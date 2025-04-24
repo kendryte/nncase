@@ -266,7 +266,8 @@ internal class Compiler : ICompiler
     {
         foreach (var moduleCompiler in _compileSession.Target.ModuleCompilers)
         {
-            passManager.AddWithName<ModulePartitionPass>($"ModulePartition_{moduleCompiler.ModuleKind}", moduleCompiler);
+            // passManager.AddWithName<ModulePartitionPass>($"ModulePartition_{moduleCompiler.ModuleKind}", moduleCompiler);
+            passManager.AddWithName<ModuleConvertPass>($"Module_{moduleCompiler.ModuleKind}", moduleCompiler);
         }
 
         passManager.Add<RemoveUnusedFunctions>();

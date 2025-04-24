@@ -19,20 +19,19 @@
 #include "../ukernels.h"
 #include "../utility.h"
 #include "copy.h"
-#include "nncase/compiler_defs.h"
 #include <type_traits>
 
 namespace nncase::ntt {
 
 template <class TBegin, class TEnd, class TStep, class TOut>
-void range(const TBegin &begin, NNCASE_UNUSED const TEnd &end,
-           const TStep &step, TOut &&output) {
-    // FIXME: rewrite this with a better way
-    using element_type = element_or_scalar_t<TOut>;
-    constexpr auto output_shape = typename TOut::shape_type{};
-    apply(output_shape, [&](auto shape) {
-        element_type value = begin + step * shape;
-        output(shape) = value;
-    });
+void range(const TBegin &begin, const TEnd &end, const TStep &step, TOut &&output) {
+    using TOutType = typename std::remove_reference<TOut>::type;
+    using TOutElem = typename TOutType::element_type;
+    const auto size = output.size();
+
+    // TODO: use apply?
+    for (size_t i = 0; i < size; ++i) {
+        output(i) = (TOutElem)begin(0) + (TOutElem)step(0) * (TOutElem)i;
+    }
 }
 } // namespace nncase::ntt

@@ -19,20 +19,21 @@
 #include "../ukernels.h"
 #include "../utility.h"
 #include "copy.h"
-#include "nncase/compiler_defs.h"
+// #include "nncase/compiler_defs.h"
 #include <type_traits>
 
 namespace nncase::ntt {
 
 template <class TIn, class TValue, class TOut>
-void constant_of_shape(NNCASE_UNUSED const TIn &shape, const TValue &value,
+void constant_of_shape(const TIn &shape, const TValue &value,
                        TOut &&output) {
-    // FIXME: rewrite this with a better way
-    using element_type = element_or_scalar_t<TValue>;
-    auto data = basic_tensor<element_type, typename TOut::shape_type,
-                             default_strides_t<typename TOut::shape_type>,
-                             TOut::max_size(), false>::from_scalar(value);
+    using TOutType = typename std::remove_reference<TOut>::type;
+    using TOutElem = typename TOutType::element_type;
+    const auto size = output.size();
 
-    tensor_copy(data, output);
+    // TODO: use apply?
+    for (size_t i = 0; i < size; ++i) {
+        output(i) = (TOutElem)value(0);
+    }
 }
 } // namespace nncase::ntt
