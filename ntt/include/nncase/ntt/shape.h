@@ -142,7 +142,7 @@ template <class T, size_t Rank> struct ranked_dims_base {
 };
 } // namespace detail
 
-template <class T, size_t... Dims>
+template <class T, T... Dims>
 struct fixed_dims : detail::fixed_dims_base<T, Dims...> {};
 
 template <size_t... Dims>
