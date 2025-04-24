@@ -29,11 +29,6 @@ public sealed partial class QuantizerMatmul : IRewriteRule
 
     private Expr? GetReplace(Expr matmul, Call call, Expr inputA, Marker markerA, TensorConst scaleA, Expr inputB, Marker markerB, TensorConst scaleB, RunPassContext context)
     {
-        if (inputA is not TensorConst && inputB is not TensorConst)
-        {
-            return null;
-        }
-
         if (markerA.MixQuantInfo!.MarkerQuantType == DataTypes.Float8E4M3 && markerB.MixQuantInfo!.MarkerQuantType == DataTypes.Float8E4M3)
         {
             if (inputA is TensorConst)
@@ -81,17 +76,28 @@ public sealed partial class QuantizerMatmul : IRewriteRule
         var qScaleB = 1 / deqScaleB;
         var qInput = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, inputA, qScaleA);
         qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Float8E4M3);
-        var weights = ((TensorConst)inputB).Value.ToArray<float>();
-        var qWeights = new Float8E4M3[weights.Length];
-        for (int i = 0; i < weights.Length; i++)
+        if (inputB is TensorConst)
         {
-            qWeights[i] = (Float8E4M3)(weights[i] * qScaleB);
-        }
+            var weights = ((TensorConst)inputB).Value.ToArray<float>();
+            var qWeights = new Float8E4M3[weights.Length];
+            for (int i = 0; i < weights.Length; i++)
+            {
+                qWeights[i] = (Float8E4M3)(weights[i] * qScaleB);
+            }
 
-        var qWeightsConst = Tensor.From<Float8E4M3>(qWeights, inputB.CheckedShape.ToValueArray());
-        var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeightsConst);
-        qMatmul = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
-        return qMatmul;
+            var qWeightsConst = Tensor.From<Float8E4M3>(qWeights, inputB.CheckedShape.ToValueArray());
+            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeightsConst);
+            qMatmul = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
+            return qMatmul;
+        }
+        else
+        {
+            var qInputB = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, inputB, qScaleB);
+            qInputB = Nncase.IR.F.Tensors.Cast(qInputB, DataTypes.Float8E4M3);
+            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qInputB);
+            qMatmul = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
+            return qMatmul;
+        }
     }
 
     private Expr? QuantMatmulE5M2(Expr inputA, TensorConst scaleA, Expr inputB, TensorConst scaleB)
