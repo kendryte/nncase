@@ -112,8 +112,9 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type,
                                      context);
     if (cmp_dt(in_type, dt_float32) && cmp_dt(out_type, dt_float16))
         return cast_f32_to_fp16_impl(reinterpret_cast<const float *>(input),
-                                     reinterpret_cast<_Float16 *>(output), in_shape,
-                                     in_strides, out_strides, context);
+                                     reinterpret_cast<_Float16 *>(output),
+                                     in_shape, in_strides, out_strides,
+                                     context);
     bool contiguous = is_contiguous(in_shape, in_strides);
     CAST_IMPL_LV1(bool);
     CAST_IMPL_LV1(uint8_t);
@@ -125,7 +126,7 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type,
     CAST_IMPL_LV1(int32_t);
     CAST_IMPL_LV1(int64_t);
     CAST_IMPL_LV1(bfloat16);
-    CAST_IMPL_LV1(_Float16 );
+    CAST_IMPL_LV1(_Float16);
     CAST_IMPL_LV1(float);
     return err(std::errc::not_supported);
 }

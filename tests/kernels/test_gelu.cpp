@@ -59,7 +59,8 @@ class GeluTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](std::span<const size_t> index) -> result<void> {
-                    get<_Float16>(tensor, index) = static_cast<_Float16>(dis(gen));
+                    get<_Float16>(tensor, index) =
+                        static_cast<_Float16>(dis(gen));
                     return ok();
                 });
             break;
