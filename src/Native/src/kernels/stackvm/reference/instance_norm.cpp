@@ -120,7 +120,7 @@ instance_norm_impl2(typecode_t type, const T *input, const T *scale,
     case dt_float32:                                                           \
         _impl(float);                                                          \
     case dt_float16:                                                           \
-        _impl(half);                                                           \
+        _impl(_Float16);                                                       \
     case dt_bfloat16:                                                          \
         _impl(bfloat16);                                                       \
     case dt_int8:                                                              \

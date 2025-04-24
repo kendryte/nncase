@@ -53,7 +53,7 @@ REGISTER_RVV_UNARY_FP16_OP(abs, _Float16, abs_float16)
         constexpr auto pc5 = (_Float16)(0x1.3af7d8p-5);                        \
         constexpr auto pc6 = (_Float16)(0x1.b059dp-6);                         \
         auto zero = __riscv_vfmv_v_f_f16m##lmul(0.f16, vl);                    \
-        auto halff = __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl);                   \
+        auto halff = __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl);                  \
         auto one = __riscv_vfmv_v_f_f16m##lmul(1.f16, vl);                     \
         auto two = __riscv_vfmv_v_f_f16m##lmul(2.f16, vl);                     \
         auto minus_one = __riscv_vfmv_v_f_f16m##lmul(-1.f16, vl);              \
@@ -67,11 +67,11 @@ REGISTER_RVV_UNARY_FP16_OP(abs, _Float16, abs_float16)
         auto mul2 =                                                            \
             __riscv_vfmerge_vfm_f16m##lmul(minus_one, 1.f16, neg_mask, vl);    \
         auto le_half_mask =                                                    \
-            __riscv_vmfle_vv_f16m##lmul##_b##mlen(x, halff, vl);                \
+            __riscv_vmfle_vv_f16m##lmul##_b##mlen(x, halff, vl);               \
         auto tmp = __riscv_vmv_v_v_f16m##lmul(x, vl);                          \
         auto mul =                                                             \
             __riscv_vmerge_vvm_f16m##lmul(mul1, mul2, le_half_mask, vl);       \
-        tmp = __riscv_vfnmsub_vv_f16m##lmul(tmp, halff, halff, vl);              \
+        tmp = __riscv_vfnmsub_vv_f16m##lmul(tmp, halff, halff, vl);            \
         auto v2 = __riscv_vfmul_vv_f16m##lmul(v, v, vl);                       \
         auto add = __riscv_vfmerge_vfm_f16m##lmul(off, pc4, le_half_mask, vl); \
         auto z2 = __riscv_vmerge_vvm_f16m##lmul(tmp, v2, le_half_mask, vl);    \
@@ -117,7 +117,7 @@ REGISTER_RVV_UNARY_FP16_OP(acosh, _Float16, acosh_float16)
         constexpr auto pc3 = (_Float16)(0x1.70d7dcp-5);                        \
         constexpr auto pc4 = (_Float16)(0x1.3af7d8p-5);                        \
         constexpr auto pc5 = (_Float16)(0x1.b059dp-6);                         \
-        auto halff = __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl);                   \
+        auto halff = __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl);                  \
         auto one = __riscv_vfmv_v_f_f16m##lmul(1.f16, vl);                     \
         auto minus_two = __riscv_vfmv_v_f_f16m##lmul(-2.f16, vl);              \
         auto pi_over_2f = __riscv_vfmv_v_f_f16m##lmul(pc0, vl);                \
@@ -132,11 +132,11 @@ REGISTER_RVV_UNARY_FP16_OP(acosh, _Float16, acosh_float16)
             z2 = x ^ 2         and z = |x|     , if |x| < 0.5                  \
             z2 = (1 - |x|) / 2 and z = sqrt(z2), if |x| >= 0.5.  */            \
         auto lt_half_mask =                                                    \
-            __riscv_vmflt_vv_f16m##lmul##_b##mlen(x, halff, vl);                \
+            __riscv_vmflt_vv_f16m##lmul##_b##mlen(x, halff, vl);               \
         auto tmp = __riscv_vmv_v_v_f16m##lmul(x, vl);                          \
         auto mul2 = __riscv_vfmerge_vfm_f16m##lmul(minus_two, 1.f16,           \
                                                    lt_half_mask, vl);          \
-        tmp = __riscv_vfnmsub_vv_f16m##lmul(tmp, halff, halff, vl);              \
+        tmp = __riscv_vfnmsub_vv_f16m##lmul(tmp, halff, halff, vl);            \
         auto add = __riscv_vfmerge_vfm_f16m##lmul(pi_over_2f, 0.f16,           \
                                                   lt_half_mask, vl);           \
         auto v2 = __riscv_vfmul_vv_f16m##lmul(v, v, vl);                       \
@@ -205,12 +205,12 @@ REGISTER_RVV_UNARY_FP16_OP(ceil, _Float16, ceil_float16)
         constexpr auto p6 = (_Float16)(0x1.5b2e76p-19f);                       \
         constexpr auto p7 = (_Float16)(0x1.110df4p-7f);                        \
         auto n = __riscv_vfmv_v_f_f16m##lmul(p0, vl);                          \
-        auto halff = __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl);                   \
+        auto halff = __riscv_vfmv_v_f_f16m##lmul(0.5f16, vl);                  \
         auto c0 = __riscv_vfmv_v_f_f16m##lmul(p1, vl);                         \
         auto c2 = __riscv_vfmv_v_f_f16m##lmul(p2, vl);                         \
                                                                                \
         auto r = __riscv_vfabs_v_f16m##lmul(v, vl);                            \
-        n = __riscv_vfmadd_vv_f16m##lmul(r, n, halff, vl);                      \
+        n = __riscv_vfmadd_vv_f16m##lmul(r, n, halff, vl);                     \
         auto ni = __riscv_vfcvt_x_f_v_i16m##lmul(n, vl);                       \
         n = __riscv_vfcvt_f_x_v_f16m##lmul(ni, vl);                            \
         auto parity = __riscv_vand_vx_i16m##lmul(ni, 1, vl);                   \
@@ -466,8 +466,8 @@ REGISTER_RVV_UNARY_FP16_OP(swish, _Float16, swish_float16)
 // register swishb kernel
 // swishb(v) = v / (exp(-v*beta) + 1)
 #define SWISHB_FLOAT16(lmul, mlen)                                             \
-    inline vfloat16m##lmul##_t swishb_float16(const vfloat16m##lmul##_t &v,    \
-                                              _Float16 beta, const size_t vl) {    \
+    inline vfloat16m##lmul##_t swishb_float16(                                 \
+        const vfloat16m##lmul##_t &v, _Float16 beta, const size_t vl) {        \
         auto tmp = __riscv_vfmul_vf_f16m##lmul(v, -beta, vl);                  \
         tmp = exp_ps_fp16(tmp, vl);                                            \
         tmp = __riscv_vfadd_vf_f16m##lmul(tmp, 1.f16, vl);                     \
@@ -533,7 +533,7 @@ REGISTER_RVV_UNARY_FP16_OP(erf, _Float16, erf_float16)
     RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)     \
     RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)     
 
-// add 
+// add
 #define ADD_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v1,      \
                                            const vfloat16m##lmul##_t &v2,      \
@@ -541,13 +541,13 @@ REGISTER_RVV_UNARY_FP16_OP(erf, _Float16, erf_float16)
         return __riscv_vfadd_vv_f16m##lmul(v1, v2, vl);                        \
     }                                                                          \
                                                                                \
-    inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v,       \
-                                           const _Float16 &s, const size_t vl) {   \
+    inline vfloat16m##lmul##_t add_float16(                                    \
+        const vfloat16m##lmul##_t &v, const _Float16 &s, const size_t vl) {    \
         return __riscv_vfadd_vf_f16m##lmul(v, s, vl);                          \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t add_float16(                                    \
-        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {    \
         return __riscv_vfadd_vf_f16m##lmul(v, s, vl);                          \
     }
 
@@ -562,13 +562,13 @@ REGISTER_RVV_BINARY_FP16_OP(add, _Float16, add_float16)
         return __riscv_vfsub_vv_f16m##lmul(v1, v2, vl);                        \
     }                                                                          \
                                                                                \
-    inline vfloat16m##lmul##_t sub_float16(const vfloat16m##lmul##_t &v,       \
-                                           const _Float16 &s, const size_t vl) {   \
+    inline vfloat16m##lmul##_t sub_float16(                                    \
+        const vfloat16m##lmul##_t &v, const _Float16 &s, const size_t vl) {    \
         return __riscv_vfsub_vf_f16m##lmul(v, s, vl);                          \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t sub_float16(                                    \
-        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {    \
         return __riscv_vfrsub_vf_f16m##lmul(v, s, vl);                         \
     }
 
@@ -583,20 +583,20 @@ REGISTER_RVV_BINARY_FP16_OP(sub, _Float16, sub_float16)
         return __riscv_vfmul_vv_f16m##lmul(v1, v2, vl);                        \
     }                                                                          \
                                                                                \
-    inline vfloat16m##lmul##_t mul_float16(const vfloat16m##lmul##_t &v,       \
-                                           const _Float16 &s, const size_t vl) {   \
+    inline vfloat16m##lmul##_t mul_float16(                                    \
+        const vfloat16m##lmul##_t &v, const _Float16 &s, const size_t vl) {    \
         return __riscv_vfmul_vf_f16m##lmul(v, s, vl);                          \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t mul_float16(                                    \
-        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {    \
         return __riscv_vfmul_vf_f16m##lmul(v, s, vl);                          \
     }
 
 REGISTER_RVV_FP16_KERNEL(MUL_FLOAT16)
 REGISTER_RVV_BINARY_FP16_OP(mul, _Float16, mul_float16)
 
-// div 
+// div
 #define DIV_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t div_float16(const vfloat16m##lmul##_t &v1,      \
                                            const vfloat16m##lmul##_t &v2,      \
@@ -604,13 +604,13 @@ REGISTER_RVV_BINARY_FP16_OP(mul, _Float16, mul_float16)
         return __riscv_vfdiv_vv_f16m##lmul(v1, v2, vl);                        \
     }                                                                          \
                                                                                \
-    inline vfloat16m##lmul##_t div_float16(const vfloat16m##lmul##_t &v,       \
-                                           const _Float16 &s, const size_t vl) {   \
+    inline vfloat16m##lmul##_t div_float16(                                    \
+        const vfloat16m##lmul##_t &v, const _Float16 &s, const size_t vl) {    \
         return __riscv_vfdiv_vf_f16m##lmul(v, s, vl);                          \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t div_float16(                                    \
-        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {    \
         return __riscv_vfrdiv_vf_f16m##lmul(v, s, vl);                         \
     }
 
@@ -625,14 +625,14 @@ REGISTER_RVV_BINARY_FP16_OP(div, _Float16, div_float16)
         return pow_ps_fp16(v1, v2, vl);                                        \
     }                                                                          \
                                                                                \
-    inline vfloat16m##lmul##_t pow_float16(const vfloat16m##lmul##_t &v1,      \
-                                           const _Float16 &s, const size_t vl) {   \
+    inline vfloat16m##lmul##_t pow_float16(                                    \
+        const vfloat16m##lmul##_t &v1, const _Float16 &s, const size_t vl) {   \
         auto v2 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
         return pow_ps_fp16(v1, v2, vl);                                        \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t pow_float16(                                    \
-        const _Float16 &s, const vfloat16m##lmul##_t &v2, const size_t vl) {       \
+        const _Float16 &s, const vfloat16m##lmul##_t &v2, const size_t vl) {   \
         auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
         return pow_ps_fp16(v1, v2, vl);                                        \
     }
@@ -652,8 +652,8 @@ REGISTER_RVV_BINARY_FP16_OP(pow, _Float16, pow_float16)
         return __riscv_vfnmsub_vv_f16m##lmul(quotient, v2, v1, vl);            \
     }                                                                          \
                                                                                \
-    inline vfloat16m##lmul##_t mod_float16(const vfloat16m##lmul##_t &v,       \
-                                           const _Float16 &s, const size_t vl) {   \
+    inline vfloat16m##lmul##_t mod_float16(                                    \
+        const vfloat16m##lmul##_t &v, const _Float16 &s, const size_t vl) {    \
         auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
             __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
                 __riscv_vfdiv_vf_f16m##lmul(v, s, vl), vl),                    \
@@ -662,7 +662,7 @@ REGISTER_RVV_BINARY_FP16_OP(pow, _Float16, pow_float16)
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t mod_float16(                                    \
-        const _Float16 &s, const vfloat16m##lmul##_t &v2, const size_t vl) {       \
+        const _Float16 &s, const vfloat16m##lmul##_t &v2, const size_t vl) {   \
         auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
         auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
             __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
@@ -674,47 +674,25 @@ REGISTER_RVV_BINARY_FP16_OP(pow, _Float16, pow_float16)
 REGISTER_RVV_FP16_KERNEL(MOD_FLOAT16)
 REGISTER_RVV_BINARY_FP16_OP(mod, _Float16, mod_float16)
 
-// min
-// template <> struct min<_Float16, _Float16> {
-//     auto operator()(const _Float16 &s1, const _Float16 &s2) const noexcept {
-//         _Float16 ret;
-//         __asm("fmin.s %[ret], %[s1], %[s2];"
-//               : [ret] "=f"(ret)
-//               : [s1] "f"(s1), [s2] "f"(s2));
-//         return ret;
-//     }
-// };
-
 #define MIN_FLOAT16(lmul, mlen)                                                \
-    inline vfloat16m##lmul##_t min_float16(                                    \
-        const vfloat16m##lmul##_t &v1, const vfloat16m##lmul##_t &v2,          \
-        const size_t vl) {                                                     \
+    inline vfloat16m##lmul##_t min_float16(const vfloat16m##lmul##_t &v1,      \
+                                           const vfloat16m##lmul##_t &v2,      \
+                                           const size_t vl) {                  \
         return __riscv_vfmin_vv_f16m##lmul(v1, v2, vl);                        \
     }                                                                          \
                                                                                \
-    inline vfloat16m##lmul##_t min_float16(const vfloat16m##lmul##_t &v,       \
-                                           const _Float16 &s, const size_t vl) {   \
+    inline vfloat16m##lmul##_t min_float16(                                    \
+        const vfloat16m##lmul##_t &v, const _Float16 &s, const size_t vl) {    \
         return __riscv_vfmin_vf_f16m##lmul(v, s, vl);                          \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t min_float16(                                    \
-        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {    \
         return __riscv_vfmin_vf_f16m##lmul(v, s, vl);                          \
     }
 
 REGISTER_RVV_FP16_KERNEL(MIN_FLOAT16)
 REGISTER_RVV_BINARY_FP16_OP(min, _Float16, min_float16)
-
-// max
-// template <> struct max<_Float16, _Float16> {
-//     auto operator()(const _Float16 &s1, const _Float16 &s2) const noexcept {
-//         _Float16 ret;
-//         __asm("fmax.s %[ret], %[s1], %[s2];"
-//               : [ret] "=f"(ret)
-//               : [s1] "f"(s1), [s2] "f"(s2));
-//         return ret;
-//     }
-// };
 
 #define MAX_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t max_float16(const vfloat16m##lmul##_t &v1,      \
@@ -723,13 +701,13 @@ REGISTER_RVV_BINARY_FP16_OP(min, _Float16, min_float16)
         return __riscv_vfmax_vv_f16m##lmul(v1, v2, vl);                        \
     }                                                                          \
                                                                                \
-    inline vfloat16m##lmul##_t max_float16(const vfloat16m##lmul##_t &v,       \
-                                           const _Float16 &s, const size_t vl) {   \
+    inline vfloat16m##lmul##_t max_float16(                                    \
+        const vfloat16m##lmul##_t &v, const _Float16 &s, const size_t vl) {    \
         return __riscv_vfmax_vf_f16m##lmul(v, s, vl);                          \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t max_float16(                                    \
-        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {        \
+        const _Float16 &s, const vfloat16m##lmul##_t &v, const size_t vl) {    \
         return __riscv_vfmax_vf_f16m##lmul(v, s, vl);                          \
     }
 

@@ -129,7 +129,7 @@ result<void> lrn_impl2(typecode_t type, const T *input, float alpha, float beta,
     case dt_float32:                                                           \
         _impl(float);                                                          \
     case dt_float16:                                                           \
-        _impl(half);                                                           \
+        _impl(_Float16);                                                       \
     case dt_bfloat16:                                                          \
         _impl(bfloat16);                                                       \
     case dt_float64:                                                           \

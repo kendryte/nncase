@@ -143,7 +143,7 @@ class ReduceProdTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](std::span<const size_t> index) -> result<void> {
-                    get<half>(tensor, index) = static_cast<half>(1);
+                    get<_Float16>(tensor, index) = static_cast<_Float16>(1);
                     return ok();
                 });
             break;

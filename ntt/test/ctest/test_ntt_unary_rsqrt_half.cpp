@@ -26,7 +26,8 @@ TEST(UnaryTestRsqrtFloat, fixed_fixed) {
     using shape = ntt::fixed_shape<1, 3, 16, 16>;
     using tensor_type = ntt::tensor<_Float16, shape>;
     std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    NttTest::init_tensor(*ntt_input, static_cast<_Float16>(1.0f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_input, static_cast<_Float16>(1.0f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
@@ -47,7 +48,8 @@ TEST(UnaryTestRsqrtFloat, fixed_ranked) {
     using shape1 = ntt::fixed_shape<1, 3, 16, 16>;
     using tensor_type1 = ntt::tensor<_Float16, shape1>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, static_cast<_Float16>(1.0f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_input, static_cast<_Float16>(1.0f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
@@ -70,7 +72,8 @@ TEST(UnaryTestRsqrtFloat, ranked_ranked) {
     using tensor_type = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type> ntt_input(new tensor_type(shape));
-    NttTest::init_tensor(*ntt_input, static_cast<_Float16>(1.0f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_input, static_cast<_Float16>(1.0f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type(shape));
@@ -91,7 +94,8 @@ TEST(UnaryTestRsqrtFloat, ranked_fixed) {
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     std::unique_ptr<tensor_type1> ntt_input(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_input, static_cast<_Float16>(1.0f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_input, static_cast<_Float16>(1.0f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using shape2 = ntt::fixed_shape<1, 3, 16, 16>;
@@ -142,7 +146,7 @@ void rsqrt_std(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &input,
 
         nncase::ntt::apply(input_element.shape(), [&](auto idx) {
             output_element(idx) =
-            static_cast<_Float16>(1.0) / std::sqrt(input_element(idx));
+                static_cast<_Float16>(1.0) / std::sqrt(input_element(idx));
             [[maybe_unused]] auto debug = static_cast<_Float16>(1.0f);
         });
     });

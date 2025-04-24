@@ -28,8 +28,10 @@ TEST(BinaryTestSubFP16, fixed_fixed_fixed) {
     using tensor_type = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
     std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type);
@@ -50,11 +52,13 @@ TEST(BinaryTestSubFP16, fixed_fixed_fixed_broadcast_lhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1>>;
     std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type2> ntt_lhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
@@ -75,11 +79,13 @@ TEST(BinaryTestSubFP16, fixed_fixed_fixed_broadcast_rhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<1>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
@@ -100,11 +106,13 @@ TEST(BinaryTestSubFP16, fixed_fixed_fixed_broadcast_lhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<16>>;
     std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type2> ntt_lhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
@@ -125,11 +133,13 @@ TEST(BinaryTestSubFP16, fixed_fixed_fixed_broadcast_rhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
@@ -150,11 +160,13 @@ TEST(BinaryTestSubFP16, fixed_fixed_fixed_broadcast_multidirectional) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 1, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<3, 1, 16, 1>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::fixed_shape<3, 3, 16, 16>>;
@@ -176,12 +188,14 @@ TEST(BinaryTestSubFP16, fixed_ranked_ranked) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape));
@@ -202,12 +216,14 @@ TEST(BinaryTestSubFP16, fixed_ranked_ranked_broadcast_lhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape));
@@ -228,12 +244,14 @@ TEST(BinaryTestSubFP16, fixed_ranked_ranked_broadcast_rhs_scalar) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
@@ -256,12 +274,14 @@ TEST(BinaryTestSubFP16, fixed_ranked_ranked_broadcast_lhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape));
@@ -282,12 +302,14 @@ TEST(BinaryTestSubFP16, fixed_ranked_ranked_broadcast_rhs_vector) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
@@ -310,12 +332,14 @@ TEST(BinaryTestSubFP16, fixed_ranked_ranked_broadcast_multidirectional) {
     // init
     using tensor_type1 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 1, 16>>;
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(3, 1, 16, 1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape1));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
@@ -339,11 +363,13 @@ TEST(BinaryTestSubFP16, ranked_fixed_ranked) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1(shape));
@@ -365,11 +391,13 @@ TEST(BinaryTestSubFP16, ranked_fixed_ranked_broadcast_lhs_scalar) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(1);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
@@ -393,11 +421,13 @@ TEST(BinaryTestSubFP16, ranked_fixed_ranked_broadcast_rhs_scalar) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<1>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
@@ -421,11 +451,13 @@ TEST(BinaryTestSubFP16, ranked_fixed_ranked_broadcast_lhs_vector) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<1, 3, 16, 16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
@@ -449,11 +481,13 @@ TEST(BinaryTestSubFP16, ranked_fixed_ranked_broadcast_rhs_vector) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<16>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
@@ -477,11 +511,13 @@ TEST(BinaryTestSubFP16, ranked_fixed_ranked_broadcast_multidirectional) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 1, 16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::fixed_shape<3, 1, 16, 1>>;
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
@@ -505,10 +541,12 @@ TEST(BinaryTestSubFP16, ranked_ranked_ranked) {
     using tensor_type = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type> ntt_lhs(new tensor_type(shape));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     std::unique_ptr<tensor_type> ntt_rhs(new tensor_type(shape));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type> ntt_output1(new tensor_type(shape));
@@ -530,12 +568,14 @@ TEST(BinaryTestSubFP16, ranked_ranked_ranked_broadcast_lhs_scalar) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(1);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
@@ -557,12 +597,14 @@ TEST(BinaryTestSubFP16, ranked_ranked_ranked_broadcast_rhs_scalar) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<1>>;
     auto shape2 = ntt::make_ranked_shape(1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1(shape1));
@@ -584,12 +626,14 @@ TEST(BinaryTestSubFP16, ranked_ranked_ranked_broadcast_lhs_vector) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<1>>;
     auto shape1 = ntt::make_ranked_shape(16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape2 = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2(shape2));
@@ -611,12 +655,14 @@ TEST(BinaryTestSubFP16, ranked_ranked_ranked_broadcast_rhs_vector) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 16, 16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<1>>;
     auto shape2 = ntt::make_ranked_shape(16);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1(shape1));
@@ -638,12 +684,14 @@ TEST(BinaryTestSubFP16, ranked_ranked_ranked_broadcast_multidirectional) {
     using tensor_type1 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape1 = ntt::make_ranked_shape(1, 3, 1, 16);
     std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1(shape1));
-    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_lhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     using tensor_type2 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;
     auto shape2 = ntt::make_ranked_shape(3, 1, 16, 1);
     std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2(shape2));
-    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f), static_cast<_Float16>(10.f));
+    NttTest::init_tensor(*ntt_rhs, -static_cast<_Float16>(10.f),
+                         static_cast<_Float16>(10.f));
 
     // ntt
     using tensor_type3 = ntt::tensor<_Float16, ntt::ranked_shape<4>>;

@@ -46,9 +46,12 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
     auto out_shape = to_4d(out_shape_3);
 
     auto tanh = [&](T x) {
-        return (1 - exp(-2 * (float)x)) / (1 + exp(-2 * (float)x));
+        return static_cast<T>((1.f - expf(-2.f * (float)x)) /
+                              (1.f + expf(-2.f * (float)x)));
     };
-    auto sigmoid = [&](T x) { return 1 / (1 + exp(-x)); };
+    auto sigmoid = [&](T x) {
+        return static_cast<T>(1.f / (1.f + expf(-1.f * (float)x)));
+    };
 
     auto output_h_tmp = std::make_unique<T[]>(compute_size(init_h_shape));
     auto output_c_tmp = std::make_unique<T[]>(compute_size(init_c_shape));
@@ -145,8 +148,10 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
 
                 // tanh_ct = tanh(ct_o)
                 for (size_t o = 0; o < out_shape[3]; o++) {
-                    out_mul1[o + out_shape[3] * 3] = std::tanh(
-                        output_c_tmp[o + d * out_shape[2] * out_shape[3]]);
+                    out_mul1[o + out_shape[3] * 3] =
+                        static_cast<T>(std::tanh(static_cast<float>(
+                            output_c_tmp[o +
+                                         d * out_shape[2] * out_shape[3]])));
                 }
 
                 // ht = ot * tanh_ct
@@ -193,7 +198,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
     case dt_float32:                                                           \
         _impl(float);                                                          \
     case dt_float16:                                                           \
-        _impl(half);                                                           \
+        _impl(_Float16);                                                       \
     case dt_float64:                                                           \
         _impl(double);                                                         \
     default:                                                                   \

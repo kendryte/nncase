@@ -79,13 +79,7 @@ void dump_data(std::ostream &stream, const T *data,
         sum *= s;
     }
     for (int i = 0; i < sum; ++i) {
-        if constexpr (std::is_same_v<T, nncase::half>) {
-            auto ptr = IN_CAST(uint16_t, data);
-            stream << std::to_string((float)nncase::half::from_raw(ptr[i]))
-                   << "\n";
-        } else {
-            stream << std::to_string(data[i]) << "\n";
-        }
+        stream << std::to_string(static_cast<float>(data[i])) << "\n";
     }
 }
 

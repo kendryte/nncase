@@ -80,14 +80,14 @@ TEST_P(SeluTest, Selu) {
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
     } else if (input.datatype() == dt_float16) {
-        half alpha_ptr[] = {(half)alpha_value};
+        _Float16 alpha_ptr[] = {(_Float16)alpha_value};
         alpha = hrt::create(nncase::dt_float16, {1},
                             {reinterpret_cast<std::byte *>(alpha_ptr),
                              sizeof(alpha_ptr)},
                             true, host_runtime_tensor::pool_cpu_only)
                     .expect("create tensor failed");
 
-        half gamma_ptr[] = {(half)gamma_value};
+        _Float16 gamma_ptr[] = {(_Float16)gamma_value};
         gamma = hrt::create(nncase::dt_float16, {1},
                             {reinterpret_cast<std::byte *>(gamma_ptr),
                              sizeof(gamma_ptr)},

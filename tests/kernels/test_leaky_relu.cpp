@@ -63,7 +63,7 @@ TEST_P(LeakyReluTest, leaky_relu) {
     // expected
     OrtKITensor *output_ort;
     if (input.datatype() == dt_float16) {
-        output_ort = ortki_LeakyRelu(l_ort, tensor_to_array<half>(alpha)[0]);
+        output_ort = ortki_LeakyRelu(l_ort, tensor_to_array<_Float16>(alpha)[0]);
     } else if (input.datatype() == dt_float32) {
         output_ort = ortki_LeakyRelu(l_ort, tensor_to_array<float>(alpha)[0]);
     } else if (input.datatype() == dt_bfloat16) {

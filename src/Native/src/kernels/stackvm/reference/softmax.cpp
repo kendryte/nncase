@@ -135,7 +135,7 @@ softmax_impl(const T *input, T *output, std::span<const size_t> in_shape,
     case dt_float32:                                                           \
         _impl(float);                                                          \
     case dt_float16:                                                           \
-        _impl(half);                                                           \
+        _impl(_Float16);                                                       \
     case dt_bfloat16:                                                          \
         _impl(bfloat16);                                                       \
     case dt_int8:                                                              \

@@ -166,7 +166,8 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](std::span<const size_t> index) -> result<void> {
-                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    get<_Float16>(tensor, index) =
+                        static_cast<_Float16>(dis(gen));
                     return ok();
                 });
             break;
@@ -380,7 +381,7 @@ class KernelTest {
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](std::span<const size_t> index) -> result<void> {
-                    SWITCH_INIT_MODE(half, real_random_dis, real_noneg_dis,
+                    SWITCH_INIT_MODE(_Float16, real_random_dis, real_noneg_dis,
                                      real_noneg_dis, real_nopos_dis)
                     return ok();
                 });
@@ -529,7 +530,7 @@ class KernelTest {
     //             arr = new double[tensor.shape().size()];
     //             break;
     //         case dt_float16:
-    //             arr = new half[tensor.shape().size()];
+    //             arr = new _Float16 [tensor.shape().size()];
     //             break;
     //         case dt_boolean:
     //             arr = new bool[tensor.shape().size()];
@@ -557,8 +558,8 @@ class KernelTest {
     //                     arr[index] = static_cast<double>(get<double>(tensor,
     //                     index)); break;
     //                 case dt_float16:
-    //                     arr[index] = static_cast<double>(get<half>(tensor,
-    //                     index)); break;
+    //                     arr[index] = static_cast<double>(get<_Float16
+    //                     >(tensor, index)); break;
     //                 case dt_boolean:
     //                     arr[index] = static_cast<bool>(get<bool>(tensor,
     //                     index)); break;
@@ -644,11 +645,13 @@ class KernelTest {
                     break;
                 }
                 case dt_float16: {
-                    vec1.push_back(static_cast<T>(get<half>(lhs, index)));
+                    vec1.push_back(static_cast<T>(
+                        static_cast<float>(get<_Float16>(lhs, index))));
                     break;
                 }
                 case dt_bfloat16: {
-                    vec1.push_back(static_cast<T>(get<bfloat16>(lhs, index)));
+                    vec1.push_back(static_cast<T>(
+                        static_cast<float>(get<bfloat16>(lhs, index))));
                     break;
                 }
                 case dt_float32: {
@@ -757,12 +760,16 @@ class KernelTest {
                            break;
                        }
                        case dt_float16: {
-                           if (get<half>(lhs, index) == get<half>(rhs, index) ||
-                               fabs((float)get<half>(lhs, index) -
-                                    (float)get<half>(rhs, index)) <= 0.01f) {
+                           if ((float)get<_Float16>(lhs, index) ==
+                                   (float)get<_Float16>(rhs, index) ||
+                               fabs((float)get<_Float16>(lhs, index) -
+                                    (float)get<_Float16>(rhs, index)) <=
+                                   0.01f) {
                                return ok();
-                           } else if (std::isnan(get<half>(lhs, index)) &&
-                                      std::isnan(get<half>(rhs, index))) {
+                           } else if (std::isnan(
+                                          (float)get<_Float16>(lhs, index)) &&
+                                      std::isnan(
+                                          (float)get<_Float16>(rhs, index))) {
                                return ok();
                            } else {
                                return err(std::errc::not_supported);
@@ -903,8 +910,10 @@ class KernelTest {
                     break;
                 }
                 case dt_float16: {
-                    vec1.push_back(static_cast<double>(get<half>(lhs, index)));
-                    vec2.push_back(static_cast<double>(get<half>(rhs, index)));
+                    vec1.push_back(
+                        static_cast<double>(get<_Float16>(lhs, index)));
+                    vec2.push_back(
+                        static_cast<double>(get<_Float16>(rhs, index)));
                     break;
                 }
                 case dt_bfloat16: {
@@ -989,7 +998,7 @@ class KernelTest {
                     std::cout << get<double>(lhs, index) << " ";
                     break;
                 case dt_float16:
-                    std::cout << get<half>(lhs, index) << " ";
+                    std::cout << (float)get<_Float16>(lhs, index) << " ";
                     break;
                 case dt_boolean:
                     std::cout << get<bool>(lhs, index) << " ";

@@ -94,7 +94,7 @@ void dump_output_impl(dump_manager &dump_manager_, nncase::value_t value,
             RETURN_RESULT_SELECT(RETURN_RESULT);
 
             if (value_tensor->dtype()->typecode() == nncase::dt_float16) {
-                dump_data(stream, IN_CAST(nncase::half, data), value_tensor);
+                dump_data(stream, IN_CAST(_Float16, data), value_tensor);
                 return;
             }
         },

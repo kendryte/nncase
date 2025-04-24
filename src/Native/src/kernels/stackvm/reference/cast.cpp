@@ -60,13 +60,13 @@ result<void> cast_f32_to_bf16_impl(
 }
 
 result<void> cast_f32_to_fp16_impl(
-    const float *input, half *output, std::span<const size_t> in_shape,
+    const float *input, _Float16 *output, std::span<const size_t> in_shape,
     std::span<const size_t> in_strides, std::span<const size_t> out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept {
-    SCALAR_CAST_IMPL(half::round_to_half);
+    SCALAR_CAST_IMPL(static_cast<_Float16>);
     return apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
         auto value = input[offset(in_strides, index)];
-        output[offset(out_strides, index)] = half::round_to_half(value);
+        output[offset(out_strides, index)] = static_cast<_Float16>(value);
         return ok();
     });
 }
@@ -112,7 +112,7 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type,
                                      context);
     if (cmp_dt(in_type, dt_float32) && cmp_dt(out_type, dt_float16))
         return cast_f32_to_fp16_impl(reinterpret_cast<const float *>(input),
-                                     reinterpret_cast<half *>(output), in_shape,
+                                     reinterpret_cast<_Float16 *>(output), in_shape,
                                      in_strides, out_strides, context);
     bool contiguous = is_contiguous(in_shape, in_strides);
     CAST_IMPL_LV1(bool);
@@ -125,7 +125,7 @@ result<void> cast_impl(datatype_t in_type, datatype_t out_type,
     CAST_IMPL_LV1(int32_t);
     CAST_IMPL_LV1(int64_t);
     CAST_IMPL_LV1(bfloat16);
-    CAST_IMPL_LV1(half);
+    CAST_IMPL_LV1(_Float16 );
     CAST_IMPL_LV1(float);
     return err(std::errc::not_supported);
 }
