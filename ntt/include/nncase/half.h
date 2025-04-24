@@ -93,6 +93,10 @@ struct half {
         return half(nncase::fp16_from_raw, v);
     }
 
+    explicit operator _Float16() const noexcept{
+        return static_cast<_Float16>(float(*this));
+    }
+
     static half round_to_half(float v) {
         fp32 f;
         f.f32 = v;
