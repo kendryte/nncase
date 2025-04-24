@@ -149,9 +149,7 @@ result<void> lstm_impl(const T *input, const T *w_xc, const T *w_rc,
                 // tanh_ct = tanh(ct_o)
                 for (size_t o = 0; o < out_shape[3]; o++) {
                     out_mul1[o + out_shape[3] * 3] =
-                        static_cast<T>(std::tanh(static_cast<float>(
-                            output_c_tmp[o +
-                                         d * out_shape[2] * out_shape[3]])));
+                        tanh(output_c_tmp[o + d * out_shape[2] * out_shape[3]]);
                 }
 
                 // ht = ot * tanh_ct
