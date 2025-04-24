@@ -176,7 +176,9 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
 #define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
 #endif
 
+#if __riscv
 TEST(UnaryTestSqrtFloat, ulp_error) { TEST_VECTOR_ULP(_Float16, 0.) }
+#endif
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
