@@ -1093,12 +1093,14 @@ public sealed class PackCast : PackRule
 
     public override Pattern Pattern { get; } = IsCast(
       "target",
+      "calle",
       _ => true,
       IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(IR.Tensors.Cast op, Expr input, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, int[] packedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
+        var op = (IR.Tensors.Cast)call.Target;
         var inShape = input.CheckedShape;
         if (packedAxes.Length == 0)
         {
@@ -1113,8 +1115,11 @@ public sealed class PackCast : PackRule
             return rets;
         }
 
-        var cast = IR.F.Tensors.Cast(packedInput, op.NewType, op.CastMode);
-        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(cast, lanes, packedAxes), inShape, padsInput!);
+        var scale = 1f * call.CheckedDataType.SizeInBytes / input.CheckedDataType.SizeInBytes;
+        var outLanes = lanes.Select(l => (int)(l / scale)).ToArray();
+
+        var cast = IR.F.Tensors.Cast(packedInput, op.NewType, op.CastMode, packedAxes);
+        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(cast, outLanes, packedAxes), inShape, padsInput!);
         if (cast.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1126,18 +1131,18 @@ public sealed class PackCast : PackRule
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
-        var op = (IR.Tensors.Cast)result["target"];
+        var call = (Call)result["call"];
         var input = (Expr)result["input"];
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         for (int i = 0; i < input.CheckedShape.Count; i++)
         {
-            rets.AddRange(AddCandidate(op, input, [i], [laneSize]));
+            rets.AddRange(AddCandidate(call, input, [i], [laneSize]));
             for (int j = i + 1; j < input.CheckedShape.Count; j++)
             {
                 if (Rank > 1)
                 {
-                    rets.AddRange(AddCandidate(op, input, [i, j], [laneSize, laneSize]));
+                    rets.AddRange(AddCandidate(call, input, [i, j], [laneSize, laneSize]));
                 }
             }
         }
@@ -1212,6 +1217,38 @@ public sealed partial class TransposePackMatMulInputs : RewriteRule<Pattern>
             var npack = IR.F.CPU.Pack(transInput, [rhsPack.Lanes[1], rhsPack.Lanes[0]], [rhsPack.Axes[1], rhsPack.Axes[0]]);
             var newMatmul = new IR.CPU.PackedMatMul(matmul.LhsPackedAxes, matmul.LhsPadedNums, new[] { matmul.RhsPackedAxes[1], matmul.RhsPackedAxes[0] }, new[] { matmul.RhsPadedNums[1], matmul.RhsPadedNums[0] }, false, true, matmul.FusedReduce);
             return new Call(newMatmul, lhs, npack);
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class FoldNopPack : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } = PatternMatch.F.CPU.IsPack("pack", "call", _ => true, IsWildcard("input"));
+
+    private Expr? GetReplace(IR.CPU.Pack pack, Expr input)
+    {
+        if (pack.Axes.Count == 0)
+        {
+            return input;
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class FoldNopUnpack : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } = PatternMatch.F.CPU.IsUnpack("unpack", "call", _ => true, IsWildcard("input"));
+
+    private Expr? GetReplace(IR.CPU.Unpack unpack, Expr input)
+    {
+        if (unpack.Axes.Count == 0)
+        {
+            return input;
         }
 
         return null;

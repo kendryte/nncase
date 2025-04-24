@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
@@ -64,6 +65,25 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
 
     private IRType Visit(Cast target, TensorType input)
     {
+        if (input.DType is VectorType vt)
+        {
+            if (target.PackAxes.Any(a => input.Shape[a] is { IsFixed: false }))
+            {
+                throw new InvalidCastException();
+            }
+
+            var scale = 1f * target.NewType.SizeInBytes / vt.ElemType.SizeInBytes;
+            if (target.PackAxes.Any(a => input.Shape[a].FixedValue * scale % 1 != 0))
+            {
+                throw new InvalidCastException();
+            }
+
+            var outType = new VectorType(target.NewType, vt.Lanes.Select(l => (int)(l / scale)).ToArray());
+            var newShape = input.Shape.ToArray();
+            target.PackAxes.ToArray().ForEach(a => newShape[a] = (int)(newShape[a].FixedValue * scale));
+            return new TensorType(outType, newShape);
+        }
+
         return new TensorType(target.NewType, input.Shape);
     }
 
