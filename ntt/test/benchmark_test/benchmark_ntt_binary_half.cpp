@@ -56,21 +56,26 @@ int main(int argc, char *argv[]) {
 
     constexpr size_t N = NTT_VLEN / (sizeof(_Float16) * 8);
     benchmark_ntt_binary_half<ntt::ops::add, _Float16, N>(
-        "add", -10.f16, 10.f16, -10.f16, 10.f16);
+        "add", -(_Float16)10.f, (_Float16)10.f, -(_Float16)10.f,
+        (_Float16)10.f);
     benchmark_ntt_binary_half<ntt::ops::sub, _Float16, N>(
-        "sub", -10.f16, 10.f16, -10.f16, 10.f16);
+        "sub", -(_Float16)10.f, (_Float16)10.f, -(_Float16)10.f,
+        (_Float16)10.f);
     benchmark_ntt_binary_half<ntt::ops::mul, _Float16, N>(
-        "mul", -10.f16, 10.f16, -10.f16, 10.f16);
+        "mul", -(_Float16)10.f, (_Float16)10.f, -(_Float16)10.f,
+        (_Float16)10.f);
     benchmark_ntt_binary_half<ntt::ops::div, _Float16, N>(
-        "div", -10.f16, 10.f16, 1.f16, 10.f16);
+        "div", -(_Float16)10.f, (_Float16)10.f, (_Float16)1.f, (_Float16)10.f);
     benchmark_ntt_binary_half<ntt::ops::max, _Float16, N>(
-        "max", -10.f16, 10.f16, -10.f16, 10.f16);
+        "max", -(_Float16)10.f, (_Float16)10.f, -(_Float16)10.f,
+        (_Float16)10.f);
     benchmark_ntt_binary_half<ntt::ops::min, _Float16, N>(
-        "min", -10.f16, 10.f16, -10.f16, 10.f16);
-    benchmark_ntt_binary_half<ntt::ops::floor_mod, int16_t, N>("floor_mod", -10,
+        "min", -(_Float16)10.f, (_Float16)10.f, -(_Float16)10.f,
+        (_Float16)10.f);
+    benchmark_ntt_binary_half<ntt::ops::floor_mod, int32_t, N>("floor_mod", -10,
                                                                10, 1, 10);
     benchmark_ntt_binary_half<ntt::ops::mod, _Float16, N>(
-        "mod", -10.f16, 10.f16, 1.f16, 10.f16);
-    benchmark_ntt_binary_half<ntt::ops::pow, _Float16, N>("pow", 0.f16, 3.f16,
-                                                          0.f16, 3.f16);
+        "mod", -(_Float16)10.f, (_Float16)10.f, (_Float16)1.f, (_Float16)10.f);
+    benchmark_ntt_binary_half<ntt::ops::pow, _Float16, N>(
+        "pow", (_Float16)0.f, (_Float16)3.f, (_Float16)0.f, (_Float16)3.f);
 }

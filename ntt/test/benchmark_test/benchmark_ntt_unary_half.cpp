@@ -57,28 +57,50 @@ int main(int argc, char *argv[]) {
     (void)argv;
 
     constexpr size_t N = NTT_VLEN / (sizeof(_Float16) * 8);
-    benchmark_ntt_unary_half<ntt::ops::abs, _Float16, N>("abs", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::acos, _Float16, N>("acos", -1.f16, 1.f16);
-    benchmark_ntt_unary_half<ntt::ops::acosh, _Float16, N>("acosh", 1.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::asin, _Float16, N>("asin", -1.f16, 1.f16);
-    benchmark_ntt_unary_half<ntt::ops::asinh, _Float16, N>("asinh", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::ceil, _Float16, N>("ceil", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::copy, _Float16, N>("copy", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::cos, _Float16, N>("cos", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::cosh, _Float16, N>("cosh", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::erf, _Float16, N>("erf", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::exp, _Float16, N>("exp", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::floor, _Float16, N>("floor", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::log, _Float16, N>("log", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::neg, _Float16, N>("neg", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::round, _Float16, N>("round", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::rsqrt, _Float16, N>("rsqrt", 1.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::sign, _Float16, N>("sign", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::sin, _Float16, N>("sin", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::sinh, _Float16, N>("sinh", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::sqrt, _Float16, N>("sqrt", 1.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::square, _Float16, N>("square", -10.f16,
-                                                       10.f16);
-    benchmark_ntt_unary_half<ntt::ops::swish, _Float16, N>("swish", -10.f16, 10.f16);
-    benchmark_ntt_unary_half<ntt::ops::tanh, _Float16, N>("tanh", -10.f16, 10.f16);
+    benchmark_ntt_unary_half<ntt::ops::abs, _Float16, N>("abs", -(_Float16)10.f,
+                                                         (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::acos, _Float16, N>(
+        "acos", -(_Float16)1.f, (_Float16)1.f);
+    benchmark_ntt_unary_half<ntt::ops::acosh, _Float16, N>(
+        "acosh", (_Float16)1.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::asin, _Float16, N>(
+        "asin", -(_Float16)1.f, (_Float16)1.f);
+    benchmark_ntt_unary_half<ntt::ops::asinh, _Float16, N>(
+        "asinh", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::ceil, _Float16, N>(
+        "ceil", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::copy, _Float16, N>(
+        "copy", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::cos, _Float16, N>("cos", -(_Float16)10.f,
+                                                         (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::cosh, _Float16, N>(
+        "cosh", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::erf, _Float16, N>("erf", -(_Float16)10.f,
+                                                         (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::exp, _Float16, N>("exp", -(_Float16)10.f,
+                                                         (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::floor, _Float16, N>(
+        "floor", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::log, _Float16, N>("log", -(_Float16)10.f,
+                                                         (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::neg, _Float16, N>("neg", -(_Float16)10.f,
+                                                         (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::round, _Float16, N>(
+        "round", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::rsqrt, _Float16, N>(
+        "rsqrt", (_Float16)1.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::sign, _Float16, N>(
+        "sign", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::sin, _Float16, N>("sin", -(_Float16)10.f,
+                                                         (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::sinh, _Float16, N>(
+        "sinh", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::sqrt, _Float16, N>("sqrt", (_Float16)1.f,
+                                                          (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::square, _Float16, N>(
+        "square", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::swish, _Float16, N>(
+        "swish", -(_Float16)10.f, (_Float16)10.f);
+    benchmark_ntt_unary_half<ntt::ops::tanh, _Float16, N>(
+        "tanh", -(_Float16)10.f, (_Float16)10.f);
 }
