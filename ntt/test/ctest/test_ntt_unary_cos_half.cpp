@@ -145,7 +145,7 @@ void cos_std(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &input,
         auto &output_element = output(index);
 
         nncase::ntt::apply(input_element.shape(), [&](auto idx) {
-            output_element(idx) = std::cos(input_element(idx));
+            output_element(idx) = (T)std::cos((float)input_element(idx));
             [[maybe_unused]] auto debug = 1.0f;
         });
     });
@@ -183,7 +183,7 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
 #define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
 #endif
 
-#ifndef __aarch64__
+#ifndef __riscv
 // TEST(UnaryTestCosFloat, ulp_error) { TEST_VECTOR_ULP(_Float16, 2.) }
 #endif
 

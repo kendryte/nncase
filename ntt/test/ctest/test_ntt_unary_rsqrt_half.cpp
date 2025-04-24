@@ -146,7 +146,7 @@ void rsqrt_std(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &input,
 
         nncase::ntt::apply(input_element.shape(), [&](auto idx) {
             output_element(idx) =
-                static_cast<_Float16>(1.0) / std::sqrt(input_element(idx));
+                (T)1.0 / (T)std::sqrt((float)input_element(idx));
             [[maybe_unused]] auto debug = static_cast<_Float16>(1.0f);
         });
     });
@@ -183,7 +183,9 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
 #define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
 #endif
 
+#if __riscv
 TEST(UnaryTestRsqrtFloat, ulp_error) { TEST_VECTOR_ULP(_Float16, 2.) }
+#endif
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

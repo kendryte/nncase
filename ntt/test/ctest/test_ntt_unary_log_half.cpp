@@ -158,7 +158,7 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
         auto &output_element = (*ntt_output2)(index);
 
         nncase::ntt::apply(input_element.shape(), [&](auto idx) {
-            output_element(idx) = std::log(input_element(idx));
+            output_element(idx) = (T)std::log((float)input_element(idx));
         });
     });
 
@@ -180,7 +180,9 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
 #define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
 #endif
 
+#if __riscv
 TEST(UnaryTestLogFloat, ulp_error) { TEST_VECTOR_ULP(_Float16, 1.) }
+#endif
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);

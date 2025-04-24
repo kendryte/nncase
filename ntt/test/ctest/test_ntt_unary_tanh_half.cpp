@@ -154,7 +154,7 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
         auto &output_element = (*ntt_output2)(index);
 
         nncase::ntt::apply(input_element.shape(), [&](auto idx) {
-            output_element(idx) = std::tanh(input_element(idx));
+            output_element(idx) = (T)std::tanh((float)input_element(idx));
         });
     });
 
@@ -176,7 +176,7 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
 #define TEST_VECTOR_ULP(T, ulp_threshold) _TEST_VECTOR_ULP(T, 1, ulp_threshold)
 #endif
 
-#ifndef __aarch64__
+#if __riscv
 // TEST(UnaryTestTanhFloat, ulp_error) { TEST_VECTOR_ULP(_Float16, 2.) }
 #endif
 

@@ -154,7 +154,7 @@ template <typename T, size_t vl> void test_vector_ulp(double ulp_threshold) {
         auto &output_element = (*ntt_output2)(index);
 
         nncase::ntt::apply(input_element.shape(), [&](auto idx) {
-            output_element(idx) = std::cosh(input_element(idx));
+            output_element(idx) = (T)std::cosh((float)input_element(idx));
         });
     });
 
