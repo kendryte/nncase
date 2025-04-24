@@ -238,9 +238,6 @@ inline std::ostream &operator<<(std::ostream &os, const half &a) {
     os << std::to_string(float(a));
     return os;
 }
-inline half fmod(const half &a, const half &b) {
-    return half::round_to_half(std::fmod(float(a), float(b)));
-}
 inline half powh(const half &a, const half &b) {
     return half::round_to_half(std::pow(float(a), float(b)));
 }
