@@ -48,11 +48,15 @@ template <class TDest, class TSource> struct store {
  */
 
 template <class T> struct abs {
-    constexpr T operator()(const T &v) const noexcept { return std::abs(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::abs((float)v);
+    }
 };
 
 template <class T> struct acos {
-    constexpr T operator()(const T &v) const noexcept { return std::acos(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::acos((float)v);
+    }
 };
 
 template <class T> struct acosh {
@@ -60,7 +64,9 @@ template <class T> struct acosh {
 };
 
 template <class T> struct asin {
-    constexpr T operator()(const T &v) const noexcept { return std::asin(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::asin((float)v);
+    }
 };
 
 template <class T> struct asinh {
@@ -68,7 +74,9 @@ template <class T> struct asinh {
 };
 
 template <class T> struct ceil {
-    constexpr T operator()(const T &v) const noexcept { return std::ceil(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::ceil((float)v);
+    }
 };
 
 template <class T> struct copy {
@@ -76,7 +84,9 @@ template <class T> struct copy {
 };
 
 template <class T> struct cos {
-    constexpr T operator()(const T &v) const noexcept { return std::cos(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::cos((float)v);
+    }
 };
 
 template <class T> struct cosh {
@@ -84,19 +94,27 @@ template <class T> struct cosh {
 };
 
 template <class T> struct erf {
-    constexpr T operator()(const T &v) const noexcept { return std::erf(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::erf((float)v);
+    }
 };
 
 template <class T> struct exp {
-    constexpr T operator()(const T &v) const noexcept { return std::exp(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::exp((float)v);
+    }
 };
 
 template <class T> struct floor {
-    constexpr T operator()(const T &v) const noexcept { return std::floor(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::floor((float)v);
+    }
 };
 
 template <class T> struct log {
-    constexpr T operator()(const T &v) const noexcept { return std::log(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::log((float)v);
+    }
 };
 
 template <class T> struct neg {
@@ -105,13 +123,13 @@ template <class T> struct neg {
 
 template <class T> struct round {
     constexpr T operator()(const T &v) const noexcept {
-        return std::nearbyint(v);
+        return (T)std::nearbyint((float)v);
     }
 };
 
 template <class T> struct rsqrt {
     constexpr T operator()(const T &v) const noexcept {
-        return (T)1 / std::sqrt(v);
+        return (T)1 / (T)std::sqrt((float)v);
     }
 };
 
@@ -122,7 +140,9 @@ template <class T> struct sign {
 };
 
 template <class T> struct sin {
-    constexpr T operator()(const T &v) const noexcept { return std::sin(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::sin((float)v);
+    }
 };
 
 template <class T> struct sinh {
@@ -130,7 +150,9 @@ template <class T> struct sinh {
 };
 
 template <class T> struct sqrt {
-    constexpr T operator()(const T &v) const noexcept { return std::sqrt(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::sqrt((float)v);
+    }
 };
 
 template <class T> struct square {
@@ -138,7 +160,9 @@ template <class T> struct square {
 };
 
 template <class T> struct tanh {
-    constexpr T operator()(const T &v) const noexcept { return std::tanh(v); }
+    constexpr T operator()(const T &v) const noexcept {
+        return (T)std::tanh((float)v);
+    }
 };
 
 template <class T> struct swish {
@@ -406,8 +430,8 @@ constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
     return ops::mma<AccC, TransA, T1, T2, TResult>()(v1, v2, v3);
 }
 
-template <template <class T1, class T2> class BinaryOp, IsTensorOrScalar TResult,
-          IsTensorOrScalar T>
+template <template <class T1, class T2> class BinaryOp,
+          IsTensorOrScalar TResult, IsTensorOrScalar T>
 constexpr TResult reduce(const T &v, TResult init_value) noexcept {
     return ops::reduce<BinaryOp, TResult, T>()(v, init_value);
 }
