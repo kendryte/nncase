@@ -67,7 +67,7 @@ struct half {
 
     constexpr half(fp16_from_raw_t, uint16_t value) noexcept : value_(value) {}
 
-    operator _Float16() const noexcept{
+    explicit operator _Float16() const noexcept{
         return static_cast<_Float16>(float(*this));
     }
 
@@ -75,7 +75,7 @@ struct half {
         return bfloat16::round_to_bfloat16(float(*this));
     }
 
-    explicit operator float() const noexcept {
+    operator float() const noexcept {
         const fp32 magic = {113 << 23};
         const unsigned int shifted_exp = 0x7c00
                                          << 13; // exponent mask after shift
