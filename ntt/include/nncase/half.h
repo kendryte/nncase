@@ -57,7 +57,7 @@ struct half {
   public:
     half() noexcept = default;
 
-    half(_Float16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
+    half(int &&val) noexcept : half(static_cast<float>(val)) {}
     explicit half(float v) noexcept : value_(round_to_half(v).value_) {}
 
     template <class T,
@@ -237,57 +237,6 @@ inline bool operator!=(const half &lhs, const half &rhs) noexcept {
 inline std::ostream &operator<<(std::ostream &os, const half &a) {
     os << std::to_string(float(a));
     return os;
-}
-inline half nextafter(const half &from, const half &to) {
-    if (from.raw() == to.raw()) {
-        return to;
-    }
-
-    const uint16_t from_raw = from.raw();
-    const uint16_t to_raw = to.raw();
-
-    const bool is_to_larger =
-        (from_raw < to_raw) ^ ((from_raw ^ to_raw) & 0x8000);
-
-    if (from.zero()) {
-        return is_to_larger ? half::from_raw(0x0001)  // +0 -> +min_positive
-                            : half::from_raw(0x8001); // +0 -> -max_negative
-    }
-
-    uint16_t next_raw;
-
-    if (is_to_larger) {
-        if (from_raw == 0x7C00) {
-            return from;
-        } else if (from_raw == 0xFC00) {
-            return half::from_raw(0xFBFF);
-        } else if (from_raw == 0xFBFF) {
-            return half::from_raw(0xFC00);
-        } else if (from_raw == 0x7BFF) {
-            return half::from_raw(0x7C00);
-        }
-
-        next_raw = from_raw + 1;
-    } else {
-        if (from_raw == 0x0000) {
-            return half::from_raw(0x8001);
-        } else if (from_raw == 0x8000) {
-            return half::from_raw(0x8001);
-        } else if (from_raw == 0x7C00) {
-            return half::from_raw(0x7BFF);
-        } else if (from_raw == 0xFC00) {
-            return from;
-        }
-
-        next_raw = from_raw - 1;
-    }
-
-    const bool sign_changed = ((from_raw ^ next_raw) & 0x8000) != 0;
-    if (sign_changed) {
-        next_raw = is_to_larger ? 0x7C00 : 0xFC00;
-    }
-
-    return half::from_raw(next_raw);
 }
 inline half fmod(const half &a, const half &b) {
     return half::round_to_half(std::fmod(float(a), float(b)));
