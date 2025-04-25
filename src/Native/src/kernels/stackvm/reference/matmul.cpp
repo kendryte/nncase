@@ -35,7 +35,7 @@ result<void> matmul_unit_impl(const T *input_a, const T *input_b, T *output,
 
     for (int32_t oy = 0; oy < a_rows; oy++) {
         for (int32_t ox = 0; ox < b_cols; ox++) {
-            T value = 0;
+            T value = (T)0;
 
             for (int32_t i = 0; i < a_cols; i++) {
                 const auto a = input_a[oy * a_cols + i];

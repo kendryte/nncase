@@ -55,7 +55,7 @@ result<void> cumsum_impl(const T *input, T *output,
             outer_index_adj = outer_index;
 
         for (size_t inner_index = 0; inner_index < inner; inner_index++) {
-            T accumulator = 0;
+            T accumulator = (T)0;
             size_t inner_index_adj;
             if (reverse)
                 inner_index_adj = (inner - 1) - inner_index;

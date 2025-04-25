@@ -377,6 +377,26 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         return new Enumerator(this);
     }
 
+    public override Tensor<TTo> Cast<TTo>(CastMode castMode, long[] dimensions)
+    {
+        if (typeof(T) == typeof(TTo))
+        {
+            return (Tensor<TTo>)(object)this;
+        }
+        else
+        {
+            if (castMode == CastMode.Exact)
+            {
+                throw new InvalidCastException();
+            }
+
+            var converter = (ISpanConverter<T, TTo>)CompilerServices.DataTypeService.GetConverter(typeof(T), typeof(TTo));
+            var tensor = new Tensor<TTo>(dimensions);
+            converter.ConvertTo(Buffer.Span, tensor.Buffer.Span, castMode);
+            return tensor;
+        }
+    }
+
     /// <inheritdoc/>
     public override Tensor<TTo> Cast<TTo>(CastMode castMode)
     {

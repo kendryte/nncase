@@ -1117,8 +1117,9 @@ public sealed class PackCast : PackRule
 
         var scale = 1f * call.CheckedDataType.SizeInBytes / input.CheckedDataType.SizeInBytes;
         var outLanes = lanes.Select(l => (int)(l / scale)).ToArray();
+        var newType = new VectorType(op.NewType, outLanes);
 
-        var cast = IR.F.Tensors.Cast(packedInput, op.NewType, op.CastMode, packedAxes);
+        var cast = IR.F.Tensors.Cast(packedInput, newType, op.CastMode, packedAxes);
         var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(cast, outLanes, packedAxes), inShape, padsInput!);
         if (cast.CheckedType is not InvalidType)
         {

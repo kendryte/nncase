@@ -47,6 +47,8 @@ class NNCASE_API datatype_t : public object_t<datatype_node> {
     static prim_type_t float32;
     static prim_type_t float64;
     static prim_type_t bfloat16;
+    static prim_type_t float8e4m3;
+    static prim_type_t float8e5m2;
 
     datatype_t(typecode_t typecode);
 
@@ -153,6 +155,8 @@ DEFINE_DATATYPE_OF(half, float16)
 DEFINE_DATATYPE_OF(float, float32)
 DEFINE_DATATYPE_OF(double, float64)
 DEFINE_DATATYPE_OF(bfloat16, bfloat16)
+DEFINE_DATATYPE_OF(float_e4m3_t, float8e4m3)
+DEFINE_DATATYPE_OF(float_e5m2_t, float8e5m2)
 
 #undef DEFINE_DATATYPE_OF
 } // namespace detail

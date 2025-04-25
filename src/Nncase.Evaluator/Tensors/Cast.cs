@@ -21,7 +21,14 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
-        return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
+        var dimensions = input.Dimensions.ToArray();
+        if (cast.NewType is VectorType vt)
+        {
+            var scale = 1f * vt.ElemType.SizeInBytes / ((VectorType)input.ElementType).ElemType.SizeInBytes;
+            cast.PackAxes.ToArray().ForEach(a => dimensions[a] = (int)(dimensions[a] * scale));
+        }
+
+        return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode, dimensions));
     }
 
     /// <inheritdoc/>
@@ -69,19 +76,19 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         {
             if (target.PackAxes.Any(a => input.Shape[a] is { IsFixed: false }))
             {
-                throw new InvalidCastException();
+                return new InvalidType("Pack axes must be fixed");
             }
 
-            var scale = 1f * target.NewType.SizeInBytes / vt.ElemType.SizeInBytes;
+            var scale = 1f * ((VectorType)target.NewType).ElemType.SizeInBytes / vt.ElemType.SizeInBytes;
             if (target.PackAxes.Any(a => input.Shape[a].FixedValue * scale % 1 != 0))
             {
-                throw new InvalidCastException();
+                return new InvalidType("Pack axes must be divisible by scale");
             }
 
-            var outType = new VectorType(target.NewType, vt.Lanes.Select(l => (int)(l / scale)).ToArray());
+            // var outType = new VectorType(((VectorType)target.NewType).ElemType, vt.Lanes.Select(l => (int)(l / scale)).ToArray());
             var newShape = input.Shape.ToArray();
             target.PackAxes.ToArray().ForEach(a => newShape[a] = (int)(newShape[a].FixedValue * scale));
-            return new TensorType(outType, newShape);
+            return new TensorType(target.NewType, newShape);
         }
 
         return new TensorType(target.NewType, input.Shape);
@@ -90,6 +97,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     private IRType Visit(Cast target, DistributedType inType)
     {
         var invalid = new InvalidType(inType.ToString());
+        var outType = Visit(target, inType.TensorType);
         var ndsbp = new SBP[inType.TensorType.Shape.Rank];
         for (int i = 0; i < ndsbp.Length; i++)
         {
@@ -101,6 +109,6 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
             ndsbp[i] = inType.AxisPolices[i];
         }
 
-        return new DistributedType(new TensorType(target.NewType, inType.TensorType.Shape), ndsbp, inType.Placement);
+        return new DistributedType((TensorType)outType, ndsbp, inType.Placement);
     }
 }
