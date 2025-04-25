@@ -48,13 +48,11 @@ public sealed class ModuleConvertPass : ModulePass
 
     private Expr PerformConvert(IRModule module, string funcName, Function pre)
     {
+        var dynamicVars = IRHelpers.GetDynamicDimVars();
         var parameters = new List<Var>();
-        foreach (var item in ((Nncase.IR.Function)module.Entry).VarMap)
+        foreach (var item in dynamicVars)
         {
-            foreach (var item2 in item.Value)
-            {
-                parameters.Add((Var)item2);
-            }
+            parameters.Add(item);
         }
 
         // FIXME: use shapebucket DynamicVar
