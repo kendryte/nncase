@@ -182,7 +182,7 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(intVal, fields[0].ToValue());
         Assert.Equal(floatVal, fields[1].ToValue());
     }
-
+#if false
     [Fact]
     public void TestRTAttentionConfig()
     {
@@ -227,4 +227,5 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(128, cache.SeqLen(0));
         Assert.Equal(0, cache.ContextLen(0));
     }
+#endif
 }

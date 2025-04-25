@@ -115,7 +115,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     private static OrtKISharp.Tensor GatherKV(AttentionCacheKind cacheKind, IPagedAttentionKVCache cache, int seqId, int layerId, long queryLen, long seqLen, long queryStart)
     {
         var caches = new List<OrtKISharp.Tensor>();
-        var blockIds = cache.GetBlockIds(seqId);
+        // var blockIds = cache.GetBlockId(seqId);
         var numBlocksForSeq = MathUtility.CeilDiv(cache.SeqLen(seqId), cache.Config.BlockSize);
 
         // block layout is construct from `head dim, block_size`. but we don't know the concrete shape.
@@ -132,11 +132,16 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             throw new InvalidOperationException("block layout not contain head dim");
         }
 
+        if (cache.Config.Topology.Count > 0)
+        {
+            throw new NotSupportedException("topology not support");
+        }
+
         for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
         {
             for (int i = 0; i < numBlocksForSeq; i++)
             {
-                var blockId = blockIds[i];
+                var blockId = cache.GetBlockId(seqId, i);
                 var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
                 var blockOrt = block.ToOrtTensor();
 

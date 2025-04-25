@@ -54,23 +54,25 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// Gets the context block ids.
     /// </summary>
     /// <param name="seqId">The seq id.</param>
+    /// <param name="contextId">The context id.</param>
     /// <returns>The context block ids.</returns>
     /// <remarks>
     /// The context block ids are used to identify the blocks of key-value pairs
     /// that are used for the attention mechanism in the transformer model.
     /// </remarks>
-    Tensor GetBlockIds(int seqId);
+    Tensor GetBlockId(int seqId, int contextId);
 
     /// <summary>
     /// Gets the output slot ids.
     /// </summary>
+    /// <param name="tokenId">The token id.</param>
     /// <returns>The output slot ids.</returns>
     /// <remarks>
     /// The output slot ids are used to identify the slots of key-value pairs
     /// that are used for the attention mechanism in the transformer model.
     /// The kind parameter indicates whether the output slot is for keys or values.
     /// </remarks>
-    Tensor GetSlotIds();
+    Tensor GetSlotId(int tokenId);
 
     /// <summary>
     /// Gets the block.
@@ -80,7 +82,7 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// <param name="headId">The head id.</param>
     /// <param name="blockId">The block id.</param>
     /// <returns>The block contains block size and head dim.</returns>
-    Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, object blockId);
+    Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId);
 
     /// <summary>
     /// Updates the output slot.
@@ -90,7 +92,7 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// <param name="headId"> The head id.</param>
     /// <param name="blockId"> The block id.</param>
     /// <param name="block"> the block tensor.</param>
-    void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, object blockId, Tensor block);
+    void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId, Tensor block);
 
     /// <summary>
     /// Gets the slot from kv cache.
@@ -100,7 +102,7 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// <param name="headId">The head Id.</param>
     /// <param name="slotId">The slot id.</param>
     /// <returns>The slot.</returns>
-    Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, object slotId);
+    Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, Tensor slotId);
 
     /// <summary>
     /// Updates the slot in the kv cache.
@@ -110,7 +112,7 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// <param name="headId">The head Id.</param>
     /// <param name="slotId">The slot id.</param>
     /// <param name="slot">The slot.</param>
-    void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, object slotId, Tensor slot);
+    void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, Tensor slotId, Tensor slot);
 
     /// <summary>
     /// Updates the slots in the kv cache.
@@ -119,9 +121,8 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// <param name="kind">The kind of the output slot.</param>
     /// <param name="layerId">The layer id.</param>
     /// <param name="headId">The head Id.</param>
-    /// <param name="slotIds">The slot ids.</param>
     /// <param name="slots">The slots.</param>
-    void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slotIds, Tensor slots);
+    void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slots);
 }
 
 public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType, int BlockSize, IRArray<PagedAttentionDimKind> CacheLayout, IRArray<PagedAttentionDimKind> PackedAxes, IRArray<int> Lanes, IRArray<int> Topology)

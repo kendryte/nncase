@@ -56,10 +56,9 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
         var cache = kvCaches.Single().Value;
 
         // [num_tokens, slot_shape]
-        var slotIds = cache.GetSlotIds();
         for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
         {
-            cache.UpdateSlots(cacheKind, layerId, headId, slotIds, slots);
+            cache.UpdateSlots(cacheKind, layerId, headId, slots);
         }
     }
 
