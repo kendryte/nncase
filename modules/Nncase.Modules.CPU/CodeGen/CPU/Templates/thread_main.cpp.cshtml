@@ -10,7 +10,6 @@
 #include <nncase/ntt/runtime.h>
 #include "topo_aware_runtime.h"
 #include <nncase/float8.h>
-#include <nncase/half.h>
 #include <nncase/bfloat16.h>
 @foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).SkipLast(1)){
 @:uint8_t L@(i+1)Data[@(s)];
