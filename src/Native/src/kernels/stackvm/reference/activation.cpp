@@ -46,7 +46,7 @@ UNARY_WITH_MUL_TEMPLATE_V2(elu, alpha,
 UNARY_WITH_MUL_TEMPLATE_V2(
     celu, alpha,
     std::max(0.f, (float)x) +
-        std::min(0.f, (float)(alpha * (std::expf((float)x / alpha) - 1.f))))
+        std::min(0.f, (float)(alpha *(std::expf((float)x / alpha) - 1.f))))
 UNARY_WITH_MUL_TEMPLATE_V2(leaky_relu, alpha,
                            (float)x < 0.f ? (float)(alpha * (float)x)
                                           : (float)x)
@@ -63,5 +63,5 @@ ACTIVATION_TEMPLATE_V2(selu,
                            : (float)((float)x * gamma),
                        alpha, gamma)
 ACTIVATION_TEMPLATE_V2(hard_sigmoid,
-                       std::max(0.f, std::min(1.f, (float)(x * alpha + gamma))),
+                       std::max(0.f, std::min(1.f, (float)(x *alpha + gamma))),
                        alpha, gamma)
