@@ -33,29 +33,34 @@ UNARY_TEMPLATE(relu, std::max(0.f, (float)x))
 UNARY_TEMPLATE(softsign, (float)x / (1.f + std::abs((float)x)))
 UNARY_TEMPLATE(softplus, std::logf(1.f + std::expf((float)x)))
 UNARY_TEMPLATE(sigmoid, 1.f / (1.f + std::expf((float)(-x))))
-UNARY_TEMPLATE(
-    hard_swish,
-    x *(float)std::max(0.f,
-                       (float)std::min(1.f, (float)(1.f / 6 * (float)x + 0.5))))
+UNARY_TEMPLATE(hard_swish,
+               (float)x *(float)std::max(
+                   0.f,
+                   (float)std::min(1.f, (float)(1.f / 6.f * (float)x + 0.5f))))
 UNARY_TEMPLATE(erf, std::erff((float)x)) // for k510 toolchain
 UNARY_WITH_MUL_TEMPLATE_V2(elu, alpha,
-                           x < 0 ? alpha * (std::expf((float)x) - 1) : (float)x)
+                           (float)x < 0.f
+                               ? (float)(alpha * (std::expf((float)x) - 1))
+                               : (float)x)
 // FLOAT_UNARY_WITH_MUL_TEMPLATE(prelu, slope, x < 0 ? slope * x : x)
 UNARY_WITH_MUL_TEMPLATE_V2(
     celu, alpha,
     std::max(0.f, (float)x) +
         std::min(0.f, (float)(alpha * (std::expf((float)x / alpha) - 1.f))))
 UNARY_WITH_MUL_TEMPLATE_V2(leaky_relu, alpha,
-                           x < 0 ? alpha * (float)x : (float)x)
+                           (float)x < 0.f ? (float)(alpha * (float)x)
+                                          : (float)x)
 UNARY_WITH_MUL_TEMPLATE_V2(gelu, alpha,
-                           0.5f * (alpha * (float)x) *
-                               (1.f +
-                                std::erff(alpha * (float)x / std::sqrtf(2.f))))
+                           (float)(0.5f * (alpha * (float)x) *
+                                   (1.f + std::erff(alpha * (float)x /
+                                                    std::sqrtf(2.f)))))
 UNARY_WITH_MUL_TEMPLATE_V2(swish, alpha,
                            (float)x / (1.f + std::expf(-alpha * (float)x)))
 ACTIVATION_TEMPLATE_V2(selu,
-                       x <= 0 ? gamma * (alpha * std::expf((float)x) - alpha)
-                              : (float)x * gamma,
+                       (float)x <= 0.f
+                           ? (float)(gamma *
+                                     (alpha * std::expf((float)x) - alpha))
+                           : (float)((float)x * gamma),
                        alpha, gamma)
 ACTIVATION_TEMPLATE_V2(hard_sigmoid,
                        std::max(0.f, std::min(1.f, (float)(x * alpha + gamma))),
