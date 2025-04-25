@@ -48,7 +48,7 @@ public abstract class HuggingFaceModel
         if (!Context.FixVarMap.ContainsKey("sequence_length"))
         {
             Context.DynVarMap["sequence_length"] = Var.SizeVar("sequence_length");
-            if(Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo.ContainsKey("sequence_length"))
+            if (Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo.ContainsKey("sequence_length"))
             {
                 Context.DynVarMap["sequence_length"].Metadata.Range = Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo["sequence_length"];
             }
@@ -179,7 +179,9 @@ public abstract class HuggingFaceModel
             hiddenStates = Context.Outputs["hiddenStates"];
         }
 
-        var output = new List<Expr?> { logits, kvCache, outAttention, hiddenStates, };
+        var output = new List<Expr?> { logits, kvCache, outAttention, hiddenStates,
+                                        // Context.Outputs["debug"]
+                                        };
         output.RemoveAll(item => item == null);
 
         return new IR.Tuple([.. output!]);
@@ -565,7 +567,6 @@ public abstract class HuggingFaceModel
             // ;
             var diagonalAttendMaskShape = IR.F.Tensors.Stack(new IR.Tuple([seqLen, 1L]), 0L);
             var diagonalAttendMask = IR.F.Tensors.Range(0L, targtLen, 1L) > IR.F.Tensors.Reshape(cachePosition, diagonalAttendMaskShape);
-            ShapeExprUtility.CheckShape(diagonalAttendMask);
             // TODO: maybe consider:
             /*
              if config.sliding_window is not None:
