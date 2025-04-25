@@ -99,23 +99,23 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>, INumber<BF
         return left.CompareTo(right) >= 0;
     }
 
-    public static BFloat16 operator %(BFloat16 left, BFloat16 right) => throw new NotImplementedException();
+    public static BFloat16 operator %(BFloat16 left, BFloat16 right) => (BFloat16)((float)left % (float)right);
 
-    public static BFloat16 operator +(BFloat16 left, BFloat16 right) => throw new NotImplementedException();
+    public static BFloat16 operator +(BFloat16 left, BFloat16 right) => (BFloat16)((float)left + (float)right);
 
-    public static BFloat16 operator --(BFloat16 value) => throw new NotImplementedException();
+    public static BFloat16 operator --(BFloat16 value) => (BFloat16)((float)value - 1);
 
-    public static BFloat16 operator /(BFloat16 left, BFloat16 right) => throw new NotImplementedException();
+    public static BFloat16 operator /(BFloat16 left, BFloat16 right) => (BFloat16)((float)left / (float)right);
 
-    public static BFloat16 operator ++(BFloat16 value) => throw new NotImplementedException();
+    public static BFloat16 operator ++(BFloat16 value) => (BFloat16)((float)value + 1);
 
-    public static BFloat16 operator *(BFloat16 left, BFloat16 right) => throw new NotImplementedException();
+    public static BFloat16 operator *(BFloat16 left, BFloat16 right) => (BFloat16)((float)left * (float)right);
 
-    public static BFloat16 operator -(BFloat16 left, BFloat16 right) => throw new NotImplementedException();
+    public static BFloat16 operator -(BFloat16 left, BFloat16 right) => (BFloat16)((float)left - (float)right);
 
-    public static BFloat16 operator -(BFloat16 value) => throw new NotImplementedException();
+    public static BFloat16 operator -(BFloat16 value) => (BFloat16)(-(float)value);
 
-    public static BFloat16 operator +(BFloat16 value) => throw new NotImplementedException();
+    public static BFloat16 operator +(BFloat16 value) => (BFloat16)(+(float)value);
 
     /// <summary>
     /// Reinterpret cast <see cref="ushort"/> to <see cref="BFloat16"/>.
@@ -168,7 +168,7 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>, INumber<BF
 
     public static bool IsImaginaryNumber(BFloat16 value) => throw new NotImplementedException();
 
-    public static bool IsInfinity(BFloat16 value) => throw new NotImplementedException();
+    public static bool IsInfinity(BFloat16 value) => float.IsInfinity(value);
 
     public static bool IsInteger(BFloat16 value) => throw new NotImplementedException();
 
@@ -176,7 +176,7 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>, INumber<BF
 
     public static bool IsNegative(BFloat16 value) => throw new NotImplementedException();
 
-    public static bool IsNegativeInfinity(BFloat16 value) => throw new NotImplementedException();
+    public static bool IsNegativeInfinity(BFloat16 value) => float.IsNegativeInfinity(value);
 
     public static bool IsNormal(BFloat16 value) => throw new NotImplementedException();
 
