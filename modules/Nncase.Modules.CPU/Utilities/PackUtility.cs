@@ -1,27 +1,28 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using Nncase.Evaluator;
 using Nncase.IR;
 
 namespace Nncase.Utilities;
 
 public static class PackUtility
 {
-    public static Expr PadForPack(Expr input, long[] shape, int[] packedAxes, int[] lanes, Expr value, out int[] padNums)
+    public static Expr PadForPack(Expr input, Shape shape, int[] packedAxes, int[] lanes, Expr value, out Dimension[] padNums)
     {
         var isPadded = false;
-        var pads = new int[shape.Length, 2];
+        var pads = new Dimension[shape.Rank, 2];
         for (int i = 0; i < packedAxes.Length; i++)
         {
             var axis = packedAxes[i];
             if (shape[axis] % lanes[i] != 0)
             {
-                pads[axis, 1] = (int)(MathUtility.AlignUp(shape[axis], lanes[i]) - shape[axis]);
+                pads[axis, 1] = PadForAlign(shape[axis], lanes[i]);
                 isPadded = true;
             }
         }
 
-        padNums = new int[packedAxes.Length];
+        padNums = new Dimension[packedAxes.Length];
         for (int i = 0; i < packedAxes.Length; i++)
         {
             padNums[i] = pads[packedAxes[i], 1];
@@ -29,22 +30,22 @@ public static class PackUtility
 
         if (isPadded)
         {
-            return IR.F.NN.Pad(input, pads, PadMode.Constant, value);
+            return IR.F.NN.Pad(input, Dimension.ConcatPadding(pads), PadMode.Constant, value);
         }
 
         return input;
     }
 
-    public static Expr SliceForPack(Expr input, long[] shape, int[] padNums)
+    public static Expr SliceForPack(Expr input, Shape shape, Dimension[] padNums)
     {
         bool isPadded = false;
-        var ends = shape.ToArray();
-        if (padNums.Any(i => i > 0))
+        var ends = shape.ToValueArrayExpr();
+        if (padNums.Any(i => !i.IsFixed || i.FixedValue != 0))
         {
             isPadded = true;
         }
 
-        return isPadded ? IR.F.Tensors.Slice(input, Enumerable.Repeat(0L, shape.Length).ToArray(), ends, shape.Length) : input;
+        return isPadded ? IR.F.Tensors.Slice(input, Enumerable.Repeat(0L, shape.Count).ToArray(), ends, shape.Rank) : input;
     }
 
     /// <summary>
@@ -169,5 +170,11 @@ public static class PackUtility
         }
 
         return (forward, backward);
+    }
+
+    private static Dimension PadForAlign(Dimension dim, int align)
+    {
+        var mod = dim % align;
+        return Dimension.Select(mod, 0, 0, align - mod);
     }
 }

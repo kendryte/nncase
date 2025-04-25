@@ -11,11 +11,11 @@ using System.Runtime.Intrinsics;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.IR.Tensors;
+using Nncase.Passes.Transforms;
 using Nncase.Runtime.Interop;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
@@ -57,7 +57,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         DefaultTargetName = CPUTarget.Kind;
         CompileOptions.TargetOptions = new CpuTargetOptions();
 #if DEBUG
-        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Compile | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Compile | Diagnostics.DumpFlags.Schedule | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
     }
 
@@ -102,7 +102,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.Packing = packing;
@@ -129,7 +129,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             feedDict.Add(ve, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate());
         }
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { f });
+        await RunCases($"Theory{count}", feedDict, new[] { f });
     }
 
     [Theory]
@@ -139,7 +139,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
@@ -159,7 +159,50 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var post = IR.F.Distributed.Boxing(boxed, inputType);
         post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, new[] { post });
+        await RunCases($"Theory{count}", feedDict, new[] { post });
+    }
+
+    [Theory]
+    [InlineData([new long[] { 32, 64 }, new int[] { 2 }, 0])]
+    [InlineData([new long[] { 8, 4 }, new int[] { 4, 2 }, 1])]
+    [InlineData([new long[] { 32, 64, 128 }, new int[] { 8, 4, 2 }, 2])]
+    [InlineData([new long[] { 64, 128 }, new int[] { 2, 4, 8 }, 3])]
+    public async Task TestGatherReduceScatter(long[] shape, int[] hierarchy, int count)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var inputType = new TensorType(DataTypes.Float32, shape);
+        var input = new Var(inputType);
+        var feedDict = new Dictionary<Var, IValue>() {
+            // { input, IR.F.Tensors.ConstantOfShape(shape, 1.0f).Evaluate() },
+            { input, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, shape).Evaluate() },
+        };
+
+        var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
+        var ndsbp = Enumerable.Repeat<SBP>(SBP.B, hierarchy.Length).ToArray();
+        var posts = new List<Call>();
+        var broadcast = IR.F.Distributed.Boxing(input, new DistributedType(inputType, ndsbp, placement));
+        foreach (var comb in LinqUtility.Combination(hierarchy.Length))
+        {
+            var newsbp = ndsbp.ToArray();
+            foreach (var axis in comb)
+            {
+                newsbp[axis] = SBP.P();
+            }
+
+            var partial = IR.F.Distributed.ForceBoxing(broadcast, new DistributedType(inputType, newsbp, placement));
+            var sumed = IR.F.Distributed.Boxing(partial, new DistributedType(inputType, ndsbp, placement));
+            var post = IR.F.Distributed.Boxing(sumed, inputType);
+            post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
+            posts.Add(post);
+        }
+
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Fact]
@@ -184,7 +227,39 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { f, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, fshape).Evaluate() },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), string.Empty), feedDict, new[] { g });
+        await RunCases(string.Empty, feedDict, new[] { g });
+    }
+
+    [Fact]
+    public async Task TestDynamicMatmulBinaryBinary()
+    {
+        var dimM = Var.SizeVar("m");
+        dimM.Metadata.Range = new(1, 384 * 2);
+        var ashape = new[] { 1, 64, 384, 128 };
+        var bshape = new[] { 1, 64, 128, 384 };
+        var aDims = ashape.Select(x => (Dimension)x).ToArray();
+        aDims[^2] = dimM;
+
+        var a = new Var("a", new TensorType(DataTypes.Float32, new Shape(aDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(a, aDims.Select(x => x.ToExpr()).ToArray());
+        var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
+        var c = IR.F.Tensors.MatMul(a, b);
+        var dshape = new[] { 1 };
+        var d = new Var("d", new TensorType(DataTypes.Float32, dshape));
+        var e = IR.F.Math.Binary(BinaryOp.Div, c, d);
+        var fshape = new[] { 1, 1, 384, 384 };
+        var f = new Var("f", new TensorType(DataTypes.Float32, fshape));
+        var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { a, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() },
+            { b, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() },
+            { d, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, dshape).Evaluate() },
+            { f, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, fshape).Evaluate() },
+            { dimM, Value.FromTensor(ashape[^2]) },
+        };
+
+        await RunCases(string.Empty, feedDict, new[] { g });
     }
 
     [Theory]
@@ -200,7 +275,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackSwish(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -221,7 +296,42 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
+    public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int count)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 40), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var dimVars = new[] { "n", "c", "h", "w" }.Select((x, i) =>
+        {
+            var v = Var.SizeVar(x);
+            v.Metadata.Range = new(1, shape[i] * 2);
+            return v;
+        }).ToArray();
+        var input = new Var(new TensorType(DataTypes.Float32, new Shape(dimVars[0], dimVars[1], shape[2], dimVars[3])));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(input, dimVars);
+
+        var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+            { dimVars[0], Value.FromTensor(shape[0]) },
+            { dimVars[1], Value.FromTensor(shape[1]) },
+            { dimVars[2], Value.FromTensor(shape[2]) },
+            { dimVars[3], Value.FromTensor(shape[3]) },
+        };
+
+        var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -231,7 +341,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
@@ -272,7 +382,44 @@ public sealed class UnitTestCPUKernels : TestClassBase
             }
         }
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { BinaryOp.Add, new long[] { 8, 2 }, new long[] { 8, 2 }, new int[] { 1 }, new int[] { }, 0 })] // normal
+    [InlineData(new object[] { BinaryOp.Mul, new long[] { 1, 8, 64, 2 * 8 }, new long[] { 1, 1, 64, 2 * 8 }, new int[] { 1 }, new int[] { }, 1 })] // broadcast
+    [InlineData(new object[] { BinaryOp.Add, new long[] { 8, 16 }, new long[] { 16 }, new int[] { 1 }, new int[] { }, 2 })] // normal
+    [InlineData(new object[] { BinaryOp.Mul, new long[] { 1, 8, 64, 2 * 8 }, new long[] { 1, 1, 64, 2 * 8 }, new[] { 4 }, new[] { 2 }, 3 })] // broadcast
+    public async Task TestDynamicPackBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[] sbps, int count)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var dimH = Var.SizeVar("h");
+        dimH.Metadata.Range = new(1, 128);
+        var inputDims = lhsShape.Select(x => (Dimension)x).ToArray();
+        inputDims[^2] = dimH;
+
+        var lhsDynShape = new Shape(inputDims);
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsDynShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, inputDims.Select(x => x.ToExpr()).ToArray());
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Math.Binary(op, lhs, rhs);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+            { dimH, Value.FromTensor(lhsShape[^2]) },
+        };
+
+        var rule = new Passes.Rules.CPU.PackBinary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory(Skip = "Drop InstanceNorm")]
@@ -295,7 +442,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackInstanceNorm(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -313,7 +460,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackResizeImage(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -334,7 +481,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackCast(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -376,7 +523,74 @@ public sealed class UnitTestCPUKernels : TestClassBase
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 384, 512 }, new long[] { 512, 512 }, false, false, new[] { 1 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 1, 384, 256 }, new long[] { 32, 256, 512 }, false, false, new[] { 1 }, 1 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, false, new[] { 1 }, 2 })]
+    [InlineData(new object[] { new long[] { 1, 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 1 }, 3 })]
+    [InlineData(new object[] { new long[] { 1, 1, 384, 256 }, new long[] { 32, 256, 512 }, false, true, new[] { 1 }, 4 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 1 }, 5 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 256 }, false, true, new[] { 2 }, 6 })]
+    [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 2, 4 }, 7 })]
+    public async Task TestDynamicPackMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        var lhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(lhsShape, 1.0f).Evaluate().AsTensor();
+        var rhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(rhsShape, 1.0f).Evaluate().AsTensor();
+
+        var dimM = Var.SizeVar("m");
+        dimM.Metadata.Range = new(1, 1024);
+        var dimK = Var.SizeVar("k");
+        dimK.Metadata.Range = new(1, 1024);
+
+        var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
+        if (!constA)
+        {
+            lhsDims[^2] = dimM;
+        }
+
+        var rhsDims = rhsShape.Select(x => (Dimension)x).ToArray();
+        if (!constA)
+        {
+            rhsDims[^2] = dimK;
+        }
+
+        var lhsDynShape = new Shape(lhsDims);
+        var rhsDynShape = new Shape(rhsDims);
+        Expr lhs = constA ? lhsTensor : new Var(new TensorType(DataTypes.Float32, lhsDynShape));
+        Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsDynShape));
+
+        var pre = IR.F.Tensors.MatMul(lhs, rhs);
+
+        var feedDict = new Dictionary<Var, IValue>
+        {
+            { dimM, Value.FromTensor(lhsShape[^2]) },
+            { dimK, Value.FromTensor(rhsShape[^2]) },
+        };
+        if (!constA)
+        {
+            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+            feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
+        }
+
+        if (!constB)
+        {
+            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)rhs, rhsDims.Select(x => x.ToExpr()).ToArray());
+            feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
+        }
+
+        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane, transB: true);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -429,7 +643,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -439,7 +653,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
@@ -490,7 +704,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             }
         }
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -516,7 +730,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -528,7 +742,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         var input = new Var("input", new TensorType(DataTypes.Float32, inshape));
@@ -544,7 +758,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackReshape(packRank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -566,7 +780,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rule = new Passes.Rules.CPU.PackTranspose(rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -577,7 +791,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.Packing = true;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
@@ -602,7 +816,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, posts);
+        await RunCases($"Theory{number}", feedDict, posts);
     }
 
     [Theory]
@@ -628,7 +842,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr post = Passes.Rules.CPU.PackConv2D.AddCandidate(input, weights, bias, strides, padding, wShape, outShape);
         Expr post2 = Passes.Rules.CPU.PackConv2D.AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, Lane);
         var posts = new[] { pre, post, post2 };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -639,7 +853,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        targetOptions.HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
@@ -658,7 +872,146 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
         };
 
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{number}"), feedDict, new[] { unary });
+        await RunCases($"Theory{number}", feedDict, new[] { unary });
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, -1, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, -1, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 1 })]
+    public async Task TestDynamicMatMulReshapeUnary(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
+    {
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.Compile;
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        var dimM = Var.SizeVar("m");
+        dimM.Metadata.Range = new(1, 64);
+        var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
+        lhsDims[^2] = dimM;
+
+        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var matmul = IR.F.Tensors.MatMul(lhs, rhs);
+        var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
+        var unary = reshaped;
+        foreach (var item in unaryOps)
+        {
+            unary = IR.F.Math.Unary(item, unary);
+        }
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
+            { dimM, Value.FromTensor(lhsShape[^2]) },
+        };
+
+        await RunCases($"Theory{number}", feedDict, new[] { unary });
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 48, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
+    public async Task TestReshapeAndUnsqueeze(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
+
+        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var matmul = IR.F.Tensors.MatMul(lhs, rhs);
+        var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
+        var unary = reshaped;
+        foreach (var item in unaryOps)
+        {
+            unary = IR.F.Math.Unary(item, unary);
+        }
+
+        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
+        };
+
+        await RunCases($"Theory{number}", feedDict, new[] { unsqueezed });
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 48, -1, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
+    public async Task TestDynamicReshapeAndUnsqueeze(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var dimN = Var.SizeVar("n");
+        dimN.Metadata.Range = new(1, 1200);
+        var rhsDims = rhsShape.Select(x => (Dimension)x).ToArray();
+        rhsDims[^1] = dimN;
+
+        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsShape)));
+        var rhs = new Var(new TensorType(DataTypes.Float32, new Shape(rhsDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDims.Select(x => x.ToExpr()).ToArray());
+        var matmul = IR.F.Tensors.MatMul(lhs, rhs);
+        var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
+        var unary = reshaped;
+        foreach (var item in unaryOps)
+        {
+            unary = IR.F.Math.Unary(item, unary);
+        }
+
+        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
+            { dimN, Value.FromTensor(rhsShape[^1]) },
+        };
+
+        await RunCases($"Theory{number}", feedDict, new[] { unsqueezed });
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 2, 48, 512 }, new long[] { 0 }, new[] { 1 }, 0 })]
+    public async Task TestGetItem(long[] inShape, long[] indices, int[] hierarchy, int number)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var inDims = inShape.Select(x => (Dimension)x).ToArray();
+
+        var input = new Var(new TensorType(DataTypes.Float32, new Shape(inDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(input, inDims.Select(x => x.ToExpr()).ToArray());
+
+        var output = IR.F.Tensors.GetItem(input, indices);
+        output = IR.F.Math.Unary(UnaryOp.Cos, output);
+
+        var feedDict = new Dictionary<Var, IValue>()
+        {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape).Evaluate() },
+        };
+
+        await RunCases($"Theory{number}", feedDict, new[] { output });
     }
 
     [Theory(Skip = "ToBig")]
@@ -676,7 +1029,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var hierarchy = new[] { 2, 4 };
         ((CpuTargetOptions)CompileOptions.TargetOptions).Hierarchies[0] = hierarchy;
         ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes = Enumerable.Repeat((int)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
@@ -739,7 +1092,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -776,7 +1129,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var posts = new[] { pre };
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     internal async Task RunCases(string dumpDir, Dictionary<Var, IValue> feedDict, IEnumerable<Expr> posts)
@@ -795,8 +1148,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     internal async Task Run(string dumpDir, CpuKernelCase kernelCase)
     {
-        CompileOptions.DumpDir = Path.Join(dumpDir, kernelCase.Name);
-        using var dumpScope = new Diagnostics.DumpScope(string.Empty, CompileOptions.DumpFlags);
+        using var dumpScope = new Diagnostics.DumpScope(Path.Join(dumpDir, kernelCase.Name), CompileOptions.DumpFlags);
 
         // convert fusion to prim func
         var fusion = kernelCase.Fusion;
@@ -851,8 +1203,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
     private async Task Compile(IRModule module)
     {
         var pmgr = CompileSession.CreatePassManager("pmgr");
-        CompileSession.Target.RegisterTargetDependentAfterQuantPass(pmgr, CompileSession.CompileOptions);
-        CompileSession.Target.RegisterTargetDependentBeforeCodeGen(pmgr, CompileSession.CompileOptions);
+        var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
+        compiler.TargetIndependentPass(pmgr);
+        compiler.ModulePartitionPass(pmgr);
+        compiler.AutoDistributedPass(pmgr);
+        compiler.AutoTilingPass(pmgr);
+        compiler.TIRPass(pmgr);
+        pmgr.Add<ReplaceDimVarWithShapeOfPass>();
         await pmgr.RunAsync(module);
     }
 }

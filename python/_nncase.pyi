@@ -96,7 +96,8 @@ class GraphEvaluator:
 
 
 class ImportOptions:
-    def __init__(self) -> None: ...
+    huggingface_options: HuggingFaceOptions
+    def __init__(self, import_options) -> None: ...
 
 
 class MemoryRange:

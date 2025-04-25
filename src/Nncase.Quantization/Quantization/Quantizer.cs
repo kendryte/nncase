@@ -148,7 +148,7 @@ internal partial class Quantizer
         bool exportQuantScheme = _quantizeOptions.ExportQuantScheme;
         bool exportWeightRangeByChannel = _quantizeOptions.ExportWeightRangeByChannel;
 
-        if (!configExist)
+        if (!configExist && _target.Name != "xpu")
         {
             int srcBinSize = 8192;
             int dstBinSize = 256;
@@ -305,7 +305,7 @@ internal partial class Quantizer
             // AssignDataTypeFromConfig(quantScheme!);
 
             // load from file
-            if (_target.Kind == "xpu")
+            if (_target.Name == "xpu")
             {
                 using (var r = new StreamReader(readJson))
                 {

@@ -9,6 +9,8 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.BufferSchedule;
+using Nncase.Passes.Rules.ShapeBucket;
+using Nncase.Passes.Transforms;
 using Nncase.Tests.TestFixture;
 using Xunit;
 
@@ -26,13 +28,13 @@ public sealed class UnitTestBufferScheduler : TestClassBase
 #endif
     }
 
-    public static TheoryData<Func<Fusion>, int, int> ScheduleGetItemDatas
+    public static TheoryData<Func<Function>, int, int> ScheduleGetItemDatas
     { get; } = new()
     {
         { SampleSwish, 1648, 0 },
     };
 
-    public static Fusion SampleSwish()
+    public static Function SampleSwish()
     {
         var ttype = new TensorType(DataTypes.Float32, new[] { 100 });
         var dtype = new DistributedType(ttype, new[] { SBP.B }, new(new[] { 1 }, "b"));
@@ -51,7 +53,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
         var i = IR.F.Tensors.GetItem(tp, 1) + h;
 
         var body = new IR.Tuple(IR.F.Distributed.Boxing(IR.F.Tensors.GetItem(tp, 0), ttype), IR.F.Distributed.Boxing(i, ttype));
-        return new Fusion("kernel", Targets.CPUTarget.Kind, body, a, b);
+        return new Function("kernel", Targets.CPUTarget.Kind, body, [a, b]);
     }
 
     [Fact]
@@ -79,7 +81,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
 
     [Theory]
     [MemberData(nameof(ScheduleGetItemDatas))]
-    public async Task TestScheduleGetItem(Func<Fusion> fusionGetter, int capacity, int number)
+    public async Task TestScheduleGetItem(Func<Function> fusionGetter, int capacity, int number)
     {
         ((Targets.CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes[^1] = capacity;
         var fusion = fusionGetter();
@@ -101,7 +103,8 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     private async Task Compile(IRModule module)
     {
         var passManager = CompileSession.CreatePassManager("pmgr");
-        passManager.Add<CPUFusionToTirPass>();
+        passManager.Add<CPUTIRSelectionPass>();
+        passManager.Add<AddFunctionToModule>();
 
         // todo add auto fusion merge pass here.
         passManager.Add<PrimFuncPass>().Configure(p =>
@@ -112,7 +115,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
             p.Add<Passes.Mutators.FoldConstCall>();
         });
 
-        passManager.AddWithName<DDrBufferSchdeulePass>("DDrBufferSchdeule");
+        passManager.AddWithName<BufferizePass>("BufferizePass");
 
         passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>
         {

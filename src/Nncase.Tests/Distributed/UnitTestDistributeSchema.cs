@@ -85,7 +85,7 @@ public class UnitTestDistributeSchema : TestClassBase
             input.Metadata.OutputNames = new string[] { "hidden_in" };
             var leaky = IR.F.Math.Unary(UnaryOp.Cos, input);
             var output = leaky;
-            func = new(output);
+            func = new("main", "cpu", output, default);
         }
 
         var pass = new AutoDistributedPass(true, "cpu", CompileOptions);

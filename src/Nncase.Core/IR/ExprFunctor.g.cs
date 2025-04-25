@@ -126,7 +126,7 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     /// <summary>
     /// Visit <see cref="TIR.PrimFunction"/>.
     /// </summary>
-    internal protected virtual TExprResult VisitPrimFunction(TIR.PrimFunction expr, TContext context) => DefaultVisit(expr, context);
+    internal protected virtual TExprResult VisitPrimFunction(TIR.PrimFunction expr, TContext context) => VisitBaseFunction(expr, context);
 
     /// <summary>
     /// Visit <see cref="TIR.Sequential"/>.

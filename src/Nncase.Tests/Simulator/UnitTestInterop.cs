@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using Nncase.CodeGen;
+using Nncase.CodeGen.StackVM;
 using Nncase.IR;
 using Nncase.Runtime.Interop;
 using Nncase.Schedule;
@@ -26,7 +27,8 @@ public class UnitTestInterop : TestClassBase
         var main = new Function("main", y, new[] { x });
         var module = new IRModule(main);
         var target = CompilerServices.GetTarget(CPUTarget.Kind);
-        var modelBuilder = new ModelBuilder(target, CompileOptions);
+        var stackVMModuleBuilder = new StackVMModuleBuilder();
+        var modelBuilder = new ModelBuilder(target, CompileOptions, stackVMModuleBuilder);
         var linkedModel = modelBuilder.Build(module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);

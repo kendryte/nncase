@@ -25,7 +25,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 
     public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
     {
-        _context = new EvaluateContext(ExprMemo);
+        _context = new EvaluateContext(this, ExprMemo);
         _evaluator_cache = evaluator_cache;
         _varsValues = varsValues;
         _dumpManager = new EvaluatorDumpManager(DumpScope.Current.CreateSubDummper("Evaluate", null), expr => _context.GetValue(expr).AsTensors());
@@ -139,6 +139,12 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
     {
         bool cond = Visit(expr.Condition).AsTensor().ToScalar<bool>();
         return cond ? EvaluateCallable(expr.Then, expr.Arguments) : EvaluateCallable(expr.Else, expr.Arguments);
+    }
+
+    protected override IValue VisitLeafShape(Shape expr)
+    {
+        var dims = expr.Dimensions.AsValueEnumerable().Select(x => ExprMemo[x].AsTensor().ToScalar<long>()).ToArray();
+        return new ShapeValue(dims);
     }
 
     private IValue EvaluateCallable(Expr callable, ReadOnlySpan<Expr> arguments)

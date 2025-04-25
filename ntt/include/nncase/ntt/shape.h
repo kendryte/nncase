@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <iterator>
 #include <numeric>
 #include <optional>
 #include <span>
@@ -27,34 +28,100 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <size_t... Dims> struct fixed_dims_base {
+template <class T, T... Dims> struct fixed_dims_base {
+    struct iterator {
+        using dims_type = fixed_dims_base<T, Dims...>;
+        using difference_type = std::ptrdiff_t;
+        using element_type = T;
+
+        constexpr iterator() noexcept = default;
+        constexpr iterator(size_t index) noexcept : index_(index) {}
+
+        element_type operator*() const { return dims_type::at(index_); }
+
+        iterator &operator++() {
+            index_++;
+            return *this;
+        }
+        iterator operator++(int) {
+            iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+        iterator &operator+=(int i) {
+            index_ += i;
+            return *this;
+        }
+        iterator operator+(const difference_type other) const {
+            return index_ + other;
+        }
+        friend iterator operator+(const difference_type value,
+                                  const iterator &other) {
+            return other + value;
+        }
+
+        iterator &operator--() {
+            index_--;
+            return *this;
+        }
+        iterator operator--(int) {
+            iterator tmp = *this;
+            --(*this);
+            return tmp;
+        }
+        iterator &operator-=(int i) {
+            index_ -= i;
+            return *this;
+        }
+        difference_type operator-(const iterator &other) const {
+            return index_ - other.index_;
+        }
+        iterator operator-(const difference_type other) const {
+            return index_ - other;
+        }
+        friend iterator operator-(const difference_type value,
+                                  const iterator &other) {
+            return other - value;
+        }
+
+        element_type operator[](difference_type idx) const {
+            return dims_type::at(index_ + idx);
+        }
+
+        bool operator==(const iterator &other) const {
+            return index_ == other.index_;
+        }
+
+      private:
+        size_t index_;
+    };
+
     static constexpr size_t rank() noexcept { return sizeof...(Dims); }
 
-    static constexpr size_t at(size_t index) noexcept {
-        return std::array<size_t, sizeof...(Dims)>{Dims...}[index];
+    static constexpr T at(size_t index) noexcept {
+        return std::array<T, sizeof...(Dims)>{Dims...}[index];
     }
 
-    static constexpr size_t last() noexcept { return at(rank() - 1); }
+    static constexpr auto begin() noexcept { return iterator(); }
+    static constexpr auto end() noexcept { return iterator(rank()); }
 
-    static constexpr bool contains(size_t value) noexcept {
+    static constexpr T last() noexcept { return at(rank() - 1); }
+
+    static constexpr bool contains([[maybe_unused]] T value) noexcept {
         return (false || ... || (Dims == value));
     }
 
-    constexpr size_t operator[](size_t index) const noexcept {
-        return at(index);
-    }
+    constexpr T operator[](size_t index) const noexcept { return at(index); }
 };
 
-template <size_t Rank> struct ranked_dims_base {
+template <class T, size_t Rank> struct ranked_dims_base {
     static constexpr size_t rank() noexcept { return Rank; }
 
-    constexpr size_t operator[](size_t index) const noexcept {
-        return at(index);
-    }
-    constexpr size_t &operator[](size_t index) noexcept { return at(index); }
+    constexpr T operator[](size_t index) const noexcept { return at(index); }
+    constexpr T &operator[](size_t index) noexcept { return at(index); }
 
-    constexpr size_t at(size_t index) const noexcept { return dims_[index]; }
-    constexpr size_t &at(size_t index) noexcept { return dims_[index]; }
+    constexpr T at(size_t index) const noexcept { return dims_[index]; }
+    constexpr T &at(size_t index) noexcept { return dims_[index]; }
 
     constexpr auto begin() const noexcept { return dims_.begin(); }
     constexpr auto end() const noexcept { return dims_.end(); }
@@ -64,19 +131,22 @@ template <size_t Rank> struct ranked_dims_base {
     constexpr auto begin() noexcept { return dims_.begin(); }
     constexpr auto end() noexcept { return dims_.end(); }
 
-    constexpr size_t last() const noexcept { return at(rank() - 1); }
-    constexpr size_t &last() noexcept { return at(rank() - 1); }
+    constexpr T last() const noexcept { return at(rank() - 1); }
+    constexpr T &last() noexcept { return at(rank() - 1); }
 
-    constexpr bool contains(size_t value) const noexcept {
+    constexpr bool contains(T value) const noexcept {
         return std::find(begin(), end(), value) != end();
     }
 
-    std::array<size_t, Rank> dims_;
+    std::array<T, Rank> dims_;
 };
 } // namespace detail
 
+template <class T, size_t... Dims>
+struct fixed_dims : detail::fixed_dims_base<T, Dims...> {};
+
 template <size_t... Dims>
-struct fixed_shape : detail::fixed_dims_base<Dims...> {
+struct fixed_shape : detail::fixed_dims_base<size_t, Dims...> {
     template <size_t I> struct prepend {
         using type = fixed_shape<I, Dims...>;
     };
@@ -87,17 +157,10 @@ struct fixed_shape : detail::fixed_dims_base<Dims...> {
 
     static constexpr size_t length() noexcept { return (Dims * ... * 1); }
     static constexpr size_t size() noexcept { return sizeof...(Dims); }
-
-    constexpr auto begin() const {
-        return &detail::fixed_dims_base<Dims...>::operator[](0);
-    }
-    constexpr auto end() const {
-        return &detail::fixed_dims_base<Dims...>::operator[](0) +
-               sizeof...(Dims);
-    }
 };
 
-template <size_t Rank> struct ranked_shape : detail::ranked_dims_base<Rank> {
+template <size_t Rank>
+struct ranked_shape : detail::ranked_dims_base<size_t, Rank> {
     constexpr size_t length() const noexcept {
         return std::accumulate(this->begin(), this->end(), 1,
                                std::multiplies<>());
@@ -105,7 +168,7 @@ template <size_t Rank> struct ranked_shape : detail::ranked_dims_base<Rank> {
 };
 
 template <size_t... Strides>
-struct fixed_strides : detail::fixed_dims_base<Strides...> {
+struct fixed_strides : detail::fixed_dims_base<size_t, Strides...> {
     template <size_t I> struct prepend {
         using type = fixed_strides<I, Strides...>;
     };
@@ -116,7 +179,7 @@ struct fixed_strides : detail::fixed_dims_base<Strides...> {
 };
 
 template <size_t Rank>
-struct ranked_strides : detail::ranked_dims_base<Rank> {};
+struct ranked_strides : detail::ranked_dims_base<size_t, Rank> {};
 
 namespace detail {
 template <size_t I, size_t... Dims> struct default_strides_impl;
@@ -181,8 +244,8 @@ inline constexpr bool is_fixed_dims_v = is_fixed_dims<Dims>::value;
 
 template <typename T> struct is_ranked_dims : std::false_type {};
 
-template <size_t Rank>
-struct is_ranked_dims<detail::ranked_dims_base<Rank>> : std::true_type {};
+template <class T, size_t Rank>
+struct is_ranked_dims<detail::ranked_dims_base<T, Rank>> : std::true_type {};
 
 template <size_t Rank>
 struct is_ranked_dims<ranked_shape<Rank>> : std::true_type {};
@@ -290,6 +353,19 @@ template <size_t Rank, size_t... Indices>
 constexpr auto to_fixed_strides(ranked_strides<Rank> strides,
                                 std::index_sequence<Indices...>) noexcept {
     return fixed_strides<strides[Indices]...>{};
+}
+
+template <class TShape>
+constexpr auto to_ranked_shape(const TShape &shape) noexcept {
+    if constexpr (is_fixed_dims_v<TShape>) {
+        ranked_shape<TShape::rank()> new_shape{};
+        for (size_t i = 0; i < TShape::rank(); i++) {
+            new_shape[i] = shape[i];
+        }
+        return new_shape;
+    } else {
+        return shape;
+    }
 }
 
 template <class Shape>
@@ -483,5 +559,9 @@ template <size_t RankA, size_t RankB>
 bool operator==(const ranked_shape<RankA> &lhs,
                 const ranked_shape<RankB> &rhs) noexcept {
     return RankA == RankB && std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+inline constexpr size_t positive_index(int64_t index, size_t dim) {
+    return size_t(index < 0 ? index + (int64_t)dim : index);
 }
 } // namespace nncase::ntt

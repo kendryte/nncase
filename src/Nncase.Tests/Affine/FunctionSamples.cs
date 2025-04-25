@@ -8,7 +8,7 @@ using System.Linq;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.Passes;
-using Nncase.Schedule.TileTree;
+using Nncase.Targets;
 using QuikGraph.Graphviz;
 using Xunit;
 
@@ -20,7 +20,7 @@ public static class FunctionSamples
     /// Tileflow default case.
     /// </summary>
     /// <returns>function.</returns>
-    public static Function Get1()
+    public static Function Get1WithTarget(string target)
     {
         Function func;
         {
@@ -30,11 +30,13 @@ public static class FunctionSamples
             var d = IR.F.Math.Exp(c);
             var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
             var f = IR.F.Tensors.MatMul(d, e);
-            func = new(f, a, b, e);
+            func = new("main", target, f, [a, b, e]);
         }
 
         return func;
     }
+
+    public static Function Get1() => Get1WithTarget(CPUTarget.Kind);
 
     public static Function Get1Matmul()
     {
@@ -43,7 +45,7 @@ public static class FunctionSamples
             var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
             var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
             var c = IR.F.Tensors.MatMul(a, b);
-            func = new(c, a, b);
+            func = new("main", CPUTarget.Kind, c, [a, b]);
         }
 
         return func;
@@ -55,7 +57,7 @@ public static class FunctionSamples
         {
             var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 384 }));
             var d = IR.F.Math.Exp(a);
-            func = new(d, a);
+            func = new("main", CPUTarget.Kind, d, [a]);
         }
 
         return func;
@@ -75,7 +77,7 @@ public static class FunctionSamples
             var d = IR.F.Math.Exp(c);
             var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
             var f = IR.F.CPU.PackedMatMul(d, IR.F.CPU.Pack(e, new[] { 4 }, new[] { 0 }), new[] { 0, 1 }, Array.Empty<int>(), new[] { 0 }, Array.Empty<int>());
-            func = new(f, a, b, e);
+            func = new("main", CPUTarget.Kind, f, [a, b, e]);
         }
 
         return func;
@@ -96,7 +98,7 @@ public static class FunctionSamples
             var fshape = new[] { 1, 1, 384, 384 };
             var f = new IR.Var("f", new IR.TensorType(DataTypes.Float32, fshape));
             var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
-            func = new IR.Function("main", g, a, b, d, f);
+            func = new IR.Function("main", CPUTarget.Kind, g, [a, b, d, f]);
         }
 
         return func;
@@ -112,7 +114,7 @@ public static class FunctionSamples
             var c = IR.F.Math.Div(b, new[] { 2.0f });
             var d = IR.F.Math.Mul(c, new[] { 1.0f });
             var e = IR.F.Math.Sub(new[] { 1.5f }, d);
-            func = new IR.Function("main", e, a);
+            func = new IR.Function("main", CPUTarget.Kind, e, [a]);
         }
 
         return func;
@@ -129,7 +131,7 @@ public static class FunctionSamples
             var b1 = IR.F.Math.Neg(b);
             var c = IR.F.Math.Add(a1, b1);
             var d = IR.F.Math.Neg(c);
-            func = new IR.Function("main", d, a, b);
+            func = new IR.Function("main", CPUTarget.Kind, d, [a, b]);
         }
 
         return func;
@@ -147,7 +149,7 @@ public static class FunctionSamples
             var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, shape));
             var c = IR.F.Math.Binary(BinaryOp.Mul, a, b);
             var d = IR.F.Math.Neg(c);
-            func = new IR.Function("main", new IR.Tuple(c, d), a, b);
+            func = new IR.Function("main", CPUTarget.Kind, new IR.Tuple(c, d), [a, b]);
         }
 
         return func;
@@ -164,7 +166,7 @@ public static class FunctionSamples
             var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
             var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, shape));
             var c = IR.F.Math.Binary(BinaryOp.Mul, a, b);
-            func = new IR.Function("main", c, a, b);
+            func = new IR.Function("main", CPUTarget.Kind, c, [a, b]);
         }
 
         return func;

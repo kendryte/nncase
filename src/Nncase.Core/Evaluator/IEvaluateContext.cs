@@ -27,7 +27,9 @@ public interface IEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
-    public IValue GetArgumentValue(Op op, ParameterInfo parameter);
+    IValue GetArgumentValue(Op op, ParameterInfo parameter);
+
+    IValue Evaluate(Expr expr);
 
     public Option<IValue> GetOptionalArgumentValue(Op op, ParameterInfo parameter)
     {

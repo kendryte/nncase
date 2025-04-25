@@ -23,7 +23,7 @@ public static class TestExtensions
 
 public sealed class UnitTestStringUtility
 {
-    private readonly TIR.PrimFunction _entry = new("test_module", new Sequential(1), new TIR.Buffer("testInput", DataTypes.Float32, new MemSpan(0, 123, MemoryLocation.Input), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 }), null), new TIR.Buffer("testInput", DataTypes.Float32, new MemSpan(0, 123, MemoryLocation.Output), new Expr[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Expr[] { 1, 16, 64, 400 }), null));
+    private readonly TIR.PrimFunction _entry = new("test_module", new Sequential(1), new Var("testInput", new TensorType(DataTypes.Float32, new[] { 1, 16, 64, 400 })), new Var("testInput", new TensorType(DataTypes.Float32, new[] { 1, 16, 64, 400 })));
 
     [Fact]
     public void TestJoin()

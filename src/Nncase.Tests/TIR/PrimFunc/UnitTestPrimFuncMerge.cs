@@ -13,6 +13,7 @@ using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
+using Nncase.Passes.Transforms;
 using Xunit;
 
 namespace Nncase.Tests.TIRTest.PrimFuncTest;
@@ -65,7 +66,7 @@ public class UnitTestPrimFuncMerge : TestClassBase
 
         IRModule module = new(main);
         var pmgr = CompileSession.CreatePassManager("pmgr");
-        pmgr.Add<DDrBufferSchdeulePass>(true);
+        pmgr.Add<BufferizePass>();
         module = await pmgr.RunAsync(module);
 
         var post = (Function)module.Entry!;

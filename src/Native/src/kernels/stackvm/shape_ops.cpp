@@ -66,34 +66,3 @@ inline padding get_windowed_padding(int32_t input_size, int32_t output_size,
     }
     return {before, after};
 }
-
-result<value_t> nncase::kernels::stackvm::get_paddings(
-    value_t input_shape, value_t weights_shape, value_t strides,
-    value_t dilations, value_t same, value_t lower, value_t output,
-    [[maybe_unused]] kernel_context &) {
-    try_dims(in_shape, input_shape);
-    try_dims(w_shape, weights_shape);
-    try_strides(strides_value, strides);
-    try_strides(dilations_value, dilations);
-    try_to_scalar_v(same, bool);
-    try_to_scalar_v(lower, bool);
-    auto out_h =
-        get_windowed_output_size(in_shape[2], w_shape[2], strides_value[0],
-                                 dilations_value[0], same_value, false);
-    auto out_w =
-        get_windowed_output_size(in_shape[3], w_shape[3], strides_value[1],
-                                 dilations_value[1], same_value, false);
-    auto pad_h =
-        get_windowed_padding(in_shape[2], out_h, w_shape[2], strides_value[0],
-                             dilations_value[0], lower_value);
-    auto pad_w =
-        get_windowed_padding(in_shape[3], out_w, w_shape[3], strides_value[1],
-                             dilations_value[1], lower_value);
-    auto out_shape = dims_t{2, 2};
-    try_out_mem(output, dt_int64, out_shape);
-    OUT_CAST(int64_t, output_mem)[0] = pad_h.before;
-    OUT_CAST(int64_t, output_mem)[1] = pad_h.after;
-    OUT_CAST(int64_t, output_mem)[2] = pad_w.before;
-    OUT_CAST(int64_t, output_mem)[3] = pad_w.after;
-    KERNEL_FINISH;
-}

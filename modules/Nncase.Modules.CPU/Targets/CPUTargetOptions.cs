@@ -11,25 +11,6 @@ using Nncase.IR;
 
 namespace Nncase.Targets;
 
-public enum MemoryAccessArchitecture : byte
-{
-    /// <summary>
-    /// Unified Memory Access.
-    /// </summary>
-    UMA = 0,
-
-    /// <summary>
-    /// Non-Unified Memory Access.
-    /// </summary>
-    NUMA = 1,
-}
-
-public enum NocArchitecture : byte
-{
-    Mesh = 0,
-    CrossBar = 1,
-}
-
 public class CpuTargetOptions : ICpuTargetOptions
 {
     [DisplayName("--model-name")]
@@ -79,9 +60,9 @@ public class CpuTargetOptions : ICpuTargetOptions
 
     [DisplayName("--hierarchy-sizes")]
     [Description("the memory capacity of hierarchies.")]
-    [DefaultValue("() => new int[] { 1073741824 }")]
+    [DefaultValue("() => new long[] { 1099511627776 }")]
     [CommandLine.AllowMultiplePerToken]
-    public int[] HierarchySizes { get; set; } = new[] { 1 * (int)MathF.Pow(2, 30) };
+    public long[] HierarchySizes { get; set; } = new[] { 1 * (long)MathF.Pow(2, 40) };
 
     [DisplayName("--hierarchy-latencies")]
     [Description("the latency of hierarchies.")]

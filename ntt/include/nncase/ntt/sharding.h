@@ -19,6 +19,7 @@
 #include "utility.h"
 #include <cstddef>
 #include <tuple>
+#include <type_traits>
 
 namespace nncase::ntt::distributed {
 namespace shard_policy {
@@ -59,7 +60,23 @@ template <size_t... Axes> struct S {
     template <class Mesh>
     static constexpr size_t local_dim(size_t global_dim) noexcept {
         auto divider = (1 * ... * Mesh::shape_type::at(Axes));
-        return ntt::ceil_div(global_dim, divider);
+        auto div = ntt::div(global_dim, divider);
+        auto rem = global_dim % divider;
+        if (std::is_constant_evaluated() && (rem == 0)) {
+            return div;
+        } else {
+            using submesh_shape = fixed_shape<Mesh::shape_type::at(Axes)...>;
+            using submesh_strides = default_strides_t<submesh_shape>;
+            auto shard_index = Mesh::local_index();
+            ranked_shape<submesh_shape::rank()> submesh_index{
+                shard_index.at(Axes)...};
+            auto submesh_linear_offset =
+            ntt::linear_offset(submesh_index, submesh_strides{});
+            if (submesh_linear_offset < rem)
+                div += 1;
+
+            return div;
+        }
     }
 
     template <class Mesh>
@@ -79,7 +96,7 @@ template <size_t... Axes> struct S {
     template <class Mesh>
     static constexpr size_t
     local_dim(size_t global_dim,
-              const typename Mesh::index_type &shard_index) noexcept {
+               const typename Mesh::index_type &shard_index) noexcept {
         auto local_dim = S::local_dim<Mesh>(global_dim);
         auto global_offset = S::global_offset<Mesh>(global_dim, shard_index);
         return std::min(global_dim - global_offset, local_dim);
@@ -177,7 +194,7 @@ constexpr size_t get_submesh_start() noexcept {
 }
 
 template <class Sharding, size_t Axis, class GlobalShape>
-constexpr size_t get_local_shard_dim(GlobalShape shape) noexcept {
+constexpr size_t get_local_shard_dim(const GlobalShape &shape) noexcept {
     static_assert(GlobalShape::rank() == Sharding::axis_policies_size,
                   "Invalid sharding.");
 
@@ -186,10 +203,21 @@ constexpr size_t get_local_shard_dim(GlobalShape shape) noexcept {
         .template local_dim<typename Sharding::mesh_type>(local_dim);
 }
 
-template <class Sharding, class GlobalShape, size_t... Axes>
-constexpr auto
-get_fixed_local_shard_dim(GlobalShape, std::index_sequence<Axes...>) noexcept {
-    return fixed_shape<get_local_shard_dim<Sharding, Axes>(GlobalShape{})...>{};
+template <class Sharding, class GlobalShape>
+constexpr auto local_shard_shape(const GlobalShape &shape) noexcept {
+    if constexpr (is_fixed_dims_v<GlobalShape>) {
+        auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
+            return fixed_shape<get_local_shard_dim<Sharding, Axes>(
+                GlobalShape{})...>{};
+        };
+        return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
+    } else {
+        auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
+            return make_ranked_shape(
+                get_local_shard_dim<Sharding, Axes>(shape)...);
+        };
+        return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
+    }
 }
 
 template <class GlobalShape, class Sharding> struct local_shard_shape_type {
@@ -198,8 +226,7 @@ template <class GlobalShape, class Sharding> struct local_shard_shape_type {
 
 template <size_t... Dims, class Sharding>
 struct local_shard_shape_type<fixed_shape<Dims...>, Sharding> {
-    using type = decltype(get_fixed_local_shard_dim<Sharding>(
-        fixed_shape<Dims...>{}, std::make_index_sequence<sizeof...(Dims)>{}));
+    using type = decltype(local_shard_shape<Sharding>(fixed_shape<Dims...>{}));
 };
 
 template <class Mesh, topology Topology>

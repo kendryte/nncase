@@ -30,13 +30,37 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
     {
-        var input = context.GetOrtArgumentValue(sl, Slice.Input);
+        OrtKISharp.Tensor input;
+
+        var inputOrg = context.GetArgumentValue(sl, Slice.Input).AsTensor();
+        var dataType = inputOrg.ElementType;
+        if (dataType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
+        {
+            var interType = new VectorType(DataTypes.Float32, vType.Lanes);
+            input = Nncase.IR.F.Tensors.Cast(inputOrg, interType).Evaluate().AsTensor().ToOrtTensor();
+        }
+        else if (dataType is not VectorType && dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            input = Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+        }
+        else
+        {
+            input = context.GetOrtArgumentValue(sl, Slice.Input);
+        }
+
         var begins = context.GetInt64OrtTensorArgumentValue(sl, Slice.Begins);
         var ends = context.GetInt64OrtTensorArgumentValue(sl, Slice.Ends);
         var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
         var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
         var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
-        return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
+        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        {
+            return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor().CastTo(dataType) : sliced.ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
+        }
+        else
+        {
+            return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
+        }
     }
 
     /// <inheritdoc/>

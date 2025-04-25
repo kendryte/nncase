@@ -130,15 +130,19 @@ result<void> tile_impl(const T *input, T *output,
     return tile_impl(IN_CAST(_ty, input), OUT_CAST(_ty, output), in_shape,     \
                      out_shape, in_strides, out_strides, repeats);
 
+#define TILE_APPLY_IMPL(_ty)                                                   \
+    return tile_apply_impl(IN_CAST(_ty, input), OUT_CAST(_ty, output),         \
+                           in_shape, out_shape, in_strides, out_strides,       \
+                           repeats);
+
 result<void> nncase::kernels::stackvm::reference::tile(
     datatype_t dt, const std::byte *input, std::byte *output,
     std::span<const size_t> in_shape, std::span<const size_t> out_shape,
     std::span<const size_t> in_strides, std::span<const size_t> out_strides,
     std::span<const size_t> repeats) {
-    if (in_shape.size() > 4) {
-        return tile_apply_impl(input, output, in_shape, out_shape, in_strides,
-                               out_strides, repeats);
-    }
     try_var(tycode, to_typecode(dt));
+    if (in_shape.size() > 4) {
+        TYPE_SELECT(tycode, TILE_APPLY_IMPL);
+    }
     TYPE_SELECT(tycode, TILE_IMPL);
 }

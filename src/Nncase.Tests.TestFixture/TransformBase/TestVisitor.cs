@@ -39,8 +39,8 @@ public sealed class TestVisitor : ExprVisitor<bool, IRType>
         return count;
     }
 
-    public int CountCallFusion<T>()
-      where T : Fusion
+    public int CountCallFunction<T>()
+      where T : BaseFunction
     {
         var count = ExprMemo.Keys.OfType<Call>().Where(call => call is { Target: T }).Count();
         return count;

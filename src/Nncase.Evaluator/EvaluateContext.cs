@@ -37,11 +37,13 @@ public static class EvaluateContextExtensions
 /// </summary>
 internal sealed class EvaluateContext : IEvaluateContext
 {
+    private readonly EvaluateVisitor _evaluateVisitor;
     private readonly Dictionary<Expr, IValue> _exprMemo;
     private BaseCall? _currentCall;
 
-    public EvaluateContext(Dictionary<Expr, IValue> exprMemo)
+    public EvaluateContext(EvaluateVisitor evaluateVisitor, Dictionary<Expr, IValue> exprMemo)
     {
+        _evaluateVisitor = evaluateVisitor;
         _exprMemo = exprMemo;
     }
 
@@ -60,4 +62,6 @@ internal sealed class EvaluateContext : IEvaluateContext
             : throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
         return _exprMemo[expr];
     }
+
+    public IValue Evaluate(Expr expr) => _evaluateVisitor.Visit(expr);
 }

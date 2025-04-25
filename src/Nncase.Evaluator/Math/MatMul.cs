@@ -44,7 +44,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var (lm, lk, rk, rn) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
 
         // TODO: keep summa only
-        if (transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
+        if (!a.TensorType.Shape.IsFixed || !b.TensorType.Shape.IsFixed || transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
         {
             var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(a.AxisPolices, a.Placement.Rank);
             var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(b.AxisPolices, b.Placement.Rank);
@@ -290,7 +290,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             // pack k or m&n
             var elemType = vl.ElemType;
-            if (elemType == DataTypes.Float8E4M3 || elemType == DataTypes.Float8E5M2)
+            if (elemType.IsFloat() && elemType != DataTypes.Float32)
             {
                 elemType = DataTypes.Float32;
             }
@@ -310,6 +310,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             else if (vl.Lanes.Count == 2 && vr.Lanes.Count == 2)
             {
                 // TODO: only support transpose vector B for now
+                if (lhsDType == DataTypes.Float16 && vl.Lanes[0] == 64 && vr.Lanes[1] == 64)
+                {
+                    elemType = lhsDType;
+                }
+
                 dtype = new VectorType(elemType, vl.Lanes[0], vl.Lanes[1] == vr.Lanes[0] ? vr.Lanes[1] : vr.Lanes[0]);
             }
             else
@@ -340,7 +345,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             var lhsOrt = Cast(lhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
             var rhsOrt = Cast(rhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor().CastTo(dataType);
+            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
             return Value.FromTensor(ret);
         }
         else

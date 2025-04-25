@@ -8,22 +8,63 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Nncase.CodeGen;
+using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Quantization;
+using Nncase.Targets;
 
 namespace Nncase;
 
+public enum MemoryAccessArchitecture : byte
+{
+    /// <summary>
+    /// Unified Memory Access.
+    /// </summary>
+    UMA = 0,
+
+    /// <summary>
+    /// Non-Unified Memory Access.
+    /// </summary>
+    NUMA = 1,
+}
+
+public enum NocArchitecture : byte
+{
+    Mesh = 0,
+    CrossBar = 1,
+}
+
 public interface ICpuTargetOptions : ITargetOptions
 {
-    int[] MemoryCapacities { get; }
+    string ModelName { get; set; }
 
-    int[] MemoryBandWidths { get; }
+    bool Packing { get; set; }
 
-    public int[] HierarchyLatencies { get; }
+    bool UnifiedMemoryArch { get; set; }
 
-    public int[] HierarchyBandWidths { get; }
+    MemoryAccessArchitecture MemoryAccessArch { get; set; }
 
-    bool UnifiedMemoryArch { get; }
+    NocArchitecture NocArch { get; set; }
+
+    HierarchyKind HierarchyKind { get; set; }
+
+    int[][] Hierarchies { get; set; }
+
+    string HierarchyNames { get; set; }
+
+    long[] HierarchySizes { get; set; }
+
+    int[] HierarchyLatencies { get; set; }
+
+    int[] HierarchyBandWidths { get; set; }
+
+    int[] MemoryCapacities { get; set; }
+
+    int[] MemoryBandWidths { get; set; }
+
+    string DistributedScheme { get; set; }
+
+    string CustomOpScheme { get; set; }
 }
 
 /// <summary>
@@ -41,7 +82,11 @@ public interface ITarget
     /// <summary>
     /// Gets target kind.
     /// </summary>
-    string Kind { get; }
+    string Name { get; }
+
+    IReadOnlyList<IModuleCompiler> ModuleCompilers { get; }
+
+    IModuleCompiler GetModuleCompiler(string moduleKind);
 
     /// <summary>
     /// create the current target's command and parser.
@@ -96,26 +141,26 @@ public interface ITarget
     void RegisterQuantizePass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
-    /// Register Target Dependent After Quant Pass.
+    /// Register Post Quant Pass.
     /// </summary>
     /// <param name="passManager">Pass manager.</param>
     /// <param name="options">compile options.</param>
-    void RegisterTargetDependentAfterQuantPass(IPassManager passManager, CompileOptions options);
+    void RegisterPostQuantizePass(IPassManager passManager, CompileOptions options);
 
     /// <summary>
-    /// Register Target Dependent After Quant Pass.
+    /// Register Target Dependent Before CodeGen Pass.
     /// </summary>
     /// <param name="passManager">Pass manager.</param>
     /// <param name="options">compile options.</param>
     void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options);
 
-    /// <summary>
-    /// Create module builder.
-    /// </summary>
-    /// <param name="moduleKind">Module kind.</param>
-    /// <param name="options">compile options.</param>
-    /// <returns>Module builder.</returns>
-    IModuleBuilder CreateModuleBuilder(string moduleKind, CompileOptions options);
+    void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options);
+
+    void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options);
+
+    void RegisterPostAutoPackingPass(IPassManager passManager, CompileOptions options);
+
+    void RegisterTIRSelectionPass(IPassManager passManager, CompileOptions options);
 }
 
 public sealed class DefaultTargetCompileOptions : ITargetOptions

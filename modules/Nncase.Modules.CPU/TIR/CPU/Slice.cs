@@ -26,17 +26,17 @@ public sealed partial class Slice : CPUKernelOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Output = new(typeof(Slice), 1, "output");
+    public static readonly ParameterInfo Begins = new(typeof(Slice), 1, "begins");
 
     /// <summary>
-    /// Gets begins.
+    /// Gets input.
     /// </summary>
-    public IRArray<int> Begins { get; }
+    public static readonly ParameterInfo Ends = new(typeof(Slice), 2, "ends");
 
     /// <summary>
-    /// Gets ends.
+    /// Gets input.
     /// </summary>
-    public IRArray<int> Ends { get; }
+    public static readonly ParameterInfo Output = new(typeof(Slice), 3, "output");
 
     /// <summary>
     /// Gets axes.
@@ -47,6 +47,4 @@ public sealed partial class Slice : CPUKernelOp
     /// Gets strides.
     /// </summary>
     public IRArray<int> Strides { get; }
-
-    public DistributedType DistType { get; }
 }

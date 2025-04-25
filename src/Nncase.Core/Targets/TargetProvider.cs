@@ -16,10 +16,10 @@ internal class TargetProvider : ITargetProvider
 
     public TargetProvider(ITarget[] targets, IConfiguration configure)
     {
-        _targets = targets.ToDictionary(x => x.Kind);
+        _targets = targets.ToDictionary(x => x.Name);
         foreach (var target in _targets.Values)
         {
-            target.ParseTargetDependentOptions(configure.GetSection(target.Kind));
+            target.ParseTargetDependentOptions(configure.GetSection(target.Name));
         }
     }
 

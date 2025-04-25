@@ -32,168 +32,44 @@ public interface IScheduler
     public IR.IRModule Schedule(bool skip_buffer_alias = false);
 }
 
-/// <summary>
-/// memory range define.
-/// </summary>
-[StructLayout(LayoutKind.Sequential)]
-public struct MemoryRange
+public record struct Interval
 {
-    /// <summary>
-    /// memory loaction.
-    /// </summary>
-    public MemoryLocation MemoryLocate;
-
-    /// <summary>
-    /// memory data type.
-    /// </summary>
-    public PrimTypeCode DType;
-
-    /// <summary>
-    /// shared module.
-    /// </summary>
-    public ushort SharedModule;
-
-    /// <summary>
-    /// memory span start.
-    /// </summary>
-    public uint Start;
-
-    /// <summary>
-    /// memory span length.
-    /// </summary>
-    public uint Size;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="MemoryRange"/> struct.
-    /// <see cref="MemoryRange"/>.
-    /// </summary>
-    /// <param name="memoryLocate">memory data type.</param>
-    /// <param name="dType">memory loaction.</param>
-    /// <param name="sharedModule">shared module.</param>
-    /// <param name="start">memory span start.</param>
-    /// <param name="size">memory span length.</param>
-    public MemoryRange(MemoryLocation memoryLocate, PrimTypeCode dType, ushort sharedModule, uint start, uint size)
+    public Interval(long start, long end)
     {
-        MemoryLocate = memoryLocate;
-        DType = dType;
-        SharedModule = sharedModule;
         Start = start;
-        Size = size;
+        Stop = end;
+    }
+
+    public long Start { get; set; }
+
+    public long Stop { get; set; }
+
+    public long Size
+    {
+        get => Stop - Start;
+        set => Stop = Start + value;
+    }
+
+    public bool Overlaps(Interval rhs) => Size != 0 && rhs.Size != 0 && Start < Stop && Stop > rhs.Start;
+
+    public override string ToString()
+    {
+        return $"Interval({Start}, {Stop})";
     }
 }
 
-/// <summary>
-/// the buffer allocation.
-/// </summary>
-public class BufferAllocation
+public record class BufferLifetime
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="BufferAllocation"/> class.
-    /// <see cref="BufferAllocation"/>.
-    /// </summary>
-    /// <param name="memory_locate">mem loacte.</param>
-    /// <param name="d_type">data type.</param>
-    /// <param name="shared_module">shared modeule.</param>
-    /// <param name="start">start.</param>
-    /// <param name="size">total size.</param>
-    /// <param name="shape">full shape.</param>
-    /// <param name="strides">full stride.</param>
-    /// <param name="strides_shape">stride shape.</param>
-    public BufferAllocation(MemoryLocation memory_locate, DataType d_type, ulong shared_module, ulong start, ulong size, long[] shape, long[] strides, long[] strides_shape)
+    public Interval Time;
+
+    public Interval Memory;
+
+    public BufferLifetime(TIR.Buffer buffer)
     {
-        MemoryLocate = memory_locate;
-        DType = d_type;
-        SharedModule = shared_module;
-        Start = start;
-        Size = size;
-        Shape = shape;
-        Strides = strides;
-        StridesShape = strides_shape;
+        Buffer = buffer;
     }
 
-    /// <summary>
-    /// Gets or sets mem loacte.
-    /// </summary>
-    public MemoryLocation MemoryLocate { get; set; }
-
-    /// <summary>
-    /// Gets or sets data type.
-    /// </summary>
-    public DataType DType { get; set; }
-
-    /// <summary>
-    /// Gets or sets shared modeule.
-    /// </summary>
-    public ulong SharedModule { get; set; }
-
-    /// <summary>
-    /// Gets or sets start.
-    /// </summary>
-    public ulong Start { get; set; }
-
-    /// <summary>
-    /// Gets or sets total size.
-    /// </summary>
-    public ulong Size { get; set; }
-
-    /// <summary>
-    /// Gets or sets full shape.
-    /// </summary>
-    public long[] Shape { get; set; }
-
-    /// <summary>
-    /// Gets or sets full stride.
-    /// </summary>
-    public long[] Strides { get; set; }
-
-    /// <summary>
-    /// Gets or sets stride shape.
-    /// </summary>
-    public long[] StridesShape { get; set; }
-
-    /// <summary>
-    /// Gets get current buffer memory range.
-    /// </summary>
-    public MemoryRange MemoryRange
-    {
-        get
-        {
-            // todo because of
-            PrimTypeCode code;
-            try
-            {
-                code = PrimTypeCodes.ToTypeCode(DType);
-            }
-            catch (System.Collections.Generic.KeyNotFoundException)
-            {
-                if (DType.SizeInBytes == 4)
-                {
-                    code = PrimTypeCode.Float32;
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return new(
-                MemoryLocate,
-                code,
-                (ushort)SharedModule,
-                (uint)Start,
-                (uint)Size);
-        }
-    }
-
-    /// <summary>
-    /// get then mem span end.
-    /// </summary>
-    public ulong LinearEnd() => Start + Size;
-
-    /// <summary>
-    /// calc the overlap with another buffer.
-    /// </summary>
-    public bool Overlap(BufferAllocation rhs) => Size != 0 && rhs.Size != 0 && MemoryLocate == rhs.MemoryLocate && Start < rhs.LinearEnd() && LinearEnd() > rhs.Start;
+    public TIR.Buffer Buffer { get; }
 }
 
 /// <summary>

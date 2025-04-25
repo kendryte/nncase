@@ -87,10 +87,14 @@ public static class TypeSerializer
             writer.Write((byte)1);
             foreach (var dim in shape)
             {
-                writer.Write((byte)dim.Kind);
-                if (dim.IsFixed)
+                if (dim.Kind == DimensionKind.Fixed)
                 {
+                    writer.Write((byte)0);
                     writer.Write(dim.FixedValue);
+                }
+                else
+                {
+                    writer.Write((byte)1);
                 }
             }
 

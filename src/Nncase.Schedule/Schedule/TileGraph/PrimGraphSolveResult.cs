@@ -33,7 +33,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         _subViewMemo = new();
     }
 
-    public Dictionary<BufferIdentity, TIR.Buffer> PrimBufferMemo { get; }
+    public Dictionary<BufferIdentity, Expr> PrimBufferMemo { get; }
 
     public BufferGraph PrimBufferGraph { get; }
 
@@ -342,25 +342,16 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     /// <summary>
     /// get declare of the input/output buffer which was stored on top level.
     /// </summary>
-    private TIR.Buffer GetTopLevelDeclareBuffer(BufferIdentity bid)
+    private Expr GetTopLevelDeclareBuffer(BufferIdentity bid)
     {
         var expr = bid.Node.Grid.Buffers[bid.Index];
         var tensorType = GetBufferTensorType(expr);
-        var distributedType = GetBufferDistributedType(expr);
+
+        // TODO: Currently we only support the buffer which is not distributed.
+        // var distributedType = GetBufferDistributedType(expr);
         if (!PrimBufferMemo.TryGetValue(bid, out var buffer))
         {
-            MemoryLocation loc = MemoryLocation.Data;
-            if (Inputs.Contains(bid))
-            {
-                loc = MemoryLocation.Input;
-            }
-            else if (Outputs.Contains(bid))
-            {
-                loc = MemoryLocation.Output;
-            }
-
-            buffer = T.AttachBuffer(None.Default, tensorType, loc, 1, out _, $"{bid}", distributedType);
-
+            buffer = new Var($"{bid}", tensorType);
             PrimBufferMemo.Add(bid, buffer);
         }
 
@@ -459,7 +450,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             PrimBufferMemo.Add(bid, buffer);
         }
 
-        return buffer;
+        return (TIR.Buffer)buffer;
     }
 
     public sealed record Context(ISequentialBuilder<Expr> ParentBuilder, Expr[] ForwardOffsets)

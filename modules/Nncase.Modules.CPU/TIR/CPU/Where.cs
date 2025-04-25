@@ -11,6 +11,4 @@ public sealed partial class Where : CPUKernelOp
     public static readonly ParameterInfo X = new(typeof(Where), 1, "x");
 
     public static readonly ParameterInfo Y = new(typeof(Where), 2, "y");
-
-    public DistributedType DistType { get; }
 }

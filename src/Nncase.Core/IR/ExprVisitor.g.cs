@@ -610,7 +610,7 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// <summary>
     /// Visit leaf <see cref="TIR.PrimFunction"/>.
     /// </summary>
-    protected virtual TExprResult VisitLeafPrimFunction(TIR.PrimFunction expr, TContext context) => DefaultVisitLeaf(expr, context);
+    protected virtual TExprResult VisitLeafPrimFunction(TIR.PrimFunction expr, TContext context) => VisitLeafBaseFunction(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="TIR.Sequential"/>.

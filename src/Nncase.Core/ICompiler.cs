@@ -38,6 +38,14 @@ public interface ICompiler
     Task<IRModule> ImportNcnnModuleAsync(Stream ncnnParam, Stream ncnnBin);
 
     /// <summary>
+    /// Import Ncnn model as ir module.
+    /// </summary>
+    /// <param name="content">HuggingFace model path.</param>
+    /// <param name="importOptions">HuggingFace model importOptions.</param>
+    /// <returns>Imported ir module.</returns>
+    Task<IRModule> ImportHuggingFaceModuleAsync(string content, ImportOptions importOptions);
+
+    /// <summary>
     /// import ir module into compiler.
     /// </summary>
     /// <param name="module">Module.</param>

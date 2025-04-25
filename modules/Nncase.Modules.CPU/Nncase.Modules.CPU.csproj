@@ -17,6 +17,7 @@
     <ProjectReference Include="..\..\..\nncase\src\Nncase.Diagnostics\Nncase.Diagnostics.csproj" />
     <ProjectReference Include="..\..\..\nncase\src\Nncase.Passes\Nncase.Passes.csproj" />
     <ProjectReference Include="..\..\..\nncase\src\Nncase.CodeGen\Nncase.CodeGen.csproj" />
+    <ProjectReference Include="..\..\..\nncase\src\Nncase.Targets\Nncase.Targets.csproj" />
   </ItemGroup>
 
   <ItemGroup>

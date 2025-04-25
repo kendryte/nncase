@@ -22,6 +22,8 @@ public class ModelInitContext
 
     private Dictionary<string, int>? _fixVarMap = new Dictionary<string, int>();
 
+    private ImportOptions? _importOptions;
+
     private CompileSession? _compileSession;
 
     // 公共属性
@@ -61,6 +63,12 @@ public class ModelInitContext
         set { _fixVarMap = value; }
     }
 
+    public ImportOptions? ImportOptions
+    {
+        get { return _importOptions; }
+        set { _importOptions = value; }
+    }
+
     public CompileSession? CompileSession
     {
         get { return _compileSession; }
@@ -73,7 +81,7 @@ public partial class HuggingFaceImporter : BaseImporter
     private readonly HuggingFaceModel _model;
     private readonly ModelInitContext _modelContext = new();
 
-    public HuggingFaceImporter(string huggingFaceDir, CompileSession compileSession)
+    public HuggingFaceImporter(string huggingFaceDir, ImportOptions importOptions, CompileSession compileSession)
         : base(compileSession)
     {
         var config = HuggingFaceUtils.GetConfigInfo(Path.Combine(huggingFaceDir, "config.json"));
@@ -107,6 +115,7 @@ public partial class HuggingFaceImporter : BaseImporter
 
         _modelContext!.Config = config;
         _modelContext!.ConstTensors = constTensors;
+        _modelContext!.ImportOptions = importOptions;
         _modelContext!.CompileSession = compileSession;
         switch (config.GetNestedValue<string>("architectures", 0))
         {

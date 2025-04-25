@@ -31,13 +31,13 @@ def test_llama32_1B(request):
     method = 'text'
 
     [generator.inputs.text]
-    args = 'tests/llm/prompt.txt'
+    args = 'tests/importer/huggingface_/prompt.txt'
 
     [generator.calibs]
     method = 'text'
 
     [generator.calibs.text]
-    args = 'tests/llm/prompt.txt'
+    args = 'tests/importer/huggingface_/prompt.txt'
     
     #TODO: Need remove!
     [target]
