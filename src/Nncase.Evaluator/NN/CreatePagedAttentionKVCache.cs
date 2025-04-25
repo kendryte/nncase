@@ -134,7 +134,7 @@ internal sealed record RefPagedAttentionKVCache(
 
         var starts = PagedAttentionConfig.CacheLayout.Select(i => defaultStarts[(int)i]).ToArray();
         var shape = PagedAttentionConfig.CacheLayout.Select(i => defaultShape[(int)i]).ToArray();
-        var squeeze_axes = Enumerable.Range(0, KVCaches.Rank).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim)).ToArray();
+        var squeeze_axes = Enumerable.Range(0, PagedAttentionConfig.CacheLayout.Count).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim)).Select(i => i + PagedAttentionConfig.Topology.Count).ToArray();
 
         // process the topology.
         var topo_starts = Enumerable.Range(0, PagedAttentionConfig.Topology.Count).Select(i => (long)blockId[i]).ToArray();

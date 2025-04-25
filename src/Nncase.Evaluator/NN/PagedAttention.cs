@@ -132,27 +132,66 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             throw new InvalidOperationException("block layout not contain head dim");
         }
 
+        int totalKVHeads = cache.Config.NumKVHeads;
+
         if (cache.Config.Topology.Count > 0)
         {
-            throw new NotSupportedException("topology not support");
-        }
-
-        for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
-        {
-            for (int i = 0; i < numBlocksForSeq; i++)
+            // var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
+            if (cache.Config.Topology is [1, 2]) // for xpu
             {
-                var blockId = cache.GetBlockId(seqId, i);
-                var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
-                var blockOrt = block.ToOrtTensor();
-
-                // slice
-                var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
-                if (validSlotCount < cache.Config.BlockSize)
+                totalKVHeads *= 2; // recover kv heads.
+                for (int did = 0; did < 2; did++)
                 {
-                    blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
-                }
+                    for (int h_id = 0; h_id < cache.Config.NumKVHeads; h_id++)
+                    {
+                        for (int i = 0; i < numBlocksForSeq; i++)
+                        {
+                            var blockId = cache.GetBlockId(seqId, i);
+                            if (blockId[0] is not -1L)
+                            {
+                                throw new NotSupportedException();
+                            }
 
-                caches.Add(blockOrt);
+                            var tmp_blockId = Tensor.Zeros(blockId.ElementType, blockId.Dimensions);
+                            blockId.CopyTo(tmp_blockId);
+                            tmp_blockId[0] = did;
+
+                            // 这部分还是可以复用的。
+                            var block = cache.GetBlock(cacheKind, layerId, h_id, tmp_blockId);
+                            var blockOrt = block.ToOrtTensor();
+
+                            // slice
+                            var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
+                            if (validSlotCount < cache.Config.BlockSize)
+                            {
+                                blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
+                            }
+
+                            caches.Add(blockOrt);
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+            {
+                for (int i = 0; i < numBlocksForSeq; i++)
+                {
+                    var blockId = cache.GetBlockId(seqId, i);
+                    var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
+                    var blockOrt = block.ToOrtTensor();
+
+                    // slice
+                    var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
+                    if (validSlotCount < cache.Config.BlockSize)
+                    {
+                        blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
+                    }
+
+                    caches.Add(blockOrt);
+                }
             }
         }
 
@@ -172,8 +211,8 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         }
 
         var newShape = concatCache.Shape.ToList(); // split head and seq len dim.
-        newShape.Insert(0, cache.Config.NumKVHeads);
-        newShape[1] /= cache.Config.NumKVHeads;
+        newShape.Insert(0, totalKVHeads);
+        newShape[1] /= totalKVHeads;
         concatCache.Reshape(newShape.ToArray());
         return concatCache; // [num_heads, seq_len, head_dim]
     }

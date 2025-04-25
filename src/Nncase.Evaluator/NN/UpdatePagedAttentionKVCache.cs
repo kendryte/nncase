@@ -55,10 +55,46 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
 
         var cache = kvCaches.Single().Value;
 
-        // [num_tokens, slot_shape]
-        for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+        if (cache.Config.Topology.Count > 0)
         {
-            cache.UpdateSlots(cacheKind, layerId, headId, slots);
+            // only for xpu
+            var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
+            if (cache.Config.Topology is [1, 2] && num_kv_head == cache.Config.NumKVHeads * 2)
+            {
+                for (int tok_id = 0; tok_id < cache.NumTokens; tok_id++)
+                {
+                    var slot_id = cache.GetSlotId(tok_id);
+                    if (slot_id[0] is not -1L)
+                    {
+                        throw new InvalidOperationException("should be broadcast!");
+                    }
+
+                    for (int die_id = 0; die_id < 2; die_id++)
+                    {
+                        var die_slot_id = Tensor.Zeros(slot_id.ElementType, slot_id.Dimensions);
+                        slot_id.CopyTo(die_slot_id);
+                        die_slot_id[0] = die_id;
+
+                        for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+                        {
+                            var slot = slots.View([tok_id, (die_id * cache.Config.NumKVHeads) + headId, 0], [1, 1, slots.Dimensions[2]]).Squeeze(0, 1);
+                            cache.UpdateSlot(cacheKind, layerId, headId, die_slot_id, slot);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                throw new NotSupportedException();
+            }
+        }
+        else
+        {
+            // [num_tokens, slot_shape]
+            for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+            {
+                cache.UpdateSlots(cacheKind, layerId, headId, slots);
+            }
         }
     }
 
