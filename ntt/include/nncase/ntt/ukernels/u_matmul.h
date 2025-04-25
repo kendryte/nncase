@@ -324,11 +324,23 @@ struct u_matmul_generic {
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
                         for (size_t k = 0; k < n0_scale; k++) {
-                            u_mul_add<PackKind, true>(
-                                a0_grouped[m], b0_grouped[n](k), c0_tmp[m][k]);
+                            u_mul_add<PackKind, true>(a0_grouped[m],
+                                                      b0_grouped[n](k),
+                                                      c0_grouped[m][k]);
                         }
                     }
                 }
+
+                using TElem = TOutElem::element_type;
+                loop<m0_tile_scaled>([&](auto i) {
+                    loop<n0_tile_scaled>([&](auto j) {
+                        ntt::apply(c0_tmp[i][j].shape(), [&](auto index) {
+                            c0_tmp[i][j](index) =
+                                (TElem)c0_grouped[i][j](index);
+                        });
+                    });
+                });
+
             } else if constexpr ((ukernels::mamtul_pack_kind::pack_mk ==
                                   PackKind) &&
                                  (!same_type)) {
