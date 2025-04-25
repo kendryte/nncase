@@ -25,6 +25,11 @@ namespace nncase::ntt {
 
 template <class TIn, class TOut>
 void shapeof(const TIn &input, TOut &&output) {
-    tensor_copy(input.shape(), output);
+    using TOutType = typename std::remove_reference<TOut>::type;
+    using TOutElem = typename TOutType::element_type;
+    const auto size = output.size();
+    for(size_t i = 0; i < size; i++) {
+        output(i) = (TOutElem)input.shape()[i];
+    }
 }
 } // namespace nncase::ntt

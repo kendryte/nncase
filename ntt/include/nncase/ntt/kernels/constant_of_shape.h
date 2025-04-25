@@ -29,11 +29,14 @@ void constant_of_shape(const TIn &shape, const TValue &value,
                        TOut &&output) {
     using TOutType = typename std::remove_reference<TOut>::type;
     using TOutElem = typename TOutType::element_type;
-    const auto size = output.size();
-
-    // TODO: use apply?
-    for (size_t i = 0; i < size; ++i) {
-        output(i) = (TOutElem)value(0);
-    }
+    
+    auto out_shape = output.shape();
+    apply(out_shape, [&](auto index) {
+        output(index) = (TOutElem)value(0);
+    });
+    // // TODO: use apply?
+    // for (size_t i = 0; i < size; ++i) {
+    //     output(i) = (TOutElem)value(0);
+    // }
 }
 } // namespace nncase::ntt

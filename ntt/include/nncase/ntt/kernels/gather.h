@@ -24,11 +24,14 @@ namespace nncase::ntt {
 
 namespace detail {
 
-template <class Shape, class InStrides, class OutStrides> class gather_impl;
+template <class Shape, class InStrides, class IndexShape, class IndicesStrides> class gather_impl;
 
-template <size_t... Dims, size_t... InStrides, size_t... OutStrides>
+// weights: static
+// indices: static
+template <size_t... Dims, size_t... InStrides, size_t... IndicesRank, size_t... IndicesStrides>
 class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
-                  fixed_strides<OutStrides...>> {
+                  fixed_shape<IndicesRank...>,
+                  fixed_strides<IndicesStrides...>> {
   public:
     template <size_t Axis, typename TA, typename TB, typename TC>
     constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
@@ -149,8 +152,10 @@ class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
     }
 };
 
-template <size_t Rank, class InStrides, class OutStrides>
-class gather_impl<ranked_shape<Rank>, InStrides, OutStrides> {
+// weights: dynamic
+// indices: dynamic
+template <size_t Rank, class InStrides, size_t IndicesRank, class IndicesStrides>
+class gather_impl<ranked_shape<Rank>, InStrides, ranked_shape<IndicesRank>, IndicesStrides> {
   public:
     template <size_t Axis, typename TA, typename TB, typename TC>
     constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
@@ -174,13 +179,85 @@ class gather_impl<ranked_shape<Rank>, InStrides, OutStrides> {
         });
     }
 };
+// weights: dynamic indices: static
+template <size_t Rank, class InStrides, size_t... IndicesDims, class IndicesStrides>
+class gather_impl<ranked_shape<Rank>, InStrides, fixed_shape<IndicesDims...>, IndicesStrides> {
+public:
+    template <size_t Axis, typename TA, typename TB, typename TC>
+    constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
+        constexpr size_t indices_rank = sizeof...(IndicesDims);
+        constexpr size_t output_rank = Rank + indices_rank - 1;
+
+        // 静态断言验证输出维度
+        static_assert(output_rank == std::remove_reference_t<TC>::shape_type::rank(), "Output rank mismatch!");
+
+        // 动态索引实现
+        ranked_shape<Rank> in_index;
+        ranked_shape<indices_rank> indices_index;
+
+        apply(output.shape(), [&](auto out_index) {
+            // 静态维度部分直接从输出索引拷贝
+            loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+            // 动态索引部分
+            loop<indices_rank>([&](auto i) {
+                indices_index[i] = out_index[Axis + i];
+            });
+            in_index[Axis] = indices(indices_index); // 从静态索引张量获取值
+
+            // 剩余维度拷贝
+            loop<Rank - Axis - 1>([&](auto i) {
+                in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+            });
+
+            output(out_index) = input(in_index);
+        });
+    }
+};
+
+// weights: static
+// indices: dynamic
+template <size_t... Dims, class InStrides, size_t IndicesRank, class IndicesStrides>
+class gather_impl<fixed_shape<Dims...>, InStrides, ranked_shape<IndicesRank>, IndicesStrides> {
+public:
+    template <size_t Axis, typename TA, typename TB, typename TC>
+    constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
+        constexpr size_t rank = sizeof...(Dims);
+        constexpr size_t indices_rank = IndicesRank;
+
+        // // 静态断言验证输出维度
+        // static_assert(TC::shape_type::rank() == rank + indices_rank - 1, "Output rank mismatch!");
+
+        // 动态索引实现
+        ranked_shape<rank> in_index;
+        ranked_shape<indices_rank> indices_index;
+
+        apply(output.shape(), [&](auto out_index) {
+            // 静态维度部分直接从输出索引拷贝
+            loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+            // 动态索引部分
+            loop<indices_rank>([&](auto i) {
+                indices_index[i] = out_index[Axis + i];
+            });
+            in_index[Axis] = indices(indices_index); // 从动态索引张量获取值
+
+            // 剩余维度拷贝
+            loop<rank - Axis - 1>([&](auto i) {
+                in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+            });
+
+            output(out_index) = input(in_index);
+        });
+    }
+};
 
 } // namespace detail
 
 template <size_t Axis, typename TA, typename TB, typename TC>
 void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     detail::gather_impl<typename TA::shape_type, typename TA::strides_type,
-                        typename std::decay_t<TC>::strides_type>
+                        typename TB::shape_type, typename TB::strides_type>
         impl;
     impl.template operator()<Axis>(input, indices, output);
 }
