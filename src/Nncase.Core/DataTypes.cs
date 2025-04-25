@@ -127,6 +127,7 @@ public static class DataTypes
     public static string GetDisplayName(this DataType dataType) => dataType switch
     {
         PointerType pointerType => $"({GetDisplayName(pointerType.ElemType)} *)",
+        ReferenceType referenceType => $"(&{GetDisplayName(referenceType.ElemType)})",
         PrimType primType => primType.ShortName,
         ValueType => dataType.ToString(),
         VectorType vtype => $"{GetDisplayName(vtype.ElemType)}<{string.Join(",", vtype.Lanes)}>",

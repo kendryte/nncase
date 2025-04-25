@@ -236,6 +236,10 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
 
     public new PagedAttentionConfig Config => (PagedAttentionConfig)base.Config;
 
+    public int NumBlocks => throw new NotImplementedException();
+
+    IPagedAttentionConfig IPagedAttentionKVCache.Config => Config;
+
     public Tensor GetBlock(AttentionCacheKind kind, int layerId, object blockId) => throw new NotImplementedException();
 
     public Tensor GetBlockIds(int requestId) => throw new NotImplementedException();
@@ -259,9 +263,14 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
     }
 
     public void UpdateSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot) => throw new NotImplementedException();
+
     public Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, object blockId) => throw new NotImplementedException();
+
     public void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, object blockId, Tensor block) => throw new NotImplementedException();
+
     public Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, object slotId) => throw new NotImplementedException();
+
     public void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, object slotId, Tensor slot) => throw new NotImplementedException();
+
     public void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slotIds, Tensor slots) => throw new NotImplementedException();
 }

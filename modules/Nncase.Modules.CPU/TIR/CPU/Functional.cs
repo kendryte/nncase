@@ -117,6 +117,21 @@ public partial class CPU
         return new Call(new Reshape(), input, ret);
     }
 
+    public static Expr PagedAttention(Expr q, Expr kvcache, int layerId, Expr ret)
+    {
+        return new Call(new PagedAttention(layerId), q, kvcache, ret);
+    }
+
+    public static Expr UpdatePagedAttentionKVCache(Expr value, Expr kvcache, IR.NN.AttentionCacheKind kind, int layerId)
+    {
+        return new Call(new UpdatePagedAttentionKVCache(kind, layerId), value, kvcache);
+    }
+
+    public static Expr CreatePagedAttentionKVCache(IR.NN.PagedAttentionConfig config, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches, Expr output)
+    {
+        return new Call(new CreatePagedAttentionKVCache(config), numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches, output);
+    }
+
     public static Expr Swish(Expr buffer, Expr ret, float v)
     {
         return new Call(new Swish(v), buffer, ret);

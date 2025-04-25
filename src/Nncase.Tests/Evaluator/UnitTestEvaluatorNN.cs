@@ -37,6 +37,7 @@ internal sealed record TestPagedAttentionKVCache(
     Tensor<long> SeqLens,
     Tensor<long> BlockTable,
     Tensor<long> SlotMapping,
+    int NumBlocks,
     Tensor KVCaches)
     : TestAttentionKVCache(
         Config,
@@ -894,7 +895,21 @@ public class UnitTestEvaluatorNN : TestClassBase
         var queryVar = new Var("query", new TensorType(DataTypes.Float32, new(numTokens, numQHeads, headDim)));
         var keyVar = new Var("key", new TensorType(DataTypes.Float32, new(numTokens, numKVHeads, headDim)));
         var valueVar = new Var("value", new TensorType(DataTypes.Float32, new(numTokens, numKVHeads, headDim)));
-        var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(new ReferenceType(new AttentionKVCacheType())));
+        var pagedAttnConfig = new PagedAttentionConfig(
+                blockSize,
+                numLayers,
+                numKVHeads,
+                headDim,
+                [PagedAttentionDimKind.NumBlocks,
+                 PagedAttentionDimKind.NumLayers,
+                 PagedAttentionDimKind.NumKVHeads,
+                 PagedAttentionDimKind.KV,
+                 PagedAttentionDimKind.HeadDim,
+                 PagedAttentionDimKind.BlockSize],
+                [PagedAttentionDimKind.HeadDim],
+                [lane],
+                kvType);
+        var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(new ReferenceType(new PagedAttentionKVCacheType(pagedAttnConfig))));
         Expr root;
         {
             var updatedkvCache = IR.F.NN.UpdatePagedAttentionKVCache(IR.F.CPU.Pack(keyVar, [lane], [2]), kvCacheObjVar, AttentionCacheKind.Key, 0);
@@ -960,27 +975,11 @@ public class UnitTestEvaluatorNN : TestClassBase
             var curValueTensor = OrtKI.Concat(curValues.ToArray(), 0L);
             var kvcacheStorage = Tensor.Zeros(new VectorType(kvType, [lane]), [numBlocks, numLayers, numKVHeads, 2, headDim / lane, blockSize]);
 
-            var config = new PagedAttentionConfig(
-                numBlocks,
-                blockSize,
-                numLayers,
-                numKVHeads,
-                headDim,
-                [PagedAttentionDimKind.NumBlocks,
-                 PagedAttentionDimKind.NumLayers,
-                 PagedAttentionDimKind.NumKVHeads,
-                 PagedAttentionDimKind.KV,
-                 PagedAttentionDimKind.HeadDim,
-                 PagedAttentionDimKind.BlockSize],
-                [PagedAttentionDimKind.HeadDim],
-                [lane],
-                kvType);
-
             // update hist kv cache.
             var histSlotMapping = Tensor.From(histSlotMappings.SelectMany(i => i).ToArray());
             if (histSlotMapping.Length > 0)
             {
-                var tempkvCacheObject = new TestPagedAttentionKVCache(config, numSeqs, (int)numTokens, contextLens, Tensor.From(seqLens), blockTables, histSlotMapping, kvcacheStorage);
+                var tempkvCacheObject = new TestPagedAttentionKVCache(pagedAttnConfig, numSeqs, (int)numTokens, contextLens, Tensor.From(seqLens), blockTables, histSlotMapping, numBlocks, kvcacheStorage);
                 var keySlots = OrtKI.Concat(histKeys.ToArray(), 0).ToTensor(new TensorType(new VectorType(kvType, [lane]), new[] { histSlotMapping.Length, numKVHeads, headDim / lane }));
                 var valueSlots = OrtKI.Concat(histValues.ToArray(), 0).ToTensor(new TensorType(new VectorType(kvType, [lane]), new[] { histSlotMapping.Length, numKVHeads, headDim / lane }));
 
@@ -991,7 +990,7 @@ public class UnitTestEvaluatorNN : TestClassBase
                 }
             }
 
-            var kvCacheObject = new TestPagedAttentionKVCache(config, numSeqs, (int)numTokens, contextLens, Tensor.From(seqLens), blockTables, slotMapping, kvcacheStorage);
+            var kvCacheObject = new TestPagedAttentionKVCache(pagedAttnConfig, numSeqs, (int)numTokens, contextLens, Tensor.From(seqLens), blockTables, slotMapping, numBlocks, kvcacheStorage);
             var kvCacheObjectTensor = Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCacheObject));
             feedDict.Add(queryVar, curQueryTensor.ToValue());
             feedDict.Add(keyVar, curKeyTensor.ToValue());

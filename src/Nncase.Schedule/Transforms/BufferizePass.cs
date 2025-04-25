@@ -203,6 +203,11 @@ show(p)");
             if (_buffers.TryGetValue(expr, out var lifetime))
             {
                 var start = Tensor.FromPointer((ulong)lifetime.Memory.Start, expr.ElemType);
+                if (start.ElementType is PointerType { ElemType: ReferenceType { ElemType: IR.NN.PagedAttentionKVCacheType ntype } } && expr.ElemType is ReferenceType { ElemType: IR.NN.PagedAttentionKVCacheType oldType })
+                {
+                    ntype.Config = oldType.Config;
+                }
+
                 var memSpan = expr.MemSpan.With(start: start);
                 return expr.With(memSpan: memSpan);
             }

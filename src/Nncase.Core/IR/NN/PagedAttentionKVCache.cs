@@ -22,15 +22,17 @@ public enum PagedAttentionDimKind : int
 
 public interface IPagedAttentionConfig : IAttentionConfig
 {
-    int NumBlocks { get; }
-
     int BlockSize { get; }
 
-    PagedAttentionDimKind[] CacheLayout { get; }
+    IRArray<PagedAttentionDimKind> CacheLayout { get; }
 
-    PagedAttentionDimKind[] PackedAxes { get; }
+    IRArray<PagedAttentionDimKind> BlockLayout => CacheLayout.Where(x => x is PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim).ToArray();
 
-    int[] Lanes { get; }
+    IRArray<PagedAttentionDimKind> PackedAxes { get; }
+
+    IRArray<int> Lanes { get; }
+
+    IRArray<int> Topology { get; }
 }
 
 /// <summary>
@@ -44,7 +46,9 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// <summary>
     /// Gets the config.
     /// </summary>
-    new PagedAttentionConfig Config { get; }
+    new IPagedAttentionConfig Config { get; }
+
+    int NumBlocks { get; }
 
     /// <summary>
     /// Gets the context block ids.
@@ -120,14 +124,15 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slotIds, Tensor slots);
 }
 
-public sealed record PagedAttentionConfig(int NumBlocks, int BlockSize, int NumLayers, int NumKVHeads, int HeadDim, PagedAttentionDimKind[] CacheLayout, PagedAttentionDimKind[] PackedAxes, int[] Lanes, PrimType KVType)
+public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType, int BlockSize, IRArray<PagedAttentionDimKind> CacheLayout, IRArray<PagedAttentionDimKind> PackedAxes, IRArray<int> Lanes, IRArray<int> Topology)
     : AttentionConfig(NumLayers, NumKVHeads, HeadDim, KVType), IPagedAttentionConfig
 {
-    public PagedAttentionDimKind[] BlockLayout => CacheLayout.Where(x => x is PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim).ToArray();
 }
 
-public sealed record PagedAttentionKVCacheType : AttentionKVCacheType
+public sealed record PagedAttentionKVCacheType() : AttentionKVCacheType
 {
+    public IPagedAttentionConfig Config { get; set; }
+
     /// <inheritdoc/>
     public override Type CLRType => typeof(IPagedAttentionKVCache);
 

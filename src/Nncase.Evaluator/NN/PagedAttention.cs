@@ -183,6 +183,17 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
     private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q)
     {
+        if (q.Placement.Name == "cdxyt") // for xpu.
+        {
+            // seq split at x, head split at die and y
+            if (q.AxisPolices[0] is SBPSplit { Axes: [2] } &&
+                q.AxisPolices[1] is SBPSplit { Axes: [1, 3] } &&
+                q.AxisPolices[2] is SBPBroadCast)
+            {
+                return q;
+            }
+        }
+
         return new InvalidType("not support distributed type");
     }
 }

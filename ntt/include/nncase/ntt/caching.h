@@ -16,6 +16,7 @@
 #include "kernels/copy.h"
 #include <cstddef>
 #include <nncase/ntt/distributed.h>
+#include <nncase/ntt/tensor_traits.h>
 
 namespace nncase::ntt::caching {
 enum class attention_cache_kind : int {
@@ -31,68 +32,54 @@ enum class paged_attention_dim_kind : int {
     num_kv_heads,
     head_dim,
 };
-} // namespace nncase::ntt::caching
 
-#if defined(NNCASE_CPU_MODULE) || defined(NNCASE_XPU_MODULE)
-#include <attention_config.h>
-#elif !defined(NNCASE_NTT_ATTENTION_CONFIG_DEFINED)
-namespace nncase::ntt::caching {
+template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
+          typename KVPrimType>
 struct attention_config {
-    static inline constexpr size_t num_layers = 24;
-    static inline constexpr size_t num_kv_heads = 12;
-    static inline constexpr size_t head_dim = 64;
-    using kv_prim_type = float;
+    static inline constexpr size_t num_layers = NumLayer;
+    static inline constexpr size_t num_kv_heads = NumKVHead;
+    static inline constexpr size_t head_dim = HeadDim;
+    using kv_prim_type = KVPrimType;
 };
 
-struct paged_attention_config : public attention_config {
-    static inline constexpr int block_size = 16;
+template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
+          typename KVPrimType, size_t BlockSize, IsFixedDims CacheLayout,
+          IsFixedDims BlockLayout, IsFixedDims PackedAxes, IsFixedDims Lanes,
+          IsFixedDims Topology>
+struct paged_attention_config
+    : public attention_config<NumLayer, NumKVHead, HeadDim, KVPrimType> {
+    static inline constexpr int block_size = BlockSize;
 
-    using cache_layout_t =
-        ntt::fixed_shape<(size_t)paged_attention_dim_kind::num_blocks,
-                         (size_t)paged_attention_dim_kind::num_layers,
-                         (size_t)paged_attention_dim_kind::num_kv_heads,
-                         (size_t)paged_attention_dim_kind::kv,
-                         (size_t)paged_attention_dim_kind::head_dim,
-                         (size_t)paged_attention_dim_kind::block_size>;
+    using cache_layout_t = CacheLayout;
 
-    using block_layout_t =
-        ntt::fixed_shape<(size_t)paged_attention_dim_kind::head_dim,
-                         (size_t)paged_attention_dim_kind::block_size>;
+    using block_layout_t = BlockLayout;
 
-    using packed_axes_t =
-        ntt::fixed_shape<(size_t)paged_attention_dim_kind::head_dim>;
+    using packed_axes_t = PackedAxes;
 
-    using lanes_t = ntt::fixed_shape<32>;
+    using lanes_t = Lanes;
 
-    using kv_topo_t = ntt::fixed_shape<(size_t)distributed::topology::chip,
-                                       (size_t)distributed::topology::block>;
+    using kv_topo_t = Topology;
 
-    cache_layout_t cache_layout = cache_layout_t{};
-    block_layout_t block_layout = block_layout_t{};
-    packed_axes_t packed_axes = packed_axes_t{};
-    lanes_t lanes = lanes_t{};
-    kv_topo_t kv_topo = kv_topo_t{};
+    static inline constexpr cache_layout_t cache_layout = cache_layout_t{};
+    static inline constexpr block_layout_t block_layout = block_layout_t{};
+    static inline constexpr packed_axes_t packed_axes = packed_axes_t{};
+    static inline constexpr lanes_t lanes = lanes_t{};
+    static inline constexpr kv_topo_t kv_topo = kv_topo_t{};
 };
 
-} // namespace nncase::ntt::caching
-#endif
-
-namespace nncase::ntt::caching {
-class attention_kv_cache {
+template <class TConfig> class attention_kv_cache {
   public:
-    attention_kv_cache(attention_config config, size_t num_seqs,
-                       size_t num_tokens,
+    attention_kv_cache(size_t num_seqs, size_t num_tokens,
                        tensor_view<int64_t, ranked_shape<1>> context_lens,
                        tensor_view<int64_t, ranked_shape<1>> seq_lens)
-        : config_(config),
-          num_seqs_(num_seqs),
+        : num_seqs_(num_seqs),
           num_tokens_(num_tokens),
           context_lens_(context_lens),
           seq_lens_(seq_lens) {}
 
     virtual ~attention_kv_cache() = default;
 
-    const attention_config &config() const noexcept { return config_; }
+    constexpr TConfig &config() const noexcept { return TConfig{}; }
 
     size_t num_seqs() const noexcept { return num_seqs_; }
 
@@ -107,7 +94,6 @@ class attention_kv_cache {
     }
 
   protected:
-    attention_config config_;
     size_t num_seqs_;
     size_t num_tokens_;
 
@@ -115,27 +101,30 @@ class attention_kv_cache {
     tensor_view<int64_t, ranked_shape<1>> seq_lens_;
 };
 
-template <size_t Rank> struct kv_type_trait {
+namespace detail {
+template <typename TPagedAttentionConfig, size_t Rank> struct kv_type_trait {
     using kv_storage_type_t =
-        make_vector_t<paged_attention_config::kv_prim_type,
-                      paged_attention_config::lanes_t>;
+        make_vector_t<typename TPagedAttentionConfig::kv_prim_type,
+                      typename TPagedAttentionConfig::lanes_t>;
     using kv_storage_shape_t =
-        ntt::ranked_shape<paged_attention_config::cache_layout_t::rank()>;
+        ntt::ranked_shape<TPagedAttentionConfig::cache_layout_t::rank()>;
     using kv_storage_tensor_type_t =
         tensor_view<kv_storage_type_t, kv_storage_shape_t>;
 
     using kv_type_t = intptr_t;
-    using kv_shape_t = decltype(indirect_indexing(
-        paged_attention_config::kv_topo_t{}, distributed::topology_shape_t{}));
-    using kv_tensor_type_t = tensor_view<intptr_t, kv_shape_t>;
+    using kv_shape_t =
+        decltype(indirect_indexing(typename TPagedAttentionConfig::kv_topo_t{},
+                                   typename distributed::topology_shape_t{}));
+    using kv_tensor_type_t = tensor<intptr_t, kv_shape_t>;
 };
 
-template <> struct kv_type_trait<0> {
+template <typename TPagedAttentionConfig>
+struct kv_type_trait<TPagedAttentionConfig, 0> {
     using kv_storage_type_t =
-        make_vector_t<paged_attention_config::kv_prim_type,
-                      paged_attention_config::lanes_t>;
+        make_vector_t<typename TPagedAttentionConfig::kv_prim_type,
+                      typename TPagedAttentionConfig::lanes_t>;
     using kv_storage_shape_t =
-        ntt::ranked_shape<paged_attention_config::cache_layout_t::rank()>;
+        ntt::ranked_shape<TPagedAttentionConfig::cache_layout_t::rank()>;
     using kv_storage_tensor_type_t =
         tensor_view<kv_storage_type_t, kv_storage_shape_t>;
 
@@ -143,10 +132,14 @@ template <> struct kv_type_trait<0> {
     using kv_shape_t = kv_storage_shape_t;
     using kv_tensor_type_t = kv_storage_tensor_type_t;
 };
+} // namespace detail
 
-class paged_attention_kv_cache : public attention_kv_cache {
+template <typename TConfig>
+class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
   public:
-    using kv_trait = kv_type_trait<paged_attention_config::kv_topo_t::rank()>;
+    using config_t = TConfig;
+    using kv_trait = detail::kv_type_trait<TConfig,
+                                           TConfig::kv_topo_t::rank()>;
     using kv_storage_type_t = kv_trait::kv_storage_type_t;
     using kv_storage_shape_t = kv_trait::kv_storage_shape_t;
     using kv_storage_tensor_type_t = kv_trait::kv_storage_tensor_type_t;
@@ -154,22 +147,21 @@ class paged_attention_kv_cache : public attention_kv_cache {
     using kv_shape_t = kv_trait::kv_shape_t;
     using kv_tensor_type_t = kv_trait::kv_tensor_type_t;
 
-    paged_attention_kv_cache(paged_attention_config config, size_t num_seqs,
-                             size_t num_tokens,
+    paged_attention_kv_cache(size_t num_seqs, size_t num_tokens,
                              tensor_view<int64_t, ranked_shape<1>> context_lens,
                              tensor_view<int64_t, ranked_shape<1>> seq_lens,
                              tensor_view<int64_t, ranked_shape<3>> block_table,
                              tensor_view<int64_t, ranked_shape<2>> slot_mapping,
                              size_t num_blocks, kv_tensor_type_t kv_caches)
-        : attention_kv_cache(config, num_seqs, num_tokens, context_lens,
-                             seq_lens),
+        : attention_kv_cache<TConfig>(num_seqs, num_tokens,
+                                               context_lens, seq_lens),
           block_table_(block_table),
           slot_mapping_(slot_mapping),
           num_blocks_(num_blocks),
           kv_caches_(kv_caches) {}
 
-    const paged_attention_config &config() const noexcept {
-        return static_cast<const paged_attention_config &>(config_);
+    constexpr TConfig &config() const noexcept {
+        return TConfig{};
     }
 
     tensor_view<int64_t, ranked_shape<2>> get_block_ids(int seq_id) {
@@ -209,7 +201,7 @@ class paged_attention_kv_cache : public attention_kv_cache {
     }
 
     auto get_kv_storage(tensor_view<int64_t, ranked_shape<1>> block_id) {
-        constexpr size_t rank = paged_attention_config::kv_topo_t::rank();
+        constexpr size_t rank = TConfig::kv_topo_t::rank();
         if constexpr (rank == 0) {
             return kv_caches_;
         } else {
