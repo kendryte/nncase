@@ -108,6 +108,7 @@ jobs:
 
           wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
           sudo tar xf qemu.tgz -C /usr/local/bin
+          sudo chmod +rx /usr/local/bin/qemu-*
           echo "TESTS_EXECUTABLE_LOADER=${{matrix.config.qemu}}" >> $GITHUB_ENV
           echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loaderArgs}};$GITHUB_WORKSPACE/${{matrix.config.toolchainFile}}/sysroot" >> $GITHUB_ENV
           echo "CC=$GITHUB_WORKSPACE/${{matrix.config.toolchainFile}}/bin/${{matrix.config.toolchainPrefix}}gcc" >> $GITHUB_ENV
