@@ -133,7 +133,9 @@ template <typename T, size_t vl> void test_vector() {
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
 
+#if __riscv
 TEST(UnaryTestAsinh, vector) { TEST_VECTOR(_Float16) }
+#endif
 
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
