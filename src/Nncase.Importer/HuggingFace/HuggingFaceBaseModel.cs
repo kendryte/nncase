@@ -45,37 +45,36 @@ public abstract class HuggingFaceModel
         // _fixVarMap["sequence_length"] = 10;
         // _fixVarMap["history_len"] = 0;
         // TODO: control by config file
-        if (!Context.FixVarMap.ContainsKey("sequence_length"))
+
+        Context.DynVarMap["sequence_length"] = Var.SizeVar("sequence_length");
+        if (Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo.ContainsKey("sequence_length"))
         {
-            Context.DynVarMap["sequence_length"] = Var.SizeVar("sequence_length");
-            if (Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo.ContainsKey("sequence_length"))
-            {
-                Context.DynVarMap["sequence_length"].Metadata.Range = Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo["sequence_length"];
-            }
-            else
-            {
-                Context.DynVarMap["sequence_length"].Metadata.Range = new(1, 64);
-            }
+            Context.DynVarMap["sequence_length"].Metadata.Range = Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo["sequence_length"];
+        }
+        else
+        {
+            Context.DynVarMap["sequence_length"].Metadata.Range = new(1, 64);
         }
 
-        // if (!_fixVarMap.ContainsKey("history_len"))
-        // {
-        //     _dynVarMap["history_len"] = Var.SizeVar("history_len");
-        //     _dynVarMap["history_len"].Metadata.Range=new (4096,8192);
-        // }
-        if (!Context.FixVarMap.ContainsKey("batch_size"))
+        if (Context.FixVarMap.ContainsKey("sequence_length"))
         {
-            Context.DynVarMap["batch_size"] = Var.SizeVar("batch_size");
-            if (Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo.ContainsKey("batch_size"))
-            {
-                Context.DynVarMap["batch_size"].Metadata.Range = Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo["batch_size"];
-            }
-            else
-            {
-                Context.DynVarMap["batch_size"].Metadata.Range = new(1, 4);
-            }
+            Context.DynVarMap["sequence_length"].Metadata.Range = new(Context.FixVarMap["sequence_length"], Context.FixVarMap["sequence_length"]);
         }
 
+        Context.DynVarMap["batch_size"] = Var.SizeVar("batch_size");
+        if (Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo.ContainsKey("batch_size"))
+        {
+            Context.DynVarMap["batch_size"].Metadata.Range = Context.CompileSession.CompileOptions.ShapeBucketOptions.RangeInfo["batch_size"];
+        }
+        else
+        {
+            Context.DynVarMap["batch_size"].Metadata.Range = new(1, 2);
+        }
+
+        if (Context.FixVarMap.ContainsKey("batch_size"))
+        {
+            Context.DynVarMap["batch_size"].Metadata.Range = new(Context.FixVarMap["batch_size"], Context.FixVarMap["batch_size"]);
+        }
 
         var inputIdsShapeExpr = new Expr[] { Context.DynVarMap["batch_size"],
                                                Context.DynVarMap["sequence_length"],
