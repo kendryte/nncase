@@ -374,11 +374,23 @@ struct u_matmul_generic {
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
                         for (size_t k = 0; k < m0_scale; k++) {
-                            u_mul_add<PackKind, true>(
-                                a0_grouped[m](k), b0_grouped[n], c0_tmp[k][n]);
+                            u_mul_add<PackKind, true>(a0_grouped[m](k),
+                                                      b0_grouped[n],
+                                                      c0_grouped[k][n]);
                         }
                     }
                 }
+
+                using TElem = TOutElem::element_type;
+                loop<m0_tile_scaled>([&](auto i) {
+                    loop<n0_tile_scaled>([&](auto j) {
+                        ntt::apply(c0_tmp[i][j].shape(), [&](auto index) {
+                            c0_tmp[i][j](index) =
+                                (TElem)c0_grouped[i][j](index);
+                        });
+                    });
+                });
+
             } else if constexpr ((ukernels::mamtul_pack_kind::pack_mn ==
                                   PackKind) &&
                                  (!same_type)) {
@@ -418,11 +430,21 @@ struct u_matmul_generic {
                             for (size_t l = 0; l < m0_scale; l++) {
                                 u_mul_add<PackKind, true>(a0_grouped[m](l),
                                                           b0_grouped[n](k),
-                                                          c0_tmp[l][k]);
+                                                          c0_grouped[l][k]);
                             }
                         }
                     }
                 }
+
+                using TElem = TOutElem::element_type;
+                loop<m0_tile_scaled>([&](auto i) {
+                    loop<n0_tile_scaled>([&](auto j) {
+                        ntt::apply(c0_tmp[i][j].shape(), [&](auto index) {
+                            c0_tmp[i][j](index) =
+                                (TElem)c0_grouped[i][j](index);
+                        });
+                    });
+                });
 
             } else if constexpr ((ukernels::mamtul_pack_kind::pack_mkn ==
                                   PackKind) &&
@@ -464,11 +486,21 @@ struct u_matmul_generic {
                             for (size_t l = 0; l < m0_scale; l++) {
                                 u_mul_add<PackKind, true>(a0_grouped[m](l),
                                                           b0_grouped[n](k),
-                                                          c0_tmp[l][k]);
+                                                          c0_grouped[l][k]);
                             }
                         }
                     }
                 }
+
+                using TElem = TOutElem::element_type;
+                loop<m0_tile_scaled>([&](auto i) {
+                    loop<n0_tile_scaled>([&](auto j) {
+                        ntt::apply(c0_tmp[i][j].shape(), [&](auto index) {
+                            c0_tmp[i][j](index) =
+                                (TElem)c0_grouped[i][j](index);
+                        });
+                    });
+                });
 
             } else if constexpr ((ukernels::mamtul_pack_kind::no_pack ==
                                   PackKind) &&
@@ -617,6 +649,25 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
             c0_tmp[index[0]][index[1]] = AccumulateC ? c0(index) : TOutElem{};
         });
 
+        using TLhsElemExpanded =
+            cast_fixed_tensor_element_type<TOutElem, float>::type;
+        TLhsElemExpanded c0_grouped[m0_tile_scaled][n0_tile_scaled];
+        if constexpr (IsScalar<TLhsElemExpanded>) {
+            for (size_t i = 0; i < m0_tile_scaled; i++) {
+                for (size_t j = 0; j < n0_tile_scaled; j++) {
+                    c0_grouped[i][j] = (float)c0_tmp[i][j];
+                }
+            }
+        } else {
+            for (size_t i = 0; i < m0_tile_scaled; i++) {
+                for (size_t j = 0; j < n0_tile_scaled; j++) {
+                    ntt::apply(c0_grouped[i][j].shape(), [&](auto index) {
+                        c0_grouped[i][j](index) = (float)c0_tmp[i][j](index);
+                    });
+                }
+            }
+        }
+
         for (size_t k1 = 0; k1 < K; k1++) {
             auto a0 =
                 a.view(make_ranked_shape(0, k1), fixed_shape<M0Tile, 1>{});
@@ -671,12 +722,23 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                     for (size_t n = 0; n < N0Tile; n++) {
                         for (size_t m = 0; m < M0Tile; m++) {
                             for (size_t k = 0; k < n0_scale; k++) {
-                                c0_tmp[m][k] = ntt::mul_add(a0_grouped[m],
-                                                            b0_grouped[n](k),
-                                                            c0_tmp[m][k]);
+                                c0_grouped[m][k] = ntt::mul_add(
+                                    a0_grouped[m], b0_grouped[n](k),
+                                    c0_grouped[m][k]);
                             }
                         }
                     }
+
+                    using TElem = TOutElem::element_type;
+                    loop<m0_tile_scaled>([&](auto i) {
+                        loop<n0_tile_scaled>([&](auto j) {
+                            ntt::apply(c0_tmp[i][j].shape(), [&](auto index) {
+                                c0_tmp[i][j](index) =
+                                    (TElem)c0_grouped[i][j](index);
+                            });
+                        });
+                    });
+
                 } else {
                     for (size_t n = 0; n < N0Tile; n++) {
                         for (size_t m = 0; m < M0Tile; m++) {

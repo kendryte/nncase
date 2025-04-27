@@ -1413,6 +1413,470 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_N1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32, ntt_output2));
 }
 
+TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K0) {
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr size_t M = 128;
+    constexpr size_t N = 128;
+    constexpr size_t K = 128;
+
+    // init
+    using tensor_type_f32 = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_out = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_lhs = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type_f32_rhs = ntt::tensor<float, ntt::fixed_shape<K, N>>;
+    using tensor_type_f8_lhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, K>>;
+    using tensor_type_f8_rhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<K, N>>;
+    tensor_type_f8_lhs ntt_lhs_f8;
+    tensor_type_f8_rhs ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P1, P1>,
+                            ntt::fixed_shape<M / P1, K / P1>>
+        p_ntt_lhs;
+    alignas(32)
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<K / P1, N>>
+            p_ntt_rhs;
+    ntt::pack<0, 1>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<0>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    alignas(32)
+        ntt::tensor<ntt::vector<bfloat16, P2>, ntt::fixed_shape<M / P2, N>>
+            ntt_output_out;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output_out,
+                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
+                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{});
+    tensor_type_f32 ntt_output1;
+    unpack<0>(ntt_output_out, ntt_output1);
+    tensor_type_f32_out ntt_output_f32;
+    ntt::cast(ntt_output1, ntt_output_f32);
+
+    // ort
+    tensor_type_f32_lhs ntt_lhs_f32;
+    tensor_type_f32_rhs ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32_out ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32, ntt_output2));
+}
+
+TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K1) {
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr size_t M = 128;
+    constexpr size_t N = 128;
+    constexpr size_t K = 128;
+
+    // init
+    using tensor_type_f32 = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_out = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_lhs = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type_f32_rhs = ntt::tensor<float, ntt::fixed_shape<K, N>>;
+    using tensor_type_f8_lhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, K>>;
+    using tensor_type_f8_rhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<K, N>>;
+    tensor_type_f8_lhs ntt_lhs_f8;
+    tensor_type_f8_rhs ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P1, P1>,
+                            ntt::fixed_shape<M / P1, K / P1>>
+        p_ntt_lhs;
+    alignas(32)
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<K / P1, N>>
+            p_ntt_rhs;
+    ntt::pack<0, 1>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<0>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    alignas(32)
+        ntt::tensor<ntt::vector<bfloat16, P2>, ntt::fixed_shape<M / P2, N>>
+            ntt_output_out;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output_out,
+                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
+                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{});
+    tensor_type_f32 ntt_output1;
+    unpack<0>(ntt_output_out, ntt_output1);
+    tensor_type_f32_out ntt_output_f32;
+    ntt::cast(ntt_output1, ntt_output_f32);
+
+    // ort
+    tensor_type_f32_lhs ntt_lhs_f32;
+    tensor_type_f32_rhs ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32_out ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32, ntt_output2));
+}
+
+TEST(MatmulTestFloatE4M3Bfloat16, Pack_K_N0) {
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr size_t M = 128;
+    constexpr size_t N = 128;
+    constexpr size_t K = 128;
+
+    // init
+    using tensor_type_out = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_lhs = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type_f32_rhs = ntt::tensor<float, ntt::fixed_shape<K, N>>;
+    using tensor_type_f8_lhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, K>>;
+    using tensor_type_f8_rhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<K, N>>;
+    tensor_type_f8_lhs ntt_lhs_f8;
+    tensor_type_f8_rhs ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32)
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<M, K / P1>>
+            p_ntt_lhs;
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P1, P1>,
+                            ntt::fixed_shape<K / P1, N / P1>>
+        p_ntt_rhs;
+    ntt::pack<1>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<0, 1>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    alignas(32)
+        ntt::tensor<ntt::vector<bfloat16, P2>, ntt::fixed_shape<M, N / P2>>
+            ntt_output1;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output1, ntt::fixed_shape<1>{},
+                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
+                       ntt::fixed_shape<0>{});
+    tensor_type_out ntt_output1_unpack;
+    unpack<1>(ntt_output1, ntt_output1_unpack);
+    tensor_type_f32 ntt_output_f32;
+    ntt::cast(ntt_output1_unpack, ntt_output_f32);
+
+    // ort
+    tensor_type_f32_lhs ntt_lhs_f32;
+    tensor_type_f32_rhs ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32, ntt_output2));
+}
+
+TEST(MatmulTestFloatE4M3Bfloat16, Pack_K_N1) {
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr size_t M = 128;
+    constexpr size_t N = 128;
+    constexpr size_t K = 128;
+
+    // init
+    using tensor_type_out = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_lhs = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type_f32_rhs = ntt::tensor<float, ntt::fixed_shape<K, N>>;
+    using tensor_type_f8_lhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, K>>;
+    using tensor_type_f8_rhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<K, N>>;
+    tensor_type_f8_lhs ntt_lhs_f8;
+    tensor_type_f8_rhs ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32)
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<M, K / P1>>
+            p_ntt_lhs;
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P1, P1>,
+                            ntt::fixed_shape<K / P1, N / P1>>
+        p_ntt_rhs;
+    ntt::pack<1>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<0, 1>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    alignas(32)
+        ntt::tensor<ntt::vector<bfloat16, P2>, ntt::fixed_shape<M, N / P2>>
+            ntt_output1;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output1, ntt::fixed_shape<1>{},
+                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
+                       ntt::fixed_shape<0>{});
+    tensor_type_out ntt_output1_unpack;
+    unpack<1>(ntt_output1, ntt_output1_unpack);
+    tensor_type_f32 ntt_output_f32;
+    ntt::cast(ntt_output1_unpack, ntt_output_f32);
+
+    // ort
+    tensor_type_f32_lhs ntt_lhs_f32;
+    tensor_type_f32_rhs ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32, ntt_output2));
+}
+
+TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_N0) {
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr size_t M = 128;
+    constexpr size_t N = 128;
+    constexpr size_t K = 128;
+
+    // init
+    using tensor_type_out = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_lhs = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type_f32_rhs = ntt::tensor<float, ntt::fixed_shape<K, N>>;
+    using tensor_type_f8_lhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, K>>;
+    using tensor_type_f8_rhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<K, N>>;
+    tensor_type_f8_lhs ntt_lhs_f8;
+    tensor_type_f8_rhs ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32)
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<M / P1, K>>
+            p_ntt_lhs;
+    alignas(32)
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<K, N / P1>>
+            p_ntt_rhs;
+    ntt::pack<0>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<1>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    alignas(32) ntt::tensor<ntt::vector<bfloat16, P2, P2>,
+                            ntt::fixed_shape<M / P2, N / P2>>
+        ntt_output_f32;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output_f32,
+                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    tensor_type_out ntt_output1;
+    unpack<0, 1>(ntt_output_f32, ntt_output1);
+    tensor_type_f32 ntt_output_f32_unpack;
+    ntt::cast(ntt_output1, ntt_output_f32_unpack);
+
+    // ort
+    tensor_type_f32_lhs ntt_lhs_f32;
+    tensor_type_f32_rhs ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32_unpack, ntt_output2));
+}
+
+TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_N1) {
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr size_t M = 128;
+    constexpr size_t N = 128;
+    constexpr size_t K = 128;
+
+    // init
+    using tensor_type_out = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_lhs = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type_f32_rhs = ntt::tensor<float, ntt::fixed_shape<K, N>>;
+    using tensor_type_f8_lhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, K>>;
+    using tensor_type_f8_rhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<K, N>>;
+    tensor_type_f8_lhs ntt_lhs_f8;
+    tensor_type_f8_rhs ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32)
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<M / P1, K>>
+            p_ntt_lhs;
+    alignas(32)
+        ntt::tensor<ntt::vector<float_e4m3_t, P1>, ntt::fixed_shape<K, N / P1>>
+            p_ntt_rhs;
+    ntt::pack<0>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<1>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    alignas(32) ntt::tensor<ntt::vector<bfloat16, P2, P2>,
+                            ntt::fixed_shape<M / P2, N / P2>>
+        ntt_output_f32;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output_f32,
+                       ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    tensor_type_out ntt_output1;
+    unpack<0, 1>(ntt_output_f32, ntt_output1);
+    tensor_type_f32 ntt_output_f32_unpack;
+    ntt::cast(ntt_output1, ntt_output_f32_unpack);
+
+    // ort
+    tensor_type_f32_lhs ntt_lhs_f32;
+    tensor_type_f32_rhs ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32_unpack, ntt_output2));
+}
+
+TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K_N0) {
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr size_t M = 128;
+    constexpr size_t N = 128;
+    constexpr size_t K = 128;
+
+    // init
+    using tensor_type_out = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_lhs = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type_f32_rhs = ntt::tensor<float, ntt::fixed_shape<K, N>>;
+    using tensor_type_f8_lhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, K>>;
+    using tensor_type_f8_rhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<K, N>>;
+    tensor_type_f8_lhs ntt_lhs_f8;
+    tensor_type_f8_rhs ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P1, P1>,
+                            ntt::fixed_shape<M / P1, K / P1>>
+        p_ntt_lhs;
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P1, P1>,
+                            ntt::fixed_shape<K / P1, N / P1>>
+        p_ntt_rhs;
+    ntt::pack<0, 1>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<0, 1>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    alignas(32) ntt::tensor<ntt::vector<bfloat16, P2, P2>,
+                            ntt::fixed_shape<M / P2, N / P2>>
+        ntt_output_f32;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output_f32,
+                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
+                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{});
+    tensor_type_out ntt_output1;
+    unpack<0, 1>(ntt_output_f32, ntt_output1);
+    tensor_type_f32 ntt_output_f32_unpack;
+    ntt::cast(ntt_output1, ntt_output_f32_unpack);
+
+    // ort
+    tensor_type_f32_lhs ntt_lhs_f32;
+    tensor_type_f32_rhs ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32_unpack, ntt_output2));
+}
+
+TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K_N1) {
+    constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
+    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
+
+    constexpr size_t M = 128;
+    constexpr size_t N = 128;
+    constexpr size_t K = 128;
+
+    // init
+    using tensor_type_out = ntt::tensor<bfloat16, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
+    using tensor_type_f32_lhs = ntt::tensor<float, ntt::fixed_shape<M, K>>;
+    using tensor_type_f32_rhs = ntt::tensor<float, ntt::fixed_shape<K, N>>;
+    using tensor_type_f8_lhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, K>>;
+    using tensor_type_f8_rhs =
+        ntt::tensor<float_e4m3_t, ntt::fixed_shape<K, N>>;
+    tensor_type_f8_lhs ntt_lhs_f8;
+    tensor_type_f8_rhs ntt_rhs_f8;
+    NttTest::init_tensor(ntt_lhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+    NttTest::init_tensor(ntt_rhs_f8, (float_e4m3_t)-448.f, (float_e4m3_t)448.f);
+
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P1, P1>,
+                            ntt::fixed_shape<M / P1, K / P1>>
+        p_ntt_lhs;
+    alignas(32) ntt::tensor<ntt::vector<float_e4m3_t, P1, P1>,
+                            ntt::fixed_shape<K / P1, N / P1>>
+        p_ntt_rhs;
+    ntt::pack<0, 1>(ntt_lhs_f8, p_ntt_lhs);
+    ntt::pack<0, 1>(ntt_rhs_f8, p_ntt_rhs);
+
+    // ntt
+    alignas(32) ntt::tensor<ntt::vector<bfloat16, P2, P2>,
+                            ntt::fixed_shape<M / P2, N / P2>>
+        ntt_output_f32;
+    ntt::matmul<false>(p_ntt_lhs, p_ntt_rhs, ntt_output_f32,
+                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{},
+                       ntt::fixed_shape<0, 1>{}, ntt::fixed_shape<0>{});
+    tensor_type_out ntt_output1;
+    unpack<0, 1>(ntt_output_f32, ntt_output1);
+    tensor_type_f32 ntt_output_f32_unpack;
+    ntt::cast(ntt_output1, ntt_output_f32_unpack);
+
+    // ort
+    tensor_type_f32_lhs ntt_lhs_f32;
+    tensor_type_f32_rhs ntt_rhs_f32;
+    ntt::cast(ntt_lhs_f8, ntt_lhs_f32);
+    ntt::cast(ntt_rhs_f8, ntt_rhs_f32);
+    auto ort_lhs = NttTest::ntt2ort(ntt_lhs_f32);
+    auto ort_rhs = NttTest::ntt2ort(ntt_rhs_f32);
+    auto ort_output = ortki_MatMul(ort_lhs, ort_rhs);
+
+    // compare
+    tensor_type_f32 ntt_output2;
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32_unpack, ntt_output2));
+}
+
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
