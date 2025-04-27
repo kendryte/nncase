@@ -207,7 +207,7 @@ public partial class CPU
         return new Call(new TIR.CPU.ShapeOf(), inputs, ret);
     }
 
-    public static Expr ConstantOfShape(Expr shape,  Expr value, Expr ret)
+    public static Expr ConstantOfShape(Expr shape, Expr value, Expr ret)
     {
         return new Call(new TIR.CPU.ConstantOfShape(), shape, value, ret);
     }
