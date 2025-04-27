@@ -9,5 +9,4 @@ public sealed partial class ConstantOfShape : CPUKernelOp
     public static readonly ParameterInfo Shape = new(typeof(ConstantOfShape), 0, "shape");
     public static readonly ParameterInfo Value = new(typeof(ConstantOfShape), 1, "value");
     public static readonly ParameterInfo Output = new(typeof(ConstantOfShape), 2, "output");
-
 }

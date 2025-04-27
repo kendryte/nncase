@@ -216,5 +216,4 @@ public partial class CPU
     {
         return new Call(new TIR.CPU.Range(), begin, end, step, ret);
     }
-
 }

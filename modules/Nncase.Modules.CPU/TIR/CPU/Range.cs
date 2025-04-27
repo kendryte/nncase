@@ -20,5 +20,4 @@ public sealed partial class Range : CPUKernelOp
     /// Gets step.
     /// </summary>
     public static readonly ParameterInfo Step = new(typeof(Range), 2, "step");
-
 }

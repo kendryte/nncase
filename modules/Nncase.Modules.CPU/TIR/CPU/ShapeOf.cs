@@ -9,5 +9,4 @@ public sealed partial class ShapeOf : CPUKernelOp
     public static readonly ParameterInfo Input = new(typeof(ShapeOf), 0, "input");
 
     public static readonly ParameterInfo Output = new(typeof(ShapeOf), 1, "output");
-
 }

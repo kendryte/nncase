@@ -15,7 +15,6 @@ namespace Nncase.Passes.Rules.Neutral;
 [RuleGenerator]
 public partial class SimplifySelect : IRewriteRule
 {
-
     private readonly Pattern _operandPattern = IsWildcard("operand");
 
     public SimplifySelect()

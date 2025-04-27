@@ -16,7 +16,6 @@ namespace Nncase.Passes.Rules.Neutral;
 [RuleGenerator]
 public partial class SimplifyBinaryCeilDiv : RewriteRule<Pattern>
 {
-
     public override Pattern Pattern { get; } = IsBinary(
         "binary",
         "binaryCall",
