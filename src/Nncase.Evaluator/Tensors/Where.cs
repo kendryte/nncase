@@ -197,7 +197,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
                 break;
             case (SBPSplit sa, SBPBroadCast):
                 // invalid (S, B) if B is not broacast
-                if (b[axis - padB] != 1)
+                if (b[axis - padB] is { IsFixed: false } || (b[axis - padB] is { IsFixed: true, FixedValue: var fb } && fb != 1))
                 {
                     ret = null;
                 }
@@ -209,7 +209,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
                 break;
             case (SBPBroadCast, SBPSplit sb):
                 // invalid (B, S) if A is not broacast
-                if (a[axis - padA] != 1)
+                if (a[axis - padA] is { IsFixed: false } || (a[axis - padA] is { IsFixed: true, FixedValue: var fa } && fa != 1))
                 {
                     ret = null;
                 }

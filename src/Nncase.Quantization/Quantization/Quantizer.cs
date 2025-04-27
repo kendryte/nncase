@@ -148,7 +148,7 @@ internal partial class Quantizer
         bool exportQuantScheme = _quantizeOptions.ExportQuantScheme;
         bool exportWeightRangeByChannel = _quantizeOptions.ExportWeightRangeByChannel;
 
-        if (!configExist)
+        if (!configExist && _target.Name != "xpu")
         {
             int srcBinSize = 8192;
             int dstBinSize = 256;

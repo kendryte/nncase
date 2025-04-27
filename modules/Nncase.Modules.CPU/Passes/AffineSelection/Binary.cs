@@ -12,9 +12,9 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes;
 
-public sealed partial class CPUAffineSelectionPass
+public partial class CPUAffineSelectionPass
 {
-    private Expr SelectBinary(Binary binary, Call call, Expr output)
+    public Expr SelectBinary(Binary binary, Call call, Expr output)
     {
         var lhs = call[Binary.Lhs];
         var rhs = call[Binary.Rhs];
