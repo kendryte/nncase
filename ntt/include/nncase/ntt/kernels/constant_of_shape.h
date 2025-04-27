@@ -25,7 +25,7 @@
 namespace nncase::ntt {
 
 template <class TIn, class TValue, class TOut>
-void constant_of_shape(const TIn &shape, const TValue &value,
+void constant_of_shape([[maybe_unused]] const TIn &shape, const TValue &value,
                        TOut &&output) {
     using TOutType = typename std::remove_reference<TOut>::type;
     using TOutElem = typename TOutType::element_type;

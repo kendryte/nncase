@@ -186,7 +186,6 @@ public:
     template <size_t Axis, typename TA, typename TB, typename TC>
     constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
         constexpr size_t indices_rank = sizeof...(IndicesDims);
-        constexpr size_t output_rank = Rank + indices_rank - 1;
 
         ranked_shape<Rank> in_index;
         ranked_shape<indices_rank> indices_index;
