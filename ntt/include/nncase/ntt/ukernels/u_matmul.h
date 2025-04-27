@@ -405,7 +405,6 @@ struct u_matmul_generic {
                             index[0] * a0_grouped[i].shape()[1] + index[1]);
                     });
                 });
-
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
                         b0_grouped[i](index) = (float)b0_tmp[i](
