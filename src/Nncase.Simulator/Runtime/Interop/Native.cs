@@ -62,8 +62,20 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_prime")]
     public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out RTDataType dtype);
 
+    [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_vector")]
+    public static extern unsafe ErrorCode DTypeCreateVector(RTDataType elemType, int[] lanes, int length, out RTVectorType dtype);
+
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_get_typecode")]
     public static extern unsafe TypeCode DTypeGetTypeCode(RTDataType handle);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_vector_dtype_get_elem_type")]
+    public static extern unsafe ErrorCode VectorDTypeGetElemType(RTVectorType handle, out RTDataType elemType);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_vector_dtype_get_lanes_length")]
+    public static extern unsafe ErrorCode VectorDTypeGetLanesLength(RTVectorType handle, out int length);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_vector_dtype_get_lanes")]
+    public static extern unsafe ErrorCode VectorDTypeGetLanes(RTVectorType handle, [Out] int[] lanes);
 
     [DllImport(LibraryName, EntryPoint = "nncase_value_is_tensor")]
     public static extern unsafe ErrorCode ValueIsTensor(IntPtr value, out bool isTensor);

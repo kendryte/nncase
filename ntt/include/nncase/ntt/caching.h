@@ -79,7 +79,7 @@ template <class TConfig> class attention_kv_cache {
 
     virtual ~attention_kv_cache() = default;
 
-    constexpr TConfig &config() const noexcept { return TConfig{}; }
+    constexpr TConfig config() const noexcept { return TConfig{}; }
 
     size_t num_seqs() const noexcept { return num_seqs_; }
 
@@ -138,8 +138,7 @@ template <typename TConfig>
 class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
   public:
     using config_t = TConfig;
-    using kv_trait = detail::kv_type_trait<TConfig,
-                                           TConfig::kv_topo_t::rank()>;
+    using kv_trait = detail::kv_type_trait<TConfig, TConfig::kv_topo_t::rank()>;
     using kv_storage_type_t = kv_trait::kv_storage_type_t;
     using kv_storage_shape_t = kv_trait::kv_storage_shape_t;
     using kv_storage_tensor_type_t = kv_trait::kv_storage_tensor_type_t;
@@ -153,26 +152,29 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                              tensor_view<int64_t, ranked_shape<3>> block_table,
                              tensor_view<int64_t, ranked_shape<2>> slot_mapping,
                              size_t num_blocks, kv_tensor_type_t kv_caches)
-        : attention_kv_cache<TConfig>(num_seqs, num_tokens,
-                                               context_lens, seq_lens),
+        : attention_kv_cache<TConfig>(num_seqs, num_tokens, context_lens,
+                                      seq_lens),
           block_table_(block_table),
           slot_mapping_(slot_mapping),
           num_blocks_(num_blocks),
           kv_caches_(kv_caches) {}
 
-    constexpr TConfig &config() const noexcept {
-        return TConfig{};
+    constexpr TConfig config() const noexcept { return TConfig{}; }
+
+    tensor_view<int64_t, ranked_shape<1>> get_block_id(int seq_id,
+                                                       int context_id) {
+        return block_table_
+            .view(ntt::make_ranked_shape(seq_id, context_id, 0),
+                  ntt::make_ranked_shape(1, 1, block_table_.shape()[2]))
+            .squeeze(ntt::fixed_shape<0, 1>());
     }
 
-    tensor_view<int64_t, ranked_shape<2>> get_block_ids(int seq_id) {
-        return block_table_
-            .view(ntt::make_ranked_shape(seq_id, 0, 0),
-                  ntt::make_ranked_shape(1, block_table_.shape()[1],
-                                         block_table_.shape()[2]))
+    tensor_view<int64_t, ranked_shape<1>> get_slot_id(int token_id) {
+        return slot_mapping_
+            .view(ntt::make_ranked_shape(token_id, 0),
+                  ntt::make_ranked_shape(1, slot_mapping_.shape()[1]))
             .squeeze(ntt::fixed_shape<0>());
     }
-
-    auto get_slot_ids() { return slot_mapping_; }
 
     size_t num_blocks() const noexcept { return num_blocks_; }
 
@@ -201,13 +203,17 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     }
 
     auto get_kv_storage(tensor_view<int64_t, ranked_shape<1>> block_id) {
-        constexpr size_t rank = TConfig::kv_topo_t::rank();
-        if constexpr (rank == 0) {
+        constexpr auto kv_topo = TConfig::kv_topo;
+        constexpr size_t topo_rank = kv_topo.rank();
+        auto program_ids = distributed::program_ids();
+        if constexpr (topo_rank == 0) {
             return kv_caches_;
         } else {
-            auto indices = ntt::ranked_shape<rank>();
-            for (size_t i = 0; i < rank; i++) {
-                indices[i] = block_id(i);
+            auto indices = ntt::ranked_shape<topo_rank>();
+            for (size_t i = 0; i < topo_rank; i++) {
+                auto id = block_id(i);
+                // support broadcasting
+                indices[i] = id == -1 ? program_ids[kv_topo[i]] : id;
             }
 
             auto storage_ptr = kv_caches_(indices);
@@ -308,10 +314,10 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         return get_slot_view_from_storage(kind, layer_id, head_id, slot_id);
     }
 
-    void
-    update_slot(attention_cache_kind kind, int layer_id, int head_id,
-                tensor_view<int64_t, ntt::ranked_shape<1>> slot_id,
-                tensor_view<kv_storage_type_t, ntt::ranked_shape<1>> slot) {
+    template <typename T>
+    void update_slot(attention_cache_kind kind, int layer_id, int head_id,
+                     tensor_view<int64_t, ntt::ranked_shape<1>> slot_id,
+                     T slot) {
         auto destView =
             get_slot_view_from_storage(kind, layer_id, head_id, slot_id);
         ntt::tensor_copy(slot, destView);
@@ -319,16 +325,11 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
 
     void
     update_slots(attention_cache_kind kind, int layer_id, int head_id,
-                 tensor_view<int64_t, ntt::ranked_shape<2>> slot_ids,
                  tensor_view<kv_storage_type_t, ntt::ranked_shape<3>> slots) {
         // slots : [num_tokens, numHeads, headDim]
         auto slots_shape = slots.shape();
-        for (int i = 0; i < slot_ids.shape()[0]; i++) {
-            auto slot_id = slot_ids
-                               .view(ntt::make_ranked_shape(i, 0),
-                                     ntt::make_ranked_shape(
-                                         1, config().kv_topo.rank() + 1))
-                               .squeeze(ntt::fixed_shape<0>{});
+        for (int i = 0; i < this.template num_tokens(); i++) {
+            auto slot_id = get_slot_id(i);
             auto slot = slots
                             .view(ntt::make_ranked_shape(i, head_id, 0),
                                   ntt::make_ranked_shape(1, 1, slots_shape[2]))

@@ -138,7 +138,7 @@ public sealed record PagedAttentionKVCacheType() : AttentionKVCacheType
     public override Type CLRType => typeof(IPagedAttentionKVCache);
 
     /// <inheritdoc/>
-    public unsafe override int SizeInBytes => throw new NotSupportedException();
+    public unsafe override int SizeInBytes => 512; // we can't get the concrete size here.
 
     /// <inheritdoc/>
     public override Guid Uuid { get; } = new("f6955016-f185-46fb-aa5f-fdcea1c89ef6");

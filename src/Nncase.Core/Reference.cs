@@ -85,5 +85,5 @@ public sealed record ReferenceType(DataType ElemType) : DataType
     public override Type CLRType { get; } = typeof(Reference<>).MakeGenericType(ElemType.CLRType);
 
     /// <inheritdoc/>
-    public override int SizeInBytes => sizeof(ulong);
+    public override int SizeInBytes => ElemType.SizeInBytes;
 }

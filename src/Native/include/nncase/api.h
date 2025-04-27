@@ -28,6 +28,7 @@ class tuple_node;
 class value_node;
 class type_node;
 class datatype_node;
+class vector_type_node;
 
 namespace runtime {
 class buffer_allocator;
@@ -90,7 +91,22 @@ nncase_host_buffer_unmap(nncase::runtime::host_buffer_node *host_buffer);
 NNCASE_API int nncase_dtype_create_prime(nncase::typecode_t typecode,
                                          nncase::datatype_node **dtype);
 
+NNCASE_API int nncase_dtype_create_vector(nncase::datatype_node *elem_type,
+                                          int32_t *lanes, int32_t length,
+                                          nncase::datatype_node **dtype);
+
 NNCASE_API int nncase_dtype_get_typecode(nncase::datatype_node *dtype);
+
+NNCASE_API int
+nncase_vector_dtype_get_elem_type(nncase::vector_type_node *handle,
+                                  nncase::datatype_node **elemType);
+
+NNCASE_API int
+nncase_vector_dtype_get_lanes_length(nncase::vector_type_node *handle,
+                                     int32_t *length);
+
+NNCASE_API int nncase_vector_dtype_get_lanes(nncase::vector_type_node *handle,
+                                             int32_t *lanes);
 
 NNCASE_API int nncase_value_is_tensor(nncase::value_node *value,
                                       bool *is_tensor);
@@ -127,10 +143,12 @@ NNCASE_API int nncase_tuple_get_fields(nncase::tuple_node *tuple,
 // nncase_attention_config_set_num_layers(nncase::attention_config_node *config,
 //                                        int32_t num_layers);
 // NNCASE_API int
-// nncase_attention_config_get_num_kv_heads(nncase::attention_config_node *config,
+// nncase_attention_config_get_num_kv_heads(nncase::attention_config_node
+// *config,
 //                                          int32_t *num_kv_heads);
 // NNCASE_API int
-// nncase_attention_config_set_num_kv_heads(nncase::attention_config_node *config,
+// nncase_attention_config_set_num_kv_heads(nncase::attention_config_node
+// *config,
 //                                          int32_t num_kv_heads);
 // NNCASE_API int
 // nncase_attention_config_get_head_dim(nncase::attention_config_node *config,
@@ -171,7 +189,8 @@ NNCASE_API int nncase_tuple_get_fields(nncase::tuple_node *tuple,
 
 // NNCASE_API int nncase_paged_attenion_scheduler_create(
 //     nncase::paged_attention_config_node *config, int32_t num_blocks,
-//     int32_t max_model_len, nncase::paged_attention_scheduler_node **scheduler);
+//     int32_t max_model_len, nncase::paged_attention_scheduler_node
+//     **scheduler);
 
 // NNCASE_API int nncase_paged_attenion_scheduler_schedule(
 //     nncase::paged_attention_scheduler_node *scheduler,
@@ -204,10 +223,10 @@ NNCASE_API int nncase_paged_attenion_kv_cache_update_output_slot(
 */
 
 // NNCASE_API int nncase_paged_attenion_kv_cache_get_sub_block(
-//     nncase::paged_attention_kv_cache_node *cache, int *indices, int indices_len,
-//     nncase::tensor_node **sub_block);
+//     nncase::paged_attention_kv_cache_node *cache, int *indices, int
+//     indices_len, nncase::tensor_node **sub_block);
 
 // NNCASE_API int nncase_paged_attenion_kv_cache_set_sub_block(
-//     nncase::paged_attention_kv_cache_node *cache, int *indices, int indices_len,
-//     nncase::tensor_node *sub_block);
+//     nncase::paged_attention_kv_cache_node *cache, int *indices, int
+//     indices_len, nncase::tensor_node *sub_block);
 }

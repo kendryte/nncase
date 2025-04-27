@@ -18,6 +18,7 @@ void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
 
     using mesh_type = typename T7::mesh_type;
     auto program_ids = distributed::program_ids();
+    distributed::topology_synchronize(); // sync for shard kv cache.
 
     apply(kv_topo_t{}, [&](auto program_index) {
         for (size_t i = 0; i < kv_topo_t::rank(); i++) {
@@ -48,6 +49,22 @@ void update_paged_attention_kv_cache(
     [[maybe_unused]] caching::attention_cache_kind kind,
     [[maybe_unused]] size_t layer_id) {
     auto kv_cache = kv_cache_tensor(0);
+    auto local_slot = slot_tensor.local();
+    using mesh_type = typename T0::mesh_type;
+    // slots : [num_tokens -> x, numHeads -> [die,y], headDim]
+    auto program_ids = distributed::program_ids();
+    auto mesh_index = mesh_type::index_from_program_id(program_ids);
+    auto head_id = mesh_index[3]; // note die head was broadcasting.
+    auto token_id = mesh_index[2];
+
+    // todo support core token nums > 1.
+    auto slot_id = kv_cache.get_slot_id(token_id);
+    auto slot = local_slot
+                    .view(ntt::make_ranked_shape(0, 0, 0),
+                          ntt::make_ranked_shape(1, 1, local_slot.shape()[2]))
+                    .squeeze(ntt::fixed_shape<0, 1>{});
+    kv_cache.update_slot(kind, layer_id, head_id, slot_id, slot);
+    distributed::topology_synchronize();
 }
 
 template <class T0, class T1, class T2>
