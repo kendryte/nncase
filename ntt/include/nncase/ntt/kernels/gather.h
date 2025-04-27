@@ -188,24 +188,17 @@ public:
         constexpr size_t indices_rank = sizeof...(IndicesDims);
         constexpr size_t output_rank = Rank + indices_rank - 1;
 
-        // 静态断言验证输出维度
-        static_assert(output_rank == std::remove_reference_t<TC>::shape_type::rank(), "Output rank mismatch!");
-
-        // 动态索引实现
         ranked_shape<Rank> in_index;
         ranked_shape<indices_rank> indices_index;
 
         apply(output.shape(), [&](auto out_index) {
-            // 静态维度部分直接从输出索引拷贝
             loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
 
-            // 动态索引部分
             loop<indices_rank>([&](auto i) {
                 indices_index[i] = out_index[Axis + i];
             });
-            in_index[Axis] = indices(indices_index); // 从静态索引张量获取值
+            in_index[Axis] = indices(indices_index);
 
-            // 剩余维度拷贝
             loop<Rank - Axis - 1>([&](auto i) {
                 in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
             });
@@ -225,24 +218,17 @@ public:
         constexpr size_t rank = sizeof...(Dims);
         constexpr size_t indices_rank = IndicesRank;
 
-        // // 静态断言验证输出维度
-        // static_assert(TC::shape_type::rank() == rank + indices_rank - 1, "Output rank mismatch!");
-
-        // 动态索引实现
         ranked_shape<rank> in_index;
         ranked_shape<indices_rank> indices_index;
 
         apply(output.shape(), [&](auto out_index) {
-            // 静态维度部分直接从输出索引拷贝
             loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
 
-            // 动态索引部分
             loop<indices_rank>([&](auto i) {
                 indices_index[i] = out_index[Axis + i];
             });
-            in_index[Axis] = indices(indices_index); // 从动态索引张量获取值
+            in_index[Axis] = indices(indices_index);
 
-            // 剩余维度拷贝
             loop<rank - Axis - 1>([&](auto i) {
                 in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
             });
