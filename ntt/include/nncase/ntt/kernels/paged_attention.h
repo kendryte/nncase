@@ -28,6 +28,17 @@ void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
         auto remote = kv_caches.template remote<mesh_type::scope>(mesh_index);
         kv_tensor(program_index) = (intptr_t)remote.elements().data();
     });
+    distributed::topology_synchronize(); // sync for shard kv cache.
+    if (program_ids[0] == 0 && program_ids[1] == 0 && program_ids[2] == 0 &&
+        program_ids[3] == 0) {
+        apply(kv_topo_t{}, [&](auto program_index) {
+            printf("[%ld, %ld]: %p", program_index[0], program_index[1],
+                   kv_tensor(program_index));
+            // auto *kv = (intptr_t *)kv_tensor(program_index);
+            // auto *kv_cache = (kv_type_t *)kv;
+            // new (kv_cache) kv_type_t();
+        });
+    }
 
     new (kv_cache) caching::paged_attention_kv_cache<
         typename paged_attention_kv_cache_t::config_t>(
@@ -67,9 +78,21 @@ void update_paged_attention_kv_cache(
     distributed::topology_synchronize();
 }
 
-template <class T0, class T1, class T2>
-void paged_attention([[maybe_unused]] T0 q, [[maybe_unused]] T1 kv_cache_tensor,
+template <class T0, class T1, class T2, class T3>
+void paged_attention([[maybe_unused]] T0 q_tensor,
+                     [[maybe_unused]] T1 kv_cache_tensor,
+                     [[maybe_unused]] T3 extra_tensor,
                      [[maybe_unused]] size_t layer_id,
-                     [[maybe_unused]] T2 output) {}
+                     [[maybe_unused]] T2 output_tensor) {}
 
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+          class T7, class T8>
+void identity_paged_attention_kv_cache(
+    [[maybe_unused]] T0 input, [[maybe_unused]] T1 num_seqs,
+    [[maybe_unused]] T2 num_tokens, [[maybe_unused]] T3 context_lens,
+    [[maybe_unused]] T4 seq_lens, [[maybe_unused]] T5 block_table,
+    [[maybe_unused]] T6 slot_mapping, [[maybe_unused]] T7 num_blocks,
+    [[maybe_unused]] T8 kv_caches) {
+    // just extent the kv cache liveness.
+}
 } // namespace nncase::ntt

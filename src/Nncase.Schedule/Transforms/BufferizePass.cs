@@ -152,9 +152,9 @@ color_dict = {}
 for buffer in buffers:
   source['name'].append(buffer.name)
   width = buffer.time_interval.end - buffer.time_interval.start
-  x = buffer.time_interval.start
+  x = buffer.time_interval.start + (width / 2)
   height = buffer.mem_interval.end - buffer.mem_interval.start
-  y = buffer.mem_interval.start
+  y = buffer.mem_interval.start + (height / 2)
   y_range_max = max(y_range_max, y)
   x_range_max = max(x_range_max, buffer.time_interval.end)
   source['x'].append(x)

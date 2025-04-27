@@ -18,10 +18,11 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     public IRType Visit(ITypeInferenceContext context, PagedAttention target)
     {
         var q = context.CheckArgumentType<IRType>(target, PagedAttention.Q);
-        return q switch
+        var extra = context.CheckArgumentType<IRType>(target, PagedAttention.Extra);
+        return (q, extra) switch
         {
-            DistributedType dq => Visit(context, target, dq),
-            TensorType tq => Visit(context, target, tq),
+            (DistributedType dq, DistributedType dextra) => Visit(context, target, dq, dextra),
+            (TensorType tq, TensorType textra) => Visit(context, target, tq, textra),
             _ => new InvalidType("not support type"),
         };
     }
@@ -217,7 +218,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concatCache; // [num_heads, seq_len, head_dim]
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, TensorType extra)
     {
         var headDim = q.Shape[^1];
         var dims = q.Shape.ToArray();
@@ -225,10 +226,15 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return q with { Shape = dims };
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra)
     {
         if (q.Placement.Name == "cdxyt") // for xpu.
         {
+            if (!extra.AxisPolices.All(p => p is SBPBroadCast))
+            {
+                return new InvalidType("extra should be broadcast!");
+            }
+
             // seq split at x, head split at die and y
             if (q.AxisPolices[0] is SBPSplit { Axes: [2] } &&
                 q.AxisPolices[1] is SBPSplit { Axes: [1, 3] } &&

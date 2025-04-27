@@ -18,5 +18,7 @@ public sealed partial class PagedAttention : Op
 
     public static readonly ParameterInfo KVCaches = new(typeof(PagedAttention), 1, "kvCaches", ParameterKind.Attribute);
 
+    public static readonly ParameterInfo Extra = new(typeof(PagedAttention), 2, "extra", ParameterKind.Input);
+
     public int LayerId { get; }
 }

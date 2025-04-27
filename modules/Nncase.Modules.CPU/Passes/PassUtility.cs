@@ -39,6 +39,7 @@ public static class PassUtility
             or IR.NN.Swish
             or IR.NN.UpdatePagedAttentionKVCache
             or IR.NN.CreatePagedAttentionKVCache
+            or IR.NN.IdentityPagedAttentionKVCache
             or IR.NN.PagedAttention
             or IR.Tensors.Cast
             or IR.Tensors.Concat

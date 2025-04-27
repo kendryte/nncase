@@ -18,7 +18,9 @@ public sealed partial class PagedAttention : CPUKernelOp
 
     public static readonly ParameterInfo KVCaches = new(typeof(PagedAttention), 1, "kvCaches");
 
-    public static readonly ParameterInfo Output = new(typeof(PagedAttention), 2, "Output");
+    public static readonly ParameterInfo Extra = new(typeof(PagedAttention), 2, "extra");
+
+    public static readonly ParameterInfo Output = new(typeof(PagedAttention), 3, "Output");
 
     public int LayerId { get; }
 }
