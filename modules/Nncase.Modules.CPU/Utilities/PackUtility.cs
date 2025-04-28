@@ -17,7 +17,13 @@ public static class PackUtility
             var axis = packedAxes[i];
             if (shape[axis] % lanes[i] != 0)
             {
-                pads[axis, 1] = PadForAlign(shape[axis], lanes[i]) + (extraPads is null ? 0 : extraPads[i]);
+                pads[axis, 1] = PadForAlign(shape[axis], lanes[i]);
+                isPadded = true;
+            }
+
+            if (extraPads != null && extraPads[axis] > 0)
+            {
+                pads[axis, 1] += extraPads[axis];
                 isPadded = true;
             }
         }
