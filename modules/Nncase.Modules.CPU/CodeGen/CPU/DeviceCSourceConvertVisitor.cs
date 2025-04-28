@@ -252,16 +252,16 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 WriteIndWithProfiler($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
                 break;
             case IR.Math.Binary op:
-                str = CSourceUtilities.ContertBinary(op, arguments);
+                str = CSourceUtilities.ConvertBinary(op, arguments);
                 break;
             case IR.Math.Unary op:
-                str = CSourceUtilities.ContertUnary(op, arguments);
+                str = CSourceUtilities.ConvertUnary(op, arguments);
                 break;
             case IR.Math.Compare op:
-                str = CSourceUtilities.ContertCompare(op, arguments);
+                str = CSourceUtilities.ConvertCompare(op, arguments);
                 break;
             case IR.Math.Select op:
-                str = CSourceUtilities.ContertSelect(op, arguments);
+                str = CSourceUtilities.ConvertSelect(op, arguments);
                 break;
             case TIR.CPU.SramPtr op:
                 str = $"g_cpu_mt->sram_address(bid, tid) + {arguments[0].Name}";

@@ -3,16 +3,23 @@
 
 using Nncase.IR;
 
-namespace Nncase
+namespace Nncase;
+
+public enum HuggingFaceAttentionBackendKind : byte
 {
-    public record HuggingFaceOptions
-    {
-        public bool OutputAttentions { get; set; }
+    Default = 0,
+    PagedAttention = 1,
+}
 
-        public bool OutputHiddenStates { get; set; }
+public record HuggingFaceOptions
+{
+    public bool OutputAttentions { get; set; }
 
-        public bool UseCache { get; set; }
+    public bool OutputHiddenStates { get; set; }
 
-        public static HuggingFaceOptions Default => new();
-    }
+    public bool UseCache { get; set; }
+
+    public HuggingFaceAttentionBackendKind AttenionBackend { get; set; }
+
+    public static HuggingFaceOptions Default => new();
 }

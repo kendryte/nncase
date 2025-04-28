@@ -103,7 +103,14 @@ public sealed class ModulePartitionPass : ModulePass
             {
                 algo.FormatVertex += (s, arg) =>
                 {
-                    arg.VertexFormat.Label = $"{arg.Vertex.Expr.GetType().Name}";
+                    arg.VertexFormat.Label = arg.Vertex.Expr switch
+                    {
+                        Call call => $"call({call.Target switch { Op op => op.GetType().Name, BaseFunction f => f.Name, _ => "unknown" }})",
+                        Var var => $"%{var.Name}#{var.GlobalVarIndex})",
+                        Op op => $"op({op.GetType().Name})",
+                        BaseFunction f => $"func({f.Name})",
+                        Expr e => $"{e.GetType().Name}",
+                    };
                 };
             });
         }
@@ -165,7 +172,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
         foreach (var (pre, post) in pairs)
         {
-            if (pre is not (Call or Var or If or IR.Tuple))
+            if (pre is not (Call or Var or If))
             {
                 continue;
             }
@@ -189,10 +196,25 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
                     for (int i = 0; i < tupleType.Fields.Count; i++)
                     {
                         var field = tupleType.Fields[i];
-                        @var = new Var(field) { Metadata = pre.Metadata };
+
+                        if (dynamicVars.Contains(((IR.Tuple)pre).Fields[i]))
+                        {
+                            // can't skip, extractFields will miss some var.
+                            @var = (Var)((IR.Tuple)pre).Fields[i];
+                        }
+                        else if (((IR.Tuple)pre).Fields[i] is TensorConst tensorConst)
+                        {
+                            extractFields[i] = tensorConst;
+                            continue;
+                        }
+                        else
+                        {
+                            @var = new Var(field) { Metadata = pre.Metadata };
+                            @params.Add(@var);
+                            arguments.Add(post[i]);
+                        }
+
                         extractFields[i] = @var;
-                        @params.Add(@var);
-                        arguments.Add(post[i]);
                     }
 
                     extractDict.Add(pre, new IR.Tuple(extractFields));

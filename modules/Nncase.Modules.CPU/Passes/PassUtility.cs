@@ -39,11 +39,14 @@ public static class PassUtility
             or IR.NN.Swish
             or IR.Tensors.Cast
             or IR.Tensors.Concat
+            or IR.Tensors.ConstantOfShape
             or IR.Tensors.Expand
             or IR.Tensors.Gather
             or IR.Tensors.GetItem
+            or IR.Tensors.Range
             or IR.Tensors.Reshape
             or IR.Tensors.ScatterND
+            or IR.Tensors.ShapeOf
             or IR.Tensors.Slice
             or IR.Tensors.Stack
             or IR.Tensors.Transpose
@@ -112,14 +115,6 @@ public static class PassUtility
                 if (reduce.ReduceOp == ReduceOp.Prod ||
                  arguments.ToArray()[0].CheckedDataType == DataTypes.Float16 ||
                  !consecutiveAixs)
-                {
-                    return false;
-                }
-
-                break;
-
-            case IR.Tensors.Where where:
-                if (arguments.ToArray()[0].CheckedShape != call.CheckedShape)
                 {
                     return false;
                 }

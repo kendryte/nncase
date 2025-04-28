@@ -28,7 +28,7 @@ template <class TCond, class TX, class TY, class TOut> class where_impl {
   public:
     constexpr void operator()(const TCond &cond, const TX &x, const TY &y,
                               TOut &output) {
-        constexpr auto out_shape = TOut::shape();
+        const auto& out_shape = output.shape(); 
 
         apply(out_shape, [&](auto index) {
             const auto cond_index =

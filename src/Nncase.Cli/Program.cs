@@ -36,7 +36,8 @@ internal partial class Program
         using var compileSession = CompileSession.Create(target, compileOptions);
         using var compileSessionScope = new CompileSessionScope(compileSession);
         var compiler = compileSession.Compiler;
-        IR.IRModule module = await compiler.ImportModuleAsync(Path.GetExtension(compileOptions.InputFile).Trim('.'), compileOptions.InputFile, compileOptions.IsBenchmarkOnly);
+        var inputformat = compileOptions.InputFormat.Any() ? compileOptions.InputFormat : (System.IO.File.Exists(compileOptions.InputFile) ? Path.GetExtension(compileOptions.InputFile).Trim('.') : throw new NotSupportedException($"Input File {compileOptions.InputFile} is directory and not set the input format!"));
+        IR.IRModule module = await compiler.ImportModuleAsync(inputformat, compileOptions.InputFile, compileOptions.IsBenchmarkOnly);
 
         // 3. create the calib dataset
         if (compileOptions.QuantizeOptions.ModelQuantMode == Quantization.ModelQuantMode.UsePTQ)
@@ -126,6 +127,13 @@ internal partial class Program
                 },
                 ModelQuantMode = context.ParseResult.GetValueForOption(compilecmd.ModelQuantMode),
                 QuantScheme = context.ParseResult.GetValueForOption(compilecmd.QuantScheme)!,
+            },
+            HuggingFaceOptions = new()
+            {
+                OutputAttentions = context.ParseResult.GetValueForOption(compilecmd.HFOutputAttentions),
+                OutputHiddenStates = context.ParseResult.GetValueForOption(compilecmd.HFOutputHiddenStates),
+                UseCache = context.ParseResult.GetValueForOption(compilecmd.HFUseCache),
+                AttenionBackend = context.ParseResult.GetValueForOption(compilecmd.HFAttenionBackend),
             },
         };
 

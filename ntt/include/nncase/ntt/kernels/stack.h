@@ -31,7 +31,7 @@ void stack(const std::tuple<TInputs...> &inputs, TOut &&output) {
         auto in_index = concat_dims(left_shape, right_shape);
         loop<sizeof...(TInputs)>([&](auto i) {
             auto input = std::get<i>(inputs);
-            for (out_index[Axis] = 0; out_index[Axis] < inputs.size();
+            for (out_index[Axis] = 0; out_index[Axis] < input.size();
                  out_index[Axis]++) {
                 output(out_index) = input(in_index);
             }

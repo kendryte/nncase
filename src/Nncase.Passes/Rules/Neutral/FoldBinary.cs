@@ -73,3 +73,40 @@ public sealed partial class FoldSameBinary : IRewriteRule
         return operand;
     }
 }
+
+/// <summary>
+/// Fold nop <see cref="IR.Math.Binary"/> by range.
+/// </summary>
+[RuleGenerator]
+public sealed partial class FoldNopBinaryByRange : IRewriteRule
+{
+    public IPattern Pattern { get; } = IsBinary(
+        "binary",
+        "call",
+        x => x.BinaryOp is BinaryOp.Min or BinaryOp.Max,
+        IsWildcard("lhs"),
+        IsTensorConst("rhs"));
+
+    private Expr? GetReplace(Binary binary, Expr lhs, TensorConst rhs)
+    {
+        if (lhs.Metadata.Range is null)
+        {
+            return null;
+        }
+
+        var lhsRangeMin = lhs.Metadata.Range.Value.Min;
+        var lhsRangeMax = lhs.Metadata.Range.Value.Max;
+
+        if (rhs.CheckedShape.IsScalar)
+        {
+            return binary.BinaryOp switch
+            {
+                BinaryOp.Min when rhs.Value.ToArray<float>().All(x => x >= lhsRangeMax) => lhs,
+                BinaryOp.Max when rhs.Value.ToArray<float>().All(x => x <= lhsRangeMin) => lhs,
+                _ => null,
+            };
+        }
+
+        return null;
+    }
+}

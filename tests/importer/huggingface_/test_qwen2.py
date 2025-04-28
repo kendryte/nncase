@@ -21,28 +21,33 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 def test_qwen2(request):
     cfg = """
+    [compile_opt]
+    shape_bucket_enable = true
+    shape_bucket_range_info = { "sequence_length"=[1, 1024] }
+    shape_bucket_segments_count = 2
+    shape_bucket_fix_var_map = { "batch_size"=1 }
+    
     [huggingface_options]
-    output_attentions = false
+    output_attentions = true
     output_hidden_states = true
-    use_cache = false
+    use_cache = true
 
     [generator]
     [generator.inputs]
     method = 'text'
+    number = 1
+    batch = 1
 
     [generator.inputs.text]
     args = 'tests/importer/huggingface_/prompt.txt'
 
     [generator.calibs]
     method = 'text'
+    number = 1
+    batch = 1
 
     [generator.calibs.text]
     args = 'tests/importer/huggingface_/prompt.txt'
-    
-    #TODO: Need remove!
-    [target]
-    [target.cpu]
-    infer = false
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
@@ -58,4 +63,4 @@ def test_qwen2(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_qwen2.py'])
+    pytest.main(['-vv', __file__])
