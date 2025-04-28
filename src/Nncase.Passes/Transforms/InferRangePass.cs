@@ -297,7 +297,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             // startRange is scaler const, all input are non-negative number (torch.arange)
             Math.Min(startRange.Min, endRange.Min),
             Math.Min(startRange.Min, endRange.Max),
-            endRange.Max - (endRange.Max-startRange.Min)%stepRange.Max,
+            endRange.Max - ((endRange.Max - startRange.Min) % stepRange.Max),
         };
         return new ValueRange<double>(values.Min(), values.Max());
     }
