@@ -1215,6 +1215,26 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 4, 4, 255 }, new[] { 8 }, 0 })]
+    public async Task TestNonUiniformDist(long[] shape, int[] hierarchy, int count)
+    {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
     internal async Task RunCases(string dumpDir, Dictionary<Var, IValue> feedDict, IEnumerable<Expr> posts)
     {
         var postArray = posts.ToArray();
