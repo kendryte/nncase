@@ -33,13 +33,13 @@ def test_llama3_fp8_static(request):
     method = 'text'
 
     [generator.inputs.text]
-    args = 'tests/importer/huggingface_/prompt.txt'
+    args = 'tests/importer/huggingface_/prompt_llama3.txt'
 
     [generator.calibs]
     method = 'text'
 
     [generator.calibs.text]
-    args = 'tests/importer/huggingface_/prompt.txt'
+    args = 'tests/importer/huggingface_/prompt_llama3.txt'
     
     [target.cpu.mode.noptq]
     enabled = true
