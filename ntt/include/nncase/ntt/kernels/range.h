@@ -25,7 +25,7 @@ namespace nncase::ntt {
 
 template <class TBegin, class TEnd, class TStep, class TOut>
 void range(const TBegin &begin, [[maybe_unused]] const TEnd &end, const TStep &step, TOut &&output) {
-    using TOutType = typename std::remove_reference<TOut>::type;
+    using TOutType = typename std::decay_t<TOut>;
     using TOutElem = typename TOutType::element_type;
     const auto size = output.size();
 
