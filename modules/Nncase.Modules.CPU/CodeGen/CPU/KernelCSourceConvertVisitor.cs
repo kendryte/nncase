@@ -619,16 +619,16 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             switch (expr.Target)
             {
                 case IR.Math.Binary op:
-                    str = CSourceUtilities.ContertBinary(op, arguments);
+                    str = CSourceUtilities.ConvertBinary(op, arguments);
                     break;
                 case IR.Math.Unary op:
-                    str = CSourceUtilities.ContertUnary(op, arguments);
+                    str = CSourceUtilities.ConvertUnary(op, arguments);
                     break;
                 case IR.Math.Compare op:
-                    str = CSourceUtilities.ContertCompare(op, arguments);
+                    str = CSourceUtilities.ConvertCompare(op, arguments);
                     break;
                 case IR.Math.Select op:
-                    str = CSourceUtilities.ContertSelect(op, arguments);
+                    str = CSourceUtilities.ConvertSelect(op, arguments);
                     break;
                 case TIR.Load op:
                     str = $"{arguments[0].Name}[{arguments[1].Name}]";
@@ -640,7 +640,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                     str = op.PtrName;
                     break;
                 case IR.Math.Clamp op:
-                    str = CSourceUtilities.ContertClamp(op, arguments);
+                    str = CSourceUtilities.ConvertClamp(op, arguments);
                     break;
                 default:
                     throw new NotSupportedException(expr.Target.GetType().Name);
