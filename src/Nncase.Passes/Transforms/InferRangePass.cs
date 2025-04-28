@@ -295,6 +295,8 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         var values = new[]
         {
             // startRange is scaler const, all input are non-negative number (torch.arange)
+            // But nncase support negative number
+            // Here, we just need a range for creating buffer, equal or bigger than the real size.
             Math.Min(startRange.Min, endRange.Min),
             Math.Max(startRange.Max, endRange.Max),
         };
