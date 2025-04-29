@@ -26,9 +26,19 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pad pad)
     {
-        var input = context.GetOrtArgumentValue(pad, Pad.Input);
+        var input = context.GetArgumentValue(pad, Pad.Input);
         var pads = context.GetInt64OrtTensorArgumentValue(pad, Pad.Pads);
-        var constValue = context.GetOrtArgumentValue(pad, Pad.Value);
+        var constValue = context.GetArgumentValue(pad, Pad.Value);
+
+        var inType = context.CurrentCall.Arguments[Pad.Input.Index].CheckedDataType;
+        if (inType.IsFloat() && inType != DataTypes.Float32)
+        {
+            input = Cast(input.AsTensor(), DataTypes.Float32).Evaluate();
+            constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
+        }
+
+        var inputOrt = input.AsTensor().ToOrtTensor();
+        var constValueOrt = constValue.AsTensor().ToOrtTensor();
 
         var mode = pad.PadMode switch
         {
@@ -49,7 +59,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
 
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
                 Trace.Assert(quantParam.Count == 1);
-                var inputFloat = input.ToArray<float>();
+                var inputFloat = inputOrt.ToArray<float>();
                 for (var i = 0; i < inputFloat.Length; i++)
                 {
                     var inputBufQuant = (double)((inputFloat[i] / (double)quantParam[0].Scale) + quantParam[0].ZeroPoint);
@@ -62,17 +72,29 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
                     inputFloat[i] = (float)inputBufDeQuant;
                 }
 
-                input = OrtKISharp.Tensor.MakeTensor(inputFloat, input.Shape);
+                inputOrt = OrtKISharp.Tensor.MakeTensor(inputFloat, inputOrt.Shape);
             }
         }
 
         if (pad.PadMode == PadMode.Symmetric)
         {
-            return SymmetricPad(input, ToOnnxPadFormat(pads), constValue).ToValue();
+            var ret = SymmetricPad(inputOrt, ToOnnxPadFormat(pads), constValueOrt).ToValue();
+            if (inType.IsFloat() && inType != DataTypes.Float32)
+            {
+                ret = Cast(ret.AsTensor(), inType).Evaluate().AsTensor();
+            }
+
+            return ret;
         }
         else
         {
-            return OrtKI.Pad(input, ToOnnxPadFormat(pads), constValue, mode).ToValue();
+            var ret = OrtKI.Pad(inputOrt, ToOnnxPadFormat(pads), constValueOrt, mode).ToValue();
+            if (inType.IsFloat() && inType != DataTypes.Float32)
+            {
+                ret = Cast(ret.AsTensor(), inType).Evaluate().AsTensor();
+            }
+
+            return ret;
         }
     }
 
