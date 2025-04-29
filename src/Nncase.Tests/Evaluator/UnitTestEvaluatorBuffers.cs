@@ -38,7 +38,7 @@ public class UnitTestEvaluatorBuffers : TestClassBase
     public void TestDDrOf()
     {
         var input = OrtKI.Random(1);
-        var expr = IR.F.Buffer.DDrOf(input.ToTensor());
+        var expr = IR.F.Buffer.AddressOf(input.ToTensor());
         CompilerServices.InferenceType(expr);
     }
 

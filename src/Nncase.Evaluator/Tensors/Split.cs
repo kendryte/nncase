@@ -57,18 +57,19 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
 
     private IRType Visit(ITypeInferenceContext context, Split target, TensorType input)
     {
+        var inShape = input.Shape as RankedShape;
         if (context.GetArgument(target, Split.Axis) is TensorConst axis_con &&
             context.GetArgument(target, Split.Sections) is TensorConst sections_con)
         {
             var axis_v = Util.PositiveIndex(axis_con.Value.ToScalar<int>(), input.Shape.Rank);
             var sections_v = sections_con.Value.Cast<int>();
 
-            if (input.Shape.IsUnranked)
+            if (inShape is null)
             {
                 return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = Shape.Unranked }), (int)sections_v.Length));
             }
 
-            var inshape = input.Shape.ToArray();
+            var inshape = inShape.ToArray();
 
             // split
             if (sections_v.Length == 1)
@@ -81,7 +82,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
                 var outshape = new Dimension[inshape.Length];
                 Array.Copy(inshape, outshape, inshape.Length);
                 outshape[axis_v] = inshape[axis_v].FixedValue / sections_v[0];
-                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = new Shape(outshape) }), sections_v[0]));
+                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = new RankedShape(outshape) }), sections_v[0]));
             }
             else
             {
@@ -94,11 +95,16 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
                 Array.Copy(inshape, outshape, inshape.Length);
                 return new TupleType(from section in sections_v
                                      let x = outshape[axis_v] = section
-                                     select input with { Shape = new Shape(outshape) });
+                                     select input with { Shape = new RankedShape(outshape) });
             }
         }
 
-        var splitedShape = input.Shape.ToArray();
+        if (inShape is null)
+        {
+            return new TupleType(new IRType[] { input with { Shape = Shape.Unranked } }, IsVariadic: true);
+        }
+
+        var splitedShape = inShape.ToArray();
         if (context.GetArgument(target, Split.Axis) is TensorConst axisCon)
         {
             var axisV = Util.PositiveIndex(axisCon.Value.ToScalar<int>(), input.Shape.Rank);

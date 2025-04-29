@@ -20,11 +20,11 @@ public partial class FoldNopReduce : RewriteRule<Pattern>
         "reduce",
         _ => true,
         IsWildcard("input") with { TypePattern = HasShape(new[] { 1 }) },
-        IsTensorConst("axis"),
+        IsFixedShape("axis"),
         IsTensorConst("initValue"),
         IsWildcard("keepDims"));
 
-    private Expr? GetReplace(Expr input, Tensor keepDims)
+    private BaseExpr? GetReplace(Expr input, Tensor keepDims)
     {
         if (keepDims.ToScalar<bool>())
         {

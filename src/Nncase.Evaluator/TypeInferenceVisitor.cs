@@ -84,7 +84,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
             VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
         }
 
-        var type = new TensorType(expr.ElemType, new Shape(expr.Dimensions));
+        var type = new TensorType(expr.ElemType, new RankedShape(expr.Dimensions));
         return type;
     }
 
@@ -357,24 +357,24 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
 
         Visit(expr.Expression);
 
-        if (expr.Var.TypeAnnotation is not AnyType)
+        if (expr.Var is Var var && var.TypeAnnotation is not AnyType)
         {
             // now we need custom visit the var.
             type = new InvalidType("The Let Bind Var Must Be Any Type!");
-            SetCheckedType(expr.Var, type);
+            SetCheckedType(var, type);
             SetCheckedType(expr.Body, type);
             return type;
         }
         else
         {
             // now change the var checkedtype
-            SetCheckedType(expr.Var, expr.Expression.CheckedType);
+            SetCheckedType((BaseExpr)expr.Var, expr.Expression.CheckedType);
             Visit(expr.Body);
             return VisitLeafLet(expr);
         }
     }
 
-    protected override IRType DispatchVisit(Expr expr)
+    protected override IRType DispatchVisit(BaseExpr expr)
     {
         if (IRHelpers.GetRawCheckedType(expr) is null)
         {
@@ -394,7 +394,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <summary>
     /// Verify the expression sub field type is valid.
     /// </summary>
-    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
+    private void VerifySubField(BaseExpr parent, BaseExpr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
     {
         pattern ??= TypePatternUtility.IsIRType();
         if (field.CheckedType is InvalidType invalidType)
@@ -414,7 +414,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <summary>
     /// set expr's current type.
     /// </summary>
-    private void SetCheckedType(Expr expr, IRType type)
+    private void SetCheckedType(BaseExpr expr, IRType type)
     {
         // note can't determine whether to update checkedtype
         // eg. old call[x,y] shape is [5,6]

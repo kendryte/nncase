@@ -276,9 +276,9 @@ internal sealed class TestReconstructor : ExprReconstructor<ExprVertex, ExprEdge
     protected override Expr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
         var pairs = GetClusterArgumentPairs(cluster);
-        var paramDict = new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance);
-        var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-        var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+        var paramDict = new Dictionary<BaseExpr, Var>(ReferenceEqualityComparer.Instance);
+        var extractDict = new Dictionary<BaseExpr, BaseExpr>(ReferenceEqualityComparer.Instance);
+        var argumentDict = new Dictionary<Var, BaseExpr>(ReferenceEqualityComparer.Instance);
         foreach (var (pre, post) in pairs)
         {
             if (pre is not (Call or Var or If))
@@ -301,7 +301,7 @@ internal sealed class TestReconstructor : ExprReconstructor<ExprVertex, ExprEdge
 
         var cloner = new ExprClusterCloner(extractDict);
         var outVertices = cluster.OutVertices(Algo.ClusteredGraph).ToArray();
-        var clones = new List<Expr>();
+        var clones = new List<BaseExpr>();
         foreach (var outVertex in outVertices)
         {
             clones.Add(cloner.Clone(outVertex.Expr, default));
@@ -312,15 +312,15 @@ internal sealed class TestReconstructor : ExprReconstructor<ExprVertex, ExprEdge
         return new Call(fusion, paramDict.Values.OfType<Var>().Select(v => argumentDict[v]).ToArray());
     }
 
-    private Expr PostProcess(List<Expr> clones)
+    private BaseExpr PostProcess(List<BaseExpr> clones)
     {
-        Expr PostProcessSingle(Expr cloned, out bool changed)
+        BaseExpr PostProcessSingle(BaseExpr cloned, out bool changed)
         {
             changed = false;
             switch (cloned)
             {
                 case IR.Tuple tp:
-                    var nFields = new List<Expr>();
+                    var nFields = new List<BaseExpr>();
                     foreach (var item in tp.Fields)
                     {
                         nFields.Add(PostProcessSingle(item, out var childChanged));

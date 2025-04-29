@@ -24,7 +24,7 @@ namespace Nncase.Importer
             var remains = equation.Split(',')[1];
             var inTerm2 = remains.Substring(0, remains.IndexOf('-', System.StringComparison.Ordinal));
             var outTerm = remains.Split('>')[1];
-            var (lhs, rhs) = GetInputExprs(op, 0, 1);
+            var (lhs, rhs) = GetInputExprs<Expr, Expr>(op, 0, 1);
 
             // i,j->ij
             if (inTerm1.Length == 1 && inTerm2.Length == 1 && outTerm.Length == 2 && inTerm1 + inTerm2 == outTerm)
@@ -37,10 +37,10 @@ namespace Nncase.Importer
             && inTerm1.Substring(0, 2) + inTerm2.Substring(1, 2) == outTerm
             && inTerm1.Last() == inTerm2.First())
             {
-                var lhsShape = F.Tensors.ShapeOf(lhs);
-                var rhsShape = F.Tensors.ShapeOf(rhs);
-                var mm = F.Math.MatMul(lhs, F.Tensors.Reshape(rhs, new Shape(rhsShape[0], rhsShape[1] * rhsShape[2])));
-                return F.Tensors.Reshape(mm, new Shape(lhsShape[0], lhsShape[1], rhsShape[1], rhsShape[2]));
+                var lhsShape = F.Tensors.ShapeOf(lhs).AsShape();
+                var rhsShape = F.Tensors.ShapeOf(rhs).AsShape();
+                var mm = F.Math.MatMul(lhs, F.Tensors.Reshape(rhs, [rhsShape[0], rhsShape[1] * rhsShape[2]]));
+                return F.Tensors.Reshape(mm, [lhsShape[0], lhsShape[1], rhsShape[1], rhsShape[2]]);
             }
 
             // ibnd,jbnd->bnij
@@ -49,13 +49,13 @@ namespace Nncase.Importer
             && inTerm1.Substring(1, 2) == inTerm2.Substring(1, 2)
             && inTerm1.Last() == inTerm2.Last())
             {
-                var lhsShape = F.Tensors.ShapeOf(lhs);
-                var rhsShape = F.Tensors.ShapeOf(rhs);
+                var lhsShape = F.Tensors.ShapeOf(lhs).AsShape();
+                var rhsShape = F.Tensors.ShapeOf(rhs).AsShape();
                 var mm = F.Math.MatMul(
-                F.Tensors.Transpose(F.Tensors.Reshape(lhs, new Shape(lhsShape[0], lhsShape[1] * lhsShape[2], lhsShape[3])), new[] { 1, 0, 2 }),
-                F.Tensors.Transpose(F.Tensors.Reshape(rhs, new Shape(rhsShape[0], rhsShape[1] * rhsShape[2], rhsShape[3])), new[] { 1, 2, 0 }));
+                F.Tensors.Transpose(F.Tensors.Reshape(lhs, [lhsShape[0], lhsShape[1] * lhsShape[2], lhsShape[3]]), new[] { 1, 0, 2 }),
+                F.Tensors.Transpose(F.Tensors.Reshape(rhs, [rhsShape[0], rhsShape[1] * rhsShape[2], rhsShape[3]]), new[] { 1, 2, 0 }));
 
-                return F.Tensors.Reshape(mm, new Shape(lhsShape[1], lhsShape[2], lhsShape[0], rhsShape[0]));
+                return F.Tensors.Reshape(mm, [lhsShape[1], lhsShape[2], lhsShape[0], rhsShape[0]]);
             }
 
             // bnij,jbnd->ibnd
@@ -64,13 +64,13 @@ namespace Nncase.Importer
                 && inTerm1.Substring(0, 2) == inTerm2.Substring(1, 2)
                 && inTerm1.Last() == inTerm2.First())
             {
-                var lhsShape = F.Tensors.ShapeOf(lhs);
-                var rhsShape = F.Tensors.ShapeOf(rhs);
+                var lhsShape = F.Tensors.ShapeOf(lhs).AsShape();
+                var rhsShape = F.Tensors.ShapeOf(rhs).AsShape();
                 var mm = F.Math.MatMul(
-                F.Tensors.Reshape(lhs, new Shape(lhsShape[0] * lhsShape[1], lhsShape[2], lhsShape[3])),
-                F.Tensors.Transpose(F.Tensors.Reshape(rhs, new Shape(rhsShape[0], rhsShape[1] * rhsShape[2], rhsShape[3])), new[] { 1, 0, 2 }));
+                F.Tensors.Reshape(lhs, [lhsShape[0] * lhsShape[1], lhsShape[2], lhsShape[3]]),
+                F.Tensors.Transpose(F.Tensors.Reshape(rhs, [rhsShape[0], rhsShape[1] * rhsShape[2], rhsShape[3]]), new[] { 1, 0, 2 }));
 
-                return F.Tensors.Reshape(F.Tensors.Transpose(mm, new[] { 1, 0, 2 }), new Shape(lhsShape[2], lhsShape[0], lhsShape[1], rhsShape[3]));
+                return F.Tensors.Reshape(F.Tensors.Transpose(mm, new[] { 1, 0, 2 }), [lhsShape[2], lhsShape[0], lhsShape[1], rhsShape[3]]);
             }
 
             // ibnd,hnd->ibh
@@ -78,13 +78,13 @@ namespace Nncase.Importer
                 && inTerm1.Substring(0, 2) + inTerm2.First() == outTerm
                 && inTerm1.Substring(2, 2) == inTerm2.Substring(1, 2))
             {
-                var lhsShape = F.Tensors.ShapeOf(lhs);
-                var rhsShape = F.Tensors.ShapeOf(rhs);
+                var lhsShape = F.Tensors.ShapeOf(lhs).AsShape();
+                var rhsShape = F.Tensors.ShapeOf(rhs).AsShape();
                 var mm = F.Math.MatMul(
-                F.Tensors.Reshape(lhs, new Shape(lhsShape[0], lhsShape[1], lhsShape[2] * lhsShape[3])),
-                F.Tensors.Transpose(F.Tensors.Reshape(rhs, new Shape(rhsShape[0], rhsShape[1] * rhsShape[2])), new[] { 1, 0 }));
+                F.Tensors.Reshape(lhs, [lhsShape[0], lhsShape[1], lhsShape[2] * lhsShape[3]]),
+                F.Tensors.Transpose(F.Tensors.Reshape(rhs, [rhsShape[0], rhsShape[1] * rhsShape[2]]), new[] { 1, 0 }));
 
-                return F.Tensors.Reshape(mm, new Shape(lhsShape[0], lhsShape[1], rhsShape[0]));
+                return F.Tensors.Reshape(mm, [lhsShape[0], lhsShape[1], rhsShape[0]]);
             }
 
             throw new InvalidOperationException("Not Yet Supported Einsum Operation!");

@@ -92,8 +92,8 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
     public IRType Visit(ITypeInferenceContext context, SpaceToBatch target)
     {
         var input = context.CheckArgumentType<TensorType>(target, SpaceToBatch.Input);
-        var blockShape = context.CheckArgumentType<TensorType>(target, SpaceToBatch.BlockShape);
-        var paddings = context.CheckArgumentType<TensorType>(target, SpaceToBatch.Paddings);
+        var blockShape = context.CheckArgumentType<ShapeType>(target, SpaceToBatch.BlockShape);
+        var paddings = context.CheckArgumentType<PaddingsType>(target, SpaceToBatch.Paddings);
         return Visit(context, target, input, blockShape, paddings);
     }
 
@@ -181,23 +181,23 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
         return Enumerable.Range(begin, end - begin);
     }
 
-    private IRType Visit(ITypeInferenceContext context, SpaceToBatch target, TensorType input, TensorType blockShape, TensorType paddings)
+    private IRType Visit(ITypeInferenceContext context, SpaceToBatch target, TensorType input, ShapeType blockShape, PaddingsType paddings)
     {
         var blockShapeValue = (Shape)context.GetArgument(target, SpaceToBatch.BlockShape);
         var paddingsValue = (Paddings)context.GetArgument(target, SpaceToBatch.Paddings);
-        if (blockShapeValue.IsRanked)
+        if (blockShapeValue is RankedShape rankedBlockShape)
         {
             int m = blockShapeValue.Rank;
 
             // var padded_shape = input.Shape.ToList();
-            var inShape = input.Shape.ToList();
+            var inShape = ((RankedShape)input.Shape).ToList();
             var padded_shape = ShapeNCHWToNHWC(inShape);
 
             for (int i = 0; i < m; i++)
             {
                 if (!padded_shape[1 + i].IsUnknown)
                 {
-                    padded_shape[1 + i] += paddingsValue[2 * i].Before + paddingsValue[2 * i].After;
+                    padded_shape[1 + i] += paddingsValue[i].Sum();
                 }
             }
 
@@ -218,14 +218,14 @@ public class SpaceToBatchEvaluator : IEvaluator<SpaceToBatch>, ITypeInferencer<S
                 outshape.Add(padded_shape[i]);
             }
 
-            foreach (var block in blockShapeValue)
+            foreach (var block in rankedBlockShape)
             {
                 outshape[0] *= block;
             }
 
             var outputShape = ShapeNHWCToNCHW(inShape, outshape);
 
-            return input with { Shape = new Shape(outputShape) };
+            return input with { Shape = new RankedShape(outputShape) };
         }
 
         // return new TensorType(input.DType, Enumerable.Repeat(Dimension.Unknown, input.Shape.Count).ToArray());

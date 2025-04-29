@@ -30,19 +30,19 @@ namespace Nncase.Passes.Rules.Neutral;
 // {
 //     /// <inheritdoc/>
 //     public override Pattern Pattern { get; } = IsSpaceToBatch(
-//         IsWildcard("input") with { TypePattern = HasRank() },
+//         IsWildcard("input") with { TypePattern = HasRankedShape() },
 //         IsShape("blockShape") with { TypePattern = HasFixedShape() },
-//         IsShape("paddings"));
+//         IsPaddings("paddings"));
 
-//     public Expr? GetReplace(Expr input, Shape blockShape, Shape paddings)
+//     public Expr? GetReplace(Expr input, RankedShape blockShape, Paddings paddings)
 //     {
-//         var spatialSize = (int)blockShape.CheckedShape.Size;
+//         var spatialSize = (int)blockShape.Size;
 //         var remainShapeSize = input.CheckedShape.Rank - spatialSize - 1;
 //         var newPaddings = Enumerable.Repeat((Dimension)0, (1 + spatialSize + remainShapeSize) * 2).ToArray();
 //         for (int i = 0; i < spatialSize; i++)
 //         {
-//             newPaddings[1 + i] = paddings[i, 0];
-//             newPaddings[1 + (newPaddings.Length / 2) + i] = paddings[i, 1];
+//             newPaddings[1 + i] = paddings[i].Before;
+//             newPaddings[1 + (newPaddings.Length / 2) + i] = paddings[i].After;
 //         }
 
 //         var tmpPaddings = Stack(new IR.Tuple(newPaddings), 0);
@@ -99,16 +99,16 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsBatchToSpace(
-        IsWildcard("input") with { TypePattern = HasRank() },
+        IsWildcard("input") with { TypePattern = HasRankedShape() },
         IsFixedShape("blockShape"),
         IsPaddings("crop"));
 
-    public Expr? GetReplace(Expr input, Shape blockShape, Paddings crop)
+    public Expr? GetReplace(Expr input, RankedShape blockShape, Paddings crop)
     {
         // to nhwc
         var input0 = NCHWToNHWC(input);
         var blockLen = blockShape.Rank;
-        var xShape = input0.CheckedShape;
+        var xShape = (RankedShape)input0.CheckedShape;
         var xLen = xShape.Rank;
         var spatial = xShape[1..(blockLen + 1)];
         var depth = xShape[(blockLen + 1)..];
@@ -132,7 +132,7 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
 
         var perm = GetPerm(xLen, blockLen);
 
-        var newShape = new Shape(indices.Select(i => shape1[i]).ToArray());
+        var newShape = new RankedShape(indices.Select(i => shape1[i]).ToArray());
         var x2 = Reshape(input0, newShape);
         var tr2 = Transpose(x2, perm);
         Dimension[] shape2 = [-1, .. targetSpatial, .. depth];

@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Onnx;
 using static Nncase.IR.F.Tensors;
 using F = Nncase.IR.F;
@@ -17,7 +18,7 @@ namespace Nncase.Importer
     {
         private Expr VisitConv2D(in NodeProto op)
         {
-            var (input, weights) = GetInputExprs(op, 0, 1);
+            var (input, weights) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var bias = GetBias(op, weights);
             var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
             var dilation = GetDilationsAttribute(op).ToList();
@@ -71,15 +72,15 @@ namespace Nncase.Importer
             return conv1d;
         }
 
-        private Expr GetPadsAttribute(NodeProto op, bool isConv1D = false)
+        private Paddings GetPadsAttribute(NodeProto op, bool isConv1D = false)
         {
             var paddings = GetIntsAttribute(op, "pads", 0, 4);
             if (isConv1D)
             {
-                paddings = new[] { paddings[0], 0, paddings[1], 0 };
+                paddings = [paddings[0], 0, paddings[1], 0];
             }
 
-            return ToNncasePadFormat(paddings);
+            return ToNncasePadFormat((Expr)paddings);
         }
 
         private Tensor GetStrideAttribute(NodeProto op)
@@ -96,11 +97,11 @@ namespace Nncase.Importer
         {
             var biasSizeIndex = isConvTranspose ? 1 : 0;
             return op.Input.Count > 2
-                ? GetInputExpr(op, 2)
-                : F.Tensors.Expand(0f, new Shape(Util.ShapeIndex(weights, biasSizeIndex) * groups));
+                ? GetInputExpr<Expr>(op, 2)
+                : F.Tensors.Expand(0f, [Util.ShapeIndex(weights, biasSizeIndex) * groups]);
         }
 
-        private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation, bool isConv1D = false) => autoPad switch
+        private Paddings AutoPad(NodeProto op, string autoPad, Expr input, Expr weights, long[] strides, long[] dilation, bool isConv1D = false) => autoPad switch
         {
             "NOTSET" => GetPadsAttribute(op, isConv1D),
             "SAME_UPPER" => TypeInference.GetPaddings(input.CheckedShape, weights.CheckedShape, strides, dilation, true),

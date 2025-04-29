@@ -44,9 +44,10 @@ public class FlattenEvaluator : IEvaluator<Flatten>, ITypeInferencer<Flatten>, I
     {
         if (context.GetArgument(target, Flatten.Axis) is TensorConst axisV)
         {
+            var inShape = (RankedShape)input.Shape;
             var axisValue = Util.PositiveIndex(axisV.Value.ToScalar<int>(), input);
-            var first = input.Shape.Take(axisValue).Aggregate((Dimension)1, (x, y) => x * y);
-            var second = input.Shape.Take(axisValue..input.Shape.Rank).Aggregate((Dimension)1, (x, y) => x * y);
+            var first = inShape.Take(axisValue).Aggregate((Dimension)1, (x, y) => x * y);
+            var second = inShape.Take(axisValue..input.Shape.Rank).Aggregate((Dimension)1, (x, y) => x * y);
             return input with { Shape = new[] { first, second } };
         }
 

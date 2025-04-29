@@ -28,5 +28,5 @@ public sealed partial class Unsqueeze : Op
     /// <summary>
     /// Gets dimension.
     /// </summary>
-    public static readonly ParameterInfo Dim = new(typeof(Unsqueeze), 1, "dim", HasRank(1) & IsIntegral());
+    public static readonly ParameterInfo Dim = new(typeof(Unsqueeze), 1, "dim", IsShapeType());
 }

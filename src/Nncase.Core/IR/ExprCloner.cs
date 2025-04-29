@@ -16,7 +16,7 @@ namespace Nncase.IR;
 public static class ExprClonerExtensions
 {
     public static T Clone<T>(this T expr, bool cloneOtherFunctions = false)
-        where T : Expr
+        where T : BaseExpr
     {
         return new ExprCloner<Unit>(cloneOtherFunctions).Clone(expr, default);
     }
@@ -26,7 +26,7 @@ public static class ExprClonerExtensions
 /// Expression cloner.
 /// </summary>
 /// <typeparam name="TContext">Clone context.</typeparam>
-public partial class ExprCloner<TContext> : ExprVisitor<Expr, IRType, TContext>
+public partial class ExprCloner<TContext> : ExprVisitor<BaseExpr, IRType, TContext>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ExprCloner{TContext}"/> class.
@@ -43,14 +43,14 @@ public partial class ExprCloner<TContext> : ExprVisitor<Expr, IRType, TContext>
     public bool CloneUnmutated { get; set; } = true;
 
     public T Clone<T>(T expr, TContext context)
-        where T : Expr
+        where T : BaseExpr
         => (T)Visit(expr, context);
 
     public IVar Clone(IVar expr, TContext context)
         => (IVar)Visit((Expr)expr, context);
 
     protected T[] CloneArray<T>(ReadOnlySpan<T> values, TContext context)
-        where T : Expr
+        where T : BaseExpr
     {
         var array = new T[values.Length];
         for (int i = 0; i < values.Length; i++)
@@ -72,32 +72,36 @@ public partial class ExprCloner<TContext> : ExprVisitor<Expr, IRType, TContext>
         return array;
     }
 
-    protected bool IsMutated(Expr expr, TContext context)
+    protected bool IsMutated<T>(T expr, TContext context)
+        where T : BaseExpr
     {
         var newExpr = Visit(expr, context);
         return !ReferenceEquals(expr, newExpr);
     }
 
+    protected bool IsMutated(IVar expr, TContext context) =>
+        IsMutated((BaseExpr)expr, context);
+
     protected bool IsMutatedArray<T>(ReadOnlySpan<T> values, TContext context)
-        where T : Expr
+        where T : BaseExpr
     {
         return values.AsValueEnumerable().Any(v => IsMutated(v, context));
     }
 
     protected bool IsMutatedArray(ReadOnlySpan<IVar> values, TContext context)
-        => IsMutatedArray(SpanUtility.UnsafeCast<IVar, Expr>(values), context);
+        => IsMutatedArray(SpanUtility.UnsafeCast<IVar, BaseExpr>(values), context);
 }
 
 public sealed class ReplacingExprCloner : ExprCloner<Unit>
 {
-    private readonly IReadOnlyDictionary<Expr, Expr> _replaces;
+    private readonly IReadOnlyDictionary<BaseExpr, BaseExpr> _replaces;
 
-    public ReplacingExprCloner(IReadOnlyDictionary<Expr, Expr> replaces)
+    public ReplacingExprCloner(IReadOnlyDictionary<BaseExpr, BaseExpr> replaces)
     {
         _replaces = replaces;
     }
 
-    protected override Expr DispatchVisit(Expr expr, Unit context)
+    protected override BaseExpr DispatchVisit(BaseExpr expr, Unit context)
     {
         if (_replaces.TryGetValue(expr, out var replacement))
         {

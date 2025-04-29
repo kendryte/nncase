@@ -34,7 +34,7 @@ public class UnitTestExpandToBroadcast : TransformTestBase
     public static IEnumerable<object[]> TestExpandToBroadcastNegativeData =>
         new[]
         {
-            new object[] { new long[] { 2, 4, 8 }, new Var(new TensorType(DataTypes.Int32,  new IR.Shape(3))) },
+            new object[] { new long[] { 2, 4, 8 }, new Var(new TensorType(DataTypes.Int32,  new IR.RankedShape(3))) },
         };
 
     [Theory]

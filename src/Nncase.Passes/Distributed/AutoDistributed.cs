@@ -1038,7 +1038,7 @@ public interface IEquality
 {
 }
 
-public record EqualityNode(Expr Expr) : IEquality
+public record EqualityNode(BaseExpr Expr) : IEquality
 {
 }
 
@@ -1091,9 +1091,9 @@ public sealed partial class AutoDistributedPass : FunctionPass
     }
 }
 
-internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, List<Expr>>, Unit>
+internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, List<BaseExpr>>, Unit>
 {
-    private readonly Dictionary<Expr, IEquality> _equalMemo = new();
+    private readonly Dictionary<BaseExpr, IEquality> _equalMemo = new();
 
     private readonly string _moduleKind;
 
@@ -1151,9 +1151,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return true;
     }
 
-    public static IReadOnlyList<Expr> GetLeafCandidateBoxings(Expr expr, IEnumerable<Placement> placements, string moduleKind, ICpuTargetOptions targetOptions)
+    public static IReadOnlyList<BaseExpr> GetLeafCandidateBoxings(BaseExpr expr, IEnumerable<Placement> placements, string moduleKind, ICpuTargetOptions targetOptions)
     {
-        if (expr.CheckedType is InvalidType)
+        if (expr is not Expr
+            || expr.CheckedType is InvalidType)
         {
             return [expr];
         }
@@ -1161,7 +1162,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         if (expr.CheckedType is TupleType tupleType)
         {
             return Enumerable.Range(0, tupleType.Fields.Count).
-                Select(i => expr[i]).
+                Select(i => ((Expr)expr)[i]).
                 Select(e => IsDistributed(e.CheckedType) ? [e] : GetLeafCandidateBoxings(e, placements, moduleKind, targetOptions)).
                 CartesianProduct().
                 Select(fs => new IR.Tuple(fs.ToArray())).
@@ -1176,7 +1177,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     .Where(p => SingleNodeMemoryCheck(new((TensorType)expr.CheckedType, p, placement), moduleKind, targetOptions))
                     .Select<IRArray<SBP>, Expr>(ndsbp => expr is TensorConst tc ?
                         new TensorConst(tc.Value, ndsbp, placement) :
-                        IR.F.Distributed.Boxing(expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement)))).
+                        IR.F.Distributed.Boxing((Expr)expr, new DistributedType((TensorType)expr.CheckedType, ndsbp, placement)))).
                 SelectMany(e => e).ToArray();
         }
     }
@@ -1212,7 +1213,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         }
     }
 
-    public void FilterByScheme(Expr expr, Dictionary<IRType, List<Expr>> result)
+    public void FilterByScheme(BaseExpr expr, Dictionary<IRType, List<BaseExpr>> result)
     {
         foreach (var name in expr.Metadata.OutputNames ?? Array.Empty<string>())
         {
@@ -1239,7 +1240,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
             if (body is IR.Tuple tp)
             {
-                var outputs = new List<Expr>();
+                var outputs = new List<BaseExpr>();
                 var equ = _equalMemo[tp];
 
                 void Dfs(IEquality equality)
@@ -1336,7 +1337,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             }
 
             var constrains = new EGraphExtractConstrains[] { SingleNodeMemoryExtractConstrains };
-            var post = graph.Extract(root, CompileOptions, null, constrains);
+            var post = (Expr)graph.Extract(root, CompileOptions, null, constrains);
 
             if (input is Function)
             {
@@ -1351,17 +1352,17 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return input;
     }
 
-    protected override Dictionary<IRType, List<Expr>> DefaultVisitLeaf(Expr expr)
+    protected override Dictionary<IRType, List<BaseExpr>> DefaultVisitLeaf(BaseExpr expr)
     {
         return new();
     }
 
-    protected override Dictionary<IRType, List<Expr>> VisitLeafIf(If expr)
+    protected override Dictionary<IRType, List<BaseExpr>> VisitLeafIf(If expr)
     {
         return new() { { expr.CheckedType, new() { expr } } };
     }
 
-    protected override Dictionary<IRType, List<Expr>> VisitLeafTuple(IR.Tuple expr)
+    protected override Dictionary<IRType, List<BaseExpr>> VisitLeafTuple(IR.Tuple expr)
     {
         if (ReferenceEquals(expr, VisitRoot))
         {
@@ -1369,13 +1370,13 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             foreach (var i in Enumerable.Range(0, expr.Fields.Length))
             {
                 var boxings = Visit(expr.Fields[i]).Values.
-                    Select(l => l.Select(e => e.CheckedType is DistributedType dt ? IR.F.Distributed.Boxing(e, dt.TensorType) : e).ToArray()).
+                    Select(l => l.Select(e => e.CheckedType is DistributedType dt ? IR.F.Distributed.Boxing((Expr)e, dt.TensorType) : e).ToArray()).
                     SelectMany(e => e).Select(e => new EqualityNode(e)).OfType<IEquality>().ToList();
                 fileds.Add(new EqualityClass(false, boxings));
             }
 
             _equalMemo.Add(expr, new EqualityClass(true, fileds));
-            return new Dictionary<IRType, List<Expr>> { }; // return empty.
+            return new Dictionary<IRType, List<BaseExpr>> { }; // return empty.
         }
 
         return expr.Fields.ToArray().
@@ -1383,10 +1384,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 CartesianProduct().
                 Select(e => new IR.Tuple(e.Select(e => e.Value[0]).ToArray())).
                 GroupBy(tp => tp.CheckedType).
-                ToDictionary(g => g.Key, g => g.ToList<Expr>());
+                ToDictionary(g => g.Key, g => g.ToList<BaseExpr>());
     }
 
-    protected override Dictionary<IRType, List<Expr>> VisitLeafCall(Call expr)
+    protected override Dictionary<IRType, List<BaseExpr>> VisitLeafCall(Call expr)
     {
         if (expr.Target is Fusion fusion)
         {
@@ -1403,19 +1404,19 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     Select(args => args.ToArray()).
                     Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
                     {
-                        DistributedType d => GetDiverseCandidateSBPs(d, Placements, _moduleKind, TargetOptions).Select(ndsbp => IR.F.Distributed.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                        DistributedType d => GetDiverseCandidateSBPs(d, Placements, _moduleKind, TargetOptions).Select(ndsbp => IR.F.Distributed.Boxing((Expr)arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
                         _ => new[] { arg },
                     }).ToList().CartesianProduct().Select(arg => expr.With(target: post, arguments: arg.ToArray())).ToArray()).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<BaseExpr>());
 
             return ret;
         }
 
         if (expr.Target is not Op op)
         {
-            return new Dictionary<IRType, List<Expr>> { { expr.CheckedType, new() { expr } } };
+            return new Dictionary<IRType, List<BaseExpr>> { { expr.CheckedType, new() { expr } } };
         }
 
         foreach (var param in op.Parameters)
@@ -1423,7 +1424,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], true);
         }
 
-        Dictionary<IRType, List<Expr>> results;
+        Dictionary<IRType, List<BaseExpr>> results;
         if (_bidirectional)
         {
             results = expr.Arguments.ToArray().
@@ -1432,12 +1433,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                                 Select(args => args.ToArray()).
                                 Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
                                 {
-                                    DistributedType d => GetDiverseCandidateSBPs(d, Placements, _moduleKind, TargetOptions).Select(ndsbp => IR.F.Distributed.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                                    DistributedType d => GetDiverseCandidateSBPs(d, Placements, _moduleKind, TargetOptions).Select(ndsbp => IR.F.Distributed.Boxing((Expr)arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
                                     _ => new[] { arg },
                                 }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
                                 SelectMany(i => i).
                                 GroupBy(c => c.CheckedType).
-                                ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+                                ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<BaseExpr>());
         }
         else
         {
@@ -1448,7 +1449,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 Select(args => BuildEquivalCalls(op, args.Select(kv => kv.Value[0]).ToArray()).ToArray()).
                 SelectMany(i => i).
                 GroupBy(c => c.CheckedType).
-                ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+                ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<BaseExpr>());
         }
 
         if (results.Count == 0)
@@ -1459,12 +1460,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     Select(args => args.ToArray()).
                     Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
                     {
-                        DistributedType d => (d.AxisPolices.All(sbp => sbp is SBPBroadCast) || arg is TensorConst) ? arg : IR.F.Distributed.Boxing(arg, d with { AxisPolices = new(Enumerable.Repeat(SBP.B, d.AxisPolices.Count).ToArray()) }),
+                        DistributedType d => (d.AxisPolices.All(sbp => sbp is SBPBroadCast) || arg is TensorConst) ? arg : IR.F.Distributed.Boxing((Expr)arg, d with { AxisPolices = new(Enumerable.Repeat(SBP.B, d.AxisPolices.Count).ToArray()) }),
                         _ => arg,
                     }).ToArray()).Select(arg => BuildEquivalCalls(op, arg.ToArray())).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<BaseExpr>());
         }
 
         // TODO: refactor here
@@ -1476,12 +1477,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     Select(args => args.ToArray()).
                     Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
                     {
-                        DistributedType d => GetDiverseCandidateSBPs(d, Placements, _moduleKind, TargetOptions).Select(ndsbp => IR.F.Distributed.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                        DistributedType d => GetDiverseCandidateSBPs(d, Placements, _moduleKind, TargetOptions).Select(ndsbp => IR.F.Distributed.Boxing((Expr)arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
                         _ => new[] { arg },
                     }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
-                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());
+                    ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<BaseExpr>());
         }
 
         FilterByScheme(expr, results);
@@ -1495,9 +1496,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         _ => false,
     };
 
-    private Dictionary<IRType, List<Expr>> VisitLeafArgument(ParameterKind parameterKind, Expr expr, bool isSupported)
+    private Dictionary<IRType, List<BaseExpr>> VisitLeafArgument(ParameterKind parameterKind, BaseExpr expr, bool isSupported)
     {
-        var updateBuckets = (Dictionary<IRType, List<Expr>> buckets, IEnumerable<Expr> equivalents) =>
+        var updateBuckets = (Dictionary<IRType, List<BaseExpr>> buckets, IEnumerable<BaseExpr> equivalents) =>
         {
             foreach (var eq in equivalents)
             {
@@ -1521,7 +1522,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 case (ParameterKind.Input, Expr e) when e is Const or Var:
                     updateBuckets(buckets, isSupported ? GetLeafCandidateBoxings(e, Placements, _moduleKind, TargetOptions) : new[] { e });
                     break;
-                case (ParameterKind.Input, Expr e) when e is IR.Tuple tp:
+                case (ParameterKind.Input, IR.Tuple tp):
                     foreach (var f in tp.Fields)
                     {
                         VisitLeafArgument(parameterKind, f, isSupported);
@@ -1574,7 +1575,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return buckets;
     }
 
-    private Call[] BuildNotSupportedCalls(Op target, Expr[] args)
+    private Call[] BuildNotSupportedCalls(Op target, BaseExpr[] args)
     {
         if (target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).Any(p => IsDistributed(args[p.Index].CheckedType)))
         {
@@ -1584,7 +1585,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return new[] { new Call(target, args) };
     }
 
-    private IEnumerable<Call> BuildEquivalCalls(Op target, Expr[] args)
+    private IEnumerable<Call> BuildEquivalCalls(Op target, BaseExpr[] args)
     {
         if (!target.Parameters.Where(p => p.ParameterKind == ParameterKind.Input).All(p => IsDistributed(args[p.Index].CheckedType)))
         {
@@ -1603,7 +1604,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 var tensorType = inType.TensorType with { Shape = outShape };
                 foreach (var boxing in Utilities.DistributedUtility.GetLeafCandidatePolicies(tensorType, inType.Placement).
                     Where(p => SingleNodeMemoryCheck(new(tensorType, p, inType.Placement), _moduleKind, TargetOptions)).
-                    Select(ndsbp => IR.F.Distributed.Boxing(args[0], new DistributedType(tensorType, ndsbp, inType.Placement))))
+                    Select(ndsbp => IR.F.Distributed.Boxing((Expr)args[0], new DistributedType(tensorType, ndsbp, inType.Placement))))
                 {
                     if (boxing.CheckedType is not InvalidType)
                     {
@@ -1658,7 +1659,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return calls;
     }
 
-    private IReadOnlyList<Expr> GetReBoxings(Expr expr)
+    private IReadOnlyList<BaseExpr> GetReBoxings(BaseExpr expr)
     {
         if (expr is IR.Tuple tuple)
         {
@@ -1667,7 +1668,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 CartesianProduct();
             return candidates.Any() ? candidates.
                 Select(fs => new IR.Tuple(fs.ToArray())).
-                ToArray() : Array.Empty<Expr>();
+                ToArray() : Array.Empty<BaseExpr>();
         }
 
         var type = (DistributedType)expr.CheckedType;
@@ -1692,12 +1693,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return candidatesSBPs.Select(ndsbp => new IRArray<SBP>(ndsbp)).
             Where(ndsbp => ndsbp != type.AxisPolices).
             Select(ndsbp => new DistributedType(tensorType, ndsbp, type.Placement)).
-            Select(disttype => IR.F.Distributed.Boxing(expr, disttype)).ToArray();
+            Select(disttype => IR.F.Distributed.Boxing((Expr)expr, disttype)).ToArray();
     }
 
-    private Expr InstertTerminator(Expr expr)
+    private BaseExpr InstertTerminator(BaseExpr expr)
     {
-        Expr CreateFinalBoxing(Expr e, DistributedType type)
+        BaseExpr CreateFinalBoxing(Expr e, DistributedType type)
         {
             if (type.AxisPolices.Any(s => s is SBPPartial))
             {
@@ -1719,7 +1720,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         };
     }
 
-    private EClass Unions(EGraph graph, IEnumerable<Expr> equivalents)
+    private EClass Unions(EGraph graph, IEnumerable<BaseExpr> equivalents)
     {
         var eids = equivalents.Select(graph.Add).ToArray();
         foreach (var cls in eids.Skip(1))

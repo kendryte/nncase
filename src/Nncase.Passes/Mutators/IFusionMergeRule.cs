@@ -37,7 +37,7 @@ public interface IMergeRewriteRule
     /// </summary>
     /// <returns>Replace expression or null if nothing changed.</returns>
     Expr? GetReplace(
-      Func<Expr, Expr> mergedFusionRewriteCallBack,
+      Func<BaseExpr, BaseExpr> mergedFusionRewriteCallBack,
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
@@ -47,16 +47,16 @@ public interface IMergeRewriteRule
 
     protected sealed class FusionMerger : ExprCloner<Unit>
     {
-        private readonly IReadOnlyDictionary<IVar, Expr> _calleeBodyMap;
+        private readonly IReadOnlyDictionary<IVar, BaseExpr> _calleeBodyMap;
         private readonly IReadOnlyDictionary<IVar, IVar> _multiVarMap;
 
-        public FusionMerger(IReadOnlyDictionary<IVar, Expr> calleeBodyMap, IReadOnlyDictionary<IVar, IVar> multiVarMap)
+        public FusionMerger(IReadOnlyDictionary<IVar, BaseExpr> calleeBodyMap, IReadOnlyDictionary<IVar, IVar> multiVarMap)
         {
             _calleeBodyMap = calleeBodyMap;
             _multiVarMap = multiVarMap;
         }
 
-        protected override Expr VisitLeafVar(Var expr, Unit context)
+        protected override BaseExpr VisitLeafVar(Var expr, Unit context)
         {
             if (_calleeBodyMap.TryGetValue(expr, out var callee))
             {
@@ -103,7 +103,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
               target_module_kind,
               IsWildcard(),
               IsVArgsRepeat(() => IsWildcard())),
-          IsVArgsRepeat("callee_inputs", (ReadOnlySpan<Expr> callee_inputs) =>
+          IsVArgsRepeat("callee_inputs", (ReadOnlySpan<BaseExpr> callee_inputs) =>
           {
               var pats = new List<Pattern>();
               for (int i = 0; i < callee_inputs.Length; i++)
@@ -127,7 +127,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
 
     /// <inheritdoc/>
     public Expr? GetReplace(
-      Func<Expr, Expr> mergedFusionRewriteCallBack,
+      Func<BaseExpr, BaseExpr> mergedFusionRewriteCallBack,
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
@@ -139,7 +139,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
         var callee = (Call)result["callee"];
         var caller_fusion = (Fusion)result["caller_fusion"];
         var callee_fusion = (Fusion)result["callee_fusion"];
-        var callee_inputs = (IReadOnlyList<Expr>)result["callee_inputs"];
+        var callee_inputs = (IReadOnlyList<BaseExpr>)result["callee_inputs"];
 
         if (usedByReslut[callee].Count() > 1)
         {
@@ -166,7 +166,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
         return null;
     }
 
-    private Fusion ProcessMergeSingleInputFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Call caller, Call callee, Fusion caller_fusion, Fusion callee_fusion)
+    private Fusion ProcessMergeSingleInputFusion(Func<BaseExpr, BaseExpr> mergedFusionRewriteCallBack, Call caller, Call callee, Fusion caller_fusion, Fusion callee_fusion)
     {
         // 1. replace the caller_fusion input_var with the callee_fusion body
         var merger = new FusionMerger(caller_fusion.Parameters[0], callee_fusion.Body);
@@ -186,15 +186,15 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
     private sealed class FusionMerger : ExprCloner<Unit>
     {
         private readonly IVar _callerParam;
-        private readonly Expr _calleeBody;
+        private readonly BaseExpr _calleeBody;
 
-        public FusionMerger(IVar callerParam, Expr calleeBody)
+        public FusionMerger(IVar callerParam, BaseExpr calleeBody)
         {
             _callerParam = callerParam;
             _calleeBody = calleeBody;
         }
 
-        protected override Expr VisitLeafVar(Var expr, Unit context)
+        protected override BaseExpr VisitLeafVar(Var expr, Unit context)
         {
             if (ReferenceEquals(expr, _callerParam))
             {
@@ -247,7 +247,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
 
     /// <inheritdoc/>
     public Expr? GetReplace(
-      Func<Expr, Expr> mergedFusionRewriteCallBack,
+      Func<BaseExpr, BaseExpr> mergedFusionRewriteCallBack,
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
@@ -259,7 +259,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         var callee = (Call)result["callee"];
         var callerFusion = (Fusion)result["callerFusion"];
         var calleeFusion = (Fusion)result["calleeFusion"];
-        var callerInputs = (IReadOnlyList<Expr>)result["callerInputs"];
+        var callerInputs = (IReadOnlyList<BaseExpr>)result["callerInputs"];
         bool calleeInLeft = false;
         if (object.ReferenceEquals(callerInputs[0], callee))
         {
@@ -275,8 +275,8 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         var calleeInput = (Expr)result["calleeInput"];
         var callerOtherInput = (Expr)result["callerOtherInput"];
 
-        var calleeInputUsers = new HashSet<Expr>(usedByReslut[calleeInput], ReferenceEqualityComparer.Instance);
-        var calleeUsers = new HashSet<Expr>(usedByReslut[callee], ReferenceEqualityComparer.Instance);
+        var calleeInputUsers = new HashSet<BaseExpr>(usedByReslut[calleeInput], ReferenceEqualityComparer.Instance);
+        var calleeUsers = new HashSet<BaseExpr>(usedByReslut[callee], ReferenceEqualityComparer.Instance);
         if (object.ReferenceEquals(calleeInput, callerOtherInput))
         {
             // case : caller(callee(x),x)
@@ -362,7 +362,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         return left ? IsAlt(callerPatternLeft, callerPatternRight) : IsAlt(callerPatternRight, callerPatternLeft);
     }
 
-    private (Fusion Fusion, List<Expr> Inputs) ProcessMergeFusion(Func<Expr, Expr> mergedFusionRewriteCallBack, Expr calleeInput, Expr callerOtherInput, Call caller, Call callee, Fusion callerFusion, Fusion calleeFusion, bool calleeInLeft)
+    private (Fusion Fusion, List<Expr> Inputs) ProcessMergeFusion(Func<BaseExpr, BaseExpr> mergedFusionRewriteCallBack, Expr calleeInput, Expr callerOtherInput, Call caller, Call callee, Fusion callerFusion, Fusion calleeFusion, bool calleeInLeft)
     {
         bool calleeInputIsCallerOtherInput = ReferenceEquals(calleeInput, callerOtherInput);
         var calleeParam = calleeFusion.Parameters[0];
@@ -411,9 +411,9 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
         private readonly IVar _callerParam;
         private readonly IVar _callerOtherParam;
         private readonly IVar _calleeParam;
-        private readonly Expr _calleeBody;
+        private readonly BaseExpr _calleeBody;
 
-        public FusionMerger(bool calleeInputIsCallerOtherInput, IVar callerParam, IVar callerOtherParam, IVar calleeParam, Expr calleeBody)
+        public FusionMerger(bool calleeInputIsCallerOtherInput, IVar callerParam, IVar callerOtherParam, IVar calleeParam, BaseExpr calleeBody)
         {
             _calleeInputIsCallerOtherInput = calleeInputIsCallerOtherInput;
             _callerParam = callerParam;
@@ -422,7 +422,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
             _calleeBody = calleeBody;
         }
 
-        protected override Expr VisitLeafVar(Var expr, Unit context)
+        protected override BaseExpr VisitLeafVar(Var expr, Unit context)
         {
             if (ReferenceEquals(expr, _callerParam))
             {
@@ -473,7 +473,7 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
                 target_module_kind,
                 IsWildcard(),
                 IsVArgsRepeat(() => IsWildcard())),
-            IsVArgsRepeat("caller_inputs", (ReadOnlySpan<Expr> caller_inputs) =>
+            IsVArgsRepeat("caller_inputs", (ReadOnlySpan<BaseExpr> caller_inputs) =>
             {
                 var callee_patterns = new List<Pattern>();
                 for (int i = 0; i < caller_inputs.Length; i++)
@@ -500,7 +500,7 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
 
     /// <inheritdoc/>
     public Expr? GetReplace(
-      Func<Expr, Expr> mergedFusionRewriteCallBack,
+      Func<BaseExpr, BaseExpr> mergedFusionRewriteCallBack,
       Func<Fusion, HashSet<Fusion>, bool> mergedFusionCheckCallBack,
       Func<HashSet<Fusion>, bool> candidateFusionCheckCallBack,
       Action<HashSet<Fusion>> candidateFusionRecordCallBack,
@@ -510,7 +510,7 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
     {
         var caller = (Expr)result["caller"];
         var caller_fusion = (Fusion)result["caller_fusion"];
-        var caller_inputs = (IReadOnlyList<Expr>)result["caller_inputs"];
+        var caller_inputs = (IReadOnlyList<BaseExpr>)result["caller_inputs"];
         var input = (Expr)result["input"];
 
         // it will match  fusion2(fusion1(x,y)), then  input => fusion1(x,y), for merge cycle first so skip it.
@@ -569,10 +569,10 @@ v2 =f2(v0)      v1 = f1(v0)
         */
         if (caller_inputs.Count > 1)
         {
-            var input_users = new HashSet<Expr>(usedByReslut[input], ReferenceEqualityComparer.Instance);
+            var input_users = new HashSet<BaseExpr>(usedByReslut[input], ReferenceEqualityComparer.Instance);
 
             // 1. remove the all mid fusion users.
-            foreach (var caller_input in new HashSet<Expr>(caller_inputs, ReferenceEqualityComparer.Instance))
+            foreach (var caller_input in new HashSet<BaseExpr>(caller_inputs, ReferenceEqualityComparer.Instance))
             {
                 if (!object.ReferenceEquals(caller_input, input))
                 {
@@ -607,7 +607,7 @@ v2 =f2(v0)      v1 = f1(v0)
             {
                 if (!object.ReferenceEquals(caller_input, input))
                 {
-                    var caller_input_users = new HashSet<Expr>(usedByReslut[caller_input], ReferenceEqualityComparer.Instance);
+                    var caller_input_users = new HashSet<BaseExpr>(usedByReslut[caller_input], ReferenceEqualityComparer.Instance);
                     if (!caller_input_users.Remove(caller))
                     {
                         return false;
@@ -648,11 +648,11 @@ v2 =f2(v0)      v1 = f1(v0)
         return null;
     }
 
-    private bool ProcessFusionMerge(Func<Expr, Expr> mergedFusionRewriteCallBack, Func<HashSet<Fusion>, bool> candidate_fusion_checker, Expr caller, Fusion caller_fusion, IReadOnlyList<Expr> caller_inputs, Expr input, IMatchResult result, out HashSet<Fusion> candidate_fusions, out Fusion merged_fusion)
+    private bool ProcessFusionMerge(Func<BaseExpr, BaseExpr> mergedFusionRewriteCallBack, Func<HashSet<Fusion>, bool> candidate_fusion_checker, Expr caller, Fusion caller_fusion, IReadOnlyList<BaseExpr> caller_inputs, Expr input, IMatchResult result, out HashSet<Fusion> candidate_fusions, out Fusion merged_fusion)
     {
         merged_fusion = null!;
         candidate_fusions = new() { caller_fusion };
-        var calleeBodyMap = new Dictionary<IVar, Expr>(ReferenceEqualityComparer.Instance);
+        var calleeBodyMap = new Dictionary<IVar, BaseExpr>(ReferenceEqualityComparer.Instance);
         var multiVarMap = new Dictionary<IVar, IVar>();
         if (input.CheckedType is null)
         {
@@ -726,7 +726,7 @@ v2 =f2(v0)      v1 = f1(v0)
             _multiVarMap = multiVarMap;
         }
 
-        protected override Expr VisitLeafVar(Var expr, Unit context)
+        protected override BaseExpr VisitLeafVar(Var expr, Unit context)
         {
             if (_calleeBodyMap.TryGetValue(expr, out var callee))
             {

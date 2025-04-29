@@ -59,7 +59,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var oldShape = new long[] { 16 };
         var newShape = new[] { 1, 3, 16, 16 };
         var input = OrtKI.Random(oldShape);
-        var expect = input + Tensor.Zeros<float>(new Shape(newShape)).ToOrtTensor();
+        var expect = input + Tensor.Zeros<float>(new RankedShape(newShape)).ToOrtTensor();
 
         var expr = IR.F.Tensors.Broadcast(input.ToTensor(), newShape);
         CompilerServices.InferenceType(expr);
@@ -70,7 +70,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     public void TestCast()
     {
         var shape = new[] { 1, 3, 16, 16 };
-        var input = Tensor.Ones<float>(new Shape(shape));
+        var input = Tensor.Ones<float>(new RankedShape(shape));
         var expect = OrtKI.Cast(input.ToOrtTensor(), (long)OrtDataType.Int32);
 
         var expr = IR.F.Tensors.Cast(input, DataTypes.Int32);
@@ -81,8 +81,8 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestConcat()
     {
-        var a = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 })));
-        var b = Const.FromTensor(Tensor.From<int>(new int[12], new Shape(new[] { 1, 3, 4 })));
+        var a = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new RankedShape(new[] { 1, 3, 4 })));
+        var b = Const.FromTensor(Tensor.From<int>(new int[12], new RankedShape(new[] { 1, 3, 4 })));
         var inputList = new Tuple(a, b);
         var expr = Tensors.Concat(inputList, 0);
         CompilerServices.InferenceType(expr);
@@ -98,8 +98,8 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestConcat2()
     {
-        var a = Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 }));
-        var b = Tensor.From<int>(new int[12], new Shape(new[] { 1, 3, 4 }));
+        var a = Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new RankedShape(new[] { 1, 3, 4 }));
+        var b = Tensor.From<int>(new int[12], new RankedShape(new[] { 1, 3, 4 }));
         var inputList = new TupleConst(Value.FromTensors(a, b));
         var expr = Tensors.Concat(inputList, 0);
         CompilerServices.InferenceType(expr);
@@ -122,7 +122,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         for (long i = 0; i < shape.Length; i++)
         {
             var expect = OrtKI.Concat(new OrtKISharp.Tensor[] { inputA, inputB }, i);
-            var expr = IR.F.Tensors.Concat(new Tuple(inputA.ToTensor(), inputB.ToTensor()), (int)i);
+            var expr = IR.F.Tensors.Concat(new Tuple((Expr)inputA.ToTensor(), (Expr)inputB.ToTensor()), (int)i);
             CompilerServices.InferenceType(expr);
             Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
         }
@@ -134,40 +134,40 @@ public class UnitTestEvaluatorTensors : TestClassBase
         {
             var shape = new long[] { 1, 3, 16, 16 };
             var value = new[] { 1F };
-            var expect = Tensor.Ones<float>(new Shape(shape));
+            var expect = Tensor.Ones<float>(new RankedShape(shape));
             DoConstantOfShape(shape, value, expect);
         }
 
         {
             var shape = new long[] { 1, 3, 16, 16 };
             var value = new[] { 1L };
-            var expect = Tensor.Ones<long>(new Shape(shape));
+            var expect = Tensor.Ones<long>(new RankedShape(shape));
             DoConstantOfShape(shape, value, expect);
         }
 
         {
             var shape = new long[] { 1, 3, 16, 16 };
             var value = new[] { 0F };
-            var expect = Tensor.Zeros<float>(new Shape(shape));
+            var expect = Tensor.Zeros<float>(new RankedShape(shape));
             DoConstantOfShape(shape, value, expect);
         }
 
         {
             var shape = new long[] { 0 };
             var value = new[] { 0F };
-            var expect = Tensor.Zeros<float>(new Shape(shape));
+            var expect = Tensor.Zeros<float>(new RankedShape(shape));
             DoConstantOfShape(shape, value, expect);
         }
 
         {
             var s = new long[] { 1, 3, 16, 16 };
-            var shape = new Var(new TensorType(DataTypes.Int64, new int[] { s.Length }));
+            var shape = new ShapeVar(s.Length);
             var value = new[] { 0F };
-            var expect = Tensor.Zeros<float>(new Shape(s));
+            var expect = Tensor.Zeros<float>(new RankedShape(s));
 
             var expr = IR.F.Tensors.ConstantOfShape(shape, value);
             CompilerServices.InferenceType(expr);
-            var d = new Dictionary<IVar, IValue>() { { shape, Value.FromTensor(Tensor.From<long>(s)) } };
+            var d = new Dictionary<IVar, IValue>() { { shape, Value.FromShape(s) } };
             Assert.Equal(expect, expr.Evaluate(d).AsTensor());
         }
     }
@@ -362,7 +362,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestSizeOf()
     {
-        var shape = new Shape(new[] { 1, 3, 16, 16 });
+        var shape = new RankedShape(new[] { 1, 3, 16, 16 });
         var input = OrtKI.Random(1, 3, 16, 16).ToTensor();
         var expr = IR.F.Tensors.SizeOf(input);
         CompilerServices.InferenceType(expr);
@@ -372,12 +372,12 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestSlice()
     {
-        var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
-        var begin = new Shape(new[] { 0, 0, 0, 0 });
-        var end = new Shape(new[] { 1, 1, 1, 5 });
-        var axes = new Shape(new[] { 0, 1, 2, 3 });
-        var strides = new Shape(new[] { 1, 1, 1, 1 });
-        var result = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 })));
+        var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new RankedShape(new[] { 2, 3, 4, 5 }));
+        var begin = new RankedShape(new[] { 0, 0, 0, 0 });
+        var end = new RankedShape(new[] { 1, 1, 1, 5 });
+        var axes = new RankedShape(new[] { 0, 1, 2, 3 });
+        var strides = new RankedShape(new[] { 1, 1, 1, 1 });
+        var result = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 5).ToArray(), new RankedShape(new[] { 1, 1, 1, 5 })));
         var tResult = result.Value.ToOrtTensor();
         var expr = Tensors.Slice(input, begin, end, axes, strides);
         Assert.True(expr.InferenceType());
@@ -390,7 +390,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestSliceIndex()
     {
-        var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
+        var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new RankedShape(new[] { 2, 3, 4, 5 }));
         var expr = Tensors.SliceIndex(input, 1);
         var expect = Slice(input, new[] { 1 }, new[] { 2 }, 1);
         Assert.True(expr.InferenceType());
@@ -400,7 +400,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestNHWCToWNCH()
     {
-        var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
+        var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new RankedShape(new[] { 2, 3, 4, 5 }));
         var expr = NHWCToWNCH(input);
         var expect = Transpose(input, new[] { 2, 0, 3, 1 });
         Assert.Equal(expr, expect);
@@ -567,8 +567,8 @@ public class UnitTestEvaluatorTensors : TestClassBase
     public void TestStack4()
     {
         {
-            var a = OrtKI.Random(new long[] { 1, 3, 16, 16 }).ToTensor();
-            var b = OrtKI.Random(new long[] { 1, 2, 8, 8 }).ToTensor();
+            var a = (Expr)OrtKI.Random(new long[] { 1, 3, 16, 16 }).ToTensor();
+            var b = (Expr)OrtKI.Random(new long[] { 1, 2, 8, 8 }).ToTensor();
 
             var inputs = new Tuple(a, b);
             var expr = Tensors.Stack(inputs, 1);
@@ -603,13 +603,13 @@ public class UnitTestEvaluatorTensors : TestClassBase
     {
         var shape = new long[] { 1, 3, 16, 16 };
         var a = new long[] { 1, 1, 2, 2 };
-        var repeats = new Var(new TensorType(DataTypes.Int64, new int[] { a.Length }));
+        var repeats = new ShapeVar(a.Length);
         var input = OrtKI.Random(shape);
         var expect = OrtKI.Tile(input, a);
 
         var expr = IR.F.Tensors.Tile(input.ToTensor(), repeats);
         CompilerServices.InferenceType(expr);
-        var d = new Dictionary<IVar, IValue>() { { repeats, Value.FromTensor(Tensor.From<long>(a)) } };
+        var d = new Dictionary<IVar, IValue>() { { repeats, Value.FromShape(a) } };
         Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
     }
 
@@ -618,7 +618,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     {
         var shape = new long[] { 1, 3, 16, 16 };
         var a = new long[] { 1, 1, 2, 2 };
-        var repeats = new Var(new TensorType(DataTypes.Int64, new int[] { a.Length }));
+        var repeats = new ShapeVar(a.Length);
         var input = OrtKI.Random(shape);
         var expect = OrtKI.Tile(input, a);
 
@@ -628,7 +628,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var d = new Dictionary<IVar, IValue>()
         {
             { inputVar, Value.FromTensor(input.ToTensor()) },
-            { repeats, Value.FromTensor(Tensor.From<long>(a)) },
+            { repeats, Value.FromShape(a) },
         };
         Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
     }
@@ -745,14 +745,14 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var exprTF = IR.F.Tensors.Where(conTF, xTF.ToTensor(), yTF.ToTensor(), true);
         CompilerServices.InferenceType(exprTF);
         var result = conTF.Select((b, i) => (b, i)).Where(t => t.b).Select(t => (long)t.i).ToArray();
-        var expectTF = Tensor.From<long>(result, new Shape(result.Length, conTF.Rank));
+        var expectTF = Tensor.From<long>(result, new RankedShape(result.Length, conTF.Rank));
         Assert.Equal(expectTF, exprTF.Evaluate().AsTensor());
     }
 
     [Fact]
     public void TestReduceMean()
     {
-        long axis = 0L;
+        var axis = new RankedShape(0L);
         long keepDims = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var expr_a = Tensor.From(a, [2, 4]);
@@ -766,7 +766,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestReduceMin()
     {
-        long axis = 0L;
+        var axis = new RankedShape(0L);
         long keepDims = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var expr_a = Tensor.From(a, [2, 4]);
@@ -780,7 +780,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestReduceMax()
     {
-        long axis = 0L;
+        var axis = new RankedShape(0L);
         long keepDims = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var expr_a = Tensor.From(a, [2, 4]);
@@ -794,7 +794,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     [Fact]
     public void TestReduceSum()
     {
-        long axis = 0L;
+        var axis = new RankedShape(0L);
         long keepDims = 0L;
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
         var expr_a = Tensor.From(a, [2, 4]);

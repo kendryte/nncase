@@ -22,7 +22,7 @@ public abstract class ExprWalker<TContext> : ExprVisitor<Unit, Unit, TContext>
     {
     }
 
-    protected override Unit DefaultVisitLeaf(Expr expr, TContext context) => default;
+    protected override Unit DefaultVisitLeaf(BaseExpr expr, TContext context) => default;
 }
 
 public abstract class ExprWalker : ExprVisitor<Unit, Unit>
@@ -37,5 +37,5 @@ public abstract class ExprWalker : ExprVisitor<Unit, Unit>
     {
     }
 
-    protected override Unit DefaultVisitLeaf(Expr expr) => default;
+    protected override Unit DefaultVisitLeaf(BaseExpr expr) => default;
 }

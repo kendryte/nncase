@@ -105,6 +105,6 @@ public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>, ITypeInferenc
     private IRType Visit(ITypeInferenceContext context, ReduceWindow2D target, TensorType input)
     {
         var args = context.GetArguments(target, ReduceWindow2D.Filter, ReduceWindow2D.Stride, ReduceWindow2D.Padding, ReduceWindow2D.CeilMode);
-        return TypeInference.ReduceWindow2DType(input, (Shape)args[0], (Shape)args[1], (Paddings)args[2], args[3]);
+        return TypeInference.ReduceWindow2DType(input, (Shape)args[0], (Shape)args[1], (Paddings)args[2], (Expr)args[3]);
     }
 }

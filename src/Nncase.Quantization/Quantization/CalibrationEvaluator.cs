@@ -296,7 +296,7 @@ public class CalibrationEvaluator : IDisposable
 
         public BaseCall CurrentCall { get; }
 
-        public IValue Evaluate(Expr expr) => throw new NotImplementedException();
+        public IValue Evaluate(BaseExpr expr) => throw new NotImplementedException();
 
         public IValue GetArgumentValue(Op op, ParameterInfo parameter)
         {

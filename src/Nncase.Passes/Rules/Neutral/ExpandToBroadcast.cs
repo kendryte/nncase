@@ -28,7 +28,7 @@ public sealed partial class ExpandToBroadcast : IRewriteRule
         IsWildcard("input") with { TypePattern = TypePatternUtility.HasFixedShape() },
         IsFixedShape("shape"));
 
-    private Expr? GetReplace(Expr input, Shape shape)
+    private Expr? GetReplace(Expr input, RankedShape shape)
     {
         var inputRank = input.CheckedShape.Rank;
         var shapeSize = shape.Rank;
@@ -43,6 +43,6 @@ public sealed partial class ExpandToBroadcast : IRewriteRule
             outputShape[i + outputShape.Length - inputRank] = Dimension.Max(input.CheckedShape[i], outputShape[i + outputShape.Length - inputRank]);
         }
 
-        return IR.F.Tensors.Broadcast(input, new Shape(outputShape));
+        return IR.F.Tensors.Broadcast(input, new RankedShape(outputShape));
     }
 }

@@ -5,6 +5,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using tflite;
 using static Nncase.IR.F.Tensors;
@@ -17,28 +18,28 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitPad(in tflite.Operator op)
         {
-            var (input, paddings) = GetInputExprs(op, 0, 1);
+            var (input, paddings) = GetInputExprs<Expr, Paddings>(op, 0, 1);
             var padValue = GetInputTensor(op, 0).Type switch
             {
-                TensorType.FLOAT32 => 0.0f,
+                TensorType.FLOAT32 => (Expr)0.0f,
                 TensorType.INT8 => (sbyte)0,
                 TensorType.UINT8 => (byte)128,
                 _ => throw new NotSupportedException("Unsupported Constant Pad Value"),
             };
 
-            return F.NN.Pad(input, GetPaddings(paddings), PadMode.Constant, padValue);
+            return F.NN.Pad(input, paddings, PadMode.Constant, padValue);
         }
 
         private Expr VisitPadV2(in tflite.Operator op)
         {
-            var (input, paddings) = GetInputExprs(op, 0, 1);
-            var padValue = GetInputExprs(op, 2);
-            return F.NN.Pad(input, GetPaddings(paddings), PadMode.Constant, padValue);
+            var (input, paddings) = GetInputExprs<Expr, Paddings>(op, 0, 1);
+            var padValue = GetInputExprs<Expr>(op, 2);
+            return F.NN.Pad(input, paddings, PadMode.Constant, padValue);
         }
 
         private Expr VisitMirrorPad(in tflite.Operator op)
         {
-            var (input, paddings) = GetInputExprs(op, 0, 1);
+            var (input, paddings) = GetInputExprs<Expr, Paddings>(op, 0, 1);
 
             var padMode = op.BuiltinOptionsAsMirrorPadOptions().Mode switch
             {
@@ -47,7 +48,7 @@ namespace Nncase.Importer.TFLite
                 _ => throw new NotSupportedException("Unsupported Mirror Pad Mode"),
             };
 
-            return F.NN.Pad(input, GetPaddings(paddings), padMode, 0.0f);
+            return F.NN.Pad(input, paddings, padMode, 0.0f);
         }
     }
 }

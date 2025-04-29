@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 
 namespace Nncase;
 
@@ -64,7 +65,7 @@ public abstract class BaseImporter
         return module;
     }
 
-    protected void AddToOutputs<TKey, TNode>(Dictionary<TKey, Expr> outTensors, TKey[] opOutputs, TNode output)
+    protected void AddToOutputs<TKey, TNode>(Dictionary<TKey, BaseExpr> outTensors, TKey[] opOutputs, TNode output)
         where TKey : notnull
     {
         var outLength = opOutputs.Length;
@@ -82,7 +83,7 @@ public abstract class BaseImporter
                 }
             }
         }
-        else if (output is IReadOnlyList<Expr> exprs)
+        else if (output is IReadOnlyList<BaseExpr> exprs)
         {
             Trace.Assert(outLength == exprs.Count, $"Op outputs length should be {outLength}.");
             for (int i = 0; i < outLength; i++)
@@ -100,7 +101,7 @@ public abstract class BaseImporter
 
     protected abstract void ConvertOp();
 
-    protected abstract Expr CreateOutputs();
+    protected abstract BaseExpr CreateOutputs();
 
     protected Expr UnSupportedOp(string opType)
     {
@@ -122,7 +123,66 @@ public abstract class BaseImporter
         }
     }
 
-    private IRModule CreateModule(Var[] inputs, Dictionary<Var, Dimension[]> varMap, Expr body)
+    protected T GetInputExpr<T>(BaseExpr expr)
+        where T : BaseExpr
+    {
+        var type = typeof(T);
+        if (type == typeof(BaseExpr))
+        {
+            return (T)expr;
+        }
+        else if (type == typeof(Expr))
+        {
+            return (T)expr;
+        }
+        else if (type == typeof(Dimension))
+        {
+            return (T)(BaseExpr)expr.AsDim();
+        }
+        else if (type == typeof(Shape))
+        {
+            return (T)(BaseExpr)expr.AsShape();
+        }
+        else if (type == typeof(Padding))
+        {
+            return (T)(BaseExpr)expr.AsPadding();
+        }
+        else if (type == typeof(Paddings))
+        {
+            return (T)(BaseExpr)GetPaddings((Expr)expr);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Unsupported type: {type}.");
+        }
+    }
+
+    /// <summary>
+    /// Get paddings from expr.
+    /// The paddings is a 2D tensor, shape = [channels, 2(before, after)].
+    /// </summary>
+    /// <param name="expr">Expr.</param>
+    protected Paddings GetPaddings(Expr expr)
+    {
+        var shape = expr.CheckedShape;
+        if (!shape.IsFixed || shape.Rank != 2)
+        {
+            throw new InvalidDataException($"Paddings should be a 2D tensor, but got {shape}.");
+        }
+
+        var channels = (int)shape[0].FixedValue;
+        return new Paddings(Enumerable
+            .Range(0, channels)
+            .Select(i =>
+            {
+                var before = expr[i, 0].AsDim();
+                var after = expr[i, 1].AsDim();
+                return new Padding(before, after);
+            })
+            .ToArray());
+    }
+
+    private IRModule CreateModule(Var[] inputs, Dictionary<Var, Dimension[]> varMap, BaseExpr body)
     {
         var mainFunc = new Function("main", body, inputs, varMap);
         var module = new IRModule(mainFunc);

@@ -10,6 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.Passes;
 
@@ -266,7 +267,7 @@ internal sealed class PassManager : IPassManager
 
             private void ReplaceFunction(BaseFunction newFunction)
             {
-                IRHelpers.ReplaceAllUsesWith(_function, newFunction);
+                ReplaceUtility.ReplaceAllUsesWith(_function, newFunction);
                 _function = newFunction;
             }
 

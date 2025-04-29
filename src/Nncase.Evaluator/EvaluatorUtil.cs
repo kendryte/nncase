@@ -26,7 +26,7 @@ public static class EvaluatorUtil
         return OrtKI.Transpose(pads.Cast(OrtDataType.Int64), new long[] { 1, 0 }).ToArray<long>();
     }
 
-    public static Dictionary<Expr, IValue> GetMemo(Expr input, Dictionary<IVar, IValue> varValues)
+    public static Dictionary<BaseExpr, IValue> GetMemo(BaseExpr input, Dictionary<IVar, IValue> varValues)
     {
         var visitor = new EvaluateVisitor(varValues, new());
         visitor.Visit(input);

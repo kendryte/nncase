@@ -13,7 +13,7 @@ using Nncase.Utilities;
 
 namespace Nncase.IR.Shapes;
 
-public sealed partial class Padding : Expr, IEquatable<Padding?>
+public sealed partial class Padding : BaseExpr, IEquatable<Padding?>
 {
     public static readonly Padding Zero = new Padding(Dimension.Zero, Dimension.Zero);
 
@@ -25,6 +25,34 @@ public sealed partial class Padding : Expr, IEquatable<Padding?>
     public Dimension Before => (Dimension)Operands[0];
 
     public Dimension After => (Dimension)Operands[1];
+
+    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
+
+    public static implicit operator Padding(Tensor<long> tensor)
+    {
+        if (tensor.Shape.Rank != 1 && tensor.Shape[0] != 2)
+        {
+            throw new ArgumentException("Tensor must have 1 dimension with size 2.");
+        }
+
+        return new Padding(tensor[0], tensor[1]);
+    }
+
+    public static implicit operator Padding(Dimension[] array)
+    {
+        if (array.Length != 2)
+        {
+            throw new ArgumentException("Array must have length 2.");
+        }
+
+        return new Padding(array[0], array[1]);
+    }
+
+    public static implicit operator Padding(Tensor<int> tensor) => tensor.Cast<long>(CastMode.KDefault);
+
+    public static implicit operator Padding(int[] array) => Tensor.From(array);
+
+    public static implicit operator Padding(long[] array) => Tensor.From(array);
 
     public static Padding operator +(Padding lhs, Padding rhs) => new Padding(lhs.Before + rhs.Before, lhs.After + rhs.After);
 
@@ -67,7 +95,7 @@ public sealed partial class Padding : Expr, IEquatable<Padding?>
     }
 }
 
-public sealed class Paddings : Expr, IEquatable<Paddings?>, IReadOnlyList<Padding>
+public sealed class Paddings : BaseExpr, IEquatable<Paddings?>, IReadOnlyList<Padding>
 {
     public static readonly Paddings Empty = new Paddings();
 
@@ -76,13 +104,19 @@ public sealed class Paddings : Expr, IEquatable<Paddings?>, IReadOnlyList<Paddin
     {
     }
 
-    public ReadOnlySpan<Padding> Values => SpanUtility.UnsafeCast<Expr, Padding>(Operands);
+    public ReadOnlySpan<Padding> Values => SpanUtility.UnsafeCast<BaseExpr, Padding>(Operands);
 
     public int Rank => Values.Length;
 
     public int Count => Values.Length;
 
-    public new Padding this[int index] => Values[index];
+    public override Padding this[Dimension index] => index switch
+    {
+        DimConst dc => Values[(int)dc.Value],
+        _ => throw new ArgumentException("Index must be a constant dimension."),
+    };
+
+    public Padding this[int index] => Values[index];
 
     public static implicit operator Paddings(Padding[] paddings) => new Paddings(paddings);
 

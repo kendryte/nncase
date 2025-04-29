@@ -85,7 +85,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     private IRType Visit(ITypeInferenceContext context, GetItem target, TensorType input, TensorType index)
     {
         var indexExpr = context.GetArgument(target, GetItem.Index);
-        if (input.Shape.IsUnranked)
+        if (input.Shape is not RankedShape inShape)
         {
             return input;
         }
@@ -93,14 +93,14 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         if (indexExpr is TensorConst indexV)
         {
             var indices = indexV.Value.ToArray<int>();
-            if (indices.Length > input.Shape.Rank)
+            if (indices.Length > inShape.Rank)
             {
                 return new InvalidType("GetItem index count should smaller than in shape rank");
             }
 
-            if (indices.Length == input.Shape.Rank)
+            if (indices.Length == inShape.Rank)
             {
-                foreach (var (i, dim) in indices.Zip(input.Shape))
+                foreach (var (i, dim) in indices.Zip(inShape))
                 {
                     if (dim.IsFixed && i >= dim.FixedValue)
                     {
@@ -110,12 +110,12 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             }
         }
 
-        var shape = index.Shape switch
+        Shape shape = index.Shape switch
         {
-            { IsScalar: true } => new Shape(input.Shape.Skip(1)),
-            { IsFixed: true } => index.Shape[0].FixedValue == input.Shape.Rank ?
+            { IsScalar: true } => new RankedShape(inShape.Skip(1)),
+            { IsFixed: true } => index.Shape[0].FixedValue == inShape.Rank ?
                                  Shape.Scalar :
-                                 new Shape(input.Shape.Skip((int)index.Shape[0].FixedValue)),
+                                 new RankedShape(inShape.Skip((int)index.Shape[0].FixedValue)),
             _ => Shape.Unranked,
         };
         return new TensorType(input.DType, shape);

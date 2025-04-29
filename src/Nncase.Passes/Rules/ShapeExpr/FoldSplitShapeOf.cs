@@ -32,7 +32,7 @@ public partial class FoldSplitShapeOf : RewriteRule<Pattern>
 
     public Pattern InputPattern => IsGetItem(IsShapeOf(IsWildcard()), IsTensorConst());
 
-    private Expr? GetReplace(IR.Tuple tuple)
+    private BaseExpr? GetReplace(IR.Tuple tuple)
     {
         var getItemList = tuple.Fields.ToArray().OfType<Call>().Select(x =>
         {

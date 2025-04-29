@@ -14,8 +14,8 @@ namespace Nncase.Importer
     {
         private Expr VisitQuantizeLinear(in NodeProto op)
         {
-            var (input, scale) = GetInputExprs(op, 0, 1);
-            var bias = GetOptionInputExpr(op, 2, 0);
+            var (input, scale) = GetInputExprs<Expr, Expr>(op, 0, 1);
+            var bias = GetOptionInputExpr<Expr>(op, 2, 0);
             if (scale is TensorConst scaleConst && bias is TensorConst biasConst)
             {
                 return Quantize(
@@ -31,8 +31,8 @@ namespace Nncase.Importer
 
         private Expr VisitDequantizeLinear(in NodeProto op)
         {
-            var (input, scale) = GetInputExprs(op, 0, 1);
-            var bias = GetOptionInputExpr(op, 2, 0);
+            var (input, scale) = GetInputExprs<Expr, Expr>(op, 0, 1);
+            var bias = GetOptionInputExpr<Expr>(op, 2, 0);
             if (scale is TensorConst scaleConst && bias is TensorConst biasConst)
             {
                 var scaleV = scaleConst.Value.ToScalar<float>();

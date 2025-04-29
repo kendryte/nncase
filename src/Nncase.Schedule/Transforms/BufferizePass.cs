@@ -62,7 +62,7 @@ public sealed class BufferizePass : FunctionPass
         {
             foreach (var lifetime in rdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.DDrOf.Input];
+                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.Rdatas.Add(constValue, range);
             }
@@ -75,7 +75,7 @@ public sealed class BufferizePass : FunctionPass
         {
             foreach (var lifetime in localRdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.DDrOf.Input];
+                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.LocalRdatas.Add(constValue, range);
             }
@@ -124,8 +124,8 @@ buffers = [
             int bufferId = 0;
             foreach (var lifetime in locationResult.Value.Buffers)
             {
-                var dims = new Shape(lifetime.Buffer.Dimensions).Select(x => $"'{x}'");
-                var strides = new Shape(lifetime.Buffer.Strides).ToValueArray();
+                var dims = new RankedShape(lifetime.Buffer.Dimensions).Select(x => $"'{x}'");
+                var strides = new RankedShape(lifetime.Buffer.Strides).ToValueArray();
                 wr.WriteLine($"ScheduledBuffer('{lifetime.Buffer.Name}', {bufferId}, {lifetime.Time}, {lifetime.Memory}, ConstraintsMode.No, [{string.Join(",", dims)}], [{string.Join(",", strides)}], {false}),");
                 bufferId++;
             }

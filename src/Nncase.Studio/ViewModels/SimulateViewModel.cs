@@ -199,7 +199,7 @@ public partial class SimulateViewModel : ViewModelBase
                 }
             }
 
-            if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
+            if (tt.Shape.Rank != tensor.Shape.Rank || tt.Shape.Zip(tensor.Shape)
                     .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
             {
                 Context.OpenDialog($"{param.Name} input shape mismatch");

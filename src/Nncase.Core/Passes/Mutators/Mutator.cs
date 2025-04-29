@@ -38,7 +38,7 @@ public static class Mutator
     /// <summary>
     /// substitute.
     /// </summary>
-    public static Func<ExprRewriter> Substitute(Func<Expr, Expr?> maper) => () => new Mutators.Substitutor(maper);
+    public static Func<ExprRewriter> Substitute(Func<BaseExpr, BaseExpr?> maper) => () => new Mutators.Substitutor(maper);
 
     /// <summary>
     /// fold if then else block.

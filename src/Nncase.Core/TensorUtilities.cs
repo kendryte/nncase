@@ -494,13 +494,13 @@ public static class TensorUtilities
         Dimension[] strides;
         if (distributedType is null)
         {
-            dims = tensorType.Shape.Dimensions.ToArray();
+            dims = ((RankedShape)tensorType.Shape).Dimensions.ToArray();
             strides = GetStrides(dims);
         }
         else
         {
             var dividedType = DistributedUtility.GetDividedTensorType(distributedType);
-            dims = dividedType.Shape.Dimensions.ToArray();
+            dims = ((RankedShape)dividedType.Shape).Dimensions.ToArray();
             strides = GetStrides(dims);
         }
 

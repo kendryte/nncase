@@ -85,7 +85,7 @@ public abstract class HuggingFaceModel
         //                                              headDim, };
         var inputIds = new Var(
             "input_ids",
-            new TensorType(DataTypes.Int64, new Shape(
+            new TensorType(DataTypes.Int64, new RankedShape(
                                                  Context.DynVarMap["batch_size"],
                                                  Context.DynVarMap["sequence_length"])));
 
@@ -93,19 +93,19 @@ public abstract class HuggingFaceModel
         //     "attention_mask",
         //     new TensorType(
         //         DataTypes.Float32,
-        //         new Shape(
+        //         new RankedShape(
         //             1L, // _dynVarMap["batch_size"],
         //             20L)));
         // var positionIds = new Var(
         //     "position_ids",
-        //     new TensorType(DataTypes.Float32, new Shape(
+        //     new TensorType(DataTypes.Float32, new RankedShape(
         //                                     1L, // _dynVarMap["batch_size"],
         //                                     20L)));
 
         // // [decode_layers, k_or_v, batch_size, num_heads, past_seq_length, head_dim]
         // var pastKeyValue = new Var(
         //     "past_key_values",
-        //     new TensorType(DataTypes.Float32, new Shape(
+        //     new TensorType(DataTypes.Float32, new RankedShape(
         //         numsHiddenLayers,
         //         2L,
         //         1L, // _dynVarMap["batch_size"],
@@ -140,7 +140,7 @@ public abstract class HuggingFaceModel
     }
 
     // public abstract Expr CreateOutputs();
-    public virtual Expr CreateOutputs()
+    public virtual BaseExpr CreateOutputs()
     {
         // TODO: use self.config.output_attention to judge wether output kvache
         var logits = Context!.Outputs["logits"];
@@ -183,15 +183,15 @@ public abstract class HuggingFaceModel
             return hiddenStates;
         }
 
-        var batch_size = IR.F.Tensors.ShapeOf(hiddenStates)[0];
-        var numKVHeads = IR.F.Tensors.ShapeOf(hiddenStates)[1];
-        var seqLen = IR.F.Tensors.ShapeOf(hiddenStates)[2];
-        var headDim = IR.F.Tensors.ShapeOf(hiddenStates)[3];
+        var batch_size = IR.F.Tensors.ShapeOf(hiddenStates).AsShape()[0];
+        var numKVHeads = IR.F.Tensors.ShapeOf(hiddenStates).AsShape()[1];
+        var seqLen = IR.F.Tensors.ShapeOf(hiddenStates).AsShape()[2];
+        var headDim = IR.F.Tensors.ShapeOf(hiddenStates).AsShape()[3];
         hiddenStates = IR.F.Tensors.Unsqueeze(hiddenStates, new long[] { 2 });
 
-        var tmp = new Shape(batch_size, numKVHeads, nRep, seqLen, headDim);
+        var tmp = new RankedShape(batch_size, numKVHeads, nRep, seqLen, headDim);
         hiddenStates = IR.F.Tensors.Expand(hiddenStates, tmp);
-        hiddenStates = IR.F.Tensors.Reshape(hiddenStates, new Shape(batch_size, numKVHeads * nRep, seqLen, headDim));
+        hiddenStates = IR.F.Tensors.Reshape(hiddenStates, new RankedShape(batch_size, numKVHeads * nRep, seqLen, headDim));
         return hiddenStates;
     }
 
@@ -220,17 +220,17 @@ public abstract class HuggingFaceModel
     // return torch.cat((-x2, x1), dim=-1)
     public virtual Call RotateHalf(Expr x)
     {
-        var xS3 = IR.F.Tensors.ShapeOf(x)[3];
+        var xS3 = IR.F.Tensors.ShapeOf(x).AsShape()[3];
         var x1 = IR.F.Tensors.Slice(
             x,
             new[] { 0L },
-            new Shape(xS3 / 2L),
+            new RankedShape(xS3 / 2L),
             new[] { -1L },
             new[] { 1L });
         var x2 = IR.F.Tensors.Slice(
             x,
-            new Shape(xS3 / 2L),
-            new Shape(xS3),
+            new RankedShape(xS3 / 2L),
+            new RankedShape(xS3),
             new[] { -1L },
             new[] { 1L });
 
@@ -247,7 +247,7 @@ public abstract class HuggingFaceModel
         Expr weight = Context!.ConstTensors![$"{layerName}"];
 
         weight = IR.F.Tensors.Cast(weight, DataTypes.Float32);
-        var bias = Tensor.FromScalar(0f, weight.CheckedShape);
+        var bias = Tensor.FromScalar(0f, (RankedShape)weight.CheckedShape);
         int axis = -1;
 
         float eps = 1e-6F;
@@ -335,7 +335,7 @@ public abstract class HuggingFaceModel
 
     public virtual Tuple<Call, Call, Call> QKVCompute(int count, Expr hiddenStates, Dimension batchSize, Dimension seqLen, Dimension headDim)
     {
-        var hidden_shape = new Shape(batchSize, seqLen, -1L, headDim);
+        var hidden_shape = new RankedShape(batchSize, seqLen, -1L, headDim);
 
         var qProjW = Context!.ConstTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
         Tensor? qProjB = null;
@@ -386,7 +386,7 @@ public abstract class HuggingFaceModel
             var causalMask = IR.F.Tensors.Slice(
                     attentionMask,
                     new[] { 0L },
-                    new Shape(IR.F.Tensors.ShapeOf(keyStates)[-2]),
+                    new RankedShape(IR.F.Tensors.ShapeOf(keyStates).AsShape()[-2]),
                     new[] { 3L },
                     new[] { 1L });
 
@@ -415,9 +415,9 @@ public abstract class HuggingFaceModel
         // Force float32 (see https://github.com/huggingface/transformers/pull/29285)
         var invFreq_float = IR.F.Tensors.Cast(invFreq, DataTypes.Float32);
         var invFreqExpanded = IR.F.Tensors.Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 0, 2 }));
-        var batch_size = IR.F.Tensors.ShapeOf(positionIds)[0];
-        var dim_div_2 = IR.F.Tensors.ShapeOf(invFreq)[0];
-        var shape_tensor = new Shape(batch_size, dim_div_2, 1L);
+        var batch_size = IR.F.Tensors.ShapeOf(positionIds).AsShape()[0];
+        var dim_div_2 = IR.F.Tensors.ShapeOf(invFreq).AsShape()[0];
+        var shape_tensor = new RankedShape(batch_size, dim_div_2, 1L);
 
         invFreqExpanded = IR.F.Tensors.Expand(invFreqExpanded, shape_tensor);
 
@@ -509,7 +509,7 @@ public abstract class HuggingFaceModel
         }
         else
         {
-            var mask_shape = IR.F.Tensors.Stack(new IR.Tuple([seqLen, targtLen]), 0L);
+            var mask_shape = new RankedShape([seqLen, targtLen]);
             Tensor minValue;
 
             // get the min value for current dtype
@@ -542,7 +542,7 @@ public abstract class HuggingFaceModel
             )
             diagonal_attend_mask = torch.arange(target_length, device=device) > cache_position.reshape(-1, 1)
             */
-            var diagonalAttendMask = IR.F.Tensors.Range(0L, targtLen, 1L) > IR.F.Tensors.Reshape(cachePosition, new long[] { -1, 1 });
+            var diagonalAttendMask = IR.F.Tensors.Range(0L, IR.F.Shapes.AsTensor(targtLen), 1L) > IR.F.Tensors.Reshape(cachePosition, new long[] { -1, 1 });
 
             // TODO: maybe consider:
             /*
@@ -558,7 +558,7 @@ public abstract class HuggingFaceModel
             casualMask = casualMask * IR.F.Tensors.Cast(diagonalAttendMask, casualMask.CheckedDataType);
 
             // casualMask = casualMask[None, None, :, :].expand(batch_size, 1, -1, -1)
-            var expandShape = new Shape(batchSize, 1L, seqLen, targtLen);
+            var expandShape = new RankedShape(batchSize, 1L, seqLen, targtLen);
             casualMask = IR.F.Tensors.Unsqueeze(casualMask, new long[] { 0, 1 });
             casualMask = IR.F.Tensors.Expand(casualMask, expandShape);
             /*
@@ -569,11 +569,11 @@ public abstract class HuggingFaceModel
             */
             if (attentionMask != null)
             {
-                var maskLength = IR.F.Tensors.ShapeOf(attentionMask)[-1];
+                var maskLength = IR.F.Tensors.ShapeOf(attentionMask).AsShape()[-1];
                 var paddingMask = IR.F.Tensors.Slice(
                     casualMask,
                     new[] { 0L, 0L, 0L, 0L },
-                    new Shape(maskLength),
+                    new RankedShape(maskLength),
                     new[] { 0L, 1L, 2L, 3L },
                     new[] { 1L, 1L, 1L, 1L });
                 paddingMask += IR.F.Tensors.Unsqueeze(attentionMask, new long[] { 1, 2 });
@@ -588,11 +588,11 @@ public abstract class HuggingFaceModel
                 var maskPart = IR.F.Tensors.Slice(
                     casualMask,
                     new[] { 0L },
-                    new Shape(maskLength),
+                    new RankedShape(maskLength),
                     new[] { -1L },
                     new[] { 1L });
 
-                var minDtypeMatrix = IR.F.Tensors.ConstantOfShape(IR.F.Tensors.ShapeOf(maskPart), minValue);
+                var minDtypeMatrix = IR.F.Tensors.ConstantOfShape(IR.F.Tensors.ShapeOf(maskPart).AsShape(), minValue);
 
                 maskPart = IR.F.Tensors.Where(paddingMask, minDtypeMatrix, maskPart);
 
@@ -600,8 +600,8 @@ public abstract class HuggingFaceModel
                 //  just return maskPart
                 var leftPart = IR.F.Tensors.Slice(
                     casualMask,
-                    new Shape(maskLength),
-                    new Shape(IR.F.Tensors.ShapeOf(casualMask)[-1]),
+                    new RankedShape(maskLength),
+                    new RankedShape(IR.F.Tensors.ShapeOf(casualMask).AsShape()[-1]),
                     new[] { -1L },
                     new[] { 1L });
                 casualMask = IR.F.Tensors.Concat(new IR.Tuple(maskPart, leftPart), -1);
@@ -629,15 +629,15 @@ public abstract class HuggingFaceModel
         Dimension historyLen = 0L;
         if (pastKeyValues != null)
         {
-            historyLen = IR.F.Tensors.ShapeOf(pastKeyValues)[-2];
+            historyLen = IR.F.Tensors.ShapeOf(pastKeyValues).AsShape()[-2];
         }
 
-        var batchSize = IR.F.Tensors.ShapeOf(inputsEmbeds)[0];
-        var seqLen = IR.F.Tensors.ShapeOf(inputsEmbeds)[1];
+        var batchSize = IR.F.Tensors.ShapeOf(inputsEmbeds).AsShape()[0];
+        var seqLen = IR.F.Tensors.ShapeOf(inputsEmbeds).AsShape()[1];
         var targetLength = historyLen + seqLen + 1L;
         if (attentionMask != null)
         {
-            targetLength = IR.F.Tensors.ShapeOf(attentionMask)[-1];
+            targetLength = IR.F.Tensors.ShapeOf(attentionMask).AsShape()[-1];
         }
 
         var dataType = inputsEmbeds.CheckedDataType;
@@ -680,7 +680,7 @@ public abstract class HuggingFaceModel
             var zeros = Tensor.Zeros(embedingWeight.ElementType, new long[] { 1, embedingDim.FixedValue });
             var paddingMask = IR.F.Math.Equal(input, paddingIdx);
             paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, new long[] { 2 });
-            paddingMask = IR.F.Tensors.Expand(paddingMask, IR.F.Tensors.ShapeOf(gatherResult));
+            paddingMask = IR.F.Tensors.Expand(paddingMask, IR.F.Tensors.ShapeOf(gatherResult).AsShape());
             var results = IR.F.Tensors.Where(paddingMask, zeros, gatherResult);
             return results;
         }
@@ -704,8 +704,8 @@ public abstract class HuggingFaceModel
             head_dim = (long)Context.Config["head_dim"];
         }
 
-        var batch_size = IR.F.Tensors.ShapeOf(hiddenStates)[0];
-        var seq_len = IR.F.Tensors.ShapeOf(hiddenStates)[1];
+        var batch_size = IR.F.Tensors.ShapeOf(hiddenStates).AsShape()[0];
+        var seq_len = IR.F.Tensors.ShapeOf(hiddenStates).AsShape()[1];
         var (queryStates, keyStates, valueStates) = QKVCompute(count, hiddenStates, batch_size, seq_len, head_dim);
 
         var (cos, sin) = positionEmbeddings;
@@ -748,7 +748,7 @@ public abstract class HuggingFaceModel
         hiddenStates = hiddenStatesTmp;
 
         // inputShape.Add(-1);
-        var inputShape = new Shape(batch_size, seq_len, -1L);
+        var inputShape = new RankedShape(batch_size, seq_len, -1L);
         hiddenStates = IR.F.Tensors.Reshape(hiddenStates, inputShape);
         var oProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
         hiddenStates = Linear(hiddenStates, oProjW);
@@ -811,19 +811,19 @@ public abstract class HuggingFaceModel
         //     attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         // )
         // Call? casualMask = null;
-        Expr historyLen = 0L;
+        Dimension historyLen = 0L;
         if (pastKeyValues != null)
         {
-            historyLen = IR.F.Tensors.ShapeOf(pastKeyValues)[-2];
+            historyLen = IR.F.Tensors.ShapeOf(pastKeyValues).AsShape()[-2];
         }
 
-        var seqLen = IR.F.Tensors.ShapeOf(inputEmbeds)[1];
-        var cachePosition = IR.F.Tensors.Range(historyLen, historyLen + seqLen, 1L);
+        var seqLen = IR.F.Tensors.ShapeOf(inputEmbeds).AsShape()[1];
+        var cachePosition = IR.F.Tensors.Range(IR.F.Shapes.AsTensor(historyLen), IR.F.Shapes.AsTensor(historyLen + seqLen), 1L);
         var casualMask = UpdatecasualMask(attentionMask, inputEmbeds, cachePosition, pastKeyValues, outputAttentions: false);
         var hiddenStates = inputEmbeds;
         if (positionIds == null)
         {
-            positionIds = IR.F.Tensors.Cast(IR.F.Tensors.Unsqueeze(cachePosition, 0), hiddenStates.CheckedDataType);
+            positionIds = IR.F.Tensors.Cast(IR.F.Tensors.Unsqueeze(cachePosition, new RankedShape(0)), hiddenStates.CheckedDataType);
         }
 
         var positionEmbeddings = RotaryEmbedding(hiddenStates, positionIds);
@@ -935,7 +935,7 @@ public abstract class HuggingFaceModel
     //     var attnBias = (Call)F.Tensors.Broadcast(Tensor.FromScalar(0f), F.Tensors.Stack(new IR.Tuple(l, s), 0L));
     //     // if (isCausal == true)
     //     // {
-    //     //     var tempMask = (Call)Tensor.FromScalar(0f, new Shape(l, s));
+    //     //     var tempMask = (Call)Tensor.FromScalar(0f, new RankedShape(l, s));
     //     // }
     //     if (attentionMask != null)
     //     {

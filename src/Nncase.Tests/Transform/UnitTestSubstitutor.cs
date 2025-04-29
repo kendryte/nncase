@@ -23,7 +23,7 @@ public sealed class UnitTestSubstitutor : TestClassBase
     [Fact]
     public void TestSubstitutorFailed()
     {
-        var loop_i = new Var("loop_i", TensorType.Scalar(DataTypes.Int32));
+        var loop_i = new DimVar("loop_i");
         T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
         var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
           T.Load(hd, loop_i)).Build();
@@ -35,7 +35,7 @@ public sealed class UnitTestSubstitutor : TestClassBase
 
         Assert.True(CompilerServices.InferenceType(main_func));
 
-        Dictionary<Expr, Expr> vmap = new() { { loop_i, 1 } };
+        Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
         var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
         var main_func_2 = substitutor.Rewrite(main_func);
@@ -48,12 +48,12 @@ public sealed class UnitTestSubstitutor : TestClassBase
     [Fact]
     public void TestSubstitutorTrue()
     {
-        var loop_i = new Var("loop_i", TensorType.Scalar(DataTypes.Int32));
+        var loop_i = new DimVar("loop_i");
         T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
         var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
           T.Load(hd, loop_i)).Build();
 
-        Dictionary<Expr, Expr> vmap = new() { { loop_i, 1 } };
+        Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
         var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
         var prim_func_2 = substitutor.Rewrite(prim_func_1);
@@ -66,7 +66,7 @@ public sealed class UnitTestSubstitutor : TestClassBase
     [Fact]
     public void TestSubstitutorTrue2()
     {
-        var loop_i = new Var("loop_i", TensorType.Scalar(DataTypes.Int32));
+        var loop_i = new DimVar("loop_i");
         T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
         var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Int32, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
           T.Load(hd, loop_i)).Build();
@@ -74,11 +74,11 @@ public sealed class UnitTestSubstitutor : TestClassBase
         var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 
         var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
-        var main_func = new Function("main", new Call(prim_wrapper, input) + loop_i, input);
+        var main_func = new Function("main", new Call(prim_wrapper, input) + IR.F.Shapes.AsTensor(loop_i), input);
 
         Assert.True(CompilerServices.InferenceType(main_func));
 
-        Dictionary<Expr, Expr> vmap = new() { { loop_i, 1 } };
+        Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
         var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
         var main_func_2 = substitutor.Rewrite(main_func);
@@ -104,7 +104,7 @@ public sealed class UnitTestSubstitutor : TestClassBase
 
         Assert.True(CompilerServices.InferenceType(main_func));
 
-        Dictionary<Expr, Expr> vmap = new() { { loop_i, 1 } };
+        Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
         var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
         var main_func_2 = substitutor.Rewrite(main_func);

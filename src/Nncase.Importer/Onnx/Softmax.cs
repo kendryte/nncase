@@ -20,15 +20,15 @@ namespace Nncase.Importer
                 : SoftmaxV13(op);
         }
 
-        private Expr SoftmaxV1Process(in NodeProto op, Func<Expr, Expr, Expr> f)
+        private Expr SoftmaxV1Process(in NodeProto op, Func<Expr, Dimension, Expr> f)
         {
-            var input = GetSingleInputExpr(op);
+            var input = GetSingleInputExpr<Expr>(op);
             var rank = input.CheckedShape.Rank;
             var axis = (int)Dimension.Positive(GetIntAttribute(op, "axis", 1), rank).FixedValue;
-            var inShape = ShapeOf(input);
+            var inShape = (RankedShape)ShapeOf(input).AsShape();
             var first = TensorUtilities.GetProduct(inShape[..axis]);
             var second = TensorUtilities.GetProduct(inShape[axis..]);
-            var beforeShape = new Shape(first, second);
+            var beforeShape = new RankedShape(first, second);
             return Reshape(
                 f(
                     Reshape(input, beforeShape),
@@ -36,11 +36,11 @@ namespace Nncase.Importer
                 inShape);
         }
 
-        private Expr SoftmaxV13Process(in NodeProto op, Func<Expr, Expr, Expr> f)
+        private Expr SoftmaxV13Process(in NodeProto op, Func<Expr, Dimension, Expr> f)
         {
-            var input = GetSingleInputExpr(op);
+            var input = GetSingleInputExpr<Expr>(op);
             var axis = GetIntAttribute(op, "axis", -1);
-            return f(input, IR.F.Math.Select(axis < 0, Rank(input) + axis, axis));
+            return f(input, Dimension.Positive(axis, Rank(input).AsDim()));
         }
 
         private Expr SoftmaxV1(in NodeProto op)
@@ -72,13 +72,13 @@ namespace Nncase.Importer
 
         private Expr VisitSoftplus(in NodeProto op)
         {
-            var input = GetSingleInputExpr(op);
+            var input = GetSingleInputExpr<Expr>(op);
             return Softplus(input);
         }
 
         private Expr VisitSoftsign(in NodeProto op)
         {
-            var input = GetSingleInputExpr(op);
+            var input = GetSingleInputExpr<Expr>(op);
             return Softsign(input);
         }
     }

@@ -75,7 +75,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         var outputType = context.GetReturnType<IRType>();
 
         uint macPerElement = 1;
-        if (lhs is TensorType { Shape: Shape lhsShape })
+        if (lhs is TensorType { Shape: RankedShape lhsShape })
         {
             macPerElement = lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
         }

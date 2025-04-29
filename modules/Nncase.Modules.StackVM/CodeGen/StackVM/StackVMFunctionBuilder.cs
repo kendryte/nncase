@@ -55,7 +55,7 @@ internal class StackVMFunctionBuilder : FunctionBuilder
         }
 
         var localSet = new HashSet<int>();
-        var sourceMap = new List<(Expr, (long, long))>();
+        var sourceMap = new List<(BaseExpr, (long, long))>();
         Var Tag(string name) => new(name, AnyType.Default);
         int i = 1;
         foreach (var basicBlock in _context.BasicBlocks)

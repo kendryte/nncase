@@ -25,7 +25,7 @@ internal class EGraphExtractor
         _costModel = costModel;
     }
 
-    public Expr Extract(EClass root, IEGraph eGraph, EGraphExtractConstrains[] constrains)
+    public BaseExpr Extract(EClass root, IEGraph eGraph, EGraphExtractConstrains[] constrains)
     {
         var cpmodel = new CpModel();
         var nodes = CollectNodes(root);
@@ -262,7 +262,7 @@ internal sealed class PrintCostCallBack : CpSolverSolutionCallback
 internal sealed class SatExprBuildVisitor
 {
     private readonly IReadOnlyDictionary<ENode, bool> _pick;
-    private readonly Dictionary<EClass, Expr> _memo;
+    private readonly Dictionary<EClass, BaseExpr> _memo;
 
     public SatExprBuildVisitor(IReadOnlyDictionary<ENode, bool> pick)
     {
@@ -270,9 +270,9 @@ internal sealed class SatExprBuildVisitor
         _memo = new();
     }
 
-    public Expr Visit(EClass root)
+    public BaseExpr Visit(EClass root)
     {
-        Expr? expr;
+        BaseExpr? expr;
         if (_memo.TryGetValue(root, out expr))
         {
             return expr;
@@ -293,19 +293,19 @@ internal sealed class SatExprBuildVisitor
                 expr = enode.Expr;
                 break;
             case Function func:
-                expr = children.Length == 0 ? func : func.With(body: children[0], parameters: children[1..].OfType<Var>().ToArray());
+                expr = children.Length == 0 ? func : func.With(body: (Expr)children[0], parameters: children[1..].OfType<Var>().ToArray());
                 break;
             case If @if:
-                expr = @if.With(condition: children[0], then: (BaseFunction)children[1], @else: (BaseFunction)children[2], arguments: children[3..]);
+                expr = @if.With(condition: (Expr)children[0], then: (BaseFunction)children[1], @else: (BaseFunction)children[2], arguments: children[3..]);
                 break;
             case Call call:
-                expr = call.With(target: children[0], arguments: children[1..], call.Metadata);
+                expr = call.With(target: (Expr)children[0], arguments: children[1..], call.Metadata);
                 break;
             case IR.Tuple tp:
                 expr = tp.With(fields: children);
                 break;
             case Marker mk:
-                expr = mk.With(target: children[0], attribute: children[1], metadata: mk.Metadata);
+                expr = mk.With(target: (Expr)children[0], attribute: children[1], metadata: mk.Metadata);
                 break;
             default:
                 throw new NotSupportedException(enode.Expr.GetType().Name);

@@ -32,7 +32,7 @@ namespace Nncase.Importer
             if (floatsValue)
             {
                 var floats = floatsValue.ValueUnsafe();
-                return Tensor.From<float>(floats.ToArray(), new Shape(floats.Count));
+                return Tensor.From<float>(floats.ToArray(), new RankedShape(floats.Count));
             }
 
             var intValue = GetAttr(op, "value_int", AttributeType.Int, x => x.I);
@@ -47,7 +47,7 @@ namespace Nncase.Importer
             if (intsValue)
             {
                 var ints = intsValue.ValueUnsafe();
-                return Tensor.From<long>(ints.ToArray(), new Shape(ints.Count));
+                return Tensor.From<long>(ints.ToArray(), new RankedShape(ints.Count));
             }
 
             throw new NotSupportedException("Constant field format is not supported.");

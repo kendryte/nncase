@@ -36,7 +36,7 @@ public sealed class UnitTestTIRUtilities
             new TIR.Range(0, 8, 1),
         };
 
-        var shape = new IR.Shape(new List<int>() { 32, 16, 8 });
+        var shape = new IR.RankedShape(new List<int>() { 32, 16, 8 });
 
         // Act
         var paddings1 = TIRUtilities.ComputePaddings(bounds, shape);
@@ -106,7 +106,7 @@ public sealed class UnitTestTIRUtilities
             new TIR.Range(-3, 36, 1), new TIR.Range(0, 20, 1),
             new TIR.Range(0, 10, 1),
         };
-        var shape = new IR.Shape(new List<int>() { 32, 16, 8 });
+        var shape = new IR.RankedShape(new List<int>() { 32, 16, 8 });
 
         // Act
         var clampedBounds1 = TIRUtilities.ClampBounds(bounds, shape);
@@ -180,7 +180,7 @@ public sealed class UnitTestTIRUtilities
         var typePattern1 = new TypePattern(type1);
         Assert.True(typePattern1.MatchLeaf(type1));
 
-        var type2 = new TensorType(DataTypes.Float32, new Shape(1));
+        var type2 = new TensorType(DataTypes.Float32, new RankedShape(1));
         var typePattern2 = new TypePattern(type2);
         Assert.True(typePattern2.MatchLeaf(type2));
 

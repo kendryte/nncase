@@ -13,7 +13,7 @@ namespace Nncase.Tests.TIRTest;
 
 public sealed class ExtraW : Op
 {
-    public static readonly ParameterInfo Input = new(typeof(ExtraW), 0, "inputs", TypePatternUtility.IsIntegralScalar());
+    public static readonly ParameterInfo Input = new(typeof(ExtraW), 0, "inputs", TypePatternUtility.IsDimensionType());
 
     public override bool CanFoldConstCall => false;
 }

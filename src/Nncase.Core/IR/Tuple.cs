@@ -14,14 +14,14 @@ namespace Nncase.IR;
 /// <summary>
 /// Tuple expression.
 /// </summary>
-public sealed class Tuple : Expr, ITuple, IEquatable<Tuple?>
+public sealed class Tuple : BaseExpr, ITuple, IEquatable<Tuple?>
 {
-    public Tuple(ReadOnlySpan<Expr> fields)
+    public Tuple(ReadOnlySpan<BaseExpr> fields)
         : base(fields.ToArray())
     {
     }
 
-    public Tuple(params Expr[] fields)
+    public Tuple(params BaseExpr[] fields)
         : base(fields.ToArray())
     {
     }
@@ -31,36 +31,38 @@ public sealed class Tuple : Expr, ITuple, IEquatable<Tuple?>
     /// </summary>
     public static TupleConst Void => TupleConst.Void;
 
-    public ReadOnlySpan<Expr> Fields => Operands;
+    public ReadOnlySpan<BaseExpr> Fields => Operands;
 
     /// <inheritdoc/>
     public int Count => Fields.Length;
 
-    public new Expr this[int index] => Fields[index];
+    public override BaseExpr this[Dimension index] => Fields[(int)index.FixedValue];
+
+    public BaseExpr this[int index] => Fields[index];
 
     /// <summary>
     /// cast the value tuple to ir array.
     /// </summary>
-    public static implicit operator Tuple(ValueTuple<Expr> tuple) =>
-        new Tuple(new Expr[] { tuple.Item1 });
+    public static implicit operator Tuple(ValueTuple<BaseExpr> tuple) =>
+        new Tuple(new BaseExpr[] { tuple.Item1 });
 
     /// <summary>
     /// cast the value tuple to ir array.
     /// </summary>
-    public static implicit operator Tuple((Expr Expr1, Expr Expr2) tuple) =>
-        new Tuple(new Expr[] { tuple.Expr1, tuple.Expr2 });
+    public static implicit operator Tuple((BaseExpr Expr1, BaseExpr Expr2) tuple) =>
+        new Tuple(new BaseExpr[] { tuple.Expr1, tuple.Expr2 });
 
     /// <summary>
     /// cast the value tuple to ir array.
     /// </summary>
-    public static implicit operator Tuple((Expr Expr1, Expr Expr2, Expr Expr3) tuple) =>
-        new Tuple(new Expr[] { tuple.Expr1, tuple.Expr2, tuple.Expr3 });
+    public static implicit operator Tuple((BaseExpr Expr1, BaseExpr Expr2, BaseExpr Expr3) tuple) =>
+        new Tuple(new BaseExpr[] { tuple.Expr1, tuple.Expr2, tuple.Expr3 });
 
     /// <summary>
     /// cast the value tuple to ir array.
     /// </summary>
-    public static implicit operator Tuple((Expr Expr1, Expr Expr2, Expr Expr3, Expr Expr4) tuple) =>
-        new Tuple(new Expr[] { tuple.Expr1, tuple.Expr2, tuple.Expr3, tuple.Expr4 });
+    public static implicit operator Tuple((BaseExpr Expr1, BaseExpr Expr2, BaseExpr Expr3, BaseExpr Expr4) tuple) =>
+        new Tuple(new BaseExpr[] { tuple.Expr1, tuple.Expr2, tuple.Expr3, tuple.Expr4 });
 
     public static bool operator ==(Tuple? left, Tuple? right) => EqualityComparer<Tuple>.Default.Equals(left, right);
 
@@ -70,7 +72,7 @@ public sealed class Tuple : Expr, ITuple, IEquatable<Tuple?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitTuple(this, context);
 
-    public Tuple With(Expr[]? fields = null) => new Tuple(fields ?? Fields);
+    public Tuple With(BaseExpr[]? fields = null) => new Tuple(fields ?? Fields);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as Tuple);

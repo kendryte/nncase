@@ -26,7 +26,7 @@ foreach (var ir in irs.Where(x => x.IsDerived))
 {
 #>
     /// <inheritdoc />
-    protected override Expr VisitLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, TContext context)
+    protected override BaseExpr VisitLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, TContext context)
     {
         bool IsOperandsMutated()
         {

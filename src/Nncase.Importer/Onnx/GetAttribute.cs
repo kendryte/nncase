@@ -73,7 +73,7 @@ namespace Nncase.Importer
             return GetIntAttribute(n, attr, defaultValue ? 1 : 0) != 0;
         }
 
-        private Shape ComputeDefaultAxes(Expr input)
+        private RankedShape ComputeDefaultAxes(Expr input)
         {
             if (input.CheckedShape.IsRanked)
             {
@@ -84,10 +84,10 @@ namespace Nncase.Importer
                 $"Cannot compute default axes for {input} because its rank is not known.");
         }
 
-        private Shape GetAxesAttribute(NodeProto n, Expr input)
+        private RankedShape GetAxesAttribute(NodeProto n, Expr input)
         {
             return GetOptionIntsAttribute(n, "axes")
-                .Map(x => new Shape(x))
+                .Map(x => new RankedShape(x))
                 .Or(ComputeDefaultAxes(input));
         }
 

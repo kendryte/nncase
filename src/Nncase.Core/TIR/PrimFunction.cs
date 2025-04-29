@@ -58,7 +58,7 @@ public sealed class PrimFunction : BaseFunction
     /// </summary>
     public Sequential Body => (Sequential)Operands[0];
 
-    public ReadOnlySpan<IVar> Parameters => SpanUtility.UnsafeCast<Expr, IVar>(Operands.Slice(1));
+    public ReadOnlySpan<IVar> Parameters => SpanUtility.UnsafeCast<BaseExpr, IVar>(Operands.Slice(1));
 
     public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => ((Expr)x).CheckedType).ToArray();
 

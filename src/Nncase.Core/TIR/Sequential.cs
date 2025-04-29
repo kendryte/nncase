@@ -33,7 +33,7 @@ public sealed class Sequential : Expr
     {
     }
 
-    public ReadOnlySpan<Expr> Fields => Operands;
+    public ReadOnlySpan<Expr> Fields => SpanUtility.UnsafeCast<BaseExpr, Expr>(Operands);
 
     public int Count => Fields.Length;
 

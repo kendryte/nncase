@@ -49,6 +49,6 @@ public sealed partial class UnSqueezeToReshape : IRewriteRule
             }
         }
 
-        return Reshape(input, new Shape(newShape).ToValueArray());
+        return Reshape(input, new RankedShape(newShape));
     }
 }

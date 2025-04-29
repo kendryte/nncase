@@ -25,7 +25,7 @@ public class Scheduler
     public Block GetBlock(string blockName)
     {
         Block? targetBlock = null;
-        void CollectBlock(Expr expr)
+        void CollectBlock(BaseExpr expr)
         {
             if (expr is Block b && b.Name == blockName)
             {
@@ -58,7 +58,7 @@ public class Scheduler
     {
         List<For> targetLoops = new();
         Expr child = block;
-        void CollectLoops(Expr expr)
+        void CollectLoops(BaseExpr expr)
         {
             if (expr is For parent && object.ReferenceEquals(parent.Body[0], child))
             {
@@ -121,14 +121,14 @@ public class Scheduler
 
     private sealed class ExprCollector : ExprWalker
     {
-        private readonly Action<Expr> _collectFunc;
+        private readonly Action<BaseExpr> _collectFunc;
 
-        public ExprCollector(Action<Expr> func)
+        public ExprCollector(Action<BaseExpr> func)
         {
             _collectFunc = func;
         }
 
-        protected override Unit DefaultVisitLeaf(Expr expr)
+        protected override Unit DefaultVisitLeaf(BaseExpr expr)
         {
             _collectFunc(expr);
             return default;

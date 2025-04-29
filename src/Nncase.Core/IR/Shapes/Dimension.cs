@@ -39,18 +39,19 @@ public enum DimensionKind : byte
 
 public static class DimensionExtensions
 {
-    public static Dimension AsDim(this Expr expr) => expr switch
+    public static Dimension AsDim(this BaseExpr expr) => expr switch
     {
         TensorConst tc => tc.Value.ToScalar<long>(),
         Dimension dim => dim,
-        _ => new AsDim(expr),
+        Expr e => new AsDim(e),
+        _ => throw new ArgumentException($"Cannot convert {expr} to dimension."),
     };
 
-    public static Shape AsShape(this Expr value)
+    public static Shape AsShape(this BaseExpr value)
     {
         if (value is TensorConst tc)
         {
-            return new Shape(tc.Value.ToArray<long>());
+            return new RankedShape(tc.Value.ToArray<long>());
         }
         else if (value is Shape shapeExpr)
         {
@@ -60,32 +61,99 @@ public static class DimensionExtensions
         {
             if (concat[Concat.Input] is Tuple tuple)
             {
-                return new Shape(tuple.Fields.AsValueEnumerable().Select(x => x[0].AsDim()).ToArray());
+                return new RankedShape(tuple.Fields.AsValueEnumerable().Select(x => GetItem(x, 0).AsDim()).ToArray());
             }
         }
         else if (value is Call { Target: Stack } stack)
         {
             if (stack[Stack.Inputs] is Tuple tuple)
             {
-                return new Shape(tuple.Fields.AsValueEnumerable().Select(x => x.AsDim()).ToArray());
+                return new RankedShape(tuple.Fields.AsValueEnumerable().Select(x => x.AsDim()).ToArray());
             }
         }
 
         var shape = value.CheckedShape;
-        if (shape.Rank != 1 || !shape.IsFixed)
+        if (shape.Rank != 1)
         {
-            return Shape.Unranked;
+            return Shape.Invalid;
+        }
+        else if (!shape.IsFixed)
+        {
+            return new UnrankedShape((Expr)value);
         }
 
         var rank = (int)shape[0].FixedValue;
-        return new Shape(Enumerable.Range(0, rank).Select(x => value[x].AsDim()));
+        return new RankedShape(Enumerable.Range(0, rank).Select(x => GetItem(value, x).AsDim()));
     }
+
+    public static Padding AsPadding(this BaseExpr value)
+    {
+        if (value is TensorConst tc)
+        {
+            return tc.Value.Cast<long>();
+        }
+        else if (value is Padding padding)
+        {
+            return padding;
+        }
+        else if (value is Call { Target: Concat } concat)
+        {
+            if (concat[Concat.Input] is Tuple tuple)
+            {
+                return tuple.Fields.AsValueEnumerable().Select(x => GetItem(x, 0).AsDim()).ToArray();
+            }
+        }
+        else if (value is Call { Target: Stack } stack)
+        {
+            if (stack[Stack.Inputs] is Tuple tuple)
+            {
+                return tuple.Fields.AsValueEnumerable().Select(x => x.AsDim()).ToArray();
+            }
+        }
+
+        throw new ArgumentException($"Cannot convert {value} to padding.");
+    }
+
+    public static Paddings AsPaddings(this BaseExpr value)
+    {
+        if (value is TensorConst tc)
+        {
+            return new Paddings(tc.Value.Cast<long>());
+        }
+        else if (value is Paddings paddings)
+        {
+            return paddings;
+        }
+        else if (value is Call { Target: Concat } concat)
+        {
+            if (concat[Concat.Input] is Tuple tuple)
+            {
+                return new Paddings(tuple.Fields.AsValueEnumerable().Select(x => x.AsPadding()).ToArray());
+            }
+        }
+        else if (value is Call { Target: Stack } stack)
+        {
+            if (stack[Stack.Inputs] is Tuple tuple)
+            {
+                return new Paddings(tuple.Fields.AsValueEnumerable().Select(x => x.AsPadding()).ToArray());
+            }
+        }
+
+        throw new ArgumentException($"Cannot convert {value} to paddings.");
+    }
+
+    private static BaseExpr GetItem(BaseExpr expr, int index) => expr switch
+    {
+        Expr e => e[index],
+        Shape s => s[index],
+        _ => throw new ArgumentException($"Cannot get item from {expr}"),
+    };
 }
 
 /// <summary>
 /// Shape dimension.
 /// </summary>
-public abstract class Dimension : Expr
+public abstract class Dimension : BaseExpr
 {
     public static readonly DimConst Zero = new(0);
     public static readonly DimConst One = new(1);
@@ -96,7 +164,7 @@ public abstract class Dimension : Expr
     /// Initializes a new instance of the <see cref="Dimension"/> class.
     /// </summary>
     /// <param name="operands">Operands.</param>
-    protected Dimension(Expr[] operands)
+    protected Dimension(BaseExpr[] operands)
         : base(operands)
     {
     }
@@ -122,6 +190,8 @@ public abstract class Dimension : Expr
     public bool IsFixed => Kind == DimensionKind.Fixed;
 
     public bool IsUnknown => Kind == DimensionKind.Unknown;
+
+    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
 
     public static implicit operator Dimension(string name) => new DimVar(name);
 
@@ -387,8 +457,6 @@ public abstract class Dimension : Expr
         };
 
     public virtual Dimension Simplify() => this;
-
-    public abstract Expr ToValueExpr();
 
     public override bool Equals(object? obj) => base.Equals(obj as Dimension);
 }

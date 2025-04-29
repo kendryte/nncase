@@ -77,7 +77,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     internal Tensor(DataType elementType, long length)
     {
         ElementType = elementType;
-        Shape = new Shape(length);
+        Shape = new RankedShape(length);
         Length = length;
         _dimensions = new[] { length };
         _strides = TensorUtilities.GetStrides(_dimensions);
@@ -92,7 +92,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     {
         ElementType = elementType;
         _dimensions = dimensions.ToArray();
-        Shape = dimensions.IsEmpty ? Shape.Scalar : new Shape(_dimensions);
+        Shape = dimensions.IsEmpty ? IR.Shape.Scalar : new RankedShape(_dimensions);
         Length = TensorUtilities.GetProduct(dimensions);
         _strides = TensorUtilities.GetStrides(dimensions);
     }
@@ -115,7 +115,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public Shape Shape { get; }
+    public RankedShape Shape { get; }
 
     /// <summary>
     /// Gets rank of the tensor: number of dimensions.

@@ -51,7 +51,7 @@ public sealed class UnitTestMutators : TestClassBase
                               glb_if_pong,
                               new Range[] { (0, Dimension.Min(w + 9L, 48L) - w) }),
                           }),
-                             Mod(w / 9L, 2L)))))
+                             w / 9L % 2L))))
            .Build();
         }
 
@@ -320,8 +320,8 @@ public sealed class UnitTestMutators : TestClassBase
     {
         var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(// (*i8) -> ()
           T.Unrolled(out var i, (0, 32, 4)).Body(// ()
-            T.Let(out var a, (Expr)10L - (Expr)2L).Body(
-              T.Let(out var b, (Expr)10L + (Expr)2L).Body(
+            T.LetDim(out var a, (Dimension)10L - (Dimension)2L).Body(
+              T.LetDim(out var b, (Dimension)10L + (Dimension)2L).Body(
                 new Call(new ExtraW(), i + a + b)))))
         .Build();
 
@@ -343,9 +343,9 @@ public sealed class UnitTestMutators : TestClassBase
             T.Let(out var tcu_h_chunk, IR.F.Math.Min(10 + 9L, 32L) - 10L).Body(
               T.Let(out var n_active_tcu, IR.F.Tensors.Cast(IR.F.Math.Ceil(48.0f / IR.F.Tensors.Cast(tcu_h_chunk, DataTypes.Float32)), DataTypes.Int64)).Body(
                 T.If(IR.F.Math.Equal(n_active_tcu, 1L)).Then(
-                  new Call(new ExtraW(), 123))
+                  new Call(new ExtraW(), (Dimension)123))
                 .Else(
-                  new Call(new ExtraW(), 456)))))
+                  new Call(new ExtraW(), (Dimension)456)))))
         .Build();
 
         CompilerServices.InferenceType(main);

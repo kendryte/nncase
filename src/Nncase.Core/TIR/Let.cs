@@ -15,20 +15,20 @@ namespace Nncase.TIR;
 /// </summary>
 public sealed class Let : Expr
 {
-    public Let(Var var, Expr expression, Sequential body)
-        : base(new Expr[] { var, expression, body })
+    public Let(IVar var, BaseExpr expression, Sequential body)
+        : base([(BaseExpr)var, expression, body])
     {
     }
 
     /// <summary>
     /// Gets the expr.
     /// </summary>
-    public Var Var => (Var)Operands[0];
+    public IVar Var => (IVar)Operands[0];
 
     /// <summary>
     /// Gets the value to be binded.
     /// </summary>
-    public Expr Expression => Operands[1];
+    public BaseExpr Expression => Operands[1];
 
     /// <summary>
     /// Gets the Let body.
@@ -38,6 +38,6 @@ public sealed class Let : Expr
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitLet(this, context);
 
-    public Let With(Var? var = null, Expr? expression = null, Sequential? body = null)
+    public Let With(IVar? var = null, BaseExpr? expression = null, Sequential? body = null)
         => new Let(var ?? Var, expression ?? Expression, body ?? Body);
 }

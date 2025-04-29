@@ -22,7 +22,7 @@ internal partial class EvaluateVisitor
             throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
         }
 
-        if (expr.CheckedType is TensorType { IsScalar: true } tt && tt.DType == DataTypes.Int64)
+        if (value is TensorValue tv && tv.Type == DataTypes.Int64)
         {
             return value;
         }
@@ -94,7 +94,7 @@ internal partial class EvaluateVisitor
         return Value.FromTensor(operands.Aggregate(expr.Bias, (x, y) => x + y));
     }
 
-    protected override IValue VisitLeafAsDim(AsDim expr) => Value.FromTensor(GetDimValue(expr.Dim));
+    protected override IValue VisitLeafAsDim(AsDim expr) => ExprMemo[expr.Dim];
 
-    private long GetDimValue(Expr dimension) => ExprMemo[dimension].AsTensor().ToScalar<long>();
+    private long GetDimValue(Dimension dimension) => ExprMemo[dimension].AsTensor().ToScalar<long>();
 }

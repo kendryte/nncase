@@ -263,7 +263,7 @@ public class UnitTestEvaluatorNN : TestClassBase
             pads: new long[] { 1, 1, 1, 1 },
             strides: new long[] { 1, 1 });
 
-        var outShape = Tensor.From(new long[] { 1, 2, 5, 5 }, new Shape(4));
+        var outShape = Tensor.From(new long[] { 1, 2, 5, 5 }, new RankedShape(4));
         var expr = IR.F.NN.Conv2DTranspose(
             input.ToTensor(),
             weight.ToTensor(),
@@ -424,7 +424,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var a = new int[] { 1, 2, 0, 3 };
         var indices = Tensor.From(a, [4]);
         var depth = 5;
-        var values = Tensor.From(new float[] { 0, 1 }, new Shape(new[] { 2 }));
+        var values = Tensor.From(new float[] { 0, 1 }, new RankedShape(new[] { 2 }));
         var axis = 0L;
 
         var b = new float[] { 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 };
@@ -441,7 +441,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var a = new float[] { 1, 2, 0, 3 };
         var indices = Tensor.From(a, [4]);
         var depth = 5F;
-        var values = Tensor.From(new float[] { 0, 1 }, new Shape(new[] { 2 }));
+        var values = Tensor.From(new float[] { 0, 1 }, new RankedShape(new[] { 2 }));
         var axis = 1L;
 
         var expect = OrtKI.OneHot(indices.ToOrtTensor(), depth, values.ToOrtTensor(), axis);
@@ -456,7 +456,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     {
         var tinput = OrtKI.Random(1, 1, 2, 3);
         var input = tinput.ToTensor();
-        var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new Shape(new[] { 4, 2 }));
+        var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new RankedShape(new[] { 4, 2 }));
         var value = Tensor.FromScalar<float>(1.0f);
         var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
         CompilerServices.InferenceType(expr);
@@ -469,7 +469,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     {
         var tinput = OrtKI.Random(1, 1, 2, 3);
         var input = tinput.ToTensor();
-        var pads = Tensor.From<long>(new long[] { 0, 0, 1, 2, 2, 4, 5, 6 }, new Shape(4, 2));
+        var pads = Tensor.From<long>(new long[] { 0, 0, 1, 2, 2, 4, 5, 6 }, new RankedShape(4, 2));
         var value = Tensor.FromScalar<float>(2.0f);
         var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
         CompilerServices.InferenceType(expr);
@@ -485,7 +485,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var constant = OrtKISharp.Tensor.FromScalar(1F);
         var expect = OrtKI.Pad(input, ortPads, constant, "constant");
 
-        var nncaesPads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var nncaesPads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new RankedShape(4, 2));
         var expr = NN.Pad(input.ToTensor(), nncaesPads, Nncase.PadMode.Constant, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -499,7 +499,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var constant = OrtKISharp.Tensor.FromScalar(1F);
         var expect = OrtKI.Pad(input, ortPads, constant, "reflect");
 
-        var nncasePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var nncasePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new RankedShape(4, 2));
         var expr = NN.Pad(input.ToTensor(), nncasePads, Nncase.PadMode.Reflect, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -523,8 +523,8 @@ public class UnitTestEvaluatorNN : TestClassBase
         var b = new float[] { 1, 1, 2, 3, 3, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 4, 4, 5, 6, 6 };
         var expect = OrtKISharp.Tensor.MakeTensor(b, new long[] { 1, 1, 4, 5 });
 
-        var input = Tensor.From(a, new Shape(1, 1, 2, 3));
-        var pads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var input = Tensor.From(a, new RankedShape(1, 1, 2, 3));
+        var pads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new RankedShape(4, 2));
         var constant = 0F;
         var expr = NN.Pad(input, pads, Nncase.PadMode.Symmetric, constant);
         CompilerServices.InferenceType(expr);
@@ -539,7 +539,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var constant = OrtKISharp.Tensor.FromScalar(1F);
         var expect = OrtKI.Pad(input, ortPads, constant, "edge");
 
-        var nncaePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var nncaePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new RankedShape(4, 2));
         var expr = NN.Pad(input.ToTensor(), nncaePads, Nncase.PadMode.Edge, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());

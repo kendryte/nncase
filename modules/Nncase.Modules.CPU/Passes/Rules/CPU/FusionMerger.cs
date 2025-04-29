@@ -35,7 +35,7 @@ public sealed class FusionMerger : ExprCloner<Unit>
         _multiVarMap = multiVarMap;
     }
 
-    protected override Expr VisitCall(Call expr, Unit context)
+    protected override BaseExpr VisitCall(Call expr, Unit context)
     {
         if (_multiVarMap.TryGetValue(expr, out var newVar))
         {

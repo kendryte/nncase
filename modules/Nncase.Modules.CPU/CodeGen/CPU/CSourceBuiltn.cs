@@ -9,7 +9,7 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.CPU;
 
-public record BufferRenderInfo(string Name, string ElemType, int ElemSize, int Rank, ulong Offset, Expr Size, bool IsFixedDimensions, bool IsFixedStrides, Expr[] Dimensions, string DimensionsStr, Expr[] Strides, string StridesStr, string? Distributed)
+public record BufferRenderInfo(string Name, string ElemType, int ElemSize, int Rank, ulong Offset, Dimension Size, bool IsFixedDimensions, bool IsFixedStrides, Dimension[] Dimensions, string DimensionsStr, Dimension[] Strides, string StridesStr, string? Distributed)
 {
 }
 
@@ -25,7 +25,7 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
 
         var elemType = buffer.ElemType.ToC();
         var rank = buffer.Dimensions.Length;
-        var size = (Dimension)buffer.MemSpan.Size / buffer.ElemType.SizeInBytes;
+        var size = buffer.MemSpan.Size / buffer.ElemType.SizeInBytes;
         var isFixedDims = buffer.Dimensions.AsValueEnumerable().All(d => d.IsFixed);
         var isFixedStrides = buffer.Strides.AsValueEnumerable().All(d => d.IsFixed);
         var dims = KernelUtility.DimensionsTypeToC(isFixedDims, buffer.Dimensions);

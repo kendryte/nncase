@@ -25,22 +25,22 @@ public sealed partial class ReduceWindow2D : Op
     /// <summary>
     /// Get filter.
     /// </summary>
-    public static readonly ParameterInfo Filter = new(typeof(ReduceWindow2D), 2, "filter", HasRank(1) & IsIntegral());
+    public static readonly ParameterInfo Filter = new(typeof(ReduceWindow2D), 2, "filter", IsShapeType());
 
     /// <summary>
     /// Gets Stride.
     /// </summary>
-    public static readonly ParameterInfo Stride = new(typeof(ReduceWindow2D), 3, "stride", HasRank(1) & IsIntegral());
+    public static readonly ParameterInfo Stride = new(typeof(ReduceWindow2D), 3, "stride", IsShapeType());
 
     /// <summary>
     /// Gets Padding.
     /// </summary>
-    public static readonly ParameterInfo Padding = new(typeof(ReduceWindow2D), 4, "padding", HasRank(2) & IsIntegral());
+    public static readonly ParameterInfo Padding = new(typeof(ReduceWindow2D), 4, "padding", IsPaddingsType());
 
     /// <summary>
     /// Gets Padding.
     /// </summary>
-    public static readonly ParameterInfo Dilation = new(typeof(ReduceWindow2D), 5, "dilation", HasRank(1) & IsIntegral());
+    public static readonly ParameterInfo Dilation = new(typeof(ReduceWindow2D), 5, "dilation", IsShapeType());
 
     /// <summary>
     /// Gets CeilMode.

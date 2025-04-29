@@ -12,7 +12,7 @@ public sealed partial class CPUAffineSelectionPass
 {
     private Expr SelectPack(IR.CPU.Pack pack, Call call, Expr output)
     {
-        var input = call[IR.CPU.Pack.Input];
+        var input = (Expr)call[IR.CPU.Pack.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
         {
             return call;

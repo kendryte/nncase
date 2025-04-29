@@ -8,6 +8,7 @@ using System.Linq;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
@@ -45,9 +46,9 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             return null;
         }
 
-        var if_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, 1, 1 });
-        var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
-        var of_shape = new Shape(new[] { aShape[0].FixedValue, bShape[1].FixedValue });
+        var if_shape = new RankedShape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, 1, 1 });
+        var w_shape = new RankedShape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
+        var of_shape = new RankedShape(new[] { aShape[0].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
@@ -56,8 +57,8 @@ public sealed partial class MatMulToConv2D : IRewriteRule
             if_reshape,
             w_reshape,
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
-            Tensor.FromScalar(1, [2]),
-            Tensor.FromScalar(0, [2, 2]),
+            Shape.Repeat(1, 2),
+            Paddings.Zeros(2),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
@@ -89,9 +90,9 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
             return null;
         }
 
-        var if_shape = new Shape(new[] { aShape[0].FixedValue * aShape[1].FixedValue, aShape[2].FixedValue, 1, 1 });
-        var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
-        var of_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
+        var if_shape = new RankedShape(new[] { aShape[0].FixedValue * aShape[1].FixedValue, aShape[2].FixedValue, 1, 1 });
+        var w_shape = new RankedShape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
+        var of_shape = new RankedShape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
@@ -101,8 +102,8 @@ public sealed partial class BroadcastMatMulToConv2D : IRewriteRule
             if_reshape,
             w_reshape,
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
-            Tensor.FromScalar(1, [2]),
-            Tensor.FromScalar(0, [2, 2]),
+            Shape.Repeat(1, 2),
+            Paddings.Zeros(2),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
@@ -127,8 +128,8 @@ public sealed partial class BroadcastMatMul : IRewriteRule
 
     private Expr? GetReplace(Call matMulCall, Expr a, Expr b)
     {
-        var aShape = a.CheckedShape;
-        var bShape = b.CheckedShape;
+        var aShape = (RankedShape)a.CheckedShape;
+        var bShape = (RankedShape)b.CheckedShape;
 
         var sizeA = aShape.Size;
         var sizeB = bShape.Size;
@@ -237,8 +238,8 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
         var mmSlices = new Expr[aShape[0].FixedValue];
         var ofSlices = new Expr[aShape[0].FixedValue];
 
-        var if_shape = new Shape(new[] { aShape[1].FixedValue, aShape[2].FixedValue });
-        var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[2].FixedValue });
+        var if_shape = new RankedShape(new[] { aShape[1].FixedValue, aShape[2].FixedValue });
+        var w_shape = new RankedShape(new[] { bShape[1].FixedValue, bShape[2].FixedValue });
 
         for (var i = 0; i < aShape[0].FixedValue; i++)
         {
@@ -248,7 +249,7 @@ public sealed partial class SplitBatchMatMul : IRewriteRule
             ifSlices[i] = Reshape(Slice(a, begin, ifEnd, new[] { 0 }, new[] { 1 }), if_shape);
             wSlices[i] = Reshape(Slice(b, begin, wEnd, new[] { 0 }, new[] { 1 }), w_shape);
             mmSlices[i] = MatMul(ifSlices[i], wSlices[i]);
-            ofSlices[i] = Reshape(mmSlices[i], new Shape(1, aShape[1].FixedValue, bShape[2].FixedValue));
+            ofSlices[i] = Reshape(mmSlices[i], new RankedShape(1, aShape[1].FixedValue, bShape[2].FixedValue));
         }
 
         return Concat(new IR.Tuple(ofSlices), 0).InheritMetaData(matMulCall);
@@ -279,9 +280,9 @@ public sealed partial class Conv2DToMatmul : IRewriteRule
     private Expr? GetReplace(Expr conv2d, Expr input, Expr weights, Tensor<float> bias, int[] strides, Tensor<int> paddings, int[] dilation, int groups, float[] fusedClamp)
     {
         var inDType = input.CheckedDataType;
-        var inShape = input.CheckedShape;
+        var inShape = (RankedShape)input.CheckedShape;
         var wShape = weights.CheckedShape;
-        var outShape = conv2d.CheckedShape;
+        var outShape = (RankedShape)conv2d.CheckedShape;
         var inChannels = inShape[1].FixedValue;
         var outChannels = outShape[1].FixedValue;
         var filterH = wShape[2].FixedValue;
@@ -294,8 +295,8 @@ public sealed partial class Conv2DToMatmul : IRewriteRule
             return null;
         }
 
-        var if_shape = new Shape(new[] { inShape[0].FixedValue, inShape[1].FixedValue });
-        var w_shape = new Shape(new[] { wShape[0].FixedValue, wShape[1].FixedValue });
+        var if_shape = new RankedShape(new[] { inShape[0].FixedValue, inShape[1].FixedValue });
+        var w_shape = new RankedShape(new[] { wShape[0].FixedValue, wShape[1].FixedValue });
 
         var if_reshape = Reshape(input, if_shape);
         var w_reshape = Reshape(weights, w_shape);

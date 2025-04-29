@@ -24,7 +24,7 @@ namespace Nncase.CodeGen.CPU;
 
 public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
-    protected readonly Dictionary<Expr, CSymbol> _exprMemo;
+    protected readonly Dictionary<BaseExpr, CSymbol> _exprMemo;
     protected readonly StringBuilder _deviceBuilder;
 
     public DeviceCSourceConvertVisitor()
@@ -153,7 +153,7 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         var @var = Visit(expr.Var);
         var value = Visit(expr.Expression);
-        _exprMemo[expr.Var] = new(value.Type, @var.Name);
+        _exprMemo[(BaseExpr)expr.Var] = new(value.Type, @var.Name);
 
 #if DEBUG_PRINT
         IndentScope.Writer.IndWrite($"runtime_util->printf(\"let {@var.Name}\\n\");\n");
@@ -213,9 +213,9 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        var dimensions = expr.DistributedType is null ? expr.Dimensions : expr.DistributedType.TensorType.Shape.Dimensions;
-        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
-        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x is TensorConst);
+        var dimensions = expr.DistributedType is null ? expr.Dimensions : ((RankedShape)expr.DistributedType.TensorType.Shape).Dimensions;
+        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x.IsFixed);
+        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x.IsFixed);
         var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
         var strideSymbols = expr.Strides.AsValueEnumerable().Select(Visit).ToArray();
 
@@ -313,9 +313,9 @@ public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             case IR.Buffers.AllocateBufferView op:
                 {
                     var buffer = (TIR.Buffer)expr.Arguments[0];
-                    var dimensions = buffer.DistributedType is null ? buffer.Dimensions : buffer.DistributedType.TensorType.Shape.Dimensions;
-                    var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
-                    var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x is TensorConst);
+                    var dimensions = buffer.DistributedType is null ? buffer.Dimensions : ((RankedShape)buffer.DistributedType.TensorType.Shape).Dimensions;
+                    var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x.IsFixed);
+                    var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x.IsFixed);
                     var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
                     var strideSymbols = buffer.Strides.AsValueEnumerable().Select(Visit).ToArray();
 

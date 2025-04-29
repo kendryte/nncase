@@ -103,7 +103,7 @@ public class UnitTestImportQuantScheme : TestClassBase
 
     public sealed class DumpVisitor : ExprVisitor<int, IRType>
     {
-        protected override int DefaultVisitLeaf(Expr expr) => 0;
+        protected override int DefaultVisitLeaf(BaseExpr expr) => 0;
     }
 
     internal sealed class SolidCalibrationDatasetProvider : ICalibrationDatasetProvider

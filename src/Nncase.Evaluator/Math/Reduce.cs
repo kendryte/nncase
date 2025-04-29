@@ -97,18 +97,18 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     {
         var input = context.GetArgumentType<IRType>(target, Reduce.Input);
         var ret = context.GetReturnType<IRType>();
-        var inputShape = input switch
+        var inputShape = (RankedShape)(input switch
         {
             TensorType t => t.Shape,
             DistributedType d => d.TensorType.Shape,
             _ => throw new NotSupportedException(string.Empty),
-        };
-        var retShape = ret switch
+        });
+        var retShape = (RankedShape)(ret switch
         {
             TensorType t => t.Shape,
             DistributedType d => d.TensorType.Shape,
             _ => throw new NotSupportedException(string.Empty),
-        };
+        });
         uint input_elem = inputShape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
         uint ret_elem = retShape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
         uint macPerElement = input_elem / ret_elem;
@@ -139,7 +139,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
     {
         context.CheckArgumentType<TensorType>(target, Reduce.Axes);
         var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axes);
-        return TypeInference.ReduceType(input, args[0], args[1]);
+        return TypeInference.ReduceType(input, (Expr)args[0], (Shape)args[1]);
     }
 
     private IRType Visit(ITypeInferenceContext context, Reduce target, DistributedType input)

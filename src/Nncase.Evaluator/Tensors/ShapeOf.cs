@@ -63,7 +63,7 @@ public class ShapeOfEvaluator : IEvaluator<ShapeOf>, ITypeInferencer<ShapeOf>, I
         var inExpr = context.GetArgument(target, ShapeOf.Input);
         if (inExpr is TensorConst || input.Shape.IsRanked)
         {
-            return new TensorType(DataTypes.Int64, new Shape(input.Shape.Rank));
+            return new TensorType(DataTypes.Int64, new RankedShape(input.Shape.Rank));
         }
 
         return new TensorType(DataTypes.Int64, Shape.Unknown(1));

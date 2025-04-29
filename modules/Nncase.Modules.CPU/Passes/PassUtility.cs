@@ -51,7 +51,7 @@ public static class PassUtility
             or IR.Tensors.Where;
     }
 
-    public static bool IsCpuSupported(Op op, Call call, ReadOnlySpan<Expr> arguments, string moduleKind = "cpu")
+    public static bool IsCpuSupported(Op op, Call call, ReadOnlySpan<BaseExpr> arguments, string moduleKind = "cpu")
     {
         if (!IsCpuSupported(op))
         {

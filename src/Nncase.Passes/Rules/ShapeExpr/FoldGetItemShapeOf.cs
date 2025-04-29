@@ -15,19 +15,12 @@ namespace Nncase.Passes.Rules.ShapeExpr;
 [RuleGenerator]
 public partial class FoldGetItemShapeOf : RewriteRule<Pattern>
 {
-    public override Pattern Pattern => IsGetItem(null, "getItem", ShapeOfPattern, IsTensorConst("index", IsScalar() | HasShape(new Shape(1L))));
+    public override Pattern Pattern => IsGetItem(null, "getItem", ShapeOfPattern, IsTensorConst("index", IsScalar() | HasShape(new RankedShape(1L))));
 
-    public Pattern ShapeOfPattern => IsShapeOf(IsWildcard("input") with { TypePattern = HasRank() });
+    public Pattern ShapeOfPattern => IsShapeOf(IsWildcard("input") with { TypePattern = HasRankedShape() });
 
     private Expr? GetReplace(Expr input, Tensor<int> index, Call getItem)
     {
-        DataType dt = DataTypes.Int64;
-
-        if (getItem.Arguments[GetItem.Input.Index] is Call c && c.Target is IR.Tensors.Cast cast)
-        {
-            dt = cast.NewType;
-        }
-
-        return input.CheckedShape[index.Single()];
+        return IR.F.Shapes.AsTensor(input.CheckedShape[index.Single()]);
     }
 }

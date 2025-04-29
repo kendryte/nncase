@@ -86,13 +86,13 @@ public sealed partial class FoldConv2DPads : IRewriteRule
             IsTensorConst("ext_pad_init"))),
         IsWildcard("weights"),
         IsWildcard("bias"),
-        IsWildcard("stride"),
-        IsTensorConst("padding"),
-        IsWildcard("dilation"),
-        IsWildcard("groups"),
+        IsShape("stride"),
+        IsPaddings("padding"),
+        IsShape("dilation"),
+        IsDimension("groups"),
         IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Conv2D conv, Expr input, Expr weights, Expr bias, Expr stride, Tensor<int> padding, Expr dilation, Expr groups, Expr fusedClamp, Tensor<int> ext_pad, float ext_pad_init)
+    private Expr? GetReplace(Conv2D conv, Expr input, Expr weights, Expr bias, Shape stride, Tensor<int> padding, Shape dilation, Dimension groups, Expr fusedClamp, Tensor<int> ext_pad, float ext_pad_init)
     {
         if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
               ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
@@ -121,29 +121,27 @@ public sealed partial class FoldReduceWindow2DPads : IRewriteRule
         IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
-            IsTensorConst("ext_pad"),
+            IsPaddings("ext_pad"),
             IsTensorConst("ext_pad_init")),
         IsWildcard("initValue"),
-        IsWildcard("filter"),
-        IsWildcard("stride"),
-        IsTensorConst("padding"),
-        IsWildcard("dilation"),
+        IsShape("filter"),
+        IsShape("stride"),
+        IsPaddings("padding"),
+        IsShape("dilation"),
         IsWildcard("ceilMode"),
         IsWildcard("countIncludePad"));
 
-    private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Expr filter, Expr stride, Tensor<int> padding, Expr dilation, Expr ceilMode, Expr countIncludePad, Tensor<int> ext_pad, float ext_pad_init)
+    private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Shape filter, Shape stride, Paddings padding, Shape dilation, Expr ceilMode, Expr countIncludePad, Paddings ext_pad, float ext_pad_init)
     {
-        if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
-              ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
+        if (!(ext_pad[0] == Padding.Zero &&
+              ext_pad[1] == Padding.Zero))
         {
             return null;
         }
 
-        var new_pad = padding.Clone();
-        new_pad[0, 0] += ext_pad[2, 0];
-        new_pad[0, 1] += ext_pad[2, 1];
-        new_pad[1, 0] += ext_pad[3, 0];
-        new_pad[1, 1] += ext_pad[3, 1];
+        var new_pad = padding.ToArray();
+        new_pad[0] += ext_pad[2];
+        new_pad[1] += ext_pad[3];
         return ReduceWindow2D(pdp.ReduceOp, input, initValue, filter, stride, new_pad, dilation, ceilMode, countIncludePad);
     }
 }

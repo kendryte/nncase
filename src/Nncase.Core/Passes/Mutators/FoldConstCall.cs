@@ -22,7 +22,7 @@ public sealed class FoldConstCall : ExprRewriter
     }
 
     /// <inheritdoc/>
-    protected override Expr RewriteLeafTuple(IR.Tuple expr)
+    protected override BaseExpr RewriteLeafTuple(IR.Tuple expr)
     {
         if (IsAllConst(expr.Fields))
         {
@@ -33,7 +33,7 @@ public sealed class FoldConstCall : ExprRewriter
     }
 
     /// <inheritdoc/>
-    protected override Expr RewriteLeafCall(Call expr)
+    protected override BaseExpr RewriteLeafCall(Call expr)
     {
         if ((expr.Target is Op op && op.CanFoldConstCall) || expr.Target is Function)
         {
@@ -52,7 +52,7 @@ public sealed class FoldConstCall : ExprRewriter
         return expr;
     }
 
-    private bool IsAllConst(ReadOnlySpan<Expr> parameters) =>
+    private bool IsAllConst(ReadOnlySpan<BaseExpr> parameters) =>
       parameters.AsValueEnumerable()
         .All(e => e is Const);
 

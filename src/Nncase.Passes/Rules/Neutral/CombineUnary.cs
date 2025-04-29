@@ -63,9 +63,9 @@ public sealed partial class CombineTransposeUnary : IRewriteRule
     public IPattern Pattern { get; } = IsUnary(
         "unary",
         x => true,
-        IsTranspose(IsWildcard("input"), IsWildcard("perm")));
+        IsTranspose(IsWildcard("input"), IsShape("perm")));
 
-    private Expr? GetReplace(Unary unary, Expr input, Expr perm)
+    private Expr? GetReplace(Unary unary, Expr input, Shape perm)
     {
         return Transpose(Unary(unary.UnaryOp, input), perm);
     }

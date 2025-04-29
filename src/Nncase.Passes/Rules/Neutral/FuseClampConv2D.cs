@@ -28,11 +28,11 @@ public sealed partial class FuseClampConv2D : RewriteRule<Pattern>
         IsTensorConst("min", t => t.Value.Shape.IsScalar && t.Value.ElementType == DataTypes.Float32),
         IsTensorConst("max", t => t.Value.Shape.IsScalar && t.Value.ElementType == DataTypes.Float32));
 
-    private Expr? GetReplace(Op op, IReadOnlyList<Expr> callParams, float[] fusedClamp, float min, float max)
+    private Expr? GetReplace(Op op, IReadOnlyList<BaseExpr> callParams, float[] fusedClamp, float min, float max)
     {
         var newClamp = new float[2];
         newClamp[0] = System.MathF.Max(min, fusedClamp[0]);
         newClamp[1] = System.MathF.Min(max, fusedClamp[1]);
-        return ReplaceCallParams(op, callParams, (Conv2D.FusedClamp, newClamp));
+        return ReplaceCallParams(op, callParams, (Conv2D.FusedClamp, (Expr)newClamp));
     }
 }

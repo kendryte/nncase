@@ -16,9 +16,9 @@ namespace Nncase.Importer.Ncnn;
 
 public partial class NcnnImporter
 {
-    private Expr VisitSplit(NcnnLayer layer)
+    private BaseExpr VisitSplit(NcnnLayer layer)
     {
-        var input = GetInputExprs(layer, 0);
+        var input = GetInputExprs<Expr>(layer, 0);
         var output = new IR.Tuple(Enumerable.Repeat(input, layer.Tops.Length).ToArray());
         return output;
     }

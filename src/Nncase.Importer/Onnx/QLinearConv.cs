@@ -16,14 +16,14 @@ namespace Nncase.Importer
     {
         private Expr VisitQLinearConv(in NodeProto op)
         {
-            var (input, weights) = GetInputExprs(op, 0, 3);
-            var xScale = GetInputExpr(op, 1);
-            var xZeroPoint = GetInputExpr(op, 2);
-            var wScale = GetInputExpr(op, 4);
-            var wZeroPoint = GetInputExpr(op, 5);
-            var yScale = GetInputExpr(op, 6);
-            var yZeroPoint = GetInputExpr(op, 7);
-            var bias = op.Input.Count == 9 ? GetInputExpr(op, 8) : null;
+            var (input, weights) = GetInputExprs<Expr, Expr>(op, 0, 3);
+            var xScale = GetInputExpr<Expr>(op, 1);
+            var xZeroPoint = GetInputExpr<Expr>(op, 2);
+            var wScale = GetInputExpr<Expr>(op, 4);
+            var wZeroPoint = GetInputExpr<Expr>(op, 5);
+            var yScale = GetInputExpr<Expr>(op, 6);
+            var yZeroPoint = GetInputExpr<Expr>(op, 7);
+            var bias = op.Input.Count == 9 ? GetInputExpr<Expr>(op, 8) : null;
             var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
             var dilation = GetDilationsAttribute(op);
             var group = GetIntAttribute(op, "group", 1);
@@ -48,15 +48,11 @@ namespace Nncase.Importer
                 strideArr[i] = ((TensorConst)strides).Value.Cast<int>()[i];
             }
 
-            var strideConst = new TensorConst(Tensor.From<int>(strideArr));
-
             int[] dilationArr = new int[dilationValueLen];
             for (var i = 0; i < dilationValueLen; i++)
             {
                 dilationArr[i] = ((TensorConst)dilation).Value.Cast<int>()[i];
             }
-
-            var dilationConst = new TensorConst(Tensor.From<int>(dilationArr));
 
             var inputDeq = Dequantize(input, new QuantParam(((TensorConst)xZeroPoint).Value.ToScalar<int>(), ((TensorConst)xScale).Value.ToScalar<float>()), DataTypes.Float32);
             var weightsDeq = Dequantize(weights, new QuantParam(((TensorConst)wZeroPoint).Value.ToScalar<int>(), ((TensorConst)wScale).Value.ToScalar<float>()), DataTypes.Float32);
@@ -65,13 +61,13 @@ namespace Nncase.Importer
             {
                 int? ocNumber = (int)((TensorConst)weights).CheckedShape[0].FixedValue;
                 var zeroBias = new TensorConst(new int[ocNumber == null ? default(int) : ocNumber.Value]);
-                var conv = F.NN.Conv2D(inputDeq, weightsDeq, zeroBias, strideConst, pads, dilationConst, PadMode.Constant, group);
+                var conv = F.NN.Conv2D(inputDeq, weightsDeq, zeroBias, strideArr, pads, dilationArr, PadMode.Constant, group);
                 return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).CheckedDataType);
             }
             else
             {
                 var biasDeq = Dequantize(bias, new QuantParam(0, ((TensorConst)xScale).Value.ToScalar<float>() * ((TensorConst)wScale).Value.ToScalar<float>()), DataTypes.Float32);
-                var conv = F.NN.Conv2D(inputDeq, weightsDeq, biasDeq, strideConst, pads, dilationConst, PadMode.Constant, group);
+                var conv = F.NN.Conv2D(inputDeq, weightsDeq, biasDeq, strideArr, pads, dilationArr, PadMode.Constant, group);
                 return Quantize(conv, new QuantParam(((TensorConst)yZeroPoint).Value.ToScalar<int>(), ((TensorConst)yScale).Value.ToScalar<float>()), ((TensorConst)yZeroPoint).CheckedDataType);
             }
         }

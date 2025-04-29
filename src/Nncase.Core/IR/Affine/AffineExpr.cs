@@ -20,12 +20,14 @@ public enum AffineDivBinaryOp
     Mod,
 }
 
-public abstract class AffineExpr : Expr
+public abstract class AffineExpr : BaseExpr
 {
-    internal AffineExpr(Expr[] operands)
+    internal AffineExpr(BaseExpr[] operands)
         : base(operands)
     {
     }
+
+    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
 
     public static implicit operator AffineExpr(long value) => new AffineConstant(value);
 
@@ -225,7 +227,7 @@ public sealed class AffineConstant : AffineSymbolBase
 public sealed class AffineAddBinary : AffineExpr
 {
     public AffineAddBinary(AffineExpr lhs, AffineExpr rhs)
-        : base(new Expr[] { lhs, rhs })
+        : base(new BaseExpr[] { lhs, rhs })
     {
     }
 
@@ -246,7 +248,7 @@ public sealed class AffineAddBinary : AffineExpr
 public sealed class AffineMulBinary : AffineExpr
 {
     public AffineMulBinary(AffineSymbolBase lhs, AffineExpr rhs)
-        : base(new Expr[] { lhs, rhs })
+        : base(new BaseExpr[] { lhs, rhs })
     {
     }
 
@@ -267,7 +269,7 @@ public sealed class AffineMulBinary : AffineExpr
 public sealed class AffineDivBinary : AffineExpr
 {
     public AffineDivBinary(AffineDivBinaryOp binaryOp, AffineExpr lhs, AffineSymbolBase rhs)
-        : base(new Expr[] { lhs, rhs })
+        : base(new BaseExpr[] { lhs, rhs })
     {
         BinaryOp = binaryOp;
     }

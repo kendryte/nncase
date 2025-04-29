@@ -9,6 +9,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.Passes.Transforms;
 
@@ -44,9 +45,9 @@ public abstract class TIRSelectionPass : FunctionPass
         return Task.FromResult(input);
     }
 
-    protected abstract Expr SelectCall(Call call, IReadOnlyList<Expr> arguments, Expr output);
+    protected abstract Expr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments, Expr output);
 
-    protected IRType GetArgumentType(Expr argument)
+    protected IRType GetArgumentType(BaseExpr argument)
     {
         return argument switch
         {
@@ -64,7 +65,7 @@ public abstract class TIRSelectionPass : FunctionPass
             var outputAllocs = outputBufferShapes.Select(x => IR.F.Buffer.Uninitialized(x.ElemType, TIR.MemoryLocation.Data, x.Shape));
             var newArgs = caller.Arguments.ToArray().Concat(outputAllocs).ToArray();
             var newCaller = caller.With(arguments: newArgs);
-            IRHelpers.ReplaceAllUsesWith(caller, newCaller);
+            ReplaceUtility.ReplaceAllUsesWith(caller, newCaller);
         }
     }
 
@@ -119,11 +120,11 @@ public abstract class TIRSelectionPass : FunctionPass
             return SelectCall(expr, args);
         }
 
-        private Expr SelectCall(Call call, IReadOnlyList<Expr> arguments)
+        private Expr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments)
         {
             if (call.Target is IR.Tensors.GetItem && arguments[IR.Tensors.GetItem.Input.Index] is IR.Tuple tuple && call[IR.Tensors.GetItem.Index] is TensorConst index)
             {
-                return tuple[index.Value.ToScalar<int>()];
+                return (Expr)tuple[index.Value.ToScalar<int>()];
             }
             else
             {

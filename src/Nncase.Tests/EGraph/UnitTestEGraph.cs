@@ -43,9 +43,9 @@ public class UnitTestEGraph : TestClassBase
     [Fact]
     public void TestENodeConstHash()
     {
-        var node1 = ENode.Create(1, Array.Empty<EClass>());
-        var node2 = ENode.Create(1, Array.Empty<EClass>());
-        var node3 = ENode.Create(11, Array.Empty<EClass>());
+        var node1 = ENode.Create((Expr)1, Array.Empty<EClass>());
+        var node2 = ENode.Create((Expr)1, Array.Empty<EClass>());
+        var node3 = ENode.Create((Expr)11, Array.Empty<EClass>());
         Assert.Equal(node1, node2);
         Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
         Assert.NotEqual(node1, node3);
@@ -84,7 +84,7 @@ public class UnitTestEGraph : TestClassBase
         var egraph = new EGraph();
         var call1 = Binary(BinaryOp.Add, 4, 4);
         var call2 = Binary(BinaryOp.Add, (Const)1 + 3, (Const)2 + 2);
-        var e1 = egraph.Add(4);
+        var e1 = egraph.Add((Expr)4);
         var e2 = egraph.Add((Const)1 + 3);
         var e3 = egraph.Add((Const)2 + 2);
         var e4 = egraph.Add(call1);

@@ -45,10 +45,10 @@ internal sealed record ScriptSymobl(string Span, string Name, bool IsRefSymobl) 
 
 internal sealed class ScriptPrintContext : IPrintOpContext
 {
-    private readonly Dictionary<Expr, ScriptSymobl> _exprMemo;
+    private readonly Dictionary<BaseExpr, ScriptSymobl> _exprMemo;
     private readonly ScriptPrintVisitor _printVisitor;
 
-    public ScriptPrintContext(Dictionary<Expr, ScriptSymobl> exprMemo, ScriptPrintVisitor visitor, PrinterFlags flags)
+    public ScriptPrintContext(Dictionary<BaseExpr, ScriptSymobl> exprMemo, ScriptPrintVisitor visitor, PrinterFlags flags)
     {
         _exprMemo = exprMemo;
         _printVisitor = visitor;
@@ -108,7 +108,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 {
     private readonly ScopeWriter _scope;
     private readonly ScriptPrintContext _context;
-    private readonly Dictionary<Expr, ScriptSymobl> _exprMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<BaseExpr, ScriptSymobl> _exprMemo = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<BaseFunction, ScriptSymobl> _extFuncMemo = new(ReferenceEqualityComparer.Instance);
 
     public ScriptPrintVisitor(TextWriter textWriter, PrinterFlags flags)
@@ -135,7 +135,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
     public override string VisitType(DistributedType type)
     {
-        var shape = type.TensorType.Shape.ToArray();
+        var shape = ((RankedShape)type.TensorType.Shape).ToArray();
         foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)

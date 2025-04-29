@@ -648,7 +648,7 @@ internal partial class Quantizer
         foreach (var range in ranges)
         {
             var value = new[] { range.Value.Min, range.Value.Max };
-            var rangeEclass = _graph.Add(value);
+            var rangeEclass = _graph.Add((Expr)value);
             var rangeOfEclass = _graph.Find(range.Key);
             _graph.Union(rangeOfEclass, rangeEclass);
         }

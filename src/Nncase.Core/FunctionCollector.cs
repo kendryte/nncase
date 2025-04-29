@@ -23,6 +23,6 @@ namespace Nncase
             return 0;
         }
 
-        protected override int DefaultVisitLeaf(Expr expr) => 1;
+        protected override int DefaultVisitLeaf(BaseExpr expr) => 1;
     }
 }

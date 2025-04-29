@@ -243,7 +243,7 @@ public class UnitTestCPUTarget : TestClassBase
         GenerateKModelAndRunFromFn(main, input, output);
     }
 
-    private void TestCodeGen(Expr body, Var[] vars, [CallerMemberName] string? name = null)
+    private void TestCodeGen(BaseExpr body, Var[] vars, [CallerMemberName] string? name = null)
     {
         var main = new Function("main", body, vars);
         var module = new IRModule(main);

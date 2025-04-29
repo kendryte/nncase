@@ -23,11 +23,11 @@ public sealed class RemoveBoxingCloner : ExprCloner<Unit>
         CloneUnmutated = false;
     }
 
-    protected override Expr VisitLeafCall(Call expr, Unit context)
+    protected override BaseExpr VisitLeafCall(Call expr, Unit context)
     {
         if (expr.Target is Boxing boxing)
         {
-            var input = Visit(expr[Boxing.Input], context);
+            var input = (Expr)Visit(expr[Boxing.Input], context);
             if (boxing.NewType is DistributedType dt && dt.TensorType != input.CheckedType)
             {
                 // Reshape
@@ -42,7 +42,7 @@ public sealed class RemoveBoxingCloner : ExprCloner<Unit>
         return base.VisitLeafCall(expr, context);
     }
 
-    protected override Expr VisitLeafTensorConst(TensorConst expr, Unit context)
+    protected override BaseExpr VisitLeafTensorConst(TensorConst expr, Unit context)
     {
         return expr.ValueType is DistributedType ? new TensorConst(expr.Value) : base.VisitLeafTensorConst(expr, context);
     }

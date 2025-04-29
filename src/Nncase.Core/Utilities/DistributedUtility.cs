@@ -43,13 +43,13 @@ public static class DistributedUtility
         for (int di = 0; di < tensorType.Shape.Rank; di++)
         {
             var policy = new List<SBP>();
-            if (tensorType.Shape.All(x => x.IsDynamic || x.FixedValue != 0))
+            if (tensorType.Shape is RankedShape inShape && inShape.All(x => x.IsDynamic || x.FixedValue != 0))
             {
                 for (int ti = 0; ti < splitsAxes.Count; ti++)
                 {
                     var axis = splitsAxes[ti];
                     var divisor = axis.Select(a => placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                    if (tensorType.Shape[di] is { IsFixed: true, FixedValue: long s } && axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && IsDivideExactly(s, divisor))
+                    if (inShape[di] is { IsFixed: true, FixedValue: long s } && axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && IsDivideExactly(s, divisor))
                     {
                         policy.Add(SBP.S(axis.ToArray()));
                     }
@@ -165,14 +165,19 @@ public static class DistributedUtility
         return divisors;
     }
 
-    public static bool TryGetDividedTensorType(DistributedType distributedType, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out TensorType tensorType)
+    public static bool TryGetDividedTensorType(DistributedType distributedType, [MaybeNullWhen(false)] out TensorType tensorType)
     {
         tensorType = null;
         var divisors = GetDivisors(distributedType);
-        tensorType = new TensorType(
-            distributedType.TensorType.DType,
-            distributedType.TensorType.Shape.Zip(divisors).Select(p => p.Second == 0 ? p.First : Dimension.CeilDiv(p.First, p.Second)).ToArray());
-        return true;
+        if (distributedType.TensorType.Shape is RankedShape inShape)
+        {
+            tensorType = new TensorType(
+                distributedType.TensorType.DType,
+                inShape.Zip(divisors).Select(p => p.Second == 0 ? p.First : Dimension.CeilDiv(p.First, p.Second)).ToArray());
+            return true;
+        }
+
+        return false;
     }
 
     public static IRArray<SBP> AxisPolicesToNDSBP(IRArray<SBP> axisPolices, int rank)
@@ -388,10 +393,11 @@ public static class DistributedUtility
         return (offset, shape);
     }
 
-    private static (Shape Tile, Shape Shape) GetDividedTile(DistributedType distributedType)
+    private static (RankedShape Tile, RankedShape Shape) GetDividedTile(DistributedType distributedType)
     {
-        var shape = distributedType.TensorType.Shape.ToArray();
-        var tiles = distributedType.TensorType.Shape.ToArray();
+        var inShape = (RankedShape)distributedType.TensorType.Shape;
+        var shape = inShape.ToArray();
+        var tiles = inShape.ToArray();
         for (var d = 0; d < shape.Length; d++)
         {
             if (distributedType.AxisPolices[d] is SBPSplit split)

@@ -76,7 +76,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
                 }
             }
 
-            return input with { Shape = new Shape(outShape) };
+            return input with { Shape = new RankedShape(outShape) };
         }
 
         return input with { Shape = Shape.Unknown(input.Shape.Rank + 1) };
@@ -86,7 +86,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     {
         var tensorType = (TensorType)Visit(context, target, input.TensorType);
 
-        var ndsbp = new SBP[tensorType.Shape.Count];
+        var ndsbp = new SBP[tensorType.Shape.Rank];
 
         if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst tdims)
         {

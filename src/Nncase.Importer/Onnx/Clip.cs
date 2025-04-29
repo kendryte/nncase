@@ -17,7 +17,7 @@ namespace Nncase.Importer
 
         private Expr ClipV1(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var min = GetOptionFloatAttribute(op, "min").Or(float.MinValue);
             var max = GetOptionFloatAttribute(op, "max").Or(float.MaxValue);
             return F.Math.Clamp(input, min, max);
@@ -25,15 +25,15 @@ namespace Nncase.Importer
 
         private Expr ClipV11(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var min = GetOptionInputExpr(op, 1).Match(
+            var input = GetInputExpr<Expr>(op, 0);
+            var min = GetOptionInputExpr<Expr>(op, 1).Match(
                 min =>
                 {
                     min.InferenceType();
                     return min.CheckedShape.IsScalar ? min : Squeeze(min, new[] { 0 });
                 },
                 Cast(float.MinValue, DataTypes.Float32));
-            var max = GetOptionInputExpr(op, 2).Match(
+            var max = GetOptionInputExpr<Expr>(op, 2).Match(
                 max =>
                     {
                         max.InferenceType();

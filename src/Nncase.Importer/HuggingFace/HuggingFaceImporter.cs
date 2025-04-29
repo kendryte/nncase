@@ -145,7 +145,7 @@ public partial class HuggingFaceImporter : BaseImporter
         _model.VisitForCausalLM();
     }
 
-    protected override Expr CreateOutputs()
+    protected override BaseExpr CreateOutputs()
     {
         return _model.CreateOutputs();
     }

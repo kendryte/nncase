@@ -22,7 +22,7 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
     private readonly MatchOptions _options;
     private MatchScope _currentScope = new MatchScope();
 
-    private Matcher(Expr root, MatchOptions options)
+    private Matcher(BaseExpr root, MatchOptions options)
     {
         _currentScope = new MatchScope(root);
         _options = options;
@@ -36,7 +36,7 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
     /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    public static bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    public static bool TryMatchRoot(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
         if (options.IsSuppressedPattern(expr, pattern) || !pattern.MatchLeaf(expr))
         {
@@ -57,9 +57,9 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
     /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    public static bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    public static bool TryMatch(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
-        var candidates = new List<Expr>();
+        var candidates = new List<BaseExpr>();
         new MatchVisitor(candidates, pattern, options).Visit(expr);
 
         foreach (var candidate in candidates)
@@ -94,7 +94,7 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
         return DefaultVisit(expr, context);
     }
 
-    protected override bool DispatchVisit(Expr expr, IPattern pattern)
+    protected override bool DispatchVisit(BaseExpr expr, IPattern pattern)
     {
         bool isMatch = _currentScope.IsMatch;
         if (isMatch)
@@ -131,7 +131,7 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
         return isMatch;
     }
 
-    protected override bool DefaultVisit(Expr expr, IPattern pattern)
+    protected override bool DefaultVisit(BaseExpr expr, IPattern pattern)
     {
         return pattern switch
         {
@@ -141,7 +141,7 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
         };
     }
 
-    private bool VisitOrPattern(Expr expr, OrPattern orPattern)
+    private bool VisitOrPattern(BaseExpr expr, OrPattern orPattern)
     {
         // Preserve context
         var oldScope = _currentScope;
@@ -157,15 +157,15 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
         return true;
     }
 
-    private bool VisitExprPattern(Expr expr, ExprPattern exprPattern)
+    private bool VisitExprPattern(BaseExpr expr, ExprPattern exprPattern)
     {
         return exprPattern.MatchLeaf(expr);
     }
 
     private bool VisitVArgsPattern<T>(ReadOnlySpan<T> exprs, VArgsPattern vArgsPattern)
-        where T : Expr
+        where T : BaseExpr
     {
-        bool isMatch = vArgsPattern.MatchLeaf(SpanUtility.UnsafeCast<T, Expr>(exprs), out var fieldsPattern);
+        bool isMatch = vArgsPattern.MatchLeaf(SpanUtility.UnsafeCast<T, BaseExpr>(exprs), out var fieldsPattern);
         if (isMatch)
         {
             for (int i = 0; i < exprs.Length; i++)
@@ -195,18 +195,18 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
 
     private sealed class MatchVisitor : ExprWalker
     {
-        private readonly List<Expr> _candidates;
+        private readonly List<BaseExpr> _candidates;
         private readonly IPattern _rootPattern;
         private readonly MatchOptions _options;
 
-        public MatchVisitor(List<Expr> candidates, IPattern rootPattern, MatchOptions options)
+        public MatchVisitor(List<BaseExpr> candidates, IPattern rootPattern, MatchOptions options)
         {
             _candidates = candidates;
             _rootPattern = rootPattern;
             _options = options;
         }
 
-        protected override Unit DefaultVisitLeaf(Expr expr)
+        protected override Unit DefaultVisitLeaf(BaseExpr expr)
         {
             if (!_options.IsSuppressedPattern(expr, _rootPattern) && _rootPattern.MatchLeaf(expr))
             {

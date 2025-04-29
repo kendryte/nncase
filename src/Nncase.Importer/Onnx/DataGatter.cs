@@ -33,7 +33,7 @@ public sealed partial class OnnxImporter
         { TensorProto.Types.DataType.Uint8, DataTypes.UInt8 },
     };
 
-    public Shape GetShape(ValueInfoProto v) => new Shape(GetOriginShape(v));
+    public RankedShape GetShape(ValueInfoProto v) => new RankedShape(GetOriginShape(v));
 
     public Dimension[] GetOriginShape(ValueInfoProto v)
     {
@@ -63,9 +63,9 @@ public sealed partial class OnnxImporter
         }).ToArray();
     }
 
-    public Shape GetShape(TensorProto tensor)
+    public RankedShape GetShape(TensorProto tensor)
     {
-        return new Shape(tensor.Dims.ToArray());
+        return new RankedShape(tensor.Dims.ToArray());
     }
 
     public TensorType GetIRType(ValueInfoProto v)
@@ -85,7 +85,7 @@ public sealed partial class OnnxImporter
         return tensor.Dims.Count == 1 && tensor.Dims[0] == 0;
     }
 
-    private Tensor GetExternalTensor<T>(BinaryReader br, DataType dataType, long length, Shape shape)
+    private Tensor GetExternalTensor<T>(BinaryReader br, DataType dataType, long length, RankedShape shape)
         where T : unmanaged, IEquatable<T>
     {
         var tensorArray = new T[length / dataType.SizeInBytes];
@@ -166,7 +166,7 @@ public sealed partial class OnnxImporter
         };
     }
 
-    private Expr GetInputExpr(NodeProto n, int index)
+    private BaseExpr GetInputExprCore(NodeProto n, int index)
     {
         // todo:is null?
         var id = n.Input[index];
@@ -176,10 +176,10 @@ public sealed partial class OnnxImporter
             return expr;
         }
 
-        Expr ret = _graph.Initializer
+        BaseExpr ret = _graph.Initializer
             .Find(x => x.Name == id)
             .Match(
-                GetTensor,
+                x => (Expr)GetTensor(x),
                 () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
         ret.Metadata.OutputNames = new string[] { n.Input[index] };
         return ret;
@@ -195,9 +195,17 @@ public sealed partial class OnnxImporter
                 () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
     }
 
-    private Expr GetSingleInputExpr(NodeProto n)
+    private T GetInputExpr<T>(NodeProto n, int index)
+        where T : BaseExpr
     {
-        return GetInputExpr(n, 0);
+        var expr = GetInputExprCore(n, index);
+        return GetInputExpr<T>(expr);
+    }
+
+    private T GetSingleInputExpr<T>(NodeProto n)
+        where T : BaseExpr
+    {
+        return GetInputExpr<T>(n, 0);
     }
 
     private DataType GetOutputType(NodeProto n)
@@ -209,44 +217,48 @@ public sealed partial class OnnxImporter
                 () => throw new InvalidOperationException($"Can't find Output for node:{n.Name}"));
     }
 
-    private (Expr Input1, Expr Input2) GetInputExprs(NodeProto n, int index0, int index1)
-    {
-        return (GetInputExpr(n, index0), GetInputExpr(n, index1));
-    }
+    private (T1 Expr0, T2 Expr1) GetInputExprs<T1, T2>(NodeProto n, int index0, int index1)
+        where T1 : BaseExpr
+        where T2 : BaseExpr =>
+        (GetInputExpr<T1>(n, index0), GetInputExpr<T2>(n, index1));
 
-    private Option<Expr> GetOptionInputExpr(NodeProto n, int index)
+    private Option<T> GetOptionInputExpr<T>(NodeProto n, int index)
+        where T : BaseExpr
     {
         if (n.Input.Count <= index)
         {
-            return Option<Expr>.None;
+            return Option<T>.None;
         }
 
         var id = n.Input[index];
         if (id == string.Empty)
         {
-            return Option<Expr>.None;
+            return Option<T>.None;
         }
 
         if (_outputTensors!.TryGetValue(id, out var expr))
         {
-            return expr;
+            return GetInputExpr<T>(expr);
         }
 
         return _graph.Initializer
             .Find(x => x.Name == id)
             .Match(
-                t => EmptyTensor(t) ? Option<Expr>.None : Option<Expr>.Some(GetTensor(t)),
+                t => EmptyTensor(t) ? Option<T>.None : Option<T>.Some(GetInputExpr<T>((Expr)GetTensor(t))),
                 () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
     }
 
-    private Expr GetOptionInputExpr(NodeProto n, int index, Expr defaultExpr)
+    private T GetOptionInputExpr<T>(NodeProto n, int index, T defaultExpr)
+        where T : BaseExpr
     {
-        return GetOptionInputExpr(n, index).Or(defaultExpr);
+        return GetOptionInputExpr<T>(n, index).Or(defaultExpr);
     }
 
-    private (Option<Expr> Input1, Option<Expr> Input2) GetOptionInputExprs(NodeProto n, int index0, int index1)
+    private (Option<T1> Input1, Option<T2> Input2) GetOptionInputExprs<T1, T2>(NodeProto n, int index0, int index1)
+        where T1 : BaseExpr
+        where T2 : BaseExpr
     {
-        return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, index1));
+        return (GetOptionInputExpr<T1>(n, index0), GetOptionInputExpr<T2>(n, index1));
     }
 
     /// <summary>
@@ -258,18 +270,25 @@ public sealed partial class OnnxImporter
     /// The pads are converted from the format [x1_begin, x2_begin,...,x1_end, x2_end,...]
     /// to the format [[x1_begin, x1_end], [x2_begin, x2_end], ...].
     /// </remarks>
-    private Paddings ToNncasePadFormat(Expr pads)
+    private Paddings ToNncasePadFormat(BaseExpr pads)
     {
-        var shape = pads.CheckedShape;
-        if (shape.IsFixed || shape.Rank != 1 || !shape[0] % 2 != 0)
+        if (pads is Expr padsExpr)
         {
-            throw new ArgumentException($"Invalid pads shape: {shape}");
-        }
+            var shape = pads.CheckedShape;
+            if (!shape.IsFixed || shape.Rank != 1 || shape[0].FixedValue % 2 != 0)
+            {
+                throw new ArgumentException($"Invalid pads shape: {shape}");
+            }
 
-        var padsRank = (int)shape[0].FixedValue / 2;
-        return new Paddings(
-            Enumerable.Range(0, padsRank)
-                .Select(i => new Padding(pads[i].AsDim(), pads[i + padsRank].AsDim()))
-                .ToArray());
+            var padsRank = (int)shape[0].FixedValue / 2;
+            return new Paddings(
+                Enumerable.Range(0, padsRank)
+                    .Select(i => new Padding(padsExpr[i].AsDim(), padsExpr[i + padsRank].AsDim()))
+                    .ToArray());
+        }
+        else
+        {
+            throw new ArgumentException($"Invalid pads type: {pads.GetType()}");
+        }
     }
 }

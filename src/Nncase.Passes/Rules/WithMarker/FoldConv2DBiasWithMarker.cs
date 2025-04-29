@@ -8,6 +8,7 @@ using System.Linq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
@@ -46,16 +47,16 @@ public sealed partial class FoldConv2DBiasWithMarker : IRewriteRule
                         IsWildcard("input"),
                         IsWildcard("weights"),
                         IsTensorConst("bias") with { TypePattern = HasRank(1) },
-                        IsWildcard("stride"),
-                        IsWildcard("padding"),
-                        IsWildcard("dilation"),
-                        IsWildcard("groups")),
+                        IsShape("stride"),
+                        IsPaddings("padding"),
+                        IsShape("dilation"),
+                        IsDimension("groups")),
                     IsWildcard()),
                 IsShape("shape")),
             IsRangeOfMarker("bm", IsTensorConst("b") with { TypePattern = HasRank(1) }, IsWildcard())),
         IsWildcard());
 
-    private Expr? GetReplace(Conv2D conv2d, Call binaryCall, Expr input, Expr weights, Tensor bias, Tensor b, Shape shape, Expr stride, Expr padding, Expr dilation, Expr groups, Marker binarym)
+    private Expr? GetReplace(Conv2D conv2d, Call binaryCall, Expr input, Expr weights, Tensor bias, Tensor b, Shape shape, Shape stride, Paddings padding, Shape dilation, Dimension groups, Marker binarym)
     {
         var newBias = IR.F.Math.Add(bias, b).Evaluate().AsTensor();
         var newConv2d = Conv2D(

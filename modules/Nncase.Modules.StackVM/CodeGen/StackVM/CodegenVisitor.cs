@@ -23,7 +23,7 @@ internal class TextSnippet
 {
     private readonly List<TextSnippet> _inputSnippets = new List<TextSnippet>();
 
-    public TextSnippet(Expr expr, Symbol beginSymbol, Symbol endSymbol, BasicBlock basicBlock)
+    public TextSnippet(BaseExpr expr, Symbol beginSymbol, Symbol endSymbol, BasicBlock basicBlock)
     {
         Expr = expr;
         BeginSymbol = beginSymbol;
@@ -35,7 +35,7 @@ internal class TextSnippet
 
     public BasicBlock BasicBlock { get; set; }
 
-    public Expr Expr { get; }
+    public BaseExpr Expr { get; }
 
     public MemoryStream Text { get; } = new MemoryStream();
 
@@ -506,7 +506,7 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         Emitter.LdDataType();
     }
 
-    private TextSnippet BeginTextSnippet(Expr expr)
+    private TextSnippet BeginTextSnippet(BaseExpr expr)
     {
         var snippet = new TextSnippet(
             expr,

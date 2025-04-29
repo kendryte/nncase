@@ -11,11 +11,11 @@ namespace Nncase.IR;
 
 public sealed class ExprPinner : IDisposable
 {
-    private readonly Expr[] _exprs;
+    private readonly BaseExpr[] _exprs;
     private readonly ExprUser _user = new();
     private bool _disposed;
 
-    public ExprPinner(params Expr[] exprs)
+    public ExprPinner(params BaseExpr[] exprs)
     {
         _exprs = exprs;
 
@@ -39,12 +39,14 @@ public sealed class ExprPinner : IDisposable
     }
 }
 
-internal sealed class ExprUser : Expr
+internal sealed class ExprUser : BaseExpr
 {
     public ExprUser()
         : base(Array.Empty<Expr>())
     {
     }
+
+    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => throw new NotSupportedException();
 }

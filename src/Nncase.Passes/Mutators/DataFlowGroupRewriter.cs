@@ -24,7 +24,7 @@ public sealed class DataFlowMergeRewriter
     /// <summary>
     /// Rewrite the merge rule.
     /// </summary>
-    public Expr Rewrite(Expr expr, IEnumerable<Mutators.IMergeRewriteRule> rules, Func<Mutators.IMergeRewriteRule, RunPassContext, Mutators.FusionGroupMutator> mutator_creator, RunPassContext options)
+    public BaseExpr Rewrite(BaseExpr expr, IEnumerable<Mutators.IMergeRewriteRule> rules, Func<Mutators.IMergeRewriteRule, RunPassContext, Mutators.FusionGroupMutator> mutator_creator, RunPassContext options)
     {
         var post = expr;
         int count = 0;
@@ -70,7 +70,7 @@ public sealed class DataFlowMergeRewriter
     /// <summary>
     /// callback for rewrite start.
     /// </summary>
-    private void OnRewriteStart(Expr expr, int count)
+    private void OnRewriteStart(BaseExpr expr, int count)
     {
         if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
@@ -81,7 +81,7 @@ public sealed class DataFlowMergeRewriter
     /// <summary>
     /// call back for rewrite end.
     /// </summary>
-    private void OnRewriteEnd(Expr expr, int count)
+    private void OnRewriteEnd(BaseExpr expr, int count)
     {
         if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {

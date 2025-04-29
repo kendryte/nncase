@@ -11,12 +11,12 @@ namespace Nncase.IR.Buffers;
 /// DDrOf expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class DDrOf : Op
+public sealed partial class AddressOf : Op
 {
     /// <summary>
     /// Get the input parameter.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(DDrOf), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(AddressOf), 0, "input");
 
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;

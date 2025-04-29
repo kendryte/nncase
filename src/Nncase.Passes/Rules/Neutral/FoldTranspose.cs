@@ -95,7 +95,7 @@ public sealed partial class TransposeToReshape : IRewriteRule
     public IPattern Pattern { get; } = IsTranspose(
         target_name: null,
         call_name: "tp",
-        IsWildcard("input") with { TypePattern = HasRank() },
+        IsWildcard("input") with { TypePattern = HasRankedShape() },
         IsTensorConst("perm", IsIntegral())) with
     { TypePattern = HasFixedShape() };
 

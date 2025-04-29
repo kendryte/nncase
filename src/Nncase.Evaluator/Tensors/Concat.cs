@@ -153,7 +153,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
                 }
             }
         });
-        var shape = new Shape(shapeValue);
+        var shape = new RankedShape(shapeValue);
         if (invalidType is InvalidType invalid)
         {
             return invalid;

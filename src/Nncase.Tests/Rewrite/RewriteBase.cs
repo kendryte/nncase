@@ -66,15 +66,15 @@ public static class DummyOp
 
 public class RewriteFixtrue : TestClassBase
 {
-    public async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
+    public async Task<BaseExpr> RunShapeInferPass(string name, BaseExpr expr, params Var[] parameters)
     {
         var f = new Function(expr, parameters);
         var result = ((Function)await new ShapeInferPass { Name = $"ShapeInfer_{name}" }.RunAsync(f, new())).Body;
-        Assert.True(CompilerServices.InferenceType(CompilerServices.InferenceType(f)));
+        Assert.True(CompilerServices.InferenceType(f));
         return result;
     }
 
-    public Expr ApplyFoldConstCallRewrite(Expr expr) =>
+    public BaseExpr ApplyFoldConstCallRewrite(BaseExpr expr) =>
         CompilerServices.Rewrite(expr, new[] { new Passes.Rules.Neutral.FoldConstCall() }, new());
 }
 
@@ -777,8 +777,8 @@ public sealed class RemoveMarkerCaseEgraph : IRewriteCase
             var v8 = RangeOfMarker(
                 Conv2D(
                 v7,
-                RangeOfMarker(Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }),
-                RangeOfMarker(Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }),
+                RangeOfMarker((Expr)Normal(DataTypes.Float32, 0, 1, 1, new[] { 16, 16, 3, 3 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }),
+                RangeOfMarker((Expr)Normal(DataTypes.Float32, 0, 1, 1, new[] { 16 }).Evaluate().AsTensor(), new float[] { -1.0f, 1.0f }),
                 new[] { 1, 1 },
                 new[,]
                 {
@@ -1574,11 +1574,11 @@ public sealed class SliceCase : IRewriteCase
     {
         get
         {
-            var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
-            var begin = new Shape(new[] { 0, 0, 0, 0 });
-            var end = new Shape(new[] { 1, 1, 1, 5 });
-            var axes = new Shape(new[] { 0, 1, 2, 3 });
-            var strides = new Shape(new[] { 1, 1, 1, 1 });
+            var input = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new RankedShape(new[] { 2, 3, 4, 5 }));
+            var begin = new RankedShape(new[] { 0, 0, 0, 0 });
+            var end = new RankedShape(new[] { 1, 1, 1, 5 });
+            var axes = new RankedShape(new[] { 0, 1, 2, 3 });
+            var strides = new RankedShape(new[] { 1, 1, 1, 1 });
             var expr = IR.F.Tensors.Slice(input, begin, end, axes, strides);
             return new Function(expr, new Var[] { _input });
         }
@@ -1880,7 +1880,7 @@ public sealed class Conv2DTransposeCase : IRewriteCase
             var input = OrtKI.Random(1, 1, 5, 5);
             var weight = OrtKI.Random(2, 1, 3, 3);
             var bias = OrtKI.Random(2);
-            var outShape = Tensor.From(new long[] { 1, 2, 5, 5 }, new Shape(4));
+            var outShape = Tensor.From(new long[] { 1, 2, 5, 5 }, new RankedShape(4));
             var expr = IR.F.NN.Conv2DTranspose(
                 input.ToTensor(),
                 weight.ToTensor(),
@@ -2036,7 +2036,7 @@ public sealed class TopKCase : IRewriteCase
     {
         get
         {
-            var x = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] { 2, 3, 4, 5 }));
+            var x = Tensor.From<int>(Enumerable.Range(0, 120).ToArray(), new RankedShape(new[] { 2, 3, 4, 5 }));
             var k = 1L;
             var axis = -1;
             var largest = 1;
@@ -2214,8 +2214,8 @@ public sealed class ConcatCase : IRewriteCase
     {
         get
         {
-            var a = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new Shape(new[] { 1, 3, 4 })));
-            var b = Const.FromTensor(Tensor.From<int>(new int[12], new Shape(new[] { 1, 3, 4 })));
+            var a = Const.FromTensor(Tensor.From<int>(Enumerable.Range(0, 12).ToArray(), new RankedShape(new[] { 1, 3, 4 })));
+            var b = Const.FromTensor(Tensor.From<int>(new int[12], new RankedShape(new[] { 1, 3, 4 })));
             var inputList = new Tuple(a, b);
             var expr = IR.F.Tensors.Concat(inputList, 0);
             return new Function(expr, new Var[] { _input });
@@ -2415,7 +2415,7 @@ public sealed class SizeOfCase : IRewriteCase
     {
         get
         {
-            _ = new Shape(new[] { 1, 3, 16, 16 });
+            _ = new RankedShape(new[] { 1, 3, 16, 16 });
             var input = OrtKI.Random(1, 3, 16, 16).ToTensor();
             var expr = IR.F.Tensors.SizeOf(input);
             return new Function(expr, new Var[] { _input });
@@ -2509,7 +2509,7 @@ public sealed class OneHotCase : IRewriteCase
             var a = new int[] { 1, 2, 0, 3 };
             var indices = Tensor.From(a, [4]);
             var depth = 5;
-            var values = Tensor.From(new int[] { 0, 1 }, new Shape(new[] { 2 }));
+            var values = Tensor.From(new int[] { 0, 1 }, new RankedShape(new[] { 2 }));
             var axis = 0L;
             var expr = IR.F.NN.OneHot(OneHotMode.Normal, indices, depth, values, axis);
             return new Function(expr, new Var[] { _input });

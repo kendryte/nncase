@@ -78,19 +78,19 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
     private static Shape ApplyAxis(long[] axes, TensorType input, Func<int, long, Dimension, Dimension> f)
     {
-        if (input.Shape.IsUnranked)
+        if (input.Shape is not RankedShape inShape)
         {
             return Shape.Unranked;
         }
 
-        var outShape = input.Shape.ToArray();
+        var outShape = inShape.ToArray();
         for (int i = 0; i < axes.Length; i++)
         {
             var axisV = axes[i];
             var axis = axisV < 0
-                ? axisV + input.Shape.Rank
+                ? axisV + inShape.Rank
                 : axisV;
-            outShape[axis] = f(i, axis, input.Shape[axis]);
+            outShape[axis] = f(i, axis, inShape[axis]);
         }
 
         return outShape;
@@ -109,7 +109,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return input;
         }
 
-        if (input.Shape.IsRanked && input.Shape.Count == 0)
+        if (input.Shape.IsScalar)
         {
             return new InvalidType("Slice Input should not scalar");
         }

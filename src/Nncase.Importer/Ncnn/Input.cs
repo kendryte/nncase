@@ -23,7 +23,7 @@ public partial class NcnnImporter
         var w = (Dimension?)layer.ParamDict.GetInt(0) ?? new DimVar("w");
         var h = (Dimension?)layer.ParamDict.GetInt(1) ?? new DimVar("h");
         var c = (Dimension?)layer.ParamDict.GetInt(2) ?? new DimVar("c");
-        var shape = new Shape(c, h, w);
+        var shape = new RankedShape(c, h, w);
         var input = new Var(layer.Name, new TensorType(DataTypes.Float32, shape));
         _inputs.Add(input);
         return input;

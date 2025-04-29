@@ -57,7 +57,7 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
     public IRType Visit(ITypeInferenceContext context, Expand target)
     {
         var input = context.CheckArgumentType<IRType>(target, Expand.Input);
-        var shape = context.CheckArgumentTensorTypeOrBroadcast(target, Expand.Shape);
+        var shape = (Shape)context.GetArgument(target, Expand.Shape);
         return input switch
         {
             TensorType t => Visit(context, target, t, shape),
@@ -66,20 +66,18 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input, TensorType shape)
+    private IRType Visit(ITypeInferenceContext context, Expand target, TensorType input, Shape shape)
     {
-        var shapeExpr = (Shape)context.GetArgument(target, Expand.Shape);
-        var newShape = TypeInference.ExpandShape(input.Shape, shapeExpr);
+        var newShape = TypeInference.ExpandShape(input.Shape, shape);
         return input with { Shape = newShape };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Expand target, DistributedType input, TensorType shape)
+    private IRType Visit(ITypeInferenceContext context, Expand target, DistributedType input, Shape shape)
     {
         var invalid = new InvalidType(input.ToString());
-        var shapeExpr = (Shape)context.GetArgument(target, Expand.Shape);
-        if (input.TensorType.Shape.IsRanked && shapeExpr.IsRanked)
+        if (input.TensorType.Shape.IsRanked && shape.IsRanked)
         {
-            var newShape = TypeInference.ExpandShape(input.TensorType.Shape, shapeExpr);
+            var newShape = TypeInference.ExpandShape(input.TensorType.Shape, shape);
             var dimExtends = newShape.Rank - input.TensorType.Shape.Rank;
             var ndsbp = new SBP[newShape.Rank];
             for (int i = 0; i < ndsbp.Length; i++)

@@ -7,16 +7,18 @@ using Nncase.Utilities;
 
 namespace Nncase.IR.Affine;
 
-public sealed class AffineDomain : Expr
+public sealed class AffineDomain : BaseExpr
 {
     public AffineDomain(AffineDim offset, AffineExtent extent)
-        : base(new Expr[] { offset, extent })
+        : base(new BaseExpr[] { offset, extent })
     {
     }
 
     public AffineDim Offset => (AffineDim)Operands[0];
 
     public AffineExtent Extent => (AffineExtent)Operands[1];
+
+    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineDomain(this, context);
 
@@ -26,16 +28,18 @@ public sealed class AffineDomain : Expr
     public override string ToString() => $"({Offset}, {Extent})";
 }
 
-public sealed class AffineRange : Expr
+public sealed class AffineRange : BaseExpr
 {
     public AffineRange(AffineExpr offset, AffineExpr extent)
-        : base(new Expr[] { offset, extent })
+        : base(new BaseExpr[] { offset, extent })
     {
     }
 
     public AffineExpr Offset => (AffineExpr)Operands[0];
 
     public AffineExpr Extent => (AffineExpr)Operands[1];
+
+    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineRange(this, context);
 
@@ -63,23 +67,25 @@ public sealed class AffineRange : Expr
         => new AffineRange(Offset.ReplaceDomainsAndSymbols(newDomains, Array.Empty<AffineSymbol>()), Extent.ReplaceDomainsAndSymbols(newDomains, Array.Empty<AffineSymbol>()));
 }
 
-public sealed class AffineMap : Expr
+public sealed class AffineMap : BaseExpr
 {
     private readonly int _domainsCount;
     private readonly int _symbolsCount;
 
     public AffineMap(ReadOnlySpan<AffineDomain> domains, ReadOnlySpan<AffineSymbol> symbols, ReadOnlySpan<AffineRange> results)
-        : base(domains.ToArray().AsEnumerable<Expr>().Concat(symbols.ToArray()).Concat(results.ToArray()))
+        : base(domains.ToArray().AsEnumerable<BaseExpr>().Concat(symbols.ToArray()).Concat(results.ToArray()))
     {
         _domainsCount = domains.Length;
         _symbolsCount = symbols.Length;
     }
 
-    public ReadOnlySpan<AffineDomain> Domains => SpanUtility.UnsafeCast<Expr, AffineDomain>(Operands.Slice(0, _domainsCount));
+    public ReadOnlySpan<AffineDomain> Domains => SpanUtility.UnsafeCast<BaseExpr, AffineDomain>(Operands.Slice(0, _domainsCount));
 
-    public ReadOnlySpan<AffineSymbol> Symbols => SpanUtility.UnsafeCast<Expr, AffineSymbol>(Operands.Slice(_domainsCount, _symbolsCount));
+    public ReadOnlySpan<AffineSymbol> Symbols => SpanUtility.UnsafeCast<BaseExpr, AffineSymbol>(Operands.Slice(_domainsCount, _symbolsCount));
 
-    public ReadOnlySpan<AffineRange> Results => SpanUtility.UnsafeCast<Expr, AffineRange>(Operands.Slice(_domainsCount + _symbolsCount));
+    public ReadOnlySpan<AffineRange> Results => SpanUtility.UnsafeCast<BaseExpr, AffineRange>(Operands.Slice(_domainsCount + _symbolsCount));
+
+    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
 
     public static AffineMap operator *(AffineMap lhs, AffineMap rhs)
     {

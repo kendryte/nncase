@@ -92,12 +92,12 @@ internal sealed class PrintOpContext : IPrintOpContext
 internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 {
     private readonly IndentedWriter _writer;
-    private readonly List<Dictionary<Expr, string>> _stackedMemos;
+    private readonly List<Dictionary<BaseExpr, string>> _stackedMemos;
     private readonly List<int> _stackedSSANumbers;
     private readonly List<int> _stackedScopeDepthOffSets;
     private readonly List<int> _stackedVisitDepthOffSets;
 
-    public ILPrintVisitor(IndentedWriter printer, PrinterFlags printerFlags, IReadOnlyDictionary<Expr, string> feedDict)
+    public ILPrintVisitor(IndentedWriter printer, PrinterFlags printerFlags, IReadOnlyDictionary<BaseExpr, string> feedDict)
     {
         _writer = printer;
         Flags = printerFlags;
@@ -145,7 +145,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     public override string VisitType(DistributedType type)
     {
-        var shape = type.TensorType.Shape.ToArray();
+        var shape = ((RankedShape)type.TensorType.Shape).ToArray();
         foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
@@ -169,7 +169,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         return $"{{{VisitType(type.TensorType)}, ({string.Join(',', type.AxisPolices)}), [{string.Join(',', sshape)}]}}";
     }
 
-    protected override string DispatchVisit(Expr expr)
+    protected override string DispatchVisit(BaseExpr expr)
     {
         if (_stackedMemos[^1].TryGetValue(expr, out var name))
         {

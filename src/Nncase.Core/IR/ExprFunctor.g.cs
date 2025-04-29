@@ -304,6 +304,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitDimPositive(DimPositive expr, TContext context) => VisitDimension(expr, context);
 
     /// <summary>
+    /// Visit <see cref="DimAt"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimAt(DimAt expr, TContext context) => VisitDimension(expr, context);
+
+    /// <summary>
     /// Visit <see cref="Shapes.Padding"/>.
     /// </summary>
     internal protected virtual TExprResult VisitPadding(Shapes.Padding expr, TContext context) => DefaultVisit(expr, context);
@@ -317,6 +322,26 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     /// Visit <see cref="Shape"/>.
     /// </summary>
     internal protected virtual TExprResult VisitShape(Shape expr, TContext context) => DefaultVisit(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="RankedShape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitRankedShape(RankedShape expr, TContext context) => VisitShape(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="UnrankedShape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitUnrankedShape(UnrankedShape expr, TContext context) => VisitShape(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="InvalidShape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitInvalidShape(InvalidShape expr, TContext context) => VisitShape(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="ShapeVar"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShapeVar(ShapeVar expr, TContext context) => VisitShape(expr, context);
 
 }
 
@@ -729,6 +754,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitDimPositive(DimPositive expr, Unit context) => VisitDimPositive(expr);
     /// <summary>
+    /// Visit <see cref="DimAt"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimAt(DimAt expr) => base.VisitDimAt(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimAt(DimAt expr, Unit context) => VisitDimAt(expr);
+    /// <summary>
     /// Visit <see cref="Shapes.Padding"/>.
     /// </summary>
     internal protected virtual TExprResult VisitPadding(Shapes.Padding expr) => base.VisitPadding(expr, default);
@@ -749,4 +781,32 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitShape(Shape expr, Unit context) => VisitShape(expr);
+    /// <summary>
+    /// Visit <see cref="RankedShape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitRankedShape(RankedShape expr) => base.VisitRankedShape(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitRankedShape(RankedShape expr, Unit context) => VisitRankedShape(expr);
+    /// <summary>
+    /// Visit <see cref="UnrankedShape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitUnrankedShape(UnrankedShape expr) => base.VisitUnrankedShape(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitUnrankedShape(UnrankedShape expr, Unit context) => VisitUnrankedShape(expr);
+    /// <summary>
+    /// Visit <see cref="InvalidShape"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitInvalidShape(InvalidShape expr) => base.VisitInvalidShape(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitInvalidShape(InvalidShape expr, Unit context) => VisitInvalidShape(expr);
+    /// <summary>
+    /// Visit <see cref="ShapeVar"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShapeVar(ShapeVar expr) => base.VisitShapeVar(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitShapeVar(ShapeVar expr, Unit context) => VisitShapeVar(expr);
 }

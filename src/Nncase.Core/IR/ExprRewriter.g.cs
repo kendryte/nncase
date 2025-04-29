@@ -14,675 +14,730 @@ namespace Nncase.IR;
 public partial class ExprRewriter<TContext>
 {
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafBaseFunction(BaseFunction expr, TContext context)
+    protected sealed override BaseExpr VisitLeafBaseFunction(BaseFunction expr, TContext context)
     {
         return RewriteLeafBaseFunction(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafCall(Call expr, TContext context)
+    protected sealed override BaseExpr VisitLeafCall(Call expr, TContext context)
     {
         return RewriteLeafCall(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafConst(Const expr, TContext context)
+    protected sealed override BaseExpr VisitLeafConst(Const expr, TContext context)
     {
         return RewriteLeafConst(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafFunction(Function expr, TContext context)
+    protected sealed override BaseExpr VisitLeafFunction(Function expr, TContext context)
     {
         return RewriteLeafFunction(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafFusion(Fusion expr, TContext context)
+    protected sealed override BaseExpr VisitLeafFusion(Fusion expr, TContext context)
     {
         return RewriteLeafFusion(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafIf(If expr, TContext context)
+    protected sealed override BaseExpr VisitLeafIf(If expr, TContext context)
     {
         return RewriteLeafIf(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafMarker(Marker expr, TContext context)
+    protected sealed override BaseExpr VisitLeafMarker(Marker expr, TContext context)
     {
         return RewriteLeafMarker(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafNone(None expr, TContext context)
+    protected sealed override BaseExpr VisitLeafNone(None expr, TContext context)
     {
         return RewriteLeafNone(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafOp(Op expr, TContext context)
+    protected sealed override BaseExpr VisitLeafOp(Op expr, TContext context)
     {
         return RewriteLeafOp(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context)
+    protected sealed override BaseExpr VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context)
     {
         return RewriteLeafPrimFunctionWrapper(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafTensorConst(TensorConst expr, TContext context)
+    protected sealed override BaseExpr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
         return RewriteLeafTensorConst(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafTuple(IR.Tuple expr, TContext context)
+    protected sealed override BaseExpr VisitLeafTuple(IR.Tuple expr, TContext context)
     {
         return RewriteLeafTuple(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafTupleConst(TupleConst expr, TContext context)
+    protected sealed override BaseExpr VisitLeafTupleConst(TupleConst expr, TContext context)
     {
         return RewriteLeafTupleConst(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafMemSpan(TIR.MemSpan expr, TContext context)
+    protected sealed override BaseExpr VisitLeafMemSpan(TIR.MemSpan expr, TContext context)
     {
         return RewriteLeafMemSpan(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafVar(Var expr, TContext context)
+    protected sealed override BaseExpr VisitLeafVar(Var expr, TContext context)
     {
         return RewriteLeafVar(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafBlock(TIR.Block expr, TContext context)
+    protected sealed override BaseExpr VisitLeafBlock(TIR.Block expr, TContext context)
     {
         return RewriteLeafBlock(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafBuffer(TIR.Buffer expr, TContext context)
+    protected sealed override BaseExpr VisitLeafBuffer(TIR.Buffer expr, TContext context)
     {
         return RewriteLeafBuffer(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafBufferRegion(TIR.BufferRegion expr, TContext context)
+    protected sealed override BaseExpr VisitLeafBufferRegion(TIR.BufferRegion expr, TContext context)
     {
         return RewriteLeafBufferRegion(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafFor(TIR.For expr, TContext context)
+    protected sealed override BaseExpr VisitLeafFor(TIR.For expr, TContext context)
     {
         return RewriteLeafFor(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafIfThenElse(TIR.IfThenElse expr, TContext context)
+    protected sealed override BaseExpr VisitLeafIfThenElse(TIR.IfThenElse expr, TContext context)
     {
         return RewriteLeafIfThenElse(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafLet(TIR.Let expr, TContext context)
+    protected sealed override BaseExpr VisitLeafLet(TIR.Let expr, TContext context)
     {
         return RewriteLeafLet(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafPrimFunction(TIR.PrimFunction expr, TContext context)
+    protected sealed override BaseExpr VisitLeafPrimFunction(TIR.PrimFunction expr, TContext context)
     {
         return RewriteLeafPrimFunction(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafSequential(TIR.Sequential expr, TContext context)
+    protected sealed override BaseExpr VisitLeafSequential(TIR.Sequential expr, TContext context)
     {
         return RewriteLeafSequential(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafRange(TIR.Range expr, TContext context)
+    protected sealed override BaseExpr VisitLeafRange(TIR.Range expr, TContext context)
     {
         return RewriteLeafRange(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafIterVar(TIR.IterVar expr, TContext context)
+    protected sealed override BaseExpr VisitLeafIterVar(TIR.IterVar expr, TContext context)
     {
         return RewriteLeafIterVar(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineExpr(Affine.AffineExpr expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineExpr(Affine.AffineExpr expr, TContext context)
     {
         return RewriteLeafAffineExpr(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineSymbolBase(Affine.AffineSymbolBase expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineSymbolBase(Affine.AffineSymbolBase expr, TContext context)
     {
         return RewriteLeafAffineSymbolBase(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineDim(Affine.AffineDim expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineDim(Affine.AffineDim expr, TContext context)
     {
         return RewriteLeafAffineDim(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineExtent(Affine.AffineExtent expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineExtent(Affine.AffineExtent expr, TContext context)
     {
         return RewriteLeafAffineExtent(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineSymbol(Affine.AffineSymbol expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineSymbol(Affine.AffineSymbol expr, TContext context)
     {
         return RewriteLeafAffineSymbol(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineConstant(Affine.AffineConstant expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineConstant(Affine.AffineConstant expr, TContext context)
     {
         return RewriteLeafAffineConstant(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineAddBinary(Affine.AffineAddBinary expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineAddBinary(Affine.AffineAddBinary expr, TContext context)
     {
         return RewriteLeafAffineAddBinary(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineMulBinary(Affine.AffineMulBinary expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineMulBinary(Affine.AffineMulBinary expr, TContext context)
     {
         return RewriteLeafAffineMulBinary(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineDivBinary(Affine.AffineDivBinary expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineDivBinary(Affine.AffineDivBinary expr, TContext context)
     {
         return RewriteLeafAffineDivBinary(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineDomain(Affine.AffineDomain expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineDomain(Affine.AffineDomain expr, TContext context)
     {
         return RewriteLeafAffineDomain(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineRange(Affine.AffineRange expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineRange(Affine.AffineRange expr, TContext context)
     {
         return RewriteLeafAffineRange(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineMap(Affine.AffineMap expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineMap(Affine.AffineMap expr, TContext context)
     {
         return RewriteLeafAffineMap(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAffineRelation(Affine.AffineRelation expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineRelation(Affine.AffineRelation expr, TContext context)
     {
         return RewriteLeafAffineRelation(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafGrid(Affine.Grid expr, TContext context)
+    protected sealed override BaseExpr VisitLeafGrid(Affine.Grid expr, TContext context)
     {
         return RewriteLeafGrid(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafLoad(Affine.Load expr, TContext context)
+    protected sealed override BaseExpr VisitLeafLoad(Affine.Load expr, TContext context)
     {
         return RewriteLeafLoad(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafFor(Affine.For expr, TContext context)
+    protected sealed override BaseExpr VisitLeafFor(Affine.For expr, TContext context)
     {
         return RewriteLeafFor(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafBufferOf(Buffers.BufferOf expr, TContext context)
+    protected sealed override BaseExpr VisitLeafBufferOf(Buffers.BufferOf expr, TContext context)
     {
         return RewriteLeafBufferOf(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimension(Dimension expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimension(Dimension expr, TContext context)
     {
         return RewriteLeafDimension(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafAsDim(AsDim expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAsDim(AsDim expr, TContext context)
     {
         return RewriteLeafAsDim(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafUnknownDim(UnknownDim expr, TContext context)
+    protected sealed override BaseExpr VisitLeafUnknownDim(UnknownDim expr, TContext context)
     {
         return RewriteLeafUnknownDim(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimVar(DimVar expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimVar(DimVar expr, TContext context)
     {
         return RewriteLeafDimVar(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimConst(DimConst expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimConst(DimConst expr, TContext context)
     {
         return RewriteLeafDimConst(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimPower(DimPower expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimPower(DimPower expr, TContext context)
     {
         return RewriteLeafDimPower(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimFraction(DimFraction expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimFraction(DimFraction expr, TContext context)
     {
         return RewriteLeafDimFraction(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimRemainder(DimRemainder expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimRemainder(DimRemainder expr, TContext context)
     {
         return RewriteLeafDimRemainder(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimProduct(DimProduct expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimProduct(DimProduct expr, TContext context)
     {
         return RewriteLeafDimProduct(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimSum(DimSum expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimSum(DimSum expr, TContext context)
     {
         return RewriteLeafDimSum(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimAbs(DimAbs expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimAbs(DimAbs expr, TContext context)
     {
         return RewriteLeafDimAbs(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimClamp(DimClamp expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimClamp(DimClamp expr, TContext context)
     {
         return RewriteLeafDimClamp(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimCompareAndSelect(DimCompareAndSelect expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimCompareAndSelect(DimCompareAndSelect expr, TContext context)
     {
         return RewriteLeafDimCompareAndSelect(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimMin(DimMin expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimMin(DimMin expr, TContext context)
     {
         return RewriteLeafDimMin(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimMax(DimMax expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimMax(DimMax expr, TContext context)
     {
         return RewriteLeafDimMax(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafDimPositive(DimPositive expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimPositive(DimPositive expr, TContext context)
     {
         return RewriteLeafDimPositive(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafPadding(Shapes.Padding expr, TContext context)
+    protected sealed override BaseExpr VisitLeafDimAt(DimAt expr, TContext context)
+    {
+        return RewriteLeafDimAt(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafPadding(Shapes.Padding expr, TContext context)
     {
         return RewriteLeafPadding(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafPaddings(Shapes.Paddings expr, TContext context)
+    protected sealed override BaseExpr VisitLeafPaddings(Shapes.Paddings expr, TContext context)
     {
         return RewriteLeafPaddings(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeafShape(Shape expr, TContext context)
+    protected sealed override BaseExpr VisitLeafShape(Shape expr, TContext context)
     {
         return RewriteLeafShape(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafRankedShape(RankedShape expr, TContext context)
+    {
+        return RewriteLeafRankedShape(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafUnrankedShape(UnrankedShape expr, TContext context)
+    {
+        return RewriteLeafUnrankedShape(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafInvalidShape(InvalidShape expr, TContext context)
+    {
+        return RewriteLeafInvalidShape(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafShapeVar(ShapeVar expr, TContext context)
+    {
+        return RewriteLeafShapeVar(expr, context);
     }
 
     /// <summary>
     /// Rewrite leaf <see cref="BaseFunction"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBaseFunction(BaseFunction expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafBaseFunction(BaseFunction expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Call"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafCall(Call expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafCall(Call expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Const"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafConst(Const expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafConst(Const expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Function"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafFunction(Function expr, TContext context) => RewriteLeafBaseFunction(expr, context);
+    protected virtual BaseExpr RewriteLeafFunction(Function expr, TContext context) => RewriteLeafBaseFunction(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Fusion"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafFusion(Fusion expr, TContext context) => RewriteLeafBaseFunction(expr, context);
+    protected virtual BaseExpr RewriteLeafFusion(Fusion expr, TContext context) => RewriteLeafBaseFunction(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="If"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafIf(If expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafIf(If expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Marker"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafMarker(Marker expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafMarker(Marker expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="None"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafNone(None expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafNone(None expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Op"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafOp(Op expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafOp(Op expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="PrimFunctionWrapper"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => RewriteLeafBaseFunction(expr, context);
+    protected virtual BaseExpr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => RewriteLeafBaseFunction(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TensorConst"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafTensorConst(TensorConst expr, TContext context) => RewriteLeafConst(expr, context);
+    protected virtual BaseExpr RewriteLeafTensorConst(TensorConst expr, TContext context) => RewriteLeafConst(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="IR.Tuple"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafTuple(IR.Tuple expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafTuple(IR.Tuple expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TupleConst"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafTupleConst(TupleConst expr, TContext context) => RewriteLeafConst(expr, context);
+    protected virtual BaseExpr RewriteLeafTupleConst(TupleConst expr, TContext context) => RewriteLeafConst(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.MemSpan"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafMemSpan(TIR.MemSpan expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafMemSpan(TIR.MemSpan expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Var"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafVar(Var expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafVar(Var expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Block"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBlock(TIR.Block expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafBlock(TIR.Block expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Buffer"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBuffer(TIR.Buffer expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafBuffer(TIR.Buffer expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.BufferRegion"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBufferRegion(TIR.BufferRegion expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafBufferRegion(TIR.BufferRegion expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.For"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafFor(TIR.For expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafFor(TIR.For expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.IfThenElse"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafIfThenElse(TIR.IfThenElse expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafIfThenElse(TIR.IfThenElse expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Let"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafLet(TIR.Let expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafLet(TIR.Let expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.PrimFunction"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPrimFunction(TIR.PrimFunction expr, TContext context) => RewriteLeafBaseFunction(expr, context);
+    protected virtual BaseExpr RewriteLeafPrimFunction(TIR.PrimFunction expr, TContext context) => RewriteLeafBaseFunction(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Sequential"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafSequential(TIR.Sequential expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafSequential(TIR.Sequential expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Range"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafRange(TIR.Range expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafRange(TIR.Range expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.IterVar"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafIterVar(TIR.IterVar expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafIterVar(TIR.IterVar expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineExpr"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineExpr(Affine.AffineExpr expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineExpr(Affine.AffineExpr expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineSymbolBase"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr, TContext context) => RewriteLeafAffineExpr(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDim"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineDim(Affine.AffineDim expr, TContext context) => RewriteLeafAffineExpr(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineDim(Affine.AffineDim expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineExtent"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineExtent(Affine.AffineExtent expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineExtent(Affine.AffineExtent expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineSymbol"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineSymbol(Affine.AffineSymbol expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineSymbol(Affine.AffineSymbol expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineConstant"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineConstant(Affine.AffineConstant expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineConstant(Affine.AffineConstant expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineAddBinary"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineAddBinary(Affine.AffineAddBinary expr, TContext context) => RewriteLeafAffineExpr(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineAddBinary(Affine.AffineAddBinary expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineMulBinary"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineMulBinary(Affine.AffineMulBinary expr, TContext context) => RewriteLeafAffineExpr(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineMulBinary(Affine.AffineMulBinary expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDivBinary"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineDivBinary(Affine.AffineDivBinary expr, TContext context) => RewriteLeafAffineExpr(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineDivBinary(Affine.AffineDivBinary expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDomain"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineDomain(Affine.AffineDomain expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineDomain(Affine.AffineDomain expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineRange"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineRange(Affine.AffineRange expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineRange(Affine.AffineRange expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineMap"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineMap(Affine.AffineMap expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineMap(Affine.AffineMap expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineRelation"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineRelation(Affine.AffineRelation expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineRelation(Affine.AffineRelation expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.Grid"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafGrid(Affine.Grid expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafGrid(Affine.Grid expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.Load"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafLoad(Affine.Load expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafLoad(Affine.Load expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.For"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafFor(Affine.For expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafFor(Affine.For expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Buffers.BufferOf"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBufferOf(Buffers.BufferOf expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafBufferOf(Buffers.BufferOf expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Dimension"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimension(Dimension expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafDimension(Dimension expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="AsDim"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAsDim(AsDim expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafAsDim(AsDim expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="UnknownDim"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafUnknownDim(UnknownDim expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafUnknownDim(UnknownDim expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimVar"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimVar(DimVar expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimVar(DimVar expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimConst"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimConst(DimConst expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimConst(DimConst expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimPower"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimPower(DimPower expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimPower(DimPower expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimFraction"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimFraction(DimFraction expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimFraction(DimFraction expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimRemainder"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimRemainder(DimRemainder expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimRemainder(DimRemainder expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimProduct"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimProduct(DimProduct expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimProduct(DimProduct expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimSum"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimSum(DimSum expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimSum(DimSum expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimAbs"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimAbs(DimAbs expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimAbs(DimAbs expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimClamp"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimClamp(DimClamp expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimClamp(DimClamp expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimCompareAndSelect"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimMin"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimMin(DimMin expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimMin(DimMin expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimMax"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimMax(DimMax expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimMax(DimMax expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimPositive"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimPositive(DimPositive expr, TContext context) => RewriteLeafDimension(expr, context);
+    protected virtual BaseExpr RewriteLeafDimPositive(DimPositive expr, TContext context) => RewriteLeafDimension(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimAt"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafDimAt(DimAt expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Shapes.Padding"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPadding(Shapes.Padding expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafPadding(Shapes.Padding expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Shapes.Paddings"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPaddings(Shapes.Paddings expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafPaddings(Shapes.Paddings expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Shape"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafShape(Shape expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafShape(Shape expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="RankedShape"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafRankedShape(RankedShape expr, TContext context) => RewriteLeafShape(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="UnrankedShape"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafUnrankedShape(UnrankedShape expr, TContext context) => RewriteLeafShape(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="InvalidShape"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafInvalidShape(InvalidShape expr, TContext context) => RewriteLeafShape(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="ShapeVar"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafShapeVar(ShapeVar expr, TContext context) => RewriteLeafShape(expr, context);
 
 }
 
@@ -691,489 +746,529 @@ public partial class ExprRewriter
     /// <summary>
     /// Rewrite leaf <see cref="BaseFunction"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBaseFunction(BaseFunction expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafBaseFunction(BaseFunction expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafBaseFunction(BaseFunction expr, Unit context) => RewriteLeafBaseFunction(expr);
+    protected sealed override BaseExpr RewriteLeafBaseFunction(BaseFunction expr, Unit context) => RewriteLeafBaseFunction(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Call"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafCall(Call expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafCall(Call expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafCall(Call expr, Unit context) => RewriteLeafCall(expr);
+    protected sealed override BaseExpr RewriteLeafCall(Call expr, Unit context) => RewriteLeafCall(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Const"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafConst(Const expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafConst(Const expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafConst(Const expr, Unit context) => RewriteLeafConst(expr);
+    protected sealed override BaseExpr RewriteLeafConst(Const expr, Unit context) => RewriteLeafConst(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Function"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafFunction(Function expr) => RewriteLeafBaseFunction(expr);
+    protected virtual BaseExpr RewriteLeafFunction(Function expr) => RewriteLeafBaseFunction(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafFunction(Function expr, Unit context) => RewriteLeafFunction(expr);
+    protected sealed override BaseExpr RewriteLeafFunction(Function expr, Unit context) => RewriteLeafFunction(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Fusion"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafFusion(Fusion expr) => RewriteLeafBaseFunction(expr);
+    protected virtual BaseExpr RewriteLeafFusion(Fusion expr) => RewriteLeafBaseFunction(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafFusion(Fusion expr, Unit context) => RewriteLeafFusion(expr);
+    protected sealed override BaseExpr RewriteLeafFusion(Fusion expr, Unit context) => RewriteLeafFusion(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="If"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafIf(If expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafIf(If expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafIf(If expr, Unit context) => RewriteLeafIf(expr);
+    protected sealed override BaseExpr RewriteLeafIf(If expr, Unit context) => RewriteLeafIf(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Marker"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafMarker(Marker expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafMarker(Marker expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafMarker(Marker expr, Unit context) => RewriteLeafMarker(expr);
+    protected sealed override BaseExpr RewriteLeafMarker(Marker expr, Unit context) => RewriteLeafMarker(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="None"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafNone(None expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafNone(None expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafNone(None expr, Unit context) => RewriteLeafNone(expr);
+    protected sealed override BaseExpr RewriteLeafNone(None expr, Unit context) => RewriteLeafNone(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Op"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafOp(Op expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafOp(Op expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafOp(Op expr, Unit context) => RewriteLeafOp(expr);
+    protected sealed override BaseExpr RewriteLeafOp(Op expr, Unit context) => RewriteLeafOp(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="PrimFunctionWrapper"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr) => RewriteLeafBaseFunction(expr);
+    protected virtual BaseExpr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr) => RewriteLeafBaseFunction(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => RewriteLeafPrimFunctionWrapper(expr);
+    protected sealed override BaseExpr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => RewriteLeafPrimFunctionWrapper(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TensorConst"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafTensorConst(TensorConst expr) => RewriteLeafConst(expr);
+    protected virtual BaseExpr RewriteLeafTensorConst(TensorConst expr) => RewriteLeafConst(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafTensorConst(TensorConst expr, Unit context) => RewriteLeafTensorConst(expr);
+    protected sealed override BaseExpr RewriteLeafTensorConst(TensorConst expr, Unit context) => RewriteLeafTensorConst(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="IR.Tuple"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafTuple(IR.Tuple expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafTuple(IR.Tuple expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafTuple(IR.Tuple expr, Unit context) => RewriteLeafTuple(expr);
+    protected sealed override BaseExpr RewriteLeafTuple(IR.Tuple expr, Unit context) => RewriteLeafTuple(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TupleConst"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafTupleConst(TupleConst expr) => RewriteLeafConst(expr);
+    protected virtual BaseExpr RewriteLeafTupleConst(TupleConst expr) => RewriteLeafConst(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafTupleConst(TupleConst expr, Unit context) => RewriteLeafTupleConst(expr);
+    protected sealed override BaseExpr RewriteLeafTupleConst(TupleConst expr, Unit context) => RewriteLeafTupleConst(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.MemSpan"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafMemSpan(TIR.MemSpan expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafMemSpan(TIR.MemSpan expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafMemSpan(TIR.MemSpan expr, Unit context) => RewriteLeafMemSpan(expr);
+    protected sealed override BaseExpr RewriteLeafMemSpan(TIR.MemSpan expr, Unit context) => RewriteLeafMemSpan(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Var"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafVar(Var expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafVar(Var expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafVar(Var expr, Unit context) => RewriteLeafVar(expr);
+    protected sealed override BaseExpr RewriteLeafVar(Var expr, Unit context) => RewriteLeafVar(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Block"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBlock(TIR.Block expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafBlock(TIR.Block expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafBlock(TIR.Block expr, Unit context) => RewriteLeafBlock(expr);
+    protected sealed override BaseExpr RewriteLeafBlock(TIR.Block expr, Unit context) => RewriteLeafBlock(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Buffer"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBuffer(TIR.Buffer expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafBuffer(TIR.Buffer expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafBuffer(TIR.Buffer expr, Unit context) => RewriteLeafBuffer(expr);
+    protected sealed override BaseExpr RewriteLeafBuffer(TIR.Buffer expr, Unit context) => RewriteLeafBuffer(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.BufferRegion"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBufferRegion(TIR.BufferRegion expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafBufferRegion(TIR.BufferRegion expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafBufferRegion(TIR.BufferRegion expr, Unit context) => RewriteLeafBufferRegion(expr);
+    protected sealed override BaseExpr RewriteLeafBufferRegion(TIR.BufferRegion expr, Unit context) => RewriteLeafBufferRegion(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.For"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafFor(TIR.For expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafFor(TIR.For expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafFor(TIR.For expr, Unit context) => RewriteLeafFor(expr);
+    protected sealed override BaseExpr RewriteLeafFor(TIR.For expr, Unit context) => RewriteLeafFor(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.IfThenElse"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafIfThenElse(TIR.IfThenElse expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafIfThenElse(TIR.IfThenElse expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafIfThenElse(TIR.IfThenElse expr, Unit context) => RewriteLeafIfThenElse(expr);
+    protected sealed override BaseExpr RewriteLeafIfThenElse(TIR.IfThenElse expr, Unit context) => RewriteLeafIfThenElse(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Let"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafLet(TIR.Let expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafLet(TIR.Let expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafLet(TIR.Let expr, Unit context) => RewriteLeafLet(expr);
+    protected sealed override BaseExpr RewriteLeafLet(TIR.Let expr, Unit context) => RewriteLeafLet(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.PrimFunction"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPrimFunction(TIR.PrimFunction expr) => RewriteLeafBaseFunction(expr);
+    protected virtual BaseExpr RewriteLeafPrimFunction(TIR.PrimFunction expr) => RewriteLeafBaseFunction(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafPrimFunction(TIR.PrimFunction expr, Unit context) => RewriteLeafPrimFunction(expr);
+    protected sealed override BaseExpr RewriteLeafPrimFunction(TIR.PrimFunction expr, Unit context) => RewriteLeafPrimFunction(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Sequential"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafSequential(TIR.Sequential expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafSequential(TIR.Sequential expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafSequential(TIR.Sequential expr, Unit context) => RewriteLeafSequential(expr);
+    protected sealed override BaseExpr RewriteLeafSequential(TIR.Sequential expr, Unit context) => RewriteLeafSequential(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.Range"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafRange(TIR.Range expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafRange(TIR.Range expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafRange(TIR.Range expr, Unit context) => RewriteLeafRange(expr);
+    protected sealed override BaseExpr RewriteLeafRange(TIR.Range expr, Unit context) => RewriteLeafRange(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.IterVar"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafIterVar(TIR.IterVar expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafIterVar(TIR.IterVar expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafIterVar(TIR.IterVar expr, Unit context) => RewriteLeafIterVar(expr);
+    protected sealed override BaseExpr RewriteLeafIterVar(TIR.IterVar expr, Unit context) => RewriteLeafIterVar(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineExpr"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineExpr(Affine.AffineExpr expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafAffineExpr(Affine.AffineExpr expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineExpr(Affine.AffineExpr expr, Unit context) => RewriteLeafAffineExpr(expr);
+    protected sealed override BaseExpr RewriteLeafAffineExpr(Affine.AffineExpr expr, Unit context) => RewriteLeafAffineExpr(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineSymbolBase"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr) => RewriteLeafAffineExpr(expr);
+    protected virtual BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr, Unit context) => RewriteLeafAffineSymbolBase(expr);
+    protected sealed override BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr, Unit context) => RewriteLeafAffineSymbolBase(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDim"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineDim(Affine.AffineDim expr) => RewriteLeafAffineExpr(expr);
+    protected virtual BaseExpr RewriteLeafAffineDim(Affine.AffineDim expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineDim(Affine.AffineDim expr, Unit context) => RewriteLeafAffineDim(expr);
+    protected sealed override BaseExpr RewriteLeafAffineDim(Affine.AffineDim expr, Unit context) => RewriteLeafAffineDim(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineExtent"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineExtent(Affine.AffineExtent expr) => RewriteLeafAffineSymbolBase(expr);
+    protected virtual BaseExpr RewriteLeafAffineExtent(Affine.AffineExtent expr) => RewriteLeafAffineSymbolBase(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineExtent(Affine.AffineExtent expr, Unit context) => RewriteLeafAffineExtent(expr);
+    protected sealed override BaseExpr RewriteLeafAffineExtent(Affine.AffineExtent expr, Unit context) => RewriteLeafAffineExtent(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineSymbol"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineSymbol(Affine.AffineSymbol expr) => RewriteLeafAffineSymbolBase(expr);
+    protected virtual BaseExpr RewriteLeafAffineSymbol(Affine.AffineSymbol expr) => RewriteLeafAffineSymbolBase(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineSymbol(Affine.AffineSymbol expr, Unit context) => RewriteLeafAffineSymbol(expr);
+    protected sealed override BaseExpr RewriteLeafAffineSymbol(Affine.AffineSymbol expr, Unit context) => RewriteLeafAffineSymbol(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineConstant"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineConstant(Affine.AffineConstant expr) => RewriteLeafAffineSymbolBase(expr);
+    protected virtual BaseExpr RewriteLeafAffineConstant(Affine.AffineConstant expr) => RewriteLeafAffineSymbolBase(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineConstant(Affine.AffineConstant expr, Unit context) => RewriteLeafAffineConstant(expr);
+    protected sealed override BaseExpr RewriteLeafAffineConstant(Affine.AffineConstant expr, Unit context) => RewriteLeafAffineConstant(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineAddBinary"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineAddBinary(Affine.AffineAddBinary expr) => RewriteLeafAffineExpr(expr);
+    protected virtual BaseExpr RewriteLeafAffineAddBinary(Affine.AffineAddBinary expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineAddBinary(Affine.AffineAddBinary expr, Unit context) => RewriteLeafAffineAddBinary(expr);
+    protected sealed override BaseExpr RewriteLeafAffineAddBinary(Affine.AffineAddBinary expr, Unit context) => RewriteLeafAffineAddBinary(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineMulBinary"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineMulBinary(Affine.AffineMulBinary expr) => RewriteLeafAffineExpr(expr);
+    protected virtual BaseExpr RewriteLeafAffineMulBinary(Affine.AffineMulBinary expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineMulBinary(Affine.AffineMulBinary expr, Unit context) => RewriteLeafAffineMulBinary(expr);
+    protected sealed override BaseExpr RewriteLeafAffineMulBinary(Affine.AffineMulBinary expr, Unit context) => RewriteLeafAffineMulBinary(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDivBinary"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineDivBinary(Affine.AffineDivBinary expr) => RewriteLeafAffineExpr(expr);
+    protected virtual BaseExpr RewriteLeafAffineDivBinary(Affine.AffineDivBinary expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineDivBinary(Affine.AffineDivBinary expr, Unit context) => RewriteLeafAffineDivBinary(expr);
+    protected sealed override BaseExpr RewriteLeafAffineDivBinary(Affine.AffineDivBinary expr, Unit context) => RewriteLeafAffineDivBinary(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDomain"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineDomain(Affine.AffineDomain expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafAffineDomain(Affine.AffineDomain expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineDomain(Affine.AffineDomain expr, Unit context) => RewriteLeafAffineDomain(expr);
+    protected sealed override BaseExpr RewriteLeafAffineDomain(Affine.AffineDomain expr, Unit context) => RewriteLeafAffineDomain(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineRange"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineRange(Affine.AffineRange expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafAffineRange(Affine.AffineRange expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineRange(Affine.AffineRange expr, Unit context) => RewriteLeafAffineRange(expr);
+    protected sealed override BaseExpr RewriteLeafAffineRange(Affine.AffineRange expr, Unit context) => RewriteLeafAffineRange(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineMap"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineMap(Affine.AffineMap expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafAffineMap(Affine.AffineMap expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineMap(Affine.AffineMap expr, Unit context) => RewriteLeafAffineMap(expr);
+    protected sealed override BaseExpr RewriteLeafAffineMap(Affine.AffineMap expr, Unit context) => RewriteLeafAffineMap(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineRelation"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAffineRelation(Affine.AffineRelation expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafAffineRelation(Affine.AffineRelation expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAffineRelation(Affine.AffineRelation expr, Unit context) => RewriteLeafAffineRelation(expr);
+    protected sealed override BaseExpr RewriteLeafAffineRelation(Affine.AffineRelation expr, Unit context) => RewriteLeafAffineRelation(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.Grid"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafGrid(Affine.Grid expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafGrid(Affine.Grid expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafGrid(Affine.Grid expr, Unit context) => RewriteLeafGrid(expr);
+    protected sealed override BaseExpr RewriteLeafGrid(Affine.Grid expr, Unit context) => RewriteLeafGrid(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.Load"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafLoad(Affine.Load expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafLoad(Affine.Load expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafLoad(Affine.Load expr, Unit context) => RewriteLeafLoad(expr);
+    protected sealed override BaseExpr RewriteLeafLoad(Affine.Load expr, Unit context) => RewriteLeafLoad(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.For"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafFor(Affine.For expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafFor(Affine.For expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafFor(Affine.For expr, Unit context) => RewriteLeafFor(expr);
+    protected sealed override BaseExpr RewriteLeafFor(Affine.For expr, Unit context) => RewriteLeafFor(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Buffers.BufferOf"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafBufferOf(Buffers.BufferOf expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafBufferOf(Buffers.BufferOf expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafBufferOf(Buffers.BufferOf expr, Unit context) => RewriteLeafBufferOf(expr);
+    protected sealed override BaseExpr RewriteLeafBufferOf(Buffers.BufferOf expr, Unit context) => RewriteLeafBufferOf(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Dimension"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimension(Dimension expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafDimension(Dimension expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimension(Dimension expr, Unit context) => RewriteLeafDimension(expr);
+    protected sealed override BaseExpr RewriteLeafDimension(Dimension expr, Unit context) => RewriteLeafDimension(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="AsDim"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafAsDim(AsDim expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafAsDim(AsDim expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafAsDim(AsDim expr, Unit context) => RewriteLeafAsDim(expr);
+    protected sealed override BaseExpr RewriteLeafAsDim(AsDim expr, Unit context) => RewriteLeafAsDim(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="UnknownDim"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafUnknownDim(UnknownDim expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafUnknownDim(UnknownDim expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafUnknownDim(UnknownDim expr, Unit context) => RewriteLeafUnknownDim(expr);
+    protected sealed override BaseExpr RewriteLeafUnknownDim(UnknownDim expr, Unit context) => RewriteLeafUnknownDim(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimVar"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimVar(DimVar expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimVar(DimVar expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimVar(DimVar expr, Unit context) => RewriteLeafDimVar(expr);
+    protected sealed override BaseExpr RewriteLeafDimVar(DimVar expr, Unit context) => RewriteLeafDimVar(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimConst"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimConst(DimConst expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimConst(DimConst expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimConst(DimConst expr, Unit context) => RewriteLeafDimConst(expr);
+    protected sealed override BaseExpr RewriteLeafDimConst(DimConst expr, Unit context) => RewriteLeafDimConst(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimPower"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimPower(DimPower expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimPower(DimPower expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimPower(DimPower expr, Unit context) => RewriteLeafDimPower(expr);
+    protected sealed override BaseExpr RewriteLeafDimPower(DimPower expr, Unit context) => RewriteLeafDimPower(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimFraction"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimFraction(DimFraction expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimFraction(DimFraction expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimFraction(DimFraction expr, Unit context) => RewriteLeafDimFraction(expr);
+    protected sealed override BaseExpr RewriteLeafDimFraction(DimFraction expr, Unit context) => RewriteLeafDimFraction(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimRemainder"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimRemainder(DimRemainder expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimRemainder(DimRemainder expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimRemainder(DimRemainder expr, Unit context) => RewriteLeafDimRemainder(expr);
+    protected sealed override BaseExpr RewriteLeafDimRemainder(DimRemainder expr, Unit context) => RewriteLeafDimRemainder(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimProduct"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimProduct(DimProduct expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimProduct(DimProduct expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimProduct(DimProduct expr, Unit context) => RewriteLeafDimProduct(expr);
+    protected sealed override BaseExpr RewriteLeafDimProduct(DimProduct expr, Unit context) => RewriteLeafDimProduct(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimSum"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimSum(DimSum expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimSum(DimSum expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimSum(DimSum expr, Unit context) => RewriteLeafDimSum(expr);
+    protected sealed override BaseExpr RewriteLeafDimSum(DimSum expr, Unit context) => RewriteLeafDimSum(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimAbs"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimAbs(DimAbs expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimAbs(DimAbs expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimAbs(DimAbs expr, Unit context) => RewriteLeafDimAbs(expr);
+    protected sealed override BaseExpr RewriteLeafDimAbs(DimAbs expr, Unit context) => RewriteLeafDimAbs(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimClamp"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimClamp(DimClamp expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimClamp(DimClamp expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimClamp(DimClamp expr, Unit context) => RewriteLeafDimClamp(expr);
+    protected sealed override BaseExpr RewriteLeafDimClamp(DimClamp expr, Unit context) => RewriteLeafDimClamp(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimCompareAndSelect"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr, Unit context) => RewriteLeafDimCompareAndSelect(expr);
+    protected sealed override BaseExpr RewriteLeafDimCompareAndSelect(DimCompareAndSelect expr, Unit context) => RewriteLeafDimCompareAndSelect(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimMin"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimMin(DimMin expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimMin(DimMin expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimMin(DimMin expr, Unit context) => RewriteLeafDimMin(expr);
+    protected sealed override BaseExpr RewriteLeafDimMin(DimMin expr, Unit context) => RewriteLeafDimMin(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimMax"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimMax(DimMax expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimMax(DimMax expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimMax(DimMax expr, Unit context) => RewriteLeafDimMax(expr);
+    protected sealed override BaseExpr RewriteLeafDimMax(DimMax expr, Unit context) => RewriteLeafDimMax(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="DimPositive"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafDimPositive(DimPositive expr) => RewriteLeafDimension(expr);
+    protected virtual BaseExpr RewriteLeafDimPositive(DimPositive expr) => RewriteLeafDimension(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafDimPositive(DimPositive expr, Unit context) => RewriteLeafDimPositive(expr);
+    protected sealed override BaseExpr RewriteLeafDimPositive(DimPositive expr, Unit context) => RewriteLeafDimPositive(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="DimAt"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafDimAt(DimAt expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafDimAt(DimAt expr, Unit context) => RewriteLeafDimAt(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Shapes.Padding"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPadding(Shapes.Padding expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafPadding(Shapes.Padding expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafPadding(Shapes.Padding expr, Unit context) => RewriteLeafPadding(expr);
+    protected sealed override BaseExpr RewriteLeafPadding(Shapes.Padding expr, Unit context) => RewriteLeafPadding(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Shapes.Paddings"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafPaddings(Shapes.Paddings expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafPaddings(Shapes.Paddings expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafPaddings(Shapes.Paddings expr, Unit context) => RewriteLeafPaddings(expr);
+    protected sealed override BaseExpr RewriteLeafPaddings(Shapes.Paddings expr, Unit context) => RewriteLeafPaddings(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Shape"/>.
     /// </summary>
-    protected virtual Expr RewriteLeafShape(Shape expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafShape(Shape expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeafShape(Shape expr, Unit context) => RewriteLeafShape(expr);
+    protected sealed override BaseExpr RewriteLeafShape(Shape expr, Unit context) => RewriteLeafShape(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="RankedShape"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafRankedShape(RankedShape expr) => RewriteLeafShape(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafRankedShape(RankedShape expr, Unit context) => RewriteLeafRankedShape(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="UnrankedShape"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafUnrankedShape(UnrankedShape expr) => RewriteLeafShape(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafUnrankedShape(UnrankedShape expr, Unit context) => RewriteLeafUnrankedShape(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="InvalidShape"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafInvalidShape(InvalidShape expr) => RewriteLeafShape(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafInvalidShape(InvalidShape expr, Unit context) => RewriteLeafInvalidShape(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="ShapeVar"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafShapeVar(ShapeVar expr) => RewriteLeafShape(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafShapeVar(ShapeVar expr, Unit context) => RewriteLeafShapeVar(expr);
 
 }

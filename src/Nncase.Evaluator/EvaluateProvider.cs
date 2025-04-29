@@ -22,7 +22,7 @@ internal sealed class EvaluateProvider : IEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
+    public IValue Evaluate(BaseExpr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         if (expr.CheckedType is null)
         {

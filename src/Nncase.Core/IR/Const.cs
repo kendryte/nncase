@@ -137,11 +137,6 @@ public abstract class Const : Expr
       => new(tensor);
 
     /// <summary>
-    /// convert shape to const expr.
-    /// </summary>
-    public static Const FromShape(Shape shape) => FromTensor(Tensor.From<long>(shape.ToValueArray()));
-
-    /// <summary>
     /// Convert value to const expr.
     /// </summary>
     /// <param name="value">Value.</param>

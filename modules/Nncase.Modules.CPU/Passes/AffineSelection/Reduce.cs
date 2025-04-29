@@ -12,7 +12,7 @@ public sealed partial class CPUAffineSelectionPass
 {
     private Expr SelectReduce(IR.CPU.PackedReduce reduce, Call call, Expr output)
     {
-        var input = call[IR.CPU.PackedReduce.Input];
+        var input = (Expr)call[IR.CPU.PackedReduce.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 }
             || reduce.ReduceOp == ReduceOp.Mean)
         {
@@ -56,13 +56,14 @@ public sealed partial class CPUAffineSelectionPass
         Expr? outExpr = null;
         foreach (var axis in axes)
         {
+            var domainAxisVar = (Expr)domainVar[axis][0];
             if (outExpr is null)
             {
-                outExpr = IR.F.Math.NotEqual(domainVar[axis][0], 0L);
+                outExpr = IR.F.Math.NotEqual(domainAxisVar, 0L);
             }
             else
             {
-                outExpr = IR.F.Math.LogicalAnd(outExpr, IR.F.Math.NotEqual(domainVar[axis][0], 0L));
+                outExpr = IR.F.Math.LogicalAnd(outExpr, IR.F.Math.NotEqual(domainAxisVar, 0L));
             }
         }
 

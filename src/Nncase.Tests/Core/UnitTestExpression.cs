@@ -54,8 +54,8 @@ public class UnitTestExpression
         Assert.Equal(va, vb);
         Assert.Equal(va.GetHashCode(), vb.GetHashCode());
 
-        var sa = new TensorType(DataTypes.Int32, new Shape(new[] { 2 }));
-        var sb = new TensorType(DataTypes.Int32, new Shape(new[] { 2 }));
+        var sa = new TensorType(DataTypes.Int32, new RankedShape(new[] { 2 }));
+        var sb = new TensorType(DataTypes.Int32, new RankedShape(new[] { 2 }));
         Assert.True(sa.Shape == sb.Shape);
         Assert.True(sa == sb);
         Assert.Equal(sa, sb);
@@ -120,7 +120,7 @@ public class UnitTestExpression
     public void TestTupleGetHashCode()
     {
         var expr = new IR.Tuple((Const)1 * (Const)2, (Const)1.0f + (Const)2.4f);
-        var d = new HashSet<Expr>() { (Const)1.3f };
+        var d = new HashSet<BaseExpr>() { (Const)1.3f };
         d.TryGetValue(expr, out _);
     }
 
@@ -132,7 +132,7 @@ public class UnitTestExpression
         var c = new IR.Tuple(b, b, b, b);
         var d = new IR.Tuple(c, c, c, c);
         var expr = new IR.Tuple(d, d, d, d);
-        var set = new HashSet<Expr>();
+        var set = new HashSet<BaseExpr>();
         set.Add(expr);
     }
 
@@ -328,8 +328,8 @@ public class UnitTestExpression
         var b = ImmutableArray.CreateRange(new[] { new DimConst(1), new DimConst(1) });
         Assert.True(a.SequenceEqual(b));
 
-        var sa = new Shape(new[] { 1, 2, 3 });
-        var sb = new Shape(new[] { 1, 2, 3 });
+        var sa = new RankedShape(new[] { 1, 2, 3 });
+        var sb = new RankedShape(new[] { 1, 2, 3 });
         Assert.StrictEqual(sa, sb);
         Assert.Equal(sa, sb);
     }

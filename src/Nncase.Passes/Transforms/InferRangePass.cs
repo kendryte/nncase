@@ -48,7 +48,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
 
     public override Unit DefaultVisitTypeLeaf(IRType type, Unit context) => default;
 
-    protected override ValueRange<double> DispatchVisit(Expr expr)
+    protected override ValueRange<double> DispatchVisit(BaseExpr expr)
     {
         if (expr.Metadata.Range is null)
         {
@@ -58,7 +58,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         return expr.Metadata.Range!.Value;
     }
 
-    protected override ValueRange<double> DefaultVisitLeaf(Expr expr)
+    protected override ValueRange<double> DefaultVisitLeaf(BaseExpr expr)
     {
         return expr.Metadata.Range ?? ValueRange<double>.Full;
     }
@@ -112,7 +112,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         {
             Binary binary => InferenceBinary(expr, binary.BinaryOp),
             Boxing => Visit(expr[Boxing.Input]),
-            Clamp => InferenceClamp(expr[Clamp.Input], expr[Clamp.Min], expr[Clamp.Max]),
+            Clamp => InferenceClamp((Expr)expr[Clamp.Input], (Expr)expr[Clamp.Min], (Expr)expr[Clamp.Max]),
             Concat => Visit(expr[Concat.Input]),
             Gather => Visit(expr[Gather.Input]),
             GetItem => Visit(expr[GetItem.Input]),

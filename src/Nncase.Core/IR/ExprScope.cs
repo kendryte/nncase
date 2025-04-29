@@ -15,7 +15,7 @@ internal sealed class ExprScope : IDisposable
     private static readonly AsyncLocal<ExprScope?> _exprScope = new AsyncLocal<ExprScope?>();
 
     private readonly ExprScope? _originalExprScope;
-    private readonly ConcurrentBag<Expr> _exprs = new();
+    private readonly ConcurrentBag<BaseExpr> _exprs = new();
 
     public ExprScope()
     {
@@ -25,9 +25,9 @@ internal sealed class ExprScope : IDisposable
 
     public static ExprScope? Current => _exprScope.Value;
 
-    public IReadOnlyCollection<Expr> Exprs => _exprs;
+    public IReadOnlyCollection<BaseExpr> Exprs => _exprs;
 
-    public void Add(Expr expr) => _exprs.Add(expr);
+    public void Add(BaseExpr expr) => _exprs.Add(expr);
 
     public void Dispose()
     {

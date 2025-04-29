@@ -249,7 +249,7 @@ public class UnitTestCombineTranspose : TransformTestBase
          { a, Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate() },
          { b, Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate() },
         };
-        Expr permExpr = perm;
+        Shape permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), Tensors.Transpose(b, permExpr));
         TestMatched<CombineBinaryTranspose>(rootPre, normal);
     }
@@ -261,7 +261,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
         var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
 
-        Expr permExpr = perm;
+        Shape permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), b);
         TestNotMatch<CombineBinaryTranspose>(rootPre);
     }
@@ -273,7 +273,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, lShape);
         var b = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate().AsTensor().ToArray<float>(), rShape);
 
-        Expr permExpr = perm;
+        Shape permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Transpose(a, permExpr), b);
         TestMatched<CombineConstBinaryTranspose>(rootPre);
     }
@@ -285,7 +285,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         var a = Tensor.From<float>(Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate().AsTensor().ToArray<float>(), lShape);
         var b = Random.Normal(DataTypes.Float32, 0, 1, 0, rShape);
 
-        Expr permExpr = perm;
+        Shape permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, a, Tensors.Transpose(b, permExpr));
         TestMatched<CombineConstBinaryTranspose>(rootPre);
     }
@@ -297,7 +297,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         var a = Random.Normal(DataTypes.Int64, 0, 1, 0, lShape).Evaluate().AsTensor();
         var b = Random.Normal(DataTypes.Int64, 0, 1, 0, rShape);
 
-        Expr permExpr = perm;
+        Shape permExpr = perm;
         var rootPre = Math.Binary(BinaryOp.Add, a, Tensors.Transpose(b, permExpr));
         TestMatched<CombineConstBinaryTranspose>(rootPre);
     }
@@ -345,7 +345,7 @@ public class UnitTestCombineTranspose : TransformTestBase
         var a = new Var();
         var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
-        var rootPre = IR.F.Tensors.Reduce(ReduceOp.Mean, Tensors.Transpose(a, perm), axis, initValue, keepDims);
+        var rootPre = IR.F.Tensors.Reduce(ReduceOp.Mean, Tensors.Transpose(a, perm), [axis], initValue, keepDims);
         TestMatched<CombineTransposeReduce>(rootPre, normal);
     }
 

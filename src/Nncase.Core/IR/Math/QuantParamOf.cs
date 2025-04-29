@@ -15,7 +15,7 @@ public sealed partial class QuantParamOf : Op
     /// <summary>
     /// Gets range.
     /// </summary>
-    public static readonly ParameterInfo Range = new(typeof(QuantParamOf), 0, "range", HasShape(new Shape(2)));
+    public static readonly ParameterInfo Range = new(typeof(QuantParamOf), 0, "range", HasShape(new RankedShape(2)));
 
     /// <summary>
     /// Gets bits.

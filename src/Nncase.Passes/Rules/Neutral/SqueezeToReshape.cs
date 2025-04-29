@@ -32,10 +32,11 @@ public sealed partial class SqueezeToReshape : IRewriteRule
 
     private Expr? GetReplace(Expr input, TensorConst axes)
     {
-        var axesArray = axes.Value.ToArray<long>().Select(a => a >= 0 ? a : input.CheckedShape.Count + a).ToArray();
+        var inShape = (RankedShape)input.CheckedShape;
+        var axesArray = axes.Value.ToArray<long>().Select(a => a >= 0 ? a : inShape.Rank + a).ToArray();
         var newShape = axesArray.Length == 0
             ? input.CheckedShape.Where(d => !d.IsFixed || d.FixedValue != 1)
             : input.CheckedShape.Where((_, i) => !axesArray.Contains(i));
-        return Reshape(input, new Shape(newShape.ToArray()));
+        return Reshape(input, new RankedShape(newShape.ToArray()));
     }
 }

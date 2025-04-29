@@ -19,10 +19,10 @@ namespace Nncase.Passes.Mutators;
 public sealed class UnRollLoopSequential : ExprRewriter
 {
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache = new();
-    private readonly Dictionary<Expr, Expr> _cseMemo = new();
+    private readonly Dictionary<BaseExpr, BaseExpr> _cseMemo = new();
 
     /// <inheritdoc/>
-    protected internal override Expr VisitFor(For expr, Unit context)
+    protected internal override BaseExpr VisitFor(For expr, Unit context)
     {
         var replace = TryUnroll(expr);
         if (!ReferenceEquals(expr, replace))
@@ -131,9 +131,9 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
     private readonly IReadOnlyDictionary<IVar, TensorConst> _vmap;
     private readonly Dictionary<IVar, IValue> _cmap;
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache;
-    private readonly IDictionary<Expr, Expr> _cseMemo;
+    private readonly IDictionary<BaseExpr, BaseExpr> _cseMemo;
 
-    public LoopBodyCloner(IReadOnlyDictionary<IVar, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<Expr, Expr> cseMemo)
+    public LoopBodyCloner(IReadOnlyDictionary<IVar, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<BaseExpr, BaseExpr> cseMemo)
     {
         _vmap = vmap;
         _cmap = new(ReferenceEqualityComparer.Instance);
@@ -145,7 +145,7 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
         }
     }
 
-    protected override Expr VisitLeafMemSpan(MemSpan expr, Unit context)
+    protected override BaseExpr VisitLeafMemSpan(MemSpan expr, Unit context)
     {
         return expr.With(Clone(expr.Start, context), Clone(expr.Size, context));
     }
@@ -202,7 +202,7 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
     }
 
     private T CSE<T>(T c)
-        where T : Expr
+        where T : BaseExpr
     {
         if (!_cseMemo.TryGetValue(c, out var result))
         {

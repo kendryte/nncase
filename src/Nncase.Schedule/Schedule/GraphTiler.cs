@@ -666,7 +666,7 @@ public class GraphTiler
         return (resultMemo, objectValue);
     }
 
-    public Expr Tile(Expr preExpr, string moduleKind, ICpuTargetOptions targetOptions)
+    public BaseExpr Tile(BaseExpr preExpr, string moduleKind, ICpuTargetOptions targetOptions)
     {
 #if true
         var topLevel = targetOptions.MemoryCapacities.Length;
@@ -677,7 +677,7 @@ public class GraphTiler
         }
 
         var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, targetOptions);
-        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => resultMemo[kv.Value]));
+        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (BaseExpr)kv.Key, kv => (BaseExpr)resultMemo[kv.Value]));
         return cloner.Clone(preExpr, default);
 #else
         var topLevel = targetOptions.MemoryCapacities.Length;

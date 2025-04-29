@@ -240,7 +240,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var aDims = ashape.Select(x => (Dimension)x).ToArray();
         aDims[^2] = dimM;
 
-        var a = new Var("a", new TensorType(DataTypes.Float32, new Shape(aDims)));
+        var a = new Var("a", new TensorType(DataTypes.Float32, new RankedShape(aDims)));
         CompileOptions.ShapeBucketOptions.VarMap.Add(a, aDims.Select(x => x).ToArray());
         var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
         var c = IR.F.Tensors.MatMul(a, b);
@@ -316,7 +316,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             v.Metadata.Range = new(1, shape[i] * 2);
             return v;
         }).ToArray();
-        var input = new Var(new TensorType(DataTypes.Float32, new Shape(dimVars[0], dimVars[1], shape[2], dimVars[3])));
+        var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(dimVars[0], dimVars[1], shape[2], dimVars[3])));
         CompileOptions.ShapeBucketOptions.VarMap.Add(input, dimVars);
 
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
@@ -404,7 +404,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var inputDims = lhsShape.Select(x => (Dimension)x).ToArray();
         inputDims[^2] = dimH;
 
-        var lhsDynShape = new Shape(inputDims);
+        var lhsDynShape = new RankedShape(inputDims);
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsDynShape));
         CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, inputDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
@@ -562,8 +562,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
             rhsDims[^2] = dimK;
         }
 
-        var lhsDynShape = new Shape(lhsDims);
-        var rhsDynShape = new Shape(rhsDims);
+        var lhsDynShape = new RankedShape(lhsDims);
+        var rhsDynShape = new RankedShape(rhsDims);
         Expr lhs = constA ? lhsTensor : new Var(new TensorType(DataTypes.Float32, lhsDynShape));
         Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsDynShape));
 
@@ -665,7 +665,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        IEnumerable<Expr> posts;
+        IEnumerable<BaseExpr> posts;
         var rule = new Passes.Rules.CPU.PackReduce(Rank, Lane);
         if (!CompilerServices.TryMatch(pre, rule.Pattern, out var result))
         {
@@ -892,7 +892,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
         lhsDims[^2] = dimM;
 
-        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsDims)));
+        var lhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(lhsDims)));
         CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
@@ -926,7 +926,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
 
-        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsDims)));
+        var lhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(lhsDims)));
         CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
@@ -937,7 +937,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             unary = IR.F.Math.Unary(item, unary);
         }
 
-        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
+        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, new RankedShape(0));
 
         var feedDict = new Dictionary<IVar, IValue>()
         {
@@ -964,8 +964,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rhsDims = rhsShape.Select(x => (Dimension)x).ToArray();
         rhsDims[^1] = dimN;
 
-        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsShape)));
-        var rhs = new Var(new TensorType(DataTypes.Float32, new Shape(rhsDims)));
+        var lhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(lhsShape)));
+        var rhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(rhsDims)));
         CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDims.Select(x => x).ToArray());
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
         var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
@@ -975,7 +975,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             unary = IR.F.Math.Unary(item, unary);
         }
 
-        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
+        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, new RankedShape(0));
 
         var feedDict = new Dictionary<IVar, IValue>()
         {
@@ -1000,7 +1000,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var inDims = inShape.Select(x => (Dimension)x).ToArray();
 
-        var input = new Var(new TensorType(DataTypes.Float32, new Shape(inDims)));
+        var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(inDims)));
         CompileOptions.ShapeBucketOptions.VarMap.Add(input, inDims.Select(x => x).ToArray());
 
         var output = IR.F.Tensors.GetItem(input, indices);
@@ -1132,7 +1132,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
-    internal async Task RunCases(string dumpDir, Dictionary<IVar, IValue> feedDict, IEnumerable<Expr> posts)
+    internal async Task RunCases(string dumpDir, Dictionary<IVar, IValue> feedDict, IEnumerable<BaseExpr> posts)
     {
         var postArray = posts.ToArray();
         using var pinner = new ExprPinner(postArray);

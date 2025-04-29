@@ -12,7 +12,7 @@ namespace Nncase.IR;
 /// <summary>
 /// Leaf expression equality comparer.
 /// </summary>
-public sealed class LeafExprEqualityComparer : IEqualityComparer<Expr>
+public sealed class LeafExprEqualityComparer : IEqualityComparer<BaseExpr>
 {
     /// <summary>
     /// Gets instance.
@@ -20,7 +20,7 @@ public sealed class LeafExprEqualityComparer : IEqualityComparer<Expr>
     public static LeafExprEqualityComparer Instance { get; } = new();
 
     /// <inheritdoc/>
-    public bool Equals(Expr? x, Expr? y)
+    public bool Equals(BaseExpr? x, BaseExpr? y)
     {
         if (x == null && y == null)
         {
@@ -58,7 +58,7 @@ public sealed class LeafExprEqualityComparer : IEqualityComparer<Expr>
     }
 
     /// <inheritdoc/>
-    public int GetHashCode(Expr obj)
+    public int GetHashCode(BaseExpr obj)
     {
         return obj switch
         {

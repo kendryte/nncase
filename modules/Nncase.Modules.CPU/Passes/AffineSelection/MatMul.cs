@@ -12,8 +12,8 @@ public sealed partial class CPUAffineSelectionPass
 {
     private Expr SelectMatMul(Op op, Call call, Expr output)
     {
-        var lhs = call.Arguments[IR.Math.MatMul.Lhs.Index];
-        var rhs = call.Arguments[IR.Math.MatMul.Rhs.Index];
+        var lhs = (Expr)call.Arguments[IR.Math.MatMul.Lhs.Index];
+        var rhs = (Expr)call.Arguments[IR.Math.MatMul.Rhs.Index];
 
         // TODO: summa not support tiling for now.
         if ((lhs.CheckedType is DistributedType ldt && ldt.AxisPolices.Last() is SBPSplit)
@@ -96,8 +96,8 @@ public sealed partial class CPUAffineSelectionPass
             .Write(output, outMap, out var outTile)
             .Body(op switch
             {
-                IR.Math.MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
-                IR.CPU.PackedMatMul pop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
+                IR.Math.MatMul => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual((Expr)((Expr)domainVar[ok])[0], 0L)),
+                IR.CPU.PackedMatMul pop => TIR.F.CPU.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual((Expr)((Expr)domainVar[ok])[0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
                 _ => throw new System.Diagnostics.UnreachableException(),
             }).Build();
     }

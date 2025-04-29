@@ -12,8 +12,8 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitReshape(in tflite.Operator op)
         {
-            var (input, outShape) = GetInputExprs(op, 0, 1);
-            return F.Tensors.Reshape(input, outShape.AsShape());
+            var (input, outShape) = GetInputExprs<Expr, Shape>(op, 0, 1);
+            return F.Tensors.Reshape(input, outShape);
         }
     }
 }

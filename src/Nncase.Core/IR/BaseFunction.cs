@@ -14,7 +14,7 @@ namespace Nncase.IR;
 /// </summary>
 public abstract class BaseFunction : Callable
 {
-    public BaseFunction(string name, string moduleKind, Expr[] operands)
+    public BaseFunction(string name, string moduleKind, BaseExpr[] operands)
         : base(name, moduleKind, operands)
     {
         SchedResult = new();

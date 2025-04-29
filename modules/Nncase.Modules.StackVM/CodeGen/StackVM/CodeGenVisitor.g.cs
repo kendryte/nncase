@@ -40,7 +40,7 @@ internal partial class CodeGenVisitor
             case IR.Buffers.BufferSubview top:
                 Emitter.T.BufferSubview();
                 break;
-            case IR.Buffers.DDrOf top:
+            case IR.Buffers.AddressOf top:
                 Emitter.T.DDrOf();
                 break;
             case IR.Buffers.MatchBuffer top:

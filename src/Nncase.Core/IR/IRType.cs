@@ -42,11 +42,10 @@ public abstract record IRType
             AnyType => 0,
             _ => 1,
         },
-        (TensorType t1, TensorType t2) => (t1, t2) switch
+        (TensorType t1, TensorType t2) => (t1.Shape, t2.Shape) switch
         {
-            var p when p.t1.Shape.Rank != p.t2.Shape.Rank ||
-                       p.t1.DType != p.t2.DType => throw new InvalidDataException($"The {this} can't compare with {rhs}"),
-            var p => p.t1.Shape.Where(d => d.IsFixed).Count().CompareTo(p.t2.Shape.Where(d => d.IsFixed).Count()),
+            (RankedShape s1, RankedShape s2) when s1.Rank == s2.Rank => s1.Where(d => d.IsFixed).Count().CompareTo(s2.Where(d => d.IsFixed).Count()),
+            _ => throw new InvalidDataException($"The {this} can't compare with {rhs}"),
         },
         (TupleType t1, TupleType t2) => (t1, t2) switch
         {

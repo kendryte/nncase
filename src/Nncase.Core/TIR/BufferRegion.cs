@@ -47,12 +47,12 @@ public sealed class BufferRegion : Expr
     /// <summary>
     /// Gets the buffer of the buffer region.
     /// </summary>
-    public Expr Buffer => Operands[0];
+    public Expr Buffer => (Expr)Operands[0];
 
     /// <summary>
     /// Gets the region array of the buffer region.
     /// </summary>
-    public ReadOnlySpan<Range> Region => SpanUtility.UnsafeCast<Expr, Range>(Operands.Slice(1));
+    public ReadOnlySpan<Range> Region => SpanUtility.UnsafeCast<BaseExpr, Range>(Operands.Slice(1));
 
     /// <summary>
     /// Gets new buffer region.

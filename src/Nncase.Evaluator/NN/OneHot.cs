@@ -73,7 +73,8 @@ public class OneHotEvaluator : IEvaluator<OneHot>, ITypeInferencer<OneHot>, ICos
         if (context.GetArgument(target, OneHot.Axis) is TensorConst axisValue
             && context.GetArgument(target, OneHot.Depth) is TensorConst depthValue)
         {
-            var newShape = indices.Shape.InsertAndClone(axisValue.Value.ToScalar<int>(), depthValue.Value.ToScalar<int>());
+            var indicesShape = (RankedShape)indices.Shape;
+            var newShape = indicesShape.InsertAndClone(axisValue.Value.ToScalar<int>(), depthValue.Value.ToScalar<int>());
             return new TensorType(values.DType, newShape);
         }
 

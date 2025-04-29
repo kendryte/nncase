@@ -666,6 +666,18 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
+    protected internal override TExprResult VisitDimAt(DimAt expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafDimAt(expr, context);
+    }
+
+    /// <inheritdoc />
     protected internal override TExprResult VisitPadding(Shapes.Padding expr, TContext context)
     {
         VisitOperands(expr, context);
@@ -687,18 +699,6 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
         }
 
         return VisitLeafPaddings(expr, context);
-    }
-
-    /// <inheritdoc />
-    protected internal override TExprResult VisitShape(Shape expr, TContext context)
-    {
-        VisitOperands(expr, context);
-        if (CanVisitAttributes(expr))
-        {
-            VisitAttributes(expr, context);
-        }
-
-        return VisitLeafShape(expr, context);
     }
 
     /// <summary>
@@ -992,6 +992,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected virtual TExprResult VisitLeafDimPositive(DimPositive expr, TContext context) => VisitLeafDimension(expr, context);
 
     /// <summary>
+    /// Visit leaf <see cref="DimAt"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimAt(DimAt expr, TContext context) => VisitLeafDimension(expr, context);
+
+    /// <summary>
     /// Visit leaf <see cref="Shapes.Padding"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafPadding(Shapes.Padding expr, TContext context) => DefaultVisitLeaf(expr, context);
@@ -1005,6 +1010,26 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// Visit leaf <see cref="Shape"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafShape(Shape expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="RankedShape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafRankedShape(RankedShape expr, TContext context) => VisitLeafShape(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="UnrankedShape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafUnrankedShape(UnrankedShape expr, TContext context) => VisitLeafShape(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="InvalidShape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafInvalidShape(InvalidShape expr, TContext context) => VisitLeafShape(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="ShapeVar"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShapeVar(ShapeVar expr, TContext context) => VisitLeafShape(expr, context);
 
 }
 
@@ -1382,6 +1407,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitDimPositive(DimPositive expr, Unit context) => VisitDimPositive(expr);
     /// <summary>
+    /// Visit <see cref="DimAt"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitDimAt(DimAt expr) => base.VisitDimAt(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitDimAt(DimAt expr, Unit context) => VisitDimAt(expr);
+    /// <summary>
     /// Visit <see cref="Shapes.Padding"/>.
     /// </summary>
     internal protected virtual TExprResult VisitPadding(Shapes.Padding expr) => base.VisitPadding(expr, default);
@@ -1395,13 +1427,6 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPaddings(Shapes.Paddings expr, Unit context) => VisitPaddings(expr);
-    /// <summary>
-    /// Visit <see cref="Shape"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitShape(Shape expr) => base.VisitShape(expr, default);
-    
-    /// <inheritdoc/>
-    internal protected sealed override TExprResult VisitShape(Shape expr, Unit context) => VisitShape(expr);
     /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -1867,6 +1892,14 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     protected sealed override TExprResult VisitLeafDimPositive(DimPositive expr, Unit context) => VisitLeafDimPositive(expr);
 
     /// <summary>
+    /// Visit leaf <see cref="DimAt"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafDimAt(DimAt expr) => base.VisitLeafDimAt(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafDimAt(DimAt expr, Unit context) => VisitLeafDimAt(expr);
+
+    /// <summary>
     /// Visit leaf <see cref="Shapes.Padding"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafPadding(Shapes.Padding expr) => base.VisitLeafPadding(expr, default);
@@ -1889,5 +1922,37 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafShape(Shape expr, Unit context) => VisitLeafShape(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="RankedShape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafRankedShape(RankedShape expr) => base.VisitLeafRankedShape(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafRankedShape(RankedShape expr, Unit context) => VisitLeafRankedShape(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="UnrankedShape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafUnrankedShape(UnrankedShape expr) => base.VisitLeafUnrankedShape(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafUnrankedShape(UnrankedShape expr, Unit context) => VisitLeafUnrankedShape(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="InvalidShape"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafInvalidShape(InvalidShape expr) => base.VisitLeafInvalidShape(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafInvalidShape(InvalidShape expr, Unit context) => VisitLeafInvalidShape(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="ShapeVar"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShapeVar(ShapeVar expr) => base.VisitLeafShapeVar(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafShapeVar(ShapeVar expr, Unit context) => VisitLeafShapeVar(expr);
 
 }

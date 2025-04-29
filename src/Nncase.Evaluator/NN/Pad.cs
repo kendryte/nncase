@@ -82,7 +82,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     {
         var input = context.CheckArgumentType<IRType>(target, Pad.Input);
         var paddings = (Paddings)context.GetArgument(target, Pad.Pads);
-        var padValue = context.GetArgument(target, Pad.Value);
+        var padValue = (Expr)context.GetArgument(target, Pad.Value);
         return input switch
         {
             DistributedType distributedType => Visit(distributedType, paddings, padValue),

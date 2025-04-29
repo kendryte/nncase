@@ -17,7 +17,7 @@ namespace Nncase.Importer
         private Expr VisitReduceWindow2D(in NodeProto op, ReduceOp reduceOp, Expr initValue, bool isGlobal = false)
         {
             // auto_pad had been DEPRECATED
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             if (isGlobal && input.CheckedShape.Rank != 4)
             {
                 return F.Tensors.Reduce(reduceOp, input, Enumerable.Range(0, input.CheckedShape.Rank).Skip(2).ToArray(), initValue, true);
@@ -26,11 +26,11 @@ namespace Nncase.Importer
             var ceilMode = GetBoolAttribute(op, "ceil_mode", false);
             var countIncludePad = GetBoolAttribute(op, "count_include_pad", false);
             var dilation = reduceOp == ReduceOp.Max
-                ? GetIntsAttribute(op, "dilations", 1, 2).ToList()
-                : Enumerable.Repeat<long>(1, 2).ToList();
+                ? GetIntsAttribute(op, "dilations", 1, 2).ToArray()
+                : Enumerable.Repeat<long>(1, 2).ToArray();
             var kernelShape = isGlobal
-                ? Util.GetHW(input).Map((h, w) => (Expr)F.Tensors.Stack(new Tuple(h, w), 0))
-                : Tensor.From<long>(GetIntsAttribute(op, "kernel_shape"));
+                ? Util.GetHW(input).Map((h, w) => new RankedShape(h, w))
+                : GetIntsAttribute(op, "kernel_shape");
             var strides = GetStrideAttribute(op).ToArray<long>().ToList();
 
             var isPool1D = input.CheckedShape.Rank == 3;
@@ -38,7 +38,7 @@ namespace Nncase.Importer
             if (isPool1D)
             {
                 strides.Add(1);
-                kernelShape = Concat(new Tuple(kernelShape, new[] { 1L }), 0);
+                kernelShape = kernelShape.Append(1).ToArray();
                 input = To4D(input);
             }
 
@@ -49,7 +49,7 @@ namespace Nncase.Importer
                 kernelShape,
                 strides.ToArray(),
                 pads,
-                Tensor.From<long>(dilation.ToArray()),
+                dilation,
                 ceilMode,
                 countIncludePad);
 

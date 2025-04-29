@@ -59,6 +59,11 @@ DimCompareAndSelect,true,false,Dimension,,Value;Expected;TrueValue;FalseValue
 DimMin,true,false,Dimension,,@Operands
 DimMax,true,false,Dimension,,@Operands
 DimPositive,true,false,Dimension,,Operand;Extent
+DimAt,true,false,Dimension,,Shape;Index
 Padding,true,false,Default,Shapes.,Before;After
 Paddings,true,false,Default,Shapes.,@Values
-Shape,true,false,Default,,@Dimensions
+Shape,false,false,Default,,
+RankedShape,false,false,Shape,,@Dimensions
+UnrankedShape,false,false,Shape,,Value
+InvalidShape,false,false,Shape,,
+ShapeVar,false,false,Shape,,

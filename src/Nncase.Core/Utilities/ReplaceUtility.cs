@@ -25,7 +25,7 @@ public static class ReplaceUtility
     /// <param name="pairs">target value pair.</param>
     /// <returns>new args list.</returns>
     /// <exception cref="InvalidOperationException">when the same target match two value.</exception>
-    public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (Expr Target, Expr Value)[] pairs)
+    public static BaseExpr[] ReplaceItems(IReadOnlyList<BaseExpr> list, params (BaseExpr Target, BaseExpr Value)[] pairs)
     {
         var l = list.ToList();
         return ReplaceItems(list, pairs.Select(p => (l.IndexOf(p.Target), p.Value)).ToArray());
@@ -37,7 +37,7 @@ public static class ReplaceUtility
     /// <param name="list">expr list.</param>
     /// <param name="pairs">pairs.</param>
     /// <returns>replaced list.</returns>
-    public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (int Index, Expr Value)[] pairs)
+    public static BaseExpr[] ReplaceItems(IReadOnlyList<BaseExpr> list, params (int Index, BaseExpr Value)[] pairs)
     {
         if (pairs.Length == 0)
         {
@@ -67,7 +67,7 @@ public static class ReplaceUtility
     /// <param name="list">expr list.</param>
     /// <param name="pairs">pairs.</param>
     /// <returns>replaced list.</returns>
-    public static Expr[] ReplaceItems(IReadOnlyList<Expr> list, params (IR.ParameterInfo Info, Expr Value)[] pairs)
+    public static BaseExpr[] ReplaceItems(IReadOnlyList<BaseExpr> list, params (IR.ParameterInfo Info, BaseExpr Value)[] pairs)
     {
         return ReplaceItems(list, pairs.Select(p => (p.Info.Index, p.Value)).ToArray());
     }
@@ -79,7 +79,7 @@ public static class ReplaceUtility
     /// <param name="oldParams">old params.</param>
     /// <param name="pairs">replace pairs.</param>
     /// <returns>new call.</returns>
-    public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (Expr, Expr)[] pairs)
+    public static Call ReplaceCallParams(Expr target, IReadOnlyList<BaseExpr> oldParams, params (BaseExpr, BaseExpr)[] pairs)
     {
         return new Call(target, ReplaceItems(oldParams, pairs));
     }
@@ -91,7 +91,7 @@ public static class ReplaceUtility
     /// <param name="oldParams">target params.</param>
     /// <param name="pairs">the param info pair.</param>
     /// <returns>new call.</returns>
-    public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (IR.ParameterInfo, Expr)[] pairs)
+    public static Call ReplaceCallParams(Expr target, IReadOnlyList<BaseExpr> oldParams, params (IR.ParameterInfo, BaseExpr)[] pairs)
     {
         return new Call(target, ReplaceItems(oldParams, pairs));
     }
@@ -103,7 +103,7 @@ public static class ReplaceUtility
     /// <param name="oldParams">target params.</param>
     /// <param name="pairs">the param info pair.</param>
     /// <returns>new call.</returns>
-    public static Call ReplaceCallParams(Expr target, IReadOnlyList<Expr> oldParams, params (int, Expr)[] pairs)
+    public static Call ReplaceCallParams(Expr target, IReadOnlyList<BaseExpr> oldParams, params (int, BaseExpr)[] pairs)
     {
         return new Call(target, ReplaceItems(oldParams, pairs));
     }
@@ -115,7 +115,7 @@ public static class ReplaceUtility
     /// <param name="oldParams">oldParams.</param>
     /// <param name="expr">expr.</param>
     /// <returns>new Call.</returns>
-    public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<Expr> oldParams, Expr expr) =>
+    public static Call ReplaceCallFirstParam(Expr target, IReadOnlyList<BaseExpr> oldParams, BaseExpr expr) =>
         ReplaceCallParams(target, oldParams, (0, expr));
 
     /// <summary>
@@ -125,7 +125,7 @@ public static class ReplaceUtility
     /// <param name="target">Target.</param>
     /// <param name="expr">Expr.</param>
     /// <returns>New Body.</returns>
-    public static Expr ReplaceExpr(Expr body, Expr target, Expr expr)
+    public static BaseExpr ReplaceExpr(BaseExpr body, BaseExpr target, BaseExpr expr)
     {
         var mutator = new Passes.Mutators.Substitutor(e =>
         {
@@ -139,7 +139,7 @@ public static class ReplaceUtility
         return mutator.Visit(body, Unit.Default);
     }
 
-    public static void ReplaceAllUsesWith(Expr expr, Expr newOperand)
+    public static void ReplaceAllUsesWith(BaseExpr expr, BaseExpr newOperand)
     {
         expr.ReplaceAllUsesWith(newOperand);
     }

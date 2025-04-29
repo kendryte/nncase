@@ -15,10 +15,8 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitSlice(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
-            var (beginExpr, sizeExpr) = GetInputExprs(op, 1, 2);
-            var begin = beginExpr.AsShape();
-            var size = sizeExpr.AsShape();
+            var input = GetInputExprs<Expr>(op, 0);
+            var (begin, size) = GetInputExprs<RankedShape, RankedShape>(op, 1, 2);
             var end = begin + size;
             var count = GetInputTensor(op, 1).Shape(0);
             return F.Tensors.Slice(input, begin, end, count);
@@ -26,13 +24,10 @@ namespace Nncase.Importer.TFLite
 
         private Expr VisitStrideSlice(in tflite.Operator op)
         {
-            var (input, beginExpr) = GetInputExprs(op, 0, 1);
-            var (endExpr, stridesExpr) = GetInputExprs(op, 2, 3);
+            var (input, begins) = GetInputExprs<Expr, Shape>(op, 0, 1);
+            var (ends, strides) = GetInputExprs<Shape, Shape>(op, 2, 3);
             var options = op.BuiltinOptionsAsStridedSliceOptions();
             var tensor = GetInputTensor(op, 0);
-            var begins = beginExpr.AsShape();
-            var ends = endExpr.AsShape();
-            var strides = stridesExpr.AsShape();
             var axes = Shape.Range(0, tensor.ShapeLength);
             if ((options.NewAxisMask + options.EllipsisMask) != 0)
             {

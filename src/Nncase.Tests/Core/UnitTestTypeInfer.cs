@@ -21,7 +21,7 @@ public class UnitTypeInferBase : TestClassBase
 {
     public void CheckInferShape(Expr expr, params long[] shapeDimensions)
     {
-        CheckInferShape(expr, new Shape(shapeDimensions));
+        CheckInferShape(expr, new RankedShape(shapeDimensions));
     }
 
     public void CheckInferShape(Expr expr, Shape expectShape)
@@ -38,7 +38,7 @@ public class UnitTypeInferBase : TestClassBase
 
     public void CheckInferShape(Expr expr, params Dimension[] shapeDimensions)
     {
-        CheckInferShape(expr, new Shape(shapeDimensions));
+        CheckInferShape(expr, new RankedShape(shapeDimensions));
     }
 
     public Var Var(Shape shape, DataType dt) => new Var(new TensorType(dt, shape));
@@ -85,21 +85,21 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestInferPad()
     {
-        var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var pads = Tensor.From(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
+        var a = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, 3, 224, 224)));
+        var pads = Tensor.From(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new RankedShape(4, 2));
         var pad = Pad(a, pads, PadMode.Constant, 1f);
         Assert.True(CompilerServices.InferenceType(pad));
-        Assert.Equal(new Shape(1, 5, 228, 230), pad.CheckedShape);
+        Assert.Equal(new RankedShape(1, 5, 228, 230), pad.CheckedShape);
     }
 
     [Fact]
     public void TestSlice()
     {
         var input = Tensor.From<int>(new[] { 1, 7, 7, 75 });
-        var begin = new Shape(new[] { 0 });
-        var end = new Shape(new[] { 1 });
-        var stride = new Shape(new[] { 1 });
-        var axis = new Shape(new[] { 0 });
+        var begin = new RankedShape(new[] { 0 });
+        var end = new RankedShape(new[] { 1 });
+        var stride = new RankedShape(new[] { 1 });
+        var axis = new RankedShape(new[] { 0 });
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(CompilerServices.InferenceType(s));
         var post = s.Evaluate();
@@ -110,7 +110,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestSlice2()
     {
         var input_a = new Var("input_a", new TensorType(DataTypes.Float32, new Dimension[] { "x", "y", "z" }));
-        var repeats = IR.F.Tensors.Slice(ShapeOf(input_a).ToValueArrayExpr(), new[] { -2 }, new[] { -1 }, 1);
+        var repeats = IR.F.Tensors.Slice(ShapeOf(input_a), new[] { -2 }, new[] { -1 }, 1);
         Assert.True(CompilerServices.InferenceType(repeats));
         Assert.True(repeats.CheckedShape.Rank == 1);
     }
@@ -122,10 +122,10 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var end = new[] { 3 };
         var stride = new[] { 1 };
         var axes = new[] { 0 };
-        var slice = Slice(new Shape(1, 7, 7, 768).ToValueArrayExpr(), begin, end, axes, stride);
+        var slice = Slice(new RankedShape(1, 7, 7, 768).ToValueArrayExpr(), begin, end, axes, stride);
         CompilerServices.InferenceType(slice);
         var post = slice.Evaluate();
-        Assert.Equal(new Shape(2), ((TensorType)post.Type).Shape);
+        Assert.Equal(new RankedShape(2), ((TensorType)post.Type).Shape);
     }
 
     [Fact]
@@ -136,20 +136,20 @@ public class UnitTestTypeInfer : UnitTypeInferBase
         var c = (Const)1;
         var s = Stack(new Tuple(a, b, c), 0);
         CompilerServices.InferenceType(s);
-        Assert.Equal(new Shape(3), s.CheckedShape);
+        Assert.Equal(new RankedShape(3), s.CheckedShape);
 
-        var x = Tensor.From<int>(new[] { 1, 2 });
-        var y = Tensor.From<int>(new[] { 1, 2 });
-        var z = Tensor.From<int>(new[] { 1, 2 });
+        var x = (Expr)Tensor.From<int>(new[] { 1, 2 });
+        var y = (Expr)Tensor.From<int>(new[] { 1, 2 });
+        var z = (Expr)Tensor.From<int>(new[] { 1, 2 });
         var ss = Stack(new Tuple(x, y, z), 1);
         CompilerServices.InferenceType(ss);
-        Assert.Equal(new Shape(2, 3), ss.CheckedShape);
+        Assert.Equal(new RankedShape(2, 3), ss.CheckedShape);
     }
 
     [Fact]
     public void TestReduceArgTypeInfer()
     {
-        var input = new Var("v", new TensorType(DataTypes.Float32, new Shape(4, 5, 6, 7)));
+        var input = new Var("v", new TensorType(DataTypes.Float32, new RankedShape(4, 5, 6, 7)));
         CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 0, false, false), 5, 6, 7);
         CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 1, false, false), 4, 6, 7);
         CheckInferShape(ReduceArg(ReduceArgOp.ArgMax, DataTypes.Int64, input, 2, false, false), 4, 5, 7);
@@ -164,7 +164,7 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestInferReshape()
     {
-        var input = new Var("v", new TensorType(DataTypes.Float32, new Shape(4, 5, 6, 7)));
+        var input = new Var("v", new TensorType(DataTypes.Float32, new RankedShape(4, 5, 6, 7)));
         CheckReshape(input, new[] { 8, 5, 3, 7 }, new[] { 8, 5, 3, 7 });
         CheckReshape(input, new[] { -1, 5, 6, 7 }, new[] { 4, 5, 6, 7 });
         CheckReshape(input, new[] { -1, 5, 3, 7 }, new[] { 8, 5, 3, 7 });
@@ -218,22 +218,22 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     [Fact]
     public void TestGather0()
     {
-        var input = new Var("a", new TensorType(DataTypes.Float32, new Shape(32, 256)));
+        var input = new Var("a", new TensorType(DataTypes.Float32, new RankedShape(32, 256)));
         var indices = Tensor.From<int>(new[] { 1, 10 });
         var g = Gather(input, 0, indices);
-        CheckInferType(g, DataTypes.Float32, new Shape(2, 256));
+        CheckInferType(g, DataTypes.Float32, new RankedShape(2, 256));
     }
 
     [Fact]
     public void TestSlice1()
     {
-        var input = new Var("a", new TensorType(DataTypes.Float32, new Shape(1, 10, 256)));
-        var ones = new Shape(new[] { 1L });
+        var input = new Var("a", new TensorType(DataTypes.Float32, new RankedShape(1, 10, 256)));
+        var ones = new RankedShape(new[] { 1L });
         var begins = ones;
-        var ends = new Shape(new[] { 9223372036854775807 });
+        var ends = new RankedShape(new[] { 9223372036854775807 });
         var axes = ones;
         var s = Slice(input, begins, ends, axes, ones);
-        CheckInferType(s, DataTypes.Float32, new Shape(1, 9, 256));
+        CheckInferType(s, DataTypes.Float32, new RankedShape(1, 9, 256));
     }
 
     [Theory]
@@ -249,8 +249,8 @@ public class UnitTestTypeInfer : UnitTypeInferBase
     public void TestConv2DInvalidWeights()
     {
         var v30 = new Var("serving_default_input_1:0", new TensorType(DataTypes.Float32, new[] { 1, 256, 56, 56 }));
-        var v30_1 = new Marker("RangeOf", Testing.Rand<float>(256, 64, 1, 1), new float[] { -0.3903954f, 0.46443018f }); // f32[256,64,1,1]
-        var v30_2 = new Call(new IR.NN.Conv2D(PadMode.Constant), new Expr[] { v30, v30_1, Testing.Rand<float>(256), new Shape(1, 1), Paddings.Zeros(2), new Shape(1, 1), DimConst.One, new float[] { -float.PositiveInfinity, float.PositiveInfinity } }); // f32[1,256,56,56]
+        var v30_1 = new Marker("RangeOf", (Expr)Testing.Rand<float>(256, 64, 1, 1), (Expr)new float[] { -0.3903954f, 0.46443018f }); // f32[256,64,1,1]
+        var v30_2 = new Call(new IR.NN.Conv2D(PadMode.Constant), new BaseExpr[] { v30, v30_1, (Expr)Testing.Rand<float>(256), new RankedShape(1, 1), Paddings.Zeros(2), new RankedShape(1, 1), DimConst.One, (Expr)new float[] { -float.PositiveInfinity, float.PositiveInfinity } }); // f32[1,256,56,56]
         CompilerServices.InferenceType(v30_2);
         Assert.IsType<InvalidType>(v30_2.CheckedType);
     }
@@ -324,7 +324,7 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     public void TestBroadcastInfer()
     {
         // appear in where
-        var a = new TensorType(DataTypes.Int32, new Shape(new[] { 1, 3, 224, 224 }));
+        var a = new TensorType(DataTypes.Int32, new RankedShape(new[] { 1, 3, 224, 224 }));
         var b = new TensorType(DataTypes.Float32, Shape.Unknown(4));
         var c = new TensorType(DataTypes.Float32, Shape.Unknown(4));
         var result = (TensorType)TypeInference.BroadcastType(b.DType, a, b, c);
@@ -347,16 +347,16 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         var dimVar = new DimVar("seq_len");
         dimVar.Metadata.Range = new(1, 512);
         var dimC = (Dimension)dimVar;
-        var a = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 128)));
-        var constShape = new Shape(1, dimC, 2, 64);
+        var a = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, dimVar, 128)));
+        var constShape = new RankedShape(1, dimC, 2, 64);
         var reshape = Reshape(a, constShape);
         var result = reshape.CheckedType;
-        Assert.Equal(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 2, 64)), result);
+        Assert.Equal(new TensorType(DataTypes.Float32, new RankedShape(1, dimVar, 2, 64)), result);
 
-        var b = new Var(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 14, 64)));
-        var reshapeb = Reshape(b, new Shape(1, dimC, -1));
+        var b = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, dimVar, 14, 64)));
+        var reshapeb = Reshape(b, new RankedShape(1, dimC, -1));
         var resultb = reshapeb.CheckedType;
-        Assert.Equal(new TensorType(DataTypes.Float32, new Shape(1, dimVar, 896)), resultb);
+        Assert.Equal(new TensorType(DataTypes.Float32, new RankedShape(1, dimVar, 896)), resultb);
     }
 
     [Fact]
@@ -364,8 +364,8 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
     {
         var seq_len = new DimVar("seq_len");
         var hist_len = new DimVar("his_len");
-        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(1, seq_len, 2, 64)));
-        var rhs = new Var(new TensorType(DataTypes.Float32, new Shape(1, hist_len, 2, 64)));
+        var lhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, seq_len, 2, 64)));
+        var rhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, hist_len, 2, 64)));
         var reshape = Concat(new IR.Tuple(new[] { lhs, rhs }), 1);
         var result = reshape.CheckedType;
         Assert.IsType<TensorType>(result);

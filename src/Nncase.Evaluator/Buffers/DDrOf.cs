@@ -10,7 +10,7 @@ namespace Nncase.Evaluator.Buffers;
 /// Evaluator for DDrOf.
 /// </summary>
 [TypeInferGenerator]
-public partial class DDrOfEvaluator : ITypeInferencer<DDrOf>
+public partial class DDrOfEvaluator : ITypeInferencer<AddressOf>
 {
     private IRType Visit(IRType input)
     {

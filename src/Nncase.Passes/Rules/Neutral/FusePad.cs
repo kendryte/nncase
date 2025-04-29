@@ -33,13 +33,13 @@ public sealed partial class FusePadConv2d : IRewriteRule
             IsWildcard("value")),
         IsWildcard("weights"),
         IsWildcard("bias"),
-        IsWildcard("stride"),
+        IsShape("stride"),
         IsPaddings("pads2"),
-        IsWildcard("dilation"),
-        IsWildcard("groups"),
+        IsShape("dilation"),
+        IsDimension("groups"),
         IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Expr input, Paddings pads1, Expr weights, Expr bias, Expr stride, Paddings pads2, Expr dilation, Expr groups, Expr fusedClamp)
+    private Expr? GetReplace(Expr input, Paddings pads1, Expr weights, Expr bias, Shape stride, Paddings pads2, Shape dilation, Dimension groups, Expr fusedClamp)
     {
         var newPadsH = Padding.Zero;
         var newPadsW = Padding.Zero;

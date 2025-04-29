@@ -95,7 +95,7 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
     public IRType Visit(ITypeInferenceContext context, Softmax target)
     {
         var input = context.CheckArgumentType<IRType>(target, Softmax.Input);
-        var axis = context.GetArgument(target, Softmax.Axis);
+        var axis = (Dimension)context.GetArgument(target, Softmax.Axis);
         return input switch
         {
             TensorType t => Visit(t),
@@ -136,9 +136,9 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
         return input;
     }
 
-    private IRType Visit(DistributedType input, Expr axisExpr)
+    private IRType Visit(DistributedType input, Dimension axis)
     {
-        var axis = ((TensorConst)axisExpr).Value.ToScalar<int>();
+        axis = Dimension.Positive(axis, input.TensorType.Shape.Rank);
         if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && i == axis))
         {
             return new InvalidType("Not support split on Axis for Softmax now.");

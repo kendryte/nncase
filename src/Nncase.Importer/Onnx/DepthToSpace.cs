@@ -11,7 +11,7 @@ namespace Nncase.Importer
     {
         private Expr VisitDepthToSpace(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var blockSize = GetIntAttribute(op, "blocksize");
             var mode = GetStringAttribute(op, "mode", "DCR");
 
@@ -21,9 +21,9 @@ namespace Nncase.Importer
             var shape3 = Util.ShapeIndex(input, 3);
             var depth = shape1 / (blockSize * blockSize);
             var beforeNewShape = mode == "DCR"
-                ? new Shape(shape0, blockSize, blockSize, depth, shape2, shape3)
-                : new Shape(shape0, depth, blockSize, blockSize, shape2, shape3);
-            var afterNewShape = new Shape(shape0, depth, shape2 * blockSize, shape3 * blockSize);
+                ? new RankedShape(shape0, blockSize, blockSize, depth, shape2, shape3)
+                : new RankedShape(shape0, depth, blockSize, blockSize, shape2, shape3);
+            var afterNewShape = new RankedShape(shape0, depth, shape2 * blockSize, shape3 * blockSize);
             var perm = mode == "DCR"
                 ? new[] { 0, 3, 4, 1, 5, 2 }
                 : new[] { 0, 1, 4, 2, 5, 3 };

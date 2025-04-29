@@ -47,7 +47,7 @@ public sealed partial class BroadcastEvaluator : IEvaluator<Broadcast>, ITypeInf
         };
     }
 
-    private IRType Visit(TensorType input, TensorType shape, ITypeInferenceContext context, Broadcast op)
+    private IRType Visit(TensorType input, ITypeInferenceContext context, Broadcast op)
     {
         var shapeValue = (Shape)context.GetArgument(op, Broadcast.Shape);
         return TypeInference.BroadcastType(input, new TensorType(input.DType, shapeValue));

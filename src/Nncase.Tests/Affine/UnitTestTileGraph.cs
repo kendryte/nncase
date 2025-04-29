@@ -34,7 +34,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.Get1PackMN, new (IntMergePoint, bool)[] { (new(2, 0, 2), true), (new(2, 1, 2), true), (new(2, 0, 1), true), (new(2, 1, 1), true), (new(3, 2, 2), true), (new(5, 4, 2), true) }, MergeTileGraphChecker2, 2 },
     };
 
-    public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<Expr>, int> SolveTileGraphDatas = new()
+    public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BaseExpr>, int> SolveTileGraphDatas = new()
     {
         { FunctionSamples.Get5, [], SolveTileGraphChecker0, 0 },
         { FunctionSamples.Get1, [new(1, 0, 2)], (_) => { }, 1 },
@@ -322,7 +322,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     [Theory]
     [MemberData(nameof(SolveTileGraphDatas))]
-    public void TestSolveTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<Expr> action, int count)
+    public void TestSolveTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BaseExpr> action, int count)
     {
         var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
@@ -427,7 +427,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     {
     }
 
-    private static void SolveTileGraphChecker0(Expr post)
+    private static void SolveTileGraphChecker0(BaseExpr post)
     {
         Assert.IsType<IR.Function>(post);
         Assert.IsType<IR.Tuple>(((IR.Function)post).Body);

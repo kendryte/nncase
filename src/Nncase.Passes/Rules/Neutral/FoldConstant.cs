@@ -33,7 +33,7 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
         TypePattern = IsType(x => !(x is InvalidType)),
     };
 
-    private Const GetReplace(Call call, IReadOnlyList<Expr> constArgs)
+    private Const GetReplace(Call call, IReadOnlyList<BaseExpr> constArgs)
     {
         // note for egraphs.
         var new_call = call.With(arguments: constArgs.ToArray());

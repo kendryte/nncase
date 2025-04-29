@@ -19,7 +19,7 @@ public abstract class Callable : Expr
     /// </summary>
     public const string StackVMModuleKind = "stackvm";
 
-    public Callable(string name, string moduleKind, Expr[] operands)
+    public Callable(string name, string moduleKind, BaseExpr[] operands)
         : base(operands)
     {
         Name = name;

@@ -17,7 +17,7 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed partial class NormAxisGather : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsGather("gather", g => g.Axis < 0, IsWildcard("input") with { TypePattern = HasRank() }, IsWildcard("index") with { TypePattern = HasRank() });
+    public override CallPattern Pattern { get; } = IsGather("gather", g => g.Axis < 0, IsWildcard("input") with { TypePattern = HasRankedShape() }, IsWildcard("index") with { TypePattern = HasRankedShape() });
 
     private Expr? GetReplace(IR.Tensors.Gather gather, Expr input, Expr index)
     {
@@ -34,13 +34,13 @@ public sealed partial class NormAxisConcat : RewriteRule<CallPattern>
         var ps = new Pattern[inputs.Length];
         for (int i = 0; i < inputs.Length; i++)
         {
-            ps[i] = IsWildcard(i.ToString()) with { TypePattern = HasRank() };
+            ps[i] = IsWildcard(i.ToString()) with { TypePattern = HasRankedShape() };
         }
 
         return ps;
     })));
 
-    private Expr? GetReplace(IR.Tensors.Concat concat, IReadOnlyList<Expr> inputs)
+    private Expr? GetReplace(IR.Tensors.Concat concat, IReadOnlyList<BaseExpr> inputs)
     {
         return IR.F.Tensors.Concat(new IR.Tuple(inputs.ToArray()), concat.Axis + inputs[0].CheckedShape.Rank);
     }
@@ -50,7 +50,7 @@ public sealed partial class NormAxisConcat : RewriteRule<CallPattern>
 public sealed partial class NormAxisReduce : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsReduce("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRank() }, IsTensorConst("axes"), IsWildcard("initValue"), IsWildcard("keepDims"));
+    public override CallPattern Pattern { get; } = IsReduce("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRankedShape() }, IsTensorConst("axes"), IsWildcard("initValue"), IsWildcard("keepDims"));
 
     private Expr? GetReplace(IR.Math.Reduce reduce, Call call, Expr input, int[] axes, Expr initValue, Expr keepDims)
     {
@@ -67,7 +67,7 @@ public sealed partial class NormAxisReduce : RewriteRule<CallPattern>
 public sealed partial class NormAxisReduceArg : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsReduceArg("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRank() }, IsTensorConst("axis"), IsWildcard("keepDims"), IsWildcard("selectLastIndex"));
+    public override CallPattern Pattern { get; } = IsReduceArg("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRankedShape() }, IsTensorConst("axis"), IsWildcard("keepDims"), IsWildcard("selectLastIndex"));
 
     private Expr? GetReplace(IR.Math.ReduceArg reduce, Call call, Expr input, int axis, Expr keepDims, Expr selectLastIndex)
     {

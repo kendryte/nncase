@@ -31,7 +31,7 @@ public sealed class IfThenElse : Expr
     {
     }
 
-    public Expr Condition => Operands[0];
+    public Expr Condition => (Expr)Operands[0];
 
     public Sequential Then => (Sequential)Operands[1];
 

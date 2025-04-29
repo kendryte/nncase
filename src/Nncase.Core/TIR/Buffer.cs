@@ -17,7 +17,7 @@ namespace Nncase.TIR;
 public sealed class Buffer : Expr
 {
     public Buffer(string name, DataType elemType, MemSpan memSpan, Dimension[] dimensions, Dimension[] strides, DistributedType? distributedType)
-        : base(new Expr[] { memSpan }.Concat(dimensions).Concat(strides))
+        : base(new BaseExpr[] { memSpan }.Concat(dimensions).Concat(strides))
     {
         Name = name;
         ElemType = elemType;
@@ -42,7 +42,7 @@ public sealed class Buffer : Expr
     /// <summary>
     /// Gets the shape.
     /// </summary>
-    public ReadOnlySpan<Dimension> Dimensions => SpanUtility.UnsafeCast<Expr, Dimension>(Operands[1..(1 + Rank)]);
+    public ReadOnlySpan<Dimension> Dimensions => SpanUtility.UnsafeCast<BaseExpr, Dimension>(Operands[1..(1 + Rank)]);
 
     /// <summary>
     /// Gets the strides.
@@ -50,7 +50,7 @@ public sealed class Buffer : Expr
     /// This Strides is by elements not by bytes!
     /// </remarks>
     /// </summary>
-    public ReadOnlySpan<Dimension> Strides => SpanUtility.UnsafeCast<Expr, Dimension>(Operands[(1 + Rank)..(1 + Rank + Rank)]);
+    public ReadOnlySpan<Dimension> Strides => SpanUtility.UnsafeCast<BaseExpr, Dimension>(Operands[(1 + Rank)..(1 + Rank + Rank)]);
 
     public DistributedType? DistributedType { get; }
 

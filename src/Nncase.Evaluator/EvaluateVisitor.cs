@@ -142,7 +142,7 @@ internal sealed partial class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisp
         return cond ? EvaluateCallable(expr.Then, expr.Arguments) : EvaluateCallable(expr.Else, expr.Arguments);
     }
 
-    private IValue EvaluateCallable(Expr callable, ReadOnlySpan<Expr> arguments)
+    private IValue EvaluateCallable(Expr callable, ReadOnlySpan<BaseExpr> arguments)
     {
         return callable switch
         {
@@ -153,7 +153,7 @@ internal sealed partial class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisp
         };
     }
 
-    private IReadOnlyDictionary<IVar, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<IVar> parameters, ReadOnlySpan<Expr> arguments)
+    private IReadOnlyDictionary<IVar, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<IVar> parameters, ReadOnlySpan<BaseExpr> arguments)
     {
         var values = new Dictionary<IVar, IValue>(_varsValues);
         for (int i = 0; i < parameters.Length; i++)

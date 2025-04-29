@@ -111,7 +111,7 @@ public sealed class IndentWriter : StringWriter
 /// </summary>
 internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDisposable
 {
-    private readonly Dictionary<Expr, CSymbol> _exprMemo;
+    private readonly Dictionary<BaseExpr, CSymbol> _exprMemo;
     private readonly StringBuilder _kernelBuilder;
 
     private readonly StringBuilder _sharedBuilder;
@@ -282,7 +282,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         };
         var ptype = (PointerType)expr.CheckedDataType;
         var ptypeName = ptype.ElemType.ToC();
-        var spanSize = ((TensorConst)expr.Size).Value.ToScalar<ulong>() / (ulong)ptype.ElemType.SizeInBytes;
+        var spanSize = (ulong)expr.Size.FixedValue / (ulong)ptype.ElemType.SizeInBytes;
         var name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}UL), {spanSize})";
 
         symbol = new(start.Type, name);
@@ -297,9 +297,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             return symbol;
         }
 
-        var dimensions = expr.DistributedType is null ? expr.Dimensions : expr.DistributedType.TensorType.Shape.Dimensions;
-        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
-        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x is TensorConst);
+        var dimensions = expr.DistributedType is null ? expr.Dimensions : ((RankedShape)expr.DistributedType.TensorType.Shape).Dimensions;
+        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x.IsFixed);
+        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x.IsFixed);
         var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
         var strideSymbols = expr.Strides.AsValueEnumerable().Select(Visit).ToArray();
 
@@ -714,7 +714,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         return symbol;
     }
 
-    private CSymbol VisitBuffer(Expr buffer, bool local)
+    private CSymbol VisitBuffer(BaseExpr buffer, bool local)
     {
         var symbol = Visit(buffer);
         if (local && ((buffer.CheckedType is DistributedType) || (buffer is TIR.Buffer b && b.DistributedType != null)))
@@ -742,9 +742,9 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         IndentScope.Writer.IndWrite($"{symbol.Type} {symbol.Name}");
         if (buffer.MemSpan.Start is not None)
         {
-            var dimensions = buffer.DistributedType is null ? buffer.Dimensions : buffer.DistributedType.TensorType.Shape.Dimensions;
-            var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x is TensorConst);
-            var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x is TensorConst);
+            var dimensions = buffer.DistributedType is null ? buffer.Dimensions : ((RankedShape)buffer.DistributedType.TensorType.Shape).Dimensions;
+            var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x.IsFixed);
+            var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x.IsFixed);
             var spanStr = Visit(buffer.MemSpan).Name;
 
             if (isFixedDimensions && isFixedStrides)

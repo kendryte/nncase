@@ -7,6 +7,7 @@ using System.Linq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.PatternMatch;
@@ -90,12 +91,12 @@ public partial class FoldDilatedConv2D : RewriteRule<Pattern>
             { paddings[1, 0] + (strideH * slicePadding[3, 0]) - crop[1, 0], paddings[1, 1] + (strideH * slicePadding[3, 1]) - crop[1, 1] },
         };
 
-        var pairs = new[]
+        var pairs = new (int, BaseExpr)[]
         {
             (Conv2D.Input.Index, stbInput),
-            (Conv2D.Padding.Index, (Expr)newPaddings),
-            (Conv2D.Stride.Index, (Expr)new[] { strideH, strideW }),
-            (Conv2D.Dilation.Index, (Expr)new[] { dilationH, dilationW }),
+            (Conv2D.Padding.Index, (Paddings)newPaddings),
+            (Conv2D.Stride.Index, (Shape)new[] { strideH, strideW }),
+            (Conv2D.Dilation.Index, (Shape)new[] { dilationH, dilationW }),
         };
         var res = ReplaceUtility.ReplaceCallParams(conv.Target, conv.Arguments.ToArray(), pairs).InheritMetaData(btsCall);
         return res;

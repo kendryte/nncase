@@ -18,18 +18,18 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitConv2DTranspose(in tflite.Operator op)
         {
-            var outShape = GetInputExprs(op, 0);
-            var newOutShape = new Shape(outShape[0].AsDim(), outShape[3].AsDim(), outShape[1].AsDim(), outShape[2].AsDim());
-            var (input, weights) = GetInputExprs(op, 2, 1);
+            var outShape = GetInputExprs<Shape>(op, 0);
+            var newOutShape = new RankedShape(outShape[0], outShape[3], outShape[1], outShape[2]);
+            var (input, weights) = GetInputExprs<Expr, Expr>(op, 2, 1);
             Expr bias;
             if (op.InputsLength > 3)
             {
-                bias = GetInputExprs(op, 3);
+                bias = GetInputExprs<Expr>(op, 3);
             }
             else
             {
-                var oc = IR.F.Tensors.ShapeOf(weights)[0];
-                bias = IR.F.Tensors.Expand(new[] { 0f }, new Shape(oc));
+                var oc = IR.F.Tensors.ShapeOf(weights).AsShape()[0];
+                bias = IR.F.Tensors.Expand(new[] { 0f }, new RankedShape(oc));
             }
 
             var options = op.BuiltinOptionsAsTransposeConvOptions();
@@ -37,10 +37,10 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = 1;
             var dilationW = 1;
-            var stride = new Shape(strideH, strideW);
-            var dilation = new Shape(dilationH, dilationW);
+            var stride = new RankedShape(strideH, strideW);
+            var dilation = new RankedShape(dilationH, dilationW);
             var oldWShape = weights.CheckedShape;
-            var wShape = new Shape(oldWShape[0], oldWShape[3], oldWShape[1], oldWShape[2]);
+            var wShape = new RankedShape(oldWShape[0], oldWShape[3], oldWShape[1], oldWShape[2]);
             var padding = TypeInference.GetPaddings(newOutShape, wShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
             var clamp = ValueRange<float>.Full;
 

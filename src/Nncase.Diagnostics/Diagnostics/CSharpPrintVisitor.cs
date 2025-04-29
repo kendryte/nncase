@@ -236,7 +236,7 @@ public sealed class IndentMananger : IDisposable
 internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter _scope;
-    private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<BaseExpr, string> _names = new Dictionary<BaseExpr, string>(ReferenceEqualityComparer.Instance);
     private readonly BinaryWriter _constWriter;
     private readonly bool _randConst;
     private int _localId;
@@ -465,7 +465,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
-    private string AllocateTempVar(Expr expr)
+    private string AllocateTempVar(BaseExpr expr)
     {
         var name = $"v{_localId++}";
         _names.Add(expr, name);
@@ -519,7 +519,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             PrimType primType => tc.Value.Shape switch
             {
                 Shape { IsScalar: true } => tc.Value.GetArrayString(false),
-                Shape x when x.Size <= 8 => $"new {primType.GetBuiltInName()}[{GetArrayComma(x)}]{tc.Value.GetArrayString(false)}",
+                RankedShape x when x.Size <= 8 => $"new {primType.GetBuiltInName()}[{GetArrayComma(x)}]{tc.Value.GetArrayString(false)}",
                 _ => GetCSharpConstFromFile(tc),
             },
             ValueType valueType => GetCSharpConstFromFile(tc),

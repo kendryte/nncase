@@ -44,7 +44,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
 
     private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input, TensorType dims)
     {
-        if (input.Shape.IsUnranked)
+        if (input.Shape is not RankedShape inShape)
         {
             return input;
         }
@@ -52,23 +52,23 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         if (context.GetArgument(target, Squeeze.Dim) is TensorConst dim_con)
         {
             var dimsValue = dim_con.Value.Cast<int>();
-            var outshape = input.Shape.ToList();
+            var outshape = inShape.ToList();
             if (dimsValue.Length == 0)
             {
-                return input with { Shape = new Shape(outshape.Where(x => x != 1).ToArray()) };
+                return input with { Shape = new RankedShape(outshape.Where(x => x != 1).ToArray()) };
             }
 
             foreach (var dimV in dimsValue)
             {
-                var dimValue = Util.PositiveIndex(dimV, input.Shape.Rank);
+                var dimValue = Util.PositiveIndex(dimV, inShape.Rank);
                 outshape[dimValue] = int.MaxValue;
             }
 
-            return input with { Shape = new Shape(outshape.Where(x => x != int.MaxValue)) };
+            return input with { Shape = new RankedShape(outshape.Where(x => x != int.MaxValue)) };
         }
-        else if (dims.Shape.IsFixed)
+        else if (dims.Shape is RankedShape { IsFixed: true } dimsShape)
         {
-            return input with { Shape = Shape.Unknown(input.Shape.Rank - (int)dims.Shape.Prod().FixedValue) };
+            return input with { Shape = Shape.Unknown(input.Shape.Rank - (int)dimsShape.Prod().FixedValue) };
         }
 
         return input with { Shape = Shape.Unranked };

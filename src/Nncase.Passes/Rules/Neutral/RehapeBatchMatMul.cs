@@ -33,15 +33,15 @@ public sealed partial class ReshapeBatchMatmul : IRewriteRule
 
     private Expr? GetReplace(Call call, Expr a, Expr b)
     {
-        var aShape = a.CheckedShape;
-        var bShape = b.CheckedShape;
+        var aShape = (RankedShape)a.CheckedShape;
+        var bShape = (RankedShape)b.CheckedShape;
         if (aShape[^2] != 1 || bShape.Size != bShape[^2] * bShape[^1])
         {
             return null;
         }
 
-        var newAShape = new Shape(aShape.Size / aShape[^1], aShape[^1]);
-        var newBShape = new Shape(bShape[^2], bShape[^1]);
+        var newAShape = new RankedShape(aShape.Size / aShape[^1], aShape[^1]);
+        var newBShape = new RankedShape(bShape[^2], bShape[^1]);
 
         return Reshape(
             MatMul(

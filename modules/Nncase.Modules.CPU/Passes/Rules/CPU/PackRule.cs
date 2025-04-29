@@ -44,10 +44,10 @@ public sealed class PackResizeImage : PackRule
 
     public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input") with { TypePattern = !IsVector() }, IsWildcard("roi"), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var roi = (Expr)result["roi"];
-        if (roi is not None && roi.CheckedShape.Size != 0)
+        if (roi is not None && ((RankedShape)roi.CheckedShape).Size != 0)
         {
             return null!;
         }
@@ -86,12 +86,12 @@ public sealed class PackReduce : PackRule
     public override Pattern Pattern { get; } = IsReduce(
       "target",
       r => r.ReduceOp is ReduceOp.Mean or ReduceOp.Sum,
-      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() & HasRankedShape() },
       IsTensorConst("axes") with { TypePattern = IsIntegral() },
       IsTensorConst("initValue") with { TypePattern = IsFloat() },
       IsTensorConst("keepDims") with { TypePattern = IsBool() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
         var op = (IR.Math.Reduce)result["target"];
@@ -99,12 +99,12 @@ public sealed class PackReduce : PackRule
         var axes = ((TensorConst)result["axes"]).Value.ToArray<int>();
         if (axes.Length > 1)
         {
-            return new();
+            return Array.Empty<BaseExpr>();
         }
 
         var initValue = ((TensorConst)result["initValue"]).Value.ToScalar<float>();
         var keepDims = ((TensorConst)result["keepDims"]).Value.ToScalar<bool>();
-        var inShape = input.CheckedShape;
+        var inShape = (RankedShape)input.CheckedShape;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
         {
@@ -127,10 +127,10 @@ public sealed class PackReduce : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate([i], [Lane]);
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
@@ -158,7 +158,7 @@ public sealed class PackInstanceNorm : PackRule
       IsWildcard("bias") with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("eps") with { TypePattern = IsFloat() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
         var op = (IR.NN.InstanceNormalization)result["target"];
@@ -201,10 +201,10 @@ public sealed class PackInstanceNorm : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
@@ -235,7 +235,7 @@ public sealed class PackMatMul : PackRule
     /// </summary>
     public bool TransB { get; }
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
         var lhs = (Expr)result["lhs"];
@@ -409,7 +409,7 @@ public sealed class PackUnary : PackRule
       _ => true,
       IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
         var op = (IR.Math.Unary)result["target"];
@@ -434,10 +434,10 @@ public sealed class PackUnary : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
@@ -463,7 +463,7 @@ public sealed class PackBinary : PackRule
       IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
         var op = (IR.Math.Binary)result["target"];
@@ -569,10 +569,10 @@ public sealed class PackSwish : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
@@ -597,7 +597,7 @@ public sealed class PackTranspose : PackRule
       IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("perm") with { TypePattern = IsIntegral() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
@@ -631,10 +631,10 @@ public sealed class PackTranspose : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
@@ -659,7 +659,7 @@ public sealed class PackUnsqueeze : PackRule
       IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("axes") with { TypePattern = IsIntegral() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
@@ -700,10 +700,10 @@ public sealed class PackUnsqueeze : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
@@ -769,7 +769,7 @@ public sealed class PackConv2D : PackRule
         }
     }
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
@@ -807,7 +807,7 @@ public sealed class PackReshape : PackRule
       IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() & HasFixedShape() },
       IsTensorConst("newShape") with { TypePattern = IsIntegral() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
@@ -893,12 +893,12 @@ public sealed class PackReshape : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
             if (Rank > 1)
             {
-                for (int j = i + 1; j < input.CheckedShape.Count; j++)
+                for (int j = i + 1; j < input.CheckedShape.Rank; j++)
                 {
                     AddCandidate(new[] { i, j }, new[] { Lane, Lane });
                 }
@@ -924,7 +924,7 @@ public sealed class PackSlice : PackRule
       IsTensorConst("axes") with { TypePattern = IsIntegral() },
       IsTensorConst("strides") with { TypePattern = IsIntegral() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
@@ -991,10 +991,10 @@ public sealed class PackSlice : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
@@ -1019,7 +1019,7 @@ public sealed class PackCast : PackRule
       _ => true,
       IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
-    public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.Cast)result["target"];
@@ -1044,10 +1044,10 @@ public sealed class PackCast : PackRule
             }
         }
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             AddCandidate(new[] { i }, new[] { Lane });
-            for (int j = i + 1; j < input.CheckedShape.Count; j++)
+            for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
@@ -1090,7 +1090,7 @@ public sealed partial class FoldPackConcatUnpack : RewriteRule<Pattern>
             return patterns;
         }))));
 
-    private Expr? GetReplace(IR.CPU.Pack pack, IR.Tensors.Concat concat, IReadOnlyList<Expr> fileds, IMatchResult result)
+    private Expr? GetReplace(IR.CPU.Pack pack, IR.Tensors.Concat concat, IReadOnlyList<BaseExpr> fileds, IMatchResult result)
     {
         var inputs = new Expr[fileds.Count];
         for (int i = 0; i < fileds.Count; i++)

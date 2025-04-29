@@ -36,13 +36,13 @@ public interface IDumpper
     /// <returns>Sub dummper.</returns>
     IDumpper CreateSubDummper(string subDirectory, DumpFlags? dumpFlags = null);
 
-    void DumpIR(Expr expr, string prefix, string? reletivePath = null, PrinterFlags flags = PrinterFlags.Minimal);
+    void DumpIR(BaseExpr expr, string prefix, string? reletivePath = null, PrinterFlags flags = PrinterFlags.Minimal);
 
-    void DumpDotIR(Expr expr, string prefix, string? reletivePath = null);
+    void DumpDotIR(BaseExpr expr, string prefix, string? reletivePath = null);
 
-    void DumpCSharpIR(Expr expr, string prefix, string? reletivePath = null);
+    void DumpCSharpIR(BaseExpr expr, string prefix, string? reletivePath = null);
 
-    void DumpPatternIR(Expr expr, string prefix, string? reletivePath = null);
+    void DumpPatternIR(BaseExpr expr, string prefix, string? reletivePath = null);
 
     void DumpModule(IRModule module, string? reletivePath = null);
 

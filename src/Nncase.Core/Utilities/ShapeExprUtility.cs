@@ -38,7 +38,7 @@ public static class ShapeExprUtility
         return new If(condition, thenFunc, elseFunc, arg1, arg2);
     }
 
-    public static Expr GetPermutation(Expr tensor, long[] dims)
+    public static Shape GetPermutation(Expr tensor, long[] dims)
     {
         var r = tensor.CheckedShape.Rank;
 
@@ -46,7 +46,7 @@ public static class ShapeExprUtility
 
         for (int i = 0; i != r; i++)
         {
-            fullDims.Add((long)i);
+            fullDims.Add(i);
         }
 
         for (int i = 0; i != dims.Length; i++)
@@ -60,7 +60,7 @@ public static class ShapeExprUtility
         if (dims.Length == 2)
         {
             (fullDims[(int)dims[0]], fullDims[(int)dims[1]]) = (fullDims[(int)dims[1]], fullDims[(int)dims[0]]);
-            return Tensor.FromArray(fullDims.ToArray());
+            return fullDims.ToArray();
         }
         else
         {

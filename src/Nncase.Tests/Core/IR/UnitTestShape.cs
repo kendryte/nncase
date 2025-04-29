@@ -17,9 +17,8 @@ public sealed class UnitTestShape
     public void TestIEnumerableDimension()
     {
         var a = new Dimension[] { 1, 3, 2, 2 };
-        var s = new Shape((IEnumerable<Dimension>)a);
+        var s = new RankedShape((IEnumerable<Dimension>)a);
         Assert.Equal(ShapeKind.Fixed, s.Kind);
-        Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -35,9 +34,8 @@ public sealed class UnitTestShape
     public void TestIEnumerableLong()
     {
         var a = new long[] { 1, 3, 2, 2 };
-        var s = new Shape(a);
+        var s = new RankedShape(a);
         Assert.Equal(ShapeKind.Fixed, s.Kind);
-        Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -53,9 +51,8 @@ public sealed class UnitTestShape
     public void TestIEnumerableInt()
     {
         var a = new int[] { 1, 3, 2, 2 };
-        var s = new Shape((IEnumerable<int>)a);
+        var s = new RankedShape((IEnumerable<int>)a);
         Assert.Equal(ShapeKind.Fixed, s.Kind);
-        Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -71,9 +68,8 @@ public sealed class UnitTestShape
     public void TestIntArray()
     {
         var a = new int[] { 1, 3, 2, 2 };
-        var s = new Shape(a);
+        var s = new RankedShape(a);
         Assert.Equal(ShapeKind.Fixed, s.Kind);
-        Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -89,9 +85,8 @@ public sealed class UnitTestShape
     public void TestImplicitOeratorIntArray()
     {
         var a = new int[] { 1, 3, 2, 2 };
-        Shape s = a;
+        RankedShape s = a;
         Assert.Equal(ShapeKind.Fixed, s.Kind);
-        Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -107,9 +102,8 @@ public sealed class UnitTestShape
     public void TestDimensionArray()
     {
         var a = new Dimension[] { 1, 3, 2, 2 };
-        var s = new Shape(a);
+        var s = new RankedShape(a);
         Assert.Equal(ShapeKind.Fixed, s.Kind);
-        Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -125,9 +119,8 @@ public sealed class UnitTestShape
     public void TestImplicitOeratorDimensionArray()
     {
         var a = new Dimension[] { 1, 3, 2, 2 };
-        Shape s = a;
+        RankedShape s = a;
         Assert.Equal(ShapeKind.Fixed, s.Kind);
-        Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -143,7 +136,6 @@ public sealed class UnitTestShape
     public void TestInvalid()
     {
         var s = Shape.Invalid;
-        Assert.True(s.IsReadOnly);
         Assert.False(s.IsFixed);
         Assert.True(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -152,14 +144,14 @@ public sealed class UnitTestShape
         Assert.False(s.IsScalar);
         Assert.Throws<InvalidOperationException>(() => s.Rank);
         Assert.Empty(s);
-        Assert.Throws<InvalidOperationException>(() => s.Size);
+        Assert.Throws<InvalidOperationException>(s.ToValueArray);
+        Assert.Throws<InvalidOperationException>(s.ToValueArrayExpr);
     }
 
     [Fact]
     public void TestUnranked()
     {
         var s = Shape.Unranked;
-        Assert.True(s.IsReadOnly);
         Assert.False(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.True(s.IsUnranked);
@@ -168,14 +160,13 @@ public sealed class UnitTestShape
         Assert.False(s.IsScalar);
         Assert.Throws<InvalidOperationException>(() => s.Rank);
         Assert.Empty(s);
-        Assert.Throws<InvalidOperationException>(() => s.Size);
+        Assert.Throws<InvalidOperationException>(s.ToValueArray);
     }
 
     [Fact]
     public void TestScalar()
     {
         var s = Shape.Scalar;
-        Assert.True(s.IsReadOnly);
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -186,14 +177,12 @@ public sealed class UnitTestShape
         Assert.Empty(s);
         Assert.Equal(1, s.Size);
         Assert.Empty(s.ToValueArray());
-        Assert.Empty(s.ToValueList());
     }
 
     [Fact]
     public void TestScalar2()
     {
-        var s = new Shape(Array.Empty<Dimension>());
-        Assert.True(s.IsReadOnly);
+        var s = new RankedShape(Array.Empty<Dimension>());
         Assert.True(s.IsFixed);
         Assert.False(s.IsInvalid);
         Assert.False(s.IsUnranked);
@@ -204,7 +193,6 @@ public sealed class UnitTestShape
         Assert.Empty(s);
         Assert.Equal(1, s.Size);
         Assert.Empty(s.ToValueArray());
-        Assert.Empty(s.ToValueList());
     }
 
     [Fact]
@@ -214,9 +202,9 @@ public sealed class UnitTestShape
         var a2 = new int[] { 1, 3, 2, 2 };
         var a3 = new int[] { 1, 3, 4, 4 };
 
-        var s1 = new Shape(a1);
-        var s2 = new Shape(a2);
-        var s3 = new Shape(a3);
+        var s1 = new RankedShape(a1);
+        var s2 = new RankedShape(a2);
+        var s3 = new RankedShape(a3);
 
         Assert.True(s1 == s2);
         Assert.False(s1 == s3);
@@ -229,9 +217,9 @@ public sealed class UnitTestShape
         var a2 = new int[] { 1, 3, 2, 2 };
         var a3 = new int[] { 1, 3, 4, 4 };
 
-        var s1 = new Shape(a1);
-        var s2 = new Shape(a2);
-        var s3 = new Shape(a3);
+        var s1 = new RankedShape(a1);
+        var s2 = new RankedShape(a2);
+        var s3 = new RankedShape(a3);
 
         Assert.False(s1 != s2);
         Assert.True(s1 != s3);
@@ -244,9 +232,9 @@ public sealed class UnitTestShape
         var a2 = new int[] { 1, 3, 2, 2 };
         var a3 = new int[] { 1, 3, 4, 4 };
 
-        var s1 = new Shape(a1);
-        var s2 = new Shape(a2);
-        var s3 = new Shape(a3);
+        var s1 = new RankedShape(a1);
+        var s2 = new RankedShape(a2);
+        var s3 = new RankedShape(a3);
 
         Assert.Equal(s1, s2);
         Assert.NotEqual(s1, s3);
@@ -263,8 +251,8 @@ public sealed class UnitTestShape
         List<int> list = new();
         list.AddRange(a);
         list.Insert(index, item);
-        var expected = new Shape(list);
-        var actual = new Shape(a).InsertAndClone(index, item);
+        var expected = new RankedShape(list);
+        var actual = new RankedShape(a).InsertAndClone(index, item);
         Assert.Equal(expected, actual);
     }
 
@@ -278,24 +266,8 @@ public sealed class UnitTestShape
         List<int> list = new();
         list.AddRange(a);
         list.InsertRange(index, items);
-        var expected = new Shape(list);
-        var actual = new Shape(a).InsertAndClone(index, dimensions);
-        Assert.Equal(expected, actual);
-    }
-
-    [Fact]
-    public void TestToValueList()
-    {
-        int index = 1;
-        var items = new long[] { 3, 2 };
-        var dimensions = new Dimension[] { 3, 2 };
-        var a = new long[] { 1, 2 };
-        List<long> expected = new();
-        expected.AddRange(a);
-        expected.InsertRange(index, items);
-
-        var s = new Shape(a).InsertAndClone(index, dimensions);
-        var actual = s.ToValueList();
+        var expected = new RankedShape(list);
+        var actual = new RankedShape(a).InsertAndClone(index, dimensions);
         Assert.Equal(expected, actual);
     }
 
@@ -311,7 +283,7 @@ public sealed class UnitTestShape
         list.InsertRange(index, items);
         var expected = list.ToArray();
 
-        var s = new Shape(a).InsertAndClone(index, dimensions);
+        var s = new RankedShape(a).InsertAndClone(index, dimensions);
         var actual = s.ToValueArray();
         Assert.Equal(expected, actual);
     }
@@ -319,7 +291,7 @@ public sealed class UnitTestShape
     [Fact]
     public void TestToString()
     {
-        var s = Shape.Invalid;
+        Shape s = Shape.Invalid;
         Assert.Equal("[invalid]", s.ToString());
 
         s = Shape.Unranked;

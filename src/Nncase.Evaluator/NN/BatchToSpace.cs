@@ -138,8 +138,8 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
     private IRType Visit(ITypeInferenceContext context, BatchToSpace target, TensorType input, TensorType blockShape, TensorType crops)
     {
         var inShape = input.Shape.Rank == 4
-            ? TypeInference.ApplyPerm(input.Shape, new[] { 0, 2, 3, 1 })
-            : TypeInference.ApplyPerm(input.Shape, new[] { 0, 2, 1 });
+            ? TypeInference.ApplyPerm((RankedShape)input.Shape, new[] { 0, 2, 3, 1 })
+            : TypeInference.ApplyPerm((RankedShape)input.Shape, new[] { 0, 2, 1 });
         var batch = inShape[0];
         if (context.GetArgument(target, BatchToSpace.BlockShape) is TensorConst blockShapeValue &&
             context.GetArgument(target, BatchToSpace.Crops) is TensorConst cropsValue)
@@ -159,7 +159,7 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
                 i => (inShape[i + 1] * blockShapeArr[i]) - cropsV[i, 0] - cropsV[i, 1]);
 
             var remainSize = inShape.Rank - 1 - m;
-            var remainShape = remainSize > 0 ? inShape.Skip(1 + m) : Array.Empty<Dimension>();
+            var remainShape = remainSize > 0 ? inShape.Skip(1 + m).ToArray() : Array.Empty<Dimension>();
             var outShapeList = new[] { d0 }.Concat(cropSection).Concat(remainShape).ToArray();
             var outShape =
                 outShapeList.Length == 4

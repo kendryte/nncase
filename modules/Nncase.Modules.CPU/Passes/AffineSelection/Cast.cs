@@ -17,7 +17,7 @@ public sealed partial class CPUAffineSelectionPass
 {
     private Expr SelectCast(IR.Tensors.Cast cast, Call call, Expr output)
     {
-        var input = call[IR.Tensors.Cast.Input];
+        var input = (Expr)call[IR.Tensors.Cast.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
         {
             return call;

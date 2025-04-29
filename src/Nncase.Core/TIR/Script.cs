@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Runtime.CompilerServices;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.TIR.Builders;
 using Nncase.Utilities;
@@ -53,7 +54,7 @@ public static class T
     /// </summary>
     /// <param name="handle">The buffer handle variable in the load expression.</param>
     /// <param name="index">The index in the load.</param>
-    public static Call Load(Expr handle, Expr index) => new Call(new Load(), handle, index);
+    public static Call Load(BaseExpr handle, Dimension index) => new Call(new Load(), handle, index);
 
     /// <summary>
     /// get the nop op.
@@ -82,7 +83,7 @@ public static class T
     /// <param name="handle">The buffer Variable.</param>
     /// <param name="index">The index in the store expression.</param>
     /// <param name="value">The value we want to store.</param>
-    public static Call Store(Expr handle, Expr index, Expr value) => new Call(new Store(), handle, index, value);
+    public static Call Store(BaseExpr handle, Dimension index, Expr value) => new Call(new Store(), handle, index, value);
 
     /// <summary>
     /// build for loop.
@@ -243,7 +244,7 @@ public static class T
             name = name[4..];
         }
 
-        var dimensions = tensorType.Shape.Dimensions.ToArray();
+        var dimensions = ((RankedShape)tensorType.Shape).Dimensions.ToArray();
         (var size, var strides) = location is MemoryLocation.Input or MemoryLocation.Output
             ? TensorUtilities.GetTensorSizeAndContiguousStrides(tensorType, distributedType)
             : TensorUtilities.GetTensorMaxSizeAndStridesExpr(tensorType, distributedType);
@@ -287,7 +288,7 @@ public static class T
             name = name[4..];
         }
 
-        var dimensions = tensorType.Shape.Dimensions.ToArray();
+        var dimensions = ((RankedShape)tensorType.Shape).Dimensions.ToArray();
         (var size, var strides) = location is MemoryLocation.Input or MemoryLocation.Output
             ? TensorUtilities.GetTensorSizeAndContiguousStrides(tensorType, distributedType)
             : TensorUtilities.GetTensorMaxSizeAndStridesExpr(tensorType, distributedType);
@@ -306,9 +307,9 @@ public static class T
             name = name[4..];
         }
 
-        var dimensions = @const.CheckedShape.ToArray();
+        var dimensions = @const.Value.Dimensions.AsValueEnumerable().Select(x => (Dimension)x).ToArray();
         (var maxSize, var strides) = TensorUtilities.GetTensorMaxSizeAndStrides(@const.CheckedTensorType, @const.ValueType as DistributedType);
-        var memspan = new MemSpan(IR.F.Buffer.DDrOf(@const), maxSize, @const.ValueType is DistributedType ? MemoryLocation.ThreadLocalRdata : MemoryLocation.Rdata);
+        var memspan = new MemSpan(IR.F.Buffer.AddressOf(@const), maxSize, @const.ValueType is DistributedType ? MemoryLocation.ThreadLocalRdata : MemoryLocation.Rdata);
         buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions, strides.Select(i => (Dimension)i).ToArray(), @const.ValueType as DistributedType);
         return buffer;
     }
@@ -340,7 +341,7 @@ public static class T
     }
 #endif
 
-    public static ISequentialBuilder<For> ForSegment(out (Expr B, Expr E) seg, Dimension low, Dimension chunck, Dimension high)
+    public static ISequentialBuilder<For> ForSegment(out (Dimension B, Dimension E) seg, Dimension low, Dimension chunck, Dimension high)
     {
         var count = Dimension.CeilDiv(high - low, chunck);
         var forloop = T.Serial(out var i, (0, count));
@@ -358,6 +359,19 @@ public static class T
     public static ISequentialBuilder<Let> Let(out Var v, Expr expression, [CallerArgumentExpression("v")] string name = "")
     {
         var newV = v = new Var(name.StartsWith("var ") ? name[4..] : name);
+        return new SequentialBuilder<Let>(body => new Let(newV, expression, body));
+    }
+
+    /// <summary>
+    /// Let bind.
+    /// </summary>
+    /// <param name="v">Variable.</param>
+    /// <param name="expression">the expression.</param>
+    /// <param name="name">the var name.</param>
+    /// <returns>let builder.</returns>
+    public static ISequentialBuilder<Let> LetDim(out DimVar v, Dimension expression, [CallerArgumentExpression("v")] string name = "")
+    {
+        var newV = v = new DimVar(name.StartsWith("var ") ? name[4..] : name);
         return new SequentialBuilder<Let>(body => new Let(newV, expression, body));
     }
 

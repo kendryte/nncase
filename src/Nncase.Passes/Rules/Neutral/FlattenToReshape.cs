@@ -32,8 +32,9 @@ public sealed partial class FlattenToReshape : IRewriteRule
 
     private Expr? GetReplace(Expr input, int axis)
     {
-        var postiveAxis = axis >= 0 ? axis : input.CheckedShape.Count + axis;
-        var newShape = postiveAxis == 0 ? new Shape(1, input.CheckedShape.Size) : new Shape(input.CheckedShape.ToValueArray()[..postiveAxis].Aggregate((a, b) => a * b), input.CheckedShape.ToValueArray()[postiveAxis..].Aggregate((a, b) => a * b));
+        var inShape = (RankedShape)input.CheckedShape;
+        var postiveAxis = axis >= 0 ? axis : inShape.Rank + axis;
+        var newShape = postiveAxis == 0 ? new RankedShape(1, inShape.Prod()) : new RankedShape(input.CheckedShape.ToValueArray()[..postiveAxis].Aggregate((a, b) => a * b), input.CheckedShape.ToValueArray()[postiveAxis..].Aggregate((a, b) => a * b));
         return Reshape(input, newShape);
     }
 }

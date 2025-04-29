@@ -20,7 +20,7 @@ public sealed partial class Reduce : Op
     /// <summary>
     /// Gets axes.
     /// </summary>
-    public static readonly ParameterInfo Axes = new(typeof(Reduce), 1, "axes", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Axes = new(typeof(Reduce), 1, "axes", IsShapeType());
 
     /// <summary>
     /// Gets initial value.

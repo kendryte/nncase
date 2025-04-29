@@ -14,8 +14,6 @@ namespace Nncase
 {
     public static class Util
     {
-        public static Dimension DynamicShapeIndex(in Expr input, Dimension index) => F.Tensors.ShapeOf(input)[index].AsDim();
-
         public static Dimension ShapeIndex(in Expr input, int index)
         {
             int i;
@@ -26,10 +24,8 @@ namespace Nncase
             }
             else
             {
-                i = index;
+                throw new InvalidOperationException($"Expr {input} has no shape");
             }
-
-            return DynamicShapeIndex(input, i);
         }
 
         public static (Dimension H, Dimension W) GetHW(in Expr input, bool isNHWC = false)
@@ -47,11 +43,9 @@ namespace Nncase
             return new TensorConst(Tensor.From<int>(new[] { 0 }));
         }
 
-        public static Expr ComputeSplit(Expr input, long outputSize, long axis)
+        public static Shape ComputeSplit(Expr input, long outputSize, long axis)
         {
-            return F.Tensors.Expand(
-                Util.ShapeIndex(input, (int)axis) / outputSize, // Util.DynamicShapeIndex(input, Cast(axis, DataTypes.Int32)) / outputSize
-                new Shape(outputSize));
+            return Shape.Repeat(Util.ShapeIndex(input, (int)axis) / outputSize, (int)outputSize);
         }
     }
 }

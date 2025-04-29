@@ -61,7 +61,7 @@ public abstract partial record Pattern
     /// Convert <see cref="Expr"/> to <see cref="Pattern"/>.
     /// </summary>
     /// <param name="expr">Expression.</param>
-    public static implicit operator Pattern(Expr expr) => expr switch
+    public static implicit operator Pattern(BaseExpr expr) => expr switch
     {
         Var var => new VarPattern(var),
         TensorConst con => new TensorConstPattern(con, null),

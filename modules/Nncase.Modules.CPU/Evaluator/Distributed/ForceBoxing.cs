@@ -96,6 +96,6 @@ public sealed class ForceBoxingEvaluator : ITypeInferencer<ForceBoxing>, ICostEv
             output += input;
         }
 
-        return Value.FromTensor(Tensor.FromBytes(inTenor.ElementType, output.BytesBuffer.ToArray(), target.NewType.TensorType.Shape));
+        return Value.FromTensor(Tensor.FromBytes(inTenor.ElementType, output.BytesBuffer.ToArray(), (RankedShape)target.NewType.TensorType.Shape));
     }
 }

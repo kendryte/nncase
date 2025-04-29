@@ -44,7 +44,7 @@ public sealed partial class NcnnImporter : BaseImporter
 
     private readonly NcnnModel _model;
     private readonly NcnnModelBin _modelBin;
-    private readonly Dictionary<string, Expr> _outputTensors = new Dictionary<string, Expr>();
+    private readonly Dictionary<string, BaseExpr> _outputTensors = new Dictionary<string, BaseExpr>();
     private readonly List<Var> _inputs = new();
 
     /// <summary>
@@ -75,7 +75,7 @@ public sealed partial class NcnnImporter : BaseImporter
         }
     }
 
-    protected override Expr CreateOutputs()
+    protected override BaseExpr CreateOutputs()
     {
         var outputTensors = (from l in _model.Layers
                              from t in l.Tops
@@ -137,12 +137,21 @@ public sealed partial class NcnnImporter : BaseImporter
         AddToOutputs(_outputTensors, outputNames, output);
     }
 
-    private Expr GetInputExprs(NcnnLayer layer, int index) =>
+    private BaseExpr GetInputExprsCore(NcnnLayer layer, int index) =>
         _outputTensors[layer.Bottoms[index].Name];
 
-    private (Expr Expr0, Expr Expr1) GetInputExprs(NcnnLayer layer, int index0, int index1) =>
-        (GetInputExprs(layer, index0), GetInputExprs(layer, index1));
+    private T GetInputExprs<T>(NcnnLayer layer, int index)
+        where T : BaseExpr
+    {
+        var expr = GetInputExprsCore(layer, index);
+        return GetInputExpr<T>(expr);
+    }
 
-    private IEnumerable<Expr> GetInputExprs(NcnnLayer layer) =>
+    private (T1 Expr0, T2 Expr1) GetInputExprs<T1, T2>(NcnnLayer layer, int index0, int index1)
+        where T1 : BaseExpr
+        where T2 : BaseExpr =>
+        (GetInputExprs<T1>(layer, index0), GetInputExprs<T2>(layer, index1));
+
+    private IEnumerable<BaseExpr> GetInputExprs(NcnnLayer layer) =>
         layer.Bottoms.Select(x => _outputTensors[x.Name]);
 }

@@ -85,7 +85,7 @@ public static class TypeSerializer
         else
         {
             writer.Write((byte)1);
-            foreach (var dim in shape)
+            foreach (var dim in (RankedShape)shape)
             {
                 if (dim.Kind == DimensionKind.Fixed)
                 {

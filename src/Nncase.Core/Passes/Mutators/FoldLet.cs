@@ -17,7 +17,7 @@ namespace Nncase.Passes.Mutators;
 public sealed class FoldLet : ExprRewriter
 {
     /// <inheritdoc/>
-    protected override Expr RewriteLeafLet(Let expr)
+    protected override BaseExpr RewriteLeafLet(Let expr)
     {
         if (expr.Expression is Const @const)
         {
@@ -29,10 +29,10 @@ public sealed class FoldLet : ExprRewriter
 
     private sealed class SubFieldRewriter : ExprRewriter
     {
-        private readonly Var _var;
+        private readonly IVar _var;
         private readonly Const _const;
 
-        public SubFieldRewriter(Var @var, Const @const)
+        public SubFieldRewriter(IVar @var, Const @const)
         {
             _var = @var;
             _const = @const;

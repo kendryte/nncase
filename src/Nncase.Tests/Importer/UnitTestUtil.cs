@@ -29,11 +29,11 @@ public class UnitTestUtil
     public void TestComputeSplit()
     {
         var input = OrtKI.Random(1, 2, 4, 8).ToTensor();
-        var outputSize = 4L;
+        var outputSize = 4;
         var axis = -1L;
         var expr = Util.ComputeSplit(input, outputSize, axis);
 
-        var expect = IR.F.Tensors.Expand(Util.ShapeIndex(input, (int)axis) / outputSize, new Shape(outputSize));
+        var expect = Shape.Repeat(Util.ShapeIndex(input, (int)axis) / outputSize, outputSize);
         Assert.Equal(expr, expect);
     }
 }

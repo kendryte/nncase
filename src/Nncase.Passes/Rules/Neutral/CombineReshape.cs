@@ -78,7 +78,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; init; }
 
-    private Expr? GetReplace(Binary binary, Call call, IReadOnlyList<Expr> callParams, Expr input, TensorConst constInput, Shape shape)
+    private Expr? GetReplace(Binary binary, Call call, IReadOnlyList<BaseExpr> callParams, Expr input, TensorConst constInput, Shape shape)
     {
         var oldShape = shape.ToValueArray();
         var significantShape = oldShape.Where(x => x > 1).ToArray();
@@ -159,7 +159,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
             return patterns;
         }));
 
-    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Shape shape)
+    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<BaseExpr> parameters, Shape shape)
     {
         // TODO: Not support PRelu for now.
         if (activation is PRelu)
@@ -251,7 +251,7 @@ public sealed partial class CombineReshapeTranspose : IRewriteRule
             var inv = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
             var invViewAxis = inv.Where(tp => tp.i == viewAxis).First().p;
             var invPerm = perm.ToList();
-            var invNewShape = input.CheckedShape.ToValueList();
+            var invNewShape = ((RankedShape)input.CheckedShape).ToList();
             invNewShape.RemoveAt(invViewAxis);
             invPerm.Remove(invViewAxis);
             return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(input, invNewShape.ToArray()), invPerm.Select(i => i > invViewAxis ? i - 1 : i).ToArray());

@@ -20,7 +20,7 @@ public static class TIRUtilities
   /// <summary>
   /// give the bounds and shape, compute paddings.
   /// </summary>
-  public static Paddings ComputePaddings(IReadOnlyList<TIR.Range> bounds, IR.Shape shape) => new Paddings(
+  public static Paddings ComputePaddings(IReadOnlyList<TIR.Range> bounds, RankedShape shape) => new Paddings(
     bounds.Zip(shape).Select((t, i) =>
       new Padding(Dimension.Max(-t.First.Start, 0), Dimension.Max(t.First.Stop - t.Second, 0))).ToArray());
 
@@ -66,7 +66,7 @@ public static class TIRUtilities
   /// <summary>
   /// clamp bounds by given shape.
   /// </summary>
-  public static IReadOnlyList<TIR.Range> ClampBounds(IReadOnlyList<TIR.Range> bounds, IR.Shape shape) =>
+  public static IReadOnlyList<TIR.Range> ClampBounds(IReadOnlyList<TIR.Range> bounds, RankedShape shape) =>
     bounds.Zip(shape).Select(
       t => new TIR.Range(
           Dimension.Max(0, t.First.Start),

@@ -44,7 +44,7 @@ public sealed partial class TFLiteImporter : BaseImporter
 
     private readonly tflite.Model _model;
     private readonly tflite.SubGraph _subGraph;
-    private readonly Dictionary<int, Expr> _outputTensors = new Dictionary<int, Expr>();
+    private readonly Dictionary<int, BaseExpr> _outputTensors = new Dictionary<int, BaseExpr>();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TFLiteImporter"/> class.
@@ -112,7 +112,7 @@ public sealed partial class TFLiteImporter : BaseImporter
         }
     }
 
-    protected override Expr CreateOutputs()
+    protected override BaseExpr CreateOutputs()
     {
         var outputs = (from o in _subGraph.GetOutputsBytes().AsValueEnumerable()
                        select _outputTensors[o]).ToArray();
@@ -135,7 +135,7 @@ public sealed partial class TFLiteImporter : BaseImporter
         }
         else
         {
-            return new TensorType(dataType, new Shape(shape));
+            return new TensorType(dataType, new RankedShape(shape));
         }
     }
 
@@ -169,7 +169,7 @@ public sealed partial class TFLiteImporter : BaseImporter
             (int)opcode.BuiltinCode);
         AddOpInModel(builtinCode.ToString());
 
-        var output = builtinCode switch
+        BaseExpr output = builtinCode switch
         {
             tflite.BuiltinOperator.ABS => VisitUnary(op, UnaryOp.Abs),
             tflite.BuiltinOperator.ADD => VisitBinary(op, BinaryOp.Add, op.BuiltinOptionsAsAddOptions().FusedActivationFunction),
@@ -439,7 +439,7 @@ public sealed partial class TFLiteImporter : BaseImporter
         }
     }
 
-    private Expr GetInputExprs(in tflite.Operator op, int index)
+    private BaseExpr GetInputExprsCore(in tflite.Operator op, int index)
     {
         var id = op.Inputs(index);
 
@@ -473,8 +473,17 @@ public sealed partial class TFLiteImporter : BaseImporter
         }
     }
 
-    private (Expr Expr0, Expr Expr1) GetInputExprs(in tflite.Operator op, int index0, int index1) =>
-        (GetInputExprs(op, index0), GetInputExprs(op, index1));
+    private T GetInputExprs<T>(in tflite.Operator op, int index)
+        where T : BaseExpr
+    {
+        var expr = GetInputExprsCore(op, index);
+        return GetInputExpr<T>(expr);
+    }
+
+    private (T1 Expr0, T2 Expr1) GetInputExprs<T1, T2>(in tflite.Operator op, int index0, int index1)
+        where T1 : BaseExpr
+        where T2 : BaseExpr =>
+        (GetInputExprs<T1>(op, index0), GetInputExprs<T2>(op, index1));
 
     private tflite.Tensor GetTfliteTensor(int id)
     {
@@ -496,30 +505,5 @@ public sealed partial class TFLiteImporter : BaseImporter
     private Shape GetTensorShape(in tflite.Tensor tensor)
     {
         return GetShapeArray(tensor);
-    }
-
-    /// <summary>
-    /// Get paddings from expr.
-    /// The paddings is a 2D tensor, shape = [channels, 2(before, after)].
-    /// </summary>
-    /// <param name="expr">Expr.</param>
-    private Paddings GetPaddings(Expr expr)
-    {
-        var shape = expr.CheckedShape;
-        if (!shape.IsFixed || shape.Rank != 2)
-        {
-            throw new InvalidDataException($"Paddings should be a 2D tensor, but got {shape}.");
-        }
-
-        var channels = (int)shape[0].FixedValue;
-        return new Paddings(Enumerable
-            .Range(0, channels)
-            .Select(i =>
-            {
-                var before = expr[i, 0].AsDim();
-                var after = expr[i, 1].AsDim();
-                return new Padding(before, after);
-            })
-            .ToArray());
     }
 }

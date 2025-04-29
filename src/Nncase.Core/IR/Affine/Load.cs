@@ -12,11 +12,11 @@ namespace Nncase.IR.Affine;
 public sealed class Load : Expr
 {
     public Load(Expr source, AffineMap region)
-        : base(new[] { source, region })
+        : base(new BaseExpr[] { source, region })
     {
     }
 
-    public Expr Source => Operands[0];
+    public Expr Source => (Expr)Operands[0];
 
     public AffineMap Region => (AffineMap)Operands[1];
 

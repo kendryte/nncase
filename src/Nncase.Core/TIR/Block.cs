@@ -77,27 +77,27 @@ public sealed class Block : Expr
     /// <summary>
     /// Gets the List Exprs contain the IterVars.
     /// </summary>
-    public ReadOnlySpan<IterVar> IterVars => SpanUtility.UnsafeCast<Expr, IterVar>(Operands.Slice(2, _iterVarsCount));
+    public ReadOnlySpan<IterVar> IterVars => SpanUtility.UnsafeCast<BaseExpr, IterVar>(Operands.Slice(2, _iterVarsCount));
 
     /// <summary>
     /// Gets the read buffer regions of the block.
     /// </summary>
-    public ReadOnlySpan<BufferRegion> Reads => SpanUtility.UnsafeCast<Expr, BufferRegion>(Operands.Slice(2 + _iterVarsCount, _readsCount));
+    public ReadOnlySpan<BufferRegion> Reads => SpanUtility.UnsafeCast<BaseExpr, BufferRegion>(Operands.Slice(2 + _iterVarsCount, _readsCount));
 
     /// <summary>
     /// Gets the write buffer regions of the block.
     /// </summary>
-    public ReadOnlySpan<BufferRegion> Writes => SpanUtility.UnsafeCast<Expr, BufferRegion>(Operands.Slice(2 + _iterVarsCount + _readsCount, _writesCount));
+    public ReadOnlySpan<BufferRegion> Writes => SpanUtility.UnsafeCast<BaseExpr, BufferRegion>(Operands.Slice(2 + _iterVarsCount + _readsCount, _writesCount));
 
     /// <summary>
     /// Gets the buffer allocated in the block.
     /// </summary>
-    public ReadOnlySpan<Buffer> AllocBuffers => SpanUtility.UnsafeCast<Expr, Buffer>(Operands.Slice(2 + _iterVarsCount + _readsCount + _writesCount, _allocBuffersCount));
+    public ReadOnlySpan<Buffer> AllocBuffers => SpanUtility.UnsafeCast<BaseExpr, Buffer>(Operands.Slice(2 + _iterVarsCount + _readsCount + _writesCount, _allocBuffersCount));
 
     /// <summary>
     /// Gets the predicate of the block realization, the block will only be executed when the predicate is true.
     /// </summary>
-    public Expr Predicate => Operands[2 + _iterVarsCount + _readsCount + _writesCount + _allocBuffersCount];
+    public Expr Predicate => (Expr)Operands[2 + _iterVarsCount + _readsCount + _writesCount + _allocBuffersCount];
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)

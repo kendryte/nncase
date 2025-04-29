@@ -21,7 +21,7 @@ public partial class Expr
     /// get the item from the expr.
     /// </summary>
     /// <param name="index"> expr. </param>
-    public Expr this[Dimension index] => F.Tensors.GetItem(this, index);
+    public override Expr this[Dimension index] => F.Tensors.GetItem(this, index);
 
     /// <summary>
     /// get the item from the expr.
@@ -30,10 +30,8 @@ public partial class Expr
     public Expr this[long index] =>
         this switch
         {
-            TensorConst tc when tc.Value.Rank == 1 => Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
-            TupleConst tc => tc.Value[(int)index].AsTensor(),
-            Shape shape => shape.Dimensions[(int)index],
-            IR.Tuple t => t[(int)index],
+            TensorConst tc when tc.Value.Rank == 1 => (Expr)Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
+            TupleConst tc => (Expr)tc.Value[(int)index].AsTensor(),
             _ => this[(Dimension)index],
         };
 
@@ -62,7 +60,7 @@ public partial class Expr
             }
             else
             {
-                return F.Tensors.GetItem(this, F.Tensors.Stack(new IR.Tuple(indices), 0));
+                return F.Tensors.GetItem(this, indices);
             }
         }
     }

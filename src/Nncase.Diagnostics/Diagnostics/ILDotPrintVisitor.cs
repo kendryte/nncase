@@ -69,7 +69,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
 {
     private readonly DotGraph _dotGraph;
     private readonly List<(string, DotGraph)> _subdotGraphs;
-    private readonly Dictionary<Expr, ILDotOption> _exprMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<BaseExpr, ILDotOption> _exprMemo = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<Var, int> _varColorMemo = new(ReferenceEqualityComparer.Instance);
     private readonly PrinterFlags _flags;
     private int _idCounter;
@@ -100,7 +100,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
 
     public override string DefaultVisitType(IRType type)
     {
-        var feedDict = new Dictionary<Expr, string>();
+        var feedDict = new Dictionary<BaseExpr, string>();
 
         foreach (var var in CollectShapeExprs(type).OfType<Var>())
         {
@@ -296,7 +296,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
                 CellSpacing = 0,
             };
 
-            var connect_list = new List<(Expr, string)>();
+            var connect_list = new List<(BaseExpr, string)>();
 
             // 1. the connect type.
             table.AddRow(row =>
@@ -480,7 +480,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
                 CellSpacing = 0,
             };
 
-            var connect_list = new List<(Expr, string)>();
+            var connect_list = new List<(BaseExpr, string)>();
 
             // 1. the connect type.
             table.AddRow(row =>
@@ -578,7 +578,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         return new DotColor(Utility.BaseColors[_varColorMemo[expr] % Utility.BaseColors.Length]);
     }
 
-    private List<Expr> CollectShapeExprs(IRType irType)
+    private List<BaseExpr> CollectShapeExprs(IRType irType)
     {
         var shapes = new List<Shape>();
 

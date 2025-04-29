@@ -20,7 +20,7 @@ public enum DimDivideMode
 
 public abstract class OpaqueDim : Dimension
 {
-    protected OpaqueDim(Expr[] operands)
+    protected OpaqueDim(BaseExpr[] operands)
         : base(operands)
     {
     }
@@ -38,14 +38,12 @@ public sealed class AsDim : Dimension, IEquatable<AsDim?>
     /// <summary>
     /// Gets dim.
     /// </summary>
-    public Expr Dim => Operands[0];
+    public Expr Dim => (Expr)Operands[0];
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitAsDim(this, context);
 
     public AsDim With(Expr? dim = null) => new AsDim(dim ?? Dim);
-
-    public override Expr ToValueExpr() => Dim;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as AsDim);
@@ -82,8 +80,6 @@ public sealed class UnknownDim : Dimension, IEquatable<UnknownDim?>
         functor.VisitUnknownDim(this, context);
 
     public UnknownDim With() => Default;
-
-    public override Expr ToValueExpr() => None.Default;
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as UnknownDim);
@@ -161,8 +157,6 @@ public sealed class DimVar : OpaqueDim, IVar, IEquatable<DimVar?>
 
     IVar IVar.With(string? name) => With(name);
 
-    public override Expr ToValueExpr() => this;
-
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimVar);
 
@@ -219,8 +213,6 @@ public sealed class DimConst : Dimension, IEquatable<DimConst?>
 
     public DimConst With(long? value = null) => new DimConst(value ?? Value);
 
-    public override Expr ToValueExpr() => Value;
-
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimConst);
 
@@ -268,8 +260,6 @@ public sealed class DimPower : Dimension, IEquatable<DimPower?>
         functor.VisitDimPower(this, context);
 
     public DimPower With(OpaqueDim? dim = null, int? power = null) => new DimPower(dim ?? Dim, power ?? Power);
-
-    public override Expr ToValueExpr() => F.Math.Pow(Dim.ToValueExpr(), Power);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimPower);
@@ -353,8 +343,6 @@ public sealed class DimFraction : Dimension, IEquatable<DimFraction?>
 
     public DimFraction With(DimDivideMode? divMode = null, Dimension? numerator = null, Dimension? denominator = null) =>
         new DimFraction(divMode ?? DivMode, numerator ?? Numerator, denominator ?? Denominator);
-
-    public override Expr ToValueExpr() => F.Math.Binary(DivMode == DimDivideMode.FloorDiv ? BinaryOp.FloorDiv : BinaryOp.CeilDiv, Numerator.ToValueExpr(), Denominator.ToValueExpr());
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimFraction);
@@ -469,8 +457,6 @@ public sealed class DimRemainder : Dimension, IEquatable<DimRemainder?>
     public DimRemainder With(Dimension? numerator = null, Dimension? denominator = null) =>
         new DimRemainder(numerator ?? Numerator, denominator ?? Denominator);
 
-    public override Expr ToValueExpr() => Numerator.ToValueExpr() % Denominator.ToValueExpr();
-
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimRemainder);
 
@@ -528,18 +514,16 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
     /// <summary>
     /// Gets operands.
     /// </summary>
-    public new ReadOnlySpan<Dimension> Operands => SpanUtility.UnsafeCast<Expr, Dimension>(base.Operands);
+    public new ReadOnlySpan<Dimension> Operands => SpanUtility.UnsafeCast<BaseExpr, Dimension>(base.Operands);
 
     public int Count => Operands.Length;
 
-    public new Dimension this[int index] => Operands[index];
+    public Dimension this[int index] => Operands[index];
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimProduct(this, context);
 
     public DimProduct With(Dimension[]? operands = null, long? scale = null) => new DimProduct(operands ?? Operands.ToArray(), scale ?? Scale);
-
-    public override Expr ToValueExpr() => Enumerable.Aggregate(Operands.ToArray(), (Expr)Scale, (acc, operand) => acc * operand.ToValueExpr());
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimProduct);
@@ -618,20 +602,16 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
     /// <summary>
     /// Gets operands.
     /// </summary>
-    public new ReadOnlySpan<Dimension> Operands => SpanUtility.UnsafeCast<Expr, Dimension>(base.Operands);
+    public new ReadOnlySpan<Dimension> Operands => SpanUtility.UnsafeCast<BaseExpr, Dimension>(base.Operands);
 
     public long Bias { get; }
 
     public int Count => Operands.Length;
 
-    public new Dimension this[int index] => Operands[index];
-
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimSum(this, context);
 
     public DimSum With(Dimension[]? operands = null, long? bias = null) => new DimSum(operands ?? Operands.ToArray(), bias ?? Bias);
-
-    public override Expr ToValueExpr() => Enumerable.Aggregate(Operands.ToArray(), (Expr)Bias, (acc, operand) => acc + operand.ToValueExpr());
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimSum);
@@ -727,8 +707,6 @@ public sealed class DimAbs : Dimension, IEquatable<DimAbs?>
 
     public DimAbs With(Dimension? operand = null) => new DimAbs(operand ?? Operand);
 
-    public override Expr ToValueExpr() => F.Math.Abs(Operand.ToValueExpr());
-
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimAbs);
 
@@ -794,8 +772,6 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
     public DimClamp With(Dimension? operand = null, Dimension? minValue = null, Dimension? maxValue = null) =>
         new DimClamp(operand ?? Operand, minValue ?? MinValue, maxValue ?? MaxValue);
 
-    public override Expr ToValueExpr() => F.Math.Clamp(Operand.ToValueExpr(), MinValue.ToValueExpr(), MaxValue.ToValueExpr());
-
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimClamp);
 
@@ -860,8 +836,6 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
     public DimCompareAndSelect With(Dimension? value = null, Dimension? expected = null, Dimension? trueValue = null, Dimension? falseValue = null) =>
         new DimCompareAndSelect(value ?? Value, expected ?? Expected, trueValue ?? TrueValue, falseValue ?? FalseValue);
 
-    public override Expr ToValueExpr() => F.Math.Select(F.Math.Equal(Value.ToValueExpr(), Expected.ToValueExpr()), TrueValue.ToValueExpr(), FalseValue.ToValueExpr());
-
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimCompareAndSelect);
 
@@ -904,14 +878,12 @@ public sealed class DimMin : OpaqueDim, IEquatable<DimMin?>
     /// <summary>
     /// Gets operands.
     /// </summary>
-    public new ReadOnlySpan<Dimension> Operands => SpanUtility.UnsafeCast<Expr, Dimension>(base.Operands);
+    public new ReadOnlySpan<Dimension> Operands => SpanUtility.UnsafeCast<BaseExpr, Dimension>(base.Operands);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimMin(this, context);
 
     public DimMin With(Dimension[]? operands = null) => new DimMin(operands ?? Operands.ToArray());
-
-    public override Expr ToValueExpr() => Enumerable.Aggregate(Operands.AsValueEnumerable().Select(x => x.ToValueExpr()).ToArray(), F.Math.Min);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimMin);
@@ -969,14 +941,12 @@ public sealed class DimMax : OpaqueDim, IEquatable<DimMax?>
     /// <summary>
     /// Gets operands.
     /// </summary>
-    public new ReadOnlySpan<Dimension> Operands => SpanUtility.UnsafeCast<Expr, Dimension>(base.Operands);
+    public new ReadOnlySpan<Dimension> Operands => SpanUtility.UnsafeCast<BaseExpr, Dimension>(base.Operands);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimMax(this, context);
 
     public DimMax With(Dimension[]? operands = null) => new DimMax(operands ?? Operands.ToArray());
-
-    public override Expr ToValueExpr() => Enumerable.Aggregate(Operands.AsValueEnumerable().Select(x => x.ToValueExpr()).ToArray(), F.Math.Max);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimMax);
@@ -1046,13 +1016,6 @@ public sealed class DimPositive : OpaqueDim, IEquatable<DimPositive?>
 
     public DimPositive With(Dimension? operand = null, Dimension? extent = null) => new DimPositive(operand ?? Operand, extent ?? Extent);
 
-    public override Expr ToValueExpr()
-    {
-        var operand = Operand.ToValueExpr();
-        var extent = Extent.ToValueExpr();
-        return F.Math.Select(operand < 0, operand + extent, operand);
-    }
-
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimPositive);
 
@@ -1079,6 +1042,61 @@ public sealed class DimPositive : OpaqueDim, IEquatable<DimPositive?>
             var min = operandRange.Min < 0 ? 0 : operandRange.Min;
             var max = operandRange.Max >= 0 ? System.Math.Min(operandRange.Max, extentRange.Max) : extentRange.Max;
             return new ValueRange<double>(min, max);
+        }
+
+        return ValueRange<double>.Full;
+    }
+}
+
+public sealed class DimAt : OpaqueDim, IEquatable<DimAt?>
+{
+    public DimAt(Shape shape, Dimension index)
+        : base([shape, index])
+    {
+        Metadata.Range = InferRange();
+    }
+
+    public override DimensionKind Kind => DimensionKind.Dynamic;
+
+    /// <summary>
+    /// Gets shape.
+    /// </summary>
+    public Shape Shape => (Shape)Operands[0];
+
+    /// <summary>
+    /// Gets index.
+    /// </summary>
+    public Dimension Index => (Dimension)Operands[1];
+
+    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
+        functor.VisitDimAt(this, context);
+
+    public DimAt With(Shape? shape = null, Dimension? index = null) => new DimAt(shape ?? Shape, index ?? Index);
+
+    /// <inheritdoc/>
+    public override bool Equals(object? obj) => Equals(obj as DimAt);
+
+    /// <inheritdoc/>
+    public bool Equals(DimAt? other)
+    {
+        if (ReferenceEquals(this, other))
+        {
+            return true;
+        }
+
+        return other is not null && Shape.Equals(other.Shape) && Index.Equals(other.Index);
+    }
+
+    public override string ToString() => $"at({Shape}, {Index})";
+
+    /// <inheritdoc/>
+    protected override int GetHashCodeCore() => HashCode.Combine(Shape, Index);
+
+    private ValueRange<double> InferRange()
+    {
+        if (Shape.Metadata.Range is ValueRange<double> shapeRange)
+        {
+            return shapeRange;
         }
 
         return ValueRange<double>.Full;

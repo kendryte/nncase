@@ -26,7 +26,7 @@ public sealed class Grid : Expr
     /// <param name="reads">Reads.</param>
     /// <param name="body">The body sequence.</param>
     public Grid(Var domainParameter, ReadOnlySpan<Var> bodyParameters, ReadOnlySpan<AffineMap> accessMaps, ReadOnlySpan<Expr> buffers, ReadOnlySpan<Expr> reads, Sequential body)
-        : base(new Expr[] { domainParameter }.Concat(bodyParameters.ToArray()).Concat(accessMaps.ToArray()).Concat(buffers.ToArray()).Concat(reads.ToArray()).Append(body))
+        : base(new BaseExpr[] { domainParameter }.Concat(bodyParameters.ToArray()).Concat(accessMaps.ToArray()).Concat(buffers.ToArray()).Concat(reads.ToArray()).Append(body))
     {
         _bodyParametersCount = bodyParameters.Length;
         _accessMapsCount = accessMaps.Length;
@@ -45,13 +45,13 @@ public sealed class Grid : Expr
 
     public Var DomainParameter => (Var)Operands[0];
 
-    public ReadOnlySpan<Var> BodyParameters => SpanUtility.UnsafeCast<Expr, Var>(Operands.Slice(1, _bodyParametersCount));
+    public ReadOnlySpan<Var> BodyParameters => SpanUtility.UnsafeCast<BaseExpr, Var>(Operands.Slice(1, _bodyParametersCount));
 
-    public ReadOnlySpan<AffineMap> AccessMaps => SpanUtility.UnsafeCast<Expr, AffineMap>(Operands.Slice(1 + _bodyParametersCount, _accessMapsCount));
+    public ReadOnlySpan<AffineMap> AccessMaps => SpanUtility.UnsafeCast<BaseExpr, AffineMap>(Operands.Slice(1 + _bodyParametersCount, _accessMapsCount));
 
-    public ReadOnlySpan<Expr> Buffers => Operands.Slice(1 + _bodyParametersCount + _accessMapsCount, _accessMapsCount);
+    public ReadOnlySpan<Expr> Buffers => SpanUtility.UnsafeCast<BaseExpr, Expr>(Operands.Slice(1 + _bodyParametersCount + _accessMapsCount, _accessMapsCount));
 
-    public ReadOnlySpan<Expr> Reads => Operands.Slice(1 + _bodyParametersCount + (_accessMapsCount * 2), _accessMapsCount - 1);
+    public ReadOnlySpan<Expr> Reads => SpanUtility.UnsafeCast<BaseExpr, Expr>(Operands.Slice(1 + _bodyParametersCount + (_accessMapsCount * 2), _accessMapsCount - 1));
 
     public Sequential Body => (Sequential)Operands[1 + _bodyParametersCount + (_accessMapsCount * 3) - 1];
 

@@ -17,8 +17,8 @@ public sealed partial class CPUAffineSelectionPass
 {
     private Expr SelectPackedBinary(PackedBinary binary, Call call, Expr output)
     {
-        var lhs = call[PackedBinary.Lhs];
-        var rhs = call[PackedBinary.Rhs];
+        var lhs = (Expr)call[PackedBinary.Lhs];
+        var rhs = (Expr)call[PackedBinary.Rhs];
         if (lhs.CheckedShape is not { IsFixed: true, Rank: > 0 }
             || rhs.CheckedShape is not { IsFixed: true, Rank: > 0 })
         {

@@ -93,7 +93,7 @@ internal sealed class TestEvaluateVisitor : ExprVisitor<IValue, Unit>
         _feedDict = feedDict;
     }
 
-    protected override IValue DefaultVisitLeaf(Expr expr) => Value.None;
+    protected override IValue DefaultVisitLeaf(BaseExpr expr) => Value.None;
 
     protected override IValue VisitLeafConst(Const expr) => Value.FromConst(expr);
 
@@ -208,7 +208,7 @@ internal sealed class PrimFuncEvaluateVisitor
         }
     }
 
-    private Span<byte> GetBufferSpan(Expr expr)
+    private Span<byte> GetBufferSpan(BaseExpr expr)
     {
         var buffer = Assert.IsType<TIR.Buffer>(expr);
         return _poolMap[buffer.MemSpan.Location].AsSpan<byte>(buffer.MemSpan.Start.Evaluate().AsTensor().ToScalar<int>(), buffer.MemSpan.Size.Evaluate().AsTensor().ToScalar<int>());

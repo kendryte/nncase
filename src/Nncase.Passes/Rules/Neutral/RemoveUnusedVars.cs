@@ -48,7 +48,7 @@ public sealed partial class RemoveUnusedVarsByCall : IRewriteRule
         {
             var newVarsMap = new Dictionary<IVar, IVar>(ReferenceEqualityComparer.Instance);
             var newVars = new List<IVar>();
-            var newArgs = new List<Expr>();
+            var newArgs = new List<BaseExpr>();
             foreach (var i in usedVars)
             {
                 var var = function.Parameters[i];
@@ -103,7 +103,7 @@ public sealed partial class RemoveUnusedVarsByIf : IRewriteRule
             var newVarsMap = new Dictionary<IVar, IVar>(ReferenceEqualityComparer.Instance);
             var newThenVars = new List<IVar>();
             var newElseVars = new List<IVar>();
-            var newArgs = new List<Expr>();
+            var newArgs = new List<BaseExpr>();
             foreach (var i in usedVars)
             {
                 var thenVar = thenFunc.Parameters[i];

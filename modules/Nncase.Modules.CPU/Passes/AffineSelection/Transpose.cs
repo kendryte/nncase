@@ -12,15 +12,15 @@ public sealed partial class CPUAffineSelectionPass
 {
     private Expr SelectTranspose(IR.Tensors.Transpose transpose, Call call, Expr output)
     {
-        var input = call[IR.Tensors.Transpose.Input];
-        var perm = call[IR.Tensors.Transpose.Perm];
+        var input = (Expr)call[IR.Tensors.Transpose.Input];
+        var perm = (Shape)call[IR.Tensors.Transpose.Perm];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 }
-            || perm is not TensorConst permConst)
+            || !perm.IsFixed)
         {
             return call;
         }
 
-        var permValues = permConst.Value.Cast<int>();
+        var permValues = perm.ToValueArray();
         var rank = input.CheckedShape.Rank;
         var domains = IR.F.Affine.Domains(rank);
         var results = new AffineRange[rank];
@@ -34,7 +34,7 @@ public sealed partial class CPUAffineSelectionPass
             .Domain(rank, out var _)
             .Read(input, inputAccessMap, out var intile)
             .Write(output, AffineMap.Identity(rank), out var outTile)
-            .Body(TIR.F.CPU.Transpose(intile, outTile, permValues.ToArray()))
+            .Body(TIR.F.CPU.Transpose(intile, outTile, permValues.ToInts()))
             .Build();
     }
 }

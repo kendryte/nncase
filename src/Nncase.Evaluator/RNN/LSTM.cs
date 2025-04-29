@@ -74,6 +74,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
     public Metric Visit(IMetricEvaluateContext context, LSTM target)
     {
         var xType = context.GetArgumentType<TensorType>(target, LSTM.X);
+        var xShape = (RankedShape)xType.Shape;
         var wType = context.GetArgumentType<TensorType>(target, LSTM.W);
         var rType = context.GetArgumentType<TensorType>(target, LSTM.R);
         var bType = context.GetArgumentType<TensorType>(target, LSTM.B);
@@ -81,7 +82,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
         var outputYType = (TensorType)returnType[0];
         var outputYShape = outputYType.Shape.ToValueArray().Select(s => (UInt128)s).ToArray();
         var (sequence_len, num_directions, batch_size, hidden_size) = (outputYShape[0], outputYShape[1], outputYShape[2], outputYShape[3]);
-        var embbeding_size = (UInt128)xType.Shape[^1].FixedValue;
+        var embbeding_size = (UInt128)xShape[^1].FixedValue;
 
         var flops = num_directions * batch_size * sequence_len * (
             MetricUtility.GetMatMulFLOPs(1, 4 * hidden_size, embbeding_size)
@@ -132,7 +133,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
         // [seq_length, num_directions, batch_size, hidden_size]
         // layout 1:
         // [batch_size, seq_length, num_directions, hidden_size]
-        var yShape = x.Shape.ToList();
+        var yShape = ((RankedShape)x.Shape).ToList();
         yShape.Insert(seqLenIndex + 1, numDirections);
         var hiddenSize = context.GetArgument(target, LSTM.HiddenSize).AsDim();
         yShape[^1] = hiddenSize;

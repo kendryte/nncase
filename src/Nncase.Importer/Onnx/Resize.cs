@@ -29,19 +29,19 @@ namespace Nncase.Importer
 
         private Expr GetRoi(NodeProto op)
         {
-            return GetOptionInputExpr(op, 1).Or(Array.Empty<float>());
+            return GetOptionInputExpr<Expr>(op, 1).Or(Array.Empty<float>());
         }
 
         private Expr ResizeV10(in NodeProto op)
         {
-            var (input, scales) = GetInputExprs(op, 0, 1);
+            var (input, scales) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var mode = GetResizeMode(op);
             return F.Imaging.ResizeImage(mode, input, Array.Empty<float>(), ComputeNewSizes(input, scales));
         }
 
         private Expr ResizeV11(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var roi = GetRoi(op);
             var newSize = GetNewSize(op);
             var transformationMode = ParseImageResizeTransformationMode(
@@ -79,18 +79,18 @@ namespace Nncase.Importer
         {
             // Only one of 'scales' and 'sizes' can be specified.
             // 2:scales, 3:sizes
-            var scales = GetOptionInputExpr(op, 2);
+            var scales = GetOptionInputExpr<Expr>(op, 2);
             if (scales.IsSome)
             {
                 var scalesValue = scales.ValueUnsafe();
                 scalesValue.InferenceType();
                 if (scalesValue.CheckedShape[0] != 0 && !scalesValue.CheckedShape.IsScalar)
                 {
-                    return ComputeNewSizes(GetInputExpr(op, 0), scalesValue);
+                    return ComputeNewSizes(GetInputExpr<Expr>(op, 0), scalesValue);
                 }
             }
 
-            var sizes = GetOptionInputExpr(op, 3).ValueUnsafe().AsShape();
+            var sizes = GetOptionInputExpr<Shape>(op, 3).ValueUnsafe().AsShape();
             return sizes;
         }
     }

@@ -27,5 +27,5 @@ public sealed partial class Broadcast : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape", IsIntegral());
+    public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape", IsShapeType());
 }

@@ -58,7 +58,8 @@ public static class OrtKIExtensions
 
     public static Tensor ToTensor(this OrtKISharp.Tensor tensor, TensorType tensorType)
     {
-        return Tensor.From(tensorType.DType, new TensorInitializerWithOrt(tensor), tensorType.Shape.IsFixed ? tensorType.Shape : tensor.Shape);
+        var shape = tensorType.Shape.IsFixed ? (RankedShape)tensorType.Shape : tensor.Shape;
+        return Tensor.From(tensorType.DType, new TensorInitializerWithOrt(tensor), shape);
     }
 
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor)

@@ -16,7 +16,7 @@ namespace Nncase.IR;
 /// Expression rewriter.
 /// </summary>
 /// <typeparam name="TContext">Rewrite context.</typeparam>
-public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType, TContext>
+public abstract partial class ExprRewriter<TContext> : ExprVisitor<BaseExpr, IRType, TContext>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ExprRewriter{TContext}"/> class.
@@ -39,7 +39,7 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
     /// <param name="expr">Expression to rewrite.</param>
     /// <param name="context">Context.</param>
     /// <returns>Rewritten expression.</returns>
-    public Expr Rewrite(Expr expr, TContext context)
+    public BaseExpr Rewrite(BaseExpr expr, TContext context)
     {
         using var exprScope = new ExprScope();
         var newExpr = Visit(expr, context);
@@ -64,11 +64,11 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
     /// <summary>
     /// Default rewrite leaf routine.
     /// </summary>
-    protected virtual Expr DefaultRewriteLeaf(Expr expr, TContext context) => expr;
+    protected virtual BaseExpr DefaultRewriteLeaf(BaseExpr expr, TContext context) => expr;
 
     protected void SetMutated() => IsMutated = true;
 
-    protected override void VisitOperands(Expr expr, TContext context)
+    protected override void VisitOperands(BaseExpr expr, TContext context)
     {
         var operands = expr.Operands;
         for (int i = 0; i < operands.Length; i++)
@@ -83,7 +83,7 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
         }
     }
 
-    protected override void VisitAttributes(Expr expr, TContext context)
+    protected override void VisitAttributes(BaseExpr expr, TContext context)
     {
         var type = expr.RawCheckedType;
         if (type != null)
@@ -97,7 +97,7 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<Expr, IRType,
         }
     }
 
-    private void DCE(Expr root, ExprScope exprScope)
+    private void DCE(BaseExpr root, ExprScope exprScope)
     {
         // using var exprPin = new ExprPinner(root);
         // GC.Collect();
@@ -124,13 +124,13 @@ public abstract partial class ExprRewriter : ExprRewriter<Unit>
     /// </summary>
     /// <param name="expr">Expression to rewrite.</param>
     /// <returns>Rewritten expression.</returns>
-    public Expr Rewrite(Expr expr) => Rewrite(expr, default);
+    public BaseExpr Rewrite(BaseExpr expr) => Rewrite(expr, default);
 
     /// <summary>
     /// Default rewrite leaf routine.
     /// </summary>
-    protected virtual Expr DefaultRewriteLeaf(Expr expr) => base.DefaultRewriteLeaf(expr, default);
+    protected virtual BaseExpr DefaultRewriteLeaf(BaseExpr expr) => base.DefaultRewriteLeaf(expr, default);
 
     /// <inheritdoc/>
-    protected sealed override Expr DefaultRewriteLeaf(Expr expr, Unit context) => DefaultRewriteLeaf(expr);
+    protected sealed override BaseExpr DefaultRewriteLeaf(BaseExpr expr, Unit context) => DefaultRewriteLeaf(expr);
 }

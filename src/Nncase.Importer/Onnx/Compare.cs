@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitCompare(in NodeProto op, CompareOp compareOp)
         {
-            var (lhs, rhs) = GetInputExprs(op, 0, 1);
+            var (lhs, rhs) = GetInputExprs<Expr, Expr>(op, 0, 1);
             return Compare(compareOp, lhs, rhs);
         }
     }

@@ -214,9 +214,9 @@ public class RTTensor : RTValue
         {
             var hostBuffer = Buffer.Buffer.AsHost()!;
             using var owner = hostBuffer.Map(RTMapAccess.Read);
-            return Tensor.FromBytes(new TensorType(dtype, new(dims.ToArray())), owner.Memory.ToArray());
+            return Tensor.FromBytes(new TensorType(dtype, dims.ToArray()), owner.Memory.ToArray());
         }
 
-        return Tensor.FromBytes(new TensorType(dtype, new(dims.ToArray())), Array.Empty<byte>());
+        return Tensor.FromBytes(new TensorType(dtype, dims.ToArray()), Array.Empty<byte>());
     }
 }

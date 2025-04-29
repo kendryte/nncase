@@ -21,17 +21,17 @@ public partial class NcnnImporter
         var group = layer.ParamDict.Get(0, 1);
         var reverse = layer.ParamDict.Get(1, 0) != 0;
 
-        var input = GetInputExprs(layer, 0);
-        var inShape = Tensors.ShapeOf(input);
+        var input = GetInputExprs<Expr>(layer, 0);
+        var inShape = Tensors.ShapeOf(input).AsShape();
         var channels = inShape[0];
         var h = inShape[1];
         var w = inShape[2];
         var realGroup = reverse ? channels / group : (Dimension)group;
         var channelsPerGroup = channels / realGroup;
 
-        var rshape1 = Tensors.Reshape(input, new Shape(realGroup, channelsPerGroup, h, w));
+        var rshape1 = Tensors.Reshape(input, [realGroup, channelsPerGroup, h, w]);
         var tp = Tensors.Transpose(rshape1, new[] { 1, 0, 2, 3 });
-        var output = Tensors.Reshape(tp, new Shape(channels, h, w));
+        var output = Tensors.Reshape(tp, [channels, h, w]);
         return output;
     }
 }

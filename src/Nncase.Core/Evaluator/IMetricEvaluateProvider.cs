@@ -20,7 +20,7 @@ public interface IMetricEvaluateProvider
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Evaluate result.</returns>
-    Dictionary<Expr, Metric> EvaluateMetric(Expr expr);
+    Dictionary<BaseExpr, Metric> EvaluateMetric(BaseExpr expr);
 
     /// <summary>
     /// Evaluate Metric of operator.
