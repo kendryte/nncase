@@ -13,7 +13,7 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.NN;
 
-internal abstract record RefAttentionKVCache(
+public abstract record RefAttentionKVCache(
     AttentionConfig Config,
     int NumSeqs,
     int NumTokens,
@@ -25,7 +25,7 @@ internal abstract record RefAttentionKVCache(
     public long SeqLen(int requestId) => SeqLens[requestId];
 }
 
-internal sealed record RefPagedAttentionKVCache(
+public sealed record RefPagedAttentionKVCache(
     AttentionConfig Config,
     int NumSeqs,
     int NumTokens,
@@ -94,13 +94,13 @@ internal sealed record RefPagedAttentionKVCache(
     private Tensor GetSlotViewFromStorage(AttentionCacheKind kind, int layerId, int headId, Tensor slotId)
     {
         // slot_id : [len(topo) + 1].
-        var slotIdValue = (long)slotId[slotId.Dimensions.Length - 1];
+        var slotIdValue = (long)slotId[slotId.Dimensions[^1] - 1];
         var blockIdValue = slotIdValue / PagedAttentionConfig.BlockSize;
         var blockOffset = slotIdValue % PagedAttentionConfig.BlockSize;
 
         var blockId = Tensor.Zeros<long>(slotId.Dimensions);
         slotId.AsContiguous().CopyTo(blockId);
-        blockId[slotId.Dimensions.Length - 1] = blockIdValue;
+        blockId[slotId.Dimensions[^1] - 1] = blockIdValue;
 
         var blockView = GetBlockViewFromStorage(kind, layerId, headId, blockId);
         var blockShape = blockView.Dimensions;
@@ -123,7 +123,7 @@ internal sealed record RefPagedAttentionKVCache(
     private Tensor GetBlockViewFromStorage(AttentionCacheKind kind, int layerId, int headId, Tensor blockId)
     {
         // blockId: [len(topo) + 1].
-        var blockIdValue = (long)blockId[blockId.Dimensions.Length - 1];
+        var blockIdValue = (long)blockId[blockId.Dimensions[^1] - 1];
         PagedAttentionDimKind[] defaultLayout = [PagedAttentionDimKind.NumBlocks, PagedAttentionDimKind.NumLayers, PagedAttentionDimKind.KV, PagedAttentionDimKind.BlockSize, PagedAttentionDimKind.NumKVHeads, PagedAttentionDimKind.HeadDim];
         long[] defaultStarts = [blockIdValue, layerId, (long)kind, 0, (long)headId, 0];
         long[] defaultShape = [1, 1, 1, PagedAttentionConfig.BlockSize, 1, PagedAttentionConfig.HeadDim];
