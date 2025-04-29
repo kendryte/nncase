@@ -32,10 +32,10 @@ class NNCASE_API paged_attention_kv_cache_node
                                   tensor block_tables, tensor slot_mapping,
                                   tensor kv_caches) noexcept;
 
-    const paged_attention_config &config() const noexcept {
-        return attention_kv_cache_node::config()
-            .as<paged_attention_config>()
-            .unwrap();
+    paged_attention_config config() const noexcept {
+        auto cfg = attention_kv_cache_node::config();
+        auto pcfg = cfg.as<paged_attention_config>().unwrap();
+        return pcfg;
     }
 
     void config(paged_attention_config config) noexcept {

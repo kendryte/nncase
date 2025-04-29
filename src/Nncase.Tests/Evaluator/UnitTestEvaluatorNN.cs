@@ -800,7 +800,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         {
             var updatedkvCache = IR.F.NN.UpdatePagedAttentionKVCache(IR.F.CPU.Pack(keyVar, [lane], [2]), kvCacheObjVar, AttentionCacheKind.Key, 0);
             updatedkvCache = IR.F.NN.UpdatePagedAttentionKVCache(IR.F.CPU.Pack(valueVar, [lane], [2]), updatedkvCache, AttentionCacheKind.Value, 0);
-            var pagedAttentionExpr = IR.F.NN.PagedAttention(IR.F.CPU.Pack(queryVar, [lane], [2]), updatedkvCache, 0); // [num_seqs, num_query_heads, head_size] with pack
+            var pagedAttentionExpr = IR.F.NN.PagedAttention(IR.F.CPU.Pack(queryVar, [lane], [2]), updatedkvCache, None.Default, 0, [AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]); // [num_seqs, num_query_heads, head_size] with pack
             root = IR.F.Tensors.Transpose(IR.F.CPU.Unpack(pagedAttentionExpr, [lane], [2]), new[] { 1, 0, 2 }); // [Hq,L,Ev]
         }
 

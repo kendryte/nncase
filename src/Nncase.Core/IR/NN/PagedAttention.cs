@@ -11,6 +11,13 @@ using Nncase.PatternMatch;
 
 namespace Nncase.IR.NN;
 
+public enum AttentionDimKind : int
+{
+    Seq = 0,
+    Head,
+    Dim,
+}
+
 [PatternFunctionalGenerator]
 public sealed partial class PagedAttention : Op
 {
@@ -21,4 +28,6 @@ public sealed partial class PagedAttention : Op
     public static readonly ParameterInfo Extra = new(typeof(PagedAttention), 2, "extra", ParameterKind.Input);
 
     public int LayerId { get; }
+
+    public IRArray<AttentionDimKind> QLayout { get; }
 }

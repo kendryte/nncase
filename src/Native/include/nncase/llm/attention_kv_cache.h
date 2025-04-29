@@ -35,7 +35,7 @@ class NNCASE_API attention_kv_cache_node : public object_node {
           seq_lens_(std::move(seq_lens)) {}
 
     /**@brief Gets attention config. */
-    const attention_config &config() const noexcept { return config_; }
+    attention_config config() const noexcept { return config_; }
 
     void config(attention_config config) noexcept {
         config_ = std::move(config);

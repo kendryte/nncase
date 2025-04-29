@@ -11,47 +11,56 @@ void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
                                      T6 num_blocks, T7 kv_caches, T8 output) {
     auto *kv_cache = output.elements().data();
     using paged_attention_kv_cache_t = typename T8::element_type;
-    typename paged_attention_kv_cache_t::kv_tensor_type_t kv_tensor;
 
     using kv_type_t = typename paged_attention_kv_cache_t::kv_type_t;
+    using kv_shape_t = typename paged_attention_kv_cache_t::kv_shape_t;
     using kv_topo_t = typename paged_attention_kv_cache_t::config_t::kv_topo_t;
 
-    using mesh_type = typename T7::mesh_type;
-    auto program_ids = distributed::program_ids();
-    distributed::topology_synchronize(); // sync for shard kv cache.
+    if constexpr (kv_topo_t::rank() > 0) {
+        typename paged_attention_kv_cache_t::kv_tensor_type_t kv_tensor;
 
-    apply(kv_topo_t{}, [&](auto program_index) {
-        for (size_t i = 0; i < kv_topo_t::rank(); i++) {
-            program_ids[kv_topo_t::at(i)] = program_index[i];
-        }
-        auto mesh_index = mesh_type::index_from_program_id(program_ids);
-        auto remote = kv_caches.template remote<mesh_type::scope>(mesh_index);
-        kv_tensor(program_index) = (intptr_t)remote.elements().data();
-    });
-    distributed::topology_synchronize(); // sync for shard kv cache.
-    if (program_ids[0] == 0 && program_ids[1] == 0 && program_ids[2] == 0 &&
-        program_ids[3] == 0) {
-        apply(kv_topo_t{}, [&](auto program_index) {
-            printf("[%ld, %ld]: %p", program_index[0], program_index[1],
-                   kv_tensor(program_index));
-            // auto *kv = (intptr_t *)kv_tensor(program_index);
-            // auto *kv_cache = (kv_type_t *)kv;
-            // new (kv_cache) kv_type_t();
+        using mesh_type = typename T7::mesh_type;
+        auto program_ids = distributed::program_ids();
+        // printf("[nncase_log] try create kv_cache at die:%ld core: %ld\n",
+        //        program_ids[1], program_ids[2]);
+        distributed::topology_synchronize(); // sync for shard kv cache.
+
+        apply(kv_shape_t{}, [&](auto kv_index) {
+            for (size_t i = 0; i < kv_topo_t::rank(); i++) {
+                program_ids[kv_topo_t::at(i)] = kv_index[i];
+            }
+            auto mesh_index = mesh_type::index_from_program_id(program_ids);
+            auto remote =
+                kv_caches.template remote<mesh_type::scope>(mesh_index);
+            kv_tensor(kv_index) = (intptr_t)remote.elements().data();
         });
-    }
 
-    new (kv_cache) caching::paged_attention_kv_cache<
-        typename paged_attention_kv_cache_t::config_t>(
-        num_seqs(0), num_tokens(0),
-        tensor_view<int64_t, ranked_shape<1>>(
-            context_lens.buffer(), to_ranked_shape(context_lens.shape())),
-        tensor_view<int64_t, ranked_shape<1>>(
-            seq_lens.buffer(), to_ranked_shape(seq_lens.shape())),
-        tensor_view<int64_t, ranked_shape<3>>(
-            block_table.buffer(), to_ranked_shape(block_table.shape())),
-        tensor_view<int64_t, ranked_shape<2>>(
-            slot_mapping.buffer(), to_ranked_shape(slot_mapping.shape())),
-        num_blocks(0), kv_tensor);
+        distributed::topology_synchronize(); // sync for shard kv cache.
+
+        new (kv_cache) caching::paged_attention_kv_cache<
+            typename paged_attention_kv_cache_t::config_t>(
+            num_seqs(0), num_tokens(0),
+            tensor_view<int64_t, ranked_shape<1>>(
+                context_lens.buffer(), to_ranked_shape(context_lens.shape())),
+            tensor_view<int64_t, ranked_shape<1>>(
+                seq_lens.buffer(), to_ranked_shape(seq_lens.shape())),
+            tensor_view<int64_t, ranked_shape<3>>(
+                block_table.buffer(), to_ranked_shape(block_table.shape())),
+            tensor_view<int64_t, ranked_shape<2>>(
+                slot_mapping.buffer(), to_ranked_shape(slot_mapping.shape())),
+            num_blocks(0), kv_tensor);
+
+        program_ids = distributed::program_ids();
+        // if (std::all_of(program_ids.begin(), program_ids.end(),
+        //                 [](auto &i) { return i == 0; })) {
+        //     apply(kv_shape_t{}, [&](auto kv_index) {
+        //         printf("kv_tensor [%d, %d]: %p\n", kv_index[0], kv_index[1],
+        //                kv_tensor(kv_index));
+        //     });
+        // }
+        // printf("[nncase_log] kv_cache created at die:%ld core: %ld\n",
+        //        program_ids[1], program_ids[2]);
+    }
 }
 
 template <class T0, class T1>
@@ -61,6 +70,11 @@ void update_paged_attention_kv_cache(
     [[maybe_unused]] size_t layer_id) {
     auto kv_cache = kv_cache_tensor(0);
     auto local_slot = slot_tensor.local();
+    if (local_slot.shape()[0] != 1) {
+        printf("not support local token nums > 1 now!\n");
+        std::terminate();
+    }
+
     using mesh_type = typename T0::mesh_type;
     // slots : [num_tokens -> x, numHeads -> [die,y], headDim]
     auto program_ids = distributed::program_ids();

@@ -39,7 +39,9 @@ struct attention_config {
     static inline constexpr size_t num_layers = NumLayer;
     static inline constexpr size_t num_kv_heads = NumKVHead;
     static inline constexpr size_t head_dim = HeadDim;
+    static inline constexpr size_t kv = 2;
     using kv_prim_type = KVPrimType;
+    static inline constexpr size_t kv_prim_size = sizeof(kv_prim_type);
 };
 
 template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
@@ -233,6 +235,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         tensor_view<int64_t, ranked_shape<1>> block_id) {
         auto block_id_value = block_id(block_id.size() - 1);
 
+        auto cache_layout = config().cache_layout;
         auto default_starts = ntt::make_ranked_shape(block_id_value, layer_id,
                                                      kind, 0, head_id, 0);
         auto default_shape = get_default_kv_storage_shape();
@@ -245,18 +248,29 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         auto shape = ntt::ranked_shape<default_shape.rank()>();
         auto squeeze_axes = ntt::ranked_shape<4>();
         for (size_t i = 0, j = 0; i < default_starts.rank(); i++) {
-            starts[i] = default_starts[config().cache_layout[i]];
-            shape[i] = default_shape[config().cache_layout[i]];
-            if ((config().cache_layout[i] !=
-                 (size_t)paged_attention_dim_kind::block_size) ||
-                (config().cache_layout[i] !=
+            starts[i] = default_starts[cache_layout[i]];
+            shape[i] = default_shape[cache_layout[i]];
+            // printf("[nncase_log] block_start[%ld] = %ld\n", i, starts[i]);
+            // printf("[nncase_log] block_shape[%ld] = %ld\n", i, shape[i]);
+            if ((cache_layout[i] !=
+                 (size_t)paged_attention_dim_kind::block_size) &&
+                (cache_layout[i] !=
                  (size_t)paged_attention_dim_kind::head_dim)) {
-                squeeze_axes[j++] = i;
+                squeeze_axes[j] = i;
+                // printf("[nncase_log] block_squeeze[%ld] = %ld\n", j,
+                //        squeeze_axes[j]);
+                j++;
             }
         }
-        return get_kv_storage(block_id)
-            .view(starts, shape)
-            .squeeze(squeeze_axes);
+        auto kv_storage = get_kv_storage(block_id);
+        // printf("[nncase_log] default_shape [%ld, %ld, %ld, %ld, %ld, %ld]\n",
+        //        default_shape[0], default_shape[1], default_shape[2],
+        //        default_shape[3], default_shape[4], default_shape[5]);
+        // printf("[nncase_log] try get block kv_storage view starts: [%ld, %ld, "
+        //        "%ld, %ld, %ld, %ld], shape [%ld, %ld, %ld, %ld, %ld, %ld]\n",
+        //        starts[0], starts[1], starts[2], starts[3], starts[4], starts[5],
+        //        shape[0], shape[1], shape[2], shape[3], shape[4], shape[5]);
+        return kv_storage.view(starts, shape).squeeze(squeeze_axes);
     }
 
     auto
@@ -264,6 +278,8 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                                int head_id,
                                tensor_view<int64_t, ranked_shape<1>> slot_id) {
         auto slot_id_value = slot_id(slot_id.size() - 1);
+        // printf("[nncase_log] try get slot: [%ld, %ld, %ld]\n", slot_id(0),
+        //        slot_id(1), slot_id(2));
         auto block_id_value = slot_id_value / config().block_size;
         auto block_offset_value = slot_id_value % config().block_size;
         auto block_id = tensor<int64_t, ranked_shape<1>>(slot_id.shape());
@@ -289,7 +305,9 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
             starts[i] = default_starts[default_layout[block_layout[i]]];
             shape[i] = default_shape[default_layout[block_layout[i]]];
         }
-
+        // printf(
+        //     "[nncase_log] get slot view, starts [%ld, %ld], shape [%ld, %ld]\n",
+        //     starts[0], starts[1], shape[0], shape[1]);
         return block_view.view(starts, shape)
             .squeeze(ntt::make_ranked_shape(block_layout.indexof(
                 (size_t)paged_attention_dim_kind::block_size)));
@@ -320,6 +338,13 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                      T slot) {
         auto destView =
             get_slot_view_from_storage(kind, layer_id, head_id, slot_id);
+
+        auto program_ids = distributed::program_ids();
+        if (std::all_of(program_ids.begin(), program_ids.end(),
+                        [](auto i) { return i == 0; })) {
+            printf("[nncase_log] try_copy_to_destView\n");
+        }
+
         ntt::tensor_copy(slot, destView);
     }
 
@@ -328,7 +353,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                  tensor_view<kv_storage_type_t, ntt::ranked_shape<3>> slots) {
         // slots : [num_tokens, numHeads, headDim]
         auto slots_shape = slots.shape();
-        for (int i = 0; i < this.template num_tokens(); i++) {
+        for (int i = 0; i < this->template num_tokens(); i++) {
             auto slot_id = get_slot_id(i);
             auto slot = slots
                             .view(ntt::make_ranked_shape(i, head_id, 0),
@@ -337,6 +362,10 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
             update_slot(kind, layer_id, head_id, slot_id, slot);
         }
     }
+
+    auto block_table() const noexcept { return block_table_; }
+
+    auto &kv_caches() const noexcept { return kv_caches_; }
 
   private:
     tensor_view<int64_t, ranked_shape<3>> block_table_;

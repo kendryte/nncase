@@ -47,10 +47,10 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     {
         var q = context.GetOrtArgumentValue(target, PagedAttention.Q);
         var kvCaches = context.GetArgumentValueAsTensor<Reference<IPagedAttentionKVCache>>(target, PagedAttention.KVCaches);
-        return RefPagedAttn(q, kvCaches, 1.0f, target.LayerId).ToValue();
+        return RefPagedAttn(q, kvCaches, 1.0f, target.LayerId, target.QLayout).ToValue();
     }
 
-    private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, float scale, int layerId)
+    private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, float scale, int layerId, IRArray<AttentionDimKind> qlayout)
     {
         // TODO: Support DP
         if (kvCaches.Length != 1)
@@ -59,6 +59,25 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         }
 
         var cache = kvCaches.Single().Value;
+
+        // unpack for q
+        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
+        {
+            query = query.Unpack(qlayout.IndexOf(AttentionDimKind.Dim));
+        }
+
+        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.NumKVHeads))
+        {
+            query = query.Unpack(qlayout.IndexOf(AttentionDimKind.Head));
+        }
+
+        // revert transpose
+        if (!qlayout.SequenceEqual([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]))
+        {
+            var invPerm = qlayout.Zip(Enumerable.Range(0, qlayout.Count)).OrderBy(p => p.First).Select(p => (long)p.Second).ToArray();
+            query = OrtKI.Transpose(query, invPerm);
+        }
+
         var outputs = new List<OrtKISharp.Tensor>();
         long queryStart = 0;
         for (int seqId = 0; seqId < cache.NumSeqs; seqId++)
@@ -67,18 +86,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             var queryLen = seqLen - cache.ContextLen(seqId);
             var q = OrtKI.Slice(query, new long[] { queryStart }, new long[] { queryStart + queryLen }, new long[] { 0L }, new long[] { 1L });
 
-            // unpack for q
-            if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
-            {
-                q = q.Unpack(2);
-            }
-
-            if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.NumKVHeads))
-            {
-                q = q.Unpack(1);
-            }
-
-            q = q * scale; // [query_len, num_heads, head_dim] [L,Hq,E]
+            q = q * OrtKI.Cast(scale, (long)q.DataType); // [query_len, num_heads, head_dim] [L,Hq,E]
 
             var k = GatherKV(AttentionCacheKind.Key, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
             var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS"); // [num_heads, query_len, seq_len] [H,L,S]
@@ -89,28 +97,36 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             tempMask = OrtKI.Trilu(tempMask, OrtKISharp.Tensor.FromScalar<long>(0), 0);
             attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen])));
 
-            attn = attn + attnBias;
+            attn = attn + OrtKI.Cast(attnBias, (long)attn.DataType);
             attn = OrtKI.Softmax(attn, -1);
 
             var v = GatherKV(AttentionCacheKind.Value, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
             var output = OrtKI.Einsum([attn, v], "HLS,HSE->LHE"); // [query_len, num_heads, head_dim] [L,H,E]
 
-            // repack for q
-            if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.NumKVHeads))
-            {
-                output = output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedAttentionDimKind.NumKVHeads)], 1);
-            }
-
-            if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
-            {
-                output = output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim)], 2);
-            }
-
             outputs.Add(output);
             queryStart += queryLen;
         }
 
-        return OrtKI.Concat(outputs.ToArray(), 0L);
+        var concat_output = OrtKI.Concat(outputs.ToArray(), 0L); // concat at seqs
+
+        // retranspose output
+        if (!qlayout.SequenceEqual([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]))
+        {
+            concat_output = OrtKI.Transpose(concat_output, qlayout.Select(i => (long)i).ToArray());
+        }
+
+        // repack for output
+        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.NumKVHeads))
+        {
+            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedAttentionDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
+        }
+
+        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
+        {
+            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
+        }
+
+        return concat_output;
     }
 
     private static OrtKISharp.Tensor GatherKV(AttentionCacheKind cacheKind, IPagedAttentionKVCache cache, int seqId, int layerId, long queryLen, long seqLen, long queryStart)
@@ -220,7 +236,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
     private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, TensorType extra)
     {
-        var headDim = q.Shape[^1];
+        var headDim = q.Shape[target.QLayout.IndexOf(AttentionDimKind.Head)];
         var dims = q.Shape.ToArray();
         dims[^1] = headDim;
         return q with { Shape = dims };
@@ -236,9 +252,12 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             }
 
             // seq split at x, head split at die and y
-            if (q.AxisPolices[0] is SBPSplit { Axes: [2] } &&
-                q.AxisPolices[1] is SBPSplit { Axes: [1, 3] } &&
-                q.AxisPolices[2] is SBPBroadCast)
+            var seqAxis = target.QLayout.IndexOf(AttentionDimKind.Seq);
+            var headAxis = target.QLayout.IndexOf(AttentionDimKind.Head);
+            var dimAxis = target.QLayout.IndexOf(AttentionDimKind.Dim);
+            if (q.AxisPolices[seqAxis] is SBPSplit { Axes: [2] } &&
+                q.AxisPolices[headAxis] is SBPSplit { Axes: [1, 3] } &&
+                q.AxisPolices[dimAxis] is SBPBroadCast)
             {
                 return q;
             }
