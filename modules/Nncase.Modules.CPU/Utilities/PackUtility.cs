@@ -20,10 +20,13 @@ public static class PackUtility
                 pads[axis, 1] = PadForAlign(shape[axis], lanes[i]);
                 isPadded = true;
             }
+        }
 
-            if (extraPads != null && extraPads[axis] > 0)
+        for (int i = 0; i < extraPads?.Length; i++)
+        {
+            if (extraPads[i] > 0)
             {
-                pads[axis, 1] += extraPads[axis];
+                pads[i, 1] += extraPads[i];
                 isPadded = true;
             }
         }
