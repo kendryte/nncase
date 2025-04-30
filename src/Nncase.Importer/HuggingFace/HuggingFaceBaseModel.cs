@@ -64,8 +64,8 @@ public abstract class HuggingFaceModel
             Context.DynVarMap["batch_size"].Metadata.Range = new(1, 4);
         }
 
-        var inputIdsShapeExpr = new Expr[] { Context.DynVarMap["batch_size"],
-                                                   Context.DynVarMap["sequence_length"],
+        var inputIdsShapeExpr = new Expr[] { 1L,
+                                                   256L,
                                                 };
 
         // var attentionMaskShapeExpr = new Expr[]
@@ -88,8 +88,8 @@ public abstract class HuggingFaceModel
         var inputIds = new Var(
             "input_ids",
             new TensorType(DataTypes.Int64, new Shape(
-                                                 Context.DynVarMap["batch_size"],
-                                                 Context.DynVarMap["sequence_length"])));
+                                                 1L,
+                                                 256L)));
 
         // var attentionMask = new Var(
         //     "attention_mask",
