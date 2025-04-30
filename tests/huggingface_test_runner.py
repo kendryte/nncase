@@ -109,7 +109,6 @@ def restore_weights(model_dir):
             print(f"Restored: {restored_path}")
 
 
-
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)
