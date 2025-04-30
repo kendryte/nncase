@@ -71,37 +71,43 @@ def recursive_stack(obj):
 
 
 def dequantize_weights(model_dir):
-    org_safetensors = model_dir + "/model_org.safetensors"
-    f32_safetensors = model_dir + "/model.safetensors"
-    if not os.path.exists(org_safetensors):
-        os.rename(f32_safetensors, org_safetensors)
-    state_dict = load_file(org_safetensors)
+    for filename in os.listdir(model_dir):
+        if filename.endswith(".safetensors") and not filename.endswith(".org.safetensors"):
+            filepath = os.path.join(model_dir, filename)
+            org_filepath = filepath.replace(".safetensors", ".org.safetensors")
 
-    for key in list(state_dict.keys()):
-        if key.endswith('weight_scale'):
-            scale_tensor = state_dict[key].to(torch.float32)
-            weight_key = key.replace('.weight_scale', '.weight')
-            if weight_key in state_dict:
-                weight_tensor = state_dict[weight_key]
-                if scale_tensor.numel() == 1 or scale_tensor.shape[0] == weight_tensor.shape[0]:
-                    weight_fp32 = weight_tensor.to(torch.float32)
-                    scaled_weight = weight_fp32 * scale_tensor
-                    state_dict[weight_key] = scaled_weight
-                else:
-                    raise os.error(
-                        f"\033[31m weight_tensor {weight_key} and scale_tensor {key} shape not match! \033[0m")
-            else:
-                print(
-                    f"Warning: Corresponding weight {weight_key} not found, skipping.")
+            if not os.path.exists(org_filepath):
+                os.rename(filepath, org_filepath)
 
-    save_file(state_dict, f32_safetensors)
+            state_dict = load_file(org_filepath)
+
+            for key in list(state_dict.keys()):
+                if key.endswith('weight_scale'):
+                    scale_tensor = state_dict[key].to(torch.float32)
+                    weight_key = key.replace('.weight_scale', '.weight')
+                    if weight_key in state_dict:
+                        weight_tensor = state_dict[weight_key]
+                        if scale_tensor.numel() == 1 or scale_tensor.shape[0] == weight_tensor.shape[0]:
+                            weight_fp32 = weight_tensor.to(torch.float32)
+                            scaled_weight = weight_fp32 * scale_tensor
+                            state_dict[weight_key] = scaled_weight
+                        else:
+                            raise RuntimeError(
+                                f"\033[31m weight_tensor {weight_key} and scale_tensor {key} shape not match! \033[0m")
+                    else:
+                        print(f"Warning: Corresponding weight {weight_key} not found, skipping.")
+
+            save_file(state_dict, filepath)
 
 
 def restore_weights(model_dir):
-    org_safetensors = model_dir + "/model_org.safetensors"
-    f32_safetensors = model_dir + "/model.safetensors"
-    if os.path.exists(org_safetensors):
-        os.rename(org_safetensors, f32_safetensors)
+    for filename in os.listdir(model_dir):
+        if filename.endswith(".org.safetensors"):
+            org_path = os.path.join(model_dir, filename)
+            restored_path = org_path.replace(".org.safetensors", ".safetensors")
+            os.rename(org_path, restored_path)
+            print(f"Restored: {restored_path}")
+
 
 
 class HuggingfaceTestRunner(TestRunner):
