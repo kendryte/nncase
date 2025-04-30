@@ -21,13 +21,13 @@ namespace nncase::ntt {
 
 namespace pad_detail {
 
-template <IsFixedTensor TIn, IsFixedTensor TOut, typename TElem, size_t... Ints>
+template <IsTensor TIn, IsTensor TOut, typename TElem, size_t... Ints>
 void pad_impl(const TIn &input, TOut &&output, const TElem &padValue,
               const fixed_shape<Ints...> paddings) {
-    constexpr auto input_shape = TIn::shape();
-    constexpr auto rank = TIn::shape().rank();
+    auto input_shape = input.shape();
+    constexpr auto rank = TIn::shape_type::rank();
     static_assert(sizeof...(Ints) == rank * 2, "the paddings not support!");
-    constexpr auto output_shape = std::decay_t<TOut>::shape();
+    auto output_shape = output.shape();
     // constexpr auto input_strides = TIn::strides();
     // constexpr auto output_strides = std::decay_t<TOut>::strides();
     auto in_index = ranked_shape<rank>();
