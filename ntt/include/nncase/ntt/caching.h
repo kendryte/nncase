@@ -354,7 +354,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                       T slots) {
         // slots : [num_tokens, numHeads, headDim]
         auto slots_shape = slots.shape();
-        for (int i = 0; i < this->template num_tokens(); i++) {
+        for (int i = 0; i < this->template num_tokens<TConfig>(); i++) {
             auto slot_id = get_slot_id(i);
             auto slot = slots
                             .view(ntt::make_ranked_shape(i, head_id, 0),

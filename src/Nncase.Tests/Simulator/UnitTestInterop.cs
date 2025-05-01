@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
@@ -182,7 +183,7 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(intVal, fields[0].ToValue());
         Assert.Equal(floatVal, fields[1].ToValue());
     }
-#if false
+
     [Fact]
     public void TestRTAttentionConfig()
     {
@@ -198,8 +199,10 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(2, r_a.NumKVHeads);
         Assert.Equal(1, r_a.HeadDim);
 
-        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers], [], [], DataTypes.Float16);
-        var r_b = (RTPagedAttentionConfig)RTAttentionConfig.FromConfig(b);
+        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers }, [], [], []);
+        var r_ = RTAttentionConfig.FromConfig(b);
+        Assert.IsType<RTPagedAttentionConfig>(r_);
+        var r_b = (RTPagedAttentionConfig)r_;
         Assert.Equal(b.NumLayers, r_b.NumLayers);
         Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
         Assert.Equal(b.HeadDim, r_b.HeadDim);
@@ -212,8 +215,21 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(2, r_b.NumKVHeads);
         Assert.Equal(1, r_b.HeadDim);
         Assert.Equal(0, r_b.BlockSize);
+
+        Assert.Empty(r_b.PackedAxes);
+        Assert.Empty(r_b.Lanes);
+        r_b.PackedAxes = new[] { IR.NN.PagedAttentionDimKind.HeadDim };
+        r_b.Lanes = new[] { 64 };
+        Assert.True(r_b.PackedAxes.SequenceEqual(new[] { IR.NN.PagedAttentionDimKind.HeadDim }));
+        Assert.True(r_b.Lanes.SequenceEqual(new[] { 64 }));
+
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            r_b.Lanes = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+        });
     }
 
+#if false
     [Fact]
     public void TestRTPagedAttentionScheduler()
     {

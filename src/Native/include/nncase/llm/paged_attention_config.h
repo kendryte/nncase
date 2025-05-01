@@ -24,31 +24,31 @@ class paged_attention_config_node : public attention_config_node {
     DEFINE_OBJECT_KIND(attention_config_node, object_paged_attention_config);
 
   public:
-    // 新增构造函数，包含所有新属性
     paged_attention_config_node(
         size_t num_layers, size_t num_kv_heads, size_t head_dim,
-        typecode_t kv_type, size_t block_size, size_t num_blocks,
+        typecode_t kv_type, size_t block_size,
         const std::array<paged_attention_dim_kind, 6> &cache_layout,
         const std::vector<paged_attention_dim_kind> &packed_axes,
-        const std::vector<int> &lanes) noexcept
+        const dims_t &lanes, const dims_t &topology) noexcept
         : attention_config_node(num_layers, num_kv_heads, head_dim, kv_type),
           block_size_(block_size),
-          num_blocks_(num_blocks),
           cache_layout_(cache_layout),
-          packed_axes_(packed_axes),
-          lanes_(lanes) {}
+          packed_axes_(packed_axes.begin(), packed_axes.end()),
+          lanes_(lanes),
+          topology_(topology) {}
 
     size_t block_size() const noexcept { return block_size_; }
 
     void block_size(size_t block_size) noexcept { block_size_ = block_size; }
 
-    size_t num_blocks() const noexcept { return num_blocks_; }
-
-    void num_blocks(size_t num_blocks) noexcept { num_blocks_ = num_blocks; }
-
     const std::array<paged_attention_dim_kind, 6> &
     cache_layout() const noexcept {
         return cache_layout_;
+    }
+
+    void cache_layout(
+        const std::array<paged_attention_dim_kind, 6> &cache_layout) noexcept {
+        cache_layout_ = cache_layout;
     }
 
     const std::array<paged_attention_dim_kind, 2>
@@ -57,38 +57,42 @@ class paged_attention_config_node : public attention_config_node {
         size_t j = 0;
         for (size_t i = 0; i < 6; i++) {
             auto dim = cache_layout_[i];
-            if ((dim == paged_attention_dim_kind::head_dim) ||
-                (dim == paged_attention_dim_kind::block_size)) {
+            if ((dim != paged_attention_dim_kind::head_dim) &&
+                (dim != paged_attention_dim_kind::block_size)) {
                 block_layout[j++] = dim;
             }
         }
         return block_layout;
     }
 
-    void cache_layout(
-        const std::array<paged_attention_dim_kind, 6> &cache_layout) noexcept {
-        cache_layout_ = cache_layout;
-    }
-
-    const std::vector<paged_attention_dim_kind> &packed_axes() const noexcept {
-        return packed_axes_;
-    }
+    const auto &packed_axes() const noexcept { return packed_axes_; }
 
     void packed_axes(
         const std::vector<paged_attention_dim_kind> &packed_axes) noexcept {
-        packed_axes_ = packed_axes;
+        packed_axes_.clear();
+        packed_axes_.assign(packed_axes.begin(), packed_axes.end());
     }
 
-    const std::vector<int> &lanes() const noexcept { return lanes_; }
+    const dims_t &lanes() const noexcept { return lanes_; }
 
-    void lanes(const std::vector<int> &lanes) noexcept { lanes_ = lanes; }
+    void lanes(const std::vector<int> &lanes) noexcept {
+        lanes_.clear();
+        lanes_.assign(lanes.begin(), lanes.end());
+    }
+
+    const dims_t &topology() const noexcept { return topology_; }
+
+    void topology(const std::vector<int> &topology) noexcept {
+        topology_.clear();
+        topology_.assign(topology.begin(), topology.end());
+    }
 
   private:
     size_t block_size_;
-    size_t num_blocks_;
     std::array<paged_attention_dim_kind, 6> cache_layout_;
-    std::vector<paged_attention_dim_kind> packed_axes_;
-    std::vector<int> lanes_;
+    itlib::small_vector<paged_attention_dim_kind, 8> packed_axes_;
+    dims_t lanes_;
+    dims_t topology_;
 };
 
 using paged_attention_config = object_t<paged_attention_config_node>;

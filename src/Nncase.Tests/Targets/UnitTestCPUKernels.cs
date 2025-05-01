@@ -21,7 +21,9 @@ using Nncase.Runtime.Interop;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
 using Nncase.Utilities;
+using OrtKISharp;
 using Xunit;
+using static Nncase.Evaluator.OrtKIExtensions;
 
 namespace Nncase.Tests.TargetTest;
 
@@ -92,6 +94,166 @@ public sealed class UnitTestCPUKernels : TestClassBase
         { ReduceOp.Mean, new long[] { 1, 3, 1024 }, new[] { 2 }, 0, true, new[] { 4 }, [[-1], [-1], [-1]], 6 },
         { ReduceOp.Sum, new long[] { 1, 64, 384, 384 }, new[] { 3 }, 0, true, new[] { 64 }, [], 7 },
     };
+
+    [Theory]
+    [InlineData(new object[] { new[] { 8L }, new[] { 8L }, 1, 128, 4, 8, Runtime.TypeCode.Float32 })] // prefill
+    public void TestPagedAttentionCase(long[] queryLens, long[] seqLens, int numHead, int headDim, int blockSize, int numBlocks, Nncase.Runtime.TypeCode typeCode)
+    {
+        int numQHeads = numHead, numKVHeads = numHead;
+        var numLayers = 1;
+        var kvType = DataTypes.Float32;
+        var refQuerys = new List<OrtKISharp.Tensor>();
+        var refKeys = new List<OrtKISharp.Tensor>();
+        var refValues = new List<OrtKISharp.Tensor>();
+        var refOutputs = new List<OrtKISharp.Tensor>();
+
+        // 1. using sdpa computed reference.
+        for (int req_id = 0; req_id < queryLens.Length; req_id++)
+        {
+            var seq_len = seqLens[req_id];
+            var cur_len = queryLens[req_id];
+            var hist_len = seq_len - cur_len;
+            var query = IR.F.Random.Normal(DataTypes.Float32, new[] { numQHeads, cur_len, headDim }).Evaluate().AsTensor();
+            var key = IR.F.Random.Normal(DataTypes.Float32, new[] { numKVHeads, seq_len, headDim }).Evaluate().AsTensor();
+            var value = IR.F.Random.Normal(DataTypes.Float32, new[] { numKVHeads, seq_len, headDim }).Evaluate().AsTensor();
+
+            // var qarange = Enumerable.Range(0, (int)(numQHeads * cur_len * headDim)).Select(i => (float)i).ToArray();
+            // var kvarange = Enumerable.Range(0, (int)(numQHeads * seq_len * headDim)).Select(i => (float)i).ToArray();
+            // var query = Tensor.From(qarange, new[] { numQHeads, cur_len, headDim });
+            // var key = Tensor.From(kvarange, new[] { numKVHeads, seq_len, headDim });
+            // var value = Tensor.From(kvarange, new[] { numKVHeads, seq_len, headDim });
+            var refQuery = query.ToOrtTensor();
+            var refKey = key.ToOrtTensor();
+            var refValue = value.ToOrtTensor();
+            refQuerys.Add(refQuery);
+            refKeys.Add(refKey);
+            refValues.Add(refValue);
+            var output = EvaluatorTest.UnitTestEvaluatorNN.ScaledDotProductAttention(refQuery, refKey, refValue, isCausal: true, scale: 1.0f);
+            refOutputs.Add(output);
+        }
+
+        // 2. create paged attention expr.
+        var numSeqs = queryLens.Length;
+        var numTokens = queryLens.Sum();
+        var lane = 128 / kvType.SizeInBytes;
+        var queryVar = new Var("query", new TensorType(DataTypes.Float32, new(numTokens, numQHeads, headDim)));
+        var keyVar = new Var("key", new TensorType(DataTypes.Float32, new(numTokens, numKVHeads, headDim)));
+        var valueVar = new Var("value", new TensorType(DataTypes.Float32, new(numTokens, numKVHeads, headDim)));
+        var pagedAttnConfig = new PagedAttentionConfig(
+                numLayers,
+                numKVHeads,
+                headDim,
+                kvType,
+                blockSize,
+                new[] {
+                    PagedAttentionDimKind.NumBlocks,
+                    PagedAttentionDimKind.NumLayers,
+                    PagedAttentionDimKind.NumKVHeads,
+                    PagedAttentionDimKind.KV,
+                    PagedAttentionDimKind.HeadDim,
+                    PagedAttentionDimKind.BlockSize, },
+                new[] { PagedAttentionDimKind.HeadDim },
+                new[] { lane },
+                Array.Empty<int>());
+        var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(new ReferenceType(new PagedAttentionKVCacheType() { Config = pagedAttnConfig })));
+        Expr root;
+        {
+            var updatedkvCache = IR.F.NN.UpdatePagedAttentionKVCache(IR.F.CPU.Pack(keyVar, [lane], [2]), kvCacheObjVar, AttentionCacheKind.Key, 0);
+            updatedkvCache = IR.F.NN.UpdatePagedAttentionKVCache(IR.F.CPU.Pack(valueVar, [lane], [2]), updatedkvCache, AttentionCacheKind.Value, 0);
+            var pagedAttentionExpr = IR.F.NN.PagedAttention(IR.F.CPU.Pack(queryVar, [lane], [2]), updatedkvCache, None.Default, 0, [AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]); // [num_seqs, num_query_heads, head_size] with pack
+            root = IR.F.Tensors.Transpose(IR.F.CPU.Unpack(pagedAttentionExpr, [lane], [2]), new[] { 1, 0, 2 }); // [Hq,L,Ev]
+        }
+
+        var feedDict = new Dictionary<Var, IValue>();
+
+        // 3. prepare paged attention inputs.
+        {
+            var contextLens = Tensor.From(queryLens.Zip(seqLens).Select(p => p.Second - p.First).ToArray());
+            var maxSeqLen = seqLens.Max();
+
+            var maxNumBlocksPreSeq = MathUtility.CeilDiv(maxSeqLen, blockSize);
+            var blockTables = Tensor.FromScalar(-1L, [numSeqs, maxNumBlocksPreSeq, 1]);
+            var slotMapping = Tensor.FromScalar(-1L, [numTokens, 1]);
+            var histSlotMappings = Enumerable.Range(0, numSeqs).Select(_ => new List<long>()).ToArray();
+            var histKeys = new List<OrtKISharp.Tensor>();
+            var histValues = new List<OrtKISharp.Tensor>();
+            var curKeys = new List<OrtKISharp.Tensor>();
+            var curValues = new List<OrtKISharp.Tensor>();
+
+            var tokenId = 0;
+            for (int seqId = 0; seqId < numSeqs; seqId++)
+            {
+                // update block table.
+                var seqLen = seqLens[seqId];
+                var contextLen = contextLens[seqId];
+                var queryLen = queryLens[seqId];
+                var numBlocksForSeq = MathUtility.CeilDiv(seqLen, blockSize);
+                var blockIdStart = seqId * maxNumBlocksPreSeq;
+                for (long blockId = blockIdStart; blockId < blockIdStart + numBlocksForSeq; blockId++)
+                {
+                    blockTables[seqId, blockId - blockIdStart, 0] = blockId;
+                }
+
+                // write the histroy kv.
+                for (long i = 0; i < contextLen; i++)
+                {
+                    histSlotMappings[seqId].Add((blockIdStart * blockSize) + i);
+                }
+
+                // slice hist k,v and save it.
+                var ks = OrtKI.Split(OrtKI.Transpose(refKeys[seqId], [1, 0, 2]), new long[] { contextLen, queryLen }, 0);
+                histKeys.Add(ks[0].Pack(lane, 2));
+                curKeys.Add(ks[1]);
+                var vs = OrtKI.Split(OrtKI.Transpose(refValues[seqId], [1, 0, 2]), new long[] { contextLen, queryLen }, 0);
+                histValues.Add(vs[0].Pack(lane, 2));
+                curValues.Add(vs[1]);
+
+                // update current slot mapping.
+                for (long i = contextLen; i < seqLen; i++)
+                {
+                    slotMapping[tokenId++, 0] = (blockIdStart * blockSize) + i;
+                }
+            }
+
+            // [numQHeads, numTokens, headDim] -> [numTokens, numQHeads, headDim]
+            var curQueryTensor = OrtKI.Concat(refQuerys.Select(q => OrtKI.Transpose(q, [1, 0, 2])).ToArray(), 0L);
+            var curKeyTensor = OrtKI.Concat(curKeys.ToArray(), 0L);
+            var curValueTensor = OrtKI.Concat(curValues.ToArray(), 0L);
+            var kvcacheStorage = Tensor.Zeros(new VectorType(kvType, [lane]), [numBlocks, numLayers, numKVHeads, 2, headDim / lane, blockSize]);
+
+            // update hist kv cache.
+            var histSlotMappingArray = histSlotMappings.SelectMany(i => i).ToArray();
+            var histSlotMapping = Tensor.From(histSlotMappingArray, [histSlotMappingArray.Length, 1]);
+            if (histSlotMapping.Length > 0)
+            {
+                var tempkvCacheObject = new Evaluator.NN.RefPagedAttentionKVCache(pagedAttnConfig, numSeqs, (int)histSlotMapping.Length, contextLens, Tensor.From(seqLens), blockTables, histSlotMapping, numBlocks, kvcacheStorage);
+                var keySlots = OrtKI.Concat(histKeys.ToArray(), 0).ToTensor(new TensorType(new VectorType(kvType, [lane]), new[] { histSlotMapping.Length, numKVHeads, headDim / lane }));
+                var valueSlots = OrtKI.Concat(histValues.ToArray(), 0).ToTensor(new TensorType(new VectorType(kvType, [lane]), new[] { histSlotMapping.Length, numKVHeads, headDim / lane }));
+
+                for (int headId = 0; headId < numKVHeads; headId++)
+                {
+                    tempkvCacheObject.UpdateSlots(AttentionCacheKind.Key, 0, headId, keySlots);
+                    tempkvCacheObject.UpdateSlots(AttentionCacheKind.Value, 0, headId, valueSlots);
+                }
+            }
+
+            var kvCacheObject = new Evaluator.NN.RefPagedAttentionKVCache(pagedAttnConfig, numSeqs, (int)numTokens, contextLens, Tensor.From(seqLens), blockTables, slotMapping, numBlocks, kvcacheStorage);
+            var kvCacheObjectTensor = Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCacheObject));
+            feedDict.Add(queryVar, curQueryTensor.ToValue());
+            feedDict.Add(keyVar, curKeyTensor.ToValue());
+            feedDict.Add(valueVar, curValueTensor.ToValue());
+            feedDict.Add(kvCacheObjVar, Value.FromTensor(kvCacheObjectTensor));
+        }
+
+        // 4. evaluate and compare
+        {
+            var refTensor = OrtKI.Concat(refOutputs.ToArray(), 1L).ToTensor();
+            var actualTensor = root.Evaluate(feedDict).AsTensor();
+
+            var cos = Comparator.CosSimilarity(refTensor, actualTensor);
+            Assert.True(cos > 0.999, $"cos: {cos} ");
+        }
+    }
 
     [Theory]
     [InlineData(new object[] { new[] { 32, 64 }, false, new[] { 64, 48 }, false, new[] { 48, 16 }, true, new[] { 1 }, 0 })]

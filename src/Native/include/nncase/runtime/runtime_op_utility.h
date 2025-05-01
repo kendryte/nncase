@@ -78,6 +78,19 @@ inline strides_t get_default_strides(std::span<const size_t> shape) {
     return strides;
 }
 
+inline size_t linear_offset(std::span<const size_t> index,
+                            std::span<const size_t> strides) {
+    size_t offset = 0;
+    if (index.size() == 0 || strides.size() == 0) {
+        return offset;
+    }
+
+    for (size_t i = 0; i < index.size(); i++) {
+        offset += index[i] * strides[i];
+    }
+    return offset;
+}
+
 template <class TShape>
 TShape convert_shape_type(const TShape &shape, datatype_t src,
                           datatype_t dest) {

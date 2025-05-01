@@ -19,6 +19,41 @@ namespace Nncase.Tests.EvaluatorTest;
 
 public class UnitTestEvaluatorNN : TestClassBase
 {
+    public static OrtKISharp.Tensor ScaledDotProductAttention(OrtKISharp.Tensor query, OrtKISharp.Tensor key, OrtKISharp.Tensor value, OrtKISharp.Tensor? attnMask = null, float dropoutP = 0.0f, bool isCausal = false, float? scale = null)
+    {
+        var curLen = query.Shape[^2];
+        var histLen = key.Shape[^2];
+
+        var scaleFactor = scale ?? 1 / MathF.Sqrt(query.Length);
+
+        var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([curLen, histLen]));
+
+        if (isCausal)
+        {
+            var tempMask = OrtKISharp.Tensor.MakeTensor(Enumerable.Repeat(1.0f, (int)(curLen * histLen)).ToArray(), [curLen, histLen]);
+            tempMask = OrtKI.Trilu(tempMask, OrtKISharp.Tensor.FromScalar<long>(0), 0);
+            attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([curLen, histLen])));
+        }
+
+        if (attnMask != null)
+        {
+            throw new NotSupportedException("not support attnMask");
+        }
+
+        var perm = Enumerable.Range(0, key.Shape.Length).Select(i => (long)i).ToArray();
+        (perm[^1], perm[^2]) = (perm[^2], perm[^1]);
+        var attnWeight = OrtKI.MatMul(query, OrtKI.Transpose(key, perm)) * scaleFactor;
+        attnWeight = attnWeight + attnBias;
+        attnWeight = OrtKI.Softmax(attnWeight, -1);
+
+        if (dropoutP > 0f)
+        {
+            throw new NotSupportedException("not support dropout");
+        }
+
+        return OrtKI.MatMul(attnWeight, value); // [Hq,L,Ev]
+    }
+
     [Fact]
     public void TestActivationCelu()
     {
@@ -663,41 +698,6 @@ public class UnitTestEvaluatorNN : TestClassBase
             Tensor.From(crops, [2, 2])));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
-    }
-
-    public OrtKISharp.Tensor ScaledDotProductAttention(OrtKISharp.Tensor query, OrtKISharp.Tensor key, OrtKISharp.Tensor value, OrtKISharp.Tensor? attnMask = null, float dropoutP = 0.0f, bool isCausal = false, float? scale = null)
-    {
-        var curLen = query.Shape[^2];
-        var histLen = key.Shape[^2];
-
-        var scaleFactor = scale ?? 1 / MathF.Sqrt(query.Length);
-
-        var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([curLen, histLen]));
-
-        if (isCausal)
-        {
-            var tempMask = OrtKISharp.Tensor.MakeTensor(Enumerable.Repeat(1.0f, (int)(curLen * histLen)).ToArray(), [curLen, histLen]);
-            tempMask = OrtKI.Trilu(tempMask, OrtKISharp.Tensor.FromScalar<long>(0), 0);
-            attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([curLen, histLen])));
-        }
-
-        if (attnMask != null)
-        {
-            throw new NotSupportedException("not support attnMask");
-        }
-
-        var perm = Enumerable.Range(0, key.Shape.Length).Select(i => (long)i).ToArray();
-        (perm[^1], perm[^2]) = (perm[^2], perm[^1]);
-        var attnWeight = OrtKI.MatMul(query, OrtKI.Transpose(key, perm)) * scaleFactor;
-        attnWeight = attnWeight + attnBias;
-        attnWeight = OrtKI.Softmax(attnWeight, -1);
-
-        if (dropoutP > 0f)
-        {
-            throw new NotSupportedException("not support dropout");
-        }
-
-        return OrtKI.MatMul(attnWeight, value); // [Hq,L,Ev]
     }
 
     [Theory]

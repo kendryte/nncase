@@ -89,6 +89,11 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             q = q * OrtKI.Cast(scale, (long)q.DataType); // [query_len, num_heads, head_dim] [L,Hq,E]
 
             var k = GatherKV(AttentionCacheKind.Key, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
+            if (k.Shape[0] != q.Shape[1])
+            {
+                k = OrtKI.Expand(k, new long[] { q.Shape[1], k.Shape[1], k.Shape[2] });
+            }
+
             var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS"); // [num_heads, query_len, seq_len] [H,L,S]
 
             // compute causal mask
@@ -101,6 +106,11 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             attn = OrtKI.Softmax(attn, -1);
 
             var v = GatherKV(AttentionCacheKind.Value, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
+            if (v.Shape[0] != q.Shape[1])
+            {
+                v = OrtKI.Expand(v, new long[] { q.Shape[1], v.Shape[1], v.Shape[2] });
+            }
+
             var output = OrtKI.Einsum([attn, v], "HLS,HSE->LHE"); // [query_len, num_heads, head_dim] [L,H,E]
 
             outputs.Add(output);

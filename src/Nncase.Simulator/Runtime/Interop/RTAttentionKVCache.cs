@@ -35,14 +35,13 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
     {
         get
         {
-            int num_layers = 0;
-            Native.AttentionConfigGetNumLayers(this, ref num_layers);
-            return num_layers;
+            Native.AttentionConfigGetNumLayers(this, out int numLayers).ThrowIfFailed();
+            return numLayers;
         }
 
         set
         {
-            Native.AttentionConfigSetNumLayers(this, value);
+            Native.AttentionConfigSetNumLayers(this, value).ThrowIfFailed();
         }
     }
 
@@ -50,14 +49,13 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
     {
         get
         {
-            int num_kv_heads = 0;
-            Native.AttentionConfigGetNumKvHeads(this, ref num_kv_heads);
-            return num_kv_heads;
+            Native.AttentionConfigGetNumKvHeads(this, out int numKvHeads).ThrowIfFailed();
+            return numKvHeads;
         }
 
         set
         {
-            Native.AttentionConfigSetNumKvHeads(this, value);
+            Native.AttentionConfigSetNumKvHeads(this, value).ThrowIfFailed();
         }
     }
 
@@ -65,14 +63,13 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
     {
         get
         {
-            int head_dim = 0;
-            Native.AttentionConfigGetHeadDim(this, ref head_dim);
-            return head_dim;
+            Native.AttentionConfigGetHeadDim(this, out int headDim).ThrowIfFailed();
+            return headDim;
         }
 
         set
         {
-            Native.AttentionConfigSetHeadDim(this, value);
+            Native.AttentionConfigSetHeadDim(this, value).ThrowIfFailed();
         }
     }
 
@@ -80,13 +77,13 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
     {
         get
         {
-            Native.AttentionConfigGetKVType(this, out var kv_type);
-            return PrimType.FromTypeCode(kv_type);
+            Native.AttentionConfigGetKvType(this, out TypeCode kvType).ThrowIfFailed();
+            return DataType.FromTypeCode(kvType);
         }
 
         set
         {
-            Native.AttentionConfigSetKVType(this, value.TypeCode);
+            Native.AttentionConfigSetKvType(this, value.TypeCode).ThrowIfFailed();
         }
     }
 
@@ -114,7 +111,7 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
     {
         try
         {
-            throw new NotImplementedException();
+            return new RTAttentionConfig(handle, addRef);
         }
         catch
         {
@@ -150,10 +147,104 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig
         }
     }
 
+    public PagedAttentionDimKind[] CacheLayout
+    {
+        get
+        {
+            var layout = new PagedAttentionDimKind[6];
+            Native.PagedAttentionConfigGetCacheLayout(this, layout, layout.Length).ThrowIfFailed();
+            return layout;
+        }
+
+        set
+        {
+            if (value.Length != 6)
+            {
+                throw new ArgumentException("Cache layout must have 6 dimensions");
+            }
+
+            Native.PagedAttentionConfigSetCacheLayout(this, value, value.Length).ThrowIfFailed();
+        }
+    }
+
+    public PagedAttentionDimKind[] PackedAxes
+    {
+        get
+        {
+            var packedAxes = new PagedAttentionDimKind[8]; // Using max size from small_vector
+            int length = packedAxes.Length;
+            Native.PagedAttentionConfigGetPackedAxes(this, packedAxes, length).ThrowIfFailed();
+            return packedAxes.Where(x => Enum.IsDefined(x)).ToArray();
+        }
+
+        set
+        {
+            Native.PagedAttentionConfigSetPackedAxes(this, value, value.Length).ThrowIfFailed();
+        }
+    }
+
+    public int[] Lanes
+    {
+        get
+        {
+            var lanes = new int[8]; // Using a reasonable initial size
+            int length = lanes.Length;
+            Native.PagedAttentionConfigGetLanes(this, lanes, length).ThrowIfFailed();
+            return lanes.Where(x => x != -1).ToArray();
+        }
+
+        set
+        {
+            Native.PagedAttentionConfigSetLanes(this, value, value.Length).ThrowIfFailed();
+        }
+    }
+
+    public int[] Topology
+    {
+        get
+        {
+            var topology = new int[8]; // Using a reasonable initial size
+            int length = topology.Length;
+            Native.PagedAttentionConfigGetTopology(this, topology, length).ThrowIfFailed();
+            return topology.Where(x => x != -1).ToArray();
+        }
+
+        set
+        {
+            Native.PagedAttentionConfigSetTopology(this, value, value.Length).ThrowIfFailed();
+        }
+    }
+
     public static RTPagedAttentionConfig FromConfig(PagedAttentionConfig cfg)
     {
-        Native.PagedAttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, cfg.KVType.TypeCode, cfg.BlockSize, out var rtcfg).ThrowIfFailed();
+        Native.PagedAttentionConfigCreate(
+            cfg.NumLayers,
+            cfg.NumKVHeads,
+            cfg.HeadDim,
+            cfg.KVType.TypeCode,
+            cfg.BlockSize,
+            cfg.CacheLayout.ToArray(),
+            cfg.PackedAxes.ToArray(),
+            cfg.PackedAxes.Count,
+            cfg.Lanes.ToArray(),
+            cfg.Lanes.Count,
+            cfg.Topology.ToArray(),
+            cfg.Topology.Count,
+            out var rtcfg).ThrowIfFailed();
         return rtcfg;
+    }
+
+    public static new RTPagedAttentionConfig FromHandle(IntPtr handle, bool addRef = false)
+    {
+        try
+        {
+            return new RTPagedAttentionConfig(handle, addRef);
+        }
+        catch
+        {
+            Native.ObjectRelease(handle);
+            throw;
+        }
     }
 }
 
@@ -178,14 +269,7 @@ public abstract class RTAttentionKVCache : RTObject, IAttentionKVCache
 
     public AttentionConfig Config => throw new NotImplementedException();
 
-    public int NumSeqs
-    {
-        get
-        {
-            Native.AttentionKvCacheGetNumRequests(this, out var numRequests).ThrowIfFailed();
-            return numRequests;
-        }
-    }
+    public int NumSeqs => throw new NotImplementedException();
 
     public int NumTokens => throw new NotImplementedException();
 
@@ -202,17 +286,9 @@ public abstract class RTAttentionKVCache : RTObject, IAttentionKVCache
         }
     }
 
-    public long ContextLen(int requestId)
-    {
-        Native.AttentionKvCacheGetContextLen(this, requestId, out var contextLen).ThrowIfFailed();
-        return contextLen;
-    }
+    public long ContextLen(int seqId) => throw new NotImplementedException();
 
-    public long SeqLen(int requestId)
-    {
-        Native.AttentionKvCacheGetSeqLen(this, requestId, out var seqLen).ThrowIfFailed();
-        return seqLen;
-    }
+    public long SeqLen(int seqId) => throw new NotImplementedException();
 }
 
 /// <summary>
@@ -234,50 +310,21 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
         }
     }
 
-    public new PagedAttentionConfig Config => (PagedAttentionConfig)base.Config;
-
     public int NumBlocks => throw new NotImplementedException();
 
-    IPagedAttentionConfig IPagedAttentionKVCache.Config => Config;
+    IPagedAttentionConfig IPagedAttentionKVCache.Config => throw new NotImplementedException();
 
-    public Tensor GetBlock(AttentionCacheKind kind, int layerId, object blockId) => throw new NotImplementedException();
-
-    public Tensor GetBlockId(int requestId) => throw new NotImplementedException();
-
-    public Tensor GetSlotId() => throw new NotImplementedException();
-
-    public Tensor GetSlot(AttentionCacheKind kind, int layerId, object slotId) => throw new NotImplementedException();
-
-    public Tensor GetSlots(Tensor block, int startSlot, int count) => throw new NotImplementedException();
-
-    public Tensor GetSubBlock(params int[] indices)
-    {
-        Native.PagedAttenionKVCacheGetSubBlock(this, indices, indices.Length, out var subBlock).ThrowIfFailed();
-        return subBlock.ToTensor();
-    }
-
-    public void SetSubBlock(int[] indices, Tensor subBlock)
-    {
-        var rtTensor = RTTensor.FromTensor(subBlock);
-        Native.PagedAttenionKVCacheSetSubBlock(this, indices, indices.Length, rtTensor).ThrowIfFailed();
-    }
-
-    public void UpdateSlot(AttentionCacheKind kind, int layerId, object slotId, Tensor slot) => throw new NotImplementedException();
-
-    public Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, object blockId) => throw new NotImplementedException();
-
-    public void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, object blockId, Tensor block) => throw new NotImplementedException();
-
-    public Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, object slotId) => throw new NotImplementedException();
-
-    public void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, object slotId, Tensor slot) => throw new NotImplementedException();
-
-    public void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slotIds, Tensor slots) => throw new NotImplementedException();
     public Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId) => throw new NotImplementedException();
-    public void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId, Tensor block) => throw new NotImplementedException();
-    public Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, Tensor slotId) => throw new NotImplementedException();
-    public void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, Tensor slotId, Tensor slot) => throw new NotImplementedException();
+
     public Tensor GetBlockId(int seqId, int contextId) => throw new NotImplementedException();
+
+    public Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, Tensor slotId) => throw new NotImplementedException();
+
     public Tensor GetSlotId(int tokenId) => throw new NotImplementedException();
+
+    public void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId, Tensor block) => throw new NotImplementedException();
+
+    public void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, Tensor slotId, Tensor slot) => throw new NotImplementedException();
+
     public void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slots) => throw new NotImplementedException();
 }
