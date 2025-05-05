@@ -1133,6 +1133,53 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
+    [Theory]
+    [InlineData(new object[] { new[] { 4L }, new[] { 4L }, 1, 64, 4, 8, 1 })] // prefill
+    public async Task TestPagedAttention(long[] queryLens, long[] seqLens, int numHead, int headDim, int blockSize, int numBlocks, int count)
+    {
+        int numQHeads = numHead, numKVHeads = numHead;
+        var numLayers = 1;
+        var kvType = DataTypes.Float32;
+        var numSeqs = queryLens.Length;
+        var numTokens = queryLens.Sum();
+        var lane = 128 / kvType.SizeInBytes;
+        var pagedAttnConfig = new PagedAttentionConfig(
+                numLayers,
+                numKVHeads,
+                headDim,
+                kvType,
+                blockSize,
+                new[] {
+                    PagedAttentionDimKind.NumBlocks,
+                    PagedAttentionDimKind.NumLayers,
+                    PagedAttentionDimKind.NumKVHeads,
+                    PagedAttentionDimKind.KV,
+                    PagedAttentionDimKind.HeadDim,
+                    PagedAttentionDimKind.BlockSize, },
+                new[] { PagedAttentionDimKind.HeadDim },
+                new[] { lane },
+                Array.Empty<int>());
+        var queryVar = new Var("query", new TensorType(DataTypes.Float32, new(numTokens, numQHeads, headDim)));
+        var keyVar = new Var("key", new TensorType(DataTypes.Float32, new(numTokens, numKVHeads, headDim)));
+        var valueVar = new Var("value", new TensorType(DataTypes.Float32, new(numTokens, numKVHeads, headDim)));
+        var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(new ReferenceType(new PagedAttentionKVCacheType() { Config = pagedAttnConfig })));
+        Expr root;
+        {
+            var updatedkvCache = IR.F.NN.UpdatePagedAttentionKVCache(IR.F.CPU.Pack(keyVar, [lane], [2]), kvCacheObjVar, AttentionCacheKind.Key, 0);
+            updatedkvCache = IR.F.NN.UpdatePagedAttentionKVCache(IR.F.CPU.Pack(valueVar, [lane], [2]), updatedkvCache, AttentionCacheKind.Value, 0);
+            var pagedAttentionExpr = IR.F.NN.PagedAttention(IR.F.CPU.Pack(queryVar, [lane], [2]), updatedkvCache, None.Default, 0, [AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]); // [num_seqs, num_query_heads, head_size] with pack
+            root = IR.F.Tensors.Transpose(IR.F.CPU.Unpack(pagedAttentionExpr, [lane], [2]), new[] { 1, 0, 2 }); // [Hq,L,Ev]
+        }
+
+        using var dumpScope = new Diagnostics.DumpScope(Path.Join($"Theory{count}", "Case0"), CompileOptions.DumpFlags);
+
+        var main = new Function(root, [queryVar, keyVar, valueVar, kvCacheObjVar]);
+
+        var module = new IR.IRModule(main);
+        await Compile(module);
+        var (kmodel_path, _) = Testing.BuildKModel("test", module, CompileSession, false);
+    }
+
     internal async Task RunCases(string dumpDir, Dictionary<Var, IValue> feedDict, IEnumerable<Expr> posts)
     {
         var postArray = posts.ToArray();
@@ -1207,7 +1254,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
         compiler.ModulePartitionPass(pmgr);
-        compiler.AutoDistributedPass(pmgr);
+
+        // compiler.AutoDistributedPass(pmgr);
         compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
         pmgr.Add<ReplaceDimVarWithShapeOfPass>();

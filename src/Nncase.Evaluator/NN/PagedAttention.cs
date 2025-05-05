@@ -21,8 +21,8 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         var extra = context.CheckArgumentType<IRType>(target, PagedAttention.Extra);
         return (q, extra) switch
         {
-            (DistributedType dq, DistributedType dextra) => Visit(context, target, dq, dextra),
-            (TensorType tq, TensorType textra) => Visit(context, target, tq, textra),
+            (DistributedType dq, IRType dextra) => Visit(context, target, dq, dextra),
+            (TensorType tq, IRType textra) => Visit(context, target, tq, textra),
             _ => new InvalidType("not support type"),
         };
     }
@@ -234,7 +234,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concatCache; // [num_heads, seq_len, head_dim]
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, TensorType extra)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra)
     {
         var headDim = q.Shape[target.QLayout.IndexOf(AttentionDimKind.Head)];
         var dims = q.Shape.ToArray();
@@ -242,11 +242,11 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return q with { Shape = dims };
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, IRType extra)
     {
         if (q.Placement.Name == "cdxyt") // for xpu.
         {
-            if (!extra.AxisPolices.All(p => p is SBPBroadCast))
+            if (extra is DistributedType dtExtra && !dtExtra.AxisPolices.All(p => p is SBPBroadCast))
             {
                 return new InvalidType("extra should be broadcast!");
             }
@@ -261,6 +261,16 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             {
                 return q;
             }
+        }
+        else
+        {
+            // for cpu.
+            if (q.AxisPolices.All(p => p is SBPBroadCast))
+            {
+                return new InvalidType("Q should be broadcast!");
+            }
+
+            return q;
         }
 
         return new InvalidType("not support distributed type");

@@ -31,6 +31,7 @@ enum class paged_attention_dim_kind : int {
     block_size,
     num_kv_heads,
     head_dim,
+    count__,
 };
 
 template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
@@ -186,8 +187,8 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         auto shape = ntt::make_ranked_shape(num_blocks(), cfg.num_layers, 2,
                                             cfg.block_size, cfg.num_kv_heads,
                                             cfg.head_dim);
-        for (size_t i = 0; i < 6; i++) {
-            auto it = cfg.packed_axes.indexof(i);
+        for (size_t i = 0; i < (size_t)paged_attention_dim_kind::count__; i++) {
+            auto it = cfg.packed_axes.indexof((paged_attention_dim_kind)i);
             if (it != -1) {
                 shape[i] /= cfg.lanes[it];
             }
@@ -248,14 +249,12 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         auto shape = ntt::ranked_shape<default_shape.rank()>();
         auto squeeze_axes = ntt::ranked_shape<4>();
         for (size_t i = 0, j = 0; i < default_starts.rank(); i++) {
-            starts[i] = default_starts[cache_layout[i]];
-            shape[i] = default_shape[cache_layout[i]];
+            starts[i] = default_starts[(size_t)cache_layout[i]];
+            shape[i] = default_shape[(size_t)cache_layout[i]];
             // printf("[nncase_log] block_start[%ld] = %ld\n", i, starts[i]);
             // printf("[nncase_log] block_shape[%ld] = %ld\n", i, shape[i]);
-            if ((cache_layout[i] !=
-                 (size_t)paged_attention_dim_kind::block_size) &&
-                (cache_layout[i] !=
-                 (size_t)paged_attention_dim_kind::head_dim)) {
+            if ((cache_layout[i] != paged_attention_dim_kind::block_size) &&
+                (cache_layout[i] != paged_attention_dim_kind::head_dim)) {
                 squeeze_axes[j] = i;
                 // printf("[nncase_log] block_squeeze[%ld] = %ld\n", j,
                 //        squeeze_axes[j]);
@@ -266,10 +265,12 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         // printf("[nncase_log] default_shape [%ld, %ld, %ld, %ld, %ld, %ld]\n",
         //        default_shape[0], default_shape[1], default_shape[2],
         //        default_shape[3], default_shape[4], default_shape[5]);
-        // printf("[nncase_log] try get block kv_storage view starts: [%ld, %ld, "
+        // printf("[nncase_log] try get block kv_storage view starts: [%ld, %ld,
+        // "
         //        "%ld, %ld, %ld, %ld], shape [%ld, %ld, %ld, %ld, %ld, %ld]\n",
-        //        starts[0], starts[1], starts[2], starts[3], starts[4], starts[5],
-        //        shape[0], shape[1], shape[2], shape[3], shape[4], shape[5]);
+        //        starts[0], starts[1], starts[2], starts[3], starts[4],
+        //        starts[5], shape[0], shape[1], shape[2], shape[3], shape[4],
+        //        shape[5]);
         return kv_storage.view(starts, shape).squeeze(squeeze_axes);
     }
 
@@ -302,15 +303,15 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         auto starts = ntt::ranked_shape<2>();
         auto shape = ntt::ranked_shape<2>();
         for (size_t i = 0; i < 2; i++) {
-            starts[i] = default_starts[default_layout[block_layout[i]]];
-            shape[i] = default_shape[default_layout[block_layout[i]]];
+            starts[i] = default_starts[default_layout[(size_t)block_layout[i]]];
+            shape[i] = default_shape[default_layout[(size_t)block_layout[i]]];
         }
         // printf(
-        //     "[nncase_log] get slot view, starts [%ld, %ld], shape [%ld, %ld]\n",
-        //     starts[0], starts[1], shape[0], shape[1]);
+        //     "[nncase_log] get slot view, starts [%ld, %ld], shape [%ld,
+        //     %ld]\n", starts[0], starts[1], shape[0], shape[1]);
         return block_view.view(starts, shape)
-            .squeeze(ntt::make_ranked_shape(block_layout.indexof(
-                (size_t)paged_attention_dim_kind::block_size)));
+            .squeeze(ntt::make_ranked_shape(
+                block_layout.indexof(paged_attention_dim_kind::block_size)));
     }
 
   public:
@@ -348,9 +349,9 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         ntt::tensor_copy(slot, destView);
     }
 
-    void
-    update_slots(attention_cache_kind kind, int layer_id, int head_id,
-                 tensor_view<kv_storage_type_t, ntt::ranked_shape<3>> slots) {
+    template <typename T>
+    void update_slots(attention_cache_kind kind, int layer_id, int head_id,
+                      T slots) {
         // slots : [num_tokens, numHeads, headDim]
         auto slots_shape = slots.shape();
         for (int i = 0; i < this->template num_tokens(); i++) {

@@ -1,7 +1,9 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using DryIoc.ImTools;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.TIR;
 
 namespace Nncase.CodeGen.CPU;
@@ -55,14 +57,40 @@ internal static class CSourceExtensions
         PrimType ptype => ptype.ToC(),
         PointerType => "uint8_t *",
         VectorType vtype => $"vector<{vtype.ElemType.ToC()},{string.Join(",", vtype.Lanes)}>",
+        ReferenceType rtype => $"{rtype.ElemType.ToC()} *",
+        PagedAttentionKVCacheType pagedAttentionKVCacheType => ToC(pagedAttentionKVCacheType),
         _ => throw new NotSupportedException(dataType.ToString()),
+    };
+
+    public static string ToC(this PagedAttentionKVCacheType pagedAttentionKVCacheType)
+    {
+        var config = pagedAttentionKVCacheType.Config;
+        var configStr = $"ntt::caching::paged_attention_config<{config.NumLayers}, {config.NumKVHeads}, {config.HeadDim}, {config.KVType.ToC()}, {config.BlockSize}, {config.CacheLayout.ToC()}, {config.BlockLayout.ToC()}, {config.PackedAxes.ToC()}, fixed_shape<{string.Join(", ", config.Lanes)}>, fixed_shape<{string.Join(", ", config.Topology)}>>";
+        return $"ntt::caching::paged_attention_kv_cache<{configStr}>";
+    }
+
+    public static string ToC(this IEnumerable<PagedAttentionDimKind> layout)
+    {
+        var layoutStr = string.Join(", ", layout.Select(x => $"ntt::caching::paged_attention_dim_kind::{x.ToC()}"));
+        return $"fixed_dims<ntt::caching::paged_attention_dim_kind, {layoutStr}>";
+    }
+
+    public static string ToC(this PagedAttentionDimKind kind) => kind switch
+    {
+        PagedAttentionDimKind.NumBlocks => "num_blocks",
+        PagedAttentionDimKind.NumLayers => "num_layers",
+        PagedAttentionDimKind.KV => "kv",
+        PagedAttentionDimKind.BlockSize => "block_size",
+        PagedAttentionDimKind.NumKVHeads => "num_kv_heads",
+        PagedAttentionDimKind.HeadDim => "head_dim",
+        _ => throw new NotSupportedException(kind.ToString()),
     };
 
     public static string ToC(this ImageResizeMode mode) => mode switch
     {
         ImageResizeMode.Bilinear => "bilinear",
         ImageResizeMode.NearestNeighbor => "nearest_neighbor",
-        _ => throw new NotImplementedException(),
+        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
     };
 
     public static string ToC(this ImageResizeTransformationMode mode) => mode switch
@@ -72,7 +100,7 @@ internal static class CSourceExtensions
         ImageResizeTransformationMode.AlignCorners => "align_corners",
         ImageResizeTransformationMode.Asymmetric => "asymmetric",
         ImageResizeTransformationMode.TFCropAndResize => "tfcrop_and_resize",
-        _ => throw new NotImplementedException(),
+        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
     };
 
     public static string ToC(this ImageResizeNearestMode mode) => mode switch
@@ -81,7 +109,14 @@ internal static class CSourceExtensions
         ImageResizeNearestMode.RoundPreferCeil => "round_prefer_ceil",
         ImageResizeNearestMode.Floor => "floor",
         ImageResizeNearestMode.Ceil => "ceil",
-        _ => throw new NotImplementedException(),
+        _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null),
+    };
+
+    public static string ToC(this AttentionCacheKind kind) => kind switch
+    {
+        AttentionCacheKind.Key => "key",
+        AttentionCacheKind.Value => "value",
+        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, null),
     };
 
     public static string[] ToSlicing(this IEnumerable<string> dims, string[] begins, IRArray<SBP> ndsbp, Placement placement)

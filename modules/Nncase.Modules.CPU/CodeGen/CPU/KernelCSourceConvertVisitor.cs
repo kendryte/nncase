@@ -579,6 +579,12 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
                 case TIR.CPU.Reshape reshape:
                     IndentScope.Writer.Write($"reshape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
+                case TIR.CPU.UpdatePagedAttentionKVCache updateKVCache:
+                    IndentScope.Writer.Write($"update_paged_attention_kv_cache({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, ntt::caching::attention_cache_kind::{updateKVCache.CacheKind.ToC()}, {updateKVCache.LayerId});\n");
+                    break;
+                case TIR.CPU.PagedAttention pagedAttention:
+                    IndentScope.Writer.Write($"paged_attention({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[3], local: true).Name});\n");
+                    break;
                 default:
                     throw new NotSupportedException(kop.ToString());
             }
