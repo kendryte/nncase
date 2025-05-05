@@ -26,7 +26,7 @@ namespace Nncase.Importer
         private Expr SqueezeV13(in NodeProto op)
         {
             var input = GetInputExpr<Expr>(op, 0);
-            var axes = GetOptionInputExpr<Expr>(op, 1, Tensor.From<long>(System.Array.Empty<long>()));
+            var axes = GetOptionInputExpr<Shape>(op, 1, Shape.Scalar);
             return Squeeze(input, axes);
         }
     }

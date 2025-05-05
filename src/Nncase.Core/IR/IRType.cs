@@ -209,7 +209,16 @@ public sealed record NoneType : IRType
     }
 }
 
-public sealed record ShapeType(ShapeKind Kind) : IRType
+public sealed record DimensionType(DimensionKind Kind) : IRType
+{
+    public static readonly DimensionType Fixed = new(DimensionKind.Fixed);
+
+    public static readonly DimensionType Dynamic = new(DimensionKind.Dynamic);
+
+    public static readonly DimensionType Unknown = new(DimensionKind.Unknown);
+}
+
+public sealed record ShapeType(ShapeKind Kind, int? Rank = null) : IRType
 {
     public static readonly ShapeType Scalar = new(ShapeKind.Fixed);
 
@@ -217,15 +226,17 @@ public sealed record ShapeType(ShapeKind Kind) : IRType
 
     public static readonly ShapeType Invalid = new(ShapeKind.Invalid);
 
-    public static ShapeType Fixed(int rank) => new(ShapeKind.Fixed);
+    public static ShapeType Fixed(int rank) => new(ShapeKind.Fixed, rank);
 
-    public static ShapeType Unknown(int rank) => new(ShapeKind.HasUnknownDimension);
+    public static ShapeType Unknown(int rank) => new(ShapeKind.HasUnknownDimension, rank);
 }
 
-public sealed record PaddingType() : IRType
+public sealed record PaddingType(ShapeKind Kind) : IRType
 {
+    public static readonly PaddingType Fixed = new(ShapeKind.Fixed);
 }
 
-public sealed record PaddingsType(int Rank) : IRType
+public sealed record PaddingsType(ShapeKind Kind, int Rank) : IRType
 {
+    public static PaddingsType Fixed(int rank) => new(ShapeKind.Fixed, rank);
 }

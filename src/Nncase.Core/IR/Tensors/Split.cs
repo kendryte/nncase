@@ -26,7 +26,7 @@ public sealed partial class Split : Op
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Split), 1, "axis", IsScalar() & IsIntegral());
+    public static readonly ParameterInfo Axis = new(typeof(Split), 1, "axis", IsDimensionType());
 
     /// <summary>
     /// Gets sections.

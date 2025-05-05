@@ -209,7 +209,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
     // axis: if one of inputs shape[axis] is unknown
     // then dims axis is known
     // else get sum of dims
-    private Dimension AxisDim(TupleType inputs, int axisValue)
+    private Dimension AxisDim(TupleType inputs, long axisValue)
     {
         return inputs.Fields.Aggregate(
             (Dimension)0,

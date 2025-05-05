@@ -58,9 +58,9 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
             return input;
         }
 
-        if (context.GetDimensionArgument(target, Unsqueeze.Dim) is TensorConst axes)
+        if (context.GetArgument(target, Unsqueeze.Dim) is RankedShape { IsFixed: true } axes)
         {
-            var axesValue = axes.Value.ToArray<int>();
+            var axesValue = axes.ToValueArray();
             var outShape = new Dimension[input.Shape.Rank + axesValue.Length];
             axesValue = axesValue.Select(axis => axis < 0 ? axis + outShape.Length : axis).ToArray();
             var offset = 0;

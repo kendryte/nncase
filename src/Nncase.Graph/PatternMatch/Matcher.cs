@@ -84,16 +84,6 @@ internal sealed partial class Matcher : ExprFunctor<bool, Unit, IPattern>
         return DefaultVisit(expr, pattern);
     }
 
-    protected override bool VisitShape(Shape expr, IPattern context)
-    {
-        if (context is ShapePattern shapePattern)
-        {
-            return shapePattern.MatchLeaf(expr);
-        }
-
-        return DefaultVisit(expr, context);
-    }
-
     protected override bool DispatchVisit(BaseExpr expr, IPattern pattern)
     {
         bool isMatch = _currentScope.IsMatch;

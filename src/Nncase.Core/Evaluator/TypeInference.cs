@@ -304,6 +304,11 @@ public static class TypeInference
 
         var newShape = inShape.ToList();
         var channel = pads.Rank;
+        if (channel > newShape.Count)
+        {
+            return new InvalidType($"Pads rank {channel} is greater than input rank {newShape.Count}");
+        }
+
         for (int i = 0; i < channel; i++)
         {
             newShape[newShape.Count - channel + i] += pads[i].Sum();
@@ -615,8 +620,8 @@ public static class TypeInference
 
         var rank = newShape.Rank;
         var shapeDims = new RankedShape((from i in Enumerable.Range(0, rank)
-                                   let dim = newRankedShape[i]
-                                   select i < inRankedShape.Rank ? Dimension.Select(dim, 0, inRankedShape[i], dim) : dim).ToArray());
+                                         let dim = newRankedShape[i]
+                                         select i < inRankedShape.Rank ? Dimension.Select(dim, 0, inRankedShape[i], dim) : dim).ToArray());
         var minus1DimCount = shapeDims.Count(x => x.IsFixed && x.FixedValue == -1);
         var outputShape = new Dimension[rank];
 

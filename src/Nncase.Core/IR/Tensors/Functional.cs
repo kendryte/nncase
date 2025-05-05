@@ -79,7 +79,7 @@ public static class Tensors
 
     public static Call Expand(Expr input, Shape shape) => new Call(new Expand(), input, shape);
 
-    public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
+    public static Call Flatten(Expr input, Dimension axis) => new Call(new Flatten(), input, axis);
 
     public static Call Gather(Expr input, int axis, Expr index) => new Call(new Gather(axis), input, index);
 
@@ -146,10 +146,10 @@ public static class Tensors
 
     public static Expr SizeOf(Expr input) => new Call(new SizeOf(), input);
 
-    public static Call Stack(BaseExpr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
+    public static Call Stack(BaseExpr inputs, Dimension axis) => new Call(new Stack(), inputs, axis);
 
     // squeeze input by give dims
-    public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
+    public static Call Squeeze(Expr input, Shape dims) => new Call(new Squeeze(), input, dims);
 
     public static Call Unsqueeze(Expr input, Shape dims) => new Call(new Unsqueeze(), input, dims);
 
@@ -157,7 +157,7 @@ public static class Tensors
     public static Call Rank(Expr input) => GetItem(ShapeOf(ShapeOf(input)), 0);
 
     // sections (int or list[int])
-    public static Call Split(Expr input, Expr axis, Shape sections) => new Call(new Split(), input, axis, sections);
+    public static Call Split(Expr input, Dimension axis, Shape sections) => new Call(new Split(), input, axis, sections);
 
     public static Call Tile(Expr input, Shape repeats) => new Call(new Tile(), input, repeats);
 

@@ -15,6 +15,7 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Nncase.Utilities;
 
@@ -529,6 +530,10 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     protected override string VisitShape(Shape shape) => shape.ToString();
 
     protected override string VisitDimension(Dimension expr) => expr.ToString();
+
+    protected override string VisitPadding(Padding expr) => expr.ToString();
+
+    protected override string VisitPaddings(Paddings expr) => expr.ToString();
 
     private string GetNextSSANumber()
     {

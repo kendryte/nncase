@@ -189,7 +189,7 @@ public sealed partial class CombineReshapePad : IRewriteRule
             IsWildcard("shape")) with
         { TypePattern = HasFixedShape() };
 
-    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, Paddings pads, Expr value)
+    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Shape shape, Paddings pads, Expr value)
     {
         // only support pattern like melgan
         var reshapeRank = reshapeCall.CheckedShape.Rank;
@@ -199,7 +199,7 @@ public sealed partial class CombineReshapePad : IRewriteRule
         {
             return Pad(
             Reshape(input, Enumerable.Repeat(1L, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray()).InheritMetaData(reshapeCall),
-            Enumerable.Repeat(Padding.Zero, (reshapeRank - padRank) * 2).Concat(pads).ToArray(),
+            Enumerable.Repeat(Padding.Zero, reshapeRank - padRank).Concat(pads).ToArray(),
             pad.PadMode,
             value).InheritMetaData(padCall);
         }
@@ -231,9 +231,9 @@ public sealed partial class CombineReshapeTranspose : IRewriteRule
             null,
             "trans",
             IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsTensorConst("perm")) with
+            IsFixedShape("perm")) with
         { TypePattern = HasFixedShape() },
-        IsTensorConst("newShape"));
+        IsFixedShape("newShape"));
 
     private Expr? GetReplace(Expr input, Call trans, long[] newShape, int[] perm)
     {

@@ -1516,7 +1516,7 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
-    protected override BaseExpr VisitLeafPadding(Shapes.Padding expr, TContext context)
+    protected override BaseExpr VisitLeafPadding(IR.Shapes.Padding expr, TContext context)
     {
         bool IsOperandsMutated()
         {
@@ -1545,7 +1545,7 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
-    protected override BaseExpr VisitLeafPaddings(Shapes.Paddings expr, TContext context)
+    protected override BaseExpr VisitLeafPaddings(IR.Shapes.Paddings expr, TContext context)
     {
         bool IsOperandsMutated()
         {
@@ -1561,6 +1561,86 @@ public partial class ExprCloner<TContext>
         {
             return expr.With(
                 values: CloneArray(expr.Values, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override BaseExpr VisitLeafRankedShape(RankedShape expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Dimensions, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                dimensions: CloneArray(expr.Dimensions, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override BaseExpr VisitLeafUnrankedShape(UnrankedShape expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Value, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                value: Clone(expr.Value, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override BaseExpr VisitLeafInvalidShape(InvalidShape expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override BaseExpr VisitLeafShapeVar(ShapeVar expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
             );
         }
 

@@ -320,7 +320,7 @@ public sealed partial class CombinePadTranspose : IRewriteRule
             IsWildcard("input"),
             IsPaddings("pads"),
             IsTensorConst("padValue")),
-        IsTensorConst("perm"));
+        IsFixedShape("perm"));
 
     private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Paddings pads, Expr padValue)
     {
@@ -346,8 +346,8 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
         "reduce",
         "reduceCall",
         x => true,
-        IsTranspose("tp", "tpCall", _ => true, IsWildcard("input"), IsTensorConst("perm")),
-        IsTensorConst("axis"),
+        IsTranspose("tp", "tpCall", _ => true, IsWildcard("input"), IsFixedShape("perm")),
+        IsFixedShape("axis"),
         IsWildcard("initValue"),
         IsTensorConst("keepDims", IsBoolScalar()));
 
@@ -400,9 +400,9 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
         "trans",
         IsReshape(
             IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsTensorConst("newShape")) with
+            IsFixedShape("newShape")) with
         { TypePattern = HasFixedShape() },
-        IsTensorConst("perm"));
+        IsFixedShape("perm"));
 
     private Expr? GetReplace(Call trans, Expr input, long[] newShape, int[] perm)
     {
@@ -457,7 +457,7 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
     public IPattern Pattern { get; } =
         IsTranspose(
             IsCall("actCall", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("arguments", () => IsWildcard() with { TypePattern = HasFixedShape() })),
-            IsTensorConst("perm"));
+            IsFixedShape("perm"));
 
     private Expr? GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<BaseExpr> arguments, int[] perm)
     {

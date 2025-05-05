@@ -48,7 +48,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     public IRType Visit(ITypeInferenceContext context, GetItem target)
     {
         var input = context.CheckArgumentType<IRType>(target, GetItem.Input);
-        var index = context.CheckArgumentTensorTypeOrBroadcast(target, GetItem.Index);
+        var index = context.CheckArgumentType<IRType>(target, GetItem.Index);
 
         return input switch
         {
@@ -82,7 +82,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         return input[index.AsTensor().ToScalar<int>()];
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, TensorType input, TensorType index)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, TensorType input, IRType index)
     {
         var indexExpr = context.GetArgument(target, GetItem.Index);
         if (input.Shape is not RankedShape inShape)
@@ -110,18 +110,18 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             }
         }
 
-        Shape shape = index.Shape switch
+        Shape shape = index switch
         {
-            { IsScalar: true } => new RankedShape(inShape.Skip(1)),
-            { IsFixed: true } => index.Shape[0].FixedValue == inShape.Rank ?
+            DimensionType => new RankedShape(inShape.Skip(1)),
+            ShapeType st when st.Rank != null => st.Rank == inShape.Rank ?
                                  Shape.Scalar :
-                                 new RankedShape(inShape.Skip((int)index.Shape[0].FixedValue)),
+                                 new RankedShape(inShape.Skip(st.Rank.Value)),
             _ => Shape.Unranked,
         };
         return new TensorType(input.DType, shape);
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, TupleType input, TensorType index)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, TupleType input, IRType index)
     {
         var indexExpr = context.GetArgument(target, GetItem.Index);
         if (indexExpr is TensorConst @const)
@@ -153,7 +153,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         }
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, DistributedType input, TensorType index)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, DistributedType input, IRType index)
     {
         var outputType = (TensorType)Visit(context, target, input.TensorType, index);
         var ndsbp = input.AxisPolices.Skip(input.TensorType.Shape.Rank - outputType.Shape.Rank).ToArray();
@@ -161,8 +161,8 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         {
             if (ndsbp[i] is SBPSplit)
             {
-                if ((index.Shape.IsScalar && i == 0)
-                    || i < index.Shape[0].FixedValue)
+                if ((index is DimensionType && i == 0)
+                    || i < ((ShapeType)index).Rank)
                 {
                     return new InvalidType("not support");
                 }

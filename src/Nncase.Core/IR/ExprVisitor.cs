@@ -133,6 +133,50 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
         return MarkVisited(type, VisitTypeLeaf(type, context));
     }
 
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(DimensionType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(ShapeType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(PaddingType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(PaddingsType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
     /// <summary>
     /// Visit any type leaf.
     /// </summary>
@@ -167,6 +211,26 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
     /// Visit distributed type leaf.
     /// </summary>
     public virtual TTypeResult VisitTypeLeaf(DistributedType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit dimension type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(DimensionType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit shape type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(ShapeType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit padding type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(PaddingType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit paddings type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(PaddingsType type, TContext context) => DefaultVisitTypeLeaf(type, context);
 
     /// <summary>
     /// Default visit leaf routine.

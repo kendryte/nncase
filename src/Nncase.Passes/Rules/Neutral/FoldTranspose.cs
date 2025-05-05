@@ -21,7 +21,7 @@ public sealed partial class FoldNopTranspose : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsTranspose(
         IsWildcard("input"),
-        IsTensorConst("perm", IsIntegral()));
+        IsFixedShape("perm"));
 
     private Expr? GetReplace(Expr input, Tensor<int> perm)
     {
@@ -96,7 +96,7 @@ public sealed partial class TransposeToReshape : IRewriteRule
         target_name: null,
         call_name: "tp",
         IsWildcard("input") with { TypePattern = HasRankedShape() },
-        IsTensorConst("perm", IsIntegral())) with
+        IsFixedShape("perm")) with
     { TypePattern = HasFixedShape() };
 
     private Expr? GetReplace(Expr input, Expr tp, Tensor<int> perm, RunPassContext context)

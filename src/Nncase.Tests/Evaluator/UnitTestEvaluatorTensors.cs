@@ -434,14 +434,14 @@ public class UnitTestEvaluatorTensors : TestClassBase
     {
         var shape = new long[] { 1, 3, 1, 16 };
         var axes = new long[] { -2, -4 };
-        var dims = new Var(new TensorType(DataTypes.Int64, new int[] { axes.Length }));
+        var dims = new ShapeVar(axes.Length);
 
         var input = OrtKI.Random(shape);
         var expect = OrtKI.Squeeze(input, axes);
 
         var expr = IR.F.Tensors.Squeeze(input.ToTensor(), dims);
         CompilerServices.InferenceType(expr);
-        var d = new Dictionary<IVar, IValue>() { { dims, Value.FromTensor(Tensor.From<long>(axes)) } };
+        var d = new Dictionary<IVar, IValue>() { { dims, Value.FromShape(axes) } };
         Assert.Equal(expect, expr.Evaluate(d).AsTensor().ToOrtTensor());
     }
 
@@ -499,7 +499,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
     {
         var shape = new long[] { 1, 3, 16, 16 };
         var dim = 1L;
-        var axis = new Var(TensorType.Scalar(DataTypes.Int64));
+        var axis = new DimVar();
         var sections = new long[] { 1, 2 };
 
         var input = OrtKI.Random(shape);

@@ -28,7 +28,7 @@ public sealed partial class FlattenToReshape : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsFlatten(
         IsWildcard("input") with { TypePattern = HasFixedShape() },
-        IsConstIntSclar("axis"));
+        IsFixedDimension("axis"));
 
     private Expr? GetReplace(Expr input, int axis)
     {

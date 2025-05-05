@@ -27,19 +27,18 @@ public sealed partial class UnSqueezeToReshape : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsUnsqueeze(
         IsWildcard("input") with { TypePattern = HasFixedShape() },
-        IsTensorConst("axes"));
+        IsFixedShape("axes"));
 
-    private Expr? GetReplace(Expr input, TensorConst axes)
+    private Expr? GetReplace(Expr input, long[] axes)
     {
-        var axesArray = axes.Value.ToArray<long>();
-        var outputRank = input.CheckedShape.Rank + axesArray.Length;
-        axesArray = axesArray.Select(a => a >= 0 ? a : outputRank + a).ToArray();
+        var outputRank = input.CheckedShape.Rank + axes.Length;
+        axes = axes.Select(a => a >= 0 ? a : outputRank + a).ToArray();
         var newShape = Array.Empty<Dimension>().ToList();
         var oldShape = input.CheckedShape.ToArray();
         var count = 0;
         for (var i = 0; i < outputRank; i++)
         {
-            if (axesArray.Contains(i))
+            if (axes.Contains(i))
             {
                 newShape.Add(1);
             }

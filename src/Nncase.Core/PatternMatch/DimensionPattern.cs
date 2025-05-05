@@ -39,21 +39,12 @@ public sealed record DimensionPattern(Func<Dimension, bool> Condition, string? N
 public static partial class Utility
 {
     /// <summary>
-    /// create the DimensionPattern.
-    /// </summary>
-    /// <param name="name">name.</param>
-    /// <returns>TensorConstPattern.</returns>
-    public static DimensionPattern IsDimension(string? name = null) => new DimensionPattern(x => x is not null, name);
-
-    /// <summary>
     /// create the TensorConstPattern.
     /// </summary>
     /// <param name="name">name.</param>
     /// <param name="cond">condition.</param>
     /// <returns>TensorConstPattern.</returns>
-    public static DimensionPattern IsDimension(string? name, Func<Dimension, bool> cond) => new DimensionPattern(cond, name);
+    public static DimensionPattern IsDimension(string? name = null, Func<Dimension, bool>? cond = null) => new DimensionPattern(cond ?? (x => true), name);
 
-    public static DimensionPattern IsDimension(Func<Dimension, bool> cond) => IsDimension(null, cond);
-
-    public static DimensionPattern IsFixedDimension(string? name = null) => IsDimension(name, x => x.IsFixed);
+    public static DimensionPattern IsFixedDimension(string? name = null, long? value = null) => IsDimension(name, x => x.IsFixed && (value == null || x.FixedValue == value));
 }

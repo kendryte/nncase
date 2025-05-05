@@ -152,13 +152,16 @@ internal sealed class RuleGenerator : IIncrementalGenerator
                 switch (parameterSymbol.Type)
                 {
                     case INamedTypeSymbol { IsGenericType: true, IsReferenceType: true } x when x.IsInheritFrom(TensorSymobl) && x.Name == "Tensor":
-                        rightExpr = $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.Cast<{x.TypeArguments[0].ToDisplayString()}>()";
+                        rightExpr = $"Nncase.Utilities.ReplaceUtility.ToTensor<{x.TypeArguments[0].ToDisplayString()}>(__result[\"{parameterSymbol.Name}\"])";
                         break;
-                    case IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e } x:
-                        rightExpr = $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToArray<{e.ToDisplayString()}>()";
+                    case IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e, Rank: 1 } x:
+                        rightExpr = $"Nncase.Utilities.ReplaceUtility.ToArray<{e.ToDisplayString()}>(__result[\"{parameterSymbol.Name}\"])";
+                        break;
+                    case IArrayTypeSymbol { ElementType: { IsUnmanagedType: true, IsValueType: true } e, Rank: 2 } x:
+                        rightExpr = $"Nncase.Utilities.ReplaceUtility.ToArray2D<{e.ToDisplayString()}>(__result[\"{parameterSymbol.Name}\"])";
                         break;
                     case { IsUnmanagedType: true, IsValueType: true } x:
-                        rightExpr = $"((Nncase.IR.TensorConst)__result[\"{parameterSymbol.Name}\"]).Value.ToScalar<{x.ToDisplayString()}>()";
+                        rightExpr = $"Nncase.Utilities.ReplaceUtility.ToScalar<{x.ToDisplayString()}>(__result[\"{parameterSymbol.Name}\"])";
                         break;
                     case { IsReferenceType: true } x when x.IsInheritFrom(BaseExprSymobl):
                         rightExpr = $"({parameterSymbol.Type.ToDisplayString()})__result[\"{parameterSymbol.Name}\"]";

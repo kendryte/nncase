@@ -9,12 +9,12 @@ using Nncase.IR.Tensors;
 namespace Nncase.PatternMatch;
 
 /// <summary>
-/// Pattern for <see cref="If"/>.
+/// Pattern for <see cref="Padding"/>.
 /// </summary>
 /// <param name="Before">Before pattern.</param>
 /// <param name="After">After pattern.</param>
 /// <param name="Name"> name. </param>
-public sealed record PaddingPattern(Pattern Before, Pattern After, string? Name) : Pattern<If>(Name)
+public sealed record PaddingPattern(Pattern Before, Pattern After, string? Name) : Pattern<Padding>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="PaddingPattern"/> class.
@@ -40,4 +40,6 @@ public static partial class Utility
     /// <param name="after">after.</param>
     /// <returns>call pattern.</returns>
     public static PaddingPattern IsPadding(string? name = null, Pattern? before = null, Pattern? after = null) => new PaddingPattern(before ?? IsWildcard(), after ?? IsWildcard(), name);
+
+    public static PaddingPattern IsFixedPadding(string? name = null) => new PaddingPattern(IsFixedDimension(), IsFixedDimension(), name);
 }

@@ -32,7 +32,7 @@ public partial class Expr
         {
             TensorConst tc when tc.Value.Rank == 1 => (Expr)Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
             TupleConst tc => (Expr)tc.Value[(int)index].AsTensor(),
-            _ => this[(Dimension)index],
+            _ => F.Tensors.GetItem(this, index),
         };
 
     /// <summary>
@@ -74,15 +74,8 @@ public partial class Expr
             if (index.IsFromEnd)
             {
                 var shape = (CheckedType as TensorType)?.Shape;
-                if (shape?.IsRanked == true)
-                {
-                    var newIndex = shape[0] - index.Value;
-                    return this[newIndex];
-                }
-                else
-                {
-                    return this[IR.F.Tensors.ShapeOf(this)[0].AsDim() - index.Value];
-                }
+                var newIndex = shape?.IsRanked == true ? shape[0] - index.Value : IR.F.Tensors.Rank(this).AsDim() - index.Value;
+                return IR.F.Tensors.GetItem(this, newIndex);
             }
 
             return this[(long)index.Value];

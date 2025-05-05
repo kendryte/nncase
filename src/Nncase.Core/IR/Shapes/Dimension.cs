@@ -191,7 +191,7 @@ public abstract class Dimension : BaseExpr
 
     public bool IsUnknown => Kind == DimensionKind.Unknown;
 
-    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
+    public override BaseExpr this[Dimension index] => throw new InvalidOperationException();
 
     public static implicit operator Dimension(string name) => new DimVar(name);
 
@@ -314,7 +314,7 @@ public abstract class Dimension : BaseExpr
 
     public static Dimension CeilDiv(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
     {
-        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value / rhsConst.Value,
+        (DimConst lhsConst, DimConst rhsConst) => MathUtility.CeilDiv(lhsConst.Value, rhsConst.Value),
         (_, DimConst dimConst) when dimConst.Value == 0 => throw new DivideByZeroException(),
         (_, DimConst dimConst) when dimConst.Value == 1 => lhs,
         (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,

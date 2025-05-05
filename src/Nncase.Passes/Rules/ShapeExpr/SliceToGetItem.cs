@@ -29,8 +29,8 @@ public partial class SliceToGetItem : RewriteRule<Pattern>
             IsFixedShape("begins"),
             IsFixedShape("ends"),
             IsFixedShape("axes"),
-            IsShape("strides", strides => strides.IsFixed && strides[0].FixedValue == 1)),
-        IsTensorConst("dims"));
+            IsRankedShape("strides", strides => strides.IsFixed && strides[0].FixedValue == 1)),
+        IsFixedShape("dims"));
 
     private BaseExpr? GetReplace(Expr input, int[] begins, int[] ends)
     {

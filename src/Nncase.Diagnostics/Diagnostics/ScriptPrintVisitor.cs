@@ -13,6 +13,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Nncase.Utilities;
 
@@ -703,6 +704,18 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
+    protected override IPrintSymbol VisitDimension(Dimension expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new ScriptSymobl(new("Dimension"), "Dimension", false);
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
     protected override IPrintSymbol VisitShape(Shape expr)
     {
         if (_exprMemo.TryGetValue(expr, out var doc))
@@ -711,6 +724,30 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         }
 
         doc = new ScriptSymobl(new("Shape"), "Shape", false);
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    protected override IPrintSymbol VisitPadding(Padding expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new ScriptSymobl(new("Padding"), "Padding", false);
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    protected override IPrintSymbol VisitPaddings(Paddings expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new ScriptSymobl(new("Paddings"), "Paddings", false);
         _exprMemo.Add(expr, doc);
         return doc;
     }

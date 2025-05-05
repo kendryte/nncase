@@ -7,6 +7,8 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using DryIoc;
@@ -241,6 +243,22 @@ public static class CompilerServices
     {
         _serviceProvider = serviceProvider;
         _provider = serviceProvider.GetRequiredService<ICompilerServicesProvider>();
+    }
+
+    public static void Convert<TFrom, TTo>(ReadOnlySpan<TFrom> source, Span<TTo> dest, CastMode castMode = CastMode.KDefault)
+        where TFrom : unmanaged, IEquatable<TFrom>
+        where TTo : unmanaged, IEquatable<TTo>
+    {
+        if (typeof(TFrom) == typeof(TTo))
+        {
+            var sourceSpan = MemoryMarshal.Cast<TFrom, TTo>(source);
+            sourceSpan.CopyTo(dest);
+        }
+        else
+        {
+            var converter = DataTypeService.GetConverter<TFrom, TTo>();
+            converter.ConvertTo(source, dest, castMode);
+        }
     }
 
     /// <summary>

@@ -46,7 +46,7 @@ public sealed class InvalidShape : Shape, IEquatable<InvalidShape?>
     public bool Equals(InvalidShape? other) => other is not null;
 
     /// <inheritdoc/>
-    public override bool Equals(object? other) => Equals(other as UnrankedShape);
+    public override bool Equals(object? other) => Equals(other as InvalidShape);
 
     public override bool IsAssignableFrom(Shape shape) => false;
 

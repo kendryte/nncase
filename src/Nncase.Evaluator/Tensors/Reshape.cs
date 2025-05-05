@@ -248,7 +248,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         }
 
         var tensorType = context.CurrentCall.CheckedTensorType;
-        var allowzero = ((RankedShape)tensorType.Shape).Contains(0) ? 1L : 0L;
+        var allowzero = tensorType.Shape is RankedShape rankedShape && rankedShape.Contains(0) ? 1L : 0L;
         if (tensorType.DType is VectorType vtype)
         {
             shape = shape.Concat(vtype.Lanes.Select(i => (long)i)).ToArray();
@@ -293,7 +293,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
-        var shape = (Shape)context.GetDimensionArgument(target, Reshape.Shape);
+        var shape = (Shape)context.GetArgument(target, Reshape.Shape);
         var outShape = TypeInference.ReshapeShape(input.Shape, shape);
         return input with { Shape = outShape };
     }

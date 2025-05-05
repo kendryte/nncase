@@ -61,6 +61,14 @@ public abstract partial class ExprRewriter<TContext> : ExprVisitor<BaseExpr, IRT
 
     public override IRType VisitTypeLeaf(DistributedType type, TContext context) => type;
 
+    public override IRType VisitTypeLeaf(DimensionType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(ShapeType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(PaddingType type, TContext context) => type;
+
+    public override IRType VisitTypeLeaf(PaddingsType type, TContext context) => type;
+
     /// <summary>
     /// Default rewrite leaf routine.
     /// </summary>

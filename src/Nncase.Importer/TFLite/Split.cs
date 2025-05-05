@@ -16,10 +16,10 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitSplit(in tflite.Operator op)
         {
-            var axis = GetInputExprs<Expr>(op, 0);
+            var axis = GetInputExprs<Dimension>(op, 0);
             var input = GetInputExprs<Expr>(op, 1);
             var splits = op.BuiltinOptionsAsSplitOptions().NumSplits;
-            var a = ((TensorConst)axis).Value.ToScalar<int>();
+            var a = axis.FixedValue;
             var s = ComputeSplit(input, splits, a);
             _ = GetOutputTensor(op, 0);
             return F.Tensors.Split(input, axis, s);

@@ -28,7 +28,7 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
     public IRType Visit(ITypeInferenceContext context, Squeeze target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Squeeze.Input);
-        var dims = context.CheckArgumentType<TensorType>(target, Squeeze.Dim);
+        var dims = context.CheckArgumentType<ShapeType>(target, Squeeze.Dim);
         return Visit(context, target, input, dims);
     }
 
@@ -42,33 +42,32 @@ public class SqueezeEvaluator : IEvaluator<Squeeze>, ITypeInferencer<Squeeze>, I
         return Metric.Zero;
     }
 
-    private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input, TensorType dims)
+    private IRType Visit(ITypeInferenceContext context, Squeeze target, TensorType input, ShapeType dims)
     {
         if (input.Shape is not RankedShape inShape)
         {
             return input;
         }
 
-        if (context.GetArgument(target, Squeeze.Dim) is TensorConst dim_con)
+        if (context.GetArgument(target, Squeeze.Dim) is RankedShape { IsFixed: true } dimsValue)
         {
-            var dimsValue = dim_con.Value.Cast<int>();
             var outshape = inShape.ToList();
-            if (dimsValue.Length == 0)
+            if (dimsValue.Rank == 0)
             {
                 return input with { Shape = new RankedShape(outshape.Where(x => x != 1).ToArray()) };
             }
 
             foreach (var dimV in dimsValue)
             {
-                var dimValue = Util.PositiveIndex(dimV, inShape.Rank);
-                outshape[dimValue] = int.MaxValue;
+                var dimValue = Dimension.Positive(dimV, inShape.Rank);
+                outshape[(int)dimValue.FixedValue] = int.MaxValue;
             }
 
             return input with { Shape = new RankedShape(outshape.Where(x => x != int.MaxValue)) };
         }
-        else if (dims.Shape is RankedShape { IsFixed: true } dimsShape)
+        else if (dims.Rank is int dimsRank)
         {
-            return input with { Shape = Shape.Unknown(input.Shape.Rank - (int)dimsShape.Prod().FixedValue) };
+            return input with { Shape = Shape.Unknown(input.Shape.Rank - dimsRank) };
         }
 
         return input with { Shape = Shape.Unranked };

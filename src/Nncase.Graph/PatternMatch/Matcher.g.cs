@@ -51,7 +51,7 @@ internal partial class Matcher
             ;
         }
 
-        return DefaultVisit(expr, pattern);
+        return VisitBaseFunction(expr, pattern);
     }
 
     /// <inheritdoc/>
@@ -65,7 +65,7 @@ internal partial class Matcher
             ;
         }
 
-        return DefaultVisit(expr, pattern);
+        return VisitBaseFunction(expr, pattern);
     }
 
     /// <inheritdoc/>
@@ -141,6 +141,58 @@ internal partial class Matcher
         }
 
         return DefaultVisit(expr, pattern);
+    }
+
+    /// <inheritdoc/>
+    protected override bool VisitPadding(IR.Shapes.Padding expr, IPattern pattern)
+    {
+        if (pattern is PaddingPattern exprPattern)
+        {
+            return exprPattern.MatchLeaf(expr)
+                && Visit(expr.Before, exprPattern.Before)
+                && Visit(expr.After, exprPattern.After)
+            ;
+        }
+
+        return DefaultVisit(expr, pattern);
+    }
+
+    /// <inheritdoc/>
+    protected override bool VisitPaddings(IR.Shapes.Paddings expr, IPattern pattern)
+    {
+        if (pattern is PaddingsPattern exprPattern)
+        {
+            return exprPattern.MatchLeaf(expr)
+                && VisitVArgsPattern(expr.Values, exprPattern.Values)
+            ;
+        }
+
+        return DefaultVisit(expr, pattern);
+    }
+
+    /// <inheritdoc/>
+    protected override bool VisitShape(Shape expr, IPattern pattern)
+    {
+        if (pattern is ShapePattern exprPattern)
+        {
+            return exprPattern.MatchLeaf(expr)
+            ;
+        }
+
+        return DefaultVisit(expr, pattern);
+    }
+
+    /// <inheritdoc/>
+    protected override bool VisitRankedShape(RankedShape expr, IPattern pattern)
+    {
+        if (pattern is RankedShapePattern exprPattern)
+        {
+            return exprPattern.MatchLeaf(expr)
+                && VisitVArgsPattern(expr.Dimensions, exprPattern.Dimensions)
+            ;
+        }
+
+        return VisitShape(expr, pattern);
     }
 
 }

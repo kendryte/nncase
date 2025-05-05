@@ -143,7 +143,7 @@ public sealed class UnitTestShape
         Assert.False(s.IsRanked);
         Assert.False(s.IsScalar);
         Assert.Throws<InvalidOperationException>(() => s.Rank);
-        Assert.Empty(s);
+        Assert.Throws<InvalidOperationException>(s.GetEnumerator);
         Assert.Throws<InvalidOperationException>(s.ToValueArray);
         Assert.Throws<InvalidOperationException>(s.ToValueArrayExpr);
     }
@@ -159,7 +159,7 @@ public sealed class UnitTestShape
         Assert.False(s.IsRanked);
         Assert.False(s.IsScalar);
         Assert.Throws<InvalidOperationException>(() => s.Rank);
-        Assert.Empty(s);
+        Assert.Throws<InvalidOperationException>(s.GetEnumerator);
         Assert.Throws<InvalidOperationException>(s.ToValueArray);
     }
 

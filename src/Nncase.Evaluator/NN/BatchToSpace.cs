@@ -9,6 +9,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
@@ -75,8 +76,8 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
     public IRType Visit(ITypeInferenceContext context, BatchToSpace target)
     {
         var input = context.CheckArgumentType<TensorType>(target, BatchToSpace.Input);
-        var blockShape = context.CheckArgumentType<TensorType>(target, BatchToSpace.BlockShape);
-        var crops = context.CheckArgumentType<TensorType>(target, BatchToSpace.Crops);
+        var blockShape = context.CheckArgumentType<ShapeType>(target, BatchToSpace.BlockShape);
+        var crops = context.CheckArgumentType<PaddingsType>(target, BatchToSpace.Crops);
         return Visit(context, target, input, blockShape, crops);
     }
 
@@ -135,28 +136,21 @@ public class BatchToSpaceEvaluator : IEvaluator<BatchToSpace>, ITypeInferencer<B
         return perm.Select(x => (long)x).ToArray();
     }
 
-    private IRType Visit(ITypeInferenceContext context, BatchToSpace target, TensorType input, TensorType blockShape, TensorType crops)
+    private IRType Visit(ITypeInferenceContext context, BatchToSpace target, TensorType input, ShapeType blockShape, PaddingsType crops)
     {
         var inShape = input.Shape.Rank == 4
             ? TypeInference.ApplyPerm((RankedShape)input.Shape, new[] { 0, 2, 3, 1 })
             : TypeInference.ApplyPerm((RankedShape)input.Shape, new[] { 0, 2, 1 });
         var batch = inShape[0];
-        if (context.GetArgument(target, BatchToSpace.BlockShape) is TensorConst blockShapeValue &&
-            context.GetArgument(target, BatchToSpace.Crops) is TensorConst cropsValue)
+        if (context.GetArgument(target, BatchToSpace.BlockShape) is RankedShape blockShapeValue &&
+            context.GetArgument(target, BatchToSpace.Crops) is Paddings cropsValue)
         {
-            if (crops.Shape.Rank != 2)
-            {
-                return new InvalidType("BatchToSpace crops rank must be 2");
-            }
-
-            var blockShapeArr = blockShapeValue.Value.ToArray<int>();
-            var blockSize = blockShapeArr.Aggregate(1, (a, b) => a * b);
+            var blockSize = blockShapeValue.Prod();
             var d0 = batch / blockSize;
-            Trace.Assert(blockShape.Shape[0] == crops.Shape[0]);
-            var m = (int)blockShape.Shape[0].FixedValue;
-            var cropsV = cropsValue.Value.Cast<int>();
+            Trace.Assert(blockShape.Rank == crops.Rank);
+            var m = blockShape.Rank.Value;
             var cropSection = Enumerable.Range(0, m).Select(
-                i => (inShape[i + 1] * blockShapeArr[i]) - cropsV[i, 0] - cropsV[i, 1]);
+                i => (inShape[i + 1] * blockShapeValue[i]) - cropsValue[i].Sum());
 
             var remainSize = inShape.Rank - 1 - m;
             var remainShape = remainSize > 0 ? inShape.Skip(1 + m).ToArray() : Array.Empty<Dimension>();

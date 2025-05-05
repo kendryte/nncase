@@ -270,7 +270,7 @@ public class UnitTestEvaluatorNN : TestClassBase
             bias.ToTensor(),
             outShape,
             stride: new[] { 1, 1 },
-            padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, [4]),
+            padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, [2, 2]),
             outputPadding: Tensor.From<long>(new long[] { 0, 0 }, [2]),
             dilation: new[] { 1, 1 },
             PadMode.Constant,

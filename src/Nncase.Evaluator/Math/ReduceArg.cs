@@ -78,12 +78,12 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
 
     private IRType Visit(ITypeInferenceContext context, ReduceArg target, TensorType input)
     {
-        if (context.GetArgument(target, ReduceArg.Axis) is TensorConst axisValue &&
+        if (context.GetArgument(target, ReduceArg.Axis) is DimConst axisValue &&
             context.GetArgument(target, ReduceArg.KeepDims) is TensorConst keepDimsValue)
         {
             var inShape = (RankedShape)input.Shape;
             var shape = inShape.ToList();
-            var axisIndex = axisValue.Value.ToScalar<int>();
+            var axisIndex = (int)axisValue.Value;
             axisIndex = axisIndex >= 0 ? axisIndex : input.Shape.Rank + axisIndex;
             if (keepDimsValue.Value.ToScalar<bool>())
             {

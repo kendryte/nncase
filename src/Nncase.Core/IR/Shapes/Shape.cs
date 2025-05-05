@@ -111,11 +111,11 @@ public abstract class Shape : BaseExpr, IEnumerable<Dimension>
     /// </summary>
     /// <param name="index">Index, allowing negative value.</param>
     /// <returns>Dimension.</returns>
-    public virtual Dimension this[int index] => throw new NotSupportedException("Shape is not indexed");
+    public virtual Dimension this[int index] => this[(Dimension)index];
 
     public Dimension this[long index] => this[(int)index];
 
-    public virtual Dimension this[Index index] => throw new NotSupportedException("Shape is not indexed");
+    public virtual Dimension this[Index index] => this[index.IsFromEnd ? -index.Value : index.Value];
 
     public override Dimension this[Dimension index] => throw new NotSupportedException("Shape is not indexed");
 
@@ -175,7 +175,7 @@ public abstract class Shape : BaseExpr, IEnumerable<Dimension>
 
     public abstract Expr ToValueArrayExpr();
 
-    public virtual IEnumerator<Dimension> GetEnumerator() => throw new NotSupportedException("Shape is not indexed");
+    public virtual IEnumerator<Dimension> GetEnumerator() => throw new InvalidOperationException("Shape is not indexed");
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

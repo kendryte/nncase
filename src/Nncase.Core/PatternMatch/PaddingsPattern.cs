@@ -13,7 +13,7 @@ namespace Nncase.PatternMatch;
 /// </summary>
 /// <param name="Values">Arguments pattern.</param>
 /// <param name="Name"> name. </param>
-public sealed record PaddingsPattern(VArgsPattern Values, string? Name) : Pattern<If>(Name)
+public sealed record PaddingsPattern(VArgsPattern Values, string? Name) : Pattern<Paddings>(Name)
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="PaddingsPattern"/> class.
@@ -37,5 +37,7 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <param name="values">values.</param>
     /// <returns>call pattern.</returns>
-    public static PaddingsPattern IsPaddings(string? name = null, VArgsPattern? values = null) => new PaddingsPattern(values ?? IsVArgsRepeat(() => IsWildcard()), name);
+    public static PaddingsPattern IsPaddings(string? name = null, VArgsPattern? values = null) => new PaddingsPattern(values ?? IsVArgsRepeat(IsWildcard), name);
+
+    public static PaddingsPattern IsFixedPaddings(string? name = null, VArgsPattern? values = null) => new PaddingsPattern(values ?? IsVArgsRepeat(() => IsFixedPadding()), name);
 }

@@ -39,7 +39,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
         IsTuple("tuple", IsVArgsRepeat("tupleInputs", () => IsWildcard()))),
       IsWildcard("quantParam"));
 
-    private Expr? GetReplace(Quantize quantize, IReadOnlyList<BaseExpr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options, Expr tuple)
+    private Expr? GetReplace(Quantize quantize, IReadOnlyList<BaseExpr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options, IR.Tuple tuple)
     {
         if (options.Driver is DataflowPass)
         {

@@ -26,8 +26,8 @@ public partial class FoldUnsqueezeSqueeze : RewriteRule<Pattern>
     public override Pattern Pattern => IsUnsqueeze(
         "unsqu",
         "output",
-        IsSqueeze(IsWildcard("input"), IsTensorConst("sqAxes")),
-        IsTensorConst("unsqAxes"));
+        IsSqueeze(IsWildcard("input"), IsFixedShape("sqAxes")),
+        IsFixedShape("unsqAxes"));
 
     private Expr? GetReplace(Call output, Expr input)
     {
@@ -47,8 +47,8 @@ public partial class FoldSqueezeUnsqueeze : RewriteRule<Pattern>
     public override Pattern Pattern => IsSqueeze(
         "sqOp",
         "output",
-        IsUnsqueeze(IsWildcard("input"), IsTensorConst("unsqAxes")),
-        IsTensorConst("sqAxes"));
+        IsUnsqueeze(IsWildcard("input"), IsFixedShape("unsqAxes")),
+        IsFixedShape("sqAxes"));
 
     private Expr? GetReplace(Call output, Expr input)
     {

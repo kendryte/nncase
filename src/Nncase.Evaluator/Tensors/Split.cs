@@ -58,11 +58,11 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
     private IRType Visit(ITypeInferenceContext context, Split target, TensorType input)
     {
         var inShape = input.Shape as RankedShape;
-        if (context.GetArgument(target, Split.Axis) is TensorConst axis_con &&
-            context.GetArgument(target, Split.Sections) is TensorConst sections_con)
+        if (context.GetArgument(target, Split.Axis) is DimConst axis_con &&
+            context.GetArgument(target, Split.Sections) is RankedShape { IsFixed: true } sections_con)
         {
-            var axis_v = Util.PositiveIndex(axis_con.Value.ToScalar<int>(), input.Shape.Rank);
-            var sections_v = sections_con.Value.Cast<int>();
+            var axis_v = Util.PositiveIndex((int)axis_con.Value, input.Shape.Rank);
+            var sections_v = sections_con.ToValueArray();
 
             if (inShape is null)
             {
@@ -82,7 +82,7 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
                 var outshape = new Dimension[inshape.Length];
                 Array.Copy(inshape, outshape, inshape.Length);
                 outshape[axis_v] = inshape[axis_v].FixedValue / sections_v[0];
-                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = new RankedShape(outshape) }), sections_v[0]));
+                return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = new RankedShape(outshape) }), (int)sections_v[0]));
             }
             else
             {
@@ -105,9 +105,9 @@ public class SplitEvaluator : IEvaluator<Split>, ITypeInferencer<Split>, ICostEv
         }
 
         var splitedShape = inShape.ToArray();
-        if (context.GetArgument(target, Split.Axis) is TensorConst axisCon)
+        if (context.GetArgument(target, Split.Axis) is DimConst axisCon)
         {
-            var axisV = Util.PositiveIndex(axisCon.Value.ToScalar<int>(), input.Shape.Rank);
+            var axisV = Util.PositiveIndex((int)axisCon.Value, input.Shape.Rank);
             splitedShape[axisV] = Dimension.Unknown;
         }
         else

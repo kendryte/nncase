@@ -10,12 +10,12 @@ namespace Nncase.IR
 {
     public class Util
     {
-        public static int PositiveIndex(int index, TensorType input)
+        public static long PositiveIndex(long index, TensorType input)
         {
             return PositiveIndex(index, input.Shape.Rank);
         }
 
-        public static int PositiveIndex(int index, int rank)
+        public static long PositiveIndex(long index, int rank)
         {
             return index < 0 ? index + rank : index;
         }

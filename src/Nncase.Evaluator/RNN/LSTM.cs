@@ -24,7 +24,7 @@ public class LSTMEvaluator : IEvaluator<LSTM>, ITypeInferencer<LSTM>, ICostEvalu
         var w = context.GetOrtArgumentValue(target, LSTM.W);
         var r = context.GetOrtArgumentValue(target, LSTM.R);
         var b = context.GetOrtArgumentValue(target, LSTM.B);
-        var seqLens = context.GetOrtArgumentValue(target, LSTM.SequenceLens);
+        var seqLens = context.GetOrtArgumentValue(target, LSTM.SequenceLens).Cast(OrtDataType.Int32);
         var initH = context.GetOrtArgumentValue(target, LSTM.InitialH);
         var initC = context.GetOrtArgumentValue(target, LSTM.InitialC);
         var p = context.GetOrtArgumentValue(target, LSTM.P);

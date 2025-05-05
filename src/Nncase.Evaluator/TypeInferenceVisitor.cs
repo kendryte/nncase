@@ -322,22 +322,28 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
 
     protected override IRType VisitLeafDimension(Dimension expr)
     {
-        return TensorType.Scalar(DataTypes.Int64);
+        return expr.Kind switch
+        {
+            DimensionKind.Fixed => DimensionType.Fixed,
+            DimensionKind.Dynamic => DimensionType.Dynamic,
+            DimensionKind.Unknown => DimensionType.Unknown,
+            _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, "Invalid DimensionKind"),
+        };
     }
 
     protected override IRType VisitLeafShape(Shape expr)
     {
-        return new ShapeType(expr.Kind);
+        return new ShapeType(expr.Kind, expr.IsRanked ? expr.Rank : null);
     }
 
     protected override IRType VisitLeafPadding(Padding expr)
     {
-        return new PaddingType();
+        return new PaddingType(expr.Kind);
     }
 
     protected override IRType VisitLeafPaddings(Paddings expr)
     {
-        return new PaddingsType(expr.Count);
+        return new PaddingsType(expr.Kind, expr.Count);
     }
 
     protected override IRType VisitLeafMemSpan(MemSpan expr)

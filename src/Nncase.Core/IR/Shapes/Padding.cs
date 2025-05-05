@@ -20,7 +20,23 @@ public sealed partial class Padding : BaseExpr, IEquatable<Padding?>
     public Padding(Dimension before, Dimension after)
         : base([before, after])
     {
+        RefreshKind();
     }
+
+    /// <summary>
+    /// Gets kind.
+    /// </summary>
+    public ShapeKind Kind { get; private set; }
+
+    /// <summary>
+    /// Gets a value indicating whether fixed.
+    /// </summary>
+    public bool IsFixed => Kind == ShapeKind.Fixed;
+
+    /// <summary>
+    /// Gets a value indicating whether has unknown dimension.
+    /// </summary>
+    public bool HasUnknownDimension => Kind == ShapeKind.HasUnknownDimension;
 
     public Dimension Before => (Dimension)Operands[0];
 
@@ -74,6 +90,8 @@ public sealed partial class Padding : BaseExpr, IEquatable<Padding?>
         return $"Padding({Before}, {After})";
     }
 
+    public long[] ToValueArray() => [Before.FixedValue, After.FixedValue];
+
     public override bool Equals(object? obj)
     {
         return obj is Padding padding && Equals(padding);
@@ -93,110 +111,15 @@ public sealed partial class Padding : BaseExpr, IEquatable<Padding?>
     {
         return HashCode.Combine(Before, After);
     }
-}
 
-public sealed class Paddings : BaseExpr, IEquatable<Paddings?>, IReadOnlyList<Padding>
-{
-    public static readonly Paddings Empty = new Paddings();
-
-    public Paddings(params Padding[] paddings)
-        : base(paddings)
+    protected override void OnOperandsReplaced()
     {
+        base.OnOperandsReplaced();
+        RefreshKind();
     }
 
-    public ReadOnlySpan<Padding> Values => SpanUtility.UnsafeCast<BaseExpr, Padding>(Operands);
-
-    public int Rank => Values.Length;
-
-    public int Count => Values.Length;
-
-    public override Padding this[Dimension index] => index switch
+    private void RefreshKind()
     {
-        DimConst dc => Values[(int)dc.Value],
-        _ => throw new ArgumentException("Index must be a constant dimension."),
-    };
-
-    public Padding this[int index] => Values[index];
-
-    public static implicit operator Paddings(Padding[] paddings) => new Paddings(paddings);
-
-    public static implicit operator Paddings(Tensor<long> tensor)
-    {
-        if (tensor.Shape.Rank != 2)
-        {
-            throw new ArgumentException("Tensor must have 2 dimensions.");
-        }
-
-        return new Paddings(
-            Enumerable.Range(0, (int)tensor.Dimensions[0])
-                .Select(i => new Padding(tensor[i, 0], tensor[i, 1]))
-                .ToArray());
-    }
-
-    public static implicit operator Paddings(Tensor<int> tensor) => tensor.Cast<long>(CastMode.KDefault);
-
-    public static implicit operator Paddings(int[,] array) => Tensor.From(array);
-
-    public static implicit operator Paddings(long[,] array) => Tensor.From(array);
-
-    public static Paddings Zeros(int rank) => Enumerable.Repeat(Padding.Zero, rank).ToArray();
-
-    public IEnumerator<Padding> GetEnumerator()
-    {
-        for (int i = 0; i < Count; i++)
-        {
-            yield return Values[i];
-        }
-    }
-
-    System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
-
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitPaddings(this, context);
-
-    public Paddings With(Padding[]? values = null) => new Paddings(values ?? Values.ToArray());
-
-    public override string ToString()
-    {
-        return $"Paddings({StringUtility.Join(", ", Values)})";
-    }
-
-    public override bool Equals(object? obj)
-    {
-        return obj is Paddings paddings && Equals(paddings);
-    }
-
-    public bool Equals(Paddings? other)
-    {
-        if (other is null)
-        {
-            return false;
-        }
-
-        if (Values.Length != other.Values.Length)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < Values.Length; i++)
-        {
-            if (!Values[i].Equals(other.Values[i]))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    protected override int GetHashCodeCore()
-    {
-        var hashCode = default(HashCode);
-        foreach (var padding in Values)
-        {
-            hashCode.Add(padding);
-        }
-
-        return hashCode.ToHashCode();
+        Kind = Before.IsFixed && After.IsFixed ? ShapeKind.Fixed : ShapeKind.HasUnknownDimension;
     }
 }

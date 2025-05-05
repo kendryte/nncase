@@ -22,7 +22,7 @@ internal partial class EvaluateVisitor
         return new ShapeValue(dims);
     }
 
-    protected override IValue VisitUnrankedShape(UnrankedShape expr, Unit context)
+    protected override IValue VisitUnrankedShape(UnrankedShape expr)
     {
         var value = expr.Value;
         if (value is None)
@@ -33,7 +33,7 @@ internal partial class EvaluateVisitor
         return new ShapeValue(ExprMemo[value].AsTensor().Cast<long>().ToArray());
     }
 
-    protected override IValue VisitShapeVar(ShapeVar expr, Unit context)
+    protected override IValue VisitShapeVar(ShapeVar expr)
     {
         if (!_varsValues.TryGetValue(expr, out var value))
         {

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Shapes;
 
 namespace Nncase.IR;
 
@@ -74,6 +75,24 @@ public sealed class LeafExprEqualityComparer : IEqualityComparer<BaseExpr>
             Marker x => x.Name.GetHashCode(StringComparison.Ordinal),
             None x => x.GetHashCode(),
             IR.If x => x.GetType().GetHashCode(),
+
+            // Dimension
+            AsDim or UnknownDim or DimFraction or DimRemainder or DimAbs or DimClamp or DimCompareAndSelect
+            or DimMin or DimMax or DimPositive or DimAt => obj.GetType().GetHashCode(),
+            DimVar or DimConst => obj.GetHashCode(),
+            DimPower x => x.Power.GetHashCode(),
+            DimProduct x => HashCode.Combine(x.Scale, x.Operands.Length),
+            DimSum x => HashCode.Combine(x.Bias, x.Operands.Length),
+
+            // Padding
+            Padding x => x.GetType().GetHashCode(),
+            Paddings x => x.Rank.GetHashCode(),
+
+            // Shape
+            UnrankedShape or InvalidShape => obj.GetType().GetHashCode(),
+            RankedShape x => HashCode.Combine(x.Rank, x.Kind),
+            ShapeVar x => x.GetHashCode(),
+
             _ => throw new InvalidOperationException("Invalid expression type."),
         };
     }

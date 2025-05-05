@@ -24,12 +24,6 @@ public interface ITypeInferenceContext
     /// <returns>The argument expression.</returns>
     BaseExpr GetArgument(Op op, ParameterInfo parameter);
 
-    BaseExpr GetDimensionArgument(Op op, ParameterInfo parameter)
-    {
-        var arg = GetArgument(op, parameter);
-        return CompilerServices.FastSimplifyForDimension((Expr)arg);
-    }
-
     /// <summary>
     /// Get arguments expression.
     /// </summary>

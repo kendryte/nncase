@@ -13,9 +13,8 @@ namespace Nncase.PatternMatch;
 /// Pattern for <see cref="Shape"/>.
 /// </summary>
 /// <param name="Condition">Shape condition.</param>
-/// <param name="Dimensions">Dimensions condition.</param>
 /// <param name="Name">name.</param>
-public sealed record ShapePattern(Func<Shape, bool> Condition, VArgsPattern Dimensions, string? Name) : Pattern<Shape>(Name)
+public sealed record ShapePattern(Func<Shape, bool> Condition, string? Name) : Pattern<Shape>(Name)
 {
     /// <inheritdoc/>
     protected override bool MatchLeafCore(Shape expr) => Condition(expr);
@@ -27,16 +26,9 @@ public static partial class Utility
     /// create the ShapePattern.
     /// </summary>
     /// <param name="name">name.</param>
-    /// <returns>ShapePattern.</returns>
-    public static ShapePattern IsShape(string? name = null) => IsShape(name, x => true);
-
-    /// <summary>
-    /// create the ShapePattern.
-    /// </summary>
-    /// <param name="name">name.</param>
     /// <param name="cond">condition.</param>
     /// <returns>ShapePattern.</returns>
-    public static ShapePattern IsShape(string? name, Func<Shape, bool> cond) => new ShapePattern(cond, IsVArgsRepeat(() => IsWildcard()), name);
+    public static ShapePattern IsShape(string? name = null, Func<Shape, bool>? cond = null) => new ShapePattern(cond ?? (x => true), name);
 
     /// <summary>
     /// create the ShapePattern.
@@ -44,18 +36,7 @@ public static partial class Utility
     /// <param name="name">name.</param>
     /// <param name="shape">shape.</param>
     /// <returns>ShapePattern.</returns>
-    public static ShapePattern IsShape(string? name, Shape shape) => new ShapePattern(x => shape.IsAssignableFrom(shape), IsVArgsRepeat(() => IsWildcard()), name);
+    public static ShapePattern IsShape(string? name = null, Shape? shape = null) => new ShapePattern(x => shape?.IsAssignableFrom(shape) ?? true, name);
 
-    /// <summary>
-    /// create the ShapePattern.
-    /// </summary>
-    /// <param name="shape">shape.</param>
-    /// <returns>ShapePattern.</returns>
-    public static ShapePattern IsShape(Shape shape) => IsShape(null, shape);
-
-    public static ShapePattern IsShape(Func<Shape, bool> cond) => IsShape(null, cond);
-
-    public static ShapePattern IsRankedShape(string? name = null) => IsShape(name, x => x.IsRanked);
-
-    public static ShapePattern IsFixedShape(string? name = null) => IsShape(name, x => x.IsFixed);
+    public static ShapePattern IsShape(string? name = null) => IsShape(name, shape: null);
 }

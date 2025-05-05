@@ -368,13 +368,13 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
-    protected sealed override BaseExpr VisitLeafPadding(Shapes.Padding expr, TContext context)
+    protected sealed override BaseExpr VisitLeafPadding(IR.Shapes.Padding expr, TContext context)
     {
         return RewriteLeafPadding(expr, context);
     }
 
     /// <inheritdoc/>
-    protected sealed override BaseExpr VisitLeafPaddings(Shapes.Paddings expr, TContext context)
+    protected sealed override BaseExpr VisitLeafPaddings(IR.Shapes.Paddings expr, TContext context)
     {
         return RewriteLeafPaddings(expr, context);
     }
@@ -705,14 +705,14 @@ public partial class ExprRewriter<TContext>
     protected virtual BaseExpr RewriteLeafDimAt(DimAt expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Shapes.Padding"/>.
+    /// Rewrite leaf <see cref="IR.Shapes.Padding"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafPadding(Shapes.Padding expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafPadding(IR.Shapes.Padding expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Shapes.Paddings"/>.
+    /// Rewrite leaf <see cref="IR.Shapes.Paddings"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafPaddings(Shapes.Paddings expr, TContext context) => DefaultRewriteLeaf(expr, context);
+    protected virtual BaseExpr RewriteLeafPaddings(IR.Shapes.Paddings expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Shape"/>.
@@ -1216,20 +1216,20 @@ public partial class ExprRewriter
     protected sealed override BaseExpr RewriteLeafDimAt(DimAt expr, Unit context) => RewriteLeafDimAt(expr);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Shapes.Padding"/>.
+    /// Rewrite leaf <see cref="IR.Shapes.Padding"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafPadding(Shapes.Padding expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafPadding(IR.Shapes.Padding expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override BaseExpr RewriteLeafPadding(Shapes.Padding expr, Unit context) => RewriteLeafPadding(expr);
+    protected sealed override BaseExpr RewriteLeafPadding(IR.Shapes.Padding expr, Unit context) => RewriteLeafPadding(expr);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Shapes.Paddings"/>.
+    /// Rewrite leaf <see cref="IR.Shapes.Paddings"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafPaddings(Shapes.Paddings expr) => DefaultRewriteLeaf(expr);
+    protected virtual BaseExpr RewriteLeafPaddings(IR.Shapes.Paddings expr) => DefaultRewriteLeaf(expr);
 
     /// <inheritdoc />
-    protected sealed override BaseExpr RewriteLeafPaddings(Shapes.Paddings expr, Unit context) => RewriteLeafPaddings(expr);
+    protected sealed override BaseExpr RewriteLeafPaddings(IR.Shapes.Paddings expr, Unit context) => RewriteLeafPaddings(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Shape"/>.

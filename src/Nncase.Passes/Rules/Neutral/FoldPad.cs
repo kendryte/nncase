@@ -26,11 +26,11 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed partial class FoldNopPad : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsPad(padMode => true, IsWildcard("input"), IsTensorConst("pads", IsIntegral()), IsWildcard());
+    public IPattern Pattern { get; } = IsPad(padMode => true, IsWildcard("input"), IsFixedPaddings("pads"), IsWildcard());
 
-    private Expr? GetReplace(Expr input, TensorConst pads)
+    private Expr? GetReplace(Expr input, Paddings pads)
     {
-        if (pads.Value.Cast<int>().All(x => x == 0))
+        if (pads.All(x => x == Padding.Zero))
         {
             return input;
         }

@@ -134,6 +134,34 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     public virtual TTypeResult VisitType(DistributedType type) => base.VisitType(type, default);
 
     /// <summary>
+    /// Visit dimension type.
+    /// </summary>
+    /// <param name="type">Dimension type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(DimensionType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit shape type.
+    /// </summary>
+    /// <param name="type">Shape type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(ShapeType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit padding type.
+    /// </summary>
+    /// <param name="type">Padding type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(PaddingType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit paddings type.
+    /// </summary>
+    /// <param name="type">Padding type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(PaddingsType type) => base.VisitType(type, default);
+
+    /// <summary>
     /// Default visit routine.
     /// </summary>
     /// <param name="type">Type.</param>
@@ -163,6 +191,18 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
 
     /// <inheritdoc/>
     public sealed override TTypeResult VisitType(DistributedType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(DimensionType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(ShapeType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(PaddingType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(PaddingsType type, Unit context) => VisitType(type);
 
     /// <inheritdoc/>
     public sealed override TTypeResult DefaultVisitType(IRType type, Unit context) => DefaultVisitType(type);

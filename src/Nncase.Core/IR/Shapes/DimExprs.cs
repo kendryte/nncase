@@ -857,8 +857,8 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
 
     private ValueRange<double> InferRange()
     {
-        var trueValueRange = TrueValue.Metadata.Range!.Value;
-        var falseValueRange = FalseValue.Metadata.Range!.Value;
+        var trueValueRange = TrueValue.Metadata.Range ?? ValueRange<double>.Full;
+        var falseValueRange = FalseValue.Metadata.Range ?? ValueRange<double>.Full;
         var min = System.Math.Min(trueValueRange.Min, falseValueRange.Min);
         var max = System.Math.Max(trueValueRange.Max, falseValueRange.Max);
         return new ValueRange<double>(min, max);

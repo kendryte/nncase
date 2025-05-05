@@ -22,16 +22,16 @@ public partial class FoldStackGetItem : RewriteRule<Pattern>
         "stack",
         IsTuple("tuple", IsVArgsRepeat(list =>
             Enumerable.Range(0, list.Length)
-                    .Select(_ => (Pattern)IsGetItem(InputPattern, IsTensorConst()))
+                    .Select(_ => (Pattern)IsGetItem(InputPattern, IsFixedDimension()))
                     .ToArray())),
-        IsTensorConst(tensor => tensor.Value.ToScalar<int>() == 0));
+        IsFixedDimension(value: 0));
 
     private Pattern InputPattern => IsWildcard();
 
     private Expr? GetReplace(Call stack, IR.Tuple tuple)
     {
         var getItems = tuple.Fields.ToArray().Select(x => (Call)x).ToArray();
-        var index = getItems.Select(x => ((TensorConst)x.Arguments[GetItem.Index.Index]).Value.ToScalar<int>());
+        var index = getItems.Select(x => (int)((DimConst)x[GetItem.Index]).Value);
         if (!Enumerable.Range(0, getItems.Length).SequenceEqual(index))
         {
             return null;

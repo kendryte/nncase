@@ -429,7 +429,7 @@ public sealed class PaddingValue : IValue, IEquatable<PaddingValue?>
     {
         _before = before;
         _after = after;
-        Type = new PaddingType();
+        Type = PaddingType.Fixed;
     }
 
     public long Before => _before;
@@ -507,7 +507,7 @@ public sealed class PaddingsValue : IValue, IEquatable<PaddingsValue?>
         }
 
         _paddings = Tensor.From(paddings);
-        Type = new PaddingsType((int)_paddings.Dimensions[0]);
+        Type = PaddingsType.Fixed((int)_paddings.Dimensions[0]);
     }
 
     public PaddingsValue(Tensor<long> paddings)
@@ -518,13 +518,13 @@ public sealed class PaddingsValue : IValue, IEquatable<PaddingsValue?>
         }
 
         _paddings = paddings;
-        Type = new PaddingsType((int)_paddings.Dimensions[0]);
+        Type = PaddingsType.Fixed((int)_paddings.Dimensions[0]);
     }
 
     public PaddingsValue(PaddingValue[] paddings)
     {
         _paddings = new Tensor<long>([paddings.Length, 2]);
-        Type = new PaddingsType(paddings.Length);
+        Type = PaddingsType.Fixed(paddings.Length);
         for (int i = 0; i < paddings.Length; i++)
         {
             _paddings[i, 0] = paddings[i].Before;

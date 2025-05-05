@@ -371,7 +371,7 @@ public class UnitTestDynamicTypeInfer : UnitTypeInferBase
         Assert.IsType<TensorType>(result);
         Assert.IsType<DimSum>(((TensorType)result).Shape[1]);
         var call = (DimSum)((TensorType)result).Shape[1];
-        Assert.Equal(seq_len, call[0]);
-        Assert.Equal(hist_len, call[1]);
+        Assert.Equal(seq_len, call.Operands[0]);
+        Assert.Equal(hist_len, call.Operands[1]);
     }
 }

@@ -137,7 +137,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
 
     private IRType Visit(ITypeInferenceContext context, Reduce target, TensorType input)
     {
-        context.CheckArgumentType<TensorType>(target, Reduce.Axes);
+        context.CheckArgumentType<ShapeType>(target, Reduce.Axes);
         var args = context.GetArguments(target, Reduce.KeepDims, Reduce.Axes);
         return TypeInference.ReduceType(input, (Expr)args[0], (Shape)args[1]);
     }

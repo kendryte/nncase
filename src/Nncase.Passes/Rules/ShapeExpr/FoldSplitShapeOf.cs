@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -28,9 +29,9 @@ public partial class FoldSplitShapeOf : RewriteRule<Pattern>
                     .Select(_ => IsAlt(IsCast(c => c.NewType == DataTypes.Int64, InputPattern), InputPattern))
                     .ToArray(),
                 "args")),
-        IsTensorConst(tensor => tensor.Value.ToScalar<int>() == 0));
+        IsFixedDimension(value: 0));
 
-    public Pattern InputPattern => IsGetItem(IsShapeOf(IsWildcard()), IsTensorConst());
+    public Pattern InputPattern => IsGetItem(IsShapeOf(IsWildcard()), IsFixedDimension() | IsFixedShape());
 
     private BaseExpr? GetReplace(IR.Tuple tuple)
     {
@@ -38,19 +39,32 @@ public partial class FoldSplitShapeOf : RewriteRule<Pattern>
         {
             if (x.Target is Cast)
             {
-                return x.Arguments[Cast.Input.Index];
+                return x[Cast.Input];
             }
 
             return x;
         }).OfType<Call>().ToArray();
 
-        var getItemIndices = getItemList.Select(x => x.Arguments[GetItem.Index.Index]).OfType<TensorConst>().Select(x => x.Value.ToScalar<int>()).ToArray();
-        if (getItemIndices.Length == 0)
+        var getItemIndices = new List<int>();
+        foreach (var getItem in getItemList)
+        {
+            var index = getItem[GetItem.Index];
+            if (index is DimConst dc)
+            {
+                getItemIndices.Add((int)dc.Value);
+            }
+            else if (index is RankedShape { IsFixed: true, Rank: 1 } rs)
+            {
+                getItemIndices.Add((int)rs[0].FixedValue);
+            }
+        }
+
+        if (getItemIndices.Count == 0)
         {
             return null;
         }
 
-        var shapeOf = getItemList[0].Arguments[GetItem.Input.Index];
+        var shapeOf = getItemList[0][GetItem.Input];
         if (!shapeOf.CheckedShape[0].IsFixed)
         {
             return null;

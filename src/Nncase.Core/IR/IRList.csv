@@ -60,10 +60,10 @@ DimMin,true,false,Dimension,,@Operands
 DimMax,true,false,Dimension,,@Operands
 DimPositive,true,false,Dimension,,Operand;Extent
 DimAt,true,false,Dimension,,Shape;Index
-Padding,true,false,Default,Shapes.,Before;After
-Paddings,true,false,Default,Shapes.,@Values
+Padding,true,false,Default,IR.Shapes.,Before;After
+Paddings,true,false,Default,IR.Shapes.,@Values
 Shape,false,false,Default,,
-RankedShape,false,false,Shape,,@Dimensions
-UnrankedShape,false,false,Shape,,Value
-InvalidShape,false,false,Shape,,
-ShapeVar,false,false,Shape,,
+RankedShape,true,false,Shape,,@Dimensions
+UnrankedShape,true,false,Shape,,Value
+InvalidShape,true,false,Shape,,
+ShapeVar,true,false,Shape,,

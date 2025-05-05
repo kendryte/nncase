@@ -39,12 +39,12 @@ public sealed partial class SpaceToBatchToPad : IRewriteRule
     {
         if (input.CheckedShape.Rank == 4 && blockShape.Rank == 2 && blockShape[0] == 1 && blockShape[1] == 1)
         {
-            var newPaddings = new Padding[4];
+            var newPaddings = Enumerable.Repeat(Padding.Zero, 4).ToArray();
 
             // pad for hw
             for (var i = 0; i < paddings.Rank; i++)
             {
-                newPaddings[i] = (0, paddings[i].Before);
+                newPaddings[i + 2] = paddings[i];
             }
 
             return Pad(input, newPaddings, PadMode.Constant, 0f);

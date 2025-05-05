@@ -277,7 +277,13 @@ public static partial class TypePatternUtility
     /// </summary>
     public static TypePattern IsQuantParamType() => IsScalar() & HasDataType(new QuantParamType());
 
-    public static TypePattern IsDimensionType() => IsScalar() & HasDataType(DataTypes.Int64);
+    public static TypePattern IsDimensionType() => new TypePattern(
+        x => x switch
+        {
+            DimensionType stype => true,
+            _ => false,
+        },
+        "IsDimensionType");
 
     public static TypePattern IsShapeType() => new TypePattern(
         x => x switch
