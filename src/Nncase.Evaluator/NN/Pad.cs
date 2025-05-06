@@ -30,11 +30,18 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         var pads = context.GetInt64OrtTensorArgumentValue(pad, Pad.Pads);
         var constValue = context.GetArgumentValue(pad, Pad.Value);
 
-        var inType = context.CurrentCall.Arguments[Pad.Input.Index].CheckedDataType;
-        if (inType.IsFloat() && inType != DataTypes.Float32)
+        DataType? inType = null;
+        try
         {
-            input = Cast(input.AsTensor(), DataTypes.Float32).Evaluate();
-            constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
+            inType = context.CurrentCall.Arguments[Pad.Input.Index].CheckedDataType;
+            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
+            {
+                input = Cast(input.AsTensor(), DataTypes.Float32).Evaluate();
+                constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
+            }
+        }
+        catch
+        {
         }
 
         var inputOrt = input.AsTensor().ToOrtTensor();
@@ -79,7 +86,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         if (pad.PadMode == PadMode.Symmetric)
         {
             var ret = SymmetricPad(inputOrt, ToOnnxPadFormat(pads), constValueOrt).ToValue();
-            if (inType.IsFloat() && inType != DataTypes.Float32)
+            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
             {
                 ret = Cast(ret.AsTensor(), inType).Evaluate().AsTensor();
             }
@@ -89,7 +96,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         else
         {
             var ret = OrtKI.Pad(inputOrt, ToOnnxPadFormat(pads), constValueOrt, mode).ToValue();
-            if (inType.IsFloat() && inType != DataTypes.Float32)
+            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
             {
                 ret = Cast(ret.AsTensor(), inType).Evaluate().AsTensor();
             }
