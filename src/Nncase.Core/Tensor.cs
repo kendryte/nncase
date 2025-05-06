@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -65,6 +66,10 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 
     private static readonly MethodInfo _tensorCastFunc =
         typeof(Tensor).GetMethod(nameof(Cast))!;
+
+    private static readonly MethodInfo _tensorCreateZerosFunc = typeof(Tensor).GetMethod(nameof(Zeros), BindingFlags.Static | BindingFlags.Public, [typeof(ReadOnlySpan<long>)])!;
+
+    private static readonly MethodInfo _tensorCreateOnesFunc = typeof(Tensor).GetMethod(nameof(Ones), BindingFlags.Static | BindingFlags.Public, [typeof(ReadOnlySpan<long>)])!;
 
     private readonly long[] _dimensions;
     private readonly long[] _strides;
@@ -441,15 +446,14 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
     public static Tensor Zeros<T>(ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : unmanaged, IEquatable<T>, INumber<T>
     {
-        var value = (T)Convert.ChangeType(0, typeof(T));
-        return Tensor.FromScalar<T>(value, dimensions);
+        return Tensor.FromScalar<T>(T.Zero, dimensions);
     }
 
     public static Tensor Zeros(DataType dataType, ReadOnlySpan<long> dimensions)
     {
-        return (Tensor)_tensorCreateEmptyFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
+        return (Tensor)_tensorCreateZerosFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
     }
 
     public static Tensor Zero(DataType dataType) => Zeros(dataType, []);
@@ -461,16 +465,14 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
     public static Tensor Ones<T>(ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : unmanaged, IEquatable<T>, INumber<T>
     {
-        var value = (T)Convert.ChangeType(1, typeof(T));
-        return Tensor.FromScalar<T>(value, dimensions);
+        return Tensor.FromScalar<T>(T.One, dimensions);
     }
 
     public static Tensor Ones(DataType dataType, ReadOnlySpan<long> dimensions)
     {
-        var value = Convert.ChangeType(1, dataType.CLRType);
-        return Tensor.FromScalar(dataType, value, dimensions);
+        return (Tensor)_tensorCreateOnesFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
     }
 
     public static Tensor One(DataType dataType) => Ones(dataType, []);

@@ -895,6 +895,43 @@ public class UnitTestEvaluatorNN : TestClassBase
         }
     }
 
+    [Theory]
+    [InlineData(new object[] { new[] { 4L }, new[] { 4L }, 1, 64, 4, 8, Runtime.TypeCode.Float32 })] // prefill
+    public void TestPagedAttentionKVCacheSerialize(long[] queryLens, long[] seqLens, int numHead, int headDim, int blockSize, int numBlocks, Runtime.TypeCode kvTypeCode)
+    {
+        var kvType = DataType.FromTypeCode(kvTypeCode);
+        var lane = 128 / kvType.SizeInBytes;
+        var numLayers = 1;
+        var numKVHeads = numHead;
+        var numSeqs = queryLens.Length;
+        var numTokens = queryLens.Sum();
+        var topology = new int[] { 1 };
+        var pagedAttnConfig = new PagedAttentionConfig(
+                numLayers,
+                numKVHeads,
+                headDim,
+                kvType,
+                blockSize,
+                new[] {
+                    PagedAttentionDimKind.NumBlocks,
+                    PagedAttentionDimKind.NumLayers,
+                    PagedAttentionDimKind.NumKVHeads,
+                    PagedAttentionDimKind.KV,
+                    PagedAttentionDimKind.HeadDim,
+                    PagedAttentionDimKind.BlockSize, },
+                new[] { PagedAttentionDimKind.HeadDim },
+                new[] { lane },
+                topology);
+        var contextLens = Tensor.From(queryLens.Zip(seqLens).Select(p => p.Second - p.First).ToArray());
+        var blockTable = Tensor.FromScalar(-1L, [numSeqs, MathUtility.CeilDiv(seqLens.Max(), blockSize), topology.Length + 1]);
+        var slotMapping = Tensor.FromScalar(-1L, [numTokens, topology.Length + 1]);
+        var kvcacheStorage = Tensor.Ones(new VectorType(kvType, [lane]), topology.Select(i => (long)i).Concat([numBlocks, numLayers, numKVHeads, 2, headDim / lane, blockSize]).ToArray());
+        var kvCacheObject = new Evaluator.NN.RefPagedAttentionKVCache(pagedAttnConfig, numSeqs, (int)numTokens, contextLens, Tensor.From(seqLens), blockTable, slotMapping, numBlocks, kvcacheStorage);
+
+        var kvCacheObjectTensor = Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCacheObject));
+        var write = kvCacheObjectTensor.BytesBuffer;
+    }
+
     private void DoHardmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)
     {
         var expect = OrtKI.Hardmax(ortTensor, axis);
