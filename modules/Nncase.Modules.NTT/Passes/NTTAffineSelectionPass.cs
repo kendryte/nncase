@@ -25,7 +25,7 @@ public sealed partial class NTTAffineSelectionPass : AffineSelectionPass
     private readonly CompileOptions _compileOptions;
 
     public NTTAffineSelectionPass(CompileOptions compileOptions)
-        : base(NTTTarget.Kind)
+        : base(CPUTarget.Kind)
     {
         _compileOptions = compileOptions;
     }

@@ -12,7 +12,7 @@ namespace Nncase.Targets;
 
 public class NTTModuleCompiler : IModuleCompiler
 {
-    public string ModuleKind => NTTTarget.Kind;
+    public string ModuleKind => CPUTarget.Kind;
 
     public IModuleBuilder CreateModuleBuilder(CompileOptions options) => new NTTModuleBuilder(options);
 

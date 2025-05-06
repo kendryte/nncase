@@ -64,14 +64,6 @@ result<void> cpu_runtime_module::initialize_before_functions(
     return ok();
 }
 
-kernels::kernel_context &cpu_runtime_module::kernel_context() noexcept {
-    auto &context = kernels::default_kernel_context();
-#ifdef NNCASE_DUMP_MANAGER
-    context.dump_manager = interp().dump_manager();
-#endif
-    return context;
-}
-
 result<std::unique_ptr<runtime_function>>
 cpu_runtime_module::create_function() noexcept {
     std::unique_ptr<runtime_function> mod(new (std::nothrow)

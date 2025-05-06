@@ -11,7 +11,7 @@ using Nncase.IR;
 
 namespace Nncase.Targets;
 
-public class CpuTargetOptions : ICpuTargetOptions
+public class NTTTargetOptions : INTTTargetOptions
 {
     [DisplayName("--model-name")]
     [Description("the input model name.")]

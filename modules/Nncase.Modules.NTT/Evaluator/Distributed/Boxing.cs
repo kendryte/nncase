@@ -171,7 +171,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                                     case SBPPartial:
                                         break;
                                     case SBPBroadCast:
-                                        latency = MathF.Max(latency, ((ICpuTargetOptions)context.CompileOptions.TargetOptions).HierarchyLatencies[i]);
+                                        latency = MathF.Max(latency, ((INTTTargetOptions)context.CompileOptions.TargetOptions).HierarchyLatencies[i]);
                                         reducePart *= a.Placement.Hierarchy[i];
                                         gatherPart *= a.Placement.Hierarchy[i];
                                         if (i == 0)

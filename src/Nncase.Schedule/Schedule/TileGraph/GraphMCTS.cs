@@ -27,13 +27,13 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     private readonly string _moduleKind;
 
-    private readonly ICpuTargetOptions _targetOptions;
+    private readonly INTTTargetOptions _targetOptions;
 
     private readonly TieredTileGraph _graph;
 
     private int _permformCount;
 
-    public MCTState(TieredTileGraph graph, string moduleKind, string searchPath, GraphTiler graphTiler, ICpuTargetOptions targetOptions)
+    public MCTState(TieredTileGraph graph, string moduleKind, string searchPath, GraphTiler graphTiler, INTTTargetOptions targetOptions)
     {
         _graph = graph;
         _moduleKind = moduleKind;

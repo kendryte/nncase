@@ -14,7 +14,6 @@
  */
 #pragma once
 #include <cstdint>
-#include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/cpu/runtime_module.h>
 #include <unordered_map>
 
@@ -28,8 +27,6 @@ class cpu_runtime_module : public runtime_module {
   public:
     cpu_runtime_module() noexcept;
     virtual ~cpu_runtime_module();
-
-    kernels::kernel_context &kernel_context() noexcept;
 
     uint64_t tdim() const noexcept { return tdim_; }
     uint64_t bdim() const noexcept { return bdim_; }

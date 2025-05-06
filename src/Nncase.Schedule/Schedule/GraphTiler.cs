@@ -19,7 +19,7 @@ public class GraphTiler
 {
     public Dictionary<TileNode, TiledFunc> SolveMemo { get; } = new Dictionary<TileNode, TiledFunc>(new ITreeNodeComparer());
 
-    public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, ICpuTargetOptions targetOptions, string moduleKind)
+    public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, INTTTargetOptions targetOptions, string moduleKind)
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
@@ -583,7 +583,7 @@ public class GraphTiler
         }
     }
 
-    public (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, ICpuTargetOptions targetOptions)
+    public (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, INTTTargetOptions targetOptions)
     {
         // bufferize root graph.
         var bufferGraphMemo = rootGraph.Bufferize();
@@ -666,7 +666,7 @@ public class GraphTiler
         return (resultMemo, objectValue);
     }
 
-    public BaseExpr Tile(BaseExpr preExpr, string moduleKind, ICpuTargetOptions targetOptions)
+    public BaseExpr Tile(BaseExpr preExpr, string moduleKind, INTTTargetOptions targetOptions)
     {
 #if true
         var topLevel = targetOptions.MemoryCapacities.Length;

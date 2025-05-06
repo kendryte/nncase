@@ -119,7 +119,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
     private readonly StringWriter _sharedWriter;
     private ulong _collective_pool_size;
 
-    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, CpuTargetOptions targetOptions)
+    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, NTTTargetOptions targetOptions)
     {
         DataAlign = dataAlign;
         DataUsage = dataUsage;
@@ -138,7 +138,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
 
     public int CallCount { get; private set; }
 
-    public CpuTargetOptions TargetOptions { get; }
+    public NTTTargetOptions TargetOptions { get; }
 
     public ulong DataAlign { get; }
 

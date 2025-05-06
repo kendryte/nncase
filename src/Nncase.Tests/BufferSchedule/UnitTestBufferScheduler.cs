@@ -21,8 +21,8 @@ public sealed class UnitTestBufferScheduler : TestClassBase
 {
     public UnitTestBufferScheduler()
     {
-        DefaultTargetName = Targets.NTTTarget.Kind;
-        CompileOptions.TargetOptions = new Targets.CpuTargetOptions();
+        DefaultTargetName = Targets.CPUTarget.Kind;
+        CompileOptions.TargetOptions = new Targets.NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.Schedule | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
@@ -53,7 +53,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
         var i = IR.F.Tensors.GetItem(tp, 1) + h;
 
         var body = new IR.Tuple(IR.F.Distributed.Boxing(IR.F.Tensors.GetItem(tp, 0), ttype), IR.F.Distributed.Boxing(i, ttype));
-        return new Function("kernel", Targets.NTTTarget.Kind, body, [a, b]);
+        return new Function("kernel", Targets.CPUTarget.Kind, body, [a, b]);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     [MemberData(nameof(ScheduleGetItemDatas))]
     public async Task TestScheduleGetItem(Func<Function> fusionGetter, int capacity, int number)
     {
-        ((Targets.CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes[^1] = capacity;
+        ((Targets.NTTTargetOptions)CompileOptions.TargetOptions).HierarchySizes[^1] = capacity;
         var fusion = fusionGetter();
         var dupVars = fusion.Parameters.AsValueEnumerable().Select(v => new Var(v.CheckedType)).ToArray();
 

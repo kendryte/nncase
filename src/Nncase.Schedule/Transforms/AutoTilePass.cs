@@ -158,7 +158,7 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
 
             var cloner = new ExprClusterCloner(extractDict);
             var cloned = (Expr)cloner.Clone(expr, default);
-            var tiled = Tiler.Tile(cloned, ModuleKind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+            var tiled = Tiler.Tile(cloned, ModuleKind, (INTTTargetOptions)CompileOptions.TargetOptions);
             var substitutor = new Mutators.Substitutor(e =>
             {
                 if (e is Var v && argumentDict.TryGetValue(v, out var arg))
@@ -210,7 +210,7 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
         }
 
         var cloned = clones.Count == 1 ? clones[0] : new IR.Tuple(clones.ToArray());
-        var tiled = Tiler.Tile(cloned, ModuleKind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+        var tiled = Tiler.Tile(cloned, ModuleKind, (INTTTargetOptions)CompileOptions.TargetOptions);
         var substitutor = new Mutators.Substitutor(e =>
         {
             if (e is Var v && argumentDict.TryGetValue(v, out var arg))

@@ -22,7 +22,7 @@ internal class FunctionBuilder
     private readonly BinaryWriter _rdataWriter;
     private readonly IReadOnlyList<BinaryWriter> _localRdataWriters;
 
-    public FunctionBuilder(uint id, BinaryWriter rdataWriter, IReadOnlyList<BinaryWriter> localRdataWriters, Targets.CpuTargetOptions targetOptions)
+    public FunctionBuilder(uint id, BinaryWriter rdataWriter, IReadOnlyList<BinaryWriter> localRdataWriters, Targets.NTTTargetOptions targetOptions)
     {
         _id = id;
         _sectionManager = new();
@@ -32,7 +32,7 @@ internal class FunctionBuilder
         TargetOptions = targetOptions;
     }
 
-    public CpuTargetOptions TargetOptions { get; }
+    public NTTTargetOptions TargetOptions { get; }
 
     public unsafe ILinkableFunction Build(TIR.PrimFunction function)
     {

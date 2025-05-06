@@ -12,12 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
+#include "host_buffer.h"
+#include <nncase/runtime/small_vector.hpp>
 
-NNCASE_STACKVM_DISPATCH_BEGIN(DUP)
-auto entry = stack_.peek();
-stack_.push(std::move(entry));
-NNCASE_STACKVM_DISPATCH_END()
+BEGIN_NS_NNCASE_RUNTIME
 
-NNCASE_STACKVM_DISPATCH_BEGIN(POP)
-stack_.pop();
-NNCASE_STACKVM_DISPATCH_END()
+result<void> copy(host_buffer_t src_buffer, host_buffer_t dest_buffer,
+                  size_t src_start, size_t dest_start, datatype_t datatype,
+                  std::span<const size_t> shape,
+                  std::span<const size_t> src_strides,
+                  std::span<const size_t> dest_strides) noexcept;
+
+END_NS_NNCASE_RUNTIME

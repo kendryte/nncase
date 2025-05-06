@@ -54,8 +54,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
 {
     public UnitTestCPUKernels()
     {
-        DefaultTargetName = NTTTarget.Kind;
-        CompileOptions.TargetOptions = new CpuTargetOptions();
+        DefaultTargetName = CPUTarget.Kind;
+        CompileOptions.TargetOptions = new NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Compile | Diagnostics.DumpFlags.Schedule | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
@@ -99,7 +99,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new[] { 128, 256 }, true, new[] { 256, 384 }, false, new[] { 384, 512 }, true, new[] { 8 }, 3, false })]
     public async Task TestTileFlowCase(int[] ashape, bool constA, int[] bshape, bool constB, int[] eshape, bool constE, int[] hierarchy, int count, bool packing = false)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -136,7 +136,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [MemberData(nameof(TestReshardData))]
     public async Task TestReshard(long[] shape, int[] hierarchy, List<int[][]> sbps, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -169,7 +169,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData([new long[] { 64, 128 }, new int[] { 2, 4, 8 }, 3])]
     public async Task TestGatherReduceScatter(long[] shape, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -283,7 +283,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestUnary(long[] shape, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -304,7 +304,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 40), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -338,7 +338,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [MemberData(nameof(TestPackBinaryData))]
     public async Task TestPackBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[][] sbps, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -392,7 +392,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { BinaryOp.Mul, new long[] { 1, 8, 64, 2 * 8 }, new long[] { 1, 1, 64, 2 * 8 }, new[] { 4 }, new[] { 2 }, 3 })] // broadcast
     public async Task TestDynamicPackBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[] sbps, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -494,7 +494,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 256 }, false, true, new[] { 2 }, 6 })]
     public async Task TestPackMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -537,7 +537,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 2, 4 }, 7 })]
     public async Task TestDynamicPackMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -600,7 +600,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 2, 384, 512 }, new long[] { 2, 512, 512 }, false, false, new[] { 2, 4, 8 }, 3 })]
     public async Task TestSUMMA(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -650,7 +650,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [MemberData(nameof(TestPackReduceData))]
     public async Task TestPackReduce(ReduceOp reduceOp, long[] shape, int[] axes, float init, bool keepDims, int[] hierarchy, int[][] splitedAxes, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -739,7 +739,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData([new long[] { 1, 8192, 384 }, new long[] { 1, 64, 128, 384 }, 1, new[] { 8 }, 2])]
     public async Task TestPackReshape(long[] inshape, long[] outshape, int packRank, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -787,7 +787,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData([new[] { 2, 4 }, 0])]
     public async Task TestTransposeMatmul(int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Packing = true;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
@@ -850,7 +850,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 64, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 1 })]
     public async Task TestMatMulReshapeUnary(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -881,7 +881,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public async Task TestDynamicMatMulReshapeUnary(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.Compile;
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -917,7 +917,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 48, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
     public async Task TestReshapeAndUnsqueeze(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -952,7 +952,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 48, -1, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
     public async Task TestDynamicReshapeAndUnsqueeze(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -991,7 +991,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 2, 48, 512 }, new long[] { 0 }, new[] { 1 }, 0 })]
     public async Task TestGetItem(long[] inShape, long[] indices, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -1025,11 +1025,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
             return;
         }
 
-        ((CpuTargetOptions)CompileOptions.TargetOptions).Packing = packing;
+        ((NTTTargetOptions)CompileOptions.TargetOptions).Packing = packing;
         var hierarchy = new[] { 2, 4 };
-        ((CpuTargetOptions)CompileOptions.TargetOptions).Hierarchies[0] = hierarchy;
-        ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        ((NTTTargetOptions)CompileOptions.TargetOptions).Hierarchies[0] = hierarchy;
+        ((NTTTargetOptions)CompileOptions.TargetOptions).HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        ((NTTTargetOptions)CompileOptions.TargetOptions).HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
@@ -1101,7 +1101,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { true, 1 })] // enable packing
     public async Task TestVAEDecRes(bool packing, int count)
     {
-        CompileOptions.TargetOptions = new CpuTargetOptions() { Packing = packing };
+        CompileOptions.TargetOptions = new NTTTargetOptions() { Packing = packing };
         var vlatent_sample = new Var("vlatent_sample", new TensorType(DataTypes.Float32, new[] { 1, 4, 64, 64 }));
         Expr pre;
         {
@@ -1141,7 +1141,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 #if DEBUG
             System.Console.WriteLine(CompilerServices.Print(postArray[i]));
 #endif
-            var kernelCase = new CpuKernelCase($"Case{i}", new Fusion("kernel", NTTTarget.Kind, postArray[i], feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray());
+            var kernelCase = new CpuKernelCase($"Case{i}", new Fusion("kernel", CPUTarget.Kind, postArray[i], feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray());
             await Run(dumpDir, kernelCase);
         }
     }

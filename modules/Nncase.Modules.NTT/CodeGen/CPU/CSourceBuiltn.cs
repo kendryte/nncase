@@ -13,7 +13,7 @@ public record BufferRenderInfo(string Name, string ElemType, int ElemSize, int R
 {
 }
 
-public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataBuffers, CpuTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize, ulong LocalRdataPoolSize)
+public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataBuffers, NTTTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize, ulong LocalRdataPoolSize)
 {
     public BufferRenderInfo GetInfo(TIR.Buffer buffer)
     {
@@ -35,7 +35,7 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
     }
 }
 
-public record CpuTargetOptionsModel(CpuTargetOptions Options, ulong Alignment, ulong CollectivePoolSize)
+public record NTTTargetOptionsModel(NTTTargetOptions Options, ulong Alignment, ulong CollectivePoolSize)
 {
 }
 
@@ -50,13 +50,13 @@ using namespace nncase::ntt::distributed::shard_policy;
 
 ";
 
-    public static string TopoAwareRuntimeDef(CpuTargetOptions options, ulong dataAlign, ulong collective_pool_size)
+    public static string TopoAwareRuntimeDef(NTTTargetOptions options, ulong dataAlign, ulong collective_pool_size)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new CpuTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topo_aware_runtime.cshtml", new NTTTargetOptionsModel(options, dataAlign, collective_pool_size)).Result;
         return content;
     }
 
-    public static string TopologyDef(CpuTargetOptions options)
+    public static string TopologyDef(NTTTargetOptions options)
     {
         var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topology_def.h.cshtml", options).Result;
         return content;
@@ -69,7 +69,7 @@ using namespace nncase::ntt::distributed::shard_policy;
         return content;
     }
 
-    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, CpuTargetOptions options)
+    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, NTTTargetOptions options)
     {
         var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize, localRdataPoolSize)).Result;
         return content;

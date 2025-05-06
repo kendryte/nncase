@@ -25,7 +25,7 @@ namespace Nncase.Targets;
 /// <summary>
 /// Target for NTT.
 /// </summary>
-public class NTTTarget : Target
+public class CPUTarget : Target
 {
     public const string Kind = "cpu";
 
@@ -37,11 +37,11 @@ public class NTTTarget : Target
 
     public override (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser()
     {
-        var cmd = new CpuTargetOptionsCommand(Kind);
+        var cmd = new NTTTargetOptionsCommand(Kind);
 
         ITargetOptions ParseTargetCompileOptions(InvocationContext context, Command command)
         {
-            var binder = new CpuTargetOptionsBinder(cmd);
+            var binder = new NTTTargetOptionsBinder(cmd);
             return binder.GetBoundValue(context);
         }
 

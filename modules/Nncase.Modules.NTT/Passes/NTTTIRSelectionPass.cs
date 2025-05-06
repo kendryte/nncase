@@ -24,7 +24,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
     private readonly CompileOptions _compileOptions;
 
     public NTTTIRSelectionPass(CompileOptions compileOptions)
-        : base(NTTTarget.Kind)
+        : base(CPUTarget.Kind)
     {
         _compileOptions = compileOptions;
     }

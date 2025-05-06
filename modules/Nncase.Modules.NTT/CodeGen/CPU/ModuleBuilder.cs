@@ -21,7 +21,7 @@ public sealed class NTTModuleBuilder : IModuleBuilder
     {
         _sectionManager = new();
         _rdataWriter = _sectionManager.GetWriter(WellknownSectionNames.Rdata);
-        var shardCount = TensorUtilities.GetProduct(((Targets.CpuTargetOptions)options.TargetOptions).Hierarchies[0]);
+        var shardCount = TensorUtilities.GetProduct(((Targets.NTTTargetOptions)options.TargetOptions).Hierarchies[0]);
         _localRdataWriters = new BinaryWriter[shardCount];
         for (int i = 0; i < shardCount; i++)
         {
@@ -39,7 +39,7 @@ public sealed class NTTModuleBuilder : IModuleBuilder
     /// <inheritdoc/>
     public ILinkableModule Build(IReadOnlyList<BaseFunction> functions)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
 
         // 1. write the module header
         using (var writer = _sectionManager.GetWriter(LinkedModule.KernelHeaderSectionName))
@@ -51,7 +51,7 @@ public sealed class NTTModuleBuilder : IModuleBuilder
             writer.Write(ref header);
         }
 
-        var linkableFunctions = functions.OfType<TIR.PrimFunction>().Select((f, i) => new FunctionBuilder((uint)i, _rdataWriter, _localRdataWriters, (Targets.CpuTargetOptions)CompileOptions.TargetOptions).Build(f)).ToArray();
+        var linkableFunctions = functions.OfType<TIR.PrimFunction>().Select((f, i) => new FunctionBuilder((uint)i, _rdataWriter, _localRdataWriters, (Targets.NTTTargetOptions)CompileOptions.TargetOptions).Build(f)).ToArray();
         _rdataWriter.Flush();
         var localRdataContents = Enumerable.Range(0, _localRdataWriters.Length).Select(i =>
         {

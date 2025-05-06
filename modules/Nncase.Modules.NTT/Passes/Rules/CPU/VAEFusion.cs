@@ -28,7 +28,7 @@ namespace Nncase.Passes.Rules;
 [RuleGenerator]
 public sealed partial class FuseVAEDecRes : FusionMaker
 {
-    public override string ModuleKind { get; } = NTTTarget.Kind;
+    public override string ModuleKind { get; } = CPUTarget.Kind;
 
     public override Pattern Pattern => CreatePattern();
 
@@ -84,7 +84,7 @@ public sealed partial class FuseVAEDecRes : FusionMaker
 [RuleGenerator]
 public sealed partial class FuseVAEDecHead : FusionMaker
 {
-    public override string ModuleKind { get; } = NTTTarget.Kind;
+    public override string ModuleKind { get; } = CPUTarget.Kind;
 
     public override Pattern Pattern => CreatePattern();
 
@@ -124,7 +124,7 @@ public sealed partial class FuseVAEDecHead : FusionMaker
 [RuleGenerator]
 public sealed partial class FuseVAEDecMHA : FusionMaker
 {
-    public override string ModuleKind { get; } = NTTTarget.Kind;
+    public override string ModuleKind { get; } = CPUTarget.Kind;
 
     public override Pattern Pattern => CreatePattern();
 

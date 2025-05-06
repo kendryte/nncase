@@ -17,9 +17,9 @@ using Nncase.IR;
 
 namespace Nncase.Targets;
 
-public sealed class CpuTargetOptionsCommand : Command
+public sealed class NTTTargetOptionsCommand : Command
 {
-    public CpuTargetOptionsCommand(string name)
+    public NTTTargetOptionsCommand(string name)
         : base(name)
     {
         ModelNameOption = new Option<string>(
@@ -148,18 +148,18 @@ public sealed class CpuTargetOptionsCommand : Command
     public Option<string> CustomOpSchemeOption { get; }
 }
 
-public sealed class CpuTargetOptionsBinder
+public sealed class NTTTargetOptionsBinder
 {
-    private readonly CpuTargetOptionsCommand _cmd;
+    private readonly NTTTargetOptionsCommand _cmd;
 
-    public CpuTargetOptionsBinder(CpuTargetOptionsCommand cmd)
+    public NTTTargetOptionsBinder(NTTTargetOptionsCommand cmd)
     {
         _cmd = cmd;
     }
 
-    public CpuTargetOptions GetBoundValue(InvocationContext context)
+    public NTTTargetOptions GetBoundValue(InvocationContext context)
     {
-        return new CpuTargetOptions()
+        return new NTTTargetOptions()
         {
             ModelName = context.ParseResult.GetValueForOption(_cmd.ModelNameOption)!,
             Packing = context.ParseResult.GetValueForOption(_cmd.PackingOption)!,

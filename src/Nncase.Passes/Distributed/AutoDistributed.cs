@@ -61,7 +61,7 @@ public sealed partial class AutoDistributedPass : FunctionPass
             return Task.FromResult(input);
         }
 
-        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions(), _moduleKind, _bidirectional);
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is NTTTargetOptions options ? options : new NTTTargetOptions(), _moduleKind, _bidirectional);
         return Task.FromResult(rewriter.Rewirte(input));
     }
 }
@@ -136,7 +136,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     private readonly bool _bidirectional;
 
-    public AutoDistributedRewriter(CompileOptions compileOptions, CpuTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
+    public AutoDistributedRewriter(CompileOptions compileOptions, NTTTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
         Bidirectional = bidirectional;
@@ -166,7 +166,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     public CompileOptions CompileOptions { get; }
 
-    public CpuTargetOptions TargetOptions { get; }
+    public NTTTargetOptions TargetOptions { get; }
 
     public IReadOnlyDictionary<string, (IRArray<SBP> NdSBP, Placement Placement)> Scheme { get; }
 
@@ -1077,7 +1077,7 @@ public sealed partial class AutoDistributedPass : FunctionPass
             return Task.FromResult(input);
         }
 
-        if (_compileOptions.TargetOptions is ICpuTargetOptions targetOptions)
+        if (_compileOptions.TargetOptions is INTTTargetOptions targetOptions)
         {
             var rewriter = new AutoDistributedRewriter(
                 _compileOptions,
@@ -1099,7 +1099,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     private readonly bool _bidirectional;
 
-    public AutoDistributedRewriter(CompileOptions compileOptions, ICpuTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
+    public AutoDistributedRewriter(CompileOptions compileOptions, INTTTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
     {
         Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames, targetOptions.HierarchyKind)).ToArray();
         TargetOptions = targetOptions;
@@ -1124,7 +1124,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
     public CompileOptions CompileOptions { get; }
 
-    public ICpuTargetOptions TargetOptions { get; }
+    public INTTTargetOptions TargetOptions { get; }
 
     public IReadOnlyDictionary<string, (IRArray<SBP> Polices, Placement Placement)> Scheme { get; }
 
@@ -1138,7 +1138,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         })) < (2L * 512L * 1024L * 1024L));
     }
 
-    public static bool SingleNodeMemoryCheck(DistributedType distributedType, string moduleKind, ICpuTargetOptions targetOptions)
+    public static bool SingleNodeMemoryCheck(DistributedType distributedType, string moduleKind, INTTTargetOptions targetOptions)
     {
         if (moduleKind == "xpu")
         {
@@ -1151,7 +1151,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         return true;
     }
 
-    public static IReadOnlyList<BaseExpr> GetLeafCandidateBoxings(BaseExpr expr, IEnumerable<Placement> placements, string moduleKind, ICpuTargetOptions targetOptions)
+    public static IReadOnlyList<BaseExpr> GetLeafCandidateBoxings(BaseExpr expr, IEnumerable<Placement> placements, string moduleKind, INTTTargetOptions targetOptions)
     {
         if (expr is not Expr
             || expr.CheckedType is InvalidType)
@@ -1182,7 +1182,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         }
     }
 
-    public static IReadOnlyList<IRArray<SBP>> GetDiverseCandidateSBPs(DistributedType distributedType, IEnumerable<Placement> placements, string moduleKind, ICpuTargetOptions targetOptions)
+    public static IReadOnlyList<IRArray<SBP>> GetDiverseCandidateSBPs(DistributedType distributedType, IEnumerable<Placement> placements, string moduleKind, INTTTargetOptions targetOptions)
     {
         return placements.Select(
             placement =>

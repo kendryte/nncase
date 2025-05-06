@@ -27,7 +27,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, IKernelInfoEvalua
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
         var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
         var bufferInfos = new MicroKernelBufferInfo[context.BufferShapes.Length];
-        var opt = (ICpuTargetOptions)context.TargetOptions;
+        var opt = (INTTTargetOptions)context.TargetOptions;
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[1] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Write);
         return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);

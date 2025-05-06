@@ -14,6 +14,6 @@ internal class NTTModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
-        registrator.Register<ITarget, NTTTarget>(reuse: Reuse.Singleton);
+        registrator.Register<ITarget, CPUTarget>(reuse: Reuse.Singleton);
     }
 }

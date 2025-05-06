@@ -22,13 +22,13 @@ public class CustomOpSubstitutePass : DataflowPass
 {
     private readonly CompileOptions _compileOptions;
 
-    private readonly CpuTargetOptions _cpuTargetOptions;
+    private readonly NTTTargetOptions _cpuTargetOptions;
 
     public CustomOpSubstitutePass(CompileOptions compileOptions)
     {
         _compileOptions = compileOptions;
 
-        _cpuTargetOptions = _compileOptions.TargetOptions is CpuTargetOptions options ? options : new CpuTargetOptions();
+        _cpuTargetOptions = _compileOptions.TargetOptions is NTTTargetOptions options ? options : new NTTTargetOptions();
 
         if (Path.Exists(_cpuTargetOptions.CustomOpScheme) &&
         System.Text.Json.JsonSerializer.Deserialize<CustomOpScheme>(File.ReadAllText(_cpuTargetOptions.CustomOpScheme)) is CustomOpScheme customOpScheme)

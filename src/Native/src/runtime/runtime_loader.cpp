@@ -22,7 +22,6 @@
 #include <nncase/runtime/cpu/runtime_module.h>
 #include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_module.h>
-#include <nncase/runtime/stackvm/runtime_module.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -84,8 +83,7 @@ FindRuntimeMethod(collector, COLLECTOR)
         return ok(reinterpret_cast<rt_module_##snake_name##_t>(proc));         \
     }
 // clang-format off
-FindRuntimeMethod(activator, ACTIVATOR) 
-FindRuntimeMethod(collector, COLLECTOR)
+FindRuntimeMethod(activator, ACTIVATOR)
 // clang-format on
 
 #undef FindRuntimeMethod
@@ -117,11 +115,8 @@ FindRuntimeMethod(collector)
 
 result<std::unique_ptr<runtime_module>>
 runtime_module::create(const module_kind_t &kind) {
-    if (!strncmp(kind.data(), stackvm::stackvm_module_kind.data(),
+    if (!strncmp(kind.data(), cpu::cpu_module_kind.data(),
                  MAX_MODULE_KIND_LENGTH)) {
-        return stackvm::create_stackvm_runtime_module();
-    } else if (!strncmp(kind.data(), cpu::cpu_module_kind.data(),
-                        MAX_MODULE_KIND_LENGTH)) {
         return cpu::create_cpu_runtime_module();
     }
 
@@ -130,20 +125,6 @@ runtime_module::create(const module_kind_t &kind) {
     try_var(activator, find_runtime_activator(kind));
     activator(rt_module);
     return rt_module;
-}
-
-result<std::vector<std::pair<std::string, runtime_module::custom_call_type>>>
-runtime_module::collect(const module_kind_t &kind) {
-    if (!strncmp(kind.data(), stackvm::stackvm_module_kind.data(),
-                 MAX_MODULE_KIND_LENGTH))
-        return stackvm::create_stackvm_custom_calls();
-
-    result<
-        std::vector<std::pair<std::string, runtime_module::custom_call_type>>>
-        table(nncase_errc::runtime_not_found);
-    try_var(collector, find_runtime_collector(kind));
-    collector(table);
-    return table;
 }
 
 #ifdef NNCASE_DEFAULT_BUILTIN_RUNTIMES

@@ -19,7 +19,7 @@ public sealed class UnitTestModeling : TestClassBase
 {
     public UnitTestModeling()
     {
-        CompileOptions.TargetOptions = new Nncase.Targets.CpuTargetOptions();
+        CompileOptions.TargetOptions = new Nncase.Targets.NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR;
 #endif
@@ -245,7 +245,7 @@ public sealed class UnitTestModeling : TestClassBase
             var d = IR.F.Math.Exp(c);
             var e = new Var(new TensorType(DataTypes.Float32, new[] { 1024, 3072 }));
             var f = IR.F.Tensors.MatMul(d, e);
-            func = new("main", NTTTarget.Kind, f, [a, b, e]);
+            func = new("main", CPUTarget.Kind, f, [a, b, e]);
         }
 
         var post = (BaseFunction)CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.NTT.PackMatMul(1, 8), new Passes.Rules.NTT.PackUnary(1, 8), }, new(), CompileOptions);

@@ -26,7 +26,6 @@ set_property(TARGET nncasebase PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(compiler)
 add_subdirectory(runtime)
-add_subdirectory(kernels)
 
 if (NOT BUILDING_RUNTIME)
     add_executable(nncasetest test.cpp)

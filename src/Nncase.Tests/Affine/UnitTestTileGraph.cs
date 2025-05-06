@@ -61,7 +61,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     public UnitTestTileGraph()
     {
-        CompileOptions.TargetOptions = new Targets.CpuTargetOptions();
+        CompileOptions.TargetOptions = new Targets.NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.Tiling;
 #endif
@@ -324,7 +324,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(SolveTileGraphDatas))]
     public void TestSolveTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BaseExpr> action, int count)
     {
-        var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
@@ -344,7 +344,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
         var tiler = new Schedule.GraphTiler();
         using var scope = new Diagnostics.DumpScope($"{count}");
-        var result = tiler.Tile(post, Nncase.Targets.NTTTarget.Kind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, (INTTTargetOptions)CompileOptions.TargetOptions);
         action(result);
     }
 
@@ -352,7 +352,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(MCTSDatas))]
     public void TestMCTS(Func<Function> functor, int count)
     {
-        var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
@@ -375,7 +375,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(BufferizeTileGraphDatas))]
     public void TestBufferizeTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BufferGraph> action, int count)
     {
-        var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 

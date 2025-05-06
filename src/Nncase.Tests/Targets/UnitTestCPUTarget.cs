@@ -30,8 +30,8 @@ public class UnitTestNTTTarget : TestClassBase
 {
     public UnitTestNTTTarget()
     {
-        DefaultTargetName = NTTTarget.Kind;
-        CompileOptions.TargetOptions = new CpuTargetOptions();
+        DefaultTargetName = CPUTarget.Kind;
+        CompileOptions.TargetOptions = new NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen | DumpFlags.Compile;
 #else
@@ -57,14 +57,14 @@ public class UnitTestNTTTarget : TestClassBase
     [AutoSetupTestMethod(InitSession = false)]
     public void TestNTTTargetKind()
     {
-        Assert.Equal("cpu", NTTTarget.Kind);
+        Assert.Equal("cpu", CPUTarget.Kind);
     }
 
     [Fact]
     [AutoSetupTestMethod(InitSession = false)]
     public void TestCreateNTTTarget()
     {
-        var target = CompilerServices.GetTarget(NTTTarget.Kind);
+        var target = CompilerServices.GetTarget(CPUTarget.Kind);
         Assert.NotNull(target);
     }
 

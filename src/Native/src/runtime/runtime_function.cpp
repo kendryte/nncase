@@ -18,7 +18,6 @@
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/runtime/span_reader.h>
-#include <nncase/runtime/stackvm/op_profile.h>
 #include <nncase/runtime/type_serializer.h>
 
 using namespace nncase;
