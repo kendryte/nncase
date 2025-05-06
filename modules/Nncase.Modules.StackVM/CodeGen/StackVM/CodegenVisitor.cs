@@ -363,6 +363,8 @@ internal partial class CodeGenVisitor : ExprVisitor<TextSnippet, IRType>
         return snippet;
     }
 
+    
+
     private void EmitCallable(Expr callable, int argumentsCount)
     {
         if (callable is CustomOp custom_op)

@@ -28,7 +28,7 @@ public sealed class RankedShape : Shape, IEquatable<RankedShape?>, IReadOnlyList
     /// </summary>
     /// <param name="dimensions">Dimensions.</param>
     public RankedShape(ReadOnlySpan<Dimension> dimensions)
-        : base(dimensions.ToArray())
+        : base(dimensions.AsValueEnumerable().Select(x => x as BaseExpr).ToArray())
     {
         RefreshKind();
     }

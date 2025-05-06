@@ -304,6 +304,10 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
     public override string VisitType(TupleType type) =>
         $"({string.Join(", ", type.Fields.Select(VisitType))})";
 
+    public override string VisitType(DimensionType type) => "dim";
+
+    public override string VisitType(ShapeType type) => "shape";
+
     /// <inheritdoc/>
     protected override string VisitCall(Call expr)
     {
@@ -465,6 +469,33 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
+    protected override string VisitRankedShape(RankedShape expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var dims = expr.Dimensions.AsValueEnumerable().Select(Visit);
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = new RankedShape({StringUtility.Join(", ", dims)})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
+    protected override string VisitDimension(Dimension expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = new Dimension({expr})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
     private string AllocateTempVar(BaseExpr expr)
     {
         var name = $"v{_localId++}";
@@ -497,6 +528,8 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         TupleType ttype => $"new TupleType({string.Join(",", ttype.Fields)})",
         AnyType => "AnyType.Default",
         NoneType => "NoneType.Default",
+        DimensionType dt => $"new DimensionType(DimensionKind.{dt.Kind})",
+        ShapeType st => $"new ShapeType(ShapeKind.{st.Kind}, {st.Rank})",
         _ => "AnyType.Default",
     };
 

@@ -32,7 +32,7 @@ public abstract class PackRule : RewriteRule<Pattern>
 
     public int Rank { get; }
 
-    public override Expr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
+    public override BaseExpr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
 }
 
 public sealed class PackResizeImage : PackRule

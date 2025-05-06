@@ -43,13 +43,7 @@ public abstract class RewriteRule<TPattern> : IRewriteRule
 
     public virtual IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
-        var candidates = new List<BaseExpr> { };
         var expr = GetReplace(result, context);
-        if (expr is not null)
-        {
-            candidates.Add(expr);
-        }
-
-        return candidates;
+        return expr is null ? Array.Empty<BaseExpr>() : [expr];
     }
 }

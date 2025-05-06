@@ -150,7 +150,7 @@ public sealed class UnitTestDumpper : TestClassBase
             var weights = Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 64, 3, 3, 3 }).Evaluate());
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
-            var strideH = 2;
+            var strideH = new AsDim(2);
             var strideW = 2;
             var dilationH = 1;
             var dilationW = 1;

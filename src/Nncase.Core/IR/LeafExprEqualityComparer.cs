@@ -54,6 +54,34 @@ public sealed class LeafExprEqualityComparer : IEqualityComparer<BaseExpr>
             (IR.If, IR.If) => true,
             (Marker tx, Marker ty) => tx.Name == ty.Name,
             (None tx, None ty) => tx.Equals(ty),
+
+            // Dimension
+            (AsDim, AsDim) => true,
+            (UnknownDim, UnknownDim) => true,
+            (DimFraction, DimFraction) => true,
+            (DimRemainder, DimRemainder) => true,
+            (DimAbs, DimAbs) => true,
+            (DimClamp, DimClamp) => true,
+            (DimCompareAndSelect, DimCompareAndSelect) => true,
+            (DimMin, DimMin) => true,
+            (DimMax, DimMax) => true,
+            (DimPositive, DimPositive) => true,
+            (DimAt, DimAt) => true,
+            (DimVar tx, DimVar ty) => tx.Equals(ty),
+            (DimConst tx, DimConst ty) => tx.Equals(ty),
+            (DimPower tx, DimPower ty) => tx.Power.Equals(ty.Power),
+            (DimProduct tx, DimProduct ty) => tx.Scale.Equals(ty.Scale) && tx.Operands.Length == ty.Operands.Length,
+            (DimSum tx, DimSum ty) => tx.Bias.Equals(ty.Bias) && tx.Operands.Length == ty.Operands.Length,
+
+            // Padding
+            (Padding, Padding) => true,
+            (Paddings tx, Paddings ty) => tx.Rank == ty.Rank,
+
+            // Shape
+            (UnrankedShape, UnrankedShape) => true,
+            (InvalidShape, InvalidShape) => true,
+            (RankedShape tx, RankedShape ty) => tx.Rank == ty.Rank && tx.Kind == ty.Kind,
+            (ShapeVar tx, ShapeVar ty) => tx.Equals(ty),
             _ => throw new InvalidOperationException("Invalid expression type."),
         };
     }

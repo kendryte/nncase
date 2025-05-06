@@ -217,6 +217,22 @@ internal sealed class PatternPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
+    /// <inheritdoc/>
+    protected override string VisitShape(Shape expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = IsShape(name: \"{name}\"));\n");
+
+        // AppendCheckedType(expr.CheckedType);
+        _scope.IndWriteLine();
+        return name;
+    }
+
     private string AllocateTempVar(BaseExpr expr)
     {
         var name = $"v{_localId++}";

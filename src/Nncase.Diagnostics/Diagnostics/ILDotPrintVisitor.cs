@@ -26,6 +26,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.IR.Buffers;
+using Nncase.IR.Shapes;
 
 namespace Nncase.Diagnostics;
 
@@ -527,6 +528,176 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
                     continue;
                 }
 
+                _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
+                {
+                    edge.Head.Endpoint.Port = new DotEndpointPort(port_name);
+                });
+            }
+
+            result = new(dotNode);
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+    protected override ILDotOption VisitRankedShape(RankedShape expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            var id = _idCounter++;
+            string exprId = "\"" + id.ToString() + "\"";
+
+            var table = new DotHtmlTable
+            {
+                BorderWidth = 0,
+                CellBorderWidth = 1,
+                CellSpacing = 0,
+            };
+
+            var connect_list = new List<(BaseExpr, string)>();
+
+            // 1. the connect type.
+            table.AddRow(row =>
+            {
+                row.AddCell("RankedShape"); // key wrods type.
+                int count = 0;
+                foreach (var child in expr.Dimensions)
+                {
+                    var childnode = Visit(child);
+                    var portName = $"P{count++}";
+                    row.AddCell(childnode.IsDotNode ? string.Empty : childnode.Str, cell => cell.PortName = portName);
+                    if (childnode.IsDotNode)
+                    {
+                        connect_list.Add((child, portName));
+                    }
+                }
+            });
+
+            // 3. make crrent node.
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
+
+            // 4. connect edge.
+            foreach (var (child, port_name) in connect_list)
+            {
+                _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
+                {
+                    edge.Head.Endpoint.Port = new DotEndpointPort(port_name);
+                });
+            }
+
+            result = new(dotNode);
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+    protected override ILDotOption VisitDimension(Dimension expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            result = new(CompilerServices.Print(expr));
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+    protected override ILDotOption VisitPadding(Padding expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            var id = _idCounter++;
+            string exprId = "\"" + id.ToString() + "\"";
+
+            var table = new DotHtmlTable
+            {
+                BorderWidth = 0,
+                CellBorderWidth = 1,
+                CellSpacing = 0,
+            };
+
+            var connect_list = new List<(BaseExpr, string)>();
+
+            // 1. the connect type.
+            table.AddRow(row =>
+            {
+                row.AddCell("Padding"); // key wrods type.
+                int count = 0;
+                foreach (var child in new[] { expr.Before, expr.After })
+                {
+                    var childnode = Visit(child);
+                    var portName = $"P{count++}";
+                    row.AddCell(childnode.IsDotNode ? string.Empty : childnode.Str, cell => cell.PortName = portName);
+                    if (childnode.IsDotNode)
+                    {
+                        connect_list.Add((child, portName));
+                    }
+                }
+            });
+
+            // 3. make crrent node.
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
+
+            // 4. connect edge.
+            foreach (var (child, port_name) in connect_list)
+            {
+                _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
+                {
+                    edge.Head.Endpoint.Port = new DotEndpointPort(port_name);
+                });
+            }
+
+            result = new(dotNode);
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+    protected override ILDotOption VisitPaddings(Paddings expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            var id = _idCounter++;
+            string exprId = "\"" + id.ToString() + "\"";
+
+            var table = new DotHtmlTable
+            {
+                BorderWidth = 0,
+                CellBorderWidth = 1,
+                CellSpacing = 0,
+            };
+
+            var connect_list = new List<(BaseExpr, string)>();
+
+            // 1. the connect type.
+            table.AddRow(row =>
+            {
+                row.AddCell("Paddings"); // key wrods type.
+                int count = 0;
+                foreach (var child in expr.Values)
+                {
+                    var childnode = Visit(child);
+                    var portName = $"P{count++}";
+                    row.AddCell(childnode.IsDotNode ? string.Empty : childnode.Str, cell => cell.PortName = portName);
+                    if (childnode.IsDotNode)
+                    {
+                        connect_list.Add((child, portName));
+                    }
+                }
+            });
+
+            // 3. make crrent node.
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
+
+            // 4. connect edge.
+            foreach (var (child, port_name) in connect_list)
+            {
                 _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
                 {
                     edge.Head.Endpoint.Port = new DotEndpointPort(port_name);

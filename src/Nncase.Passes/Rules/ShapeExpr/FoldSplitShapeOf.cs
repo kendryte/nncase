@@ -31,7 +31,7 @@ public partial class FoldSplitShapeOf : RewriteRule<Pattern>
                 "args")),
         IsFixedDimension(value: 0));
 
-    public Pattern InputPattern => IsGetItem(IsShapeOf(IsWildcard()), IsFixedDimension() | IsFixedShape());
+    public Pattern InputPattern => IsGetItem(IsShapeOf(IsWildcard()), IsAlt(IsFixedDimension(), IsFixedShape()));
 
     private BaseExpr? GetReplace(IR.Tuple tuple)
     {

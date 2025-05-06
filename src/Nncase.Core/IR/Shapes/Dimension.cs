@@ -164,7 +164,7 @@ public abstract class Dimension : BaseExpr
     /// Initializes a new instance of the <see cref="Dimension"/> class.
     /// </summary>
     /// <param name="operands">Operands.</param>
-    protected Dimension(BaseExpr[] operands)
+    protected Dimension(IEnumerable<BaseExpr> operands)
         : base(operands)
     {
     }
@@ -281,11 +281,15 @@ public abstract class Dimension : BaseExpr
     {
         return value switch
         {
+            _ when power == 0 => One,
+            _ when power == 1 => value,
+            _ when power == -1 => One / value,
             DimConst dimConst => (long)System.Math.Pow(dimConst.Value, power),
             OpaqueDim opaqueDim => new DimPower(opaqueDim, power),
             UnknownDim => UnknownDim.Default,
             DimProduct dimProduct => dimProduct.With(operands: dimProduct.Operands.AsValueEnumerable().Select(x => Pow(x, power)).ToArray(), scale: (long)System.Math.Pow(dimProduct.Scale, power)),
-            DimAbs dimAbs => power % 2 == 0 ? dimAbs.Operand : new DimAbs(Pow(dimAbs.Operand, power)),
+            DimAbs dimAbs => power % 2 == 0 ? Pow(dimAbs.Operand, power) : new DimAbs(Pow(dimAbs.Operand, power)),
+            DimSum dimSum => DimHelpers.Pow(dimSum, power),
             _ => throw new NotSupportedException($"Unsupported dimension type: {value.GetType()}"),
         };
     }

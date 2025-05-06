@@ -570,11 +570,13 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
         var allMinMax = from lhs in operands
                         from rhs in operands
                         where !ReferenceEquals(lhs, rhs)
+                        let lhsRange = lhs.Metadata.Range ?? ValueRange<double>.Full
+                        let rhsRange = rhs.Metadata.Range ?? ValueRange<double>.Full
                         let ranges = new[] {
-                         lhs.Metadata.Range!.Value.Min * rhs.Metadata.Range!.Value.Min,
-                         lhs.Metadata.Range!.Value.Min * rhs.Metadata.Range!.Value.Max,
-                         lhs.Metadata.Range!.Value.Max * rhs.Metadata.Range!.Value.Min,
-                         lhs.Metadata.Range!.Value.Max * rhs.Metadata.Range!.Value.Max,
+                            lhsRange.Min * rhsRange.Min,
+                            lhsRange.Min * rhsRange.Max,
+                            lhsRange.Max * rhsRange.Min,
+                            lhsRange.Max * rhsRange.Max,
                      }
                         select new ValueRange<double>(ranges.Min(), ranges.Max());
         var min = allMinMax.MinBy(x => x.Min).Min;
@@ -678,7 +680,7 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
         var max = (double)Bias;
         foreach (var operand in Operands)
         {
-            var range = operand.Metadata.Range!.Value;
+            var range = operand.Metadata.Range ?? ValueRange<double>.Full;
             min = System.Math.Min(min, range.Min);
             max = System.Math.Max(max, range.Max);
         }

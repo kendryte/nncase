@@ -76,12 +76,12 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         VerifySubField(expr, expr.MemSpan, TypePatternUtility.IsPointer() | TypePatternUtility.IsNoneType());
         foreach (var r in expr.Dimensions)
         {
-            VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, r, TypePatternUtility.IsDimensionType());
         }
 
         foreach (var r in expr.Strides)
         {
-            VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, r, TypePatternUtility.IsDimensionType());
         }
 
         var type = new TensorType(expr.ElemType, new RankedShape(expr.Dimensions));
@@ -349,7 +349,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     protected override IRType VisitLeafMemSpan(MemSpan expr)
     {
         VerifySubField(expr, expr.Start, TypePatternUtility.IsNoneType() | TypePatternUtility.IsIntegralScalar() | TypePatternUtility.IsPointer());
-        VerifySubField(expr, expr.Size, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Size, TypePatternUtility.IsDimensionType());
         return expr.Start.CheckedType;
     }
 
