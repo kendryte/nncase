@@ -754,4 +754,56 @@ REGISTER_RVV_BINARY_FP16_OP(max, _Float16, max_float16)
 REGISTER_RVV_FP16_KERNEL(FLOOR_MOD_INT16)
 REGISTER_RVV_BINARY_FP16_OP(floor_mod, int16_t, floor_mod_int16)
 
+// Reduce
+
+// REDUCE_ADD_FP16
+#define REDUCE_ADD_FLOAT16(lmul, mlen)                                         \
+    inline _Float16 reduce_add_float16(const vfloat16m##lmul##_t &v,           \
+                                       const size_t vl) {                      \
+        auto scalar = __riscv_vfmv_v_f_f16m1((_Float16)0.f, vl);               \
+        auto dest = __riscv_vfredusum_vs_f16m##lmul##_f16m1(v, scalar, vl);    \
+        return __riscv_vfmv_f_s_f16m1_f16(dest);                               \
+    }
+
+// REDUCE_MAX_FP16
+#define REDUCE_MAX_FLOAT16(lmul, mlen)                                         \
+    inline _Float16 reduce_max_float16(const vfloat16m##lmul##_t &v,           \
+                                       const size_t vl) {                      \
+        _Float16 lowest = -__FLT16_MAX__;                                      \
+        auto scalar = __riscv_vfmv_v_f_f16m1(lowest, vl);                      \
+        auto dest = __riscv_vfredmax_vs_f16m##lmul##_f16m1(v, scalar, vl);     \
+        return __riscv_vfmv_f_s_f16m1_f16(dest);                               \
+    }
+
+// REDUCE_MIN_FP16
+#define REDUCE_MIN_FLOAT16(lmul, mlen)                                         \
+    inline _Float16 reduce_min_float16(const vfloat16m##lmul##_t &v,           \
+                                       const size_t vl) {                      \
+        _Float16 max_val = __FLT16_MAX__;                                      \
+        auto scalar = __riscv_vfmv_v_f_f16m1(max_val, vl);                     \
+        auto dest = __riscv_vfredmin_vs_f16m##lmul##_f16m1(v, scalar, vl);     \
+        return __riscv_vfmv_f_s_f16m1_f16(dest);                               \
+    }
+
+REGISTER_RVV_FP16_KERNEL(REDUCE_ADD_FLOAT16)
+REGISTER_RVV_FP16_KERNEL(REDUCE_MAX_FLOAT16)
+REGISTER_RVV_FP16_KERNEL(REDUCE_MIN_FLOAT16)
+
+// register reduce op
+#define RVV_REDUCE_FP16_OP(op, dtype, vl, kernel)                              \
+    template <> struct reduce<op, dtype, ntt::vector<dtype, vl>> {             \
+        dtype operator()(const ntt::vector<dtype, vl> &v) const noexcept {     \
+            return kernel(v, vl);                                              \
+        }                                                                      \
+    };
+
+#define REGISTER_RVV_REDUCE_FP16_OP(op, dtype, kernel)                         \
+    RVV_REDUCE_FP16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)     \
+    RVV_REDUCE_FP16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel)     \
+    RVV_REDUCE_FP16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)     \
+    RVV_REDUCE_FP16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
+
+REGISTER_RVV_REDUCE_FP16_OP(add, _Float16, reduce_add_float16)
+REGISTER_RVV_REDUCE_FP16_OP(max, _Float16, reduce_max_float16)
+REGISTER_RVV_REDUCE_FP16_OP(min, _Float16, reduce_min_float16)
 } // namespace nncase::ntt::ops
