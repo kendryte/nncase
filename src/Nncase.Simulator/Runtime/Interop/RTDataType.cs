@@ -49,6 +49,16 @@ public class RTDataType : RTObject
         {
             case PrimType primType:
                 return FromTypeCode(primType.TypeCode);
+            case ReferenceType referenceType:
+                var rType = From(referenceType.ElemType);
+                Native.DTypeCreateReference(rType, out var refType).ThrowIfFailed();
+                return refType;
+            case IR.NN.PagedAttentionKVCacheType:
+                Native.DTypeCreatePagedAttentionKVCache(out var pkvType).ThrowIfFailed();
+                return pkvType;
+            case IR.NN.AttentionKVCacheType:
+                Native.DTypeCreateAttentionKVCache(out var kvType).ThrowIfFailed();
+                return kvType;
             case VectorType vectorType:
                 var elemType = From(vectorType.ElemType);
                 var lanes = vectorType.Lanes.ToArray();

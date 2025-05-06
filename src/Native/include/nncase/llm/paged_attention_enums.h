@@ -14,8 +14,9 @@
  */
 #pragma once
 
+#include <cstdint>
 namespace nncase::llm {
-enum class paged_attention_dim_kind : int {
+enum class paged_attention_dim_kind : int32_t {
     num_blocks = 0,
     num_layers,
     kv,
@@ -24,5 +25,5 @@ enum class paged_attention_dim_kind : int {
     head_dim
 };
 
-enum class attention_cache_kind : int { key = 0, value };
+enum class attention_cache_kind : int32_t { key = 0, value };
 } // namespace nncase::llm

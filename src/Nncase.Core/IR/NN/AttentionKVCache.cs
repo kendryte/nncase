@@ -35,7 +35,7 @@ public interface IAttentionKVCache
     /// <summary>
     /// Gets the config.
     /// </summary>
-    AttentionConfig Config { get; }
+    IAttentionConfig Config { get; }
 
     /// <summary>
     /// Gets the number of sequence in this batch.

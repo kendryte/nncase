@@ -121,9 +121,9 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
 template <class T0, class T1, class T2, class T3>
 void paged_attention([[maybe_unused]] T0 q_tensor,
                      [[maybe_unused]] T1 kv_cache_tensor,
-                     [[maybe_unused]] T3 extra_tensor,
+                     [[maybe_unused]] T2 extra_tensor,
                      [[maybe_unused]] size_t layer_id,
-                     [[maybe_unused]] T2 output_tensor) {}
+                     [[maybe_unused]] T3 output_tensor) {}
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
           class T7, class T8>

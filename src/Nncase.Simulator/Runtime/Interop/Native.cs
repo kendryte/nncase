@@ -77,6 +77,15 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_vector_dtype_get_lanes")]
     public static extern unsafe ErrorCode VectorDTypeGetLanes(RTVectorType handle, [Out] int[] lanes);
 
+    [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_reference")]
+    public static extern unsafe ErrorCode DTypeCreateReference(RTDataType elemType, out RTDataType dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_attention_kv_cache")]
+    public static extern unsafe ErrorCode DTypeCreateAttentionKVCache(out RTDataType dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_paged_attention_kv_cache")]
+    public static extern unsafe ErrorCode DTypeCreatePagedAttentionKVCache(out RTDataType dtype);
+
     [DllImport(LibraryName, EntryPoint = "nncase_value_is_tensor")]
     public static extern unsafe ErrorCode ValueIsTensor(IntPtr value, out bool isTensor);
 
@@ -173,4 +182,64 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_topology")]
     public static extern ErrorCode PagedAttentionConfigSetTopology(RTPagedAttentionConfig config, [In] int[] topology, int topology_len);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_create")]
+    public static extern ErrorCode AttentionKVCacheCreate(
+        RTAttentionConfig config,
+        int num_seqs,
+        int num_tokens,
+        RTTensor context_lens,
+        RTTensor seq_lens,
+        out RTAttentionKVCache cache);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_config")]
+    public static extern ErrorCode AttentionKVCacheGetConfig(
+        RTAttentionKVCache cache,
+        out RTAttentionConfig config);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_num_seqs")]
+    public static extern ErrorCode AttentionKVCacheGetNumSeqs(
+        RTAttentionKVCache cache,
+        out int num_seqs);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_set_num_seqs")]
+    public static extern ErrorCode AttentionKVCacheSetNumSeqs(
+        RTAttentionKVCache cache,
+        int num_seqs);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_num_tokens")]
+    public static extern ErrorCode AttentionKVCacheGetNumTokens(
+        RTAttentionKVCache cache,
+        out int num_tokens);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_set_num_tokens")]
+    public static extern ErrorCode AttentionKVCacheSetNumTokens(
+        RTAttentionKVCache cache,
+        int num_tokens);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_create")]
+    public static extern ErrorCode PagedAttentionKVCacheCreate(
+        RTPagedAttentionConfig config,
+        int num_seqs,
+        int num_tokens,
+        RTTensor context_lens,
+        RTTensor seq_lens,
+        RTTensor block_table,
+        RTTensor slot_mapping,
+        int num_blocks,
+        [In] int[] kv_shape,
+        int kv_shape_len,
+        out RTPagedAttentionKVCache cache);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_get_num_blocks")]
+    public static extern ErrorCode PagedAttentionKVCacheGetNumBlocks(
+        RTPagedAttentionKVCache cache,
+        out int num_blocks);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_set_kv_cache")]
+    public static extern ErrorCode PagedAttentionKVCacheSetKVCache(
+        RTPagedAttentionKVCache cache,
+        int[] indices,
+        int indices_len,
+        RTTensor kv_cache);
 }

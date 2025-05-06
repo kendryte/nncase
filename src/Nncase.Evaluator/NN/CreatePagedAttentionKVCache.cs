@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
@@ -14,7 +15,7 @@ using OrtKISharp;
 namespace Nncase.Evaluator.NN;
 
 public abstract record RefAttentionKVCache(
-    AttentionConfig Config,
+    IAttentionConfig Config,
     int NumSeqs,
     int NumTokens,
     Tensor<long> ContextLens,
@@ -26,7 +27,7 @@ public abstract record RefAttentionKVCache(
 }
 
 public sealed record RefPagedAttentionKVCache(
-    AttentionConfig Config,
+    IAttentionConfig Config,
     int NumSeqs,
     int NumTokens,
     Tensor<long> ContextLens,
@@ -42,9 +43,9 @@ public sealed record RefPagedAttentionKVCache(
         ContextLens,
         SeqLens), IPagedAttentionKVCache
 {
-    public IPagedAttentionConfig PagedAttentionConfig => (PagedAttentionConfig)Config;
+    IPagedAttentionConfig IPagedAttentionKVCache.Config => (IPagedAttentionConfig)Config;
 
-    IPagedAttentionConfig IPagedAttentionKVCache.Config => PagedAttentionConfig;
+    private IPagedAttentionConfig PagedAttentionConfig => (IPagedAttentionConfig)Config;
 
     public Tensor GetBlockId(int seqId, int contextId)
     {

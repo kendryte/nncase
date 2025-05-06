@@ -139,9 +139,32 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concat_output;
     }
 
+    private static void GatherKVCore(IPagedAttentionKVCache cache, int numBlocksForSeq, int seqId, AttentionCacheKind cacheKind, int layerId, int seqLen, int blockSizeAxis, List<OrtKISharp.Tensor> caches)
+    {
+        for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+        {
+            for (int i = 0; i < numBlocksForSeq; i++)
+            {
+                var blockId = cache.GetBlockId(seqId, i);
+                var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
+                var blockOrt = block.ToOrtTensor();
+
+                // slice
+                var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
+                if (validSlotCount < cache.Config.BlockSize)
+                {
+                    blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
+                }
+
+                caches.Add(blockOrt);
+            }
+        }
+    }
+
     private static OrtKISharp.Tensor GatherKV(AttentionCacheKind cacheKind, IPagedAttentionKVCache cache, int seqId, int layerId, long queryLen, long seqLen, long queryStart)
     {
         var caches = new List<OrtKISharp.Tensor>();
+
         // var blockIds = cache.GetBlockId(seqId);
         var numBlocksForSeq = MathUtility.CeilDiv(cache.SeqLen(seqId), cache.Config.BlockSize);
 
@@ -164,7 +187,8 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         if (cache.Config.Topology.Count > 0)
         {
             // var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
-            if (cache.Config.Topology is [1, 2]) // for xpu
+            // for xpu
+            if (cache.Config.Topology is [1, 2])
             {
                 totalKVHeads *= 2; // recover kv heads.
                 for (int did = 0; did < 2; did++)
@@ -199,27 +223,18 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                     }
                 }
             }
+            else if (cache.Config.Topology is [0] && CompileSessionScope.Current!.CompileOptions.TargetOptions is ICpuTargetOptions { Hierarchies: [[1]] })
+            {
+                GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
+            }
+            else
+            {
+                throw new NotSupportedException("topology not support");
+            }
         }
         else
         {
-            for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
-            {
-                for (int i = 0; i < numBlocksForSeq; i++)
-                {
-                    var blockId = cache.GetBlockId(seqId, i);
-                    var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
-                    var blockOrt = block.ToOrtTensor();
-
-                    // slice
-                    var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
-                    if (validSlotCount < cache.Config.BlockSize)
-                    {
-                        blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
-                    }
-
-                    caches.Add(blockOrt);
-                }
-            }
+            GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
         }
 
         // caches is (head * blocks) * [BlockLayout + lanes], concat at block size axis.
@@ -246,15 +261,13 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
     private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra)
     {
-        var headDim = q.Shape[target.QLayout.IndexOf(AttentionDimKind.Head)];
-        var dims = q.Shape.ToArray();
-        dims[^1] = headDim;
-        return q with { Shape = dims };
+        return q;
     }
 
     private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, IRType extra)
     {
-        if (q.Placement.Name == "cdxyt") // for xpu.
+        // for xpu.
+        if (q.Placement.Name == "cdxyt")
         {
             if (extra is DistributedType dtExtra && !dtExtra.AxisPolices.All(p => p is SBPBroadCast))
             {
@@ -272,14 +285,8 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 return q;
             }
         }
-        else
+        else if (q.Placement.Hierarchy.SequenceEqual([1]) && q.AxisPolices.All(x => x is SBPBroadCast))
         {
-            // for cpu.
-            if (q.AxisPolices.All(p => p is SBPBroadCast))
-            {
-                return new InvalidType("Q should be broadcast!");
-            }
-
             return q;
         }
 

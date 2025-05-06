@@ -31,6 +31,7 @@ public sealed class RTPagedAttentionScheduler : RTObject, IAttentionScheduler
     public static RTPagedAttentionScheduler Create(RTPagedAttentionConfig config, int numBlocks, int maxModelLen)
     {
         throw new NotSupportedException();
+
         // Native.PagedAttentionSchedulerCreate(config, numBlocks, maxModelLen, out var scheduler).ThrowIfFailed();
         // return scheduler;
     }
@@ -44,6 +45,7 @@ public sealed class RTPagedAttentionScheduler : RTObject, IAttentionScheduler
     public IAttentionKVCache Schedule(Tensor<long> sessionIds, Tensor<long> tokenCounts)
     {
         throw new NotSupportedException();
+
         // Native.PagedAttentionSchedulerSchedule(this, RTTensor.FromTensor(sessionIds), RTTensor.FromTensor(tokenCounts), out var cache).ThrowIfFailed();
         // return cache;
     }

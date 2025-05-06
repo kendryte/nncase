@@ -83,6 +83,14 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
                     }
                 }
             }
+            else if (cache.Config.Topology is [0] && num_kv_head == cache.Config.NumKVHeads)
+            {
+                // [num_tokens, slot_shape]
+                for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+                {
+                    cache.UpdateSlots(cacheKind, layerId, headId, slots);
+                }
+            }
             else
             {
                 throw new NotSupportedException();
@@ -105,7 +113,8 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
 
     private IRType Visit(ITypeInferenceContext context, UpdatePagedAttentionKVCache target, DistributedType slots, IRType kvCache)
     {
-        if (slots.Placement.Name == "cdxyt") // for xpu.
+        // for xpu.
+        if (slots.Placement.Name == "cdxyt")
         {
             // seq split at x, head split at die and y
             if (slots.AxisPolices[0] is SBPSplit { Axes: [2] } &&
@@ -114,6 +123,10 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
             {
                 return kvCache;
             }
+        }
+        else if (slots.Placement.Hierarchy.SequenceEqual([1]))
+        {
+            return kvCache;
         }
 
         return new InvalidType("not support distributed type");

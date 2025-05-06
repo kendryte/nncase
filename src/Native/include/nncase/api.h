@@ -112,6 +112,14 @@ nncase_vector_dtype_get_lanes_length(nncase::vector_type_node *handle,
 NNCASE_API int nncase_vector_dtype_get_lanes(nncase::vector_type_node *handle,
                                              int32_t *lanes);
 
+NNCASE_API int nncase_dtype_create_reference(nncase::datatype_node *elem_type,
+                                             nncase::datatype_node **dtype);
+NNCASE_API int
+nncase_dtype_create_attention_kv_cache(nncase::datatype_node **dtype);
+
+NNCASE_API int
+nncase_dtype_create_paged_attention_kv_cache(nncase::datatype_node **dtype);
+
 NNCASE_API int nncase_value_is_tensor(nncase::value_node *value,
                                       bool *is_tensor);
 
@@ -217,4 +225,62 @@ NNCASE_API int nncase_paged_attention_config_get_topology(
 NNCASE_API int nncase_paged_attention_config_set_topology(
     nncase::llm::paged_attention_config_node *config, const int32_t *topology,
     int32_t topology_len);
+
+NNCASE_API int
+nncase_attention_kv_cache_create(nncase::llm::attention_config_node *config,
+                                 int32_t num_seqs, int32_t num_tokens,
+                                 nncase::tensor_node *context_lens,
+                                 nncase::tensor_node *seq_lens,
+                                 nncase::llm::attention_kv_cache_node **cache);
+
+NNCASE_API int nncase_attention_kv_cache_get_config(
+    nncase::llm::attention_kv_cache_node *cache,
+    nncase::llm::attention_config_node **config);
+
+NNCASE_API int nncase_attention_kv_cache_get_num_seqs(
+    nncase::llm::attention_kv_cache_node *cache, int32_t *num_seqs);
+
+NNCASE_API int nncase_attention_kv_cache_set_num_seqs(
+    nncase::llm::attention_kv_cache_node *cache, int32_t num_seqs);
+
+NNCASE_API int nncase_attention_kv_cache_get_num_tokens(
+    nncase::llm::attention_kv_cache_node *cache, int32_t *num_tokens);
+
+NNCASE_API int nncase_attention_kv_cache_set_num_tokens(
+    nncase::llm::attention_kv_cache_node *cache, int32_t num_tokens);
+
+NNCASE_API int nncase_paged_attention_kv_cache_create(
+    nncase::llm::paged_attention_config_node *config, int32_t num_seqs,
+    int32_t num_tokens, nncase::tensor_node *context_lens,
+    nncase::tensor_node *seq_lens, nncase::tensor_node *block_table,
+    nncase::tensor_node *slot_mapping, int32_t num_blocks,
+    const int32_t *kv_shape, int32_t kv_shape_len,
+    nncase::llm::paged_attention_kv_cache_node **cache);
+
+NNCASE_API int nncase_paged_attention_kv_cache_get_num_blocks(
+    nncase::llm::paged_attention_kv_cache_node *cache, int32_t *num_blocks);
+
+NNCASE_API int nncase_paged_attention_kv_cache_get_block_table(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node **block_table);
+
+NNCASE_API int nncase_paged_attention_kv_cache_set_block_table(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node *block_table);
+
+NNCASE_API int nncase_paged_attention_kv_cache_get_slot_mapping(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node **slot_mapping);
+
+NNCASE_API int nncase_paged_attention_kv_cache_set_slot_mapping(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node *slot_mapping);
+
+NNCASE_API int nncase_paged_attention_kv_cache_get_kv_cache(
+    nncase::llm::paged_attention_kv_cache_node *cache, const int32_t *indices,
+    int32_t indices_len, nncase::tensor_node **kv_cache);
+
+NNCASE_API int nncase_paged_attention_kv_cache_set_kv_cache(
+    nncase::llm::paged_attention_kv_cache_node *cache, const int32_t *indices,
+    int32_t indices_len, nncase::tensor_node *kv_cache);
 }

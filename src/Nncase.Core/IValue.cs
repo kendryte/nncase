@@ -34,9 +34,6 @@ public interface IValue : IReadOnlyList<IValue>
     /// </summary>
     /// <returns>The tensors.</returns>
     Tensor[] AsTensors();
-
-    T AsObjectRef<T>()
-        where T : class, IEquatable<T>;
 }
 
 /// <summary>
@@ -163,8 +160,6 @@ public sealed class NoneValue : IValue, IEquatable<NoneValue?>
     public bool Equals(NoneValue? other) => other is not null;
 
     public override int GetHashCode() => 0;
-
-    T IValue.AsObjectRef<T>() => throw new NotImplementedException();
 }
 
 /// <summary>
@@ -258,8 +253,6 @@ public sealed class TensorValue : IValue, IEquatable<TensorValue?>
 
         return _value.Shape.ToString();
     }
-
-    T IValue.AsObjectRef<T>() => throw new NotImplementedException();
 }
 
 /// <summary>
@@ -336,42 +329,6 @@ public sealed class TupleValue : IValue, IEquatable<TupleValue?>
     {
         return "(" + string.Join(",", _values.Select(v => v.ToString())) + ")";
     }
-
-    T IValue.AsObjectRef<T>() => throw new NotImplementedException();
-}
-
-public sealed class ReferenceValue : IValue, IEquatable<ReferenceValue?>
-{
-    private readonly object _value;
-
-    public ReferenceValue(object value)
-    {
-        _value = value;
-    }
-
-    /// <inheritdoc/>
-    public IRType Type => new ReferenceType(CompilerServices.DataTypeService.GetValueTypeFromType(_value.GetType()));
-
-    public int Count => 1;
-
-    public IValue this[int index] => throw new NotImplementedException();
-
-    public Tensor AsTensor() => throw new NotImplementedException();
-
-    public Tensor[] AsTensors() => throw new NotImplementedException();
-
-    public bool Equals(ReferenceValue? other) => other?._value.Equals(_value) ?? false;
-
-    public IEnumerator<IValue> GetEnumerator() => throw new NotImplementedException();
-
-    T IValue.AsObjectRef<T>() => (T)_value;
-
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    public override bool Equals(object? obj)
-    {
-        return Equals(obj as ReferenceValue);
-    }
 }
 
 /// <summary>
@@ -422,8 +379,6 @@ public sealed class ShapeValue : IValue, IEquatable<ShapeValue?>
     {
         return new[] { AsTensor() };
     }
-
-    T IValue.AsObjectRef<T>() => throw new NotImplementedException();
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)

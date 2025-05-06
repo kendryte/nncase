@@ -52,13 +52,31 @@ internal static class CSourceExtensions
         _ => throw new NotImplementedException(),
     };
 
+    public static string ToC(this IR.NN.AttentionCacheKind mode) => mode switch
+    {
+        IR.NN.AttentionCacheKind.Key => "caching::attention_cache_kind::key",
+        IR.NN.AttentionCacheKind.Value => "caching::attention_cache_kind::value",
+        _ => throw new NotImplementedException(),
+    };
+
+    public static string ToC(this IR.NN.PagedAttentionDimKind mode) => mode switch
+    {
+        IR.NN.PagedAttentionDimKind.NumBlocks => "caching::paged_attention_dim_kind::num_blocks",
+        IR.NN.PagedAttentionDimKind.NumLayers => "caching::paged_attention_dim_kind::num_layers",
+        IR.NN.PagedAttentionDimKind.KV => "caching::paged_attention_dim_kind::kv",
+        IR.NN.PagedAttentionDimKind.BlockSize => "caching::paged_attention_dim_kind::block_size",
+        IR.NN.PagedAttentionDimKind.NumKVHeads => "caching::paged_attention_dim_kind::num_kv_heads",
+        IR.NN.PagedAttentionDimKind.HeadDim => "caching::paged_attention_dim_kind::head_dim",
+        _ => throw new NotImplementedException(),
+    };
+
     public static string ToC(this DataType dataType) => dataType switch
     {
         PrimType ptype => ptype.ToC(),
+        IR.NN.PagedAttentionKVCacheType kv_type => $"caching::paged_attention_kv_cache<caching::paged_attention_config<{kv_type.Config.NumLayers}, {kv_type.Config.NumKVHeads}, {kv_type.Config.HeadDim}, {kv_type.Config.KVType.ToC()}, {kv_type.Config.BlockSize}, fixed_shape<{string.Join(',', kv_type.Config.CacheLayout.Select(e => "(size_t)" + e.ToC()))}>, fixed_shape<{string.Join(',', kv_type.Config.BlockLayout.Select(e => "(size_t)" + e.ToC()))}>, fixed_shape<{string.Join(',', kv_type.Config.PackedAxes.Select(e => "(size_t)" + e.ToC()))}>, fixed_shape<{string.Join(',', kv_type.Config.Lanes)}>, fixed_shape<{string.Join(',', kv_type.Config.Topology)}>>>",
         PointerType => "uint8_t *",
         VectorType vtype => $"vector<{vtype.ElemType.ToC()},{string.Join(",", vtype.Lanes)}>",
-        ReferenceType rtype => $"{rtype.ElemType.ToC()} *",
-        PagedAttentionKVCacheType pagedAttentionKVCacheType => ToC(pagedAttentionKVCacheType),
+        ReferenceType rtype => $"{rtype.ElemType.ToC()}",
         _ => throw new NotSupportedException(dataType.ToString()),
     };
 

@@ -27,11 +27,12 @@ class NNCASE_API paged_attention_kv_cache_node
                        object_paged_attention_kv_cache);
 
   public:
-    paged_attention_kv_cache_node(
-        paged_attention_config config, size_t num_seqs, size_t num_tokens,
-        tensor context_lens, tensor seq_lens, tensor block_table,
-        tensor slot_mapping, size_t num_blocks, const dims_t &kv_shape,
-        const std::vector<tensor> &kv_storages) noexcept
+    paged_attention_kv_cache_node(paged_attention_config config,
+                                  int32_t num_seqs, int32_t num_tokens,
+                                  tensor context_lens, tensor seq_lens,
+                                  tensor block_table, tensor slot_mapping,
+                                  int32_t num_blocks,
+                                  const dims_t &kv_shape) noexcept
         : attention_kv_cache_node(config, num_seqs, num_tokens, context_lens,
                                   seq_lens),
           block_table_(block_table),
@@ -39,7 +40,7 @@ class NNCASE_API paged_attention_kv_cache_node
           num_blocks_(num_blocks),
           kv_shape_(kv_shape),
           kv_strides_(runtime::get_default_strides(kv_shape)),
-          kv_storages_(kv_storages) {}
+          kv_storages_(runtime::compute_size(kv_shape)) {}
 
     paged_attention_config config() const noexcept {
         auto cfg = attention_kv_cache_node::config();
@@ -48,7 +49,7 @@ class NNCASE_API paged_attention_kv_cache_node
         return pcfg;
     }
 
-    size_t num_blocks() const noexcept { return num_blocks_; }
+    int32_t num_blocks() const noexcept { return num_blocks_; }
 
     void context_lens(tensor context_lens) noexcept {
         context_lens_ = context_lens;
@@ -82,12 +83,16 @@ class NNCASE_API paged_attention_kv_cache_node
         return kv_storages_[index];
     }
 
+    const dims_t &kv_shape() const noexcept { return kv_shape_; }
+
+    const auto &kv_storages() const noexcept { return kv_storages_; }
+
   private:
     tensor context_lens_;
     tensor seq_lens_;
     tensor block_table_;
     tensor slot_mapping_;
-    size_t num_blocks_;
+    int32_t num_blocks_;
     dims_t kv_shape_;
     strides_t kv_strides_;
     std::vector<tensor> kv_storages_;

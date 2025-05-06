@@ -229,6 +229,48 @@ public class UnitTestInterop : TestClassBase
         });
     }
 
+    [Fact]
+    public void TestRTAttentionKVCache()
+    {
+        var pagedConfig = new IR.NN.PagedAttentionConfig(
+            NumLayers: 2,
+            NumKVHeads: 4,
+            HeadDim: 32,
+            KVType: DataTypes.Float32,
+            BlockSize: 16,
+            CacheLayout: new[]
+            {
+                IR.NN.PagedAttentionDimKind.NumBlocks,
+                IR.NN.PagedAttentionDimKind.NumLayers,
+                IR.NN.PagedAttentionDimKind.KV,
+                IR.NN.PagedAttentionDimKind.BlockSize,
+                IR.NN.PagedAttentionDimKind.NumKVHeads,
+                IR.NN.PagedAttentionDimKind.HeadDim,
+            },
+            PackedAxes: new[] { IR.NN.PagedAttentionDimKind.HeadDim },
+            Lanes: new[] { 32 },
+            Topology: new[] { 0 });
+
+        var contextLens = Tensor.From(new[] { 64L });
+        var seqLens = Tensor.From(new[] { 128L });
+        var blockTable = Tensor.From(new long[] { 0, -1, -1, -1 }); // Example block table
+        var slotMapping = Tensor.From(new long[] { 5, 4, 3, 2, 1 }); // Example slot mapping
+
+        var rtPagedConfig = RTPagedAttentionConfig.FromConfig(pagedConfig);
+
+        var rtContextLens = RTTensor.FromTensor(contextLens);
+        var rtSeqLens = RTTensor.FromTensor(seqLens);
+        var rtBlockTable = RTTensor.FromTensor(blockTable);
+        var rtSlotMapping = RTTensor.FromTensor(slotMapping);
+        var rtpagedAttn = RTPagedAttentionKVCache.Create(
+            rtPagedConfig, 1, 64, rtContextLens, rtSeqLens, rtBlockTable, rtSlotMapping, 15, [1]);
+
+        Assert.Equal(15, rtpagedAttn.NumBlocks);
+
+        var totensor = Tensor.FromScalar(new Reference<IR.NN.IPagedAttentionKVCache>(rtpagedAttn));
+        RTTensor.FromTensor(totensor);
+    }
+
 #if false
     [Fact]
     public void TestRTPagedAttentionScheduler()

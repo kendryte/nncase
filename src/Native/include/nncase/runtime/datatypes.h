@@ -50,6 +50,7 @@ class NNCASE_API datatype_t : public object_t<datatype_node> {
     static prim_type_t float64;
     static prim_type_t bfloat16;
     static value_type_t attention_kv_cache;
+    static value_type_t paged_attention_kv_cache;
 
     datatype_t(typecode_t typecode);
 
