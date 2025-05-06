@@ -121,7 +121,35 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             return new InvalidType("pad infer type failed");
         }
 
-        return new DistributedType(tensorType, input.AxisPolices, input.Placement);
+        var ndsbp = new SBP[input.TensorType.Shape.Rank];
+        if (paddings is TensorConst tc)
+        {
+            var pads = tc.Value.ToArray<int>();
+            var padsPerDim = Enumerable.Range(0, pads.Length / 2).Select(i => pads[2 * i] + pads[(2 * i) + 1]).ToArray();
+            for (var i = 0; i < input.AxisPolices.Count; i++)
+            {
+                if (input.AxisPolices[i] is SBPSplit split && padsPerDim[i] != 0)
+                {
+                    return new InvalidType("pad not support split on axes for now.");
+                }
+
+                ndsbp[i] = input.AxisPolices[i];
+            }
+        }
+        else
+        {
+            for (var i = 0; i < input.AxisPolices.Count; i++)
+            {
+                if (input.AxisPolices[i] is SBPSplit)
+                {
+                    return new InvalidType("dynamic pad not support split on axes for now.");
+                }
+
+                ndsbp[i] = input.AxisPolices[i];
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 
     /// <inheritdoc/>
