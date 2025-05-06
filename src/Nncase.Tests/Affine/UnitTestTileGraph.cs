@@ -273,7 +273,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     public void TestBuildTileGraph(Func<Function> functor, int count)
     {
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 #if DEBUG
         Dumpper.DumpIR(post, $"post{count}");
 #endif
@@ -293,7 +293,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     public void TestMergeTileGraph(Func<Function> functor, (IntMergePoint, bool)[] mergePoints, Action<TieredTileGraph> checker, int count)
     {
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 #if DEBUG
         Dumpper.DumpIR(post, $"post{count}");
 #endif
@@ -326,7 +326,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     {
         var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
         var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
@@ -344,7 +344,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
         var tiler = new Schedule.GraphTiler();
         using var scope = new Diagnostics.DumpScope($"{count}");
-        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+        var result = tiler.Tile(post, Nncase.Targets.NTTTarget.Kind, (ICpuTargetOptions)CompileOptions.TargetOptions);
         action(result);
     }
 
@@ -354,7 +354,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     {
         var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
         var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
@@ -377,7 +377,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     {
         var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
         var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
@@ -400,7 +400,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     public void TestPrimTreeEqualityComparer()
     {
         var func = FunctionSamples.Get3();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
         var grid = (IR.Affine.Grid)((Function)post).Body;
         var rootGraph = GraphBuilder.Build(grid, 2, out _);
 #if DEBUG

@@ -15,7 +15,7 @@ using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
-using Nncase.Passes.Rules.CPU;
+using Nncase.Passes.Rules.NTT;
 using Nncase.PatternMatch;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
@@ -290,11 +290,11 @@ public class UnitTestEGraphFusion : TestClassBase
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_1);
 
             main = new Function("main", v_2, input);
@@ -586,7 +586,7 @@ public class UnitTestEGraphFusion : TestClassBase
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_0);
 
             var fusion_4_input_0 = new Var("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
@@ -1077,8 +1077,8 @@ public class UnitTestEGraphFusion : TestClassBase
         var prmg = CompileSession.CreatePassManager("prmg");
         prmg.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<CPUSingleFusion>(CPUTarget.Kind);
-            p.Add<CPUOutputBoxingFusion>(CPUTarget.Kind);
+            p.Add<CPUSingleFusion>(NTTTarget.Kind);
+            p.Add<CPUOutputBoxingFusion>(NTTTarget.Kind);
         });
         prmg.Add<EGraphRulesPass>().Configure(p =>
         {
@@ -1111,11 +1111,11 @@ public class UnitTestEGraphFusion : TestClassBase
             var v_0 = IR.F.Tensors.Split(input, 0, new[] { 1, 1 });
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, IR.F.Tensors.GetItem(v_0, 0));
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Abs, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Abs, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, IR.F.Tensors.GetItem(v_0, 1));
 
             var v_3 = new IR.Tuple(v_1, v_2);
@@ -1140,8 +1140,8 @@ public class UnitTestEGraphFusion : TestClassBase
         var prmg = CompileSession.CreatePassManager("prmg");
         prmg.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<CPUSingleFusion>(CPUTarget.Kind);
-            p.Add<CPUOutputBoxingFusion>(CPUTarget.Kind);
+            p.Add<CPUSingleFusion>(NTTTarget.Kind);
+            p.Add<CPUOutputBoxingFusion>(NTTTarget.Kind);
         });
         DumpScope.Current.DumpIR(main, "pre");
         prmg.Add<EGraphRulesPass>().Configure(p =>

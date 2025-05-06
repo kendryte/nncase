@@ -2,8 +2,12 @@
 
 set(SRCS 
         api.cpp
+        dim_value.cpp
         object.cpp
+        padding_value.cpp
+        paddings_value.cpp
         shape.cpp
+        shape_value.cpp
         tensor.cpp
         type.cpp
         value.cpp)

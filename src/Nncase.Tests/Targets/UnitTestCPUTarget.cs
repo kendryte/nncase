@@ -26,11 +26,11 @@ namespace Nncase.Tests.TargetTest;
 
 [Collection(nameof(NotThreadSafeResourceCollection))]
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestCPUTarget : TestClassBase
+public class UnitTestNTTTarget : TestClassBase
 {
-    public UnitTestCPUTarget()
+    public UnitTestNTTTarget()
     {
-        DefaultTargetName = CPUTarget.Kind;
+        DefaultTargetName = NTTTarget.Kind;
         CompileOptions.TargetOptions = new CpuTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite | DumpFlags.EGraphCost | DumpFlags.CodeGen | DumpFlags.Compile;
@@ -55,16 +55,16 @@ public class UnitTestCPUTarget : TestClassBase
 
     [Fact]
     [AutoSetupTestMethod(InitSession = false)]
-    public void TestCPUTargetKind()
+    public void TestNTTTargetKind()
     {
-        Assert.Equal("cpu", CPUTarget.Kind);
+        Assert.Equal("cpu", NTTTarget.Kind);
     }
 
     [Fact]
     [AutoSetupTestMethod(InitSession = false)]
-    public void TestCreateCPUTarget()
+    public void TestCreateNTTTarget()
     {
-        var target = CompilerServices.GetTarget(CPUTarget.Kind);
+        var target = CompilerServices.GetTarget(NTTTarget.Kind);
         Assert.NotNull(target);
     }
 

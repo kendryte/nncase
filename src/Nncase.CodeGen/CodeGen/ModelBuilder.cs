@@ -16,17 +16,14 @@ namespace Nncase.CodeGen;
 /// </summary>
 public sealed class ModelBuilder : IModelBuilder
 {
-    private readonly IStackVMModuleBuilder _stackVMModuleBuilder;
-
     /// <summary>
     /// Initializes a new instance of the <see cref="ModelBuilder"/> class.
     /// default ctor.
     /// </summary>
-    public ModelBuilder(ITarget target, CompileOptions compileOptions, IStackVMModuleBuilder stackVMModuleBuilder)
+    public ModelBuilder(ITarget target, CompileOptions compileOptions)
     {
         Target = target;
         CompileOptions = compileOptions;
-        _stackVMModuleBuilder = stackVMModuleBuilder;
     }
 
     /// <summary>
@@ -57,11 +54,6 @@ public sealed class ModelBuilder : IModelBuilder
 
     private IModuleBuilder GetModuleBuilder(string kind)
     {
-        if (kind == _stackVMModuleBuilder.ModuleKind)
-        {
-            return _stackVMModuleBuilder;
-        }
-
         return Target.GetModuleCompiler(kind).CreateModuleBuilder(CompileOptions);
     }
 

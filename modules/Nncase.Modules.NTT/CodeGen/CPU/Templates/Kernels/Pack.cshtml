@@ -1,0 +1,4 @@
+﻿@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.Pack>
+@{
+}
+@(Model.Indent)pack<@string.Join(",", Model.Target.Axes)>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name));

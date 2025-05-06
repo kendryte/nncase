@@ -14,14 +14,14 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.IR.CPU;
 using Nncase.IR.Distributed;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.NTT;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
-using Nncase.Passes.Rules.CPU;
+using Nncase.Passes.Rules.NTT;
 using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Targets;
@@ -63,7 +63,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -98,7 +98,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -135,7 +135,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -172,7 +172,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -213,7 +213,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -253,7 +253,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -288,7 +288,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -323,7 +323,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -361,7 +361,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -399,7 +399,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -440,7 +440,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -480,7 +480,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -518,7 +518,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -555,7 +555,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -591,7 +591,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -629,7 +629,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -666,7 +666,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -705,7 +705,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -741,7 +741,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -781,7 +781,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -821,7 +821,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();

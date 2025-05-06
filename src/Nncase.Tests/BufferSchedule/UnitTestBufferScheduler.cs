@@ -21,7 +21,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
 {
     public UnitTestBufferScheduler()
     {
-        DefaultTargetName = Targets.CPUTarget.Kind;
+        DefaultTargetName = Targets.NTTTarget.Kind;
         CompileOptions.TargetOptions = new Targets.CpuTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.Schedule | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
@@ -53,7 +53,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
         var i = IR.F.Tensors.GetItem(tp, 1) + h;
 
         var body = new IR.Tuple(IR.F.Distributed.Boxing(IR.F.Tensors.GetItem(tp, 0), ttype), IR.F.Distributed.Boxing(i, ttype));
-        return new Function("kernel", Targets.CPUTarget.Kind, body, [a, b]);
+        return new Function("kernel", Targets.NTTTarget.Kind, body, [a, b]);
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     private async Task Compile(IRModule module)
     {
         var passManager = CompileSession.CreatePassManager("pmgr");
-        passManager.Add<CPUTIRSelectionPass>();
+        passManager.Add<NTTTIRSelectionPass>();
         passManager.Add<AddFunctionToModule>();
 
         // todo add auto fusion merge pass here.
