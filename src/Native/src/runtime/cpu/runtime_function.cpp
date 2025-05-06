@@ -60,8 +60,9 @@ result<value_t> cpu_runtime_function::invoke_core(
         try_var(m, hb.map(map_read_write));
 
         if (t->dtype().is_a<reference_type_t>()) {
-            try_var(rt, t->dtype().as<reference_type_t>());
-            auto vt = rt.as<value_type_t>().expect(
+            auto rt = t->dtype().as<reference_type_t>().expect(
+                "now only support reference value type!");
+            auto vt = rt->elemtype().as<value_type_t>().expect(
                 "now only support reference value type!");
             if (vt->uuid() == datatype_t::paged_attention_kv_cache->uuid()) {
                 auto refspan =

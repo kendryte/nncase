@@ -84,7 +84,7 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
                                      TKVCache kv_cache_tensor,
                                      caching::attention_cache_kind kind,
                                      size_t layer_id) {
-    auto &kv_cache = *kv_cache_tensor(0);
+    auto &kv_cache = kv_cache_tensor(0);
     using config_t = typename std::decay_t<decltype(kv_cache)>::config_t;
     constexpr size_t num_heads = config_t::num_kv_heads;
 

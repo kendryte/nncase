@@ -188,7 +188,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                                             cfg.block_size, cfg.num_kv_heads,
                                             cfg.head_dim);
         for (size_t i = 0; i < (size_t)paged_attention_dim_kind::count__; i++) {
-            auto it = cfg.packed_axes.indexof((paged_attention_dim_kind)i);
+            auto it = cfg.packed_axes.indexof(i);
             if (it != -1) {
                 shape[i] /= cfg.lanes[it];
             }
@@ -253,8 +253,8 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
             shape[i] = default_shape[(size_t)cache_layout[i]];
             // printf("[nncase_log] block_start[%ld] = %ld\n", i, starts[i]);
             // printf("[nncase_log] block_shape[%ld] = %ld\n", i, shape[i]);
-            if ((cache_layout[i] != paged_attention_dim_kind::block_size) &&
-                (cache_layout[i] != paged_attention_dim_kind::head_dim)) {
+            if ((cache_layout[i] != (size_t)paged_attention_dim_kind::block_size) &&
+                (cache_layout[i] != (size_t)paged_attention_dim_kind::head_dim)) {
                 squeeze_axes[j] = i;
                 // printf("[nncase_log] block_squeeze[%ld] = %ld\n", j,
                 //        squeeze_axes[j]);
@@ -311,7 +311,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         //     %ld]\n", starts[0], starts[1], shape[0], shape[1]);
         return block_view.view(starts, shape)
             .squeeze(ntt::make_ranked_shape(
-                block_layout.indexof(paged_attention_dim_kind::block_size)));
+                block_layout.indexof((size_t)paged_attention_dim_kind::block_size)));
     }
 
   public:
@@ -354,7 +354,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                       T slots) {
         // slots : [num_tokens, numHeads, headDim]
         auto slots_shape = slots.shape();
-        for (int i = 0; i < this->template num_tokens<TConfig>(); i++) {
+        for (int i = 0; i < this->num_tokens(); i++) {
             auto slot_id = get_slot_id(i);
             auto slot = slots
                             .view(ntt::make_ranked_shape(i, head_id, 0),
