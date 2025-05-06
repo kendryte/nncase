@@ -34,7 +34,7 @@ template <reduce_op ReduceOp> struct P {
 // Implicit
 struct I {
     template <class Mesh>
-    constexpr bool is_divisible(size_t global_dim) noexcept {
+    constexpr bool is_divisible([[maybe_unused]] size_t global_dim) noexcept {
         return true;
     }
 
