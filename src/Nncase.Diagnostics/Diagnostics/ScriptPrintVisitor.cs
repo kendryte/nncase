@@ -135,19 +135,19 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
     public override string VisitType(DistributedType type)
     {
-        var shape = type.TensorType.Shape.ToArray();
+        var shape = CompilerServices.GetMaxShape(type.TensorType.Shape);
+        bool[] usedCeil = new bool[shape.Length];
         foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
-                if (shape[r].IsFixed)
-                {
-                    shape[r] = shape[r] / split.Axes.Select(a => type.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                }
+                var divisor = split.Axes.Select(a => type.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                usedCeil[r] = shape[r] % divisor != 0;
+                shape[r] = (shape[r] + divisor - 1) / divisor;
             }
         }
 
-        var sshape = shape.Select(s => s.ToString()).ToArray();
+        var sshape = shape.Select((s, idx) => usedCeil[idx] ? $"⌈{s}⌉" : s.ToString()).ToArray();
         foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
