@@ -99,11 +99,24 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         var invalid = new InvalidType(inType.ToString());
         var outType = Visit(target, inType.TensorType);
         var ndsbp = new SBP[inType.TensorType.Shape.Rank];
+        var shape = CompilerServices.GetMaxShape(inType.TensorType.Shape);
         for (int i = 0; i < ndsbp.Length; i++)
         {
             if (inType.AxisPolices[i] is SBPPartial)
             {
                 return invalid;
+            }
+
+            if (inType.AxisPolices[i] is SBPSplit split && inType.TensorType.DType is VectorType vtIn && outType is TensorType ttOut && ttOut.DType is VectorType vtOut)
+            {
+                if (vtIn.ElemType != vtOut.ElemType)
+                {
+                    var divisor = split.Axes.Select(a => inType.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                    if (shape[i] % divisor != 0)
+                    {
+                        return invalid;
+                    }
+                }
             }
 
             ndsbp[i] = inType.AxisPolices[i];
