@@ -9,6 +9,23 @@ namespace Nncase.Utilities;
 
 public static class DistributedUtility
 {
+    static DistributedUtility()
+    {
+        var divisibleDist = Environment.GetEnvironmentVariable("DivisibleDist");
+        if (!string.IsNullOrEmpty(divisibleDist) && divisibleDist == "0")
+        {
+            DivideByFunc = IsDivideBy;
+        }
+        else
+        {
+            DivideByFunc = IsDivideExactly;
+        }
+    }
+
+    public delegate bool DivideByDelegate(long input, int divisor);
+
+    public static DivideByDelegate DivideByFunc { get; }
+
     public static List<List<int>> GetHierarchyCombinations(int rank)
     {
         var allCombinations = new List<List<int>>(rank);
@@ -48,7 +65,7 @@ public static class DistributedUtility
             {
                 var axis = splitsAxes[ti];
                 var divisor = axis.Select(a => placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                if (axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && IsDivideBy(maxShape[di], divisor))
+                if (axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && DivideByFunc(maxShape[di], divisor))
                 {
                     policy.Add(SBP.S(axis.ToArray()));
                 }
@@ -117,7 +134,7 @@ public static class DistributedUtility
         // 2. All shapes are divisible by the mesh.
         var maxShape = CompilerServices.GetMaxShape(tensorType.Shape);
         var divisors = GetDivisors(new DistributedType(tensorType, polices.ToArray(), placement));
-        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : IsDivideBy(maxShape[p.axis], p.d));
+        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : DivideByFunc(maxShape[p.axis], p.d));
     }
 
     public static bool IsDistributable(ReadOnlySpan<SBP> polices)
