@@ -102,6 +102,20 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
             throw new InvalidOperationException();
         }
 
+        // TODO: may support non-divisible input and pass it to output even if it's divisible.
+        var shape = CompilerServices.GetMaxShape(input.TensorType.Shape);
+        foreach (var (s, r) in input.AxisPolices.Select((s, r) => (s, r)))
+        {
+            if (s is SBPSplit split)
+            {
+                var divisor = split.Axes.Select(a => input.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                if (shape[r] % divisor != 0)
+                {
+                    return new InvalidType("Not support non-divisible input");
+                }
+            }
+        }
+
         return new DistributedType(tensorType, input.AxisPolices, input.Placement);
     }
 }
