@@ -59,4 +59,28 @@ public static class SpanUtility
     {
         return MemoryMarshal.CreateReadOnlySpan(ref MemoryMarshal.GetArrayDataReference(array), array.Length);
     }
+
+    public static ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] array, int start, int length)
+    {
+        if (start < 0 || length < 0 || start + length > array.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(start), "Start or length is out of range.");
+        }
+
+        return MemoryMarshal.CreateReadOnlySpan(ref MemoryMarshal.GetArrayDataReference(array), array.Length).Slice(start, length);
+    }
+
+    public static bool ReferenceContains<T>(this ReadOnlySpan<T> span, T value)
+        where T : class
+    {
+        foreach (var item in span)
+        {
+            if (ReferenceEquals(item, value))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

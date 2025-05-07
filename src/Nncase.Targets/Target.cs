@@ -19,7 +19,8 @@ public abstract class Target : ITarget
 
     public IModuleCompiler GetModuleCompiler(string moduleKind)
     {
-        return ModuleCompilers.Single(m => m.ModuleKind == moduleKind);
+        return ModuleCompilers.FirstOrDefault(m => m.ModuleKind == moduleKind) ??
+            throw new NotSupportedException($"Module compiler for {moduleKind} is not found.");
     }
 
     public virtual Task AdaRoundWeights(ICalibrationDatasetProvider calibrationDataset, List<ENode> rangeOfs, List<ENode> childrenOfRangeOfs, QuantizeOptions quantizeOptions)

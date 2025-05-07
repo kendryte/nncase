@@ -7,7 +7,7 @@ using Nncase.IR.Buffers;
 namespace Nncase.Evaluator.Buffers;
 
 /// <summary>
-/// Evaluator for DDrOf.
+/// Evaluator for AddressOf.
 /// </summary>
 public partial class AllocateEvaluator : ITypeInferencer<Allocate>
 {

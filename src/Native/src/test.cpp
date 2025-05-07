@@ -1373,7 +1373,7 @@ int main() {
 
 #if 0
     auto kmodel = read_file(
-        R"(/mnt/home-nas/work/repo/nncase/tests_output/UnitTestNTTTarget/TestSimpleUnary/TestSimpleUnary.kmodel)");
+        R"(/mnt/home-nas/work/repo/nncase/tests_output/UnitTestCPUTarget/TestSimpleUnary/TestSimpleUnary.kmodel)");
 
     interpreter *interp;
     TRY(nncase_interp_create(&interp));

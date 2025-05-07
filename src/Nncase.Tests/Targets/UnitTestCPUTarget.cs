@@ -26,9 +26,9 @@ namespace Nncase.Tests.TargetTest;
 
 [Collection(nameof(NotThreadSafeResourceCollection))]
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestNTTTarget : TestClassBase
+public class UnitTestCPUTarget : TestClassBase
 {
-    public UnitTestNTTTarget()
+    public UnitTestCPUTarget()
     {
         DefaultTargetName = CPUTarget.Kind;
         CompileOptions.TargetOptions = new NTTTargetOptions();
@@ -55,14 +55,14 @@ public class UnitTestNTTTarget : TestClassBase
 
     [Fact]
     [AutoSetupTestMethod(InitSession = false)]
-    public void TestNTTTargetKind()
+    public void TestCPUTargetKind()
     {
         Assert.Equal("cpu", CPUTarget.Kind);
     }
 
     [Fact]
     [AutoSetupTestMethod(InitSession = false)]
-    public void TestCreateNTTTarget()
+    public void TestCreateCPUTarget()
     {
         var target = CompilerServices.GetTarget(CPUTarget.Kind);
         Assert.NotNull(target);
@@ -70,9 +70,9 @@ public class UnitTestNTTTarget : TestClassBase
 
     [Theory]
     [CombinatorialData]
-    public void TestCreateStackVMModuleBuilder([CombinatorialValues("stackvm")] string moduleKind)
+    public void TestCreateCPUModuleBuilder([CombinatorialValues("cpu")] string moduleKind)
     {
-        var moduleBuilder = CompileSession.Target.ModuleCompilers[0].CreateModuleBuilder(CompileOptions);
+        var moduleBuilder = CompileSession.Target.GetModuleCompiler(moduleKind).CreateModuleBuilder(CompileOptions);
         Assert.NotNull(moduleBuilder);
     }
 
@@ -245,8 +245,13 @@ public class UnitTestNTTTarget : TestClassBase
 
     private void TestCodeGen(BaseExpr body, Var[] vars, [CallerMemberName] string? name = null)
     {
-        var main = new Function("main", body, vars);
+        var main = new Function("main", CPUTarget.Kind, body, vars);
         var module = new IRModule(main);
+        var pmgr = CompileSession.CreatePassManager("pmgr");
+        var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
+        compiler.TIRPass(pmgr);
+        pmgr.RunAsync(module).Wait();
+
         var modelBuilder = CompileSession.GetRequiredService<IModelBuilder>();
         var linkedModel = modelBuilder.Build(module);
         using var output = File.Open($"{name}.kmodel", FileMode.Create);

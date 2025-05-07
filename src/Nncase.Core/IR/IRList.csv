@@ -8,6 +8,7 @@ Marker,true,false,Default,,Target;Attribute
 None,true,false,Default,,
 Op,true,false,Default,,
 PrimFunctionWrapper,true,true,BaseFunction,,Target
+FunctionWrapper,true,true,BaseFunction,,Target
 TensorConst,true,false,Const,,
 Tuple,true,false,Default,IR.,@Fields
 TupleConst,true,false,Const,,
@@ -23,6 +24,7 @@ PrimFunction,true,true,BaseFunction,TIR.,@Parameters;Body
 Sequential,true,false,Default,TIR.,@Fields
 Range,true,false,Default,TIR.,Start;Stop;Step
 IterVar,true,false,Default,TIR.,Value;Dom
+Return,true,false,Default,TIR.,@Values
 # Affine
 AffineExpr,false,false,Default,Affine.,
 AffineSymbolBase,false,false,AffineExpr,Affine.,

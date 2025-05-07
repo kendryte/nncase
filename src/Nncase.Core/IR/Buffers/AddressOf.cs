@@ -8,7 +8,7 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.Buffers;
 
 /// <summary>
-/// DDrOf expression.
+/// AddressOf expression.
 /// </summary>
 [PatternFunctionalGenerator]
 public sealed partial class AddressOf : Op

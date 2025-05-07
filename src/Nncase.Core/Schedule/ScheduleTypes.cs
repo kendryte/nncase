@@ -109,6 +109,10 @@ public sealed class SchedFunctionResult
     /// </summary>
     public ulong DataAlign { get; set; }
 
+    public ulong OutputUsage { get; set; }
+
+    public ulong OutputAlign { get; set; }
+
     /// <summary>
     /// Gets or sets a value indicating whether the Scheduled status.
     /// </summary>

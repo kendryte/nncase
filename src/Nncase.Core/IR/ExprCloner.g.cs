@@ -243,6 +243,34 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
+    protected override BaseExpr VisitLeafFunctionWrapper(FunctionWrapper expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Target, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (!CanVisitFunctionBody(expr))
+        {
+            return expr;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                target: Clone(expr.Target, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
     protected override BaseExpr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
         bool IsOperandsMutated()
@@ -688,6 +716,29 @@ public partial class ExprCloner<TContext>
             return expr.With(
                 value: Clone(expr.Value, context),
                 dom: Clone(expr.Dom, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override BaseExpr VisitLeafReturn(TIR.Return expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedArray(expr.Values, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                values: CloneArray(expr.Values, context)
             );
         }
 

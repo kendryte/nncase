@@ -386,6 +386,39 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     }
 
     /// <inheritdoc/>
+    protected override string VisitFunctionWrapper(FunctionWrapper expr)
+    {
+        if (Flags.HasFlag(PrinterFlags.Inline))
+        {
+            return expr.Name;
+        }
+
+        using var subScope = NestedScope();
+        var name = $"%{expr.Name}";
+
+        // 1. Function signature
+        _writer.WInd().Write($"{name} = func_wrapper({string.Join(", ", expr.ParameterTypes.Select(x => x == null ? string.Empty : VisitType(x)))})");
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " {");
+
+        // 2. Function body
+        if (ShouldEnterScope())
+        {
+            using (IndentScope())
+            {
+                Visit(expr.Target);
+            }
+        }
+        else
+        {
+            _writer.WInd().WriteLine("...");
+        }
+
+        // 3. Function closing
+        _writer.WInd().WriteLine("}");
+        return name;
+    }
+
+    /// <inheritdoc/>
     protected override string VisitOp(Op expr)
     {
         return expr.GetType().Name;

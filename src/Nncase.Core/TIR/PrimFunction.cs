@@ -29,7 +29,7 @@ public sealed class PrimFunction : BaseFunction
     /// <param name="parameters">Arguments.</param>
     /// <param name="body">Body.</param>
     public PrimFunction(string name, string moduleKind, Sequential body, ReadOnlySpan<IVar> parameters)
-        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<IVar, Expr>(parameters)))
+        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<IVar, BaseExpr>(parameters)))
     {
     }
 
@@ -60,7 +60,7 @@ public sealed class PrimFunction : BaseFunction
 
     public ReadOnlySpan<IVar> Parameters => SpanUtility.UnsafeCast<BaseExpr, IVar>(Operands.Slice(1));
 
-    public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => ((Expr)x).CheckedType).ToArray();
+    public override IEnumerable<IRType> ParameterTypes => Parameters.AsValueEnumerable().Select(x => ((Expr)x).CheckedType).ToArray();
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)

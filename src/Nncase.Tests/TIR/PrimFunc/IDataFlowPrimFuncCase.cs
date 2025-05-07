@@ -39,7 +39,7 @@ internal static class PrimFuncBuilder
 
         var fusion_output = allocator.AllocateVar($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
-        var fusion_1 = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_input, fusion_output).Body(
+        var fusion_1 = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.CPUModuleKind, fusion_input, fusion_output).Body(
           new Call(new TIRTest.LoadT(), fusion_input, glb),
           new Call(new TIRTest.LoadT(), glb, fusion_output)).Build();
 
@@ -57,7 +57,7 @@ internal static class PrimFuncBuilder
         var glb_output = allocator.Allocate($"fusion_{_count}_glb_output", TIR.MemoryLocation.L2Data);
         var fusion_output = allocator.AllocateVar($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
-        var fusion = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_input_lhs, fusion_input_rhs, fusion_output).Body(
+        var fusion = TIR.T.PrimFunc($"fusion_{_count}_{mask}", Callable.CPUModuleKind, fusion_input_lhs, fusion_input_rhs, fusion_output).Body(
           new Call(new TIRTest.LoadT(), fusion_input_lhs, glb_lhs),
           new Call(new TIRTest.LoadT(), fusion_input_rhs, glb_rhs),
           new Call(new TIRTest.BinaryT(binaryOp), glb_lhs, glb_rhs, glb_output),
@@ -82,7 +82,7 @@ internal static class PrimFuncBuilder
         var glb2 = allocator.Allocate($"fusion_{_count}_glb2", TIR.MemoryLocation.L2Data);
         var fusion_output = allocator.AllocateVar($"fusion_{_count}_output", TIR.MemoryLocation.Output);
 
-        var fusion = TIR.T.PrimFunc($"multi_fusion_{_count}_{mask}", Callable.StackVMModuleKind, fusion_inputs.Concat(new[] { fusion_output }).ToArray());
+        var fusion = TIR.T.PrimFunc($"multi_fusion_{_count}_{mask}", Callable.CPUModuleKind, fusion_inputs.Concat(new[] { fusion_output }).ToArray());
 
         fusion.Body(
           new Call(new LoadT(), fusion_inputs[0], glb1));

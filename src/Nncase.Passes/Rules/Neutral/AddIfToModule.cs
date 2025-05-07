@@ -30,17 +30,25 @@ public sealed class AddFunctionToModule : ModulePass
 
     protected override Task<IRModule> RunCoreAsync(IRModule input, RunPassContext context)
     {
-        var funcs = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
-        foreach (var func in input.Functions.OfType<Function>())
+        while (true)
         {
-            var collector = new FuncCollector(funcs);
-            collector.Visit(func.Body);
-        }
+            var funcs = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
+            foreach (var func in input.Functions)
+            {
+                var collector = new FuncCollector(funcs);
+                collector.Visit(func);
+            }
 
-        var toAdd = funcs.Except(input.Functions).ToArray();
-        foreach (var ifToAdd in toAdd)
-        {
-            input.Add(ifToAdd);
+            var toAdd = funcs.Except(input.Functions).ToArray();
+            if (toAdd.Length == 0)
+            {
+                break;
+            }
+
+            foreach (var ifToAdd in toAdd)
+            {
+                input.Add(ifToAdd);
+            }
         }
 
         return Task.FromResult(input);

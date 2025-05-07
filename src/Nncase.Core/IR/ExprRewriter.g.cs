@@ -74,6 +74,12 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafFunctionWrapper(FunctionWrapper expr, TContext context)
+    {
+        return RewriteLeafFunctionWrapper(expr, context);
+    }
+
+    /// <inheritdoc/>
     protected sealed override BaseExpr VisitLeafTensorConst(TensorConst expr, TContext context)
     {
         return RewriteLeafTensorConst(expr, context);
@@ -161,6 +167,12 @@ public partial class ExprRewriter<TContext>
     protected sealed override BaseExpr VisitLeafIterVar(TIR.IterVar expr, TContext context)
     {
         return RewriteLeafIterVar(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafReturn(TIR.Return expr, TContext context)
+    {
+        return RewriteLeafReturn(expr, context);
     }
 
     /// <inheritdoc/>
@@ -460,6 +472,11 @@ public partial class ExprRewriter<TContext>
     protected virtual BaseExpr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => RewriteLeafBaseFunction(expr, context);
 
     /// <summary>
+    /// Rewrite leaf <see cref="FunctionWrapper"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafFunctionWrapper(FunctionWrapper expr, TContext context) => RewriteLeafBaseFunction(expr, context);
+
+    /// <summary>
     /// Rewrite leaf <see cref="TensorConst"/>.
     /// </summary>
     protected virtual BaseExpr RewriteLeafTensorConst(TensorConst expr, TContext context) => RewriteLeafConst(expr, context);
@@ -533,6 +550,11 @@ public partial class ExprRewriter<TContext>
     /// Rewrite leaf <see cref="TIR.IterVar"/>.
     /// </summary>
     protected virtual BaseExpr RewriteLeafIterVar(TIR.IterVar expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="TIR.Return"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafReturn(TIR.Return expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineExpr"/>.
@@ -824,6 +846,14 @@ public partial class ExprRewriter
     protected sealed override BaseExpr RewriteLeafPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => RewriteLeafPrimFunctionWrapper(expr);
 
     /// <summary>
+    /// Rewrite leaf <see cref="FunctionWrapper"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafFunctionWrapper(FunctionWrapper expr) => RewriteLeafBaseFunction(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafFunctionWrapper(FunctionWrapper expr, Unit context) => RewriteLeafFunctionWrapper(expr);
+
+    /// <summary>
     /// Rewrite leaf <see cref="TensorConst"/>.
     /// </summary>
     protected virtual BaseExpr RewriteLeafTensorConst(TensorConst expr) => RewriteLeafConst(expr);
@@ -942,6 +972,14 @@ public partial class ExprRewriter
 
     /// <inheritdoc />
     protected sealed override BaseExpr RewriteLeafIterVar(TIR.IterVar expr, Unit context) => RewriteLeafIterVar(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="TIR.Return"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafReturn(TIR.Return expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafReturn(TIR.Return expr, Unit context) => RewriteLeafReturn(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineExpr"/>.

@@ -81,8 +81,8 @@ public class UnitTestFusionGroup : TestClassBase
     [Fact]
     public void TestFusionMergeCandidateComparer()
     {
-        var f1 = new Fusion("main", Callable.StackVMModuleKind, None.Default, Array.Empty<Var>());
-        var f2 = new Fusion("main", Callable.StackVMModuleKind, None.Default, Array.Empty<Var>());
+        var f1 = new Fusion("main", Callable.CPUModuleKind, None.Default, Array.Empty<Var>());
+        var f2 = new Fusion("main", Callable.CPUModuleKind, None.Default, Array.Empty<Var>());
         var h1 = new HashSet<Fusion>() { f1, f2 };
         var h2 = new HashSet<Fusion>() { f1, f2 };
         Assert.Equal(FusionGroupMutator.GroupedMatchOptions.GetCandidateHashCode(h1), FusionGroupMutator.GroupedMatchOptions.GetCandidateHashCode(h2));

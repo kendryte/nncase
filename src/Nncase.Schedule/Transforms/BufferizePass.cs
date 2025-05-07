@@ -36,6 +36,7 @@ public sealed class BufferizePass : FunctionPass
             DumpSchedule(scheduleResult);
         }
 
+        AssignOutputResult(func, scheduleResult);
         AssignDataResult(func, scheduleResult);
         AssignRdataResult(func, scheduleResult);
         AssignLocalRdataResult(func, scheduleResult);
@@ -45,6 +46,15 @@ public sealed class BufferizePass : FunctionPass
             (IEqualityComparer<TIR.Buffer>)ReferenceEqualityComparer.Instance);
         new BufferReplacer(bufferReplaces).Rewrite(func.Body);
         func.SchedResult.IsScheduled = true;
+    }
+
+    private void AssignOutputResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    {
+        if (scheduleResult.TryGetValue(MemoryLocation.Output, out var dataResult))
+        {
+            func.SchedResult.OutputAlign = (ulong)dataResult.Alignment;
+            func.SchedResult.OutputUsage = (ulong)dataResult.MemoryPoolSize;
+        }
     }
 
     private void AssignDataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)

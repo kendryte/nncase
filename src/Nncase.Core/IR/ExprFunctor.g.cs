@@ -64,6 +64,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => VisitBaseFunction(expr, context);
 
     /// <summary>
+    /// Visit <see cref="FunctionWrapper"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitFunctionWrapper(FunctionWrapper expr, TContext context) => VisitBaseFunction(expr, context);
+
+    /// <summary>
     /// Visit <see cref="TensorConst"/>.
     /// </summary>
     internal protected virtual TExprResult VisitTensorConst(TensorConst expr, TContext context) => VisitConst(expr, context);
@@ -137,6 +142,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     /// Visit <see cref="TIR.IterVar"/>.
     /// </summary>
     internal protected virtual TExprResult VisitIterVar(TIR.IterVar expr, TContext context) => DefaultVisit(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="TIR.Return"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitReturn(TIR.Return expr, TContext context) => DefaultVisit(expr, context);
 
     /// <summary>
     /// Visit <see cref="Affine.AffineExpr"/>.
@@ -418,6 +428,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => VisitPrimFunctionWrapper(expr);
     /// <summary>
+    /// Visit <see cref="FunctionWrapper"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitFunctionWrapper(FunctionWrapper expr) => base.VisitFunctionWrapper(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitFunctionWrapper(FunctionWrapper expr, Unit context) => VisitFunctionWrapper(expr);
+    /// <summary>
     /// Visit <see cref="TensorConst"/>.
     /// </summary>
     internal protected virtual TExprResult VisitTensorConst(TensorConst expr) => base.VisitTensorConst(expr, default);
@@ -522,6 +539,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitIterVar(TIR.IterVar expr, Unit context) => VisitIterVar(expr);
+    /// <summary>
+    /// Visit <see cref="TIR.Return"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitReturn(TIR.Return expr) => base.VisitReturn(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitReturn(TIR.Return expr, Unit context) => VisitReturn(expr);
     /// <summary>
     /// Visit <see cref="Affine.AffineExpr"/>.
     /// </summary>

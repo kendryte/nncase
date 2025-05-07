@@ -22,7 +22,12 @@
 nncase::ntt::tensor<uintptr_t[2], nncase::ntt::distributed::topology_shape_t> global_local_data_ptr;
 nncase::ntt::tensor<uintptr_t, nncase::ntt::distributed::topology_shape_t> global_local_rdata_ptr;
 
-extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inouts, const std::byte *rdata, const std::byte *local_rdata, nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__> program_ids) {
+extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
+  nncase::ntt::runtime::thread_inout_desc *const output_descs,
+  const std::byte *rdata,
+  const std::byte *local_rdata,
+  std::byte *output,
+  nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__> program_ids) {
   /* prepare inputs */
   @{
     var names = new List<string>();
@@ -34,20 +39,20 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inout
     if (dynamicVars.Contains(input))
     {
       names.Add(name);
-  @:int64_t @Html.Raw(name) = *(int64_t *)inouts[@i].data;
+  @:int64_t @Html.Raw(name) = *(int64_t *)input_descs[@i].data;
     }
     else
     {
       names.Add(name);
       var shape = input.CheckedShape;
       var rank = shape.Rank;
-      var sizeStr = $"inouts[{i}].size / {input.CheckedDataType.SizeInBytes}";
+      var sizeStr = $"input_descs[{i}].size / {input.CheckedDataType.SizeInBytes}";
       var elemType = input.CheckedDataType.ToC();
       var dimType = shape.IsFixed ? $"fixed_shape<{string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].FixedValue))}>" : $"ranked_shape<{rank}>";
       var stridesType = $"ranked_strides<{rank}>";
-      var dimStr = shape.IsFixed ? ", {}" : $", make_ranked_shape({string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].IsFixed ? $"{shape[d].FixedValue}" : $"inouts[{i}].shape[{d}]"))})";
-      var strideStr = $", make_ranked_strides({string.Join(", ", Enumerable.Range(0, rank).Select(d => $"inouts[{i}].strides[{d}]"))})";
-  @:std::span<@Html.Raw(elemType)> p@(name)((@Html.Raw(elemType) *)inouts[@i].data, @Html.Raw(sizeStr));
+      var dimStr = shape.IsFixed ? ", {}" : $", make_ranked_shape({string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].IsFixed ? $"{shape[d].FixedValue}" : $"input_descs[{i}].shape[{d}]"))})";
+      var strideStr = $", make_ranked_strides({string.Join(", ", Enumerable.Range(0, rank).Select(d => $"input_descs[{i}].strides[{d}]"))})";
+  @:std::span<@Html.Raw(elemType)> p@(name)((@Html.Raw(elemType) *)input_descs[@i].data, @Html.Raw(sizeStr));
   @:tensor_view<@Html.Raw(elemType), @Html.Raw(dimType), @Html.Raw(stridesType)> @(name)(p@(name)@Html.Raw(dimStr)@Html.Raw(strideStr));
     }
   @:
@@ -73,11 +78,11 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inout
     throw new NotSupportedException($"not support multi form topology!");
   }
   
-  auto local_data = (uint8_t *)nncase::ntt::runtime::thread_alloc(@Model.DataSize, @Model.Alignment);
+  auto local_data = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.DataSize, @Model.Alignment);
   global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[0] = (uintptr_t)local_data;
   global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[1] = (uintptr_t)local_data + @Model.DataSize;
   global_local_rdata_ptr(program_ids[0], program_ids[1], program_ids[2]) = (uintptr_t)local_rdata;
-  @(Model.PrimFunction.Name)(@(string.Join(", ", names)), local_data);
+  @(Model.PrimFunction.Name)(@(string.Join(", ", names)), local_data, output, output_descs);
   nncase::ntt::runtime::thread_free(local_data);
 }
 
@@ -117,7 +122,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
             .bid = bid,
             .cid = cid,
             .cpu_id_offset = (cid * bdim() + bid) * tdim(),
-            .inouts = inputs,
+            .input_descs = inputs,
             .rdata = rdata,
             .local_rdata_header = local_rdata_header,
             .local_rdata = local_rdata,

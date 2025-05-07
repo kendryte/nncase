@@ -22,14 +22,12 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.NTT;
 
-public class DeviceCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
+public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
 {
-    protected readonly Dictionary<BaseExpr, CSymbol> _exprMemo;
     protected readonly StringBuilder _deviceBuilder;
 
     public DeviceCSourceConvertVisitor()
     {
-        _exprMemo = new(ReferenceEqualityComparer.Instance);
         _deviceBuilder = new();
     }
 

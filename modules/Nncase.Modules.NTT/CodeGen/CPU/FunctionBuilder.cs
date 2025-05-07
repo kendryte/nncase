@@ -36,7 +36,7 @@ internal class FunctionBuilder
 
     public unsafe ILinkableFunction Build(TIR.PrimFunction function)
     {
-        if (function.Name.EndsWith("kernel_prim"))
+        if (!function.Name.Contains("device_func", StringComparison.Ordinal))
         {
             // 1. write the rdata
             ulong rdataPoolSize = ulong.MinValue;

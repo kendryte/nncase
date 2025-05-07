@@ -35,7 +35,7 @@ public class UnitTestEvaluatorBuffers : TestClassBase
     }
 
     [Fact]
-    public void TestDDrOf()
+    public void TestAddressOf()
     {
         var input = OrtKI.Random(1);
         var expr = IR.F.Buffer.AddressOf(input.ToTensor());

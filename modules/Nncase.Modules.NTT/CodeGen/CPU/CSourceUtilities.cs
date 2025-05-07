@@ -5,6 +5,7 @@ using System.CommandLine;
 using System.Globalization;
 using DryIoc.ImTools;
 using Nncase.Diagnostics;
+using Nncase.IR;
 using Nncase.IR.Math;
 
 namespace Nncase.CodeGen.NTT;

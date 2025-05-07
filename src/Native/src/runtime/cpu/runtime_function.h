@@ -43,7 +43,7 @@ class cpu_runtime_function final : public runtime_function {
 
   private:
     result<void>
-    run(std::span<nncase::ntt::runtime::thread_inout_desc> inouts) noexcept;
+    run(std::span<nncase::ntt::runtime::thread_inout_desc> input_descs) noexcept;
 
   private:
 #if WIN32

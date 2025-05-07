@@ -402,4 +402,6 @@ public static class T
     public static Call BufferStore(TIR.Buffer buffer, Expr[] indices, Expr value) => new Call(new IR.Buffers.BufferStore(), buffer, new IR.Tuple(indices), value);
 
     public static Call MatchBuffer(TIR.Buffer buffer) => new Call(new IR.Buffers.MatchBuffer(), buffer);
+
+    public static Return Return(params Expr[] values) => new Return(values);
 }

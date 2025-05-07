@@ -121,7 +121,7 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
             auto local_rdata_offset = params.local_rdata_header[tid * 2];
             auto local_rdata = params.local_rdata + local_rdata_offset;
             auto program_ids = nncase::ntt::make_ranked_shape(params.cid, params.bid, tid);
-            thread_main(params.inouts, params.rdata, local_rdata, program_ids);
+            thread_main(params.input_descs, params.output_descs, params.rdata, local_rdata, params.output, program_ids);
         });
     }
 

@@ -23,95 +23,11 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.NTT;
 
-public struct IndentScope : IDisposable
-{
-    private static readonly AsyncLocal<IndentWriter?> _writer = new AsyncLocal<IndentWriter?>();
-
-    private readonly bool _initialized;
-
-    private readonly IndentWriter? _originalWriter;
-
-    public IndentScope(StringBuilder sb)
-    {
-        _initialized = true;
-        _originalWriter = _writer.Value;
-        _writer.Value = new IndentWriter(sb);
-    }
-
-    public IndentScope()
-    {
-        _initialized = true;
-        if (_writer.Value is null)
-        {
-            return;
-        }
-
-        _originalWriter = _writer.Value;
-        _writer.Value = new(_originalWriter.GetStringBuilder(), _originalWriter.Indent + 2);
-    }
-
-    public static IndentWriter Writer => _writer.Value!;
-
-    public void Dispose()
-    {
-        if (_initialized)
-        {
-            _writer.Value = _originalWriter;
-        }
-    }
-}
-
-/// <summary>
-/// the c symbol define.
-/// </summary>
-public sealed class CSymbol
-{
-    public CSymbol(string type, string name)
-    {
-        Type = type;
-        Name = name;
-    }
-
-    public static IReadOnlyList<CSymbol> Builtns => new CSymbol[] {
-        new CSymbol("nncase_mt_t*", "nncase_mt"),
-        new CSymbol("uint8_t*", "data"),
-        new CSymbol("const uint8_t*", "rdata"),
-    };
-
-    public string Type { get; }
-
-    public string Name { get; }
-
-    public override string ToString() => $"{Type} {Name}";
-}
-
-public sealed class IndentWriter : StringWriter
-{
-    public IndentWriter(StringBuilder sb, int indent = 0)
-        : base(sb)
-    {
-        Indent = indent;
-    }
-
-    public int Indent { get; set; }
-
-    public void IndWrite(string? value)
-    {
-        for (int i = 0; i < Indent; i++)
-        {
-            Write(' ');
-        }
-
-        Write(value);
-    }
-}
-
 /// <summary>
 /// convert single prim function to c source.
 /// </summary>
-internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, IDisposable
+internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisposable
 {
-    private readonly Dictionary<BaseExpr, CSymbol> _exprMemo;
     private readonly StringBuilder _kernelBuilder;
 
     private readonly StringBuilder _sharedBuilder;
@@ -128,7 +44,6 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         _kernelBuilder = new StringBuilder();
         _sharedBuilder = new StringBuilder();
         _sharedWriter = new StringWriter(_sharedBuilder);
-        _exprMemo = new(ReferenceEqualityComparer.Instance);
         _refFuncs = new(ReferenceEqualityComparer.Instance);
         _collective_pool_size = 0;
         TargetOptions = targetOptions;
@@ -191,7 +106,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
     public KernelCSource GetCSource()
     {
         var ctype = $"template<{string.Join(", ", Enumerable.Range(0, VisitEntry.Parameters.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine +
-            $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, uint8_t* data)";
+            $"void {VisitEntry.Name}({string.Join(", ", VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata).Select(Visit).Select(s => $" {s.Type} {s.Name}").ToArray()))}, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
         return new(
             CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, LocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
@@ -235,11 +150,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             return symbol;
         }
 
-        if (expr.CheckedType is not CallableType { ReturnType: TupleType r } || r != TupleType.Void)
-        {
-            throw new NotSupportedException("The PrimFunction must return void!");
-        }
-
+        var returnType = ((CallableType)expr.CheckedType).ReturnType;
         var ctype = $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}").ToArray())})";
 
         using (var scope = new IndentScope(_kernelBuilder))
@@ -278,6 +189,7 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
             (MemoryLocation.ThreadLocalRdata, 0) => "local_rdata",
             (MemoryLocation.Data, 0) => "data",
             (MemoryLocation.Data, 1) => "data",
+            (MemoryLocation.Output, 0) => "output",
             _ => throw new NotSupportedException($"{expr.Location}, {expr.Hierarchy}"),
         };
         var ptype = (PointerType)expr.CheckedDataType;
@@ -702,14 +614,25 @@ internal sealed class KernelCSourceConvertVisitor : ExprFunctor<CSymbol, Unit>, 
         return symbol;
     }
 
-    protected override CSymbol VisitNone(None expr)
+    protected override CSymbol VisitReturn(Return expr)
     {
         if (_exprMemo.TryGetValue(expr, out var symbol))
         {
             return symbol;
         }
 
-        symbol = new("std::nullptr_t", "nullptr");
+        var values = expr.Values.AsValueEnumerable().Select(Visit).ToArray();
+        for (int i = 0; i < values.Length; i++)
+        {
+            var value = values[i];
+            var rank = expr.Values[i].CheckedShape.Rank;
+            IndentScope.Writer.IndWrite($"output_descs[{i}].data = (std::byte *){value.Name}.elements().data();\n");
+            IndentScope.Writer.IndWrite($"output_descs[{i}].size = {value.Name}.size() * sizeof({expr.Values[i].CheckedDataType.ToC()});\n");
+            IndentScope.Writer.IndWrite($"std::copy_n({value.Name}.shape().begin(), {rank}, output_descs[{i}].shape);\n");
+            IndentScope.Writer.IndWrite($"std::copy_n({value.Name}.strides().begin(), {rank}, output_descs[{i}].strides);\n");
+        }
+
+        symbol = new(string.Empty, string.Empty);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

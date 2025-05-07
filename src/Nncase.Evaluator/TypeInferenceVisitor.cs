@@ -239,6 +239,13 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
+    /// <inheritdoc/>
+    protected override IRType VisitLeafFunctionWrapper(FunctionWrapper expr)
+    {
+        var type = new CallableType(expr.Target.CheckedType, new(expr.ParameterTypes));
+        return type;
+    }
+
     protected override IRType VisitLeafGrid(Grid expr)
     {
         VerifySubField(expr, expr.DomainParameter);
@@ -289,6 +296,17 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
+    protected override IRType VisitLeafReturn(Return expr)
+    {
+        var valueTypes = expr.Values.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+        return valueTypes.Length switch
+        {
+            0 => TupleType.Void,
+            1 => valueTypes[0],
+            _ => new TupleType(valueTypes),
+        };
+    }
+
     /// <inheritdoc/>
     protected override IRType VisitLeafSequential(Sequential expr)
     {
@@ -297,7 +315,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
             VerifySubField(expr, expr.Fields[i], null, $"Sequential Line {i}");
         }
 
-        var type = TupleType.Void;
+        var type = expr.Fields.Length > 0 ? expr.Fields[^1].CheckedType : TupleType.Void;
         return type;
     }
 

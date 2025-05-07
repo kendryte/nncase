@@ -19,7 +19,7 @@ public abstract class Const : Expr
     /// </summary>
     /// <param name="valueType">Type of value.</param>
     public Const(IRType valueType)
-        : base(Array.Empty<Expr>())
+        : base(Array.Empty<BaseExpr>())
     {
         ValueType = valueType;
     }

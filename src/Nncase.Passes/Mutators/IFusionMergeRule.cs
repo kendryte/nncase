@@ -88,7 +88,7 @@ public class MultiInputFusionMergeRule : IMergeRewriteRule
     /// <summary>
     /// Gets the matched fusion module kind.
     /// </summary>
-    public virtual string ModuleKind => Callable.StackVMModuleKind;
+    public virtual string ModuleKind => Callable.CPUModuleKind;
 
     /// <inheritdoc/>
     public IPattern Pattern => _pattern ??= CreatePattern(ModuleKind);
@@ -237,7 +237,7 @@ public class ShortCutFusionMergeRuleLeft : IMergeRewriteRule
     /// <summary>
     /// Gets the matched fusion module kind.
     /// </summary>
-    public virtual string ModuleKind => Callable.StackVMModuleKind;
+    public virtual string ModuleKind => Callable.CPUModuleKind;
 
     /// <inheritdoc/>
     public IPattern Pattern => _pattern ??= CreatePattern(ModuleKind);
@@ -456,7 +456,7 @@ public class SameInputFusionMergeRule : IMergeRewriteRule
     /// <summary>
     /// Gets get ModuleKind.
     /// </summary>
-    public virtual string ModuleKind => Callable.StackVMModuleKind;
+    public virtual string ModuleKind => Callable.CPUModuleKind;
 
     /// <inheritdoc/>
     public IPattern Pattern => _pattern ??= CreatePattern(ModuleKind);

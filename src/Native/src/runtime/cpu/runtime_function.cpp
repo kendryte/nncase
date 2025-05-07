@@ -50,13 +50,13 @@ result<void> cpu_runtime_function::initialize_core(
 result<value_t> cpu_runtime_function::invoke_core(
     std::span<value_t> parameters,
     [[maybe_unused]] value_t return_value) noexcept {
-    std::vector<thread_inout_desc> inouts;
+    std::vector<thread_inout_desc> input_descs;
     for (auto arg : parameters) {
         try_var(t, arg.as<tensor>());
         try_var(hb, t->buffer().as_host());
         try_var(m, hb.map(map_read_write));
 
-        inouts.emplace_back(thread_inout_desc{
+        input_descs.emplace_back(thread_inout_desc{
             .data = m.buffer().data(),
             .size = m.buffer().size(),
             .shape = t->shape().data(),
@@ -65,7 +65,7 @@ result<value_t> cpu_runtime_function::invoke_core(
         m.release();
     }
 
-    try_(run(inouts));
+    try_(run(input_descs));
 
     for (auto arg : parameters) {
         try_var(t, arg.as<tensor>());

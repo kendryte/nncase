@@ -28,5 +28,7 @@ public abstract class BaseFunction : Callable
     /// <summary>
     /// Gets parameter types.
     /// </summary>
-    public abstract IEnumerable<IRType?> ParameterTypes { get; }
+    public abstract IEnumerable<IRType> ParameterTypes { get; }
+
+    public bool IsEntry { get; set; }
 }

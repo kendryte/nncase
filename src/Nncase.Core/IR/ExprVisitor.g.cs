@@ -122,6 +122,22 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
+    protected internal override TExprResult VisitFunctionWrapper(FunctionWrapper expr, TContext context)
+    {
+        if (CanVisitFunctionBody(expr))
+        {
+            VisitOperands(expr, context);
+        }
+
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafFunctionWrapper(expr, context);
+    }
+
+    /// <inheritdoc />
     protected internal override TExprResult VisitTensorConst(TensorConst expr, TContext context)
     {
         VisitOperands(expr, context);
@@ -303,6 +319,18 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
         }
 
         return VisitLeafIterVar(expr, context);
+    }
+
+    /// <inheritdoc />
+    protected internal override TExprResult VisitReturn(TIR.Return expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafReturn(expr, context);
     }
 
     /// <inheritdoc />
@@ -800,6 +828,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected virtual TExprResult VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, TContext context) => VisitLeafBaseFunction(expr, context);
 
     /// <summary>
+    /// Visit leaf <see cref="FunctionWrapper"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafFunctionWrapper(FunctionWrapper expr, TContext context) => VisitLeafBaseFunction(expr, context);
+
+    /// <summary>
     /// Visit leaf <see cref="TensorConst"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafTensorConst(TensorConst expr, TContext context) => VisitLeafConst(expr, context);
@@ -873,6 +906,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// Visit leaf <see cref="TIR.IterVar"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafIterVar(TIR.IterVar expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="TIR.Return"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafReturn(TIR.Return expr, TContext context) => DefaultVisitLeaf(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="Affine.AffineExpr"/>.
@@ -1140,6 +1178,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => VisitPrimFunctionWrapper(expr);
     /// <summary>
+    /// Visit <see cref="FunctionWrapper"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitFunctionWrapper(FunctionWrapper expr) => base.VisitFunctionWrapper(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitFunctionWrapper(FunctionWrapper expr, Unit context) => VisitFunctionWrapper(expr);
+    /// <summary>
     /// Visit <see cref="TensorConst"/>.
     /// </summary>
     internal protected virtual TExprResult VisitTensorConst(TensorConst expr) => base.VisitTensorConst(expr, default);
@@ -1244,6 +1289,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitIterVar(TIR.IterVar expr, Unit context) => VisitIterVar(expr);
+    /// <summary>
+    /// Visit <see cref="TIR.Return"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitReturn(TIR.Return expr) => base.VisitReturn(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitReturn(TIR.Return expr, Unit context) => VisitReturn(expr);
     /// <summary>
     /// Visit <see cref="Affine.AffineDim"/>.
     /// </summary>
@@ -1584,6 +1636,14 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     protected sealed override TExprResult VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr, Unit context) => VisitLeafPrimFunctionWrapper(expr);
 
     /// <summary>
+    /// Visit leaf <see cref="FunctionWrapper"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafFunctionWrapper(FunctionWrapper expr) => base.VisitLeafFunctionWrapper(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafFunctionWrapper(FunctionWrapper expr, Unit context) => VisitLeafFunctionWrapper(expr);
+
+    /// <summary>
     /// Visit leaf <see cref="TensorConst"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafTensorConst(TensorConst expr) => base.VisitLeafTensorConst(expr, default);
@@ -1702,6 +1762,14 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafIterVar(TIR.IterVar expr, Unit context) => VisitLeafIterVar(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="TIR.Return"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafReturn(TIR.Return expr) => base.VisitLeafReturn(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafReturn(TIR.Return expr, Unit context) => VisitLeafReturn(expr);
 
     /// <summary>
     /// Visit leaf <see cref="Affine.AffineExpr"/>.

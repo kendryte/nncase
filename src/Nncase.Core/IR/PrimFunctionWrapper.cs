@@ -28,7 +28,7 @@ public sealed class PrimFunctionWrapper : BaseFunction
     /// <param name="parametersCount">Arguments count.</param>
     /// <param name="hints">the type hints.</param>
     public PrimFunctionWrapper(string name, PrimFunction target, int parametersCount, params IRType[] hints)
-        : base(name, StackVMModuleKind, new Expr[] { target })
+        : base(name, CPUModuleKind, [target])
     {
         ParametersCount = parametersCount;
         TypeHints = hints;

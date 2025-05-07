@@ -30,7 +30,7 @@ public sealed partial class InlineFunction : RewriteRule<Pattern>
     private Expr? GetReplace(Call expr)
     {
         var target = (Function)expr.Target;
-        if (target.ModuleKind == Callable.StackVMModuleKind)
+        if (target.ModuleKind == Callable.CPUModuleKind)
         {
             var count = ExprCollector.Collect(target.Body).Count;
             if (count <= MaxInlineSize)

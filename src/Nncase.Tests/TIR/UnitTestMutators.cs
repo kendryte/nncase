@@ -35,7 +35,7 @@ public sealed class UnitTestMutators : TestClassBase
         T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 9 }), MemoryLocation.Data, out var glb_if_pong);
         PrimFunction main;
         {
-            main = T.PrimFunc("main", Callable.StackVMModuleKind, ddr_if).Body(
+            main = T.PrimFunc("main", Callable.CPUModuleKind, ddr_if).Body(
                    T.Unrolled(out var w, (0, 48, 9)).Body(
                      new Call(
                          new LoadT(),
@@ -95,7 +95,7 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestUnRollLoopSequential()
     {
-        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(// (*i8) -> ()
+        var main = T.PrimFunc("main", Callable.CPUModuleKind).Body(// (*i8) -> ()
             T.Unrolled(out var i, (0, 32, 4)).Body(// ()
               T.Unrolled(out var j, (0, 16, 4)).Body(// ()
                 T.Unrolled(out var k, (0, 18, 6)).Body(// ()
@@ -123,7 +123,7 @@ public sealed class UnitTestMutators : TestClassBase
 
         PrimFunction main;
         {
-            main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(
+            main = T.PrimFunc("main", Callable.CPUModuleKind).Body(
              T.Unrolled(out var n, (0, 3, 3)).Body(
                T.Unrolled(out var c, (0, 16, 10)).Body(
                  T.Unrolled(out var h, (0, 24, 5)).Body(
@@ -206,7 +206,7 @@ public sealed class UnitTestMutators : TestClassBase
 
         PrimFunction main;
         {
-            main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(
+            main = T.PrimFunc("main", Callable.CPUModuleKind).Body(
              T.Unrolled(out var n, (0, 3, 3)).Body(
                T.Unrolled(out var c, (0, 16, 10)).Body(
                  T.Unrolled(out var h, (0, 24, 5)).Body(
@@ -318,7 +318,7 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestFoldLet()
     {
-        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(// (*i8) -> ()
+        var main = T.PrimFunc("main", Callable.CPUModuleKind).Body(// (*i8) -> ()
           T.Unrolled(out var i, (0, 32, 4)).Body(// ()
             T.LetDim(out var a, (Dimension)10L - (Dimension)2L).Body(
               T.LetDim(out var b, (Dimension)10L + (Dimension)2L).Body(
@@ -339,7 +339,7 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestFoldLet2()
     {
-        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(// (*i8) -> ()
+        var main = T.PrimFunc("main", Callable.CPUModuleKind).Body(// (*i8) -> ()
             T.Let(out var tcu_h_chunk, IR.F.Math.Min(10 + 9L, 32L) - 10L).Body(
               T.Let(out var n_active_tcu, IR.F.Tensors.Cast(IR.F.Math.Ceil(48.0f / IR.F.Tensors.Cast(tcu_h_chunk, DataTypes.Float32)), DataTypes.Int64)).Body(
                 T.If(IR.F.Math.Equal(n_active_tcu, 1L)).Then(
@@ -372,7 +372,7 @@ public sealed class UnitTestMutators : TestClassBase
 
         PrimFunction main;
         {
-            main = T.PrimFunc("main", Callable.StackVMModuleKind, ddr_if, ddr_of).Body(
+            main = T.PrimFunc("main", Callable.CPUModuleKind, ddr_if, ddr_of).Body(
              T.Unrolled(out var n, (0, 3, 3)).Body(
                T.Unrolled(out var c, (0, 16, 10)).Body(
                  T.Unrolled(out var h, (0, 24, 5)).Body(

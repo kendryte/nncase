@@ -309,6 +309,10 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 _scope.AppendLine(string.Empty);
                 _scope.IndWrite($"{target.Name}({string.Join(", ", from a in args select a.ToString())})");
                 break;
+            case FunctionWrapper:
+                _scope.AppendLine(string.Empty);
+                _scope.IndWrite($"{target.Name}({string.Join(", ", from a in args select a.ToString())})");
+                break;
             default:
                 _scope.Append($"{target}({string.Join(", ", from a in args select a.ToString())})");
                 break;
@@ -430,6 +434,32 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             _scope.IndWriteLine(extFunc.ToString());
         }
+
+        return doc;
+    }
+
+    /// <inheritdoc/>
+    protected override IPrintSymbol VisitFunctionWrapper(FunctionWrapper expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        string il_sb;
+        if (Flags.HasFlag(PrinterFlags.Detailed))
+        {
+            il_sb = CompilerServices.Print(expr, Flags & ~PrinterFlags.Script);
+        }
+        else
+        {
+            il_sb = $"{expr.Name} = FunctionWrapper({expr.Target.Name} : {VisitType(expr.CheckedType)})";
+        }
+
+        doc = new(il_sb, expr.Name, true);
+        _extFuncMemo[expr] = doc;
+
+        _exprMemo.Add(expr, doc);
 
         return doc;
     }
@@ -692,6 +722,20 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
+    /// <inheritdoc/>
+    protected override IPrintSymbol VisitReturn(Return expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        var values = expr.Values.AsValueEnumerable().Select(Visit).ToArray();
+        doc = new($"return ({string.Join(", ", from a in values select a.ToString())})");
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
     protected override IPrintSymbol VisitNone(None expr)
     {
         if (_exprMemo.TryGetValue(expr, out var doc))
@@ -711,7 +755,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             return doc;
         }
 
-        doc = new ScriptSymobl(new("Dimension"), "Dimension", false);
+        doc = new ScriptSymobl(expr.ToString(), "Dimension", false);
         _exprMemo.Add(expr, doc);
         return doc;
     }
@@ -723,7 +767,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             return doc;
         }
 
-        doc = new ScriptSymobl(new("Shape"), "Shape", false);
+        doc = new ScriptSymobl(expr.ToString(), "Shape", false);
         _exprMemo.Add(expr, doc);
         return doc;
     }

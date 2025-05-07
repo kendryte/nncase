@@ -54,6 +54,11 @@ public abstract partial class BaseExpr
 
     internal BaseExpr(BaseExpr[] operands)
     {
+        if (operands.GetType().GetElementType() != typeof(BaseExpr))
+        {
+            throw new ArgumentException("operands must be BaseExpr[]");
+        }
+
         ExprScope.Current?.Add(this);
         _operands = operands;
         foreach (var operand in _operands)

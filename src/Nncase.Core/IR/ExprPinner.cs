@@ -42,7 +42,7 @@ public sealed class ExprPinner : IDisposable
 internal sealed class ExprUser : BaseExpr
 {
     public ExprUser()
-        : base(Array.Empty<Expr>())
+        : base(Array.Empty<BaseExpr>())
     {
     }
 
