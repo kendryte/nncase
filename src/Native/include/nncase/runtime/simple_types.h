@@ -17,7 +17,6 @@
 #include "small_vector.hpp"
 #include <array>
 #include <nncase/bfloat16.h>
-#include <nncase/half.h>
 
 namespace nncase {
 typedef enum : uint8_t {
@@ -67,9 +66,9 @@ struct scalar {
         as<bfloat16>() = value;
     }
 
-    scalar(half value) noexcept {
+    scalar(_Float16 value) noexcept {
         type = dt_float16;
-        as<half>() = value;
+        as<_Float16>() = value;
     }
 
     scalar(float value) noexcept {
@@ -139,7 +138,8 @@ template <class T> struct value_range {
 
     static constexpr value_range<T> full() noexcept {
         if (std::is_floating_point<T>::value ||
-            std::is_same<T, bfloat16>::value || std::is_same<T, half>::value)
+            std::is_same<T, bfloat16>::value ||
+            std::is_same<T, _Float16>::value)
             return {-std::numeric_limits<T>::infinity(),
                     std::numeric_limits<T>::infinity()};
         else

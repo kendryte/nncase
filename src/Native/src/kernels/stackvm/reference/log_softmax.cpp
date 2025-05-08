@@ -80,7 +80,7 @@ log_softmax_impl(const T *input, T *output, std::span<const size_t> in_shape,
         const auto out_index =
             kernels::detail::get_reduced_offset(index, axes, true);
         auto out_idx = offset(reduced_strides, out_index);
-        output[in_idx] = expf(in);
+        output[in_idx] = static_cast<T>(expf(static_cast<float>(in)));
         tmp[out_idx] += output[in_idx];
 
         return ok();
@@ -96,7 +96,7 @@ log_softmax_impl(const T *input, T *output, std::span<const size_t> in_shape,
         auto out_idx = offset(out_strides, index);
         auto &out = output[out_idx];
         out /= in;
-        out = std::log(out);
+        out = static_cast<T>(std::log(static_cast<float>(out)));
         return ok();
     }));
 
@@ -112,7 +112,7 @@ log_softmax_impl(const T *input, T *output, std::span<const size_t> in_shape,
     case dt_float32:                                                           \
         _impl(float);                                                          \
     case dt_float16:                                                           \
-        _impl(half);                                                           \
+        _impl(_Float16);                                                       \
     case dt_bfloat16:                                                          \
         _impl(bfloat16);                                                       \
     case dt_int8:                                                              \

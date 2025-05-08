@@ -97,8 +97,8 @@ result<void> conv2d_impl(
                         }
 
                         output[offset(out_strides, out_index)] =
-                            kernels::detail::apply_activation(value,
-                                                              fused_activation);
+                            static_cast<T>(kernels::detail::apply_activation(
+                                value, fused_activation));
                     }
                 }
             }
@@ -120,7 +120,7 @@ result<void> conv2d_impl(
     case dt_float32:                                                           \
         _impl(float);                                                          \
     case dt_float16:                                                           \
-        _impl(half);                                                           \
+        _impl(_Float16);                                                       \
     case dt_bfloat16:                                                          \
         _impl(bfloat16);                                                       \
     case dt_float64:                                                           \
@@ -244,7 +244,7 @@ result<void> conv2d_transpose_impl(
     case dt_float32:                                                           \
         _impl(float);                                                          \
     case dt_float16:                                                           \
-        _impl(half);                                                           \
+        _impl(_Float16);                                                       \
     case dt_bfloat16:                                                          \
         _impl(bfloat16);                                                       \
     case dt_float64:                                                           \

@@ -59,7 +59,8 @@ class GeluTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](std::span<const size_t> index) -> result<void> {
-                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    get<_Float16>(tensor, index) =
+                        static_cast<_Float16>(dis(gen));
                     return ok();
                 });
             break;
@@ -123,13 +124,13 @@ TEST_P(GeluTest, gelu) {
     runtime_tensor b;
     runtime_tensor c;
     if (input.datatype() == dt_float16) {
-        half b_ptr[] = {(half)2.0f};
+        _Float16 b_ptr[] = {(_Float16)2.0f};
         b = hrt::create(nncase::dt_float16, {1},
                         {reinterpret_cast<std::byte *>(b_ptr), sizeof(b_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)
                 .expect("create tensor failed");
 
-        half c_ptr[] = {(half)1.0f};
+        _Float16 c_ptr[] = {(_Float16)1.0f};
         c = hrt::create(nncase::dt_float16, {1},
                         {reinterpret_cast<std::byte *>(c_ptr), sizeof(c_ptr)},
                         true, host_runtime_tensor::pool_cpu_only)

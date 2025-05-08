@@ -31,7 +31,7 @@
  **************************************************************************************************/
 /*!
     \file
-    \brief Defines a class for using IEEE half-precision floating-point types in
+    \brief Defines a class for using IEEE _Float16 -precision floating-point types in
    host or device code.
 */
 #pragma once
@@ -77,7 +77,6 @@
 // #include <cuda_fp16.h>
 
 // #include "nncase/nncase.h"
-#include "half.h"
 #ifndef CUTLASS_HOST_DEVICE
 #define CUTLASS_HOST_DEVICE inline
 #define CUTLASS_DEVICE inline
@@ -426,7 +425,7 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
 
     /// FP16 -> E5M2 conversion - rounds to nearest even
     CUTLASS_HOST_DEVICE
-    static float_e4m3_t from_half(half const &flt) {
+    static float_e4m3_t from_half(_Float16  const &flt) {
 #if defined(CUDA_PTX_FP8_CVT_ENABLED)
         uint16_t tmp = 0;
         uint32_t bits = reinterpret_cast<uint16_t const &>(flt);
@@ -441,9 +440,9 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
 #endif
     }
 
-    // E4M3 -> half
+    // E4M3 -> _Float16 
     CUTLASS_HOST_DEVICE
-    static half to_half(float_e4m3_t const &x) {
+    static _Float16  to_half(float_e4m3_t const &x) {
 #if defined(CUDA_PTX_FP8_CVT_ENABLED)
         uint16_t bits = x.storage;
         uint32_t packed;
@@ -454,7 +453,7 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
         return reinterpret_cast<half2 const &>(packed).x;
 #else
         // return __float2half(Base::convert_fp8_to_float(x.storage));
-        return half(Base::convert_fp8_to_float(x.storage));
+        return _Float16 (Base::convert_fp8_to_float(x.storage));
 #endif
     }
 
@@ -492,7 +491,7 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
     explicit float_e4m3_t(float x) { storage = from_float(x).storage; }
 
     CUTLASS_HOST_DEVICE
-    explicit float_e4m3_t(half x) { storage = from_half(x).storage; }
+    explicit float_e4m3_t(_Float16  x) { storage = from_half(x).storage; }
 
     /// Floating point conversion
     CUTLASS_HOST_DEVICE
@@ -519,9 +518,9 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
     CUTLASS_HOST_DEVICE
     operator float() const { return to_float(*this); }
 
-    /// Converts to half
+    /// Converts to _Float16 
     CUTLASS_HOST_DEVICE
-    operator half() const { return to_half(*this); }
+    operator _Float16 () const { return to_half(*this); }
 
     /// Converts to float
     CUTLASS_HOST_DEVICE
@@ -619,7 +618,7 @@ struct alignas(1) float_e5m2_t : float8_base<FloatEncoding::E5M2> {
 
     /// FP16 -> E5M2 conversion - rounds to nearest even
     CUTLASS_HOST_DEVICE
-    static float_e5m2_t from_half(half const &flt) {
+    static float_e5m2_t from_half(_Float16  const &flt) {
 #if defined(CUDA_PTX_FP8_CVT_ENABLED)
         uint16_t tmp = 0;
         uint32_t bits = reinterpret_cast<uint16_t const &>(flt);
@@ -634,9 +633,9 @@ struct alignas(1) float_e5m2_t : float8_base<FloatEncoding::E5M2> {
 #endif
     }
 
-    // E5M2 -> half
+    // E5M2 -> _Float16 
     CUTLASS_HOST_DEVICE
-    static half to_half(float_e5m2_t const &x) {
+    static _Float16  to_half(float_e5m2_t const &x) {
 #if defined(CUDA_PTX_FP8_CVT_ENABLED)
         uint16_t bits = x.storage;
         uint32_t packed;
@@ -647,7 +646,7 @@ struct alignas(1) float_e5m2_t : float8_base<FloatEncoding::E5M2> {
         return reinterpret_cast<half2 const &>(packed).x;
 #else
         // return __float2half(Base::convert_fp8_to_float(x.storage));
-        return half(Base::convert_fp8_to_float(x.storage));
+        return _Float16 (Base::convert_fp8_to_float(x.storage));
 #endif
     }
 
@@ -685,7 +684,7 @@ struct alignas(1) float_e5m2_t : float8_base<FloatEncoding::E5M2> {
     explicit float_e5m2_t(float x) { storage = from_float(x).storage; }
 
     CUTLASS_HOST_DEVICE
-    explicit float_e5m2_t(half x) { storage = from_half(x).storage; }
+    explicit float_e5m2_t(_Float16  x) { storage = from_half(x).storage; }
 
     /// Floating point conversion
     CUTLASS_HOST_DEVICE
@@ -712,9 +711,9 @@ struct alignas(1) float_e5m2_t : float8_base<FloatEncoding::E5M2> {
     CUTLASS_HOST_DEVICE
     operator float() const { return to_float(*this); }
 
-    /// Converts to half
+    /// Converts to _Float16 
     CUTLASS_HOST_DEVICE
-    operator half() const { return to_half(*this); }
+    operator _Float16 () const { return to_half(*this); }
 
     /// Converts to float
     CUTLASS_HOST_DEVICE
@@ -1002,13 +1001,13 @@ float_e5m2_t operator--(float_e5m2_t &lhs, int) {
 }
 
 CUTLASS_HOST_DEVICE
-half operator*(float_e4m3_t const &lhs, float_e5m2_t const &rhs) {
-    return half(float(lhs) * float(rhs));
+_Float16  operator*(float_e4m3_t const &lhs, float_e5m2_t const &rhs) {
+    return _Float16 (float(lhs) * float(rhs));
 }
 
 CUTLASS_HOST_DEVICE
-half operator*(float_e5m2_t const &lhs, float_e4m3_t const &rhs) {
-    return half(float(lhs) * float(rhs));
+_Float16  operator*(float_e5m2_t const &lhs, float_e4m3_t const &rhs) {
+    return _Float16 (float(lhs) * float(rhs));
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////

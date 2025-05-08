@@ -58,6 +58,8 @@ repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_di
 [tool.cibuildwheel.linux.environment]
 CC = "gcc-14"
 CXX = "g++-14"
+CFLAGS ="-static-libgcc -static-libstdc++"
+CXXFLAGS ="-static-libgcc -static-libstdc++"
 
 [tool.cibuildwheel.macos]
 archs = ["arm64"]

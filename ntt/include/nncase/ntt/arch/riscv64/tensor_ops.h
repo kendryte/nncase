@@ -29,4 +29,16 @@ RVV_LOAD_SCALAR_FLOAT32(NTT_VL(sizeof(float) * 8, *, 2), 2)
 RVV_LOAD_SCALAR_FLOAT32(NTT_VL(sizeof(float) * 8, *, 4), 4)
 RVV_LOAD_SCALAR_FLOAT32(NTT_VL(sizeof(float) * 8, *, 8), 8)
 
+#define RVV_LOAD_SCALAR_FLOAT16(vl, lmul)                                      \
+    template <> struct tload_scalar<ntt::vector<_Float16, vl>> {               \
+        ntt::vector<_Float16, vl> operator()(_Float16 f) const noexcept {      \
+            return __riscv_vfmv_v_f_f16m##lmul(f, vl);                         \
+        }                                                                      \
+    };
+
+RVV_LOAD_SCALAR_FLOAT16(NTT_VL(sizeof(_Float16) * 8, *, 1), 1)
+RVV_LOAD_SCALAR_FLOAT16(NTT_VL(sizeof(_Float16) * 8, *, 2), 2)
+RVV_LOAD_SCALAR_FLOAT16(NTT_VL(sizeof(_Float16) * 8, *, 4), 4)
+RVV_LOAD_SCALAR_FLOAT16(NTT_VL(sizeof(_Float16) * 8, *, 8), 8)
+
 } // namespace nncase::ntt::tensor_ops

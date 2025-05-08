@@ -182,7 +182,7 @@
     case dt_float32:                                                           \
         _impl(_impl_func, float);                                              \
     case dt_float16:                                                           \
-        _impl(_impl_func, half);                                               \
+        _impl(_impl_func, _Float16);                                           \
     case dt_bfloat16:                                                          \
         _impl(_impl_func, bfloat16);                                           \
     case dt_int8:                                                              \

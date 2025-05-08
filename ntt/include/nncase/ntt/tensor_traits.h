@@ -32,7 +32,8 @@ template <typename T>
 concept IsVector = std::decay_t<T>::IsVector;
 
 template <typename T>
-concept IsScalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
+concept IsScalar = std::is_integral_v<T> || std::is_floating_point_v<T> ||
+                   std::is_same_v<T, _Float16>;
 
 template <typename T>
 concept IsShardedTensor = requires {

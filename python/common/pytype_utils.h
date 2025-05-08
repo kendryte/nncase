@@ -25,7 +25,7 @@ constexpr int NPY_FLOAT16 = 23;
 
 // Kinda following:
 // https://github.com/pybind/pybind11/blob/9bb3313162c0b856125e481ceece9d8faa567716/include/pybind11/numpy.h#L1000
-template <> struct npy_format_descriptor<nncase::half> {
+template <> struct npy_format_descriptor<_Float16> {
     static pybind11::dtype dtype() {
         handle ptr = npy_api::get().PyArray_DescrFromType_(NPY_FLOAT16);
         return reinterpret_borrow<pybind11::dtype>(ptr);
@@ -102,7 +102,7 @@ typecode_t from_dtype(pybind11::array array) {
         return dt_int32;
     else if (py::isinstance<py::array_t<int64_t>>(array))
         return dt_int64;
-    else if (py::isinstance<py::array_t<half>>(array))
+    else if (py::isinstance<py::array_t<_Float16>>(array))
         return dt_float16;
     else if (py::isinstance<py::array_t<float>>(array))
         return dt_float32;

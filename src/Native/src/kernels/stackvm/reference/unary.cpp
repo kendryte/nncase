@@ -110,7 +110,7 @@ result<void> nncase::kernels::stackvm::reference::unary(
     kernel_context &context) noexcept {
     switch (dtype) {
         UNARY_IMPL_DTYPE(dt_float32, float)
-        UNARY_IMPL_DTYPE(dt_float16, half)
+        UNARY_IMPL_DTYPE(dt_float16, _Float16)
         //        UNARY_IMPL_DTYPE(dt_bfloat16, bfloat16)
         UNARY_IMPL_DTYPE(dt_float64, double)
         UNARY_IMPL_DTYPE(dt_int32, int32_t)

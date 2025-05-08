@@ -74,6 +74,52 @@ result<void> hardmax_impl(const T *input, std::span<const size_t> in_shape,
     return ok();
 }
 
+template <>
+result<void> hardmax_impl(const _Float16 *input,
+                          std::span<const size_t> in_shape,
+                          std::span<const size_t> in_strides, _Float16 *output,
+                          int32_t axis) noexcept {
+    // init with init_value
+    auto init_value = std::numeric_limits<float>::lowest();
+    bool keep_dims = true;
+    dims_t axes{static_cast<size_t>(axis)};
+    auto max_shape =
+        kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);
+    auto max_stride = get_default_strides(max_shape);
+    std::unique_ptr<float[]> ptr(new float[compute_size(max_shape)]);
+    try_(kernels::stackvm::apply(
+        max_shape, [&](std::span<const size_t> index) -> result<void> {
+            ptr[offset(max_stride, index)] = init_value;
+            return ok();
+        }));
+
+    // collact all max indices
+    std::unordered_map<size_t, size_t> out_map;
+    try_(apply(in_shape, [&](std::span<const size_t> index) -> result<void> {
+        size_t src_idx = offset(in_strides, index);
+        const auto src = static_cast<float>(input[src_idx]);
+        auto out_idx =
+            offset(max_stride,
+                   kernels::detail::get_reduced_offset(index, axes, keep_dims));
+        auto &dst = ptr[out_idx];
+        auto ret = src > dst;
+        if (ret) {
+            out_map[out_idx] = src_idx;
+            dst = src;
+        }
+        return ok();
+    }));
+
+    // update output with max idx as 1
+    memset(static_cast<void *>(output), 0,
+           compute_size(in_shape) * sizeof(_Float16));
+    for (auto e : out_map) {
+        output[e.second] = static_cast<_Float16>(1);
+    }
+
+    return ok();
+}
+
 #define HARDMAX_IMPL(_ty)                                                      \
     return hardmax_impl(IN_CAST(_ty, input), in_shape, in_strides,             \
                         OUT_CAST(_ty, output), axis);

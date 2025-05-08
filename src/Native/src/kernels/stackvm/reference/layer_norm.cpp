@@ -44,7 +44,7 @@ static void layernorm_impl(int inner_size, const T *src, const T *scale,
         mean2 += pow[i] / inner_size;
 
     T add = mean2 + static_cast<T>(epsilon);
-    T sqrt = std::sqrt(add);
+    T sqrt = static_cast<T>(std::sqrt(static_cast<float>(add)));
 
     std::vector<T> div(inner_size, 0);
     for (auto i = 0; i < inner_size; i++)
@@ -89,7 +89,7 @@ result<void> layer_norm_impl2(const T *input, T *output, const T *scale,
     case dt_float32:                                                           \
         _impl(float);                                                          \
     case dt_float16:                                                           \
-        _impl(half);                                                           \
+        _impl(_Float16);                                                       \
     case dt_bfloat16:                                                          \
         _impl(bfloat16);                                                       \
     case dt_int8:                                                              \

@@ -117,8 +117,12 @@ class reduce_impl {
                     inner_size /= TOutElem::shape_type::length();
                 }
 
-                auto denom = (TOutScalar)inner_size;
-                output(index) /= denom;
+                auto denom = static_cast<float>(inner_size);
+                if constexpr (IsScalar<TOutElem>) {
+                    output(index) = static_cast<TOutScalar>(output(index) / denom);
+                } else {
+                    output(index) = output(index) / denom;
+                }
             }
         });
     }

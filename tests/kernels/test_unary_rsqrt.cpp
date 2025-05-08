@@ -169,7 +169,8 @@ class UnaryTest : public KernelTest,
             NNCASE_UNUSED auto res = kernels::stackvm::apply(
                 tensor.shape(),
                 [&](std::span<const size_t> index) -> result<void> {
-                    get<half>(tensor, index) = static_cast<half>(dis(gen));
+                    get<_Float16>(tensor, index) =
+                        static_cast<_Float16>(dis(gen));
                     return ok();
                 });
             break;
@@ -205,7 +206,7 @@ TEST_P(UnaryTest, rsqrt) {
     // expected
     runtime_tensor one;
     if (input.datatype() == dt_float16) {
-        half one_array[] = {(half)1};
+        _Float16 one_array[] = {(_Float16)1};
         one = hrt::create(
                   input.datatype(), {1},
                   {reinterpret_cast<std::byte *>(one_array), sizeof(one_array)},

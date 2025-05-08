@@ -90,10 +90,16 @@ result<void> binary_impl(binary_op_t op, const T *lhs, const T *rhs, T *output,
         BINARY_IMPL_OP(div, std::divides<T>());
         BINARY_IMPL_OP(min, [](T a, T b) { return std::min(a, b); });
         BINARY_IMPL_OP(max, [](T a, T b) { return std::max(a, b); });
-        BINARY_IMPL_OP(pow, [](T a, T b) { return std::pow(a, b); });
+        BINARY_IMPL_OP(pow, [](T a, T b) {
+            return static_cast<T>(
+                std::pow(static_cast<float>(a), static_cast<float>(b)));
+        });
         BINARY_IMPL_OP(logical_and,
                        [](T a, T b) { return static_cast<T>(a && b); });
-        BINARY_IMPL_OP(mod, [](T a, T b) { return std::fmod(a, b); });
+        BINARY_IMPL_OP(mod, [](T a, T b) {
+            return static_cast<T>(
+                std::fmod(static_cast<float>(a), static_cast<float>(b)));
+        });
     default:
         return err(std::errc::not_supported);
     }
