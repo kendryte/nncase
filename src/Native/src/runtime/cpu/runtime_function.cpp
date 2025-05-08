@@ -172,7 +172,7 @@ result<value_t> cpu_runtime_function::invoke_core(
                 inout_paged_kvcaches.push_back(descs);
                 inouts.emplace_back(thread_inout_desc{
                     .data = (std::byte *)descs,
-                    .size = sizeof(intptr_t) * refspan.size(),
+                    .size = sizeof(thread_paged_attention_kv_cache_desc) * refspan.size(),
                     .shape = t->shape().data(),
                     .strides = t->strides().data(),
                 });
@@ -196,6 +196,10 @@ result<value_t> cpu_runtime_function::invoke_core(
         try_var(t, arg.as<tensor>());
         try_var(hb, t->buffer().as_host());
         try_(hb.unmap());
+    }
+
+    for (auto ptrs : inout_paged_kvcaches) {
+        delete[] ptrs;
     }
 
     return ok(tuple(std::in_place));
