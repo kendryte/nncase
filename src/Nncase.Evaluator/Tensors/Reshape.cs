@@ -94,6 +94,11 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 return invalidType;
             }
 
+            if (policies.ToArray().Count(p => p is SBPSplit) > 1)
+            {
+                return invalidType;
+            }
+
             return new DistributedType(newTensorType, policies, inType.Placement);
         }
         else

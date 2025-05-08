@@ -34,6 +34,11 @@ template <reduce_op ReduceOp> struct P {
 // Implicit
 struct I {
     template <class Mesh>
+    constexpr bool is_divisible([[maybe_unused]] size_t global_dim) noexcept {
+        return true;
+    }
+
+    template <class Mesh>
     static constexpr size_t local_dim(size_t global_dim) noexcept {
         return global_dim;
     }
@@ -56,6 +61,17 @@ struct I {
 // Split
 template <size_t... Axes> struct S {
     using axes_type = fixed_shape<Axes...>;
+
+    template <class Mesh>
+    constexpr bool is_divisible(size_t global_dim) noexcept {
+            return global_dim % (1 * ... * Mesh::shape_type::at(Axes)) == 0;
+    }
+
+    template <class Mesh>
+    static constexpr size_t local_dim_stride(size_t global_dim) noexcept {
+        auto divider = (1 * ... * Mesh::shape_type::at(Axes));
+        return ntt::ceil_div(global_dim, divider);
+    }
 
     template <class Mesh>
     static constexpr size_t local_dim(size_t global_dim) noexcept {
@@ -89,8 +105,10 @@ template <size_t... Axes> struct S {
             shard_index.at(Axes)...};
         auto submesh_linear_offset =
             ntt::linear_offset(submesh_index, submesh_strides{});
-        auto local_dim = S::local_dim<Mesh>(global_dim);
-        return submesh_linear_offset * local_dim;
+        auto divider = (1 * ... * Mesh::shape_type::at(Axes));
+        auto div = ntt::div(global_dim, divider);
+        auto rem = global_dim % divider;
+        return submesh_linear_offset * div + ntt::min(rem, submesh_linear_offset);
     }
 
     template <class Mesh>
@@ -203,9 +221,15 @@ constexpr size_t get_local_shard_dim(const GlobalShape &shape) noexcept {
         .template local_dim<typename Sharding::mesh_type>(local_dim);
 }
 
+template <class Sharding, class GlobalShape, size_t ... Ids>
+constexpr bool is_divisible(const GlobalShape &shape, std::index_sequence<Ids ... >) noexcept {
+    return ((std::get<Ids>(typename Sharding::axis_policy_type{})
+        .template is_divisible<typename Sharding::mesh_type>(shape.at(Ids))) && ...);
+}
+
 template <class Sharding, class GlobalShape>
 constexpr auto local_shard_shape(const GlobalShape &shape) noexcept {
-    if constexpr (is_fixed_dims_v<GlobalShape>) {
+    if constexpr (is_fixed_dims_v<GlobalShape> && is_divisible<Sharding>(GlobalShape{}, std::make_index_sequence<GlobalShape::rank()>{})) {
         auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
             return fixed_shape<get_local_shard_dim<Sharding, Axes>(
                 GlobalShape{})...>{};

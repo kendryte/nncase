@@ -494,6 +494,10 @@ inline bool is_contiguous(tensor tensor) {
         _impl(double);                                                         \
     case dt_boolean:                                                           \
         _impl(bool);                                                           \
+    case dt_float8e4m3:                                                        \
+        _impl(float_e4m3_t);                                                   \
+    case dt_float8e5m2:                                                        \
+        _impl(float_e5m2_t);                                                   \
     default:                                                                   \
         return err(std::errc::not_supported);                                  \
     }

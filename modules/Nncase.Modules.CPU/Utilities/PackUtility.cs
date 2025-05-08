@@ -8,7 +8,7 @@ namespace Nncase.Utilities;
 
 public static class PackUtility
 {
-    public static Expr PadForPack(Expr input, Shape shape, int[] packedAxes, int[] lanes, Expr value, out Dimension[] padNums)
+    public static Expr PadForPack(Expr input, Shape shape, int[] packedAxes, int[] lanes, Expr value, out Dimension[] padNums, int[]? extraPads = null)
     {
         var isPadded = false;
         var pads = new Dimension[shape.Rank, 2];
@@ -18,6 +18,15 @@ public static class PackUtility
             if (shape[axis] % lanes[i] != 0)
             {
                 pads[axis, 1] = PadForAlign(shape[axis], lanes[i]);
+                isPadded = true;
+            }
+        }
+
+        for (int i = 0; i < extraPads?.Length; i++)
+        {
+            if (extraPads[i] > 0)
+            {
+                pads[i, 1] += extraPads[i];
                 isPadded = true;
             }
         }
