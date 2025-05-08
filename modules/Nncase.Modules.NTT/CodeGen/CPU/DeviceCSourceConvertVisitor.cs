@@ -290,20 +290,8 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 break;
             case IR.Buffers.BufferSubview op:
                 {
-                    var arg0 = expr.Arguments[1] switch
-                    {
-                        TupleConst => $"fixed_shape<{arguments[1].Name}>{{}}",
-                        IR.Tuple tc => $"make_ranked_shape({arguments[1].Name})",
-                        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-                    };
-
-                    var arg1 = expr.Arguments[2] switch
-                    {
-                        TupleConst => $"fixed_shape<{arguments[2].Name}>{{}}",
-                        IR.Tuple tc => $"make_ranked_shape({arguments[2].Name})",
-                        _ => throw new ArgumentOutOfRangeException(nameof(expr)),
-                    };
-
+                    var arg0 = VisitDimOrShape(expr.Arguments[1], CShapeKind.Shape).Name;
+                    var arg1 = VisitDimOrShape(expr.Arguments[2], CShapeKind.Shape).Name;
                     str = $"{arguments[0].Name}.view({arg0}, {arg1})";
                 }
 

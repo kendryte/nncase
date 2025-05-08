@@ -3,6 +3,7 @@
 
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 
 namespace Nncase.Utilities;
 
@@ -11,7 +12,7 @@ public static class PackUtility
     public static Expr PadForPack(Expr input, Shape shape, int[] packedAxes, int[] lanes, Expr value, out Dimension[] padNums)
     {
         var isPadded = false;
-        var pads = new Dimension[shape.Rank, 2];
+        var pads = Paddings.Zeros(shape.Rank).ToDimensionArray();
         for (int i = 0; i < packedAxes.Length; i++)
         {
             var axis = packedAxes[i];
@@ -22,7 +23,7 @@ public static class PackUtility
             }
         }
 
-        padNums = new Dimension[packedAxes.Length];
+        padNums = Enumerable.Repeat(Dimension.Zero, packedAxes.Length).ToArray();
         for (int i = 0; i < packedAxes.Length; i++)
         {
             padNums[i] = pads[packedAxes[i], 1];

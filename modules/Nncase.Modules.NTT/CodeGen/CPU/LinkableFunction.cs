@@ -6,8 +6,23 @@ using Nncase.IR;
 
 namespace Nncase.CodeGen.NTT;
 
+[StructLayout(LayoutKind.Sequential)]
+internal unsafe struct KernelDescHeader
+{
+    [MarshalAs(UnmanagedType.U4)]
+    public uint OutputAlign;
+
+    [MarshalAs(UnmanagedType.U4)]
+    public uint Reserved0;
+
+    [MarshalAs(UnmanagedType.U8)]
+    public ulong OutputPoolSize;
+}
+
 internal sealed class LinkableKernelFunction : ILinkableFunction
 {
+    public const string KernelHeaderSectionName = ".desc";
+
     public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, KernelCSource funcCSource, Stream text, params ILinkedSection[] sections)
     {
         Id = id;

@@ -9,7 +9,7 @@ namespace Nncase.IR.Buffers;
 public sealed class BufferOf : Expr
 {
     public BufferOf(Expr input)
-        : base(new[] { input })
+        : base([input])
     {
     }
 

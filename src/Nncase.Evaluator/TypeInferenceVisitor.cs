@@ -112,9 +112,9 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <inheritdoc/>
     protected override IRType VisitLeafFor(Nncase.TIR.For expr)
     {
-        VerifySubField(expr, expr.Domain.Start, TypePatternUtility.IsIntegralScalar());
-        VerifySubField(expr, expr.Domain.Stop, TypePatternUtility.IsIntegralScalar());
-        VerifySubField(expr, expr.LoopVar, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Domain.Start, TypePatternUtility.IsDimensionType());
+        VerifySubField(expr, expr.Domain.Stop, TypePatternUtility.IsDimensionType());
+        VerifySubField(expr, expr.LoopVar, TypePatternUtility.IsDimensionType());
         VerifySubField(expr, expr.Body, TypePatternUtility.IsUnit());
 
         var type = TupleType.Void;
@@ -242,7 +242,8 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <inheritdoc/>
     protected override IRType VisitLeafFunctionWrapper(FunctionWrapper expr)
     {
-        var type = new CallableType(expr.Target.CheckedType, new(expr.ParameterTypes));
+        var returnType = ((CallableType)expr.Target.CheckedType).ReturnType;
+        var type = new CallableType(TupleType.Void, new(expr.ParameterTypes.Append(returnType)));
         return type;
     }
 

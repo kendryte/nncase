@@ -375,6 +375,12 @@ public static class T
         return new SequentialBuilder<Let>(body => new Let(newV, expression, body));
     }
 
+    public static Call Assign<T>(out T v, T value)
+    {
+        v = value;
+        return Nop();
+    }
+
     /// <summary>
     /// we can use it get some temp var.
     /// </summary>

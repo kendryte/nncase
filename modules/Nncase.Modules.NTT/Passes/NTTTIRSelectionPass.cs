@@ -122,7 +122,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Math.Compare compare:
                 return TIR.F.NTT.Compare(compare.CompareOp, (Expr)arguments[0], (Expr)arguments[1], output);
             case IR.Tensors.GetItem getItem:
-                return TIR.F.NTT.GetItem((Expr)arguments[0], (Expr)arguments[1], output);
+                return TIR.F.NTT.GetItem((Expr)arguments[0], arguments[1], output);
             case IR.Tensors.Reshape:
                 return TIR.F.NTT.Reshape((Expr)arguments[0], output);
             case IR.Tensors.ScatterND scatterND:

@@ -30,8 +30,8 @@ namespace nncase::ntt::runtime {
 struct thread_inout_desc {
     std::byte *data;
     size_t size;
-    int64_t *shape;
-    int64_t *strides;
+    size_t *shape;
+    size_t *strides;
 };
 
 void *thread_alloc(size_t bytes, size_t alignment);

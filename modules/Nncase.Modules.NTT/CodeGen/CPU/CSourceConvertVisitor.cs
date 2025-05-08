@@ -24,6 +24,13 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.NTT;
 
+public enum CShapeKind
+{
+    Shape,
+    Strides,
+    I64Dims,
+}
+
 public struct IndentScope : IDisposable
 {
     private static readonly AsyncLocal<IndentWriter?> _writer = new AsyncLocal<IndentWriter?>();
@@ -305,5 +312,50 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         symbol = new("int64_t", expr.Name);
         _exprMemo.Add(expr, symbol);
         return symbol;
+    }
+
+    protected override CSymbol VisitRankedShape(RankedShape expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var operands = expr.Operands.AsValueEnumerable().Select(x => Visit(x).Name);
+        var values = StringUtility.Join(", ", operands);
+        symbol = expr.IsFixed ? new($"fixed_dims<{values}>", $"fixed_dims<{values}>{{}}")
+            : new($"ranked_dims<{values.Length}>", $"make_ranked_dims({values})");
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    protected CSymbol VisitDimOrShape(BaseExpr expr, CShapeKind shapeKind = CShapeKind.I64Dims)
+    {
+        var symbol = Visit(expr);
+        var replaceType = shapeKind switch
+        {
+            CShapeKind.Shape => "shape<",
+            CShapeKind.Strides => "strides<",
+            CShapeKind.I64Dims => "dims<int64_t, ",
+            _ => throw new NotSupportedException($"Not support {shapeKind}"),
+        };
+        var replaceName1 = shapeKind switch
+        {
+            CShapeKind.Shape => "ranked_shape",
+            CShapeKind.Strides => "ranked_strides",
+            CShapeKind.I64Dims => "ranked_dims<int64_t>",
+            _ => throw new NotSupportedException($"Not support {shapeKind}"),
+        };
+        var replaceName2 = shapeKind switch
+        {
+            CShapeKind.Shape => "fixed_shape<",
+            CShapeKind.Strides => "fixed_strides<",
+            CShapeKind.I64Dims => "fixed_dims<int64_t, ",
+            _ => throw new NotSupportedException($"Not support {shapeKind}"),
+        };
+        return new CSymbol(
+            symbol.Type.Replace("dims<", replaceType, StringComparison.Ordinal),
+            symbol.Name.Replace("ranked_dims", replaceName1, StringComparison.Ordinal)
+                .Replace("fixed_dims<", replaceName2, StringComparison.Ordinal));
     }
 }

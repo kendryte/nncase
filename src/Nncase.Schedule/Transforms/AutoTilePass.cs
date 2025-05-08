@@ -82,7 +82,7 @@ public sealed class AutoTilePass : FunctionPass
 
         // 3. reconstruction
         var constructor = new AutoTileReconstructor(tiler, ModuleKind, CompileOptions, condenseAlgo);
-        var post = (Expr)constructor.Construct();
+        var post = constructor.Construct();
         return Task.FromResult((BaseFunction)func.With(body: post));
     }
 }

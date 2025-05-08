@@ -16,6 +16,7 @@
 #include "model.h"
 #include "result.h"
 #include "runtime_section_context.h"
+#include <cstdint>
 #include <nncase/runtime/stream_reader.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
@@ -50,7 +51,9 @@ class NNCASE_API runtime_function {
 
     uint32_t parameters_size() const noexcept;
     result<type> parameter_type(size_t index) const noexcept;
+    uint32_t return_size() const noexcept;
     const type &return_type() const noexcept;
+    result<type> return_type(size_t index) const noexcept;
 
     result<value_t> invoke(std::span<value_t> parameters,
                            value_t return_value = nullptr) noexcept;

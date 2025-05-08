@@ -86,7 +86,17 @@ internal class FunctionBuilder
             visitor.Visit(function);
             var functionCSource = visitor.GetCSource();
 
-            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!);
+            // 4. write the kernel desc
+            using (var writer = _sectionManager.GetWriter(LinkableKernelFunction.KernelHeaderSectionName))
+            {
+                var header = default(KernelDescHeader);
+                header.OutputAlign = (uint)function.SchedResult.OutputAlign;
+                header.OutputPoolSize = function.SchedResult.OutputUsage;
+                writer.Write(ref header);
+            }
+
+            var kernelDescSection = new LinkedSection(_sectionManager.GetContent(LinkableKernelFunction.KernelHeaderSectionName)!, ".desc", 0, 8, (uint)sizeof(KernelDescHeader));
+            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!, kernelDescSection);
         }
         else
         {

@@ -19,7 +19,6 @@
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/type_serializer.h>
-#include <stdexcept>
 #include <thread>
 #include <vector>
 
@@ -28,8 +27,7 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 using namespace nncase::ntt::runtime;
 
-result<void>
-cpu_runtime_function::run(std::span<thread_inout_desc> input_descs) noexcept {
+result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
     std::vector<std::thread> blocks;
     timer_record timer_records[24];
     try_var(enable_profiling,
@@ -38,8 +36,8 @@ cpu_runtime_function::run(std::span<thread_inout_desc> input_descs) noexcept {
     for (size_t cid = 0; cid < module().cdim(); cid++) {
         for (size_t bid = 0; bid < module().bdim(); bid++) {
             auto tid_offset = (cid * module().bdim() + bid) * module().tdim();
-            blocks.emplace_back([cid, bid, input_descs, tid_offset, enable_profiling,
-                                 timer_records, this] {
+            blocks.emplace_back([cid, bid, tid_offset, enable_profiling,
+                                 timer_records, output_data, this] {
                 cpu_block_entry_params_t block_entry_params{
                     .tdim = module().tdim(),
                     .bdim = module().bdim(),
@@ -47,8 +45,10 @@ cpu_runtime_function::run(std::span<thread_inout_desc> input_descs) noexcept {
                     .bid = bid,
                     .cid = cid,
                     .cpu_id_offset = tid_offset,
-                    .input_descs = input_descs.data(),
+                    .input_descs = this->input_descs_.data(),
+                    .output_descs = this->output_descs_.data(),
                     .rdata = module().rdata().data(),
+                    .output = output_data,
                     .enable_profiling = enable_profiling,
                     .timer_records = const_cast<timer_record *>(
                         &timer_records[cid * module().bdim() * module().tdim() +

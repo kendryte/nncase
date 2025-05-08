@@ -136,7 +136,7 @@ public abstract class AffineExpr : BaseExpr
 public sealed class AffineDim : AffineExpr
 {
     public AffineDim(int position)
-        : base(Array.Empty<Expr>())
+        : base(Array.Empty<BaseExpr>())
     {
         Position = position;
     }
@@ -158,7 +158,7 @@ public sealed class AffineDim : AffineExpr
 public abstract class AffineSymbolBase : AffineExpr
 {
     public AffineSymbolBase()
-        : base(Array.Empty<Expr>())
+        : base(Array.Empty<BaseExpr>())
     {
     }
 }

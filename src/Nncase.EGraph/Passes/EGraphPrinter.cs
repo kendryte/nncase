@@ -23,6 +23,7 @@ using GiGraph.Dot.Types.Styling;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 
@@ -286,5 +287,9 @@ public partial class EGraphPrinter
         protected override string VisitShape(Shape shape) => shape.ToString();
 
         protected override string VisitDimension(Dimension expr) => expr.ToString();
+
+        protected override string VisitPadding(Padding expr) => expr.ToString();
+
+        protected override string VisitPaddings(Paddings expr) => expr.ToString();
     }
 }

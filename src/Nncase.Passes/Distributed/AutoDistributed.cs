@@ -1024,6 +1024,7 @@ using Nncase.CodeGen;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Distributed;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Targets;
@@ -1337,7 +1338,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             }
 
             var constrains = new EGraphExtractConstrains[] { SingleNodeMemoryExtractConstrains };
-            var post = (Expr)graph.Extract(root, CompileOptions, null, constrains);
+            var post = graph.Extract(root, CompileOptions, null, constrains);
 
             if (input is Function)
             {
@@ -1540,7 +1541,19 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 case (ParameterKind.Attribute, TensorConst e):
                     updateBuckets(buckets, new[] { e.With() }); // remove all old users.
                     break;
-                case (ParameterKind.Attribute, None e):
+                case (_, Dimension e):
+                    updateBuckets(buckets, new[] { e });
+                    break;
+                case (_, Shape e):
+                    updateBuckets(buckets, new[] { e });
+                    break;
+                case (_, Padding e):
+                    updateBuckets(buckets, new[] { e });
+                    break;
+                case (_, Paddings e):
+                    updateBuckets(buckets, new[] { e });
+                    break;
+                case (_, None e):
                     updateBuckets(buckets, new[] { e.With() });
                     break;
                 default:

@@ -18,7 +18,7 @@ public sealed class Paddings : BaseExpr, IEquatable<Paddings?>, IReadOnlyList<Pa
     public static readonly Paddings Empty = new Paddings();
 
     public Paddings(params Padding[] paddings)
-        : base(paddings)
+        : base(paddings.Cast<BaseExpr>().ToArray())
     {
         RefreshKind();
     }
@@ -112,6 +112,18 @@ public sealed class Paddings : BaseExpr, IEquatable<Paddings?>, IReadOnlyList<Pa
         {
             throw new InvalidOperationException("Cannot convert to value array when paddings are not fixed.");
         }
+    }
+
+    public Dimension[,] ToDimensionArray()
+    {
+        var result = new Dimension[Rank, 2];
+        for (int i = 0; i < Rank; i++)
+        {
+            result[i, 0] = Values[i].Before;
+            result[i, 1] = Values[i].After;
+        }
+
+        return result;
     }
 
     public override bool Equals(object? obj)

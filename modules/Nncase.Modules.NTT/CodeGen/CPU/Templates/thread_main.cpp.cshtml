@@ -82,7 +82,7 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input
   global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[0] = (uintptr_t)local_data;
   global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[1] = (uintptr_t)local_data + @Model.DataSize;
   global_local_rdata_ptr(program_ids[0], program_ids[1], program_ids[2]) = (uintptr_t)local_rdata;
-  @(Model.PrimFunction.Name)(@(string.Join(", ", names)), local_data, output, output_descs);
+  @(Model.PrimFunction.Name)(@(string.Concat(names.Select(x => $"{x}, ")))local_data, output, output_descs);
   nncase::ntt::runtime::thread_free(local_data);
 }
 

@@ -127,7 +127,7 @@ public partial class NTT
         return new Call(new Gather(axis), input, indcies, ret);
     }
 
-    public static Expr GetItem(Expr input, Expr index, Expr ret)
+    public static Expr GetItem(Expr input, BaseExpr index, Expr ret)
     {
         return new Call(new GetItem(), input, index, ret);
     }

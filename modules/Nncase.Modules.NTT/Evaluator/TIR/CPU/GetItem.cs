@@ -12,7 +12,7 @@ public sealed class GetItemEvaluator : ITypeInferencer<GetItem>
     public IRType Visit(ITypeInferenceContext context, GetItem target)
     {
         context.CheckArgumentType<TensorType>(target, GetItem.Input);
-        context.CheckArgumentType<TensorType>(target, GetItem.Index);
+        context.CheckArgumentType<IRType>(target, GetItem.Index);
         return TupleType.Void;
     }
 }

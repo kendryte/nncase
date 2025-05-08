@@ -19,6 +19,11 @@ public sealed class If : BaseCall
     public If(Expr condition, BaseFunction then, BaseFunction @else, ReadOnlySpan<BaseExpr> arguments)
         : base(ArrayUtility.Concat(condition, then, @else, arguments))
     {
+        if (then is not Function or FunctionWrapper
+            || @else is not Function or FunctionWrapper)
+        {
+            throw new ArgumentException("Then and Else must be a function.");
+        }
     }
 
     public If(Expr condition, BaseFunction then, BaseFunction @else, params BaseExpr[] arguments)

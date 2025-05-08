@@ -631,7 +631,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         if (expr.Else.Count > 0)
         {
-            _scope.Append(".Then");
+            _scope.Append(".Else");
             _scope.Append(VisitTypeSequential(expr.Else, string.Empty).ToString());
         }
 

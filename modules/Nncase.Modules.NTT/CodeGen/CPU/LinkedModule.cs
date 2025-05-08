@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 namespace Nncase.CodeGen.NTT;
 
 [StructLayout(LayoutKind.Sequential)]
-internal unsafe struct DescHeader
+internal unsafe struct ModuleDescHeader
 {
     [MarshalAs(UnmanagedType.U4)]
     public uint ThreadDim;
@@ -28,14 +28,14 @@ internal unsafe struct DescHeader
 
 internal sealed class LinkedModule : ILinkedModule
 {
-    public const string KernelHeaderSectionName = ".desc";
+    public const string ModuleHeaderSectionName = ".desc";
 
     public unsafe LinkedModule(IReadOnlyList<ILinkedFunction> functions, Stream desc, Stream text, Stream rdata, IReadOnlyList<Stream> localRdatas, ulong rdataAlign)
     {
         Functions = functions;
         Sections =
         [
-            new LinkedSection(desc, KernelHeaderSectionName, 0, 8, (uint)sizeof(DescHeader)),
+            new LinkedSection(desc, ModuleHeaderSectionName, 0, 8, (uint)sizeof(ModuleDescHeader)),
             new LinkedSection(text, WellknownSectionNames.Text, 0, 8, (ulong)text.Length),
             new LinkedSection(rdata, WellknownSectionNames.Rdata, 0, (uint)rdataAlign, (ulong)rdata.Length),
             new LinkedMultipleContentsSection(localRdatas, WellknownSectionNames.LocalRdata, 0, (uint)rdataAlign),

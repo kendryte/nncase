@@ -42,9 +42,9 @@ public sealed class NTTModuleBuilder : IModuleBuilder
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
 
         // 1. write the module header
-        using (var writer = _sectionManager.GetWriter(LinkedModule.KernelHeaderSectionName))
+        using (var writer = _sectionManager.GetWriter(LinkedModule.ModuleHeaderSectionName))
         {
-            var header = default(DescHeader);
+            var header = default(ModuleDescHeader);
             header.ThreadDim = (uint)targetOptions.Hierarchies[0][^1];
             header.BlockDim = targetOptions.Hierarchies[0].Length < 2 ? 1 : (uint)targetOptions.Hierarchies[0][^2];
             header.ChipDim = targetOptions.Hierarchies[0].Length < 3 ? 1 : (uint)targetOptions.Hierarchies[0][^3];
@@ -59,6 +59,6 @@ public sealed class NTTModuleBuilder : IModuleBuilder
             return _sectionManager.GetContent(WellknownSectionNames.LocalRdata, i)!;
         }).ToArray();
 
-        return new LinkableModule(_sectionManager.GetContent(LinkedModule.KernelHeaderSectionName)!, _sectionManager.GetContent(WellknownSectionNames.Rdata)!, localRdataContents, linkableFunctions, CompileOptions);
+        return new LinkableModule(_sectionManager.GetContent(LinkedModule.ModuleHeaderSectionName)!, _sectionManager.GetContent(WellknownSectionNames.Rdata)!, localRdataContents, linkableFunctions, CompileOptions);
     }
 }

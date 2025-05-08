@@ -11,6 +11,7 @@ using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.Graphs;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 
 namespace Nncase.Passes;
 
@@ -293,7 +294,7 @@ internal sealed class SatExprBuildVisitor
                 expr = enode.Expr;
                 break;
             case Function func:
-                expr = children.Length == 0 ? func : func.With(body: (Expr)children[0], parameters: children[1..].OfType<Var>().ToArray());
+                expr = children.Length == 0 ? func : func.With(body: children[0], parameters: children[1..].Cast<IVar>().ToArray());
                 break;
             case If @if:
                 expr = @if.With(condition: (Expr)children[0], then: (BaseFunction)children[1], @else: (BaseFunction)children[2], arguments: children[3..]);
@@ -306,6 +307,12 @@ internal sealed class SatExprBuildVisitor
                 break;
             case Marker mk:
                 expr = mk.With(target: (Expr)children[0], attribute: children[1], metadata: mk.Metadata);
+                break;
+            case Padding padding:
+                expr = padding.With(before: (Dimension)children[0], after: (Dimension)children[1]);
+                break;
+            case Paddings paddings:
+                expr = paddings.With(children.Cast<Padding>().ToArray());
                 break;
             default:
                 throw new NotSupportedException(enode.Expr.GetType().Name);

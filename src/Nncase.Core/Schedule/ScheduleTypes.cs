@@ -107,11 +107,11 @@ public sealed class SchedFunctionResult
     /// <summary>
     /// Gets or sets the data section align.
     /// </summary>
-    public ulong DataAlign { get; set; }
+    public ulong DataAlign { get; set; } = 8;
 
     public ulong OutputUsage { get; set; }
 
-    public ulong OutputAlign { get; set; }
+    public ulong OutputAlign { get; set; } = 8;
 
     /// <summary>
     /// Gets or sets a value indicating whether the Scheduled status.
