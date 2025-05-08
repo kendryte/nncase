@@ -118,7 +118,11 @@ class reduce_impl {
                 }
 
                 auto denom = static_cast<float>(inner_size);
-                output(index) = static_cast<TOutScalar>(output(index) / denom);
+                if constexpr (IsScalar<TOutElem>) {
+                    output(index) = static_cast<TOutScalar>(output(index) / denom);
+                } else {
+                    output(index) = output(index) / denom;
+                }
             }
         });
     }
