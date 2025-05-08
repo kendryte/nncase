@@ -36,7 +36,7 @@ result<void> binary_impl(TOp &&op, const T *lhs, const T *rhs, T *output,
                          std::span<const size_t> out_strides,
                          NNCASE_UNUSED kernel_context &context) noexcept {
     if (is_scalar(out_shape)) {
-        output[0] = op(lhs[0], rhs[0]);
+        output[0] = (T)op(lhs[0], rhs[0]);
         return ok();
     }
     return apply(out_shape, [&](std::span<const size_t> index) -> result<void> {
@@ -46,7 +46,7 @@ result<void> binary_impl(TOp &&op, const T *lhs, const T *rhs, T *output,
             kernels::detail::get_reduced_offset(index, rhs_shape);
         const auto a = lhs[offset(lhs_strides, lhs_index)];
         const auto b = rhs[offset(rhs_strides, rhs_index)];
-        output[offset(out_strides, index)] = op(a, b);
+        output[offset(out_strides, index)] = (T)op(a, b);
         return ok();
     });
 }

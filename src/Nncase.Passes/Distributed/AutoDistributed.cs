@@ -1470,9 +1470,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     Select(args => args.ToArray()).
                     Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
                     {
-                        DistributedType d => (d.AxisPolices.All(sbp => sbp is SBPBroadCast) || arg is TensorConst) ? arg : IR.F.Distributed.Boxing(arg, d with { AxisPolices = new(Enumerable.Repeat(SBP.B, d.AxisPolices.Count).ToArray()) }),
-                        _ => arg,
-                    }).ToArray()).Select(arg => BuildEquivalCalls(op, arg.ToArray())).
+                        DistributedType d => GetDiverseCandidateSBPs(d, Placements, _moduleKind, TargetOptions).Select(ndsbp => IR.F.Distributed.Boxing(arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                        _ => new[] { arg },
+                    }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
                     ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<Expr>());

@@ -98,7 +98,7 @@ result<datatype_t> deserialize_datatype_impl(TReader &sr) noexcept {
     }
         // prim types
     default: {
-        if (typecode >= dt_boolean && typecode <= dt_bfloat16) {
+        if (typecode >= dt_boolean && typecode <= dt_float8e5m2) {
             return datatype_t::from_typecode(typecode);
         } else {
             return err(std::errc::invalid_argument);

@@ -52,8 +52,9 @@ public partial class CPUAffineSelectionPass : AffineSelectionPass
                 return SelectUnaryLike(call[IR.Math.Unary.Input], new TIR.CPU.Unary(op.UnaryOp), call, output);
             case IR.NN.Swish op:
                 return SelectSwish(op, call, output);
-            case IR.Tensors.Cast op:
-                return SelectCast(op, call, output);
+
+            // case IR.Tensors.Cast op:
+            // return SelectCast(op, call, output);
             case IR.Tensors.Transpose op:
                 return SelectTranspose(op, call, output);
             default:

@@ -64,7 +64,10 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         typeof(Tensor).GetMethod(nameof(CreateTensorEmptyImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
 
     private static readonly MethodInfo _tensorCastFunc =
-        typeof(Tensor).GetMethod(nameof(Cast))!;
+        typeof(Tensor).GetMethod(nameof(Cast), [typeof(CastMode)])!;
+
+    private static readonly MethodInfo _tensorCastFunc2 =
+            typeof(Tensor).GetMethod(nameof(Cast), [typeof(CastMode), typeof(long[])])!;
 
     private readonly long[] _dimensions;
     private readonly long[] _strides;
@@ -484,12 +487,21 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public abstract Tensor<T> Cast<T>(CastMode castMode = CastMode.KDefault)
         where T : struct, IEquatable<T>;
 
+    public abstract Tensor<T> Cast<T>(CastMode castMode, long[] dimensions)
+        where T : unmanaged, IEquatable<T>;
+
     /// <summary>
     /// <see cref="Cast{T}(CastMode)"/>.
     /// </summary>
     public Tensor CastTo(DataType type, CastMode castMode = CastMode.KDefault)
     {
         var tensor = (Tensor)_tensorCastFunc.MakeGenericMethod(type.CLRType).Invoke(this, new object[] { castMode })!;
+        return tensor;
+    }
+
+    public Tensor CastTo(DataType type, CastMode castMode, long[] dimensions)
+    {
+        var tensor = (Tensor)_tensorCastFunc2.MakeGenericMethod(type.CLRType).Invoke(this, new object[] { castMode, dimensions })!;
         return tensor;
     }
 

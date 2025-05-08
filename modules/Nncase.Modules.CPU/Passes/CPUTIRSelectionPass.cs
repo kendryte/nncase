@@ -61,7 +61,7 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
             case IR.Math.MatMul matmul:
                 return TIR.F.CPU.Matmul(arguments[0], arguments[1], output, None.Default);
             case IR.CustomCPU.MatMul matmul:
-                return TIR.F.CPU.Matmul(arguments[0], arguments[1], output, None.Default);
+                return TIR.F.CPU.Matmul(arguments[0], arguments[1], output, None.Default, matmul.LhsPackedAxes, matmul.LhsPadedNums, matmul.RhsPackedAxes, matmul.RhsPadedNums, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath);
             case IR.NN.Conv2D conv:
                 {
                     var input = call[IR.NN.Conv2D.Input];

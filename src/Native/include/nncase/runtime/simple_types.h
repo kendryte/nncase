@@ -17,8 +17,8 @@
 #include "small_vector.hpp"
 #include <array>
 #include <nncase/bfloat16.h>
+#include <nncase/float8.h>
 #include <nncase/half.h>
-
 namespace nncase {
 typedef enum : uint8_t {
 #define DEFINE_TYPECODE(id, name, value) dt_##id = value,
@@ -77,6 +77,16 @@ struct scalar {
         as<float>() = value;
     }
 
+    scalar(float_e4m3_t value) noexcept {
+        type = dt_float8e4m3;
+        as<float_e4m3_t>() = value;
+    }
+
+    scalar(float_e5m2_t value) noexcept {
+        type = dt_float8e5m2;
+        as<float_e5m2_t>() = value;
+    }
+
     template <class T> T &as() noexcept {
         return *reinterpret_cast<T *>(&storage);
     }
@@ -91,6 +101,8 @@ inline constexpr size_t typecode_bytes(typecode_t typecode) {
     case dt_boolean:
     case dt_uint8:
     case dt_int8:
+    case dt_float8e4m3:
+    case dt_float8e5m2:
         return 1;
     case dt_uint16:
     case dt_int16:
