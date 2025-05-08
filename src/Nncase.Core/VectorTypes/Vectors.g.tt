@@ -16,6 +16,8 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Nncase;
 
@@ -29,7 +31,7 @@ foreach (var (lanesA, lanesB) in new[] {
 var typeName = lanesA == 0 ? $"Vector{lanesB.ToString()}<T>" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}<T>";
 #>
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, ISubtractionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, IMultiplyOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, IDivisionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>
+public unsafe struct <#=typeName#> : INumberBase<<#=typeName#>>
     where T : unmanaged, IEquatable<T>, INumber<T>
 {
 <# if (lanesA == 0) {#>
@@ -68,6 +70,8 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
 
     public bool Equals(<#=typeName#> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is <#=typeName#> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 <# if (lanesA != 0) {#>
@@ -85,6 +89,42 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
     public int Count => <#=lanesB#>;
 <#}#>
 
+    public static <#=typeName#> One 
+    {
+        get 
+        {
+            <#=typeName#> result = default;
+            var span = result.AsSpan();
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = T.One;
+            }
+
+            return result;
+        }
+    }
+
+    public static int Radix => T.Radix;
+
+    public static <#=typeName#> Zero 
+    {
+        get 
+        {
+            <#=typeName#> result = default;
+            var span = result.AsSpan();
+            for (int i = 0; i < span.Length; i++)
+            {
+                span[i] = T.Zero;
+            }
+
+            return result;
+        }
+    }
+
+    public static <#=typeName#> AdditiveIdentity => Zero;
+
+    public static <#=typeName#> MultiplicativeIdentity => One;
+
 <#foreach (var op in new string[] { "+", "-" , "*", "/" }) {#>
     public static <#=typeName#> operator <#=op#>(<#=typeName#> left, <#=typeName#> right) 
     {
@@ -100,6 +140,13 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
     }
 
 <#}#>
+
+    public static <#=typeName#> operator --(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool operator ==(<#=typeName#> left, <#=typeName#> right) => throw new NotImplementedException();
+    public static bool operator !=(<#=typeName#> left, <#=typeName#> right) => throw new NotImplementedException();
+    public static <#=typeName#> operator ++(<#=typeName#> value) => throw new NotImplementedException();
+    public static <#=typeName#> operator -(<#=typeName#> value) => throw new NotImplementedException();
+    public static <#=typeName#> operator +(<#=typeName#> value) => throw new NotImplementedException();
 
     public override string ToString() 
     {
@@ -120,6 +167,45 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
         return sb.ToString();
 <#}#>
     }
+
+    public static <#=typeName#> Abs(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsCanonical(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsComplexNumber(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsEvenInteger(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsFinite(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsImaginaryNumber(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsInfinity(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsInteger(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsNaN(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsNegative(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsNegativeInfinity(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsNormal(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsOddInteger(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsPositive(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsPositiveInfinity(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsRealNumber(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsSubnormal(<#=typeName#> value) => throw new NotImplementedException();
+    public static bool IsZero(<#=typeName#> value) => throw new NotImplementedException();
+    public static <#=typeName#> MaxMagnitude(<#=typeName#> x, <#=typeName#> y) => throw new NotImplementedException();
+    public static <#=typeName#> MaxMagnitudeNumber(<#=typeName#> x, <#=typeName#> y) => throw new NotImplementedException();
+    public static <#=typeName#> MinMagnitude(<#=typeName#> x, <#=typeName#> y) => throw new NotImplementedException();
+    public static <#=typeName#> MinMagnitudeNumber(<#=typeName#> x, <#=typeName#> y) => throw new NotImplementedException();
+    public static <#=typeName#> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
+    public static <#=typeName#> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
+    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out <#=typeName#> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
+    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out <#=typeName#> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
+    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out <#=typeName#> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
+    public static bool TryConvertToChecked<TOther>(<#=typeName#> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
+    public static bool TryConvertToSaturating<TOther>(<#=typeName#> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
+    public static bool TryConvertToTruncating<TOther>(<#=typeName#> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
+    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out <#=typeName#> result) => throw new NotImplementedException();
+    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out <#=typeName#> result) => throw new NotImplementedException();
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
+    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
+    public static <#=typeName#> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
+    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out <#=typeName#> result) => throw new NotImplementedException();
+    public static <#=typeName#> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
+    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out <#=typeName#> result) => throw new NotImplementedException();
 }
 
 <#}#>

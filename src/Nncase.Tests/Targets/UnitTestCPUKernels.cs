@@ -1351,23 +1351,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
 #if DEBUG
         for (var i = 0; i < inputs.Length; i++)
         {
-            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.bin"))
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.json"))
             {
-                if (inputs[i] is not Tensor { ElementType: ReferenceType })
-                {
-                    fs.Write(inputs[i].BytesBuffer);
-                }
+                JsonSerializer.Serialize(fs, inputs[i], JsonSerializerOptions.Default);
             }
         }
 
         for (int i = 0; i < outputs.Length; i++)
         {
-            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_{i}.bin"))
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_{i}.json"))
             {
-                if (inputs[i] is not Tensor { ElementType: ReferenceType })
-                {
-                    fs.Write(outputs[i].BytesBuffer);
-                }
+                JsonSerializer.Serialize(fs, outputs[i], JsonSerializerOptions.Default);
             }
         }
 #endif

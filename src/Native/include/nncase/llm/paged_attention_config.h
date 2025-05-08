@@ -57,8 +57,8 @@ class paged_attention_config_node : public attention_config_node {
         size_t j = 0;
         for (size_t i = 0; i < 6; i++) {
             auto dim = cache_layout_[i];
-            if ((dim != paged_attention_dim_kind::head_dim) &&
-                (dim != paged_attention_dim_kind::block_size)) {
+            if ((dim == paged_attention_dim_kind::head_dim) ||
+                (dim == paged_attention_dim_kind::block_size)) {
                 block_layout[j++] = dim;
             }
         }

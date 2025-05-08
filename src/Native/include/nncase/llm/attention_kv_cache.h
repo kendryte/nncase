@@ -45,6 +45,16 @@ class NNCASE_API attention_kv_cache_node : public object_node {
 
     void num_tokens(int32_t num_tokens) noexcept { num_tokens_ = num_tokens; }
 
+    void context_lens(tensor context_lens) noexcept {
+        context_lens_ = context_lens;
+    }
+
+    tensor context_lens() const noexcept { return context_lens_; }
+
+    void seq_lens(tensor seq_lens) noexcept { seq_lens_ = seq_lens; }
+
+    tensor seq_lens() const noexcept { return seq_lens_; }
+
   private:
     attention_config config_;
     int32_t num_seqs_;

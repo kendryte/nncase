@@ -86,10 +86,9 @@ result<value_t> cpu_runtime_function::invoke_core(
                             desc.cache_layout[i] =
                                 (int32_t)cfg->cache_layout()[i];
                         }
-                        for (size_t i = 0; i < cfg->block_layout().size();
-                             i++) {
-                            desc.block_layout[i] =
-                                (int32_t)cfg->block_layout()[i];
+                        auto block_layout = cfg->block_layout();
+                        for (size_t i = 0; i < block_layout.size(); i++) {
+                            desc.block_layout[i] = (int32_t)block_layout[i];
                         }
                         for (size_t i = 0; i < desc.packed_axes.size(); i++) {
                             desc.packed_axes[i] =

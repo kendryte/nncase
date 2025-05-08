@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
@@ -26,6 +28,7 @@ public abstract record RefAttentionKVCache(
     public long SeqLen(int requestId) => SeqLens[requestId];
 }
 
+[JsonConverter(typeof(PagedAttentionKVCacheJsonConverterFactory))]
 public sealed record RefPagedAttentionKVCache(
     IAttentionConfig Config,
     int NumSeqs,
@@ -313,5 +316,101 @@ public sealed class CreatePagedAttentionKVCacheEvaluator : ITypeInferencer<Creat
         {
             Config = target.Config,
         });
+    }
+}
+
+public sealed class PagedAttentionKVCacheJsonConverterFactory : JsonConverterFactory
+{
+    public override bool CanConvert(Type typeToConvert)
+    {
+        return typeof(IPagedAttentionKVCache).IsAssignableFrom(typeToConvert);
+    }
+
+    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    {
+        return new PagedAttentionKVCacheJsonConverter();
+    }
+}
+
+internal sealed class PagedAttentionKVCacheJsonConverter : JsonConverter<IPagedAttentionKVCache>
+{
+    public override IPagedAttentionKVCache? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType != JsonTokenType.StartObject)
+        {
+            throw new JsonException("Expected StartObject token");
+        }
+
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        var config = JsonSerializer.Deserialize<IPagedAttentionConfig>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.Config)).GetRawText(),
+            options)!;
+
+        var numSeqs = root.GetProperty(nameof(RefPagedAttentionKVCache.NumSeqs)).GetInt32();
+        var numTokens = root.GetProperty(nameof(RefPagedAttentionKVCache.NumTokens)).GetInt32();
+        var numBlocks = root.GetProperty(nameof(RefPagedAttentionKVCache.NumBlocks)).GetInt32();
+
+        var contextLens = JsonSerializer.Deserialize<Tensor<long>>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.ContextLens)).GetRawText(),
+            options)!;
+
+        var seqLens = JsonSerializer.Deserialize<Tensor<long>>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.SeqLens)).GetRawText(),
+            options)!;
+
+        var blockTable = JsonSerializer.Deserialize<Tensor<long>>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.BlockTable)).GetRawText(),
+            options)!;
+
+        var slotMapping = JsonSerializer.Deserialize<Tensor<long>>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.SlotMapping)).GetRawText(),
+            options)!;
+
+        var kvCaches = JsonSerializer.Deserialize<Tensor>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.KVCaches)).GetRawText(),
+            options)!;
+
+        return new RefPagedAttentionKVCache(
+            config,
+            numSeqs,
+            numTokens,
+            contextLens,
+            seqLens,
+            blockTable,
+            slotMapping,
+            numBlocks,
+            kvCaches);
+    }
+
+    public override void Write(Utf8JsonWriter writer, IPagedAttentionKVCache value, JsonSerializerOptions options)
+    {
+        var cache = (RefPagedAttentionKVCache)value;
+        writer.WriteStartObject();
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.Config));
+        JsonSerializer.Serialize(writer, (IPagedAttentionConfig)cache.Config, options);
+
+        writer.WriteNumber(nameof(RefPagedAttentionKVCache.NumSeqs), cache.NumSeqs);
+        writer.WriteNumber(nameof(RefPagedAttentionKVCache.NumTokens), cache.NumTokens);
+        writer.WriteNumber(nameof(RefPagedAttentionKVCache.NumBlocks), cache.NumBlocks);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.ContextLens));
+        JsonSerializer.Serialize(writer, cache.ContextLens, options);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.SeqLens));
+        JsonSerializer.Serialize(writer, cache.SeqLens, options);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.BlockTable));
+        JsonSerializer.Serialize(writer, cache.BlockTable, options);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.SlotMapping));
+        JsonSerializer.Serialize(writer, cache.SlotMapping, options);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.KVCaches));
+        JsonSerializer.Serialize(writer, cache.KVCaches, options);
+
+        writer.WriteEndObject();
     }
 }

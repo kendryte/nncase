@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Nncase.IR.NN;
@@ -20,6 +21,7 @@ public enum PagedAttentionDimKind : int
     HeadDim,
 }
 
+[JsonConverter(typeof(IO.IPagedAttentionConfigJsonConverter))]
 public interface IPagedAttentionConfig : IAttentionConfig
 {
     int BlockSize { get; }
@@ -41,6 +43,7 @@ public interface IPagedAttentionConfig : IAttentionConfig
 ///     slot layout: [num_head].
 /// note the slot or block may have different pack shape.
 /// </summary>
+[JsonConverter(typeof(IO.IPagedAttentionKVCacheJsonConverter))]
 public interface IPagedAttentionKVCache : IAttentionKVCache
 {
     /// <summary>

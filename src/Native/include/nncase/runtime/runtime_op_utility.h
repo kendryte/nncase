@@ -91,6 +91,18 @@ inline size_t linear_offset(std::span<const size_t> index,
     return offset;
 }
 
+template <class Strides>
+inline dims_t unravel_index(const size_t offset,
+                            const Strides &strides) noexcept {
+    size_t remain = offset;
+    dims_t index;
+    for (size_t i = 0; i < Strides::rank(); i++) {
+        index.push_back(remain / strides[i]);
+        remain = remain % strides[i];
+    }
+    return index;
+}
+
 template <class TShape>
 TShape convert_shape_type(const TShape &shape, datatype_t src,
                           datatype_t dest) {

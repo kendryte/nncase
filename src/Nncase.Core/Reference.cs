@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Nncase;
@@ -18,6 +19,7 @@ public interface IReference
 /// Reference type.
 /// </summary>
 /// <typeparam name="T">Elem type.</typeparam>
+[JsonConverter(typeof(IO.ReferenceJsonConverter))]
 public struct Reference<T> : IReference, IEquatable<Reference<T>>
 {
     /// <summary>

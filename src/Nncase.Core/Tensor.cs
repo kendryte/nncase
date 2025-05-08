@@ -11,10 +11,12 @@ using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
 using Google.Protobuf.WellKnownTypes;
 using Nncase.Buffers;
+using Nncase.IO;
 using Nncase.IR;
 using Nncase.TIR;
 
@@ -53,6 +55,7 @@ public enum CastMode
 /// Tensor.
 /// </summary>
 [DebuggerDisplay("{GetArrayString(false)}")]
+[JsonConverter(typeof(TensorJsonConverterFactory))]
 public abstract partial class Tensor : IStructuralComparable, IStructuralEquatable, IEnumerable, ICollection, IList
 {
     private static readonly MethodInfo _tensorCreateFromBytesFunc =
@@ -67,9 +70,9 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     private static readonly MethodInfo _tensorCastFunc =
         typeof(Tensor).GetMethod(nameof(Cast))!;
 
-    private static readonly MethodInfo _tensorCreateZerosFunc = typeof(Tensor).GetMethod(nameof(Zeros), BindingFlags.Static | BindingFlags.Public, [typeof(ReadOnlySpan<long>)])!;
+    private static readonly MethodInfo _tensorCreateZerosFunc = typeof(Tensor).GetMethod(nameof(CreateTensorZerosImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
 
-    private static readonly MethodInfo _tensorCreateOnesFunc = typeof(Tensor).GetMethod(nameof(Ones), BindingFlags.Static | BindingFlags.Public, [typeof(ReadOnlySpan<long>)])!;
+    private static readonly MethodInfo _tensorCreateOnesFunc = typeof(Tensor).GetMethod(nameof(CreateTensorOnesImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
 
     private readonly long[] _dimensions;
     private readonly long[] _strides;
@@ -446,7 +449,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
     public static Tensor Zeros<T>(ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>, INumber<T>
+        where T : unmanaged, IEquatable<T>, INumberBase<T>
     {
         return Tensor.FromScalar<T>(T.Zero, dimensions);
     }
@@ -465,7 +468,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
     public static Tensor Ones<T>(ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>, INumber<T>
+        where T : unmanaged, IEquatable<T>, INumberBase<T>
     {
         return Tensor.FromScalar<T>(T.One, dimensions);
     }
@@ -608,6 +611,18 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         where T : unmanaged, IEquatable<T>
     {
         return new Tensor<T>(dimensions);
+    }
+
+    private static Tensor CreateTensorZerosImpl<T>(long[] dimensions)
+        where T : unmanaged, IEquatable<T>, INumberBase<T>
+    {
+        return FromScalar(T.Zero, dimensions);
+    }
+
+    private static Tensor CreateTensorOnesImpl<T>(long[] dimensions)
+        where T : unmanaged, IEquatable<T>, INumberBase<T>
+    {
+        return FromScalar(T.One, dimensions);
     }
 
     private sealed class ScalarTensorInitializer : ITensorInitializer

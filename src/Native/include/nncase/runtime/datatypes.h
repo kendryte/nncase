@@ -129,7 +129,7 @@ class NNCASE_API value_type_node : public datatype_node {
 };
 
 class NNCASE_API vector_type_node : public datatype_node {
-    DEFINE_OBJECT_KIND(datatype_node, object_value_type)
+    DEFINE_OBJECT_KIND(datatype_node, object_vector_type)
   public:
     vector_type_node(datatype_t elemtype, dims_t lanes) noexcept
         : elemtype_(elemtype), lanes_(lanes) {}

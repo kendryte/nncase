@@ -35,8 +35,8 @@ class NNCASE_API paged_attention_kv_cache_node
                                   const dims_t &kv_shape) noexcept
         : attention_kv_cache_node(config, num_seqs, num_tokens, context_lens,
                                   seq_lens),
-          block_table_(block_table),
-          slot_mapping_(slot_mapping),
+          block_table_(std::move(block_table)),
+          slot_mapping_(std::move(slot_mapping)),
           num_blocks_(num_blocks),
           kv_shape_(kv_shape),
           kv_strides_(runtime::get_default_strides(kv_shape)),
@@ -50,16 +50,6 @@ class NNCASE_API paged_attention_kv_cache_node
     }
 
     int32_t num_blocks() const noexcept { return num_blocks_; }
-
-    void context_lens(tensor context_lens) noexcept {
-        context_lens_ = context_lens;
-    }
-
-    tensor context_lens() const noexcept { return context_lens_; }
-
-    void seq_lens(tensor seq_lens) noexcept { seq_lens_ = seq_lens; }
-
-    tensor seq_lens() const noexcept { return seq_lens_; }
 
     void block_table(tensor block_table) noexcept {
         block_table_ = block_table;
@@ -83,12 +73,17 @@ class NNCASE_API paged_attention_kv_cache_node
         return kv_storages_[index];
     }
 
+    void kv_cache(int index, tensor kv_storage) noexcept {
+        kv_storages_[index] = kv_storage;
+    }
+
+    tensor kv_cache(int index) const noexcept { return kv_storages_[index]; }
+
     const dims_t &kv_shape() const noexcept { return kv_shape_; }
 
     const auto &kv_storages() const noexcept { return kv_storages_; }
 
   private:
-    tensor context_lens_;
     tensor seq_lens_;
     tensor block_table_;
     tensor slot_mapping_;
