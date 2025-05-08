@@ -490,9 +490,6 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public abstract Tensor<T> Cast<T>(CastMode castMode, long[] dimensions)
         where T : unmanaged, IEquatable<T>;
 
-    public abstract Tensor<T> Cast<T>(CastMode castMode, long[] dimensions)
-        where T : unmanaged, IEquatable<T>;
-
     /// <summary>
     /// <see cref="Cast{T}(CastMode)"/>.
     /// </summary>
