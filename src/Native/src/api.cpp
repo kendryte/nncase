@@ -247,7 +247,7 @@ int nncase_dtype_get_typecode(nncase::datatype_node *dtype) {
 }
 
 int nncase_vector_dtype_get_elem_type(nncase::vector_type_node *handle,
-                               nncase::datatype_node **elemType) {
+                                      nncase::datatype_node **elemType) {
     if (handle && elemType) {
         auto elem_type = handle->elemtype();
         *elemType = elem_type.get();
@@ -258,7 +258,7 @@ int nncase_vector_dtype_get_elem_type(nncase::vector_type_node *handle,
 }
 
 int nncase_vector_dtype_get_lanes_length(nncase::vector_type_node *handle,
-                                  int32_t *length) {
+                                         int32_t *length) {
     if (handle && length) {
         *length = handle->lanes().size();
         return 0;
@@ -266,7 +266,8 @@ int nncase_vector_dtype_get_lanes_length(nncase::vector_type_node *handle,
     return -EINVAL;
 }
 
-int nncase_vector_dtype_get_lanes(nncase::vector_type_node *handle, int32_t *lanes) {
+int nncase_vector_dtype_get_lanes(nncase::vector_type_node *handle,
+                                  int32_t *lanes) {
     if (handle && lanes) {
         auto lanes_span = handle->lanes();
         for (size_t i = 0; i < lanes_span.size(); i++) {

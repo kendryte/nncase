@@ -142,6 +142,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     private static OrtKISharp.Tensor GatherKV(AttentionCacheKind cacheKind, IPagedAttentionKVCache cache, int seqId, int layerId, long queryLen, long seqLen, long queryStart)
     {
         var caches = new List<OrtKISharp.Tensor>();
+
         // var blockIds = cache.GetBlockId(seqId);
         var numBlocksForSeq = MathUtility.CeilDiv(cache.SeqLen(seqId), cache.Config.BlockSize);
 

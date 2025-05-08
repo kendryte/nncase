@@ -273,11 +273,18 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
     public void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, object slotId, Tensor slot) => throw new NotImplementedException();
 
     public void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slotIds, Tensor slots) => throw new NotImplementedException();
+
     public Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId) => throw new NotImplementedException();
+
     public void UpdateBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId, Tensor block) => throw new NotImplementedException();
+
     public Tensor GetSlot(AttentionCacheKind kind, int layerId, int headId, Tensor slotId) => throw new NotImplementedException();
+
     public void UpdateSlot(AttentionCacheKind kind, int layerId, int headId, Tensor slotId, Tensor slot) => throw new NotImplementedException();
+
     public Tensor GetBlockId(int seqId, int contextId) => throw new NotImplementedException();
+
     public Tensor GetSlotId(int tokenId) => throw new NotImplementedException();
+
     public void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slots) => throw new NotImplementedException();
 }

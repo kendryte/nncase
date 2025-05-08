@@ -119,7 +119,8 @@ class GraphEvaluator:
 
     def set_input_tensor(self, index: int, value: RuntimeTensor | RTValue):
         assert index < len(self._inputs)
-        self._inputs[index] = _nncase.RTValue.from_runtime_tensor(value) if isinstance(value, RuntimeTensor) else value
+        self._inputs[index] = _nncase.RTValue.from_runtime_tensor(
+            value) if isinstance(value, RuntimeTensor) else value
 
     def get_output_tensor(self, index: int):
         return self._outputs[index]
