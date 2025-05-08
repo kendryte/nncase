@@ -132,7 +132,6 @@ public unsafe struct CApiMT
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
     public delegate* unmanaged<byte*, nuint, IntPtr> TargetCreatePtr;
     public delegate* unmanaged<byte*, nuint, byte> TargetExistsPtr;
-    public delegate* unmanaged<IntPtr, IntPtr, nuint, IntPtr> TargetCreatePagedAttentionSchedulerPtr;
 }
 
 /// <summary>

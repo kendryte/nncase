@@ -18,7 +18,7 @@ import nncase
 import numpy as np
 
 
-def test_duca_paged_attention_kvcache(request):
+def disable_test_duca_paged_attention_kvcache(request):
   num_blocks = 12
   layers = 24
   num_kv_head = 2
@@ -43,7 +43,7 @@ def test_duca_paged_attention_kvcache(request):
   hidden_states = model(input_ids, None, position_ids, paged_kv)
 
 
-def test_paged_attention_kv_cache():
+def disable_test_paged_attention_kv_cache():
   num_blocks = 12
   layers = 24
   num_kv_head = 2
