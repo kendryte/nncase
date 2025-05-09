@@ -145,7 +145,7 @@ int main() {
             //    4096   ,   4096  ,    2048  , 1024  ,   16   ,     1
             // (1*4096+3) * 128 == 524672
             // clang-format on
-            auto dest_slot_view =
+            NNCASE_UNUSED auto dest_slot_view =
                 kv_storage
                     .view(ntt::make_ranked_shape(
                               slot_id_3(2) / BlockSize, 0, head_id,
