@@ -1,4 +1,4 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -41,7 +41,7 @@ public struct Reference<T> : IReference, IEquatable<Reference<T>>
     /// </summary>
     public T Value { get; }
 
-    object IReference.Value => Value;
+    object IReference.Value => Value!;
 
     /// <summary>
     /// Compare two pointers.
