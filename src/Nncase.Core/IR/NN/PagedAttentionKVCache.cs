@@ -132,7 +132,7 @@ public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int Hea
 
 public sealed record PagedAttentionKVCacheType() : AttentionKVCacheType
 {
-    public IPagedAttentionConfig Config { get; set; }
+    public IPagedAttentionConfig Config { get; set; } = null!;
 
     /// <inheritdoc/>
     public override Type CLRType => typeof(IPagedAttentionKVCache);

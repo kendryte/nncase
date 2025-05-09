@@ -105,8 +105,9 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
 
     private IRType Visit(ITypeInferenceContext context, UpdatePagedAttentionKVCache target, DistributedType slots, IRType kvCache)
     {
-        if (slots.Placement.Name == "cdxyt") // for xpu.
+        if (slots.Placement.Name == "cdxyt")
         {
+            // for xpu.
             // seq split at x, head split at die and y
             if (slots.AxisPolices[0] is SBPSplit { Axes: [2] } &&
                 slots.AxisPolices[1] is SBPSplit { Axes: [1, 3] } &&

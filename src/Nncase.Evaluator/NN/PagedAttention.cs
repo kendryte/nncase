@@ -165,8 +165,9 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         if (cache.Config.Topology.Count > 0)
         {
             // var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
-            if (cache.Config.Topology is [1, 2]) // for xpu
+            if (cache.Config.Topology is [1, 2])
             {
+                // for xpu
                 totalKVHeads *= 2; // recover kv heads.
                 for (int did = 0; did < 2; did++)
                 {
@@ -255,8 +256,9 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
     private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra)
     {
-        if (q.Placement.Name == "cdxyt") // for xpu.
+        if (q.Placement.Name == "cdxyt")
         {
+            // for xpu.
             if (!extra.AxisPolices.All(p => p is SBPBroadCast))
             {
                 return new InvalidType("extra should be broadcast!");

@@ -327,8 +327,9 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                             builder.AppendLine();
                         }
                     }
-                    else // last element
+                    else
                     {
+                        // last element
                         // close out
                         if (includeWhitespace)
                         {
