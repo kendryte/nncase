@@ -350,7 +350,7 @@ public sealed class UnitTestTensorOfT
         {
             var a = Tensor.From(Enumerable.Range(0, 2 * 2 * 3).Select(i => Vector4<int>.Create([i, i, i, i])).ToArray(), [2, 2, 3]);
 
-            var b = a.View([1, 0, 0], [1, 1, 3]); /* [[[<9,9,9,9>,<10,...>,<11,...>]]] */
+            var b = a.View([1, 1, 0], [1, 1, 3]); /* [[[<9,9,9,9>,<10,...>,<11,...>]]] */
             Assert.True(b.ToArray<Vector4<int>>().SequenceEqual([Vector4<int>.Create([9, 9, 9, 9]), Vector4<int>.Create([10, 10, 10, 10]), Vector4<int>.Create([11, 11, 11, 11])]));
         }
     }
