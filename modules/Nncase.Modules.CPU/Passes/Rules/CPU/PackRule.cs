@@ -226,7 +226,9 @@ public sealed class PackMatMul : PackRule
     }
 
     public override Pattern Pattern { get; } = IsMatMul(
+      "matmul",
       "target",
+      _ => true,
       IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
@@ -243,7 +245,8 @@ public sealed class PackMatMul : PackRule
         var candidate = (Expr)result[Pattern];
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
-        var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape);
+        var outputDataType = ((Nncase.IR.Math.MatMul)result["matmul"]).OutputDataType;
+        var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape, outputDataType);
 
         // pack A's k and B's k
         // AddCandidate(rcontext, PackKind.K, PackKind.K);
@@ -277,7 +280,7 @@ public sealed class PackMatMul : PackRule
 
     private void AddCandidate(RuleContext context, IR.CPU.PackedMatMul.PackKind lhsPack, IR.CPU.PackedMatMul.PackKind rhsPack, bool transA = false, bool transB = false)
     {
-        var (rets, lhs, rhs, candidate, _, _) = context;
+        var (rets, lhs, rhs, candidate, _, _, outputDataType) = context;
         var lhsShape = context.LhsShape.ToArray();
         var rhsShape = context.RhsShape.ToArray();
         if (transA)
@@ -355,7 +358,7 @@ public sealed class PackMatMul : PackRule
             return;
         }
 
-        var matmul = IR.F.CPU.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums.Select(x => (int)x.FixedValue).ToArray(), rhsPackedAxes, rhsPadNums.Select(x => (int)x.FixedValue).ToArray(), transA, transB);
+        var matmul = IR.F.CPU.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums.Select(x => (int)x.FixedValue).ToArray(), rhsPackedAxes, rhsPadNums.Select(x => (int)x.FixedValue).ToArray(), transA, transB, false, outputDataType);
 
         var outRank = System.Math.Max(lhsShape.Length, rhsShape.Length);
         var lhsAlign = outRank - lhsShape.Length;
@@ -392,7 +395,7 @@ public sealed class PackMatMul : PackRule
         }
     }
 
-    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, Shape LhsShape, Shape RhsShape)
+    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, Shape LhsShape, Shape RhsShape, DataType OutputDataType)
     {
     }
 }
@@ -756,7 +759,7 @@ public sealed class PackConv2D : PackRule
         var col = IR.F.CPU.Im2col(IR.F.CPU.Pack(paddedInput, new[] { lane }, new[] { 1 }), new[] { wShape[2], wShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
         var paddedW = PackUtility.PadForPack(weights, wShape, new[] { 1 }, new[] { lane }, 0f, out _);
         var newW = IR.F.Tensors.Reshape(IR.F.CPU.Pack(paddedW, new[] { lane }, new[] { 1 }), new[] { wShape[0], MathUtility.CeilDiv(wShape[1], lane) * wShape[2] * wShape[3] });
-        var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
+        var matmul = IR.F.CPU.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }, false, false, false); // [oc, b*oh*ow]
         var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
         var add = matmul + newBias;
         if (outShape[0] == 1)
@@ -1124,8 +1127,8 @@ public sealed partial class TransposePackMatMulInputs : RewriteRule<Pattern>
         if (tperm.SequenceEqual(perm))
         {
             var npack = IR.F.CPU.Pack(transInput, [rhsPack.Lanes[1], rhsPack.Lanes[0]], [rhsPack.Axes[1], rhsPack.Axes[0]]);
-            var newMatmul = new IR.CPU.PackedMatMul(matmul.LhsPackedAxes, matmul.LhsPadedNums, new[] { matmul.RhsPackedAxes[1], matmul.RhsPackedAxes[0] }, new[] { matmul.RhsPadedNums[1], matmul.RhsPadedNums[0] }, false, true, matmul.FusedReduce);
-            return new Call(newMatmul, lhs, npack);
+            var newMatmul = Nncase.IR.F.CPU.PackedMatMul(lhs, npack, matmul.LhsPackedAxes, matmul.LhsPadedNums, new[] { matmul.RhsPackedAxes[1], matmul.RhsPackedAxes[0] }, new[] { matmul.RhsPadedNums[1], matmul.RhsPadedNums[0] }, false, true, matmul.FusedReduce);
+            return newMatmul;
         }
 
         return null;
