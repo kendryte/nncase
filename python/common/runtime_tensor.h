@@ -40,22 +40,23 @@ inline void register_runtime_tensor(py::module &m) {
         .def_readwrite("size", &tensor_desc::size);
 
     py::class_<runtime_tensor>(m, "RuntimeTensor")
-        .def_static(
-            "from_object",
-            [](object obj) {
-                auto ref_type = nncase::reference_type_t(
-                    std::in_place, datatype_t::attention_kv_cache);
-                auto tensor =
-                    nncase::runtime::detail::create(
-                        ref_type, {},
-                        nncase::runtime::hrt::memory_pool_t::pool_cpu_only)
-                        .unwrap_or_throw();
-                auto host_buffer = tensor->buffer().as_host().unwrap_or_throw();
-                auto mapped_data = host_buffer.map(map_write).unwrap_or_throw();
-                auto dest_buffer = ntt::span_cast<object>(mapped_data.buffer());
-                dest_buffer[0] = obj;
-                return runtime_tensor(tensor);
-            })
+        // .def_static(
+        //     "from_object",
+        //     [](object obj) {
+        //         auto ref_type = nncase::reference_type_t(
+        //             std::in_place, datatype_t::attention_kv_cache);
+        //         auto tensor =
+        //             nncase::runtime::detail::create(
+        //                 ref_type, {},
+        //                 nncase::runtime::hrt::memory_pool_t::pool_cpu_only)
+        //                 .unwrap_or_throw();
+        //         auto host_buffer =
+        //         tensor->buffer().as_host().unwrap_or_throw(); auto
+        //         mapped_data = host_buffer.map(map_write).unwrap_or_throw();
+        //         auto dest_buffer =
+        //         ntt::span_cast<object>(mapped_data.buffer()); dest_buffer[0]
+        //         = obj; return runtime_tensor(tensor);
+        //     })
         .def_static(
             "from_numpy",
             [](py::array arr) {
