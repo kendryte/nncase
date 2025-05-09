@@ -1,4 +1,4 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -83,6 +83,14 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
                     }
                 }
             }
+            else if (cache.Config.Topology is [0] && num_kv_head == cache.Config.NumKVHeads)
+            {
+                // [num_tokens, slot_shape]
+                for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+                {
+                    cache.UpdateSlots(cacheKind, layerId, headId, slots);
+                }
+            }
             else
             {
                 throw new NotSupportedException();
@@ -105,9 +113,9 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
 
     private IRType Visit(ITypeInferenceContext context, UpdatePagedAttentionKVCache target, DistributedType slots, IRType kvCache)
     {
+        // for xpu.
         if (slots.Placement.Name == "cdxyt")
         {
-            // for xpu.
             // seq split at x, head split at die and y
             if (slots.AxisPolices[0] is SBPSplit { Axes: [2] } &&
                 slots.AxisPolices[1] is SBPSplit { Axes: [1, 3] } &&
@@ -115,6 +123,10 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
             {
                 return kvCache;
             }
+        }
+        else if (slots.Placement.Hierarchy.SequenceEqual([1]))
+        {
+            return kvCache;
         }
 
         return new InvalidType("not support distributed type");

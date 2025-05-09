@@ -278,6 +278,31 @@ int nncase_vector_dtype_get_lanes(nncase::vector_type_node *handle,
     return -EINVAL;
 }
 
+int nncase_dtype_create_reference(nncase::datatype_node *elem_type,
+                                  nncase::datatype_node **dtype) {
+    if (dtype) {
+        *dtype = new nncase::reference_type_node(elem_type);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_dtype_create_attention_kv_cache(nncase::datatype_node **dtype) {
+    if (dtype) {
+        *dtype = datatype_t::attention_kv_cache.detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_dtype_create_paged_attention_kv_cache(nncase::datatype_node **dtype) {
+    if (dtype) {
+        *dtype = datatype_t::paged_attention_kv_cache.detach();
+        return 0;
+    }
+    return -EINVAL;
+}
+
 int nncase_value_is_tensor(nncase::value_node *value, bool *is_tensor) {
     if (value && is_tensor) {
         *is_tensor = value_t(value).is_a<tensor>();
@@ -403,253 +428,400 @@ int nncase_tuple_get_fields(nncase::tuple_node *tuple,
     return -EINVAL;
 }
 
-// int nncase_attention_config_create(int32_t num_layers, int32_t num_kv_heads,
-//                                    int32_t head_dim, nncase::typecode_t
-//                                    kv_type, nncase::attention_config_node
-//                                    **config) {
-//     if (config) {
-//         *config = new nncase::attention_config_node(num_layers, num_kv_heads,
-//                                                     head_dim, kv_type);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_create(
+    int32_t num_layers, int32_t num_kv_heads, int32_t head_dim,
+    nncase::typecode_t kv_type, nncase::llm::attention_config_node **config) {
+    if (config) {
+        *config = new nncase::llm::attention_config_node(
+            num_layers, num_kv_heads, head_dim, kv_type);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_attention_config_get_num_layers(
-//     nncase::attention_config_node *config, int32_t *num_layers) {
-//     if (config) {
-//         *num_layers = config->num_layers();
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
-// int nncase_attention_config_set_num_layers(
-//     nncase::attention_config_node *config, int32_t num_layers) {
-//     if (config) {
-//         config->num_layers(num_layers);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
-// // Get the number of key-value heads in the attention configuration
-// int nncase_attention_config_get_num_kv_heads(
-//     nncase::attention_config_node *config, int32_t *num_kv_heads) {
-//     if (config) {
-//         *num_kv_heads = config->num_kv_heads();
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
-// int nncase_attention_config_set_num_kv_heads(
-//     nncase::attention_config_node *config, int32_t num_kv_heads) {
-//     if (config) {
-//         config->num_kv_heads(num_kv_heads);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_get_num_layers(
+    nncase::llm::attention_config_node *config, int32_t *num_layers) {
+    if (config && num_layers) {
+        *num_layers = config->num_layers();
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_attention_config_get_head_dim(nncase::attention_config_node
-// *config,
-//                                          int32_t *head_dim) {
-//     if (config) {
-//         *head_dim = config->head_dim();
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
-// int nncase_attention_config_set_head_dim(nncase::attention_config_node
-// *config,
-//                                          int32_t head_dim) {
-//     if (config) {
-//         config->head_dim(head_dim);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_set_num_layers(
+    nncase::llm::attention_config_node *config, int32_t num_layers) {
+    if (config) {
+        config->num_layers(num_layers);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_attention_config_get_kv_type(nncase::attention_config_node
-// *config,
-//                                         nncase::typecode_t *kv_type) {
-//     if (config) {
-//         *kv_type = config->kv_type();
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_get_num_kv_heads(
+    nncase::llm::attention_config_node *config, int32_t *num_kv_heads) {
+    if (config && num_kv_heads) {
+        *num_kv_heads = config->num_kv_heads();
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_attention_config_set_kv_type(nncase::attention_config_node
-// *config,
-//                                         nncase::typecode_t kv_type) {
-//     if (config) {
-//         config->kv_type(kv_type);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_set_num_kv_heads(
+    nncase::llm::attention_config_node *config, int32_t num_kv_heads) {
+    if (config) {
+        config->num_kv_heads(num_kv_heads);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attention_config_create(
-//     int32_t num_layers, int32_t num_kv_heads, int32_t head_dim,
-//     nncase::typecode_t kv_type, int32_t block_size,
-//     nncase::paged_attention_config_node **config) {
-//     if (config) {
-//         *config = new nncase::paged_attention_config_node(
-//             num_layers, num_kv_heads, head_dim, kv_type, block_size);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_get_head_dim(
+    nncase::llm::attention_config_node *config, int32_t *head_dim) {
+    if (config && head_dim) {
+        *head_dim = config->head_dim();
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attention_config_get_block_size(
-//     nncase::paged_attention_config_node *config, int32_t *block_size) {
-//     if (config) {
-//         *block_size = config->block_size();
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_set_head_dim(
+    nncase::llm::attention_config_node *config, int32_t head_dim) {
+    if (config) {
+        config->head_dim(head_dim);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attention_config_set_block_size(
-//     nncase::paged_attention_config_node *config, int32_t block_size) {
-//     if (config) {
-//         config->block_size(block_size);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_get_kv_type(
+    nncase::llm::attention_config_node *config, nncase::typecode_t *kv_type) {
+    if (config && kv_type) {
+        *kv_type = config->kv_type();
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_attention_kv_cache_get_num_requests(
-//     nncase::paged_attention_kv_cache_node *cache, int32_t *num_requests) {
-//     if (cache && num_requests) {
-//         *num_requests = cache->num_requests();
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_attention_config_set_kv_type(
+    nncase::llm::attention_config_node *config, nncase::typecode_t kv_type) {
+    if (config) {
+        config->kv_type(kv_type);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_attention_kv_cache_get_seq_len(
-//     nncase::paged_attention_kv_cache_node *cache, int32_t request_id,
-//     int32_t *out) {
-//     if (cache && out) {
-//         c_try_set(*out, cache->seq_len(request_id));
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_paged_attention_config_create(
+    int32_t num_layers, int32_t num_kv_heads, int32_t head_dim,
+    nncase::typecode_t kv_type, int32_t block_size,
+    const nncase::llm::paged_attention_dim_kind *cache_layout,
+    const nncase::llm::paged_attention_dim_kind *packed_axes,
+    int32_t packed_axes_len, const int32_t *lanes, int32_t lanes_len,
+    const int32_t *topology, int32_t topology_len,
+    nncase::llm::paged_attention_config_node **config) {
+    if (config && cache_layout) {
+        std::array<nncase::llm::paged_attention_dim_kind, 6> cache_layout_vec;
+        std::copy(cache_layout, cache_layout + 6, cache_layout_vec.begin());
 
-// int nncase_attention_kv_cache_get_context_len(
-//     nncase::paged_attention_kv_cache_node *cache, int32_t request_id,
-//     int32_t *out) {
-//     if (cache && out) {
-//         c_try_set(*out, cache->context_len(request_id));
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+        std::vector<nncase::llm::paged_attention_dim_kind> packed_axes_vec(
+            packed_axes, packed_axes + packed_axes_len);
 
-// int nncase_paged_attenion_scheduler_create(
-//     nncase::paged_attention_config_node *config, int32_t num_blocks,
-//     int32_t max_model_len, nncase::paged_attention_scheduler_node
-//     **scheduler) { if (scheduler) {
-//         *scheduler = new nncase::paged_attention_scheduler_node(
-//             config, num_blocks, max_model_len);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+        dims_t lanes_vec(lanes, lanes + lanes_len);
 
-// int nncase_paged_attenion_scheduler_schedule(
-//     nncase::paged_attention_scheduler_node *scheduler, tensor_node
-//     *session_ids, tensor_node *token_counts,
-//     nncase::paged_attention_kv_cache_node **cache) { if (scheduler &&
-//     session_ids && token_counts && cache) {
-//         c_try_var(kv_cache, scheduler->schedule(session_ids, token_counts));
-//         *cache = kv_cache.detach(); // avoid early free
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
-// /*
-// int nncase_paged_attenion_kv_cache_get_block(
-//     nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
-//     long block_id, nncase::tensor_node **tensor) {
-//     // if (cache && tensor) {
-//     //     auto block = cache->get_block((attention_kv_cache_kind)kind,
-// layer_id, block_id);
-//     // }
-//     return -EINVAL;
-// }
+        dims_t topology_vec(topology, topology + topology_len);
 
-// int nncase_paged_attenion_kv_cache_get_context_block_ids(
-//     nncase::paged_attention_kv_cache_node *cache, int request_id,
-//     nncase::tensor_node **tensor) {
-//     // if (cache && tensor) {
-//     //     auto block_ids = cache->get_context_block_ids(request_id);
-//     // }
-//     return -EINVAL;
-// }
+        *config = new nncase::llm::paged_attention_config_node(
+            num_layers, num_kv_heads, head_dim, kv_type, block_size,
+            cache_layout_vec, packed_axes_vec, lanes_vec, topology_vec);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attenion_kv_cache_get_output_slot_ids(
-//     nncase::paged_attention_kv_cache_node *cache, nncase::tensor_node
-//     **tensor)
-// {
-//     // if (cache && tensor) {
-//     //     auto slot_ids = cache->get_output_slot_ids();
-//     // }
-//     return -EINVAL;
-// }
+int nncase_paged_attention_config_get_block_size(
+    nncase::llm::paged_attention_config_node *config, int32_t *block_size) {
+    if (config && block_size) {
+        *block_size = config->block_size();
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attenion_kv_cache_get_slot(
-//     nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
-//     long slot_id, nncase::tensor_node **tensor) {
-//     // if (cache && tensor) {
-//     //     auto slot = cache->get_slot((attention_kv_cache_kind)kind,
-//     layer_id,
-// slot_id);
-//     // }
-//     return -EINVAL;
-// }
+int nncase_paged_attention_config_set_block_size(
+    nncase::llm::paged_attention_config_node *config, int32_t block_size) {
+    if (config) {
+        config->block_size(block_size);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attenion_kv_cache_get_slots(
-//     nncase::paged_attention_kv_cache_node *cache, nncase::tensor_node *block,
-//     int start_slot, int count, nncase::tensor_node **tensor) {
-//     // if (cache && block && tensor) {
-//     //     auto slots = cache->get_slots(block, start_slot, count);
-//     // }
-//     return -EINVAL;
-// }
+int nncase_paged_attention_config_get_cache_layout(
+    nncase::llm::paged_attention_config_node *config,
+    nncase::llm::paged_attention_dim_kind *layout, int32_t layout_len) {
+    if (config && layout) {
+        if (layout_len != 6) {
+            return -EINVAL;
+        }
+        auto src_layout = config->cache_layout();
+        std::copy(src_layout.begin(), src_layout.end(), layout);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attenion_kv_cache_update_output_slot(
-//     nncase::paged_attention_kv_cache_node *cache, uint8_t kind, int layer_id,
-//     long slot_id, nncase::tensor_node *slot) {
-//     // if (cache && slot) {
-//     //     cache->update_output_slot((attention_kv_cache_kind)kind, layer_id,
-//     //                               slot_id, slot);
-//     // }
-//     return -EINVAL;
-// }
-//     */
+int nncase_paged_attention_config_set_cache_layout(
+    nncase::llm::paged_attention_config_node *config,
+    const nncase::llm::paged_attention_dim_kind *layout, int32_t layout_len) {
+    if (config && layout) {
+        if (layout_len != 6) {
+            return -EINVAL;
+        }
+        std::array<nncase::llm::paged_attention_dim_kind, 6> cache_layout;
+        std::copy(layout, layout + 6, cache_layout.begin());
+        config->cache_layout(cache_layout);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attenion_kv_cache_get_sub_block(
-//     nncase::paged_attention_kv_cache_node *cache, int *indices, int
-//     indices_len, nncase::tensor_node **sub_block) { if (cache && indices &&
-//     sub_block) {
-//         std::vector<int> indices_vec(indices, indices + indices_len);
-//         auto block = cache->sub_block(indices_vec);
-//         *sub_block = block.detach();
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_paged_attention_config_get_packed_axes(
+    nncase::llm::paged_attention_config_node *config,
+    nncase::llm::paged_attention_dim_kind *packed_axes,
+    int32_t packed_axes_len) {
+    if (config && packed_axes && packed_axes_len) {
+        auto src_axes = config->packed_axes();
+        if (packed_axes_len < src_axes.size()) {
+            return -EOVERFLOW;
+        }
+        std::copy(src_axes.begin(), src_axes.end(), packed_axes);
+        std::fill_n(packed_axes + src_axes.size(),
+                    packed_axes_len - src_axes.size(),
+                    (nncase::llm::paged_attention_dim_kind)-1);
+        return 0;
+    }
+    return -EINVAL;
+}
 
-// int nncase_paged_attenion_kv_cache_set_sub_block(
-//     nncase::paged_attention_kv_cache_node *cache, int *indices, int
-//     indices_len, nncase::tensor_node *sub_block) { if (cache && indices &&
-//     sub_block) {
-//         std::vector<int> indices_vec(indices, indices + indices_len);
-//         cache->sub_block(indices_vec, sub_block);
-//         return 0;
-//     }
-//     return -EINVAL;
-// }
+int nncase_paged_attention_config_set_packed_axes(
+    nncase::llm::paged_attention_config_node *config,
+    const nncase::llm::paged_attention_dim_kind *packed_axes,
+    int32_t packed_axes_len) {
+    if (config && packed_axes) {
+        if (packed_axes_len > 6) {
+            return -EOVERFLOW;
+        }
+        std::vector<nncase::llm::paged_attention_dim_kind> axes_vec(
+            packed_axes, packed_axes + packed_axes_len);
+        config->packed_axes(axes_vec);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_config_get_lanes(
+    nncase::llm::paged_attention_config_node *config, int32_t *lanes,
+    int32_t lanes_len) {
+    if (config && lanes && lanes_len) {
+        auto src_lanes = config->lanes();
+        auto required_length = src_lanes.size();
+        if (lanes_len < required_length) {
+            return -EOVERFLOW;
+        }
+        std::copy(src_lanes.begin(), src_lanes.end(), lanes);
+        std::fill_n(lanes + required_length, lanes_len - required_length, -1);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_config_set_lanes(
+    nncase::llm::paged_attention_config_node *config, const int32_t *lanes,
+    int32_t lanes_len) {
+    if (config && lanes) {
+        if (lanes_len > 8) {
+            return -EOVERFLOW;
+        }
+        config->lanes({lanes, lanes + lanes_len});
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_config_get_topology(
+    nncase::llm::paged_attention_config_node *config, int32_t *topology,
+    int32_t topology_len) {
+    if (config && topology && topology_len) {
+        auto src_topology = config->topology();
+        int required_length = src_topology.size();
+        if (topology_len < required_length) {
+            return -EOVERFLOW;
+        }
+        std::copy(src_topology.begin(), src_topology.end(), topology);
+        std::fill_n(topology + required_length, topology_len - required_length,
+                    -1);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_config_set_topology(
+    nncase::llm::paged_attention_config_node *config, const int32_t *topology,
+    int32_t topology_len) {
+    if (config && topology) {
+        if (topology_len > 8) {
+            return -EOVERFLOW;
+        }
+        config->topology({topology, topology + topology_len});
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_create(
+    nncase::llm::attention_config_node *config, int32_t num_seqs,
+    int32_t num_tokens, nncase::tensor_node *context_lens,
+    nncase::tensor_node *seq_lens,
+    nncase::llm::attention_kv_cache_node **cache) {
+    if (config && context_lens && seq_lens && cache) {
+        *cache = new nncase::llm::attention_kv_cache_node(
+            config, num_seqs, num_tokens, context_lens, seq_lens);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_get_config(
+    nncase::llm::attention_kv_cache_node *cache,
+    nncase::llm::attention_config_node **config) {
+    if (cache && config) {
+        *config = cache->config().get();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_get_num_seqs(
+    nncase::llm::attention_kv_cache_node *cache, int32_t *num_seqs) {
+    if (cache && num_seqs) {
+        *num_seqs = cache->num_seqs();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_set_num_seqs(
+    nncase::llm::attention_kv_cache_node *cache, int32_t num_seqs) {
+    if (cache) {
+        cache->num_seqs(num_seqs);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_get_num_tokens(
+    nncase::llm::attention_kv_cache_node *cache, int32_t *num_tokens) {
+    if (cache && num_tokens) {
+        *num_tokens = cache->num_tokens();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_attention_kv_cache_set_num_tokens(
+    nncase::llm::attention_kv_cache_node *cache, int32_t num_tokens) {
+    if (cache) {
+        cache->num_tokens(num_tokens);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_kv_cache_create(
+    nncase::llm::paged_attention_config_node *config, int32_t num_seqs,
+    int32_t num_tokens, nncase::tensor_node *context_lens,
+    nncase::tensor_node *seq_lens, nncase::tensor_node *block_table,
+    nncase::tensor_node *slot_mapping, int32_t num_blocks,
+    const int32_t *kv_shape, int32_t kv_shape_len,
+    nncase::llm::paged_attention_kv_cache_node **cache) {
+    if (config && context_lens && seq_lens && block_table && slot_mapping &&
+        kv_shape && cache) {
+        *cache = new nncase::llm::paged_attention_kv_cache_node(
+            config, num_seqs, num_tokens, context_lens, seq_lens, block_table,
+            slot_mapping, num_blocks, {kv_shape, kv_shape + kv_shape_len});
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_kv_cache_get_num_blocks(
+    nncase::llm::paged_attention_kv_cache_node *cache, int32_t *num_blocks) {
+    if (cache && num_blocks) {
+        *num_blocks = cache->num_blocks();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_kv_cache_get_block_table(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node **block_table) {
+    if (cache && block_table) {
+        *block_table = cache->block_table().get();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_kv_cache_set_block_table(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node *block_table) {
+    if (cache && block_table) {
+        cache->block_table(block_table);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_kv_cache_get_slot_mapping(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node **slot_mapping) {
+    if (cache && slot_mapping) {
+        *slot_mapping = cache->slot_mapping().get();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_kv_cache_set_slot_mapping(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node *slot_mapping) {
+    if (cache && slot_mapping) {
+        cache->slot_mapping(slot_mapping);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_kv_cache_get_kv_cache(
+    nncase::llm::paged_attention_kv_cache_node *cache, const int32_t *indices,
+    int32_t indices_len, nncase::tensor_node **kv_cache) {
+    if (cache && indices && kv_cache) {
+        dims_t idx(indices, indices + indices_len);
+        *kv_cache = cache->kv_cache(idx).get();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_kv_cache_set_kv_cache(
+    nncase::llm::paged_attention_kv_cache_node *cache, const int32_t *indices,
+    int32_t indices_len, nncase::tensor_node *kv_cache) {
+    if (cache && indices && kv_cache) {
+        dims_t idx(indices, indices + indices_len);
+        cache->kv_cache(idx, kv_cache);
+        return 0;
+    }
+    return -EINVAL;
+}
 }

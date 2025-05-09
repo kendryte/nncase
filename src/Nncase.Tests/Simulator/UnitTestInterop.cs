@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Nncase.CodeGen;
 using Nncase.CodeGen.StackVM;
@@ -182,7 +183,7 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(intVal, fields[0].ToValue());
         Assert.Equal(floatVal, fields[1].ToValue());
     }
-#if false
+
     [Fact]
     public void TestRTAttentionConfig()
     {
@@ -198,8 +199,10 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(2, r_a.NumKVHeads);
         Assert.Equal(1, r_a.HeadDim);
 
-        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers], [], [], DataTypes.Float16);
-        var r_b = (RTPagedAttentionConfig)RTAttentionConfig.FromConfig(b);
+        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers }, [], [], []);
+        var r_ = RTAttentionConfig.FromConfig(b);
+        Assert.IsType<RTPagedAttentionConfig>(r_);
+        var r_b = (RTPagedAttentionConfig)r_;
         Assert.Equal(b.NumLayers, r_b.NumLayers);
         Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
         Assert.Equal(b.HeadDim, r_b.HeadDim);
@@ -212,8 +215,63 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(2, r_b.NumKVHeads);
         Assert.Equal(1, r_b.HeadDim);
         Assert.Equal(0, r_b.BlockSize);
+
+        Assert.Empty(r_b.PackedAxes);
+        Assert.Empty(r_b.Lanes);
+        r_b.PackedAxes = new[] { IR.NN.PagedAttentionDimKind.HeadDim };
+        r_b.Lanes = new[] { 64 };
+        Assert.True(r_b.PackedAxes.SequenceEqual(new[] { IR.NN.PagedAttentionDimKind.HeadDim }));
+        Assert.True(r_b.Lanes.SequenceEqual(new[] { 64 }));
+
+        Assert.Throws<InvalidOperationException>(() =>
+        {
+            r_b.Lanes = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+        });
     }
 
+    [Fact]
+    public void TestRTAttentionKVCache()
+    {
+        var pagedConfig = new IR.NN.PagedAttentionConfig(
+            NumLayers: 2,
+            NumKVHeads: 4,
+            HeadDim: 32,
+            KVType: DataTypes.Float32,
+            BlockSize: 16,
+            CacheLayout: new[]
+            {
+                IR.NN.PagedAttentionDimKind.NumBlocks,
+                IR.NN.PagedAttentionDimKind.NumLayers,
+                IR.NN.PagedAttentionDimKind.KV,
+                IR.NN.PagedAttentionDimKind.BlockSize,
+                IR.NN.PagedAttentionDimKind.NumKVHeads,
+                IR.NN.PagedAttentionDimKind.HeadDim,
+            },
+            PackedAxes: new[] { IR.NN.PagedAttentionDimKind.HeadDim },
+            Lanes: new[] { 32 },
+            Topology: new[] { 0 });
+
+        var contextLens = Tensor.From(new[] { 64L });
+        var seqLens = Tensor.From(new[] { 128L });
+        var blockTable = Tensor.From(new long[] { 0, -1, -1, -1 }); // Example block table
+        var slotMapping = Tensor.From(new long[] { 5, 4, 3, 2, 1 }); // Example slot mapping
+
+        var rtPagedConfig = RTPagedAttentionConfig.FromConfig(pagedConfig);
+
+        var rtContextLens = RTTensor.FromTensor(contextLens);
+        var rtSeqLens = RTTensor.FromTensor(seqLens);
+        var rtBlockTable = RTTensor.FromTensor(blockTable);
+        var rtSlotMapping = RTTensor.FromTensor(slotMapping);
+        var rtpagedAttn = RTPagedAttentionKVCache.Create(
+            rtPagedConfig, 1, 64, rtContextLens, rtSeqLens, rtBlockTable, rtSlotMapping, 15, [1]);
+
+        Assert.Equal(15, rtpagedAttn.NumBlocks);
+
+        var totensor = Tensor.FromScalar(new Reference<IR.NN.IPagedAttentionKVCache>(rtpagedAttn));
+        RTTensor.FromTensor(totensor);
+    }
+
+#if false
     [Fact]
     public void TestRTPagedAttentionScheduler()
     {

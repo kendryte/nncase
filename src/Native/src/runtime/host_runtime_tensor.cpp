@@ -117,9 +117,9 @@ result<runtime_tensor> hrt::create(datatype_t datatype, dims_t shape,
         memcpy(dest_buffer.data(), data.data(), size_bytes);
         host_buffer->host_sync_status(host_sync_status_t::need_write_back);
     } else {
-        checked_try_set(buffer,
-                        attach_buffer(
-                            data, [](std::byte *) {}, pool, physical_address));
+        checked_try_set(
+            buffer,
+            attach_buffer(data, [](std::byte *) {}, pool, physical_address));
     }
     return ok(runtime_tensor(tensor(std::in_place, datatype, std::move(shape),
                                     std::move(strides), buffer)));

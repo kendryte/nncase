@@ -37,6 +37,11 @@ value_type_t datatype_t::attention_kv_cache(
     uuid_t({0xF6, 0x95, 0x50, 0x16, 0xF1, 0x85, 0x46, 0xFB, 0xAA, 0x5F, 0xFD,
             0xCE, 0xA1, 0xC8, 0x9E, 0xF6}),
     0);
+value_type_t datatype_t::paged_attention_kv_cache(
+    std::in_place,
+    uuid_t({246, 149, 80, 22, 241, 133, 70, 251, 170, 95, 253, 206, 161, 200,
+            158, 246}),
+    8);
 
 result<prim_type_t> datatype_t::from_typecode(typecode_t typecode) {
     switch (typecode) {

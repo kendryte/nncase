@@ -1,4 +1,4 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -139,6 +139,28 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concat_output;
     }
 
+    private static void GatherKVCore(IPagedAttentionKVCache cache, int numBlocksForSeq, int seqId, AttentionCacheKind cacheKind, int layerId, int seqLen, int blockSizeAxis, List<OrtKISharp.Tensor> caches)
+    {
+        for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+        {
+            for (int i = 0; i < numBlocksForSeq; i++)
+            {
+                var blockId = cache.GetBlockId(seqId, i);
+                var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
+                var blockOrt = block.ToOrtTensor();
+
+                // slice
+                var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
+                if (validSlotCount < cache.Config.BlockSize)
+                {
+                    blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
+                }
+
+                caches.Add(blockOrt);
+            }
+        }
+    }
+
     private static OrtKISharp.Tensor GatherKV(AttentionCacheKind cacheKind, IPagedAttentionKVCache cache, int seqId, int layerId, long queryLen, long seqLen, long queryStart)
     {
         var caches = new List<OrtKISharp.Tensor>();
@@ -201,27 +223,18 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                     }
                 }
             }
+            else if (cache.Config.Topology is [0] && CompileSessionScope.Current!.CompileOptions.TargetOptions is ICpuTargetOptions { Hierarchies: [[1]] })
+            {
+                GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
+            }
+            else
+            {
+                throw new NotSupportedException("topology not support");
+            }
         }
         else
         {
-            for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
-            {
-                for (int i = 0; i < numBlocksForSeq; i++)
-                {
-                    var blockId = cache.GetBlockId(seqId, i);
-                    var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
-                    var blockOrt = block.ToOrtTensor();
-
-                    // slice
-                    var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
-                    if (validSlotCount < cache.Config.BlockSize)
-                    {
-                        blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
-                    }
-
-                    caches.Add(blockOrt);
-                }
-            }
+            GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
         }
 
         // caches is (head * blocks) * [BlockLayout + lanes], concat at block size axis.
@@ -246,20 +259,17 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concatCache; // [num_heads, seq_len, head_dim]
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, TensorType extra)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra)
     {
-        var headDim = q.Shape[target.QLayout.IndexOf(AttentionDimKind.Head)];
-        var dims = q.Shape.ToArray();
-        dims[^1] = headDim;
-        return q with { Shape = dims };
+        return q;
     }
 
     private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra)
     {
+        // for xpu.
         if (q.Placement.Name == "cdxyt")
         {
-            // for xpu.
-            if (!extra.AxisPolices.All(p => p is SBPBroadCast))
+            if (extra.AxisPolices.All(p => p is SBPBroadCast))
             {
                 return new InvalidType("extra should be broadcast!");
             }
@@ -274,6 +284,10 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             {
                 return q;
             }
+        }
+        else if (q.Placement.Hierarchy.SequenceEqual([1]) && q.AxisPolices.All(x => x is SBPBroadCast))
+        {
+            return q;
         }
 
         return new InvalidType("not support distributed type");

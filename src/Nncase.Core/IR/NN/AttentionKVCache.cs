@@ -1,4 +1,4 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -35,7 +35,7 @@ public interface IAttentionKVCache
     /// <summary>
     /// Gets the config.
     /// </summary>
-    AttentionConfig Config { get; }
+    IAttentionConfig Config { get; }
 
     /// <summary>
     /// Gets the number of sequence in this batch.

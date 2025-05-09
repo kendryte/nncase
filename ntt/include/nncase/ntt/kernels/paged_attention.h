@@ -1,6 +1,22 @@
+/* Copyright 2019-2021 Canaan Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 #pragma once
+#include "nncase/ntt/tensor_traits.h"
 #include <nncase/ntt/caching.h>
 #include <nncase/ntt/shape.h>
+#include <type_traits>
 
 namespace nncase::ntt {
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
@@ -63,41 +79,51 @@ void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
     }
 }
 
-template <class T0, class T1>
-void update_paged_attention_kv_cache(
-    [[maybe_unused]] T0 slot_tensor, T1 kv_cache_tensor,
-    [[maybe_unused]] caching::attention_cache_kind kind,
-    [[maybe_unused]] size_t layer_id) {
-    auto kv_cache = kv_cache_tensor(0);
-    auto local_slot = slot_tensor.local();
-    if (local_slot.shape()[0] != 1) {
-        printf("not support local token nums > 1 now!\n");
-        std::terminate();
+template <class TSlots, class TKVCache>
+void update_paged_attention_kv_cache(TSlots slots_tensor,
+                                     TKVCache kv_cache_tensor,
+                                     caching::attention_cache_kind kind,
+                                     size_t layer_id) {
+    auto &kv_cache = kv_cache_tensor(0);
+    using config_t = typename std::decay_t<decltype(kv_cache)>::config_t;
+    constexpr size_t num_heads = config_t::num_kv_heads;
+
+    if constexpr (IsShardedTensor<TSlots>) {
+        auto local_slot = slots_tensor.local();
+        if (local_slot.shape()[0] != 1) {
+            printf("not support local token nums > 1 now!\n");
+            std::terminate();
+        }
+
+        using mesh_type = typename TSlots::mesh_type;
+        // slots : [num_tokens -> x, numHeads -> [die,y], headDim]
+        auto program_ids = distributed::program_ids();
+        auto mesh_index = mesh_type::index_from_program_id(program_ids);
+        auto head_id = mesh_index[3]; // note die head was broadcasting.
+        auto token_id = mesh_index[2];
+
+        // todo support core token nums > 1.
+        auto slot_id = kv_cache.get_slot_id(token_id);
+        auto slot =
+            local_slot
+                .view(ntt::make_ranked_shape(0, 0, 0),
+                      ntt::make_ranked_shape(1, 1, local_slot.shape()[2]))
+                .squeeze(ntt::fixed_shape<0, 1>{});
+        kv_cache.update_slot(kind, layer_id, head_id, slot_id, slot);
+        distributed::topology_synchronize();
+    } else {
+        for (size_t head_id = 0; head_id < num_heads; head_id++) {
+            kv_cache.update_slots(kind, layer_id, head_id, slots_tensor);
+        }
     }
-
-    using mesh_type = typename T0::mesh_type;
-    // slots : [num_tokens -> x, numHeads -> [die,y], headDim]
-    auto program_ids = distributed::program_ids();
-    auto mesh_index = mesh_type::index_from_program_id(program_ids);
-    auto head_id = mesh_index[3]; // note die head was broadcasting.
-    auto token_id = mesh_index[2];
-
-    // todo support core token nums > 1.
-    auto slot_id = kv_cache.get_slot_id(token_id);
-    auto slot = local_slot
-                    .view(ntt::make_ranked_shape(0, 0, 0),
-                          ntt::make_ranked_shape(1, 1, local_slot.shape()[2]))
-                    .squeeze(ntt::fixed_shape<0, 1>{});
-    kv_cache.update_slot(kind, layer_id, head_id, slot_id, slot);
-    distributed::topology_synchronize();
 }
 
 template <class T0, class T1, class T2, class T3>
 void paged_attention([[maybe_unused]] T0 q_tensor,
                      [[maybe_unused]] T1 kv_cache_tensor,
-                     [[maybe_unused]] T3 extra_tensor,
+                     [[maybe_unused]] T2 extra_tensor,
                      [[maybe_unused]] size_t layer_id,
-                     [[maybe_unused]] T2 output_tensor) {}
+                     [[maybe_unused]] T3 output_tensor) {}
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
           class T7, class T8>

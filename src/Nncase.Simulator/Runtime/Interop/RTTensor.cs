@@ -189,11 +189,41 @@ public class RTTensor : RTValue
     public static unsafe RTTensor FromTensor(Tensor tensor)
     {
         var dtype = tensor.ElementType;
-        var sizeBytes = (uint)tensor.BytesBuffer.Length;
-        var buffer = RTBufferAllocator.Host.Allocate(sizeBytes).AsHost()!;
-        using (var mem = buffer.Map(RTMapAccess.Write))
+        RTHostBuffer buffer;
+        uint sizeBytes;
+        if (dtype is ReferenceType)
         {
-            tensor.BytesBuffer.CopyTo(mem.Memory.Span);
+            var elemSize = sizeof(IntPtr);
+            sizeBytes = (uint)tensor.Length * (uint)elemSize;
+            buffer = RTBufferAllocator.Host.Allocate(sizeBytes).AsHost()!;
+            using (var mem = buffer.Map(RTMapAccess.Write))
+            {
+                if (tensor.Shape.IsScalar)
+                {
+                    if (tensor[[]] is IReference { Value: RTObject rtObject })
+                    {
+                        var handle = rtObject.DangerousGetHandle();
+                        MemoryMarshal.AsBytes([handle]).CopyTo(mem.Memory.Span);
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("only support RTObject for reference type tensor!");
+                    }
+                }
+                else
+                {
+                    throw new NotSupportedException("only support scalar tensor for reference type tensor!");
+                }
+            }
+        }
+        else
+        {
+            sizeBytes = (uint)tensor.BytesBuffer.Length;
+            buffer = RTBufferAllocator.Host.Allocate(sizeBytes).AsHost()!;
+            using (var mem = buffer.Map(RTMapAccess.Write))
+            {
+                tensor.BytesBuffer.CopyTo(mem.Memory.Span);
+            }
         }
 
         var dims = MemoryMarshal.Cast<int, uint>(tensor.Dimensions.ToInts());

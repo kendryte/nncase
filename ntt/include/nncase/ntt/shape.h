@@ -159,7 +159,7 @@ template <class T, size_t Rank> struct ranked_dims_base {
 };
 } // namespace detail
 
-template <class T, size_t... Dims>
+template <class T, T... Dims>
 struct fixed_dims : detail::fixed_dims_base<T, Dims...> {};
 
 template <size_t... Dims>
@@ -249,6 +249,9 @@ DEFINE_SQUEEZE_FIXED_DIMS_IMPL(strides)
 } // namespace detail
 
 template <class Dims> struct is_fixed_dims : std::false_type {};
+
+template <class T, T... Dims>
+struct is_fixed_dims<fixed_dims<T, Dims...>> : std::true_type {};
 
 template <size_t... Dims>
 struct is_fixed_dims<fixed_shape<Dims...>> : std::true_type {};

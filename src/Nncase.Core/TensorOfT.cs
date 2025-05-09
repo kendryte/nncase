@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Helpers;
@@ -26,6 +27,7 @@ namespace Nncase;
 /// where all values are represented.
 /// </summary>
 /// <typeparam name="T">type contained within the Tensor. Typically a value type such as int, double, float, etc.</typeparam>
+[JsonConverter(typeof(IO.TensorJsonConverterFactory))]
 public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollection<T>,
     IReadOnlyCollection<T>, IList<T>, IReadOnlyList<T>, IEquatable<Tensor<T>>
     where T : struct, IEquatable<T>

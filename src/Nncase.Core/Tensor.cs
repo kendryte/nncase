@@ -7,13 +7,16 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
 using Google.Protobuf.WellKnownTypes;
 using Nncase.Buffers;
+using Nncase.IO;
 using Nncase.IR;
 using Nncase.TIR;
 
@@ -52,6 +55,7 @@ public enum CastMode
 /// Tensor.
 /// </summary>
 [DebuggerDisplay("{GetArrayString(false)}")]
+[JsonConverter(typeof(TensorJsonConverterFactory))]
 public abstract partial class Tensor : IStructuralComparable, IStructuralEquatable, IEnumerable, ICollection, IList
 {
     private static readonly MethodInfo _tensorCreateFromBytesFunc =
@@ -68,6 +72,10 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
 
     private static readonly MethodInfo _tensorCastFunc2 =
             typeof(Tensor).GetMethod(nameof(Cast), [typeof(CastMode), typeof(long[])])!;
+
+    private static readonly MethodInfo _tensorCreateZerosFunc = typeof(Tensor).GetMethod(nameof(CreateTensorZerosImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
+
+    private static readonly MethodInfo _tensorCreateOnesFunc = typeof(Tensor).GetMethod(nameof(CreateTensorOnesImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
 
     private readonly long[] _dimensions;
     private readonly long[] _strides;
@@ -444,15 +452,14 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
     public static Tensor Zeros<T>(ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : unmanaged, IEquatable<T>, INumberBase<T>
     {
-        var value = (T)Convert.ChangeType(0, typeof(T));
-        return Tensor.FromScalar<T>(value, dimensions);
+        return Tensor.FromScalar<T>(T.Zero, dimensions);
     }
 
     public static Tensor Zeros(DataType dataType, ReadOnlySpan<long> dimensions)
     {
-        return (Tensor)_tensorCreateEmptyFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
+        return (Tensor)_tensorCreateZerosFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
     }
 
     public static Tensor Zero(DataType dataType) => Zeros(dataType, []);
@@ -464,16 +471,14 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
     public static Tensor Ones<T>(ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : unmanaged, IEquatable<T>, INumberBase<T>
     {
-        var value = (T)Convert.ChangeType(1, typeof(T));
-        return Tensor.FromScalar<T>(value, dimensions);
+        return Tensor.FromScalar<T>(T.One, dimensions);
     }
 
     public static Tensor Ones(DataType dataType, ReadOnlySpan<long> dimensions)
     {
-        var value = Convert.ChangeType(1, dataType.CLRType);
-        return Tensor.FromScalar(dataType, value, dimensions);
+        return (Tensor)_tensorCreateOnesFunc.MakeGenericMethod(dataType.CLRType).Invoke(null, new object[] { dimensions.ToArray() })!;
     }
 
     public static Tensor One(DataType dataType) => Ones(dataType, []);
@@ -618,6 +623,18 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         where T : unmanaged, IEquatable<T>
     {
         return new Tensor<T>(dimensions);
+    }
+
+    private static Tensor CreateTensorZerosImpl<T>(long[] dimensions)
+        where T : unmanaged, IEquatable<T>, INumberBase<T>
+    {
+        return FromScalar(T.Zero, dimensions);
+    }
+
+    private static Tensor CreateTensorOnesImpl<T>(long[] dimensions)
+        where T : unmanaged, IEquatable<T>, INumberBase<T>
+    {
+        return FromScalar(T.One, dimensions);
     }
 
     private sealed class ScalarTensorInitializer : ITensorInitializer

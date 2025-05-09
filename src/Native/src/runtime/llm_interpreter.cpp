@@ -26,5 +26,4 @@
 // using namespace nncase;
 // using namespace nncase::runtime;
 
-// interpreter_for_causal_lm::interpreter_for_causal_lm() noexcept :
-// interpreter() {}
+// interpreter_for_causal_lm::interpreter_for_causal_lm() noexcept : interpreter() {}

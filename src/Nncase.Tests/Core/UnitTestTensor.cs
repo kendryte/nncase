@@ -4,6 +4,8 @@
 using System;
 using System.Collections;
 using System.Collections.Immutable;
+using System.IO;
+using System.Text.Json;
 using Nncase;
 using Nncase.IR;
 using Xunit;
@@ -198,5 +200,121 @@ public sealed class UnitTestTensor
         var a = Tensor<float>.From([1f, 2f, 3f]);
         var c = Tensor<Memory<float>>.From(new[] { a.Buffer });
         Assert.IsType<MemoryType>(c.ElementType);
+    }
+
+    [Fact]
+    public void TestTensorSerialize()
+    {
+        var path = "UnitTestTensor_TestSeriable.json";
+        var options = new JsonSerializerOptions() { WriteIndented = true };
+        {
+            var original = Tensor.From(new int[] { 123 }, []);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
+            var original = Tensor.From(new int[] { 1, 2, 3, 4 }, [2, 2]);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
+            var original = Tensor.From(new float[] { 1, 2, 3, 4 }, [1, 4]);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
+            var original = Tensor.From(new float[] { 1, 2, 3, 4 }, [1, 4]);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
+            var original = Tensor.From(new Vector4<float>[] { Vector4<float>.Create([0, 1, 2, 3]), Vector4<float>.Create([4, 5, 6, 7]), Vector4<float>.Create([8, 9, 10, 11]), Vector4<float>.Create([12, 13, 14, 15]) }, [1, 4, 1]);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
+            var cfg = new IR.NN.PagedAttentionConfig(
+                1,
+                2,
+                3,
+                DataTypes.Float32,
+                4,
+                new[] {
+                    IR.NN.PagedAttentionDimKind.NumBlocks,
+                    IR.NN.PagedAttentionDimKind.NumLayers,
+                    IR.NN.PagedAttentionDimKind.KV,
+                    IR.NN.PagedAttentionDimKind.BlockSize,
+                    IR.NN.PagedAttentionDimKind.NumKVHeads,
+                    IR.NN.PagedAttentionDimKind.HeadDim,
+                },
+                new[] {
+                    IR.NN.PagedAttentionDimKind.HeadDim,
+                },
+                new[] { 32 },
+                new[] { 0 });
+            var obj = new Evaluator.NN.RefPagedAttentionKVCache(cfg, 1, 4, Tensor.From([0L]), Tensor.From([4L]), Tensor.From([0L, 1L, 0L, 2L], [1, 2, 2]), Tensor.From([0L, 1L, 0L, 2L, 0L, 3L, 0L, 4L], [4, 2]), 4, Tensor.Zeros<Vector32<float>>([1, 1, 2, 3, 4, 5, 6]));
+            var original = Tensor.From(new Reference<IR.NN.IPagedAttentionKVCache>[] { new(obj) }, []);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
     }
 }
