@@ -29,6 +29,8 @@ class NNCASE_API datatype_node : public object_node {
 
 class prim_type_node;
 using prim_type_t = object_t<prim_type_node>;
+class value_type_node;
+using value_type_t = object_t<value_type_node>;
 
 class NNCASE_API datatype_t : public object_t<datatype_node> {
   public:
@@ -49,6 +51,7 @@ class NNCASE_API datatype_t : public object_t<datatype_node> {
     static prim_type_t bfloat16;
     static prim_type_t float8e4m3;
     static prim_type_t float8e5m2;
+    static value_type_t attention_kv_cache;
 
     datatype_t(typecode_t typecode);
 
@@ -92,6 +95,25 @@ class NNCASE_API pointer_type_node : public datatype_node {
 
 using pointer_type_t = object_t<pointer_type_node>;
 
+class NNCASE_API reference_type_node : public datatype_node {
+    DEFINE_OBJECT_KIND(datatype_node, object_reference_type)
+  public:
+    explicit reference_type_node(datatype_t elemtype) noexcept
+        : elemtype_(elemtype) {}
+
+    size_t size_bytes() const noexcept override {
+        return typecode_bytes(dt_reference);
+    }
+
+    typecode_t typecode() const noexcept override { return dt_reference; }
+    const datatype_t &elemtype() const noexcept { return elemtype_; }
+
+  private:
+    datatype_t elemtype_;
+};
+
+using reference_type_t = object_t<reference_type_node>;
+
 class NNCASE_API value_type_node : public datatype_node {
     DEFINE_OBJECT_KIND(datatype_node, object_value_type)
   public:
@@ -107,13 +129,15 @@ class NNCASE_API value_type_node : public datatype_node {
     size_t size_bytes_;
 };
 
-using value_type_t = object_t<value_type_node>;
-
 class NNCASE_API vector_type_node : public datatype_node {
     DEFINE_OBJECT_KIND(datatype_node, object_value_type)
   public:
     vector_type_node(datatype_t elemtype, dims_t lanes) noexcept
         : elemtype_(elemtype), lanes_(lanes) {}
+
+    const datatype_t &elemtype() const noexcept { return elemtype_; }
+
+    const dims_t &lanes() const noexcept { return lanes_; }
 
     size_t size_bytes() const noexcept override {
         auto acc = elemtype_->size_bytes();
@@ -122,6 +146,7 @@ class NNCASE_API vector_type_node : public datatype_node {
         }
         return acc;
     }
+
     typecode_t typecode() const noexcept override { return dt_vectortype; }
 
   private:

@@ -65,8 +65,7 @@ result<void> run_core(const std::string &kmodel_path,
             reinterpret_cast<std::byte *>(input_pool.data()),
             input_pool.size()};
         try_var(dims, ts_type->shape().as_fixed());
-        try_var(_, hrt::create(ts_type->dtype()->typecode(), dims,
-                               input_pool_span, true));
+        try_var(_, hrt::create(ts_type->dtype(), dims, input_pool_span, true));
         parameters.push_back(_.impl());
     }
 

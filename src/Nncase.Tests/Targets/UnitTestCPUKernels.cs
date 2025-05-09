@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;

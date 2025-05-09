@@ -29,7 +29,7 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
         _compileOptions = compileOptions;
     }
 
-    protected override Expr SelectCall(Call call, IReadOnlyList<Expr> arguments, Expr output)
+    protected override Expr SelectCall(Call call, IReadOnlyList<Expr> arguments, ref Expr output)
     {
         var op = call.Target;
         switch (op)
@@ -131,6 +131,16 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
                 return TIR.F.CPU.Stack(((IR.Tuple)arguments[0]).Fields.ToArray(), output, ((TensorConst)call[IR.Tensors.Stack.Axis]).Value.ToScalar<int>());
             case IR.Tensors.Unsqueeze:
                 return TIR.F.CPU.Reshape(arguments[0], output);
+            case IR.NN.UpdatePagedAttentionKVCache upkv:
+                output = arguments[1];
+                return TIR.F.CPU.UpdatePagedAttentionKVCache(arguments[0], arguments[1], upkv.CacheKind, upkv.LayerId);
+            case IR.NN.CreatePagedAttentionKVCache ctkv:
+                return TIR.F.CPU.CreatePagedAttentionKVCache(ctkv.Config, arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], output);
+            case IR.NN.IdentityPagedAttentionKVCache ctkv:
+                output = arguments[0];
+                return TIR.F.CPU.IdentityPagedAttentionKVCache(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], arguments[8]);
+            case IR.NN.PagedAttention pgat:
+                return TIR.F.CPU.PagedAttention(arguments[0], arguments[1], arguments[2], pgat.LayerId, output);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

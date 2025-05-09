@@ -28,7 +28,7 @@ namespace Nncase;
 /// <typeparam name="T">type contained within the Tensor. Typically a value type such as int, double, float, etc.</typeparam>
 public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollection<T>,
     IReadOnlyCollection<T>, IList<T>, IReadOnlyList<T>, IEquatable<Tensor<T>>
-    where T : unmanaged, IEquatable<T>
+    where T : struct, IEquatable<T>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Tensor{T}"/> class.
@@ -59,6 +59,23 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         : base(DataType.FromType<T>(), dimensions)
     {
         if (Length != buffer.Length)
+        {
+            throw new ArgumentException("Buffer length should be same as tensor length.");
+        }
+
+        Buffer = buffer;
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Tensor{T}"/> class.
+    /// </summary>
+    /// <param name="buffer">Buffer memory.</param>
+    /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
+    /// <param name="strides">The strides.</param>
+    public Tensor(Memory<T> buffer, ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
+        : base(DataType.FromType<T>(), dimensions, strides)
+    {
+        if (IsContiguous && Length != buffer.Length)
         {
             throw new ArgumentException("Buffer length should be same as tensor length.");
         }
@@ -235,98 +252,100 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
         string suffix = TensorOfT.SuffixMap.GetValueOrDefault(typeof(T).TypeHandle, string.Empty);
 
         var builder = new StringBuilder();
-
-        var indices = new long[Rank];
-        var innerDimension = Rank - 1;
-        var innerLength = Dimensions[innerDimension];
-
         int indent = 0;
-        for (long outerIndex = 0; outerIndex < Length; outerIndex += innerLength)
+        void Apply(int axis, long[] index)
         {
-            TensorUtilities.GetIndices(Strides, false, outerIndex, indices);
-
-            while ((indent < innerDimension) && (indices[indent] == 0))
+            if (axis == Rank - 1)
             {
-                // start up
-                if (includeWhitespace)
+                for (int innerIndex = 0; innerIndex < Dimensions[axis]; innerIndex++)
                 {
-                    Indent(builder, indent, 2);
-                }
+                    index[axis] = innerIndex;
 
-                indent++;
-                builder.Append('{');
-                if (includeWhitespace)
-                {
-                    builder.AppendLine();
-                }
-            }
-
-            for (int innerIndex = 0; innerIndex < innerLength; innerIndex++)
-            {
-                indices[innerDimension] = innerIndex;
-
-                if (innerIndex == 0)
-                {
-                    if (includeWhitespace)
+                    if (innerIndex == 0)
                     {
-                        Indent(builder, indent, 2);
-                    }
+                        if (includeWhitespace)
+                        {
+                            Indent(builder, indent, 2);
+                        }
 
-                    if (includeWhitespace)
-                    {
-                        builder.Append($"[{string.Join(",", indices)}]: {{");
+                        if (includeWhitespace)
+                        {
+                            builder.Append($"[{string.Join(",", index)}]: {{");
+                        }
+                        else
+                        {
+                            builder.Append('{');
+                        }
                     }
                     else
                     {
-                        builder.Append('{');
+                        builder.Append(',');
+                    }
+
+                    if (!string.IsNullOrEmpty(prefix))
+                    {
+                        builder.Append(prefix);
+                    }
+
+                    builder.Append(this[index]);
+                    if (!string.IsNullOrEmpty(suffix))
+                    {
+                        builder.Append(suffix);
                     }
                 }
-                else
-                {
-                    builder.Append(',');
-                }
 
-                if (!string.IsNullOrEmpty(prefix))
-                {
-                    builder.Append(prefix);
-                }
-
-                builder.Append(this[indices]);
-                if (!string.IsNullOrEmpty(suffix))
-                {
-                    builder.Append(suffix);
-                }
+                builder.Append('}');
             }
-
-            builder.Append('}');
-
-            for (int i = Rank - 2; i >= 0; i--)
+            else
             {
-                var lastIndex = Dimensions[i] - 1;
-                if (indices[i] == lastIndex)
+                for (int i = 0; i < Dimensions[axis]; i++)
                 {
-                    // close out
-                    --indent;
-                    if (includeWhitespace)
+                    if (i == 0)
                     {
-                        builder.AppendLine();
-                        Indent(builder, indent, 2);
+                        if (includeWhitespace)
+                        {
+                            Indent(builder, indent, 2);
+                            indent++;
+                        }
+
+                        builder.Append('{');
+                        if (includeWhitespace)
+                        {
+                            builder.AppendLine();
+                        }
                     }
 
-                    builder.Append('}');
-                }
-                else
-                {
-                    builder.Append(',');
-                    if (includeWhitespace)
-                    {
-                        builder.AppendLine();
-                    }
+                    index[axis] = i;
+                    Apply(axis + 1, index);
 
-                    break;
+                    if (i < Dimensions[axis] - 1)
+                    {
+                        // not last element
+                        builder.Append(',');
+                        if (includeWhitespace)
+                        {
+                            builder.AppendLine();
+                        }
+                    }
+                    else
+                    {
+                        // last element
+                        // close out
+                        if (includeWhitespace)
+                        {
+                            builder.AppendLine();
+                            --indent;
+                            Indent(builder, indent, 2);
+                        }
+
+                        builder.Append('}');
+                    }
                 }
             }
         }
+
+        var index = new long[Rank];
+        Apply(0, index);
 
         return builder.ToString();
     }

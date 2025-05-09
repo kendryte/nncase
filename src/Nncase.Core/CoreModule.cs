@@ -3,6 +3,7 @@
 
 using DryIoc;
 using Nncase.Hosting;
+using Nncase.IR.NN;
 
 namespace Nncase;
 
@@ -37,5 +38,7 @@ internal class CoreModule : IApplicationPart
 
         // Value types
         registrator.Register<ValueType, QuantParamType>(reuse: Reuse.Singleton);
+        registrator.Register<ValueType, AttentionKVCacheType>(reuse: Reuse.Singleton);
+        registrator.Register<ValueType, PagedAttentionKVCacheType>(reuse: Reuse.Singleton);
     }
 }

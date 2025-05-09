@@ -118,6 +118,7 @@ inline constexpr size_t typecode_bytes(typecode_t typecode) {
     case dt_float64:
         return 8;
     case dt_pointer:
+    case dt_reference:
         return sizeof(intptr_t);
     default:
         return -1;

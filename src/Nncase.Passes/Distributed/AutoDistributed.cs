@@ -1559,6 +1559,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 case (ParameterKind.Attribute, None e):
                     updateBuckets(buckets, new[] { e.With() });
                     break;
+                case (ParameterKind.Attribute, Call e):
+                    updateBuckets(buckets, new[] { e });
+                    break;
                 default:
                     throw new InvalidOperationException();
             }

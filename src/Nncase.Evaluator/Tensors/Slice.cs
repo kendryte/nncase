@@ -31,21 +31,15 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     public IValue Visit(IEvaluateContext context, Slice sl)
     {
         OrtKISharp.Tensor input;
-
-        var inputOrg = context.GetArgumentValue(sl, Slice.Input).AsTensor();
-        var dataType = inputOrg.ElementType;
-        if (dataType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
+        var inputTensor = context.GetArgumentValueAsTensor(sl, Slice.Input);
+        var inputElemType = inputTensor.ElementType;
+        if (TryGetTempDataType(inputTensor.ElementType, out var tempType))
         {
-            var interType = new VectorType(DataTypes.Float32, vType.Lanes);
-            input = Nncase.IR.F.Tensors.Cast(inputOrg, interType).Evaluate().AsTensor().ToOrtTensor();
-        }
-        else if (dataType is not VectorType && dataType.IsFloat() && dataType != DataTypes.Float32)
-        {
-            input = Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+            input = inputTensor.CastTo(tempType).ToOrtTensor();
         }
         else
         {
-            input = context.GetOrtArgumentValue(sl, Slice.Input);
+            input = inputTensor.ToOrtTensor();
         }
 
         var begins = context.GetInt64OrtTensorArgumentValue(sl, Slice.Begins);
@@ -53,13 +47,37 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
         var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
         var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
-        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+
+        switch (context.CurrentCall.CheckedType)
         {
-            return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor().CastTo(dataType) : sliced.ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
-        }
-        else
-        {
-            return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
+            case AnyType:
+                {
+                    var slicedTensor = sliced.ToTensor();
+                    if (tempType is not null)
+                    {
+                        slicedTensor = slicedTensor.CastTo(inputElemType);
+                    }
+
+                    return Value.FromTensor(slicedTensor);
+                }
+
+            case TensorType tensorType:
+                {
+                    Tensor slicedTensor;
+                    if (tempType is not null)
+                    {
+                        slicedTensor = sliced.ToTensor(tensorType with { DType = tempType }).CastTo(inputElemType);
+                    }
+                    else
+                    {
+                        slicedTensor = sliced.ToTensor(tensorType);
+                    }
+
+                    return Value.FromTensor(slicedTensor);
+                }
+
+            default:
+                throw new NotSupportedException("Unsupported type.");
         }
     }
 
@@ -213,5 +231,31 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
 
         return new DistributedType((TensorType)outType, input.AxisPolices, input.Placement);
+    }
+
+    private bool TryGetTempDataType(DataType dataType, out DataType tempType)
+    {
+        tempType = null!;
+        bool change = false;
+
+        switch (dataType)
+        {
+            case PrimType pt when pt == DataTypes.Float8E4M3 || pt == DataTypes.Float8E5M2:
+                tempType = DataTypes.Float32;
+                change = true;
+                break;
+            case VectorType vtype:
+                if (TryGetTempDataType(vtype.ElemType, out var tempElemType))
+                {
+                    tempType = vtype with { ElemType = tempElemType };
+                    change = true;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        return change;
     }
 }

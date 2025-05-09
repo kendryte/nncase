@@ -5,6 +5,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Nncase.IR;
@@ -146,6 +147,9 @@ public static class OrtKIExtensions
 
     private sealed class TensorInitializerWithOrt : ITensorInitializer
     {
+        private static readonly MethodInfo _initializeUnmanagedFunc = typeof(TensorInitializerWithOrt)
+            .GetMethod(nameof(InitializeUnmanaged), BindingFlags.NonPublic | BindingFlags.Instance)!;
+
         private readonly OrtKISharp.Tensor _tensor;
 
         public TensorInitializerWithOrt(OrtKISharp.Tensor tensor)
@@ -154,9 +158,21 @@ public static class OrtKIExtensions
         }
 
         public void Initialize<T>(Tensor<T> tensor)
+            where T : struct, IEquatable<T>
+        {
+            if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+            {
+                throw new NotSupportedException("Tensor<T> with reference type is not supported.");
+            }
+
+            _initializeUnmanagedFunc.MakeGenericMethod(typeof(T)).Invoke(this, [tensor]);
+        }
+
+        private void InitializeUnmanaged<T>(Tensor<T> tensor)
             where T : unmanaged, IEquatable<T>
         {
-            _tensor.GetBuffer<T>().CopyTo(tensor.Buffer.Span);
+            var span = MemoryMarshal.Cast<T, byte>(tensor.Buffer.Span);
+            _tensor.GetBuffer<byte>().CopyTo(span);
         }
     }
 }
