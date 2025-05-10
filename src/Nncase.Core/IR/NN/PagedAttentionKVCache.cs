@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.NN;
 
-public enum PagedAttentionDimKind : int
+public enum PagedKVCacheDimKind : int
 {
     NumBlocks = 0,
     NumLayers,
@@ -26,15 +26,76 @@ public interface IPagedAttentionConfig : IAttentionConfig
 {
     int BlockSize { get; }
 
-    IRArray<PagedAttentionDimKind> CacheLayout { get; }
+    IRArray<PagedKVCacheDimKind> CacheLayout { get; }
 
-    IRArray<PagedAttentionDimKind> BlockLayout => CacheLayout.Where(x => x is PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim).ToArray();
+    IRArray<PagedKVCacheDimKind> BlockLayout => CacheLayout.Where(x => x is PagedKVCacheDimKind.BlockSize or PagedKVCacheDimKind.HeadDim).ToArray();
 
-    IRArray<PagedAttentionDimKind> PackedAxes { get; }
+    IRArray<PagedKVCacheDimKind> PackedAxes { get; }
 
     IRArray<int> Lanes { get; }
 
-    IRArray<int> Topology { get; }
+    IRArray<PagedKVCacheDimKind> ShardingAxes { get; }
+
+    IRArray<SBPSplit> AxisPolicies { get; }
+
+    DataType KVType => Lanes.Count == 0 ? KVPrimType : new VectorType(KVPrimType, Lanes);
+
+    long[] GetDefaultDimensions(int numBlocks)
+    {
+        return new long[] { numBlocks, NumLayers, 2, BlockSize, NumKVHeads, HeadDim };
+    }
+
+    long[] GetDimensions(int numBlocks)
+    {
+        var defaultDims = GetDefaultDimensions(numBlocks);
+        var dims = CacheLayout.Select(i => defaultDims[(int)i]).ToArray();
+        return dims;
+    }
+
+    TensorType GetRawTensorType(int numBlocks)
+    {
+        var shape = GetDimensions(numBlocks);
+        return new TensorType(KVPrimType, shape);
+    }
+
+    TensorType GetBlockTableTensorType(int numSeqs, int maxSeqLen)
+    {
+        return new TensorType(DataTypes.Int64, new[] { numSeqs, Utilities.MathUtility.CeilDiv(maxSeqLen, BlockSize), ShardingAxes.Count + 1 });
+    }
+
+    TensorType GetSlotMappingTensorType(int numTokens)
+    {
+        return new TensorType(DataTypes.Int64, new[] { numTokens, ShardingAxes.Count + 1 });
+    }
+
+    TensorType GetLogicalTensorType(int numBlocks, Placement placement)
+    {
+        var dims = GetDefaultDimensions(numBlocks);
+
+        // 1. process packed axes
+        foreach (var (axis, lane) in PackedAxes.Zip(Lanes))
+        {
+            dims[(int)axis] /= lane;
+        }
+
+        // 2. process sharding axes
+        var shardingDims = Enumerable.Repeat(1L, placement.Rank).ToArray();
+        for (int i = 0; i < ShardingAxes.Count; i++)
+        {
+            var axis = ShardingAxes[i];
+            var sbp = AxisPolicies[i];
+            for (int j = 0; j < sbp.Axes.Count; j++)
+            {
+                dims[(int)axis] /= placement.Hierarchy[sbp.Axes[j]];
+                shardingDims[i] *= placement.Hierarchy[sbp.Axes[j]];
+            }
+        }
+
+        // 3. reorder dims
+        var cacheDims = CacheLayout.Select(i => dims[(int)i]).ToArray();
+
+        return new TensorType(KVType, shardingDims.Concat(cacheDims).ToArray());
+    }
 }
 
 /// <summary>
@@ -128,7 +189,7 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slots);
 }
 
-public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType, int BlockSize, IRArray<PagedAttentionDimKind> CacheLayout, IRArray<PagedAttentionDimKind> PackedAxes, IRArray<int> Lanes, IRArray<int> Topology)
+public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType, int BlockSize, IRArray<PagedKVCacheDimKind> CacheLayout, IRArray<PagedKVCacheDimKind> PackedAxes, IRArray<int> Lanes, IRArray<PagedKVCacheDimKind> ShardingAxes, IRArray<SBPSplit> AxisPolicies)
     : AttentionConfig(NumLayers, NumKVHeads, HeadDim, KVType), IPagedAttentionConfig
 {
 }

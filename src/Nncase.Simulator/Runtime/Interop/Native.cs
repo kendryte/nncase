@@ -144,8 +144,8 @@ internal static class Native
         int head_dim,
         TypeCode kv_type,
         int block_size,
-        [In] IR.NN.PagedAttentionDimKind[] cache_layout,
-        [In] IR.NN.PagedAttentionDimKind[] packed_axes,
+        [In] IR.NN.PagedKVCacheDimKind[] cache_layout,
+        [In] IR.NN.PagedKVCacheDimKind[] packed_axes,
         int packed_axes_len,
         [In] int[] lanes,
         int lanes_len,
@@ -160,16 +160,16 @@ internal static class Native
     public static extern ErrorCode PagedAttentionConfigSetBlockSize(RTPagedAttentionConfig config, int block_size);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_cache_layout")]
-    public static extern ErrorCode PagedAttentionConfigGetCacheLayout(RTPagedAttentionConfig config, [Out] IR.NN.PagedAttentionDimKind[] layout, int layout_len);
+    public static extern ErrorCode PagedAttentionConfigGetCacheLayout(RTPagedAttentionConfig config, [Out] IR.NN.PagedKVCacheDimKind[] layout, int layout_len);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_cache_layout")]
-    public static extern ErrorCode PagedAttentionConfigSetCacheLayout(RTPagedAttentionConfig config, [In] IR.NN.PagedAttentionDimKind[] layout, int layout_len);
+    public static extern ErrorCode PagedAttentionConfigSetCacheLayout(RTPagedAttentionConfig config, [In] IR.NN.PagedKVCacheDimKind[] layout, int layout_len);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_packed_axes")]
-    public static extern ErrorCode PagedAttentionConfigGetPackedAxes(RTPagedAttentionConfig config, [Out] IR.NN.PagedAttentionDimKind[] packed_axes, int packed_axes_len);
+    public static extern ErrorCode PagedAttentionConfigGetPackedAxes(RTPagedAttentionConfig config, [Out] IR.NN.PagedKVCacheDimKind[] packed_axes, int packed_axes_len);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_packed_axes")]
-    public static extern ErrorCode PagedAttentionConfigSetPackedAxes(RTPagedAttentionConfig config, [In] IR.NN.PagedAttentionDimKind[] packed_axes, int packed_axes_len);
+    public static extern ErrorCode PagedAttentionConfigSetPackedAxes(RTPagedAttentionConfig config, [In] IR.NN.PagedKVCacheDimKind[] packed_axes, int packed_axes_len);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_lanes")]
     public static extern ErrorCode PagedAttentionConfigGetLanes(RTPagedAttentionConfig config, [Out] int[] lanes, int lanes_len);

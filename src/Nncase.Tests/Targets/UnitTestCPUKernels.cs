@@ -142,7 +142,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             refQuerys.Add(refQuery);
             refKeys.Add(refKey);
             refValues.Add(refValue);
-            var output = EvaluatorTest.UnitTestEvaluatorNN.ScaledDotProductAttention(refQuery, refKey, refValue, isCausal: true, scale: 1.0f);
+            var output = PagedAttentionKVCacheTestFixture.ScaledDotProductAttention(refQuery, refKey, refValue, isCausal: true, scale: 1.0f);
             refOutputs.Add(output);
         }
 
@@ -160,15 +160,16 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 kvType,
                 blockSize,
                 new[] {
-                    PagedAttentionDimKind.NumBlocks,
-                    PagedAttentionDimKind.NumLayers,
-                    PagedAttentionDimKind.NumKVHeads,
-                    PagedAttentionDimKind.KV,
-                    PagedAttentionDimKind.HeadDim,
-                    PagedAttentionDimKind.BlockSize, },
-                new[] { PagedAttentionDimKind.HeadDim },
+                    PagedKVCacheDimKind.NumBlocks,
+                    PagedKVCacheDimKind.NumLayers,
+                    PagedKVCacheDimKind.NumKVHeads,
+                    PagedKVCacheDimKind.KV,
+                    PagedKVCacheDimKind.HeadDim,
+                    PagedKVCacheDimKind.BlockSize, },
+                new[] { PagedKVCacheDimKind.HeadDim },
                 new[] { lane },
-                new[] { 0 }); // chip
+                new[] { PagedKVCacheDimKind.NumBlocks },
+                new[] { SBP.S(0) });
         var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(new ReferenceType(new PagedAttentionKVCacheType() { Config = pagedAttnConfig })));
         Expr root;
         {
@@ -187,8 +188,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
             var maxSeqLen = seqLens.Max();
 
             var maxNumBlocksPreSeq = MathUtility.CeilDiv(maxSeqLen, blockSize);
-            var blockTables = Tensor.FromScalar(-1L, [numSeqs, maxNumBlocksPreSeq, pagedAttnConfig.Topology.Count + 1]);
-            var slotMapping = Tensor.FromScalar(-1L, [numTokens, pagedAttnConfig.Topology.Count + 1]);
+            var blockTables = Tensor.FromScalar(-1L, [numSeqs, maxNumBlocksPreSeq, pagedAttnConfig.ShardingAxes.Count + 1]);
+            var slotMapping = Tensor.FromScalar(-1L, [numTokens, pagedAttnConfig.ShardingAxes.Count + 1]);
             var histSlotMappings = Enumerable.Range(0, numSeqs).Select(_ => new List<long>()).ToArray();
             var histKeys = new List<OrtKISharp.Tensor>();
             var histValues = new List<OrtKISharp.Tensor>();
@@ -242,7 +243,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
             // update hist kv cache.
             var histSlotMappingArray = histSlotMappings.SelectMany(i => i).ToArray();
-            var histSlotMapping = Tensor.From(histSlotMappingArray, [histSlotMappingArray.Length, pagedAttnConfig.Topology.Count + 1]);
+            var histSlotMapping = Tensor.From(histSlotMappingArray, [histSlotMappingArray.Length, pagedAttnConfig.ShardingAxes.Count + 1]);
             if (histSlotMapping.Length > 0)
             {
                 var tempkvCacheObject = new Evaluator.NN.RefPagedAttentionKVCache(pagedAttnConfig, numSeqs, (int)histSlotMapping.Length, contextLens, Tensor.From(seqLens), blockTables, histSlotMapping, numBlocks, kvcacheStorage);

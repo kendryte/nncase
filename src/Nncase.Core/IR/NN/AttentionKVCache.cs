@@ -24,7 +24,7 @@ public interface IAttentionConfig
 
     int HeadDim { get; }
 
-    PrimType KVType { get; }
+    PrimType KVPrimType { get; }
 }
 
 /// <summary>
@@ -70,7 +70,7 @@ public interface IAttentionKVCache
     long SeqLen(int seqId);
 }
 
-public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType) : IAttentionConfig;
+public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVPrimType) : IAttentionConfig;
 
 /// <summary>
 /// Prim type of <see cref="QuantParam"/>.

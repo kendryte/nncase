@@ -61,12 +61,12 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         var cache = kvCaches.Single().Value;
 
         // unpack for q
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
             query = query.Unpack(qlayout.IndexOf(AttentionDimKind.Dim));
         }
 
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.NumKVHeads))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
         {
             query = query.Unpack(qlayout.IndexOf(AttentionDimKind.Head));
         }
@@ -126,14 +126,14 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         }
 
         // repack for output
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.NumKVHeads))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
         {
-            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedAttentionDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
+            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
         }
 
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
-            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
+            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
         }
 
         return concat_output;
@@ -170,13 +170,13 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
         // block layout is construct from `head dim, block_size`. but we don't know the concrete shape.
         var blockLayout = cache.Config.BlockLayout;
-        var blockSizeAxis = blockLayout.IndexOf(PagedAttentionDimKind.BlockSize);
+        var blockSizeAxis = blockLayout.IndexOf(PagedKVCacheDimKind.BlockSize);
         if (blockSizeAxis < 0)
         {
             throw new InvalidOperationException("block layout not contain block size");
         }
 
-        var headDimAxis = blockLayout.IndexOf(PagedAttentionDimKind.HeadDim);
+        var headDimAxis = blockLayout.IndexOf(PagedKVCacheDimKind.HeadDim);
         if (headDimAxis < 0)
         {
             throw new InvalidOperationException("block layout not contain head dim");
@@ -184,10 +184,10 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
         int totalKVHeads = cache.Config.NumKVHeads;
 
-        if (cache.Config.Topology.Count > 0)
+        if (cache.Config.ShardingAxes.Count > 0)
         {
             // var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
-            if (cache.Config.Topology is [1, 2])
+            if (cache.Config.AxisPolicies[1].Axes is [1, 2])
             {
                 // for xpu
                 totalKVHeads *= 2; // recover kv heads.
@@ -223,7 +223,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                     }
                 }
             }
-            else if (cache.Config.Topology is [0] && CompileSessionScope.Current!.CompileOptions.TargetOptions is ICpuTargetOptions { Hierarchies: [[1]] })
+            else if (cache.Config.AxisPolicies[0].Axes is [0] && CompileSessionScope.Current!.CompileOptions.TargetOptions is ICpuTargetOptions { Hierarchies: [[1]] })
             {
                 GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
             }
@@ -241,13 +241,13 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         var concatCache = OrtKI.Concat(caches.ToArray(), blockSizeAxis);
 
         // unpack head dim
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
             concatCache = concatCache.Unpack(headDimAxis);
         }
 
         // transpose to [num_head * seq_len, head_dim]
-        if (blockLayout is [PagedAttentionDimKind.HeadDim, PagedAttentionDimKind.BlockSize])
+        if (blockLayout is [PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize])
         {
             concatCache = OrtKI.Transpose(concatCache, [1, 0]);
         }

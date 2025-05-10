@@ -110,40 +110,40 @@ public sealed record RefPagedAttentionKVCache(
         var blockShape = blockView.Dimensions;
         var blockLayout = PagedAttentionConfig.BlockLayout;
 
-        // PagedAttentionDimKind[] defaultLayout = [PagedAttentionDimKind.BlockSize, PagedAttentionDimKind.HeadDim];
+        // PagedKVCacheDimKind[] defaultLayout = [PagedKVCacheDimKind.BlockSize, PagedKVCacheDimKind.HeadDim];
         int[] defaultLayout = [-1, -1, -1, 0, -1, 1];
         long[] defaultStarts = [blockOffset, 0];
         long[] defaultShape = [1, PagedAttentionConfig.HeadDim];
-        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim) is int i && i != -1)
+        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim) is int i && i != -1)
         {
             defaultShape[1] /= PagedAttentionConfig.Lanes[i];
         }
 
         var starts = blockLayout.Select(i => defaultStarts[defaultLayout[(int)i]]).ToArray();
         var shape = blockLayout.Select(i => defaultShape[defaultLayout[(int)i]]).ToArray();
-        return blockView.View(starts, shape).Squeeze([blockLayout.IndexOf(PagedAttentionDimKind.BlockSize)]);
+        return blockView.View(starts, shape).Squeeze([blockLayout.IndexOf(PagedKVCacheDimKind.BlockSize)]);
     }
 
     private Tensor GetBlockViewFromStorage(AttentionCacheKind kind, int layerId, int headId, Tensor blockId)
     {
         // blockId: [len(topo) + 1].
         var blockIdValue = (long)blockId[blockId.Dimensions[^1] - 1];
-        PagedAttentionDimKind[] defaultLayout = [PagedAttentionDimKind.NumBlocks, PagedAttentionDimKind.NumLayers, PagedAttentionDimKind.KV, PagedAttentionDimKind.BlockSize, PagedAttentionDimKind.NumKVHeads, PagedAttentionDimKind.HeadDim];
+        PagedKVCacheDimKind[] defaultLayout = [PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.BlockSize, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim];
         long[] defaultStarts = [blockIdValue, layerId, (long)kind, 0, (long)headId, 0];
         long[] defaultShape = [1, 1, 1, PagedAttentionConfig.BlockSize, 1, PagedAttentionConfig.HeadDim];
-        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim) is int i && i != -1)
+        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim) is int i && i != -1)
         {
             defaultShape[^1] /= PagedAttentionConfig.Lanes[i];
         }
 
         var starts = PagedAttentionConfig.CacheLayout.Select(i => defaultStarts[(int)i]).ToArray();
         var shape = PagedAttentionConfig.CacheLayout.Select(i => defaultShape[(int)i]).ToArray();
-        var squeeze_axes = Enumerable.Range(0, PagedAttentionConfig.CacheLayout.Count).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim)).Select(i => i + PagedAttentionConfig.Topology.Count).ToArray();
+        var squeeze_axes = Enumerable.Range(0, PagedAttentionConfig.CacheLayout.Count).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedKVCacheDimKind.BlockSize or PagedKVCacheDimKind.HeadDim)).Select(i => i + PagedAttentionConfig.ShardingAxes.Count).ToArray();
 
         // process the topology.
-        var topo_starts = Enumerable.Range(0, PagedAttentionConfig.Topology.Count).Select(i => (long)blockId[i]).ToArray();
-        var topo_shape = Enumerable.Range(0, PagedAttentionConfig.Topology.Count).Select(i => 1L).ToArray();
-        var topo_squeeze = Enumerable.Range(0, PagedAttentionConfig.Topology.Count).Select(i => i).ToArray();
+        var topo_starts = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => (long)blockId[i]).ToArray();
+        var topo_shape = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => 1L).ToArray();
+        var topo_squeeze = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => i).ToArray();
 
         var final_starts = topo_starts.Concat(starts).ToArray();
         var final_shape = topo_shape.Concat(shape).ToArray();

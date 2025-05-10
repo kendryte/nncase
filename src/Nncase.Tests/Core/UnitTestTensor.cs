@@ -290,18 +290,19 @@ public sealed class UnitTestTensor
                 DataTypes.Float32,
                 4,
                 new[] {
-                    IR.NN.PagedAttentionDimKind.NumBlocks,
-                    IR.NN.PagedAttentionDimKind.NumLayers,
-                    IR.NN.PagedAttentionDimKind.KV,
-                    IR.NN.PagedAttentionDimKind.BlockSize,
-                    IR.NN.PagedAttentionDimKind.NumKVHeads,
-                    IR.NN.PagedAttentionDimKind.HeadDim,
+                    IR.NN.PagedKVCacheDimKind.NumBlocks,
+                    IR.NN.PagedKVCacheDimKind.NumLayers,
+                    IR.NN.PagedKVCacheDimKind.KV,
+                    IR.NN.PagedKVCacheDimKind.BlockSize,
+                    IR.NN.PagedKVCacheDimKind.NumKVHeads,
+                    IR.NN.PagedKVCacheDimKind.HeadDim,
                 },
                 new[] {
-                    IR.NN.PagedAttentionDimKind.HeadDim,
+                    IR.NN.PagedKVCacheDimKind.HeadDim,
                 },
                 new[] { 32 },
-                new[] { 0 });
+                new[] { IR.NN.PagedKVCacheDimKind.NumBlocks },
+                new[] { SBP.S(0) });
             var obj = new Evaluator.NN.RefPagedAttentionKVCache(cfg, 1, 4, Tensor.From([0L]), Tensor.From([4L]), Tensor.From([0L, 1L, 0L, 2L], [1, 2, 2]), Tensor.From([0L, 1L, 0L, 2L, 0L, 3L, 0L, 4L], [4, 2]), 4, Tensor.Zeros<Vector32<float>>([1, 1, 2, 3, 4, 5, 6]));
             var original = Tensor.From(new Reference<IR.NN.IPagedAttentionKVCache>[] { new(obj) }, []);
             using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))

@@ -51,8 +51,8 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inout
       if (input.CheckedDataType is ReferenceType referenceType) {
         if (referenceType.ElemType is Nncase.IR.NN.PagedAttentionKVCacheType kvcacheType) {
           var size = TensorUtilities.GetProduct(shape.ToValueArray()); // todo: support dynamic shape
-          var kv_tensor_shape = kvcacheType.Config.Topology.Select(i => Model.Options.Hierarchies[0][i]).ToArray();
-          var kv_tensor_size = TensorUtilities.GetProduct(kvcacheType.Config.Topology.Select(i => Model.Options.Hierarchies[0][i]).ToArray());
+          var kv_tensor_shape = kvcacheType.Config.AxisPolicies.Select(p => p.Axes.Select(i => Model.Options.Hierarchies[0][i]).Product()).ToArray();
+          var kv_tensor_size = kv_tensor_shape.Product();
           if (kv_tensor_size > 128) {
             throw new NotSupportedException("KVCache tensor size is too large!");
           }

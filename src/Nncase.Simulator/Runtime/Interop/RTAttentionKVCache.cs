@@ -73,7 +73,7 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
         }
     }
 
-    public PrimType KVType
+    public PrimType KVPrimType
     {
         get
         {
@@ -98,7 +98,7 @@ public class RTAttentionConfig : RTObject, IAttentionConfig
         }
         else if (cfg.GetType() == typeof(AttentionConfig))
         {
-            Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, cfg.KVType.TypeCode, out var rtcfg).ThrowIfFailed();
+            Native.AttentionConfigCreate(cfg.NumLayers, cfg.NumKVHeads, cfg.HeadDim, cfg.KVPrimType.TypeCode, out var rtcfg).ThrowIfFailed();
             return rtcfg;
         }
         else
@@ -147,11 +147,11 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig, IPagedAttentionC
         }
     }
 
-    public IRArray<PagedAttentionDimKind> CacheLayout
+    public IRArray<PagedKVCacheDimKind> CacheLayout
     {
         get
         {
-            var layout = new PagedAttentionDimKind[6];
+            var layout = new PagedKVCacheDimKind[6];
             Native.PagedAttentionConfigGetCacheLayout(this, layout, layout.Length).ThrowIfFailed();
             return layout;
         }
@@ -168,11 +168,11 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig, IPagedAttentionC
         }
     }
 
-    public IRArray<PagedAttentionDimKind> PackedAxes
+    public IRArray<PagedKVCacheDimKind> PackedAxes
     {
         get
         {
-            var packedAxes = new PagedAttentionDimKind[8]; // Using max size from small_vector
+            var packedAxes = new PagedKVCacheDimKind[8]; // Using max size from small_vector
             int length = packedAxes.Length;
             Native.PagedAttentionConfigGetPackedAxes(this, packedAxes, length).ThrowIfFailed();
             return packedAxes.Where(x => Enum.IsDefined(x)).ToArray();
@@ -219,23 +219,28 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig, IPagedAttentionC
         }
     }
 
+    public IRArray<PagedKVCacheDimKind> ShardingAxes => throw new NotImplementedException();
+
+    public IRArray<SBPSplit> AxisPolicies => throw new NotImplementedException();
+
     public static RTPagedAttentionConfig FromConfig(IPagedAttentionConfig cfg)
     {
-        Native.PagedAttentionConfigCreate(
-            cfg.NumLayers,
-            cfg.NumKVHeads,
-            cfg.HeadDim,
-            cfg.KVType.TypeCode,
-            cfg.BlockSize,
-            cfg.CacheLayout.ToArray(),
-            cfg.PackedAxes.ToArray(),
-            cfg.PackedAxes.Count,
-            cfg.Lanes.ToArray(),
-            cfg.Lanes.Count,
-            cfg.Topology.ToArray(),
-            cfg.Topology.Count,
-            out var rtcfg).ThrowIfFailed();
-        return rtcfg;
+        // Native.PagedAttentionConfigCreate(
+        //     cfg.NumLayers,
+        //     cfg.NumKVHeads,
+        //     cfg.HeadDim,
+        //     cfg.KVPrimType.TypeCode,
+        //     cfg.BlockSize,
+        //     cfg.CacheLayout.ToArray(),
+        //     cfg.PackedAxes.ToArray(),
+        //     cfg.PackedAxes.Count,
+        //     cfg.Lanes.ToArray(),
+        //     cfg.Lanes.Count,
+        //     cfg.Topology.ToArray(),
+        //     cfg.Topology.Count,
+        //     out var rtcfg).ThrowIfFailed();
+        // return rtcfg;
+        throw new NotSupportedException("PagedAttentionConfig creation is not implemented yet.");
     }
 
     public static new RTPagedAttentionConfig FromHandle(IntPtr handle, bool addRef = false)

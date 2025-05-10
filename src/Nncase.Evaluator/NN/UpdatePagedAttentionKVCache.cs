@@ -55,11 +55,11 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
 
         var cache = kvCaches.Single().Value;
 
-        if (cache.Config.Topology.Count > 0)
+        if (cache.Config.ShardingAxes.Count > 0)
         {
             // only for xpu
             var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
-            if (cache.Config.Topology is [1, 2] && num_kv_head == cache.Config.NumKVHeads * 2)
+            if (cache.Config.AxisPolicies[1].Axes is [1, 2] && num_kv_head == cache.Config.NumKVHeads * 2)
             {
                 for (int tok_id = 0; tok_id < cache.NumTokens; tok_id++)
                 {
@@ -83,7 +83,7 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
                     }
                 }
             }
-            else if (cache.Config.Topology is [0] && num_kv_head == cache.Config.NumKVHeads)
+            else if (cache.Config.AxisPolicies[0].Axes is [0] && num_kv_head == cache.Config.NumKVHeads)
             {
                 // [num_tokens, slot_shape]
                 for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)

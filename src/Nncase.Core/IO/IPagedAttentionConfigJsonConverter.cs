@@ -36,13 +36,13 @@ internal sealed class PagedAttentionConfigConverter : JsonConverter<IPagedAttent
         var numKVHeads = root.GetProperty(nameof(IPagedAttentionConfig.NumKVHeads)).GetInt32();
         var headDim = root.GetProperty(nameof(IPagedAttentionConfig.HeadDim)).GetInt32();
         var blockSize = root.GetProperty(nameof(IPagedAttentionConfig.BlockSize)).GetInt32();
-        var kvType = DataType.FromTypeCode((Runtime.TypeCode)root.GetProperty(nameof(IPagedAttentionConfig.KVType)).GetInt32());
+        var kvType = DataType.FromTypeCode((Runtime.TypeCode)root.GetProperty(nameof(IPagedAttentionConfig.KVPrimType)).GetInt32());
 
-        var cacheLayout = JsonSerializer.Deserialize<PagedAttentionDimKind[]>(
+        var cacheLayout = JsonSerializer.Deserialize<PagedKVCacheDimKind[]>(
             root.GetProperty(nameof(IPagedAttentionConfig.CacheLayout)).GetRawText(),
             options)!;
 
-        var packedAxes = JsonSerializer.Deserialize<PagedAttentionDimKind[]>(
+        var packedAxes = JsonSerializer.Deserialize<PagedKVCacheDimKind[]>(
             root.GetProperty(nameof(IPagedAttentionConfig.PackedAxes)).GetRawText(),
             options)!;
 
@@ -50,8 +50,12 @@ internal sealed class PagedAttentionConfigConverter : JsonConverter<IPagedAttent
             root.GetProperty(nameof(IPagedAttentionConfig.Lanes)).GetRawText(),
             options)!;
 
-        var topology = JsonSerializer.Deserialize<int[]>(
-            root.GetProperty(nameof(IPagedAttentionConfig.Topology)).GetRawText(),
+        var shardingAxes = JsonSerializer.Deserialize<PagedKVCacheDimKind[]>(
+            root.GetProperty(nameof(IPagedAttentionConfig.ShardingAxes)).GetRawText(),
+            options)!;
+
+        var axisPolicies = JsonSerializer.Deserialize<IR.SBPSplit[]>(
+            root.GetProperty(nameof(IPagedAttentionConfig.AxisPolicies)).GetRawText(),
             options)!;
 
         return new PagedAttentionConfig(
@@ -63,7 +67,8 @@ internal sealed class PagedAttentionConfigConverter : JsonConverter<IPagedAttent
             cacheLayout,
             packedAxes,
             lanes,
-            topology);
+            shardingAxes,
+            axisPolicies);
     }
 
     public override void Write(Utf8JsonWriter writer, IPagedAttentionConfig value, JsonSerializerOptions options)
@@ -76,7 +81,7 @@ internal sealed class PagedAttentionConfigConverter : JsonConverter<IPagedAttent
         writer.WriteNumber(nameof(IPagedAttentionConfig.BlockSize), value.BlockSize);
 
         writer.WritePropertyName("KVType");
-        JsonSerializer.Serialize(writer, value.KVType.TypeCode, options);
+        JsonSerializer.Serialize(writer, value.KVPrimType.TypeCode, options);
 
         writer.WritePropertyName(nameof(IPagedAttentionConfig.CacheLayout));
         JsonSerializer.Serialize(writer, value.CacheLayout, options);
@@ -87,8 +92,11 @@ internal sealed class PagedAttentionConfigConverter : JsonConverter<IPagedAttent
         writer.WritePropertyName(nameof(IPagedAttentionConfig.Lanes));
         JsonSerializer.Serialize(writer, value.Lanes, options);
 
-        writer.WritePropertyName(nameof(IPagedAttentionConfig.Topology));
-        JsonSerializer.Serialize(writer, value.Topology, options);
+        writer.WritePropertyName(nameof(IPagedAttentionConfig.ShardingAxes));
+        JsonSerializer.Serialize(writer, value.ShardingAxes, options);
+
+        writer.WritePropertyName(nameof(IPagedAttentionConfig.AxisPolicies));
+        JsonSerializer.Serialize(writer, value.AxisPolicies, options);
 
         writer.WriteEndObject();
     }
