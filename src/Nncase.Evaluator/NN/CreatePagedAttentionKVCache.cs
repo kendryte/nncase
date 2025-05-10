@@ -86,13 +86,18 @@ public sealed record RefPagedAttentionKVCache(
 
     public void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slots)
     {
-        // slots : [num_tokens, numHeads, headDim ]
+        // slots : [num_tokens, numHeads, headDim]
         for (int i = 0; i < NumTokens; i++)
         {
             var slotId = GetSlotId(i);
             var slot = slots.View([i, headId, 0], [1, 1, slots.Dimensions[2]]).Squeeze([0, 1]);
             UpdateSlot(kind, layerId, headId, slotId, slot);
         }
+    }
+
+    public long[] LogicalCacheDimensions()
+    {
+        return KVCaches.Dimensions.ToArray();
     }
 
     private Tensor GetSlotViewFromStorage(AttentionCacheKind kind, int layerId, int headId, Tensor slotId)
@@ -138,12 +143,12 @@ public sealed record RefPagedAttentionKVCache(
 
         var starts = PagedAttentionConfig.CacheLayout.Select(i => defaultStarts[(int)i]).ToArray();
         var shape = PagedAttentionConfig.CacheLayout.Select(i => defaultShape[(int)i]).ToArray();
-        var squeeze_axes = Enumerable.Range(0, PagedAttentionConfig.CacheLayout.Count).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedKVCacheDimKind.BlockSize or PagedKVCacheDimKind.HeadDim)).Select(i => i + PagedAttentionConfig.ShardingAxes.Count).ToArray();
+        var squeeze_axes = Enumerable.Range(0, PagedAttentionConfig.CacheLayout.Count).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedKVCacheDimKind.BlockSize or PagedKVCacheDimKind.HeadDim)).Select(i => (long)i + PagedAttentionConfig.ShardingAxes.Count).ToArray();
 
         // process the topology.
         var topo_starts = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => (long)blockId[i]).ToArray();
         var topo_shape = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => 1L).ToArray();
-        var topo_squeeze = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => i).ToArray();
+        var topo_squeeze = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => (long)i).ToArray();
 
         var final_starts = topo_starts.Concat(starts).ToArray();
         var final_shape = topo_shape.Concat(shape).ToArray();

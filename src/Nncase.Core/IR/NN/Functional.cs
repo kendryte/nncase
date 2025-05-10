@@ -110,7 +110,7 @@ public static class NN
     /// </summary>
     public static Call Swish(Expr input, Expr beta) => new Call(new Swish(), input, beta);
 
-    public static Expr UpdatePagedAttentionKVCache(Expr slots, Expr kvCaches, AttentionCacheKind cacheKind, int layerId) => new Call(new UpdatePagedAttentionKVCache(cacheKind, layerId), slots, kvCaches);
+    public static Expr UpdatePagedAttentionKVCache(Expr slots, Expr kvCaches, AttentionCacheKind cacheKind, int layerId, AttentionDimKind[] layout) => new Call(new UpdatePagedAttentionKVCache(cacheKind, layerId, layout), slots, kvCaches);
 
     public static Expr CreatePagedAttentionKVCache(PagedAttentionConfig config, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches) => new Call(new CreatePagedAttentionKVCache(config), numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches);
 

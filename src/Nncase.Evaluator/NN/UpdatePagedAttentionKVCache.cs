@@ -41,11 +41,11 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
     {
         var slots = context.GetArgumentValueAsTensor(target, UpdatePagedAttentionKVCache.Slots);
         var kvCaches = context.GetArgumentValue(target, UpdatePagedAttentionKVCache.KVCaches);
-        UpdateCache(slots, kvCaches.AsTensor().Cast<Reference<IPagedAttentionKVCache>>(), target.CacheKind, target.LayerId);
+        UpdateCache(slots, kvCaches.AsTensor().Cast<Reference<IPagedAttentionKVCache>>(), target.CacheKind, target.LayerId, target.Layout);
         return kvCaches;
     }
 
-    private static void UpdateCache(Tensor slots, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, AttentionCacheKind cacheKind, int layerId)
+    private static void UpdateCache(Tensor slots, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, AttentionCacheKind cacheKind, int layerId, IRArray<AttentionDimKind> layout)
     {
         // TODO: Support DP
         if (kvCaches.Length != 1)
@@ -55,53 +55,37 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
 
         var cache = kvCaches.Single().Value;
 
-        if (cache.Config.ShardingAxes.Count > 0)
+        var shape = slots.Dimensions.ToArray();
+        shape[layout.IndexOf(AttentionDimKind.Seq)] = 1;
+        shape[layout.IndexOf(AttentionDimKind.Head)] = 1;
+        var starts = new long[shape.Length];
+        var axes = new long[] { layout.IndexOf(AttentionDimKind.Seq), layout.IndexOf(AttentionDimKind.Head) };
+        for (int tokenId = 0; tokenId < cache.NumTokens; tokenId++)
         {
-            // only for xpu
-            var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
-            if (cache.Config.AxisPolicies[1].Axes is [1, 2] && num_kv_head == cache.Config.NumKVHeads * 2)
-            {
-                for (int tok_id = 0; tok_id < cache.NumTokens; tok_id++)
-                {
-                    var slot_id = cache.GetSlotId(tok_id);
-                    if (slot_id[0] is not -1L)
-                    {
-                        throw new InvalidOperationException("should be broadcast!");
-                    }
-
-                    for (int die_id = 0; die_id < 2; die_id++)
-                    {
-                        var die_slot_id = Tensor.Zeros(slot_id.ElementType, slot_id.Dimensions);
-                        slot_id.CopyTo(die_slot_id);
-                        die_slot_id[0] = die_id;
-
-                        for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
-                        {
-                            var slot = slots.View([tok_id, (die_id * cache.Config.NumKVHeads) + headId, 0], [1, 1, slots.Dimensions[2]]).Squeeze(0, 1);
-                            cache.UpdateSlot(cacheKind, layerId, headId, die_slot_id, slot);
-                        }
-                    }
-                }
-            }
-            else if (cache.Config.AxisPolicies[0].Axes is [0] && num_kv_head == cache.Config.NumKVHeads)
-            {
-                // [num_tokens, slot_shape]
-                for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
-                {
-                    cache.UpdateSlots(cacheKind, layerId, headId, slots);
-                }
-            }
-            else
-            {
-                throw new NotSupportedException();
-            }
-        }
-        else
-        {
-            // [num_tokens, slot_shape]
+            var slotId = cache.GetSlotId(tokenId);
+            starts[layout.IndexOf(AttentionDimKind.Seq)] = tokenId;
             for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
             {
-                cache.UpdateSlots(cacheKind, layerId, headId, slots);
+                starts[layout.IndexOf(AttentionDimKind.Head)] = headId;
+                var slot = slots.View(starts, shape).Squeeze(axes); // only contains dim.
+
+                // check the sharding axes.
+                var headIdCopy = headId;
+                var slotIdCopy = slotId.AsContiguous(true);
+                for (int shardId = 0; shardId < cache.Config.ShardingAxes.Count; shardId++)
+                {
+                    switch (cache.Config.ShardingAxes[shardId])
+                    {
+                        case PagedKVCacheDimKind.HeadDim when slotIdCopy[shardId] is -1:
+                            var headTile = cache.Config.NumKVHeads / (int)cache.LogicalCacheDimensions()[shardId];
+                            slotIdCopy[shardId] = System.Math.DivRem(headIdCopy, headTile, out headIdCopy);
+                            break;
+                        default:
+                            break;
+                    }
+                }
+
+                cache.UpdateSlot(cacheKind, layerId, headIdCopy, slotIdCopy, slot);
             }
         }
     }

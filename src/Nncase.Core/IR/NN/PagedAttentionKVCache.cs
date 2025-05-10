@@ -79,7 +79,7 @@ public interface IPagedAttentionConfig : IAttentionConfig
         }
 
         // 2. process sharding axes
-        var shardingDims = Enumerable.Repeat(1L, placement.Rank).ToArray();
+        var shardingDims = Enumerable.Repeat(1L, ShardingAxes.Count).ToArray();
         for (int i = 0; i < ShardingAxes.Count; i++)
         {
             var axis = ShardingAxes[i];
@@ -187,6 +187,8 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     /// <param name="headId">The head Id.</param>
     /// <param name="slots">The slots.</param>
     void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slots);
+
+    long[] LogicalCacheDimensions();
 }
 
 public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType, int BlockSize, IRArray<PagedKVCacheDimKind> CacheLayout, IRArray<PagedKVCacheDimKind> PackedAxes, IRArray<int> Lanes, IRArray<PagedKVCacheDimKind> ShardingAxes, IRArray<SBPSplit> AxisPolicies)

@@ -146,7 +146,27 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             for (int i = 0; i < numBlocksForSeq; i++)
             {
                 var blockId = cache.GetBlockId(seqId, i);
-                var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
+
+                var headIdCopy = headId;
+                var blockIdCopy = blockId.AsContiguous(true);
+
+                // process sharding axes.
+                for (int shardId = 0; shardId < cache.Config.ShardingAxes.Count; shardId++)
+                {
+                    switch (cache.Config.ShardingAxes[shardId])
+                    {
+                        case PagedKVCacheDimKind.HeadDim when blockIdCopy[shardId] is -1:
+                            var headTile = cache.Config.NumKVHeads / (int)cache.LogicalCacheDimensions()[shardId];
+                            blockIdCopy[shardId] = System.Math.DivRem(headId, headTile, out headIdCopy);
+                            break;
+                        case PagedKVCacheDimKind.NumBlocks when blockIdCopy[shardId] is not -1:
+                            break;
+                        default:
+                            throw new NotSupportedException();
+                    }
+                }
+
+                var block = cache.GetBlock(cacheKind, layerId, headIdCopy, blockIdCopy);
                 var blockOrt = block.ToOrtTensor();
 
                 // slice
@@ -184,58 +204,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
         int totalKVHeads = cache.Config.NumKVHeads;
 
-        if (cache.Config.ShardingAxes.Count > 0)
-        {
-            // var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
-            if (cache.Config.AxisPolicies[1].Axes is [1, 2])
-            {
-                // for xpu
-                totalKVHeads *= 2; // recover kv heads.
-                for (int did = 0; did < 2; did++)
-                {
-                    for (int h_id = 0; h_id < cache.Config.NumKVHeads; h_id++)
-                    {
-                        for (int i = 0; i < numBlocksForSeq; i++)
-                        {
-                            var blockId = cache.GetBlockId(seqId, i);
-                            if (blockId[0] is not -1L)
-                            {
-                                throw new NotSupportedException();
-                            }
-
-                            var tmp_blockId = Tensor.Zeros(blockId.ElementType, blockId.Dimensions);
-                            blockId.CopyTo(tmp_blockId);
-                            tmp_blockId[0] = did;
-
-                            // 这部分还是可以复用的。
-                            var block = cache.GetBlock(cacheKind, layerId, h_id, tmp_blockId);
-                            var blockOrt = block.ToOrtTensor();
-
-                            // slice
-                            var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
-                            if (validSlotCount < cache.Config.BlockSize)
-                            {
-                                blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
-                            }
-
-                            caches.Add(blockOrt);
-                        }
-                    }
-                }
-            }
-            else if (cache.Config.AxisPolicies[0].Axes is [0] && CompileSessionScope.Current!.CompileOptions.TargetOptions is ICpuTargetOptions { Hierarchies: [[1]] })
-            {
-                GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
-            }
-            else
-            {
-                throw new NotSupportedException("topology not support");
-            }
-        }
-        else
-        {
-            GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
-        }
+        GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
 
         // caches is (head * blocks) * [BlockLayout + lanes], concat at block size axis.
         var concatCache = OrtKI.Concat(caches.ToArray(), blockSizeAxis);

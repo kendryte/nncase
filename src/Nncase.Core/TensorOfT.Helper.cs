@@ -63,7 +63,7 @@ public partial class Tensor<T>
         return new Tensor<T>(subBuffer, shape, Strides);
     }
 
-    public override Tensor<T> Squeeze(params int[] axes)
+    public override Tensor<T> Squeeze(params long[] axes)
     {
         var dimensions = Enumerable.Range(0, Rank).Where(i =>
         {
@@ -88,9 +88,9 @@ public partial class Tensor<T>
         CopyTo(this, dest.Cast<T>());
     }
 
-    public override Tensor<T> AsContiguous()
+    public override Tensor<T> AsContiguous(bool force = false)
     {
-        if (TensorUtilities.IsContiguous(Dimensions, Strides))
+        if (!force && TensorUtilities.IsContiguous(Dimensions, Strides))
         {
             return this;
         }

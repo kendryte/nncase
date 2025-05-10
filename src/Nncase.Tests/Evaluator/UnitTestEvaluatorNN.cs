@@ -17,19 +17,92 @@ using Xunit;
 
 namespace Nncase.Tests.EvaluatorTest;
 
+public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture>
+{
+    // 基础测试场景
+    private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
+    [
+        ("prefill", [4L], [4L]),
+        ("prefill*2", [12L, 15L], [12L, 15L]),
+        ("extend", [4L], [8L]),
+        ("prefill+extend", [4L, 4L], [4L, 8L]),
+        ("prefill+decode", [4L, 1L], [4L, 9L]),
+    ];
+
+    private static readonly Runtime.TypeCode[] TypeConfigs = [
+        Runtime.TypeCode.Float32,
+        Runtime.TypeCode.Float16,
+    ];
+
+    // 注意力头配置
+    private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
+    [
+        (1, 1, 64),
+        (2, 2, 64),
+        (4, 4, 128),
+    ];
+
+    // 缓存块配置
+    private static readonly (int Layer, int BlockSize, int NumBlocks)[] CacheConfigs = [
+        (1, 4, 8),
+        (1, 16, 8),
+        (1, 32, 16),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
+    [
+        (new[] {
+            PagedKVCacheDimKind.NumLayers,
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Sharding, SBPSplit[] Policies)[] ShardingConfigs =
+    [
+        (Array.Empty<PagedKVCacheDimKind>(), Array.Empty<SBPSplit>()),
+        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }),
+    ];
+
+    private static readonly (AttentionDimKind[] QLayout, AttentionDimKind[] KLayout)[] QKLayoutConfigs =
+    [
+        ([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim],
+         [AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head]),
+    ];
+
+    public PagedAttentionKVCacheTestData()
+    {
+        foreach (var (name, queryLens, seqLens) in TestScenarios)
+        {
+            foreach (var (numQHeads, numKVHeads, headDim) in HeadConfigs)
+            {
+                foreach (var (numLayer, blockSize, numBlocks) in CacheConfigs)
+                {
+                    foreach (var typeCode in TypeConfigs)
+                    {
+                        foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
+                        {
+                            foreach (var (shardingAxes, axisPolicies) in ShardingConfigs)
+                            {
+                                foreach (var (qlayout, klayout) in QKLayoutConfigs)
+                                {
+                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, packedAxes, shardingAxes, axisPolicies, qlayout, klayout));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 public class UnitTestEvaluatorNN : TestClassBase
 {
-    public static TheoryData<TestFixture.PagedAttentionKVCacheTestFixture> PagedAttentionKVCacheTestData =>
-        new()
-        {
-            new TestFixture.PagedAttentionKVCacheTestFixture(new[] { 4L }, new[] { 4L }, numQHeads: 1, numKVHeads: 1, headDim: 64, blockSize: 4, numBlocks: 8, kvPrimTypeCode: Runtime.TypeCode.Float32, numLayers: 1, cacheLayout: new[] { PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize }, packedAxes: new[] { PagedKVCacheDimKind.HeadDim }, shardingAxes: new[] { PagedKVCacheDimKind.NumBlocks }, axisPolicies: new[] { SBP.S(0) }, new[] { AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim }, new[] { AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head }), // prefill
-
-            // new TestFixture.PagedAttentionKVCacheTestFixture(new[] { 12L, 15L }, new[] { 12L, 15L }, 4, 64, 4, 8 ), // prefill*2
-            // new TestFixture.PagedAttentionKVCacheTestFixture(new[] { 4L }, new[] { 8L }, 2, 64, 16, 8 ), // extend
-            // new TestFixture.PagedAttentionKVCacheTestFixture(new[] { 4L, 4L }, new[] { 4L, 8L }, 2, 64, 16, 8 ), //  prefill + extend
-            // new TestFixture.PagedAttentionKVCacheTestFixture(new[] { 4L, 1L }, new[] { 4L, 9L, }, 2, 64, 16, 8 ), //,prefill + decode
-        };
-
     [Fact]
     public void TestActivationCelu()
     {
@@ -738,22 +811,37 @@ public class UnitTestEvaluatorNN : TestClassBase
     }
 
     [Theory]
-    [MemberData(nameof(PagedAttentionKVCacheTestData))]
+    [ClassData(typeof(PagedAttentionKVCacheTestData))]
     public void TestPagedAttention(TestFixture.PagedAttentionKVCacheTestFixture testFixture)
     {
-        // var referenceResults = TestFixture.PagedAttentionKVCacheTestFixture.PrepareReferenceResults(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.Config.NumKVHeads, testFixture.Config.HeadDim, testFixture.Config.NumLayers, testFixture.Config.KVPrimType);
+        var placement = new IR.Placement(new[] { 1 }, "t");
+        var referenceResults = TestFixture.PagedAttentionKVCacheTestFixture.PrepareReferenceResults(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.Config.NumKVHeads, testFixture.Config.HeadDim, testFixture.Config.NumLayers, testFixture.Config.KVPrimType);
 
-        // var testKernel = TestFixture.PagedAttentionKVCacheTestFixture.CreateTestKernel(testFixture.QueryLens, testFixture.NumQHeads, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
+        var testKernel = TestFixture.PagedAttentionKVCacheTestFixture.CreateTestKernel(testFixture.QueryLens, testFixture.NumQHeads, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
 
+        var kvinputs = TestFixture.PagedAttentionKVCacheTestFixture.PrepareKVInputs(testFixture.QueryLens, testFixture.SeqLens, testFixture.ContextLens, testFixture.NumBlocks, placement, referenceResults, testFixture.Config);
 
-        // // 4. evaluate and compare
-        // {
-        //     var refTensor = OrtKI.Concat(refOutputs.ToArray(), 1L).ToTensor();
-        //     var actualTensor = root.Evaluate(feedDict).AsTensor();
+        var feedDict = new Dictionary<Var, IValue>();
+        {
+            feedDict.Add(testKernel.QueryVar, Value.FromTensor(referenceResults.GetQueryTensor()));
+            for (int layerId = 0; layerId < testFixture.Config.NumLayers; layerId++)
+            {
+                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+            }
 
-        //     var cos = Comparator.CosSimilarity(refTensor, actualTensor);
-        //     Assert.True(cos > 0.999, $"cos: {cos} ");
-        // }
+            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+        }
+
+        // 4. evaluate and compare
+        {
+            // var refTensor = OrtKI.Concat(refOutputs.ToArray(), 1L).ToTensor();
+            var refTensor = referenceResults.GetOutputTensor();
+            var actualTensor = testKernel.Root.Evaluate(feedDict).AsTensor();
+
+            var cos = Comparator.CosSimilarity(refTensor, actualTensor);
+            Assert.True(cos > 0.999, $"cos: {cos} ");
+        }
     }
 
     private void DoHardmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)

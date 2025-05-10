@@ -132,6 +132,8 @@ public sealed class PagedAttentionKVCacheTestFixture
             // Create key and value tensors for each layer
             var layerKeys = new List<OrtKISharp.Tensor>();
             var layerValues = new List<OrtKISharp.Tensor>();
+            refKeys.Add(layerKeys);
+            refValues.Add(layerValues);
 
             for (int layer = 0; layer < numLayers; layer++)
             {
@@ -241,7 +243,8 @@ public sealed class PagedAttentionKVCacheTestFixture
                 packedKey,
                 kvCacheObjVar,
                 AttentionCacheKind.Key,
-                layerId);
+                layerId,
+                kvLayout);
 
             var packedValue = lanes.Length > 0 ? IR.F.CPU.Pack(valueVar, lanes, axes) : valueVar;
             packedValue = IR.F.Tensors.Transpose(packedValue, kvLayout.Select(x => (int)x).ToArray());
@@ -249,7 +252,8 @@ public sealed class PagedAttentionKVCacheTestFixture
                 packedValue,
                 updatedKVCache,
                 AttentionCacheKind.Value,
-                layerId);
+                layerId,
+                kvLayout);
 
             // Apply attention for current layer
             packedQuery = IR.F.NN.PagedAttention(
@@ -264,7 +268,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         var unpacked = lanes.Length > 0 ? IR.F.CPU.Unpack(packedQuery, lanes, axes) : packedQuery;
         var root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
 
-        return new TestKernel(root, kvVars, kvCacheObjVar);
+        return new TestKernel(root, queryVar, kvVars, kvCacheObjVar);
     }
 
     public static KVInputs PrepareKVInputs(long[] queryLens, long[] seqLens, long[] contextLens, int numBlocks, Placement placement, ReferenceResults referenceResults, IPagedAttentionConfig config)
@@ -321,9 +325,15 @@ public sealed class PagedAttentionKVCacheTestFixture
                 var histTensor = Tensor.FromBytes(new TensorType(config.KVType, histOrtTensors.Shape.SkipLast(config.PackedAxes.Count).ToArray()), histOrtTensors.BytesBuffer.ToArray());
 
                 // assign slot id.
-                if (contextLens.Sum() != (int)histOrtTensors.Shape[1])
+                var contextTokens = contextLens.Sum();
+                if (contextTokens != (int)histOrtTensors.Shape[1])
                 {
                     throw new ArgumentOutOfRangeException(nameof(contextLens));
+                }
+
+                if (contextTokens == 0)
+                {
+                    continue;
                 }
 
                 var tempSlotMappingTensorType = config.GetSlotMappingTensorType((int)contextLens.Sum());
@@ -334,29 +344,7 @@ public sealed class PagedAttentionKVCacheTestFixture
                     for (long logical_slot_id = alignedSeqStartLocs[seqId]; logical_slot_id < alignedSeqStartLocs[seqId] + alignedContextEndLocs[seqId]; logical_slot_id++)
                     {
                         var indices = new long[] { tokenId, 0 };
-                        var physical_slot_id = logical_slot_id;
-
-                        // process sharding axes.
-                        for (int shard_id = 0; shard_id < config.ShardingAxes.Count; shard_id++)
-                        {
-                            int value;
-                            switch (config.ShardingAxes[shard_id])
-                            {
-                                case PagedKVCacheDimKind.NumBlocks:
-                                    value = (int)Math.DivRem(physical_slot_id, config.AxisPolicies[shard_id].Axes.Select(axis => placement.Hierarchy[axis]).Product(), out physical_slot_id);
-                                    break;
-                                case PagedKVCacheDimKind.HeadDim:
-                                    value = -1;
-                                    break;
-                                default:
-                                    throw new ArgumentOutOfRangeException(nameof(config));
-                            }
-
-                            tempSlotMappingTensor[indices] = value;
-                            indices[^1]++;
-                        }
-
-                        tempSlotMappingTensor[indices] = physical_slot_id;
+                        PrepareSlotMappingId(tempSlotMappingTensor, [tokenId, 0], logical_slot_id, numBlocks, placement, config);
                     }
                 }
 
@@ -387,7 +375,6 @@ public sealed class PagedAttentionKVCacheTestFixture
         // 3. create block table/slot mapping tensor.
         for (int seqId = 0; seqId < seqLens.Length; seqId++)
         {
-            var num_blocks = MathUtility.CeilDiv(seqLens[seqId], config.BlockSize);
             for (long j = 0, logicalSlotId = alignedSeqStartLocs[seqId]; logicalSlotId < alignedSeqStartLocs[seqId] + alignedSeqLens[seqId]; logicalSlotId += config.BlockSize)
             {
                 var logicalBlockId = logicalSlotId / config.BlockSize;
@@ -399,7 +386,8 @@ public sealed class PagedAttentionKVCacheTestFixture
                     switch (config.ShardingAxes[topoId])
                     {
                         case PagedKVCacheDimKind.NumBlocks:
-                            var value = (int)Math.DivRem(physicalBlockId, config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product(), out physicalBlockId);
+                            var blockTile = numBlocks / config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
+                            var value = (int)Math.DivRem(physicalBlockId, blockTile, out physicalBlockId);
                             blockTableTensor[indices] = value;
                             break;
                         case PagedKVCacheDimKind.HeadDim:
@@ -412,7 +400,7 @@ public sealed class PagedAttentionKVCacheTestFixture
                     indices[^1]++;
                 }
 
-                blockTableTensor[indices] = j;
+                blockTableTensor[indices] = physicalBlockId;
             }
         }
 
@@ -423,28 +411,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         {
             for (long logicalSlotId = alignedContextEndLocs[seqId]; logicalSlotId < alignedContextEndLocs[seqId] + queryLens[seqId]; logicalSlotId++)
             {
-                var indices = new long[] { tokenId, 0 };
-                var physicalSlotId = logicalSlotId;
-
-                for (int topoId = 0; topoId < config.ShardingAxes.Count; topoId++)
-                {
-                    switch (config.ShardingAxes[topoId])
-                    {
-                        case PagedKVCacheDimKind.NumBlocks:
-                            var value = (int)Math.DivRem(physicalSlotId, config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product(), out physicalSlotId);
-                            slotMappingTensor[indices] = value;
-                            break;
-                        case PagedKVCacheDimKind.HeadDim:
-                            slotMappingTensor[indices] = -1;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(config));
-                    }
-
-                    indices[^1]++;
-                }
-
-                slotMappingTensor[indices] = physicalSlotId;
+                PrepareSlotMappingId(slotMappingTensor, [tokenId, 0], logicalSlotId, numBlocks, placement, config);
                 tokenId++;
             }
         }
@@ -464,9 +431,41 @@ public sealed class PagedAttentionKVCacheTestFixture
         return new(kvInputs, kvcacheObj);
     }
 
-    public sealed record TestKernel(Expr Root, List<Var[]> KVVars, Var KVCacheObjVar);
+    public static void PrepareSlotMappingId(Tensor<long> slotMappingTensor, long[] indices, long logicalSlotId, int numBlocks, Placement placement, IPagedAttentionConfig config)
+    {
+        var physicalSlotId = logicalSlotId;
 
-    public sealed record KVInputs(List<OrtKISharp.Tensor[]> KVTensors, RefPagedAttentionKVCache KVCacheObj);
+        for (int topoId = 0; topoId < config.ShardingAxes.Count; topoId++)
+        {
+            switch (config.ShardingAxes[topoId])
+            {
+                case PagedKVCacheDimKind.NumBlocks:
+                    var numBlockTile = numBlocks / config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
+                    var value = (int)Math.DivRem(physicalSlotId, numBlockTile, out physicalSlotId);
+                    slotMappingTensor[indices] = value;
+                    break;
+                case PagedKVCacheDimKind.HeadDim:
+                    slotMappingTensor[indices] = -1; // todo should matching the kv sharding.
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(config));
+            }
+
+            indices[^1]++;
+        }
+
+        slotMappingTensor[indices] = physicalSlotId;
+    }
+
+    public sealed record TestKernel(Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar);
+
+    public sealed record KVInputs(List<OrtKISharp.Tensor[]> KVTensors, RefPagedAttentionKVCache KVCacheObj)
+    {
+        public Tensor GetKeyValueTensor(int layerId, int kind)
+        {
+            return OrtKI.Transpose(KVTensors[layerId][kind], [1, 0, 2]).ToTensor();
+        }
+    }
 
     public sealed class ReferenceResults
     {
@@ -493,24 +492,14 @@ public sealed class PagedAttentionKVCacheTestFixture
             _numSeqs = numSeqs;
         }
 
-        public OrtKISharp.Tensor GetQuery(int seqId)
+        public Tensor GetQueryTensor()
         {
-            if (seqId >= _numSeqs)
-            {
-                throw new ArgumentOutOfRangeException(nameof(seqId));
-            }
-
-            return _refQuerys[seqId];
+            return OrtKI.Transpose(OrtKI.Concat(_refQuerys.ToArray(), 1), [1, 0, 2]).ToTensor();
         }
 
-        public OrtKISharp.Tensor GetOutput(int seqId)
+        public Tensor GetOutputTensor()
         {
-            if (seqId >= _numSeqs)
-            {
-                throw new ArgumentOutOfRangeException(nameof(seqId));
-            }
-
-            return _refOutputs[seqId];
+            return OrtKI.Transpose(OrtKI.Concat(_refOutputs.ToArray(), 1), [1, 0, 2]).ToTensor();
         }
 
         /// <summary>

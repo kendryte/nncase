@@ -428,4 +428,6 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
     {
         throw new NotImplementedException();
     }
+
+    public long[] LogicalCacheDimensions() => throw new NotImplementedException();
 }
