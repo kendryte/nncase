@@ -63,6 +63,48 @@ public partial class Tensor<T>
         return new Tensor<T>(subBuffer, shape, Strides);
     }
 
+    public override Tensor Transpose(ReadOnlySpan<long> perm)
+    {
+        if (perm.Length != Rank || perm.ToArray().Any(x => x >= Rank))
+        {
+            throw new ArgumentException("Permutation length must match tensor rank", nameof(perm));
+        }
+
+        var invPerms = perm.ToInts().Zip(Enumerable.Range(0, Rank)).OrderBy(p => p.First).Select(p => p.Second).ToArray();
+        var permArr = perm.ToInts();
+        var destDimensions = Enumerable.Range(0, Rank).Select(i => Dimensions[permArr[i]]).ToArray();
+        var destStrides = TensorUtilities.GetStrides(destDimensions);
+        void Apply(int axis, Span<int> index, int i, int j, Span<T> srcSpan, Span<T> destSpan)
+        {
+            if (axis < Rank - 1)
+            {
+                for (index[axis] = 0; index[axis] < Dimensions[axis]; index[axis]++)
+                {
+                    int ni = i + (index[axis] * (int)Strides[axis]);
+                    int nj = j + (index[axis] * (int)destStrides[invPerms[axis]]);
+                    Apply(axis + 1, index, ni, nj, srcSpan, destSpan);
+                }
+            }
+            else
+            {
+                for (index[axis] = 0; index[axis] < Dimensions[axis]; index[axis]++)
+                {
+                    int ni = i + (index[axis] * (int)Strides[axis]);
+                    int nj = j + (index[axis] * (int)destStrides[invPerms[axis]]);
+                    destSpan[nj] = srcSpan[ni];
+                }
+            }
+        }
+
+        // 0,  4,  8, 12, 16, 20,  1,  5,  9, 13, 17, 21,  2,  6, 10, 14, 18, 22,  3,  7, 11, 15, 19, 23
+        var newBuffer = new T[Buffer.Length];
+        var newBufferMemory = new Memory<T>(newBuffer);
+        var bufferSpan = Buffer.Span;
+        var indices = Enumerable.Repeat(0, Rank).ToArray();
+        Apply(0, indices, 0, 0, bufferSpan, newBufferMemory.Span);
+        return new Tensor<T>(newBuffer, destDimensions, destStrides);
+    }
+
     public override Tensor<T> Squeeze(params long[] axes)
     {
         var dimensions = Enumerable.Range(0, Rank).Where(i =>

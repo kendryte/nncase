@@ -55,6 +55,8 @@ public partial class Tensor
 
     public abstract Tensor Squeeze(params long[] axes);
 
+    public abstract Tensor Transpose(ReadOnlySpan<long> perm);
+
     public abstract void CopyTo(Tensor dest);
 
     public abstract Tensor AsContiguous(bool force = false);
