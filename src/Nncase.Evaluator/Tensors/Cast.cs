@@ -22,7 +22,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
         var dimensions = input.Dimensions.ToArray();
-        if (cast.NewType is VectorType vt)
+        if (cast.NewType is VectorType vt && cast.PackAxes.Any())
         {
             var scale = 1f * vt.ElemType.SizeInBytes / ((VectorType)input.ElementType).ElemType.SizeInBytes;
             cast.PackAxes.ToArray().ForEach(a => dimensions[a] = (int)(dimensions[a] * scale));
