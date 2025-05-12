@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.NN;
 using Nncase.PatternMatch;
 
 namespace Nncase.TIR.CPU;
@@ -23,4 +24,6 @@ public sealed partial class PagedAttention : CPUKernelOp
     public static readonly ParameterInfo Output = new(typeof(PagedAttention), 3, "Output");
 
     public int LayerId { get; }
+
+    public IRArray<AttentionDimKind> Layout { get; }
 }

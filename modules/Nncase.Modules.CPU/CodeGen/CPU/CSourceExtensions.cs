@@ -59,6 +59,14 @@ internal static class CSourceExtensions
         _ => throw new NotImplementedException(),
     };
 
+    public static string ToC(this IR.NN.AttentionDimKind mode) => mode switch
+    {
+        IR.NN.AttentionDimKind.Seq => "caching::attention_dim_kind::seq",
+        IR.NN.AttentionDimKind.Head => "caching::attention_dim_kind::head",
+        IR.NN.AttentionDimKind.Dim => "caching::attention_dim_kind::dim",
+        _ => throw new NotImplementedException(),
+    };
+
     public static string ToC(this IR.NN.PagedKVCacheDimKind mode) => mode switch
     {
         IR.NN.PagedKVCacheDimKind.NumBlocks => "caching::paged_kvcache_dim_kind::num_blocks",
@@ -73,6 +81,8 @@ internal static class CSourceExtensions
     public static string ToC(this IRArray<IR.NN.PagedKVCacheDimKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
 
     public static string ToC(this IRArray<IR.NN.AttentionCacheKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+
+    public static string ToC(this IRArray<IR.NN.AttentionDimKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
 
     public static string ToC(this IRArray<int> arr) => $"fixed_shape<{string.Join(',', arr)}>";
 

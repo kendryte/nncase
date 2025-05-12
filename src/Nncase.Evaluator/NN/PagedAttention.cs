@@ -47,7 +47,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     {
         var q = context.GetOrtArgumentValue(target, PagedAttention.Q);
         var kvCaches = context.GetArgumentValueAsTensor<Reference<IPagedAttentionKVCache>>(target, PagedAttention.KVCaches);
-        return RefPagedAttn(q, kvCaches, 1.0f, target.LayerId, target.QLayout).ToValue();
+        return RefPagedAttn(q, kvCaches, 1.0f, target.LayerId, target.Layout).ToValue();
     }
 
     private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, float scale, int layerId, IRArray<AttentionDimKind> qlayout)
@@ -244,9 +244,9 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             }
 
             // seq split at x, head split at die and y
-            var seqAxis = target.QLayout.IndexOf(AttentionDimKind.Seq);
-            var headAxis = target.QLayout.IndexOf(AttentionDimKind.Head);
-            var dimAxis = target.QLayout.IndexOf(AttentionDimKind.Dim);
+            var seqAxis = target.Layout.IndexOf(AttentionDimKind.Seq);
+            var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
+            var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);
             if (q.AxisPolices[seqAxis] is SBPSplit { Axes: [2] } &&
                 q.AxisPolices[headAxis] is SBPSplit { Axes: [1, 3] } &&
                 q.AxisPolices[dimAxis] is SBPBroadCast)

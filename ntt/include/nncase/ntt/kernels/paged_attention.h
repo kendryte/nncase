@@ -81,7 +81,7 @@ void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
 }
 #endif
 
-template <class TSlots, class TKVCache, IsFixedDims TLayout>
+template <IsFixedDims TLayout, class TSlots, class TKVCache>
 void update_paged_attention_kv_cache(TSlots slots_tensor,
                                      TKVCache kv_cache_tensor,
                                      caching::attention_cache_kind kind,
@@ -147,7 +147,7 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
     }
 }
 
-template <class T0, class T1, class T2, class T3>
+template <IsFixedDims TLayout, class T0, class T1, class T2, class T3>
 void paged_attention([[maybe_unused]] T0 q_tensor,
                      [[maybe_unused]] T1 kv_cache_tensor,
                      [[maybe_unused]] T2 extra_tensor,
