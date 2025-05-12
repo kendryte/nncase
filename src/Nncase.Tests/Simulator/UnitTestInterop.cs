@@ -198,35 +198,44 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(3, r_a.NumLayers);
         Assert.Equal(2, r_a.NumKVHeads);
         Assert.Equal(1, r_a.HeadDim);
-
-        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedKVCacheDimKind.BlockSize, IR.NN.PagedKVCacheDimKind.HeadDim, IR.NN.PagedKVCacheDimKind.KV, IR.NN.PagedKVCacheDimKind.NumBlocks, IR.NN.PagedKVCacheDimKind.NumKVHeads, IR.NN.PagedKVCacheDimKind.NumLayers }, [], [], [], []);
-        var r_ = RTAttentionConfig.FromConfig(b);
-        Assert.IsType<RTPagedAttentionConfig>(r_);
-        var r_b = (RTPagedAttentionConfig)r_;
-        Assert.Equal(b.NumLayers, r_b.NumLayers);
-        Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
-        Assert.Equal(b.HeadDim, r_b.HeadDim);
-        Assert.Equal(b.BlockSize, r_b.BlockSize);
-        r_b.NumLayers = 3;
-        r_b.NumKVHeads = 2;
-        r_b.HeadDim = 1;
-        r_b.BlockSize = 0;
-        Assert.Equal(3, r_b.NumLayers);
-        Assert.Equal(2, r_b.NumKVHeads);
-        Assert.Equal(1, r_b.HeadDim);
-        Assert.Equal(0, r_b.BlockSize);
-
-        Assert.Empty(r_b.PackedAxes);
-        Assert.Empty(r_b.Lanes);
-        r_b.PackedAxes = new[] { IR.NN.PagedKVCacheDimKind.HeadDim };
-        r_b.Lanes = new[] { 64 };
-        Assert.True(r_b.PackedAxes.SequenceEqual(new[] { IR.NN.PagedKVCacheDimKind.HeadDim }));
-        Assert.True(r_b.Lanes.SequenceEqual(new[] { 64 }));
-
-        Assert.Throws<InvalidOperationException>(() =>
         {
-            r_b.Lanes = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-        });
+            var b = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedKVCacheDimKind.BlockSize, IR.NN.PagedKVCacheDimKind.HeadDim, IR.NN.PagedKVCacheDimKind.KV, IR.NN.PagedKVCacheDimKind.NumBlocks, IR.NN.PagedKVCacheDimKind.NumKVHeads, IR.NN.PagedKVCacheDimKind.NumLayers }, [], [], [], []);
+            var r_ = RTAttentionConfig.FromConfig(b);
+            Assert.IsType<RTPagedAttentionConfig>(r_);
+            var r_b = (RTPagedAttentionConfig)r_;
+            Assert.Equal(b.NumLayers, r_b.NumLayers);
+            Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
+            Assert.Equal(b.HeadDim, r_b.HeadDim);
+            Assert.Equal(b.BlockSize, r_b.BlockSize);
+            r_b.NumLayers = 3;
+            r_b.NumKVHeads = 2;
+            r_b.HeadDim = 1;
+            r_b.BlockSize = 0;
+            Assert.Equal(3, r_b.NumLayers);
+            Assert.Equal(2, r_b.NumKVHeads);
+            Assert.Equal(1, r_b.HeadDim);
+            Assert.Equal(0, r_b.BlockSize);
+
+            Assert.Empty(r_b.PackedAxes);
+            Assert.Empty(r_b.Lanes);
+            r_b.PackedAxes = new[] { IR.NN.PagedKVCacheDimKind.HeadDim };
+            r_b.Lanes = new[] { 64 };
+            Assert.True(r_b.PackedAxes.SequenceEqual(new[] { IR.NN.PagedKVCacheDimKind.HeadDim }));
+            Assert.True(r_b.Lanes.SequenceEqual(new[] { 64 }));
+
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                r_b.Lanes = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            });
+        }
+
+        {
+            var config = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedKVCacheDimKind.BlockSize, IR.NN.PagedKVCacheDimKind.HeadDim, IR.NN.PagedKVCacheDimKind.KV, IR.NN.PagedKVCacheDimKind.NumBlocks, IR.NN.PagedKVCacheDimKind.NumKVHeads, IR.NN.PagedKVCacheDimKind.NumLayers }, new[] { IR.NN.PagedKVCacheDimKind.HeadDim }, new[] { 32 }, new[] { IR.NN.PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(1, 2) });
+            var rtConfig = RTAttentionConfig.FromConfig(config);
+            Assert.IsType<RTPagedAttentionConfig>(rtConfig);
+            var rtPagedConfig = (RTPagedAttentionConfig)rtConfig;
+            Assert.True(rtPagedConfig.AxisPolicies.SequenceEqual([SBP.S(1, 2)]));
+        }
     }
 
     [Fact]

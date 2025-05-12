@@ -69,20 +69,22 @@ int main() {
         using paged_config_t = ntt::caching::paged_attention_config<
             NumLayer, NumKVHead, HeadDim, KVPrimType, BlockSize,
             ntt::fixed_shape<
-                (size_t)caching::paged_attention_dim_kind::num_blocks,
-                (size_t)caching::paged_attention_dim_kind::num_layers,
-                (size_t)caching::paged_attention_dim_kind::num_kv_heads,
-                (size_t)caching::paged_attention_dim_kind::kv,
-                (size_t)caching::paged_attention_dim_kind::head_dim,
-                (size_t)caching::paged_attention_dim_kind::block_size>,
-            ntt::fixed_shape<
-                (size_t)caching::paged_attention_dim_kind::head_dim,
-                (size_t)caching::paged_attention_dim_kind::block_size>,
-            ntt::fixed_shape<(
-                size_t)caching::paged_attention_dim_kind::head_dim>,
+                (size_t)caching::paged_kvcache_dim_kind::num_blocks,
+                (size_t)caching::paged_kvcache_dim_kind::num_layers,
+                (size_t)caching::paged_kvcache_dim_kind::num_kv_heads,
+                (size_t)caching::paged_kvcache_dim_kind::kv,
+                (size_t)caching::paged_kvcache_dim_kind::head_dim,
+                (size_t)caching::paged_kvcache_dim_kind::block_size>,
+            ntt::fixed_shape<(size_t)caching::paged_kvcache_dim_kind::head_dim,
+                             (size_t)
+                                 caching::paged_kvcache_dim_kind::block_size>,
+            ntt::fixed_shape<(size_t)caching::paged_kvcache_dim_kind::head_dim>,
             ntt::fixed_shape<64>,
-            ntt::fixed_shape<(size_t)distributed::topology::chip,
-                             (size_t)distributed::topology::block>>;
+            ntt::fixed_shape<
+                (size_t)caching::paged_kvcache_dim_kind::num_kv_heads,
+                (size_t)caching::paged_kvcache_dim_kind::num_blocks>,
+            ntt::distributed::shard_policy::S<0>,
+            ntt::distributed::shard_policy::S<1>>; // blocks sharding on chip.
 
         ntt::tensor<int64_t, ntt::ranked_shape<1>> context_lens({1});
         context_lens(0) = 0;
@@ -101,12 +103,15 @@ int main() {
         }
 
         size_t num_blocks = 8;
-        using kv_tensor_type_t = typename caching::paged_attention_kv_cache<
-            paged_config_t>::kv_tensor_type_t;
-        using kv_storage_type_t = typename caching::paged_attention_kv_cache<
-            paged_config_t>::kv_storage_type_t;
-        using kv_storage_shape_t = typename caching::paged_attention_kv_cache<
-            paged_config_t>::kv_storage_shape_t;
+        using mesh_type = mesh<distributed::topology::thread, 1, 1>;
+        using paged_attention_kv_cache_t =
+            caching::paged_attention_kv_cache<mesh_type, paged_config_t>;
+        using kv_tensor_type_t =
+            typename paged_attention_kv_cache_t::kv_tensor_type_t;
+        using kv_storage_type_t =
+            typename paged_attention_kv_cache_t::kv_storage_type_t;
+        using kv_storage_shape_t =
+            typename paged_attention_kv_cache_t::kv_storage_shape_t;
 
         ntt::tensor<kv_storage_type_t, kv_storage_shape_t> kv_storage(
             {num_blocks, NumLayer, NumKVHead, 2,
@@ -115,7 +120,7 @@ int main() {
                   (kv_storage_type_t)0.f);
         kv_tensor_type_t kv_tensor;
         kv_tensor(0, 0) = (intptr_t)kv_storage.elements().data();
-        auto kv_cache = caching::paged_attention_kv_cache<paged_config_t>(
+        auto kv_cache = paged_attention_kv_cache_t(
             1, 8, context_lens.view(), seq_lens.view(), block_table.view(),
             slot_mapping.view(), num_blocks, kv_tensor);
 

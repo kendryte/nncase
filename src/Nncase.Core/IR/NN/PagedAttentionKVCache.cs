@@ -86,7 +86,7 @@ public interface IPagedAttentionConfig : IAttentionConfig
             var sbp = AxisPolicies[i];
             for (int j = 0; j < sbp.Axes.Count; j++)
             {
-                dims[(int)axis] /= placement.Hierarchy[sbp.Axes[j]];
+                dims[CacheLayout.IndexOf(axis)] /= placement.Hierarchy[sbp.Axes[j]];
                 shardingDims[i] *= placement.Hierarchy[sbp.Axes[j]];
             }
         }

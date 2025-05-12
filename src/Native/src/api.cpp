@@ -295,7 +295,8 @@ int nncase_dtype_create_attention_kv_cache(nncase::datatype_node **dtype) {
     return -EINVAL;
 }
 
-int nncase_dtype_create_paged_attention_kv_cache(nncase::datatype_node **dtype) {
+int nncase_dtype_create_paged_attention_kv_cache(
+    nncase::datatype_node **dtype) {
     if (dtype) {
         *dtype = datatype_t::paged_attention_kv_cache.detach();
         return 0;
@@ -514,25 +515,39 @@ int nncase_attention_config_set_kv_type(
 int nncase_paged_attention_config_create(
     int32_t num_layers, int32_t num_kv_heads, int32_t head_dim,
     nncase::typecode_t kv_type, int32_t block_size,
-    const nncase::llm::paged_attention_dim_kind *cache_layout,
-    const nncase::llm::paged_attention_dim_kind *packed_axes,
+    const nncase::llm::paged_kvcache_dim_kind *cache_layout,
+    const nncase::llm::paged_kvcache_dim_kind *packed_axes,
     int32_t packed_axes_len, const int32_t *lanes, int32_t lanes_len,
-    const int32_t *topology, int32_t topology_len,
+    const nncase::llm::paged_kvcache_dim_kind *sharding_axes,
+    int32_t sharding_axes_len, const int32_t *axis_policies,
+    const int32_t *axis_policies_lens,
     nncase::llm::paged_attention_config_node **config) {
-    if (config && cache_layout) {
-        std::array<nncase::llm::paged_attention_dim_kind, 6> cache_layout_vec;
-        std::copy(cache_layout, cache_layout + 6, cache_layout_vec.begin());
+    if (config && cache_layout && packed_axes && lanes && sharding_axes &&
+        axis_policies && axis_policies_lens) {
+        std::array<nncase::llm::paged_kvcache_dim_kind, 6> cache_layout_arr;
+        std::copy(cache_layout, cache_layout + 6, cache_layout_arr.begin());
 
-        std::vector<nncase::llm::paged_attention_dim_kind> packed_axes_vec(
+        std::vector<nncase::llm::paged_kvcache_dim_kind> packed_axes_vec(
             packed_axes, packed_axes + packed_axes_len);
 
         dims_t lanes_vec(lanes, lanes + lanes_len);
 
-        dims_t topology_vec(topology, topology + topology_len);
+        std::vector<nncase::llm::paged_kvcache_dim_kind> sharding_axes_vec(
+            sharding_axes, sharding_axes + sharding_axes_len);
+
+        std::vector<dims_t> axis_policies_vec;
+        const int32_t *policy_ptr = axis_policies;
+        for (int i = 0; i < sharding_axes_len; i++) {
+            dims_t policy(policy_ptr, policy_ptr + axis_policies_lens[i]);
+            axis_policies_vec.push_back(policy);
+            policy_ptr += axis_policies_lens[i];
+        }
 
         *config = new nncase::llm::paged_attention_config_node(
             num_layers, num_kv_heads, head_dim, kv_type, block_size,
-            cache_layout_vec, packed_axes_vec, lanes_vec, topology_vec);
+            cache_layout_arr, packed_axes_vec, lanes_vec, sharding_axes_vec,
+            axis_policies_vec);
+
         return 0;
     }
     return -EINVAL;
@@ -558,7 +573,7 @@ int nncase_paged_attention_config_set_block_size(
 
 int nncase_paged_attention_config_get_cache_layout(
     nncase::llm::paged_attention_config_node *config,
-    nncase::llm::paged_attention_dim_kind *layout, int32_t layout_len) {
+    nncase::llm::paged_kvcache_dim_kind *layout, int32_t layout_len) {
     if (config && layout) {
         if (layout_len != 6) {
             return -EINVAL;
@@ -572,12 +587,12 @@ int nncase_paged_attention_config_get_cache_layout(
 
 int nncase_paged_attention_config_set_cache_layout(
     nncase::llm::paged_attention_config_node *config,
-    const nncase::llm::paged_attention_dim_kind *layout, int32_t layout_len) {
+    const nncase::llm::paged_kvcache_dim_kind *layout, int32_t layout_len) {
     if (config && layout) {
         if (layout_len != 6) {
             return -EINVAL;
         }
-        std::array<nncase::llm::paged_attention_dim_kind, 6> cache_layout;
+        std::array<nncase::llm::paged_kvcache_dim_kind, 6> cache_layout;
         std::copy(layout, layout + 6, cache_layout.begin());
         config->cache_layout(cache_layout);
         return 0;
@@ -587,8 +602,7 @@ int nncase_paged_attention_config_set_cache_layout(
 
 int nncase_paged_attention_config_get_packed_axes(
     nncase::llm::paged_attention_config_node *config,
-    nncase::llm::paged_attention_dim_kind *packed_axes,
-    int32_t packed_axes_len) {
+    nncase::llm::paged_kvcache_dim_kind *packed_axes, int32_t packed_axes_len) {
     if (config && packed_axes && packed_axes_len) {
         auto src_axes = config->packed_axes();
         if (packed_axes_len < src_axes.size()) {
@@ -597,7 +611,7 @@ int nncase_paged_attention_config_get_packed_axes(
         std::copy(src_axes.begin(), src_axes.end(), packed_axes);
         std::fill_n(packed_axes + src_axes.size(),
                     packed_axes_len - src_axes.size(),
-                    (nncase::llm::paged_attention_dim_kind)-1);
+                    (nncase::llm::paged_kvcache_dim_kind)-1);
         return 0;
     }
     return -EINVAL;
@@ -605,13 +619,13 @@ int nncase_paged_attention_config_get_packed_axes(
 
 int nncase_paged_attention_config_set_packed_axes(
     nncase::llm::paged_attention_config_node *config,
-    const nncase::llm::paged_attention_dim_kind *packed_axes,
+    const nncase::llm::paged_kvcache_dim_kind *packed_axes,
     int32_t packed_axes_len) {
     if (config && packed_axes) {
         if (packed_axes_len > 6) {
             return -EOVERFLOW;
         }
-        std::vector<nncase::llm::paged_attention_dim_kind> axes_vec(
+        std::vector<nncase::llm::paged_kvcache_dim_kind> axes_vec(
             packed_axes, packed_axes + packed_axes_len);
         config->packed_axes(axes_vec);
         return 0;
@@ -648,31 +662,87 @@ int nncase_paged_attention_config_set_lanes(
     return -EINVAL;
 }
 
-int nncase_paged_attention_config_get_topology(
-    nncase::llm::paged_attention_config_node *config, int32_t *topology,
-    int32_t topology_len) {
-    if (config && topology && topology_len) {
-        auto src_topology = config->topology();
-        int required_length = src_topology.size();
-        if (topology_len < required_length) {
+int nncase_paged_attention_config_get_sharding_axes(
+    nncase::llm::paged_attention_config_node *config,
+    nncase::llm::paged_kvcache_dim_kind *sharding_axes,
+    int32_t sharding_axes_len) {
+    if (config && sharding_axes && sharding_axes_len) {
+        auto src_axes = config->sharding_axes();
+        if (sharding_axes_len < src_axes.size()) {
             return -EOVERFLOW;
         }
-        std::copy(src_topology.begin(), src_topology.end(), topology);
-        std::fill_n(topology + required_length, topology_len - required_length,
-                    -1);
+        std::copy(src_axes.begin(), src_axes.end(), sharding_axes);
+        std::fill_n(sharding_axes + src_axes.size(),
+                    sharding_axes_len - src_axes.size(),
+                    (nncase::llm::paged_kvcache_dim_kind)-1);
         return 0;
     }
     return -EINVAL;
 }
 
-int nncase_paged_attention_config_set_topology(
-    nncase::llm::paged_attention_config_node *config, const int32_t *topology,
-    int32_t topology_len) {
-    if (config && topology) {
-        if (topology_len > 8) {
+int nncase_paged_attention_config_set_sharding_axes(
+    nncase::llm::paged_attention_config_node *config,
+    const nncase::llm::paged_kvcache_dim_kind *sharding_axes,
+    int32_t sharding_axes_len) {
+    if (config && sharding_axes) {
+        if (sharding_axes_len > 8) {
             return -EOVERFLOW;
         }
-        config->topology({topology, topology + topology_len});
+        std::vector<nncase::llm::paged_kvcache_dim_kind> axes_vec(
+            sharding_axes, sharding_axes + sharding_axes_len);
+        config->sharding_axes(axes_vec);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_config_get_axis_policy_len(
+    nncase::llm::paged_attention_config_node *config, int32_t i,
+    int32_t *policy_len) {
+    if (config && policy_len) {
+        auto policies = config->axis_policies();
+        if (i >= policies.size()) {
+            return -EINVAL;
+        }
+
+        auto &policy = policies[i];
+        *policy_len = policy.size();
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_config_get_axis_policy(
+    nncase::llm::paged_attention_config_node *config, int32_t i,
+    int32_t *axis_policy, int32_t axis_policy_len) {
+    if (config && axis_policy) {
+        auto policies = config->axis_policies();
+        if (i >= policies.size()) {
+            return -EINVAL;
+        }
+
+        auto &policy = policies[i];
+        if (axis_policy_len < policy.size()) {
+            return -EOVERFLOW;
+        }
+
+        std::copy(policy.begin(), policy.end(), axis_policy);
+        return 0;
+    }
+    return -EINVAL;
+}
+
+int nncase_paged_attention_config_set_axis_policy(
+    nncase::llm::paged_attention_config_node *config, int32_t i,
+    const int32_t *axis_policy, int32_t axis_policy_len) {
+    if (config && axis_policy) {
+        auto policies = config->axis_policies();
+        if (i >= policies.size()) {
+            return -EINVAL;
+        }
+
+        auto policy = dims_t(axis_policy, axis_policy + axis_policy_len);
+        config->axis_policies(i, policy);
         return 0;
     }
     return -EINVAL;

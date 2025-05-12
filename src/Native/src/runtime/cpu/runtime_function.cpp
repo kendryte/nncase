@@ -74,40 +74,6 @@ result<value_t> cpu_runtime_function::invoke_core(
                     auto &desc = descs[i];
                     {
                         auto cfg = node->config();
-                        desc.num_layers = cfg->num_layers();
-                        desc.num_kv_heads = cfg->num_kv_heads();
-                        desc.head_dim = cfg->head_dim();
-                        desc.kv_prim_size = typecode_bytes(cfg->kv_type());
-
-                        // paged config parameters
-                        desc.block_size = cfg->block_size();
-                        for (size_t i = 0; i < cfg->cache_layout().size();
-                             i++) {
-                            desc.cache_layout[i] =
-                                (int32_t)cfg->cache_layout()[i];
-                        }
-                        auto block_layout = cfg->block_layout();
-                        for (size_t i = 0; i < block_layout.size(); i++) {
-                            desc.block_layout[i] = (int32_t)block_layout[i];
-                        }
-                        for (size_t i = 0; i < desc.packed_axes.size(); i++) {
-                            desc.packed_axes[i] =
-                                i < cfg->packed_axes().size()
-                                    ? (int32_t)cfg->packed_axes()[i]
-                                    : -1;
-                        }
-                        for (size_t i = 0; i < desc.lanes.size(); i++) {
-                            desc.lanes[i] = i < cfg->lanes().size()
-                                                ? (int32_t)cfg->lanes()[i]
-                                                : -1;
-                        }
-                        for (size_t i = 0; i < desc.topology.size(); i++) {
-                            desc.topology[i] = i < cfg->topology().size()
-                                                   ? (int32_t)cfg->topology()[i]
-                                                   : -1;
-                        }
-
-                        // Basic parameters from attention_kv_cache
                         desc.num_seqs = node->num_seqs();
                         desc.num_tokens = node->num_tokens();
                         {

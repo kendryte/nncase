@@ -56,16 +56,20 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *inout
           if (kv_tensor_size > 128) {
             throw new NotSupportedException("KVCache tensor size is too large!");
           }
+          var placement = new Placement(Model.Options.Hierarchies[0], Model.Options.HierarchyNames, Model.Options.HierarchyKind);
+
   @:std::span<runtime::thread_paged_attention_kv_cache_desc> p@(name)_descs((runtime::thread_paged_attention_kv_cache_desc*)inouts[@i].data, inouts[@i].size / sizeof(runtime::thread_paged_attention_kv_cache_desc));
-  @:using paged_attention_t = @Html.Raw(elemType);
-  @:alignas(paged_attention_t) std::byte p@(name)[sizeof(paged_attention_t) * @size];
+  @:using paged_attention_kv_cache_mesh_t = @Html.Raw(KernelUtility.PlacementToC(placement));
+  @:using paged_attention_kv_cache_config_t = @Html.Raw(kvcacheType.Config.ToC());
+  @:using paged_attention_kv_cache_t = caching::paged_attention_kv_cache<paged_attention_kv_cache_mesh_t, paged_attention_kv_cache_config_t>;
+  @:alignas(paged_attention_kv_cache_t) std::byte p@(name)[sizeof(paged_attention_kv_cache_t) * @size];
   @:for (size_t i = 0; i < @size; ++i) {
     var init_list = string.Join(',', Enumerable.Range(0, kv_tensor_size).Select(j => $"desc.kv_storages[{j}]"));
     @:auto desc = p@(name)_descs[i];
-    @:auto ptr = (paged_attention_t*)p@(name) + i;
-    @:new (ptr) paged_attention_t(desc.num_seqs, desc.num_tokens, tensor_view<int64_t, ranked_shape<1>> (std::span(desc.context_lens, desc.context_lens_size), ntt::make_ranked_shape(desc.context_lens_size)), tensor_view<int64_t, ranked_shape<1>> (std::span(desc.seq_lens, desc.seq_lens_size), ntt::make_ranked_shape(desc.seq_lens_size)), tensor_view<int64_t, ranked_shape<3>> (std::span(desc.block_table, desc.block_table_shape[0]*desc.block_table_shape[1]*desc.block_table_shape[2]), make_ranked_shape(desc.block_table_shape[0],desc.block_table_shape[1],desc.block_table_shape[2])), tensor_view<int64_t, ranked_shape<2>> (std::span(desc.slot_mapping, desc.slot_mapping[0]*desc.slot_mapping[1]), make_ranked_shape(desc.slot_mapping_shape[0],desc.slot_mapping_shape[1])), desc.num_blocks, ntt::tensor<intptr_t, ntt::fixed_shape<@(string.Join(',', kv_tensor_shape))>> (std::array<intptr_t, @(kv_tensor_size)> {@Html.Raw(init_list)}));
+    @:auto ptr = (paged_attention_kv_cache_t*)p@(name) + i;
+    @:new (ptr) paged_attention_kv_cache_t(desc.num_seqs, desc.num_tokens, tensor_view<int64_t, ranked_shape<1>> (std::span(desc.context_lens, desc.context_lens_size), ntt::make_ranked_shape(desc.context_lens_size)), tensor_view<int64_t, ranked_shape<1>> (std::span(desc.seq_lens, desc.seq_lens_size), ntt::make_ranked_shape(desc.seq_lens_size)), tensor_view<int64_t, ranked_shape<3>> (std::span(desc.block_table, desc.block_table_shape[0]*desc.block_table_shape[1]*desc.block_table_shape[2]), make_ranked_shape(desc.block_table_shape[0],desc.block_table_shape[1],desc.block_table_shape[2])), tensor_view<int64_t, ranked_shape<2>> (std::span(desc.slot_mapping, desc.slot_mapping[0]*desc.slot_mapping[1]), make_ranked_shape(desc.slot_mapping_shape[0],desc.slot_mapping_shape[1])), desc.num_blocks, ntt::tensor<intptr_t, ntt::fixed_shape<@(string.Join(',', kv_tensor_shape))>> (std::array<intptr_t, @(kv_tensor_size)> {@Html.Raw(init_list)}));
   @:}
-  @:tensor_view<paged_attention_t, @Html.Raw(dimType), @Html.Raw(stridesType)> @(name)(std::span<paged_attention_t, @size>((paged_attention_t *)p@(name), @size)@Html.Raw(dimStr)@Html.Raw(strideStr));
+  @:tensor_view<paged_attention_kv_cache_t, @Html.Raw(dimType), @Html.Raw(stridesType)> @(name)(std::span<paged_attention_kv_cache_t, @size>((paged_attention_kv_cache_t *)p@(name), @size)@Html.Raw(dimStr)@Html.Raw(strideStr));
         }
       } else {
   @:std::span<@Html.Raw(elemType)> p@(name)((@Html.Raw(elemType) *)inouts[@i].data, @Html.Raw(sizeStr));
@@ -139,7 +143,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
             .bid = bid,
             .cid = cid,
             .cpu_id_offset = (cid * bdim() + bid) * tdim(),
-            .inouts = inputs,
+            .inouts = nullptr,
             .rdata = rdata,
             .local_rdata_header = local_rdata_header,
             .local_rdata = local_rdata,

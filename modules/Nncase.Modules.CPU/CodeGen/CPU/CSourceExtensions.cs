@@ -61,19 +61,42 @@ internal static class CSourceExtensions
 
     public static string ToC(this IR.NN.PagedKVCacheDimKind mode) => mode switch
     {
-        IR.NN.PagedKVCacheDimKind.NumBlocks => "caching::paged_attention_dim_kind::num_blocks",
-        IR.NN.PagedKVCacheDimKind.NumLayers => "caching::paged_attention_dim_kind::num_layers",
-        IR.NN.PagedKVCacheDimKind.KV => "caching::paged_attention_dim_kind::kv",
-        IR.NN.PagedKVCacheDimKind.BlockSize => "caching::paged_attention_dim_kind::block_size",
-        IR.NN.PagedKVCacheDimKind.NumKVHeads => "caching::paged_attention_dim_kind::num_kv_heads",
-        IR.NN.PagedKVCacheDimKind.HeadDim => "caching::paged_attention_dim_kind::head_dim",
+        IR.NN.PagedKVCacheDimKind.NumBlocks => "caching::paged_kvcache_dim_kind::num_blocks",
+        IR.NN.PagedKVCacheDimKind.NumLayers => "caching::paged_kvcache_dim_kind::num_layers",
+        IR.NN.PagedKVCacheDimKind.KV => "caching::paged_kvcache_dim_kind::kv",
+        IR.NN.PagedKVCacheDimKind.BlockSize => "caching::paged_kvcache_dim_kind::block_size",
+        IR.NN.PagedKVCacheDimKind.NumKVHeads => "caching::paged_kvcache_dim_kind::num_kv_heads",
+        IR.NN.PagedKVCacheDimKind.HeadDim => "caching::paged_kvcache_dim_kind::head_dim",
         _ => throw new NotImplementedException(),
     };
+
+    public static string ToC(this IRArray<IR.NN.PagedKVCacheDimKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+
+    public static string ToC(this IRArray<IR.NN.AttentionCacheKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+
+    public static string ToC(this IRArray<int> arr) => $"fixed_shape<{string.Join(',', arr)}>";
+
+    public static string ToC(this IEnumerable<SBP> arr)
+    {
+        var toc = (SBP sbp) => sbp switch
+        {
+            SBPSplit s => $"shard_policy::S<{string.Join(", ", s.Axes)}>",
+            SBPPartial p => $"shard_policy::P<reduce_op::{p.Op.ToC()}>",
+            SBPBroadCast b => $"shard_policy::B",
+            _ => throw new ArgumentOutOfRangeException(nameof(arr)),
+        };
+        return $"{string.Join(',', arr.Select(toc))}";
+    }
+
+    public static string ToC(this IPagedAttentionConfig config)
+    {
+        return $"caching::paged_attention_config<{config.NumLayers}, {config.NumKVHeads}, {config.HeadDim}, {config.KVPrimType.ToC()}, {config.BlockSize}, {config.CacheLayout.ToC()}, {config.BlockLayout.ToC()}, {config.PackedAxes.ToC()}, {config.Lanes.ToC()}, {config.ShardingAxes.ToC()}, {config.AxisPolicies.OfType<SBP>().ToC()}>";
+    }
 
     public static string ToC(this DataType dataType) => dataType switch
     {
         PrimType ptype => ptype.ToC(),
-        IR.NN.PagedAttentionKVCacheType kv_type => $"caching::paged_attention_kv_cache<caching::paged_attention_config<{kv_type.Config.NumLayers}, {kv_type.Config.NumKVHeads}, {kv_type.Config.HeadDim}, {kv_type.Config.KVType.ToC()}, {kv_type.Config.BlockSize}, fixed_shape<{string.Join(',', kv_type.Config.CacheLayout.Select(e => "(size_t)" + e.ToC()))}>, fixed_shape<{string.Join(',', kv_type.Config.BlockLayout.Select(e => "(size_t)" + e.ToC()))}>, fixed_shape<{string.Join(',', kv_type.Config.PackedAxes.Select(e => "(size_t)" + e.ToC()))}>, fixed_shape<{string.Join(',', kv_type.Config.Lanes)}>, fixed_shape<{string.Join(',', kv_type.Config.ShardingAxes)}>>>",
+        PagedAttentionKVCacheType => $"paged_attention_kv_cache_t",
         PointerType => "uint8_t *",
         VectorType vtype => $"vector<{vtype.ElemType.ToC()},{string.Join(",", vtype.Lanes)}>",
         ReferenceType rtype => $"{rtype.ElemType.ToC()}",

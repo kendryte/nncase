@@ -16,7 +16,7 @@
 
 #include <cstdint>
 namespace nncase::llm {
-enum class paged_attention_dim_kind : int32_t {
+enum class paged_kvcache_dim_kind : int32_t {
     num_blocks = 0,
     num_layers,
     kv,

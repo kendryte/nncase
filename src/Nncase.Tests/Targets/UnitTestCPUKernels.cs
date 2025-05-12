@@ -50,6 +50,90 @@ public class CpuKernelCase
     public IReadOnlyList<Tensor> RTInputs { get; set; }
 }
 
+public sealed class TestPagedAttentionCaseData : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture, int[], int>
+{
+    private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
+    [
+        ("prefill", [4L], [4L]),
+
+        // ("prefill*2", [12L, 15L], [12L, 15L]),
+        // ("extend", [4L], [8L]),
+        // ("prefill+extend", [4L, 4L], [4L, 8L]),
+        // ("prefill+decode", [4L, 1L], [4L, 9L]),
+    ];
+
+    private static readonly Runtime.TypeCode[] TypeConfigs = [
+        Runtime.TypeCode.Float32,
+        Runtime.TypeCode.Float16,
+    ];
+
+    private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
+    [
+        (2, 2, 64),
+
+        // (1, 1, 64),
+        // (4, 4, 128),
+    ];
+
+    private static readonly (int Layer, int BlockSize, int NumBlocks)[] CacheConfigs = [
+        (1, 4, 8),
+
+        // (1, 16, 8),
+        // (1, 32, 16),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
+    [
+        (new[] {
+            PagedKVCacheDimKind.NumLayers,
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Sharding, SBPSplit[] Policies, int[] Hierarchy)[] ShardingConfigs =
+    [
+        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }, [1]),
+    ];
+
+    private static readonly (AttentionDimKind[] QLayout, AttentionDimKind[] KLayout)[] QKLayoutConfigs =
+    [
+        ([AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head],
+         [AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head]),
+    ];
+
+    public TestPagedAttentionCaseData()
+    {
+        int count = 0;
+        foreach (var (name, queryLens, seqLens) in TestScenarios)
+        {
+            foreach (var (numQHeads, numKVHeads, headDim) in HeadConfigs)
+            {
+                foreach (var (numLayer, blockSize, numBlocks) in CacheConfigs)
+                {
+                    foreach (var typeCode in TypeConfigs)
+                    {
+                        foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
+                        {
+                            foreach (var (shardingAxes, axisPolicies, hierarchy) in ShardingConfigs)
+                            {
+                                foreach (var (qlayout, klayout) in QKLayoutConfigs)
+                                {
+                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, packedAxes, shardingAxes, axisPolicies, qlayout, klayout), hierarchy, count++);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 [CollectionDefinition(nameof(NotThreadSafeResourceCollection), DisableParallelization = true)]
 public class NotThreadSafeResourceCollection
 {
@@ -100,9 +184,72 @@ public sealed class UnitTestCPUKernels : TestClassBase
     };
 
     [Theory]
-    [InlineData(new object[] { new[] { 8L }, new[] { 8L }, 1, 1, 128, 4, 8, Runtime.TypeCode.Float32, 0 })] // prefill only
-    public async Task TestPagedAttentionCase(long[] queryLens, long[] seqLens, int numQHeads, int numKVHeads, int headDim, int blockSize, int numBlocks, Nncase.Runtime.TypeCode kvTypeCode, int count)
+    [ClassData(typeof(TestPagedAttentionCaseData))]
+    public async Task TestPagedAttentionCase(PagedAttentionKVCacheTestFixture fixture, int[] hierarchy, int count)
     {
+        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.Packing = false;
+
+        var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
+        var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType);
+
+        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.NumQHeads, fixture.QLayout, fixture.KLayout, fixture.Config);
+
+        var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
+
+        var feedDict = new Dictionary<Var, IValue>();
+        var rtFeedDict = new Dictionary<Var, IValue>();
+        {
+            var queryTensor = referenceResults.GetQueryTensor();
+            feedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            rtFeedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            for (int layerId = 0; layerId < fixture.Config.NumLayers; layerId++)
+            {
+                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                rtFeedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                rtFeedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+            }
+
+            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+
+            var rtkvObj = RTPagedAttentionKVCache.Create(
+                    RTPagedAttentionConfig.FromConfig(fixture.Config),
+                    kvinputs.KVCacheObj.NumSeqs,
+                    kvinputs.KVCacheObj.NumTokens,
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTable),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
+                    kvinputs.KVCacheObj.NumBlocks,
+                    kvinputs.KVCacheObj.KVCaches.Dimensions[..fixture.Config.ShardingAxes.Count].ToArray().Select(i => (int)i).ToArray());
+            {
+                var logicalKVShape = kvinputs.KVCacheObj.KVCaches.Dimensions.ToArray();
+                foreach (var topoIndices in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
+                {
+                    var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - hierarchy.Length)).ToArray();
+                    var shape = Enumerable.Repeat(1L, hierarchy.Length).Concat(logicalKVShape[hierarchy.Length..]).ToArray();
+                    var kvStorage = kvinputs.KVCacheObj.KVCaches.View(indices, shape);
+                    rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+                }
+            }
+
+            rtFeedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
+        }
+
+        // 4. evaluate and compare
+        // {
+        //     var refTensor = referenceResults.GetOutputTensor();
+        //     var actualTensor = testKernel.Root.Evaluate(feedDict).AsTensor();
+        //     var cos = Comparator.CosSimilarity(refTensor, actualTensor);
+        //     Assert.True(cos > 0.999, $"cos: {cos} ");
+        // }
+        await RunCases($"Theory{count}", feedDict, new[] { testKernel.Root }, rtFeedDict);
     }
 
     [Theory]
@@ -1309,8 +1456,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
         compiler.ModulePartitionPass(pmgr);
-
-        // compiler.AutoDistributedPass(pmgr);
+        compiler.AutoDistributedPass(pmgr);
         compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
         pmgr.Add<ReplaceDimVarWithShapeOfPass>();

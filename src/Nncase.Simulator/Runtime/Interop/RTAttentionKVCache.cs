@@ -202,45 +202,86 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig, IPagedAttentionC
         }
     }
 
-    public IRArray<int> Topology
+    public IRArray<PagedKVCacheDimKind> ShardingAxes
     {
         get
         {
-            var topology = new int[8]; // Using a reasonable initial size
-            int length = topology.Length;
-            Native.PagedAttentionConfigGetTopology(this, topology, length).ThrowIfFailed();
-            return topology.Where(x => x != -1).ToArray();
+            var axes = new PagedKVCacheDimKind[8];
+            int length = axes.Length;
+            Native.PagedAttentionConfigGetShardingAxes(this, axes, length).ThrowIfFailed();
+            return axes.Where(x => Enum.IsDefined(x)).ToArray();
         }
 
         set
         {
             var arr = value.ToArray();
-            Native.PagedAttentionConfigSetTopology(this, arr, arr.Length).ThrowIfFailed();
+            Native.PagedAttentionConfigSetShardingAxes(this, arr, arr.Length).ThrowIfFailed();
         }
     }
 
-    public IRArray<PagedKVCacheDimKind> ShardingAxes => throw new NotImplementedException();
+    public IRArray<SBPSplit> AxisPolicies
+    {
+        get
+        {
+            var policies = new List<SBPSplit>();
 
-    public IRArray<SBPSplit> AxisPolicies => throw new NotImplementedException();
+            for (int i = 0; i < ShardingAxes.Count; i++)
+            {
+                Native.PagedAttentionConfigGetAxisPolicyLen(this, i, out var len).ThrowIfFailed();
+
+                var policy = new int[len];
+                Native.PagedAttentionConfigGetAxisPolicy(this, i, policy, len).ThrowIfFailed();
+
+                policies.Add(SBP.S(policy));
+            }
+
+            return policies.ToArray();
+        }
+
+        set
+        {
+            for (int i = 0; i < value.Count; i++)
+            {
+                var policy = value[i];
+                Native.PagedAttentionConfigSetAxisPolicy(
+                    this,
+                    i,
+                    policy.Axes.ToArray(),
+                    policy.Axes.Count).ThrowIfFailed();
+            }
+        }
+    }
 
     public static RTPagedAttentionConfig FromConfig(IPagedAttentionConfig cfg)
     {
-        // Native.PagedAttentionConfigCreate(
-        //     cfg.NumLayers,
-        //     cfg.NumKVHeads,
-        //     cfg.HeadDim,
-        //     cfg.KVPrimType.TypeCode,
-        //     cfg.BlockSize,
-        //     cfg.CacheLayout.ToArray(),
-        //     cfg.PackedAxes.ToArray(),
-        //     cfg.PackedAxes.Count,
-        //     cfg.Lanes.ToArray(),
-        //     cfg.Lanes.Count,
-        //     cfg.Topology.ToArray(),
-        //     cfg.Topology.Count,
-        //     out var rtcfg).ThrowIfFailed();
-        // return rtcfg;
-        throw new NotSupportedException("PagedAttentionConfig creation is not implemented yet.");
+        // 1. Flatten axis policies into arrays
+        var policyLengths = new List<int>();
+        var flattenedPolicies = new List<int>();
+        foreach (var policy in cfg.AxisPolicies)
+        {
+            policyLengths.Add(policy.Axes.Count);
+            flattenedPolicies.AddRange(policy.Axes);
+        }
+
+        // 2. Create config
+        Native.PagedAttentionConfigCreate(
+            cfg.NumLayers,
+            cfg.NumKVHeads,
+            cfg.HeadDim,
+            cfg.KVPrimType.TypeCode,
+            cfg.BlockSize,
+            cfg.CacheLayout.ToArray(),
+            cfg.PackedAxes.ToArray(),
+            cfg.PackedAxes.Count,
+            cfg.Lanes.ToArray(),
+            cfg.Lanes.Count,
+            cfg.ShardingAxes.ToArray(),
+            cfg.ShardingAxes.Count,
+            flattenedPolicies.ToArray(),
+            policyLengths.ToArray(),
+            out var rtcfg).ThrowIfFailed();
+
+        return rtcfg;
     }
 
     public static new RTPagedAttentionConfig FromHandle(IntPtr handle, bool addRef = false)

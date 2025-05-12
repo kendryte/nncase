@@ -149,8 +149,10 @@ internal static class Native
         int packed_axes_len,
         [In] int[] lanes,
         int lanes_len,
-        [In] int[] topology,
-        int topology_len,
+        [In] IR.NN.PagedKVCacheDimKind[] sharding_axes,
+        int sharding_axes_len,
+        [In] int[] axis_policies,
+        [In] int[] axis_policies_lens,
         out RTPagedAttentionConfig config);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_block_size")]
@@ -177,11 +179,37 @@ internal static class Native
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_lanes")]
     public static extern ErrorCode PagedAttentionConfigSetLanes(RTPagedAttentionConfig config, [In] int[] lanes, int lanes_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_topology")]
-    public static extern ErrorCode PagedAttentionConfigGetTopology(RTPagedAttentionConfig config, [Out] int[] topology, int topology_len);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_sharding_axes")]
+    public static extern ErrorCode PagedAttentionConfigGetShardingAxes(
+        RTPagedAttentionConfig config,
+        [Out] IR.NN.PagedKVCacheDimKind[] sharding_axes,
+        int sharding_axes_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_topology")]
-    public static extern ErrorCode PagedAttentionConfigSetTopology(RTPagedAttentionConfig config, [In] int[] topology, int topology_len);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_sharding_axes")]
+    public static extern ErrorCode PagedAttentionConfigSetShardingAxes(
+        RTPagedAttentionConfig config,
+        [In] IR.NN.PagedKVCacheDimKind[] sharding_axes,
+        int sharding_axes_len);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_axis_policy_len")]
+    public static extern ErrorCode PagedAttentionConfigGetAxisPolicyLen(
+        RTPagedAttentionConfig config,
+        int i,
+        out int policy_len);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_axis_policy")]
+    public static extern ErrorCode PagedAttentionConfigGetAxisPolicy(
+        RTPagedAttentionConfig config,
+        int i,
+        [Out] int[] axis_policy,
+        int axis_policy_len);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_axis_policy")]
+    public static extern ErrorCode PagedAttentionConfigSetAxisPolicy(
+        RTPagedAttentionConfig config,
+        int i,
+        [In] int[] axis_policy,
+        int axis_policy_len);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_create")]
     public static extern ErrorCode AttentionKVCacheCreate(

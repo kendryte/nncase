@@ -19,6 +19,7 @@
 #include <type_traits>
 
 namespace nncase::ntt {
+#if false
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
           class T7, class T8>
 void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
@@ -78,8 +79,9 @@ void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
         //        program_ids[1], program_ids[2]);
     }
 }
+#endif
 
-template <class TSlots, class TKVCache>
+template <class TSlots, class TKVCache, IsFixedDims TLayout>
 void update_paged_attention_kv_cache(TSlots slots_tensor,
                                      TKVCache kv_cache_tensor,
                                      caching::attention_cache_kind kind,
@@ -90,26 +92,53 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
 
     if constexpr (IsShardedTensor<TSlots>) {
         auto local_slot = slots_tensor.local();
-        if (local_slot.shape()[0] != 1) {
-            printf("not support local token nums > 1 now!\n");
-            std::terminate();
-        }
+        using sharding_type = typename TSlots::sharding_type;
+        using mesh_type = typename sharding_type::mesh_type;
+        using axis_policy_type = typename sharding_type::axis_policy_type;
+        using default_layout =
+            fixed_shape<(size_t)caching::attention_dim_kind::seq,
+                        (size_t)caching::attention_dim_kind::head,
+                        (size_t)caching::attention_dim_kind::dim>;
 
-        using mesh_type = typename TSlots::mesh_type;
-        // slots : [num_tokens -> x, numHeads -> [die,y], headDim]
+        // slots : [seq, numHeads, headDim]
         auto program_ids = distributed::program_ids();
         auto mesh_index = mesh_type::index_from_program_id(program_ids);
-        auto head_id = mesh_index[3]; // note die head was broadcasting.
-        auto token_id = mesh_index[2];
+        auto global_shape = slots_tensor.shape();
+        auto local_shape = local_slot.shape();
+        auto global_offset =
+            sharding_type::global_offset(global_shape, mesh_index);
+        constexpr size_t seq_index =
+            TLayout::indexof((size_t)caching::attention_dim_kind::seq);
+        constexpr size_t head_index =
+            TLayout::indexof((size_t)caching::attention_dim_kind::head);
+        constexpr size_t dim_index =
+            TLayout::indexof((size_t)caching::attention_dim_kind::dim);
 
-        // todo support core token nums > 1.
-        auto slot_id = kv_cache.get_slot_id(token_id);
-        auto slot =
-            local_slot
-                .view(ntt::make_ranked_shape(0, 0, 0),
-                      ntt::make_ranked_shape(1, 1, local_slot.shape()[2]))
-                .squeeze(ntt::fixed_shape<0, 1>{});
-        kv_cache.update_slot(kind, layer_id, head_id, slot_id, slot);
+        auto starts = ntt::make_ranked_shape(0, 0, 0);
+        auto shape = ntt::ranked_shape<3>();
+        shape[seq_index] = 1;
+        shape[head_index] = 1;
+        shape[dim_index] = local_shape[dim_index];
+        auto squeeze = ntt::fixed_shape<seq_index, head_index>();
+
+        for (size_t token_id = 0; token_id++;
+             token_id < local_shape[seq_index]) {
+            // slot mapping is broadcast, but slot maybe is sharding.
+            auto slot_id =
+                kv_cache.get_slot_id(global_offset[seq_index] + token_id);
+            starts[seq_index] = token_id;
+
+            for (size_t head_id = 0; head_id++;
+                 head_id < local_shape[head_index]) {
+
+                // todo maybe slot head sharding != kv head sharding.
+                starts[head_index] = head_id;
+
+                auto slot = local_slot.view(starts, shape).squeeze(squeeze);
+                kv_cache.update_slot(kind, layer_id, head_id, slot_id, slot);
+            }
+        }
+
         distributed::topology_synchronize();
     } else {
         for (size_t head_id = 0; head_id < num_heads; head_id++) {

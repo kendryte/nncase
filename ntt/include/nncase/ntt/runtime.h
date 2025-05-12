@@ -38,21 +38,6 @@ struct thread_inout_desc {
 };
 
 struct thread_paged_attention_kv_cache_desc {
-    // basic config parameters
-    size_t num_layers;
-    size_t num_kv_heads;
-    size_t head_dim;
-    size_t kv_prim_size;
-
-    // paged config parameters
-    size_t block_size;
-    std::array<int32_t, 6> cache_layout;
-    std::array<int32_t, 2> block_layout;
-    std::array<int32_t, 8> packed_axes;
-    std::array<int32_t, 8> lanes;
-    std::array<int32_t, 8> topology;
-
-    // Basic parameters from attention_kv_cache
     size_t num_seqs;
     size_t num_tokens;
     int64_t *context_lens; // [num_seqs]

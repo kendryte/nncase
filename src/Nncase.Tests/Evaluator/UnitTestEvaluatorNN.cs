@@ -19,7 +19,6 @@ namespace Nncase.Tests.EvaluatorTest;
 
 public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture>
 {
-    // 基础测试场景
     private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
     [
         ("prefill", [4L], [4L]),
@@ -34,7 +33,6 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
         Runtime.TypeCode.Float16,
     ];
 
-    // 注意力头配置
     private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
     [
         (1, 1, 64),
@@ -42,7 +40,6 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
         (4, 4, 128),
     ];
 
-    // 缓存块配置
     private static readonly (int Layer, int BlockSize, int NumBlocks)[] CacheConfigs = [
         (1, 4, 8),
         (1, 16, 8),
