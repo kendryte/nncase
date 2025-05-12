@@ -11,7 +11,7 @@ namespace Nncase.CodeGen.CPU;
 /// <summary>
 /// convert the type/op to c name.
 /// </summary>
-internal static class CSourceExtensions
+public static class CSourceExtensions
 {
     private static readonly Dictionary<PrimType, string> _primTypeToC = new()
     {
@@ -187,14 +187,33 @@ internal static class CSourceExtensions
         _ => throw new NotSupportedException(binaryOp.ToString()),
     };
 
-    public static string ToC(this CompareOp op) => op switch
+    public static string ToC(this CompareOp op, bool symbol = true)
     {
-        CompareOp.Equal => "==",
-        CompareOp.NotEqual => "!=",
-        CompareOp.LowerThan => "<",
-        CompareOp.LowerOrEqual => "<=",
-        CompareOp.GreaterThan => ">=",
-        CompareOp.GreaterOrEqual => ">",
-        _ => throw new NotSupportedException(op.ToString()),
-    };
+        if (symbol)
+        {
+            return op switch
+            {
+                CompareOp.Equal => "==",
+                CompareOp.NotEqual => "!=",
+                CompareOp.LowerThan => "<",
+                CompareOp.LowerOrEqual => "<=",
+                CompareOp.GreaterThan => ">=",
+                CompareOp.GreaterOrEqual => ">",
+                _ => throw new NotSupportedException(op.ToString()),
+            };
+        }
+        else
+        {
+            return op switch
+            {
+                CompareOp.Equal => "ops::equal",
+                CompareOp.NotEqual => "ops::not_equal",
+                CompareOp.LowerThan => "ops::less",
+                CompareOp.LowerOrEqual => "ops::less_or_equal",
+                CompareOp.GreaterThan => "ops::greater",
+                CompareOp.GreaterOrEqual => "ops::greater_or_equal",
+                _ => throw new NotSupportedException($"Unsupported Compare: {op}."),
+            };
+        }
+    }
 }

@@ -432,7 +432,8 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
 
     public void SetKVCache(int[] indices, Tensor kv_cache)
     {
-        Native.PagedAttentionKVCacheSetKVCache(this, indices, indices.Length, RTTensor.FromTensor(kv_cache)).ThrowIfFailed();
+        var rt_kv_cache = RTTensor.FromTensor(kv_cache);
+        Native.PagedAttentionKVCacheSetKVCache(this, indices, indices.Length, rt_kv_cache).ThrowIfFailed();
     }
 
     public Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId)

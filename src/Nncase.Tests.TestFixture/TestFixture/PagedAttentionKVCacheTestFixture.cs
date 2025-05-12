@@ -75,7 +75,8 @@ public sealed class PagedAttentionKVCacheTestFixture
         var curLen = query.Shape[^2];
         var histLen = key.Shape[^2];
 
-        var scaleFactor = scale ?? 1 / MathF.Sqrt(query.Length);
+        OrtKISharp.Tensor scaleFactor = scale ?? 1 / MathF.Sqrt(query.Length);
+        scaleFactor = scaleFactor.Cast(query.DataType);
 
         var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([curLen, histLen]));
 
@@ -85,6 +86,8 @@ public sealed class PagedAttentionKVCacheTestFixture
             tempMask = OrtKI.Trilu(tempMask, OrtKISharp.Tensor.FromScalar<long>(0), 0);
             attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([curLen, histLen])));
         }
+
+        attnBias = attnBias.Cast(query.DataType);
 
         if (attnMask != null)
         {
@@ -112,12 +115,14 @@ public sealed class PagedAttentionKVCacheTestFixture
         int numKVHeads,
         int headDim,
         int numLayers,
-        DataType primType)
+        DataType primType,
+        bool randomData = true)
     {
         var refQuerys = new List<OrtKISharp.Tensor>();
         var refOutputs = new List<OrtKISharp.Tensor>();
         var refKeys = new List<List<OrtKISharp.Tensor>>();
         var refValues = new List<List<OrtKISharp.Tensor>>();
+        var refDataValue = 1f;
 
         for (int req_id = 0; req_id < queryLens.Length; req_id++)
         {
@@ -125,7 +130,9 @@ public sealed class PagedAttentionKVCacheTestFixture
             var cur_len = queryLens[req_id];
 
             // Create query tensor
-            var query = IR.F.Random.Normal(primType, new[] { numQHeads, cur_len, headDim }).Evaluate().AsTensor();
+            var qDimension = new[] { numQHeads, cur_len, headDim };
+            Tensor query = randomData ? IR.F.Random.Normal(primType, qDimension).Evaluate().AsTensor() : ReferenceInputGenerator(qDimension, ref refDataValue).CastTo(primType);
+
             var refQuery = query.ToOrtTensor();
             refQuerys.Add(refQuery);
 
@@ -137,8 +144,9 @@ public sealed class PagedAttentionKVCacheTestFixture
 
             for (int layer = 0; layer < numLayers; layer++)
             {
-                var key = IR.F.Random.Normal(primType, new[] { numKVHeads, seq_len, headDim }).Evaluate().AsTensor();
-                var value = IR.F.Random.Normal(primType, new[] { numKVHeads, seq_len, headDim }).Evaluate().AsTensor();
+                var kvDimension = new[] { numKVHeads, seq_len, headDim };
+                var key = randomData ? IR.F.Random.Normal(primType, kvDimension).Evaluate().AsTensor() : ReferenceInputGenerator(kvDimension, ref refDataValue).CastTo(primType);
+                var value = randomData ? IR.F.Random.Normal(primType, kvDimension).Evaluate().AsTensor() : ReferenceInputGenerator(kvDimension, ref refDataValue).CastTo(primType);
 
                 var refKey = key.ToOrtTensor();
                 var refValue = value.ToOrtTensor();
@@ -386,11 +394,17 @@ public sealed class PagedAttentionKVCacheTestFixture
                     switch (config.ShardingAxes[topoId])
                     {
                         case PagedKVCacheDimKind.NumBlocks:
-                            var blockTile = numBlocks / config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
-                            var value = (int)Math.DivRem(physicalBlockId, blockTile, out physicalBlockId);
+                            var parallelism = config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
+                            if (numBlocks < parallelism && !DistributedUtility.IsDivideExactly(numBlocks, parallelism))
+                            {
+                                throw new InvalidOperationException("numBlocks < parallelism");
+                            }
+
+                            var numBlockTile = numBlocks / parallelism;
+                            var value = (int)Math.DivRem(physicalBlockId, numBlockTile, out physicalBlockId);
                             blockTableTensor[indices] = value;
                             break;
-                        case PagedKVCacheDimKind.HeadDim:
+                        case PagedKVCacheDimKind.NumKVHeads:
                             blockTableTensor[indices] = -1;
                             break;
                         default:
@@ -440,11 +454,17 @@ public sealed class PagedAttentionKVCacheTestFixture
             switch (config.ShardingAxes[topoId])
             {
                 case PagedKVCacheDimKind.NumBlocks:
-                    var numBlockTile = numBlocks / config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
+                    var parallelism = config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
+                    if (numBlocks < parallelism && !DistributedUtility.IsDivideExactly(numBlocks, parallelism))
+                    {
+                        throw new InvalidOperationException("numBlocks < parallelism");
+                    }
+
+                    var numBlockTile = numBlocks / parallelism;
                     var value = (int)Math.DivRem(physicalSlotId, numBlockTile, out physicalSlotId);
                     slotMappingTensor[indices] = value;
                     break;
-                case PagedKVCacheDimKind.HeadDim:
+                case PagedKVCacheDimKind.NumKVHeads when config.AxisPolicies[topoId].Axes.Count == 1:
                     slotMappingTensor[indices] = -1; // todo should matching the kv sharding.
                     break;
                 default:
@@ -455,6 +475,24 @@ public sealed class PagedAttentionKVCacheTestFixture
         }
 
         slotMappingTensor[indices] = physicalSlotId;
+    }
+
+    public static Tensor<float> ReferenceInputGenerator(long[] dimensions, ref float startValue)
+    {
+        // head,seq,dim.
+        var buffer = new float[dimensions.Product()];
+        var strides = TensorUtilities.GetStrides(dimensions);
+        var span = buffer.AsSpan();
+        for (int headId = 0; headId < dimensions[0]; headId++)
+        {
+            for (int tokenId = 0; tokenId < dimensions[1]; tokenId++)
+            {
+                var subSpan = span.Slice((int)((headId * strides[0]) + (tokenId * strides[1])), (int)strides[1]);
+                subSpan.Fill(startValue++);
+            }
+        }
+
+        return Tensor.From(buffer, dimensions);
     }
 
     public sealed record TestKernel(Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar);

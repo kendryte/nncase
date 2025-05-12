@@ -451,7 +451,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <typeparam name="T">unmanaged type.</typeparam>
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
-    public static Tensor Zeros<T>(ReadOnlySpan<long> dimensions)
+    public static Tensor<T> Zeros<T>(ReadOnlySpan<long> dimensions)
         where T : unmanaged, IEquatable<T>, INumberBase<T>
     {
         return Tensor.FromScalar<T>(T.Zero, dimensions);
@@ -470,7 +470,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <typeparam name="T">unmanaged type.</typeparam>
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
-    public static Tensor Ones<T>(ReadOnlySpan<long> dimensions)
+    public static Tensor<T> Ones<T>(ReadOnlySpan<long> dimensions)
         where T : unmanaged, IEquatable<T>, INumberBase<T>
     {
         return Tensor.FromScalar<T>(T.One, dimensions);
