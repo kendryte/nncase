@@ -28,7 +28,10 @@ class nncaseConan(ConanFile):
         "tests": [True, False],
         "python": [True, False],
         # "vulkan_runtime": [True, False],
-        "python_root": ["ANY"]
+        "python_root": ["ANY"],
+        "op_profile": [True, False],
+        "dump_mem": [True, False],
+
     }
     default_options = {
         "shared": False,
@@ -37,7 +40,9 @@ class nncaseConan(ConanFile):
         "tests": False,
         "python": True,
         # "vulkan_runtime": False,
-        "python_root": ""
+        "python_root": "",
+        "op_profile": False,
+        "dump_mem": False
     }
 
     @property
@@ -45,10 +50,11 @@ class nncaseConan(ConanFile):
         return 17
 
     def layout(self):
-        cmake_layout(self)
+        cmake_layout(self, build_folder="build")
 
     def requirements(self):
         self.requires('gsl-lite/0.37.0')
+        self.requires('nlohmann_json/3.11.3')
         if self.options.tests:
             self.requires('gtest/1.10.0')
             self.requires('ortki/0.0.4')
@@ -60,9 +66,9 @@ class nncaseConan(ConanFile):
             self.requires('nethost/8.0.8')
             self.requires('fmt/7.1.3')
 
-        if not self.options.runtime or self.options.tests:
-            self.requires('nlohmann_json/3.11.3')
-            
+        # if not self.options.runtime or self.options.tests:
+        #     self.requires('nlohmann_json/3.11.3')
+
         # if (not self.options.runtime) or self.options.vulkan_runtime:
         #     self.requires('vulkan-headers/1.2.182')
         #     self.requires('vulkan-loader/1.2.182')
@@ -83,12 +89,14 @@ class nncaseConan(ConanFile):
         if self.settings.compiler.get_safe("cppstd"):
             check_min_cppstd(self, self._min_cppstd)
 
+
     def generate(self):
         tc = CMakeToolchain(self, generator="Ninja")
         tc.variables['BUILDING_RUNTIME'] = self.options.runtime
-        # tc.variables['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
+        tc.variables['ENABLE_OP_PROFILE'] = self.options.op_profile
+        tc.variables['ENABLE_DUMP_MEM'] = self.options.dump_mem
         if self.options.get_safe("python_root", default="") != "":
             tc.variables['Python3_ROOT_DIR'] = str(self.options.python_root).replace('\\', '/')
         if self.options.runtime:
