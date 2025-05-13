@@ -155,14 +155,14 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 {
                     switch (cache.Config.ShardingAxes[shardId])
                     {
-                        case PagedKVCacheDimKind.HeadDim when blockIdCopy[shardId] is -1:
+                        case PagedKVCacheDimKind.NumKVHeads when blockIdCopy[shardId] is -1L:
                             var headTile = cache.Config.NumKVHeads / (int)cache.LogicalCacheDimensions()[shardId];
                             blockIdCopy[shardId] = System.Math.DivRem(headId, headTile, out headIdCopy);
                             break;
-                        case PagedKVCacheDimKind.NumBlocks when blockIdCopy[shardId] is not -1:
+                        case PagedKVCacheDimKind.NumBlocks when blockIdCopy[shardId] is not -1L:
                             break;
                         default:
-                            throw new NotSupportedException();
+                            throw new ArgumentOutOfRangeException(nameof(cache));
                     }
                 }
 
@@ -238,12 +238,17 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         // for xpu.
         if (q.Placement.Name == "cdxyt")
         {
-            if (extra.AxisPolices.All(p => p is SBPBroadCast))
+            if (!extra.AxisPolices.All(p => p is SBPBroadCast))
             {
                 return new InvalidType("extra should be broadcast!");
             }
 
-            // seq split at x, head split at die and y
+            if (!target.Layout.SequenceEqual([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]))
+            {
+                return new InvalidType("layout should be [head, dim, seq]");
+            }
+
+            // seq split at x, head split at die and y, please check head size > 2*4.
             var seqAxis = target.Layout.IndexOf(AttentionDimKind.Seq);
             var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
             var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);

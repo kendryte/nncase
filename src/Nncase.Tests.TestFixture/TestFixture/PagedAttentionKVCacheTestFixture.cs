@@ -195,7 +195,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         return new TensorType(lanes.Count == 0 ? config.KVPrimType : new VectorType(config.KVPrimType, lanes.ToArray()), dims);
     }
 
-    public static (int[] Lanes, int[] Axes) GetQKVPackParams(IPagedAttentionConfig config)
+    public static (int[] Lanes, int[] Axes) GetQKVPackParams(IPagedAttentionConfig config, AttentionDimKind[] qLayout)
     {
         var lanes = new List<int>();
         var axes = new List<int>();
@@ -205,8 +205,8 @@ public sealed class PagedAttentionKVCacheTestFixture
             {
                 axes.Add(config.PackedAxes[i] switch
                 {
-                    PagedKVCacheDimKind.NumKVHeads => 1,
-                    PagedKVCacheDimKind.HeadDim => 2,
+                    PagedKVCacheDimKind.NumKVHeads => qLayout.IndexOf(AttentionDimKind.Head),
+                    PagedKVCacheDimKind.HeadDim => qLayout.IndexOf(AttentionDimKind.Dim),
                     _ => throw new ArgumentOutOfRangeException(nameof(config)),
                 });
                 lanes.Add(config.Lanes[i]);
@@ -238,15 +238,16 @@ public sealed class PagedAttentionKVCacheTestFixture
         }
 
         // Build computation graph
-        var (lanes, axes) = GetQKVPackParams(config);
-        var packedQuery = lanes.Length > 0 ? IR.F.CPU.Pack(queryVar, lanes, axes) : queryVar;
-        packedQuery = IR.F.Tensors.Transpose(packedQuery, qLayout.Select(x => (int)x).ToArray());
+        var (q_lanes, q_packed_axes) = GetQKVPackParams(config, qLayout);
+        var (kv_lanes, kv_packed_axes) = GetQKVPackParams(config, kvLayout);
+        var transedQuery = IR.F.Tensors.Transpose(queryVar, qLayout.Select(x => (int)x).ToArray());
+        var packedQuery = q_lanes.Length > 0 ? IR.F.CPU.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
             var (keyVar, valueVar) = (kvVars[layerId][0], kvVars[layerId][1]);
 
-            var packedKey = lanes.Length > 0 ? IR.F.CPU.Pack(keyVar, lanes, axes) : keyVar;
-            packedKey = IR.F.Tensors.Transpose(packedKey, kvLayout.Select(x => (int)x).ToArray());
+            var transedKey = IR.F.Tensors.Transpose(keyVar, kvLayout.Select(x => (int)x).ToArray());
+            var packedKey = kv_lanes.Length > 0 ? IR.F.CPU.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
             var updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedKey,
                 kvCacheObjVar,
@@ -254,8 +255,8 @@ public sealed class PagedAttentionKVCacheTestFixture
                 layerId,
                 kvLayout);
 
-            var packedValue = lanes.Length > 0 ? IR.F.CPU.Pack(valueVar, lanes, axes) : valueVar;
-            packedValue = IR.F.Tensors.Transpose(packedValue, kvLayout.Select(x => (int)x).ToArray());
+            var transValue = IR.F.Tensors.Transpose(valueVar, kvLayout.Select(x => (int)x).ToArray());
+            var packedValue = kv_lanes.Length > 0 ? IR.F.CPU.Pack(transValue, kv_lanes, kv_packed_axes) : transValue;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedValue,
                 updatedKVCache,
@@ -273,7 +274,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         }
 
         // unpack query.
-        var unpacked = lanes.Length > 0 ? IR.F.CPU.Unpack(packedQuery, lanes, axes) : packedQuery;
+        var unpacked = q_lanes.Length > 0 ? IR.F.CPU.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
         var root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
 
         return new TestKernel(root, queryVar, kvVars, kvCacheObjVar);
@@ -383,7 +384,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         // 3. create block table/slot mapping tensor.
         for (int seqId = 0; seqId < seqLens.Length; seqId++)
         {
-            for (long j = 0, logicalSlotId = alignedSeqStartLocs[seqId]; logicalSlotId < alignedSeqStartLocs[seqId] + alignedSeqLens[seqId]; logicalSlotId += config.BlockSize)
+            for (long j = 0, logicalSlotId = alignedSeqStartLocs[seqId]; logicalSlotId < alignedSeqStartLocs[seqId] + alignedSeqLens[seqId]; logicalSlotId += config.BlockSize, j++)
             {
                 var logicalBlockId = logicalSlotId / config.BlockSize;
                 var indices = new long[] { seqId, j, 0 };

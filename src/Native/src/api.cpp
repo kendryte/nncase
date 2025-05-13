@@ -79,7 +79,7 @@ int nncase_object_add_ref(nncase::object_node *node) {
 
 int nncase_object_release(nncase::object_node *node) {
     if (node)
-        node->release();
+        return node->release();
     return 0;
 }
 

@@ -9,7 +9,8 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-result<datatype_t> runtime::deserialize_datatype(const nlohmann::json &json) noexcept {
+result<datatype_t>
+runtime::deserialize_datatype(const nlohmann::json &json) noexcept {
     static const std::string TypeDiscriminator = "$type";
 
     if (!json.contains(TypeDiscriminator)) {
@@ -43,8 +44,8 @@ result<datatype_t> runtime::deserialize_datatype(const nlohmann::json &json) noe
     return err(std::errc::invalid_argument);
 }
 
-result<llm::paged_attention_config>
-runtime::deserialize_paged_attention_config(const nlohmann::json &json) noexcept {
+result<llm::paged_attention_config> runtime::deserialize_paged_attention_config(
+    const nlohmann::json &json) noexcept {
     auto num_layers = json["NumLayers"].get<int>();
     auto num_kv_heads = json["NumKVHeads"].get<int>();
     auto head_dim = json["HeadDim"].get<int>();
@@ -76,8 +77,8 @@ runtime::deserialize_paged_attention_config(const nlohmann::json &json) noexcept
     return ok(config);
 }
 
-result<intptr_t>
-runtime::deserialize_paged_attention_kv_cache(const nlohmann::json &json) noexcept {
+result<intptr_t> runtime::deserialize_paged_attention_kv_cache(
+    const nlohmann::json &json) noexcept {
     try_var(config, deserialize_paged_attention_config(json["Config"]));
 
     auto num_seqs = json["NumSeqs"].get<int>();
@@ -132,7 +133,8 @@ runtime::deserialize_paged_attention_kv_cache(const nlohmann::json &json) noexce
     return ok(reinterpret_cast<intptr_t>(cache.detach()));
 }
 
-result<intptr_t> runtime::deserialize_reference(const nlohmann::json &json) noexcept {
+result<intptr_t>
+runtime::deserialize_reference(const nlohmann::json &json) noexcept {
     static const std::string TypeDiscriminator = "$type";
 
     if (!json.contains(TypeDiscriminator)) {
@@ -185,7 +187,9 @@ runtime::deserialize_tensor(const nlohmann::json &root) noexcept {
         options.deleter = [element_size](void *ptr) {
             auto obj_ptr = static_cast<tensor_node **>(ptr);
             for (size_t i = 0; i < element_size; i++) {
-                delete obj_ptr[i];
+                if (nncase_object_release(obj_ptr[i]) <= 1) {
+                    obj_ptr[i] = nullptr;
+                }
             }
             delete[] obj_ptr;
         };

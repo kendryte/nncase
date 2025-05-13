@@ -76,12 +76,14 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
                 {
                     switch (cache.Config.ShardingAxes[shardId])
                     {
-                        case PagedKVCacheDimKind.HeadDim when slotIdCopy[shardId] is -1:
+                        case PagedKVCacheDimKind.NumKVHeads when slotIdCopy[shardId] is -1L:
                             var headTile = cache.Config.NumKVHeads / (int)cache.LogicalCacheDimensions()[shardId];
                             slotIdCopy[shardId] = System.Math.DivRem(headIdCopy, headTile, out headIdCopy);
                             break;
-                        default:
+                        case PagedKVCacheDimKind.NumBlocks when slotIdCopy[shardId] is not -1L:
                             break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(slots));
                     }
                 }
 
@@ -100,10 +102,18 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
         // for xpu.
         if (slots.Placement.Name == "cdxyt")
         {
+            if (!target.Layout.SequenceEqual([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]))
+            {
+                return new InvalidType("layout should be [head, dim, seq]");
+            }
+
             // seq split at x, head split at die and y
-            if (slots.AxisPolices[0] is SBPSplit { Axes: [2] } &&
-                slots.AxisPolices[1] is SBPSplit { Axes: [1, 3] } &&
-                slots.AxisPolices[2] is SBPBroadCast)
+            var seqAxis = target.Layout.IndexOf(AttentionDimKind.Seq);
+            var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
+            var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);
+            if (slots.AxisPolices[seqAxis] is SBPSplit { Axes: [2] } &&
+                slots.AxisPolices[headAxis] is SBPSplit { Axes: [1, 3] } &&
+                slots.AxisPolices[dimAxis] is SBPBroadCast)
             {
                 return kvCache;
             }

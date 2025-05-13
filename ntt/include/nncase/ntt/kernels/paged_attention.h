@@ -121,15 +121,15 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
         shape[dim_index] = local_shape[dim_index];
         auto squeeze = ntt::fixed_shape<seq_index, head_index>();
 
-        for (size_t token_id = 0; token_id++;
-             token_id < local_shape[seq_index]) {
+        for (size_t token_id = 0; token_id < local_shape[seq_index];
+             token_id++) {
             // slot mapping is broadcast, but slot maybe is sharding.
             auto slot_id =
                 kv_cache.get_slot_id(global_offset[seq_index] + token_id);
             starts[seq_index] = token_id;
 
-            for (size_t head_id = 0; head_id++;
-                 head_id < local_shape[head_index]) {
+            for (size_t head_id = 0; head_id < local_shape[head_index];
+                 head_id++) {
 
                 // todo maybe slot head sharding != kv head sharding.
                 starts[head_index] = head_id;
