@@ -422,7 +422,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     dtype = np.float32
             else:
                 input_shape = copy.deepcopy(input['model_shape'])
-            if  input_shape.size != 0 and input_shape[0] != generator_cfg['batch']:
+            if input_shape.size != 0 and input_shape[0] != generator_cfg['batch']:
                 input_shape[0] *= generator_cfg['batch']
 
             for batch_idx in range(batch_number):
