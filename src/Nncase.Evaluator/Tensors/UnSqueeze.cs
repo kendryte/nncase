@@ -39,7 +39,7 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
         if (dataType.IsFloat() && dataType != DataTypes.Float32)
         {
-            return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
+            return Value.FromTensor(OrtKI.Cast(OrtKI.Unsqueeze(input, axes), (int)dataType.ToOrtType()).ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
         }
         else
         {

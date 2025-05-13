@@ -52,7 +52,7 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var ends = context.GetInt64OrtTensorArgumentValue(sl, Slice.Ends);
         var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
         var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
-        var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
+        var sliced = OrtKI.Cast(OrtKI.Slice(input, begins, ends, axes, strides), (int)dataType.ToOrtType());
         if (dataType.IsFloat() && dataType != DataTypes.Float32)
         {
             return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor().CastTo(dataType) : sliced.ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
