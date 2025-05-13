@@ -42,4 +42,53 @@ public class RTDataType : RTObject
         Native.DTypeCreatePrim(typeCode, out var dtype).ThrowIfFailed();
         return dtype;
     }
+
+    public static RTDataType From(DataType dataType)
+    {
+        switch (dataType)
+        {
+            case PrimType primType:
+                return FromTypeCode(primType.TypeCode);
+            case VectorType vectorType:
+                var elemType = From(vectorType.ElemType);
+                var lanes = vectorType.Lanes.ToArray();
+                Native.DTypeCreateVector(elemType, lanes, lanes.Length, out var rtDtype).ThrowIfFailed();
+                return rtDtype;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(dataType));
+        }
+    }
+}
+
+public sealed class RTVectorType : RTDataType
+{
+    internal RTVectorType()
+       : base(IntPtr.Zero)
+    {
+    }
+
+    internal RTVectorType(IntPtr handle)
+        : base(handle)
+    {
+    }
+
+    public RTDataType ElementType
+    {
+        get
+        {
+            Native.VectorDTypeGetElemType(this, out var elemType).ThrowIfFailed();
+            return elemType;
+        }
+    }
+
+    public int[] Lanes
+    {
+        get
+        {
+            Native.VectorDTypeGetLanesLength(this, out int length).ThrowIfFailed();
+            var lanes = new int[length];
+            Native.VectorDTypeGetLanes(this, lanes).ThrowIfFailed();
+            return lanes;
+        }
+    }
 }

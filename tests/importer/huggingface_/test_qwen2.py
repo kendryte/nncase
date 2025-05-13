@@ -31,14 +31,14 @@ def test_qwen2(request):
     method = 'text'
 
     [generator.inputs.text]
-    args = 'tests/importer/huggingface_/prompt.txt'
+    args = 'tests/importer/huggingface_/prompt_qwen.txt'
 
     [generator.calibs]
     method = 'text'
 
     [generator.calibs.text]
-    args = 'tests/importer/huggingface_/prompt.txt'
-    
+    args = 'tests/importer/huggingface_/prompt_qwen.txt'
+
     #TODO: Need remove!
     [target]
     [target.cpu]
@@ -58,4 +58,4 @@ def test_qwen2(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_qwen2.py'])
+    pytest.main(['-vvs', __file__])

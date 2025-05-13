@@ -43,12 +43,13 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
 <#}}#>
 <#}#>
 
-    public static <#=typeName#> Create(T[<#=(lanesA == 0) ? "" : ","#>] array) {
-      <#=typeName#> vec = default;
-      var src = array.AsSpan<#= lanesA == 0 ? "" : "2D"#>();
-      var dest = vec.AsSpan<#= lanesA == 0 ? "" : "2D"#>();
-      src.CopyTo(dest);
-      return vec;
+    public static <#=typeName#> Create(T[<#=(lanesA == 0) ? "" : ","#>] array) 
+    {
+        <#=typeName#> vec = default;
+        var src = array.AsSpan<#= lanesA == 0 ? "" : "2D"#>();
+        var dest = vec.AsSpan<#= lanesA == 0 ? "" : "2D"#>();
+        src.CopyTo(dest);
+        return vec;
     }
 
 <# if (lanesA == 0) {#>
@@ -70,19 +71,23 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 <# if (lanesA != 0) {#>
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => <#=lanesA#>;
 
     public int Width => <#=lanesB#>;
-    
+
     public int Count => Height * Width;
 <# } else {#>
     public int Count => <#=lanesB#>;
 <#}#>
 
 <#foreach (var op in new string[] { "+", "-" , "*", "/" }) {#>
-    public static <#=typeName#> operator <#=op#>(<#=typeName#> left, <#=typeName#> right) {
+    public static <#=typeName#> operator <#=op#>(<#=typeName#> left, <#=typeName#> right) 
+    {
         <#=typeName#> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -95,6 +100,26 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
     }
 
 <#}#>
+
+    public override string ToString() 
+    {
+<# if (lanesA == 0) {#>
+        return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
+<#} else {#>
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+<#}#>
+    }
 }
 
 <#}#>

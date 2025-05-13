@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -14,7 +15,7 @@ namespace Nncase;
 /// </summary>
 /// <typeparam name="T">Elem type.</typeparam>
 public struct Pointer<T> : IEquatable<Pointer<T>>
-    where T : unmanaged, IEquatable<T>
+    where T : struct, IEquatable<T>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Pointer{T}"/> struct.
@@ -28,7 +29,7 @@ public struct Pointer<T> : IEquatable<Pointer<T>>
     /// <summary>
     /// Gets element size.
     /// </summary>
-    public static unsafe int ElemSize => sizeof(T);
+    public static unsafe int ElemSize => Unsafe.SizeOf<T>();
 
     /// <summary>
     /// Gets value.

@@ -20,12 +20,12 @@ using Nncase.TIR;
 
 namespace Nncase.Passes;
 
-public sealed partial class CPUAffineSelectionPass : AffineSelectionPass
+public partial class CPUAffineSelectionPass : AffineSelectionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public CPUAffineSelectionPass(CompileOptions compileOptions)
-        : base(CPUTarget.Kind)
+    public CPUAffineSelectionPass(CompileOptions compileOptions, string moduleKind = CPUTarget.Kind)
+        : base(moduleKind)
     {
         _compileOptions = compileOptions;
     }
@@ -52,8 +52,9 @@ public sealed partial class CPUAffineSelectionPass : AffineSelectionPass
                 return SelectUnaryLike(call[IR.Math.Unary.Input], new TIR.CPU.Unary(op.UnaryOp), call, output);
             case IR.NN.Swish op:
                 return SelectSwish(op, call, output);
-            case IR.Tensors.Cast op:
-                return SelectCast(op, call, output);
+
+            // case IR.Tensors.Cast op:
+            // return SelectCast(op, call, output);
             case IR.Tensors.Transpose op:
                 return SelectTranspose(op, call, output);
             default:

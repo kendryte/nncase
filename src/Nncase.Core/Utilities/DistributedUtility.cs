@@ -9,6 +9,23 @@ namespace Nncase.Utilities;
 
 public static class DistributedUtility
 {
+    static DistributedUtility()
+    {
+        var divisibleDist = Environment.GetEnvironmentVariable("DivisibleDist");
+        if (!string.IsNullOrEmpty(divisibleDist) && divisibleDist == "0")
+        {
+            DivideByFunc = IsDivideBy;
+        }
+        else
+        {
+            DivideByFunc = IsDivideExactly;
+        }
+    }
+
+    public delegate bool DivideByDelegate(long input, int divisor);
+
+    public static DivideByDelegate DivideByFunc { get; }
+
     public static List<List<int>> GetHierarchyCombinations(int rank)
     {
         var allCombinations = new List<List<int>>(rank);
@@ -38,21 +55,19 @@ public static class DistributedUtility
 
     public static IReadOnlyList<IRArray<SBP>> GetLeafCandidatePolicies(TensorType tensorType, Placement placement)
     {
+        var maxShape = CompilerServices.GetMaxShape(tensorType.Shape);
         var splitsAxes = GetHierarchyCombinations(placement.Rank);
         var policies = new List<List<SBP>>();
         for (int di = 0; di < tensorType.Shape.Rank; di++)
         {
             var policy = new List<SBP>();
-            if (tensorType.Shape.All(x => x.IsDynamic || x.FixedValue != 0))
+            for (int ti = 0; ti < splitsAxes.Count; ti++)
             {
-                for (int ti = 0; ti < splitsAxes.Count; ti++)
+                var axis = splitsAxes[ti];
+                var divisor = axis.Select(a => placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                if (axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && DivideByFunc(maxShape[di], divisor))
                 {
-                    var axis = splitsAxes[ti];
-                    var divisor = axis.Select(a => placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                    if (tensorType.Shape[di] is { IsFixed: true, FixedValue: long s } && axis.All(a => placement.Hierarchy[a] > 1) && divisor > 1 && IsDivideExactly(s, divisor))
-                    {
-                        policy.Add(SBP.S(axis.ToArray()));
-                    }
+                    policy.Add(SBP.S(axis.ToArray()));
                 }
             }
 
@@ -68,6 +83,7 @@ public static class DistributedUtility
     {
         IRArray<SBP> ndsbp = distributedType.AxisPolices;
         TensorType tensorType = distributedType.TensorType;
+        var maxShape = CompilerServices.GetMaxShape(tensorType.Shape);
         Placement placement = distributedType.Placement;
         if (!ndsbp.Any(sbp => sbp is SBPPartial))
         {
@@ -87,7 +103,7 @@ public static class DistributedUtility
                 // note separate reduce boxing and reshard boxing.
                 // for (int axis = 0; axis < tensorType.Shape.Rank; axis++)
                 // {
-                //     if (tensorType.Shape[axis] is { IsFixed: true, Value: int s } && placement.Hierarchy[i] > 1 && IsDivideExactly(s, placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
+                //     if (placement.Hierarchy[i] > 1 && IsDivideBy(maxShape[axis], placement.Hierarchy[i]) && !innerSplitedAxes.Contains(axis))
                 //     {
                 //         candidateNdsbps[i].Add(SBP.S(axis));
                 //     }
@@ -116,8 +132,9 @@ public static class DistributedUtility
         }
 
         // 2. All shapes are divisible by the mesh.
+        var maxShape = CompilerServices.GetMaxShape(tensorType.Shape);
         var divisors = GetDivisors(new DistributedType(tensorType, polices.ToArray(), placement));
-        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : IsDivideExactly(tensorType.Shape[p.axis].FixedValue, p.d));
+        return divisors.Select((d, axis) => (d, axis)).All(p => p.d == 0 ? true : DivideByFunc(maxShape[p.axis], p.d));
     }
 
     public static bool IsDistributable(ReadOnlySpan<SBP> polices)
@@ -169,9 +186,10 @@ public static class DistributedUtility
     {
         tensorType = null;
         var divisors = GetDivisors(distributedType);
+        var maxShape = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
         tensorType = new TensorType(
             distributedType.TensorType.DType,
-            distributedType.TensorType.Shape.Zip(divisors).Select(p => p.Second == 0 ? p.First : Dimension.CeilDiv(p.First, p.Second)).ToArray());
+            maxShape.Zip(divisors).Select(p => p.Second == 0 ? p.First : Dimension.CeilDiv(p.First, p.Second)).ToArray());
         return true;
     }
 
@@ -212,18 +230,17 @@ public static class DistributedUtility
         return polices;
     }
 
-#if false
     public static Expr[] TryGetNonUniformDividedShape(DistributedType distributedType)
     {
-        var shape = distributedType.TensorType.Shape.ToValueArray();
-        var hierarchies = Enumerable.Range(0, shape.Length).Select(i => new List<int>()).ToArray();
+        var maxShape = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
+        var hierarchies = Enumerable.Range(0, maxShape.Length).Select(i => new List<int>()).ToArray();
         var ids = distributedType.Placement.Name.Select(c => new Var(c + "id", TensorType.Scalar(DataTypes.Int32))).ToArray();
         var hierarchyStrides = TensorUtilities.GetStrides(distributedType.Placement.Hierarchy.ToArray());
-        for (int i = 0; i < distributedType.NdSBP.Count; i++)
+        for (int i = 0; i < distributedType.AxisPolices.Count; i++)
         {
-            if (distributedType.NdSBP[i] is SBPSplit { Axis: int axis })
+            if (distributedType.AxisPolices[i] is SBPSplit split)
             {
-                hierarchies[axis].Add(i);
+                hierarchies[i].AddRange(split.Axes);
             }
         }
 
@@ -233,12 +250,13 @@ public static class DistributedUtility
             if (divs.Any())
             {
                 var divsor = (int)TensorUtilities.GetProduct(divs.Select(h => distributedType.Placement.Hierarchy[h]).ToArray());
-                var (res, rem) = Math.DivRem(shape[axis], divsor);
+                var (res, rem) = Math.DivRem(maxShape[axis], divsor);
                 if (rem == 0)
                 {
                     return res;
                 }
 
+                // TODO: add more split policies
                 dim = IR.F.Math.Select(
                     TensorUtilities.GetIndex(hierarchyStrides.TakeLast(divs.Count).Select(s => (Expr)s).ToArray(), divs.Select(h => ids[h]).ToArray()) < (divsor - 1),
                     res,
@@ -246,7 +264,7 @@ public static class DistributedUtility
             }
             else
             {
-                dim = distributedType.TensorType.Shape[axis].FixedValue;
+                dim = maxShape[axis];
             }
 
             return dim;
@@ -255,13 +273,13 @@ public static class DistributedUtility
 
     public static List<long[]> TryGetNonUniformDividedSlice(DistributedType distributedType)
     {
-        var shape = distributedType.TensorType.Shape.ToValueArray();
-        var hierarchies = Enumerable.Range(0, shape.Length).Select(i => new List<int>()).ToArray();
-        for (int i = 0; i < distributedType.NdSBP.Count; i++)
+        var maxShape = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
+        var hierarchies = Enumerable.Range(0, maxShape.Length).Select(i => new List<int>()).ToArray();
+        for (int i = 0; i < distributedType.AxisPolices.Count; i++)
         {
-            if (distributedType.NdSBP[i] is SBPSplit { Axis: int axis })
+            if (distributedType.AxisPolices[i] is SBPSplit split)
             {
-                hierarchies[axis].Add(i);
+                hierarchies[i].AddRange(split.Axes);
             }
         }
 
@@ -271,7 +289,7 @@ public static class DistributedUtility
             if (divs.Any())
             {
                 var divsor = (int)TensorUtilities.GetProduct(divs.Select(h => distributedType.Placement.Hierarchy[h]).ToArray());
-                var (res, rem) = Math.DivRem(shape[axis], divsor);
+                var (res, rem) = Math.DivRem(maxShape[axis], divsor);
                 if (rem == 0)
                 {
                     return new[] { res };
@@ -281,7 +299,7 @@ public static class DistributedUtility
             }
             else
             {
-                dim = distributedType.TensorType.Shape.ToValueArray().Skip(axis).Take(1).ToArray();
+                dim = maxShape.Skip(axis).Take(1).ToArray();
             }
 
             return dim;
@@ -297,7 +315,6 @@ public static class DistributedUtility
 
         return ret.ToList();
     }
-#endif
 
     public static bool IsDivideBy(long input, int divisor)
     {
@@ -359,7 +376,7 @@ public static class DistributedUtility
 
     public static (long[] Offset, long[] Shape) GetLocalOffsetAndShape(DistributedType distributedType, int[] shardIndex)
     {
-        var globalShape = distributedType.TensorType.Shape.ToValueArray();
+        var globalShape = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
         var offset = new long[distributedType.TensorType.Shape.Rank];
         var shape = new long[distributedType.TensorType.Shape.Rank];
         for (int axis = 0; axis < offset.Length; axis++)
@@ -390,13 +407,14 @@ public static class DistributedUtility
 
     private static (Shape Tile, Shape Shape) GetDividedTile(DistributedType distributedType)
     {
-        var shape = distributedType.TensorType.Shape.ToArray();
-        var tiles = distributedType.TensorType.Shape.ToArray();
+        var shape = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
+        var tiles = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
         for (var d = 0; d < shape.Length; d++)
         {
             if (distributedType.AxisPolices.Count > d && distributedType.AxisPolices[d] is SBPSplit split)
             {
-                tiles[d] /= split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
+                var divisor = split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
+                tiles[d] = (tiles[d] + divisor - 1) / divisor;
             }
         }
 

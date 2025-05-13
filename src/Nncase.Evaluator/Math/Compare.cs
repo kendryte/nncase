@@ -45,7 +45,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
                     break;
                 case (SBPSplit sa, SBPBroadCast):
                     // invalid (S, B) if B is not broacast
-                    if (b.TensorType.Shape[i - padB] != 1)
+                    if (b.TensorType.Shape[i - padB] is { IsFixed: false } || (b.TensorType.Shape[i - padB] is { IsFixed: true, FixedValue: var fb } && fb != 1))
                     {
                         return new InvalidType($"lhs rhs sbp at {i} not broadcast");
                     }
@@ -54,7 +54,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
                     break;
                 case (SBPBroadCast, SBPSplit sb):
                     // invalid (B, S) if A is not broacast
-                    if (a.TensorType.Shape[i - padA] != 1)
+                    if (a.TensorType.Shape[i - padA] is { IsFixed: false } || (a.TensorType.Shape[i - padA] is { IsFixed: true, FixedValue: var fa } && fa != 1))
                     {
                         return new InvalidType($"lhs rhs sbp at {i} not broadcast");
                     }

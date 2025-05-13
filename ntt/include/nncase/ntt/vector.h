@@ -117,5 +117,17 @@ template <class OldT, size_t... Lanes, class Tnew>
 struct cast_fixed_tensor_element_type<basic_vector<OldT, Lanes...>, Tnew> {
     using type = vector<Tnew, Lanes...>;
 };
+namespace detail {
+template <typename T, typename Lanes> struct MakeVectorType;
+
+// 特化 ExtractDims 以处理 fixed_shape
+template <typename T, size_t... Lanes>
+struct MakeVectorType<T, fixed_shape<Lanes...>> {
+    using vector_type = ntt::vector<T, Lanes...>;
+};
+}; // namespace detail
+
+template <typename T, IsFixedDims Lanes>
+using make_vector_t = typename detail::MakeVectorType<T, Lanes>::vector_type;
 
 } // namespace nncase::ntt

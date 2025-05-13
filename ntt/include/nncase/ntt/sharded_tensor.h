@@ -63,14 +63,27 @@ class sharded_tensor_view : public ntt::detail::shape_storage<Shape> {
         //         mesh_type::shape_type::rank(),
         //     "Invalid index.");
         auto local_address = local().elements().data();
-        return remote_tensor_type<RemoteScope>::create(
-            mesh_type::remote_program_id(
-                ranked_shape<mesh_type::shape_type::rank()>(
-                    mesh_type::local_index())),
-            mesh_type::remote_program_id(
-                ranked_shape<mesh_type::shape_type::rank()>(
-                    std::forward<ShardIndexes>(shardIndexes)...)),
-            local_address);
+        if constexpr (IsFixedTensor<local_tensor_type>)
+        {
+            return remote_tensor_type<RemoteScope>::create(
+                mesh_type::remote_program_id(
+                    ranked_shape<mesh_type::shape_type::rank()>(
+                        mesh_type::local_index())),
+                mesh_type::remote_program_id(
+                    ranked_shape<mesh_type::shape_type::rank()>(
+                        std::forward<ShardIndexes>(shardIndexes)...)),
+                local_address);
+        }
+        else {
+            return remote_tensor_type<RemoteScope>::create(
+                mesh_type::remote_program_id(
+                    ranked_shape<mesh_type::shape_type::rank()>(
+                        mesh_type::local_index())),
+                mesh_type::remote_program_id(
+                    ranked_shape<mesh_type::shape_type::rank()>(
+                        std::forward<ShardIndexes>(shardIndexes)...)),
+                local_address, local().shape(), local().strides());
+        }
     }
 
     template <class DestSharding, class DestStrides>

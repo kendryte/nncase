@@ -87,7 +87,7 @@ reduce_prod(const T *input, T *output, std::span<const size_t> in_shape,
     // init with init_value
     try_(kernels::stackvm::apply(
         out_shape, [&](std::span<const size_t> index) -> result<void> {
-            output[offset(out_strides, index)] = 1;
+            output[offset(out_strides, index)] = (T)1;
             return ok();
         }));
 

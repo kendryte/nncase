@@ -3,7 +3,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +16,7 @@ namespace Nncase;
 /// <summary>
 /// BFloat16.
 /// </summary>
-public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
+public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>, INumber<BFloat16>
 {
     /// <summary>
     /// bfloat16 representation bits.
@@ -31,6 +34,16 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     public static BFloat16 Epsilon => FromRaw(0x3c00);
 
     public static BFloat16 NaN => FromRaw(0x7fc0);
+
+    public static BFloat16 One => throw new NotImplementedException();
+
+    public static int Radix => throw new NotImplementedException();
+
+    public static BFloat16 Zero => throw new NotImplementedException();
+
+    public static BFloat16 AdditiveIdentity => throw new NotImplementedException();
+
+    public static BFloat16 MultiplicativeIdentity => throw new NotImplementedException();
 
     /// <summary>
     /// Implicit convert <see cref="BFloat16"/> to <see cref="float"/>.
@@ -86,6 +99,24 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
         return left.CompareTo(right) >= 0;
     }
 
+    public static BFloat16 operator %(BFloat16 left, BFloat16 right) => (BFloat16)((float)left % (float)right);
+
+    public static BFloat16 operator +(BFloat16 left, BFloat16 right) => (BFloat16)((float)left + (float)right);
+
+    public static BFloat16 operator --(BFloat16 value) => (BFloat16)((float)value - 1);
+
+    public static BFloat16 operator /(BFloat16 left, BFloat16 right) => (BFloat16)((float)left / (float)right);
+
+    public static BFloat16 operator ++(BFloat16 value) => (BFloat16)((float)value + 1);
+
+    public static BFloat16 operator *(BFloat16 left, BFloat16 right) => (BFloat16)((float)left * (float)right);
+
+    public static BFloat16 operator -(BFloat16 left, BFloat16 right) => (BFloat16)((float)left - (float)right);
+
+    public static BFloat16 operator -(BFloat16 value) => (BFloat16)(-(float)value);
+
+    public static BFloat16 operator +(BFloat16 value) => (BFloat16)(+(float)value);
+
     /// <summary>
     /// Reinterpret cast <see cref="ushort"/> to <see cref="BFloat16"/>.
     /// </summary>
@@ -124,6 +155,90 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
         input += roundingBias;
         return FromRaw((ushort)(input >> 16));
     }
+
+    public static BFloat16 Abs(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsCanonical(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsComplexNumber(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsEvenInteger(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsFinite(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsImaginaryNumber(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsInfinity(BFloat16 value) => float.IsInfinity(value);
+
+    public static bool IsInteger(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsNaN(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsNegative(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsNegativeInfinity(BFloat16 value) => float.IsNegativeInfinity(value);
+
+    public static bool IsNormal(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsOddInteger(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsPositive(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsPositiveInfinity(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsRealNumber(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsSubnormal(BFloat16 value) => throw new NotImplementedException();
+
+    public static bool IsZero(BFloat16 value) => throw new NotImplementedException();
+
+    public static BFloat16 MaxMagnitude(BFloat16 x, BFloat16 y) => throw new NotImplementedException();
+
+    public static BFloat16 MaxMagnitudeNumber(BFloat16 x, BFloat16 y) => throw new NotImplementedException();
+
+    public static BFloat16 MinMagnitude(BFloat16 x, BFloat16 y) => throw new NotImplementedException();
+
+    public static BFloat16 MinMagnitudeNumber(BFloat16 x, BFloat16 y) => throw new NotImplementedException();
+
+    public static BFloat16 Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider) => throw new NotImplementedException();
+
+    public static BFloat16 Parse(string s, NumberStyles style, IFormatProvider? provider) => throw new NotImplementedException();
+
+    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out BFloat16 result)
+        where TOther : INumberBase<TOther>
+        => throw new NotImplementedException();
+
+    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out BFloat16 result)
+        where TOther : INumberBase<TOther>
+        => throw new NotImplementedException();
+
+    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out BFloat16 result)
+        where TOther : INumberBase<TOther>
+        => throw new NotImplementedException();
+
+    public static bool TryConvertToChecked<TOther>(BFloat16 value, [MaybeNullWhen(false)] out TOther result)
+        where TOther : INumberBase<TOther>
+        => throw new NotImplementedException();
+
+    public static bool TryConvertToSaturating<TOther>(BFloat16 value, [MaybeNullWhen(false)] out TOther result)
+        where TOther : INumberBase<TOther>
+        => throw new NotImplementedException();
+
+    public static bool TryConvertToTruncating<TOther>(BFloat16 value, [MaybeNullWhen(false)] out TOther result)
+        where TOther : INumberBase<TOther>
+        => throw new NotImplementedException();
+
+    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out BFloat16 result) => throw new NotImplementedException();
+
+    public static bool TryParse([NotNullWhen(true)] string? s, NumberStyles style, IFormatProvider? provider, [MaybeNullWhen(false)] out BFloat16 result) => throw new NotImplementedException();
+
+    public static BFloat16 Parse(ReadOnlySpan<char> s, IFormatProvider? provider) => throw new NotImplementedException();
+
+    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider? provider, [MaybeNullWhen(false)] out BFloat16 result) => throw new NotImplementedException();
+
+    public static BFloat16 Parse(string s, IFormatProvider? provider) => throw new NotImplementedException();
+
+    public static bool TryParse([NotNullWhen(true)] string? s, IFormatProvider? provider, [MaybeNullWhen(false)] out BFloat16 result) => throw new NotImplementedException();
 
     /// <summary>
     /// Returns a value indicating whether this instance and other BFloat16 represent the same value.
@@ -173,4 +288,10 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>
     {
         return ((float)this).CompareTo(other);
     }
+
+    public int CompareTo(object? obj) => throw new NotImplementedException();
+
+    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider? provider) => throw new NotImplementedException();
+
+    public string ToString(string? format, IFormatProvider? formatProvider) => throw new NotImplementedException();
 }

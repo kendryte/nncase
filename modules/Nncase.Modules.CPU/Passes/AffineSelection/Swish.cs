@@ -13,9 +13,9 @@ using Nncase.TIR.CPU;
 
 namespace Nncase.Passes;
 
-public sealed partial class CPUAffineSelectionPass
+public partial class CPUAffineSelectionPass
 {
-    private Expr SelectSwish(IR.NN.Swish swish, Call call, Expr output)
+    public Expr SelectSwish(IR.NN.Swish swish, Call call, Expr output)
     {
         var beta = call[IR.NN.Swish.Beta];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 }

@@ -39,6 +39,8 @@ class stack_entry {
 
     stack_entry(bfloat16 v) noexcept : stack_entry((float)v) {}
     stack_entry(half v) noexcept : stack_entry((float)v) {}
+    stack_entry(float_e4m3_t v) noexcept : stack_entry((float)v) {}
+    stack_entry(float_e5m2_t v) noexcept : stack_entry((float)v) {}
 
     stack_entry(intptr_t v) noexcept : type_(entry_type::I), i_(v) {}
     stack_entry(float v) noexcept : type_(entry_type::R), r_(v) {}

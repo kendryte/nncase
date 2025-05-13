@@ -22,8 +22,8 @@ public interface ISpanConverter
 /// <typeparam name="TFrom">From type.</typeparam>
 /// <typeparam name="TTo">To type.</typeparam>
 public interface ISpanConverter<TFrom, TTo> : ISpanConverter
-    where TFrom : unmanaged, IEquatable<TFrom>
-    where TTo : unmanaged, IEquatable<TTo>
+    where TFrom : struct, IEquatable<TFrom>
+    where TTo : struct, IEquatable<TTo>
 {
     /// <summary>
     /// Convert span.
@@ -39,7 +39,7 @@ public interface ISpanConverter<TFrom, TTo> : ISpanConverter
 /// </summary>
 /// <typeparam name="TTo">To type.</typeparam>
 public interface IPointerSpanConverter<TTo> : ISpanConverter
-    where TTo : unmanaged, IEquatable<TTo>
+    where TTo : struct, IEquatable<TTo>
 {
     /// <summary>
     /// Convert span.
@@ -49,5 +49,5 @@ public interface IPointerSpanConverter<TTo> : ISpanConverter
     /// <param name="dest">Dest span.</param>
     /// <param name="castMode">Cast mode.</param>
     void ConvertTo<T>(ReadOnlySpan<Pointer<T>> source, Span<TTo> dest, CastMode castMode)
-        where T : unmanaged, IEquatable<T>;
+        where T : struct, IEquatable<T>;
 }

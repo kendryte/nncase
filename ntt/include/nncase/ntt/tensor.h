@@ -269,6 +269,15 @@ class basic_tensor
             buffer(), new_shape, new_strides);
     }
 
+    template <size_t Rank>
+    constexpr auto squeeze(ranked_shape<Rank> axes) noexcept {
+        auto new_shape = squeeze_shape(axes, shape());
+        auto new_strides = squeeze_strides(axes, strides());
+        return tensor_view<T, std::decay_t<decltype(new_shape)>,
+                           std::decay_t<decltype(new_strides)>>(
+            buffer(), new_shape, new_strides);
+    }
+
     constexpr tensor_view<T, Shape, Strides> view() noexcept {
         return view(zero_shape_t<Shape::rank()>{}, shape());
     }

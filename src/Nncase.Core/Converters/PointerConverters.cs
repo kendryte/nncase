@@ -12,7 +12,7 @@ namespace Nncase.Converters;
 internal class PointerConverters : IPointerSpanConverter<ulong>
 {
     public void ConvertTo<T>(ReadOnlySpan<Pointer<T>> source, Span<ulong> dest, CastMode castMode)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         if (castMode == CastMode.Exact)
         {
@@ -34,7 +34,7 @@ internal class PointerConverters : IPointerSpanConverter<ulong>
 internal class PointerIntConverters : IPointerSpanConverter<int>
 {
     public void ConvertTo<T>(ReadOnlySpan<Pointer<T>> source, Span<int> dest, CastMode castMode)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         if (castMode != CastMode.KDefault)
         {

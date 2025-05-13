@@ -45,7 +45,7 @@ public interface IEvaluateContext
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
     public Tensor<T> GetArgumentValueAsTensor<T>(Op op, ParameterInfo parameter)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return GetArgumentValue(op, parameter).AsTensor().Cast<T>();
     }
@@ -77,13 +77,13 @@ public interface IEvaluateContext
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
     public T GetArgumentValueAsScalar<T>(Op op, ParameterInfo parameter)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return GetArgumentValue(op, parameter).AsTensor().ToScalar<T>();
     }
 
     public T GetOptionArgumentValueAsScalar<T>(Op op, ParameterInfo parameter, T dft)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         if (GetOptionalArgumentValue(op, parameter).Value != null && ((TensorType)GetOptionalArgumentValue(op, parameter).Value.Type).Shape.Size == 0)
         {
@@ -103,7 +103,7 @@ public interface IEvaluateContext
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
     public T[] GetArgumentValueAsArray<T>(Op op, ParameterInfo parameter)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return GetArgumentValue(op, parameter).AsTensor().ToArray<T>();
     }

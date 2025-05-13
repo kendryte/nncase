@@ -182,4 +182,50 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(intVal, fields[0].ToValue());
         Assert.Equal(floatVal, fields[1].ToValue());
     }
+#if false
+    [Fact]
+    public void TestRTAttentionConfig()
+    {
+        var a = new IR.NN.AttentionConfig(1, 2, 3, DataTypes.Float32);
+        var r_a = RTAttentionConfig.FromConfig(a);
+        Assert.Equal(a.NumLayers, r_a.NumLayers);
+        Assert.Equal(a.NumKVHeads, r_a.NumKVHeads);
+        Assert.Equal(a.HeadDim, r_a.HeadDim);
+        r_a.NumLayers = 3;
+        r_a.NumKVHeads = 2;
+        r_a.HeadDim = 1;
+        Assert.Equal(3, r_a.NumLayers);
+        Assert.Equal(2, r_a.NumKVHeads);
+        Assert.Equal(1, r_a.HeadDim);
+
+        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers], [], [], DataTypes.Float16);
+        var r_b = (RTPagedAttentionConfig)RTAttentionConfig.FromConfig(b);
+        Assert.Equal(b.NumLayers, r_b.NumLayers);
+        Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
+        Assert.Equal(b.HeadDim, r_b.HeadDim);
+        Assert.Equal(b.BlockSize, r_b.BlockSize);
+        r_b.NumLayers = 3;
+        r_b.NumKVHeads = 2;
+        r_b.HeadDim = 1;
+        r_b.BlockSize = 0;
+        Assert.Equal(3, r_b.NumLayers);
+        Assert.Equal(2, r_b.NumKVHeads);
+        Assert.Equal(1, r_b.HeadDim);
+        Assert.Equal(0, r_b.BlockSize);
+    }
+
+    [Fact]
+    public void TestRTPagedAttentionScheduler()
+    {
+        var cfg = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers], [], [], DataTypes.Float32);
+        var s = RTPagedAttentionScheduler.Create(cfg, 128, 1238);
+
+        var sessionIds = Tensor.From([1L]);
+        var tokenCounts = Tensor.From([128L]);
+        var cache = s.Schedule(sessionIds, tokenCounts);
+        Assert.Equal(1, cache.NumSeqs);
+        Assert.Equal(128, cache.SeqLen(0));
+        Assert.Equal(0, cache.ContextLen(0));
+    }
+#endif
 }

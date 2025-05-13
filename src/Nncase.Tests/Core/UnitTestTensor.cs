@@ -191,4 +191,12 @@ public sealed class UnitTestTensor
         Assert.Throws<NotImplementedException>(() => t.Contains(8));
         Assert.Throws<NotImplementedException>(() => t.IndexOf(8));
     }
+
+    [Fact]
+    public void TestTensorOfTensor()
+    {
+        var a = Tensor<float>.From([1f, 2f, 3f]);
+        var c = Tensor<Memory<float>>.From(new[] { a.Buffer });
+        Assert.IsType<MemoryType>(c.ElementType);
+    }
 }

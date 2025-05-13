@@ -54,5 +54,9 @@ internal class CPUModule : IApplicationPart
         registrator.RegisterManyInterface<ErfEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<CompareEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ScatterNDEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PagedAttentionEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UpdatePagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<CreatePagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<IdentityPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
     }
 }

@@ -23,12 +23,13 @@ public unsafe struct Vector4<T> : IEquatable<Vector4<T>>, IAdditionOperators<Vec
     private T _item_0_2;
     private T _item_0_3;
 
-    public static Vector4<T> Create(T[] array) {
-      Vector4<T> vec = default;
-      var src = array.AsSpan();
-      var dest = vec.AsSpan();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector4<T> Create(T[] array) 
+    {
+        Vector4<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i]
@@ -43,7 +44,8 @@ public unsafe struct Vector4<T> : IEquatable<Vector4<T>>, IAdditionOperators<Vec
 
     public int Count => 4;
 
-    public static Vector4<T> operator +(Vector4<T> left, Vector4<T> right) {
+    public static Vector4<T> operator +(Vector4<T> left, Vector4<T> right) 
+    {
         Vector4<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -55,7 +57,8 @@ public unsafe struct Vector4<T> : IEquatable<Vector4<T>>, IAdditionOperators<Vec
         return res;
     }
 
-    public static Vector4<T> operator -(Vector4<T> left, Vector4<T> right) {
+    public static Vector4<T> operator -(Vector4<T> left, Vector4<T> right) 
+    {
         Vector4<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -67,7 +70,8 @@ public unsafe struct Vector4<T> : IEquatable<Vector4<T>>, IAdditionOperators<Vec
         return res;
     }
 
-    public static Vector4<T> operator *(Vector4<T> left, Vector4<T> right) {
+    public static Vector4<T> operator *(Vector4<T> left, Vector4<T> right) 
+    {
         Vector4<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -79,7 +83,8 @@ public unsafe struct Vector4<T> : IEquatable<Vector4<T>>, IAdditionOperators<Vec
         return res;
     }
 
-    public static Vector4<T> operator /(Vector4<T> left, Vector4<T> right) {
+    public static Vector4<T> operator /(Vector4<T> left, Vector4<T> right) 
+    {
         Vector4<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -91,6 +96,11 @@ public unsafe struct Vector4<T> : IEquatable<Vector4<T>>, IAdditionOperators<Vec
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -106,12 +116,13 @@ public unsafe struct Vector8<T> : IEquatable<Vector8<T>>, IAdditionOperators<Vec
     private T _item_0_6;
     private T _item_0_7;
 
-    public static Vector8<T> Create(T[] array) {
-      Vector8<T> vec = default;
-      var src = array.AsSpan();
-      var dest = vec.AsSpan();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector8<T> Create(T[] array) 
+    {
+        Vector8<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i]
@@ -126,7 +137,8 @@ public unsafe struct Vector8<T> : IEquatable<Vector8<T>>, IAdditionOperators<Vec
 
     public int Count => 8;
 
-    public static Vector8<T> operator +(Vector8<T> left, Vector8<T> right) {
+    public static Vector8<T> operator +(Vector8<T> left, Vector8<T> right) 
+    {
         Vector8<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -138,7 +150,8 @@ public unsafe struct Vector8<T> : IEquatable<Vector8<T>>, IAdditionOperators<Vec
         return res;
     }
 
-    public static Vector8<T> operator -(Vector8<T> left, Vector8<T> right) {
+    public static Vector8<T> operator -(Vector8<T> left, Vector8<T> right) 
+    {
         Vector8<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -150,7 +163,8 @@ public unsafe struct Vector8<T> : IEquatable<Vector8<T>>, IAdditionOperators<Vec
         return res;
     }
 
-    public static Vector8<T> operator *(Vector8<T> left, Vector8<T> right) {
+    public static Vector8<T> operator *(Vector8<T> left, Vector8<T> right) 
+    {
         Vector8<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -162,7 +176,8 @@ public unsafe struct Vector8<T> : IEquatable<Vector8<T>>, IAdditionOperators<Vec
         return res;
     }
 
-    public static Vector8<T> operator /(Vector8<T> left, Vector8<T> right) {
+    public static Vector8<T> operator /(Vector8<T> left, Vector8<T> right) 
+    {
         Vector8<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -174,6 +189,11 @@ public unsafe struct Vector8<T> : IEquatable<Vector8<T>>, IAdditionOperators<Vec
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -197,12 +217,13 @@ public unsafe struct Vector16<T> : IEquatable<Vector16<T>>, IAdditionOperators<V
     private T _item_0_14;
     private T _item_0_15;
 
-    public static Vector16<T> Create(T[] array) {
-      Vector16<T> vec = default;
-      var src = array.AsSpan();
-      var dest = vec.AsSpan();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector16<T> Create(T[] array) 
+    {
+        Vector16<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i]
@@ -217,7 +238,8 @@ public unsafe struct Vector16<T> : IEquatable<Vector16<T>>, IAdditionOperators<V
 
     public int Count => 16;
 
-    public static Vector16<T> operator +(Vector16<T> left, Vector16<T> right) {
+    public static Vector16<T> operator +(Vector16<T> left, Vector16<T> right) 
+    {
         Vector16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -229,7 +251,8 @@ public unsafe struct Vector16<T> : IEquatable<Vector16<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector16<T> operator -(Vector16<T> left, Vector16<T> right) {
+    public static Vector16<T> operator -(Vector16<T> left, Vector16<T> right) 
+    {
         Vector16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -241,7 +264,8 @@ public unsafe struct Vector16<T> : IEquatable<Vector16<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector16<T> operator *(Vector16<T> left, Vector16<T> right) {
+    public static Vector16<T> operator *(Vector16<T> left, Vector16<T> right) 
+    {
         Vector16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -253,7 +277,8 @@ public unsafe struct Vector16<T> : IEquatable<Vector16<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector16<T> operator /(Vector16<T> left, Vector16<T> right) {
+    public static Vector16<T> operator /(Vector16<T> left, Vector16<T> right) 
+    {
         Vector16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -265,6 +290,11 @@ public unsafe struct Vector16<T> : IEquatable<Vector16<T>>, IAdditionOperators<V
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -304,12 +334,13 @@ public unsafe struct Vector32<T> : IEquatable<Vector32<T>>, IAdditionOperators<V
     private T _item_0_30;
     private T _item_0_31;
 
-    public static Vector32<T> Create(T[] array) {
-      Vector32<T> vec = default;
-      var src = array.AsSpan();
-      var dest = vec.AsSpan();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector32<T> Create(T[] array) 
+    {
+        Vector32<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i]
@@ -324,7 +355,8 @@ public unsafe struct Vector32<T> : IEquatable<Vector32<T>>, IAdditionOperators<V
 
     public int Count => 32;
 
-    public static Vector32<T> operator +(Vector32<T> left, Vector32<T> right) {
+    public static Vector32<T> operator +(Vector32<T> left, Vector32<T> right) 
+    {
         Vector32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -336,7 +368,8 @@ public unsafe struct Vector32<T> : IEquatable<Vector32<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector32<T> operator -(Vector32<T> left, Vector32<T> right) {
+    public static Vector32<T> operator -(Vector32<T> left, Vector32<T> right) 
+    {
         Vector32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -348,7 +381,8 @@ public unsafe struct Vector32<T> : IEquatable<Vector32<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector32<T> operator *(Vector32<T> left, Vector32<T> right) {
+    public static Vector32<T> operator *(Vector32<T> left, Vector32<T> right) 
+    {
         Vector32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -360,7 +394,8 @@ public unsafe struct Vector32<T> : IEquatable<Vector32<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector32<T> operator /(Vector32<T> left, Vector32<T> right) {
+    public static Vector32<T> operator /(Vector32<T> left, Vector32<T> right) 
+    {
         Vector32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -372,6 +407,11 @@ public unsafe struct Vector32<T> : IEquatable<Vector32<T>>, IAdditionOperators<V
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -443,12 +483,13 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>, IAdditionOperators<V
     private T _item_0_62;
     private T _item_0_63;
 
-    public static Vector64<T> Create(T[] array) {
-      Vector64<T> vec = default;
-      var src = array.AsSpan();
-      var dest = vec.AsSpan();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector64<T> Create(T[] array) 
+    {
+        Vector64<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i]
@@ -463,7 +504,8 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>, IAdditionOperators<V
 
     public int Count => 64;
 
-    public static Vector64<T> operator +(Vector64<T> left, Vector64<T> right) {
+    public static Vector64<T> operator +(Vector64<T> left, Vector64<T> right) 
+    {
         Vector64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -475,7 +517,8 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector64<T> operator -(Vector64<T> left, Vector64<T> right) {
+    public static Vector64<T> operator -(Vector64<T> left, Vector64<T> right) 
+    {
         Vector64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -487,7 +530,8 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector64<T> operator *(Vector64<T> left, Vector64<T> right) {
+    public static Vector64<T> operator *(Vector64<T> left, Vector64<T> right) 
+    {
         Vector64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -499,7 +543,8 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>, IAdditionOperators<V
         return res;
     }
 
-    public static Vector64<T> operator /(Vector64<T> left, Vector64<T> right) {
+    public static Vector64<T> operator /(Vector64<T> left, Vector64<T> right) 
+    {
         Vector64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -511,6 +556,11 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>, IAdditionOperators<V
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -646,12 +696,13 @@ public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators
     private T _item_0_126;
     private T _item_0_127;
 
-    public static Vector128<T> Create(T[] array) {
-      Vector128<T> vec = default;
-      var src = array.AsSpan();
-      var dest = vec.AsSpan();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector128<T> Create(T[] array) 
+    {
+        Vector128<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i]
@@ -666,7 +717,8 @@ public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators
 
     public int Count => 128;
 
-    public static Vector128<T> operator +(Vector128<T> left, Vector128<T> right) {
+    public static Vector128<T> operator +(Vector128<T> left, Vector128<T> right) 
+    {
         Vector128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -678,7 +730,8 @@ public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector128<T> operator -(Vector128<T> left, Vector128<T> right) {
+    public static Vector128<T> operator -(Vector128<T> left, Vector128<T> right) 
+    {
         Vector128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -690,7 +743,8 @@ public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector128<T> operator *(Vector128<T> left, Vector128<T> right) {
+    public static Vector128<T> operator *(Vector128<T> left, Vector128<T> right) 
+    {
         Vector128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -702,7 +756,8 @@ public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector128<T> operator /(Vector128<T> left, Vector128<T> right) {
+    public static Vector128<T> operator /(Vector128<T> left, Vector128<T> right) 
+    {
         Vector128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -714,6 +769,11 @@ public unsafe struct Vector128<T> : IEquatable<Vector128<T>>, IAdditionOperators
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -737,12 +797,13 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>, IAdditionOperators
     private T _item_3_2;
     private T _item_3_3;
 
-    public static Vector4x4<T> Create(T[,] array) {
-      Vector4x4<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector4x4<T> Create(T[,] array) 
+    {
+        Vector4x4<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -755,15 +816,19 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>, IAdditionOperators
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 4;
 
     public int Width => 4;
-    
+
     public int Count => Height * Width;
 
-    public static Vector4x4<T> operator +(Vector4x4<T> left, Vector4x4<T> right) {
+    public static Vector4x4<T> operator +(Vector4x4<T> left, Vector4x4<T> right) 
+    {
         Vector4x4<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -775,7 +840,8 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector4x4<T> operator -(Vector4x4<T> left, Vector4x4<T> right) {
+    public static Vector4x4<T> operator -(Vector4x4<T> left, Vector4x4<T> right) 
+    {
         Vector4x4<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -787,7 +853,8 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector4x4<T> operator *(Vector4x4<T> left, Vector4x4<T> right) {
+    public static Vector4x4<T> operator *(Vector4x4<T> left, Vector4x4<T> right) 
+    {
         Vector4x4<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -799,7 +866,8 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector4x4<T> operator /(Vector4x4<T> left, Vector4x4<T> right) {
+    public static Vector4x4<T> operator /(Vector4x4<T> left, Vector4x4<T> right) 
+    {
         Vector4x4<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -811,6 +879,22 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>, IAdditionOperators
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -882,12 +966,13 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>, IAdditionOperators
     private T _item_7_6;
     private T _item_7_7;
 
-    public static Vector8x8<T> Create(T[,] array) {
-      Vector8x8<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector8x8<T> Create(T[,] array) 
+    {
+        Vector8x8<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -900,15 +985,19 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>, IAdditionOperators
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 8;
 
     public int Width => 8;
-    
+
     public int Count => Height * Width;
 
-    public static Vector8x8<T> operator +(Vector8x8<T> left, Vector8x8<T> right) {
+    public static Vector8x8<T> operator +(Vector8x8<T> left, Vector8x8<T> right) 
+    {
         Vector8x8<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -920,7 +1009,8 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector8x8<T> operator -(Vector8x8<T> left, Vector8x8<T> right) {
+    public static Vector8x8<T> operator -(Vector8x8<T> left, Vector8x8<T> right) 
+    {
         Vector8x8<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -932,7 +1022,8 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector8x8<T> operator *(Vector8x8<T> left, Vector8x8<T> right) {
+    public static Vector8x8<T> operator *(Vector8x8<T> left, Vector8x8<T> right) 
+    {
         Vector8x8<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -944,7 +1035,8 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>, IAdditionOperators
         return res;
     }
 
-    public static Vector8x8<T> operator /(Vector8x8<T> left, Vector8x8<T> right) {
+    public static Vector8x8<T> operator /(Vector8x8<T> left, Vector8x8<T> right) 
+    {
         Vector8x8<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -956,6 +1048,22 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>, IAdditionOperators
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -1219,12 +1327,13 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>, IAdditionOpera
     private T _item_15_14;
     private T _item_15_15;
 
-    public static Vector16x16<T> Create(T[,] array) {
-      Vector16x16<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector16x16<T> Create(T[,] array) 
+    {
+        Vector16x16<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -1237,15 +1346,19 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>, IAdditionOpera
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 16;
 
     public int Width => 16;
-    
+
     public int Count => Height * Width;
 
-    public static Vector16x16<T> operator +(Vector16x16<T> left, Vector16x16<T> right) {
+    public static Vector16x16<T> operator +(Vector16x16<T> left, Vector16x16<T> right) 
+    {
         Vector16x16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -1257,7 +1370,8 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector16x16<T> operator -(Vector16x16<T> left, Vector16x16<T> right) {
+    public static Vector16x16<T> operator -(Vector16x16<T> left, Vector16x16<T> right) 
+    {
         Vector16x16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -1269,7 +1383,8 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector16x16<T> operator *(Vector16x16<T> left, Vector16x16<T> right) {
+    public static Vector16x16<T> operator *(Vector16x16<T> left, Vector16x16<T> right) 
+    {
         Vector16x16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -1281,7 +1396,8 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector16x16<T> operator /(Vector16x16<T> left, Vector16x16<T> right) {
+    public static Vector16x16<T> operator /(Vector16x16<T> left, Vector16x16<T> right) 
+    {
         Vector16x16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -1293,6 +1409,22 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>, IAdditionOpera
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -1812,12 +1944,13 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>, IAdditionOpera
     private T _item_31_14;
     private T _item_31_15;
 
-    public static Vector32x16<T> Create(T[,] array) {
-      Vector32x16<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector32x16<T> Create(T[,] array) 
+    {
+        Vector32x16<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -1830,15 +1963,19 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>, IAdditionOpera
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 32;
 
     public int Width => 16;
-    
+
     public int Count => Height * Width;
 
-    public static Vector32x16<T> operator +(Vector32x16<T> left, Vector32x16<T> right) {
+    public static Vector32x16<T> operator +(Vector32x16<T> left, Vector32x16<T> right) 
+    {
         Vector32x16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -1850,7 +1987,8 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x16<T> operator -(Vector32x16<T> left, Vector32x16<T> right) {
+    public static Vector32x16<T> operator -(Vector32x16<T> left, Vector32x16<T> right) 
+    {
         Vector32x16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -1862,7 +2000,8 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x16<T> operator *(Vector32x16<T> left, Vector32x16<T> right) {
+    public static Vector32x16<T> operator *(Vector32x16<T> left, Vector32x16<T> right) 
+    {
         Vector32x16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -1874,7 +2013,8 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x16<T> operator /(Vector32x16<T> left, Vector32x16<T> right) {
+    public static Vector32x16<T> operator /(Vector32x16<T> left, Vector32x16<T> right) 
+    {
         Vector32x16<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -1886,6 +2026,22 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>, IAdditionOpera
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -2917,12 +3073,13 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>, IAdditionOpera
     private T _item_31_30;
     private T _item_31_31;
 
-    public static Vector32x32<T> Create(T[,] array) {
-      Vector32x32<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector32x32<T> Create(T[,] array) 
+    {
+        Vector32x32<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -2935,15 +3092,19 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>, IAdditionOpera
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 32;
 
     public int Width => 32;
-    
+
     public int Count => Height * Width;
 
-    public static Vector32x32<T> operator +(Vector32x32<T> left, Vector32x32<T> right) {
+    public static Vector32x32<T> operator +(Vector32x32<T> left, Vector32x32<T> right) 
+    {
         Vector32x32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -2955,7 +3116,8 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x32<T> operator -(Vector32x32<T> left, Vector32x32<T> right) {
+    public static Vector32x32<T> operator -(Vector32x32<T> left, Vector32x32<T> right) 
+    {
         Vector32x32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -2967,7 +3129,8 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x32<T> operator *(Vector32x32<T> left, Vector32x32<T> right) {
+    public static Vector32x32<T> operator *(Vector32x32<T> left, Vector32x32<T> right) 
+    {
         Vector32x32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -2979,7 +3142,8 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x32<T> operator /(Vector32x32<T> left, Vector32x32<T> right) {
+    public static Vector32x32<T> operator /(Vector32x32<T> left, Vector32x32<T> right) 
+    {
         Vector32x32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -2991,6 +3155,22 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>, IAdditionOpera
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -5046,12 +5226,13 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>, IAdditionOpera
     private T _item_31_62;
     private T _item_31_63;
 
-    public static Vector32x64<T> Create(T[,] array) {
-      Vector32x64<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector32x64<T> Create(T[,] array) 
+    {
+        Vector32x64<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -5064,15 +5245,19 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>, IAdditionOpera
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 32;
 
     public int Width => 64;
-    
+
     public int Count => Height * Width;
 
-    public static Vector32x64<T> operator +(Vector32x64<T> left, Vector32x64<T> right) {
+    public static Vector32x64<T> operator +(Vector32x64<T> left, Vector32x64<T> right) 
+    {
         Vector32x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -5084,7 +5269,8 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x64<T> operator -(Vector32x64<T> left, Vector32x64<T> right) {
+    public static Vector32x64<T> operator -(Vector32x64<T> left, Vector32x64<T> right) 
+    {
         Vector32x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -5096,7 +5282,8 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x64<T> operator *(Vector32x64<T> left, Vector32x64<T> right) {
+    public static Vector32x64<T> operator *(Vector32x64<T> left, Vector32x64<T> right) 
+    {
         Vector32x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -5108,7 +5295,8 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector32x64<T> operator /(Vector32x64<T> left, Vector32x64<T> right) {
+    public static Vector32x64<T> operator /(Vector32x64<T> left, Vector32x64<T> right) 
+    {
         Vector32x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -5120,6 +5308,22 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>, IAdditionOpera
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -9223,12 +9427,13 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>, IAdditionOpe
     private T _item_31_126;
     private T _item_31_127;
 
-    public static Vector32x128<T> Create(T[,] array) {
-      Vector32x128<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector32x128<T> Create(T[,] array) 
+    {
+        Vector32x128<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -9241,15 +9446,19 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>, IAdditionOpe
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 32;
 
     public int Width => 128;
-    
+
     public int Count => Height * Width;
 
-    public static Vector32x128<T> operator +(Vector32x128<T> left, Vector32x128<T> right) {
+    public static Vector32x128<T> operator +(Vector32x128<T> left, Vector32x128<T> right) 
+    {
         Vector32x128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -9261,7 +9470,8 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector32x128<T> operator -(Vector32x128<T> left, Vector32x128<T> right) {
+    public static Vector32x128<T> operator -(Vector32x128<T> left, Vector32x128<T> right) 
+    {
         Vector32x128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -9273,7 +9483,8 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector32x128<T> operator *(Vector32x128<T> left, Vector32x128<T> right) {
+    public static Vector32x128<T> operator *(Vector32x128<T> left, Vector32x128<T> right) 
+    {
         Vector32x128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -9285,7 +9496,8 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector32x128<T> operator /(Vector32x128<T> left, Vector32x128<T> right) {
+    public static Vector32x128<T> operator /(Vector32x128<T> left, Vector32x128<T> right) 
+    {
         Vector32x128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -9297,6 +9509,22 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>, IAdditionOpe
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -11352,12 +11580,13 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>, IAdditionOpera
     private T _item_63_30;
     private T _item_63_31;
 
-    public static Vector64x32<T> Create(T[,] array) {
-      Vector64x32<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector64x32<T> Create(T[,] array) 
+    {
+        Vector64x32<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -11370,15 +11599,19 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>, IAdditionOpera
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 64;
 
     public int Width => 32;
-    
+
     public int Count => Height * Width;
 
-    public static Vector64x32<T> operator +(Vector64x32<T> left, Vector64x32<T> right) {
+    public static Vector64x32<T> operator +(Vector64x32<T> left, Vector64x32<T> right) 
+    {
         Vector64x32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -11390,7 +11623,8 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector64x32<T> operator -(Vector64x32<T> left, Vector64x32<T> right) {
+    public static Vector64x32<T> operator -(Vector64x32<T> left, Vector64x32<T> right) 
+    {
         Vector64x32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -11402,7 +11636,8 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector64x32<T> operator *(Vector64x32<T> left, Vector64x32<T> right) {
+    public static Vector64x32<T> operator *(Vector64x32<T> left, Vector64x32<T> right) 
+    {
         Vector64x32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -11414,7 +11649,8 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector64x32<T> operator /(Vector64x32<T> left, Vector64x32<T> right) {
+    public static Vector64x32<T> operator /(Vector64x32<T> left, Vector64x32<T> right) 
+    {
         Vector64x32<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -11426,6 +11662,22 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>, IAdditionOpera
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -15529,12 +15781,13 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>, IAdditionOpera
     private T _item_63_62;
     private T _item_63_63;
 
-    public static Vector64x64<T> Create(T[,] array) {
-      Vector64x64<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector64x64<T> Create(T[,] array) 
+    {
+        Vector64x64<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -15547,15 +15800,19 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>, IAdditionOpera
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 64;
 
     public int Width => 64;
-    
+
     public int Count => Height * Width;
 
-    public static Vector64x64<T> operator +(Vector64x64<T> left, Vector64x64<T> right) {
+    public static Vector64x64<T> operator +(Vector64x64<T> left, Vector64x64<T> right) 
+    {
         Vector64x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -15567,7 +15824,8 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector64x64<T> operator -(Vector64x64<T> left, Vector64x64<T> right) {
+    public static Vector64x64<T> operator -(Vector64x64<T> left, Vector64x64<T> right) 
+    {
         Vector64x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -15579,7 +15837,8 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector64x64<T> operator *(Vector64x64<T> left, Vector64x64<T> right) {
+    public static Vector64x64<T> operator *(Vector64x64<T> left, Vector64x64<T> right) 
+    {
         Vector64x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -15591,7 +15850,8 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>, IAdditionOpera
         return res;
     }
 
-    public static Vector64x64<T> operator /(Vector64x64<T> left, Vector64x64<T> right) {
+    public static Vector64x64<T> operator /(Vector64x64<T> left, Vector64x64<T> right) 
+    {
         Vector64x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -15603,6 +15863,22 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>, IAdditionOpera
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -23802,12 +24078,13 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>, IAdditionOpe
     private T _item_63_126;
     private T _item_63_127;
 
-    public static Vector64x128<T> Create(T[,] array) {
-      Vector64x128<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector64x128<T> Create(T[,] array) 
+    {
+        Vector64x128<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -23820,15 +24097,19 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>, IAdditionOpe
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 64;
 
     public int Width => 128;
-    
+
     public int Count => Height * Width;
 
-    public static Vector64x128<T> operator +(Vector64x128<T> left, Vector64x128<T> right) {
+    public static Vector64x128<T> operator +(Vector64x128<T> left, Vector64x128<T> right) 
+    {
         Vector64x128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -23840,7 +24121,8 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector64x128<T> operator -(Vector64x128<T> left, Vector64x128<T> right) {
+    public static Vector64x128<T> operator -(Vector64x128<T> left, Vector64x128<T> right) 
+    {
         Vector64x128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -23852,7 +24134,8 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector64x128<T> operator *(Vector64x128<T> left, Vector64x128<T> right) {
+    public static Vector64x128<T> operator *(Vector64x128<T> left, Vector64x128<T> right) 
+    {
         Vector64x128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -23864,7 +24147,8 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector64x128<T> operator /(Vector64x128<T> left, Vector64x128<T> right) {
+    public static Vector64x128<T> operator /(Vector64x128<T> left, Vector64x128<T> right) 
+    {
         Vector64x128<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -23876,6 +24160,22 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>, IAdditionOpe
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -32075,12 +32375,13 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>, IAdditionOpe
     private T _item_127_62;
     private T _item_127_63;
 
-    public static Vector128x64<T> Create(T[,] array) {
-      Vector128x64<T> vec = default;
-      var src = array.AsSpan2D();
-      var dest = vec.AsSpan2D();
-      src.CopyTo(dest);
-      return vec;
+    public static Vector128x64<T> Create(T[,] array) 
+    {
+        Vector128x64<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
     }
 
     public T this[int i, int j]
@@ -32093,15 +32394,19 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>, IAdditionOpe
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
     public int Height => 128;
 
     public int Width => 64;
-    
+
     public int Count => Height * Width;
 
-    public static Vector128x64<T> operator +(Vector128x64<T> left, Vector128x64<T> right) {
+    public static Vector128x64<T> operator +(Vector128x64<T> left, Vector128x64<T> right) 
+    {
         Vector128x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -32113,7 +32418,8 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector128x64<T> operator -(Vector128x64<T> left, Vector128x64<T> right) {
+    public static Vector128x64<T> operator -(Vector128x64<T> left, Vector128x64<T> right) 
+    {
         Vector128x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -32125,7 +32431,8 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector128x64<T> operator *(Vector128x64<T> left, Vector128x64<T> right) {
+    public static Vector128x64<T> operator *(Vector128x64<T> left, Vector128x64<T> right) 
+    {
         Vector128x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -32137,7 +32444,8 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>, IAdditionOpe
         return res;
     }
 
-    public static Vector128x64<T> operator /(Vector128x64<T> left, Vector128x64<T> right) {
+    public static Vector128x64<T> operator /(Vector128x64<T> left, Vector128x64<T> right) 
+    {
         Vector128x64<T> res = default;
         var lhs = left.AsSpan();
         var rhs = right.AsSpan();
@@ -32149,5 +32457,21 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>, IAdditionOpe
         return res;
     }
 
+
+    public override string ToString() 
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
 }
 

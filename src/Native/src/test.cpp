@@ -19,8 +19,18 @@
 #include <nncase/api.h>
 #include <nncase/compiler.h>
 #include <nncase/io_utils.h>
+#include <nncase/ntt/caching.h>
 #include <nncase/ntt/ntt.h>
+#include <nncase/runtime/runtime_tensor.h>
 #include <string_view>
+
+namespace nncase::ntt::runtime {
+// just for test
+cpu_thread_context_t &cpu_thread_context_t::current() noexcept {
+    static cpu_thread_context_t ctx{.tid = 0, .bid = 0, .cid = 0};
+    return ctx;
+}
+} // namespace nncase::ntt::runtime
 
 using namespace nncase;
 using namespace nncase::clr;
@@ -47,6 +57,113 @@ int main() {
     nncapi->compile_session_create(target.get(), compile_options.get());
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
 #endif
+
+    {
+        // caching
+        constexpr size_t NumLayer = 1;
+        constexpr size_t NumKVHead = 2;
+        constexpr size_t HeadDim = 64;
+        constexpr size_t BlockSize = 16;
+
+        using KVPrimType = half;
+        using paged_config_t = ntt::caching::paged_attention_config<
+            NumLayer, NumKVHead, HeadDim, KVPrimType, BlockSize,
+            ntt::fixed_shape<
+                (size_t)caching::paged_attention_dim_kind::num_blocks,
+                (size_t)caching::paged_attention_dim_kind::num_layers,
+                (size_t)caching::paged_attention_dim_kind::num_kv_heads,
+                (size_t)caching::paged_attention_dim_kind::kv,
+                (size_t)caching::paged_attention_dim_kind::head_dim,
+                (size_t)caching::paged_attention_dim_kind::block_size>,
+            ntt::fixed_shape<
+                (size_t)caching::paged_attention_dim_kind::head_dim,
+                (size_t)caching::paged_attention_dim_kind::block_size>,
+            ntt::fixed_shape<(
+                size_t)caching::paged_attention_dim_kind::head_dim>,
+            ntt::fixed_shape<64>,
+            ntt::fixed_shape<(size_t)distributed::topology::chip,
+                             (size_t)distributed::topology::block>>;
+
+        ntt::tensor<int64_t, ntt::ranked_shape<1>> context_lens({1});
+        context_lens(0) = 0;
+        ntt::tensor<int64_t, ntt::ranked_shape<1>> seq_lens({1});
+        seq_lens(0) = 8;
+        ntt::tensor<int64_t, ranked_shape<3>> block_table({1, 5, 3});
+        block_table(0, 0, 0) = -1;
+        block_table(0, 0, 1) = 0;
+        block_table(0, 0, 2) = 1;
+
+        ntt::tensor<int64_t, ntt::ranked_shape<2>> slot_mapping({8, 3});
+        for (size_t i = 0; i < 8; i++) {
+            slot_mapping(i, 0) = -1;
+            slot_mapping(i, 1) = 0;
+            slot_mapping(i, 2) = BlockSize + i;
+        }
+
+        size_t num_blocks = 8;
+        using kv_tensor_type_t = typename caching::paged_attention_kv_cache<
+            paged_config_t>::kv_tensor_type_t;
+        using kv_storage_type_t = typename caching::paged_attention_kv_cache<
+            paged_config_t>::kv_storage_type_t;
+        using kv_storage_shape_t = typename caching::paged_attention_kv_cache<
+            paged_config_t>::kv_storage_shape_t;
+
+        ntt::tensor<kv_storage_type_t, kv_storage_shape_t> kv_storage(
+            {num_blocks, NumLayer, NumKVHead, 2,
+             HeadDim / kv_storage_type_t::lane<0>(), BlockSize});
+        std::fill(kv_storage.elements().begin(), kv_storage.elements().end(),
+                  (kv_storage_type_t)0.f);
+        kv_tensor_type_t kv_tensor;
+        kv_tensor(0, 0) = (intptr_t)kv_storage.elements().data();
+        auto kv_cache = caching::paged_attention_kv_cache<paged_config_t>(
+            1, 8, context_lens.view(), seq_lens.view(), block_table.view(),
+            slot_mapping.view(), num_blocks, kv_tensor);
+
+        // start fill, key :[seq, head, dim]
+        ntt::tensor<kv_storage_type_t,
+                    ntt::fixed_shape<8, NumKVHead,
+                                     HeadDim / kv_storage_type_t::lane<0>()>>
+            key;
+        std::fill(key.elements().begin(), key.elements().end(),
+                  (kv_storage_type_t)1.f);
+
+        {
+            size_t token_id = 3;
+            auto slot_id_3 = kv_cache.get_slot_id(token_id);
+            assert(slot_id_3(0) == -1);                   // die
+            assert(slot_id_3(1) == 0);                    // core
+            assert(slot_id_3(2) == BlockSize + token_id); // slot_id
+
+            size_t head_id = 0;
+            auto src_slot_view =
+                key.view(ntt::make_ranked_shape(token_id, head_id, 0),
+                         ntt::make_ranked_shape(1, 1, key.shape()[2]))
+                    .squeeze(ntt::fixed_shape<0, 1>());
+            // clang-format off
+            // num_blocks, NumLayer, NumKVHead,   2   , HeadDim, BlockSize, <elem>
+            //     8     ,     1   ,     2    ,   2   ,    1   ,     16
+            //    4096   ,   4096  ,    2048  , 1024  ,   16   ,     1
+            // (1*4096+3) * 128 == 524672
+            // clang-format on
+            NNCASE_UNUSED auto dest_slot_view =
+                kv_storage
+                    .view(ntt::make_ranked_shape(
+                              slot_id_3(2) / BlockSize, 0, head_id,
+                              (size_t)ntt::caching::attention_cache_kind::key,
+                              0, slot_id_3(2) % BlockSize),
+                          ntt::make_ranked_shape(1, 1, 1, 1, 1, 1))
+                    .squeeze(ntt::fixed_shape<0, 1, 2, 3, 5>{});
+            for (size_t i = 0; i < kv_storage_type_t::lane<0>(); i++) {
+                assert(dest_slot_view(0)(i) == ((kv_storage_type_t)0.f)(i));
+            }
+            kv_cache.update_slot(ntt::caching::attention_cache_kind::key, 0,
+                                 head_id, slot_id_3, src_slot_view);
+            // update at correct region.
+            for (size_t i = 0; i < kv_storage_type_t::lane<0>(); i++) {
+                assert(dest_slot_view(0)(i) == src_slot_view(0)(i));
+            }
+        }
+    }
 
     // fixed
     {

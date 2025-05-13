@@ -62,7 +62,7 @@ public partial class ToCustomUnary : RewriteRule<Pattern>
         if (node is not null)
         {
             return call.With(
-                target: new IR.CustomCPU.Unary(unary.UnaryOp, node!.SBP[0], new() { [CostFactorNames.CPUCycles] = node.Cost }, null),
+                target: new IR.CustomCPU.Unary(unary.UnaryOp, node!.SBP[0], node!.SBP[1], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath),
                 arguments: new[] { input },
                 metadata: call.Metadata);
         }

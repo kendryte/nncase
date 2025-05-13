@@ -44,7 +44,7 @@ public abstract class TIRSelectionPass : FunctionPass
         return Task.FromResult(input);
     }
 
-    protected abstract Expr SelectCall(Call call, IReadOnlyList<Expr> arguments, Expr output);
+    protected abstract Expr SelectCall(Call call, IReadOnlyList<Expr> arguments, ref Expr output);
 
     protected IRType GetArgumentType(Expr argument)
     {
@@ -131,7 +131,7 @@ public abstract class TIRSelectionPass : FunctionPass
                 var newCall = call.Target switch
                 {
                     PrimFunctionWrapper { Target: TIR.PrimFunction deviceFunc } => new Call(deviceFunc, arguments.Append(output).ToArray()),
-                    _ => _selectionPass.SelectCall(call, arguments, output),
+                    _ => _selectionPass.SelectCall(call, arguments, ref output),
                 };
                 _body.Add(newCall);
                 return output;

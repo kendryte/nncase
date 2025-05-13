@@ -225,7 +225,8 @@ inline result<std::byte *> get_readonly_span(tensor input) {
     try_(alloc_output(_out_tensor, _dt, _shape));
 
 #define try_input_impl(_var_name, _value_name, _value_kind)                    \
-    try_var(_value_name##_##_value_kind, _value_name.as<_value_kind>());       \
+    try_var(_value_name##_##_value_kind,                                       \
+            _value_name.as<nncase::_value_kind>());                            \
     try_var(_var_name, get_input_data(_value_name##_##_value_kind))
 
 #define try_input(_var_name, _value_name)                                      \
@@ -494,6 +495,10 @@ inline bool is_contiguous(tensor tensor) {
         _impl(double);                                                         \
     case dt_boolean:                                                           \
         _impl(bool);                                                           \
+    case dt_float8e4m3:                                                        \
+        _impl(float_e4m3_t);                                                   \
+    case dt_float8e5m2:                                                        \
+        _impl(float_e5m2_t);                                                   \
     default:                                                                   \
         return err(std::errc::not_supported);                                  \
     }

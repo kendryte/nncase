@@ -15,6 +15,18 @@ namespace Nncase;
 /// </summary>
 public static class LinqExtensions
 {
+    public static IEnumerable<T> CumSum<T>(this IEnumerable<T> source)
+        where T : INumber<T>
+    {
+        var acc = T.Zero;
+        yield return acc;
+        foreach (var item in source)
+        {
+            acc += item;
+            yield return acc;
+        }
+    }
+
     public static int IndexOf<T>(this T[] source, T value)
     {
         if (source != null && source.Length != 0)
