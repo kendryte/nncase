@@ -21,7 +21,7 @@ from tflite_test_runner import TfliteTestRunner
 
 def _make_model(in_shape):
     model = keras.Sequential()
-    model.add(keras.layers.Conv1D(4, 3, activation='relu', input_shape=in_shape[1:]))
+    model.add(keras.layers.Conv1D(4, 3, activation='relu', input_shape=in_shape[1:], batch_size=1))
     return model
 
 
