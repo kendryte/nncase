@@ -16,6 +16,7 @@
 #include "nncase/ntt/tensor_traits.h"
 #include <nncase/ntt/caching.h>
 #include <nncase/ntt/shape.h>
+#include <nncase/ntt/sharding.h>
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -163,5 +164,74 @@ void identity_paged_attention_kv_cache(
     [[maybe_unused]] T6 slot_mapping, [[maybe_unused]] T7 num_blocks,
     [[maybe_unused]] T8 kv_caches) {
     // just extent the kv cache liveness.
+}
+
+namespace detail {
+
+template <class Mesh, class AxisPolicy, distributed::topology I,
+          distributed::topology End>
+struct FindProgramIdImpl {
+    static constexpr size_t value =
+        AxisPolicy::axes_type::at(0) ==
+                distributed::detail::get_submesh_start<Mesh, I>()
+            ? static_cast<size_t>(I)
+            : FindProgramIdImpl<Mesh, AxisPolicy,
+                                static_cast<distributed::topology>(
+                                    static_cast<size_t>(I) + 1),
+                                End>::value;
+};
+
+template <class Mesh, class AxisPolicy, distributed::topology End>
+struct FindProgramIdImpl<Mesh, AxisPolicy, End, End> {
+    static constexpr size_t value = static_cast<size_t>(-1);
+};
+
+template <class Mesh, class AxisPolicy> struct FindProgramId {
+    static constexpr size_t value =
+        FindProgramIdImpl<Mesh, AxisPolicy,
+                          static_cast<distributed::topology>(0),
+                          distributed::topology::count__>::value;
+};
+
+template <class Mesh, class AxisPolicy>
+constexpr size_t program_id_in_axis_policy() {
+    return FindProgramId<Mesh, AxisPolicy>::value;
+}
+
+template <class Mesh, class AxisPolicies, size_t... I>
+constexpr auto program_ids_in_axis_policies(std::index_sequence<I...>) {
+    return fixed_shape<program_id_in_axis_policy<
+        Mesh, std::tuple_element_t<I, AxisPolicies>>()...>{};
+}
+
+}; // namespace detail
+
+template <class Mesh, class AxisPolicies>
+constexpr auto program_ids_in_axis_policies() {
+    return detail::program_ids_in_axis_policies<Mesh, AxisPolicies>(
+        std::make_index_sequence<std::tuple_size_v<AxisPolicies>>{});
+}
+
+template <class T0, class T1, class T2>
+void gather_paged_attention_kv_cache([[maybe_unused]] T0 value,
+                                     T1 kv_cache_tensor, T2 output_tensor) {
+    auto &kv_cache = kv_cache_tensor(0);
+    using kv_cache_t = typename std::decay_t<decltype(kv_cache)>;
+    using config_t = typename kv_cache_t::config_t;
+    using mesh_type = T0::mesh_type;
+    constexpr size_t shardingRank = config_t::sharding_axes_t::rank();
+    using axis_policies_t = typename config_t::axis_policies_t;
+
+    auto program_ids = distributed::program_ids();
+    auto program_indices =
+        program_ids_in_axis_policies<mesh_type, axis_policies_t>();
+
+    auto kv_indices = ntt::ranked_shape<shardingRank>();
+    loop<shardingRank>([&](auto shard_id) {
+        kv_indices[shard_id] = program_ids[program_indices[shard_id]];
+    });
+
+    auto storage_tensor = kv_cache.get_kv_storage_tensor(kv_indices);
+    ntt::tensor_copy(storage_tensor, output_tensor);
 }
 } // namespace nncase::ntt

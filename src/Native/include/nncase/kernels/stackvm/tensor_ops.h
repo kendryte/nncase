@@ -463,7 +463,7 @@ uniform_like(typecode_t type, value_t input, value_t high, value_t low,
              kernel_context &context = default_kernel_context());
 
 NNCASE_API result<value_t>
-uninitialized(typecode_t dtype,
+uninitialized(datatype_t dtype,
               runtime::stackvm::memory_location_t memory_location,
               value_t shape, value_t output = nullptr,
               kernel_context &context = default_kernel_context());

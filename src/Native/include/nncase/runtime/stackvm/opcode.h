@@ -859,7 +859,7 @@ struct tensor_uniform_like_op_t {
 };
 
 struct tensor_uninitialized_op_t {
-    typecode_t dtype;
+    datatype_t dtype;
     memory_location_t memory_location;
 };
 

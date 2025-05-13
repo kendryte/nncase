@@ -137,7 +137,7 @@ int main() {
             auto slot_id_3 = kv_cache.get_slot_id(token_id);
             assert(slot_id_3(0) == -1);                   // die
             assert(slot_id_3(1) == 0);                    // core
-            assert(slot_id_3(2) == BlockSize + token_id); // slot_id
+            assert(slot_id_3(2) == BlockSize + token_id); // slot_id: 16+3
 
             size_t head_id = 0;
             auto src_slot_view =
@@ -147,9 +147,10 @@ int main() {
             // clang-format off
             // num_blocks, NumLayer, NumKVHead,   2   , HeadDim, BlockSize, <elem>
             //     8     ,     1   ,     2    ,   2   ,    1   ,     16
-            //    4096   ,   4096  ,    2048  , 1024  ,   16   ,     1
-            // (1*4096+3) * 128 == 524672
+            //    512    ,    64   ,    64    ,   32  ,   16   ,     1
+            //   1 * 64  +    0    +    0     +   0   +   0    +     3 = 67.
             // clang-format on
+            size_t elements_offset = 67;
             NNCASE_UNUSED auto dest_slot_view =
                 kv_storage
                     .view(ntt::make_ranked_shape(
@@ -164,9 +165,39 @@ int main() {
             kv_cache.update_slot(ntt::caching::attention_cache_kind::key, 0,
                                  head_id, slot_id_3, src_slot_view);
             // update at correct region.
+            assert(&kv_storage.elements()[elements_offset] ==
+                   &dest_slot_view.elements()[0]);
             for (size_t i = 0; i < kv_storage_type_t::lane<0>(); i++) {
                 assert(dest_slot_view(0)(i) == src_slot_view(0)(i));
             }
+
+            int64_t value_span = 1L;
+            ntt::distributed::sharded_tensor_view<
+                int64_t, ntt::fixed_shape<1>,
+                ntt::distributed::sharding<mesh_type,
+                                           ntt::distributed::shard_policy::I,
+                                           ntt::distributed::shard_policy::I>>
+                value(std::span<int64_t, 1>(&value_span, 1));
+
+            ntt::tensor_view<paged_attention_kv_cache_t, ntt::fixed_shape<1>>
+                kv_cache_tensor(
+                    std::span<paged_attention_kv_cache_t, 1>(&kv_cache, 1));
+
+            ntt::tensor<kv_storage_type_t, kv_storage_shape_t>
+                output_kv_storage({num_blocks, NumLayer, NumKVHead, 2,
+                                   HeadDim / kv_storage_type_t::lane<0>(),
+                                   BlockSize});
+            ntt::gather_paged_attention_kv_cache(value, kv_cache_tensor,
+                                                 output_kv_storage.view());
+
+            ntt::apply(output_kv_storage.shape(),
+                       [&](NNCASE_UNUSED auto index) {
+                           auto a = kv_storage(index);
+                           auto b = output_kv_storage(index);
+                           for (size_t i = 0; i < 64; i++) {
+                               assert(a(i) == b(i));
+                           }
+                       });
         }
     }
 

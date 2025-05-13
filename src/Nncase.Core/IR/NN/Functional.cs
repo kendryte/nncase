@@ -112,6 +112,8 @@ public static class NN
 
     public static Expr UpdatePagedAttentionKVCache(Expr slots, Expr kvCaches, AttentionCacheKind cacheKind, int layerId, AttentionDimKind[] layout) => new Call(new UpdatePagedAttentionKVCache(cacheKind, layerId, layout), slots, kvCaches);
 
+    public static Expr GatherPagedAttentionKVCache(Expr shardId, Expr kvCaches, int numBlocks) => new Call(new GatherPagedAttentionKVCache(numBlocks), shardId, kvCaches);
+
     public static Expr CreatePagedAttentionKVCache(PagedAttentionConfig config, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches) => new Call(new CreatePagedAttentionKVCache(config), numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches);
 
     public static Expr IdentityPagedAttentionKVCache(Expr input, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches) => new Call(new IdentityPagedAttentionKVCache(), input, numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches);

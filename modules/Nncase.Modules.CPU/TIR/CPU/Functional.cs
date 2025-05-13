@@ -127,6 +127,11 @@ public partial class CPU
         return new Call(new UpdatePagedAttentionKVCache(kind, layerId, layout), value, kvcache);
     }
 
+    public static Expr GatherPagedAttentionKVCache(Expr value, Expr kvcache, Expr output)
+    {
+        return new Call(new GatherPagedAttentionKVCache(), value, kvcache, output);
+    }
+
     public static Expr CreatePagedAttentionKVCache(IR.NN.PagedAttentionConfig config, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches, Expr output)
     {
         return new Call(new CreatePagedAttentionKVCache(config), numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches, output);

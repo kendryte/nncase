@@ -68,7 +68,23 @@ public interface IPagedAttentionConfig : IAttentionConfig
         return new TensorType(DataTypes.Int64, new[] { numTokens, ShardingAxes.Count + 1 });
     }
 
-    TensorType GetLogicalTensorType(int numBlocks, Placement placement)
+    TensorType GetLogicalTensorType(int numBlocks)
+    {
+        var dims = GetDefaultDimensions(numBlocks);
+
+        // 1. process packed axes
+        foreach (var (axis, lane) in PackedAxes.Zip(Lanes))
+        {
+            dims[(int)axis] /= lane;
+        }
+
+        // 3. reorder dims
+        var cacheDims = CacheLayout.Select(i => dims[(int)i]).ToArray();
+
+        return new TensorType(KVType, cacheDims);
+    }
+
+    TensorType GetLogicalShardTensorType(int numBlocks, Placement placement)
     {
         var dims = GetDefaultDimensions(numBlocks);
 

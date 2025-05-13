@@ -159,8 +159,8 @@ result<void> write_tensor_buffer(value_t value, std::ofstream &of) {
 }
 
 result<void> run_core(const std::string &kmodel_path,
-                      const std::vector<std::string> &files,
-                      size_t loop_count, bool warmup) {
+                      const std::vector<std::string> &files, size_t loop_count,
+                      bool warmup) {
     std::ifstream kmodel(kmodel_path, std::ios::binary | std::ios::in);
     if (!kmodel.is_open())
         return err(std::errc::no_such_file_or_directory);
@@ -214,13 +214,12 @@ result<void> run_core(const std::string &kmodel_path,
                            .count() /
                        1e6);
 
-        if (i == (loop_count - 1) &&
-            (entry->parameters_size() < files.size())) {
-            auto output_file = files[entry->parameters_size()];
+        if (i == (loop_count - 1) && (parameters.size() < files.size())) {
+            auto output_file = files[parameters.size()];
             if (std::filesystem::exists(output_file)) {
                 // try compare
                 if (output_file.ends_with(".json")) {
-                    std::ifstream json_file(files[i]);
+                    std::ifstream json_file(output_file);
                     const nlohmann::json &json_data =
                         nlohmann::json::parse(json_file);
                     try_var(ts, deserialize_tensor(json_data));
@@ -251,16 +250,17 @@ result<void> run_core(const std::string &kmodel_path,
 int main(int argc, char **argv) {
     cxxopts::Options options("nncase-interp", "NNCASE interpreter CLI tool");
 
+    // clang-format off
     options.add_options()
-        ("k,kmodel", "Path to kmodel file", cxxopts::value<std::string>())
-        ("i,inputs", "Input files (can be multiple)", cxxopts::value<std::vector<std::string>>())
-        ("o,output", "Output file", cxxopts::value<std::string>())
-        ("l,loop", "Number of inference iterations", cxxopts::value<size_t>()->default_value("1"))
-        ("w,warmup", "Enable warmup before inference", cxxopts::value<bool>()->default_value("false")->implicit_value("true"))
-        ("h,help", "Print usage");
+      ("k,kmodel", "Path to kmodel file", cxxopts::value<std::string>())
+      ("i,inputs", "Input files (can be multiple), Output files (can be multiple)", cxxopts::value<std::vector<std::string>>())
+      ("l,loop", "Number of inference iterations", cxxopts::value<size_t>()->default_value("1"))
+      ("w,warmup", "Enable warmup before inference", cxxopts::value<bool>()->default_value("false")->implicit_value("true"))
+      ("h,help", "Print usage");
+    // clang-format on
 
     options.positional_help("kmodel_path input0 ... inputN output");
-    options.parse_positional({"kmodel", "inputs", "output"});
+    options.parse_positional({"kmodel", "inputs"});
 
     auto result = options.parse(argc, argv);
 
@@ -281,10 +281,6 @@ int main(int argc, char **argv) {
         result["inputs"].as<std::vector<std::string>>();
     size_t loop_count = result["loop"].as<size_t>();
     bool warmup = result["warmup"].as<bool>();
-
-    if (result.count("output")) {
-        bins.push_back(result["output"].as<std::string>());
-    }
 
     run_core(kmodel_bin, bins, loop_count, warmup).unwrap_or_throw();
     return 0;

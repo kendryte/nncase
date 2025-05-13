@@ -185,7 +185,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [ClassData(typeof(TestPagedAttentionCaseData))]
-    public async Task TestPagedAttentionCase(PagedAttentionKVCacheTestFixture fixture, int[] hierarchy, int count)
+    public async Task TestUpdatePagedAttentionCase(PagedAttentionKVCacheTestFixture fixture, int[] hierarchy, int count)
     {
         var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -198,7 +198,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType);
 
-        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.NumQHeads, fixture.QLayout, fixture.KLayout, fixture.Config);
+        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -242,13 +242,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
             rtFeedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 
-        // 4. evaluate and compare
-        // {
-        //     var refTensor = referenceResults.GetOutputTensor();
-        //     var actualTensor = testKernel.Root.Evaluate(feedDict).AsTensor();
-        //     var cos = Comparator.CosSimilarity(refTensor, actualTensor);
-        //     Assert.True(cos > 0.999, $"cos: {cos} ");
-        // }
         await RunCases($"Theory{count}", feedDict, new[] { testKernel.Root }, rtFeedDict);
     }
 

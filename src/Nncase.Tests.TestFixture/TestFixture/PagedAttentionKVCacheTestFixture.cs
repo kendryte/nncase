@@ -219,7 +219,7 @@ public sealed class PagedAttentionKVCacheTestFixture
     /// <summary>
     /// all vars are [seq,head,dim] layout.
     /// </summary>
-    public static TestKernel CreateTestKernel(long[] queryLens, int numQHeads, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config)
+    public static TestKernel CreateTestKernel(long[] queryLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false)
     {
         var numTokens = queryLens.Sum();
         var defaultQDimenions = new long[] { numTokens, numQHeads, config.HeadDim };
@@ -242,13 +242,14 @@ public sealed class PagedAttentionKVCacheTestFixture
         var (kv_lanes, kv_packed_axes) = GetQKVPackParams(config, kvLayout);
         var transedQuery = IR.F.Tensors.Transpose(queryVar, qLayout.Select(x => (int)x).ToArray());
         var packedQuery = q_lanes.Length > 0 ? IR.F.CPU.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
+        Expr updatedKVCache = None.Default;
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
             var (keyVar, valueVar) = (kvVars[layerId][0], kvVars[layerId][1]);
 
             var transedKey = IR.F.Tensors.Transpose(keyVar, kvLayout.Select(x => (int)x).ToArray());
             var packedKey = kv_lanes.Length > 0 ? IR.F.CPU.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
-            var updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
+            updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedKey,
                 kvCacheObjVar,
                 AttentionCacheKind.Key,
@@ -275,7 +276,12 @@ public sealed class PagedAttentionKVCacheTestFixture
 
         // unpack query.
         var unpacked = q_lanes.Length > 0 ? IR.F.CPU.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
-        var root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
+        Expr root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
+
+        if (testUpdateKVCache)
+        {
+            root = IR.F.NN.GatherPagedAttentionKVCache(new[] { 0L }, updatedKVCache, numBlocks);
+        }
 
         return new TestKernel(root, queryVar, kvVars, kvCacheObjVar);
     }
@@ -287,7 +293,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         var contextLensTensor = Tensor.From(contextLens);
 
         // 1. create logical kv cache tensor.
-        var logicalKVTensorType = config.GetLogicalTensorType(numBlocks, placement);
+        var logicalKVTensorType = config.GetLogicalShardTensorType(numBlocks, placement);
         var logicalKVCacheTensor = Tensor.Zeros(logicalKVTensorType.DType, logicalKVTensorType.Shape.ToValueArray());
 
         // 2. create temporary slotmapping for update hist key and value tensors.

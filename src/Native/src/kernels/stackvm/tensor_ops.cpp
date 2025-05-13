@@ -1419,7 +1419,7 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
 }
 
 result<value_t> nncase::kernels::stackvm::uninitialized(
-    typecode_t dtype,
+    datatype_t dtype,
     [[maybe_unused]] runtime::stackvm::memory_location_t memory_location,
     value_t shape, value_t output, [[maybe_unused]] kernel_context &context) {
     try_dims(shape_value, shape);

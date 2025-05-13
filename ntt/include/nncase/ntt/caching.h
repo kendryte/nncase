@@ -176,6 +176,19 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
 
     size_t num_blocks() const noexcept { return num_blocks_; }
 
+    auto get_kv_storage_tensor(
+        const ranked_shape<TConfig::sharding_axes_t::rank()> &indices) {
+        auto storage_ptr = kv_caches_(indices);
+        auto storage_shape = get_kv_storage_shape();
+        auto storage_strides = default_strides(storage_shape);
+        auto storage_size = linear_size(storage_shape, storage_strides);
+        return kv_storage_tensor_type_t(
+            std::span<kv_storage_type_t>(
+                reinterpret_cast<kv_storage_type_t *>(storage_ptr),
+                storage_size),
+            storage_shape, storage_strides);
+    }
+
   private:
     const kv_storage_shape_t get_default_kv_storage_shape() {
         auto cfg = config();
