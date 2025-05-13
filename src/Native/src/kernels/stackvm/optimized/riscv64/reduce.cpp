@@ -242,8 +242,7 @@ result<void> optimized::reduce(
     NNCASE_UNUSED bool keep_dims,
     NNCASE_UNUSED kernel_context &context) noexcept {
 #if __riscv_vector
-    if(typecode == dt_float32)
-    {
+    if (typecode == dt_float32) {
         // The type of axis is 'size_t'. It is real axis.
         // Get inner_size、outter_size.
         size_t inner_size = 1, outter_size = 1;
@@ -263,13 +262,13 @@ result<void> optimized::reduce(
             switch (op) {
             case reduce_op_t::max:
                 return reduce_max_impl(in, out, outter_size, inner_size,
-                                    reduce_size);
+                                       reduce_size);
             case reduce_op_t::min:
                 return reduce_min_impl(in, out, outter_size, inner_size,
-                                    reduce_size);
+                                       reduce_size);
             case reduce_op_t::sum:
                 return reduce_sum_impl(in, out, outter_size, inner_size,
-                                    reduce_size);
+                                       reduce_size);
             case reduce_op_t::mean:
                 reduce_sum_impl(in, out, outter_size, inner_size, reduce_size)
                     .unwrap();
@@ -287,7 +286,6 @@ result<void> optimized::reduce(
         // TODO: implement non-last axis reduce
         // TODO: implement multi-axis reduce
     }
-
 
 #endif
     return stackvm::reference::reduce(typecode, op, init_value, input, output,
