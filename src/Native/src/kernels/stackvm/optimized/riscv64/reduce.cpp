@@ -242,48 +242,52 @@ result<void> optimized::reduce(
     NNCASE_UNUSED bool keep_dims,
     NNCASE_UNUSED kernel_context &context) noexcept {
 #if __riscv_vector
-    // The type of axis is 'size_t'. It is real axis.
-    // 计算inner_size、outter_size
-    size_t inner_size = 1, outter_size = 1;
-    size_t reduce_size = in_shape[axis[0]];
+    if(typecode == dt_float32)
+    {
+        // The type of axis is 'size_t'. It is real axis.
+        // Get inner_size、outter_size.
+        size_t inner_size = 1, outter_size = 1;
+        size_t reduce_size = in_shape[axis[0]];
 
-    for (size_t i = 0; i < axis[0]; i++) {
-        outter_size *= in_shape[i];
-    }
-
-    for (size_t i = axis[0] + 1; i < in_shape.size(); i++) {
-        inner_size *= in_shape[i];
-    }
-
-    const float *in = reinterpret_cast<const float *>(input);
-    float *out = reinterpret_cast<float *>(output);
-    if (axis.size() == 1 && axis[0] == in_shape.size() - 1) {
-        switch (op) {
-        case reduce_op_t::max:
-            return reduce_max_impl(in, out, outter_size, inner_size,
-                                   reduce_size);
-        case reduce_op_t::min:
-            return reduce_min_impl(in, out, outter_size, inner_size,
-                                   reduce_size);
-        case reduce_op_t::sum:
-            return reduce_sum_impl(in, out, outter_size, inner_size,
-                                   reduce_size);
-        case reduce_op_t::mean:
-            reduce_sum_impl(in, out, outter_size, inner_size, reduce_size)
-                .unwrap();
-            for (size_t i = 0; i < outter_size; i++) {
-                out[i] *= 1.0f / reduce_size;
-            }
-            return ok();
-        case reduce_op_t::prod:
-            return reduce_prod_impl(in, out, outter_size, inner_size,
-                                    reduce_size);
-        default:
-            break;
+        for (size_t i = 0; i < axis[0]; i++) {
+            outter_size *= in_shape[i];
         }
+
+        for (size_t i = axis[0] + 1; i < in_shape.size(); i++) {
+            inner_size *= in_shape[i];
+        }
+
+        const float *in = reinterpret_cast<const float *>(input);
+        float *out = reinterpret_cast<float *>(output);
+        if (axis.size() == 1 && axis[0] == in_shape.size() - 1) {
+            switch (op) {
+            case reduce_op_t::max:
+                return reduce_max_impl(in, out, outter_size, inner_size,
+                                    reduce_size);
+            case reduce_op_t::min:
+                return reduce_min_impl(in, out, outter_size, inner_size,
+                                    reduce_size);
+            case reduce_op_t::sum:
+                return reduce_sum_impl(in, out, outter_size, inner_size,
+                                    reduce_size);
+            case reduce_op_t::mean:
+                reduce_sum_impl(in, out, outter_size, inner_size, reduce_size)
+                    .unwrap();
+                for (size_t i = 0; i < outter_size; i++) {
+                    out[i] *= 1.0f / reduce_size;
+                }
+                return ok();
+            case reduce_op_t::prod:
+                return reduce_prod_impl(in, out, outter_size, inner_size,
+                                        reduce_size);
+            default:
+                break;
+            }
+        }
+        // TODO: implement non-last axis reduce
+        // TODO: implement multi-axis reduce
     }
-    // TODO: implement non-last axis reduce
-    // TODO: implement multi-axis reduce
+
 
 #endif
     return stackvm::reference::reduce(typecode, op, init_value, input, output,
