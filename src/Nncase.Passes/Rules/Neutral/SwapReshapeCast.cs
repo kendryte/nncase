@@ -1,27 +1,25 @@
-// Copyright (c) Canaan Inc. All rights reserved.
+﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.Math;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.F.Tensors;
-using static Nncase.PatternMatch.F.NN;
-using static Nncase.PatternMatch.Utility;
-
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.TypePatternUtility;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
+using static Nncase.PatternMatch.F.NN;
+using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
-
-using Nncase.IR.Math;
-using Nncase.IR.Tensors;
+using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.Neutral;
 
@@ -41,8 +39,7 @@ public sealed partial class SwapReshapeCast : IRewriteRule
                 "reshapeCall",
                 _ => true,
                 IsWildcard("input") with { TypePattern = IsFloat() },
-                IsTensorConst("newShape")
-            ));
+                IsTensorConst("newShape")));
 
     private Expr? GetReplace(Expr input, Cast cast, Expr reshape, Expr newShape)
     {
@@ -50,11 +47,10 @@ public sealed partial class SwapReshapeCast : IRewriteRule
         {
             return Reshape(Cast(input, DataTypes.Float16), newShape);
         }
+
         return null;
     }
-
 }
-
 
 /// <summary>
 /// Fold nop <see cref="IR.Tensors.Transpose"/>.
@@ -71,10 +67,8 @@ public sealed partial class SwapCastReshape : IRewriteRule
             "cast",
             "castCall",
             _ => true,
-            IsWildcard("input") with { TypePattern = IsFloat() }
-            ),
-        IsTensorConst("newShape")
-        );
+            IsWildcard("input") with { TypePattern = IsFloat() }),
+        IsTensorConst("newShape"));
 
     private Expr? GetReplace(Expr input, Cast cast, Expr newShape)
     {
@@ -82,7 +76,7 @@ public sealed partial class SwapCastReshape : IRewriteRule
         {
             return Cast(Reshape(input, newShape), DataTypes.Float32);
         }
+
         return null;
     }
-
 }
