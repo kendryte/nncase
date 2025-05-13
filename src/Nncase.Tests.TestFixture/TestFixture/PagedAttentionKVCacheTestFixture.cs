@@ -350,10 +350,11 @@ public sealed class PagedAttentionKVCacheTestFixture
 
                 for (long tokenId = 0, seqId = 0; seqId < queryLens.Length; seqId++)
                 {
-                    for (long logical_slot_id = alignedSeqStartLocs[seqId]; logical_slot_id < alignedSeqStartLocs[seqId] + alignedContextEndLocs[seqId]; logical_slot_id++)
+                    for (long logical_slot_id = alignedSeqStartLocs[seqId]; logical_slot_id < alignedSeqStartLocs[seqId] + contextLens[seqId]; logical_slot_id++)
                     {
                         var indices = new long[] { tokenId, 0 };
                         PrepareSlotMappingId(tempSlotMappingTensor, [tokenId, 0], logical_slot_id, numBlocks, placement, config);
+                        tokenId++;
                     }
                 }
 
@@ -374,7 +375,7 @@ public sealed class PagedAttentionKVCacheTestFixture
                     var slotId = tmpKVCacheObj.GetSlotId(tokenId);
                     for (int headId = 0; headId < config.NumKVHeads; headId++)
                     {
-                        var slot = histTensor.View([headId, tokenId, 0], [1, 1, histTensor.Dimensions[^1]]); // [heads, seq_len, head_dim]
+                        var slot = histTensor.View([headId, tokenId, 0], [1, 1, histTensor.Dimensions[^1]]).Squeeze(0, 1); // [heads, seq_len, head_dim]
                         tmpKVCacheObj.UpdateSlot(kind, layerId, headId, slotId, slot);
                     }
                 }
@@ -450,22 +451,22 @@ public sealed class PagedAttentionKVCacheTestFixture
     {
         var physicalSlotId = logicalSlotId;
 
-        for (int topoId = 0; topoId < config.ShardingAxes.Count; topoId++)
+        for (int shardId = 0; shardId < config.ShardingAxes.Count; shardId++)
         {
-            switch (config.ShardingAxes[topoId])
+            switch (config.ShardingAxes[shardId])
             {
                 case PagedKVCacheDimKind.NumBlocks:
-                    var parallelism = config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
+                    var parallelism = config.AxisPolicies[shardId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
                     if (numBlocks < parallelism && !DistributedUtility.IsDivideExactly(numBlocks, parallelism))
                     {
                         throw new InvalidOperationException("numBlocks < parallelism");
                     }
 
-                    var numBlockTile = numBlocks / parallelism;
+                    var numBlockTile = numBlocks / parallelism * config.BlockSize;
                     var value = (int)Math.DivRem(physicalSlotId, numBlockTile, out physicalSlotId);
                     slotMappingTensor[indices] = value;
                     break;
-                case PagedKVCacheDimKind.NumKVHeads when config.AxisPolicies[topoId].Axes.Count == 1:
+                case PagedKVCacheDimKind.NumKVHeads when config.AxisPolicies[shardId].Axes.Count == 1:
                     slotMappingTensor[indices] = -1; // todo should matching the kv sharding.
                     break;
                 default:
