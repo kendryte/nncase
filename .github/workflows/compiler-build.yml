@@ -216,6 +216,14 @@ jobs:
       - name: Create Test Environment
         run: mkdir test_results
 
+      - name: Start tmate session for debugging
+        uses: mxschmitt/action-tmate@v3
+        continue-on-error: true
+        env:
+          NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
+      
+      - run: echo "Run after tmate session"
+
       - name: Test
         working-directory: ${{github.workspace}}
         shell: bash
