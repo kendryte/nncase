@@ -60,7 +60,7 @@ class nncaseConan(ConanFile):
             self.requires('ortki/0.0.4')
 
         if self.options.python:
-            self.requires('pybind11/2.11.1')
+            self.requires('pybind11/2.13.6')
 
         if not self.options.runtime:
             self.requires('nethost/8.0.8')
