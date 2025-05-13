@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Nncase.TIR.NTT;
 
@@ -162,9 +163,9 @@ public partial class NTT
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    public static Expr Pad(Expr input, Expr ret, long[] pads, float padValue)
+    public static Expr Pad(Expr input, Expr ret, Paddings pads, float padValue)
     {
-        return new Call(new Pad(pads, padValue), input, ret);
+        return new Call(new Pad(padValue), input, pads, ret);
     }
 
     public static Expr Im2col(Expr input, Expr output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)

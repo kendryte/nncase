@@ -12,6 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ntt/shape.h"
+#include "nncase/ntt/tensor.h"
+#include "nncase/ntt/tensor_traits.h"
+#include "nncase/ntt/vector.h"
 #include "ntt_test.h"
 #include "ortki_helper.h"
 #include <gtest/gtest.h>
@@ -32,14 +36,13 @@ TEST(PackTestFloat, fixed_shape_3D_dim_W_odd) {
     float max_input = 10.0f;
 
     // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<C, H, W>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<C, H, coefficient>>;
-    alignas(32) tensor_type1 ntt_input;
+    alignas(32) auto ntt_input = make_tensor<float>(
+        make_shape(fixed_dim_v<C>, fixed_dim_v<H>, fixed_dim_v<W>));
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    alignas(32) tensor_type2 ntt_output1;
+    alignas(32) auto ntt_output1 = make_tensor<ntt::vector<float, P>>(
+        make_shape(fixed_dim_v<C>, fixed_dim_v<H>, fixed_dim_v<coefficient>));
     ntt::pack<2>(ntt_input, ntt_output1);
 
     // ort
@@ -52,7 +55,8 @@ TEST(PackTestFloat, fixed_shape_3D_dim_W_odd) {
     auto ort_output = ortki_Reshape(ort_input, shape, 0);
 
     // compare
-    alignas(32) tensor_type2 ntt_output2;
+    alignas(32) auto ntt_output2 = make_tensor<ntt::vector<float, P>>(
+        make_shape(fixed_dim_v<C>, fixed_dim_v<H>, fixed_dim_v<coefficient>));
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }

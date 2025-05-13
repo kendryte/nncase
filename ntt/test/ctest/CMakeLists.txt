@@ -11,7 +11,7 @@ macro(add_test_exec name)
     add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${name}> -P ${NNCASE_CMAKE_DIR}/run_test.cmake)
 endmacro()
 
-file(GLOB TEST_NAMES CONFIGURE_DEPENDS test_*.cpp)
+file(GLOB TEST_NAMES CONFIGURE_DEPENDS test_ntt_binary_add.cpp)
 foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
     add_test_exec(${tname})

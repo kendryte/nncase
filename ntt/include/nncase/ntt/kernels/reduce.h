@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "../primitive_ops.h"
-#include "../shape_infer/reduce.h"
 #include "../tensor_ops.h"
 #include "../tensor_traits.h"
 #include "../ukernels.h"

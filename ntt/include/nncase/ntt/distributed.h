@@ -29,8 +29,8 @@
 #elif !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
 namespace nncase::ntt::distributed {
 constexpr std::array<size_t, 1> topology_dims = {1};
-using topology_shape_t = ntt::fixed_shape<1, 1, 1>;
-}
+using topology_shape_t = ntt::shape_t<fixed_dim<1>, fixed_dim<1>, fixed_dim<1>>;
+} // namespace nncase::ntt::distributed
 #endif
 
 namespace nncase::ntt::distributed {
@@ -38,7 +38,7 @@ inline constexpr size_t topology_levels =
     static_cast<size_t>(topology::count__);
 
 template <topology Scope>
-using program_ids_t = ranked_shape<static_cast<size_t>(Scope) + 1>;
+using program_ids_t = dynamic_shape_t<static_cast<size_t>(Scope) + 1>;
 
 constexpr size_t program_dim(topology topo) noexcept {
     int32_t index =

@@ -24,7 +24,6 @@
 #endif
 #include "nncase/ntt/primitive_ops.h"
 #include "nncase/ntt/shape.h"
-#include "nncase/ntt/shape_infer/reduce.h"
 #include "nncase/ntt/utility.h"
 #include <type_traits>
 

@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/half.h"
 #include "nncase/ntt/apply.h"
 #include "nncase/ntt/ntt.h"
 #include "nncase/ntt/shape.h"
-#include "nncase/half.h"
 #include <assert.h>
 #include <iostream>
 #include <random>
@@ -139,9 +139,9 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if (std::is_same_v<T,half>){
+    } else if (std::is_same_v<T, half>) {
         std::uniform_real_distribution<float> dis(start, stop);
-         ntt::apply(tensor.shape(), [&](auto &index) {
+        ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<half>(dis(gen));
         });
     } else if (std::is_same_v<T, double>) {
@@ -160,23 +160,21 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
     }
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+template <typename T, typename Shape, typename Stride, size_t N>
 void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,
                  T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
     ntt::apply(tensor.shape(),
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+template <typename T, typename Shape, typename Stride, size_t N>
 void init_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor,
                  T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
     ntt::apply(tensor.shape(),
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
 }
 
-template <ntt::IsTensor TTensor>
+template <ntt::Tensor TTensor>
 bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
@@ -224,8 +222,7 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     return pass;
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+template <typename T, typename Shape, typename Stride, size_t N>
 bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
                     ntt::tensor<ntt::vector<T, N>, Shape, Stride> &rhs,
                     double threshold = 0.999f) {
@@ -278,8 +275,7 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
     return pass;
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>, size_t N>
+template <typename T, typename Shape, typename Stride, size_t N>
 bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
                     ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &rhs,
                     double threshold = 0.999f) {
@@ -341,8 +337,7 @@ template <typename T> T ulp(T x) {
     return x;
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
+template <typename T, typename Shape, typename Stride>
 bool compare_ulp(ntt::tensor<T, Shape, Stride> &lhs,
                  ntt::tensor<T, Shape, Stride> &rhs, double threshold = 0.5f) {
     if (lhs.shape().rank() != rhs.shape().rank()) {
@@ -378,8 +373,7 @@ bool compare_ulp(ntt::tensor<T, Shape, Stride> &lhs,
     return pass;
 }
 
-template <typename T, size_t N, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
+template <typename T, size_t N, typename Shape, typename Stride>
 bool compare_ulp(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
                  ntt::tensor<ntt::vector<T, N>, Shape, Stride> &rhs,
                  double threshold = 0.5f) {

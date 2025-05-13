@@ -15,16 +15,19 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/vector_storage.h"
+#include "nncase/ntt/shape.h"
 #include "tensor_traits.h"
 
 namespace nncase::ntt {
-template <class T, size_t... Lanes>
+template <Scalar T, size_t... Lanes>
 class basic_vector
-    : public detail::tensor_size_impl<
-          fixed_shape<Lanes...>, default_strides_t<fixed_shape<Lanes...>>> {
+    : public detail::tensor_size_impl<shape_t<fixed_dim<Lanes>...>,
+                                      decltype(default_strides(
+                                          make_shape(fixed_dim_v<Lanes>...)))> {
     using size_impl_type =
-        detail::tensor_size_impl<fixed_shape<Lanes...>,
-                                 default_strides_t<fixed_shape<Lanes...>>>;
+        detail::tensor_size_impl<shape_t<fixed_dim<Lanes>...>,
+                                 decltype(default_strides(
+                                     make_shape(fixed_dim_v<Lanes>...)))>;
 
   public:
     static constexpr bool IsVector = true;
@@ -32,8 +35,9 @@ class basic_vector
     using element_type = T;
     using traits_type = vector_storage_traits<T, Lanes...>;
     using buffer_type = traits_type::buffer_type;
-    using shape_type = fixed_shape<Lanes...>;
-    using strides_type = default_strides_t<shape_type>;
+    using shape_type = shape_t<fixed_dim<Lanes>...>;
+    using strides_type =
+        decltype(default_strides(make_shape(fixed_dim_v<Lanes>...)));
 
     using size_impl_type::rank;
     using size_impl_type::shape;
@@ -54,32 +58,31 @@ class basic_vector
     constexpr const buffer_type &buffer() const noexcept { return buffer_; }
     constexpr buffer_type &buffer() noexcept { return buffer_; }
 
-    template <class... Indices>
-    constexpr decltype(auto) operator()(Indices &&...index) const noexcept {
-        return this->operator()(
-            ranked_shape<sizeof...(index)>{static_cast<size_t>(index)...});
-    }
-
-    template <class... Indices>
-    constexpr decltype(auto) operator()(Indices &&...index) noexcept {
-        return this->operator()(
-            ranked_shape<sizeof...(index)>{static_cast<size_t>(index)...});
-    }
-
-    template <size_t IndexRank>
+    template <Dimension... Indices>
     constexpr decltype(auto)
-    operator()(ranked_shape<IndexRank> index) noexcept {
+    operator()(const Indices &...index) const noexcept {
+        return this->operator()(
+            dynamic_shape_t<sizeof...(index)>{static_cast<dim_t>(index)...});
+    }
+
+    template <Dimension... Indices>
+    constexpr decltype(auto) operator()(const Indices &...index) noexcept {
+        return this->operator()(
+            dynamic_shape_t<sizeof...(index)>{static_cast<dim_t>(index)...});
+    }
+
+    template <Shape TIndex>
+    constexpr decltype(auto) operator()(const TIndex &index) noexcept {
         if constexpr (requires { traits_type::element_at(buffer_, index); }) {
             return traits_type::element_at(buffer_, index);
         } else {
-            return detail::vector_storage_element_proxy<
-                traits_type, ranked_shape<IndexRank>>(buffer_, index);
+            return detail::vector_storage_element_proxy<traits_type, TIndex>(
+                buffer_, index);
         }
     }
 
-    template <size_t IndexRank>
-    constexpr decltype(auto)
-    operator()(ranked_shape<IndexRank> index) const noexcept {
+    template <Shape TIndex>
+    constexpr decltype(auto) operator()(const TIndex &index) const noexcept {
         if constexpr (requires { traits_type::element_at(buffer_, index); }) {
             return traits_type::element_at(buffer_, index);
         } else {
@@ -98,24 +101,5 @@ class basic_vector
     static constexpr std::array<size_t, sizeof...(Lanes)> lanes = {Lanes...};
 };
 
-template <class T, size_t... Lanes> using vector = basic_vector<T, Lanes...>;
-
-template <class T, size_t... OldLanes, size_t... NewLanes>
-struct fixed_tensor_alike_type<basic_vector<T, OldLanes...>, NewLanes...> {
-    using type = vector<T, NewLanes...>;
-};
-
-namespace detail {
-template <typename T, typename Lanes> struct MakeVectorType;
-
-// 特化 ExtractDims 以处理 fixed_shape
-template <typename T, size_t... Lanes>
-struct MakeVectorType<T, fixed_shape<Lanes...>> {
-    using vector_type = ntt::vector<T, Lanes...>;
-};
-}; // namespace detail
-
-template <typename T, IsFixedDims Lanes>
-using make_vector_t = typename detail::MakeVectorType<T, Lanes>::vector_type;
-
+template <Scalar T, size_t... Lanes> using vector = basic_vector<T, Lanes...>;
 } // namespace nncase::ntt

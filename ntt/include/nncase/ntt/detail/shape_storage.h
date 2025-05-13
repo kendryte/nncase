@@ -14,30 +14,32 @@
  */
 #pragma once
 #include "../compiler_defs.h"
-#include "../shape.h"
+#include "nncase/ntt/shape.h"
+#include <cstddef>
+#include <type_traits>
 
 namespace nncase::ntt::detail {
 template <class Shape> class shape_storage {
   public:
+    template <class TDummy = Shape,
+              class = std::enable_if_t<FixedShape<TDummy>>>
+    constexpr shape_storage() noexcept : shape_{} {}
+
     shape_storage(Shape shape) : shape_(shape) {}
 
-    static constexpr size_t rank() noexcept { return Shape::rank(); }
+    static constexpr auto rank() noexcept { return Shape::rank(); }
     constexpr const Shape &shape() const noexcept { return shape_; }
 
   private:
     Shape shape_;
 };
 
-template <size_t... Dims> class shape_storage<fixed_shape<Dims...>> {
-  public:
-    constexpr shape_storage(fixed_shape<Dims...> = {}) noexcept {};
-
-    static constexpr size_t rank() noexcept { return sizeof...(Dims); }
-    static constexpr auto shape() noexcept { return fixed_shape<Dims...>{}; }
-};
-
 template <class Strides> class strides_storage {
   public:
+    template <class TDummy = Strides,
+              class = std::enable_if_t<FixedStrides<TDummy>>>
+    constexpr strides_storage() noexcept : strides_{} {}
+
     strides_storage(Strides strides) : strides_(strides) {}
 
     constexpr Strides &strides() noexcept { return strides_; }
@@ -47,32 +49,20 @@ template <class Strides> class strides_storage {
     Strides strides_;
 };
 
-template <size_t... Dims> class strides_storage<fixed_strides<Dims...>> {
-  public:
-    constexpr strides_storage(fixed_strides<Dims...> = {}) noexcept {};
-
-    static constexpr auto strides() noexcept {
-        return fixed_strides<Dims...>{};
-    }
-};
-
 template <class Shape, class Strides>
 struct NTT_EMPTY_BASES tensor_size_impl : public shape_storage<Shape>,
                                           public strides_storage<Strides> {
+
+    template <
+        class TDummy1 = Shape, class TDummy2 = Strides,
+        class = std::enable_if_t<FixedShape<TDummy1> && FixedStrides<TDummy2>>>
+    constexpr tensor_size_impl() noexcept {}
+
     tensor_size_impl(Shape shape, Strides strides)
         : shape_storage<Shape>(shape), strides_storage<Strides>(strides) {}
 
-    constexpr size_t size() const noexcept { return this->shape().length(); }
-};
-
-template <size_t... Shapes, size_t... Strides>
-class NTT_EMPTY_BASES
-    tensor_size_impl<fixed_shape<Shapes...>, fixed_strides<Strides...>>
-    : public shape_storage<fixed_shape<Shapes...>>,
-      public strides_storage<fixed_strides<Strides...>> {
-  public:
-    static constexpr size_t size() noexcept {
-        return fixed_shape<Shapes...>::length();
+    constexpr size_t size() const noexcept {
+        return shape_storage<Shape>::shape().length();
     }
 };
 } // namespace nncase::ntt::detail

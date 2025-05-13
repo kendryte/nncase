@@ -14,54 +14,44 @@
  */
 #pragma once
 #include "shape.h"
-#include <cstddef>
 #include <cstring>
-#include <span>
-#include <utility>
 
 namespace nncase::ntt {
 template <typename T>
-concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type> &&
-                        is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
-
-template <typename T>
-concept IsRankedTensor = is_ranked_dims_v<typename std::decay_t<T>::shape_type> ||
-                         is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
-
-template <typename T>
-concept IsVector = std::decay_t<T>::IsVector;
-
-template <typename T>
-concept IsScalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
-
-template <typename T>
-concept IsShardedTensor = requires {
+concept ShardedTensor = requires {
     typename T::sharding_type;
     typename T::mesh_type;
 };
 
 template <typename T>
-concept IsTensor = (IsFixedTensor<T> || IsRankedTensor<T>) && !IsShardedTensor<T>;
+concept Tensor = requires {
+    typename T::shape_type;
+    typename T::strides_type;
+} && !ShardedTensor<T>;
 
 template <typename T>
-concept IsTensorOrScalar = IsTensor<T> || IsScalar<T>;
+concept FixedTensor = FixedDimensions<typename T::shape_type> &&
+                      FixedDimensions<typename T::strides_type>;
+template <typename T>
+concept Vector = std::decay_t<T>::IsVector;
 
 template <typename T>
-concept IsFixedDims = is_fixed_dims_v<T>;
+concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
+
+template <typename T>
+concept ScalarOrVector = Scalar<T> || Vector<T>;
+
+template <typename T>
+concept TensorOrScalar = Tensor<T> || Scalar<T>;
 
 template <class T> struct element_or_scalar_type {
     using type = T;
 };
 
-template <IsTensor T> struct element_or_scalar_type<T> {
+template <Tensor T> struct element_or_scalar_type<T> {
     using type = typename T::element_type;
 };
 
 template <class T>
 using element_or_scalar_t = typename element_or_scalar_type<T>::type;
-
-template <class T, size_t... Lanes> struct fixed_tensor_alike_type;
-template <class T, size_t... Lanes>
-using fixed_tensor_alike_t =
-    typename fixed_tensor_alike_type<T, Lanes...>::type;
 } // namespace nncase::ntt

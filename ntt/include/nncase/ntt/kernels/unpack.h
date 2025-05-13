@@ -21,22 +21,22 @@
 namespace nncase::ntt {
 namespace detail {
 
-template <class InShape, class InElemShape, class OutShape, class InStrides,
-          class OutStrides, size_t... Axes>
+template <Shape InShape, Shape InElemShape, Shape OutShape, Strides InStrides,
+          Strides OutStrides, size_t... Axes>
 class unpack_impl;
 
-// fixed shape(1D)
-template <size_t... InDims, size_t... InElemDims, class OutShape,
-          size_t... InStrides, class OutStrides, size_t PackAxis>
-class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
-                  fixed_strides<InStrides...>, OutStrides, PackAxis> {
+// pack 1D
+template <Shape InShape, Shape InElemShape, Shape OutShape, Strides InStrides,
+          Strides OutStrides, size_t PackAxis>
+class unpack_impl<InShape, InElemShape, OutShape, InStrides, OutStrides,
+                  PackAxis> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &output) {
         using TVec = typename TIn::element_type;
         constexpr auto rank = TIn::shape_type::rank();
-        constexpr auto in_conti_dims = contiguous_dims(
-            fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
+        const auto in_conti_dims =
+            contiguous_dims(input.shape(), input.strides());
         if constexpr (in_conti_dims == rank) {
             auto pin = input.buffer().data();
             auto pout = output.buffer().data();

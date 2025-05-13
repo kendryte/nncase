@@ -66,6 +66,6 @@ thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
             nncase::ntt::runtime::thread_inout_desc *const output_descs,
             const std::byte *rdata, const std::byte *local_rdata,
             std::byte *output,
-            nncase::ntt::ranked_shape<
+            nncase::ntt::dynamic_shape_t<
                 (size_t)nncase::ntt::distributed::topology::count__>
                 program_ids);

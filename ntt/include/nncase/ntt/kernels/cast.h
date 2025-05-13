@@ -18,22 +18,15 @@
 #include "../tensor_ops.h"
 #include "../ukernels.h"
 #include "../utility.h"
+#include "nncase/ntt/shape.h"
 
 namespace nncase::ntt {
 namespace detail {
-template <class InShape, class OutShape, class InStrides, class OutStrides>
-class cast_impl;
-
-template <size_t... InDims, size_t... OutDims, size_t... InStrides,
-          size_t... OutStrides>
-class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
-                fixed_strides<InStrides...>, fixed_strides<OutStrides...>> {
+template <Tensor TIn, Tensor TOut> class cast_impl {
   public:
-    template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &output) {
-
-        constexpr float scale =
-            (float)TIn::shape().length() / TOut::shape().length();
+        constexpr float scale = (float)sizeof(typename TIn::element_type) /
+                                sizeof(typename TOut::element_type);
 
         if constexpr (scale != 1.0f) {
             static_assert(TIn::rank() == 1,
@@ -45,17 +38,15 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
         constexpr auto out_offset_scale =
             scale > 1.0f ? (size_t)1 : (size_t)(1.0f / scale);
 
-        constexpr size_t rank = sizeof...(InDims);
-        ranked_shape<rank> index{};
-        constexpr auto conti_dims =
-            std::min(contiguous_dims(fixed_shape<InDims...>{},
-                                     fixed_strides<InStrides...>{}),
-                     contiguous_dims(fixed_shape<InDims...>{},
-                                     fixed_strides<OutStrides...>{}));
+        constexpr size_t rank = input.rank();
+        dynamic_shape_t<rank> index{};
+        const auto conti_dims =
+            std::min(contiguous_dims(input.shape(), input.strides()),
+                     contiguous_dims(output.shape(), output.strides()));
 
         if constexpr (scale >= 1.0f) {
-            apply<in_offset_scale, out_offset_scale, TIn, TOut, 0, rank,
-                  conti_dims, OutDims...>(index, input, output);
+            apply<in_offset_scale, out_offset_scale, 0, rank,
+                  conti_dims, OutDims...>(index, input, output, input.shape());
         } else {
             apply<in_offset_scale, out_offset_scale, TIn, TOut, 0, rank,
                   conti_dims, InDims...>(index, input, output);
@@ -63,8 +54,7 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
     }
 
   private:
-    template <size_t in_offset_scale, size_t out_offset_scale, class TIn,
-              class TOut, size_t Axis, size_t Rank, size_t ContiguousDims,
+    template <size_t in_offset_scale, size_t out_offset_scale, Dimension TContiguousDims, size_t Axis, size_t Rank,
               size_t... RestDims>
     constexpr void apply(ranked_shape<Rank> &index, const TIn &input,
                          TOut &output) {

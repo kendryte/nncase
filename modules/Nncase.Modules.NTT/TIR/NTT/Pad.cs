@@ -26,9 +26,12 @@ public sealed partial class Pad : NTTKernelOp
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Output = new(typeof(Pad), 1, "output");
+    public static readonly ParameterInfo Pads = new(typeof(Pad), 1, "pads", IsPaddingsType());
 
-    public IRArray<long> Paddings { get; }
+    /// <summary>
+    /// Gets input.
+    /// </summary>
+    public static readonly ParameterInfo Output = new(typeof(Pad), 2, "output");
 
     public float PadValue { get; }
 }

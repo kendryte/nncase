@@ -13,17 +13,17 @@
  * limitations under the License.
  */
 #pragma once
-#include "../../tensor_ops.h"
+#include "../../vector_ops.h"
 #include "arch_types.h"
 #include "avx_mathfun.h"
 
-namespace nncase::ntt::tensor_ops {
-template <> struct tload_scalar<ntt::vector<float, 8>> {
+namespace nncase::ntt::vector_ops {
+template <> struct vload_scalar<ntt::vector<float, 8>> {
     ntt::vector<float, 8> operator()(float v) const noexcept {
         return _mm256_set1_ps(v);
     }
 };
-template <> struct tload_scalar<ntt::vector<float, 4, 4>> {
+template <> struct vload_scalar<ntt::vector<float, 4, 4>> {
     ntt::vector<float, 4, 4> operator()(float v) const noexcept {
         ntt::vector<float, 4, 4> out;
         for (size_t i = 0; i < 4; i++) {
@@ -35,7 +35,7 @@ template <> struct tload_scalar<ntt::vector<float, 4, 4>> {
     }
 };
 
-template <> struct tload_scalar<ntt::vector<float, 8, 8>> {
+template <> struct vload_scalar<ntt::vector<float, 8, 8>> {
     ntt::vector<float, 8, 8> operator()(float v) const noexcept {
         ntt::vector<float, 8, 8> out;
         out(0) = _mm256_set1_ps(v);
@@ -49,4 +49,4 @@ template <> struct tload_scalar<ntt::vector<float, 8, 8>> {
         return out;
     }
 };
-} // namespace nncase::ntt::tensor_ops
+} // namespace nncase::ntt::vector_ops

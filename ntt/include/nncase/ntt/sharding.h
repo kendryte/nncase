@@ -60,7 +60,7 @@ struct I {
 
 // Split
 template <size_t... Axes> struct S {
-    using axes_type = fixed_shape<Axes...>;
+    using axes_type = shape_t<fixed_dim<Axes>...>;
 
     template <class Mesh>
     constexpr bool is_divisible(size_t global_dim) noexcept {
@@ -99,7 +99,7 @@ template <size_t... Axes> struct S {
     static constexpr size_t
     global_offset(size_t global_dim,
                   const typename Mesh::index_type &shard_index) noexcept {
-        using submesh_shape = fixed_shape<Mesh::shape_type::at(Axes)...>;
+        const auto submesh_shape = fixed_shape_v<Mesh::shape_type::at(Axes)...>;
         using submesh_strides = default_strides_t<submesh_shape>;
         ranked_shape<submesh_shape::rank()> submesh_index{
             shard_index.at(Axes)...};
@@ -253,9 +253,9 @@ struct local_shard_shape_type<fixed_shape<Dims...>, Sharding> {
     using type = decltype(local_shard_shape<Sharding>(fixed_shape<Dims...>{}));
 };
 
-template <class Mesh, topology Topology>
-constexpr size_t
-program_id_in_mesh(ranked_shape<Mesh::shape_type::rank()> index) noexcept {
+template <class Mesh, topology Topology, Dimensions TIndex>
+constexpr size_t program_id_in_mesh(const TIndex &index) noexcept {
+    static_assert(TIndex::rank() == Mesh::shape_type::rank(), "Invalid index.");
     auto submesh_rank = get_submesh_rank<Mesh, Topology>();
     if (submesh_rank) {
         auto axis = get_submesh_start<Mesh, Topology>();
@@ -270,10 +270,11 @@ program_id_in_mesh(ranked_shape<Mesh::shape_type::rank()> index) noexcept {
     return 0;
 }
 
-template <class Mesh, topology Topology>
-constexpr size_t
-mesh_index_from_program_id(ranked_shape<Mesh::shape_type::rank()> &index,
-                           size_t index_offset, size_t program_id) noexcept {
+template <class Mesh, topology Topology, Dimensions TIndex>
+constexpr size_t mesh_index_from_program_id(const TIndex &index,
+                                            size_t index_offset,
+                                            size_t program_id) noexcept {
+    static_assert(TIndex::rank() == Mesh::shape_type::rank(), "Invalid index.");
     constexpr auto submesh_rank = get_submesh_rank<Mesh, Topology>();
     if constexpr (submesh_rank) {
         constexpr auto submesh_start = get_submesh_start<Mesh, Topology>();
@@ -315,15 +316,17 @@ mesh_index_from_program_id(typename Mesh::program_id_type program_id,
 } // namespace detail
 
 template <topology Scope, size_t... Dims>
-constexpr auto mesh<Scope, Dims...>::remote_program_id(
-    index_type index) noexcept -> program_id_type {
+constexpr auto
+mesh<Scope, Dims...>::remote_program_id(index_type index) noexcept
+    -> program_id_type {
     return detail::program_ids_in_mesh<mesh>(
         index, std::make_index_sequence<program_id_type::rank()>{});
 }
 
 template <topology Scope, size_t... Dims>
-constexpr auto mesh<Scope, Dims...>::index_from_program_id(
-    program_id_type program_id) noexcept -> index_type {
+constexpr auto
+mesh<Scope, Dims...>::index_from_program_id(program_id_type program_id) noexcept
+    -> index_type {
     return detail::mesh_index_from_program_id<mesh>(
         program_id, std::make_index_sequence<program_id_type::rank()>{});
 }

@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include "../half.h"
 #include "tensor_traits.h"
 #include "vector.h"
-#include  "../half.h"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -293,13 +293,6 @@ template <class T1, class T2, class TResult> struct mul_add {
                                  const TResult &v3) const noexcept;
 };
 
-template <bool AccC, bool TransA, IsFixedTensor T1, IsFixedTensor T2,
-          IsFixedTensor TResult>
-struct mma {
-    constexpr TResult operator()(const T1 &v1, const T2 &v2,
-                                 const TResult &v3) const noexcept;
-};
-
 template <class T1, class T2> struct clamp {
     constexpr T1 operator()(const T1 &v, const T2 &min,
                             const T2 &max) const noexcept {
@@ -316,23 +309,23 @@ template <class T1, class T2> struct cast {
 } // namespace ops
 
 #define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \
-    template <IsTensorOrScalar T> constexpr T op(const T &v) noexcept {        \
+    template <ScalarOrVector T> constexpr T op(const T &v) noexcept {          \
         return ops::op<T>()(v);                                                \
     }
 #define NTT_DEFINE_BINARY_FUNC_IMPL(op)                                        \
-    template <IsTensorOrScalar T1, IsTensorOrScalar T2>                        \
+    template <ScalarOrVector T1, ScalarOrVector T2>                            \
     constexpr auto op(const T1 &v1, const T2 &v2) noexcept {                   \
         return ops::op<T1, T2>()(v1, v2);                                      \
     }
 #define NTT_DEFINE_REDUCE_FUNC_IMPL(name, op)                                  \
-    template <class TResultOrVoid = void, IsTensorOrScalar T>                  \
+    template <class TResultOrVoid = void, ScalarOrVector T>                    \
     constexpr auto name(const T &v) noexcept {                                 \
         using TResult =                                                        \
             std::conditional_t<std::is_same_v<TResultOrVoid, void>,            \
                                element_or_scalar_t<T>, TResultOrVoid>;         \
         return ntt::reduce<op, TResult>(v);                                    \
     }                                                                          \
-    template <IsScalar TResult, IsTensorOrScalar T>                            \
+    template <Scalar TResult, ScalarOrVector T>                                \
     constexpr auto name(const T &v, TResult init_value) noexcept {             \
         return ntt::reduce<op>(v, init_value);                                 \
     }
@@ -343,7 +336,7 @@ constexpr void store(TDest &dest, const TSource &v) noexcept {
 }
 
 #define NTT_DEFINE_COMPARE_FUNC_IMPL(op)                                       \
-    template <IsTensorOrScalar T1, IsTensorOrScalar T2>                        \
+    template <ScalarOrVector T1, ScalarOrVector T2>                            \
     constexpr auto op(const T1 &v1, const T2 &v2) noexcept {                   \
         return ops::op<T1, T2>()(v1, v2);                                      \
     }
@@ -393,26 +386,20 @@ NTT_DEFINE_COMPARE_FUNC_IMPL(less_or_equal)
 NTT_DEFINE_COMPARE_FUNC_IMPL(greater)
 NTT_DEFINE_COMPARE_FUNC_IMPL(greater_or_equal)
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2, IsTensorOrScalar TResult>
+template <ScalarOrVector T1, ScalarOrVector T2, ScalarOrVector TResult>
 constexpr TResult mul_add(const T1 &v1, const T2 &v2,
                           const TResult &v3) noexcept {
     return ops::mul_add<T1, T2, TResult>()(v1, v2, v3);
 }
 
-template <bool AccC, bool TransA, IsFixedTensor T1, IsFixedTensor T2,
-          IsFixedTensor TResult>
-constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
-    return ops::mma<AccC, TransA, T1, T2, TResult>()(v1, v2, v3);
-}
-
-template <template <class T1, class T2> class BinaryOp, IsTensorOrScalar TResult,
-          IsTensorOrScalar T>
+template <template <class T1, class T2> class BinaryOp, ScalarOrVector TResult,
+          ScalarOrVector T>
 constexpr TResult reduce(const T &v, TResult init_value) noexcept {
     return ops::reduce<BinaryOp, TResult, T>()(v, init_value);
 }
 
-template <template <class T1, class T2> class BinaryOp, IsScalar TResult,
-          IsTensorOrScalar T>
+template <template <class T1, class T2> class BinaryOp, Scalar TResult,
+          ScalarOrVector T>
 constexpr TResult reduce(const T &v) noexcept {
     return ops::reduce<BinaryOp, TResult, T>()(v);
 }
@@ -426,60 +413,60 @@ NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_min, ops::min)
  * @{
  */
 
-template <IsTensorOrScalar T> constexpr T operator-(const T &value) noexcept {
+template <ScalarOrVector T> constexpr T operator-(const T &value) noexcept {
     return neg(value);
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr auto operator+(const T1 &v1, const T2 &v2) noexcept {
     return add(v1, v2);
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr auto operator-(const T1 &v1, const T2 &v2) noexcept {
     return sub(v1, v2);
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr auto operator*(const T1 &v1, const T2 &v2) noexcept {
     return mul(v1, v2);
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr auto operator/(const T1 &v1, const T2 &v2) noexcept {
     return div(v1, v2);
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr auto operator%(const T1 &v1, const T2 &v2) noexcept {
     return mod(v1, v2);
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr T1 &operator+=(T1 &v1, const T2 &v2) noexcept {
     v1 = add(v1, v2);
     return v1;
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr T1 &operator-=(T1 &v1, const T2 &v2) noexcept {
     v1 = sub(v1, v2);
     return v1;
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr T1 &operator*=(T1 &v1, const T2 &v2) noexcept {
     v1 = mul(v1, v2);
     return v1;
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr T1 &operator/=(T1 &v1, const T2 &v2) noexcept {
     v1 = div(v1, v2);
     return v1;
 }
 
-template <IsTensorOrScalar T1, IsTensorOrScalar T2>
+template <ScalarOrVector T1, ScalarOrVector T2>
 constexpr T1 &operator%=(T1 &v1, const T2 &v2) noexcept {
     v1 = mod(v1, v2);
     return v1;
@@ -526,38 +513,6 @@ constexpr TResult
 mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
                                      const TResult &v3) const noexcept {
     return v1 * v2 + v3;
-}
-
-template <bool AccC, bool TransA, IsFixedTensor T1, IsFixedTensor T2,
-          IsFixedTensor TResult>
-constexpr TResult mma<AccC, TransA, T1, T2, TResult>::operator()(
-    const T1 &lhs, const T2 &rhs, const TResult &v3) const noexcept {
-    static_assert(T1::rank() == T2::rank() && T2::rank() == TResult::rank() &&
-                      TResult::rank() == 2,
-                  "only support 2d mma");
-    TResult output = v3;
-    if constexpr (TransA) {
-        // <k,m> @ <k,n>
-        if constexpr (AccC) {
-            output = ntt::outer_product(lhs(0), rhs(0)) + output;
-        } else {
-            output = ntt::outer_product(lhs(0), rhs(0));
-        }
-
-        for (size_t k = 1; k < T1::shape().at(0); k++) {
-            output = ntt::outer_product(lhs(k), rhs(k)) + output;
-        }
-    } else {
-        for (size_t k = 0; k < T2::shape().at(0); k++) {
-            for (size_t m = 0; m < T1::shape().at(0); m++) {
-                output(m) = (k != 0 || AccC)
-                                ? ntt::mul_add(lhs(m, k), rhs(k), output(m))
-                                : ntt::mul(lhs(m, k), rhs(k));
-            }
-        }
-    }
-
-    return output;
 }
 
 // where

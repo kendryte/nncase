@@ -15,7 +15,6 @@
 #pragma once
 #include "../apply.h"
 #include "../loop.h"
-#include "../shape_infer/binary.h"
 #include "../tensor_ops.h"
 #include "../tensor_traits.h"
 #include "../ukernels.h"

@@ -14,13 +14,15 @@
  */
 #pragma once
 #include "../shape.h"
+#include "nncase/ntt/tensor_traits.h"
 #include <vector>
 
 namespace nncase::ntt::detail {
-template <class T, size_t MaxSize, bool IsView> class tensor_storage;
+template <ScalarOrVector T, size_t MaxSize, bool IsView> class tensor_storage;
 
 // fixed tensor
-template <class T, size_t MaxSize> class tensor_storage<T, MaxSize, false> {
+template <ScalarOrVector T, size_t MaxSize>
+class tensor_storage<T, MaxSize, false> {
   public:
     using buffer_type = std::array<T, MaxSize>;
 
@@ -44,7 +46,8 @@ template <class T, size_t MaxSize> class tensor_storage<T, MaxSize, false> {
 };
 
 // fixed view
-template <class T, size_t MaxSize> class tensor_storage<T, MaxSize, true> {
+template <ScalarOrVector T, size_t MaxSize>
+class tensor_storage<T, MaxSize, true> {
   public:
     using buffer_type = std::span<T, MaxSize>;
 
@@ -63,7 +66,8 @@ template <class T, size_t MaxSize> class tensor_storage<T, MaxSize, true> {
 };
 
 // dynamic tensor
-template <class T> class tensor_storage<T, std::dynamic_extent, false> {
+template <ScalarOrVector T>
+class tensor_storage<T, std::dynamic_extent, false> {
   public:
     using buffer_type = std::vector<T>;
 
@@ -85,7 +89,7 @@ template <class T> class tensor_storage<T, std::dynamic_extent, false> {
 };
 
 // dynamic view
-template <class T> class tensor_storage<T, std::dynamic_extent, true> {
+template <ScalarOrVector T> class tensor_storage<T, std::dynamic_extent, true> {
   public:
     using const_buffer_type = std::span<const T>;
     using buffer_type = std::span<T>;

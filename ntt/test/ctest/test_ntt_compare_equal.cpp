@@ -12,8 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ntt/shape.h"
+#include "nncase/ntt/tensor.h"
 #include "ntt_test.h"
 #include "ortki_helper.h"
+#include <cstdint>
 #include <gtest/gtest.h>
 #include <iostream>
 #include <nncase/ntt/ntt.h>
@@ -25,15 +28,14 @@ using namespace ortki;
 
 TEST(CompareTestEqual, fixed_fixed_fixed) {
     // init
-    using tensor_type = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
-    using tensor_type1 = ntt::tensor<uint8_t, ntt::fixed_shape<1, 3, 16, 16>>;
-    std::unique_ptr<tensor_type> ntt_lhs(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_rhs(new tensor_type);
+    auto shape = ntt::fixed_shape_v<1, 3, 16, 16>;
+    auto ntt_lhs = ntt::make_unique_tensor<float>(shape);
+    auto ntt_rhs = ntt::make_unique_tensor<float>(shape);
     NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
     NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
 
     // ntt
-    std::unique_ptr<tensor_type1> ntt_output1(new tensor_type1);
+    auto ntt_output1 = ntt::make_unique_tensor<uint8_t>(shape);
     ntt::compare<ntt::ops::equal>(*ntt_lhs, *ntt_rhs, *ntt_output1);
 
     // ort
@@ -42,24 +44,23 @@ TEST(CompareTestEqual, fixed_fixed_fixed) {
     auto ort_output = ortki_Equal(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type1> ntt_output2(new tensor_type1);
+    auto ntt_output2 = ntt::make_unique_tensor<uint8_t>(shape);
     NttTest::ort2ntt(ort_output, *ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
 TEST(CompareTestEqual, fixed_fixed_fixed_broadcast_lhs_scalar) {
     // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1>>;
-    std::unique_ptr<tensor_type1> ntt_rhs(new tensor_type1);
+    auto shape1 = ntt::fixed_shape_v<1>;
+    auto ntt_rhs = ntt::make_unique_tensor<float>(shape1);
     NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
 
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
-    std::unique_ptr<tensor_type2> ntt_lhs(new tensor_type2);
+    auto shape2 = ntt::fixed_shape_v<1, 3, 16, 16>;
+    auto ntt_lhs = ntt::make_unique_tensor<float>(shape2);
     NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
 
     // ntt
-    using tensor_type3 = ntt::tensor<uint8_t, ntt::fixed_shape<1, 3, 16, 16>>;
-    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3);
+    auto ntt_output1 = ntt::make_unique_tensor<uint8_t>(shape2);
     ntt::compare<ntt::ops::equal>(*ntt_lhs, *ntt_rhs, *ntt_output1);
 
     // ort
@@ -68,24 +69,23 @@ TEST(CompareTestEqual, fixed_fixed_fixed_broadcast_lhs_scalar) {
     auto ort_output = ortki_Equal(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3);
+    auto ntt_output2 = ntt::make_unique_tensor<uint8_t>(shape2);
     NttTest::ort2ntt(ort_output, *ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }
 
 TEST(CompareTestEqual, fixed_fixed_fixed_broadcast_rhs_scalar) {
     // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<1, 3, 16, 16>>;
-    std::unique_ptr<tensor_type1> ntt_lhs(new tensor_type1);
+    auto shape1 = ntt::fixed_shape_v<1, 3, 16, 16>;
+    auto ntt_lhs = ntt::make_unique_tensor<float>(shape1);
     NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);
 
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1>>;
-    std::unique_ptr<tensor_type2> ntt_rhs(new tensor_type2);
+    auto shape2 = ntt::fixed_shape_v<1>;
+    auto ntt_rhs = ntt::make_unique_tensor<float>(shape2);
     NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);
 
     // ntt
-    using tensor_type3 = ntt::tensor<uint8_t, ntt::fixed_shape<1, 3, 16, 16>>;
-    std::unique_ptr<tensor_type3> ntt_output1(new tensor_type3);
+    auto ntt_output1 = ntt::make_unique_tensor<uint8_t>(shape1);
     ntt::compare<ntt::ops::equal>(*ntt_lhs, *ntt_rhs, *ntt_output1);
 
     // ort
@@ -94,7 +94,7 @@ TEST(CompareTestEqual, fixed_fixed_fixed_broadcast_rhs_scalar) {
     auto ort_output = ortki_Equal(ort_lhs, ort_rhs);
 
     // compare
-    std::unique_ptr<tensor_type3> ntt_output2(new tensor_type3);
+    auto ntt_output2 = ntt::make_unique_tensor<uint8_t>(shape1);
     NttTest::ort2ntt(ort_output, *ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
 }

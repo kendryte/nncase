@@ -34,7 +34,7 @@
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
 #include "kernels/reshape.h"
-#include "kernels/reshard.h"
+// #include "kernels/reshard.h"
 #include "kernels/resize_image.h"
 #include "kernels/scatter_nd.h"
 #include "kernels/slice.h"
@@ -46,20 +46,21 @@
 #include "kernels/where.h"
 #include "primitive_ops.h"
 #include "profiling.h"
-#include "remote_tensor.h"
-#include "sharded_tensor.h"
-#include "sharding.h"
+// #include "remote_tensor.h"
+// #include "sharded_tensor.h"
+// #include "sharding.h"
 #include "tensor.h"
 #include "tensor_ops.h"
 #include "ukernels.h"
 #include "utility.h"
 #include "vector.h"
+#include "vector_ops.h"
 
 #ifdef __AVX2__
 #include "arch/x86_64/arch_types.h"
 #include "arch/x86_64/primitive_ops.h"
-#include "arch/x86_64/tensor_ops.h"
 #include "arch/x86_64/ukernels.h"
+#include "arch/x86_64/vector_ops.h"
 #elif __aarch64__
 #include "arch/aarch64/arch_types.h"
 #include "arch/aarch64/primitive_ops.h"
@@ -77,7 +78,7 @@
 #include "arch/xpu/topology.h"
 #else
 #include "arch/cpu/distributed.h"
+#include "arch/cpu/profiling.h"
 #include "arch/cpu/runtime.h"
 #include "arch/cpu/topology.h"
-#include "arch/cpu/profiling.h"
 #endif

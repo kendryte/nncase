@@ -19,16 +19,6 @@
 
 namespace nncase::ntt {
 namespace slice_detail {
-template <IsFixedDims TStart, IsFixedDims TStop, IsFixedDims TStride,
-          IsFixedDims TAxes, IsFixedDims TShape, size_t... Ints>
-inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
-    return fixed_shape<(
-        ((std::min(TShape::at(TAxes::at(Ints)), TStop::at(Ints)) - 1 -
-          TStart::at(Ints)) /
-         TStride::at(Ints)) +
-        1)...>{};
-}
-
 template <class TInShape, class TBegins, class TEnds, class TStrides,
           class TAxes>
 auto slice_fill(const TInShape &in_shape, const TBegins &begins_value,
