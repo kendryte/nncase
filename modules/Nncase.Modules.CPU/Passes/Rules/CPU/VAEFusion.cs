@@ -138,20 +138,20 @@ public sealed partial class FuseVAEDecMHA : FusionMaker
         var v5 = IsBinary(BinaryOp.Add, v4, IsTensorConst());
         var v6 = IsReshape(v5, IsTensorConst());
         var v7 = IsTranspose(v6, IsTensorConst());
-        var v8 = IsMatMul(v7, IsTensorConst());
+        var v8 = IsMatMul(DataTypes.Float32, v7, IsTensorConst());
         var v9 = IsBinary(BinaryOp.Add, IsTensorConst(), v8);
-        var v10 = IsMatMul(v7, IsTensorConst());
+        var v10 = IsMatMul(DataTypes.Float32, v7, IsTensorConst());
         var v11 = IsBinary(BinaryOp.Add, IsTensorConst(), v10);
         var v12 = IsTranspose(v11, IsTensorConst());
-        var v13 = IsMatMul(v9, v12);
+        var v13 = IsMatMul(DataTypes.Float32, v9, v12);
         var v14 = IsBinary(BinaryOp.Mul, v13, IsTensorConst());
 
         // var v15 = IsBinary(BinaryOp.Add, v14, IsTensorConst());
         var v16 = IsSoftmax(v14, IsTensorConst());
-        var v17 = IsMatMul(v7, IsTensorConst());
+        var v17 = IsMatMul(DataTypes.Float32, v7, IsTensorConst());
         var v18 = IsBinary(BinaryOp.Add, IsTensorConst(), v17);
-        var v19 = IsMatMul(v16, v18);
-        var v20 = IsMatMul(v19, IsTensorConst());
+        var v19 = IsMatMul(DataTypes.Float32, v16, v18);
+        var v20 = IsMatMul(DataTypes.Float32, v19, IsTensorConst());
         var v21 = IsTranspose(v20, IsTensorConst());
         var v22 = IsBinary(BinaryOp.Add, IsTensorConst(), v21);
         var v23 = IsReshape(v22, IsTensorConst());

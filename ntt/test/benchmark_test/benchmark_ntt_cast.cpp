@@ -15,7 +15,9 @@
 #include "ntt_test.h"
 #include <iomanip>
 #include <memory>
+#include <nncase/bfloat16.h>
 #include <nncase/float8.h>
+#include <nncase/half.h>
 #include <nncase/ntt/ntt.h>
 #include <string>
 
@@ -41,6 +43,14 @@ template <> struct TypeToString<bool> {
 
 template <> struct TypeToString<float_e4m3_t> {
     static constexpr char name[] = "f8e4m3";
+};
+
+template <> struct TypeToString<bfloat16> {
+    static constexpr char name[] = "bfloat16";
+};
+
+template <> struct TypeToString<half> {
+    static constexpr char name[] = "half";
 };
 
 template <typename T1, typename T2>
@@ -104,4 +114,10 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_cast<float, bool>(-100.f, 100.f);
     benchmark_ntt_cast<bool, float>(0, 1);
     benchmark_ntt_cast<float, float_e4m3_t>(-1000.f, 1000.f);
+    benchmark_ntt_cast<float_e4m3_t, float>((float_e4m3_t)-448.f,
+                                            (float_e4m3_t)448.f);
+    benchmark_ntt_cast<float_e4m3_t, bfloat16>((float_e4m3_t)-448.f,
+                                               (float_e4m3_t)448.f);
+    benchmark_ntt_cast<float_e4m3_t, half>((float_e4m3_t)-448.f,
+                                           (float_e4m3_t)448.f);
 }

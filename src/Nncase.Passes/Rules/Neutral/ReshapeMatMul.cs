@@ -19,6 +19,7 @@ public partial class ReshapeMatMul : RewriteRule<Pattern>
     public override Pattern Pattern => IsMatMul(
         null,
         "matmul",
+        _ => true,
         IsWildcard("a") with { TypePattern = HasFixedShape() },
         IsWildcard("b") with { TypePattern = HasFixedShape() });
 

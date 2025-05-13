@@ -14,6 +14,8 @@
  */
 #pragma once
 #include "../primitive_ops.h"
+#include "nncase/float8.h"
+#include <iostream>
 
 namespace nncase::ntt {
 namespace ukernels {

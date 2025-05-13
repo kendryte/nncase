@@ -27,6 +27,8 @@ public sealed partial class PackedMatMul : Op
         N = 1 << 3,
     }
 
+    public DataType OutputDataType { get; }
+
     public IRArray<int> LhsPackedAxes { get; }
 
     public IRArray<int> LhsPadedNums { get; }

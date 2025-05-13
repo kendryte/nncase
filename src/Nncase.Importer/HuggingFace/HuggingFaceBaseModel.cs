@@ -275,14 +275,28 @@ public abstract class HuggingFaceModel
             var qScaleB = 1.0f / scaleW.ToArray<float>()[0];
             var deqScaleA = 1.0f / qScaleA;
             var deqScaleB = 1.0f / qScaleB;
-            var qInput = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, qScaleA);
+
+            var qInput = expr.CheckedDataType switch
+            {
+                var t when t == DataTypes.BFloat16 => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, (BFloat16)qScaleA),
+                var t when t == DataTypes.Float16 => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, (Half)qScaleA),
+                _ => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, qScaleA),
+            };
+
             qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Float8E4M3);
             var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 }).Evaluate().AsTensor();
             var qWeights = IR.F.Tensors.Cast(transposed_weight, DataTypes.Float8E4M3);
-            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
-            var result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
+            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights, expr.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+
+            var result = expr.CheckedDataType switch
+            {
+                var t when t == DataTypes.BFloat16 => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, (BFloat16)(deqScaleA * deqScaleB)),
+                var t when t == DataTypes.Float16 => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, (Half)(deqScaleA * deqScaleB)),
+                _ => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB),
+            };
             if (bias != null)
             {
+                bias = bias.CastTo(expr.CheckedDataType);
                 result = IR.F.Math.Add(result, bias);
             }
 
@@ -295,20 +309,42 @@ public abstract class HuggingFaceModel
             var max = Nncase.IR.F.Tensors.ReduceMax(expr, axes, float.MinValue, 1);
             var min = Nncase.IR.F.Tensors.ReduceMin(expr, axes, float.MaxValue, 1);
             var limit = Nncase.IR.F.Math.Max(Nncase.IR.F.Math.Abs(max), Nncase.IR.F.Math.Abs(min));
+            if (limit.CheckedDataType != DataTypes.Float32)
+            {
+                limit = Nncase.IR.F.Tensors.Cast(limit, DataTypes.Float32);
+            }
+
             var qScaleA = Nncase.IR.F.Math.Div((float)Float8E4M3.MaxNormal, limit);
             var deqScaleA = Nncase.IR.F.Math.Div(1.0f, qScaleA);
             var deqScaleB = scaleW;
+
+            if (qScaleA.CheckedDataType != expr.CheckedDataType)
+            {
+                qScaleA = Nncase.IR.F.Tensors.Cast(qScaleA, expr.CheckedDataType);
+            }
+
             var qInput = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, qScaleA);
             qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Float8E4M3);
             var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 }).Evaluate().AsTensor();
             var qWeights = IR.F.Tensors.Cast(transposed_weight, DataTypes.Float8E4M3);
-            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights, expr.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+
+            if (deqScaleA.CheckedDataType != expr.CheckedDataType)
+            {
+                deqScaleA = Nncase.IR.F.Tensors.Cast(deqScaleA, expr.CheckedDataType);
+            }
+
             var result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA);
+
             if (deqScaleB.Rank == 2)
             {
                 long[] dims = System.Linq.Enumerable.Range(0, qMatmul.CheckedShape.Rank).Select(i => 1L).ToArray();
                 dims[dims.Length - 1] = deqScaleB.Shape[0].FixedValue;
                 deqScaleB = Tensor.From<float>(deqScaleB.ToArray<float>(), dims);
+                if (deqScaleB.ElementType != expr.CheckedDataType)
+                {
+                    deqScaleB = deqScaleB.CastTo(expr.CheckedDataType);
+                }
             }
 
             result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, result, deqScaleB);
@@ -322,7 +358,7 @@ public abstract class HuggingFaceModel
         else
         {
             var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 });
-            var result = IR.F.Math.MatMul(expr, transposed_weight).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+            var result = IR.F.Math.MatMul(expr, transposed_weight, expr.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
             if (bias != null)
             {
                 result = IR.F.Math.Add(result, bias);
@@ -453,7 +489,7 @@ public abstract class HuggingFaceModel
         var keyStates = RepeatKV(key, numKVGroups);
         var valueStates = RepeatKV(value, numKVGroups);
         var scalingExpr = IR.F.Tensors.Cast(Tensor.FromScalar(scaling), query.CheckedDataType);
-        Expr attnWeights = IR.F.Math.MatMul(query, IR.F.Tensors.Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3]))).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward0" } }) * scalingExpr;
+        Expr attnWeights = IR.F.Math.MatMul(query, IR.F.Tensors.Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3])), query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward0" } }) * scalingExpr;
         if (attentionMask is not null)
         {
             var causalMask = IR.F.Tensors.Slice(
@@ -468,7 +504,7 @@ public abstract class HuggingFaceModel
 
         attnWeights = IR.F.Tensors.Cast(IR.F.NN.Softmax(IR.F.Tensors.Cast(attnWeights, DataTypes.Float32), -1L), valueStates.CheckedDataType);
 
-        Expr attnOutput = IR.F.Math.MatMul(attnWeights, valueStates).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward1" } });
+        Expr attnOutput = IR.F.Math.MatMul(attnWeights, valueStates, query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward1" } });
         attnOutput = IR.F.Tensors.Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
 
         // TODO: base on config to decide output attnWeights or not

@@ -1196,10 +1196,10 @@ struct mma<AccC, false, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
             {{v3(3)}},
         };
 
-        output_2d[0] = ntt::mma<AccC>(lhs_2d[0], rhs, output_2d[0]);
-        output_2d[1] = ntt::mma<AccC>(lhs_2d[1], rhs, output_2d[1]);
-        output_2d[2] = ntt::mma<AccC>(lhs_2d[2], rhs, output_2d[2]);
-        output_2d[3] = ntt::mma<AccC>(lhs_2d[3], rhs, output_2d[3]);
+        output_2d[0] = ntt::mma<AccC, false>(lhs_2d[0], rhs, output_2d[0]);
+        output_2d[1] = ntt::mma<AccC, false>(lhs_2d[1], rhs, output_2d[1]);
+        output_2d[2] = ntt::mma<AccC, false>(lhs_2d[2], rhs, output_2d[2]);
+        output_2d[3] = ntt::mma<AccC, false>(lhs_2d[3], rhs, output_2d[3]);
 
         output(0) = output_2d[0](0);
         output(1) = output_2d[1](0);
@@ -1236,41 +1236,41 @@ struct mma<AccC, false, ntt::vector<float, 32, 32>, ntt::vector<float, 32, 32>,
             {{v3(25)}}, {{v3(26)}}, {{v3(27)}}, {{v3(28)}}, {{v3(29)}},
             {{v3(30)}}, {{v3(31)}}};
 
-        output_2d[0] = ntt::mma<AccC>(lhs_2d[0], rhs, output_2d[0]);
-        output_2d[1] = ntt::mma<AccC>(lhs_2d[1], rhs, output_2d[1]);
-        output_2d[2] = ntt::mma<AccC>(lhs_2d[2], rhs, output_2d[2]);
-        output_2d[3] = ntt::mma<AccC>(lhs_2d[3], rhs, output_2d[3]);
-        output_2d[4] = ntt::mma<AccC>(lhs_2d[4], rhs, output_2d[4]);
-        output_2d[5] = ntt::mma<AccC>(lhs_2d[5], rhs, output_2d[5]);
-        output_2d[6] = ntt::mma<AccC>(lhs_2d[6], rhs, output_2d[6]);
-        output_2d[7] = ntt::mma<AccC>(lhs_2d[7], rhs, output_2d[7]);
+        output_2d[0] = ntt::mma<AccC, false>(lhs_2d[0], rhs, output_2d[0]);
+        output_2d[1] = ntt::mma<AccC, false>(lhs_2d[1], rhs, output_2d[1]);
+        output_2d[2] = ntt::mma<AccC, false>(lhs_2d[2], rhs, output_2d[2]);
+        output_2d[3] = ntt::mma<AccC, false>(lhs_2d[3], rhs, output_2d[3]);
+        output_2d[4] = ntt::mma<AccC, false>(lhs_2d[4], rhs, output_2d[4]);
+        output_2d[5] = ntt::mma<AccC, false>(lhs_2d[5], rhs, output_2d[5]);
+        output_2d[6] = ntt::mma<AccC, false>(lhs_2d[6], rhs, output_2d[6]);
+        output_2d[7] = ntt::mma<AccC, false>(lhs_2d[7], rhs, output_2d[7]);
 
-        output_2d[8] = ntt::mma<AccC>(lhs_2d[8], rhs, output_2d[8]);
-        output_2d[9] = ntt::mma<AccC>(lhs_2d[9], rhs, output_2d[9]);
-        output_2d[10] = ntt::mma<AccC>(lhs_2d[10], rhs, output_2d[10]);
-        output_2d[11] = ntt::mma<AccC>(lhs_2d[11], rhs, output_2d[11]);
-        output_2d[12] = ntt::mma<AccC>(lhs_2d[12], rhs, output_2d[12]);
-        output_2d[13] = ntt::mma<AccC>(lhs_2d[13], rhs, output_2d[13]);
-        output_2d[14] = ntt::mma<AccC>(lhs_2d[14], rhs, output_2d[14]);
-        output_2d[15] = ntt::mma<AccC>(lhs_2d[15], rhs, output_2d[15]);
+        output_2d[8] = ntt::mma<AccC, false>(lhs_2d[8], rhs, output_2d[8]);
+        output_2d[9] = ntt::mma<AccC, false>(lhs_2d[9], rhs, output_2d[9]);
+        output_2d[10] = ntt::mma<AccC, false>(lhs_2d[10], rhs, output_2d[10]);
+        output_2d[11] = ntt::mma<AccC, false>(lhs_2d[11], rhs, output_2d[11]);
+        output_2d[12] = ntt::mma<AccC, false>(lhs_2d[12], rhs, output_2d[12]);
+        output_2d[13] = ntt::mma<AccC, false>(lhs_2d[13], rhs, output_2d[13]);
+        output_2d[14] = ntt::mma<AccC, false>(lhs_2d[14], rhs, output_2d[14]);
+        output_2d[15] = ntt::mma<AccC, false>(lhs_2d[15], rhs, output_2d[15]);
 
-        output_2d[16] = ntt::mma<AccC>(lhs_2d[16], rhs, output_2d[16]);
-        output_2d[17] = ntt::mma<AccC>(lhs_2d[17], rhs, output_2d[17]);
-        output_2d[18] = ntt::mma<AccC>(lhs_2d[18], rhs, output_2d[18]);
-        output_2d[19] = ntt::mma<AccC>(lhs_2d[19], rhs, output_2d[19]);
-        output_2d[20] = ntt::mma<AccC>(lhs_2d[20], rhs, output_2d[20]);
-        output_2d[21] = ntt::mma<AccC>(lhs_2d[21], rhs, output_2d[21]);
-        output_2d[22] = ntt::mma<AccC>(lhs_2d[22], rhs, output_2d[22]);
-        output_2d[23] = ntt::mma<AccC>(lhs_2d[23], rhs, output_2d[23]);
+        output_2d[16] = ntt::mma<AccC, false>(lhs_2d[16], rhs, output_2d[16]);
+        output_2d[17] = ntt::mma<AccC, false>(lhs_2d[17], rhs, output_2d[17]);
+        output_2d[18] = ntt::mma<AccC, false>(lhs_2d[18], rhs, output_2d[18]);
+        output_2d[19] = ntt::mma<AccC, false>(lhs_2d[19], rhs, output_2d[19]);
+        output_2d[20] = ntt::mma<AccC, false>(lhs_2d[20], rhs, output_2d[20]);
+        output_2d[21] = ntt::mma<AccC, false>(lhs_2d[21], rhs, output_2d[21]);
+        output_2d[22] = ntt::mma<AccC, false>(lhs_2d[22], rhs, output_2d[22]);
+        output_2d[23] = ntt::mma<AccC, false>(lhs_2d[23], rhs, output_2d[23]);
 
-        output_2d[24] = ntt::mma<AccC>(lhs_2d[24], rhs, output_2d[24]);
-        output_2d[25] = ntt::mma<AccC>(lhs_2d[25], rhs, output_2d[25]);
-        output_2d[26] = ntt::mma<AccC>(lhs_2d[26], rhs, output_2d[26]);
-        output_2d[27] = ntt::mma<AccC>(lhs_2d[27], rhs, output_2d[27]);
-        output_2d[28] = ntt::mma<AccC>(lhs_2d[28], rhs, output_2d[28]);
-        output_2d[29] = ntt::mma<AccC>(lhs_2d[29], rhs, output_2d[29]);
-        output_2d[30] = ntt::mma<AccC>(lhs_2d[30], rhs, output_2d[30]);
-        output_2d[31] = ntt::mma<AccC>(lhs_2d[31], rhs, output_2d[31]);
+        output_2d[24] = ntt::mma<AccC, false>(lhs_2d[24], rhs, output_2d[24]);
+        output_2d[25] = ntt::mma<AccC, false>(lhs_2d[25], rhs, output_2d[25]);
+        output_2d[26] = ntt::mma<AccC, false>(lhs_2d[26], rhs, output_2d[26]);
+        output_2d[27] = ntt::mma<AccC, false>(lhs_2d[27], rhs, output_2d[27]);
+        output_2d[28] = ntt::mma<AccC, false>(lhs_2d[28], rhs, output_2d[28]);
+        output_2d[29] = ntt::mma<AccC, false>(lhs_2d[29], rhs, output_2d[29]);
+        output_2d[30] = ntt::mma<AccC, false>(lhs_2d[30], rhs, output_2d[30]);
+        output_2d[31] = ntt::mma<AccC, false>(lhs_2d[31], rhs, output_2d[31]);
 
         output(0) = output_2d[0](0);
         output(1) = output_2d[1](0);
@@ -1464,7 +1464,7 @@ REGISTER_RVV_CAST_OP(float, int, cast_float32_int32)
 REGISTER_RVV_CAST_OP(int, float, cast_int32_float32)
 REGISTER_RVV_CAST_OP(float, unsigned int, cast_float32_uint32)
 REGISTER_RVV_CAST_OP(unsigned int, float, cast_uint32_float32)
-  
+
 // cast float to bool
 template <>
 struct cast<ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)>,

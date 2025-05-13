@@ -105,6 +105,18 @@ struct fixed_tensor_alike_type<basic_vector<T, OldLanes...>, NewLanes...> {
     using type = vector<T, NewLanes...>;
 };
 
+template <class OriginalVector, class Tnew>
+struct cast_fixed_tensor_element_type;
+
+template <class OriginalVector, class Tnew>
+struct cast_fixed_tensor_element_type {
+    using type = Tnew;
+};
+
+template <class OldT, size_t... Lanes, class Tnew>
+struct cast_fixed_tensor_element_type<basic_vector<OldT, Lanes...>, Tnew> {
+    using type = vector<Tnew, Lanes...>;
+};
 namespace detail {
 template <typename T, typename Lanes> struct MakeVectorType;
 

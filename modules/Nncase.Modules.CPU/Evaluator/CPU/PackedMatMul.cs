@@ -207,7 +207,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
 
                     bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
                      target.LhsPackedAxes[0] == a.TensorType.Shape.Rank - 1 && target.RhsPackedAxes[0] == b.TensorType.Shape.Rank - 2;
-                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, packingK, new(lm, lk, rk, rn), target.TransposeB);
+                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, packingK, new(lm, lk, rk, rn), target.TransposeB, target.OutputDataType);
                     if (target.FusedReduce)
                     {
                         rType = Math.MatMulEvaluator.ConvertPartialToBroadcast((DistributedType)rType);
@@ -224,7 +224,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
 
                     bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
                      target.LhsPackedAxes[0] == lk && target.RhsPackedAxes[0] == rk;
-                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, packingK, new(lm, lk, rk, rn));
+                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, packingK, new(lm, lk, rk, rn), target.OutputDataType);
                 }
 
                 break;

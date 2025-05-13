@@ -26,4 +26,9 @@ public sealed partial class MatMul : Op
     /// Gets Other.
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(MatMul), 1, "rhs", ParameterKind.Input);
+
+    /// <summary>
+    /// Gets TransposeLhs.
+    /// </summary>
+    public DataType OutputDataType { get; }
 }
