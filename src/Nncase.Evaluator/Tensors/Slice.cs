@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using DryIoc.FastExpressionCompiler.LightExpression;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
@@ -46,7 +47,11 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var ends = context.GetInt64OrtTensorArgumentValue(sl, Slice.Ends);
         var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
         var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
-        var sliced = OrtKI.Cast(OrtKI.Slice(input, begins, ends, axes, strides), (int)inputElemType.ToOrtType());
+        var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
+        if (inputElemType is not VectorType && inputElemType != DataTypes.Float32)
+        {
+            sliced = OrtKI.Cast(sliced, (int)inputElemType.ToOrtType());
+        }
 
         switch (context.CurrentCall.CheckedType)
         {
