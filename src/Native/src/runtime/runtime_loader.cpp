@@ -57,7 +57,6 @@ namespace {
 
 // clang-format off
 FindRuntimeMethod(activator, ACTIVATOR)
-FindRuntimeMethod(collector, COLLECTOR)
 // clang-format on
 
 #undef FindRuntimeMethod
@@ -108,7 +107,6 @@ FindRuntimeMethod(activator, ACTIVATOR)
     }
 // clang-format off
 FindRuntimeMethod(activator)
-FindRuntimeMethod(collector)
 // clang-format on
 #undef FindRuntimeMethod
 #endif
