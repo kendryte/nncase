@@ -27,3 +27,6 @@ set(BUILD_PYTHON_BINDING OFF)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64gcv_zfh")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64gcv_zfh")
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} march=rv64gv_zvl128b_zvfh -mrvv-vector-bits=zvl")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64gv_zvl128b_zvfh -mrvv-vector-bits=zvl")
