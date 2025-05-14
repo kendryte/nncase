@@ -270,4 +270,10 @@ internal static class Native
         int[] indices,
         int indices_len,
         RTTensor kv_cache);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_wait_for_debugger")]
+    public static extern int NncaseWaitForDebugger(byte enable);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_continue_execution")]
+    public static extern int NncaseContinueExecution();
 }

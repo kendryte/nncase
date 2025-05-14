@@ -20,11 +20,23 @@
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
+#ifndef _WIN32
+#include <atomic>
+#include <chrono>
+#include <fstream>
+#include <iostream>
+#include <thread>
+#include <unistd.h>
+#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
 
 namespace {
+#ifndef _WIN32
+volatile bool g_wait_for_debugger = false;
+#endif
+
 #define c_try(x)                                                               \
     {                                                                          \
         auto v = (x);                                                          \
@@ -893,5 +905,32 @@ int nncase_paged_attention_kv_cache_set_kv_cache(
         return 0;
     }
     return -EINVAL;
+}
+
+int nncase_wait_for_debugger(uint8_t enable) {
+#ifndef _WIN32
+    if (enable) {
+        g_wait_for_debugger = true;
+        pid_t pid = getpid();
+
+        while (g_wait_for_debugger) {
+            std::cout << "Process " << pid << " is waiting for debugger. "
+                      << std::endl;
+            std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        }
+    }
+    return 0;
+#else
+    return -ENOSYS;
+#endif
+}
+
+int nncase_continue_execution() {
+#ifndef _WIN32
+    g_wait_for_debugger = false;
+    return 0;
+#else
+    return -ENOSYS;
+#endif
 }
 }

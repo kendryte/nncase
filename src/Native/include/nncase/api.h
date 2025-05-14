@@ -303,4 +303,8 @@ NNCASE_API int nncase_paged_attention_kv_cache_get_kv_cache(
 NNCASE_API int nncase_paged_attention_kv_cache_set_kv_cache(
     nncase::llm::paged_attention_kv_cache_node *cache, const int32_t *indices,
     int32_t indices_len, nncase::tensor_node *kv_cache);
+
+NNCASE_API int nncase_wait_for_debugger(uint8_t enable);
+
+NNCASE_API int nncase_continue_execution(void);
 }
