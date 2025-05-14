@@ -261,6 +261,9 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
             case IR.Math.Select op:
                 str = CSourceUtilities.ContertSelect(op, arguments);
                 break;
+            case IR.Shapes.AsTensor op:
+                str = arguments[0].Name;
+                break;
             case TIR.NTT.SramPtr op:
                 str = $"g_cpu_mt->sram_address(bid, tid) + {arguments[0].Name}";
                 break;

@@ -102,9 +102,15 @@ public abstract class TIRSelectionPass : FunctionPass
         {
             Visit(function.Body, Unit.Default);
 
-            var outBuffers = function.Body is IR.Tuple tuple
-                ? tuple.Fields.AsValueEnumerable().Select(x => (Expr)ExprMemo[x]).ToArray()
-                : [(Expr)ExprMemo[function.Body]];
+            var outBuffers = function.Body switch
+            {
+                IR.Tuple tuple => tuple.Fields.AsValueEnumerable().Select(x => (Expr)ExprMemo[x]).ToArray(),
+                var body => ExprMemo[function.Body] switch
+                {
+                    IR.Tuple bodyTuple => bodyTuple.Fields.AsValueEnumerable().Select(x => (Expr)x).ToArray(),
+                    var x => [(Expr)x],
+                },
+            };
 
             if (_isEntry)
             {
@@ -139,7 +145,7 @@ public abstract class TIRSelectionPass : FunctionPass
 
         protected sealed override Expr VisitLeafVar(Var expr, Unit context) => expr;
 
-        protected sealed override Expr VisitLeafCall(Call expr, Unit context)
+        protected sealed override BaseExpr VisitLeafCall(Call expr, Unit context)
         {
             var args = expr.Arguments.AsValueEnumerable().Select(x => ExprMemo[x]).ToArray();
             return SelectCall(expr, args);
@@ -149,7 +155,7 @@ public abstract class TIRSelectionPass : FunctionPass
         {
             var output = CreateOutputBuffer(expr);
             var condition = (Expr)Visit(expr.Condition, context);
-            return T.Let(out var outputVar, output).Body(
+            return T.Let(out var outputVar, (Expr)output).Body(
                 T.Assign(out var arguments, expr.Arguments.AsValueEnumerable().Select(x => ExprMemo[x]).ToArray().Append(outputVar).ToArray()),
                 T.If(condition)
                     .Then(new Call(new FunctionWrapper(_selectionPass.ModuleKind, expr.Then), arguments))
@@ -157,11 +163,11 @@ public abstract class TIRSelectionPass : FunctionPass
                 .Build();
         }
 
-        private Expr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments)
+        private BaseExpr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments)
         {
-            if (call.Target is IR.Tensors.GetItem && arguments[IR.Tensors.GetItem.Input.Index] is IR.Tuple tuple && call[IR.Tensors.GetItem.Index] is TensorConst index)
+            if (call.Target is IR.Tensors.GetItem && arguments[IR.Tensors.GetItem.Input.Index] is IR.Tuple tuple && call[IR.Tensors.GetItem.Index] is DimConst index)
             {
-                return (Expr)tuple[index.Value.ToScalar<int>()];
+                return tuple[index.Value];
             }
             else
             {
@@ -170,14 +176,14 @@ public abstract class TIRSelectionPass : FunctionPass
                 {
                     PrimFunctionWrapper { Target: TIR.PrimFunction deviceFunc } => new Call(deviceFunc, arguments.Append(output).ToArray()),
                     Function fn => new Call(new FunctionWrapper(_selectionPass.ModuleKind, fn), arguments.Append(output).ToArray()),
-                    _ => _selectionPass.SelectCall(call, arguments, output),
+                    _ => _selectionPass.SelectCall(call, arguments, (Expr)output),
                 };
                 _body.Add(newCall);
                 return output;
             }
         }
 
-        private Expr CreateOutputBuffer(Expr expr)
+        private BaseExpr CreateOutputBuffer(Expr expr)
         {
             var root = VisitRoot!;
             var memoryLocation = MemoryLocation.Data;
@@ -196,7 +202,26 @@ public abstract class TIRSelectionPass : FunctionPass
                 }
             }
 
-            return T.CreateBuffer(expr.CheckedTensorType, memoryLocation, out _, $"{namePrefix}{_bufferIndex++}", expr.CheckedType as DistributedType);
+            if (expr.CheckedType is TupleType tt)
+            {
+                var fields = tt.Fields.AsValueEnumerable().Select(x => CreateBuffer(x, memoryLocation)).ToArray();
+                return new IR.Tuple(fields);
+            }
+            else
+            {
+                return CreateBuffer(expr.CheckedType, memoryLocation);
+            }
+        }
+
+        private TIR.Buffer CreateBuffer(IRType type, MemoryLocation memoryLocation)
+        {
+            var tensorType = type switch
+            {
+                DistributedType dt => dt.TensorType,
+                TensorType tt => tt,
+                _ => throw new ArgumentException($"Unsupported type: {type}"),
+            };
+            return T.CreateBuffer(tensorType, memoryLocation, out _, $"buffer_{_bufferIndex++}", type as DistributedType);
         }
     }
 }

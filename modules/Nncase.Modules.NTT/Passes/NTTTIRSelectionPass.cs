@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using Nncase.Passes.Transforms;
@@ -67,10 +68,10 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                     var input = call[IR.NN.Conv2D.Input];
                     var weights = call[IR.NN.Conv2D.Weights];
                     var bias = call[IR.NN.Conv2D.Bias];
-                    var strides = ((TensorConst)call[IR.NN.Conv2D.Stride]).Value.ToArray<int>();
-                    var padding = ((TensorConst)call[IR.NN.Conv2D.Padding]).Value.ToArray<int>();
-                    var dilation = ((TensorConst)call[IR.NN.Conv2D.Dilation]).Value.ToArray<int>();
-                    var groups = ((TensorConst)call[IR.NN.Conv2D.Groups]).Value.ToScalar<int>();
+                    var strides = ((RankedShape)call[IR.NN.Conv2D.Stride]).ToValueArray();
+                    var padding = Tensor.From(((Paddings)call[IR.NN.Conv2D.Padding]).ToValueArray()).ToArray();
+                    var dilation = ((RankedShape)call[IR.NN.Conv2D.Dilation]).ToValueArray();
+                    var groups = ((Dimension)call[IR.NN.Conv2D.Groups]).FixedValue;
                     var fusedClamp = ((TensorConst)call[IR.NN.Conv2D.FusedClamp]).Value.ToArray<float>();
                     var wShape = weights.CheckedShape.ToValueArray();
                     var outShape = call.CheckedShape.ToValueArray();
@@ -94,7 +95,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.NTT.ResizeImage resize:
                 return TIR.F.NTT.ResizeImage((Expr)arguments[0], output, resize.PackedAxes.ToArray(), resize.PadedNums.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode);
             case IR.Tensors.Slice slice:
-                return TIR.F.NTT.Slice((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ((TensorConst)call[IR.Tensors.Slice.Axes]).Value.ToArray<int>(), ((TensorConst)call[IR.Tensors.Slice.Strides]).Value.ToArray<int>());
+                return TIR.F.NTT.Slice((Expr)arguments[0], (RankedShape)arguments[1], (RankedShape)arguments[2], output, ((RankedShape)call[IR.Tensors.Slice.Axes]).ToValueArray().ToInts(), ((RankedShape)call[IR.Tensors.Slice.Strides]).ToValueArray().ToInts());
             case IR.Tensors.Concat concat:
                 return TIR.F.NTT.Concat(((IR.Tuple)arguments[0]).Fields.AsValueEnumerable().Select(x => (Expr)x).ToArray(), output, concat.Axis);
             case IR.Tensors.Transpose trans:
@@ -104,7 +105,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Tensors.Gather gather:
                 return TIR.F.NTT.Gather((Expr)arguments[0], (Expr)arguments[1], output, gather.Axis);
             case IR.NN.Pad pad:
-                return TIR.F.NTT.Pad((Expr)arguments[0], output, ((TensorConst)call[IR.NN.Pad.Pads]).Value.ToArray<int>(), ((TensorConst)call[IR.NN.Pad.Value]).Value.ToArray<float>()[0]);
+                return TIR.F.NTT.Pad((Expr)arguments[0], output, Tensor.From(((Paddings)call[IR.NN.Pad.Pads]).ToValueArray()).ToArray(), ((TensorConst)call[IR.NN.Pad.Value]).Value.ToArray<float>()[0]);
             case IR.Math.Reduce reduce:
                 return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, Array.Empty<int>(), Array.Empty<int>(), ((TensorConst)call[IR.Math.Reduce.Axes]).Value.ToArray<int>().OrderBy(a => a).ToArray(), ((TensorConst)call[IR.Math.Reduce.KeepDims]).Value.ToArray<bool>()[0], reduce.ReduceOp);
             case IR.Math.ReduceArg reduceArg:

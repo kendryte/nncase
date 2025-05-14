@@ -212,9 +212,10 @@ public class RTTensor : RTValue
         _ = MemoryMarshal.Cast<uint, int>(Strides);
         if (Buffer.SizeBytes > 0)
         {
-            var hostBuffer = Buffer.Buffer.AsHost()!;
-            using var owner = hostBuffer.Map(RTMapAccess.Read);
-            return Tensor.FromBytes(new TensorType(dtype, dims.ToArray()), owner.Memory.ToArray());
+            var outHost = Buffer.Buffer.AsHost()!;
+            using var owner = outHost.Map(RTMapAccess.Read);
+            var outHostSlice = owner.Memory.Slice((int)Buffer.Start, (int)Buffer.SizeBytes);
+            return Tensor.FromBytes(new TensorType(dtype, dims.ToArray()), outHostSlice.ToArray());
         }
 
         return Tensor.FromBytes(new TensorType(dtype, dims.ToArray()), Array.Empty<byte>());

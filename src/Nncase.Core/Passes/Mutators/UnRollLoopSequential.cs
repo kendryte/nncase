@@ -19,7 +19,7 @@ namespace Nncase.Passes.Mutators;
 public sealed class UnRollLoopSequential : ExprRewriter
 {
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache = new();
-    private readonly Dictionary<BaseExpr, BaseExpr> _cseMemo = new();
+    private readonly Dictionary<BaseExpr, BaseExpr> _cseMemo = new(ReferenceEqualityComparer.Instance);
 
     /// <inheritdoc/>
     protected internal override BaseExpr VisitFor(For expr, Unit context)
@@ -53,7 +53,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
     /// <summary>
     /// convert the loop var to tensor const.
     /// </summary>
-    private static IEnumerable<TensorConst> MakeGrid(TIR.For loop)
+    private static IEnumerable<long> MakeGrid(TIR.For loop)
     {
         long start = loop.Domain.Start.FixedValue;
         long stop = loop.Domain.Stop.FixedValue;
@@ -103,7 +103,7 @@ public sealed class UnRollLoopSequential : ExprRewriter
                      select grid.ToArray()).
           Select(grid =>
             {
-                var vmap = new Dictionary<IVar, TensorConst>();
+                var vmap = new Dictionary<IVar, long>();
                 for (int i = 0; i < grid.Length; i++)
                 {
                     vmap.Add(nested_loops[i].LoopVar, grid[i]);
@@ -128,12 +128,12 @@ public sealed class UnRollLoopSequential : ExprRewriter
 /// </summary>
 internal sealed class LoopBodyCloner : ExprCloner<Unit>
 {
-    private readonly IReadOnlyDictionary<IVar, TensorConst> _vmap;
+    private readonly IReadOnlyDictionary<IVar, long> _vmap;
     private readonly Dictionary<IVar, IValue> _cmap;
     private readonly Dictionary<Type, Evaluator.IEvaluator> _evaluator_cache;
     private readonly IDictionary<BaseExpr, BaseExpr> _cseMemo;
 
-    public LoopBodyCloner(IReadOnlyDictionary<IVar, TensorConst> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<BaseExpr, BaseExpr> cseMemo)
+    public LoopBodyCloner(IReadOnlyDictionary<IVar, long> vmap, Dictionary<Type, Evaluator.IEvaluator> evaluator_cache, IDictionary<BaseExpr, BaseExpr> cseMemo)
     {
         _vmap = vmap;
         _cmap = new(ReferenceEqualityComparer.Instance);
@@ -160,11 +160,21 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
         return expr;
     }
 
+    protected override Dimension VisitLeafDimVar(DimVar expr, Unit context)
+    {
+        if (_vmap.TryGetValue(expr, out var result))
+        {
+            return result;
+        }
+
+        return expr;
+    }
+
     protected override Expr VisitLeafCall(Call expr, Unit context)
     {
         var target = Clone(expr.Target, context);
         var arguments = CloneArray(expr.Arguments, context);
-        if (target is Op op && op.CanFoldConstCall && arguments.AsValueEnumerable().All(e => e is Const))
+        if (target is Op op && op.CanFoldConstCall && arguments.AsValueEnumerable().All(e => e is Const or DimConst or RankedShape { IsFixed: true }))
         {
             return CSE(Const.FromValue(CompilerServices.Evaluate(expr.With(target, arguments), _cmap, _evaluator_cache)));
         }

@@ -33,6 +33,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
     private readonly StringBuilder _sharedBuilder;
     private readonly HashSet<TIR.PrimFunction> _refFuncs;
     private readonly StringWriter _sharedWriter;
+    private Var[]? _tensorParams;
     private ulong _collective_pool_size;
 
     public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, NTTTargetOptions targetOptions)
@@ -62,6 +63,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
     public ulong RdataPoolSize { get; }
 
     public ulong LocalRdataPoolSize { get; }
+
+    private Var[] TensorParams => _tensorParams ??= VisitEntry.Parameters.ToArray().OfType<Var>().ToArray();
 
     public static void WriteWithProfiler(string functionName, string tagName = "")
     {
@@ -105,7 +108,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
     public KernelCSource GetCSource()
     {
-        var templateHeader = VisitEntry.Parameters.Length == 0 ? string.Empty : $"template<{string.Join(", ", Enumerable.Range(0, VisitEntry.Parameters.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine;
+        var templateHeader = TensorParams.Length == 0 ? string.Empty : $"template<{string.Join(", ", Enumerable.Range(0, TensorParams.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine;
         var ctype = templateHeader +
             $"void {VisitEntry.Name}({string.Concat(VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata).Select(Visit).Select(s => $" {s.Type} {s.Name}, ").ToArray()))}std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
         return new(
@@ -129,7 +132,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         }
 
         var name = IRHelpers.GetIdentityName(expr.Name);
-        var index = VisitEntry.Parameters.IndexOf(expr);
+        var index = TensorParams.IndexOf(expr);
         if (index != -1)
         {
             symbol = new CSymbol($"T{index}", name);
@@ -195,8 +198,17 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         };
         var ptype = (PointerType)expr.CheckedDataType;
         var ptypeName = ptype.ElemType.ToC();
-        var spanSize = (ulong)expr.Size.FixedValue / (ulong)ptype.ElemType.SizeInBytes;
-        var name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}UL), {spanSize})";
+        string name;
+        if (expr.Size is DimConst)
+        {
+            var spanSize = (ulong)expr.Size.FixedValue / (ulong)ptype.ElemType.SizeInBytes;
+            name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}UL), {spanSize})";
+        }
+        else
+        {
+            var spanSize = $"{Visit(expr.Size).Name} / {ptype.ElemType.SizeInBytes}";
+            name = $"std::span<{ptypeName}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}UL), {spanSize})";
+        }
 
         symbol = new(start.Type, name);
         _exprMemo.Add(expr, symbol);

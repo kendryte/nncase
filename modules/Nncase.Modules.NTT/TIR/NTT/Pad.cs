@@ -28,7 +28,7 @@ public sealed partial class Pad : NTTKernelOp
     /// </summary>
     public static readonly ParameterInfo Output = new(typeof(Pad), 1, "output");
 
-    public IRArray<int> Paddings { get; }
+    public IRArray<long> Paddings { get; }
 
     public float PadValue { get; }
 }

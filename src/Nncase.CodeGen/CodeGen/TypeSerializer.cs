@@ -71,6 +71,9 @@ public static class TypeSerializer
 
                 writer.Write((byte)TypeSignatureToken.End);
                 break;
+            case DimensionType:
+                Serialize(writer, TensorType.Scalar(DataTypes.Int64));
+                break;
             default:
                 throw new ArgumentException($"Unsupported type: {type}");
         }

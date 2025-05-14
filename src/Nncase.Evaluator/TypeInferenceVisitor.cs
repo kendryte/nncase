@@ -60,9 +60,9 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         VerifySubField(expr, expr.Buffer, TypePatternUtility.IsTensor());
         foreach (var r in expr.Region)
         {
-            VerifySubField(expr, r.Start, TypePatternUtility.IsIntegralScalar());
-            VerifySubField(expr, r.Stop, TypePatternUtility.IsIntegralScalar());
-            VerifySubField(expr, r.Stop, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, r.Start, TypePatternUtility.IsDimensionType());
+            VerifySubField(expr, r.Stop, TypePatternUtility.IsDimensionType());
+            VerifySubField(expr, r.Stop, TypePatternUtility.IsDimensionType());
         }
 
         // TODO: need infer the sub region shape/stride
@@ -126,7 +126,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         foreach (var p in expr.Parameters)
         {
-            VerifySubField(expr, (Expr)p);
+            VerifySubField(expr, (BaseExpr)p);
         }
 
         VerifySubField(expr, expr.Body);
@@ -222,7 +222,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         foreach (var p in expr.Parameters)
         {
-            VerifySubField(expr, (Expr)p);
+            VerifySubField(expr, (BaseExpr)p);
         }
 
         VerifySubField(expr, expr.Body);

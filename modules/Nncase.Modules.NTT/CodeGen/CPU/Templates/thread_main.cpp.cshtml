@@ -31,12 +31,11 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input
   /* prepare inputs */
   @{
     var names = new List<string>();
-    var dynamicVars = IRHelpers.GetDynamicDimVars();
   }
   @foreach(var (input,i) in Model.PrimFunction.Parameters.ToArray().Select((input,i)=>(input,i)))
   {
     var name = IRHelpers.GetIdentityName(input.Name);
-    if (dynamicVars.Contains(input))
+    if (input is DimVar)
     {
       names.Add(name);
   @:int64_t @Html.Raw(name) = *(int64_t *)input_descs[@i].data;

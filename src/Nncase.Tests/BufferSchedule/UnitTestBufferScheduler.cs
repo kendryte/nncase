@@ -85,18 +85,17 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     {
         ((Targets.NTTTargetOptions)CompileOptions.TargetOptions).HierarchySizes[^1] = capacity;
         var fusion = fusionGetter();
-        var dupVars = fusion.Parameters.AsValueEnumerable().Select(v => new Var(v.CheckedType)).ToArray();
-
-        var module = new IRModule(new Function("main", new Call(fusion, dupVars), dupVars));
+        var vars = fusion.Parameters.AsValueEnumerable().Select(x => (Var)x).ToArray();
+        var module = new IRModule(fusion);
         module.Add(fusion);
 
-        var inputs = dupVars.AsValueEnumerable().Select(v =>
+        var inputs = vars.AsValueEnumerable().Select(v =>
         {
             var ttype = v.CheckedTensorType;
             return IR.F.Random.Normal(ttype.DType, ttype.Shape.ToValueArray()).Evaluate().AsTensor();
         }).ToArray();
 
-        var kernelCase = new ModuleCase($"case{number}", module, dupVars, inputs);
+        var kernelCase = new ModuleCase($"case{number}", module, vars, inputs);
         await Testing.CompileAndRun(kernelCase, CompileOptions, CompileSession, Compile);
     }
 
@@ -109,12 +108,14 @@ public sealed class UnitTestBufferScheduler : TestClassBase
         // todo add auto fusion merge pass here.
         passManager.Add<PrimFuncPass>().Configure(p =>
         {
+            p.Add<Passes.Mutators.RemoveFunctionWrapper>();
             p.Add<Passes.Mutators.UnFoldBlock>();
             p.Add<Passes.Mutators.FlattenSequential>();
             p.Add<Passes.Mutators.TailLoopStripping>();
             p.Add<Passes.Mutators.FoldConstCall>();
         });
 
+        passManager.Add<RemoveUnusedFunctions>();
         passManager.AddWithName<BufferizePass>("BufferizePass");
 
         passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>

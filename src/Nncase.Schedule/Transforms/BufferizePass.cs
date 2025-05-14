@@ -17,17 +17,7 @@ namespace Nncase.Passes.Transforms;
 
 public sealed class BufferizePass : FunctionPass
 {
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
-    {
-        if (input is PrimFunction primFunc)
-        {
-            Bufferize(primFunc);
-        }
-
-        return Task.FromResult(input);
-    }
-
-    private void Bufferize(PrimFunction func)
+    public static void Bufferize(PrimFunction func)
     {
         var lifetimes = new LifetimeCollector().Collect(func);
         var scheduleResult = BufferScheduler.Schedule(lifetimes);
@@ -48,7 +38,17 @@ public sealed class BufferizePass : FunctionPass
         func.SchedResult.IsScheduled = true;
     }
 
-    private void AssignOutputResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
+    {
+        if (input is PrimFunction primFunc)
+        {
+            Bufferize(primFunc);
+        }
+
+        return Task.FromResult(input);
+    }
+
+    private static void AssignOutputResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         if (scheduleResult.TryGetValue(MemoryLocation.Output, out var dataResult))
         {
@@ -57,7 +57,7 @@ public sealed class BufferizePass : FunctionPass
         }
     }
 
-    private void AssignDataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void AssignDataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         if (scheduleResult.TryGetValue(MemoryLocation.Data, out var dataResult))
         {
@@ -66,7 +66,7 @@ public sealed class BufferizePass : FunctionPass
         }
     }
 
-    private void AssignRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void AssignRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         if (scheduleResult.TryGetValue(MemoryLocation.Rdata, out var rdataResult))
         {
@@ -79,7 +79,7 @@ public sealed class BufferizePass : FunctionPass
         }
     }
 
-    private void AssignLocalRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void AssignLocalRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         if (scheduleResult.TryGetValue(MemoryLocation.ThreadLocalRdata, out var localRdataResult))
         {
@@ -92,7 +92,7 @@ public sealed class BufferizePass : FunctionPass
         }
     }
 
-    private void DumpSchedule(IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void DumpSchedule(IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         foreach (var locationResult in scheduleResult)
         {

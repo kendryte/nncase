@@ -1,38 +1,35 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using Nncase.IR;
-
 namespace Nncase.IR;
 
-public sealed class ShapeVar : Shape, IVar, IEquatable<ShapeVar?>
+public sealed class DimVar : OpaqueDim, IVar, IEquatable<DimVar?>
 {
     private static int _globalVarIndex;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ShapeVar"/> class.
+    /// Initializes a new instance of the <see cref="DimVar"/> class.
     /// </summary>
     /// <param name="name">Name.</param>
-    /// <param name="rank">Rank.</param>
-    public ShapeVar(string name, int rank)
-        : base(Array.Empty<BaseExpr>())
+    public DimVar(string name)
+        : base(Array.Empty<Expr>())
     {
         GlobalVarIndex = GetNextId();
         Name = name;
-        Rank = rank;
+        Metadata.Range = ValueRange<double>.Full;
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ShapeVar"/> class.
+    /// Initializes a new instance of the <see cref="DimVar"/> class.
     /// </summary>
-    /// <param name="rank">Rank.</param>
-    public ShapeVar(int rank)
-        : base(Array.Empty<BaseExpr>())
+    public DimVar()
+        : base(Array.Empty<Expr>())
     {
         GlobalVarIndex = GetNextId();
-        Name = $"shapeVar_{GlobalVarIndex}";
-        Rank = rank;
+        Name = $"dimVar_{GlobalVarIndex}";
     }
+
+    public override DimensionKind Kind => DimensionKind.Dynamic;
 
     /// <summary>
     /// Gets the global var index.
@@ -45,18 +42,14 @@ public sealed class ShapeVar : Shape, IVar, IEquatable<ShapeVar?>
     public string Name { get; }
 
     /// <summary>
-    /// Gets the rank.
+    /// Create a dim var.
     /// </summary>
-    public override int Rank { get; }
-
-    public override ShapeKind Kind => ShapeKind.HasUnknownDimension;
-
-    public override Dimension this[Dimension index] => new DimAt(this, Dimension.Positive(index, Rank));
+    public static implicit operator DimVar(string name) => new DimVar(name);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitShapeVar(this, context);
+        functor.VisitDimVar(this, context);
 
-    public ShapeVar With(string? name = null, int? rank = null) => new ShapeVar(name ?? Name, rank ?? Rank)
+    public DimVar With(string? name = null) => new DimVar(name ?? Name)
     {
         Metadata =
         {
@@ -67,10 +60,10 @@ public sealed class ShapeVar : Shape, IVar, IEquatable<ShapeVar?>
     IVar IVar.With(string? name) => With(name);
 
     /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as ShapeVar);
+    public override bool Equals(object? obj) => Equals(obj as DimVar);
 
     /// <inheritdoc/>
-    public bool Equals(ShapeVar? other)
+    public bool Equals(DimVar? other)
     {
         if (ReferenceEquals(this, other))
         {
@@ -80,13 +73,9 @@ public sealed class ShapeVar : Shape, IVar, IEquatable<ShapeVar?>
         return other is not null && GlobalVarIndex == other.GlobalVarIndex;
     }
 
-    bool IEquatable<IVar?>.Equals(IVar? other) => Equals(other as ShapeVar);
+    bool IEquatable<IVar?>.Equals(IVar? other) => Equals(other as DimVar);
 
     public override string ToString() => $"{Name}";
-
-    public override bool IsAssignableFrom(Shape shape) => shape is RankedShape rankedShape && rankedShape.Rank == Rank;
-
-    public override Expr ToValueArrayExpr() => IR.F.Shapes.AsTensor(this);
 
     /// <inheritdoc/>
     protected override int GetHashCodeCore() => HashCode.Combine(GlobalVarIndex);

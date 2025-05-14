@@ -96,8 +96,8 @@ public sealed partial class NTTAffineSelectionPass
             .Write(output, outMap, out var outTile)
             .Body(op switch
             {
-                IR.Math.MatMul => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual((Expr)((Expr)domainVar[ok])[0], 0L)),
-                IR.NTT.PackedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual((Expr)((Expr)domainVar[ok])[0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
+                IR.Math.MatMul => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
+                IR.NTT.PackedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsPackedAxes, pop.LhsPadedNums, pop.RhsPackedAxes, pop.RhsPadedNums, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
                 _ => throw new System.Diagnostics.UnreachableException(),
             }).Build();
     }

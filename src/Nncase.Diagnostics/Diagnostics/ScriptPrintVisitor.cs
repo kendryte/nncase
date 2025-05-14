@@ -177,6 +177,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     /// <inheritdoc/>
     public override string VisitType(AnyType type) => "any";
 
+    public override string VisitType(DimensionType type) => "dim";
+
     /// <inheritdoc/>
     protected override IPrintSymbol VisitFunction(Function expr)
     {

@@ -4,6 +4,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using NetFabric.Hyperlinq;
@@ -11,487 +12,6 @@ using Nncase.IR.Shapes;
 using Nncase.Utilities;
 
 namespace Nncase.IR;
-
-public enum DimDivideMode
-{
-    FloorDiv,
-    CeilDiv,
-}
-
-public abstract class OpaqueDim : Dimension
-{
-    protected OpaqueDim(BaseExpr[] operands)
-        : base(operands)
-    {
-    }
-}
-
-public sealed class AsDim : Dimension, IEquatable<AsDim?>
-{
-    public AsDim(Expr dim)
-        : base([dim])
-    {
-    }
-
-    public override DimensionKind Kind => DimensionKind.Dynamic;
-
-    /// <summary>
-    /// Gets dim.
-    /// </summary>
-    public Expr Dim => (Expr)Operands[0];
-
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitAsDim(this, context);
-
-    public AsDim With(Expr? dim = null) => new AsDim(dim ?? Dim);
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as AsDim);
-
-    /// <inheritdoc/>
-    public bool Equals(AsDim? other)
-    {
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return other is not null && Dim.Equals(other.Dim);
-    }
-
-    public override string ToString() => $"as({Dim})";
-
-    /// <inheritdoc/>
-    protected override int GetHashCodeCore() => Dim.GetHashCode();
-}
-
-public sealed class UnknownDim : Dimension, IEquatable<UnknownDim?>
-{
-    public static readonly UnknownDim Default = new();
-
-    public UnknownDim()
-        : base(Array.Empty<Expr>())
-    {
-    }
-
-    public override DimensionKind Kind => DimensionKind.Unknown;
-
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitUnknownDim(this, context);
-
-    public UnknownDim With() => Default;
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as UnknownDim);
-
-    /// <inheritdoc/>
-    public bool Equals(UnknownDim? other)
-    {
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return other is not null;
-    }
-
-    public override string ToString() => "?";
-
-    /// <inheritdoc/>
-    protected override int GetHashCodeCore() => 0;
-}
-
-public sealed class DimVar : OpaqueDim, IVar, IEquatable<DimVar?>
-{
-    private static int _globalVarIndex;
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DimVar"/> class.
-    /// </summary>
-    /// <param name="name">Name.</param>
-    public DimVar(string name)
-        : base(Array.Empty<Expr>())
-    {
-        GlobalVarIndex = GetNextId();
-        Name = name;
-        Metadata.Range = ValueRange<double>.Full;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DimVar"/> class.
-    /// </summary>
-    public DimVar()
-        : base(Array.Empty<Expr>())
-    {
-        GlobalVarIndex = GetNextId();
-        Name = $"dimVar_{GlobalVarIndex}";
-    }
-
-    public override DimensionKind Kind => DimensionKind.Dynamic;
-
-    /// <summary>
-    /// Gets the global var index.
-    /// </summary>
-    public int GlobalVarIndex { get; }
-
-    /// <summary>
-    /// Gets name.
-    /// </summary>
-    public string Name { get; }
-
-    /// <summary>
-    /// Create a dim var.
-    /// </summary>
-    public static implicit operator DimVar(string name) => new DimVar(name);
-
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitDimVar(this, context);
-
-    public DimVar With(string? name = null) => new DimVar(name ?? Name)
-    {
-        Metadata =
-        {
-            Range = Metadata.Range,
-        },
-    };
-
-    IVar IVar.With(string? name) => With(name);
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as DimVar);
-
-    /// <inheritdoc/>
-    public bool Equals(DimVar? other)
-    {
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return other is not null && GlobalVarIndex == other.GlobalVarIndex;
-    }
-
-    bool IEquatable<IVar?>.Equals(IVar? other) => Equals(other as DimVar);
-
-    public override string ToString() => $"{Name}";
-
-    /// <inheritdoc/>
-    protected override int GetHashCodeCore() => HashCode.Combine(GlobalVarIndex);
-
-    private static int GetNextId()
-    {
-        return Interlocked.Increment(ref _globalVarIndex);
-    }
-}
-
-public sealed class DimConst : Dimension, IEquatable<DimConst?>
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DimConst"/> class.
-    /// </summary>
-    /// <param name="value">Value.</param>
-    public DimConst(long value)
-        : base(Array.Empty<Expr>())
-    {
-        Value = value;
-        Metadata.Range = new ValueRange<double>(value, value);
-    }
-
-    public override DimensionKind Kind => DimensionKind.Fixed;
-
-    public override long FixedValue => Value;
-
-    /// <summary>
-    /// Gets value.
-    /// </summary>
-    public long Value { get; }
-
-    public static implicit operator DimConst(long value) => new DimConst(value);
-
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitDimConst(this, context);
-
-    public DimConst With(long? value = null) => new DimConst(value ?? Value);
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as DimConst);
-
-    /// <inheritdoc/>
-    public bool Equals(DimConst? other)
-    {
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return other is not null && Value == other.Value;
-    }
-
-    public override string ToString() => Value.ToString();
-
-    /// <inheritdoc/>
-    protected override int GetHashCodeCore() => HashCode.Combine(Value);
-}
-
-public sealed class DimPower : Dimension, IEquatable<DimPower?>
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DimPower"/> class.
-    /// </summary>
-    /// <param name="dim">Dim.</param>
-    /// <param name="power">Power.</param>
-    public DimPower(OpaqueDim dim, int power)
-        : base([dim])
-    {
-        Power = power;
-        Metadata.Range = InferRange();
-    }
-
-    public override DimensionKind Kind => DimensionKind.Dynamic;
-
-    /// <summary>
-    /// Gets dim.
-    /// </summary>
-    public OpaqueDim Dim => (OpaqueDim)Operands[0];
-
-    public int Power { get; }
-
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitDimPower(this, context);
-
-    public DimPower With(OpaqueDim? dim = null, int? power = null) => new DimPower(dim ?? Dim, power ?? Power);
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as DimPower);
-
-    /// <inheritdoc/>
-    public bool Equals(DimPower? other)
-    {
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return other is not null && Dim.Equals(other.Dim) && Power == other.Power;
-    }
-
-    /// <inheritdoc/>
-    public override string ToString() =>
-        Power switch
-        {
-            1 => Dim.ToString(),
-            _ => $"{Dim}^{Power}",
-        };
-
-    public override Dimension Simplify() =>
-        Power switch
-        {
-            0 => DimConst.One,
-            1 => Dim,
-            _ => this,
-        };
-
-    /// <inheritdoc/>
-    protected override int GetHashCodeCore() => HashCode.Combine(Dim, Power);
-
-    private ValueRange<double> InferRange()
-    {
-        if (Dim.Metadata.Range is ValueRange<double> dimRange)
-        {
-            var ranges = new[] {
-                System.Math.Pow(dimRange.Min, Power),
-                System.Math.Pow(dimRange.Max, Power),
-            };
-            return new(ranges.Min(), ranges.Max());
-        }
-
-        return ValueRange<double>.Full;
-    }
-}
-
-public sealed class DimFraction : Dimension, IEquatable<DimFraction?>
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="DimFraction"/> class.
-    /// </summary>
-    /// <param name="divMode">Division mode.</param>
-    /// <param name="numerator">Numerator.</param>
-    /// <param name="denominator">Denominator.</param>
-    public DimFraction(DimDivideMode divMode, Dimension numerator, Dimension denominator)
-        : base([numerator, denominator])
-    {
-        DivMode = divMode;
-        Metadata.Range = InferRange();
-    }
-
-    public override DimensionKind Kind => DimensionKind.Dynamic;
-
-    public DimDivideMode DivMode { get; }
-
-    /// <summary>
-    /// Gets numerator.
-    /// </summary>
-    public Dimension Numerator => (Dimension)Operands[0];
-
-    /// <summary>
-    /// Gets denominator.
-    /// </summary>
-    public Dimension Denominator => (Dimension)Operands[1];
-
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitDimFraction(this, context);
-
-    public DimFraction With(DimDivideMode? divMode = null, Dimension? numerator = null, Dimension? denominator = null) =>
-        new DimFraction(divMode ?? DivMode, numerator ?? Numerator, denominator ?? Denominator);
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as DimFraction);
-
-    /// <inheritdoc/>
-    public bool Equals(DimFraction? other)
-    {
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return other is not null && Numerator.Equals(other.Numerator) && Denominator.Equals(other.Denominator);
-    }
-
-    public override string ToString() => $"({Numerator} / {Denominator})";
-
-    public override Dimension Simplify()
-    {
-        var (numeratorScale, numeratorPows) = DimHelpers.GetScaleAndPows(Numerator);
-        var (denominatorScale, denominatorPows) = DimHelpers.GetScaleAndPows(Denominator);
-        if (numeratorScale % denominatorScale == 0)
-        {
-            numeratorScale /= denominatorScale;
-            denominatorScale = 1;
-        }
-
-        foreach (var (denominator, denominatorPow) in denominatorPows.ToArray())
-        {
-            ref var numeratorPow = ref CollectionsMarshal.GetValueRefOrNullRef(numeratorPows, denominator);
-            if (!Unsafe.IsNullRef(ref numeratorPow))
-            {
-                if (numeratorPow > denominatorPow)
-                {
-                    denominatorPows.Remove(denominator);
-                    numeratorPow -= denominatorPow;
-                }
-                else if (numeratorPow == denominatorPow)
-                {
-                    numeratorPows.Remove(denominator);
-                    denominatorPows.Remove(denominator);
-                }
-                else
-                {
-                    numeratorPows.Remove(denominator);
-                    denominatorPows[denominator] -= numeratorPow;
-                }
-            }
-        }
-
-        var newNumerator = DimHelpers.Simplify(numeratorScale, numeratorPows);
-        var newDenominator = DimHelpers.Simplify(denominatorScale, denominatorPows);
-        return (newNumerator, newDenominator) switch
-        {
-            (DimConst numConst, DimConst denConst) => DivMode == DimDivideMode.FloorDiv
-                ? numConst.Value / denConst.Value
-                : MathUtility.CeilDiv(numConst.Value, denConst.Value),
-            (DimConst numConst, _) when numConst.Value == 0 => Zero,
-            (_, DimConst denConst) when denConst.Value == 1 => newNumerator,
-            _ => new DimFraction(DivMode, newNumerator, newDenominator),
-        };
-    }
-
-    /// <inheritdoc/>
-    protected override int GetHashCodeCore() => HashCode.Combine(Numerator, Denominator);
-
-    private ValueRange<double> InferRange()
-    {
-        if (Numerator.Metadata.Range is ValueRange<double> numRange && Denominator.Metadata.Range is ValueRange<double> denRange)
-        {
-            long[] ranges = DivMode == DimDivideMode.FloorDiv ? [
-                (long)numRange.Min / (long)denRange.Min,
-                (long)numRange.Min / (long)denRange.Max,
-                (long)numRange.Max / (long)denRange.Min,
-                (long)numRange.Max / (long)denRange.Max,
-            ] : [
-                MathUtility.CeilDiv((long)numRange.Min, (long)denRange.Min),
-                MathUtility.CeilDiv((long)numRange.Min, (long)denRange.Max),
-                MathUtility.CeilDiv((long)numRange.Max, (long)denRange.Min),
-                MathUtility.CeilDiv((long)numRange.Max, (long)denRange.Max),
-            ];
-            return new(ranges.Min(), ranges.Max());
-        }
-
-        return ValueRange<double>.Full;
-    }
-}
-
-public sealed class DimRemainder : Dimension, IEquatable<DimRemainder?>
-{
-    public DimRemainder(Dimension numerator, Dimension denominator)
-        : base([numerator, denominator])
-    {
-        Metadata.Range = InferRange();
-    }
-
-    public override DimensionKind Kind => DimensionKind.Dynamic;
-
-    /// <summary>
-    /// Gets numerator.
-    /// </summary>
-    public Dimension Numerator => (Dimension)Operands[0];
-
-    /// <summary>
-    /// Gets denominator.
-    /// </summary>
-    public Dimension Denominator => (Dimension)Operands[1];
-
-    public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
-        functor.VisitDimRemainder(this, context);
-
-    public DimRemainder With(Dimension? numerator = null, Dimension? denominator = null) =>
-        new DimRemainder(numerator ?? Numerator, denominator ?? Denominator);
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj) => Equals(obj as DimRemainder);
-
-    /// <inheritdoc/>
-    public bool Equals(DimRemainder? other)
-    {
-        if (ReferenceEquals(this, other))
-        {
-            return true;
-        }
-
-        return other is not null && Numerator.Equals(other.Numerator) && Denominator.Equals(other.Denominator);
-    }
-
-    public override string ToString() => $"({Numerator} % {Denominator})";
-
-    /// <inheritdoc/>
-    protected override int GetHashCodeCore() => HashCode.Combine(Numerator, Denominator);
-
-    private ValueRange<double> InferRange()
-    {
-        if (Numerator.Metadata.Range is ValueRange<double> numRange && Denominator.Metadata.Range is ValueRange<double> denRange)
-        {
-            var ranges = new[] {
-                (long)numRange.Min % (long)denRange.Min,
-                (long)numRange.Min % (long)denRange.Max,
-                (long)numRange.Max % (long)denRange.Min,
-                (long)numRange.Max % (long)denRange.Max,
-            };
-            return new(ranges.Min(), ranges.Max());
-        }
-
-        return ValueRange<double>.Full;
-    }
-}
 
 public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
 {
@@ -523,7 +43,15 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimProduct(this, context);
 
-    public DimProduct With(Dimension[]? operands = null, long? scale = null) => new DimProduct(operands ?? Operands.ToArray(), scale ?? Scale);
+    public Dimension With(Dimension[]? operands = null, long? scale = null)
+    {
+        if (operands == null)
+        {
+            return new DimProduct(Operands.ToArray(), scale ?? Scale);
+        }
+
+        return TrySimplify(scale ?? Scale, operands) ?? new DimProduct(operands, scale ?? Scale);
+    }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimProduct);
@@ -545,10 +73,48 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
         return $"({scale}{StringUtility.Join(" * ", Operands)})";
     }
 
-    public override Dimension Simplify()
+    public override Dimension Simplify() => TrySimplify(Scale, Operands) ?? this;
+
+    internal static Dimension? TrySimplify(long scale, ReadOnlySpan<Dimension> dimensions)
     {
-        (var scale, var pows) = DimHelpers.GetScaleAndPows(this);
-        return DimHelpers.Simplify(scale, pows);
+        if (dimensions.Length == 0 || dimensions.AsValueEnumerable().All(x => x.IsFixed))
+        {
+            for (var i = 0; i < dimensions.Length; i++)
+            {
+                scale *= dimensions[i].FixedValue;
+            }
+
+            return new DimConst(scale);
+        }
+        else if (dimensions.AsValueEnumerable().Any(x => x.IsUnknown))
+        {
+            return Unknown;
+        }
+
+        Dimension lhs = scale;
+        for (var i = 0; i < dimensions.Length; i++)
+        {
+            var rhs = dimensions[i];
+            lhs = (lhs, rhs) switch
+            {
+                (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value * rhsConst.Value,
+                (DimConst lhsConst, _) when lhsConst.Value == 0 => 0,
+                (_, DimConst rhsConst) when rhsConst.Value == 0 => 0,
+                (DimConst dimConst, _) when dimConst.Value == 1 => rhs,
+                (_, DimConst dimConst) when dimConst.Value == 1 => lhs,
+                (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
+                (DimSum lhsSum, _) => new DimSum(lhsSum.Operands.AsValueEnumerable().Select(x => x * rhs).ToArray()).Simplify(),
+                (_, DimSum rhsSum) => new DimSum(rhsSum.Operands.AsValueEnumerable().Select(x => lhs * x).ToArray()).Simplify(),
+                (DimProduct dimProduct, DimConst dimConst) => dimProduct.With(scale: dimProduct.Scale * dimConst.Value),
+                (DimConst dimConst, DimProduct dimProduct) => dimProduct.With(scale: dimProduct.Scale * dimConst.Value),
+                (DimProduct lhsProduct, DimProduct rhsProduct) => CreateWithSimplify(SpanUtility.Concat(lhsProduct.Operands, rhsProduct.Operands)),
+                (DimProduct lhsProduct, _) => CreateWithSimplify(SpanUtility.Concat(lhsProduct.Operands, [rhs])),
+                (_, DimProduct rhsProduct) => CreateWithSimplify(SpanUtility.Concat([lhs], rhsProduct.Operands)),
+                (_, _) => CreateWithSimplify([lhs, rhs]),
+            };
+        }
+
+        return lhs;
     }
 
     /// <inheritdoc/>
@@ -562,6 +128,12 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
         }
 
         return hash.ToHashCode();
+    }
+
+    private static Dimension CreateWithSimplify(Dimension[] operands)
+    {
+        (var scale, var pows) = DimHelpers.GetScaleAndPows(new DimProduct(operands));
+        return DimHelpers.Simplify(scale, pows);
     }
 
     private ValueRange<double> InferRange()
@@ -613,7 +185,15 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimSum(this, context);
 
-    public DimSum With(Dimension[]? operands = null, long? bias = null) => new DimSum(operands ?? Operands.ToArray(), bias ?? Bias);
+    public Dimension With(Dimension[]? operands = null, long? bias = null)
+    {
+        if (operands == null)
+        {
+            return new DimSum(Operands.ToArray(), bias ?? Bias);
+        }
+
+        return TrySimplify(bias ?? Bias, operands) ?? new DimSum(operands, bias ?? Bias);
+    }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimSum);
@@ -631,16 +211,66 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
 
     public override string ToString()
     {
-        var bias = Bias == 1 ? string.Empty : $"{Bias} * ";
+        var bias = Bias == 0 ? string.Empty : $"{Bias} + ";
         return $"({bias}{StringUtility.Join(" + ", Operands)})";
     }
 
-    public override Dimension Simplify()
+    public override Dimension Simplify() => TrySimplify(Bias, Operands) ?? this;
+
+    internal static Dimension? TrySimplify(long bias, ReadOnlySpan<Dimension> dimensions)
     {
-        long bias = Bias;
+        if (dimensions.Length == 0 || dimensions.AsValueEnumerable().All(x => x.IsFixed))
+        {
+            for (var i = 0; i < dimensions.Length; i++)
+            {
+                bias += dimensions[i].FixedValue;
+            }
+
+            return new DimConst(bias);
+        }
+        else if (dimensions.AsValueEnumerable().Any(x => x.IsUnknown))
+        {
+            return Unknown;
+        }
+
+        Dimension lhs = bias;
+        for (var i = 0; i < dimensions.Length; i++)
+        {
+            var rhs = dimensions[i];
+            lhs = (lhs, rhs) switch
+            {
+                (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value + rhsConst.Value,
+                (DimConst dimConst, _) when dimConst.Value == 0 => rhs,
+                (_, DimConst dimConst) when dimConst.Value == 0 => lhs,
+                (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
+                (DimSum lhsSum, DimSum rhsSum) => CreateWithSimplify(SpanUtility.Concat(lhsSum.Operands, rhsSum.Operands)),
+                (DimSum lhsSum, _) => CreateWithSimplify(SpanUtility.Concat(lhsSum.Operands, [rhs])),
+                (_, DimSum rhsSum) => CreateWithSimplify(SpanUtility.Concat([lhs], rhsSum.Operands)),
+                (_, _) => CreateWithSimplify([lhs, rhs]),
+            };
+        }
+
+        return lhs;
+    }
+
+    /// <inheritdoc/>
+    protected override int GetHashCodeCore()
+    {
+        var hash = default(HashCode);
+        foreach (var operand in Operands)
+        {
+            hash.Add(operand);
+        }
+
+        return hash.ToHashCode();
+    }
+
+    private static Dimension CreateWithSimplify(Dimension[] operands)
+    {
+        long bias = 0;
         var scales = new Dictionary<Dimension, long>(ReferenceEqualityComparer.Instance);
 
-        foreach (var operand in Operands)
+        foreach (var operand in operands)
         {
             if (operand is DimConst dimConst)
             {
@@ -660,18 +290,6 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
             (0, 1) => newOperands[0],
             _ => new DimSum(newOperands, bias),
         };
-    }
-
-    /// <inheritdoc/>
-    protected override int GetHashCodeCore()
-    {
-        var hash = default(HashCode);
-        foreach (var operand in Operands)
-        {
-            hash.Add(operand);
-        }
-
-        return hash.ToHashCode();
     }
 
     private ValueRange<double> InferRange()
@@ -885,7 +503,15 @@ public sealed class DimMin : OpaqueDim, IEquatable<DimMin?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimMin(this, context);
 
-    public DimMin With(Dimension[]? operands = null) => new DimMin(operands ?? Operands.ToArray());
+    public Dimension With(Dimension[]? operands = null)
+    {
+        if (operands == null)
+        {
+            return new DimMin(Operands.ToArray());
+        }
+
+        return Dimension.Min(operands);
+    }
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimMin);
@@ -901,7 +527,34 @@ public sealed class DimMin : OpaqueDim, IEquatable<DimMin?>
         return other is not null && Operands.SequenceEqual(other.Operands);
     }
 
+    public override Dimension Simplify() => TrySimplify(Operands) ?? this;
+
     public override string ToString() => $"min({StringUtility.Join(", ", Operands)})";
+
+    internal static Dimension? TrySimplify(ReadOnlySpan<Dimension> dimensions)
+    {
+        if (dimensions.Length == 0)
+        {
+            throw new ArgumentException("At least one dimension is required.");
+        }
+
+        if (dimensions.AsValueEnumerable().All(x => x.IsFixed))
+        {
+            var min = dimensions[0].FixedValue;
+            for (var i = 1; i < dimensions.Length; i++)
+            {
+                min = System.Math.Min(min, dimensions[i].FixedValue);
+            }
+
+            return new DimConst(min);
+        }
+        else if (dimensions.AsValueEnumerable().Any(x => x.IsUnknown))
+        {
+            return Unknown;
+        }
+
+        return null;
+    }
 
     /// <inheritdoc/>
     protected override int GetHashCodeCore()

@@ -192,7 +192,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
                         @var = new Var(field) { Metadata = pre.Metadata };
                         extractFields[i] = @var;
                         @params.Add(@var);
-                        arguments.Add(((Expr)post)[i]);
+                        arguments.Add(post[i]);
                     }
 
                     extractDict.Add(pre, new IR.Tuple(extractFields));
@@ -222,7 +222,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
             clones.Add(cloner.Clone(outVertex.Expr, default));
         }
 
-        var cloned = (Expr)PostProcess(clones);
+        var cloned = PostProcess(clones);
         var func = new Function($"{FuncName}_{sortIndex}_kernel", ModuleCompiler.ModuleKind, cloned, @params.ToArray());
         Module.Add(func);
         return new Call(func, arguments.ToArray());

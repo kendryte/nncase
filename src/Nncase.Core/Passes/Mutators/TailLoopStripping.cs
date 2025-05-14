@@ -36,7 +36,7 @@ public sealed class TailLoopStripping : ExprRewriter
 
         Dictionary<Type, Evaluator.IEvaluator> evaluator_cache = new();
         Dictionary<BaseExpr, BaseExpr> cseMemo = new();
-        var vmaps = new Dictionary<IVar, TensorConst>(ReferenceEqualityComparer.Instance) { { expr.LoopVar, stopv - rem } };
+        var vmaps = new Dictionary<IVar, long>(ReferenceEqualityComparer.Instance) { { expr.LoopVar, stopv - rem } };
         var tailBody = new LoopBodyCloner(vmaps, evaluator_cache, cseMemo).Clone(expr.Body, default);
         Expr mainBody = (stopv - rem == startv) ? T.Nop() : new TIR.For(expr.LoopVar, new TIR.Range(expr.Domain.Start, expr.Domain.Stop - rem, expr.Domain.Step), expr.Mode, expr.Body);
         return T.Sequential(mainBody, tailBody);

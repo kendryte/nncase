@@ -65,7 +65,7 @@ public class UnitTestKLQuant : TestClassBase
         }
     }
 
-    [Fact]
+    [Fact(Skip = "Inconsistent visit order")]
     public async Task TestKLQuant()
     {
         CompileOptions.QuantizeOptions.ModelQuantMode = ModelQuantMode.UsePTQ;

@@ -28,22 +28,22 @@ public sealed partial class Conv2D : NTTKernelOp
     /// <summary>
     /// Gets Stride.
     /// </summary>
-    public IRArray<int> Stride { get; }
+    public IRArray<long> Stride { get; }
 
     /// <summary>
     /// Gets Padding.
     /// </summary>
-    public IRArray<int> Padding { get; }
+    public IRArray<long> Padding { get; }
 
     /// <summary>
     /// Gets Dilation.
     /// </summary>
-    public IRArray<int> Dilation { get; }
+    public IRArray<long> Dilation { get; }
 
     /// <summary>
     /// Gets Groups.
     /// </summary>
-    public int Groups { get; }
+    public long Groups { get; }
 
     public PadMode PadMode { get; }
 

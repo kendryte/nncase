@@ -70,7 +70,7 @@ public partial class NTT
         return new Call(new Pack(lanes, axes), input, output);
     }
 
-    public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr output, int[] stride, int[] padding, int[] dilation, int groups, PadMode padMode, DistributedType distributedType) => new Call(new Conv2D(stride, padding, dilation, groups, padMode, distributedType), input, weights, bias, output);
+    public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr output, long[] stride, long[] padding, long[] dilation, long groups, PadMode padMode, DistributedType distributedType) => new Call(new Conv2D(stride, padding, dilation, groups, padMode, distributedType), input, weights, bias, output);
 
     public static Expr Unpack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
     {
@@ -102,7 +102,7 @@ public partial class NTT
         return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input, output);
     }
 
-    public static Expr Slice(Expr input, Expr begins, Expr ends, Expr ret, int[] axes, int[] strides)
+    public static Expr Slice(Expr input, RankedShape begins, RankedShape ends, Expr ret, int[] axes, int[] strides)
     {
         return new Call(new Slice(axes, strides), input, begins, ends, ret);
     }
@@ -137,7 +137,7 @@ public partial class NTT
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    public static Expr Pad(Expr input, Expr ret, int[] pads, float padValue)
+    public static Expr Pad(Expr input, Expr ret, long[] pads, float padValue)
     {
         return new Call(new Pad(pads, padValue), input, ret);
     }

@@ -213,57 +213,15 @@ public abstract class Dimension : BaseExpr
 
     public static Dimension operator -(Dimension value) => value * -1;
 
-    public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
-    {
-        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value + rhsConst.Value,
-        (DimConst dimConst, _) when dimConst.Value == 0 => rhs,
-        (_, DimConst dimConst) when dimConst.Value == 0 => lhs,
-        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (DimSum lhsSum, DimSum rhsSum) => new DimSum(SpanUtility.Concat(lhsSum.Operands, rhsSum.Operands)).Simplify(),
-        (DimSum lhsSum, _) => new DimSum(SpanUtility.Concat(lhsSum.Operands, [rhs])).Simplify(),
-        (_, DimSum rhsSum) => new DimSum(SpanUtility.Concat([lhs], rhsSum.Operands)).Simplify(),
-        (_, _) => new DimSum([lhs, rhs]).Simplify(),
-    };
+    public static Dimension operator +(Dimension lhs, Dimension rhs) => DimSum.TrySimplify(0, [lhs, rhs]) ?? new DimSum([lhs, rhs]);
 
     public static Dimension operator -(Dimension lhs, Dimension rhs) => lhs + (-rhs);
 
-    public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
-    {
-        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value * rhsConst.Value,
-        (DimConst lhsConst, _) when lhsConst.Value == 0 => 0,
-        (_, DimConst rhsConst) when rhsConst.Value == 0 => 0,
-        (DimConst dimConst, _) when dimConst.Value == 1 => rhs,
-        (_, DimConst dimConst) when dimConst.Value == 1 => lhs,
-        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (DimSum lhsSum, _) => new DimSum(lhsSum.Operands.AsValueEnumerable().Select(x => x * rhs).ToArray()).Simplify(),
-        (_, DimSum rhsSum) => new DimSum(rhsSum.Operands.AsValueEnumerable().Select(x => lhs * x).ToArray()).Simplify(),
-        (DimProduct dimProduct, DimConst dimConst) => dimProduct.With(scale: dimProduct.Scale * dimConst.Value),
-        (DimConst dimConst, DimProduct dimProduct) => dimProduct.With(scale: dimProduct.Scale * dimConst.Value),
-        (DimProduct lhsProduct, DimProduct rhsProduct) => new DimProduct(SpanUtility.Concat(lhsProduct.Operands, rhsProduct.Operands)).Simplify(),
-        (DimProduct lhsProduct, _) => new DimProduct(SpanUtility.Concat(lhsProduct.Operands, [rhs])).Simplify(),
-        (_, DimProduct rhsProduct) => new DimProduct(SpanUtility.Concat([lhs], rhsProduct.Operands)).Simplify(),
-        (_, _) => new DimProduct([lhs, rhs]).Simplify(),
-    };
+    public static Dimension operator *(Dimension lhs, Dimension rhs) => DimProduct.TrySimplify(1, [lhs, rhs]) ?? new DimProduct([lhs, rhs]);
 
-    public static Dimension operator /(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
-    {
-        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value / rhsConst.Value,
-        (_, DimConst dimConst) when dimConst.Value == 0 => throw new DivideByZeroException(),
-        (_, DimConst dimConst) when dimConst.Value == 1 => lhs,
-        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (DimProduct dimProduct, DimConst dimConst) when dimProduct.Scale % dimConst.Value == 0 => dimProduct.With(scale: dimProduct.Scale / dimConst.Value),
-        (_, _) => new DimFraction(DimDivideMode.FloorDiv, lhs, rhs).Simplify(),
-    };
+    public static Dimension operator /(Dimension lhs, Dimension rhs) => DimFraction.Simplify(DimDivideMode.FloorDiv, lhs, rhs);
 
-    public static Dimension operator %(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
-    {
-        (DimConst lhsConst, DimConst rhsConst) => lhsConst.Value % rhsConst.Value,
-        (_, DimConst dimConst) when dimConst.Value == 0 => throw new DivideByZeroException(),
-        (_, DimConst dimConst) when dimConst.Value == 1 => DimConst.Zero,
-        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (DimProduct dimProduct, DimConst dimConst) when dimProduct.Scale % dimConst.Value == 0 => DimConst.Zero,
-        (_, _) => new DimRemainder(lhs, rhs).Simplify(),
-    };
+    public static Dimension operator %(Dimension lhs, Dimension rhs) => DimRemainder.Simplify(lhs, rhs);
 
     public static Dimension Abs(Dimension value) => value switch
     {
@@ -316,15 +274,7 @@ public abstract class Dimension : BaseExpr
         return new DimClamp(value, min, max);
     }
 
-    public static Dimension CeilDiv(Dimension lhs, Dimension rhs) => (lhs, rhs) switch
-    {
-        (DimConst lhsConst, DimConst rhsConst) => MathUtility.CeilDiv(lhsConst.Value, rhsConst.Value),
-        (_, DimConst dimConst) when dimConst.Value == 0 => throw new DivideByZeroException(),
-        (_, DimConst dimConst) when dimConst.Value == 1 => lhs,
-        (_, _) when lhs.IsUnknown || rhs.IsUnknown => Unknown,
-        (DimProduct dimProduct, DimConst dimConst) when dimProduct.Scale % dimConst.Value == 0 => dimProduct.With(scale: dimProduct.Scale / dimConst.Value),
-        (_, _) => new DimFraction(DimDivideMode.CeilDiv, lhs, rhs).Simplify(),
-    };
+    public static Dimension CeilDiv(Dimension lhs, Dimension rhs) => DimFraction.Simplify(DimDivideMode.CeilDiv, lhs, rhs);
 
     public static Dimension AlignUp(Dimension dimension, int align)
     {
@@ -350,24 +300,7 @@ public abstract class Dimension : BaseExpr
         return new DimMax(dimensions).Simplify();
     }
 
-    public static Dimension Min(params Dimension[] dimensions)
-    {
-        if (dimensions.Length == 0)
-        {
-            throw new ArgumentException("At least one dimension is required.");
-        }
-
-        if (dimensions.All(x => x.IsFixed))
-        {
-            return dimensions.MinBy(x => x.FixedValue)!;
-        }
-        else if (dimensions.Any(x => x.IsUnknown))
-        {
-            return Unknown;
-        }
-
-        return new DimMin(dimensions).Simplify();
-    }
+    public static Dimension Min(params Dimension[] dimensions) => DimMin.TrySimplify(dimensions) ?? new DimMin(dimensions);
 
     public static Dimension Select(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue)
     {
@@ -463,4 +396,15 @@ public abstract class Dimension : BaseExpr
     public virtual Dimension Simplify() => this;
 
     public override bool Equals(object? obj) => base.Equals(obj as Dimension);
+
+    protected override void OnOperandsReplaced()
+    {
+        base.OnOperandsReplaced();
+
+        if (Kind == DimensionKind.Dynamic
+            && Operands.AsValueEnumerable().Any(x => x is DimConst or Const or RankedShape { IsFixed: true }))
+        {
+            ReplaceAllUsesWith(Simplify());
+        }
+    }
 }

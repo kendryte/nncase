@@ -229,7 +229,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             bodyVarReplaces.Add(value.Grid.BodyParameters[i], buffers[i]);
         }
 
-        var domain = new IR.Tuple(partentOffsets.Select(off => new IR.Tuple(off, (Expr)0L)).ToArray());
+        var domain = new IR.Tuple(partentOffsets.Select(off => new IR.Tuple(IR.F.Shapes.AsTensor(off), (Expr)0L)).ToArray());
         bodyVarReplaces.Add(value.Grid.DomainParameter, domain);
         var nestBody = new ReplacingExprCloner(bodyVarReplaces).Clone(value.Grid.Body, default);
         parentbuilder.Body(nestBody);

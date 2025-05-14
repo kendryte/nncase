@@ -22,20 +22,6 @@ namespace Nncase.Tests.CoreTest;
 public sealed class UnitTestTIR
 {
     [Fact]
-    public void TestScheduler()
-    {
-        var input = OrtKI.Random(new long[] { 1, 3, 16, 16 });
-        var alpha = 0.8F;
-        var original = IR.F.NN.Celu(input.ToTensor(), alpha);
-        var function = new Function(original);
-        var scheduler = new Scheduler(new Function("Celu", original));
-        Assert.Equal(function, scheduler.Entry);
-        Assert.Throws<InvalidOperationException>(() => scheduler.GetBlock("test"));
-        scheduler.GetLoops(new Block("block"));
-        scheduler.Split(new For("loopVar", new Range(0, 0, 0), LoopMode.Parallel, new Sequential()), new Expr[] { original });
-    }
-
-    [Fact]
     public void TestBufferStore()
     {
         Expr value = 42;

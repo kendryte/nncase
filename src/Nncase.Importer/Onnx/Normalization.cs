@@ -16,7 +16,7 @@ namespace Nncase.Importer
         public static Expr ReshapeToByChannel(Expr v)
         {
             var rank = F.Tensors.Rank(v).AsDim();
-            return F.Tensors.Unsqueeze(v, [rank + 1, rank + 2]);
+            return F.Tensors.Unsqueeze(v, [rank, rank + 1]);
         }
 
         private Expr VisitBatchNormalization(in NodeProto op)

@@ -82,7 +82,7 @@ public sealed partial class FoldConv2DPads : IRewriteRule
         MaybeMarker(IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
-            IsTensorConst("ext_pad"),
+            IsFixedPaddings("ext_pad"),
             IsTensorConst("ext_pad_init"))),
         IsWildcard("weights"),
         IsWildcard("bias"),

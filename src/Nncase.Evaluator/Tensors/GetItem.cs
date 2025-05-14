@@ -90,9 +90,14 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             return input;
         }
 
-        if (indexExpr is TensorConst indexV)
+        var indices = indexExpr switch
         {
-            var indices = indexV.Value.ToArray<int>();
+            DimConst dc => new[] { dc.Value },
+            RankedShape rs when rs.IsFixed => rs.ToValueArray(),
+            _ => null,
+        };
+        if (indices is not null)
+        {
             if (indices.Length > inShape.Rank)
             {
                 return new InvalidType("GetItem index count should smaller than in shape rank");
@@ -124,9 +129,9 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     private IRType Visit(ITypeInferenceContext context, GetItem target, TupleType input, IRType index)
     {
         var indexExpr = context.GetArgument(target, GetItem.Index);
-        if (indexExpr is TensorConst @const)
+        if (indexExpr is DimConst @const)
         {
-            var indexValue = @const.Value.ToScalar<int>();
+            var indexValue = (int)@const.Value;
             if (indexValue < 0)
             {
                 return new InvalidType($"The Input Tuple Count = {input.Count}, But Index = {indexValue}");

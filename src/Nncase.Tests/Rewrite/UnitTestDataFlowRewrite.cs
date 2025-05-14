@@ -175,8 +175,8 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
 
         var inHPost = await RunShapeInferPass("inH", inH);
         var inWPost = await RunShapeInferPass("inW", inW);
-        Assert.Equal(33, ((TensorConst)inHPost).Value.ToScalar<int>());
-        Assert.Equal(65, ((TensorConst)inWPost).Value.ToScalar<int>());
+        Assert.Equal(33, ((DimConst)inHPost).Value);
+        Assert.Equal(65, ((DimConst)inWPost).Value);
         var strideH = 1;
         var strideW = 1;
         var dilationH = 1;
@@ -186,8 +186,8 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var padding = new Paddings(padH, padW);
 
         // Assert.True(CompilerServices.InferenceType(padding));
-        var paddingPost = (Expr)await RunShapeInferPass("padding", padding, input);
-        Assert.Equal(Tensor.From(new long[] { 1, 1, 1, 1 }, new RankedShape(2, 2)), paddingPost);
+        var paddingPost = (Paddings)await RunShapeInferPass("padding", padding, input);
+        Assert.Equal(new long[,] { { 1, 1 }, { 1, 1 } }, paddingPost.ToValueArray());
     }
 
     [Fact]
@@ -247,8 +247,8 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         CompilerServices.InferenceType(slice);
         var post = await RunShapeInferPass("slice", slice);
         Assert.True(CompilerServices.InferenceType(post));
-        Assert.True(post is Const);
-        Assert.Equal(Shape.Scalar, post.CheckedShape);
+        Assert.True(post is DimConst);
+        Assert.Equal(new DimensionType(DimensionKind.Fixed), post.CheckedType);
     }
 
     [Fact]
@@ -404,7 +404,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     public void TestBroadcastNopPadOutputNames()
     {
         var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, 3, 224, 224)));
-        var pad = new Call(new Pad(PadMode.Constant), new Expr[] { input, new float[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, 0.0f });
+        var pad = IR.F.NN.Pad(input, new int[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, PadMode.Constant, 0.0f);
         pad.Metadata.OutputNames = new string[] { "pad" };
         var pre = new Function(pad, new[] { input });
         var pass = new DataflowPass() { Name = "BroadcastNopPadOutputNamesUpPass" };
@@ -413,7 +413,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var post = (Function)pass.RunAsync(pre, new()).Result;
         Assert.True(post.Body.Metadata.OutputNames![0] == "pad");
 
-        pad = new Call(new Pad(PadMode.Constant), new Expr[] { input, new float[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, 0.0f });
+        pad = IR.F.NN.Pad(input, new int[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, PadMode.Constant, 0.0f);
         input.Metadata.OutputNames = new string[] { "input" };
         pre = new Function(pad, new[] { input });
         pass = new DataflowPass() { Name = "BroadcastNopPadOutputNamesDownPass" };
@@ -426,7 +426,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     public void TestBroadcastReshapeOutputNames()
     {
         var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, 3, 224, 224)));
-        var reshape = new Call(new Reshape(), new Expr[] { input, new int[] { 1, 224, 224, 3 } });
+        var reshape = IR.F.Tensors.Reshape(input, new int[] { 1, 224, 224, 3 });
         reshape.Metadata.OutputNames = new string[] { "reshape" };
         var pre = new Function(reshape, new[] { input });
         var pass = new DataflowPass() { Name = "BroadcastReshapeOutputNamesUpPass" };
@@ -435,7 +435,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var post = (Function)pass.RunAsync(pre, new()).Result;
         Assert.True(post.Body.Metadata.OutputNames![0] == "reshape");
 
-        reshape = new Call(new Reshape(), new Expr[] { input, new int[] { 1, 224, 224, 3 } });
+        reshape = IR.F.Tensors.Reshape(input, new int[] { 1, 224, 224, 3 });
         input.Metadata.OutputNames = new string[] { "input" };
         pre = new Function(reshape, new[] { input });
         pass = new DataflowPass() { Name = "BroadcastReshapeOutputNamesDownPass" };
@@ -448,7 +448,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
     public void TestBroadcastTransposeOutputNames()
     {
         var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, 3, 224, 224)));
-        var transpose = new Call(new Transpose(), new Expr[] { input, new int[] { 0, 1, 2, 3 } });
+        var transpose = IR.F.Tensors.Transpose(input, new int[] { 0, 1, 2, 3 });
         transpose.Metadata.OutputNames = new string[] { "transpose" };
         var pre = new Function(transpose, new[] { input });
         var pass = new DataflowPass() { Name = "BroadcastTransposeOutputNamesUpPass" };
@@ -457,7 +457,7 @@ public class UnitTestDataFlowRewriteAndInferIntegrate : RewriteFixtrue
         var post = (Function)pass.RunAsync(pre, new()).Result;
         Assert.True(post.Body.Metadata.OutputNames![0] == "transpose");
 
-        transpose = new Call(new Transpose(), new Expr[] { input, new int[] { 0, 1, 2, 3 } });
+        transpose = IR.F.Tensors.Transpose(input, new int[] { 0, 1, 2, 3 });
         input.Metadata.OutputNames = new string[] { "input" };
         pre = new Function(transpose, new[] { input });
         pass = new DataflowPass() { Name = "BroadcastTransposeOutputNamesDownPass" };

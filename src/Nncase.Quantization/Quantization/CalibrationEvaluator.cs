@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Passes;
 
 namespace Nncase.Quantization;
@@ -109,6 +110,10 @@ public class CalibrationEvaluator : IDisposable
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
             If @if => Visit(enode, @if),
+            DimConst dim => Visit(enode, dim),
+            RankedShape shape => Visit(enode, shape),
+            Padding padding => Visit(enode, padding),
+            Paddings paddings => Visit(enode, paddings),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }
@@ -161,7 +166,7 @@ public class CalibrationEvaluator : IDisposable
 
     private IValue? Visit(ENode enode, Marker marker)
     {
-        return Visit(enode, costs => costs[0]);
+        return Visit(enode, values => values[0]);
     }
 
     private IValue? Visit(ENode enode, None none)
@@ -177,6 +182,26 @@ public class CalibrationEvaluator : IDisposable
                 ? values[^2]
                 : values[^1];
         });
+    }
+
+    private IValue? Visit(ENode enode, DimConst dim)
+    {
+        return Visit(enode, values => Value.FromConst(dim.FixedValue));
+    }
+
+    private IValue? Visit(ENode enode, RankedShape shape)
+    {
+        return Visit(enode, values => new ShapeValue(values.Select(x => x.AsTensor().ToScalar<long>()).ToArray()));
+    }
+
+    private IValue? Visit(ENode enode, Padding padding)
+    {
+        return Visit(enode, values => new PaddingValue(values[0].AsTensor().ToScalar<long>(), values[1].AsTensor().ToScalar<long>()));
+    }
+
+    private IValue? Visit(ENode enode, Paddings paddings)
+    {
+        return Visit(enode, values => new PaddingsValue(values.Cast<PaddingValue>().ToArray()));
     }
 
     private IValue? Visit(ENode enode, Call call)

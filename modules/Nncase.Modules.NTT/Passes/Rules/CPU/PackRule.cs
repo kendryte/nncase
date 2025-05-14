@@ -42,7 +42,7 @@ public sealed class PackResizeImage : PackRule
     {
     }
 
-    public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input") with { TypePattern = !IsVector() }, IsWildcard("roi"), IsTensorConst("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
+    public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input") with { TypePattern = !IsVector() }, IsWildcard("roi"), IsFixedShape("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
 
     public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
@@ -55,7 +55,7 @@ public sealed class PackResizeImage : PackRule
         var rets = new List<Expr>();
         var op = (IR.Imaging.ResizeImage)result["target"];
         var input = (Expr)result["input"];
-        var newSize = ((TensorConst)result["newSize"]).Value.ToArray<int>();
+        var newSize = ((RankedShape)result["newSize"]).ToValueArray().ToInts();
         var inShape = input.CheckedShape;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
@@ -87,7 +87,7 @@ public sealed class PackReduce : PackRule
       "target",
       r => r.ReduceOp is ReduceOp.Mean or ReduceOp.Sum,
       IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = IsFloat() & !IsVector() & HasRankedShape() },
-      IsTensorConst("axes") with { TypePattern = IsIntegral() },
+      IsFixedShape("axes"),
       IsTensorConst("initValue") with { TypePattern = IsFloat() },
       IsTensorConst("keepDims") with { TypePattern = IsBool() });
 
@@ -96,7 +96,7 @@ public sealed class PackReduce : PackRule
         var rets = new List<Expr>();
         var op = (IR.Math.Reduce)result["target"];
         var input = (Expr)result["input"];
-        var axes = ((TensorConst)result["axes"]).Value.ToArray<int>();
+        var axes = ((RankedShape)result["axes"]).ToValueArray().ToInts();
         if (axes.Length > 1)
         {
             return Array.Empty<BaseExpr>();
@@ -595,14 +595,14 @@ public sealed class PackTranspose : PackRule
     public override Pattern Pattern { get; } = IsTranspose(
       "trans",
       IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-      IsTensorConst("perm") with { TypePattern = IsIntegral() });
+      IsFixedShape("perm"));
 
     public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var perm = ((TensorConst)result["perm"]).Value.ToArray<int>();
+        var perm = ((RankedShape)result["perm"]).ToValueArray();
         var inShape = input.CheckedShape;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
@@ -618,7 +618,7 @@ public sealed class PackTranspose : PackRule
             var tarns = IR.F.Tensors.Transpose(packed, perm);
             if (tarns.CheckedType is not InvalidType)
             {
-                var partialPerm = perm.Select(axis => packedAxes.IndexOf(axis)).Where(x => x != -1).ToArray();
+                var partialPerm = perm.Select(axis => packedAxes.IndexOf((int)axis)).Where(x => x != -1).ToArray();
                 var unpackAxes = packedAxes.Select(axis => perm.IndexOf(axis)).ToArray();
                 var unpackPads = Enumerable.Range(0, pads.Length).Select(i => pads[partialPerm[i]]).ToArray();
                 var unpackLanes = Enumerable.Range(0, lanes.Length).Select(i => lanes[partialPerm[i]]).ToArray();
@@ -657,14 +657,14 @@ public sealed class PackUnsqueeze : PackRule
     public override Pattern Pattern { get; } = IsUnsqueeze(
       "unsq",
       IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-      IsTensorConst("axes") with { TypePattern = IsIntegral() });
+      IsFixedShape("axes"));
 
     public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var axes = ((TensorConst)result["axes"]).Value.ToArray<int>();
+        var axes = ((RankedShape)result["axes"]).ToValueArray().ToInts();
         var inShape = input.CheckedShape;
 
         void AddCandidate(int[] packedAxes, int[] lanes)
@@ -729,10 +729,10 @@ public sealed class PackConv2D : PackRule
         IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() },
         IsWildcard("weights"),
         IsWildcard("bias"),
-        IsTensorConst("stride"),
-        IsTensorConst("padding"),
-        IsTensorConst("dilation"),
-        IsTensorConst("groups"),
+        IsFixedShape("stride"),
+        IsFixedPaddings("padding"),
+        IsFixedShape("dilation"),
+        IsFixedDimension("groups"),
         IsTensorConst("fusedClamp"));
 
     public static Expr AddCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, long[] wShape, long[] outShape)
@@ -776,10 +776,10 @@ public sealed class PackConv2D : PackRule
         var input = (Expr)result["input"];
         var weights = (Expr)result["weights"];
         var bias = (Expr)result["bias"];
-        var strides = ((TensorConst)result["stride"]).Value.ToArray<int>();
-        var padding = ((TensorConst)result["padding"]).Value.ToArray<int>();
-        var dilation = ((TensorConst)result["dilation"]).Value.ToArray<int>();
-        var groups = ((TensorConst)result["groups"]).Value.ToScalar<int>();
+        var strides = ((RankedShape)result["stride"]).ToValueArray().ToInts();
+        var padding = ((RankedShape)result["padding"]).ToValueArray().ToInts();
+        var dilation = ((RankedShape)result["dilation"]).ToValueArray().ToInts();
+        var groups = (int)((DimConst)result["groups"]).Value;
         var fusedClamp = ((TensorConst)result["fusedClamp"]).Value.ToArray<float>();
         var wShape = weights.CheckedShape.ToValueArray();
         var outShape = ((Expr)result[Pattern]).CheckedShape.ToValueArray();
@@ -805,14 +805,14 @@ public sealed class PackReshape : PackRule
     public override Pattern Pattern { get; } = IsReshape(
       "target",
       IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() & HasFixedShape() },
-      IsTensorConst("newShape") with { TypePattern = IsIntegral() });
+      IsFixedShape("newShape"));
 
     public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var newShape = ((TensorConst)result["newShape"]).Value.ToArray<long>();
+        var newShape = ((RankedShape)result["newShape"]).ToValueArray();
         var inShape = input.CheckedShape.ToValueArray();
 
         // 1. find the mapping transforms
@@ -919,20 +919,20 @@ public sealed class PackSlice : PackRule
     public override Pattern Pattern { get; } = IsSlice(
       "target",
       IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-      IsTensorConst("begins") with { TypePattern = IsIntegral() },
-      IsTensorConst("ends") with { TypePattern = IsIntegral() },
-      IsTensorConst("axes") with { TypePattern = IsIntegral() },
-      IsTensorConst("strides") with { TypePattern = IsIntegral() });
+      IsFixedShape("begins") with { TypePattern = IsIntegral() },
+      IsFixedShape("ends") with { TypePattern = IsIntegral() },
+      IsFixedShape("axes") with { TypePattern = IsIntegral() },
+      IsFixedShape("strides") with { TypePattern = IsIntegral() });
 
     public override IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var begins = ((TensorConst)result["begins"]).Value.ToArray<long>();
-        var ends = ((TensorConst)result["ends"]).Value.ToArray<long>();
-        var axes = ((TensorConst)result["axes"]).Value.ToArray<long>();
-        var strides = ((TensorConst)result["strides"]).Value.ToArray<long>();
+        var begins = ((RankedShape)result["begins"]).ToValueArray();
+        var ends = ((RankedShape)result["ends"]).ToValueArray();
+        var axes = ((RankedShape)result["axes"]).ToValueArray();
+        var strides = ((RankedShape)result["strides"]).ToValueArray();
         var inShape = input.CheckedShape;
         var candidate = (Expr)result[Pattern];
         for (int i = 0; i < axes.Length; i++)
@@ -1113,7 +1113,7 @@ public sealed partial class FoldPackConcatUnpack : RewriteRule<Pattern>
 [RuleGenerator]
 public sealed partial class TransposePackMatMulInputs : RewriteRule<Pattern>
 {
-    public override Pattern Pattern { get; } = PatternMatch.F.NTT.IsPackedMatMul("matmul", "caller", m => m.RhsPackedAxes.Count == 2 && m.RhsPadedNums.All(v => v == 0) && m.TransposeB == false, IsWildcard("lhs"), PatternMatch.F.NTT.IsPack("rhsPack", "callee", p => p.Axes.Count == 2 && p.Lanes.Count == 2, PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm") /* IsAlt(IsTensorConst("rhs"), PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm")) */)));
+    public override Pattern Pattern { get; } = PatternMatch.F.NTT.IsPackedMatMul("matmul", "caller", m => m.RhsPackedAxes.Count == 2 && m.RhsPadedNums.All(v => v == 0) && m.TransposeB == false, IsWildcard("lhs"), PatternMatch.F.NTT.IsPack("rhsPack", "callee", p => p.Axes.Count == 2 && p.Lanes.Count == 2, PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsFixedShape("perm") /* IsAlt(IsTensorConst("rhs"), PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm")) */)));
 
     private Expr? GetReplace(IR.NTT.PackedMatMul matmul, Expr lhs, IR.NTT.Pack rhsPack, Expr transInput, int[] perm, IMatchResult result)
     {
