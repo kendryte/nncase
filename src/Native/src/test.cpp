@@ -59,6 +59,21 @@ int main() {
 #endif
 
     {
+        using sharding_axes_t = ntt::fixed_shape<
+            (size_t)ntt::caching::paged_kvcache_dim_kind::head_dim,
+            (size_t)ntt::caching::paged_kvcache_dim_kind::num_blocks>;
+        using axis_policies_t =
+            std::tuple<ntt::distributed::shard_policy::S<1>,
+                       ntt::distributed::shard_policy::S<2, 3>>;
+        using finded_policy = ntt::find_axis_policy_t<
+            sharding_axes_t, axis_policies_t,
+            (size_t)ntt::caching::paged_kvcache_dim_kind::head_dim>;
+        static_assert(
+            std::is_same_v<finded_policy, ntt::distributed::shard_policy::S<1>>,
+            "find failed!");
+    }
+
+    {
         // caching
         constexpr size_t NumLayer = 1;
         constexpr size_t NumKVHead = 2;

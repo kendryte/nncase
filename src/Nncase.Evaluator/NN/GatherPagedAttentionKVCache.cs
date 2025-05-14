@@ -55,7 +55,8 @@ public sealed class GatherPagedAttentionKVCacheEvaluator : ITypeInferencer<Gathe
         var perms = Enumerable.Range(0, ortKVCacheTensor.Shape.Length).Select(i => new List<long> { i }).ToList();
         for (int i = 0; i < config.ShardingAxes.Count; i++)
         {
-            perms[config.CacheLayout.IndexOf(config.ShardingAxes[i])].Add(perms[i][0]);
+            var axis = config.CacheLayout.IndexOf(config.ShardingAxes[i]);
+            perms[config.ShardingAxes.Count + axis].Insert(0, perms[i][0]);
             perms[i].RemoveAt(0);
         }
 
@@ -106,7 +107,7 @@ public sealed class GatherPagedAttentionKVCacheEvaluator : ITypeInferencer<Gathe
         for (int i = 0; i < pagedAttentionKVCacheType.Config.ShardingAxes.Count; i++)
         {
             var dimName = pagedAttentionKVCacheType.Config.ShardingAxes[i];
-            axisPolices[pagedAttentionKVCacheType.Config.CacheLayout.IndexOf(dimName)] = shardId.AxisPolices[i];
+            axisPolices[pagedAttentionKVCacheType.Config.CacheLayout.IndexOf(dimName)] = pagedAttentionKVCacheType.Config.AxisPolicies[i];
         }
 
         return new DistributedType(tensorType, axisPolices.ToArray(), shardId.Placement);

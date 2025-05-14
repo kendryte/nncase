@@ -9,7 +9,7 @@ public sealed class RTDebugger
 {
     public static void Wait(bool b)
     {
-        var value = b switch { true => 1, false => 0, };
+        byte value = b switch { true => 1, false => 0, };
         _ = Native.NncaseWaitForDebugger(value);
     }
 

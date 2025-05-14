@@ -82,91 +82,23 @@ void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
 }
 #endif
 
-template <IsFixedDims TLayout, class TSlots, class TKVCache>
-void update_paged_attention_kv_cache(TSlots slots_tensor,
-                                     TKVCache kv_cache_tensor,
-                                     caching::attention_cache_kind kind,
-                                     size_t layer_id) {
-    auto &kv_cache = kv_cache_tensor(0);
-    using config_t = typename std::decay_t<decltype(kv_cache)>::config_t;
-    constexpr size_t num_heads = config_t::num_kv_heads;
-
-    if constexpr (IsShardedTensor<TSlots>) {
-        auto local_slot = slots_tensor.local();
-        using sharding_type = typename TSlots::sharding_type;
-        using mesh_type = typename sharding_type::mesh_type;
-        using axis_policy_type = typename sharding_type::axis_policy_type;
-        using default_layout =
-            fixed_shape<(size_t)caching::attention_dim_kind::seq,
-                        (size_t)caching::attention_dim_kind::head,
-                        (size_t)caching::attention_dim_kind::dim>;
-
-        // slots : [seq, numHeads, headDim]
-        auto program_ids = distributed::program_ids();
-        auto mesh_index = mesh_type::index_from_program_id(program_ids);
-        auto global_shape = slots_tensor.shape();
-        auto local_shape = local_slot.shape();
-        auto global_offset =
-            sharding_type::global_offset(global_shape, mesh_index);
-        constexpr size_t seq_index =
-            TLayout::indexof((size_t)caching::attention_dim_kind::seq);
-        constexpr size_t head_index =
-            TLayout::indexof((size_t)caching::attention_dim_kind::head);
-        constexpr size_t dim_index =
-            TLayout::indexof((size_t)caching::attention_dim_kind::dim);
-
-        auto starts = ntt::make_ranked_shape(0, 0, 0);
-        auto shape = ntt::ranked_shape<3>();
-        shape[seq_index] = 1;
-        shape[head_index] = 1;
-        shape[dim_index] = local_shape[dim_index];
-        auto squeeze = ntt::fixed_shape<seq_index, head_index>();
-
-        for (size_t token_id = 0; token_id < local_shape[seq_index];
-             token_id++) {
-            // slot mapping is broadcast, but slot maybe is sharding.
-            auto slot_id =
-                kv_cache.get_slot_id(global_offset[seq_index] + token_id);
-            starts[seq_index] = token_id;
-
-            for (size_t head_id = 0; head_id < local_shape[head_index];
-                 head_id++) {
-
-                // todo maybe slot head sharding != kv head sharding.
-                starts[head_index] = head_id;
-
-                auto slot = local_slot.view(starts, shape).squeeze(squeeze);
-                kv_cache.update_slot(kind, layer_id, head_id, slot_id, slot);
-            }
-        }
-
-        distributed::topology_synchronize();
-    } else {
-        for (size_t head_id = 0; head_id < num_heads; head_id++) {
-            kv_cache.update_slots(kind, layer_id, head_id, slots_tensor);
-        }
-    }
-}
-
-template <IsFixedDims TLayout, class T0, class T1, class T2, class T3>
-void paged_attention([[maybe_unused]] T0 q_tensor,
-                     [[maybe_unused]] T1 kv_cache_tensor,
-                     [[maybe_unused]] T2 extra_tensor,
-                     [[maybe_unused]] size_t layer_id,
-                     [[maybe_unused]] T3 output_tensor) {}
-
-template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
-          class T7, class T8>
-void identity_paged_attention_kv_cache(
-    [[maybe_unused]] T0 input, [[maybe_unused]] T1 num_seqs,
-    [[maybe_unused]] T2 num_tokens, [[maybe_unused]] T3 context_lens,
-    [[maybe_unused]] T4 seq_lens, [[maybe_unused]] T5 block_table,
-    [[maybe_unused]] T6 slot_mapping, [[maybe_unused]] T7 num_blocks,
-    [[maybe_unused]] T8 kv_caches) {
-    // just extent the kv cache liveness.
-}
-
 namespace detail {
+
+template <class ShardingAxes, class AxisPolicies, size_t Target, size_t Index,
+          bool = (Index < ShardingAxes::rank())>
+struct FindAxisPolicy {
+    static constexpr bool is_match = ShardingAxes::at(Index) == Target;
+
+    using type = typename std::conditional<
+        is_match, std::tuple_element_t<Index, AxisPolicies>,
+        typename FindAxisPolicy<ShardingAxes, AxisPolicies, Target,
+                                Index + 1>::type>::type;
+};
+
+template <class ShardingAxes, class AxisPolicies, size_t Target, size_t Index>
+struct FindAxisPolicy<ShardingAxes, AxisPolicies, Target, Index, false> {
+    using type = distributed::shard_policy::I;
+};
 
 template <class Mesh, class AxisPolicy, distributed::topology I,
           distributed::topology End>
@@ -210,6 +142,114 @@ template <class Mesh, class AxisPolicies>
 constexpr auto program_ids_in_axis_policies() {
     return detail::program_ids_in_axis_policies<Mesh, AxisPolicies>(
         std::make_index_sequence<std::tuple_size_v<AxisPolicies>>{});
+}
+
+// Helper alias template
+template <class ShardingAxes, class AxisPolicies, size_t Target>
+using find_axis_policy_t =
+    typename detail::FindAxisPolicy<ShardingAxes, AxisPolicies, Target,
+                                    0>::type;
+
+template <IsFixedDims TLayout, class TSlots, class TKVCache>
+void update_paged_attention_kv_cache(TSlots slots_tensor,
+                                     TKVCache kv_cache_tensor,
+                                     caching::attention_cache_kind kind,
+                                     size_t layer_id) {
+    auto &kv_cache = kv_cache_tensor(0);
+    using config_t = typename std::decay_t<decltype(kv_cache)>::config_t;
+    constexpr size_t num_heads = config_t::num_kv_heads;
+
+    if constexpr (IsShardedTensor<TSlots>) {
+        auto local_slots = slots_tensor.local();
+        using slots_sharding_type = typename TSlots::sharding_type;
+        using slots_mesh_type = typename slots_sharding_type::mesh_type;
+        using slots_axis_policy_type =
+            typename slots_sharding_type::axis_policy_type;
+        using default_layout =
+            fixed_shape<(size_t)caching::attention_dim_kind::seq,
+                        (size_t)caching::attention_dim_kind::head,
+                        (size_t)caching::attention_dim_kind::dim>;
+
+        // slots : [seq, numHeads, headDim]
+        auto program_ids = distributed::program_ids();
+        auto mesh_index = slots_mesh_type::index_from_program_id(program_ids);
+        auto slots_global_shape = slots_tensor.shape();
+        auto slots_local_shape = local_slots.shape();
+        auto slots_global_offset =
+            slots_sharding_type::global_offset(slots_global_shape, mesh_index);
+        constexpr size_t seq_index =
+            TLayout::indexof((size_t)caching::attention_dim_kind::seq);
+        constexpr size_t head_index =
+            TLayout::indexof((size_t)caching::attention_dim_kind::head);
+        constexpr size_t dim_index =
+            TLayout::indexof((size_t)caching::attention_dim_kind::dim);
+
+        auto local_slots_starts = ntt::make_ranked_shape(0, 0, 0);
+        auto local_slots_shape = ntt::ranked_shape<3>();
+        local_slots_shape[seq_index] = 1;
+        local_slots_shape[head_index] = 1;
+        local_slots_shape[dim_index] = slots_local_shape[dim_index];
+        auto local_slots_squeeze = ntt::fixed_shape<seq_index, head_index>();
+
+        for (size_t local_token_id = 0;
+             local_token_id < slots_local_shape[seq_index]; local_token_id++) {
+            // slot mapping is broadcast, but slot maybe is sharding.
+            auto global_token_id =
+                slots_global_offset[seq_index] + local_token_id;
+            auto slot_id = kv_cache.get_slot_id(global_token_id);
+            local_slots_starts[seq_index] = local_token_id;
+
+            for (size_t local_head_id = 0;
+                 local_head_id < slots_local_shape[head_index];
+                 local_head_id++) {
+
+                local_slots_starts[head_index] = local_head_id;
+                auto local_slot =
+                    local_slots.view(local_slots_starts, local_slots_shape)
+                        .squeeze(local_slots_squeeze);
+
+                // process kv_head different sharding on slot and kv cache.
+                using kv_head_policy_t = find_axis_policy_t<
+                    typename config_t::sharding_axes_t,
+                    typename config_t::axis_policies_t,
+                    (size_t)caching::paged_kvcache_dim_kind::num_kv_heads>;
+                auto global_head_id =
+                    slots_global_offset[head_index] + local_head_id;
+                // todo need consider num_kv_head packed.
+                auto kv_local_head_dim =
+                    kv_head_policy_t::template local_dim<slots_mesh_type>(
+                        config_t::num_kv_heads);
+                auto kv_local_head_id = global_head_id % kv_local_head_dim;
+
+                kv_cache.update_slot(kind, layer_id, kv_local_head_id, slot_id,
+                                     local_slot);
+            }
+        }
+
+        distributed::topology_synchronize();
+    } else {
+        for (size_t head_id = 0; head_id < num_heads; head_id++) {
+            kv_cache.update_slots(kind, layer_id, head_id, slots_tensor);
+        }
+    }
+}
+
+template <IsFixedDims TLayout, class T0, class T1, class T2, class T3>
+void paged_attention([[maybe_unused]] T0 q_tensor,
+                     [[maybe_unused]] T1 kv_cache_tensor,
+                     [[maybe_unused]] T2 extra_tensor,
+                     [[maybe_unused]] size_t layer_id,
+                     [[maybe_unused]] T3 output_tensor) {}
+
+template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
+          class T7, class T8>
+void identity_paged_attention_kv_cache(
+    [[maybe_unused]] T0 input, [[maybe_unused]] T1 num_seqs,
+    [[maybe_unused]] T2 num_tokens, [[maybe_unused]] T3 context_lens,
+    [[maybe_unused]] T4 seq_lens, [[maybe_unused]] T5 block_table,
+    [[maybe_unused]] T6 slot_mapping, [[maybe_unused]] T7 num_blocks,
+    [[maybe_unused]] T8 kv_caches) {
+    // just extent the kv cache liveness.
 }
 
 template <class T0, class T1, class T2>
