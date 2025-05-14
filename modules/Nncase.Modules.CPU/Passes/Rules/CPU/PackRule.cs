@@ -525,7 +525,18 @@ public sealed class PackBinary : PackRule
         var rets = new List<Expr>();
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
+        var outShape = candidate.CheckedShape;
         if (lhsPackedAxes.Length == 0 && rhsPackedAxes.Length == 0)
+        {
+            return rets;
+        }
+
+        var alignedLhsPackedAxes = lhsPackedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
+        var alignedRhsPackedAxes = rhsPackedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
+        var alignedLhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
+        var alignedRhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
+        if (alignedLhsPackedAxes.Any(a => alignedRhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedRhsPackedAxes.Contains(a))
+        || alignedRhsPackedAxes.Any(a => alignedLhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedLhsPackedAxes.Contains(a)))
         {
             return rets;
         }
@@ -1177,7 +1188,24 @@ public sealed class PackCompare : PackRule
         var rets = new List<Expr>();
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
+        var outShape = candidate.CheckedShape;
         if (lhsPackedAxes.Length == 0 && rhsPackedAxes.Length == 0)
+        {
+            return rets;
+        }
+
+        var alignedLhsPackedAxes = lhsPackedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
+        var alignedRhsPackedAxes = rhsPackedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
+        if (lhsPackedAxes.Any(a => lhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
+        || rhsPackedAxes.Any(a => rhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
+        {
+            return rets;
+        }
+
+        var alignedLhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
+        var alignedRhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
+        if (alignedLhsPackedAxes.Any(a => alignedRhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedRhsPackedAxes.Contains(a))
+        || alignedRhsPackedAxes.Any(a => alignedLhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedLhsPackedAxes.Contains(a)))
         {
             return rets;
         }
