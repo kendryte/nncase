@@ -38,12 +38,16 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
         (1, 1, 64),
         (2, 2, 64),
         (4, 4, 128),
+        (32, 8, 128),
+        (64, 8, 128),
     ];
 
     private static readonly (int Layer, int BlockSize, int NumBlocks)[] CacheConfigs = [
         (1, 4, 8),
         (1, 16, 8),
         (1, 32, 16),
+        (1, 128, 32),
+        (1, 256, 32),
     ];
 
     private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
@@ -51,6 +55,15 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
         (new[] {
             PagedKVCacheDimKind.NumLayers,
             PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+        (new[] {
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.NumLayers,
             PagedKVCacheDimKind.KV,
             PagedKVCacheDimKind.NumKVHeads,
             PagedKVCacheDimKind.HeadDim,
@@ -69,6 +82,8 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
     [
         ([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim],
          [AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head]),
+        ([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq],
+         [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]),
     ];
 
     public PagedAttentionKVCacheTestData()
