@@ -135,7 +135,7 @@ buffers = [
             foreach (var lifetime in locationResult.Value.Buffers)
             {
                 var dims = new RankedShape(lifetime.Buffer.Dimensions).Select(x => $"'{x}'");
-                var strides = new RankedShape(lifetime.Buffer.Strides).ToValueArray();
+                var strides = new RankedShape(lifetime.Buffer.Strides).Select(x => $"'{x}'");
                 wr.WriteLine($"ScheduledBuffer('{lifetime.Buffer.Name}', {bufferId}, {lifetime.Time}, {lifetime.Memory}, ConstraintsMode.No, [{string.Join(",", dims)}], [{string.Join(",", strides)}], {false}),");
                 bufferId++;
             }

@@ -23,7 +23,7 @@ public static class PackUtility
             }
         }
 
-        padNums = Enumerable.Repeat(Dimension.Zero, packedAxes.Length).ToArray();
+        padNums = Shape.Repeat(Dimension.Zero, packedAxes.Length).ToArray();
         for (int i = 0; i < packedAxes.Length; i++)
         {
             padNums[i] = pads[packedAxes[i], 1];
