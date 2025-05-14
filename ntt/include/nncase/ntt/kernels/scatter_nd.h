@@ -53,9 +53,6 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
         updates_size *= updates_shape.at(i);
     }
 
-    static_assert(IsScalar<typename std::decay_t<TOut>::element_type>,
-                  "Only support scalar type for now");
-
     apply(update_indices, [&](auto idx) {
         auto updates_begin =
             updates.elements().data() + linear_offset(idx, updates_strides_);
