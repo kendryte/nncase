@@ -10,15 +10,10 @@ using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.TypePatternUtility;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
-using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
-using static Nncase.PatternMatch.F.Tensors;
-using static Nncase.PatternMatch.Utility;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.Neutral;
