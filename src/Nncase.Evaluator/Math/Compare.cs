@@ -172,7 +172,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         var broadcastType = TypeInference.BroadcastType(lhs, rhs);
         if (broadcastType is TensorType tensorType)
         {
-            return tensorType with { DType = DataTypes.Boolean };
+            return tensorType with { DType = lhs.DType is VectorType lvt ? lvt with { ElemType = DataTypes.Boolean } : rhs.DType is VectorType rvt ? rvt with { ElemType = DataTypes.Boolean } : DataTypes.Boolean };
         }
 
         return broadcastType;
