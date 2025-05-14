@@ -227,11 +227,11 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         auto program_ids = distributed::program_ids();
         auto indices = ntt::ranked_shape<sharding_rank>();
         loop<sharding_rank>([&](auto shard_id) {
-            auto i = block_id(shard_id);
+            auto index = block_id(shard_id);
             // todo need process partial sharding.
-            constexpr auto cur_i = std::tuple_element_t<
+            constexpr auto program_id_index = std::tuple_element_t<
                 shard_id, typename TConfig::axis_policies_t>::axes_type::at(0);
-            indices[i] = i == -1 ? program_ids[cur_i] : i;
+            indices[shard_id] = index == -1 ? program_ids[program_id_index] : index;
         });
 
         auto storage_ptr = kv_caches_(indices);
