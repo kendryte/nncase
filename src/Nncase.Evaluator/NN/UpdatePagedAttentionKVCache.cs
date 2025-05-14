@@ -58,7 +58,7 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
         if (cache.Config.Topology.Count > 0)
         {
             // only for xpu
-            var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
+            var (_, num_kv_head, _) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
             if (cache.Config.Topology is [1, 2] && num_kv_head == cache.Config.NumKVHeads * 2)
             {
                 for (int tok_id = 0; tok_id < cache.NumTokens; tok_id++)
