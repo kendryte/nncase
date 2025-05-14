@@ -94,15 +94,28 @@ public sealed class PagedAttentionKVCacheTestFixture
             throw new NotSupportedException("not support attnMask");
         }
 
+        // gqa
+        if (key.Shape[0] != query.Shape[0])
+        {
+            key = OrtKI.Tile(key, new long[] { query.Shape[0] / key.Shape[0], 1, 1 });
+        }
+
         var perm = Enumerable.Range(0, key.Shape.Length).Select(i => (long)i).ToArray();
         (perm[^1], perm[^2]) = (perm[^2], perm[^1]);
-        var attnWeight = OrtKI.MatMul(query, OrtKI.Transpose(key, perm)) * scaleFactor;
+        var kt = OrtKI.Transpose(key, perm);
+        var attnWeight = OrtKI.MatMul(query, kt) * scaleFactor;
         attnWeight = attnWeight + attnBias;
         attnWeight = OrtKI.Softmax(attnWeight, -1);
 
         if (dropoutP > 0f)
         {
             throw new NotSupportedException("not support dropout");
+        }
+
+        // gqa
+        if (value.Shape[0] != query.Shape[0])
+        {
+            value = OrtKI.Tile(value, new long[] { query.Shape[0] / value.Shape[0], 1, 1 });
         }
 
         return OrtKI.MatMul(attnWeight, value); // [Hq,L,Ev]
@@ -122,7 +135,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         var refOutputs = new List<OrtKISharp.Tensor>();
         var refKeys = new List<List<OrtKISharp.Tensor>>();
         var refValues = new List<List<OrtKISharp.Tensor>>();
-        var refDataValue = 1f;
+        var refDataValue = 0f;
 
         for (int req_id = 0; req_id < queryLens.Length; req_id++)
         {
