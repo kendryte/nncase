@@ -637,7 +637,7 @@ public sealed class DimMax : OpaqueDim, IEquatable<DimMax?>
         var max = double.MinValue;
         foreach (var operand in Operands)
         {
-            var range = operand.Metadata.Range!.Value;
+            var range = operand.Metadata.Range ?? ValueRange<double>.Full;
             min = System.Math.Max(min, range.Min);
             max = System.Math.Max(max, range.Max);
         }

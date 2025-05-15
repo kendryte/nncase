@@ -237,8 +237,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     {
         var dimM = new DimVar("m");
         dimM.Metadata.Range = new(1, 384 * 2);
-        var ashape = new[] { 1, 64, 384, 128 };
-        var bshape = new[] { 1, 64, 128, 384 };
+        var ashape = new long[] { 1, 64, 384, 128 };
+        var bshape = new long[] { 1, 64, 128, 384 };
         var aDims = ashape.Select(x => (Dimension)x).ToArray();
         aDims[^2] = dimM;
 
