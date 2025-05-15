@@ -13,13 +13,14 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Rules;
+using Nncase.TIR;
 
 namespace Nncase.Passes.Transforms;
 
 /// <summary>
 /// Shape inference.
 /// </summary>
-public sealed class ReplaceDimVarWithShapeOfPass : FunctionPass
+public sealed class ReplaceDimVarWithShapeOfPass : PrimFuncPass
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ReplaceDimVarWithShapeOfPass"/> class.
@@ -29,18 +30,13 @@ public sealed class ReplaceDimVarWithShapeOfPass : FunctionPass
     }
 
     /// <inheritdoc/>
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction pre, RunPassContext options)
+    protected override Task<PrimFunction> RunCoreAsync(PrimFunction pre, RunPassContext options)
     {
-        if (pre is Function func)
-        {
-            var varMap = CreateDimVarMap();
-            var visitor = new ReplaceDimVarWithShapeOfVisitor(varMap);
-            var newBody = (Expr)visitor.Visit(func.Body, default);
-            var post = (BaseFunction)func.With(body: newBody);
-            return Task.FromResult(post);
-        }
-
-        return Task.FromResult(pre);
+        var varMap = CreateDimVarMap();
+        var visitor = new ReplaceDimVarWithShapeOfVisitor(varMap);
+        var newBody = (Sequential)visitor.Visit(pre.Body, default);
+        var post = pre.With(body: newBody);
+        return Task.FromResult(post);
     }
 
     private Dictionary<DimVar, Dimension> CreateDimVarMap()
@@ -58,7 +54,7 @@ public sealed class ReplaceDimVarWithShapeOfPass : FunctionPass
                     {
                         if (!shapeOfs.TryGetValue(tensorVar, out var shapeOf))
                         {
-                            shapeOf = IR.F.Tensors.ShapeOf(tensorVar).AsShape();
+                            shapeOf = new IR.Shapes.ShapeOf(tensorVar);
                             shapeOfs.Add(tensorVar, shapeOf);
                         }
 
@@ -77,6 +73,7 @@ internal sealed class ReplaceDimVarWithShapeOfVisitor : ExprCloner<Unit>
     private readonly IReadOnlyDictionary<DimVar, Dimension> _varMap;
 
     public ReplaceDimVarWithShapeOfVisitor(IReadOnlyDictionary<DimVar, Dimension> varMap)
+        : base(visitAttributes: true)
     {
         _varMap = varMap;
         CloneUnmutated = false;

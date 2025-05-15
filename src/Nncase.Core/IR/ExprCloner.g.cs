@@ -452,6 +452,11 @@ public partial class ExprCloner<TContext>
                 return true;
             }
 
+            if (IsMutatedType(expr.DistributedType, context))
+            {
+                return true;
+            }
+
             return false;
         }
 
@@ -460,7 +465,8 @@ public partial class ExprCloner<TContext>
             return expr.With(
                 memSpan: Clone(expr.MemSpan, context),
                 dimensions: CloneArray(expr.Dimensions, context),
-                strides: CloneArray(expr.Strides, context)
+                strides: CloneArray(expr.Strides, context),
+                distributedType: CloneType(expr.DistributedType, context)
             );
         }
 
@@ -1692,6 +1698,29 @@ public partial class ExprCloner<TContext>
         if (CloneUnmutated || IsOperandsMutated())
         {
             return expr.With(
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override BaseExpr VisitLeafShapeOf(IR.Shapes.ShapeOf expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Value, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                value: Clone(expr.Value, context)
             );
         }
 

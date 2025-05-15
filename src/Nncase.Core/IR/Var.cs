@@ -141,6 +141,8 @@ public sealed class Var : Expr, IVar, IEquatable<Var?>
         return other is not null && GlobalVarIndex == other.GlobalVarIndex;
     }
 
+    public override string ToString() => $"{Name}";
+
     bool IEquatable<IVar?>.Equals(IVar? other) => other is Var var && Equals(var);
 
     /// <inheritdoc/>

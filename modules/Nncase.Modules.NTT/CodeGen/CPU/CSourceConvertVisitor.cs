@@ -16,6 +16,7 @@ using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen.NTT;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Runtime;
 using Nncase.Targets;
 using Nncase.TIR;
@@ -325,6 +326,19 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         var values = StringUtility.Join(", ", operands);
         symbol = expr.IsFixed ? new($"fixed_dims<{values}>", $"fixed_dims<{values}>{{}}")
             : new($"ranked_dims<{values.Length}>", $"make_ranked_dims({values})");
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitShapeOf(ShapeOf expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var value = Visit(expr.Value).Name;
+        symbol = new("auto", $"{value}.shape()");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

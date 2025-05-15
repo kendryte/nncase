@@ -777,6 +777,18 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
         return VisitLeafShapeVar(expr, context);
     }
 
+    /// <inheritdoc />
+    protected internal override TExprResult VisitShapeOf(IR.Shapes.ShapeOf expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafShapeOf(expr, context);
+    }
+
     /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -1116,6 +1128,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// Visit leaf <see cref="ShapeVar"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafShapeVar(ShapeVar expr, TContext context) => VisitLeafShape(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="IR.Shapes.ShapeOf"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShapeOf(IR.Shapes.ShapeOf expr, TContext context) => VisitLeafShape(expr, context);
 
 }
 
@@ -1555,6 +1572,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitShapeVar(ShapeVar expr, Unit context) => VisitShapeVar(expr);
+    /// <summary>
+    /// Visit <see cref="IR.Shapes.ShapeOf"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShapeOf(IR.Shapes.ShapeOf expr) => base.VisitShapeOf(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitShapeOf(IR.Shapes.ShapeOf expr, Unit context) => VisitShapeOf(expr);
     /// <summary>
     /// Visit leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -2098,5 +2122,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafShapeVar(ShapeVar expr, Unit context) => VisitLeafShapeVar(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="IR.Shapes.ShapeOf"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafShapeOf(IR.Shapes.ShapeOf expr) => base.VisitLeafShapeOf(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafShapeOf(IR.Shapes.ShapeOf expr, Unit context) => VisitLeafShapeOf(expr);
 
 }

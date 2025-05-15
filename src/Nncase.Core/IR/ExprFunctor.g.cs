@@ -353,6 +353,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     /// </summary>
     internal protected virtual TExprResult VisitShapeVar(ShapeVar expr, TContext context) => VisitShape(expr, context);
 
+    /// <summary>
+    /// Visit <see cref="IR.Shapes.ShapeOf"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShapeOf(IR.Shapes.ShapeOf expr, TContext context) => VisitShape(expr, context);
+
 }
 
 public partial class ExprFunctor<TExprResult, TTypeResult>
@@ -833,4 +838,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitShapeVar(ShapeVar expr, Unit context) => VisitShapeVar(expr);
+    /// <summary>
+    /// Visit <see cref="IR.Shapes.ShapeOf"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitShapeOf(IR.Shapes.ShapeOf expr) => base.VisitShapeOf(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitShapeOf(IR.Shapes.ShapeOf expr, Unit context) => VisitShapeOf(expr);
 }

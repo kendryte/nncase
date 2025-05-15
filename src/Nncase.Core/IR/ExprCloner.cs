@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reactive;
 using System.Text;
@@ -32,8 +33,9 @@ public partial class ExprCloner<TContext> : ExprVisitor<BaseExpr, IRType, TConte
     /// Initializes a new instance of the <see cref="ExprCloner{TContext}"/> class.
     /// </summary>
     /// <param name="cloneOtherFunctions">Clone other functions.</param>
-    public ExprCloner(bool cloneOtherFunctions = false)
-        : base(cloneOtherFunctions)
+    /// <param name="visitAttributes">Visit attributes.</param>
+    public ExprCloner(bool cloneOtherFunctions = false, bool visitAttributes = false)
+        : base(cloneOtherFunctions, visitAttributes)
     {
     }
 
@@ -48,6 +50,51 @@ public partial class ExprCloner<TContext> : ExprVisitor<BaseExpr, IRType, TConte
 
     public IVar Clone(IVar expr, TContext context)
         => (IVar)Visit((Expr)expr, context);
+
+    public T CloneType<T>([MaybeNull] T type, TContext context)
+        where T : IRType
+        => type is null ? null! : (T)VisitType(type, context);
+
+    public override IRType VisitType(AnyType type, TContext context) => type;
+
+    public override IRType VisitType(NoneType type, TContext context) => type;
+
+    public override IRType VisitType(InvalidType type, TContext context) => type;
+
+    public override IRType VisitType(TupleType type, TContext context)
+    {
+        var newTypes = CloneTypeArray(type.Fields.ToArray().AsReadOnlySpan(), context);
+        return type with { Fields = newTypes };
+    }
+
+    public override IRType VisitType(CallableType type, TContext context)
+    {
+        var newParamsTypes = CloneTypeArray(type.Parameters.ToArray().AsReadOnlySpan(), context);
+        var newReturnType = CloneType(type.ReturnType, context);
+        return type with { Parameters = newParamsTypes, ReturnType = newReturnType };
+    }
+
+    public override IRType VisitType(PointerType type, TContext context) => type;
+
+    public override IRType VisitType(DistributedType type, TContext context)
+    {
+        var newTensorType = CloneType(type.TensorType, context);
+        return type with { TensorType = newTensorType };
+    }
+
+    public override IRType VisitType(TensorType type, TContext context)
+    {
+        var newShape = Clone(type.Shape, context);
+        return type with { Shape = newShape };
+    }
+
+    public override IRType VisitType(DimensionType type, TContext context) => type;
+
+    public override IRType VisitType(ShapeType type, TContext context) => type;
+
+    public override IRType VisitType(PaddingType type, TContext context) => type;
+
+    public override IRType VisitType(PaddingsType type, TContext context) => type;
 
     protected T[] CloneArray<T>(ReadOnlySpan<T> values, TContext context)
         where T : BaseExpr
@@ -72,6 +119,18 @@ public partial class ExprCloner<TContext> : ExprVisitor<BaseExpr, IRType, TConte
         return array;
     }
 
+    protected T[] CloneTypeArray<T>(ReadOnlySpan<T> values, TContext context)
+        where T : IRType
+    {
+        var array = new T[values.Length];
+        for (int i = 0; i < values.Length; i++)
+        {
+            array[i] = CloneType(values[i], context);
+        }
+
+        return array;
+    }
+
     protected bool IsMutated<T>(T expr, TContext context)
         where T : BaseExpr
     {
@@ -81,6 +140,13 @@ public partial class ExprCloner<TContext> : ExprVisitor<BaseExpr, IRType, TConte
 
     protected bool IsMutated(IVar expr, TContext context) =>
         IsMutated((BaseExpr)expr, context);
+
+    protected bool IsMutatedType<T>([MaybeNull] T type, TContext context)
+        where T : IRType
+    {
+        var newType = type is null ? null : VisitType(type, context);
+        return !ReferenceEquals(type, newType);
+    }
 
     protected bool IsMutatedArray<T>(ReadOnlySpan<T> values, TContext context)
         where T : BaseExpr

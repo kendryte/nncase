@@ -421,6 +421,12 @@ public partial class ExprRewriter<TContext>
         return RewriteLeafShapeVar(expr, context);
     }
 
+    /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafShapeOf(IR.Shapes.ShapeOf expr, TContext context)
+    {
+        return RewriteLeafShapeOf(expr, context);
+    }
+
     /// <summary>
     /// Rewrite leaf <see cref="BaseFunction"/>.
     /// </summary>
@@ -760,6 +766,11 @@ public partial class ExprRewriter<TContext>
     /// Rewrite leaf <see cref="ShapeVar"/>.
     /// </summary>
     protected virtual BaseExpr RewriteLeafShapeVar(ShapeVar expr, TContext context) => RewriteLeafShape(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="IR.Shapes.ShapeOf"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafShapeOf(IR.Shapes.ShapeOf expr, TContext context) => RewriteLeafShape(expr, context);
 
 }
 
@@ -1308,5 +1319,13 @@ public partial class ExprRewriter
 
     /// <inheritdoc />
     protected sealed override BaseExpr RewriteLeafShapeVar(ShapeVar expr, Unit context) => RewriteLeafShapeVar(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="IR.Shapes.ShapeOf"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafShapeOf(IR.Shapes.ShapeOf expr) => RewriteLeafShape(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafShapeOf(IR.Shapes.ShapeOf expr, Unit context) => RewriteLeafShapeOf(expr);
 
 }
