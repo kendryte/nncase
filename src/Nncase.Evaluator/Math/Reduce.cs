@@ -149,7 +149,7 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
             throw new InvalidOperationException();
         }
 
-        var axes = ((TensorConst)context.GetArgument(target, Reduce.Axes)).Value.ToArray<int>().Select(x => x < 0 ? x + tensorType.Shape.Rank : x).ToArray();
+        var axes = ((RankedShape)context.GetArgument(target, Reduce.Axes)).ToValueArray().Select(x => x < 0 ? x + tensorType.Shape.Rank : x).ToArray();
 
         var ndsbp = new SBP[input.TensorType.Shape.Rank];
 

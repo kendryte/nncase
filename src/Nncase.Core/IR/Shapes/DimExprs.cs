@@ -107,10 +107,10 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
                 (_, DimSum rhsSum) => new DimSum(rhsSum.Operands.AsValueEnumerable().Select(x => lhs * x).ToArray()).Simplify(),
                 (DimProduct dimProduct, DimConst dimConst) => dimProduct.With(scale: dimProduct.Scale * dimConst.Value),
                 (DimConst dimConst, DimProduct dimProduct) => dimProduct.With(scale: dimProduct.Scale * dimConst.Value),
-                (DimProduct lhsProduct, DimProduct rhsProduct) => CreateWithSimplify(SpanUtility.Concat(lhsProduct.Operands, rhsProduct.Operands)),
-                (DimProduct lhsProduct, _) => CreateWithSimplify(SpanUtility.Concat(lhsProduct.Operands, [rhs])),
-                (_, DimProduct rhsProduct) => CreateWithSimplify(SpanUtility.Concat([lhs], rhsProduct.Operands)),
-                (_, _) => CreateWithSimplify([lhs, rhs]),
+                (DimProduct lhsProduct, DimProduct rhsProduct) => CreateWithSimplify(SpanUtility.Concat(lhsProduct.Operands, rhsProduct.Operands), lhsProduct.Scale * rhsProduct.Scale),
+                (DimProduct lhsProduct, _) => CreateWithSimplify(SpanUtility.Concat(lhsProduct.Operands, [rhs]), lhsProduct.Scale),
+                (_, DimProduct rhsProduct) => CreateWithSimplify(SpanUtility.Concat([lhs], rhsProduct.Operands), rhsProduct.Scale),
+                (_, _) => CreateWithSimplify([lhs, rhs], 1),
             };
         }
 
@@ -130,10 +130,10 @@ public sealed class DimProduct : Dimension, IEquatable<DimProduct?>
         return hash.ToHashCode();
     }
 
-    private static Dimension CreateWithSimplify(Dimension[] operands)
+    private static Dimension CreateWithSimplify(Dimension[] operands, long scale)
     {
-        (var scale, var pows) = DimHelpers.GetScaleAndPows(new DimProduct(operands));
-        return DimHelpers.Simplify(scale, pows);
+        (var newScale, var pows) = DimHelpers.GetScaleAndPows(new DimProduct(operands, scale));
+        return DimHelpers.Simplify(newScale, pows);
     }
 
     private ValueRange<double> InferRange()

@@ -54,7 +54,7 @@ public class ExprReconstructor<TVertex, TEdge>
             else
             {
                 var sourceOutIndex = sourceOutVertices.IndexOf(inEdge.Source);
-                var postResult = (Expr)ClusterMemo[sourceCluster];
+                var postResult = ClusterMemo[sourceCluster];
                 postArg = postResult[sourceOutIndex];
             }
 
