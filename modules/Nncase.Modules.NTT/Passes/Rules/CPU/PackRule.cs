@@ -115,6 +115,7 @@ public sealed class PackReduce : PackRule
             return rets;
         }
 
+        axes = axes.Select(x => (int)Util.PositiveIndex(x, inShape.Rank)).ToArray();
         var packedInput = IR.F.NTT.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
         // todo support padings.
