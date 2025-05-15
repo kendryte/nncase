@@ -143,7 +143,7 @@ struct tensor_compare_impl<Op, TTensor, T2> {
     using element_type1 = typename TTensor::element_type;
     using element_type2 = element_or_scalar_t<T2>;
     static constexpr size_t vl = TTensor::template lane<0>();
-    using TOut = ntt::vector<bool, vl>;
+    using TOut = ntt::vector<unsigned char, vl>;
     constexpr TOut operator()(const TTensor &v1, const T2 &v2) const noexcept {
         TOut value;
         if constexpr (IsTensor<T2>) {
@@ -174,7 +174,7 @@ template <template <class T1, class T2> class Op, IsTensor T1, IsTensor T2>
 struct tensor_compare_impl<Op, T1, T2> {
     using sub_vector_type = fixed_tensor_alike_t<T1, T1::shape().at(1)>;
     static constexpr size_t vl = T1::template lane<0>();
-    using TOut = ntt::vector<bool, vl>;
+    using TOut = ntt::vector<unsigned char, vl>;
     constexpr TOut operator()(const T1 &v1, const T2 &v2) const noexcept {
         TOut value;
         for (size_t m = 0; m < T1::shape().at(0); m++) {
@@ -192,7 +192,7 @@ template <template <class T1, class T2> class Op, IsScalar TScalar,
 struct tensor_compare_impl<Op, TScalar, TTensor> {
     using element_type2 = typename TTensor::element_type;
     static constexpr size_t vl = TTensor::template lane<0>();
-    using TOut = ntt::vector<bool, vl>;
+    using TOut = ntt::vector<unsigned char, vl>;
     constexpr TOut operator()(const TScalar &v1,
                               const TTensor &v2) const noexcept {
         TOut value;

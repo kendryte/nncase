@@ -684,7 +684,7 @@ template <typename T, size_t vl> void test_vector() {
     auto ort_lhs = NttTest::ntt2ort(ntt_lhs);
     auto ort_rhs = NttTest::ntt2ort(ntt_rhs);
     auto ort_output = ortki_Greater(ort_lhs, ort_rhs);
-    ntt::vector<bool, vl> ntt_output2;
+    ntt::vector<unsigned char, vl> ntt_output2;
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }

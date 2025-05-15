@@ -29,8 +29,8 @@ foreach (var (lanesA, lanesB) in new[] {
 var typeName = lanesA == 0 ? $"Vector{lanesB.ToString()}<T>" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}<T>";
 #>
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, ISubtractionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, IMultiplyOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, IDivisionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>
+    where T : unmanaged, IEquatable<T>
 {
 <# if (lanesA == 0) {#>
 <# foreach (var i in Enumerable.Range(0, lanesB)) { #>
@@ -83,22 +83,6 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
     public int Count => Height * Width;
 <# } else {#>
     public int Count => <#=lanesB#>;
-<#}#>
-
-<#foreach (var op in new string[] { "+", "-" , "*", "/" }) {#>
-    public static <#=typeName#> operator <#=op#>(<#=typeName#> left, <#=typeName#> right) 
-    {
-        <#=typeName#> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] <#=op#> rhs[i];
-        }
-        return res;
-    }
-
 <#}#>
 
     public override string ToString() 

@@ -122,14 +122,6 @@ public static class PassUtility
                 }
 
                 break;
-
-            case IR.Tensors.Where where:
-                if (arguments.ToArray()[0].CheckedShape != call.CheckedShape)
-                {
-                    return false;
-                }
-
-                break;
             case IR.Tensors.Gather gather:
                 if (moduleKind == "xpu")
                 {

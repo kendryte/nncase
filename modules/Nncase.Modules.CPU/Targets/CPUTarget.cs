@@ -70,6 +70,12 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.CPU.PackUnsqueeze>(rank, lane);
         pass.Add<Passes.Rules.CPU.PackReshape>(rank, lane);
         pass.Add<Passes.Rules.CPU.PackSlice>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackGather>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackCompare>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackConcat>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackExpand>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackWhere>(rank, lane);
+        pass.Add<Passes.Rules.CPU.PackScatterND>(rank, lane);
         pass.Add<Passes.Rules.Neutral.FoldConstCall>();
         pass.Add<Passes.Rules.CPU.FoldPackUnpack>();
         pass.Add<Passes.Rules.CPU.FoldPackConcatUnpack>();

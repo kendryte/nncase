@@ -25,14 +25,24 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
     {
         var input = context.GetArgumentValueAsTensor(expand, Expand.Input);
         var originType = input.ElementType;
-        if (originType.IsFloat() && originType != DataTypes.Float32)
+        if (originType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
+        {
+            var interType = new VectorType(DataTypes.Float32, vType.Lanes);
+            input = input.CastTo(interType);
+        }
+        else if (originType.IsFloat() && originType is not VectorType && originType != DataTypes.Float32)
         {
             input = input.CastTo(DataTypes.Float32);
         }
 
         var inputOrt = input.ToOrtTensor();
-        var shape = context.GetInt64OrtTensorArgumentValue(expand, Expand.Shape);
-        return OrtKI.Expand(inputOrt, shape).ToValue(originType);
+        var shape = context.GetArgumentValue(expand, Expand.Shape).AsTensor().ToArray<long>();
+        if (originType is VectorType)
+        {
+            shape = shape.Concat(((VectorType)input.ElementType).Lanes.Select(lane => (long)lane)).ToArray();
+        }
+
+        return OrtKI.Expand(inputOrt, Tensor.FromArray(shape).ToOrtTensor()).ToValue(originType);
     }
 
     public Cost Visit(ICostEvaluateContext context, Expand target)

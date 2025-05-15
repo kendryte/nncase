@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
@@ -67,7 +68,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     public static int Lane => Vector256.IsHardwareAccelerated ? 32 : 16;
 
-    public static int Rank => 2;
+    public static int Rank => 1;
 
     public static TheoryData<long[], int[], List<int[][]>, int> TestReshardData { get; } = new()
     {
@@ -474,7 +475,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
     [InlineData(new object[] { new long[] { 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
     [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
-
     public async Task TestPackCast(long[] shape, Nncase.Runtime.TypeCode type1, Nncase.Runtime.TypeCode type2, int count)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
@@ -650,7 +650,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 6, 1, 1, indicesShape).Evaluate() },
         };
 
-        var posts = new[] { pre };
+        var rule = new Passes.Rules.CPU.PackGather(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
@@ -1265,6 +1267,110 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { CompareOp.LowerThan, new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 0 })]
+    public async Task TestPackCompare(CompareOp op, long[] lhsShape, long[] rhsShape, int count)
+    {
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Math.Compare(op, lhs, rhs);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackCompare(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 16, 1, 32 }, new long[] { 1, 16, 32, 32 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 1, 32, 32 }, new long[] { 1, 16, 32, 32 }, 1 })]
+    public async Task TestPackExpand(long[] shape, long[] newShape, int count)
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var pre = IR.F.Tensors.Expand(input, newShape);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackExpand(1, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 0 })]
+    [InlineData(new object[] { new long[] { 1 }, new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 1 })]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1 }, new long[] { 1, 8, 64, 16 }, 2 })]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 1, 64, 16 }, new long[] { 1, 8, 64, 16 }, 3 })]
+    public async Task TestPackWhere(long[] condShape, long[] lhsShape, long[] rhsShape, int count)
+    {
+        var cond = new Var(new TensorType(DataTypes.Boolean, condShape));
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Tensors.Where(cond, lhs, rhs);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { cond, IR.F.Random.Normal(DataTypes.Boolean, 0, 1, 1, condShape).Evaluate() },
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackWhere(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 1, 0 })]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 2, 1 })]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 3, 2 })]
+    public async Task TestPackConcat(long[] inShape1, long[] inShape2, int axis, int count)
+    {
+        var input1 = new Var(new TensorType(DataTypes.Float32, inShape1));
+        var input2 = new Var(new TensorType(DataTypes.Float32, inShape2));
+        var pre = IR.F.Tensors.Concat(new IR.Tuple(input1, input2), axis);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input1, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape1).Evaluate() },
+            { input2, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, inShape2).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackConcat(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 16, 16, 16 }, new long[] { 2, 1 }, new long[] { 16, 16, 16 }, 0 })]
+    [InlineData(new object[] { new long[] { 16, 16, 16 }, new long[] { 3, 2 }, new long[] { 16, 16 }, 1 })]
+    [InlineData(new object[] { new long[] { 16, 16, 256, 256 }, new long[] { 16, 16, 256, 256, 4 }, new long[] { 16, 16, 256, 256 }, 2 })]
+    public async Task TestPackScatterND(long[] inShape, long[] indicesShape, long[] updatesShape, int count)
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, inShape));
+        var indices = IR.F.Random.Uniform(DataTypes.Int64, 15, 0, 1, indicesShape).Evaluate().AsTensor();
+        var updates = new Var(new TensorType(DataTypes.Float32, updatesShape));
+        var pre = IR.F.Tensors.ScatterND(input, indices, updates);
+
+        var feedDict = new Dictionary<Var, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape).Evaluate() },
+            { updates, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, updatesShape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.CPU.PackScatterND(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
