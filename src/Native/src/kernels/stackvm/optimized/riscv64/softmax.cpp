@@ -486,7 +486,7 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
             }
 
             // exp((x - max) * beta) and sum(exp)
-            __float16_t sum = 0.f;
+            __float16_t sum = (__float16_t)0.f;
             ptr_input_vl = ptr_input;
             n = axis_dim;
             vl = vsetvl_e16m4(n);
@@ -524,7 +524,7 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
             ptr_input_vl = ptr_input;
             ptr_output_vl = ptr_output;
             n = axis_dim;
-            sum = 1.0f / sum;
+            sum = (__float16_t)1.0f / sum;
             while (n) {
                 auto vl = vsetvl_e16m4(n);
 
@@ -545,7 +545,7 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
         auto reduced_size = compute_size(reduced_shape);
         std::vector<__float16_t> max(
             reduced_size, std::numeric_limits<__float16_t>::lowest());
-        std::vector<__float16_t> sum(reduced_size, 0.f);
+        std::vector<__float16_t> sum(reduced_size, (__float16_t)0.f);
 
         for (size_t i = 0; i < out_side; i++) {
             const __float16_t *ptr_input = input + i * axis_dim * in_side;

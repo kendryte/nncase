@@ -177,19 +177,19 @@ _RVV_FLOAT32_EXP_OP(1, 32)
 _RVV_FLOAT32_EXP_OP(2, 16)
 _RVV_FLOAT32_EXP_OP(4, 8)
 _RVV_FLOAT32_EXP_OP(8, 4)
-#define c_exp_hi_half 11.089f
-#define c_exp_lo_half -11.089f
+#define c_exp_hi_half (__float16_t)11.089f
+#define c_exp_lo_half (__float16_t)-11.089f
 
-#define c_cephes_LOG2EF_half 1.44269504088896341f
-#define c_cephes_exp_C1_half 0.693359375f
-#define c_cephes_exp_C2_half -2.12194440e-4f
+#define c_cephes_LOG2EF_half (__float16_t)1.44269504088896341f
+#define c_cephes_exp_C1_half (__float16_t)0.693359375f
+#define c_cephes_exp_C2_half (__float16_t)-2.12194440e-4f
 
-#define c_cephes_exp_p0_half 1.9875691500E-4f
-#define c_cephes_exp_p1_half 1.3981999507E-3f
-#define c_cephes_exp_p2_half 8.3334519073E-3f
-#define c_cephes_exp_p3_half 4.1665795894E-2f
-#define c_cephes_exp_p4_half 1.6666665459E-1f
-#define c_cephes_exp_p5_half 5.0000001201E-1f
+#define c_cephes_exp_p0_half (__float16_t)1.9875691500E-4f
+#define c_cephes_exp_p1_half (__float16_t)1.3981999507E-3f
+#define c_cephes_exp_p2_half (__float16_t)8.3334519073E-3f
+#define c_cephes_exp_p3_half (__float16_t)4.1665795894E-2f
+#define c_cephes_exp_p4_half (__float16_t)1.6666665459E-1f
+#define c_cephes_exp_p5_half (__float16_t)5.0000001201E-1f
 
 #define _RVV_FLOAT16_EXP_OP(LMUL, MLEN)                                        \
     static inline vfloat16m##LMUL##_t exp_ph(vfloat16m##LMUL##_t x,            \
@@ -199,13 +199,13 @@ _RVV_FLOAT32_EXP_OP(8, 4)
         x = vfmin_vf_f16m##LMUL(x, c_exp_hi_half, vl);                         \
         x = vfmax_vf_f16m##LMUL(x, c_exp_lo_half, vl);                         \
                                                                                \
-        fx = vfmacc_vf_f16m##LMUL(vfmv_v_f_f16m##LMUL(0.5f, vl),               \
+        fx = vfmacc_vf_f16m##LMUL(vfmv_v_f_f16m##LMUL((__float16_t)0.5f, vl),               \
                                   c_cephes_LOG2EF_half, x, vl);                \
                                                                                \
         tmp = vfcvt_f_x_v_f16m##LMUL(vfcvt_x_f_v_i16m##LMUL(fx, vl), vl);      \
                                                                                \
         vbool##MLEN##_t mask = vmfgt_vv_f16m##LMUL##_b##MLEN(tmp, fx, vl);     \
-        fx = vfsub_vf_f16m##LMUL##_m(mask, tmp, tmp, 1.0f, vl);                \
+        fx = vfsub_vf_f16m##LMUL##_m(mask, tmp, tmp, (__float16_t)1.0f, vl);                \
                                                                                \
         tmp = vfmul_vf_f16m##LMUL(fx, c_cephes_exp_C1_half, vl);               \
         vfloat16m##LMUL##_t z =                                                \
@@ -229,7 +229,7 @@ _RVV_FLOAT32_EXP_OP(8, 4)
                                                                                \
         y = vfmul_vv_f16m##LMUL(y, z, vl);                                     \
         y = vfadd_vv_f16m##LMUL(y, x, vl);                                     \
-        y = vfadd_vf_f16m##LMUL(y, 1.0f, vl);                                  \
+        y = vfadd_vf_f16m##LMUL(y, (__float16_t)1.0f, vl);                                  \
                                                                                \
         vint16m##LMUL##_t mm = vfcvt_x_f_v_i16m##LMUL(fx, vl);                 \
         mm = vadd_vx_i16m##LMUL(mm, 15, vl);                                   \
