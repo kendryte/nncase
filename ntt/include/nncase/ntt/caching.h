@@ -59,7 +59,7 @@ template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
           IsFixedDims ShardingAxes, class... AxisPolicies>
 struct paged_attention_config
     : public attention_config<NumLayer, NumKVHead, HeadDim, KVPrimType> {
-    static inline constexpr int block_size = BlockSize;
+    static inline constexpr size_t block_size = BlockSize;
 
     using cache_layout_t = CacheLayout;
 

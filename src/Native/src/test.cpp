@@ -268,15 +268,18 @@ int main() {
 
     // viewd tensor
     {
-        ntt::tensor<float, ntt::fixed_shape<2, 3>> ta;
-        ntt::tensor<float, ntt::fixed_shape<2, 1, 3>> tb;
-        ntt::tensor_copy(ta.reshape(ntt::fixed_shape<2, 1, 3>{}), tb.view());
-        assert(ta(0, 0) == tb(0, 0, 0));
-        assert(ta(0, 1) == tb(0, 0, 1));
-        assert(ta(0, 2) == tb(0, 0, 2));
-        assert(ta(1, 0) == tb(1, 0, 0));
-        assert(ta(1, 1) == tb(1, 0, 1));
-        assert(ta(1, 2) == tb(1, 0, 2));
+        {
+            ntt::tensor<float, ntt::fixed_shape<2, 3>> ta;
+            ntt::tensor<float, ntt::fixed_shape<2, 1, 3>> tb;
+            ntt::tensor_copy(ta.reshape(ntt::fixed_shape<2, 1, 3>{}),
+                             tb.view());
+            assert(ta(0, 0) == tb(0, 0, 0));
+            assert(ta(0, 1) == tb(0, 0, 1));
+            assert(ta(0, 2) == tb(0, 0, 2));
+            assert(ta(1, 0) == tb(1, 0, 0));
+            assert(ta(1, 1) == tb(1, 0, 1));
+            assert(ta(1, 2) == tb(1, 0, 2));
+        }
 
         // nocontigious copy
         {
@@ -289,6 +292,25 @@ int main() {
             ntt::apply(ntt::fixed_shape<2, 3>{}, [&](NNCASE_UNUSED auto index) {
                 assert(tc(index[0], index[1] + 3) == td(index));
             });
+        }
+
+        {
+            ntt::tensor<float, ntt::fixed_shape<1, 2, 4>> ta;
+            for (size_t i = 0; i < ta.shape()[1]; i++) {
+                for (size_t j = 0; j < ta.shape()[2]; j++) {
+                    ta(0, i, j) = i * 4 + j;
+                }
+            }
+
+            auto tb = ta.view(ntt::make_ranked_shape(0, 0, 0),
+                              ntt::make_ranked_shape(1, 2, 1))
+                          .squeeze(ntt::fixed_shape<0, 2>{});
+            assert(tb.strides()[0] == 4);
+            auto tc = tb.unsqueeze(ntt::make_ranked_shape(0));
+            assert(tc.shape()[0] == 1);
+            assert(tc.shape()[1] == 2);
+            assert(tc.strides()[0] == 4);
+            assert(tc.strides()[1] == 4);
         }
     }
 
@@ -584,24 +606,38 @@ int main() {
 
     // packed matmul 1d on k
     {
-        ntt::tensor<float, ntt::fixed_shape<3, 16>> ta;
-        ntt::tensor<float, ntt::fixed_shape<16, 2>> tb;
-        ntt::tensor<float, ntt::fixed_shape<3, 2>> tc;
-        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
-        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 2>> pa;
-        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> pb;
-        ntt::pack<1>(ta, pa);
-        ntt::pack<0>(tb, pb);
-        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{});
-        assert(tc(0, 0) == 2480.f);
-        assert(tc(0, 1) == 2600.f);
-        assert(tc(1, 0) == 6320.f);
-        assert(tc(1, 1) == 6696.f);
-        assert(tc(2, 0) == 10160.f);
-        assert(tc(2, 1) == 10792.f);
+        {
+            ntt::tensor<float, ntt::fixed_shape<3, 16>> ta;
+            ntt::tensor<float, ntt::fixed_shape<16, 2>> tb;
+            ntt::tensor<float, ntt::fixed_shape<3, 2>> tc;
+            std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+            std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
+            ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 2>> pa;
+            ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<2, 2>> pb;
+            ntt::pack<1>(ta, pa);
+            ntt::pack<0>(tb, pb);
+            ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
+                               ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
+                               ntt::fixed_shape<0>{});
+            assert(tc(0, 0) == 2480.f);
+            assert(tc(0, 1) == 2600.f);
+            assert(tc(1, 0) == 6320.f);
+            assert(tc(1, 1) == 6696.f);
+            assert(tc(2, 0) == 10160.f);
+            assert(tc(2, 1) == 10792.f);
+        }
+
+        {
+            ntt::tensor<ntt::vector<float, 8>, ntt::ranked_shape<2>> ta(
+                ntt::make_ranked_shape(1, 2));
+            ntt::tensor<ntt::vector<float, 8>, ntt::ranked_shape<2>> tb(
+                ntt::make_ranked_shape(2, 4));
+            ntt::tensor<float, ntt::ranked_shape<2>> tc(
+                ntt::make_ranked_shape(1, 4));
+            ntt::matmul<true>(ta, tb, tc, ntt::fixed_shape<1>{},
+                              ntt::fixed_shape<>{}, ntt::fixed_shape<0>{},
+                              ntt::fixed_shape<>{});
+        }
     }
 
     // packed matmul 1d on m

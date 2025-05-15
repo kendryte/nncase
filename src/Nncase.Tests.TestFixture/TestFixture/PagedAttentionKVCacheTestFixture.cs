@@ -129,7 +129,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         int headDim,
         int numLayers,
         DataType primType,
-        bool randomData = true)
+        DataGeneratorOptions generatorOptions)
     {
         var refQuerys = new List<OrtKISharp.Tensor>();
         var refOutputs = new List<OrtKISharp.Tensor>();
@@ -144,7 +144,7 @@ public sealed class PagedAttentionKVCacheTestFixture
 
             // Create query tensor
             var qDimension = new[] { numQHeads, cur_len, headDim };
-            Tensor query = randomData ? IR.F.Random.Normal(primType, qDimension).Evaluate().AsTensor() : ReferenceInputGenerator(qDimension, ref refDataValue).CastTo(primType);
+            Tensor query = generatorOptions.Random ? IR.F.Random.Normal(primType, qDimension).Evaluate().AsTensor() : ReferenceInputGenerator(qDimension, ref refDataValue, generatorOptions).CastTo(primType);
 
             var refQuery = query.ToOrtTensor();
             refQuerys.Add(refQuery);
@@ -157,9 +157,14 @@ public sealed class PagedAttentionKVCacheTestFixture
 
             for (int layer = 0; layer < numLayers; layer++)
             {
+                if (generatorOptions.ResetForKV)
+                {
+                    refDataValue = 0f;
+                }
+
                 var kvDimension = new[] { numKVHeads, seq_len, headDim };
-                var key = randomData ? IR.F.Random.Normal(primType, kvDimension).Evaluate().AsTensor() : ReferenceInputGenerator(kvDimension, ref refDataValue).CastTo(primType);
-                var value = randomData ? IR.F.Random.Normal(primType, kvDimension).Evaluate().AsTensor() : ReferenceInputGenerator(kvDimension, ref refDataValue).CastTo(primType);
+                var key = generatorOptions.Random ? IR.F.Random.Normal(primType, kvDimension).Evaluate().AsTensor() : ReferenceInputGenerator(kvDimension, ref refDataValue, generatorOptions).CastTo(primType);
+                var value = generatorOptions.Random ? IR.F.Random.Normal(primType, kvDimension).Evaluate().AsTensor() : ReferenceInputGenerator(kvDimension, ref refDataValue, generatorOptions).CastTo(primType);
 
                 var refKey = key.ToOrtTensor();
                 var refValue = value.ToOrtTensor();
@@ -232,7 +237,7 @@ public sealed class PagedAttentionKVCacheTestFixture
     /// <summary>
     /// all vars are [seq,head,dim] layout.
     /// </summary>
-    public static TestKernel CreateTestKernel(long[] queryLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false)
+    public static TestKernel CreateTestKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false)
     {
         var numTokens = queryLens.Sum();
         var defaultQDimenions = new long[] { numTokens, numQHeads, config.HeadDim };
@@ -282,7 +287,7 @@ public sealed class PagedAttentionKVCacheTestFixture
             packedQuery = IR.F.NN.PagedAttention(
                 packedQuery,
                 updatedKVCache,
-                Const.FromTensor(Tensor.Zeros<byte>([1024])),
+                Tensor.Zeros(config.KVPrimType, [numQHeads, queryLens.Max(), seqLens.Max() + 1]), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
                 layerId,
                 qLayout);
         }
@@ -498,7 +503,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         slotMappingTensor[indices] = physicalSlotId;
     }
 
-    public static Tensor<float> ReferenceInputGenerator(long[] dimensions, ref float startValue)
+    public static Tensor<float> ReferenceInputGenerator(long[] dimensions, ref float startValue, DataGeneratorOptions options)
     {
         // head,seq,dim.
         var buffer = new float[dimensions.Product()];
@@ -509,7 +514,16 @@ public sealed class PagedAttentionKVCacheTestFixture
             for (int tokenId = 0; tokenId < dimensions[1]; tokenId++)
             {
                 var subSpan = span.Slice((int)((headId * strides[0]) + (tokenId * strides[1])), (int)strides[1]);
-                subSpan.Fill(startValue++);
+                subSpan.Fill(startValue);
+                if (options.IncreaseBy.Contains(AttentionDimKind.Seq))
+                {
+                    startValue += options.Step;
+                }
+            }
+
+            if (options.IncreaseBy.Contains(AttentionDimKind.Head))
+            {
+                startValue += options.Step;
             }
         }
 
@@ -579,4 +593,6 @@ public sealed class PagedAttentionKVCacheTestFixture
             return kind == AttentionCacheKind.Key ? _refKeys[seqId][layerId] : _refValues[seqId][layerId];
         }
     }
+
+    public sealed record DataGeneratorOptions(bool Random, IR.NN.AttentionDimKind[] IncreaseBy, float Step = 1.0f, bool ResetForKV = false);
 }

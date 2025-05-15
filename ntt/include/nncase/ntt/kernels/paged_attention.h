@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/ntt/kernels/binary.h"
+#include "nncase/ntt/kernels/matmul.h"
+#include "nncase/ntt/kernels/reduce.h"
+#include "nncase/ntt/kernels/unary.h"
 #include "nncase/ntt/tensor_traits.h"
 #include <nncase/ntt/caching.h>
 #include <nncase/ntt/shape.h>
@@ -234,12 +238,226 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
     }
 }
 
-template <IsFixedDims TLayout, class T0, class T1, class T2, class T3>
+template <IsFixedDims QLayout, class T0, class T1, class T2, class T3>
+void paged_attention(
+    [[maybe_unused]] T0 q_tensor, [[maybe_unused]] T1 kv_cache_tensor,
+    [[maybe_unused]] T2 extra_tensor, // [head_q, max_query_len, max_seq_len] +
+                                      // [head_q, max_query_len, 1]
+    [[maybe_unused]] size_t layer_id, [[maybe_unused]] T3 output_tensor) {
+    auto &kv_cache = kv_cache_tensor(0);
+    using kv_cache_t = typename std::decay_t<decltype(kv_cache)>;
+    using config_t = typename kv_cache_t::config_t;
+    using kv_prim_type_t = typename config_t::kv_prim_type;
+
+    constexpr size_t num_kv_heads = config_t::num_kv_heads;
+    auto q_shape = q_tensor.shape();
+
+    // Get sequence and dimension information
+    constexpr size_t seq_index =
+        QLayout::indexof((size_t)caching::attention_dim_kind::seq);
+    constexpr size_t head_index =
+        QLayout::indexof((size_t)caching::attention_dim_kind::head);
+    constexpr size_t dim_index =
+        QLayout::indexof((size_t)caching::attention_dim_kind::dim);
+
+    auto q_slice_start = ntt::ranked_shape<3>();
+    auto q_slice_shape = ntt::ranked_shape<3>();
+    q_slice_shape[seq_index] = 1;
+    q_slice_shape[head_index] = 1;
+    q_slice_shape[dim_index] = q_shape[dim_index];
+    auto q_squeeze = ntt::fixed_shape<seq_index, head_index>();
+
+    for (size_t query_start_loc = 0, seq_id = 0,
+                seq_len = kv_cache.seq_len(seq_id),
+                context_len = kv_cache.context_len(seq_id),
+                query_len = seq_len - context_len;
+
+         seq_id < kv_cache.num_seqs();
+
+         seq_id++, query_start_loc += query_len) {
+
+        auto s_shape =
+            ntt::make_ranked_shape(q_shape[head_index], query_len, seq_len);
+        auto reduce_s_shape =
+            ntt::make_ranked_shape(q_shape[head_index], query_len, 1);
+        if (extra_tensor.elements().size_bytes() <
+            (s_shape.length() + reduce_s_shape.length()) *
+                (sizeof(kv_prim_type_t))) {
+            printf("extra_tensor is not enough.\n");
+            std::terminate();
+        }
+
+        auto s = tensor_view<kv_prim_type_t, ranked_shape<3>>(
+            std::span<kv_prim_type_t>(
+                (kv_prim_type_t *)extra_tensor.elements().data(),
+                s_shape.length()),
+            s_shape);
+        auto reduce_s = tensor_view<kv_prim_type_t, ranked_shape<3>>(
+            std::span<kv_prim_type_t>(
+                (kv_prim_type_t *)extra_tensor.elements().data() +
+                    s_shape.length(),
+                reduce_s_shape.length()),
+            reduce_s_shape);
+
+        // s = q * k^T : [head_q, query_len, seq_len]
+        for (size_t q_head_id = 0; q_head_id < q_shape[head_index];
+             q_head_id++) {
+            auto k_head_id = q_head_id % num_kv_heads;
+            q_slice_start[head_index] = q_head_id;
+
+            for (size_t q_id = 0, q_id_batch = query_start_loc;
+                 q_id_batch < query_start_loc + query_len;
+                 q_id_batch++, q_id++) {
+                q_slice_start[seq_index] = q_id_batch;
+
+                // [1, dim']<dim>
+                auto q_slice = q_tensor.view(q_slice_start, q_slice_shape)
+                                   .squeeze(q_squeeze)
+                                   .unsqueeze(ntt::make_ranked_shape(0));
+
+                //  block_slice
+                for (size_t context_bid = 0;
+                     context_bid < (seq_len + (config_t::block_size - 1)) /
+                                       config_t::block_size;
+                     context_bid++) {
+                    auto block_id = kv_cache.get_block_id(seq_id, context_bid);
+                    auto k_block =
+                        kv_cache.get_block(caching::attention_cache_kind::key,
+                                           layer_id, k_head_id, block_id);
+
+                    static_assert(
+                        std::is_same_v<
+                            typename config_t::block_layout_t,
+                            fixed_shape<
+                                (size_t)
+                                    caching::paged_kvcache_dim_kind::head_dim,
+                                (size_t)caching::paged_kvcache_dim_kind::
+                                    block_size>>,
+                        "block layout is not supported.");
+                    auto valid_block_size =
+                        std::min(seq_len - context_bid * config_t::block_size,
+                                 config_t::block_size);
+
+                    // [dim', valid_block_size]<dim>
+                    auto k_slice =
+                        k_block.view(ntt::make_ranked_shape(0, 0),
+                                     ntt::make_ranked_shape(k_block.shape()[0],
+                                                            valid_block_size));
+                    // [1, valid_block_size]
+                    auto s_slice =
+                        s.view(ntt::make_ranked_shape(q_head_id, q_id,
+                                                      context_bid *
+                                                          config_t::block_size),
+                               ntt::make_ranked_shape(1, 1, valid_block_size))
+                            .squeeze(ntt::fixed_shape<1>());
+
+                    // [1, valid_block_size] = [1, dim']<dim> @ [dim',
+                    // valid_block_size]<dim>
+                    ntt::matmul<false>(
+                        q_slice, k_slice, s_slice, ntt::fixed_shape<1>{},
+                        ntt::fixed_shape<>{}, ntt::fixed_shape<0>{},
+                        ntt::fixed_shape<>{});
+                }
+            }
+        }
+
+        // todo scale_factor
+        // add tril mask.
+        constexpr size_t diagonal = 0;
+        for (size_t q_head_id = 0; q_head_id < s.shape()[0]; q_head_id++) {
+            for (size_t q_id = 0; q_id < s.shape()[1]; q_id++) {
+                for (size_t context_id = q_id + diagonal + 1;
+                     context_id < s.shape()[2]; context_id++) {
+                    s(q_head_id, q_id, context_id) -=
+                        std::numeric_limits<kv_prim_type_t>::infinity();
+                }
+            }
+        }
+
+        // d = softmax(s) : [head_q, query_len, seq_len]
+        {
+            // max = reduce max(s, -1)
+            ntt::reduce_max<fixed_shape<2>>(s, reduce_s);
+            // sub（input） =  input - max;
+            ntt::binary<ops::sub>(s, reduce_s, s);
+            // exp（input） = exp(sub)
+            ntt::unary<ops::exp>(s, s);
+            // sum（max） = reduce sum(exp, -1)
+            ntt::reduce_sum<fixed_shape<2>>(s, reduce_s);
+            // div（input） = exp / sum
+            ntt::binary<ops::div>(s, reduce_s, s);
+        }
+
+        // d @ v : [head_q, query_len, dim], depend by qlayout.
+        auto s_slice_start = ntt::ranked_shape<3>();
+        for (size_t q_head_id = 0; q_head_id < q_shape[head_index];
+             q_head_id++) {
+            auto v_head_id = q_head_id % num_kv_heads;
+            s_slice_start[0] = q_head_id;
+            q_slice_start[head_index] = q_head_id;
+            for (size_t q_id = 0, q_id_batch = query_start_loc;
+                 q_id_batch < query_start_loc + query_len;
+                 q_id_batch++, q_id++) {
+                s_slice_start[1] = q_id;
+                q_slice_start[seq_index] = q_id_batch;
+
+                // [1, dim']<dim>
+                auto d_slice = output_tensor.view(q_slice_start, q_slice_shape)
+                                   .squeeze(q_squeeze)
+                                   .unsqueeze(ntt::make_ranked_shape(0));
+
+                for (size_t context_bid = 0;
+                     context_bid < (seq_len + (config_t::block_size - 1)) /
+                                       config_t::block_size;
+                     context_bid++) {
+                    s_slice_start[2] = context_bid * config_t::block_size;
+
+                    auto valid_block_size =
+                        std::min(config_t::block_size,
+                                 seq_len - context_bid * config_t::block_size);
+
+                    // [1, valid_block_size]
+                    auto s_slice =
+                        s.view(s_slice_start,
+                               ntt::make_ranked_shape(1, 1, valid_block_size))
+                            .squeeze(ntt::fixed_shape<1>());
+
+                    auto v_block = kv_cache.get_block(
+                        caching::attention_cache_kind::value, layer_id,
+                        v_head_id, kv_cache.get_block_id(seq_id, context_bid));
+
+                    // [dim',valid_block_size]<dim>
+                    auto v_slice =
+                        v_block.view(ntt::make_ranked_shape(0, 0),
+                                     ntt::make_ranked_shape(v_block.shape()[0],
+                                                            valid_block_size));
+                    // clang-format off
+                    // [1, dim']<dim> = [1, valid_block_size] @ [dim',valid_block_size]<dim>
+                    // clang-format on
+                    if (context_bid == 0) {
+                        ntt::matmul<false, false, true>(
+                            s_slice, v_slice, d_slice, fixed_shape<>{},
+                            fixed_shape<>{}, fixed_shape<0>{}, fixed_shape<>{});
+                    } else {
+                        ntt::matmul<true, false, true>(
+                            s_slice, v_slice, d_slice, fixed_shape<>{},
+                            fixed_shape<>{}, fixed_shape<0>{}, fixed_shape<>{});
+                    }
+                }
+            }
+        }
+    }
+}
+
+template <class T0, class T1, class T2, class T3>
 void paged_attention([[maybe_unused]] T0 q_tensor,
                      [[maybe_unused]] T1 kv_cache_tensor,
                      [[maybe_unused]] T2 extra_tensor,
                      [[maybe_unused]] size_t layer_id,
-                     [[maybe_unused]] T3 output_tensor) {}
+                     [[maybe_unused]] T3 output_tensor) {
+    using kv_cache_t = typename std::decay_t<decltype(kv_cache_tensor(0))>;
+    using config_t = typename kv_cache_t::config_t;
+}
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
           class T7, class T8>
