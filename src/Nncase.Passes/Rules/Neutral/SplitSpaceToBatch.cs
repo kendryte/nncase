@@ -25,74 +25,78 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.Neutral;
 
-// [RuleGenerator]
-// public partial class SplitSpaceToBatch : RewriteRule<Pattern>
-// {
-//     /// <inheritdoc/>
-//     public override Pattern Pattern { get; } = IsSpaceToBatch(
-//         IsWildcard("input") with { TypePattern = HasRankedShape() },
-//         IsShape("blockShape") with { TypePattern = HasFixedShape() },
-//         IsPaddings("paddings"));
+[RuleGenerator]
+public partial class SplitSpaceToBatch : RewriteRule<Pattern>
+{
+    /// <inheritdoc/>
+    public override Pattern Pattern { get; } = IsSpaceToBatch(
+        IsWildcard("input") with { TypePattern = HasRankedShape() },
+        IsShape("blockShape") with { TypePattern = HasFixedShape() },
+        IsPaddings("paddings"));
 
-//     public Expr? GetReplace(Expr input, RankedShape blockShape, Paddings paddings)
-//     {
-//         var spatialSize = (int)blockShape.Size;
-//         var remainShapeSize = input.CheckedShape.Rank - spatialSize - 1;
-//         var newPaddings = Enumerable.Repeat((Dimension)0, (1 + spatialSize + remainShapeSize) * 2).ToArray();
-//         for (int i = 0; i < spatialSize; i++)
-//         {
-//             newPaddings[1 + i] = paddings[i].Before;
-//             newPaddings[1 + (newPaddings.Length / 2) + i] = paddings[i].After;
-//         }
+    public Expr? GetReplace(Expr input, RankedShape blockShape, Paddings paddings)
+    {
+        // TODO: rewrite to use shape expr
+#if false
+        var spatialSize = (int)blockShape.Size;
+        var remainShapeSize = input.CheckedShape.Rank - spatialSize - 1;
+        var newPaddings = Enumerable.Repeat((Dimension)0, (1 + spatialSize + remainShapeSize) * 2).ToArray();
+        for (int i = 0; i < spatialSize; i++)
+        {
+            newPaddings[1 + i] = paddings[i].Before;
+            newPaddings[1 + (newPaddings.Length / 2) + i] = paddings[i].After;
+        }
 
-//         var tmpPaddings = Stack(new IR.Tuple(newPaddings), 0);
-//         var newPaddingsTensor = Transpose(Reshape(tmpPaddings, new long[] { 2, 1 + spatialSize + remainShapeSize }), new long[] { 1, 0 });
-//         var p = Pad(NCHWToNHWC(input), newPaddingsTensor, PadMode.Constant, 0f);
+        var tmpPaddings = Stack(new IR.Tuple(newPaddings), 0);
+        var newPaddingsTensor = Transpose(Reshape(tmpPaddings, new long[] { 2, 1 + spatialSize + remainShapeSize }), new long[] { 1, 0 });
+        var p = Pad(NCHWToNHWC(input), newPaddingsTensor, PadMode.Constant, 0f);
 
-//         var padShape = Cast(ShapeOf(p), DataTypes.Int32);
-//         var batchShape1 = StackScalar(padShape[0]);
-//         var spatialShape1 = RangeExec(
-//                 spatialSize,
-//                 i => Stack(new IR.Tuple(padShape[i + 1] / blockShape[i], blockShape[i]), 0))
-//             .Aggregate((x, y) => Concat(new IR.Tuple(x, y), 0));
-//         var remainShape1 = Stack(new IR.Tuple(RangeExec(remainShapeSize, i => padShape[1 + spatialSize + i])), 0);
-//         var reshappedShape1 = Concat(
-//             new IR.Tuple(
-//             batchShape1,
-//             spatialShape1,
-//             remainShape1),
-//             0);
+        var padShape = Cast(ShapeOf(p), DataTypes.Int32);
+        var batchShape1 = StackScalar(padShape[0]);
+        var spatialShape1 = RangeExec(
+                spatialSize,
+                i => Stack(new IR.Tuple(padShape[i + 1] / blockShape[i], blockShape[i]), 0))
+            .Aggregate((x, y) => Concat(new IR.Tuple(x, y), 0));
+        var remainShape1 = Stack(new IR.Tuple(RangeExec(remainShapeSize, i => padShape[1 + spatialSize + i])), 0);
+        var reshappedShape1 = Concat(
+            new IR.Tuple(
+            batchShape1,
+            spatialShape1,
+            remainShape1),
+            0);
 
-//         var perm = RangeExec(spatialSize, i => (i * 2) + 2)
-//             .Concat(new[] { 0 })
-//             .Concat(RangeExec(spatialSize, i => (i * 2) + 1))
-//             .Concat(RangeExec(remainShapeSize, i => i + ((int)spatialSize * 2) + 1))
-//             .Select(x => (long)x)
-//             .ToArray();
+        var perm = RangeExec(spatialSize, i => (i * 2) + 2)
+            .Concat(new[] { 0 })
+            .Concat(RangeExec(spatialSize, i => (i * 2) + 1))
+            .Concat(RangeExec(remainShapeSize, i => i + ((int)spatialSize * 2) + 1))
+            .Select(x => (long)x)
+            .ToArray();
 
-//         var reshappedShape2 = Concat(
-//             input: new IR.Tuple(
-//                 StackScalar(padShape[0] * Prod(blockShape)),
-//                 Stack(new IR.Tuple(RangeExec(spatialSize, i => padShape[i + 1] / blockShape[i])), 0),
-//                 Stack(new IR.Tuple(RangeExec(remainShapeSize, i => padShape[1 + spatialSize + i])), 0)),
-//             0);
+        var reshappedShape2 = Concat(
+            input: new IR.Tuple(
+                StackScalar(padShape[0] * Prod(blockShape)),
+                Stack(new IR.Tuple(RangeExec(spatialSize, i => padShape[i + 1] / blockShape[i])), 0),
+                Stack(new IR.Tuple(RangeExec(remainShapeSize, i => padShape[1 + spatialSize + i])), 0)),
+            0);
 
-//         var reshape1 = Reshape(p, reshappedShape1);
-//         var rt = Transpose(reshape1, perm);
-//         var reshape2 = Reshape(rt, reshappedShape2);
-//         return NHWCToNCHW(reshape2);
-//     }
+        var reshape1 = Reshape(p, reshappedShape1);
+        var rt = Transpose(reshape1, perm);
+        var reshape2 = Reshape(rt, reshappedShape2);
+        return NHWCToNCHW(reshape2);
+#endif
+        return null;
+    }
 
-//     private T[] RangeExec<T>(long end, Func<int, T> f)
-//     {
-//         return EndRange(0, (int)end).Select(f).ToArray();
-//     }
+    private T[] RangeExec<T>(long end, Func<int, T> f)
+    {
+        return EndRange(0, (int)end).Select(f).ToArray();
+    }
 
-//     private IEnumerable<int> EndRange(int begin, int end)
-//     {
-//         return Enumerable.Range(begin, end - begin);
-//     }
-// }
+    private IEnumerable<int> EndRange(int begin, int end)
+    {
+        return Enumerable.Range(begin, end - begin);
+    }
+}
 
 [RuleGenerator]
 public partial class SplitBatchToSpace : RewriteRule<Pattern>

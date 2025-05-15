@@ -15,21 +15,21 @@ namespace Nncase.Tests.Rules.NeutralTest;
 [AutoSetupTestMethod(InitSession = true)]
 public class UnitTestSpaceToBatch : TransformTestBase
 {
-    // [Fact(Skip = "Bug")]
-    // public void TestSplitSpaceToBatch()
-    // {
-    //     var i = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(Testing.Rand<float>(1, 206, 192)), new[] { 3 }, new[,] { { 0, 1 } }));
-    //     var originEvaluateResult = i.Evaluate();
-    //     var newBody = TestMatched<SplitSpaceToBatch>(i);
-    //     var ev = newBody.Evaluate();
-    //     _ = Comparator.CosSimilarity(originEvaluateResult, ev);
-    //     var dumpDir = Dumpper.Directory;
-    //     var (kmodelPath, _) = Testing.BuildKModel("kmodel", new IRModule(new Function(newBody, System.Array.Empty<Var>())), CompileSession);
-    //     var inputs = System.Array.Empty<Tensor>();
-    //     var result = Testing.RunKModel(kmodelPath, dumpDir, inputs);
-    //     var v = Comparator.CosSimilarity(ev, result);
-    //     Assert.True(v[0] > 0.99f);
-    // }
+    [Fact(Skip = "Bug")]
+    public void TestSplitSpaceToBatch()
+    {
+        var i = NCHWToNHWC(SpaceToBatch(NHWCToNCHW(Testing.Rand<float>(1, 206, 192)), new[] { 3 }, new[,] { { 0, 1 } }));
+        var originEvaluateResult = i.Evaluate();
+        var newBody = TestMatched<SplitSpaceToBatch>(i);
+        var ev = newBody.Evaluate();
+        _ = Comparator.CosSimilarity(originEvaluateResult, ev);
+        var dumpDir = Dumpper.Directory;
+        var (kmodelPath, _) = Testing.BuildKModel("kmodel", new IRModule(new Function(newBody, System.Array.Empty<Var>())), CompileSession);
+        var inputs = System.Array.Empty<Tensor>();
+        var result = Testing.RunKModel(kmodelPath, dumpDir, inputs);
+        var v = Comparator.CosSimilarity(ev, result);
+        Assert.True(v[0] > 0.99f);
+    }
 
     [Fact(Skip = "Bug")]
     public void TestSplitBatchToSpace()
