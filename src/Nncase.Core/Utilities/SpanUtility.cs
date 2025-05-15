@@ -23,29 +23,47 @@ public static class SpanUtility
         return MemoryMarshal.CreateReadOnlySpan(ref castFirst, froms.Length);
     }
 
+#pragma warning disable CS8500
     public static unsafe void Deserialize<T>(Span<T> span, Stream stream)
-        where T : unmanaged
+        where T : struct
     {
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            throw new NotSupportedException("Span<T> with reference type is not supported.");
+        }
+
         var position = 0;
         while (position < span.Length)
         {
-            var length = Math.Min(span.Length - position, 1024 * 1024 * 1024 / sizeof(T));
-            stream.ReadExactly(span.Slice(position, length).AsBytes());
-            position += length;
+            var length = Math.Min(span.Length - position, 1024 * 1024 * 1024 / Unsafe.SizeOf<T>());
+            fixed (T* ptr = &MemoryMarshal.GetReference(span.Slice(position)))
+            {
+                stream.ReadExactly(new Span<byte>(ptr, length * Unsafe.SizeOf<T>()));
+                position += length;
+            }
         }
     }
 
     public static unsafe void Serialize<T>(ReadOnlySpan<T> span, Stream stream)
-        where T : unmanaged
+        where T : struct
     {
+        if (RuntimeHelpers.IsReferenceOrContainsReferences<T>())
+        {
+            throw new NotSupportedException("Span<T> with reference type is not supported.");
+        }
+
         var position = 0;
         while (position < span.Length)
         {
-            var length = Math.Min(span.Length - position, 1024 * 1024 * 1024 / sizeof(T));
-            stream.Write(span.Slice(position, length).AsBytes());
-            position += length;
+            var length = Math.Min(span.Length - position, 1024 * 1024 * 1024 / Unsafe.SizeOf<T>());
+            fixed (T* ptr = &MemoryMarshal.GetReference(span.Slice(position)))
+            {
+                stream.Write(new Span<byte>(ptr, length * Unsafe.SizeOf<T>()));
+                position += length;
+            }
         }
     }
+#pragma warning restore CS8500
 
     public static T[] Concat<T>(ReadOnlySpan<T> first, ReadOnlySpan<T> second)
     {

@@ -8,7 +8,7 @@ using Nncase.TIR.NTT;
 
 namespace Nncase.Passes;
 
-public sealed partial class NTTAffineSelectionPass
+public partial class NTTAffineSelectionPass
 {
     private Expr SelectPack(IR.NTT.Pack pack, Call call, Expr output)
     {

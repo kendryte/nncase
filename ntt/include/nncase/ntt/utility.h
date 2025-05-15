@@ -91,6 +91,13 @@ inline constexpr auto permute_fixed_dims(A<Dims...> a, A<Perms...> perms,
                                          std::index_sequence<Ints...>) {
     return A<(a[perms[Ints]])...>{};
 }
+
+template <template <size_t...> class A, size_t... Dims, size_t... Perms,
+          size_t... Ints>
+inline constexpr auto indirect_indexing(A<Dims...> a, A<Perms...> b,
+                                        std::index_sequence<Ints...>) {
+    return A<(b[a[Ints]])...>{};
+}
 } // namespace utility_detail
 
 template <class U, class T, size_t Extent>
@@ -173,6 +180,13 @@ inline constexpr auto permute_fixed_dims(A<Dims...> a, A<Perms...> perms) {
                   "the dims and perms length must be same");
     return utility_detail::permute_fixed_dims(
         a, perms, std::make_index_sequence<sizeof...(Dims)>{});
+}
+
+
+template <template <size_t...> class A, size_t... Dims, size_t... Perms>
+inline constexpr auto indirect_indexing(A<Dims...> a, A<Perms...> b) {
+    return utility_detail::indirect_indexing(
+        a, b, std::make_index_sequence<sizeof...(Dims)>{});
 }
 
 template <IsFixedDims Axes, class Shape>

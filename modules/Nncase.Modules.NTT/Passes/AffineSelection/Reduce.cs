@@ -8,7 +8,7 @@ using Nncase.TIR.NTT;
 
 namespace Nncase.Passes;
 
-public sealed partial class NTTAffineSelectionPass
+public partial class NTTAffineSelectionPass
 {
     private Expr SelectReduce(IR.NTT.PackedReduce reduce, Call call, Expr output)
     {

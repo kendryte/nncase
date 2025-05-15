@@ -16,6 +16,7 @@ using Newtonsoft.Json;
 using Nncase.Diagnostics;
 using Nncase.Hosting;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.Quantization;
 using Nncase.Runtime;
 using Nncase.Runtime.Interop;
@@ -50,6 +51,8 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputAttentionsPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputHiddenStatesPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsUseCachePtr;
+    public delegate* unmanaged<IntPtr, byte> HuggingFaceOptionsGetAttentionBackendPtr;
+    public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsSetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr> CompileOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFormatPtr;
@@ -151,6 +154,8 @@ public static unsafe class CApi
         mt->HuggingFaceOptionsOutputAttentionsPtr = &HuggingFaceOptionsOutputAttentions;
         mt->HuggingFaceOptionsOutputHiddenStatesPtr = &HuggingFaceOptionsOutputHiddenStates;
         mt->HuggingFaceOptionsUseCachePtr = &HuggingFaceOptionsUseCache;
+        mt->HuggingFaceOptionsGetAttentionBackendPtr = &HuggingFaceOptionsGetAttentionBackend;
+        mt->HuggingFaceOptionsSetAttentionBackendPtr = &HuggingFaceOptionsSetAttentionBackend;
         mt->CompileOptionsCreatePtr = &CompileOptionsCreate;
         mt->CompileOptionsSetInputFilePtr = &CompileOptionsSetInputFile;
         mt->CompileOptionsSetInputFormatPtr = &CompileOptionsSetInputFormat;
@@ -338,6 +343,18 @@ public static unsafe class CApi
     {
         bool useCacheBool = useCache != 0;
         Get<HuggingFaceOptions>(huggingFaceOptionsHandle).UseCache = useCacheBool;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsSetAttentionBackend(IntPtr handle, byte value)
+    {
+        Get<HuggingFaceOptions>(handle).AttenionBackend = (HuggingFaceAttentionBackendKind)value;
+    }
+
+    [UnmanagedCallersOnly]
+    private static byte HuggingFaceOptionsGetAttentionBackend(IntPtr handle)
+    {
+        return (byte)Get<HuggingFaceOptions>(handle).AttenionBackend;
     }
 
     [UnmanagedCallersOnly]

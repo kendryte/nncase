@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
+using System.Runtime.CompilerServices;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
@@ -60,7 +61,7 @@ public abstract class TIRSelectionPass : FunctionPass
         return Task.FromResult(input);
     }
 
-    protected abstract Expr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments, Expr output);
+    protected abstract Expr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments, ref Expr output);
 
     protected IRType GetArgumentType(BaseExpr argument)
     {
@@ -176,7 +177,7 @@ public abstract class TIRSelectionPass : FunctionPass
                 {
                     PrimFunctionWrapper { Target: TIR.PrimFunction deviceFunc } => new Call(deviceFunc, arguments.Append(output).ToArray()),
                     Function fn => new Call(new FunctionWrapper(_selectionPass.ModuleKind, fn), arguments.Append(output).ToArray()),
-                    _ => _selectionPass.SelectCall(call, arguments, (Expr)output),
+                    _ => _selectionPass.SelectCall(call, arguments, ref Unsafe.As<BaseExpr, Expr>(ref output)),
                 };
                 _body.Add(newCall);
                 return output;

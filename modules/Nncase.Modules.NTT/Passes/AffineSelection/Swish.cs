@@ -13,9 +13,9 @@ using Nncase.TIR.NTT;
 
 namespace Nncase.Passes;
 
-public sealed partial class NTTAffineSelectionPass
+public partial class NTTAffineSelectionPass
 {
-    private Expr SelectSwish(IR.NN.Swish swish, Call call, Expr output)
+    public Expr SelectSwish(IR.NN.Swish swish, Call call, Expr output)
     {
         var beta = (Expr)call[IR.NN.Swish.Beta];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 }

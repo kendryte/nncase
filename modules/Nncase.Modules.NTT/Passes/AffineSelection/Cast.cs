@@ -13,9 +13,9 @@ using Nncase.TIR.NTT;
 
 namespace Nncase.Passes;
 
-public sealed partial class NTTAffineSelectionPass
+public partial class NTTAffineSelectionPass
 {
-    private Expr SelectCast(IR.Tensors.Cast cast, Call call, Expr output)
+    public Expr SelectCast(IR.Tensors.Cast cast, Call call, Expr output)
     {
         var input = (Expr)call[IR.Tensors.Cast.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })

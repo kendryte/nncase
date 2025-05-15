@@ -176,7 +176,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         model.Add(LinearExpr.WeightedSum(consts.Select(k => vars[k]), consts.Select(k =>
         {
             var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
-            return TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+            var maxShape = CompilerServices.GetMaxShape(type.Shape);
+            return TensorUtilities.GetProduct(maxShape) * type.DType.SizeInBytes;
         })) < (2L * 512L * 1024L * 1024L));
     }
 
@@ -193,7 +194,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             if (TargetOptions.HierarchySizes.Length > 1)
             {
                 var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
-                var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                var maxShape = CompilerServices.GetMaxShape(type.Shape);
+                var size = TensorUtilities.GetProduct(maxShape) * type.DType.SizeInBytes;
 
                 if (k.Expr is Call call)
                 {
@@ -1135,7 +1137,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         model.Add(LinearExpr.WeightedSum(consts.Select(k => vars[k]), consts.Select(k =>
         {
             var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
-            return TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+            var maxShape = CompilerServices.GetMaxShape(type.Shape);
+            return TensorUtilities.GetProduct(maxShape) * type.DType.SizeInBytes;
         })) < (2L * 512L * 1024L * 1024L));
     }
 
@@ -1144,7 +1147,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         if (moduleKind == "xpu")
         {
             var type = DistributedUtility.GetDividedTensorType(distributedType);
-            var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+            var maxShape = CompilerServices.GetMaxShape(type.Shape);
+            var size = TensorUtilities.GetProduct(maxShape) * type.DType.SizeInBytes;
 
             return size < targetOptions.HierarchySizes[^2] / targetOptions.Hierarchies[0][^1];
         }
@@ -1201,12 +1205,19 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             if (TargetOptions.HierarchySizes.Length > 1)
             {
                 var type = DistributedUtility.GetDividedTensorType((DistributedType)k.Expr.CheckedType);
-                var size = TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                var maxShape = CompilerServices.GetMaxShape(type.Shape);
+                var size = TensorUtilities.GetProduct(maxShape) * type.DType.SizeInBytes;
 
-                if (k.Expr is Call { Target: IR.Distributed.Boxing boxing } call && boxing.NewType is DistributedType distributedType && call.Arguments[0].CheckedType is DistributedType inType && inType.AxisPolices.Any(sbp => sbp is SBPPartial) && distributedType != call.Arguments[0].CheckedType)
+                if (k.Expr is Call call)
                 {
-                    type = DistributedUtility.GetDividedTensorType(inType);
-                    size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                    for (var i = 0; i < call.Arguments.Length; i++)
+                    {
+                        if (call.Arguments[i].CheckedType is DistributedType inType)
+                        {
+                            type = DistributedUtility.GetDividedTensorType(inType);
+                            size += TensorUtilities.GetProduct(type.Shape.ToValueArray()) * type.DType.SizeInBytes;
+                        }
+                    }
                 }
 
                 model.Add(vars[k] * size < TargetOptions.HierarchySizes[^2] / TargetOptions.Hierarchies[0][^1]);
@@ -1461,16 +1472,22 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     Select(args => args.ToArray()).
                     Select(args => args.Select(kv => kv.Value[0]).Select(arg => arg.CheckedType switch
                     {
-                        DistributedType d => (d.AxisPolices.All(sbp => sbp is SBPBroadCast) || arg is TensorConst) ? arg : IR.F.Distributed.Boxing((Expr)arg, d with { AxisPolices = new(Enumerable.Repeat(SBP.B, d.AxisPolices.Count).ToArray()) }),
-                        _ => arg,
-                    }).ToArray()).Select(arg => BuildEquivalCalls(op, arg.ToArray())).
+                        DistributedType d => GetDiverseCandidateSBPs(d, Placements, _moduleKind, TargetOptions).Select(ndsbp => IR.F.Distributed.Boxing((Expr)arg, new DistributedType(d.TensorType, ndsbp, d.Placement))).Concat(new[] { arg }).ToArray(),
+                        _ => new[] { arg },
+                    }).ToList().CartesianProduct().Select(arg => BuildEquivalCalls(op, arg.ToArray())).SelectMany(i => i).ToArray()).
                     SelectMany(i => i).
                     GroupBy(c => c.CheckedType).
                     ToDictionary(g => g.Key, g => g.OrderByDescending(e => e.Users.Count()).ToList<BaseExpr>());
         }
 
         // TODO: refactor here
-        if (expr.Target is not ScatterND && expr.Target is not IR.Distributed.Boxing && (expr.CheckedType is TensorType or DistributedType) && expr.CheckedShape.IsFixed && !expr.CheckedShape.ToValueArray().Contains(0) && results.Count == 1 && results.First().Key is DistributedType dt && dt.AxisPolices.All(sbp => sbp is SBPBroadCast))
+        if (expr.Target is not ScatterND &&
+            expr.Target is not IR.Distributed.Boxing &&
+            (expr.CheckedType is TensorType or DistributedType) &&
+            !CompilerServices.GetMaxShape(expr.CheckedShape).Contains(0) &&
+            results.Count == 1 &&
+            results.First().Key is DistributedType dt &&
+            dt.AxisPolices.All(sbp => sbp is SBPBroadCast))
         {
             return expr.Arguments.ToArray().
                     Select(Visit).
@@ -1555,6 +1572,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     break;
                 case (_, None e):
                     updateBuckets(buckets, new[] { e.With() });
+                    break;
+                case (ParameterKind.Attribute, Call e):
+                    updateBuckets(buckets, new[] { e });
                     break;
                 default:
                     throw new InvalidOperationException();
@@ -1686,6 +1706,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
         var type = (DistributedType)expr.CheckedType;
         var tensorType = type.TensorType;
+        var maxShape = CompilerServices.GetMaxShape(tensorType.Shape);
         var candidateNdsbps = new List<SBP>[type.AxisPolices.Count];
         var splitsAxes = DistributedUtility.GetHierarchyCombinations(type.Placement.Rank);
         for (int i = 0; i < candidateNdsbps.Length; i++)
@@ -1695,7 +1716,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             {
                 var axis = splitsAxes[ti];
                 var divisor = axis.Select(a => type.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                if (tensorType.Shape[i] is { IsFixed: true, FixedValue: long s } && Utilities.DistributedUtility.IsDivideExactly(s, divisor))
+                if (Utilities.DistributedUtility.IsDivideExactly(maxShape[i], divisor))
                 {
                     candidateNdsbps[i].Add(SBP.S(axis.ToArray()));
                 }

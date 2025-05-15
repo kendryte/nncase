@@ -37,6 +37,10 @@ public static class PassUtility
             or IR.NN.Pad { PadMode: PadMode.Constant }
             or IR.NN.Softmax
             or IR.NN.Swish
+            or IR.NN.UpdatePagedAttentionKVCache
+            or IR.NN.CreatePagedAttentionKVCache
+            or IR.NN.IdentityPagedAttentionKVCache
+            or IR.NN.PagedAttention
             or IR.Tensors.Cast
             or IR.Tensors.Concat
             or IR.Tensors.Expand
@@ -48,7 +52,8 @@ public static class PassUtility
             or IR.Tensors.Stack
             or IR.Tensors.Transpose
             or IR.Tensors.Unsqueeze
-            or IR.Tensors.Where;
+            or IR.Tensors.Where
+            or IR.CustomNTT.MatMul;
     }
 
     public static bool IsCpuSupported(Op op, Call call, ReadOnlySpan<BaseExpr> arguments, string moduleKind = "cpu")

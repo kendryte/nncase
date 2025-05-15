@@ -24,13 +24,13 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public NTTTIRSelectionPass(CompileOptions compileOptions)
-        : base(CPUTarget.Kind)
+    public NTTTIRSelectionPass(CompileOptions compileOptions, string moduleKind = CPUTarget.Kind)
+        : base(moduleKind)
     {
         _compileOptions = compileOptions;
     }
 
-    protected override Expr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments, Expr output)
+    protected override Expr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments, ref Expr output)
     {
         var op = call.Target;
         switch (op)
@@ -62,7 +62,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Math.MatMul matmul:
                 return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
             case IR.CustomNTT.MatMul matmul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
+                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.LhsPackedAxes, matmul.LhsPadedNums, matmul.RhsPackedAxes, matmul.RhsPadedNums, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath);
             case IR.NN.Conv2D conv:
                 {
                     var input = call[IR.NN.Conv2D.Input];
@@ -132,6 +132,16 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.Stack(((IR.Tuple)arguments[0]).Fields.AsValueEnumerable().Select(x => (Expr)x).ToArray(), output, ((TensorConst)call[IR.Tensors.Stack.Axis]).Value.ToScalar<int>());
             case IR.Tensors.Unsqueeze:
                 return TIR.F.NTT.Reshape((Expr)arguments[0], output);
+            case IR.NN.UpdatePagedAttentionKVCache upkv:
+                output = (Expr)arguments[1];
+                return TIR.F.NTT.UpdatePagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], upkv.CacheKind, upkv.LayerId);
+            case IR.NN.CreatePagedAttentionKVCache ctkv:
+                return TIR.F.NTT.CreatePagedAttentionKVCache(ctkv.Config, (Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], output);
+            case IR.NN.IdentityPagedAttentionKVCache ctkv:
+                output = (Expr)arguments[0];
+                return TIR.F.NTT.IdentityPagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], (Expr)arguments[8]);
+            case IR.NN.PagedAttention pgat:
+                return TIR.F.NTT.PagedAttention((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], pgat.LayerId, output);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

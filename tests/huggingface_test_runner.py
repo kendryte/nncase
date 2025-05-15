@@ -7,9 +7,10 @@ from numpy.core.defchararray import array
 from numpy.lib.function_base import select
 from test_runner import *
 import io
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 import torch
 from huggingface_hub import snapshot_download
+from safetensors.torch import load_file, save_file
 
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
@@ -67,6 +68,45 @@ def recursive_stack(obj):
             return torch.unsqueeze(obj, 0)
         else:
             return obj
+
+
+def dequantize_weights(model_dir):
+    for filename in os.listdir(model_dir):
+        if filename.endswith(".safetensors") and not filename.endswith(".org.safetensors"):
+            filepath = os.path.join(model_dir, filename)
+            org_filepath = filepath.replace(".safetensors", ".org.safetensors")
+
+            if not os.path.exists(org_filepath):
+                os.rename(filepath, org_filepath)
+
+            state_dict = load_file(org_filepath)
+
+            for key in list(state_dict.keys()):
+                if key.endswith('weight_scale'):
+                    scale_tensor = state_dict[key].to(torch.float32)
+                    weight_key = key.replace('.weight_scale', '.weight')
+                    if weight_key in state_dict:
+                        weight_tensor = state_dict[weight_key]
+                        if scale_tensor.numel() == 1 or scale_tensor.shape[0] == weight_tensor.shape[0]:
+                            weight_fp32 = weight_tensor.to(torch.float32)
+                            scaled_weight = weight_fp32 * scale_tensor
+                            state_dict[weight_key] = scaled_weight
+                        else:
+                            raise RuntimeError(
+                                f"\033[31m weight_tensor {weight_key} and scale_tensor {key} shape not match! \033[0m")
+                    else:
+                        print(f"Warning: Corresponding weight {weight_key} not found, skipping.")
+
+            save_file(state_dict, filepath)
+
+
+def restore_weights(model_dir):
+    for filename in os.listdir(model_dir):
+        if filename.endswith(".org.safetensors"):
+            org_path = os.path.join(model_dir, filename)
+            restored_path = org_path.replace(".org.safetensors", ".safetensors")
+            os.rename(org_path, restored_path)
+            print(f"Restored: {restored_path}")
 
 
 class HuggingfaceTestRunner(TestRunner):
@@ -173,8 +213,13 @@ class HuggingfaceTestRunner(TestRunner):
         return outputs
 
     def parse_model(self, model_path):
+        config = AutoConfig.from_pretrained(model_path + "/config.json")
+        if hasattr(config, "quantization_config"):
+            dequantize_weights(model_path)
+            delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, torch_dtype="auto", device_map="auto", trust_remote_code=True).to(torch.float32).eval()
+            model_path, config=config, torch_dtype="auto" if not torch.backends.mps.is_available() else 'cpu', device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
+        restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens

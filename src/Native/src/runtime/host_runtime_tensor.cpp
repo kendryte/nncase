@@ -95,7 +95,7 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                                     std::move(strides), buffer)));
 }
 
-result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
+result<runtime_tensor> hrt::create(datatype_t datatype, dims_t shape,
                                    strides_t strides, std::span<std::byte> data,
                                    bool copy, memory_pool_t pool,
                                    uintptr_t physical_address) noexcept {
@@ -125,6 +125,14 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                                     std::move(strides), buffer)));
 }
 
+result<runtime_tensor> hrt::create(typecode_t typecode, dims_t shape,
+                                   strides_t strides, std::span<std::byte> data,
+                                   bool copy, memory_pool_t pool,
+                                   uintptr_t physical_address) noexcept {
+    try_var(datatype, datatype_t::from_typecode(typecode));
+    return create(datatype, shape, strides, data, copy, pool, physical_address);
+}
+
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
                                    strides_t strides, std::span<std::byte> data,
                                    data_deleter_t data_deleter,
@@ -145,6 +153,14 @@ result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
 }
 
 result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
+                                   std::span<std::byte> data, bool copy,
+                                   memory_pool_t pool,
+                                   uintptr_t physical_address) noexcept {
+    return create(datatype, shape, get_default_strides(shape), data, copy, pool,
+                  physical_address);
+}
+
+result<runtime_tensor> hrt::create(datatype_t datatype, dims_t shape,
                                    std::span<std::byte> data, bool copy,
                                    memory_pool_t pool,
                                    uintptr_t physical_address) noexcept {

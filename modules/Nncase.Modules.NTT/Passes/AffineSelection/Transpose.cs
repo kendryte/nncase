@@ -8,9 +8,9 @@ using Nncase.TIR.NTT;
 
 namespace Nncase.Passes;
 
-public sealed partial class NTTAffineSelectionPass
+public partial class NTTAffineSelectionPass
 {
-    private Expr SelectTranspose(IR.Tensors.Transpose transpose, Call call, Expr output)
+    public Expr SelectTranspose(IR.Tensors.Transpose transpose, Call call, Expr output)
     {
         var input = (Expr)call[IR.Tensors.Transpose.Input];
         var perm = (Shape)call[IR.Tensors.Transpose.Perm];

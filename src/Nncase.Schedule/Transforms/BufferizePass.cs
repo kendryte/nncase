@@ -162,9 +162,9 @@ color_dict = {}
 for buffer in buffers:
   source['name'].append(buffer.name)
   width = buffer.time_interval.end - buffer.time_interval.start
-  x = buffer.time_interval.start
+  x = buffer.time_interval.start + (width / 2)
   height = buffer.mem_interval.end - buffer.mem_interval.start
-  y = buffer.mem_interval.start
+  y = buffer.mem_interval.start + (height / 2)
   y_range_max = max(y_range_max, y)
   x_range_max = max(x_range_max, buffer.time_interval.end)
   source['x'].append(x)
@@ -213,6 +213,11 @@ show(p)");
             if (_buffers.TryGetValue(expr, out var lifetime))
             {
                 var start = Tensor.FromPointer((ulong)lifetime.Memory.Start, expr.ElemType);
+                if (start.ElementType is PointerType { ElemType: ReferenceType { ElemType: IR.NN.PagedAttentionKVCacheType ntype } } && expr.ElemType is ReferenceType { ElemType: IR.NN.PagedAttentionKVCacheType oldType })
+                {
+                    ntype.Config = oldType.Config;
+                }
+
                 var memSpan = expr.MemSpan.With(start: start);
                 return expr.With(memSpan: memSpan);
             }

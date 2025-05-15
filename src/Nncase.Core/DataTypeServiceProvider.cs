@@ -92,7 +92,12 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
 
     public ValueType GetValueTypeFromType(Type type)
     {
-        return _valueTypes[type.TypeHandle];
+        if (!_valueTypes.TryGetValue(type.TypeHandle, out var valueType))
+        {
+            throw new KeyNotFoundException($"can't find value type for {type.Name}!");
+        }
+
+        return valueType;
     }
 
     private class PointerSpanConverter<TElem, TTo> : ISpanConverter<Pointer<TElem>, TTo>

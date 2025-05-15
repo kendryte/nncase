@@ -8,6 +8,7 @@ using CommunityToolkit.HighPerformance;
 using Nncase.IR;
 using Nncase.Tests.TestFixture;
 using Nncase.Utilities;
+using OrtKISharp;
 using Xunit;
 
 namespace Nncase.Tests.EvaluatorTest;

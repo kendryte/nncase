@@ -8,9 +8,9 @@ using Nncase.TIR.NTT;
 
 namespace Nncase.Passes;
 
-public sealed partial class NTTAffineSelectionPass
+public partial class NTTAffineSelectionPass
 {
-    private Expr SelectMatMul(Op op, Call call, Expr output)
+    public Expr SelectMatMul(Op op, Call call, Expr output)
     {
         var lhs = (Expr)call.Arguments[IR.Math.MatMul.Lhs.Index];
         var rhs = (Expr)call.Arguments[IR.Math.MatMul.Rhs.Index];

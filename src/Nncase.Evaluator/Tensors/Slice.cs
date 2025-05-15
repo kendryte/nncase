@@ -30,13 +30,55 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Slice sl)
     {
-        var input = context.GetOrtArgumentValue(sl, Slice.Input);
+        OrtKISharp.Tensor input;
+        var inputTensor = context.GetArgumentValueAsTensor(sl, Slice.Input);
+        var inputElemType = inputTensor.ElementType;
+        if (TryGetTempDataType(inputTensor.ElementType, out var tempType))
+        {
+            input = inputTensor.CastTo(tempType).ToOrtTensor();
+        }
+        else
+        {
+            input = inputTensor.ToOrtTensor();
+        }
+
         var begins = context.GetInt64OrtTensorArgumentValue(sl, Slice.Begins);
         var ends = context.GetInt64OrtTensorArgumentValue(sl, Slice.Ends);
         var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
         var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
         var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
-        return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
+
+        switch (context.CurrentCall.CheckedType)
+        {
+            case AnyType:
+                {
+                    var slicedTensor = sliced.ToTensor();
+                    if (tempType is not null)
+                    {
+                        slicedTensor = slicedTensor.CastTo(inputElemType);
+                    }
+
+                    return Value.FromTensor(slicedTensor);
+                }
+
+            case TensorType tensorType:
+                {
+                    Tensor slicedTensor;
+                    if (tempType is not null)
+                    {
+                        slicedTensor = sliced.ToTensor(tensorType with { DType = tempType }).CastTo(inputElemType);
+                    }
+                    else
+                    {
+                        slicedTensor = sliced.ToTensor(tensorType);
+                    }
+
+                    return Value.FromTensor(slicedTensor);
+                }
+
+            default:
+                throw new NotSupportedException("Unsupported type.");
+        }
     }
 
     /// <inheritdoc/>
@@ -177,5 +219,31 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
 
         return new DistributedType((TensorType)outType, input.AxisPolices, input.Placement);
+    }
+
+    private bool TryGetTempDataType(DataType dataType, out DataType tempType)
+    {
+        tempType = null!;
+        bool change = false;
+
+        switch (dataType)
+        {
+            case PrimType pt when pt == DataTypes.Float8E4M3 || pt == DataTypes.Float8E5M2:
+                tempType = DataTypes.Float32;
+                change = true;
+                break;
+            case VectorType vtype:
+                if (TryGetTempDataType(vtype.ElemType, out var tempElemType))
+                {
+                    tempType = vtype with { ElemType = tempElemType };
+                    change = true;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        return change;
     }
 }

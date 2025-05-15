@@ -188,7 +188,7 @@ public class RTTensor : RTValue
     /// <returns>Created runtime tensor.</returns>
     public static unsafe RTTensor FromTensor(Tensor tensor)
     {
-        var dtype = (PrimType)tensor.ElementType;
+        var dtype = tensor.ElementType;
         var sizeBytes = (uint)tensor.BytesBuffer.Length;
         var buffer = RTBufferAllocator.Host.Allocate(sizeBytes).AsHost()!;
         using (var mem = buffer.Map(RTMapAccess.Write))
@@ -198,7 +198,7 @@ public class RTTensor : RTValue
 
         var dims = MemoryMarshal.Cast<int, uint>(tensor.Dimensions.ToInts());
         var strides = MemoryMarshal.Cast<int, uint>(tensor.Strides.ToInts());
-        return Create(RTDataType.FromTypeCode(dtype.TypeCode), dims, strides, new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = sizeBytes });
+        return Create(RTDataType.From(dtype), dims, strides, new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = sizeBytes });
     }
 
     /// <summary>
@@ -207,7 +207,7 @@ public class RTTensor : RTValue
     /// <returns>Copied tensor.</returns>
     public Tensor ToTensor()
     {
-        var dtype = DataType.FromTypeCode(ElementType.TypeCode);
+        var dtype = ElementType.ToDataType();
         var dims = MemoryMarshal.Cast<uint, int>(Dimensions);
         _ = MemoryMarshal.Cast<uint, int>(Strides);
         if (Buffer.SizeBytes > 0)

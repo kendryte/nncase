@@ -367,6 +367,23 @@ public static class TensorUtilities
     }
 
     /// <summary>
+    /// from end to front calculate the number of contiguous dimensions.
+    /// </summary>
+    public static int GetContiguousDims(ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
+    {
+        var def_strides = GetStrides(dimensions);
+        for (int i = strides.Length - 1; i >= 0; --i)
+        {
+            if (strides[i] != def_strides[i])
+            {
+                return dimensions.Length - i - 1;
+            }
+        }
+
+        return dimensions.Length;
+    }
+
+    /// <summary>
     /// check the dimensions selected range is contiguous.
     /// </summary>
     public static bool IsContiguousSlice(ReadOnlySpan<long> dimensions, ReadOnlySpan<System.Range> slices, out int contiguousStart)
@@ -450,15 +467,19 @@ public static class TensorUtilities
 
     public static int[] ToInts(this long[] longs) => ToInts((ReadOnlySpan<long>)longs);
 
-    public static long GetSize(Span<long> shapes, Span<long> strides, int elementSize)
+    public static long GetSize(ReadOnlySpan<long> shapes, ReadOnlySpan<long> strides, int elementSize)
     {
-        long size = 0;
+        long max_stride = 1, max_shape = 1;
         for (int i = 0; i < shapes.Length; i++)
         {
-            size += (shapes[i] - 1) * strides[i];
+            if ((shapes[i] == 1 ? 0 : strides[i]) >= max_stride)
+            {
+                max_stride = strides[i];
+                max_shape = shapes[i];
+            }
         }
 
-        size += 1;
+        long size = max_stride * max_shape;
         return size * elementSize;
     }
 

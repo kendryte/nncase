@@ -142,7 +142,11 @@ internal sealed class IRPrinterProvider : IPrinterProvider
             }
             else
             {
-                new ILPrintVisitor(writer, flags, new Dictionary<BaseExpr, string>()).Visit(expr);
+                var result = new ILPrintVisitor(writer, flags, new Dictionary<BaseExpr, string>()).Visit(expr);
+                if (writer.BaseStream.Position == 0)
+                {
+                    writer.Write(result);
+                }
             }
         }
 

@@ -413,11 +413,11 @@ internal static class ModelUtils
            head_dim = getattr(config, "head_dim", config.hidden_size // config.num_attention_heads)
            dim = int(head_dim * partial_rotary_factor)
          */
-        var baseRoPETheta = (float)(double)config["rope_theta"];
+        var baseRoPETheta = (float)Convert.ToDouble(config["rope_theta"]);
         var partialRotaryFactor = 1.0; // config.partial_rotary_factor if hasattr(config, "partial_rotary_factor") else 1.0
         if (config.ContainsKey("partial_rotary_factor"))
         {
-            partialRotaryFactor = (float)(double)config["partial_rotary_factor"];
+            partialRotaryFactor = (float)Convert.ToDouble(config["partial_rotary_factor"]);
         }
 
         int headDim;

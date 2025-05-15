@@ -14,7 +14,9 @@ public sealed partial class Unary : Op
 
     public UnaryOp UnaryOp { get; }
 
-    public IRArray<SBP> SBPs { get; }
+    public IRArray<SBP> InSBPs { get; }
+
+    public IRArray<SBP> OutSBPs { get; }
 
     public Cost Cost { get; }
 

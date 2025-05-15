@@ -43,6 +43,10 @@ public abstract class Target : ITarget
     {
     }
 
+    public virtual void RegisterPostQuantizePass(IPassManager passManager, CompileOptions options)
+    {
+    }
+
     public virtual void RegisterTargetDependentBeforeCodeGen(IPassManager passManager, CompileOptions options)
     {
     }
@@ -60,6 +64,10 @@ public abstract class Target : ITarget
     }
 
     public virtual void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options)
+    {
+    }
+
+    public virtual void RegisterPostAutoPackingPass(IPassManager passManager, CompileOptions options)
     {
     }
 

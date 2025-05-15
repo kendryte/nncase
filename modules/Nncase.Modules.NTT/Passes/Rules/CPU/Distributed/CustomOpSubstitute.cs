@@ -5,6 +5,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Nncase.IR;
@@ -30,8 +31,11 @@ public class CustomOpSubstitutePass : DataflowPass
 
         _cpuTargetOptions = _compileOptions.TargetOptions is NTTTargetOptions options ? options : new NTTTargetOptions();
 
+        var jsonOptions = new JsonSerializerOptions();
+        jsonOptions.Converters.Add(new SBPConverter());
+
         if (Path.Exists(_cpuTargetOptions.CustomOpScheme) &&
-        System.Text.Json.JsonSerializer.Deserialize<CustomOpScheme>(File.ReadAllText(_cpuTargetOptions.CustomOpScheme)) is CustomOpScheme customOpScheme)
+        System.Text.Json.JsonSerializer.Deserialize<CustomOpScheme>(File.ReadAllText(_cpuTargetOptions.CustomOpScheme), jsonOptions) is CustomOpScheme customOpScheme)
         {
             CustomOpScheme = customOpScheme;
         }

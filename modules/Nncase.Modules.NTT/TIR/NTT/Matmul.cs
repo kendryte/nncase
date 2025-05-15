@@ -28,5 +28,7 @@ public sealed partial class Matmul : NTTKernelOp
 
     public bool FusedReduce { get; }
 
+    public string CSourcePath { get; }
+
     public override string DisplayProperty() => $"LhsPackedAxes: {LhsPackedAxes}, LhsPadedNums: {LhsPadedNums}, RhsPackedAxes: {RhsPackedAxes}, RhsPadedNums: {RhsPadedNums}, TransposeA: {TransposeA}, TransposeB: {TransposeB}";
 }

@@ -15,6 +15,8 @@
 #pragma once
 #ifdef NNCASE_CPU_MODULE
 #include "arch/cpu/topology.h"
+#elif defined(NNCASE_XPU_MODULE)
+#include "arch/xpu/topology.h"
 #endif
 #include "shape.h"
 #include <cstddef>
@@ -32,6 +34,7 @@ struct thread_inout_desc {
     size_t size;
     size_t *shape;
     size_t *strides;
+    size_t rank;
 };
 
 void *thread_alloc(size_t bytes, size_t alignment);

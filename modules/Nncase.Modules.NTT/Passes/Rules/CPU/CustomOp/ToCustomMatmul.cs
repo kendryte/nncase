@@ -65,7 +65,7 @@ public partial class ToCustomMatmul : RewriteRule<Pattern>
         if (node is not null)
         {
             return call.With(
-                target: new IR.CustomNTT.MatMul(node!.SBP[0], node!.SBP[1], new() { [CostFactorNames.CPUCycles] = node.Cost }, null),
+                target: new IR.CustomNTT.MatMul(null!, null!, null!, null!, false, false, node!.SBP[0], node!.SBP[1], node!.SBP[2], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath),
                 arguments: new[] { lhs, rhs },
                 metadata: call.Metadata);
         }

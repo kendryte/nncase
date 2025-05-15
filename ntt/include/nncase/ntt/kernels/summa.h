@@ -70,9 +70,9 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     using lhs_global_shape = typename TLhs::shape_type;
     using rhs_global_shape = typename TRhs::shape_type;
 
-    using lhs_local_shape = typename TLhs::local_shape_type;
-    using rhs_local_shape = typename TRhs::local_shape_type;
-    using out_local_shape = typename std::decay_t<TOut>::local_shape_type;
+    auto lhs_local_tensor = lhs.local();
+    auto rhs_local_tensor = rhs.local();
+    auto out_local_tensor = output.local();
     using out_local_strides =
         typename std::decay_t<TOut>::local_tensor_type::strides_type;
 
@@ -93,17 +93,17 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
 
     // using last two meshes(b&t) for cpu, x&y for xpu
     constexpr size_t mesh_rank = lhs_mesh_type::rank();
-    constexpr size_t local_K_lhs = lhs_local_shape::at(lhs_k_dim);
-    constexpr size_t local_K_rhs = rhs_local_shape::at(rhs_k_dim);
+    auto local_K_lhs = lhs_local_tensor.shape().at(lhs_k_dim);
+    auto local_K_rhs = rhs_local_tensor.shape().at(rhs_k_dim);
 
-    constexpr size_t lcm_K = std::lcm(local_K_lhs, local_K_rhs);
+    auto lcm_K = std::lcm(local_K_lhs, local_K_rhs);
     constexpr auto LhsRank = TLhs::local_tensor_type::rank();
     constexpr auto RhsRank = TRhs::local_tensor_type::rank();
     constexpr auto OutRank = std::decay_t<TOut>::local_tensor_type::rank();
     ntt::ranked_shape<OutRank> CShape;
     ntt::ranked_strides<OutRank> CStrides;
     for (auto i = 0; i < OutRank; i++) {
-        CShape.at(i) = out_local_shape::at(i);
+        CShape.at(i) = out_local_tensor.shape().at(i);
         CStrides.at(i) = out_local_strides::at(i);
     }
 
@@ -134,7 +134,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                 ntt::ranked_shape<LhsRank> AShape;
                 ntt::ranked_strides<LhsRank> AStrides;
                 for (auto i = 0; i < LhsRank - 1; i++)
-                    AShape.at(i) = lhs_local_shape::at(i);
+                    AShape.at(i) = lhs_local_tensor.shape().at(i);
                 for (auto i = 0; i < LhsRank; i++)
                     AStrides.at(i) = A_remote.strides()[i];
                 AShape.at(LhsRank - 1) = local_K_rhs;
@@ -142,7 +142,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                 ntt::ranked_shape<RhsRank> BShape;
                 ntt::ranked_strides<RhsRank> BStrides;
                 for (auto i = 0; i < RhsRank; i++) {
-                    BShape.at(i) = rhs_local_shape::at(i);
+                    BShape.at(i) = rhs_local_tensor.shape().at(i);
                     BStrides.at(i) = B_remote.strides()[i];
                 }
 
@@ -186,7 +186,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                 ntt::ranked_shape<RhsRank> BShape;
                 ntt::ranked_strides<RhsRank> BStrides;
                 for (auto i = 0; i < RhsRank - 1; i++)
-                    BShape.at(i) = rhs_local_shape::at(i);
+                    BShape.at(i) = rhs_local_tensor.shape().at(i);
                 for (auto i = 0; i < RhsRank; i++)
                     BStrides.at(i) = B_remote.strides()[i];
                 BShape.at(RhsRank - 1) = local_K_lhs;
@@ -194,7 +194,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                 ntt::ranked_shape<LhsRank> AShape;
                 ntt::ranked_strides<LhsRank> AStrides;
                 for (auto i = 0; i < LhsRank; i++) {
-                    AShape.at(i) = lhs_local_shape::at(i);
+                    AShape.at(i) = lhs_local_tensor.shape().at(i);
                     AStrides.at(i) = A_remote.strides()[i];
                 }
 

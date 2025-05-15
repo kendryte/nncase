@@ -24,8 +24,8 @@ public sealed partial class NTTAffineSelectionPass : AffineSelectionPass
 {
     private readonly CompileOptions _compileOptions;
 
-    public NTTAffineSelectionPass(CompileOptions compileOptions)
-        : base(CPUTarget.Kind)
+    public NTTAffineSelectionPass(CompileOptions compileOptions, string moduleKind = CPUTarget.Kind)
+        : base(moduleKind)
     {
         _compileOptions = compileOptions;
     }
@@ -52,8 +52,9 @@ public sealed partial class NTTAffineSelectionPass : AffineSelectionPass
                 return SelectUnaryLike((Expr)call[IR.Math.Unary.Input], new TIR.NTT.Unary(op.UnaryOp), call, output);
             case IR.NN.Swish op:
                 return SelectSwish(op, call, output);
-            case IR.Tensors.Cast op:
-                return SelectCast(op, call, output);
+
+            // case IR.Tensors.Cast op:
+            // return SelectCast(op, call, output);
             case IR.Tensors.Transpose op:
                 return SelectTranspose(op, call, output);
             default:

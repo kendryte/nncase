@@ -84,6 +84,14 @@ public abstract record DataType
             {
                 return new PointerType(FromType(t.GenericTypeArguments[0]));
             }
+            else if (generic == typeof(Reference<>))
+            {
+                return new ReferenceType(FromType(t.GenericTypeArguments[0]));
+            }
+            else if (generic == typeof(Memory<>))
+            {
+                return new MemoryType(FromType(t.GenericTypeArguments[0]));
+            }
             else if (generic == typeof(Vector4<>))
             {
                 return new VectorType(FromType(t.GenericTypeArguments[0]), 4);
@@ -181,7 +189,7 @@ public abstract record DataType
     /// <typeparam name="T">CLR type.</typeparam>
     /// <returns>Data type.</returns>
     public static DataType FromType<T>()
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
         => FromType(typeof(T));
 }
 

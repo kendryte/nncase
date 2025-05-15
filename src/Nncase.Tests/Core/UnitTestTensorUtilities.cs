@@ -216,16 +216,10 @@ public sealed class UnitTestTensorUtilities
     public void TestGetSize()
     {
         var shapes = new long[] { 1, 2, 4, 8 };
-        var strides = new long[] { 1, 1, 1, 1 };
+        var strides = new long[] { 64, 32, 8, 1 };
         var elementSize = 1;
         var getSize = TensorUtilities.GetSize(shapes, strides, elementSize);
-        long result = 1;
-        for (int i = 0; i < shapes.Length; i++)
-        {
-            result += (shapes[i] - 1) * strides[i];
-        }
-
-        Assert.Equal(result, getSize);
+        Assert.Equal(64, getSize);
     }
 
     [Theory]

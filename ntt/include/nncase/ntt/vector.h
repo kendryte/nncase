@@ -87,9 +87,9 @@ class basic_vector
         }
     }
 
-    template <size_t Index>
-    static constexpr size_t lane() noexcept {
-        static_assert(Index < sizeof...(Lanes), "Dimension index out of bounds");
+    template <size_t Index> static constexpr size_t lane() noexcept {
+        static_assert(Index < sizeof...(Lanes),
+                      "Dimension index out of bounds");
         return std::get<Index>(std::make_tuple(Lanes...));
     }
 
@@ -104,4 +104,18 @@ template <class T, size_t... OldLanes, size_t... NewLanes>
 struct fixed_tensor_alike_type<basic_vector<T, OldLanes...>, NewLanes...> {
     using type = vector<T, NewLanes...>;
 };
+
+namespace detail {
+template <typename T, typename Lanes> struct MakeVectorType;
+
+// 特化 ExtractDims 以处理 fixed_shape
+template <typename T, size_t... Lanes>
+struct MakeVectorType<T, fixed_shape<Lanes...>> {
+    using vector_type = ntt::vector<T, Lanes...>;
+};
+}; // namespace detail
+
+template <typename T, IsFixedDims Lanes>
+using make_vector_t = typename detail::MakeVectorType<T, Lanes>::vector_type;
+
 } // namespace nncase::ntt

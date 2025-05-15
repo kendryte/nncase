@@ -27,13 +27,13 @@ import string
 import numpy as np
 from pathlib import Path
 from shutil import which
-from typing import List
+from typing import List, Optional, Union
 import platform
 import warnings
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import _nncase
-from _nncase import RuntimeTensor, TensorDesc, Simulator, NTTTargetOptions, NocArchitecture, HierarchyKind, MemoryAccessArchitecture
+from _nncase import RuntimeTensor, RTValue, TensorDesc, Simulator, NTTTargetOptions, NocArchitecture, HierarchyKind, MemoryAccessArchitecture
 
 
 def _initialize():
@@ -101,7 +101,7 @@ class PTQTensorOptions:
 
 
 class GraphEvaluator:
-    _inputs: List[RuntimeTensor]
+    _inputs: List[RuntimeTensor | RTValue]
     _func: _nncase.Function
     _params: _nncase.Var
     _outputs: List[RuntimeTensor]
@@ -117,9 +117,10 @@ class GraphEvaluator:
         tensor = self._inputs[index]
         return tensor.to_runtime_tensor() if tensor else None
 
-    def set_input_tensor(self, index: int, value: RuntimeTensor):
+    def set_input_tensor(self, index: int, value: RuntimeTensor | RTValue):
         assert index < len(self._inputs)
-        self._inputs[index] = _nncase.RTValue.from_runtime_tensor(value)
+        self._inputs[index] = _nncase.RTValue.from_runtime_tensor(
+            value) if isinstance(value, RuntimeTensor) else value
 
     def get_output_tensor(self, index: int):
         return self._outputs[index]
@@ -127,7 +128,7 @@ class GraphEvaluator:
     def run(self):
         self._outputs = self._func.body.evaluate(self._params, self._inputs).to_runtime_tensors()
 
-    @ property
+    @property
     def outputs_size(self) -> int:
         return len(self._outputs)
 
@@ -139,7 +140,7 @@ class IRModule():
         assert module.entry != None
         self._module = module
 
-    @ property
+    @property
     def entry(self) -> _nncase.IR.Function:
         return self._module.entry
 
@@ -180,7 +181,7 @@ class Compiler:
     def compile(self) -> None:
         self._compiler.compile()
 
-    @ property
+    @property
     def module(self) -> IRModule:
         return self._module
 
@@ -449,3 +450,26 @@ class HuggingFaceOptions:
         self.output_attentions = False
         self.output_hidden_states = False
         self.use_cache = True
+
+
+class AutoModelForCausalLM():
+    def __init__(
+        self,
+        model: str,
+        model_config: Optional[dict] = None,
+        cache_config: Optional[dict] = None,
+        parallel_config: Optional[dict] = None,
+        quant_config: Optional[dict] = None,
+        lora_config: Optional[dict] = None,
+    ):
+        pass
+
+    def __call__(
+        self,
+        input_ids: Union[List[RuntimeTensor], RuntimeTensor],
+        attention_mask: Union[List[RuntimeTensor], RuntimeTensor] = None,
+        position_ids: Union[List[RuntimeTensor], RuntimeTensor] = None,
+        attenion_kv_cache: _nncase.AttentionKVCace = None,
+        **kwargs
+    ) -> Union[List[RuntimeTensor], RuntimeTensor]:
+        pass

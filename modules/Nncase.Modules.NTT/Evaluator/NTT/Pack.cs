@@ -113,7 +113,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             if (input.AxisPolices[i] is SBPSplit && target.Axes.Contains(i))
             {
                 var lane = target.Lanes[target.Axes.IndexOf(i)];
-                if (input.TensorType.Shape[i].FixedValue / lane % divisor[i] == 0)
+                if (input.TensorType.Shape[i] is { IsFixed: true, FixedValue: long s } && s / lane % divisor[i] == 0)
                 {
                     ndsbp[i] = input.AxisPolices[i];
                 }

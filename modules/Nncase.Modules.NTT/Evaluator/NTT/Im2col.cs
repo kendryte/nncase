@@ -106,8 +106,8 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
             return new InvalidType("im2col typeinfer failed");
         }
 
-        var outShape = tensorType.Shape.ToValueArray();
-        var ndsbp = new SBP[outShape.Length];
+        var outShape = tensorType.Shape.ToArray();
+        var ndsbp = new SBP[tensorType.Shape.Rank];
 
         for (int i = 0; i < dt.AxisPolices.Count; i++)
         {

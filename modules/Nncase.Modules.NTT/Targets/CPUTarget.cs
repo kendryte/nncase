@@ -56,12 +56,12 @@ public class CPUTarget : Target
     public override void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options)
     {
         // todo config it in the target options.
-        var rank = 2;
-        var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 8 : 4;
+        var rank = 1;
+        var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 32 : 16;
         pass.Add<Passes.Rules.NTT.PackReduce>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackSwish>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackResizeImage>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackMatMul>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackMatMul>(2, lane);
         pass.Add<Passes.Rules.NTT.PackConv2D>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackUnary>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackBinary>(rank, lane);

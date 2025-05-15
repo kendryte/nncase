@@ -45,14 +45,14 @@ public partial class NTT
         return new Call(new TIR.NTT.Binary(binaryOp), lhs, rhs, output);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false, bool fusedReduce = false)
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "")
     {
-        return new Call(new Matmul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums, transA, transB, fusedReduce), lhs, rhs, output, loadC);
+        return new Call(new Matmul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums, transA, transB, fusedReduce, cSourcePath), lhs, rhs, output, loadC);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC)
     {
-        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), false, false, false), lhs, rhs, output, loadC);
+        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), false, false, false, null), lhs, rhs, output, loadC);
     }
 
     public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false)
@@ -115,6 +115,26 @@ public partial class NTT
     public static Expr Reshape(Expr input, Expr ret)
     {
         return new Call(new Reshape(), input, ret);
+    }
+
+    public static Expr PagedAttention(Expr q, Expr kvcache, Expr extra, int layerId, Expr ret)
+    {
+        return new Call(new PagedAttention(layerId), q, kvcache, extra, ret);
+    }
+
+    public static Expr UpdatePagedAttentionKVCache(Expr value, Expr kvcache, IR.NN.AttentionCacheKind kind, int layerId)
+    {
+        return new Call(new UpdatePagedAttentionKVCache(kind, layerId), value, kvcache);
+    }
+
+    public static Expr CreatePagedAttentionKVCache(IR.NN.PagedAttentionConfig config, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches, Expr output)
+    {
+        return new Call(new CreatePagedAttentionKVCache(config), numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches, output);
+    }
+
+    public static Expr IdentityPagedAttentionKVCache(Expr input, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches)
+    {
+        return new Call(new IdentityPagedAttentionKVCache(), input, numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches);
     }
 
     public static Expr Swish(Expr buffer, Expr ret, float v)

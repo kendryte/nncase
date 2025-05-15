@@ -64,7 +64,10 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         typeof(Tensor).GetMethod(nameof(CreateTensorEmptyImpl), BindingFlags.Static | BindingFlags.NonPublic)!;
 
     private static readonly MethodInfo _tensorCastFunc =
-        typeof(Tensor).GetMethod(nameof(Cast))!;
+        typeof(Tensor).GetMethod(nameof(Cast), [typeof(CastMode)])!;
+
+    private static readonly MethodInfo _tensorCastFunc2 =
+            typeof(Tensor).GetMethod(nameof(Cast), [typeof(CastMode), typeof(long[])])!;
 
     private readonly long[] _dimensions;
     private readonly long[] _strides;
@@ -97,6 +100,15 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         _strides = TensorUtilities.GetStrides(dimensions);
     }
 
+    internal Tensor(DataType elementType, ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
+    {
+        ElementType = elementType;
+        _dimensions = dimensions.ToArray();
+        Shape = dimensions.IsEmpty ? IR.Shape.Scalar : new RankedShape(_dimensions);
+        Length = TensorUtilities.GetProduct(dimensions);
+        _strides = strides.ToArray();
+    }
+
     /// <summary>
     /// Gets element type.
     /// </summary>
@@ -123,7 +135,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public int Rank => Dimensions.Length;
 
     /// <summary>
-    /// Gets total length.
+    /// Gets valid elements length.
     /// </summary>
     public long Length { get; }
 
@@ -141,6 +153,8 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     bool IList.IsFixedSize => true;
 
     bool IList.IsReadOnly => false;
+
+    public bool IsContiguous => TensorUtilities.IsContiguous(Dimensions, Strides);
 
     object? IList.this[int index]
     {
@@ -179,7 +193,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="value">Value.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> FromScalar<T>(T value)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         var tensor = new Tensor<T>(ReadOnlySpan<long>.Empty);
         tensor[Array.Empty<long>()] = value;
@@ -207,7 +221,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="length">Fill length.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> FromScalar<T>(T value, long length)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         var tensor = new Tensor<T>(MemoryMarshal.CreateReadOnlySpan(ref length, 1));
         tensor.Fill(value);
@@ -222,7 +236,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">Fill dimensions.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> FromScalar<T>(T value, ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         var tensor = new Tensor<T>(dimensions);
         tensor.Fill(value);
@@ -273,7 +287,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="memory">Memory.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> From<T>(Memory<T> memory)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         long dim = memory.Length;
         return new Tensor<T>(memory, MemoryMarshal.CreateReadOnlySpan(ref dim, 1));
@@ -287,7 +301,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">Dimensions.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> From<T>(Memory<T> memory, ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return new Tensor<T>(memory, dimensions);
     }
@@ -299,7 +313,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="array">Array.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> From<T>(T[] array)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return From(array.AsMemory());
     }
@@ -318,7 +332,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">Dimensions.</param>
     /// <returns>Created tensor.</returns>
     public static Tensor<T> From<T>(T[] array, ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
     {
         return From(array.AsMemory(), dimensions);
     }
@@ -477,6 +491,9 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="castMode">Cast mode.</param>
     /// <returns>Typed tensor.</returns>
     public abstract Tensor<T> Cast<T>(CastMode castMode = CastMode.KDefault)
+        where T : struct, IEquatable<T>;
+
+    public abstract Tensor<T> Cast<T>(CastMode castMode, long[] dimensions)
         where T : unmanaged, IEquatable<T>;
 
     /// <summary>
@@ -485,6 +502,12 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     public Tensor CastTo(DataType type, CastMode castMode = CastMode.KDefault)
     {
         var tensor = (Tensor)_tensorCastFunc.MakeGenericMethod(type.CLRType).Invoke(this, new object[] { castMode })!;
+        return tensor;
+    }
+
+    public Tensor CastTo(DataType type, CastMode castMode, long[] dimensions)
+    {
+        var tensor = (Tensor)_tensorCastFunc2.MakeGenericMethod(type.CLRType).Invoke(this, new object[] { castMode, dimensions })!;
         return tensor;
     }
 
@@ -613,7 +636,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         public object Value { get; }
 
         public void Initialize<T>(Tensor<T> tensor)
-            where T : unmanaged, IEquatable<T>
+            where T : struct, IEquatable<T>
         {
             var value = (T)Convert.ChangeType(Value, typeof(T));
             tensor.Fill(value);
