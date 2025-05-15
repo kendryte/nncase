@@ -27,7 +27,7 @@ public sealed partial class FoldNopSlice : IRewriteRule
         IsFixedShape("axes"),
         IsFixedShape("strides"));
 
-    private Expr? GetReplace(Expr input, Tensor<int> begins, Tensor<int> ends, Tensor<int> axes, Tensor<int> strides)
+    private Expr? GetReplace(Expr input, Tensor<long> begins, Tensor<long> ends, Tensor<long> axes, Tensor<long> strides)
     {
         var inShape = input.CheckedShape;
         for (int i = 0; i < axes.Length; i++)

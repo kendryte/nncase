@@ -139,7 +139,7 @@ public abstract class BaseImporter
         {
             return (T)(BaseExpr)expr.AsDim();
         }
-        else if (type == typeof(Shape))
+        else if (type == typeof(Shape) || type == typeof(RankedShape))
         {
             return (T)(BaseExpr)expr.AsShape();
         }

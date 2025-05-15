@@ -32,14 +32,20 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, LogSoftmax target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, LogSoftmax.Input);
-        return Visit(input);
+        var input = context.CheckArgumentType<IRType>(target, LogSoftmax.Input);
+        var axis = (Dimension)context.GetArgument(target, LogSoftmax.Axis);
+        return input switch
+        {
+            TensorType t => Visit(t),
+            DistributedType d => Visit(d, axis),
+            _ => new InvalidType(input.GetType().Name),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, LogSoftmax target)
     {
-        var ret = context.GetReturnType<TensorType>();
+        var ret = context.GetReturnType<IRType>();
         uint macPerElement = 4;
         return new()
         {
@@ -67,6 +73,17 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
 
     private IRType Visit(TensorType input)
     {
+        return input;
+    }
+
+    private IRType Visit(DistributedType input, Dimension axis)
+    {
+        axis = Dimension.Positive(axis, input.TensorType.Shape.Rank);
+        if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && i == axis))
+        {
+            return new InvalidType("Not support split on Axis for Softmax now.");
+        }
+
         return input;
     }
 }

@@ -38,7 +38,7 @@ def _make_module(in_shape, axis, exclusive, reverse):
     axis = helper.make_tensor(
         'axis',
         TensorProto.INT32,
-        dims=[1],
+        dims=[],
         vals=[axis]
     )
     inputs.append('axis')

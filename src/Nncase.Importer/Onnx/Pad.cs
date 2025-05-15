@@ -23,9 +23,8 @@ namespace Nncase.Importer
             var input = GetInputExpr<Expr>(op, 0);
             var padMode = GetPadMode(op);
             var paddings = GetIntsAttribute(op, "pads");
-            var pads = Tensor.From<long>(paddings, [2, 4]);
             var value = GetFloatAttribute(op, "value", 0f);
-            return Pad(input, ToNncasePadFormat((Expr)pads), padMode, value);
+            return Pad(input, ToNncasePadFormat((Const)paddings), padMode, value);
         }
 
         // `pads` should be a 1D tensor of shape [2 * input_rank].

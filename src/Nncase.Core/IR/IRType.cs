@@ -44,6 +44,8 @@ public abstract record IRType
         },
         (TensorType t1, TensorType t2) => (t1.Shape, t2.Shape) switch
         {
+            (UnrankedShape, UnrankedShape) => 0,
+            (InvalidShape, InvalidShape) => 0,
             (RankedShape s1, RankedShape s2) when s1.Rank == s2.Rank => s1.Where(d => d.IsFixed).Count().CompareTo(s2.Where(d => d.IsFixed).Count()),
             _ => throw new InvalidDataException($"The {this} can't compare with {rhs}"),
         },

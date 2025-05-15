@@ -89,7 +89,12 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         }
     }
 
-    protected override ValueRange<double> VisitLeafShape(Shape expr)
+    protected override ValueRange<double> VisitLeafUnrankedShape(UnrankedShape expr)
+    {
+        return Visit(expr.Value);
+    }
+
+    protected override ValueRange<double> VisitLeafRankedShape(RankedShape expr)
     {
         if (!expr.Any())
         {

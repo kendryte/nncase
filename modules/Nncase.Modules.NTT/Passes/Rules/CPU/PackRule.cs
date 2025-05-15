@@ -83,7 +83,7 @@ public sealed class PackResizeImage : PackRule
 
         var op = (IR.Imaging.ResizeImage)result["target"];
         var input = (Expr)result["input"];
-        var newSize = ((TensorConst)result["newSize"]).Value.ToArray<int>();
+        var newSize = ((RankedShape)result["newSize"]).ToValueArray().ToInts();
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         rets = AddCandidate(op, input, newSize, [1], [laneSize]);
@@ -675,7 +675,7 @@ public sealed class PackTranspose : PackRule
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var perm = ((TensorConst)result["perm"]).Value.ToArray<int>();
+        var perm = ((RankedShape)result["perm"]).ToValueArray().ToInts();
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         for (int i = 0; i < input.CheckedShape.Rank; i++)
