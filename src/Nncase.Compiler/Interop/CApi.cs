@@ -574,7 +574,7 @@ public static unsafe class CApi
     [UnmanagedCallersOnly]
     private static IntPtr ExprEvaluate(IntPtr exprHandle, IntPtr fnParamsHandle, IntPtr inputsHandle)
     {
-        var expr = Get<Expr>(exprHandle);
+        var expr = Get<BaseExpr>(exprHandle);
         var fnParams = Get<IVar[]>(fnParamsHandle);
         var inputs = Get<RTValue[]>(inputsHandle);
         var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
