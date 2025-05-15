@@ -1346,7 +1346,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
         compiler.AutoDistributedPass(pmgr);
         compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
-        pmgr.Add<ReplaceDimVarWithShapeOfPass>();
         await pmgr.RunAsync(module);
     }
 }

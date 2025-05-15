@@ -122,6 +122,22 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
     protected readonly Dictionary<BaseExpr, CSymbol> _exprMemo = new(ReferenceEqualityComparer.Instance);
 
+    public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
+
+    protected void WriteDimVars()
+    {
+        var varMap = CreateDimVarMap();
+        foreach (var (dimVar, (tensorVar, dimIndex)) in varMap)
+        {
+            if (!VisitEntry.Parameters.Contains(dimVar))
+            {
+                var dimVarName = Visit(dimVar).Name;
+                var tensorVarName = Visit(tensorVar).Name;
+                IndentScope.Writer.IndWrite($"auto {dimVarName} = {tensorVarName}.shape()[{dimIndex}];\n");
+            }
+        }
+    }
+
     protected override CSymbol VisitNone(None expr)
     {
         if (_exprMemo.TryGetValue(expr, out var symbol))
@@ -372,4 +388,31 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             symbol.Name.Replace("ranked_dims", replaceName1, StringComparison.Ordinal)
                 .Replace("fixed_dims<", replaceName2, StringComparison.Ordinal));
     }
+
+    private Dictionary<DimVar, DimVarInfo> CreateDimVarMap()
+    {
+        var varMap = new Dictionary<DimVar, DimVarInfo>(ReferenceEqualityComparer.Instance);
+        var compileSession = CompileSessionScope.Current;
+        if (compileSession is not null)
+        {
+            foreach (var (tensorVar, dimExprs) in CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions.VarMap)
+            {
+                for (int i = 0; i < dimExprs.Length; i++)
+                {
+                    var dimExpr = dimExprs[i];
+                    if (dimExpr is DimVar dimVar)
+                    {
+                        if (!varMap.ContainsKey(dimVar))
+                        {
+                            varMap.Add(dimVar, new(tensorVar, i));
+                        }
+                    }
+                }
+            }
+        }
+
+        return varMap;
+    }
+
+    private record struct DimVarInfo(Var TensorVar, int DimIndex);
 }

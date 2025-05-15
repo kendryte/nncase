@@ -31,8 +31,6 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         _deviceBuilder = new();
     }
 
-    public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
-
     public static void WriteWithProfiler(string functionName, string tagName = "")
     {
         functionName = functionName.TrimEnd(new char[] { ';', '\n' });

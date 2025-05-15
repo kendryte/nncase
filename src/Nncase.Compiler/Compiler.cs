@@ -367,8 +367,7 @@ public class Compiler : ICompiler
         await RunPassAsync(
             p =>
             {
-                // target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions);
-                p.Add<ReplaceDimVarWithShapeOfPass>();
+                target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions);
             },
             "TargetDependentBeforeCodeGen");
         if (DumpScope.Current.IsEnabled(DumpFlags.Compile))

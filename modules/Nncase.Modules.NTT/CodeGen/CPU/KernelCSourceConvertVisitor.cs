@@ -50,8 +50,6 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         TargetOptions = targetOptions;
     }
 
-    public PrimFunction VisitEntry => (TIR.PrimFunction)VisitRoot!;
-
     public int CallCount { get; private set; }
 
     public NTTTargetOptions TargetOptions { get; }
@@ -162,13 +160,15 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             // 1. Function signature
             IndentScope.Writer.IndWrite($"{{\n");
 
-            // 2. Function body
+            WriteDimVars();
+
+            // 3. Function body
             using (_ = new IndentScope())
             {
                 Visit(expr.Body);
             }
 
-            // 3. Function closing
+            // 4. Function closing
             IndentScope.Writer.IndWrite("}\n");
         }
 
