@@ -25,5 +25,5 @@ set(ENABLE_VULKAN OFF)
 set(ENABLE_HALIDE OFF)
 set(BUILD_PYTHON_BINDING OFF)
 # -march=rv64gv_zvl128b_zvfh -mrvv-vector-bits=zvl
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64gcv_zvfh -mabi=lp64d -mcmodel=medany -fstack-protector-strong -fPIE -pie -Wl,-z,now -Wl,-z,relro -mrvv-v0p10-compatible")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64gcv_zvfh -mabi=lp64d -mcmodel=medany -fstack-protector-strong -fPIE -pie -Wl,-z,now -Wl,-z,relro  -mrvv-v0p10-compatible")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=rv64gcv_zfh_zvfh -mabi=lp64d -mcmodel=medany -fstack-protector-strong -fPIE -pie -Wl,-z,now -Wl,-z,relro -mrvv-v0p10-compatible")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=rv64gcv_zfh_zvfh -mabi=lp64d -mcmodel=medany -fstack-protector-strong -fPIE -pie -Wl,-z,now -Wl,-z,relro  -mrvv-v0p10-compatible")
