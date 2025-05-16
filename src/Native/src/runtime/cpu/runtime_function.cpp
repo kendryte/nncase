@@ -138,7 +138,8 @@ result<value_t> cpu_runtime_function::invoke_core(
                 inout_paged_kvcaches.push_back(descs);
                 inouts.emplace_back(thread_inout_desc{
                     .data = (std::byte *)descs,
-                    .size = sizeof(thread_paged_attention_kv_cache_desc) * refspan.size(),
+                    .size = sizeof(thread_paged_attention_kv_cache_desc) *
+                            refspan.size(),
                     .shape = t->shape().data(),
                     .strides = t->strides().data(),
                 });

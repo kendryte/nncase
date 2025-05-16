@@ -12,7 +12,7 @@
 #include <type_traits>
 
 #if defined(__cpp_lib_bit_cast)
-#include <bit>  // For std::bit_cast.
+#include <bit> // For std::bit_cast.
 #endif
 
 namespace base64 {
@@ -27,14 +27,14 @@ std::enable_if_t<sizeof(To) == sizeof(From) &&
                      std::is_trivially_copyable_v<From> &&
                      std::is_trivially_copyable_v<To>,
                  To>
-bit_cast(const From& src) noexcept {
-  static_assert(std::is_trivially_constructible_v<To>,
-                "This implementation additionally requires "
-                "destination type to be trivially constructible");
+bit_cast(const From &src) noexcept {
+    static_assert(std::is_trivially_constructible_v<To>,
+                  "This implementation additionally requires "
+                  "destination type to be trivially constructible");
 
-  To dst;
-  std::memcpy(&dst, &src, sizeof(To));
-  return dst;
+    To dst;
+    std::memcpy(&dst, &src, sizeof(To));
+    return dst;
 }
 #endif
 
@@ -42,13 +42,13 @@ inline constexpr char padding_char{'='};
 inline constexpr uint32_t bad_char{0x01FFFFFF};
 
 #if !defined(__LITTLE_ENDIAN__) && !defined(__BIG_ENDIAN__)
-#if (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) ||  \
-    (defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN) ||              \
-    (defined(_BYTE_ORDER) && _BYTE_ORDER == _BIG_ENDIAN) ||                 \
-    (defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN) ||                    \
-    (defined(__sun) && defined(__SVR4) && defined(_BIG_ENDIAN)) ||          \
-    defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) || \
-    defined(_MIBSEB) || defined(__MIBSEB) || defined(__MIBSEB__) ||         \
+#if (defined(__BYTE_ORDER__) && __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) ||     \
+    (defined(__BYTE_ORDER) && __BYTE_ORDER == __BIG_ENDIAN) ||                 \
+    (defined(_BYTE_ORDER) && _BYTE_ORDER == _BIG_ENDIAN) ||                    \
+    (defined(BYTE_ORDER) && BYTE_ORDER == BIG_ENDIAN) ||                       \
+    (defined(__sun) && defined(__SVR4) && defined(_BIG_ENDIAN)) ||             \
+    defined(__ARMEB__) || defined(__THUMBEB__) || defined(__AARCH64EB__) ||    \
+    defined(_MIBSEB) || defined(__MIBSEB) || defined(__MIBSEB__) ||            \
     defined(_M_PPC)
 #define __BIG_ENDIAN__
 #elif (defined(__BYTE_ORDER__) &&                                              \
@@ -489,209 +489,209 @@ std::array<char, 256> constexpr encode_table_1 = {
     'w', 'x', 'y', 'z', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '+',
     '/'};
 
-}  // namespace detail
+} // namespace detail
 
 template <class OutputBuffer, class InputIterator>
 inline OutputBuffer encode_into(InputIterator begin, InputIterator end) {
-  typedef std::decay_t<decltype(*begin)> input_value_type;
-  static_assert(std::is_same_v<input_value_type, char> ||
-                std::is_same_v<input_value_type, signed char> ||
-                std::is_same_v<input_value_type, unsigned char> ||
-                std::is_same_v<input_value_type, std::byte>);
-  typedef typename OutputBuffer::value_type output_value_type;
-  static_assert(std::is_same_v<output_value_type, char> ||
-                std::is_same_v<output_value_type, signed char> ||
-                std::is_same_v<output_value_type, unsigned char> ||
-                std::is_same_v<output_value_type, std::byte>);
-  const size_t binarytextsize = end - begin;
-  const size_t encodedsize = (binarytextsize / 3 + (binarytextsize % 3 > 0))
-                             << 2;
-  OutputBuffer encoded(encodedsize, detail::padding_char);
+    typedef std::decay_t<decltype(*begin)> input_value_type;
+    static_assert(std::is_same_v<input_value_type, char> ||
+                  std::is_same_v<input_value_type, signed char> ||
+                  std::is_same_v<input_value_type, unsigned char> ||
+                  std::is_same_v<input_value_type, std::byte>);
+    typedef typename OutputBuffer::value_type output_value_type;
+    static_assert(std::is_same_v<output_value_type, char> ||
+                  std::is_same_v<output_value_type, signed char> ||
+                  std::is_same_v<output_value_type, unsigned char> ||
+                  std::is_same_v<output_value_type, std::byte>);
+    const size_t binarytextsize = end - begin;
+    const size_t encodedsize = (binarytextsize / 3 + (binarytextsize % 3 > 0))
+                               << 2;
+    OutputBuffer encoded(encodedsize, detail::padding_char);
 
-  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&*begin);
-  char* currEncoding = reinterpret_cast<char*>(&encoded[0]);
+    const uint8_t *bytes = reinterpret_cast<const uint8_t *>(&*begin);
+    char *currEncoding = reinterpret_cast<char *>(&encoded[0]);
 
-  for (size_t i = binarytextsize / 3; i; --i) {
-    const uint8_t t1 = *bytes++;
-    const uint8_t t2 = *bytes++;
-    const uint8_t t3 = *bytes++;
-    *currEncoding++ = detail::encode_table_0[t1];
-    *currEncoding++ =
-        detail::encode_table_1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
-    *currEncoding++ =
-        detail::encode_table_1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
-    *currEncoding++ = detail::encode_table_1[t3];
-  }
+    for (size_t i = binarytextsize / 3; i; --i) {
+        const uint8_t t1 = *bytes++;
+        const uint8_t t2 = *bytes++;
+        const uint8_t t3 = *bytes++;
+        *currEncoding++ = detail::encode_table_0[t1];
+        *currEncoding++ =
+            detail::encode_table_1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+        *currEncoding++ =
+            detail::encode_table_1[((t2 & 0x0F) << 2) | ((t3 >> 6) & 0x03)];
+        *currEncoding++ = detail::encode_table_1[t3];
+    }
 
-  switch (binarytextsize % 3) {
+    switch (binarytextsize % 3) {
     case 0: {
-      break;
+        break;
     }
     case 1: {
-      const uint8_t t1 = bytes[0];
-      *currEncoding++ = detail::encode_table_0[t1];
-      *currEncoding++ = detail::encode_table_1[(t1 & 0x03) << 4];
-      // *currEncoding++ = detail::padding_char;
-      // *currEncoding++ = detail::padding_char;
-      break;
+        const uint8_t t1 = bytes[0];
+        *currEncoding++ = detail::encode_table_0[t1];
+        *currEncoding++ = detail::encode_table_1[(t1 & 0x03) << 4];
+        // *currEncoding++ = detail::padding_char;
+        // *currEncoding++ = detail::padding_char;
+        break;
     }
     case 2: {
-      const uint8_t t1 = bytes[0];
-      const uint8_t t2 = bytes[1];
-      *currEncoding++ = detail::encode_table_0[t1];
-      *currEncoding++ =
-          detail::encode_table_1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
-      *currEncoding++ = detail::encode_table_1[(t2 & 0x0F) << 2];
-      // *currEncoding++ = detail::padding_char;
-      break;
+        const uint8_t t1 = bytes[0];
+        const uint8_t t2 = bytes[1];
+        *currEncoding++ = detail::encode_table_0[t1];
+        *currEncoding++ =
+            detail::encode_table_1[((t1 & 0x03) << 4) | ((t2 >> 4) & 0x0F)];
+        *currEncoding++ = detail::encode_table_1[(t2 & 0x0F) << 2];
+        // *currEncoding++ = detail::padding_char;
+        break;
     }
     default: {
-      throw std::runtime_error{"Invalid base64 encoded data"};
+        throw std::runtime_error{"Invalid base64 encoded data"};
     }
-  }
+    }
 
-  return encoded;
+    return encoded;
 }
 
 template <class OutputBuffer>
 inline OutputBuffer encode_into(std::string_view data) {
-  return encode_into<OutputBuffer>(std::begin(data), std::end(data));
+    return encode_into<OutputBuffer>(std::begin(data), std::end(data));
 }
 
 inline std::string to_base64(std::string_view data) {
-  return encode_into<std::string>(std::begin(data), std::end(data));
+    return encode_into<std::string>(std::begin(data), std::end(data));
 }
 
 template <class OutputBuffer>
 inline OutputBuffer decode_into(std::string_view base64Text) {
-  typedef typename OutputBuffer::value_type output_value_type;
-  static_assert(std::is_same_v<output_value_type, char> ||
-                std::is_same_v<output_value_type, signed char> ||
-                std::is_same_v<output_value_type, unsigned char> ||
-                std::is_same_v<output_value_type, std::byte>);
-  if (base64Text.empty()) {
-    return OutputBuffer();
-  }
-
-  if ((base64Text.size() & 3) != 0) {
-    throw std::runtime_error{
-        "Invalid base64 encoded data - Size not divisible by 4"};
-  }
-
-  const size_t numPadding =
-      std::count(base64Text.rbegin(), base64Text.rbegin() + 4, '=');
-  if (numPadding > 2) {
-    throw std::runtime_error{
-        "Invalid base64 encoded data - Found more than 2 padding signs"};
-  }
-
-  const size_t decodedsize = (base64Text.size() * 3 >> 2) - numPadding;
-  OutputBuffer decoded(decodedsize, (output_value_type)'.');
-
-  const uint8_t* bytes = reinterpret_cast<const uint8_t*>(&base64Text[0]);
-  char* currDecoding = reinterpret_cast<char*>(&decoded[0]);
-
-  for (size_t i = (base64Text.size() >> 2) - (numPadding != 0); i; --i) {
-    const uint8_t t1 = *bytes++;
-    const uint8_t t2 = *bytes++;
-    const uint8_t t3 = *bytes++;
-    const uint8_t t4 = *bytes++;
-
-    const uint32_t d1 = detail::decode_table_0[t1];
-    const uint32_t d2 = detail::decode_table_1[t2];
-    const uint32_t d3 = detail::decode_table_2[t3];
-    const uint32_t d4 = detail::decode_table_3[t4];
-
-    const uint32_t temp = d1 | d2 | d3 | d4;
-
-    if (temp >= detail::bad_char) {
-      throw std::runtime_error{
-          "Invalid base64 encoded data - Invalid character"};
+    typedef typename OutputBuffer::value_type output_value_type;
+    static_assert(std::is_same_v<output_value_type, char> ||
+                  std::is_same_v<output_value_type, signed char> ||
+                  std::is_same_v<output_value_type, unsigned char> ||
+                  std::is_same_v<output_value_type, std::byte>);
+    if (base64Text.empty()) {
+        return OutputBuffer();
     }
 
-    // Use bit_cast instead of union and type punning to avoid
-    // undefined behaviour risk:
-    // https://en.wikipedia.org/wiki/Type_punning#Use_of_union
-    const std::array<char, 4> tempBytes =
-        detail::bit_cast<std::array<char, 4>, uint32_t>(temp);
+    if ((base64Text.size() & 3) != 0) {
+        throw std::runtime_error{
+            "Invalid base64 encoded data - Size not divisible by 4"};
+    }
 
-    *currDecoding++ = tempBytes[detail::decidx0];
-    *currDecoding++ = tempBytes[detail::decidx1];
-    *currDecoding++ = tempBytes[detail::decidx2];
-  }
+    const size_t numPadding =
+        std::count(base64Text.rbegin(), base64Text.rbegin() + 4, '=');
+    if (numPadding > 2) {
+        throw std::runtime_error{
+            "Invalid base64 encoded data - Found more than 2 padding signs"};
+    }
 
-  switch (numPadding) {
+    const size_t decodedsize = (base64Text.size() * 3 >> 2) - numPadding;
+    OutputBuffer decoded(decodedsize, (output_value_type)'.');
+
+    const uint8_t *bytes = reinterpret_cast<const uint8_t *>(&base64Text[0]);
+    char *currDecoding = reinterpret_cast<char *>(&decoded[0]);
+
+    for (size_t i = (base64Text.size() >> 2) - (numPadding != 0); i; --i) {
+        const uint8_t t1 = *bytes++;
+        const uint8_t t2 = *bytes++;
+        const uint8_t t3 = *bytes++;
+        const uint8_t t4 = *bytes++;
+
+        const uint32_t d1 = detail::decode_table_0[t1];
+        const uint32_t d2 = detail::decode_table_1[t2];
+        const uint32_t d3 = detail::decode_table_2[t3];
+        const uint32_t d4 = detail::decode_table_3[t4];
+
+        const uint32_t temp = d1 | d2 | d3 | d4;
+
+        if (temp >= detail::bad_char) {
+            throw std::runtime_error{
+                "Invalid base64 encoded data - Invalid character"};
+        }
+
+        // Use bit_cast instead of union and type punning to avoid
+        // undefined behaviour risk:
+        // https://en.wikipedia.org/wiki/Type_punning#Use_of_union
+        const std::array<char, 4> tempBytes =
+            detail::bit_cast<std::array<char, 4>, uint32_t>(temp);
+
+        *currDecoding++ = tempBytes[detail::decidx0];
+        *currDecoding++ = tempBytes[detail::decidx1];
+        *currDecoding++ = tempBytes[detail::decidx2];
+    }
+
+    switch (numPadding) {
     case 0: {
-      break;
+        break;
     }
     case 1: {
-      const uint8_t t1 = *bytes++;
-      const uint8_t t2 = *bytes++;
-      const uint8_t t3 = *bytes++;
+        const uint8_t t1 = *bytes++;
+        const uint8_t t2 = *bytes++;
+        const uint8_t t3 = *bytes++;
 
-      const uint32_t d1 = detail::decode_table_0[t1];
-      const uint32_t d2 = detail::decode_table_1[t2];
-      const uint32_t d3 = detail::decode_table_2[t3];
+        const uint32_t d1 = detail::decode_table_0[t1];
+        const uint32_t d2 = detail::decode_table_1[t2];
+        const uint32_t d3 = detail::decode_table_2[t3];
 
-      const uint32_t temp = d1 | d2 | d3;
+        const uint32_t temp = d1 | d2 | d3;
 
-      if (temp >= detail::bad_char) {
-        throw std::runtime_error{
-            "Invalid base64 encoded data - Invalid character"};
-      }
+        if (temp >= detail::bad_char) {
+            throw std::runtime_error{
+                "Invalid base64 encoded data - Invalid character"};
+        }
 
-      // Use bit_cast instead of union and type punning to avoid
-      // undefined behaviour risk:
-      // https://en.wikipedia.org/wiki/Type_punning#Use_of_union
-      const std::array<char, 4> tempBytes =
-          detail::bit_cast<std::array<char, 4>, uint32_t>(temp);
-      *currDecoding++ = tempBytes[detail::decidx0];
-      *currDecoding++ = tempBytes[detail::decidx1];
-      break;
+        // Use bit_cast instead of union and type punning to avoid
+        // undefined behaviour risk:
+        // https://en.wikipedia.org/wiki/Type_punning#Use_of_union
+        const std::array<char, 4> tempBytes =
+            detail::bit_cast<std::array<char, 4>, uint32_t>(temp);
+        *currDecoding++ = tempBytes[detail::decidx0];
+        *currDecoding++ = tempBytes[detail::decidx1];
+        break;
     }
     case 2: {
-      const uint8_t t1 = *bytes++;
-      const uint8_t t2 = *bytes++;
+        const uint8_t t1 = *bytes++;
+        const uint8_t t2 = *bytes++;
 
-      const uint32_t d1 = detail::decode_table_0[t1];
-      const uint32_t d2 = detail::decode_table_1[t2];
+        const uint32_t d1 = detail::decode_table_0[t1];
+        const uint32_t d2 = detail::decode_table_1[t2];
 
-      const uint32_t temp = d1 | d2;
+        const uint32_t temp = d1 | d2;
 
-      if (temp >= detail::bad_char) {
-        throw std::runtime_error{
-            "Invalid base64 encoded data - Invalid character"};
-      }
+        if (temp >= detail::bad_char) {
+            throw std::runtime_error{
+                "Invalid base64 encoded data - Invalid character"};
+        }
 
-      const std::array<char, 4> tempBytes =
-          detail::bit_cast<std::array<char, 4>, uint32_t>(temp);
-      *currDecoding++ = tempBytes[detail::decidx0];
-      break;
+        const std::array<char, 4> tempBytes =
+            detail::bit_cast<std::array<char, 4>, uint32_t>(temp);
+        *currDecoding++ = tempBytes[detail::decidx0];
+        break;
     }
     default: {
-      throw std::runtime_error{
-          "Invalid base64 encoded data - Invalid padding number"};
+        throw std::runtime_error{
+            "Invalid base64 encoded data - Invalid padding number"};
     }
-  }
+    }
 
-  return decoded;
+    return decoded;
 }
 
 template <class OutputBuffer, class InputIterator>
 inline OutputBuffer decode_into(InputIterator begin, InputIterator end) {
-  typedef std::decay_t<decltype(*begin)> input_value_type;
-  static_assert(std::is_same_v<input_value_type, char> ||
-                std::is_same_v<input_value_type, signed char> ||
-                std::is_same_v<input_value_type, unsigned char> ||
-                std::is_same_v<input_value_type, std::byte>);
-  std::string_view data(reinterpret_cast<const char*>(&*begin), end - begin);
-  return decode_into<OutputBuffer>(data);
+    typedef std::decay_t<decltype(*begin)> input_value_type;
+    static_assert(std::is_same_v<input_value_type, char> ||
+                  std::is_same_v<input_value_type, signed char> ||
+                  std::is_same_v<input_value_type, unsigned char> ||
+                  std::is_same_v<input_value_type, std::byte>);
+    std::string_view data(reinterpret_cast<const char *>(&*begin), end - begin);
+    return decode_into<OutputBuffer>(data);
 }
 
 inline std::string from_base64(std::string_view data) {
-  return decode_into<std::string>(data);
+    return decode_into<std::string>(data);
 }
 
-}  // namespace base64
+} // namespace base64
 
-#endif  // BASE64_HPP_
+#endif // BASE64_HPP_

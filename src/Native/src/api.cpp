@@ -245,7 +245,8 @@ int nncase_dtype_create_prime(nncase::typecode_t typecode,
 }
 
 int nncase_dtype_create_vector(nncase::datatype_node *elem_type, int32_t *lanes,
-                               int32_t length, nncase::vector_type_node **dtype) {
+                               int32_t length,
+                               nncase::vector_type_node **dtype) {
     if (dtype) {
         *dtype = vector_type_t(std::in_place, elem_type,
                                dims_t{lanes, lanes + length})

@@ -26,15 +26,15 @@ public abstract class HuggingFaceModel
     public virtual (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
     {
         var hiddenSize = (long)Context!.Config!["hidden_size"];
-        var numsHiddenLayers = (long)Context.Config!["num_hidden_layers"];
+        _ = (long)Context.Config!["num_hidden_layers"];
         var num_attention_heads = (long)Context.Config!["num_attention_heads"];
-        var headDim = hiddenSize / num_attention_heads;
+        _ = hiddenSize / num_attention_heads;
         if (Context.Config.ContainsKey("head_dim"))
         {
-            headDim = (long)Context.Config["head_dim"];
+            _ = (long)Context.Config["head_dim"];
         }
 
-        var numKVHeads = (long)Context.Config!["num_key_value_heads"];
+        _ = (long)Context.Config!["num_key_value_heads"];
 
         Context.Inputs = [];
         Context.DynVarMap = new Dictionary<string, Var>();
