@@ -28,7 +28,10 @@ class tuple_node;
 class value_node;
 class type_node;
 class datatype_node;
+class prim_type_node;
 class vector_type_node;
+class value_type_node;
+class reference_type_node;
 namespace llm {
 class attention_config_node;
 class paged_attention_config_node;
@@ -98,11 +101,11 @@ NNCASE_API int
 nncase_host_buffer_unmap(nncase::runtime::host_buffer_node *host_buffer);
 
 NNCASE_API int nncase_dtype_create_prime(nncase::typecode_t typecode,
-                                         nncase::datatype_node **dtype);
+                                         nncase::prim_type_node **dtype);
 
 NNCASE_API int nncase_dtype_create_vector(nncase::datatype_node *elem_type,
                                           int32_t *lanes, int32_t length,
-                                          nncase::datatype_node **dtype);
+                                          nncase::vector_type_node **dtype);
 
 NNCASE_API int nncase_dtype_get_typecode(nncase::datatype_node *dtype);
 
@@ -117,13 +120,21 @@ nncase_vector_dtype_get_lanes_length(nncase::vector_type_node *handle,
 NNCASE_API int nncase_vector_dtype_get_lanes(nncase::vector_type_node *handle,
                                              int32_t *lanes);
 
-NNCASE_API int nncase_dtype_create_reference(nncase::datatype_node *elem_type,
-                                             nncase::datatype_node **dtype);
+NNCASE_API int
+nncase_dtype_create_reference(nncase::datatype_node *elem_type,
+                              nncase::reference_type_node **dtype);
+
+NNCASE_API int
+nncase_reference_dtype_get_elem_type(nncase::reference_type_node *handle,
+                                     nncase::datatype_node **elemType);
 NNCASE_API int
 nncase_dtype_create_attention_kv_cache(nncase::datatype_node **dtype);
 
 NNCASE_API int
 nncase_dtype_create_paged_attention_kv_cache(nncase::datatype_node **dtype);
+
+NNCASE_API int nncase_value_dtype_get_uuid(nncase::value_type_node *value_type,
+                                           uint8_t *uuid, int32_t uuid_length);
 
 NNCASE_API int nncase_value_is_tensor(nncase::value_node *value,
                                       bool *is_tensor);

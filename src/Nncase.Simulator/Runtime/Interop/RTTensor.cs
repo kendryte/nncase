@@ -203,6 +203,7 @@ public class RTTensor : RTValue
                     if (tensor[[]] is IReference { Value: RTObject rtObject })
                     {
                         var handle = rtObject.DangerousGetHandle();
+                        Native.ObjectAddRef(handle);
                         MemoryMarshal.AsBytes([handle]).CopyTo(mem.Memory.Span);
                     }
                     else

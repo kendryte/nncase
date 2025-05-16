@@ -60,7 +60,7 @@ internal static class Native
     public static extern unsafe ErrorCode HostBufferUnmap(IntPtr hostBuffer);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_prime")]
-    public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out RTDataType dtype);
+    public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out RTPrimType dtype);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_vector")]
     public static extern unsafe ErrorCode DTypeCreateVector(RTDataType elemType, int[] lanes, int length, out RTVectorType dtype);
@@ -78,13 +78,19 @@ internal static class Native
     public static extern unsafe ErrorCode VectorDTypeGetLanes(RTVectorType handle, [Out] int[] lanes);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_reference")]
-    public static extern unsafe ErrorCode DTypeCreateReference(RTDataType elemType, out RTDataType dtype);
+    public static extern unsafe ErrorCode DTypeCreateReference(RTDataType elemType, out RTReferenceType dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_reference_dtype_get_elem_type")]
+    public static extern ErrorCode ReferenceDTypeGetElemType(RTReferenceType handle, out RTDataType elemType);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_attention_kv_cache")]
-    public static extern unsafe ErrorCode DTypeCreateAttentionKVCache(out RTDataType dtype);
+    public static extern unsafe ErrorCode DTypeCreateAttentionKVCache(out RTValueType dtype);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_paged_attention_kv_cache")]
-    public static extern unsafe ErrorCode DTypeCreatePagedAttentionKVCache(out RTDataType dtype);
+    public static extern unsafe ErrorCode DTypeCreatePagedAttentionKVCache(out RTValueType dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_value_dtype_get_uuid")]
+    public static extern unsafe ErrorCode ValueDTypeGetUUID(RTValueType dtype, [Out] byte[] uuid, int uuidLength);
 
     [DllImport(LibraryName, EntryPoint = "nncase_value_is_tensor")]
     public static extern unsafe ErrorCode ValueIsTensor(IntPtr value, out bool isTensor);

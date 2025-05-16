@@ -17,11 +17,11 @@ using Xunit;
 namespace Nncase.Tests.SimulatorTest;
 
 [AutoSetupTestMethod(InitSession = false)]
-public class UnitTestInterop : TestClassBase
+public class UnitTestInteropIntegrated : TestClassBase
 {
     private readonly byte[] _kmodel;
 
-    public UnitTestInterop()
+    public UnitTestInteropIntegrated()
     {
         var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
         var y = x + 1.0f;
@@ -36,6 +36,36 @@ public class UnitTestInterop : TestClassBase
         _kmodel = output.ToArray();
     }
 
+    [Fact]
+    public void TestRTInterpreterLoadModel()
+    {
+        var interp = RTInterpreter.Create();
+        interp.LoadModel(_kmodel, true);
+        var entry = interp.Entry;
+        Assert.NotNull(entry);
+        Assert.Equal(1u, entry!.ParamsCount);
+    }
+
+    [Fact]
+    public void TestRTInterpreterRunModel()
+    {
+        var interp = RTInterpreter.Create();
+        interp.LoadModel(_kmodel, true);
+        var entry = interp.Entry;
+        Assert.NotNull(entry);
+
+        var input = RTTensor.FromTensor(new[] { 2.0f });
+        var result = (RTTensor)entry!.Invoke(input);
+        var buffer = result.Buffer.Buffer.AsHost()!;
+        using (var mmOwner = buffer.Map(RTMapAccess.Read))
+        {
+            Assert.Equal(new[] { 3.0f }, MemoryMarshal.Cast<byte, float>(mmOwner.Memory.Span).ToArray());
+        }
+    }
+}
+
+public class UnitTestInterop
+{
     [Fact]
     public void TestCreateRTInterpreter()
     {
@@ -118,37 +148,35 @@ public class UnitTestInterop : TestClassBase
     }
 
     [Fact]
-    public void TestRTInterpreterLoadModel()
-    {
-        var interp = RTInterpreter.Create();
-        interp.LoadModel(_kmodel, true);
-        var entry = interp.Entry;
-        Assert.NotNull(entry);
-        Assert.Equal(1u, entry!.ParamsCount);
-    }
-
-    [Fact]
-    public void TestRTInterpreterRunModel()
-    {
-        var interp = RTInterpreter.Create();
-        interp.LoadModel(_kmodel, true);
-        var entry = interp.Entry;
-        Assert.NotNull(entry);
-
-        var input = RTTensor.FromTensor(new[] { 2.0f });
-        var result = (RTTensor)entry!.Invoke(input);
-        var buffer = result.Buffer.Buffer.AsHost()!;
-        using (var mmOwner = buffer.Map(RTMapAccess.Read))
-        {
-            Assert.Equal(new[] { 3.0f }, MemoryMarshal.Cast<byte, float>(mmOwner.Memory.Span).ToArray());
-        }
-    }
-
-    [Fact]
     public void TestRTDatatype()
     {
-        var dt1 = RTDataType.FromTypeCode(Runtime.TypeCode.Int16);
-        Assert.False(dt1.IsInvalid);
+        {
+            var dt1 = RTDataType.FromTypeCode(Runtime.TypeCode.Int16);
+            Assert.False(dt1.IsInvalid);
+        }
+
+        {
+            var dt = new IR.NN.PagedAttentionKVCacheType();
+            var rdt = RTDataType.From(dt);
+            Assert.IsType<RTValueType>(rdt);
+            var rvt = rdt as RTValueType;
+            var bytes = dt.Uuid.ToByteArray();
+            var uuid = new System.Guid(bytes);
+            Assert.Equal(dt.Uuid, uuid);
+            Assert.Equal(dt.Uuid, rvt!.Uuid);
+        }
+
+        {
+            var dtt = new IR.NN.PagedAttentionKVCacheType();
+            var dt = new ReferenceType(dtt);
+            var rdt = RTDataType.From(dt);
+            Assert.IsType<RTReferenceType>(rdt);
+            var rrt = rdt as RTReferenceType;
+            var rvt = rrt!.ElemType;
+            Assert.IsType<RTValueType>(rvt);
+            var rvvt = rvt as RTValueType;
+            Assert.Equal(dtt.Uuid, rvvt!.Uuid);
+        }
     }
 
     [Fact]

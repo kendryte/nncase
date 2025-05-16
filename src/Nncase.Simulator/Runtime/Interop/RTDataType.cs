@@ -9,9 +9,6 @@ using System.Threading.Tasks;
 
 namespace Nncase.Runtime.Interop;
 
-/// <summary>
-/// Runtime data type.
-/// </summary>
 public class RTDataType : RTObject
 {
     internal RTDataType()
@@ -68,6 +65,34 @@ public class RTDataType : RTObject
                 throw new ArgumentOutOfRangeException(nameof(dataType));
         }
     }
+
+    internal static RTDataType FromRTDataType(RTDataType dtype)
+    {
+        var typecode = Native.DTypeGetTypeCode(dtype);
+        dtype.SetHandleAsInvalid();
+        var handle = dtype.DangerousGetHandle();
+        return typecode switch
+        {
+            TypeCode.Pointer => throw new NotSupportedException(),
+            TypeCode.ValueType => new RTValueType(handle),
+            TypeCode.VectorType => new RTVectorType(handle),
+            TypeCode.ReferenceType => new RTReferenceType(handle),
+            _ => new RTPrimType(handle),
+        };
+    }
+}
+
+public sealed class RTPrimType : RTDataType
+{
+    internal RTPrimType()
+       : base(IntPtr.Zero)
+    {
+    }
+
+    internal RTPrimType(IntPtr handle)
+        : base(handle)
+    {
+    }
 }
 
 public sealed class RTVectorType : RTDataType
@@ -99,6 +124,51 @@ public sealed class RTVectorType : RTDataType
             var lanes = new int[length];
             Native.VectorDTypeGetLanes(this, lanes).ThrowIfFailed();
             return lanes;
+        }
+    }
+}
+
+public sealed class RTValueType : RTDataType
+{
+    internal RTValueType()
+       : base(IntPtr.Zero)
+    {
+    }
+
+    internal RTValueType(IntPtr handle)
+        : base(handle)
+    {
+    }
+
+    public Guid Uuid
+    {
+        get
+        {
+            var uuid = new byte[16];
+            Native.ValueDTypeGetUUID(this, uuid, uuid.Length).ThrowIfFailed();
+            return new Guid(uuid);
+        }
+    }
+}
+
+public sealed class RTReferenceType : RTDataType
+{
+    internal RTReferenceType()
+       : base(IntPtr.Zero)
+    {
+    }
+
+    internal RTReferenceType(IntPtr handle)
+        : base(handle)
+    {
+    }
+
+    public RTDataType ElemType
+    {
+        get
+        {
+            Native.ReferenceDTypeGetElemType(this, out var elemType).ThrowIfFailed();
+            return FromRTDataType(elemType);
         }
     }
 }
