@@ -120,7 +120,7 @@ result<bool> compare_tensor(tensor actual, tensor expect) {
     auto actual_span = actual_map.buffer();
     auto expect_span = expect_map.buffer();
     if (actual_span.size_bytes() != expect_span.size_bytes()) {
-        printf("size bytes not match: actual %ld, expect %ld\n",
+        printf("size bytes not match: actual %zu, expect %zu\n",
                actual_span.size_bytes(), expect_span.size_bytes());
         return ok(false);
     }
