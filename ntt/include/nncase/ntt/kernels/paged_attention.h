@@ -167,12 +167,6 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
         auto local_slots = slots_tensor.local();
         using slots_sharding_type = typename TSlots::sharding_type;
         using slots_mesh_type = typename slots_sharding_type::mesh_type;
-        using slots_axis_policy_type =
-            typename slots_sharding_type::axis_policy_type;
-        using default_layout =
-            fixed_shape<(size_t)caching::attention_dim_kind::seq,
-                        (size_t)caching::attention_dim_kind::head,
-                        (size_t)caching::attention_dim_kind::dim>;
 
         // slots : [seq, numHeads, headDim]
         auto program_ids = distributed::program_ids();
@@ -447,16 +441,6 @@ void paged_attention(
             }
         }
     }
-}
-
-template <class T0, class T1, class T2, class T3>
-void paged_attention([[maybe_unused]] T0 q_tensor,
-                     [[maybe_unused]] T1 kv_cache_tensor,
-                     [[maybe_unused]] T2 extra_tensor,
-                     [[maybe_unused]] size_t layer_id,
-                     [[maybe_unused]] T3 output_tensor) {
-    using kv_cache_t = typename std::decay_t<decltype(kv_cache_tensor(0))>;
-    using config_t = typename kv_cache_t::config_t;
 }
 
 template <class T0, class T1, class T2, class T3, class T4, class T5, class T6,
