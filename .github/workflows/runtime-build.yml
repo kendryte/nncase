@@ -85,7 +85,7 @@ jobs:
     strategy:
       matrix:
         config:
-          - { name: riscv64-unknown-linux, toolchain: riscv64-unknown-linux, toolchain_env: RISCV_ROOT_PATH, toolchain_file: riscv64-unknown-linux-gnu-12.0.1, qemu: qemu-riscv64, loader_args: '-cpu;rv64,v=true,Zfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', cmakeArgs: '', buildType: Release }
+          - { name: riscv64-unknown-linux, toolchain: riscv64-unknown-linux, toolchain_env: RISCV_ROOT_PATH, toolchain_file: Xuantie-900-gcc-linux-6.6.0-glibc-x86_64-V3.0.2, qemu: qemu-riscv64, loader_args: '-cpu;rv64,v=true,zfh=true,zvfh=true,vlen=128,elen=64,vext_spec=v1.0;-L', cmakeArgs: '', buildType: Release }
 
     steps:
       - uses: actions/checkout@v3
@@ -99,9 +99,12 @@ jobs:
       - name: Install toolchain and QEMU
         shell: bash
         run: |
-          wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.tar.xz -O toolchain.tar.xz
+          wget https://occ-oss-prod.oss-cn-hangzhou.aliyuncs.com/resource//1744886347539/Xuantie-900-gcc-linux-6.6.0-glibc-x86_64-V3.0.2-20250410.tar.gz -O toolchain.tar.xz
+          # wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.toolchain_file}}.tar.xz -O toolchain.tar.xz
           sudo tar xf toolchain.tar.xz -C $GITHUB_WORKSPACE
           echo "${{matrix.config.toolchain_env}}=$GITHUB_WORKSPACE/${{matrix.config.toolchain_file}}" >> $GITHUB_ENV
+          cp -r ${{matrix.config.toolchain_env}}/sysroot/lib/* /lib/
+          cp -r ${{matrix.config.toolchain_env}}/sysroot/lib64/lp64d/* /lib/
 
           wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
           sudo tar xf qemu.tgz -C /usr/local/bin
