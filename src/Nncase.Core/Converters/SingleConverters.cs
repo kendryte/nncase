@@ -24,7 +24,9 @@ internal class SingleConverters :
     ISpanConverter<float, double>,
     ISpanConverter<float, BFloat16>,
     ISpanConverter<float, Float8E4M3>,
-    ISpanConverter<float, Float8E5M2>
+    ISpanConverter<float, Float8E5M2>,
+    ISpanConverter<float, Vector32<float>>,
+    ISpanConverter<Vector32<float>, float>
 {
     public void ConvertTo(ReadOnlySpan<float> source, Span<bool> dest, CastMode castMode)
     {
@@ -360,6 +362,50 @@ internal class SingleConverters :
         for (int i = 0; i < source.Length; i++)
         {
             dest[i] = (BFloat16)source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<float> source, Span<Vector32<float>> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        var elementsPerVector = Vector32<float>.Count;
+        var requiredSourceSize = dest.Length * elementsPerVector;
+
+        if (source.Length < requiredSourceSize)
+        {
+            throw new ArgumentException("Source buffer does not contain enough elements to fill the vectors");
+        }
+
+        for (int i = 0; i < dest.Length; i++)
+        {
+            var vector = default(Vector32<float>);
+            ConvertTo(source.Slice(i * elementsPerVector, elementsPerVector), vector.AsSpan(), castMode);
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<Vector32<float>> source, Span<float> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        var elementsPerVector = Vector32<float>.Count;
+        var requiredDestSize = source.Length * elementsPerVector;
+
+        if (dest.Length < requiredDestSize)
+        {
+            throw new ArgumentException("Destination buffer is not large enough for the flattened vector data");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            var vector = source[i];
+            ConvertTo(vector.AsSpan(), dest.Slice(i * elementsPerVector, elementsPerVector), castMode);
         }
     }
 }

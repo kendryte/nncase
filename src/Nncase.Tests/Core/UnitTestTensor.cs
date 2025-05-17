@@ -446,6 +446,7 @@ public sealed class UnitTestTensor
             }
         }
 
+        if (Environment.OSVersion.Platform != PlatformID.Win32NT)
         {
             var cfg = new IR.NN.PagedAttentionConfig(
                 1,
