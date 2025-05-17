@@ -333,11 +333,11 @@ public sealed class UnitTestTensor
     [Fact]
     public void TestTensorSerialize()
     {
-        var path = "UnitTestTensor_TestSeriable.json";
         var options = new JsonSerializerOptions() { WriteIndented = true };
         {
+            var path = Path.GetTempFileName();
             var original = Tensor.From(new int[] { 123 }, []);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);
             }
@@ -351,8 +351,9 @@ public sealed class UnitTestTensor
         }
 
         {
+            var path = Path.GetTempFileName();
             var original = Tensor.From(new int[] { 1, 2, 3, 4 }, [2, 2]);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);
             }
@@ -366,8 +367,9 @@ public sealed class UnitTestTensor
         }
 
         {
+            var path = Path.GetTempFileName();
             var original = Tensor.From(new float[] { 1, 2, 3, 4 }, [1, 4]);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);
             }
@@ -381,8 +383,9 @@ public sealed class UnitTestTensor
         }
 
         {
+            var path = Path.GetTempFileName();
             var original = Tensor.From(new float[] { 1, 2, 3, 4 }, [1, 4]);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);
             }
@@ -396,8 +399,9 @@ public sealed class UnitTestTensor
         }
 
         {
+            var path = Path.GetTempFileName();
             var original = Tensor.From(new Vector4<float>[] { Vector4<float>.Create([0, 1, 2, 3]), Vector4<float>.Create([4, 5, 6, 7]), Vector4<float>.Create([8, 9, 10, 11]), Vector4<float>.Create([12, 13, 14, 15]) }, [1, 4, 1]);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);
             }
@@ -411,8 +415,9 @@ public sealed class UnitTestTensor
         }
 
         {
+            var path = Path.GetTempFileName();
             var original = Tensor.From(new Vector4<bool>[] { Vector4<bool>.Create([true, false, true, false]), Vector4<bool>.Create([false, true, false, true]), Vector4<bool>.Create([false, false, false, false]), Vector4<bool>.Create([true, true, true, true]) }, [1, 4, 1]);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);
             }
@@ -426,6 +431,7 @@ public sealed class UnitTestTensor
         }
 
         {
+            var path = Path.GetTempFileName();
             var x = new bool[4, 4] {
                 { true, false, true, false },
                 { true, false, true, false },
@@ -433,7 +439,7 @@ public sealed class UnitTestTensor
                 { false, true, false, true },
             };
             var original = Tensor.From(new Vector4x4<bool>[] { Vector4x4<bool>.Create(x), Vector4x4<bool>.Create(x), }, [2, 1]);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);
             }
@@ -446,8 +452,8 @@ public sealed class UnitTestTensor
             }
         }
 
-        if (Environment.OSVersion.Platform != PlatformID.Win32NT)
         {
+            var path = Path.GetTempFileName();
             var cfg = new IR.NN.PagedAttentionConfig(
                 1,
                 2,
@@ -470,7 +476,7 @@ public sealed class UnitTestTensor
                 new[] { SBP.S(0) });
             var obj = new Evaluator.NN.RefPagedAttentionKVCache(cfg, 1, 4, Tensor.From([0L]), Tensor.From([4L]), Tensor.From([0L, 1L, 0L, 2L], [1, 2, 2]), Tensor.From([0L, 1L, 0L, 2L, 0L, 3L, 0L, 4L], [4, 2]), 4, Tensor.Zeros<Vector32<float>>([1, 1, 2, 3, 4, 5, 6]));
             var original = Tensor.From(new Reference<IR.NN.IPagedAttentionKVCache>[] { new(obj) }, []);
-            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);
             }
