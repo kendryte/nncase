@@ -14,7 +14,6 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
-using Google.Protobuf.WellKnownTypes;
 using Nncase.Buffers;
 using Nncase.IO;
 using Nncase.IR;
@@ -452,9 +451,9 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
     public static Tensor<T> Zeros<T>(ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>, INumberBase<T>
+        where T : unmanaged, IEquatable<T>
     {
-        return Tensor.FromScalar<T>(T.Zero, dimensions);
+        return Tensor.FromScalar<T>(GetOneOrZero<T>(false), dimensions);
     }
 
     public static Tensor Zeros(DataType dataType, ReadOnlySpan<long> dimensions)
@@ -471,9 +470,9 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <param name="dimensions">dimensions.</param>
     /// <returns>Tensor{T}.</returns>
     public static Tensor<T> Ones<T>(ReadOnlySpan<long> dimensions)
-        where T : unmanaged, IEquatable<T>, INumberBase<T>
+        where T : unmanaged, IEquatable<T>
     {
-        return Tensor.FromScalar<T>(T.One, dimensions);
+        return Tensor.FromScalar<T>(GetOneOrZero<T>(true), dimensions);
     }
 
     public static Tensor Ones(DataType dataType, ReadOnlySpan<long> dimensions)
@@ -626,15 +625,62 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     private static Tensor CreateTensorZerosImpl<T>(long[] dimensions)
-        where T : unmanaged, IEquatable<T>, INumberBase<T>
+        where T : unmanaged, IEquatable<T>
     {
-        return FromScalar(T.Zero, dimensions);
+        return FromScalar(GetOneOrZero<T>(false), dimensions);
     }
 
     private static Tensor CreateTensorOnesImpl<T>(long[] dimensions)
-        where T : unmanaged, IEquatable<T>, INumberBase<T>
+        where T : unmanaged, IEquatable<T>
     {
-        return FromScalar(T.One, dimensions);
+        return FromScalar(GetOneOrZero<T>(true), dimensions);
+    }
+
+    private static T GetOneOrZero<T>(bool isOne)
+        where T : unmanaged, IEquatable<T>
+    {
+        var type = typeof(T);
+        if (type == typeof(bool))
+        {
+            return (T)(object)isOne;
+        }
+        else if (type.GetInterfaces().Where(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(INumberBase<>))).SingleOrDefault() is Type numberType)
+        {
+            if (type.GetProperty(isOne ? "One" : "Zero", BindingFlags.Public | BindingFlags.Static) is PropertyInfo prop)
+            {
+                return (T)prop.GetValue(null)!;
+            }
+            else if (type.GetProperties(BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)!
+                .SingleOrDefault(info => info.Name.EndsWith(isOne ? ".One" : ".Zero")) is PropertyInfo prop2)
+            {
+                return (T)prop2.GetValue(null)!;
+            }
+            else
+            {
+                throw new NotSupportedException($"Type {type} can't get the One or Zero property.");
+            }
+        }
+        else if (type.GetInterfaces().Where(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(IVector<>))).SingleOrDefault() is Type vectorType)
+        {
+            var elemType = type.GenericTypeArguments[0];
+            var value = typeof(Tensor).GetMethod(nameof(GetOneOrZero), BindingFlags.Static | BindingFlags.NonPublic)?
+                .MakeGenericMethod(elemType)
+                .Invoke(null, new object[] { isOne })!;
+
+            var elements = Array.CreateInstance(elemType, (int)type.GetProperty("Count")?.GetValue(null)!);
+
+            typeof(Array).GetMethods(BindingFlags.Public | BindingFlags.Static)?
+                .Where(m => m.Name == "Fill" && m.IsGenericMethod && m.GetParameters().Length == 2)
+                .Select(m => m.MakeGenericMethod(elemType))
+                .SingleOrDefault()!
+                .Invoke(null, [elements, value]);
+            return (T)type.GetMethod("Create", BindingFlags.Public | BindingFlags.Static, [elemType.MakeArrayType()])?
+                .Invoke(null, [elements])!;
+        }
+        else
+        {
+            throw new NotSupportedException($"Type {type} is not supported.");
+        }
     }
 
     private sealed class ScalarTensorInitializer : ITensorInitializer

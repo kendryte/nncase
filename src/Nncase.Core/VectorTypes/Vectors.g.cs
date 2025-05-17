@@ -16,9 +16,14 @@ namespace Nncase;
 
 // NOTE fixed array not suppot generic
 
+public interface IVector<T>
+{
+    static int Count { get; }
+}
+
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector4<T> : INumberBase<Vector4<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector4<T> : IVector<Vector4<T>>, IEquatable<Vector4<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -46,152 +51,18 @@ public unsafe struct Vector4<T> : INumberBase<Vector4<T>>
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 4;
-
-    public static Vector4<T> One 
-    {
-        get 
-        {
-            Vector4<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector4<T> Zero 
-    {
-        get 
-        {
-            Vector4<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector4<T> AdditiveIdentity => Zero;
-
-    public static Vector4<T> MultiplicativeIdentity => One;
-
-    public static Vector4<T> operator +(Vector4<T> left, Vector4<T> right) 
-    {
-        Vector4<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector4<T> operator -(Vector4<T> left, Vector4<T> right) 
-    {
-        Vector4<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector4<T> operator *(Vector4<T> left, Vector4<T> right) 
-    {
-        Vector4<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector4<T> operator /(Vector4<T> left, Vector4<T> right) 
-    {
-        Vector4<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => 4;
 
 
-    public static Vector4<T> operator --(Vector4<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector4<T> left, Vector4<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector4<T> left, Vector4<T> right) => throw new NotImplementedException();
-    public static Vector4<T> operator ++(Vector4<T> value) => throw new NotImplementedException();
-    public static Vector4<T> operator -(Vector4<T> value) => throw new NotImplementedException();
-    public static Vector4<T> operator +(Vector4<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
-
-    public static Vector4<T> Abs(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector4<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector4<T> value) => throw new NotImplementedException();
-    public static Vector4<T> MaxMagnitude(Vector4<T> x, Vector4<T> y) => throw new NotImplementedException();
-    public static Vector4<T> MaxMagnitudeNumber(Vector4<T> x, Vector4<T> y) => throw new NotImplementedException();
-    public static Vector4<T> MinMagnitude(Vector4<T> x, Vector4<T> y) => throw new NotImplementedException();
-    public static Vector4<T> MinMagnitudeNumber(Vector4<T> x, Vector4<T> y) => throw new NotImplementedException();
-    public static Vector4<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector4<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector4<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector4<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector4<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector4<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector4<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector4<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector4<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector4<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector4<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector4<T> result) => throw new NotImplementedException();
-    public static Vector4<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector4<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector8<T> : INumberBase<Vector8<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector8<T> : IVector<Vector8<T>>, IEquatable<Vector8<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -223,152 +94,18 @@ public unsafe struct Vector8<T> : INumberBase<Vector8<T>>
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 8;
-
-    public static Vector8<T> One 
-    {
-        get 
-        {
-            Vector8<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector8<T> Zero 
-    {
-        get 
-        {
-            Vector8<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector8<T> AdditiveIdentity => Zero;
-
-    public static Vector8<T> MultiplicativeIdentity => One;
-
-    public static Vector8<T> operator +(Vector8<T> left, Vector8<T> right) 
-    {
-        Vector8<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector8<T> operator -(Vector8<T> left, Vector8<T> right) 
-    {
-        Vector8<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector8<T> operator *(Vector8<T> left, Vector8<T> right) 
-    {
-        Vector8<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector8<T> operator /(Vector8<T> left, Vector8<T> right) 
-    {
-        Vector8<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => 8;
 
 
-    public static Vector8<T> operator --(Vector8<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector8<T> left, Vector8<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector8<T> left, Vector8<T> right) => throw new NotImplementedException();
-    public static Vector8<T> operator ++(Vector8<T> value) => throw new NotImplementedException();
-    public static Vector8<T> operator -(Vector8<T> value) => throw new NotImplementedException();
-    public static Vector8<T> operator +(Vector8<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
-
-    public static Vector8<T> Abs(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector8<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector8<T> value) => throw new NotImplementedException();
-    public static Vector8<T> MaxMagnitude(Vector8<T> x, Vector8<T> y) => throw new NotImplementedException();
-    public static Vector8<T> MaxMagnitudeNumber(Vector8<T> x, Vector8<T> y) => throw new NotImplementedException();
-    public static Vector8<T> MinMagnitude(Vector8<T> x, Vector8<T> y) => throw new NotImplementedException();
-    public static Vector8<T> MinMagnitudeNumber(Vector8<T> x, Vector8<T> y) => throw new NotImplementedException();
-    public static Vector8<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector8<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector8<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector8<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector8<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector8<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector8<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector8<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector8<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector8<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector8<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector8<T> result) => throw new NotImplementedException();
-    public static Vector8<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector8<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector16<T> : INumberBase<Vector16<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector16<T> : IVector<Vector16<T>>, IEquatable<Vector16<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -408,152 +145,18 @@ public unsafe struct Vector16<T> : INumberBase<Vector16<T>>
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 16;
-
-    public static Vector16<T> One 
-    {
-        get 
-        {
-            Vector16<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector16<T> Zero 
-    {
-        get 
-        {
-            Vector16<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector16<T> AdditiveIdentity => Zero;
-
-    public static Vector16<T> MultiplicativeIdentity => One;
-
-    public static Vector16<T> operator +(Vector16<T> left, Vector16<T> right) 
-    {
-        Vector16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector16<T> operator -(Vector16<T> left, Vector16<T> right) 
-    {
-        Vector16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector16<T> operator *(Vector16<T> left, Vector16<T> right) 
-    {
-        Vector16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector16<T> operator /(Vector16<T> left, Vector16<T> right) 
-    {
-        Vector16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => 16;
 
 
-    public static Vector16<T> operator --(Vector16<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector16<T> left, Vector16<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector16<T> left, Vector16<T> right) => throw new NotImplementedException();
-    public static Vector16<T> operator ++(Vector16<T> value) => throw new NotImplementedException();
-    public static Vector16<T> operator -(Vector16<T> value) => throw new NotImplementedException();
-    public static Vector16<T> operator +(Vector16<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
-
-    public static Vector16<T> Abs(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector16<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector16<T> value) => throw new NotImplementedException();
-    public static Vector16<T> MaxMagnitude(Vector16<T> x, Vector16<T> y) => throw new NotImplementedException();
-    public static Vector16<T> MaxMagnitudeNumber(Vector16<T> x, Vector16<T> y) => throw new NotImplementedException();
-    public static Vector16<T> MinMagnitude(Vector16<T> x, Vector16<T> y) => throw new NotImplementedException();
-    public static Vector16<T> MinMagnitudeNumber(Vector16<T> x, Vector16<T> y) => throw new NotImplementedException();
-    public static Vector16<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector16<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector16<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector16<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector16<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector16<T> result) => throw new NotImplementedException();
-    public static Vector16<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector16<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32<T> : INumberBase<Vector32<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector32<T> : IVector<Vector32<T>>, IEquatable<Vector32<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -609,152 +212,18 @@ public unsafe struct Vector32<T> : INumberBase<Vector32<T>>
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 32;
-
-    public static Vector32<T> One 
-    {
-        get 
-        {
-            Vector32<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector32<T> Zero 
-    {
-        get 
-        {
-            Vector32<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector32<T> AdditiveIdentity => Zero;
-
-    public static Vector32<T> MultiplicativeIdentity => One;
-
-    public static Vector32<T> operator +(Vector32<T> left, Vector32<T> right) 
-    {
-        Vector32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32<T> operator -(Vector32<T> left, Vector32<T> right) 
-    {
-        Vector32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32<T> operator *(Vector32<T> left, Vector32<T> right) 
-    {
-        Vector32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32<T> operator /(Vector32<T> left, Vector32<T> right) 
-    {
-        Vector32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => 32;
 
 
-    public static Vector32<T> operator --(Vector32<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector32<T> left, Vector32<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector32<T> left, Vector32<T> right) => throw new NotImplementedException();
-    public static Vector32<T> operator ++(Vector32<T> value) => throw new NotImplementedException();
-    public static Vector32<T> operator -(Vector32<T> value) => throw new NotImplementedException();
-    public static Vector32<T> operator +(Vector32<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
-
-    public static Vector32<T> Abs(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector32<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector32<T> value) => throw new NotImplementedException();
-    public static Vector32<T> MaxMagnitude(Vector32<T> x, Vector32<T> y) => throw new NotImplementedException();
-    public static Vector32<T> MaxMagnitudeNumber(Vector32<T> x, Vector32<T> y) => throw new NotImplementedException();
-    public static Vector32<T> MinMagnitude(Vector32<T> x, Vector32<T> y) => throw new NotImplementedException();
-    public static Vector32<T> MinMagnitudeNumber(Vector32<T> x, Vector32<T> y) => throw new NotImplementedException();
-    public static Vector32<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector32<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector32<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32<T> result) => throw new NotImplementedException();
-    public static Vector32<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64<T> : INumberBase<Vector64<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector64<T> : IVector<Vector64<T>>, IEquatable<Vector64<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -842,152 +311,18 @@ public unsafe struct Vector64<T> : INumberBase<Vector64<T>>
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 64;
-
-    public static Vector64<T> One 
-    {
-        get 
-        {
-            Vector64<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector64<T> Zero 
-    {
-        get 
-        {
-            Vector64<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector64<T> AdditiveIdentity => Zero;
-
-    public static Vector64<T> MultiplicativeIdentity => One;
-
-    public static Vector64<T> operator +(Vector64<T> left, Vector64<T> right) 
-    {
-        Vector64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64<T> operator -(Vector64<T> left, Vector64<T> right) 
-    {
-        Vector64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64<T> operator *(Vector64<T> left, Vector64<T> right) 
-    {
-        Vector64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64<T> operator /(Vector64<T> left, Vector64<T> right) 
-    {
-        Vector64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => 64;
 
 
-    public static Vector64<T> operator --(Vector64<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector64<T> left, Vector64<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector64<T> left, Vector64<T> right) => throw new NotImplementedException();
-    public static Vector64<T> operator ++(Vector64<T> value) => throw new NotImplementedException();
-    public static Vector64<T> operator -(Vector64<T> value) => throw new NotImplementedException();
-    public static Vector64<T> operator +(Vector64<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
-
-    public static Vector64<T> Abs(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector64<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector64<T> value) => throw new NotImplementedException();
-    public static Vector64<T> MaxMagnitude(Vector64<T> x, Vector64<T> y) => throw new NotImplementedException();
-    public static Vector64<T> MaxMagnitudeNumber(Vector64<T> x, Vector64<T> y) => throw new NotImplementedException();
-    public static Vector64<T> MinMagnitude(Vector64<T> x, Vector64<T> y) => throw new NotImplementedException();
-    public static Vector64<T> MinMagnitudeNumber(Vector64<T> x, Vector64<T> y) => throw new NotImplementedException();
-    public static Vector64<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector64<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector64<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64<T> result) => throw new NotImplementedException();
-    public static Vector64<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector128<T> : INumberBase<Vector128<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector128<T> : IVector<Vector128<T>>, IEquatable<Vector128<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -1139,152 +474,18 @@ public unsafe struct Vector128<T> : INumberBase<Vector128<T>>
 
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 128;
-
-    public static Vector128<T> One 
-    {
-        get 
-        {
-            Vector128<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector128<T> Zero 
-    {
-        get 
-        {
-            Vector128<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector128<T> AdditiveIdentity => Zero;
-
-    public static Vector128<T> MultiplicativeIdentity => One;
-
-    public static Vector128<T> operator +(Vector128<T> left, Vector128<T> right) 
-    {
-        Vector128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector128<T> operator -(Vector128<T> left, Vector128<T> right) 
-    {
-        Vector128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector128<T> operator *(Vector128<T> left, Vector128<T> right) 
-    {
-        Vector128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector128<T> operator /(Vector128<T> left, Vector128<T> right) 
-    {
-        Vector128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => 128;
 
 
-    public static Vector128<T> operator --(Vector128<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector128<T> left, Vector128<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector128<T> left, Vector128<T> right) => throw new NotImplementedException();
-    public static Vector128<T> operator ++(Vector128<T> value) => throw new NotImplementedException();
-    public static Vector128<T> operator -(Vector128<T> value) => throw new NotImplementedException();
-    public static Vector128<T> operator +(Vector128<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
-
-    public static Vector128<T> Abs(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector128<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector128<T> value) => throw new NotImplementedException();
-    public static Vector128<T> MaxMagnitude(Vector128<T> x, Vector128<T> y) => throw new NotImplementedException();
-    public static Vector128<T> MaxMagnitudeNumber(Vector128<T> x, Vector128<T> y) => throw new NotImplementedException();
-    public static Vector128<T> MinMagnitude(Vector128<T> x, Vector128<T> y) => throw new NotImplementedException();
-    public static Vector128<T> MinMagnitudeNumber(Vector128<T> x, Vector128<T> y) => throw new NotImplementedException();
-    public static Vector128<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector128<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector128<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector128<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector128<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector128<T> result) => throw new NotImplementedException();
-    public static Vector128<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector128<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector4x4<T> : INumberBase<Vector4x4<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector4x4<T> : IVector<Vector4x4<T>>, IEquatable<Vector4x4<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -1302,6 +503,15 @@ public unsafe struct Vector4x4<T> : INumberBase<Vector4x4<T>>
     private T _item_3_1;
     private T _item_3_2;
     private T _item_3_3;
+
+    public static Vector4x4<T> Create(T[] array) 
+    {
+        Vector4x4<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
 
     public static Vector4x4<T> Create(T[,] array) 
     {
@@ -1329,109 +539,14 @@ public unsafe struct Vector4x4<T> : INumberBase<Vector4x4<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 4;
+    public static int Height => 4;
 
-    public int Width => 4;
+    public static int Width => 4;
 
-    public int Count => Height * Width;
-
-    public static Vector4x4<T> One 
-    {
-        get 
-        {
-            Vector4x4<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector4x4<T> Zero 
-    {
-        get 
-        {
-            Vector4x4<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector4x4<T> AdditiveIdentity => Zero;
-
-    public static Vector4x4<T> MultiplicativeIdentity => One;
-
-    public static Vector4x4<T> operator +(Vector4x4<T> left, Vector4x4<T> right) 
-    {
-        Vector4x4<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector4x4<T> operator -(Vector4x4<T> left, Vector4x4<T> right) 
-    {
-        Vector4x4<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector4x4<T> operator *(Vector4x4<T> left, Vector4x4<T> right) 
-    {
-        Vector4x4<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector4x4<T> operator /(Vector4x4<T> left, Vector4x4<T> right) 
-    {
-        Vector4x4<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector4x4<T> operator --(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector4x4<T> left, Vector4x4<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector4x4<T> left, Vector4x4<T> right) => throw new NotImplementedException();
-    public static Vector4x4<T> operator ++(Vector4x4<T> value) => throw new NotImplementedException();
-    public static Vector4x4<T> operator -(Vector4x4<T> value) => throw new NotImplementedException();
-    public static Vector4x4<T> operator +(Vector4x4<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -1446,50 +561,11 @@ public unsafe struct Vector4x4<T> : INumberBase<Vector4x4<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector4x4<T> Abs(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector4x4<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector4x4<T> value) => throw new NotImplementedException();
-    public static Vector4x4<T> MaxMagnitude(Vector4x4<T> x, Vector4x4<T> y) => throw new NotImplementedException();
-    public static Vector4x4<T> MaxMagnitudeNumber(Vector4x4<T> x, Vector4x4<T> y) => throw new NotImplementedException();
-    public static Vector4x4<T> MinMagnitude(Vector4x4<T> x, Vector4x4<T> y) => throw new NotImplementedException();
-    public static Vector4x4<T> MinMagnitudeNumber(Vector4x4<T> x, Vector4x4<T> y) => throw new NotImplementedException();
-    public static Vector4x4<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector4x4<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector4x4<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector4x4<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector4x4<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector4x4<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector4x4<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector4x4<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector4x4<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector4x4<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector4x4<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector4x4<T> result) => throw new NotImplementedException();
-    public static Vector4x4<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector4x4<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector8x8<T> : INumberBase<Vector8x8<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector8x8<T> : IVector<Vector8x8<T>>, IEquatable<Vector8x8<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -1556,6 +632,15 @@ public unsafe struct Vector8x8<T> : INumberBase<Vector8x8<T>>
     private T _item_7_6;
     private T _item_7_7;
 
+    public static Vector8x8<T> Create(T[] array) 
+    {
+        Vector8x8<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector8x8<T> Create(T[,] array) 
     {
         Vector8x8<T> vec = default;
@@ -1582,109 +667,14 @@ public unsafe struct Vector8x8<T> : INumberBase<Vector8x8<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 8;
+    public static int Height => 8;
 
-    public int Width => 8;
+    public static int Width => 8;
 
-    public int Count => Height * Width;
-
-    public static Vector8x8<T> One 
-    {
-        get 
-        {
-            Vector8x8<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector8x8<T> Zero 
-    {
-        get 
-        {
-            Vector8x8<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector8x8<T> AdditiveIdentity => Zero;
-
-    public static Vector8x8<T> MultiplicativeIdentity => One;
-
-    public static Vector8x8<T> operator +(Vector8x8<T> left, Vector8x8<T> right) 
-    {
-        Vector8x8<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector8x8<T> operator -(Vector8x8<T> left, Vector8x8<T> right) 
-    {
-        Vector8x8<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector8x8<T> operator *(Vector8x8<T> left, Vector8x8<T> right) 
-    {
-        Vector8x8<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector8x8<T> operator /(Vector8x8<T> left, Vector8x8<T> right) 
-    {
-        Vector8x8<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector8x8<T> operator --(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector8x8<T> left, Vector8x8<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector8x8<T> left, Vector8x8<T> right) => throw new NotImplementedException();
-    public static Vector8x8<T> operator ++(Vector8x8<T> value) => throw new NotImplementedException();
-    public static Vector8x8<T> operator -(Vector8x8<T> value) => throw new NotImplementedException();
-    public static Vector8x8<T> operator +(Vector8x8<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -1699,50 +689,11 @@ public unsafe struct Vector8x8<T> : INumberBase<Vector8x8<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector8x8<T> Abs(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector8x8<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector8x8<T> value) => throw new NotImplementedException();
-    public static Vector8x8<T> MaxMagnitude(Vector8x8<T> x, Vector8x8<T> y) => throw new NotImplementedException();
-    public static Vector8x8<T> MaxMagnitudeNumber(Vector8x8<T> x, Vector8x8<T> y) => throw new NotImplementedException();
-    public static Vector8x8<T> MinMagnitude(Vector8x8<T> x, Vector8x8<T> y) => throw new NotImplementedException();
-    public static Vector8x8<T> MinMagnitudeNumber(Vector8x8<T> x, Vector8x8<T> y) => throw new NotImplementedException();
-    public static Vector8x8<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector8x8<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector8x8<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector8x8<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector8x8<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector8x8<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector8x8<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector8x8<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector8x8<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector8x8<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector8x8<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector8x8<T> result) => throw new NotImplementedException();
-    public static Vector8x8<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector8x8<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector16x16<T> : INumberBase<Vector16x16<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector16x16<T> : IVector<Vector16x16<T>>, IEquatable<Vector16x16<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -2001,6 +952,15 @@ public unsafe struct Vector16x16<T> : INumberBase<Vector16x16<T>>
     private T _item_15_14;
     private T _item_15_15;
 
+    public static Vector16x16<T> Create(T[] array) 
+    {
+        Vector16x16<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector16x16<T> Create(T[,] array) 
     {
         Vector16x16<T> vec = default;
@@ -2027,109 +987,14 @@ public unsafe struct Vector16x16<T> : INumberBase<Vector16x16<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 16;
+    public static int Height => 16;
 
-    public int Width => 16;
+    public static int Width => 16;
 
-    public int Count => Height * Width;
-
-    public static Vector16x16<T> One 
-    {
-        get 
-        {
-            Vector16x16<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector16x16<T> Zero 
-    {
-        get 
-        {
-            Vector16x16<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector16x16<T> AdditiveIdentity => Zero;
-
-    public static Vector16x16<T> MultiplicativeIdentity => One;
-
-    public static Vector16x16<T> operator +(Vector16x16<T> left, Vector16x16<T> right) 
-    {
-        Vector16x16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector16x16<T> operator -(Vector16x16<T> left, Vector16x16<T> right) 
-    {
-        Vector16x16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector16x16<T> operator *(Vector16x16<T> left, Vector16x16<T> right) 
-    {
-        Vector16x16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector16x16<T> operator /(Vector16x16<T> left, Vector16x16<T> right) 
-    {
-        Vector16x16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector16x16<T> operator --(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector16x16<T> left, Vector16x16<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector16x16<T> left, Vector16x16<T> right) => throw new NotImplementedException();
-    public static Vector16x16<T> operator ++(Vector16x16<T> value) => throw new NotImplementedException();
-    public static Vector16x16<T> operator -(Vector16x16<T> value) => throw new NotImplementedException();
-    public static Vector16x16<T> operator +(Vector16x16<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -2144,50 +1009,11 @@ public unsafe struct Vector16x16<T> : INumberBase<Vector16x16<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector16x16<T> Abs(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector16x16<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector16x16<T> value) => throw new NotImplementedException();
-    public static Vector16x16<T> MaxMagnitude(Vector16x16<T> x, Vector16x16<T> y) => throw new NotImplementedException();
-    public static Vector16x16<T> MaxMagnitudeNumber(Vector16x16<T> x, Vector16x16<T> y) => throw new NotImplementedException();
-    public static Vector16x16<T> MinMagnitude(Vector16x16<T> x, Vector16x16<T> y) => throw new NotImplementedException();
-    public static Vector16x16<T> MinMagnitudeNumber(Vector16x16<T> x, Vector16x16<T> y) => throw new NotImplementedException();
-    public static Vector16x16<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector16x16<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector16x16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector16x16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector16x16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector16x16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector16x16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector16x16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector16x16<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector16x16<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector16x16<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector16x16<T> result) => throw new NotImplementedException();
-    public static Vector16x16<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector16x16<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x16<T> : INumberBase<Vector32x16<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector32x16<T> : IVector<Vector32x16<T>>, IEquatable<Vector32x16<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -2702,6 +1528,15 @@ public unsafe struct Vector32x16<T> : INumberBase<Vector32x16<T>>
     private T _item_31_14;
     private T _item_31_15;
 
+    public static Vector32x16<T> Create(T[] array) 
+    {
+        Vector32x16<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector32x16<T> Create(T[,] array) 
     {
         Vector32x16<T> vec = default;
@@ -2728,109 +1563,14 @@ public unsafe struct Vector32x16<T> : INumberBase<Vector32x16<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 32;
+    public static int Height => 32;
 
-    public int Width => 16;
+    public static int Width => 16;
 
-    public int Count => Height * Width;
-
-    public static Vector32x16<T> One 
-    {
-        get 
-        {
-            Vector32x16<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector32x16<T> Zero 
-    {
-        get 
-        {
-            Vector32x16<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector32x16<T> AdditiveIdentity => Zero;
-
-    public static Vector32x16<T> MultiplicativeIdentity => One;
-
-    public static Vector32x16<T> operator +(Vector32x16<T> left, Vector32x16<T> right) 
-    {
-        Vector32x16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x16<T> operator -(Vector32x16<T> left, Vector32x16<T> right) 
-    {
-        Vector32x16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x16<T> operator *(Vector32x16<T> left, Vector32x16<T> right) 
-    {
-        Vector32x16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x16<T> operator /(Vector32x16<T> left, Vector32x16<T> right) 
-    {
-        Vector32x16<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector32x16<T> operator --(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector32x16<T> left, Vector32x16<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector32x16<T> left, Vector32x16<T> right) => throw new NotImplementedException();
-    public static Vector32x16<T> operator ++(Vector32x16<T> value) => throw new NotImplementedException();
-    public static Vector32x16<T> operator -(Vector32x16<T> value) => throw new NotImplementedException();
-    public static Vector32x16<T> operator +(Vector32x16<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -2845,50 +1585,11 @@ public unsafe struct Vector32x16<T> : INumberBase<Vector32x16<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector32x16<T> Abs(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector32x16<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector32x16<T> value) => throw new NotImplementedException();
-    public static Vector32x16<T> MaxMagnitude(Vector32x16<T> x, Vector32x16<T> y) => throw new NotImplementedException();
-    public static Vector32x16<T> MaxMagnitudeNumber(Vector32x16<T> x, Vector32x16<T> y) => throw new NotImplementedException();
-    public static Vector32x16<T> MinMagnitude(Vector32x16<T> x, Vector32x16<T> y) => throw new NotImplementedException();
-    public static Vector32x16<T> MinMagnitudeNumber(Vector32x16<T> x, Vector32x16<T> y) => throw new NotImplementedException();
-    public static Vector32x16<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector32x16<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x16<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector32x16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector32x16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector32x16<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x16<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x16<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector32x16<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x16<T> result) => throw new NotImplementedException();
-    public static Vector32x16<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x16<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x32<T> : INumberBase<Vector32x32<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector32x32<T> : IVector<Vector32x32<T>>, IEquatable<Vector32x32<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -3915,6 +2616,15 @@ public unsafe struct Vector32x32<T> : INumberBase<Vector32x32<T>>
     private T _item_31_30;
     private T _item_31_31;
 
+    public static Vector32x32<T> Create(T[] array) 
+    {
+        Vector32x32<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector32x32<T> Create(T[,] array) 
     {
         Vector32x32<T> vec = default;
@@ -3941,109 +2651,14 @@ public unsafe struct Vector32x32<T> : INumberBase<Vector32x32<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 32;
+    public static int Height => 32;
 
-    public int Width => 32;
+    public static int Width => 32;
 
-    public int Count => Height * Width;
-
-    public static Vector32x32<T> One 
-    {
-        get 
-        {
-            Vector32x32<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector32x32<T> Zero 
-    {
-        get 
-        {
-            Vector32x32<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector32x32<T> AdditiveIdentity => Zero;
-
-    public static Vector32x32<T> MultiplicativeIdentity => One;
-
-    public static Vector32x32<T> operator +(Vector32x32<T> left, Vector32x32<T> right) 
-    {
-        Vector32x32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x32<T> operator -(Vector32x32<T> left, Vector32x32<T> right) 
-    {
-        Vector32x32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x32<T> operator *(Vector32x32<T> left, Vector32x32<T> right) 
-    {
-        Vector32x32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x32<T> operator /(Vector32x32<T> left, Vector32x32<T> right) 
-    {
-        Vector32x32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector32x32<T> operator --(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector32x32<T> left, Vector32x32<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector32x32<T> left, Vector32x32<T> right) => throw new NotImplementedException();
-    public static Vector32x32<T> operator ++(Vector32x32<T> value) => throw new NotImplementedException();
-    public static Vector32x32<T> operator -(Vector32x32<T> value) => throw new NotImplementedException();
-    public static Vector32x32<T> operator +(Vector32x32<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -4058,50 +2673,11 @@ public unsafe struct Vector32x32<T> : INumberBase<Vector32x32<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector32x32<T> Abs(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector32x32<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector32x32<T> value) => throw new NotImplementedException();
-    public static Vector32x32<T> MaxMagnitude(Vector32x32<T> x, Vector32x32<T> y) => throw new NotImplementedException();
-    public static Vector32x32<T> MaxMagnitudeNumber(Vector32x32<T> x, Vector32x32<T> y) => throw new NotImplementedException();
-    public static Vector32x32<T> MinMagnitude(Vector32x32<T> x, Vector32x32<T> y) => throw new NotImplementedException();
-    public static Vector32x32<T> MinMagnitudeNumber(Vector32x32<T> x, Vector32x32<T> y) => throw new NotImplementedException();
-    public static Vector32x32<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector32x32<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector32x32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector32x32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector32x32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x32<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x32<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector32x32<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x32<T> result) => throw new NotImplementedException();
-    public static Vector32x32<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x32<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x64<T> : INumberBase<Vector32x64<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector32x64<T> : IVector<Vector32x64<T>>, IEquatable<Vector32x64<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -6152,6 +4728,15 @@ public unsafe struct Vector32x64<T> : INumberBase<Vector32x64<T>>
     private T _item_31_62;
     private T _item_31_63;
 
+    public static Vector32x64<T> Create(T[] array) 
+    {
+        Vector32x64<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector32x64<T> Create(T[,] array) 
     {
         Vector32x64<T> vec = default;
@@ -6178,109 +4763,14 @@ public unsafe struct Vector32x64<T> : INumberBase<Vector32x64<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 32;
+    public static int Height => 32;
 
-    public int Width => 64;
+    public static int Width => 64;
 
-    public int Count => Height * Width;
-
-    public static Vector32x64<T> One 
-    {
-        get 
-        {
-            Vector32x64<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector32x64<T> Zero 
-    {
-        get 
-        {
-            Vector32x64<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector32x64<T> AdditiveIdentity => Zero;
-
-    public static Vector32x64<T> MultiplicativeIdentity => One;
-
-    public static Vector32x64<T> operator +(Vector32x64<T> left, Vector32x64<T> right) 
-    {
-        Vector32x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x64<T> operator -(Vector32x64<T> left, Vector32x64<T> right) 
-    {
-        Vector32x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x64<T> operator *(Vector32x64<T> left, Vector32x64<T> right) 
-    {
-        Vector32x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x64<T> operator /(Vector32x64<T> left, Vector32x64<T> right) 
-    {
-        Vector32x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector32x64<T> operator --(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector32x64<T> left, Vector32x64<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector32x64<T> left, Vector32x64<T> right) => throw new NotImplementedException();
-    public static Vector32x64<T> operator ++(Vector32x64<T> value) => throw new NotImplementedException();
-    public static Vector32x64<T> operator -(Vector32x64<T> value) => throw new NotImplementedException();
-    public static Vector32x64<T> operator +(Vector32x64<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -6295,50 +4785,11 @@ public unsafe struct Vector32x64<T> : INumberBase<Vector32x64<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector32x64<T> Abs(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector32x64<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector32x64<T> value) => throw new NotImplementedException();
-    public static Vector32x64<T> MaxMagnitude(Vector32x64<T> x, Vector32x64<T> y) => throw new NotImplementedException();
-    public static Vector32x64<T> MaxMagnitudeNumber(Vector32x64<T> x, Vector32x64<T> y) => throw new NotImplementedException();
-    public static Vector32x64<T> MinMagnitude(Vector32x64<T> x, Vector32x64<T> y) => throw new NotImplementedException();
-    public static Vector32x64<T> MinMagnitudeNumber(Vector32x64<T> x, Vector32x64<T> y) => throw new NotImplementedException();
-    public static Vector32x64<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector32x64<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector32x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector32x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector32x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x64<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x64<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector32x64<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x64<T> result) => throw new NotImplementedException();
-    public static Vector32x64<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x64<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x128<T> : INumberBase<Vector32x128<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector32x128<T> : IVector<Vector32x128<T>>, IEquatable<Vector32x128<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -10437,6 +8888,15 @@ public unsafe struct Vector32x128<T> : INumberBase<Vector32x128<T>>
     private T _item_31_126;
     private T _item_31_127;
 
+    public static Vector32x128<T> Create(T[] array) 
+    {
+        Vector32x128<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector32x128<T> Create(T[,] array) 
     {
         Vector32x128<T> vec = default;
@@ -10463,109 +8923,14 @@ public unsafe struct Vector32x128<T> : INumberBase<Vector32x128<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 32;
+    public static int Height => 32;
 
-    public int Width => 128;
+    public static int Width => 128;
 
-    public int Count => Height * Width;
-
-    public static Vector32x128<T> One 
-    {
-        get 
-        {
-            Vector32x128<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector32x128<T> Zero 
-    {
-        get 
-        {
-            Vector32x128<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector32x128<T> AdditiveIdentity => Zero;
-
-    public static Vector32x128<T> MultiplicativeIdentity => One;
-
-    public static Vector32x128<T> operator +(Vector32x128<T> left, Vector32x128<T> right) 
-    {
-        Vector32x128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x128<T> operator -(Vector32x128<T> left, Vector32x128<T> right) 
-    {
-        Vector32x128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x128<T> operator *(Vector32x128<T> left, Vector32x128<T> right) 
-    {
-        Vector32x128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector32x128<T> operator /(Vector32x128<T> left, Vector32x128<T> right) 
-    {
-        Vector32x128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector32x128<T> operator --(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector32x128<T> left, Vector32x128<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector32x128<T> left, Vector32x128<T> right) => throw new NotImplementedException();
-    public static Vector32x128<T> operator ++(Vector32x128<T> value) => throw new NotImplementedException();
-    public static Vector32x128<T> operator -(Vector32x128<T> value) => throw new NotImplementedException();
-    public static Vector32x128<T> operator +(Vector32x128<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -10580,50 +8945,11 @@ public unsafe struct Vector32x128<T> : INumberBase<Vector32x128<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector32x128<T> Abs(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector32x128<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector32x128<T> value) => throw new NotImplementedException();
-    public static Vector32x128<T> MaxMagnitude(Vector32x128<T> x, Vector32x128<T> y) => throw new NotImplementedException();
-    public static Vector32x128<T> MaxMagnitudeNumber(Vector32x128<T> x, Vector32x128<T> y) => throw new NotImplementedException();
-    public static Vector32x128<T> MinMagnitude(Vector32x128<T> x, Vector32x128<T> y) => throw new NotImplementedException();
-    public static Vector32x128<T> MinMagnitudeNumber(Vector32x128<T> x, Vector32x128<T> y) => throw new NotImplementedException();
-    public static Vector32x128<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector32x128<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector32x128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector32x128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector32x128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector32x128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x128<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x128<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector32x128<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x128<T> result) => throw new NotImplementedException();
-    public static Vector32x128<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector32x128<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x32<T> : INumberBase<Vector64x32<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector64x32<T> : IVector<Vector64x32<T>>, IEquatable<Vector64x32<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -12674,6 +11000,15 @@ public unsafe struct Vector64x32<T> : INumberBase<Vector64x32<T>>
     private T _item_63_30;
     private T _item_63_31;
 
+    public static Vector64x32<T> Create(T[] array) 
+    {
+        Vector64x32<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector64x32<T> Create(T[,] array) 
     {
         Vector64x32<T> vec = default;
@@ -12700,109 +11035,14 @@ public unsafe struct Vector64x32<T> : INumberBase<Vector64x32<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 64;
+    public static int Height => 64;
 
-    public int Width => 32;
+    public static int Width => 32;
 
-    public int Count => Height * Width;
-
-    public static Vector64x32<T> One 
-    {
-        get 
-        {
-            Vector64x32<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector64x32<T> Zero 
-    {
-        get 
-        {
-            Vector64x32<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector64x32<T> AdditiveIdentity => Zero;
-
-    public static Vector64x32<T> MultiplicativeIdentity => One;
-
-    public static Vector64x32<T> operator +(Vector64x32<T> left, Vector64x32<T> right) 
-    {
-        Vector64x32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x32<T> operator -(Vector64x32<T> left, Vector64x32<T> right) 
-    {
-        Vector64x32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x32<T> operator *(Vector64x32<T> left, Vector64x32<T> right) 
-    {
-        Vector64x32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x32<T> operator /(Vector64x32<T> left, Vector64x32<T> right) 
-    {
-        Vector64x32<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector64x32<T> operator --(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector64x32<T> left, Vector64x32<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector64x32<T> left, Vector64x32<T> right) => throw new NotImplementedException();
-    public static Vector64x32<T> operator ++(Vector64x32<T> value) => throw new NotImplementedException();
-    public static Vector64x32<T> operator -(Vector64x32<T> value) => throw new NotImplementedException();
-    public static Vector64x32<T> operator +(Vector64x32<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -12817,50 +11057,11 @@ public unsafe struct Vector64x32<T> : INumberBase<Vector64x32<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector64x32<T> Abs(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector64x32<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector64x32<T> value) => throw new NotImplementedException();
-    public static Vector64x32<T> MaxMagnitude(Vector64x32<T> x, Vector64x32<T> y) => throw new NotImplementedException();
-    public static Vector64x32<T> MaxMagnitudeNumber(Vector64x32<T> x, Vector64x32<T> y) => throw new NotImplementedException();
-    public static Vector64x32<T> MinMagnitude(Vector64x32<T> x, Vector64x32<T> y) => throw new NotImplementedException();
-    public static Vector64x32<T> MinMagnitudeNumber(Vector64x32<T> x, Vector64x32<T> y) => throw new NotImplementedException();
-    public static Vector64x32<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector64x32<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x32<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector64x32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector64x32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector64x32<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x32<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x32<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector64x32<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x32<T> result) => throw new NotImplementedException();
-    public static Vector64x32<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x32<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x64<T> : INumberBase<Vector64x64<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector64x64<T> : IVector<Vector64x64<T>>, IEquatable<Vector64x64<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -16959,6 +15160,15 @@ public unsafe struct Vector64x64<T> : INumberBase<Vector64x64<T>>
     private T _item_63_62;
     private T _item_63_63;
 
+    public static Vector64x64<T> Create(T[] array) 
+    {
+        Vector64x64<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector64x64<T> Create(T[,] array) 
     {
         Vector64x64<T> vec = default;
@@ -16985,109 +15195,14 @@ public unsafe struct Vector64x64<T> : INumberBase<Vector64x64<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 64;
+    public static int Height => 64;
 
-    public int Width => 64;
+    public static int Width => 64;
 
-    public int Count => Height * Width;
-
-    public static Vector64x64<T> One 
-    {
-        get 
-        {
-            Vector64x64<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector64x64<T> Zero 
-    {
-        get 
-        {
-            Vector64x64<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector64x64<T> AdditiveIdentity => Zero;
-
-    public static Vector64x64<T> MultiplicativeIdentity => One;
-
-    public static Vector64x64<T> operator +(Vector64x64<T> left, Vector64x64<T> right) 
-    {
-        Vector64x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x64<T> operator -(Vector64x64<T> left, Vector64x64<T> right) 
-    {
-        Vector64x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x64<T> operator *(Vector64x64<T> left, Vector64x64<T> right) 
-    {
-        Vector64x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x64<T> operator /(Vector64x64<T> left, Vector64x64<T> right) 
-    {
-        Vector64x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector64x64<T> operator --(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector64x64<T> left, Vector64x64<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector64x64<T> left, Vector64x64<T> right) => throw new NotImplementedException();
-    public static Vector64x64<T> operator ++(Vector64x64<T> value) => throw new NotImplementedException();
-    public static Vector64x64<T> operator -(Vector64x64<T> value) => throw new NotImplementedException();
-    public static Vector64x64<T> operator +(Vector64x64<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -17102,50 +15217,11 @@ public unsafe struct Vector64x64<T> : INumberBase<Vector64x64<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector64x64<T> Abs(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector64x64<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector64x64<T> value) => throw new NotImplementedException();
-    public static Vector64x64<T> MaxMagnitude(Vector64x64<T> x, Vector64x64<T> y) => throw new NotImplementedException();
-    public static Vector64x64<T> MaxMagnitudeNumber(Vector64x64<T> x, Vector64x64<T> y) => throw new NotImplementedException();
-    public static Vector64x64<T> MinMagnitude(Vector64x64<T> x, Vector64x64<T> y) => throw new NotImplementedException();
-    public static Vector64x64<T> MinMagnitudeNumber(Vector64x64<T> x, Vector64x64<T> y) => throw new NotImplementedException();
-    public static Vector64x64<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector64x64<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector64x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector64x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector64x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x64<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x64<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector64x64<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x64<T> result) => throw new NotImplementedException();
-    public static Vector64x64<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x64<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x128<T> : INumberBase<Vector64x128<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector64x128<T> : IVector<Vector64x128<T>>, IEquatable<Vector64x128<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -25340,6 +23416,15 @@ public unsafe struct Vector64x128<T> : INumberBase<Vector64x128<T>>
     private T _item_63_126;
     private T _item_63_127;
 
+    public static Vector64x128<T> Create(T[] array) 
+    {
+        Vector64x128<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector64x128<T> Create(T[,] array) 
     {
         Vector64x128<T> vec = default;
@@ -25366,109 +23451,14 @@ public unsafe struct Vector64x128<T> : INumberBase<Vector64x128<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 64;
+    public static int Height => 64;
 
-    public int Width => 128;
+    public static int Width => 128;
 
-    public int Count => Height * Width;
-
-    public static Vector64x128<T> One 
-    {
-        get 
-        {
-            Vector64x128<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector64x128<T> Zero 
-    {
-        get 
-        {
-            Vector64x128<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector64x128<T> AdditiveIdentity => Zero;
-
-    public static Vector64x128<T> MultiplicativeIdentity => One;
-
-    public static Vector64x128<T> operator +(Vector64x128<T> left, Vector64x128<T> right) 
-    {
-        Vector64x128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x128<T> operator -(Vector64x128<T> left, Vector64x128<T> right) 
-    {
-        Vector64x128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x128<T> operator *(Vector64x128<T> left, Vector64x128<T> right) 
-    {
-        Vector64x128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector64x128<T> operator /(Vector64x128<T> left, Vector64x128<T> right) 
-    {
-        Vector64x128<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector64x128<T> operator --(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector64x128<T> left, Vector64x128<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector64x128<T> left, Vector64x128<T> right) => throw new NotImplementedException();
-    public static Vector64x128<T> operator ++(Vector64x128<T> value) => throw new NotImplementedException();
-    public static Vector64x128<T> operator -(Vector64x128<T> value) => throw new NotImplementedException();
-    public static Vector64x128<T> operator +(Vector64x128<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -25483,50 +23473,11 @@ public unsafe struct Vector64x128<T> : INumberBase<Vector64x128<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector64x128<T> Abs(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector64x128<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector64x128<T> value) => throw new NotImplementedException();
-    public static Vector64x128<T> MaxMagnitude(Vector64x128<T> x, Vector64x128<T> y) => throw new NotImplementedException();
-    public static Vector64x128<T> MaxMagnitudeNumber(Vector64x128<T> x, Vector64x128<T> y) => throw new NotImplementedException();
-    public static Vector64x128<T> MinMagnitude(Vector64x128<T> x, Vector64x128<T> y) => throw new NotImplementedException();
-    public static Vector64x128<T> MinMagnitudeNumber(Vector64x128<T> x, Vector64x128<T> y) => throw new NotImplementedException();
-    public static Vector64x128<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector64x128<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector64x128<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector64x128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector64x128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector64x128<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x128<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x128<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector64x128<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x128<T> result) => throw new NotImplementedException();
-    public static Vector64x128<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector64x128<T> result) => throw new NotImplementedException();
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector128x64<T> : INumberBase<Vector128x64<T>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct Vector128x64<T> : IVector<Vector128x64<T>>, IEquatable<Vector128x64<T>>
+    where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
@@ -33721,6 +31672,15 @@ public unsafe struct Vector128x64<T> : INumberBase<Vector128x64<T>>
     private T _item_127_62;
     private T _item_127_63;
 
+    public static Vector128x64<T> Create(T[] array) 
+    {
+        Vector128x64<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector128x64<T> Create(T[,] array) 
     {
         Vector128x64<T> vec = default;
@@ -33747,109 +31707,14 @@ public unsafe struct Vector128x64<T> : INumberBase<Vector128x64<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 128;
+    public static int Height => 128;
 
-    public int Width => 64;
+    public static int Width => 64;
 
-    public int Count => Height * Width;
-
-    public static Vector128x64<T> One 
-    {
-        get 
-        {
-            Vector128x64<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.One;
-            }
-
-            return result;
-        }
-    }
-
-    public static int Radix => T.Radix;
-
-    public static Vector128x64<T> Zero 
-    {
-        get 
-        {
-            Vector128x64<T> result = default;
-            var span = result.AsSpan();
-            for (int i = 0; i < span.Length; i++)
-            {
-                span[i] = T.Zero;
-            }
-
-            return result;
-        }
-    }
-
-    public static Vector128x64<T> AdditiveIdentity => Zero;
-
-    public static Vector128x64<T> MultiplicativeIdentity => One;
-
-    public static Vector128x64<T> operator +(Vector128x64<T> left, Vector128x64<T> right) 
-    {
-        Vector128x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] + rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector128x64<T> operator -(Vector128x64<T> left, Vector128x64<T> right) 
-    {
-        Vector128x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] - rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector128x64<T> operator *(Vector128x64<T> left, Vector128x64<T> right) 
-    {
-        Vector128x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] * rhs[i];
-        }
-        return res;
-    }
-
-    public static Vector128x64<T> operator /(Vector128x64<T> left, Vector128x64<T> right) 
-    {
-        Vector128x64<T> res = default;
-        var lhs = left.AsSpan();
-        var rhs = right.AsSpan();
-        var span = res.AsSpan();
-        for (int i = 0; i < span.Length; i++)
-        {
-            span[i] = lhs[i] / rhs[i];
-        }
-        return res;
-    }
+    public static int Count => Height * Width;
 
 
-    public static Vector128x64<T> operator --(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool operator ==(Vector128x64<T> left, Vector128x64<T> right) => throw new NotImplementedException();
-    public static bool operator !=(Vector128x64<T> left, Vector128x64<T> right) => throw new NotImplementedException();
-    public static Vector128x64<T> operator ++(Vector128x64<T> value) => throw new NotImplementedException();
-    public static Vector128x64<T> operator -(Vector128x64<T> value) => throw new NotImplementedException();
-    public static Vector128x64<T> operator +(Vector128x64<T> value) => throw new NotImplementedException();
-
-    public override string ToString() 
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -33864,44 +31729,5 @@ public unsafe struct Vector128x64<T> : INumberBase<Vector128x64<T>>
         sb.Append(">");
         return sb.ToString();
     }
-
-    public static Vector128x64<T> Abs(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsCanonical(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsComplexNumber(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsEvenInteger(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsFinite(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsImaginaryNumber(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsInfinity(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsInteger(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsNaN(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsNegative(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsNegativeInfinity(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsNormal(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsOddInteger(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsPositive(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsPositiveInfinity(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsRealNumber(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsSubnormal(Vector128x64<T> value) => throw new NotImplementedException();
-    public static bool IsZero(Vector128x64<T> value) => throw new NotImplementedException();
-    public static Vector128x64<T> MaxMagnitude(Vector128x64<T> x, Vector128x64<T> y) => throw new NotImplementedException();
-    public static Vector128x64<T> MaxMagnitudeNumber(Vector128x64<T> x, Vector128x64<T> y) => throw new NotImplementedException();
-    public static Vector128x64<T> MinMagnitude(Vector128x64<T> x, Vector128x64<T> y) => throw new NotImplementedException();
-    public static Vector128x64<T> MinMagnitudeNumber(Vector128x64<T> x, Vector128x64<T> y) => throw new NotImplementedException();
-    public static Vector128x64<T> Parse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static Vector128x64<T> Parse(string s, NumberStyles style, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryConvertFromChecked<TOther>(TOther value, [MaybeNullWhen(false)] out Vector128x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromSaturating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector128x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertFromTruncating<TOther>(TOther value, [MaybeNullWhen(false)] out Vector128x64<T> result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToChecked<TOther>(Vector128x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToSaturating<TOther>(Vector128x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryConvertToTruncating<TOther>(Vector128x64<T> value, [MaybeNullWhen(false)] out TOther result) where TOther : INumberBase<TOther> => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector128x64<T> result) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, NumberStyles style, IFormatProvider provider, [MaybeNullWhen(false)] out Vector128x64<T> result) => throw new NotImplementedException();
-    public bool TryFormat(Span<char> destination, out int charsWritten, ReadOnlySpan<char> format, IFormatProvider provider) => throw new NotImplementedException();
-    public string ToString(string format, IFormatProvider formatProvider) => throw new NotImplementedException();
-    public static Vector128x64<T> Parse(ReadOnlySpan<char> s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse(ReadOnlySpan<char> s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector128x64<T> result) => throw new NotImplementedException();
-    public static Vector128x64<T> Parse(string s, IFormatProvider provider) => throw new NotImplementedException();
-    public static bool TryParse([NotNullWhen(true)] string s, IFormatProvider provider, [MaybeNullWhen(false)] out Vector128x64<T> result) => throw new NotImplementedException();
 }
 

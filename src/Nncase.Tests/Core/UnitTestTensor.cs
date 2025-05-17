@@ -181,6 +181,134 @@ public sealed class UnitTestTensor
     }
 
     [Fact]
+    public void TestOnes()
+    {
+        // Test for Tensor.One (scalar one)
+        var floatOne = Tensor.One(DataTypes.Float32);
+        Assert.Equal(DataTypes.Float32, floatOne.ElementType);
+        Assert.Empty(floatOne.Dimensions.ToArray()); // Scalar
+        Assert.Equal(1.0f, floatOne.ToScalar<float>());
+
+        var intOne = Tensor.One(DataTypes.Int32);
+        Assert.Equal(DataTypes.Int32, intOne.ElementType);
+        Assert.Empty(intOne.Dimensions.ToArray()); // Scalar
+        Assert.Equal(1, intOne.ToScalar<int>());
+
+        var boolOne = Tensor.One(DataTypes.Boolean);
+        Assert.Equal(DataTypes.Boolean, boolOne.ElementType);
+        Assert.Empty(boolOne.Dimensions.ToArray()); // Scalar
+        Assert.True(boolOne.ToScalar<bool>());
+
+        // Test for Tensor.Ones with different dimensions
+        var vector = Tensor.Ones(DataTypes.Float32, [5]);
+        Assert.Equal(DataTypes.Float32, vector.ElementType);
+        Assert.Equal(new long[] { 5 }, vector.Dimensions.ToArray());
+        Assert.Equal(new float[] { 1.0f, 1.0f, 1.0f, 1.0f, 1.0f }, vector.ToArray<float>());
+
+        var matrix = Tensor.Ones(DataTypes.Int32, [2, 3]);
+        Assert.Equal(DataTypes.Int32, matrix.ElementType);
+        Assert.Equal(new long[] { 2, 3 }, matrix.Dimensions.ToArray());
+        Assert.Equal(new int[] { 1, 1, 1, 1, 1, 1 }, matrix.ToArray<int>());
+
+        // Test generic version
+        var genericOnes = Tensor.Ones<float>([2, 2]);
+        Assert.Equal(DataTypes.Float32, genericOnes.ElementType);
+        Assert.Equal(new long[] { 2, 2 }, genericOnes.Dimensions.ToArray());
+        Assert.Equal(new float[] { 1.0f, 1.0f, 1.0f, 1.0f }, genericOnes.ToArray<float>());
+
+        var genericHalfOnes = Tensor.Ones<Half>([2, 2]);
+        Assert.Equal(DataTypes.Float16, genericHalfOnes.ElementType);
+        Assert.Equal(new long[] { 2, 2 }, genericHalfOnes.Dimensions.ToArray());
+        Assert.Equal(new Half[] { Half.One, Half.One, Half.One, Half.One }, genericHalfOnes.ToArray<Half>());
+
+        // Test with vector type
+        var vectorOnes = Tensor.Ones<Vector4<float>>([2]);
+        Assert.Equal(new VectorType(DataTypes.Float32, 4), vectorOnes.ElementType);
+        Assert.Equal(new long[] { 2 }, vectorOnes.Dimensions.ToArray());
+        var arr = vectorOnes.ToArray<Vector4<float>>();
+        Assert.Equal(2, arr.Length);
+        foreach (var v in arr)
+        {
+            for (int i = 0; i < Vector4<float>.Count; i++)
+            {
+                Assert.Equal(1f, v[i]);
+            }
+        }
+
+        var matrixVectorOnes = Tensor.Ones<Vector4x4<float>>([3]);
+        Assert.Equal(new VectorType(DataTypes.Float32, 4, 4), matrixVectorOnes.ElementType);
+        Assert.Equal(new long[] { 3 }, matrixVectorOnes.Dimensions.ToArray());
+        var matrixArr = matrixVectorOnes.ToArray<Vector4x4<float>>();
+        Assert.Equal(3, matrixArr.Length);
+        foreach (var m in matrixArr)
+        {
+            for (int row = 0; row < 4; row++)
+            {
+                for (int col = 0; col < 4; col++)
+                {
+                    Assert.Equal(1f, m[row, col]);
+                }
+            }
+        }
+    }
+
+    [Fact]
+    public void TestZeros()
+    {
+        // Test for Tensor.Zero (scalar zero)
+        var floatZero = Tensor.Zero(DataTypes.Float32);
+        Assert.Equal(DataTypes.Float32, floatZero.ElementType);
+        Assert.Empty(floatZero.Dimensions.ToArray()); // Scalar
+        Assert.Equal(0.0f, floatZero.ToScalar<float>());
+
+        var intZero = Tensor.Zero(DataTypes.Int32);
+        Assert.Equal(DataTypes.Int32, intZero.ElementType);
+        Assert.Empty(intZero.Dimensions.ToArray()); // Scalar
+        Assert.Equal(0, intZero.ToScalar<int>());
+
+        var boolZero = Tensor.Zero(DataTypes.Boolean);
+        Assert.Equal(DataTypes.Boolean, boolZero.ElementType);
+        Assert.Empty(boolZero.Dimensions.ToArray()); // Scalar
+        Assert.False(boolZero.ToScalar<bool>());
+
+        var longZero = Tensor.Zero(DataTypes.Int64);
+        Assert.Equal(DataTypes.Int64, longZero.ElementType);
+        Assert.Empty(longZero.Dimensions.ToArray()); // Scalar
+        Assert.Equal(0L, longZero.ToScalar<long>());
+
+        // Test for Tensor.Zeros with different dimensions
+        var vector = Tensor.Zeros(DataTypes.Float32, [5]);
+        Assert.Equal(DataTypes.Float32, vector.ElementType);
+        Assert.Equal(new long[] { 5 }, vector.Dimensions.ToArray());
+        Assert.Equal(new float[] { 0.0f, 0.0f, 0.0f, 0.0f, 0.0f }, vector.ToArray<float>());
+
+        var matrix = Tensor.Zeros(DataTypes.Int32, [2, 3]);
+        Assert.Equal(DataTypes.Int32, matrix.ElementType);
+        Assert.Equal(new long[] { 2, 3 }, matrix.Dimensions.ToArray());
+        Assert.Equal(new int[] { 0, 0, 0, 0, 0, 0 }, matrix.ToArray<int>());
+
+        // Test generic version
+        var genericZeros = Tensor.Zeros<float>([2, 2]);
+        Assert.Equal(DataTypes.Float32, genericZeros.ElementType);
+        Assert.Equal(new long[] { 2, 2 }, genericZeros.Dimensions.ToArray());
+        Assert.Equal(new float[] { 0.0f, 0.0f, 0.0f, 0.0f }, genericZeros.ToArray<float>());
+        {
+            var t = Tensor.Zeros<Vector4<float>>([2]);
+            Assert.Equal(new VectorType(DataTypes.Float32, 4), t.ElementType);
+            Assert.Equal(new long[] { 2 }, t.Dimensions.ToArray());
+            var arr = t.ToArray<Vector4<float>>();
+            Assert.Equal(2, arr.Length);
+            foreach (var v in arr)
+            {
+                for (int i = 0; i < Vector4<float>.Count; i++)
+                {
+                    Assert.Equal(0f, v[i]);
+                }
+            }
+        }
+    }
+
+    [Fact]
     public void TestListException()
     {
         var a = new float[] { 1, 2, 3, 4, 5, 6, 7, 8 };
