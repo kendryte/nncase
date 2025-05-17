@@ -32,11 +32,16 @@ prim_type_t datatype_t::float64(std::in_place, dt_float64);
 prim_type_t datatype_t::bfloat16(std::in_place, dt_bfloat16);
 prim_type_t datatype_t::float8e4m3(std::in_place, dt_float8e4m3);
 prim_type_t datatype_t::float8e5m2(std::in_place, dt_float8e5m2);
-value_type_t datatype_t::attention_kv_cache(
+value_type_t datatype_t::attention_kv_cache(std::in_place,
+                                            uuid_t({35, 198, 126, 104, 151, 17,
+                                                    132, 70, 131, 200, 56, 218,
+                                                    54, 248, 207, 165}),
+                                            8);
+value_type_t datatype_t::paged_attention_kv_cache(
     std::in_place,
-    uuid_t({0xF6, 0x95, 0x50, 0x16, 0xF1, 0x85, 0x46, 0xFB, 0xAA, 0x5F, 0xFD,
-            0xCE, 0xA1, 0xC8, 0x9E, 0xF6}),
-    0);
+    uuid_t({22, 80, 149, 246, 133, 241, 251, 70, 170, 95, 253, 206, 161, 200,
+            158, 246}),
+    8);
 
 result<prim_type_t> datatype_t::from_typecode(typecode_t typecode) {
     switch (typecode) {

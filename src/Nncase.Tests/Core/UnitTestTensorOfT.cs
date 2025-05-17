@@ -354,4 +354,53 @@ public sealed class UnitTestTensorOfT
             Assert.True(b.ToArray<Vector4<int>>().SequenceEqual([Vector4<int>.Create([9, 9, 9, 9]), Vector4<int>.Create([10, 10, 10, 10]), Vector4<int>.Create([11, 11, 11, 11])]));
         }
     }
+
+    [Fact]
+    public void TestTensorTranspose()
+    {
+        {
+            var a = Tensor.From(new[] { 1, 2, 3, 4, 5, 6 }, [2, 3]);
+            var b = a.Transpose([1, 0]);
+            Assert.Equal("{{1,4},{2,5},{3,6}}", b.GetArrayString(false));
+        }
+
+        {
+            var a = Tensor.From(Enumerable.Range(0, 24).ToArray(), [2, 3, 4]);
+            var b = a.Transpose([2, 0, 1]);
+            Assert.Equal(4, b.Dimensions[0]);
+            Assert.Equal(2, b.Dimensions[1]);
+            Assert.Equal(3, b.Dimensions[2]);
+            var expected = new[] {
+                0,  4,  8, 12, 16, 20,  1,  5,  9, 13, 17, 21,  2,  6, 10, 14, 18, 22,  3,  7, 11, 15, 19, 23,
+            };
+            Assert.True(b.ToArray<int>().SequenceEqual(expected));
+        }
+
+        {
+            var a = Tensor.From(Enumerable.Range(0, 16).ToArray(), [2, 2, 2, 2]);
+            var b = a.Transpose([3, 2, 1, 0]);
+            Assert.Equal(2, b.Dimensions[0]);
+            Assert.Equal(2, b.Dimensions[1]);
+            Assert.Equal(2, b.Dimensions[2]);
+            Assert.Equal(2, b.Dimensions[3]);
+        }
+
+        {
+            var a = Tensor.From(new[] { 1, 2, 3, 4 }, [2, 2]);
+            Assert.Throws<ArgumentException>(() => a.Transpose([0, 1, 2]));
+        }
+
+        {
+            var a = Tensor.From(new[] { 1, 2, 3, 4 }, [2, 2]);
+            Assert.Throws<ArgumentException>(() => a.Transpose([0, 2]));
+        }
+
+        {
+            var vec = Vector4<float>.Create([1, 2, 3, 4]);
+            var a = Tensor.From(new[] { vec, vec }, [2, 1]);
+            var b = a.Transpose([1, 0]);
+            Assert.Equal(1, b.Dimensions[0]);
+            Assert.Equal(2, b.Dimensions[1]);
+        }
+    }
 }

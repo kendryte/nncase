@@ -1550,6 +1550,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                     }
 
                     break;
+                case (ParameterKind.Input, Expr e) when e is None:
+                    updateBuckets(buckets, new[] { e });
+                    break;
                 case (ParameterKind.Attribute, Var e):
                     updateBuckets(buckets, new[] { e });
                     break;

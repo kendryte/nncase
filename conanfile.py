@@ -64,8 +64,7 @@ class nncaseConan(ConanFile):
             self.requires('nethost/8.0.8')
             self.requires('fmt/7.1.3')
 
-        if not self.options.runtime or self.options.tests:
-            self.requires('nlohmann_json/3.9.1')
+        self.requires('nlohmann_json/3.9.1')
 
     def build_requirements(self):
         pass

@@ -59,15 +59,7 @@ public sealed partial class StackVMEmitter
     /// </summary>
     public void Write(DataType value)
     {
-        // TODO: Support generic datatype.
-        switch (value)
-        {
-            case PrimType t:
-                _writer.Write(ToTypeCode(t.CLRType));
-                break;
-            default:
-                throw new ArgumentException($"Unsupported datatype: {value}");
-        }
+        TypeSerializer.Serialize(_writer, value);
     }
 
     private void Write(byte value)

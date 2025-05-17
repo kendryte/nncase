@@ -43,6 +43,8 @@ public static class CSourceBuiltn
 {
     public const string KernelHeader = @"#pragma once
 #include <nncase/ntt/ntt.h>
+#include <nncase/ntt/caching.h>
+#include <nncase/ntt/kernels/paged_attention.h>
 #include ""topo_aware_runtime.h""
 using namespace nncase::ntt;
 using namespace nncase::ntt::distributed;

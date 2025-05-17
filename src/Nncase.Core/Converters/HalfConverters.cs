@@ -24,7 +24,9 @@ internal class HalfConverters :
     ISpanConverter<Half, double>,
     ISpanConverter<Half, BFloat16>,
     ISpanConverter<Half, Float8E4M3>,
-    ISpanConverter<Half, Float8E5M2>
+    ISpanConverter<Half, Float8E5M2>,
+    ISpanConverter<Vector64<Half>, float>,
+    ISpanConverter<Half, Vector64<float>>
 {
     public void ConvertTo(ReadOnlySpan<Half> source, Span<bool> dest, CastMode castMode)
     {
@@ -360,6 +362,49 @@ internal class HalfConverters :
         for (int i = 0; i < source.Length; i++)
         {
             dest[i] = (BFloat16)(float)source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<Vector64<Half>> source, Span<float> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        var elementsPerVector = Vector64<Half>.Count;
+        var requiredDestSize = source.Length * elementsPerVector;
+
+        if (dest.Length < requiredDestSize)
+        {
+            throw new ArgumentException("Destination buffer is not large enough for the flattened vector data");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            ConvertTo(source[i].AsSpan(), dest.Slice(i * elementsPerVector, elementsPerVector), castMode);
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<Half> source, Span<Vector64<float>> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        var elementsPerVector = Vector64<Half>.Count;
+        var requiredSourceSize = dest.Length * elementsPerVector;
+
+        if (source.Length < requiredSourceSize)
+        {
+            throw new ArgumentException("Source buffer does not contain enough elements to fill the vectors");
+        }
+
+        for (int i = 0; i < dest.Length; i++)
+        {
+            var vector = default(Vector64<float>);
+            ConvertTo(source.Slice(i * elementsPerVector, elementsPerVector), vector.AsSpan(), castMode);
         }
     }
 }

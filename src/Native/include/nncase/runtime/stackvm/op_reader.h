@@ -19,6 +19,7 @@
 #include "../error.h"
 #include "../result.h"
 #include "../span_reader.h"
+#include "nncase/runtime/type_serializer.h"
 #include "opcode.h"
 
 BEGIN_NS_NNCASE_RT_MODULE(stackvm)
@@ -1496,7 +1497,7 @@ template <> struct tensor_op_reader<tensor_function_t::uninitialized> {
     tensor_uninitialized_op_t
     operator()(NNCASE_UNUSED span_reader &reader) const {
         tensor_uninitialized_op_t op;
-        op.dtype = static_cast<typecode_t>(reader.read_unaligned<uint8_t>());
+        op.dtype = deserialize_datatype(reader).expect("can't deserialize");
         op.memory_location =
             static_cast<memory_location_t>(reader.read_unaligned<uint32_t>());
         return op;

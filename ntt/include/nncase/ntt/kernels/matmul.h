@@ -24,6 +24,16 @@
 
 namespace nncase::ntt {
 namespace detail {
+
+template <typename T>
+concept HasValidRank = requires(T t) {
+    { T::rank() } -> std::convertible_to<size_t>;
+    requires T::rank() >= 2;
+};
+
+template <typename T>
+concept IsValidMatmulTensor = IsTensor<T> && HasValidRank<T>;
+
 template <class TLhs, class TRhs, typename LhsPackedAxes,
           typename RhsPackedAxes, bool TransposedA = false,
           bool TransposedB = false>
@@ -88,8 +98,8 @@ class matmul_impl;
  * @brief 1D-packed matmul with non transposed A/B or tranposed B.
  * @remarks Loop orders: (m, n, k)
  */
-template <bool AccumulateC, bool TransposedB, IsTensor TLhs, IsTensor TRhs,
-          IsTensor TOut, typename LhsPackedAxes, typename LhsPadedNums,
+template <bool AccumulateC, bool TransposedB, IsValidMatmulTensor TLhs, IsValidMatmulTensor TRhs,
+          IsValidMatmulTensor TOut, typename LhsPackedAxes, typename LhsPadedNums,
           typename RhsPackedAxes, typename RhsPadedNums>
 class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                   LhsPackedAxes, LhsPadedNums, RhsPackedAxes, RhsPadedNums> {
@@ -218,7 +228,6 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                   "currently only support no pad!");
     static_assert(RhsPadedNums::rank() == 0 || RhsPadedNums::length() == 0,
                   "currently only support no pad!");
-
 
     detail::matmul_impl<AccumulateC, false, false, TLhs, TRhs,
                         std::decay_t<TOut>, LhsPackedAxes, LhsPadedNums,

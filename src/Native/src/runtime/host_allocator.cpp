@@ -143,10 +143,11 @@ class host_buffer_allocator : public buffer_allocator {
         auto alignment = std::max(options.alignment, uint32_t(1));
         if ((uintptr_t)data.data() & (alignment - 1))
             return err(std::errc::bad_address);
+        auto deleter = options.deleter ? options.deleter
+                                       : []([[maybe_unused]] std::byte *p) {};
         return ok<buffer_t>(object_t<host_buffer_impl>(
-            std::in_place, data.data(), data.size_bytes(),
-            []([[maybe_unused]] std::byte *p) {}, paddr, *this,
-            host_sync_status_t::valid));
+            std::in_place, data.data(), data.size_bytes(), deleter, paddr,
+            *this, host_sync_status_t::valid));
     }
 
     void shrink_memory_pool() override {}

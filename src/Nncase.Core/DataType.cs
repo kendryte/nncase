@@ -8,7 +8,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Nncase.IO;
 
 namespace Nncase;
 
@@ -54,6 +56,7 @@ public sealed record PointerType(DataType ElemType) : DataType
 /// <summary>
 /// the abstract datatype record.
 /// </summary>
+[JsonConverter(typeof(DataTypeJsonConverter))]
 public abstract record DataType
 {
     internal DataType()
@@ -248,23 +251,23 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
 
     public override Type CLRType => Lanes.ToArray() switch
     {
-        [4] => typeof(Vector4<>).MakeGenericType(ElemType.CLRType),
-        [4, 4] => typeof(Vector4x4<>).MakeGenericType(ElemType.CLRType),
-        [8] => typeof(Vector8<>).MakeGenericType(ElemType.CLRType),
-        [8, 8] => typeof(Vector8x8<>).MakeGenericType(ElemType.CLRType),
-        [16] => typeof(Vector16<>).MakeGenericType(ElemType.CLRType),
-        [16, 16] => typeof(Vector16x16<>).MakeGenericType(ElemType.CLRType),
-        [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
-        [32, 16] => typeof(Vector32x16<>).MakeGenericType(ElemType.CLRType),
-        [32, 32] => typeof(Vector32x32<>).MakeGenericType(ElemType.CLRType),
-        [32, 64] => typeof(Vector32x64<>).MakeGenericType(ElemType.CLRType),
-        [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
-        [128] => typeof(Vector128<>).MakeGenericType(ElemType.CLRType),
-        [32, 128] => typeof(Vector32x128<>).MakeGenericType(ElemType.CLRType),
-        [64, 32] => typeof(Vector64x32<>).MakeGenericType(ElemType.CLRType),
-        [64, 64] => typeof(Vector64x64<>).MakeGenericType(ElemType.CLRType),
-        [64, 128] => typeof(Vector64x128<>).MakeGenericType(ElemType.CLRType),
-        [128, 64] => typeof(Vector128x64<>).MakeGenericType(ElemType.CLRType),
+    [4] => typeof(Vector4<>).MakeGenericType(ElemType.CLRType),
+    [4, 4] => typeof(Vector4x4<>).MakeGenericType(ElemType.CLRType),
+    [8] => typeof(Vector8<>).MakeGenericType(ElemType.CLRType),
+    [8, 8] => typeof(Vector8x8<>).MakeGenericType(ElemType.CLRType),
+    [16] => typeof(Vector16<>).MakeGenericType(ElemType.CLRType),
+    [16, 16] => typeof(Vector16x16<>).MakeGenericType(ElemType.CLRType),
+    [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
+    [32, 16] => typeof(Vector32x16<>).MakeGenericType(ElemType.CLRType),
+    [32, 32] => typeof(Vector32x32<>).MakeGenericType(ElemType.CLRType),
+    [32, 64] => typeof(Vector32x64<>).MakeGenericType(ElemType.CLRType),
+    [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
+    [128] => typeof(Vector128<>).MakeGenericType(ElemType.CLRType),
+    [32, 128] => typeof(Vector32x128<>).MakeGenericType(ElemType.CLRType),
+    [64, 32] => typeof(Vector64x32<>).MakeGenericType(ElemType.CLRType),
+    [64, 64] => typeof(Vector64x64<>).MakeGenericType(ElemType.CLRType),
+    [64, 128] => typeof(Vector64x128<>).MakeGenericType(ElemType.CLRType),
+    [128, 64] => typeof(Vector128x64<>).MakeGenericType(ElemType.CLRType),
         _ => throw new NotSupportedException(),
     };
 

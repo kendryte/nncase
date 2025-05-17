@@ -108,4 +108,9 @@ public enum TypeCode : byte
     /// <see cref="Nncase.VectorType"/>.
     /// </summary>
     VectorType = 0xF2,
+
+    /// <summary>
+    /// <see cref="Nncase.ReferenceType"/>.
+    /// </summary>
+    ReferenceType = 0xF3,
 }

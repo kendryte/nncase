@@ -5,8 +5,9 @@ endif ()
 if (NOT BUILDING_RUNTIME)
     find_package(nethost REQUIRED)
     find_package(fmt REQUIRED)
-    find_package(nlohmann_json REQUIRED)
 endif ()
+
+find_package(nlohmann_json REQUIRED)
 
 if (BUILD_TESTING)
     find_package(GTest REQUIRED)

@@ -29,5 +29,5 @@ public sealed partial class PagedAttention : Op
 
     public int LayerId { get; }
 
-    public IRArray<AttentionDimKind> QLayout { get; }
+    public IRArray<AttentionDimKind> Layout { get; }
 }

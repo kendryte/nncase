@@ -21,4 +21,6 @@ public sealed partial class UpdatePagedAttentionKVCache : Op
     public AttentionCacheKind CacheKind { get; }
 
     public int LayerId { get; }
+
+    public IRArray<AttentionDimKind> Layout { get; }
 }

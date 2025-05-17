@@ -60,7 +60,7 @@ internal static class Native
     public static extern unsafe ErrorCode HostBufferUnmap(IntPtr hostBuffer);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_prime")]
-    public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out RTDataType dtype);
+    public static extern unsafe ErrorCode DTypeCreatePrim(TypeCode typeCode, out RTPrimType dtype);
 
     [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_vector")]
     public static extern unsafe ErrorCode DTypeCreateVector(RTDataType elemType, int[] lanes, int length, out RTVectorType dtype);
@@ -76,6 +76,21 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_vector_dtype_get_lanes")]
     public static extern unsafe ErrorCode VectorDTypeGetLanes(RTVectorType handle, [Out] int[] lanes);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_reference")]
+    public static extern unsafe ErrorCode DTypeCreateReference(RTDataType elemType, out RTReferenceType dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_reference_dtype_get_elem_type")]
+    public static extern ErrorCode ReferenceDTypeGetElemType(RTReferenceType handle, out RTDataType elemType);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_attention_kv_cache")]
+    public static extern unsafe ErrorCode DTypeCreateAttentionKVCache(out RTValueType dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_dtype_create_paged_attention_kv_cache")]
+    public static extern unsafe ErrorCode DTypeCreatePagedAttentionKVCache(out RTValueType dtype);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_value_dtype_get_uuid")]
+    public static extern unsafe ErrorCode ValueDTypeGetUUID(RTValueType dtype, [Out] byte[] uuid, int uuidLength);
 
     [DllImport(LibraryName, EntryPoint = "nncase_value_is_tensor")]
     public static extern unsafe ErrorCode ValueIsTensor(IntPtr value, out bool isTensor);
@@ -102,79 +117,169 @@ internal static class Native
     public static extern unsafe ErrorCode TupleGetFields(RTTuple tuple, IntPtr* fields, ref uint fieldsLength);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_create")]
-    public static extern unsafe ErrorCode AttentionConfigCreate(int num_layers, int num_kv_heads, int head_dim, TypeCode kv_type, out RTAttentionConfig config);
+    public static extern ErrorCode AttentionConfigCreate(int num_layers, int num_kv_heads, int head_dim, TypeCode kv_type, out RTAttentionConfig config);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_num_layers")]
-    public static extern unsafe ErrorCode AttentionConfigGetNumLayers(RTAttentionConfig config, ref int num_layers);
+    public static extern ErrorCode AttentionConfigGetNumLayers(RTAttentionConfig config, out int num_layers);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_num_layers")]
-    public static extern unsafe ErrorCode AttentionConfigSetNumLayers(RTAttentionConfig config, int num_layers);
+    public static extern ErrorCode AttentionConfigSetNumLayers(RTAttentionConfig config, int num_layers);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_num_kv_heads")]
-    public static extern unsafe ErrorCode AttentionConfigGetNumKvHeads(RTAttentionConfig config, ref int num_kv_heads);
+    public static extern ErrorCode AttentionConfigGetNumKvHeads(RTAttentionConfig config, out int num_kv_heads);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_num_kv_heads")]
-    public static extern unsafe ErrorCode AttentionConfigSetNumKvHeads(RTAttentionConfig config, int num_kv_heads);
+    public static extern ErrorCode AttentionConfigSetNumKvHeads(RTAttentionConfig config, int num_kv_heads);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_head_dim")]
-    public static extern unsafe ErrorCode AttentionConfigGetHeadDim(RTAttentionConfig config, ref int head_dim);
+    public static extern ErrorCode AttentionConfigGetHeadDim(RTAttentionConfig config, out int head_dim);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_head_dim")]
-    public static extern unsafe ErrorCode AttentionConfigSetHeadDim(RTAttentionConfig config, int head_dim);
+    public static extern ErrorCode AttentionConfigSetHeadDim(RTAttentionConfig config, int head_dim);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_get_kv_type")]
-    public static extern unsafe ErrorCode AttentionConfigGetKVType(RTAttentionConfig config, out TypeCode kv_type);
+    public static extern ErrorCode AttentionConfigGetKvType(RTAttentionConfig config, out TypeCode kv_type);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_config_set_kv_type")]
-    public static extern unsafe ErrorCode AttentionConfigSetKVType(RTAttentionConfig config, TypeCode kv_type);
+    public static extern ErrorCode AttentionConfigSetKvType(RTAttentionConfig config, TypeCode kv_type);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_create")]
-    public static extern unsafe ErrorCode PagedAttentionConfigCreate(int num_layers, int num_kv_heads, int head_dim, TypeCode kv_type, int block_size, out RTPagedAttentionConfig config);
+    public static extern ErrorCode PagedAttentionConfigCreate(
+        int num_layers,
+        int num_kv_heads,
+        int head_dim,
+        TypeCode kv_type,
+        int block_size,
+        [In] IR.NN.PagedKVCacheDimKind[] cache_layout,
+        [In] IR.NN.PagedKVCacheDimKind[] packed_axes,
+        int packed_axes_len,
+        [In] int[] lanes,
+        int lanes_len,
+        [In] IR.NN.PagedKVCacheDimKind[] sharding_axes,
+        int sharding_axes_len,
+        [In] int[] axis_policies,
+        [In] int[] axis_policies_lens,
+        out RTPagedAttentionConfig config);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_block_size")]
-    public static extern unsafe ErrorCode PagedAttentionConfigGetBlockSize(RTPagedAttentionConfig config, out int block_size);
+    public static extern ErrorCode PagedAttentionConfigGetBlockSize(RTPagedAttentionConfig config, out int block_size);
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_block_size")]
-    public static extern unsafe ErrorCode PagedAttentionConfigSetBlockSize(RTPagedAttentionConfig config, int block_size);
+    public static extern ErrorCode PagedAttentionConfigSetBlockSize(RTPagedAttentionConfig config, int block_size);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_num_requests")]
-    public static extern unsafe ErrorCode AttentionKvCacheGetNumRequests(RTAttentionKVCache kvcache, out int num_requests);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_cache_layout")]
+    public static extern ErrorCode PagedAttentionConfigGetCacheLayout(RTPagedAttentionConfig config, [Out] IR.NN.PagedKVCacheDimKind[] layout, int layout_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_seq_len")]
-    public static extern unsafe ErrorCode AttentionKvCacheGetSeqLen(RTAttentionKVCache kvcache, int request_id, out long seq_len);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_cache_layout")]
+    public static extern ErrorCode PagedAttentionConfigSetCacheLayout(RTPagedAttentionConfig config, [In] IR.NN.PagedKVCacheDimKind[] layout, int layout_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_context_len")]
-    public static extern unsafe ErrorCode AttentionKvCacheGetContextLen(RTAttentionKVCache kvcache, int request_id, out long context_len);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_packed_axes")]
+    public static extern ErrorCode PagedAttentionConfigGetPackedAxes(RTPagedAttentionConfig config, [Out] IR.NN.PagedKVCacheDimKind[] packed_axes, int packed_axes_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_create")]
-    public static extern unsafe ErrorCode PagedAttentionSchedulerCreate(RTPagedAttentionConfig config, int numBlocks, int maxModelLen, out RTPagedAttentionScheduler scheduler);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_packed_axes")]
+    public static extern ErrorCode PagedAttentionConfigSetPackedAxes(RTPagedAttentionConfig config, [In] IR.NN.PagedKVCacheDimKind[] packed_axes, int packed_axes_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_scheduler_schedule")]
-    public static extern unsafe ErrorCode PagedAttentionSchedulerSchedule(RTPagedAttentionScheduler rTPagedAttentionScheduler, RTTensor sessionIds, RTTensor tokenCounts, out RTPagedAttentionKVCache cache);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_lanes")]
+    public static extern ErrorCode PagedAttentionConfigGetLanes(RTPagedAttentionConfig config, [Out] int[] lanes, int lanes_len);
 
-    /*
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_block")]
-    public static extern unsafe ErrorCode GetBlock(RTPagedAttentionKVCache cache, IR.NN.AttentionCacheKind kind, int layerId, long blockId, out RTTensor tensor);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_lanes")]
+    public static extern ErrorCode PagedAttentionConfigSetLanes(RTPagedAttentionConfig config, [In] int[] lanes, int lanes_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_context_block_ids")]
-    public static extern unsafe ErrorCode GetContextBlockIds(RTPagedAttentionKVCache cache, int requestId, out RTTensor tensor);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_sharding_axes")]
+    public static extern ErrorCode PagedAttentionConfigGetShardingAxes(
+        RTPagedAttentionConfig config,
+        [Out] IR.NN.PagedKVCacheDimKind[] sharding_axes,
+        int sharding_axes_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_output_slot_ids")]
-    public static extern unsafe ErrorCode GetOutputSlotIds(RTPagedAttentionKVCache cache, out RTTensor tensor);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_sharding_axes")]
+    public static extern ErrorCode PagedAttentionConfigSetShardingAxes(
+        RTPagedAttentionConfig config,
+        [In] IR.NN.PagedKVCacheDimKind[] sharding_axes,
+        int sharding_axes_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_slot")]
-    public static extern unsafe ErrorCode GetSlot(RTPagedAttentionKVCache cache, IR.NN.AttentionCacheKind kind, int layerId, long slotId, out RTTensor tensor);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_axis_policy_len")]
+    public static extern ErrorCode PagedAttentionConfigGetAxisPolicyLen(
+        RTPagedAttentionConfig config,
+        int i,
+        out int policy_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_slots")]
-    public static extern unsafe ErrorCode GetSlots(RTPagedAttentionKVCache cache, [In] RTTensor block, int startSlot, int count, out RTTensor tensor);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_get_axis_policy")]
+    public static extern ErrorCode PagedAttentionConfigGetAxisPolicy(
+        RTPagedAttentionConfig config,
+        int i,
+        [Out] int[] axis_policy,
+        int axis_policy_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_update_output_slot")]
-    public static extern unsafe ErrorCode UpdateOutputSlot(RTPagedAttentionKVCache cache, IR.NN.AttentionCacheKind kind, int layerId, long slotId, [In] RTTensor slot);
-    */
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_config_set_axis_policy")]
+    public static extern ErrorCode PagedAttentionConfigSetAxisPolicy(
+        RTPagedAttentionConfig config,
+        int i,
+        [In] int[] axis_policy,
+        int axis_policy_len);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_get_sub_block")]
-    public static extern unsafe ErrorCode PagedAttenionKVCacheGetSubBlock(RTPagedAttentionKVCache cache, [In] int[] indices, int indices_len, out RTTensor sub_block);
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_create")]
+    public static extern ErrorCode AttentionKVCacheCreate(
+        RTAttentionConfig config,
+        int num_seqs,
+        int num_tokens,
+        RTTensor context_lens,
+        RTTensor seq_lens,
+        out RTAttentionKVCache cache);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attenion_kv_cache_set_sub_block")]
-    public static extern unsafe ErrorCode PagedAttenionKVCacheSetSubBlock(RTPagedAttentionKVCache cache, [In] int[] indices, int indices_len, RTTensor sub_block);
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_config")]
+    public static extern ErrorCode AttentionKVCacheGetConfig(
+        RTAttentionKVCache cache,
+        out RTAttentionConfig config);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_num_seqs")]
+    public static extern ErrorCode AttentionKVCacheGetNumSeqs(
+        RTAttentionKVCache cache,
+        out int num_seqs);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_set_num_seqs")]
+    public static extern ErrorCode AttentionKVCacheSetNumSeqs(
+        RTAttentionKVCache cache,
+        int num_seqs);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_num_tokens")]
+    public static extern ErrorCode AttentionKVCacheGetNumTokens(
+        RTAttentionKVCache cache,
+        out int num_tokens);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_set_num_tokens")]
+    public static extern ErrorCode AttentionKVCacheSetNumTokens(
+        RTAttentionKVCache cache,
+        int num_tokens);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_create")]
+    public static extern ErrorCode PagedAttentionKVCacheCreate(
+        RTPagedAttentionConfig config,
+        int num_seqs,
+        int num_tokens,
+        RTTensor context_lens,
+        RTTensor seq_lens,
+        RTTensor block_table,
+        RTTensor slot_mapping,
+        int num_blocks,
+        [In] int[] kv_shape,
+        int kv_shape_len,
+        out RTPagedAttentionKVCache cache);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_get_num_blocks")]
+    public static extern ErrorCode PagedAttentionKVCacheGetNumBlocks(
+        RTPagedAttentionKVCache cache,
+        out int num_blocks);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_set_kv_cache")]
+    public static extern ErrorCode PagedAttentionKVCacheSetKVCache(
+        RTPagedAttentionKVCache cache,
+        int[] indices,
+        int indices_len,
+        RTTensor kv_cache);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_wait_for_debugger")]
+    public static extern int NncaseWaitForDebugger(byte enable);
+
+    [DllImport(LibraryName, EntryPoint = "nncase_continue_execution")]
+    public static extern int NncaseContinueExecution();
 }

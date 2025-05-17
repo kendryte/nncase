@@ -27,6 +27,10 @@ public static class TypeSerializer
                 writer.Write((byte)Runtime.TypeCode.Pointer);
                 Serialize(writer, t.ElemType);
                 break;
+            case ReferenceType t:
+                writer.Write((byte)Runtime.TypeCode.ReferenceType);
+                Serialize(writer, t.ElemType);
+                break;
             case ValueType t:
                 writer.Write((byte)Runtime.TypeCode.ValueType);
                 writer.Write(t.Uuid.ToByteArray());

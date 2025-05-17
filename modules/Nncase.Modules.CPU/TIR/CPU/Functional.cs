@@ -117,14 +117,19 @@ public partial class CPU
         return new Call(new Reshape(), input, ret);
     }
 
-    public static Expr PagedAttention(Expr q, Expr kvcache, Expr extra, int layerId, Expr ret)
+    public static Expr PagedAttention(Expr q, Expr kvcache, Expr extra, int layerId, Expr ret, IRArray<IR.NN.AttentionDimKind> layout)
     {
-        return new Call(new PagedAttention(layerId), q, kvcache, extra, ret);
+        return new Call(new PagedAttention(layerId, layout), q, kvcache, extra, ret);
     }
 
-    public static Expr UpdatePagedAttentionKVCache(Expr value, Expr kvcache, IR.NN.AttentionCacheKind kind, int layerId)
+    public static Expr UpdatePagedAttentionKVCache(Expr value, Expr kvcache, IR.NN.AttentionCacheKind kind, int layerId, IRArray<IR.NN.AttentionDimKind> layout)
     {
-        return new Call(new UpdatePagedAttentionKVCache(kind, layerId), value, kvcache);
+        return new Call(new UpdatePagedAttentionKVCache(kind, layerId, layout), value, kvcache);
+    }
+
+    public static Expr GatherPagedAttentionKVCache(Expr value, Expr kvcache, Expr output)
+    {
+        return new Call(new GatherPagedAttentionKVCache(), value, kvcache, output);
     }
 
     public static Expr CreatePagedAttentionKVCache(IR.NN.PagedAttentionConfig config, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches, Expr output)

@@ -278,6 +278,15 @@ class basic_tensor
             buffer(), new_shape, new_strides);
     }
 
+    template <size_t Rank>
+    constexpr auto unsqueeze(ranked_shape<Rank> axes) noexcept {
+        auto new_shape = unsqueeze_shape(axes, shape());
+        auto new_strides = unsqueeze_strides(axes, strides());
+        return tensor_view<T, std::decay_t<decltype(new_shape)>,
+                           std::decay_t<decltype(new_strides)>>(
+            buffer(), new_shape, new_strides);
+    }
+
     constexpr tensor_view<T, Shape, Strides> view() noexcept {
         return view(zero_shape_t<Shape::rank()>{}, shape());
     }
@@ -285,7 +294,7 @@ class basic_tensor
     template <class... Indices>
     constexpr const T &operator()(Indices &&...index) const noexcept {
         if constexpr (sizeof...(index) == 1 &&
-                      (!std::is_integral_v<std::decay_t<Indices>> && ...)) {
+                      (is_ranked_dims_v<std::decay_t<Indices>> && ...)) {
             return elements()[linear_offset(index..., strides())];
         } else {
             return this->operator()(
@@ -296,7 +305,7 @@ class basic_tensor
     template <class... Indices>
     constexpr T &operator()(Indices &&...index) noexcept {
         if constexpr (sizeof...(index) == 1 &&
-                      (!std::is_integral_v<std::decay_t<Indices>> && ...)) {
+                      (is_ranked_dims_v<std::decay_t<Indices>> && ...)) {
             return elements()[linear_offset(index..., strides())];
         } else {
             return this->operator()(

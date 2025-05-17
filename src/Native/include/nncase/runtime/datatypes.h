@@ -52,6 +52,7 @@ class NNCASE_API datatype_t : public object_t<datatype_node> {
     static prim_type_t float8e4m3;
     static prim_type_t float8e5m2;
     static value_type_t attention_kv_cache;
+    static value_type_t paged_attention_kv_cache;
 
     datatype_t(typecode_t typecode);
 
@@ -130,7 +131,7 @@ class NNCASE_API value_type_node : public datatype_node {
 };
 
 class NNCASE_API vector_type_node : public datatype_node {
-    DEFINE_OBJECT_KIND(datatype_node, object_value_type)
+    DEFINE_OBJECT_KIND(datatype_node, object_vector_type)
   public:
     vector_type_node(datatype_t elemtype, dims_t lanes) noexcept
         : elemtype_(elemtype), lanes_(lanes) {}

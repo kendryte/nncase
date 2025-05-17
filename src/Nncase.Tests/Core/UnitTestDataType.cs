@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
+using System.Text.Json;
 using Nncase;
 using Xunit;
 using TypeCode = Nncase.Runtime.TypeCode;
@@ -41,5 +43,57 @@ public sealed class UnitTestDataType
         Assert.Equal(1, vb[0]);
         Assert.Equal(2, vb[1]);
         Assert.Equal(0, vb[2]);
+    }
+
+    [Fact]
+    public void TestDataTypeSerialize()
+    {
+        var path = "UnitTestDataType_TestSeriable.json";
+        var options = new JsonSerializerOptions() { WriteIndented = true, Converters = { new IO.DataTypeJsonConverter() } };
+        {
+            var original = new PointerType(DataTypes.Float32);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<DataType>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.IsType<PointerType>(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
+            var original = new VectorType(DataTypes.Float8E4M3, [16]);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<DataType>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
+            var original = new ReferenceType(new IR.NN.AttentionKVCacheType());
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<DataType>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
     }
 }

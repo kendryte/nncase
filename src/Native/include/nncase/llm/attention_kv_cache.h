@@ -25,8 +25,8 @@ class NNCASE_API attention_kv_cache_node : public object_node {
     DEFINE_OBJECT_KIND(object_node, object_attention_kv_cache);
 
   public:
-    attention_kv_cache_node(attention_config config, size_t num_seqs,
-                            size_t num_tokens, tensor context_lens,
+    attention_kv_cache_node(attention_config config, int32_t num_seqs,
+                            int32_t num_tokens, tensor context_lens,
                             tensor seq_lens) noexcept
         : config_(std::move(config)),
           num_seqs_(num_seqs),
@@ -37,26 +37,28 @@ class NNCASE_API attention_kv_cache_node : public object_node {
     /**@brief Gets attention config. */
     attention_config config() const noexcept { return config_; }
 
-    void config(attention_config config) noexcept {
-        config_ = std::move(config);
+    int32_t num_seqs() const noexcept { return num_seqs_; }
+
+    void num_seqs(int32_t num_requests) noexcept { num_seqs_ = num_requests; }
+
+    int32_t num_tokens() const noexcept { return num_tokens_; }
+
+    void num_tokens(int32_t num_tokens) noexcept { num_tokens_ = num_tokens; }
+
+    void context_lens(tensor context_lens) noexcept {
+        context_lens_ = context_lens;
     }
 
-    size_t num_seqs() const noexcept { return num_seqs_; }
+    tensor context_lens() const noexcept { return context_lens_; }
 
-    void num_seqs(size_t num_requests) noexcept { num_seqs_ = num_requests; }
+    void seq_lens(tensor seq_lens) noexcept { seq_lens_ = seq_lens; }
 
-    size_t num_tokens() const noexcept { return num_tokens_; }
-
-    void num_tokens(size_t num_tokens) noexcept { num_tokens_ = num_tokens; }
-
-    result<int64_t> context_len(size_t seq_id) const noexcept;
-
-    result<int64_t> seq_len(size_t seq_id) const noexcept;
+    tensor seq_lens() const noexcept { return seq_lens_; }
 
   private:
     attention_config config_;
-    size_t num_seqs_;
-    size_t num_tokens_;
+    int32_t num_seqs_;
+    int32_t num_tokens_;
     tensor context_lens_;
     tensor seq_lens_;
 };

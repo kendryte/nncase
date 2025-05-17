@@ -26,6 +26,11 @@ public static class KernelUtility
     public static string StridesTypeToC(bool isFixed, ReadOnlySpan<Expr> dimensions) =>
         DimensionsTypeToC("strides", isFixed, dimensions);
 
+    public static string PlacementToC(this Placement placement)
+    {
+        return $"mesh<topology::thread, {string.Join(',', placement.Hierarchy)}>";
+    }
+
     public static string DistributedToC(DistributedType distributedType)
     {
         var placement = distributedType.Placement;
