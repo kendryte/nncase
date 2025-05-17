@@ -411,6 +411,42 @@ public sealed class UnitTestTensor
         }
 
         {
+            var original = Tensor.From(new Vector4<bool>[] { Vector4<bool>.Create([true, false, true, false]), Vector4<bool>.Create([false, true, false, true]), Vector4<bool>.Create([false, false, false, false]), Vector4<bool>.Create([true, true, true, true]) }, [1, 4, 1]);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
+            var x = new bool[4, 4] {
+                { true, false, true, false },
+                { true, false, true, false },
+                { false, true, false, true },
+                { false, true, false, true },
+            };
+            var original = Tensor.From(new Vector4x4<bool>[] { Vector4x4<bool>.Create(x), Vector4x4<bool>.Create(x), }, [2, 1]);
+            using (var stream = new FileStream(path, FileMode.Create, FileAccess.Write))
+            {
+                JsonSerializer.Serialize(stream, original, options);
+            }
+
+            using (var stream = File.OpenRead(path))
+            {
+                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
+                Assert.NotNull(deserialized);
+                Assert.Equal(original, deserialized);
+            }
+        }
+
+        {
             var cfg = new IR.NN.PagedAttentionConfig(
                 1,
                 2,
