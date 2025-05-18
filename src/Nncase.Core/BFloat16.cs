@@ -35,15 +35,15 @@ public struct BFloat16 : IEquatable<BFloat16>, IComparable<BFloat16>, INumber<BF
 
     public static BFloat16 NaN => FromRaw(0x7fc0);
 
-    public static BFloat16 One => throw new NotImplementedException();
+    public static BFloat16 One => RoundToBFloat16(1f);
 
-    public static int Radix => throw new NotImplementedException();
+    public static int Radix => 2;
 
-    public static BFloat16 Zero => throw new NotImplementedException();
+    public static BFloat16 Zero => FromRaw(0);
 
-    public static BFloat16 AdditiveIdentity => throw new NotImplementedException();
+    public static BFloat16 AdditiveIdentity => Zero;
 
-    public static BFloat16 MultiplicativeIdentity => throw new NotImplementedException();
+    public static BFloat16 MultiplicativeIdentity => One;
 
     /// <summary>
     /// Implicit convert <see cref="BFloat16"/> to <see cref="float"/>.
