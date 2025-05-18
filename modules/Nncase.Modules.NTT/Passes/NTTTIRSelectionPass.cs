@@ -104,7 +104,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.Swish((Expr)arguments[0], output, ((TensorConst)call[IR.NN.Swish.Beta]).Value.ToScalar<float>());
             case IR.Tensors.Gather gather:
                 return TIR.F.NTT.Gather((Expr)arguments[0], (Expr)arguments[1], output, gather.Axis);
-            case IR.NN.Pad pad:
+            case IR.NN.Pad pad when pad.PadMode == PadMode.Constant:
                 return TIR.F.NTT.Pad((Expr)arguments[0], output, Tensor.From(((Paddings)call[IR.NN.Pad.Pads]).ToValueArray()).ToArray(), ((TensorConst)call[IR.NN.Pad.Value]).Value.ToArray<float>()[0]);
             case IR.Math.Reduce reduce:
                 return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, Array.Empty<int>(), Array.Empty<int>(), ((RankedShape)call[IR.Math.Reduce.Axes]).ToValueArray().Select(x => Util.PositiveIndex(x, arguments[0].CheckedTensorType)).OrderBy(a => a).ToArray().ToInts(), ((TensorConst)call[IR.Math.Reduce.KeepDims]).Value.ToArray<bool>()[0], reduce.ReduceOp);
