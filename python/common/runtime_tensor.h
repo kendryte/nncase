@@ -68,8 +68,8 @@ inline void register_runtime_tensor(py::module &m) {
                         datatype, to_rt_shape(src_buffer.shape),
                         to_rt_strides(src_buffer.itemsize, src_buffer.strides),
                         std::span(reinterpret_cast<std::byte *>(src_buffer.ptr),
-                                  src_buffer.size * src_buffer.itemsize), 
-                                  true, hrt::pool_shared)
+                                  src_buffer.size * src_buffer.itemsize),
+                        true, hrt::pool_shared)
                         .unwrap_or_throw();
                 // arr.inc_ref();
                 return tensor;
