@@ -69,8 +69,8 @@ public class RTDataType : RTObject
     internal static RTDataType FromRTDataType(RTDataType dtype)
     {
         var typecode = Native.DTypeGetTypeCode(dtype);
-        dtype.SetHandleAsInvalid();
         var handle = dtype.DangerousGetHandle();
+        Native.ObjectAddRef(handle);
         return typecode switch
         {
             TypeCode.Pointer => throw new NotSupportedException(),
@@ -112,7 +112,7 @@ public sealed class RTVectorType : RTDataType
         get
         {
             Native.VectorDTypeGetElemType(this, out var elemType).ThrowIfFailed();
-            return elemType;
+            return FromRTDataType(elemType);
         }
     }
 

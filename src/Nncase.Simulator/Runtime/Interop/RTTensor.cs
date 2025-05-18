@@ -204,6 +204,8 @@ public class RTTensor : RTValue
                     {
                         var handle = rtObject.DangerousGetHandle();
                         Native.ObjectAddRef(handle);
+
+                        // todo: need add allocate options for auto release objects.
                         MemoryMarshal.AsBytes([handle]).CopyTo(mem.Memory.Span);
                     }
                     else
