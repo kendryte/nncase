@@ -11,6 +11,7 @@ using Microsoft.Extensions.Hosting;
 using Nncase.Diagnostics;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Passes;
 using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
@@ -104,9 +105,9 @@ public sealed class UnitTestDumpper : TestClassBase
     [Fact]
     public async Task TestDumpDataflowRewrite()
     {
-        var weights = new Var("weights", new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
+        var weights = new Var("weights", new TensorType(DataTypes.Float32, new RankedShape(1, 3, 224, 224)));
         _ = Util.ShapeIndex(weights, 0);
-        var expand = Expand(0f, Cast(Util.ShapeIndex(weights, 0), DataTypes.Int64));
+        var expand = Expand(0f, new RankedShape(Util.ShapeIndex(weights, 0)));
         await RunShapeInferPass("main", expand, weights);
         Assert.True(File.Exists(Path.Join(Dumpper.Directory, "0_ShapeInfer_main", "main", "Start_main.il")));
     }
@@ -149,19 +150,13 @@ public sealed class UnitTestDumpper : TestClassBase
             var weights = Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 64, 3, 3, 3 }).Evaluate());
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
-            var strideH = 2;
+            var strideH = new AsDim(2);
             var strideW = 2;
             var dilationH = 1;
             var dilationW = 1;
             var padH = TypeInference.GetWindowedPadding(inH, fH, strideH, dilationH, true);
             var padW = TypeInference.GetWindowedPadding(inW, fW, strideW, dilationW, true);
-            var padding = Stack(
-              new IR.Tuple(
-                Stack(new IR.Tuple(new Expr[] { 0L, 0L }), 0),
-                Stack(new IR.Tuple(new Expr[] { 0L, 0L }), 0),
-                Stack(new IR.Tuple(padH.Select(x => x.ToExpr()).ToArray()), 0),
-                Stack(new IR.Tuple(padW.Select(x => x.ToExpr()).ToArray()), 0)),
-              0);
+            var padding = new[] { Padding.Zero, Padding.Zero, padH, padW };
             var body = IR.F.NN.Pad(input, padding, PadMode.Constant, 0.0f);
             main = new Function("main", body, input);
         }
@@ -234,7 +229,7 @@ public sealed class UnitTestDumpper : TestClassBase
         CompilerServices.DumpIR(main, string.Empty, Dumpper.Directory);
     }
 
-    private async Task<Expr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
+    private async Task<BaseExpr> RunShapeInferPass(string name, Expr expr, params Var[] parameters)
     {
         var f = new Function(name, expr, parameters);
         var result = ((Function)await new ShapeInferPass { Name = $"ShapeInfer_{name}" }.RunAsync(f, new())).Body;

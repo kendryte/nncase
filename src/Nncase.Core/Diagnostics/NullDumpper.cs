@@ -27,12 +27,12 @@ public sealed class NullDumpper : IDumpper
     public IDumpper CreateSubDummper(string subDirectory, DumpFlags? dumpFlags) => this;
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, PrinterFlags flags = PrinterFlags.Minimal)
+    public void DumpIR(BaseExpr expr, string prefix, string? reletivePath = null, PrinterFlags flags = PrinterFlags.Minimal)
     {
     }
 
     /// <inheritdoc/>
-    public void DumpDotIR(Expr expr, string prefix, string? reletivePath = null)
+    public void DumpDotIR(BaseExpr expr, string prefix, string? reletivePath = null)
     {
     }
 
@@ -42,12 +42,12 @@ public sealed class NullDumpper : IDumpper
     }
 
     /// <inheritdoc/>
-    public void DumpCSharpIR(Expr expr, string prefix, string? reletivePath = null)
+    public void DumpCSharpIR(BaseExpr expr, string prefix, string? reletivePath = null)
     {
     }
 
     /// <inheritdoc/>
-    public void DumpPatternIR(Expr expr, string prefix, string? reletivePath = null)
+    public void DumpPatternIR(BaseExpr expr, string prefix, string? reletivePath = null)
     {
     }
 

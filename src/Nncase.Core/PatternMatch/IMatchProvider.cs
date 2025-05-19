@@ -25,7 +25,7 @@ public interface IMatchProvider
     /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
+    bool TryMatch(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Match expression as root.
@@ -35,7 +35,7 @@ public interface IMatchProvider
     /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
+    bool TryMatchRoot(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
 }
 
 /// <summary>
@@ -59,5 +59,5 @@ public interface IEGraphMatchProvider
     /// <param name="pattern">Pattern.</param>
     /// <param name="results">Match results.</param>
     /// <returns>Match success.</returns>
-    bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
+    bool TryEMatchRoot(BaseExpr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
 }

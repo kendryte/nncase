@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
@@ -33,8 +34,8 @@ public class UnitTestSpaceToBatchToPad : TransformTestBase
     public static IEnumerable<object[]> TestSpaceToBatchToPadNegativeData =>
         new[]
         {
-            new object[] { new[] { 1, 128, 128, new IR.Dimension(1) }, new[] { 2, 2 }, new[,] { { 0, 0 }, { 0, 0 } } },
-            new object[] { new[] { 1, 128, 128, IR.Dimension.Unknown }, new[] { 1, 1 }, new[,] { { 1, 1 }, { 1, 1 } } },
+            new object[] { new Dimension[] { 1, 128, 128, 1 }, new[] { 2, 2 }, new[,] { { 0, 0 }, { 0, 0 } } },
+            new object[] { new Dimension[] { 1, 128, 128, IR.Dimension.Unknown }, new[] { 1, 1 }, new[,] { { 1, 1 }, { 1, 1 } } },
         };
 
     [Theory]

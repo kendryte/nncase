@@ -40,7 +40,7 @@ internal static class FusionBuilder
         var bias = IR.F.Random.Normal(DataTypes.Float32, 0, 1, _count, new[] { 3 }).Evaluate().AsTensor();
         var fusion_1 = new Fusion(
             $"fusion_{_count}_{mask}",
-            Callable.StackVMModuleKind,
+            Callable.CPUModuleKind,
             IR.F.NN.Conv2D(
                 fusion_1_input,
                 weights,
@@ -62,7 +62,7 @@ internal static class FusionBuilder
     public static Fusion MakeBinaryFusion(BinaryOp binaryOp, bool mask)
     {
         var fusion_2_input = new Var[] { new($"fusion_{_count}_input_lhs", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 })), new($"fusion_{_count}_input_rhs", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 })) };
-        var fusion_2 = new Fusion($"fusion_{_count}_{mask}", Callable.StackVMModuleKind, IR.F.Math.Binary(binaryOp, fusion_2_input[0], fusion_2_input[1]), fusion_2_input);
+        var fusion_2 = new Fusion($"fusion_{_count}_{mask}", Callable.CPUModuleKind, IR.F.Math.Binary(binaryOp, fusion_2_input[0], fusion_2_input[1]), fusion_2_input);
         _count++;
         return fusion_2;
     }

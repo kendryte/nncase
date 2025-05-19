@@ -6,12 +6,14 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Nncase.CodeGen;
-using Nncase.CodeGen.StackVM;
+using Nncase.CodeGen.NTT;
 using Nncase.IR;
+using Nncase.Passes.Transforms;
 using Nncase.Runtime.Interop;
 using Nncase.Schedule;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
+using Nncase.TIR;
 using Xunit;
 
 namespace Nncase.Tests.SimulatorTest;
@@ -23,13 +25,19 @@ public class UnitTestInteropIntegrated : TestClassBase
 
     public UnitTestInteropIntegrated()
     {
-        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
-        var y = x + 1.0f;
-        var main = new Function("main", y, new[] { x });
+        CompileOptions.TargetOptions = new NTTTargetOptions();
+
+        var type = new TensorType(DataTypes.Float32, new[] { 1 });
+        var x = new Var("x", type);
+        var body = T.Sequential().Body(
+            T.AttachBuffer(1.0f, out var constBuffer),
+            TIR.F.NTT.Binary(BinaryOp.Add, x, constBuffer, T.CreateBuffer(type, MemoryLocation.Output, out var outBuffer)),
+            T.Return(outBuffer)).Build();
+        var main = new PrimFunction("main_prim", CPUTarget.Kind, body, new[] { x });
+        BufferizePass.Bufferize(main);
         var module = new IRModule(main);
         var target = CompilerServices.GetTarget(CPUTarget.Kind);
-        var stackVMModuleBuilder = new StackVMModuleBuilder();
-        var modelBuilder = new ModelBuilder(target, CompileOptions, stackVMModuleBuilder);
+        var modelBuilder = new ModelBuilder(target, CompileOptions);
         var linkedModel = modelBuilder.Build(module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);

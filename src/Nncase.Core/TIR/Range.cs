@@ -20,33 +20,25 @@ public sealed partial class Range : Expr
     /// </summary>
     public static readonly Range All = new Range(long.MinValue, long.MaxValue, 1L);
 
-    public Range(Expr start, Expr stop, Expr step)
-        : base(new[] { start, stop, step }.Select(CompilerServices.FastSimplifyForDimension).ToArray())
+    public Range(Dimension start, Dimension stop, Dimension step)
+        : base([start, stop, step])
     {
-        foreach (var dim in Operands)
-        {
-            if (dim.CheckedType != TensorType.Scalar(DataTypes.Int64)
-                && dim.CheckedType != NoneType.Default)
-            {
-                throw new ArgumentException($"Invalid range dimension type: {dim.CheckedType}");
-            }
-        }
     }
 
     /// <summary>
     /// Gets beginning of the nodes.
     /// </summary>
-    public Expr Start => Operands[0];
+    public Dimension Start => (Dimension)Operands[0];
 
     /// <summary>
     /// Gets stop of the nodes.
     /// </summary>
-    public Expr Stop => Operands[1];
+    public Dimension Stop => (Dimension)Operands[1];
 
     /// <summary>
     /// Gets the extend of range.
     /// </summary>
-    public Expr Step => Operands[2];
+    public Dimension Step => (Dimension)Operands[2];
 
     /// <summary>
     /// <see cref="Range"/>.
@@ -66,17 +58,17 @@ public sealed partial class Range : Expr
         return new Range(range.Start.Value, range.End.Value, 1);
     }
 
-    public static Range operator *(Range range, Expr expr) => new Range(range.Start * expr, range.Stop * expr, range.Step);
+    public static Range operator *(Range range, Dimension expr) => new Range(range.Start * expr, range.Stop * expr, range.Step);
 
-    public static Range operator -(Range range, Expr expr) => new Range(range.Start - expr, range.Stop - expr, range.Step);
+    public static Range operator -(Range range, Dimension expr) => new Range(range.Start - expr, range.Stop - expr, range.Step);
 
-    public static Range operator +(Range range, Expr expr) => new Range(range.Start + expr, range.Stop + expr, range.Step);
+    public static Range operator +(Range range, Dimension expr) => new Range(range.Start + expr, range.Stop + expr, range.Step);
 
-    public static Range operator /(Range range, Expr expr) => new Range(range.Start / expr, range.Stop / expr, range.Step);
+    public static Range operator /(Range range, Dimension expr) => new Range(range.Start / expr, range.Stop / expr, range.Step);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitRange(this, context);
 
-    public Range With(Expr? start = null, Expr? stop = null, Expr? step = null)
+    public Range With(Dimension? start = null, Dimension? stop = null, Dimension? step = null)
         => new Range(start ?? Start, stop ?? Stop, step ?? Step);
 }

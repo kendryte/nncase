@@ -11,7 +11,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitCompare(in tflite.Operator op, CompareOp compareOp)
         {
-            var (x, y) = GetInputExprs(op, 0, 1);
+            var (x, y) = GetInputExprs<Expr, Expr>(op, 0, 1);
             return F.Math.Compare(compareOp, x, y);
         }
     }

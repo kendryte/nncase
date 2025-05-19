@@ -15,7 +15,7 @@ namespace Nncase.Passes;
 
 internal class RewriteProvider : IRewriteProvider
 {
-    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext context)
+    public BaseExpr Rewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext context)
     {
         CompilerServices.InferenceType(expr);
         IRewriteRule? lastRule = null;
@@ -71,7 +71,7 @@ internal class RewriteProvider : IRewriteProvider
     /// <summary>
     /// callback for rewrite start.
     /// </summary>
-    private void OnRewriteStart(Expr expr, RunPassContext context, int count)
+    private void OnRewriteStart(BaseExpr expr, RunPassContext context, int count)
     {
         if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {
@@ -82,7 +82,7 @@ internal class RewriteProvider : IRewriteProvider
     /// <summary>
     /// call back for rewrite end.
     /// </summary>
-    private void OnRewriteEnd(Expr expr, RunPassContext context, int count, IRewriteRule? rule)
+    private void OnRewriteEnd(BaseExpr expr, RunPassContext context, int count, IRewriteRule? rule)
     {
         if (DumpScope.Current.IsEnabled(DumpFlags.Rewrite))
         {

@@ -12,9 +12,9 @@ namespace Nncase.Importer
     {
         private Expr VisitScatterND(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var indices = GetInputExpr(op, 1);
-            var updates = GetInputExpr(op, 2);
+            var input = GetInputExpr<Expr>(op, 0);
+            var indices = GetInputExpr<Expr>(op, 1);
+            var updates = GetInputExpr<Expr>(op, 2);
             return F.Tensors.ScatterND(input, indices, updates);
         }
     }

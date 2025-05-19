@@ -15,9 +15,9 @@ namespace Nncase.Importer
     {
         private Expr VisitTranspose(NodeProto op)
         {
-            var input = GetSingleInputExpr(op);
-            var perm = GetAttr(op, "perm", AttributeProto.Types.AttributeType.Ints, x => (Expr)x.Ints.ToArray())
-                .Match(x => x, () => F.Tensors.Range(F.Tensors.Rank(input) - 1L, -1L, -1L));
+            var input = GetSingleInputExpr<Expr>(op);
+            var perm = GetAttr(op, "perm", AttributeProto.Types.AttributeType.Ints, x => new RankedShape(x.Ints))
+                .Match(x => x, () => new RankedShape(Enumerable.Range(0, input.CheckedShape.Rank).Reverse()));
             return F.Tensors.Transpose(input, perm).With(metadata: new IRMetadata() { OutputNames = op.Output, });
         }
     }

@@ -13,7 +13,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitSqueeze(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
+            var input = GetInputExprs<Expr>(op, 0);
             var options = op.BuiltinOptionsAsSqueezeOptions();
             var dims = options.GetSqueezeDimsArray();
             return Squeeze(input, dims);
@@ -21,8 +21,8 @@ namespace Nncase.Importer.TFLite
 
         private Expr VisitExpandDims(in tflite.Operator op)
         {
-            var (input, dim) = GetInputExprs(op, 0, 1);
-            return Unsqueeze(input, Unsqueeze(dim, new[] { 0 }));
+            var (input, dim) = GetInputExprs<Expr, Dimension>(op, 0, 1);
+            return Unsqueeze(input, new RankedShape(dim));
         }
     }
 }

@@ -18,18 +18,18 @@ namespace Nncase.Passes.Mutators;
 /// </summary>
 public sealed class Substitutor : ExprRewriter
 {
-    private readonly Func<Expr, Expr?> _mapper;
+    private readonly Func<BaseExpr, BaseExpr?> _mapper;
 
-    public Substitutor(Func<Expr, Expr?> maper)
+    public Substitutor(Func<BaseExpr, BaseExpr?> maper)
         : base(false)
     {
         _mapper = maper;
     }
 
     /// <inheritdoc/>
-    protected override Expr DefaultRewriteLeaf(Expr expr)
+    protected override BaseExpr DefaultRewriteLeaf(BaseExpr expr)
     {
-        if (_mapper(expr) is Expr replace)
+        if (_mapper(expr) is BaseExpr replace)
         {
             return replace;
         }

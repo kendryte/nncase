@@ -31,7 +31,7 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
     public IRType Visit(ITypeInferenceContext context, Tile target)
     {
         var input = context.CheckArgumentType<TensorType>(target, Tile.Input);
-        var repeat = context.CheckArgumentType<TensorType>(target, Tile.Repeats);
+        var repeat = context.CheckArgumentType<ShapeType>(target, Tile.Repeats);
         return Visit(context, target, input, repeat);
     }
 
@@ -52,25 +52,15 @@ public class TileEvaluator : IEvaluator<Tile>, ITypeInferencer<Tile>, ICostEvalu
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input, TensorType repeat)
+    private IRType Visit(ITypeInferenceContext context, Tile target, TensorType input, ShapeType repeat)
     {
-        var inShape = input.Shape;
-        if (inShape.IsUnranked)
+        if (input.Shape is not RankedShape inputShape)
         {
             return input;
         }
 
-        var repeats = context.GetArgument(target, Tile.Repeats);
-        if (repeats is TensorConst tc)
-        {
-            var repeatsValue = tc.Value.ToArray<int>();
-            var shape = input.Shape.Zip(repeatsValue).Select(p => p.First * p.Second);
-            return input with { Shape = new Shape(shape) };
-        }
-        else
-        {
-            var shape = input.Shape.Select((p, i) => p * (Dimension)repeats[i]);
-            return input with { Shape = new Shape(shape) };
-        }
+        var repeats = (Shape)context.GetArgument(target, Tile.Repeats);
+        var shape = inputShape.Select((p, i) => p * repeats[i]);
+        return input with { Shape = new RankedShape(shape) };
     }
 }

@@ -33,7 +33,7 @@ public sealed partial class RemoveUnusedVarsByCall : IRewriteRule
         var usedVars = new List<int>();
         for (int i = 0; i < function.Parameters.Length; i++)
         {
-            var var = function.Parameters[i];
+            var var = (Expr)function.Parameters[i];
             if (var.Users.Count() == 1)
             {
                 unusedVars++;
@@ -46,9 +46,9 @@ public sealed partial class RemoveUnusedVarsByCall : IRewriteRule
 
         if (unusedVars != 0)
         {
-            var newVarsMap = new Dictionary<Var, Var>(ReferenceEqualityComparer.Instance);
-            var newVars = new List<Var>();
-            var newArgs = new List<Expr>();
+            var newVarsMap = new Dictionary<IVar, IVar>(ReferenceEqualityComparer.Instance);
+            var newVars = new List<IVar>();
+            var newArgs = new List<BaseExpr>();
             foreach (var i in usedVars)
             {
                 var var = function.Parameters[i];
@@ -85,8 +85,8 @@ public sealed partial class RemoveUnusedVarsByIf : IRewriteRule
         var usedVars = new List<int>();
         for (int i = 0; i < thenFunc.Parameters.Length; i++)
         {
-            var thenVar = thenFunc.Parameters[i];
-            var elseVar = elseFunc.Parameters[i];
+            var thenVar = (Expr)thenFunc.Parameters[i];
+            var elseVar = (Expr)elseFunc.Parameters[i];
             if (thenVar.Users.Count() == 1
                 && elseVar.Users.Count() == 1)
             {
@@ -100,10 +100,10 @@ public sealed partial class RemoveUnusedVarsByIf : IRewriteRule
 
         if (unusedVars != 0)
         {
-            var newVarsMap = new Dictionary<Var, Var>(ReferenceEqualityComparer.Instance);
-            var newThenVars = new List<Var>();
-            var newElseVars = new List<Var>();
-            var newArgs = new List<Expr>();
+            var newVarsMap = new Dictionary<IVar, IVar>(ReferenceEqualityComparer.Instance);
+            var newThenVars = new List<IVar>();
+            var newElseVars = new List<IVar>();
+            var newArgs = new List<BaseExpr>();
             foreach (var i in usedVars)
             {
                 var thenVar = thenFunc.Parameters[i];
@@ -132,15 +132,15 @@ public sealed partial class RemoveUnusedVarsByIf : IRewriteRule
 
 internal sealed class VarReplacer : ExprCloner<Unit>
 {
-    private readonly Dictionary<Var, Var> _newVars;
+    private readonly Dictionary<IVar, IVar> _newVars;
 
-    public VarReplacer(Dictionary<Var, Var> newVars)
+    public VarReplacer(Dictionary<IVar, IVar> newVars)
     {
         _newVars = newVars;
     }
 
     protected override Expr VisitVar(Var var, Unit state)
     {
-        return _newVars[var];
+        return (Expr)_newVars[var];
     }
 }

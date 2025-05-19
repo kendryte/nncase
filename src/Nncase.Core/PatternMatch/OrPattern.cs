@@ -18,7 +18,7 @@ public sealed record OrPattern(Pattern ConditionA, Pattern ConditionB, string? N
     : Pattern(Name)
 {
     /// <inheritdoc/>
-    public override bool MatchLeaf(Expr input) => true;
+    public override bool MatchLeaf(BaseExpr input) => true;
 }
 
 public static partial class Utility

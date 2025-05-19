@@ -29,8 +29,8 @@ public sealed class For : Expr
     /// <param name="domain">The domain of for range.</param>
     /// <param name="mode">The kind of the for loop.</param>
     /// <param name="body">The body sequence.</param>
-    public For(Var loopVar, Range domain, LoopMode mode, Sequential body)
-        : base(new Expr[] { loopVar, domain, body })
+    public For(DimVar loopVar, Range domain, LoopMode mode, Sequential body)
+        : base([loopVar, domain, body])
     {
         Mode = mode;
     }
@@ -41,7 +41,7 @@ public sealed class For : Expr
     /// <param name="loopVar">The loop variable.</param>
     /// <param name="domain">The domain of for range.</param>
     /// <param name="mode">The kind of the for loop.</param>
-    public For(Var loopVar, Range domain, LoopMode mode)
+    public For(DimVar loopVar, Range domain, LoopMode mode)
         : this(loopVar, domain, mode, new())
     {
     }
@@ -49,7 +49,7 @@ public sealed class For : Expr
     /// <summary>
     /// Gets the loop variable.
     /// </summary>
-    public Var LoopVar => (Var)Operands[0];
+    public DimVar LoopVar => (DimVar)Operands[0];
 
     /// <summary>
     /// Gets the domain of for range.
@@ -70,6 +70,6 @@ public sealed class For : Expr
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitFor(this, context);
 
-    public For With(Var? loopVar = null, Range? domain = null, LoopMode? loopMode = null, Sequential? body = null)
+    public For With(DimVar? loopVar = null, Range? domain = null, LoopMode? loopMode = null, Sequential? body = null)
         => new For(loopVar ?? LoopVar, domain ?? Domain, loopMode ?? Mode, body ?? Body);
 }

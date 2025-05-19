@@ -56,8 +56,8 @@ public sealed class UnitTestIRArray
     [Fact]
     public void TestCompareNestedShape()
     {
-        var a = new IR.IRArray<IR.Shape>(new[] { new IR.Shape(new[] { 1, 2, 3 }), new IR.Shape(new[] { 4, 5, 6 }) });
-        var b = new IR.IRArray<IR.Shape>(new[] { new IR.Shape(new[] { 1, 2, 3 }), new IR.Shape(new[] { 4, 5, 6 }) });
+        var a = new IR.IRArray<IR.Shape>(new[] { new IR.RankedShape(new[] { 1, 2, 3 }), new IR.RankedShape(new[] { 4, 5, 6 }) });
+        var b = new IR.IRArray<IR.Shape>(new[] { new IR.RankedShape(new[] { 1, 2, 3 }), new IR.RankedShape(new[] { 4, 5, 6 }) });
 
         Assert.True(a.Equals(b));
         Assert.True(a == b);

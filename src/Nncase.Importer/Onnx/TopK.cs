@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitTopK(in NodeProto op)
         {
-            var (x, k) = GetInputExprs(op, 0, 1);
+            var (x, k) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var axis = GetOptionIntAttribute(op, "axis").Or(-1);
             var largest = GetOptionIntAttribute(op, "largest").Or(1);
             var sorted = GetOptionIntAttribute(op, "sorted").Or(1);

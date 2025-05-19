@@ -13,9 +13,9 @@ namespace Nncase.Passes.GraphPartition;
 
 public interface IExprVertex
 {
-    Expr Expr { get; }
+    BaseExpr Expr { get; }
 
-    static abstract IExprVertex Create(Expr expr);
+    static abstract IExprVertex Create(BaseExpr expr);
 }
 
 public interface IExprEdge<TExprVertex> : IEdge<TExprVertex>
@@ -26,14 +26,14 @@ public interface IExprEdge<TExprVertex> : IEdge<TExprVertex>
 
 public sealed record ExprVertex : IExprVertex
 {
-    private ExprVertex(Expr expr)
+    private ExprVertex(BaseExpr expr)
     {
         Expr = expr;
     }
 
-    public Expr Expr { get; }
+    public BaseExpr Expr { get; }
 
-    public static IExprVertex Create(Expr expr) => new ExprVertex(expr);
+    public static IExprVertex Create(BaseExpr expr) => new ExprVertex(expr);
 
     public bool Equals(ExprVertex? other)
     {
@@ -65,7 +65,7 @@ public class ExprGraphConvertor<TVertex, TEdge> : ExprVisitor<TVertex, Unit, IMu
     where TVertex : IExprVertex
     where TEdge : IExprEdge<TVertex>
 {
-    protected override TVertex DefaultVisitLeaf(Expr expr, IMutableVertexAndEdgeListGraph<TVertex, TEdge> graph)
+    protected override TVertex DefaultVisitLeaf(BaseExpr expr, IMutableVertexAndEdgeListGraph<TVertex, TEdge> graph)
     {
         var target = (TVertex)TVertex.Create(expr);
         graph.AddVertex(target);

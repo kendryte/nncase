@@ -27,7 +27,7 @@ public static class Imaging
         ImageResizeNearestMode nearestMode,
         Expr input,
         Expr roi,
-        Expr newSize,
+        Shape newSize,
         Expr cubicCoeffA,
         Expr excludeOutside,
         Expr extrapolationValue,
@@ -42,7 +42,7 @@ public static class Imaging
         ImageResizeMode resizeMode,
         Expr input,
         Expr roi,
-        Expr newSize,
+        Shape newSize,
         ImageResizeTransformationMode tranMode = ImageResizeTransformationMode.Asymmetric,
         ImageResizeNearestMode nearestMode = ImageResizeNearestMode.Floor,
         bool isTFResize = false)

@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
 set(SRCS buffer.cpp
+     copy.cpp
 		 datatypes.cpp
 		 error.cpp
 		 host_buffer.cpp
@@ -25,7 +26,6 @@ if (BUILDING_RUNTIME)
     add_library(runtime OBJECT ${SRCS})
     target_include_directories(runtime PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(runtime PUBLIC nlohmann_json::nlohmann_json)
-    target_link_libraries(runtime PRIVATE kernels)
     if (DEFAULT_BUILTIN_RUNTIMES)
       target_compile_definitions(runtime PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
     endif()
@@ -36,7 +36,7 @@ if (BUILDING_RUNTIME)
     install(TARGETS runtime EXPORT nncaseruntimeTargets)
 
     add_library(nncaseruntime STATIC dummy.cpp)
-    target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase kernels runtime runtime_stackvm runtime_cpu cpu_loaders)
+    target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase runtime runtime_cpu cpu_loaders)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
     install(TARGETS nncaseruntime EXPORT nncaseruntimeTargets
@@ -55,7 +55,6 @@ else()
     add_library(simulator OBJECT ${SRCS})
     target_include_directories(simulator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(simulator PUBLIC fmt::fmt nlohmann_json::nlohmann_json)
-    target_link_libraries(simulator PRIVATE kernels)
     target_compile_definitions(simulator PUBLIC -DNNCASE_DLL -DNNCASE_SIMULATOR)
     if (DEFAULT_BUILTIN_RUNTIMES)
       target_compile_definitions(simulator PRIVATE -DNNCASE_DEFAULT_BUILTIN_RUNTIMES)
@@ -66,7 +65,7 @@ else()
     set_property(TARGET simulator PROPERTY POSITION_INDEPENDENT_CODE ON)
     
     add_library(nncaseruntime SHARED dummy.cpp)
-    target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase kernels simulator compiler simulator_stackvm simulator_cpu cpu_loaders fmt::fmt)
+    target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase simulator compiler simulator_cpu cpu_loaders fmt::fmt)
     if (NOT (WIN32 OR APPLE))
       target_link_libraries(nncaseruntime PRIVATE dl pthread)
     endif()
@@ -87,5 +86,4 @@ else()
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseConfig.cmake DESTINATION lib/cmake/nncase)
 endif()
 
-add_subdirectory(stackvm)
 add_subdirectory(cpu)

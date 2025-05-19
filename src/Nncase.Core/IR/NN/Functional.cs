@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 
 namespace Nncase.IR.F;
@@ -16,13 +17,13 @@ namespace Nncase.IR.F;
 /// </summary>
 public static class NN
 {
-    public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2D(padMode), input, weights, bias, stride, padding, dilation, groups, new[] { ValueRange<float>.Full.Min, ValueRange<float>.Full.Max });
+    public static Call Conv2D(Expr input, Expr weights, Expr bias, Shape stride, Paddings padding, Shape dilation, PadMode padMode, Dimension groups) => new Call(new Conv2D(padMode), input, weights, bias, stride, padding, dilation, groups, (Expr)new[] { ValueRange<float>.Full.Min, ValueRange<float>.Full.Max });
 
-    public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups, Expr fusedClamp) => new Call(new Conv2D(padMode), input, weights, bias, stride, padding, dilation, groups, fusedClamp);
+    public static Call Conv2D(Expr input, Expr weights, Expr bias, Shape stride, Paddings padding, Shape dilation, PadMode padMode, Dimension groups, Expr fusedClamp) => new Call(new Conv2D(padMode), input, weights, bias, stride, padding, dilation, groups, fusedClamp);
 
     public static Call Celu(Expr input, Expr alpha) => new Call(new Celu(), input, alpha);
 
-    public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding, Expr outputPadding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, outputPadding, dilation, groups, new[] { ValueRange<float>.Full.Min, ValueRange<float>.Full.Max });
+    public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Shape outShape, Shape stride, Paddings padding, Shape outputPadding, Shape dilation, PadMode padMode, Dimension groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, outputPadding, dilation, groups, (Expr)new[] { ValueRange<float>.Full.Min, ValueRange<float>.Full.Max });
 
     public static Call Elu(Expr input, Expr alpha) => new Call(new Elu(), input, alpha);
 
@@ -36,7 +37,7 @@ public static class NN
 
     public static Call LayerNorm(int axis, float epsilon, Expr input, Expr scale, Expr bias, bool hasMean = true, bool channelFirst = false) => new Call(new LayerNorm(axis, epsilon, hasMean, channelFirst), input, scale, bias);
 
-    public static Call BatchToSpace(Expr input, Expr blockShape, Expr crops) => new Call(new BatchToSpace(), input, blockShape, crops);
+    public static Call BatchToSpace(Expr input, Shape blockShape, Paddings crops) => new Call(new BatchToSpace(), input, blockShape, crops);
 
     public static Call InstanceNormalization(Expr input, Expr scale, Expr bias, Expr eps) => new Call(new InstanceNormalization(), input, scale, bias, eps);
 
@@ -55,9 +56,9 @@ public static class NN
     /// <summary>
     /// Pads is Const tensor, shape = [channels, 2(before, after)].
     /// </summary>
-    public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
+    public static Call Pad(Expr input, Paddings pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
-    public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation, Expr ceilMode, Expr countIncludePad) =>
+    public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Shape filter, Shape stride, Paddings padding, Shape dilation, Expr ceilMode, Expr countIncludePad) =>
         new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation, ceilMode, countIncludePad);
 
     public static Call Relu(Expr input) => new Call(new Relu(), input);
@@ -70,16 +71,16 @@ public static class NN
 
     public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
 
-    public static Call Softmax(Expr expr, Expr axis) => new Call(new Softmax(), expr, axis);
+    public static Call Softmax(Expr expr, Dimension axis) => new Call(new Softmax(), expr, axis);
 
     public static Call Softplus(Expr expr) => new Call(new Softplus(), expr);
 
     public static Call Softsign(Expr expr) => new Call(new Softsign(), expr);
 
     // same like tensorflow
-    public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
+    public static Call SpaceToBatch(Expr input, Shape blockShape, Paddings paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
 
-    public static Call LogSoftmax(Expr expr, Expr axis) => new Call(new LogSoftmax(), expr, axis);
+    public static Call LogSoftmax(Expr expr, Dimension axis) => new Call(new LogSoftmax(), expr, axis);
 
     // public static Call LSTM(Expr input,Expr w, Expr r, Expr b,
     //     Expr initH, Expr initC, Expr has_static, lstm_direction lstmDirection,string str) =>
@@ -103,7 +104,7 @@ public static class NN
     /// <summary>
     /// create Swish call.
     /// </summary>
-    public static Call Swish(Expr input) => new Call(new Swish(), input, 1f);
+    public static Call Swish(Expr input) => new Call(new Swish(), input, (Expr)1f);
 
     /// <summary>
     /// create Swish call.

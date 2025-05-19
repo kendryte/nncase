@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ntt/shape.h"
 #include <chrono>
 #include <cmath>
 #include <cstring>
@@ -1012,12 +1013,10 @@ void test_slice() {
     ntt::tensor<float, ntt::fixed_shape<3, 8>> tb;
     ntt::tensor<float, ntt::fixed_shape<3, 16>> tc;
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-        ta, ntt::tensor<int64_t, ntt::fixed_shape<1>>{0},
-        ntt::tensor<int64_t, ntt::fixed_shape<1>>{8}, tb);
-    ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-        ta, ntt::tensor<int64_t, ntt::fixed_shape<1>>{8},
-        ntt::tensor<int64_t, ntt::fixed_shape<1>>{24}, tc);
+    ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ta, fixed_shape<0>{},
+                                                         fixed_shape<8>{}, tb);
+    ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ta, fixed_shape<8>{},
+                                                         fixed_shape<24>{}, tc);
     assert(tb(0, 0) == 0.f);
     assert(tb(0, 1) == 1.f);
     assert(tb(0, 2) == 2.f);

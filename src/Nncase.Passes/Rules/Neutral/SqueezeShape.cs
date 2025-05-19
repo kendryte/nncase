@@ -38,9 +38,9 @@ public sealed partial class Squeeze5DTranspose : IRewriteRule
 
     private Expr? GetReplace(Expr call, Expr input, int[] perm)
     {
-        var inputShape = input.CheckedShape.ToValueList();
+        var inputShape = input.CheckedShape.ToValueArray();
 
-        var shape1 = inputShape.GetRange(0, 3);
+        var shape1 = inputShape[0..3].ToList();
         shape1.Add(inputShape[3] * inputShape[4]);
         var perm1 = ((int[])perm.Clone()).RemoveAt(perm.IndexOf(4));
         var tp1 = Transpose(Reshape(input, shape1.ToArray()), perm1);
@@ -167,7 +167,7 @@ public sealed partial class Squeeze5DTranspose : IRewriteRule
                 throw new NotSupportedException("Not Supported perm!");
         }
 
-        return Reshape(Transpose(Reshape(tp1, shape3), perm2).With(metadata: call.Metadata), call.CheckedShape.ToValueArrayExpr());
+        return Reshape(Transpose(Reshape(tp1, shape3), perm2).With(metadata: call.Metadata), call.CheckedShape);
     }
 }
 
@@ -181,19 +181,19 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
         IsWildcard("input") with { TypePattern = HasFixedShape() & HasRank(x => x > 4, "more than 4D need to squeeze") },
         IsWildcard("perm"));
 
-    private Tuple<bool, List<int>, List<long>> SqueezeTranspose(List<long> oldShape, List<int> oldAxis)
+    private Tuple<bool, List<int>, List<long>> SqueezeTranspose(long[] oldShape, List<int> oldAxis)
     {
-        if (oldShape.Count <= 4)
+        if (oldShape.Length <= 4)
         {
-            return new Tuple<bool, List<int>, List<long>>(false, oldAxis, oldShape);
+            return new Tuple<bool, List<int>, List<long>>(false, oldAxis, oldShape.ToList());
         }
 
         var newAxis = new List<int>(oldAxis);
         var newShape = new List<long>(oldShape);
-        int squeezeTimes = oldShape.Count - 4;
+        int squeezeTimes = oldShape.Length - 4;
 
         var foldIndexCouple = new List<Tuple<int, int>>();
-        for (int i = oldShape.Count - 1; i > 0; i--)
+        for (int i = oldShape.Length - 1; i > 0; i--)
         {
             if (oldAxis[i - 1] + 1 == oldAxis[i])
             {
@@ -235,7 +235,7 @@ public sealed partial class SqueezeTransposeShape : IRewriteRule
     private Expr? GetReplace(Expr input, int[] perm, Expr call)
     {
         var inputShape = input.CheckedShape;
-        var (result, new_perm, new_shape) = SqueezeTranspose(inputShape.ToValueList(), perm.ToList());
+        var (result, new_perm, new_shape) = SqueezeTranspose(inputShape.ToValueArray(), perm.ToList());
         if (!result)
         {
             return null;
@@ -263,10 +263,10 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
     /// <param name="a"> left input shape.</param>
     /// <param name="b"> right input shape.</param>
     /// <returns> Squeeze flag, new lhs, new rhs. </returns>
-    public (bool SqueezeOrNot, List<long> NewAShape, List<long> NewBShape) SqueezeInputShape(List<long> a, List<long> b)
+    public (bool SqueezeOrNot, IReadOnlyList<long> NewAShape, IReadOnlyList<long> NewBShape) SqueezeInputShape(long[] a, long[] b)
     {
-        var aSize = a.Count;
-        var bSize = b.Count;
+        var aSize = a.Length;
+        var bSize = b.Length;
 
         var squeezeTimes = Math.Max(
             aSize > 4 ? aSize - 4 : 0,
@@ -277,8 +277,8 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
             return (false, a, b);
         }
 
-        List<long> newA = a;
-        List<long> newB = b;
+        var newA = a.ToList();
+        var newB = b.ToList();
 
         if (aSize == bSize)
         {
@@ -353,11 +353,11 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
         return (true, newA, newB);
     }
 
-    private static List<long> SqueezeShape(List<long> shape)
+    private static List<long> SqueezeShape(long[] shape)
     {
         var newShape = new List<long> { 1, 1, 1, 1 };
 
-        for (int i = shape.Count - 1, k = 3; i >= 0; i--)
+        for (int i = shape.Length - 1, k = 3; i >= 0; i--)
         {
             newShape[k] *= shape[i];
             if (k > 0)
@@ -369,20 +369,20 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
         return newShape;
     }
 
-    private static List<long> GetOutputShape(List<long> a, List<long> b)
+    private static long[] GetOutputShape(long[] a, long[] b)
     {
-        if (a.Count == 1)
+        if (a.Length == 1)
         {
             return b;
         }
 
-        if (b.Count == 1)
+        if (b.Length == 1)
         {
             return a;
         }
 
         var outputShape = a;
-        for (int i = 0; i < a.Count; i++)
+        for (int i = 0; i < a.Length; i++)
         {
             outputShape[i] = Math.Max(a[i], b[i]);
         }
@@ -392,15 +392,17 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
 
     private Expr? GetReplace(Binary binary, Call binaryCall, Expr lhs, Expr rhs)
     {
-        var lShape = lhs.CheckedShape.Count == 0 ? new Shape(new List<int> { 1 }) : lhs.CheckedShape;
-        var rShape = rhs.CheckedShape.Count == 0 ? new Shape(new List<int> { 1 }) : rhs.CheckedShape;
-        var (result, newLShape, newRShape) = SqueezeInputShape(lShape.ToValueList(), rShape.ToValueList());
+        var lhsShape = (RankedShape)lhs.CheckedShape;
+        var rhsShape = (RankedShape)rhs.CheckedShape;
+        var lShape = lhsShape.Count == 0 ? new RankedShape(1) : lhsShape;
+        var rShape = rhsShape.Count == 0 ? new RankedShape(1) : rhsShape;
+        var (result, newLShape, newRShape) = SqueezeInputShape(lShape.ToValueArray(), rShape.ToValueArray());
         if (!result)
         {
             return null;
         }
 
-        var outputShape = GetOutputShape(lShape.ToValueList(), rShape.ToValueList());
+        var outputShape = GetOutputShape(lShape.ToValueArray(), rShape.ToValueArray());
 
         return Reshape(Binary(binary.BinaryOp, Reshape(lhs, newLShape.ToArray()).With(metadata: lhs.Metadata), Reshape(rhs, newRShape.ToArray()).With(metadata: rhs.Metadata)).With(metadata: binaryCall.Metadata), outputShape.ToArray());
     }

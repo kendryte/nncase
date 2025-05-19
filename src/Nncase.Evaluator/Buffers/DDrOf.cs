@@ -7,10 +7,10 @@ using Nncase.IR.Buffers;
 namespace Nncase.Evaluator.Buffers;
 
 /// <summary>
-/// Evaluator for DDrOf.
+/// Evaluator for AddressOf.
 /// </summary>
 [TypeInferGenerator]
-public partial class DDrOfEvaluator : ITypeInferencer<DDrOf>
+public partial class AddressOfEvaluator : ITypeInferencer<AddressOf>
 {
     private IRType Visit(IRType input)
     {

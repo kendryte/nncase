@@ -13,6 +13,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Nncase.Utilities;
 
@@ -45,10 +46,10 @@ internal sealed record ScriptSymobl(string Span, string Name, bool IsRefSymobl) 
 
 internal sealed class ScriptPrintContext : IPrintOpContext
 {
-    private readonly Dictionary<Expr, ScriptSymobl> _exprMemo;
+    private readonly Dictionary<BaseExpr, ScriptSymobl> _exprMemo;
     private readonly ScriptPrintVisitor _printVisitor;
 
-    public ScriptPrintContext(Dictionary<Expr, ScriptSymobl> exprMemo, ScriptPrintVisitor visitor, PrinterFlags flags)
+    public ScriptPrintContext(Dictionary<BaseExpr, ScriptSymobl> exprMemo, ScriptPrintVisitor visitor, PrinterFlags flags)
     {
         _exprMemo = exprMemo;
         _printVisitor = visitor;
@@ -108,7 +109,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 {
     private readonly ScopeWriter _scope;
     private readonly ScriptPrintContext _context;
-    private readonly Dictionary<Expr, ScriptSymobl> _exprMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<BaseExpr, ScriptSymobl> _exprMemo = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<BaseFunction, ScriptSymobl> _extFuncMemo = new(ReferenceEqualityComparer.Instance);
 
     public ScriptPrintVisitor(TextWriter textWriter, PrinterFlags flags)
@@ -176,6 +177,8 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
     /// <inheritdoc/>
     public override string VisitType(AnyType type) => "any";
+
+    public override string VisitType(DimensionType type) => "dim";
 
     /// <inheritdoc/>
     protected override IPrintSymbol VisitFunction(Function expr)
@@ -309,6 +312,10 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
                 _scope.AppendLine(string.Empty);
                 _scope.IndWrite($"{target.Name}({string.Join(", ", from a in args select a.ToString())})");
                 break;
+            case FunctionWrapper:
+                _scope.AppendLine(string.Empty);
+                _scope.IndWrite($"{target.Name}({string.Join(", ", from a in args select a.ToString())})");
+                break;
             default:
                 _scope.Append($"{target}({string.Join(", ", from a in args select a.ToString())})");
                 break;
@@ -430,6 +437,32 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             _scope.IndWriteLine(extFunc.ToString());
         }
+
+        return doc;
+    }
+
+    /// <inheritdoc/>
+    protected override IPrintSymbol VisitFunctionWrapper(FunctionWrapper expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        string il_sb;
+        if (Flags.HasFlag(PrinterFlags.Detailed))
+        {
+            il_sb = CompilerServices.Print(expr, Flags & ~PrinterFlags.Script);
+        }
+        else
+        {
+            il_sb = $"{expr.Name} = FunctionWrapper({expr.Target.Name} : {VisitType(expr.CheckedType)})";
+        }
+
+        doc = new(il_sb, expr.Name, true);
+        _extFuncMemo[expr] = doc;
+
+        _exprMemo.Add(expr, doc);
 
         return doc;
     }
@@ -601,7 +634,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
 
         if (expr.Else.Count > 0)
         {
-            _scope.Append(".Then");
+            _scope.Append(".Else");
             _scope.Append(VisitTypeSequential(expr.Else, string.Empty).ToString());
         }
 
@@ -675,7 +708,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             var regions = expr.Region.AsValueEnumerable().Select(rg =>
             {
-                if (rg.Step is TensorConst con && con.Value.ToScalar<int>() == 1)
+                if (rg.Step is DimConst con && con.Value == 1)
                 {
                     return $"{Visit(rg.Start)}..{Visit(rg.Stop)}";
                 }
@@ -692,6 +725,20 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
+    /// <inheritdoc/>
+    protected override IPrintSymbol VisitReturn(Return expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        var values = expr.Values.AsValueEnumerable().Select(Visit).ToArray();
+        doc = new($"return ({string.Join(", ", from a in values select a.ToString())})");
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
     protected override IPrintSymbol VisitNone(None expr)
     {
         if (_exprMemo.TryGetValue(expr, out var doc))
@@ -704,6 +751,18 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
+    protected override IPrintSymbol VisitDimension(Dimension expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new ScriptSymobl(expr.ToString(), "Dimension", false);
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
     protected override IPrintSymbol VisitShape(Shape expr)
     {
         if (_exprMemo.TryGetValue(expr, out var doc))
@@ -711,7 +770,31 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             return doc;
         }
 
-        doc = new ScriptSymobl(new("Shape"), "Shape", false);
+        doc = new ScriptSymobl(expr.ToString(), "Shape", false);
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    protected override IPrintSymbol VisitPadding(Padding expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new ScriptSymobl(new("Padding"), "Padding", false);
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    protected override IPrintSymbol VisitPaddings(Paddings expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        doc = new ScriptSymobl(new("Paddings"), "Paddings", false);
         _exprMemo.Add(expr, doc);
         return doc;
     }

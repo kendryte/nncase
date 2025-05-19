@@ -32,8 +32,8 @@ namespace nncase::ntt::runtime {
 struct thread_inout_desc {
     std::byte *data;
     size_t size;
-    const size_t *shape;
-    const size_t *strides;
+    size_t *shape;
+    size_t *strides;
     size_t rank;
 };
 
@@ -62,8 +62,10 @@ void thread_free(void *ptr);
 } // namespace nncase::ntt::runtime
 
 extern "C" void
-thread_main(const nncase::ntt::runtime::thread_inout_desc *inouts,
+thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
+            nncase::ntt::runtime::thread_inout_desc *const output_descs,
             const std::byte *rdata, const std::byte *local_rdata,
+            std::byte *output,
             nncase::ntt::ranked_shape<
                 (size_t)nncase::ntt::distributed::topology::count__>
                 program_ids);

@@ -19,7 +19,7 @@ namespace Nncase.TIR;
 public partial class Range
 {
 <#
-var types = new[] {"Expr", "int"};
+var types = new[] {"Dimension", "int"};
 foreach (var startType in types)
 {
     foreach (var stopType in types)

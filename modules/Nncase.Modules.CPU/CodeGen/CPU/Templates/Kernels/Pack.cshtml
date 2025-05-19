@@ -1,4 +1,0 @@
-﻿@model Nncase.CodeGen.CPU.TypedKernelTemplateModel<Nncase.TIR.CPU.Pack>
-@{
-}
-@(Model.Indent)pack<@string.Join(",", Model.Target.Axes)>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name));

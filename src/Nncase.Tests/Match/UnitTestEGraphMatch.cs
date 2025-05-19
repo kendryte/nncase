@@ -108,8 +108,8 @@ public sealed class UnitTestEGraphMatch
     {
         _ = IsWildcard("x");
 
-        var nest_tuple = new IR.Tuple(4, 5, 6);
-        var tuple = new IR.Tuple(1, nest_tuple, 3);
+        var nest_tuple = new IR.Tuple((Expr)4, (Expr)5, (Expr)6);
+        var tuple = new IR.Tuple((Expr)1, nest_tuple, (Expr)3);
         Expr expr = Concat(tuple, 0);
         CompilerServices.InferenceType(expr);
 
@@ -122,8 +122,8 @@ public sealed class UnitTestEGraphMatch
     [Fact]
     public void TestMatchVArgsTwice()
     {
-        var tuple_lhs = new IR.Tuple(1, new Var(), 3);
-        var tuple_rhs = new IR.Tuple(4, 5, 6);
+        var tuple_lhs = new IR.Tuple((Expr)1, new Var(), (Expr)3);
+        var tuple_rhs = new IR.Tuple((Expr)4, (Expr)5, (Expr)6);
         Expr expr = Concat(tuple_lhs, 0) + Concat(tuple_rhs, 1);
 
         var vpat = IsConcat(_ => true, IsTuple("tp"));
@@ -139,7 +139,7 @@ public sealed class UnitTestEGraphMatch
         Const y = 4;
         Expr z = (Const)1 + 2;
 
-        Const perm = 123;
+        var perm = new RankedShape(123);
         Expr expr = Concat(
             new IR.Tuple(
                 Transpose(x, perm),
@@ -155,7 +155,7 @@ public sealed class UnitTestEGraphMatch
         Assert.True(CompilerServices.TryEMatchRoot(expr, pattern, out var results));
         Assert.Single(results);
         var result = results[0];
-        var wcvargs = (IReadOnlyList<Expr>)result["wcvargs"];
+        var wcvargs = (IReadOnlyList<BaseExpr>)result["wcvargs"];
         Assert.Equal(((Call)wcvargs[0]).Arguments[0], x);
         Assert.Equal(((Call)wcvargs[1]).Arguments[0], y);
         Assert.Equal(((Call)wcvargs[2]).Arguments[0], z);
@@ -192,12 +192,12 @@ public sealed class UnitTestEGraphMatch
         Fusion fusion;
         {
             var fusion_input = new Var(new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
-            fusion = new Fusion(Callable.StackVMModuleKind, IR.F.Tensors.Transpose(fusion_input, new[] { 0, 3, 1, 2 }), new[] { fusion_input });
+            fusion = new Fusion(Callable.CPUModuleKind, IR.F.Tensors.Transpose(fusion_input, new[] { 0, 3, 1, 2 }), new[] { fusion_input });
         }
 
         var call = new Call(fusion, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new[] { 1, 2, 3, 4 }));
 
-        var pattern = IsCall("callee", IsFusion("callee_fusion", Callable.StackVMModuleKind, IsWildcard(), IsVArgs(IsVar())), IsWildcard("callee_input"));
+        var pattern = IsCall("callee", IsFusion("callee_fusion", Callable.CPUModuleKind, IsWildcard(), IsVArgs(IsVar())), IsWildcard("callee_input"));
 
         Assert.True(CompilerServices.TryEMatchRoot(call, pattern, out var result));
         Assert.Single(result);

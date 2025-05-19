@@ -12,8 +12,8 @@ namespace Nncase.Importer
     {
         private Expr VisitOneHot(in NodeProto op)
         {
-            var (indices, depth) = GetInputExprs(op, 0, 1);
-            var values = GetInputExpr(op, 2);
+            var (indices, depth) = GetInputExprs<Expr, Expr>(op, 0, 1);
+            var values = GetInputExpr<Expr>(op, 2);
             var axis = GetIntAttribute(op, "axis", -1);
             return OneHot(OneHotMode.ProcessNeg, indices, depth, values, axis);
         }

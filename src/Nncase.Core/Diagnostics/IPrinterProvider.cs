@@ -48,7 +48,7 @@ public interface IPrinterProvider
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
     /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`.
     /// </summary>
-    void DumpIR(Expr expr, string prefix, string dumpPath, PrinterFlags flags);
+    void DumpIR(BaseExpr expr, string prefix, string dumpPath, PrinterFlags flags);
 
     /// <summary>
     /// print ir type.
@@ -61,11 +61,11 @@ public interface IPrinterProvider
     /// <param name="expr"> the expression.</param>
     /// <param name="flags"> display callable.</param>
     /// <returns>the string.</returns>
-    string Print(Expr expr, PrinterFlags flags);
+    string Print(BaseExpr expr, PrinterFlags flags);
 
-    void DumpDotIR(Expr expr, string prefix, string dumpPath, PrinterFlags flags);
+    void DumpDotIR(BaseExpr expr, string prefix, string dumpPath, PrinterFlags flags);
 
-    void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
+    void DumpCSharpIR(BaseExpr expr, string prefix, string dumpDir, bool randConst);
 
-    void DumpPatternIR(Expr expr, string prefix, string dumpDir);
+    void DumpPatternIR(BaseExpr expr, string prefix, string dumpDir);
 }

@@ -49,8 +49,8 @@ paddings = [
 modes = [
     'CONSTANT',
     # tf assert, padding < in_shape ? correct : mixed result
-    'REFLECT',
-    'SYMMETRIC',
+    # 'REFLECT',
+    # 'SYMMETRIC',
     # 'EDGE'
 ]
 

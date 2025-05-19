@@ -58,17 +58,17 @@ public enum MemoryLocation
     PrivateBase = 1 << 9,
 }
 
-public sealed class MemSpan : Expr
+public sealed class MemSpan : BaseExpr
 {
-    public MemSpan(Expr size, MemoryLocation location, int hierarchy = 0)
-        : base(new[] { None.Default, size })
+    public MemSpan(Dimension size, MemoryLocation location, int hierarchy = 0)
+        : base([None.Default, size])
     {
         Location = location;
         Hierarchy = hierarchy;
     }
 
-    public MemSpan(Expr start, Expr size, MemoryLocation location, int hierarchy = 0)
-        : base(new[] { start, size })
+    public MemSpan(Expr start, Dimension size, MemoryLocation location, int hierarchy = 0)
+        : base([start, size])
     {
         Location = location;
         Hierarchy = hierarchy;
@@ -77,12 +77,12 @@ public sealed class MemSpan : Expr
     /// <summary>
     /// Gets the start.
     /// </summary>
-    public Expr Start => Operands[0];
+    public Expr Start => (Expr)Operands[0];
 
     /// <summary>
     /// Gets the size of bytes.
     /// </summary>
-    public Expr Size => Operands[1];
+    public Dimension Size => (Dimension)Operands[1];
 
     /// <summary>
     /// Gets the memory location.
@@ -94,13 +94,11 @@ public sealed class MemSpan : Expr
     /// </summary>
     public int Hierarchy { get; }
 
-    public MemSpan SubSpan(Expr offset, Expr size) => new MemSpan((Start is None ? IR.F.Buffer.DDrOf(this) : Start) + offset, size, Location);
-
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitMemSpan(this, context);
 
-    public MemSpan With(Expr? start = null, Expr? size = null, MemoryLocation? location = null, int? hierarchy = null) => new(start ?? Start, size ?? Size, location ?? Location, hierarchy ?? Hierarchy);
+    public MemSpan With(Expr? start = null, Dimension? size = null, MemoryLocation? location = null, int? hierarchy = null) => new(start ?? Start, size ?? Size, location ?? Location, hierarchy ?? Hierarchy);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj)

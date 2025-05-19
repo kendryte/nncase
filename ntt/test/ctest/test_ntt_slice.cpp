@@ -36,8 +36,7 @@ TEST(SliceTestFloat, NoPack_dim_1_step_eq_1) {
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-        *ntt_input, ntt::tensor<int64_t, ntt::fixed_shape<1>>({4}),
-        ntt::tensor<int64_t, ntt::fixed_shape<1>>({8}), *ntt_output1);
+        *ntt_input, fixed_shape<4>{}, fixed_shape<8>{}, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -76,8 +75,7 @@ TEST(SliceTestFloat, NoPack_dim_1_step_gt_1) {
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::slice<ntt::fixed_shape<1>, ntt::fixed_shape<2>>(
-        *ntt_input, ntt::tensor<int64_t, ntt::fixed_shape<1>>({4}),
-        ntt::tensor<int64_t, ntt::fixed_shape<1>>({12}), *ntt_output1);
+        *ntt_input, fixed_shape<4>{}, fixed_shape<12>{}, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -116,8 +114,7 @@ TEST(SliceTestFloat, NoPack_dim_0_step_eq_1) {
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::slice<ntt::fixed_shape<0>, ntt::fixed_shape<1>>(
-        *ntt_input, ntt::tensor<int64_t, ntt::fixed_shape<1>>({4}),
-        ntt::tensor<int64_t, ntt::fixed_shape<1>>({8}), *ntt_output1);
+        *ntt_input, fixed_shape<4>{}, fixed_shape<8>{}, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -156,8 +153,7 @@ TEST(SliceTestFloat, NoPack_dim_0_step_gt_1) {
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::slice<ntt::fixed_shape<0>, ntt::fixed_shape<2>>(
-        *ntt_input, ntt::tensor<int64_t, ntt::fixed_shape<1>>({4}),
-        ntt::tensor<int64_t, ntt::fixed_shape<1>>({12}), *ntt_output1);
+        *ntt_input, fixed_shape<4>{}, fixed_shape<12>{}, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -196,8 +192,7 @@ TEST(SliceTestFloat, NoPack_dim_0_1_step_eq_1) {
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::slice<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1, 1>>(
-        *ntt_input, ntt::tensor<int64_t, ntt::fixed_shape<2>>({1, 4}),
-        ntt::tensor<int64_t, ntt::fixed_shape<2>>({5, 8}), *ntt_output1);
+        *ntt_input, fixed_shape<1, 4>{}, fixed_shape<5, 8>{}, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -236,8 +231,7 @@ TEST(SliceTestFloat, NoPack_dim_0_1_step_gt_1) {
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::slice<ntt::fixed_shape<0, 1>, ntt::fixed_shape<2, 2>>(
-        *ntt_input, ntt::tensor<int64_t, ntt::fixed_shape<2>>({1, 4}),
-        ntt::tensor<int64_t, ntt::fixed_shape<2>>({8, 12}), *ntt_output1);
+        *ntt_input, fixed_shape<1, 4>{}, fixed_shape<8, 12>{}, *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -276,8 +270,8 @@ TEST(SliceTestFloat, NoPack_dim_multiple_step_eq_1) {
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::slice<ntt::fixed_shape<1, 2, 3>, ntt::fixed_shape<1, 1, 1>>(
-        *ntt_input, ntt::tensor<int64_t, ntt::fixed_shape<3>>({1, 1, 4}),
-        ntt::tensor<int64_t, ntt::fixed_shape<3>>({3, 5, 8}), *ntt_output1);
+        *ntt_input, fixed_shape<1, 1, 4>{}, fixed_shape<3, 5, 8>{},
+        *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -316,8 +310,8 @@ TEST(SliceTestFloat, NoPack_dim_multiple_step_gt_1) {
     // ntt
     std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
     ntt::slice<ntt::fixed_shape<1, 2, 3>, ntt::fixed_shape<2, 2, 2>>(
-        *ntt_input, ntt::tensor<int64_t, ntt::fixed_shape<3>>({0, 1, 4}),
-        ntt::tensor<int64_t, ntt::fixed_shape<3>>({3, 10, 16}), *ntt_output1);
+        *ntt_input, fixed_shape<0, 1, 4>{}, fixed_shape<3, 10, 16>{},
+        *ntt_output1);
 
     // ort
     auto ort_input = NttTest::ntt2ort(*ntt_input);
@@ -365,8 +359,7 @@ TEST(SliceTestFloat, Pack_fixed_shape) {
     ntt::pack<1>(*ntt_input, *pack_input);
     std::unique_ptr<tensor_type3> pack_output(new tensor_type3);
     ntt::slice<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1, 1>>(
-        *pack_input, ntt::tensor<int64_t, ntt::fixed_shape<2>>({0, 0}),
-        ntt::tensor<int64_t, ntt::fixed_shape<2>>({16, 16}), *pack_output);
+        *pack_input, fixed_shape<0, 0>{}, fixed_shape<16, 16>{}, *pack_output);
     std::unique_ptr<tensor_type4> ntt_output1(new tensor_type4);
     ntt::unpack<1>(*pack_output, *ntt_output1);
 
@@ -420,8 +413,7 @@ TEST(SliceTestFloat, Pack_ranked_shape) {
     ntt::pack<1>(*ntt_input, *pack_input);
     std::unique_ptr<tensor_type3> pack_output(new tensor_type3(shape3));
     ntt::slice<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1, 1>>(
-        *pack_input, ntt::tensor<int64_t, ntt::fixed_shape<2>>({0, 0}),
-        ntt::tensor<int64_t, ntt::fixed_shape<2>>({16, 16}), *pack_output);
+        *pack_input, fixed_shape<0, 0>{}, fixed_shape<16, 16>{}, *pack_output);
     std::unique_ptr<tensor_type4> ntt_output1(new tensor_type4(shape4));
     ntt::unpack<1>(*pack_output, *ntt_output1);
 

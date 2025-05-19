@@ -674,8 +674,7 @@
           "Nncase.Evaluator": "[1.0.0, )",
           "Nncase.Graph": "[1.0.0, )",
           "Nncase.Importer": "[1.0.0, )",
-          "Nncase.Modules.CPU": "[1.0.0, )",
-          "Nncase.Modules.StackVM": "[1.0.0, )",
+          "Nncase.Modules.NTT": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
           "Nncase.Quantization": "[1.0.0, )",
           "Nncase.Schedule": "[1.0.0, )",
@@ -744,24 +743,16 @@
       "nncase.io": {
         "type": "Project"
       },
-      "nncase.modules.cpu": {
+      "nncase.modules.ntt": {
         "type": "Project",
         "dependencies": {
           "Nncase.CodeGen": "[1.0.0, )",
           "Nncase.Diagnostics": "[1.0.0, )",
           "Nncase.Evaluator": "[1.0.0, )",
-          "Nncase.Modules.StackVM": "[1.0.0, )",
           "Nncase.Passes": "[1.0.0, )",
           "Nncase.Schedule": "[1.0.0, )",
           "Nncase.Targets": "[1.0.0, )",
           "Razor.Templating.Core": "[2.0.0, )"
-        }
-      },
-      "nncase.modules.stackvm": {
-        "type": "Project",
-        "dependencies": {
-          "Nncase.CodeGen": "[1.0.0, )",
-          "Nncase.Passes": "[1.0.0, )"
         }
       },
       "nncase.passes": {

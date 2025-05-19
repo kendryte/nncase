@@ -58,7 +58,7 @@ public class UnitTestPrimFuncMerge : TestClassBase
 #if DEBUG
         Diagnostics.DumpScope.Current.DumpDotIR(main, $"{count}_pre");
 #endif
-        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance) {
+        var feedDict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance) {
           { inputVar, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, PrimFuncBuilder.Dimensions).Evaluate() },
         };
 
@@ -86,14 +86,14 @@ public class UnitTestPrimFuncMerge : TestClassBase
 
 internal sealed class TestEvaluateVisitor : ExprVisitor<IValue, Unit>
 {
-    private readonly IReadOnlyDictionary<Var, IValue> _feedDict;
+    private readonly IReadOnlyDictionary<IVar, IValue> _feedDict;
 
-    public TestEvaluateVisitor(IReadOnlyDictionary<Var, IValue> feedDict)
+    public TestEvaluateVisitor(IReadOnlyDictionary<IVar, IValue> feedDict)
     {
         _feedDict = feedDict;
     }
 
-    protected override IValue DefaultVisitLeaf(Expr expr) => Value.None;
+    protected override IValue DefaultVisitLeaf(BaseExpr expr) => Value.None;
 
     protected override IValue VisitLeafConst(Const expr) => Value.FromConst(expr);
 
@@ -208,7 +208,7 @@ internal sealed class PrimFuncEvaluateVisitor
         }
     }
 
-    private Span<byte> GetBufferSpan(Expr expr)
+    private Span<byte> GetBufferSpan(BaseExpr expr)
     {
         var buffer = Assert.IsType<TIR.Buffer>(expr);
         return _poolMap[buffer.MemSpan.Location].AsSpan<byte>(buffer.MemSpan.Start.Evaluate().AsTensor().ToScalar<int>(), buffer.MemSpan.Size.Evaluate().AsTensor().ToScalar<int>());

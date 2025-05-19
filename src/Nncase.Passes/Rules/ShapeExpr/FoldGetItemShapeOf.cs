@@ -15,22 +15,27 @@ namespace Nncase.Passes.Rules.ShapeExpr;
 [RuleGenerator]
 public partial class FoldGetItemShapeOf : RewriteRule<Pattern>
 {
-    public override Pattern Pattern => IsGetItem(null, "getItem", IsAlt(CastPattern, ShapeOfPattern), IsTensorConst("index", IsScalar() | HasShape(new Shape(1L))));
+    public override Pattern Pattern => IsGetItem(null, "getItem", IsAlt(CastPattern, ShapeOfPattern), IsAlt("index", IsFixedDimension(), IsFixedShape()));
 
     public Pattern CastPattern => IsCast("cast", _ => true, ShapeOfPattern);
 
-    public Pattern ShapeOfPattern => IsShapeOf(IsWildcard("input") with { TypePattern = HasRank() });
+    public Pattern ShapeOfPattern => IsShapeOf(IsWildcard("input") with { TypePattern = HasRankedShape() });
 
     private Expr? GetReplace(Expr input, Tensor<int> index, Call getItem)
     {
         DataType dt = DataTypes.Int64;
 
-        if (getItem.Arguments[GetItem.Input.Index] is Call c && c.Target is IR.Tensors.Cast cast)
+        if (getItem[GetItem.Input] is Call c && c.Target is IR.Tensors.Cast cast)
         {
             dt = cast.NewType;
         }
 
-        var dim = input.CheckedShape[index.Single()];
-        return dim.IsFixed ? Tensor.FromScalar(dt, Convert.ChangeType(dim.FixedValue, dt.CLRType)) : dim.Value;
+        if (index.Length == 1)
+        {
+            var dim = IR.F.Shapes.AsTensor(input.CheckedShape[index.Single()]);
+            return dt == DataTypes.Int64 ? dim : IR.F.Tensors.Cast(dim, dt);
+        }
+
+        return null;
     }
 }

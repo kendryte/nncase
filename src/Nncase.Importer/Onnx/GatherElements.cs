@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitGatherElements(in NodeProto op)
         {
-            var (input, indices) = GetInputExprs(op, 0, 1);
+            var (input, indices) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var axis = GetIntAttribute(op, "axis", 0);
             return F.Tensors.GatherElements(input, axis, indices);
         }

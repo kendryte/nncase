@@ -11,7 +11,7 @@ namespace Nncase.Importer
     {
         private Expr VisitCast(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
 
             // op set v1 to is string
             var typeIndex = GetIntAttribute(op, "to");

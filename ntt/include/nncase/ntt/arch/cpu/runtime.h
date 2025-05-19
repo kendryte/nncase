@@ -252,8 +252,10 @@ struct cpu_block_entry_params_t {
     size_t bid;
     size_t cid;
     size_t cpu_id_offset;
-    const thread_inout_desc *inouts;
+    const thread_inout_desc *input_descs;
+    thread_inout_desc *const output_descs;
     const std::byte *rdata;
+    std::byte *output;
     uint8_t enable_profiling;
     timer_record *timer_records;
     const uint64_t *local_rdata_header;

@@ -53,7 +53,7 @@ public sealed class UnitTestDumpUtility
         BinFileUtil.WriteBinOutputs(new Tensor[] { new Tensor<int>([1]) }, "./");
         Assert.True(File.Exists("./input_0_0.bin"));
         Assert.True(File.Exists("./nncase_result_0.bin"));
-        BinFileUtil.ReadBinFile("./nncase_result_0.bin", DataTypes.Float32, new Shape(1));
+        BinFileUtil.ReadBinFile("./nncase_result_0.bin", DataTypes.Float32, new RankedShape(1));
     }
 
     [Fact]
@@ -61,10 +61,10 @@ public sealed class UnitTestDumpUtility
     {
         var nullDumpper = new NullDumpper();
         _ = nullDumpper.Directory;
-        nullDumpper.DumpIR(1, string.Empty);
-        nullDumpper.DumpDotIR(1, string.Empty);
+        nullDumpper.DumpIR((Expr)1, string.Empty);
+        nullDumpper.DumpDotIR((Expr)1, string.Empty);
         nullDumpper.DumpModule(new IRModule(), string.Empty);
-        nullDumpper.DumpCSharpIR(1, string.Empty);
+        nullDumpper.DumpCSharpIR((Expr)1, string.Empty);
         nullDumpper.OpenFile("./");
     }
 }

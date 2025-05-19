@@ -16,28 +16,33 @@ namespace Nncase.IR;
 /// </summary>
 public sealed class If : BaseCall
 {
-    public If(Expr condition, BaseFunction then, BaseFunction @else, ReadOnlySpan<Expr> arguments)
+    public If(Expr condition, BaseFunction then, BaseFunction @else, ReadOnlySpan<BaseExpr> arguments)
         : base(ArrayUtility.Concat(condition, then, @else, arguments))
     {
+        if (then is not Function or FunctionWrapper
+            || @else is not Function or FunctionWrapper)
+        {
+            throw new ArgumentException("Then and Else must be a function.");
+        }
     }
 
-    public If(Expr condition, BaseFunction then, BaseFunction @else, params Expr[] arguments)
-        : this(condition, then, @else, (ReadOnlySpan<Expr>)arguments)
+    public If(Expr condition, BaseFunction then, BaseFunction @else, params BaseExpr[] arguments)
+        : this(condition, then, @else, (ReadOnlySpan<BaseExpr>)arguments)
     {
     }
 
-    public Expr Condition => Operands[0];
+    public Expr Condition => (Expr)Operands[0];
 
     public BaseFunction Then => (BaseFunction)Operands[1];
 
     public BaseFunction Else => (BaseFunction)Operands[2];
 
-    public override ReadOnlySpan<Expr> Arguments => Operands[3..];
+    public override ReadOnlySpan<BaseExpr> Arguments => Operands[3..];
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitIf(this, context);
 
-    public If With(Expr? condition = null, BaseFunction? then = null, BaseFunction? @else = null, Expr[]? arguments = null)
+    public If With(Expr? condition = null, BaseFunction? then = null, BaseFunction? @else = null, BaseExpr[]? arguments = null)
         => new If(condition ?? Condition, then ?? Then, @else ?? Else, arguments ?? Arguments);
 }

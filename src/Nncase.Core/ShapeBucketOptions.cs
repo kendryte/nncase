@@ -9,7 +9,7 @@ namespace Nncase
     {
         public bool Enable { get; set; }
 
-        public Dictionary<Var, Expr[]> VarMap { get; set; } = new();
+        public Dictionary<Var, Dimension[]> VarMap { get; set; } = new();
 
         public Dictionary<string, (int Min, int Max)> RangeInfo { get; set; } = new();
 
@@ -42,7 +42,7 @@ namespace Nncase
             return options;
         }
 
-        public static ShapeBucketOptions Create(bool enable, Dictionary<Var, Expr[]> varMap, Dictionary<string, (int Min, int Max)> rangeInfo, int segmentsCount, Dictionary<string, int> fixVarMap)
+        public static ShapeBucketOptions Create(bool enable, Dictionary<Var, Dimension[]> varMap, Dictionary<string, (int Min, int Max)> rangeInfo, int segmentsCount, Dictionary<string, int> fixVarMap)
         {
             var options = new ShapeBucketOptions();
             options.Enable = enable;

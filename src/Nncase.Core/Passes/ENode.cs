@@ -20,7 +20,7 @@ public sealed record ENode
     /// </summary>
     private int? _hashcode;
 
-    private ENode(Expr expr, IRArray<EClass> children)
+    private ENode(BaseExpr expr, IRArray<EClass> children)
     {
         Expr = expr;
         Children = children;
@@ -29,7 +29,7 @@ public sealed record ENode
     /// <summary>
     /// Gets the Enode's Expression.
     /// </summary>
-    public Expr Expr { get; init; }
+    public BaseExpr Expr { get; init; }
 
     /// <summary>
     /// Gets the Enode Children Eclasses.
@@ -42,7 +42,7 @@ public sealed record ENode
     /// </summary>
     /// <param name="expr">expression.</param>
     /// <param name="children">parameters.</param>
-    public static ENode Create(Expr expr, IRArray<EClass> children) => new ENode(expr, children);
+    public static ENode Create(BaseExpr expr, IRArray<EClass> children) => new ENode(expr, children);
 
     /// <summary>
     /// Add current enode information to childrens.

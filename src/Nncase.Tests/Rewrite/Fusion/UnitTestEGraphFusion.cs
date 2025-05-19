@@ -15,7 +15,7 @@ using Nncase.IR;
 using Nncase.IR.NN;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
-using Nncase.Passes.Rules.CPU;
+using Nncase.Passes.Rules.NTT;
 using Nncase.PatternMatch;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
@@ -139,13 +139,13 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 224, 224, 3 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Tensors.NHWCToNCHW(fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Tensors.NHWCToNCHW(fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input); // 1,3,224,224
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 224, 224 }));
             var fusion_2 = new Fusion(
                 "fusion_2",
-                Callable.StackVMModuleKind,
+                Callable.CPUModuleKind,
                 IR.F.NN.ReduceWindow2D(
                     ReduceOp.Max,
                     fusion_2_input,
@@ -166,7 +166,7 @@ public class UnitTestEGraphFusion : TestClassBase
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 }));
             var fusion_3 = new Fusion(
                 "fusion_3",
-                Callable.StackVMModuleKind,
+                Callable.CPUModuleKind,
                 IR.F.NN.ReduceWindow2D(
                     ReduceOp.Mean,
                     fusion_3_input,
@@ -185,7 +185,7 @@ public class UnitTestEGraphFusion : TestClassBase
             var v_2 = new Call(fusion_3, v_1); // 1,3,112,112
 
             var fusion_4_input = new Var[] { new("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })), new("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 3, 112, 112 })) };
-            var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Add(fusion_4_input[0], fusion_4_input[1]), fusion_4_input);
+            var fusion_4 = new Fusion("fusion_4", Callable.CPUModuleKind, IR.F.Math.Add(fusion_4_input[0], fusion_4_input[1]), fusion_4_input);
             var v_3 = new Call(fusion_4, new[] { v_1, v_2 }); // 1,3,112,112
             main = new Function("main", v_3, input);
         }
@@ -193,7 +193,7 @@ public class UnitTestEGraphFusion : TestClassBase
         Assert.True(CompilerServices.InferenceType(main));
 
         var input_tensor = Testing.Rand<float>(1, 224, 224, 3);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, Value.FromTensor(input_tensor) },
         };
@@ -229,15 +229,15 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_1);
 
             main = new Function("main", v_2, input);
@@ -250,7 +250,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -286,15 +286,15 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_1);
 
             main = new Function("main", v_2, input);
@@ -307,7 +307,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -344,16 +344,16 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, input1);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, input2);
 
             var fusion_4_input_0 = new Var("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
             var fusion_4_input_1 = new Var("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_4_input_0, fusion_4_input_1), new[] { fusion_4_input_0, fusion_4_input_1 });
+            var fusion_4 = new Fusion("fusion_4", Callable.CPUModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_4_input_0, fusion_4_input_1), new[] { fusion_4_input_0, fusion_4_input_1 });
             var v_3 = new Call(fusion_4, v_1, v_2);
 
             main = new Function("main", v_3, input1, input2);
@@ -367,7 +367,7 @@ public class UnitTestEGraphFusion : TestClassBase
 
         var input_tensor1 = Testing.Rand<float>(1, 32, 32);
         var input_tensor2 = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input1, Value.FromTensor(input_tensor1) },
             { input2, Value.FromTensor(input_tensor2) },
@@ -404,12 +404,12 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input_0 = new Var("fusion_2_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
             var fusion_2_input_1 = new Var("fusion_2_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input_0), IR.F.Math.Unary(UnaryOp.Sin, fusion_2_input_1)), new[] { fusion_2_input_0, fusion_2_input_1 });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Binary(BinaryOp.Add, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input_0), IR.F.Math.Unary(UnaryOp.Sin, fusion_2_input_1)), new[] { fusion_2_input_0, fusion_2_input_1 });
             var v_1 = new Call(fusion_2, v_0, v_0);
 
             main = new Function("main", v_1, input);
@@ -422,7 +422,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -458,16 +458,16 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input_0 = new Var("fusion_3_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
             var fusion_3_input_1 = new Var("fusion_3_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_3_input_0, fusion_3_input_1), new[] { fusion_3_input_0, fusion_3_input_1 });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_3_input_0, fusion_3_input_1), new[] { fusion_3_input_0, fusion_3_input_1 });
             var v_2 = new Call(fusion_3, v_0, v_1);
 
             main = new Function("main", v_2, input);
@@ -480,7 +480,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -516,20 +516,20 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_0);
 
             var fusion_4_input_0 = new Var("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
             var fusion_4_input_1 = new Var("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_4_input_0, fusion_4_input_1), new[] { fusion_4_input_0, fusion_4_input_1 });
+            var fusion_4 = new Fusion("fusion_4", Callable.CPUModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_4_input_0, fusion_4_input_1), new[] { fusion_4_input_0, fusion_4_input_1 });
             var v_3 = new Call(fusion_4, v_1, v_2);
 
             main = new Function("main", v_3, input);
@@ -542,7 +542,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -578,20 +578,20 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_0);
 
             var fusion_4_input_0 = new Var("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
             var fusion_4_input_1 = new Var("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_4_input_0, fusion_4_input_1), new[] { fusion_4_input_0, fusion_4_input_1 });
+            var fusion_4 = new Fusion("fusion_4", Callable.CPUModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_4_input_0, fusion_4_input_1), new[] { fusion_4_input_0, fusion_4_input_1 });
             var v_3 = new Call(fusion_4, v_1, v_2);
 
             main = new Function("main", v_3, input);
@@ -604,7 +604,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -640,24 +640,24 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_0);
 
             var fusion_4_input = new Var("fusion_4_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_4_input), new[] { fusion_4_input });
+            var fusion_4 = new Fusion("fusion_4", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Neg, fusion_4_input), new[] { fusion_4_input });
             var v_3 = new Call(fusion_4, v_2);
 
             var fusion_5_input_0 = new Var("fusion_5_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
             var fusion_5_input_1 = new Var("fusion_5_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_5 = new Fusion("fusion_5", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_5_input_0, fusion_5_input_1), new[] { fusion_5_input_0, fusion_5_input_1 });
+            var fusion_5 = new Fusion("fusion_5", Callable.CPUModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_5_input_0, fusion_5_input_1), new[] { fusion_5_input_0, fusion_5_input_1 });
             var v_4 = new Call(fusion_5, v_1, v_3);
 
             main = new Function("main", v_4, input);
@@ -670,7 +670,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -706,20 +706,20 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Sin, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Sin, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_1);
 
             var fusion_4_input_0 = new Var("fusion_4_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
             var fusion_4_input_1 = new Var("fusion_4_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_4 = new Fusion("fusion_4", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_4_input_0, fusion_4_input_1), new[] { fusion_4_input_0, fusion_4_input_1 });
+            var fusion_4 = new Fusion("fusion_4", Callable.CPUModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_4_input_0, fusion_4_input_1), new[] { fusion_4_input_0, fusion_4_input_1 });
             var v_3 = new Call(fusion_4, v_0, v_2);
 
             main = new Function("main", v_3, input);
@@ -732,7 +732,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -768,16 +768,16 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, input);
 
             var fusion_3_input_0 = new Var("fusion_3_input_0", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
             var fusion_3_input_1 = new Var("fusion_3_input_1", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_3_input_0, fusion_3_input_1), new[] { fusion_3_input_0, fusion_3_input_1 });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Binary(BinaryOp.Add, fusion_3_input_0, fusion_3_input_1), new[] { fusion_3_input_0, fusion_3_input_1 });
             var v_2 = new Call(fusion_3, v_0, v_1);
 
             main = new Function("main", v_2, input);
@@ -790,7 +790,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -826,11 +826,11 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, input);
 
             var v_2 = new IR.Tuple(v_0, v_1);
@@ -844,7 +844,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -881,15 +881,15 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_0);
 
             var v_3 = new IR.Tuple(v_1, v_2);
@@ -903,7 +903,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -940,11 +940,11 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, input);
 
             var v_2 = new Call(new IR.Tensors.Concat(2), new IR.Tuple(v_0, v_1));
@@ -958,7 +958,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -996,15 +996,15 @@ public class UnitTestEGraphFusion : TestClassBase
         Function main;
         {
             var fusion_1_input = new Var("fusion_1_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_1 = new Fusion("fusion_1", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
+            var fusion_1 = new Fusion("fusion_1", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_1_input), new[] { fusion_1_input });
             var v_0 = new Call(fusion_1, input);
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, v_0);
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", Callable.StackVMModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", Callable.CPUModuleKind, IR.F.Math.Unary(UnaryOp.Abs, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, v_0);
 
             var v_3 = new Call(new IR.Tensors.Concat(2), new IR.Tuple(v_1, v_2));
@@ -1018,7 +1018,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -1066,7 +1066,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -1077,8 +1077,8 @@ public class UnitTestEGraphFusion : TestClassBase
         var prmg = CompileSession.CreatePassManager("prmg");
         prmg.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<CPUSingleFusion>(CPUTarget.Kind);
-            p.Add<CPUOutputBoxingFusion>(CPUTarget.Kind);
+            p.Add<CPUSingleFusion>(NTTTarget.Kind);
+            p.Add<CPUOutputBoxingFusion>(NTTTarget.Kind);
         });
         prmg.Add<EGraphRulesPass>().Configure(p =>
         {
@@ -1111,11 +1111,11 @@ public class UnitTestEGraphFusion : TestClassBase
             var v_0 = IR.F.Tensors.Split(input, 0, new[] { 1, 1 });
 
             var fusion_2_input = new Var("fusion_2_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_2 = new Fusion("fusion_2", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
+            var fusion_2 = new Fusion("fusion_2", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Cos, fusion_2_input), new[] { fusion_2_input });
             var v_1 = new Call(fusion_2, IR.F.Tensors.GetItem(v_0, 0));
 
             var fusion_3_input = new Var("fusion_3_input", new TensorType(DataTypes.Float32, new int[] { 1, 32, 32 }));
-            var fusion_3 = new Fusion("fusion_3", CPUTarget.Kind, IR.F.Math.Unary(UnaryOp.Abs, fusion_3_input), new[] { fusion_3_input });
+            var fusion_3 = new Fusion("fusion_3", NTTTarget.Kind, IR.F.Math.Unary(UnaryOp.Abs, fusion_3_input), new[] { fusion_3_input });
             var v_2 = new Call(fusion_3, IR.F.Tensors.GetItem(v_0, 1));
 
             var v_3 = new IR.Tuple(v_1, v_2);
@@ -1129,7 +1129,7 @@ public class UnitTestEGraphFusion : TestClassBase
         var pre_number = tv.CountCallFusion<Fusion>() + tv.CountCallOp<IR.Tensors.Split>();
 
         var input_tensor = Testing.Rand<float>(2, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -1140,8 +1140,8 @@ public class UnitTestEGraphFusion : TestClassBase
         var prmg = CompileSession.CreatePassManager("prmg");
         prmg.Add<DataflowPass>().Configure(p =>
         {
-            p.Add<CPUSingleFusion>(CPUTarget.Kind);
-            p.Add<CPUOutputBoxingFusion>(CPUTarget.Kind);
+            p.Add<CPUSingleFusion>(NTTTarget.Kind);
+            p.Add<CPUOutputBoxingFusion>(NTTTarget.Kind);
         });
         DumpScope.Current.DumpIR(main, "pre");
         prmg.Add<EGraphRulesPass>().Configure(p =>

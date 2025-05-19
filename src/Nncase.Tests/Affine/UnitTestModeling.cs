@@ -19,7 +19,7 @@ public sealed class UnitTestModeling : TestClassBase
 {
     public UnitTestModeling()
     {
-        CompileOptions.TargetOptions = new Nncase.Targets.CpuTargetOptions();
+        CompileOptions.TargetOptions = new Nncase.Targets.NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR;
 #endif
@@ -248,9 +248,9 @@ public sealed class UnitTestModeling : TestClassBase
             func = new("main", CPUTarget.Kind, f, [a, b, e]);
         }
 
-        var post = (BaseFunction)CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.CPU.PackMatMul(1, 8), new Passes.Rules.CPU.PackUnary(1, 8), }, new(), CompileOptions);
+        var post = (BaseFunction)CompilerServices.ERewrite(func, new IRewriteRule[] { new Passes.Rules.NTT.PackMatMul(1, 8), new Passes.Rules.NTT.PackUnary(1, 8), }, new(), CompileOptions);
         Dumpper.DumpIR(post, "pack");
-        post = new CPUAffineSelectionPass(CompileOptions).RunAsync(post, new()).Result;
+        post = new NTTAffineSelectionPass(CompileOptions).RunAsync(post, new()).Result;
         Dumpper.DumpIR(post, "grid");
 
         // if (post is not Function { Body: IR.Affine.Grid grid })
@@ -258,13 +258,13 @@ public sealed class UnitTestModeling : TestClassBase
         //     return;
         // }
 
-        // Schedule.TreeTiler.Tile(grid, Nncase.Targets.CPUTarget.Kind, 0, CompileOptions.TargetOptions);
+        // Schedule.TreeTiler.Tile(grid, Nncase.Targets.NTTTarget.Kind, 0, CompileOptions.TargetOptions);
     }
 
     [Fact]
     public void TestAutoFusion()
     {
-        var func = FunctionSamples.Get1WithTarget(Callable.StackVMModuleKind);
+        var func = FunctionSamples.Get1WithTarget(Callable.CPUModuleKind);
         var module = new IR.IRModule(func);
         CompileSession.Compiler.ImportIRModule(module);
         CompileSession.Compiler.CompileAsync();

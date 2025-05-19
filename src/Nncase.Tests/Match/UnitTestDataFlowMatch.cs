@@ -119,11 +119,11 @@ public class UnitTestDataFlowMatch : TestClassBase
     {
         var rule = new Passes.Rules.Neutral.FoldConstCall();
 
-        var z = Concat(new IR.Tuple(new Var("x", new TensorType(DataTypes.Int32, new[] { 1 })), new[] { 1 }, new[] { 2 }), 0);
+        var z = Concat(new IR.Tuple(new Var("x", new TensorType(DataTypes.Int32, new[] { 1 })), (Expr)new[] { 1 }, (Expr)new[] { 2 }), 0);
         Assert.True(CompilerServices.InferenceType(z));
         Assert.False(CompilerServices.TryMatchRoot(z, rule.Pattern, out var _));
 
-        var z1 = Concat(new IR.Tuple(new[] { 4 }, new[] { 1 }, new[] { 1 }, new[] { 2 }), 0);
+        var z1 = Concat(new IR.Tuple((Expr)new[] { 4 }, (Expr)new[] { 1 }, (Expr)new[] { 1 }, (Expr)new[] { 2 }), 0);
         Assert.True(CompilerServices.InferenceType(z1));
         Assert.True(CompilerServices.TryMatchRoot(z1, rule.Pattern, out var _));
     }
@@ -204,7 +204,7 @@ public class UnitTestDataFlowMatch : TestClassBase
 
         lhs_unary.ReplaceAllUsesWith(updated_lhs_unary);
         Assert.True(CompilerServices.TryMatchRoot(pre, pattern, new(), out var result));
-        var root_inputs = (IReadOnlyList<Expr>)result!["root_inputs"];
+        var root_inputs = (IReadOnlyList<BaseExpr>)result!["root_inputs"];
         var lhs = (Call)result["lhs"];
         Assert.True(object.ReferenceEquals(root_inputs[0], lhs));
         Assert.True(lhs is Call { Target: Unary { UnaryOp: UnaryOp.Tanh } });
@@ -214,7 +214,7 @@ public class UnitTestDataFlowMatch : TestClassBase
     {
         public IPattern Pattern { get; } = IsBinary(BinaryOp.Add, IsWildcard("lhs"), IsWildcard("rhs"));
 
-        public Expr? GetReplace(IMatchResult result, RunPassContext options)
+        public BaseExpr? GetReplace(IMatchResult result, RunPassContext options)
         {
             return (Expr)result["lhs"] - (Expr)result["rhs"];
         }

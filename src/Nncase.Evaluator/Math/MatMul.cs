@@ -244,12 +244,13 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
     public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, DimInfo? dimInfo = null)
     {
-        if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
+        if (lhs.Shape is not RankedShape lhsShape
+            || rhs.Shape is not RankedShape rhsShape)
         {
             return new TensorType(lhs.DType, Shape.Unranked);
         }
 
-        var (lm, lk, rk, rn) = dimInfo ?? new(lhs.Shape.Rank - 2, lhs.Shape.Rank - 1, rhs.Shape.Rank - 2, rhs.Shape.Rank - 1);
+        var (lm, lk, rk, rn) = dimInfo ?? new(lhsShape.Rank - 2, lhsShape.Rank - 1, rhsShape.Rank - 2, rhsShape.Rank - 1);
         DataType dtype = lhs.DType;
         DataType lhsDType = lhs.DType is VectorType l ? l.ElemType : lhs.DType;
         DataType rhsDType = rhs.DType is VectorType r ? r.ElemType : rhs.DType;
@@ -258,7 +259,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             return new InvalidType("MatMul lhs and rhs have different DType");
         }
 
-        if (lhs.Shape[lk] != rhs.Shape[rk] && lhs.Shape[lk].IsFixed && rhs.Shape[rk].IsFixed)
+        if (lhsShape[lk] != rhsShape[rk] && lhsShape[lk].IsFixed && rhsShape[rk].IsFixed)
         {
             return new InvalidType("MatMul lhs and rhs have not compatiable shape");
         }
@@ -323,13 +324,10 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             }
         }
 
-        var lhsShape = lhs.Shape.Rank >= rhs.Shape.Rank ? lhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, rhs.Shape.Rank - lhs.Shape.Rank).Concat(lhs.Shape).ToArray();
-        var rhsShape = lhs.Shape.Rank <= rhs.Shape.Rank ? rhs.Shape.ToArray() : Enumerable.Repeat((Dimension)1, lhs.Shape.Rank - rhs.Shape.Rank).Concat(rhs.Shape).ToArray();
+        lhsShape = lhsShape.Rank >= rhsShape.Rank ? lhsShape.ToArray() : Enumerable.Repeat((Dimension)1, rhsShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
+        rhsShape = lhsShape.Rank <= rhsShape.Rank ? rhsShape.ToArray() : Enumerable.Repeat((Dimension)1, lhsShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
 
-        var bigShape = Enumerable.Zip(lhsShape, rhsShape).SkipLast(2).Select(t =>
-            t.First.IsDynamic || t.Second.IsDynamic
-                ? (Dimension)IR.F.Math.Max(t.First.Value, t.Second.Value)
-                : System.Math.Max(t.First.FixedValue, t.Second.FixedValue)).ToArray();
+        var bigShape = Enumerable.Zip(lhsShape, rhsShape).SkipLast(2).Select(t => Dimension.Max(t.First, t.Second)).ToArray();
 
         // batch and channel
         var front = bigShape;
@@ -386,14 +384,15 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var outputType = context.GetReturnType<IRType>();
 
         uint macPerElement = 1;
-        if (lhs is TensorType { Shape: Shape lhsShape })
+        if (lhs is TensorType { Shape: RankedShape lhsShape })
         {
             macPerElement = lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
         }
         else if (lhs is DistributedType distributedType)
         {
             var lhsType = DistributedUtility.GetDividedTensorType(distributedType);
-            macPerElement = lhsType.Shape[^1].IsFixed ? (uint)lhsType.Shape[^1].FixedValue : 1U;
+            lhsShape = (RankedShape)lhsType.Shape;
+            macPerElement = lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
         }
 
         return new()
@@ -409,7 +408,8 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var lhs = context.GetArgumentType<TensorType>(target, MatMul.Lhs);
         var rhs = context.GetArgumentType<TensorType>(target, MatMul.Rhs);
         var outputType = context.GetReturnType<TensorType>();
-        var k = (UInt128)lhs.Shape[^1].FixedValue;
+        var lhsShape = (RankedShape)lhs.Shape;
+        var k = (UInt128)lhsShape[^1].FixedValue;
         var m = MetricUtility.GetFLOPs(lhs) / k;
         var n = MetricUtility.GetFLOPs(rhs) / k;
         return new()

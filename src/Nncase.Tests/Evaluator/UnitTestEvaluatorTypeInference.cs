@@ -32,8 +32,8 @@ public class UnitTestEvaluatorTypeInference
         var expect2 = new TensorType(DataTypes.Boolean, Array.Empty<int>());
         Assert.Equal(actual2, expect2);
 
-        var thenType3 = new TensorType(DataTypes.Float32, new Shape(1, 3, 16, 16));
-        var elseType3 = new TensorType(DataTypes.Float32, new Shape(1, 3, 16, 16));
+        var thenType3 = new TensorType(DataTypes.Float32, new RankedShape(1, 3, 16, 16));
+        var elseType3 = new TensorType(DataTypes.Float32, new RankedShape(1, 3, 16, 16));
         var actual3 = TypeInference.CommonType(thenType3, elseType3);
         var expect3 = thenType3;
         Assert.Equal(actual3, expect3);

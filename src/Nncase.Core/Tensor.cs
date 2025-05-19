@@ -87,7 +87,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     internal Tensor(DataType elementType, long length)
     {
         ElementType = elementType;
-        Shape = new Shape(length);
+        Shape = new RankedShape(length);
         Length = length;
         _dimensions = new[] { length };
         _strides = TensorUtilities.GetStrides(_dimensions);
@@ -102,7 +102,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     {
         ElementType = elementType;
         _dimensions = dimensions.ToArray();
-        Shape = dimensions.IsEmpty ? Shape.Scalar : new Shape(_dimensions);
+        Shape = dimensions.IsEmpty ? IR.Shape.Scalar : new RankedShape(_dimensions);
         Length = TensorUtilities.GetProduct(dimensions);
         _strides = TensorUtilities.GetStrides(dimensions);
     }
@@ -111,7 +111,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     {
         ElementType = elementType;
         _dimensions = dimensions.ToArray();
-        Shape = dimensions.IsEmpty ? Shape.Scalar : new Shape(_dimensions);
+        Shape = dimensions.IsEmpty ? IR.Shape.Scalar : new RankedShape(_dimensions);
         Length = TensorUtilities.GetProduct(dimensions);
         _strides = strides.ToArray();
     }
@@ -134,7 +134,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public Shape Shape { get; }
+    public RankedShape Shape { get; }
 
     /// <summary>
     /// Gets rank of the tensor: number of dimensions.
@@ -323,6 +323,12 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         where T : struct, IEquatable<T>
     {
         return From(array.AsMemory());
+    }
+
+    public static Tensor<T> From<T>(T[,] array)
+        where T : unmanaged, IEquatable<T>
+    {
+        return From(array.AsMemory(), [array.GetLength(0), array.GetLength(1)]);
     }
 
     /// <summary>

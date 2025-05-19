@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.Collections;
 using Nncase.IR;
 using Nncase.TIR.Builders;
@@ -24,16 +25,16 @@ public sealed class Sequential : Expr
     public static readonly Sequential Empty = new Sequential(ReadOnlySpan<Expr>.Empty);
 
     public Sequential(ReadOnlySpan<Expr> fields)
-        : base(fields.ToArray())
+        : base(fields.AsValueEnumerable().Select(x => (BaseExpr)x).ToArray())
     {
     }
 
     public Sequential(params Expr[] fields)
-        : base(fields.ToArray())
+        : this(fields.AsReadOnlySpan())
     {
     }
 
-    public ReadOnlySpan<Expr> Fields => Operands;
+    public ReadOnlySpan<Expr> Fields => SpanUtility.UnsafeCast<BaseExpr, Expr>(Operands);
 
     public int Count => Fields.Length;
 

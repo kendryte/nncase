@@ -70,7 +70,7 @@ public class UnitTestCombineBinary
     {
         var (input, rootPre) = GetCombineClampBinaryCase(BinaryOp.Add, inputShape, constTensor, min, max);
 
-        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feedDict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate() },
         };
@@ -97,7 +97,7 @@ public class UnitTestCombineBinary
     {
         var (input, rootPre) = GetCombineClampBinaryCase(BinaryOp.Mul, inputShape, constTensor, min, max);
 
-        var feedDict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feedDict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
         };
@@ -122,10 +122,10 @@ public class UnitTestCombineBinary
     public void TestCombineClampAddNegative(long[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Add, inputShape, constTensor, min, max);
-        _ = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        _ = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, inputShape).Evaluate() },
-          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape.ToValueArrayExpr()).Evaluate() },
+          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape).Evaluate() },
         };
 
         CompilerServices.InferenceType(rootPre);
@@ -146,10 +146,10 @@ public class UnitTestCombineBinary
     public void TestCombineClampMulNegative(long[] inputShape, Tensor<float> constTensor, Tensor<float> min, Tensor<float> max)
     {
         var (input, constInput, rootPre) = GetCombineClampBinaryNegativeCase(BinaryOp.Mul, inputShape, constTensor, min, max);
-        _ = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        _ = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
-          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape.ToValueArrayExpr()).Evaluate() },
+          { constInput, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, constTensor.Shape).Evaluate() },
         };
 
         CompilerServices.InferenceType(rootPre);

@@ -23,9 +23,9 @@ public sealed partial class OnnxImporter : BaseImporter
     private readonly ModelProto _model;
     private readonly GraphProto _graph;
     private readonly Dictionary<string, long> _opSetMap;
-    private Dictionary<string, Expr>? _outputTensors;
+    private Dictionary<string, BaseExpr>? _outputTensors;
     private Dictionary<string, TensorProto>? _constTensors;
-    private Dictionary<string, Var> _dynVarMap = new();
+    private Dictionary<string, DimVar> _dynVarMap = new();
     private Dictionary<string, int> _fixVarMap = new();
 
     /// <summary>
@@ -48,7 +48,7 @@ public sealed partial class OnnxImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
+    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
     {
         var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
         _fixVarMap = bucketOptions.FixVarMap;
@@ -60,7 +60,7 @@ public sealed partial class OnnxImporter : BaseImporter
         _dynVarMap = _graph.Input.SelectMany(input => input.Type.TensorType.Shape.Dim.Where(d => IsDynamicDim(d)))
             .Select(v => v.DimParam).ToHashSet().Select(v =>
             {
-                var var = new Var(v, TensorType.Scalar(DataTypes.Int64));
+                var var = new DimVar(v);
                 var.Metadata.Range = v == "seq_len" ? new(1, 512) : new(0, 512); // FIX ME: Shape bucket
                 return var;
             })
@@ -72,7 +72,7 @@ public sealed partial class OnnxImporter : BaseImporter
 
         CompileSession.CompileOptions.ShapeBucketOptions =
             bucketOptions with { VarMap = varMap };
-        _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (Expr)n);
+        _outputTensors = createdInputs.ToDictionary(n => n.Name, n => (BaseExpr)n);
         return (createdInputs, varMap);
     }
 
@@ -86,7 +86,7 @@ public sealed partial class OnnxImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override Expr CreateOutputs()
+    protected override BaseExpr CreateOutputs()
     {
         var outputs = _graph.Output.Select(o => _outputTensors![o.Name]).ToArray();
         var body = outputs.Length > 1 ? new IR.Tuple(outputs) : outputs[0];
@@ -96,7 +96,7 @@ public sealed partial class OnnxImporter : BaseImporter
     private void Visit(NodeProto op)
     {
         AddOpInModel(op.OpType);
-        var output = op.OpType switch
+        BaseExpr output = op.OpType switch
         {
             "Abs" => VisitUnary(op, UnaryOp.Abs),
             "Acos" => VisitUnary(op, UnaryOp.Acos),

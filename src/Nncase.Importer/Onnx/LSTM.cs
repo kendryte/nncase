@@ -41,30 +41,29 @@ namespace Nncase.Importer
             var batchIndex = layout == 0 ? 1 : 0;
 
             // var T = GetInputDataType(op, 0);
-            var (x, w) = GetInputExprs(op, 0, 1);
+            var (x, w) = GetInputExprs<Expr, Expr>(op, 0, 1);
             x.InferenceType();
             var t = x.CheckedDataType;
 
             var hiddenSize = GetOptionIntAttribute(op, "hidden_size")
                     .Match(
-                        x => (Expr)x,
-                        () => Cast(Util.ShapeIndex(w, 1) / 4, DataTypes.Int64));
+                        x => (Dimension)x,
+                        () => Util.ShapeIndex(w, 1) / 4);
             var inputForget = GetOptionIntAttribute(op, "input_forget").Or(0);
-            var seqLens = Cast(Util.ShapeIndex(x, seqIndex), DataTypes.Int64);
-            var batchSize = Cast(Util.ShapeIndex(x, batchIndex), DataTypes.Int64);
-            var r = GetInputExpr(op, 2);
+            var seqLens = Util.ShapeIndex(x, seqIndex);
+            var batchSize = Util.ShapeIndex(x, batchIndex);
+            var r = GetInputExpr<Expr>(op, 2);
 
             // cast to x type
-            var b = GetOptionInputExpr(op, 3).Or(
+            var b = GetOptionInputExpr<Expr>(op, 3).Or(
                 ExpandToType(0, t, numBirections, 8L * hiddenSize));
 
             // onnx type constraints sequence_lens: int32
-            var sequenceLens = GetOptionInputExpr(op, 4).Or(
-                ExpandToType(seqLens, DataTypes.Int32, batchSize));
+            var sequenceLens = GetOptionInputExpr<Shape>(op, 4).Or(Shape.Repeat(seqLens, (int)batchSize.FixedValue));
             var initDefaultValue = ExpandToType(0, t, numBirections, batchSize, hiddenSize);
-            var initialH = GetOptionInputExpr(op, 5).Or(initDefaultValue);
-            var initialC = GetOptionInputExpr(op, 6).Or(initDefaultValue);
-            var p = GetOptionInputExpr(op, 7).Or(
+            var initialH = GetOptionInputExpr<Expr>(op, 5).Or(initDefaultValue);
+            var initialC = GetOptionInputExpr<Expr>(op, 6).Or(initDefaultValue);
+            var p = GetOptionInputExpr<Expr>(op, 7).Or(
                 ExpandToType(0, t, numBirections, 3L * hiddenSize));
 
             var outputCount = op.Output.Count;
@@ -88,11 +87,9 @@ namespace Nncase.Importer
                 outputCount);
         }
 
-        private Expr ExpandToType(Expr input, DataType t, params Expr[] dims)
+        private Expr ExpandToType(Expr input, DataType t, params Dimension[] dims)
         {
-            return Cast(
-                Expand(input, Stack(new Tuple(dims.Select(x => Cast(x, DataTypes.Int64)).ToArray()), 0)),
-                t);
+            return Cast(Expand(input, dims), t);
         }
     }
 }

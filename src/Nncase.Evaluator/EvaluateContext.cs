@@ -38,10 +38,10 @@ public static class EvaluateContextExtensions
 internal sealed class EvaluateContext : IEvaluateContext
 {
     private readonly EvaluateVisitor _evaluateVisitor;
-    private readonly Dictionary<Expr, IValue> _exprMemo;
+    private readonly Dictionary<BaseExpr, IValue> _exprMemo;
     private BaseCall? _currentCall;
 
-    public EvaluateContext(EvaluateVisitor evaluateVisitor, Dictionary<Expr, IValue> exprMemo)
+    public EvaluateContext(EvaluateVisitor evaluateVisitor, Dictionary<BaseExpr, IValue> exprMemo)
     {
         _evaluateVisitor = evaluateVisitor;
         _exprMemo = exprMemo;
@@ -53,7 +53,7 @@ internal sealed class EvaluateContext : IEvaluateContext
         set => _currentCall = value;
     }
 
-    public IValue GetValue(Expr expr) => _exprMemo[expr];
+    public IValue GetValue(BaseExpr expr) => _exprMemo[expr];
 
     public IValue GetArgumentValue(Op op, ParameterInfo parameter)
     {
@@ -63,5 +63,5 @@ internal sealed class EvaluateContext : IEvaluateContext
         return _exprMemo[expr];
     }
 
-    public IValue Evaluate(Expr expr) => _evaluateVisitor.Visit(expr);
+    public IValue Evaluate(BaseExpr expr) => _evaluateVisitor.Visit(expr);
 }

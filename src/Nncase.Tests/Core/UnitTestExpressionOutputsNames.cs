@@ -34,10 +34,10 @@ public class UnitTestExpressionOutputNames
     [Fact]
     public void TestInheritMetaData()
     {
-        var input = new Var(new TensorType(DataTypes.Float32, new Shape(1, 3, 224, 224)));
-        var pad1 = Pad(input, new float[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, PadMode.Constant, 0.0f);
+        var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(1, 3, 224, 224)));
+        var pad1 = Pad(input, new int[,] { { 0, 0 }, { 0, 0 }, { 0, 0 }, { 0, 0 } }, PadMode.Constant, 0.0f);
         pad1.Metadata.OutputNames = new string[] { "pad" };
-        var pad2 = Pad(input, new float[,] { { 0, 0 }, { 1, 1 }, { 1, 1 }, { 0, 0 } }, PadMode.Constant, 0.0f).InheritMetaData(pad1);
+        var pad2 = Pad(input, new int[,] { { 0, 0 }, { 1, 1 }, { 1, 1 }, { 0, 0 } }, PadMode.Constant, 0.0f).InheritMetaData(pad1);
         Assert.NotNull(pad2.Metadata.OutputNames);
     }
 }

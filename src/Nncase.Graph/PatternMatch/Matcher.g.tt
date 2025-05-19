@@ -26,6 +26,7 @@ internal partial class Matcher
 var autoGenIRs = new HashSet<string>
 {
     "Var",
+    "Const",
     "TensorConst",
     "TupleConst",
     "Function",
@@ -33,12 +34,16 @@ var autoGenIRs = new HashSet<string>
     "Tuple",
     "Marker",
     "Fusion",
+    "Dimension",
+    "Shape",
+    "RankedShape",
+    "Padding",
+    "Paddings",
 };
 
 foreach (var ir in irs.Where(x => autoGenIRs.Contains(x.Name)))
 {
-    var isConstPattern = ir.VisitBase == "Const";
-    var func1 = !isConstPattern ? "DefaultVisit" : $"Visit{ir.VisitBase}";
+    var func1 = ir.VisitBase == "Default" ? "DefaultVisit" : $"Visit{ir.VisitBase}";
 #>
     /// <inheritdoc/>
     protected override bool Visit<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, IPattern pattern)

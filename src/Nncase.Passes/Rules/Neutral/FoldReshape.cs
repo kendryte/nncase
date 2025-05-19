@@ -30,14 +30,13 @@ public sealed partial class FoldNopReshape : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsReshape(
         IsWildcard("input") with { TypePattern = HasFixedShape() },
-        IsTensorConst("newShape", IsIntegral()));
+        IsFixedShape("newShape"));
 
-    private Expr? GetReplace(Expr input, TensorConst newShape)
+    private Expr? GetReplace(Expr input, long[] newShape)
     {
-        var newShapeArray = newShape.Value.ToArray<long>();
-        if ((newShapeArray.Count(x => x == -1) == 1 && newShapeArray.Length == input.CheckedShape.Count
-             && input.CheckedShape.Zip(newShapeArray).Count(t => t.Second != -1 && t.First.FixedValue == t.Second) == newShapeArray.Length - 1)
-            || input.CheckedShape.ToValueArray().SequenceEqual(newShapeArray))
+        if ((newShape.Count(x => x == -1) == 1 && newShape.Length == input.CheckedShape.Rank
+             && input.CheckedShape.Zip(newShape).Count(t => t.Second != -1 && t.First.FixedValue == t.Second) == newShape.Length - 1)
+            || input.CheckedShape.ToValueArray().SequenceEqual(newShape))
         {
             return input;
         }
@@ -54,9 +53,9 @@ public sealed partial class FoldTwoReshapes : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsReshape(
-        MaybeMarker(IsReshape(IsWildcard("input"), IsWildcard())), IsWildcard("newShape"));
+        MaybeMarker(IsReshape(IsWildcard("input"), IsWildcard())), IsShape("newShape"));
 
-    private Expr? GetReplace(Expr input, Expr newShape)
+    private Expr? GetReplace(Expr input, Shape newShape)
     {
         return Reshape(input, newShape);
     }
@@ -70,7 +69,7 @@ public sealed partial class FoldReshapeBinaryConstReshape : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } =
-        IsReshape(IsSwappableBinary("binary", null, b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, IsReshape(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsTensorConst("unsqShape")), IsTensorConst("binaryConst")), IsTensorConst("sqShape"));
+        IsReshape(IsSwappableBinary("binary", null, b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, IsReshape(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsFixedShape("unsqShape")), IsTensorConst("binaryConst")), IsFixedShape("sqShape"));
 
     private Expr? GetReplace(Expr input, Binary binary, long[] unsqShape, TensorConst binaryConst, long[] sqShape)
     {
@@ -97,7 +96,7 @@ public sealed partial class ReshapeToTranspose : IRewriteRule
         "call",
         _ => true,
         IsWildcard("input") with { TypePattern = HasFixedShape() },
-        IsTensorConst("newShape", IsIntegral()));
+        IsFixedShape("newShape"));
 
     private Expr? GetReplace(Expr input, Call call)
     {

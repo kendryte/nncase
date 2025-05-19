@@ -22,19 +22,19 @@ public interface IParameterList<T>
     public T this[ParameterInfo parameter] { get; }
 }
 
-public abstract class BaseCall : Expr, IParameterList<Expr>
+public abstract class BaseCall : Expr, IParameterList<BaseExpr>
 {
-    public BaseCall(IEnumerable<Expr> operands)
+    public BaseCall(IEnumerable<BaseExpr> operands)
         : base(operands)
     {
     }
 
-    public BaseCall(Expr[] operands)
+    public BaseCall(BaseExpr[] operands)
         : base(operands)
     {
     }
 
-    public abstract ReadOnlySpan<Expr> Arguments { get; }
+    public abstract ReadOnlySpan<BaseExpr> Arguments { get; }
 
     // /// <summary>
     // /// used by fake ir, represents that whether this op permit int 16 quant.
@@ -55,22 +55,22 @@ public abstract class BaseCall : Expr, IParameterList<Expr>
     /// <summary>
     /// get param expr.
     /// </summary>
-    public virtual Expr this[ParameterInfo parameter] => throw new NotSupportedException();
+    public virtual BaseExpr this[ParameterInfo parameter] => throw new NotSupportedException();
 
-    public virtual void ParametersForeach(Action<Expr, ParameterInfo> f) => throw new NotSupportedException();
+    public virtual void ParametersForeach(Action<BaseExpr, ParameterInfo> f) => throw new NotSupportedException();
 }
 
 /// <summary>
 /// Call expression.
 /// </summary>
-public sealed class Call : BaseCall, IParameterList<Expr>
+public sealed class Call : BaseCall, IParameterList<BaseExpr>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Call"/> class.
     /// </summary>
     /// <param name="target">Call target.</param>
     /// <param name="arguments">Arguments.</param>
-    public Call(Expr target, ReadOnlySpan<Expr> arguments)
+    public Call(Expr target, ReadOnlySpan<BaseExpr> arguments)
         : base(ArrayUtility.Concat(target, arguments))
     {
     }
@@ -80,19 +80,19 @@ public sealed class Call : BaseCall, IParameterList<Expr>
     /// </summary>
     /// <param name="target">Call target.</param>
     /// <param name="arguments">Arguments.</param>
-    public Call(Expr target, params Expr[] arguments)
-        : this(target, (ReadOnlySpan<Expr>)arguments)
+    public Call(Expr target, params BaseExpr[] arguments)
+        : this(target, (ReadOnlySpan<BaseExpr>)arguments)
     {
     }
 
-    public Expr Target => Operands[0];
+    public Expr Target => (Expr)Operands[0];
 
-    public override ReadOnlySpan<Expr> Arguments => Operands[1..];
+    public override ReadOnlySpan<BaseExpr> Arguments => Operands[1..];
 
     /// <summary>
     /// get param expr.
     /// </summary>
-    public override Expr this[ParameterInfo parameter]
+    public override BaseExpr this[ParameterInfo parameter]
     {
         get
         {
@@ -108,7 +108,7 @@ public sealed class Call : BaseCall, IParameterList<Expr>
         }
     }
 
-    public override void ParametersForeach(Action<Expr, ParameterInfo> f)
+    public override void ParametersForeach(Action<BaseExpr, ParameterInfo> f)
     {
         var parameterInfos = ((Op)Target).Parameters.ToArray();
         for (int i = 0; i < Arguments.Length; i++)
@@ -121,7 +121,7 @@ public sealed class Call : BaseCall, IParameterList<Expr>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitCall(this, context);
 
-    public Call With(Expr? target = null, Expr[]? arguments = null, IRMetadata? metadata = null)
+    public Call With(Expr? target = null, BaseExpr[]? arguments = null, IRMetadata? metadata = null)
     {
         var call = new Call(target ?? Target, arguments ?? Arguments)
         {

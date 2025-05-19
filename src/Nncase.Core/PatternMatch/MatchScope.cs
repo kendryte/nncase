@@ -19,15 +19,15 @@ public sealed class MatchScope
 {
     private readonly object? _root;
     private readonly MatchScope? _parent;
-    private readonly Dictionary<IPattern, Expr> _patMemo = new(ReferenceEqualityComparer.Instance);
-    private readonly Dictionary<VArgsPattern, IReadOnlyList<Expr>> _vargspatMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<IPattern, BaseExpr> _patMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<VArgsPattern, IReadOnlyList<BaseExpr>> _vargspatMemo = new(ReferenceEqualityComparer.Instance);
     private readonly List<(IPattern Pattern, object Match)> _matches = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MatchScope"/> class.
     /// </summary>
     /// <param name="root">Match root.</param>
-    public MatchScope(Expr root)
+    public MatchScope(BaseExpr root)
     {
         _root = root;
     }
@@ -71,7 +71,7 @@ public sealed class MatchScope
     /// <param name="pattern">Pattern.</param>
     /// <param name="expr">Expression.</param>
     /// <returns>Operation succeeded.</returns>
-    public bool TryGetMemo(IPattern pattern, [MaybeNullWhen(false)] out Expr expr)
+    public bool TryGetMemo(IPattern pattern, [MaybeNullWhen(false)] out BaseExpr expr)
     {
         if (_patMemo.TryGetValue(pattern, out expr))
         {
@@ -92,7 +92,7 @@ public sealed class MatchScope
     /// <param name="pattern">Pattern.</param>
     /// <param name="exprs">Expressions.</param>
     /// <returns>Operation succeeded.</returns>
-    public bool TryGetMemo(VArgsPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<Expr> exprs)
+    public bool TryGetMemo(VArgsPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<BaseExpr> exprs)
     {
         if (_vargspatMemo.TryGetValue(pattern, out exprs))
         {
@@ -112,7 +112,7 @@ public sealed class MatchScope
     /// </summary>
     /// <param name="pattern">Pattern.</param>
     /// <param name="match">Match expression.</param>
-    public void AddMatch(IPattern pattern, Expr match)
+    public void AddMatch(IPattern pattern, BaseExpr match)
     {
         _patMemo.Add(pattern, match);
         _matches.Add((pattern, match));
@@ -123,7 +123,7 @@ public sealed class MatchScope
     /// </summary>
     /// <param name="pattern">Pattern.</param>
     /// <param name="match">Match expressions.</param>
-    public void AddMatch(VArgsPattern pattern, IReadOnlyList<Expr> match)
+    public void AddMatch(VArgsPattern pattern, IReadOnlyList<BaseExpr> match)
     {
         _vargspatMemo.Add(pattern, match);
         _matches.Add((pattern, match));

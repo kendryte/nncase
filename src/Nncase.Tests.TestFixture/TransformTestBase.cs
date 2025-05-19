@@ -30,19 +30,19 @@ public partial class TransformTestBase : TestClassBase
         CompileOptions.QuantizeOptions.WQuantType = DataTypes.UInt8;
     }
 
-    public virtual Expr TestMatched<T>(Function pre, IReadOnlyDictionary<Var, IValue>? feeds = null)
+    public virtual BaseExpr TestMatched<T>(Function pre, IReadOnlyDictionary<IVar, IValue>? feeds = null)
         where T : IRewriteRule, new()
     {
         return TestMatchedCore(pre, feeds, false, new T());
     }
 
-    public virtual Expr TestMatched<T>(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null)
+    public virtual BaseExpr TestMatched<T>(BaseExpr pre, IReadOnlyDictionary<IVar, IValue>? feeds = null)
         where T : IRewriteRule, new()
     {
         return TestMatchedCore(pre, feeds, new T());
     }
 
-    public void CondMatch<T>(bool cond, Expr expr)
+    public void CondMatch<T>(bool cond, BaseExpr expr)
         where T : IRewriteRule, new()
     {
         if (cond)
@@ -55,7 +55,7 @@ public partial class TransformTestBase : TestClassBase
         }
     }
 
-    public Expr TestMatchedCore(Function pre, IReadOnlyDictionary<Var, IValue>? feeds = null, bool isNotMatch = false, params IRewriteRule[] rules)
+    public Expr TestMatchedCore(Function pre, IReadOnlyDictionary<IVar, IValue>? feeds = null, bool isNotMatch = false, params IRewriteRule[] rules)
     {
         IAnalyzerManager analyzerManager = CompileSession.GetRequiredService<IAnalyzerManager>();
         var analysis = new Dictionary<System.Type, IAnalysisResult> { [typeof(IExprUserAnalysisResult)] = analyzerManager.GetAnaylsis<IExprUserAnalysisResult>(pre) };
@@ -86,7 +86,7 @@ public partial class TransformTestBase : TestClassBase
         return post;
     }
 
-    public Expr TestMatchedCore(Expr pre, IReadOnlyDictionary<Var, IValue>? feeds = null, params IRewriteRule[] rules)
+    public BaseExpr TestMatchedCore(BaseExpr pre, IReadOnlyDictionary<IVar, IValue>? feeds = null, params IRewriteRule[] rules)
     {
         pre.InferenceType();
         Assert.True(pre.InferenceType(), "TestInferFailed:" + pre.CheckedType);
@@ -108,7 +108,7 @@ public partial class TransformTestBase : TestClassBase
         return post;
     }
 
-    public void TestNotMatch(Expr pre, params IRewriteRule[] rules)
+    public void TestNotMatch(BaseExpr pre, params IRewriteRule[] rules)
     {
         pre.InferenceType();
         var preHashCode = pre.GetHashCode();
@@ -122,7 +122,7 @@ public partial class TransformTestBase : TestClassBase
         TestMatchedCore(pre, null, true, new T());
     }
 
-    public void TestNotMatch<T>(Expr pre)
+    public void TestNotMatch<T>(BaseExpr pre)
         where T : IRewriteRule, new()
     {
         TestNotMatch(pre, new T());
@@ -133,16 +133,16 @@ public partial class TransformTestBase : TestClassBase
     //     TestMatched<T>(Binary(op, lhs, rhs));
     //     TestMatched<T>(Binary(op, rhs, lhs));
     // }
-    public Expr Rewrite<T>(Expr pre, RunPassContext passOptions)
+    public BaseExpr Rewrite<T>(BaseExpr pre, RunPassContext passOptions)
         where T : IRewriteRule, new()
     {
         return CompilerServices.Rewrite(pre, new IRewriteRule[] { new T() }, passOptions);
     }
 
-    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> rules) =>
+    public BaseExpr RewriteWithSeq(BaseExpr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> rules) =>
         rules.Aggregate(expr, (expr1, rule) => CompilerServices.Rewrite(expr1, new[] { rule }, passOptions));
 
-    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> folds, IEnumerable<IRewriteRule> fuse)
+    public BaseExpr RewriteWithSeq(BaseExpr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> folds, IEnumerable<IRewriteRule> fuse)
     {
         var l = RewriteWithSeq(expr, passOptions, lower);
         var s = RewriteWithSeq(l, passOptions with { RewriteOnce = false }, folds);
@@ -150,15 +150,15 @@ public partial class TransformTestBase : TestClassBase
         return f;
     }
 
-    public Expr FoldNop(Expr expr, RunPassContext passOptions) =>
+    public BaseExpr FoldNop(BaseExpr expr, RunPassContext passOptions) =>
         CompilerServices.Rewrite(
             expr,
             new IRewriteRule[] { new FoldNopCast(), new FoldNopReshape(), },
             passOptions with { RewriteOnce = false });
 
-    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IRewriteRule fold, IEnumerable<IRewriteRule> fuse) => RewriteWithSeq(expr, passOptions, lower, new[] { fold }, fuse);
+    public BaseExpr RewriteWithSeq(BaseExpr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IRewriteRule fold, IEnumerable<IRewriteRule> fuse) => RewriteWithSeq(expr, passOptions, lower, new[] { fold }, fuse);
 
-    public Expr RewriteWithSeq(Expr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> fuse) =>
+    public BaseExpr RewriteWithSeq(BaseExpr expr, RunPassContext passOptions, IEnumerable<IRewriteRule> lower, IEnumerable<IRewriteRule> fuse) =>
         RewriteWithSeq(
             expr,
             passOptions,
@@ -166,7 +166,7 @@ public partial class TransformTestBase : TestClassBase
             new IRewriteRule[] { new FoldNopReshape(), new FoldNopCast(), },
             fuse);
 
-    public Expr TestMultiMatched<T>(Expr expr, int count)
+    public BaseExpr TestMultiMatched<T>(BaseExpr expr, int count)
         where T : IRewriteRule, new()
         =>
             Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>
@@ -175,7 +175,7 @@ public partial class TransformTestBase : TestClassBase
                 return ex;
             });
 
-    public Expr RewriteMultiTimes<T>(Expr expr, int count)
+    public BaseExpr RewriteMultiTimes<T>(BaseExpr expr, int count)
         where T : IRewriteRule, new()
         =>
             Enumerable.Range(0, count).Aggregate(expr, (expr1, i) =>

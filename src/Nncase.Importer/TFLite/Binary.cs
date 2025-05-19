@@ -15,7 +15,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitBinary(in tflite.Operator op, BinaryOp binaryOp, tflite.ActivationFunctionType activation = tflite.ActivationFunctionType.NONE)
         {
-            (var lhs, var rhs) = GetInputExprs(op, 0, 1);
+            (var lhs, var rhs) = GetInputExprs<Expr, Expr>(op, 0, 1);
 
             var node = F.Math.Binary(binaryOp, lhs, rhs);
             List<string> outputNames = new();
@@ -32,13 +32,13 @@ namespace Nncase.Importer.TFLite
 
         private Expr VisitFloorDiv(in tflite.Operator op)
         {
-            (var lhs, var rhs) = GetInputExprs(op, 0, 1);
+            (var lhs, var rhs) = GetInputExprs<Expr, Expr>(op, 0, 1);
             return F.Math.FloorDiv(lhs, rhs);
         }
 
         private Expr VisitFloorMod(in tflite.Operator op)
         {
-            (var lhs, var rhs) = GetInputExprs(op, 0, 1);
+            (var lhs, var rhs) = GetInputExprs<Expr, Expr>(op, 0, 1);
             return F.Math.FloorMod(lhs, rhs);
         }
     }

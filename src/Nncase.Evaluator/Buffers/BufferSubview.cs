@@ -10,7 +10,7 @@ using Nncase.IR.Buffers;
 namespace Nncase.Evaluator.Buffers;
 
 /// <summary>
-/// Evaluator for DDrOf.
+/// Evaluator for AddressOf.
 /// </summary>
 public partial class BufferSubviewEvaluator : ITypeInferencer<BufferSubview>
 {
@@ -18,13 +18,7 @@ public partial class BufferSubviewEvaluator : ITypeInferencer<BufferSubview>
     public IRType Visit(ITypeInferenceContext context, BufferSubview target)
     {
         var buffer = context.GetArgument(target, BufferSubview.Buffer);
-        var shapeExpr = context.GetArgument(target, BufferSubview.Shape);
-        var shape = shapeExpr switch
-        {
-            IR.Tuple t => new Shape(t.Fields),
-            TupleConst tc => new Shape(tc.Value.AsTensors().Select(t => t.ToScalar<long>()).ToArray()),
-            _ => throw new ArgumentException("Invalid shape argument."),
-        };
+        var shape = (Shape)context.GetArgument(target, BufferSubview.Shape);
         return new TensorType(buffer.CheckedDataType, shape);
     }
 }

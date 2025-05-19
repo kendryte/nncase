@@ -78,8 +78,8 @@ public static class DataGenerator
         var input = Random.Normal(DataTypes.Float32, new long[] { 1, 3, 24, 32 });
         var weights = Random.Normal(DataTypes.Float32, new long[] { 16, 3, 3, 3 }).Evaluate();
         var bias = Random.Normal(DataTypes.Float32, new long[] { 16 }).Evaluate();
-        var stride = Tensor.From(new[] { 1, 1 }, [2]);
-        var dilation = Tensor.From(new[] { 1, 1 }, [2]);
+        var stride = new[] { 1, 1 };
+        var dilation = new[] { 1, 1 };
         var padding = new[,]
         {
             { 0, 1 },

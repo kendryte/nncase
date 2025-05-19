@@ -18,7 +18,7 @@ import nncase
 
 
 def test_cpu_options_setter(request):
-    opt = nncase.CpuTargetOptions()
+    opt = nncase.NTTTargetOptions()
     opt.Packing = True
     opt.ModelName = "unknow"
     opt.Hierarchies = [[1], [2, 3]]

@@ -7,6 +7,7 @@ using System.Linq;
 using Nncase;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Schedule;
 using Nncase.TIR;
 using OrtKISharp;
@@ -35,18 +36,19 @@ public sealed class UnitTestTIRUtilities
             new TIR.Range(0, 8, 1),
         };
 
-        var shape = new IR.Shape(new List<int>() { 32, 16, 8 });
+        var shape = new IR.RankedShape(new List<int>() { 32, 16, 8 });
 
         // Act
         var paddings1 = TIRUtilities.ComputePaddings(bounds, shape);
         var expect1 = bounds.Select((bound, i) =>
-            ((IR.Expr)IR.F.Math.Max(-bound.Start, 0L), (IR.Expr)IR.F.Math.Max((bound.Stop - shape[i]).ToExpr(), 0L))).ToArray();
+            new Padding(Dimension.Max(-bound.Start, 0L), Dimension.Max(bound.Stop - shape[i], 0L))).ToArray();
 
         var paddings2 = TIRUtilities.ComputePaddings(bounds, targetbounds);
         var expect2 = bounds.Zip(targetbounds).
             Select(it =>
-                ((IR.Expr)IR.F.Math.Max(-it.First.Start, 0L),
-                    (IR.Expr)IR.F.Math.Max(it.First.Stop - (it.Second.Stop - it.Second.Start), 0L))).ToArray();
+                new Padding(
+                    Dimension.Max(-it.First.Start, 0L),
+                    Dimension.Max(it.First.Stop - (it.Second.Stop - it.Second.Start), 0L))).ToArray();
 
         // Assert
         Assert.Equal(3, paddings1.Count);
@@ -72,18 +74,10 @@ public sealed class UnitTestTIRUtilities
             new TIR.Range(0, 16, 1),
             new TIR.Range(0, 16, 1),
         };
-        IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings = new List<(IR.Expr Before, IR.Expr After)>()
-        {
-            (IR.F.Math.Max(-1L, 0L), IR.F.Math.Max(0 - 32 - 1L, 0L)),
-            (IR.F.Math.Max(0L, 0L), IR.F.Math.Max(0 - 16 - 0L, 0L)),
-            (IR.F.Math.Max(-2L, 0L), IR.F.Math.Max(0 - 8 - 2L, 0L)),
-        };
-        _ = new List<(IR.Expr Before, IR.Expr After)>()
-        {
-            (IR.F.Math.Max(-1L, 0L), IR.F.Math.Max(0 - 32 - 1L, 0L)),
-            (IR.F.Math.Max(0L, 0L), IR.F.Math.Max(0 - 16 - 0L, 0L)),
-            (IR.F.Math.Max(-2L, 0L), IR.F.Math.Max(0 - 8 - 2L, 0L)),
-        };
+        var paddings = new Paddings(
+            (Dimension.Max(-1L, 0L), Dimension.Max(0 - 32 - 1L, 0L)),
+            (Dimension.Max(0L, 0L), Dimension.Max(0 - 16 - 0L, 0L)),
+            (Dimension.Max(-2L, 0L), Dimension.Max(0 - 8 - 2L, 0L)));
 
         // Act
         var noPadBounds = TIRUtilities.ComputeNoPadBounds(bounds, paddings);
@@ -112,14 +106,14 @@ public sealed class UnitTestTIRUtilities
             new TIR.Range(-3, 36, 1), new TIR.Range(0, 20, 1),
             new TIR.Range(0, 10, 1),
         };
-        var shape = new IR.Shape(new List<int>() { 32, 16, 8 });
+        var shape = new IR.RankedShape(new List<int>() { 32, 16, 8 });
 
         // Act
         var clampedBounds1 = TIRUtilities.ClampBounds(bounds, shape);
         var expect = bounds.Zip(shape).Select(
             t => new TIR.Range(
-                IR.F.Math.Max(0L, t.First.Start),
-                IR.F.Math.Min(t.Second.FixedValue, t.First.Stop),
+                Dimension.Max(0L, t.First.Start),
+                Dimension.Min(t.Second.FixedValue, t.First.Stop),
                 t.First.Step)).ToArray();
 
         // Assert
@@ -141,12 +135,10 @@ public sealed class UnitTestTIRUtilities
             new TIR.Range(0, 32, 1), new TIR.Range(0, 8, 1),
             new TIR.Range(0, 8, 1),
         };
-        IReadOnlyList<(IR.Expr Before, IR.Expr After)> paddings = new List<(IR.Expr Before, IR.Expr After)>()
-        {
-            (IR.F.Math.Max(-1L, 0L), IR.F.Math.Max(0 - 32 - 1L, 0L)),
-            (IR.F.Math.Max(0L, 0L), IR.F.Math.Max(0 - 16 - 0L, 0L)),
-            (IR.F.Math.Max(-2L, 0L), IR.F.Math.Max(0 - 8 - 2L, 0L)),
-        };
+        Paddings paddings = new(
+            (Dimension.Max(-1L, 0L), Dimension.Max(0 - 32 - 1L, 0L)),
+            (Dimension.Max(0L, 0L), Dimension.Max(0 - 16 - 0L, 0L)),
+            (Dimension.Max(-2L, 0L), Dimension.Max(0 - 8 - 2L, 0L)));
 
         // Act
         var computeBounds = TIRUtilities.ComputeBounds(sub_no_pad_bounds, bounds, paddings);
@@ -188,7 +180,7 @@ public sealed class UnitTestTIRUtilities
         var typePattern1 = new TypePattern(type1);
         Assert.True(typePattern1.MatchLeaf(type1));
 
-        var type2 = new TensorType(DataTypes.Float32, new Shape(1));
+        var type2 = new TensorType(DataTypes.Float32, new RankedShape(1));
         var typePattern2 = new TypePattern(type2);
         Assert.True(typePattern2.MatchLeaf(type2));
 

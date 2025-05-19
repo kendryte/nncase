@@ -2,8 +2,12 @@
 
 set(SRCS 
         api.cpp
+        dim_value.cpp
         object.cpp
+        padding_value.cpp
+        paddings_value.cpp
         shape.cpp
+        shape_value.cpp
         tensor.cpp
         type.cpp
         value.cpp)
@@ -22,7 +26,6 @@ set_property(TARGET nncasebase PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 add_subdirectory(compiler)
 add_subdirectory(runtime)
-add_subdirectory(kernels)
 # add_subdirectory(llm)
 
 if (NOT BUILDING_RUNTIME)

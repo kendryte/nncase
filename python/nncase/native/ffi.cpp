@@ -279,7 +279,7 @@ PYBIND11_MODULE(_nncase, m) {
       .value("SMT", hierarchy_kind_smt);
 
 
-    py::class_<cpu_target_options>(m, "CpuTargetOptions")
+    py::class_<cpu_target_options>(m, "NTTTargetOptions")
       .def(py::init())
       .def_property(
         "ModelName",

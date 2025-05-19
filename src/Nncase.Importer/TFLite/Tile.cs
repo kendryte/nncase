@@ -11,8 +11,8 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitTile(in tflite.Operator op)
         {
-            var (input, multiples) = GetInputExprs(op, 0, 1);
-            return Tile(input, Cast(multiples, DataTypes.Int64));
+            var (input, multiples) = GetInputExprs<Expr, Shape>(op, 0, 1);
+            return Tile(input, multiples);
         }
     }
 }

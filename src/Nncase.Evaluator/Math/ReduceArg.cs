@@ -53,8 +53,8 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
     {
         var input = context.GetArgumentType<IRType>(target, ReduceArg.Input);
         var ret = context.GetReturnType<IRType>();
-        var inShape = input switch { TensorType t => t.Shape, DistributedType d => d.TensorType.Shape, _ => throw new NotImplementedException() };
-        var rShape = ret switch { TensorType t => t.Shape, DistributedType d => d.TensorType.Shape, _ => throw new NotImplementedException() };
+        var inShape = (RankedShape)(input switch { TensorType t => t.Shape, DistributedType d => d.TensorType.Shape, _ => throw new NotImplementedException() });
+        var rShape = (RankedShape)(ret switch { TensorType t => t.Shape, DistributedType d => d.TensorType.Shape, _ => throw new NotImplementedException() });
         uint input_elem = inShape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
         uint ret_elem = rShape.Aggregate(1U, (acc, d) => acc * (d.IsFixed ? (uint)d.FixedValue : 1U));
         uint macPerElement = input_elem / ret_elem;
@@ -78,11 +78,12 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
 
     private IRType Visit(ITypeInferenceContext context, ReduceArg target, TensorType input)
     {
-        if (context.GetArgument(target, ReduceArg.Axis) is TensorConst axisValue &&
+        if (context.GetArgument(target, ReduceArg.Axis) is DimConst axisValue &&
             context.GetArgument(target, ReduceArg.KeepDims) is TensorConst keepDimsValue)
         {
-            var shape = input.Shape.ToList();
-            var axisIndex = axisValue.Value.ToScalar<int>();
+            var inShape = (RankedShape)input.Shape;
+            var shape = inShape.ToList();
+            var axisIndex = (int)axisValue.Value;
             axisIndex = axisIndex >= 0 ? axisIndex : input.Shape.Rank + axisIndex;
             if (keepDimsValue.Value.ToScalar<bool>())
             {
@@ -93,7 +94,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
                 shape.RemoveAt(axisIndex);
             }
 
-            return input with { Shape = new Shape(shape), DType = target.DestType };
+            return input with { Shape = new RankedShape(shape), DType = target.DestType };
         }
         else
         {

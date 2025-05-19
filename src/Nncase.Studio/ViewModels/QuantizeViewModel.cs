@@ -218,14 +218,14 @@ public sealed class SelfInputCalibrationDatasetProvider : ICalibrationDatasetPro
 {
     private readonly int _count = 1;
 
-    private readonly IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> _samples;
+    private readonly IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> _samples;
 
-    public SelfInputCalibrationDatasetProvider(IReadOnlyDictionary<Var, IValue>[] samples)
+    public SelfInputCalibrationDatasetProvider(IReadOnlyDictionary<IVar, IValue>[] samples)
     {
         _samples = samples.ToAsyncEnumerable();
     }
 
     public int? Count => _count;
 
-    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples;
+    public IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> Samples => _samples;
 }

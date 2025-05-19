@@ -102,7 +102,7 @@ public class UnitTestFoldTranspose : TransformTestBase
     {
         using var dumpScope = new DumpScope($"{param.Count}");
         var rootPre = Tensors.Transpose(param.Act, param.Perm);
-        TestMatched<CombineTransposeActivations>(rootPre, new Dictionary<Var, IValue>());
+        TestMatched<CombineTransposeActivations>(rootPre, new Dictionary<IVar, IValue>());
     }
 
     [Theory]

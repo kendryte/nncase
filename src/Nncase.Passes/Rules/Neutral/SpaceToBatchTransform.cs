@@ -8,6 +8,7 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.PatternMatch;
@@ -31,24 +32,20 @@ public sealed partial class SpaceToBatchToPad : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsSpaceToBatch(
         IsWildcard("input") with { TypePattern = HasFixedShape() },
-        IsTensorConst("blockShape"),
-        IsTensorConst("paddings"));
+        IsShape("blockShape"),
+        IsPaddings("paddings"));
 
-    private Expr? GetReplace(Expr input, Tensor<int> blockShape, Tensor<int> paddings)
+    private Expr? GetReplace(Expr input, Shape blockShape, Paddings paddings)
     {
-        var blockShapeArray = blockShape.ToArray();
-        var paddingsArray = paddings.ToArray();
-        if (input.CheckedShape.Rank == 4 && blockShapeArray.Length == 2 && blockShapeArray[0] == 1 && blockShape[1] == 1)
+        if (input.CheckedShape.Rank == 4 && blockShape.Rank == 2 && blockShape[0] == 1 && blockShape[1] == 1)
         {
-            var newPaddingsArray = new int[8];
+            var newPaddings = Enumerable.Repeat(Padding.Zero, 4).ToArray();
 
             // pad for hw
-            for (var i = 0; i < paddingsArray.Length; i++)
+            for (var i = 0; i < paddings.Rank; i++)
             {
-                newPaddingsArray[i + 4] = paddingsArray[i];
+                newPaddings[i + 2] = paddings[i];
             }
-
-            var newPaddings = Tensor.From(newPaddingsArray, [4, 2]);
 
             return Pad(input, newPaddings, PadMode.Constant, 0f);
         }
