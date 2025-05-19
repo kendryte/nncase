@@ -653,3 +653,520 @@ public sealed class CastUnpackPropagation : RewriteRule<Pattern>
         return null;
     }
 }
+
+[RuleGenerator]
+public sealed class PackConcatPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+    PatternMatch.F.CPU.IsPack(
+            "pack",
+            "caller",
+            _ => true,
+            IsConcat(
+                "concat",
+                "callee",
+                _ => true,
+                IsTuple(null, IsVArgsRepeat("tupleInputs", exprs =>
+                {
+                    var patterns = new Pattern[exprs.Length];
+                    for (var i = 0; i < patterns.Length; i++)
+                    {
+                        patterns[i] = IsWildcard($"input_{i}", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() };
+                    }
+
+                    return patterns;
+                }))));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var pack = (IR.CPU.Pack)result["pack"];
+        if (pack.Axes.Count > 1)
+        {
+            var tupleInputs = (IReadOnlyList<Expr>)result["tupleInputs"];
+            var op = (IR.Tensors.Concat)result["concat"];
+            var axis = op.Axis;
+            var candidate = (Expr)result[Pattern];
+
+            var ret = PackConcat.AddCandidate(tupleInputs.ToArray(), candidate, axis, pack.Axes.ToArray(), pack.Lanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return IR.F.CPU.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class ConcatUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+    IsConcat(
+        "concat",
+        "concatCall",
+        _ => true,
+        IsTuple(null, IsVArgsRepeat("tupleInputs", exprs =>
+        {
+            var patterns = new Pattern[exprs.Length];
+            for (var i = 0; i < patterns.Length; i++)
+            {
+                patterns[i] = PatternMatch.F.CPU.IsUnpack($"unpack_{i}", $"callee_{i}", _ => true, IsWildcard($"input_{i}"));
+            }
+
+            return patterns;
+        })));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var tupleInputs = ((IReadOnlyList<Expr>)result["tupleInputs"]).Select(e => (Call)e).ToArray();
+        var unpacks = tupleInputs.Select(c => (IR.CPU.Unpack)c.Target).ToArray();
+        var packAxes = unpacks[0].Axes;
+        if (packAxes.Count > 1 && unpacks.Skip(1).All(unpack => unpack.Axes == packAxes))
+        {
+            var op = (IR.Tensors.Concat)result["concat"];
+            var axis = op.Axis;
+            var candidate = (Expr)result[Pattern];
+
+            var ret = PackConcat.AddCandidate(tupleInputs, candidate, axis, packAxes.ToArray(), unpacks[0].Lanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return ret;
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class PackComparePropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        PatternMatch.F.CPU.IsPack(
+            "pack",
+            "caller",
+            _ => true,
+            IsCompare(
+                "compare",
+                "callee",
+                _ => true,
+                IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+                IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() }));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var pack = (IR.CPU.Pack)result["pack"];
+        if (pack.Lanes.Count > 1)
+        {
+            var op = (IR.Math.Compare)result["compare"];
+            var lhs = (Expr)result["lhs"];
+            var rhs = (Expr)result["rhs"];
+            var lhsShape = lhs.CheckedShape;
+            var rhsShape = rhs.CheckedShape;
+            var candidate = (Expr)result[Pattern];
+            var lhsExt = candidate.CheckedShape.Rank - lhsShape.Rank;
+            var rhsExt = candidate.CheckedShape.Rank - rhsShape.Rank;
+            var lhsPackedAxes = pack.Axes.Where(a => a - lhsExt >= 0 && lhsShape[a - lhsExt] is { IsFixed: true } fa && fa != 1).ToArray();
+            var rhsPackedAxes = pack.Axes.Where(a => a - rhsExt >= 0 && rhsShape[a - rhsExt] is { IsFixed: true } fa && fa != 1).ToArray();
+            var lhsLanes = lhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
+            var rhsLanes = rhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
+
+            var ret = PackCompare.AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes.Select(a => a - lhsExt).ToArray(), rhsPackedAxes.Select(a => a - rhsExt).ToArray(), lhsLanes, rhsLanes).FirstOrDefault();
+            if (ret is not null)
+            {
+                return IR.F.CPU.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class CompareUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+    IsCompare(
+            "compare",
+            "caller",
+            _ => true,
+            IsAlt(
+                PatternMatch.F.CPU.IsUnpack("lhsUnpack", "lhs", _ => true, IsWildcard("lhsIn")),
+                IsWildcard("lhs")),
+            IsAlt(
+                PatternMatch.F.CPU.IsUnpack("rhsUnpack", "rhs", _ => true, IsWildcard("rhsIn")),
+                IsWildcard("rhs")));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var lhsUnpack = result.GetValueOrDefault("lhsUnpack") == null ? null : (IR.CPU.Unpack)result.GetValueOrDefault("lhsUnpack");
+        var rhsUnpack = result.GetValueOrDefault("rhsUnpack") == null ? null : (IR.CPU.Unpack)result.GetValueOrDefault("rhsUnpack");
+        if ((lhsUnpack != null && lhsUnpack.Lanes.Count > 1) || (rhsUnpack != null && rhsUnpack.Lanes.Count > 1))
+        {
+            var op = (IR.Math.Compare)result["compare"];
+            var lhs = (Expr)result["lhs"];
+            var rhs = (Expr)result["rhs"];
+            var candidate = (Expr)result[Pattern];
+            var lhsPackedAxes = (lhsUnpack != null && lhsUnpack.Lanes.Count > 1) ? lhsUnpack.Axes : Array.Empty<int>();
+            var rhsPackedAxes = (rhsUnpack != null && rhsUnpack.Lanes.Count > 1) ? rhsUnpack.Axes : Array.Empty<int>();
+            var lhsLanes = lhsPackedAxes.Count > 0 ? lhsUnpack!.Lanes : Array.Empty<int>();
+            var rhsLanes = rhsPackedAxes.Count > 0 ? rhsUnpack!.Lanes : Array.Empty<int>();
+
+            var ret = PackCompare.AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes.ToArray(), rhsPackedAxes.ToArray(), lhsLanes.ToArray(), rhsLanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return ret;
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class PackWherePropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        PatternMatch.F.CPU.IsPack(
+            "pack",
+            "caller",
+            _ => true,
+            IsWhere(
+                "where",
+                "callee",
+                _ => true,
+                IsWildcard("cond", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+                IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+                IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() }));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var pack = (IR.CPU.Pack)result["pack"];
+        if (pack.Lanes.Count > 1)
+        {
+            var cond = (Expr)result["cond"];
+            var lhs = (Expr)result["lhs"];
+            var rhs = (Expr)result["rhs"];
+            var condShape = cond.CheckedShape;
+            var lhsShape = lhs.CheckedShape;
+            var rhsShape = rhs.CheckedShape;
+            var candidate = (Expr)result[Pattern];
+            var condExt = candidate.CheckedShape.Rank - condShape.Rank;
+            var lhsExt = candidate.CheckedShape.Rank - lhsShape.Rank;
+            var rhsExt = candidate.CheckedShape.Rank - rhsShape.Rank;
+            var condPackedAxes = pack.Axes.Where(a => a - condExt >= 0 && condShape[a - condExt] is { IsFixed: true } fa && fa != 1).ToArray();
+            var lhsPackedAxes = pack.Axes.Where(a => a - lhsExt >= 0 && lhsShape[a - lhsExt] is { IsFixed: true } fa && fa != 1).ToArray();
+            var rhsPackedAxes = pack.Axes.Where(a => a - rhsExt >= 0 && rhsShape[a - rhsExt] is { IsFixed: true } fa && fa != 1).ToArray();
+            var condLanes = condPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
+            var lhsLanes = lhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
+            var rhsLanes = rhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
+
+            var ret = PackWhere.AddCandidate(cond, lhs, rhs, candidate, condPackedAxes.Select(a => a - condExt).ToArray(), lhsPackedAxes.Select(a => a - lhsExt).ToArray(), rhsPackedAxes.Select(a => a - rhsExt).ToArray(), condLanes, lhsLanes, rhsLanes).FirstOrDefault();
+            if (ret is not null)
+            {
+                return IR.F.CPU.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class WhereUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+    IsWhere(
+            "where",
+            "caller",
+            _ => true,
+            IsAlt(
+                PatternMatch.F.CPU.IsUnpack("condUnpack", "cond", _ => true, IsWildcard("condIn")),
+                IsWildcard("cond")),
+            IsAlt(
+                PatternMatch.F.CPU.IsUnpack("lhsUnpack", "lhs", _ => true, IsWildcard("lhsIn")),
+                IsWildcard("lhs")),
+            IsAlt(
+                PatternMatch.F.CPU.IsUnpack("rhsUnpack", "rhs", _ => true, IsWildcard("rhsIn")),
+                IsWildcard("rhs")));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var condUnpack = result.GetValueOrDefault("condUnpack") == null ? null : (IR.CPU.Unpack)result.GetValueOrDefault("condUnpack");
+        var lhsUnpack = result.GetValueOrDefault("lhsUnpack") == null ? null : (IR.CPU.Unpack)result.GetValueOrDefault("lhsUnpack");
+        var rhsUnpack = result.GetValueOrDefault("rhsUnpack") == null ? null : (IR.CPU.Unpack)result.GetValueOrDefault("rhsUnpack");
+        if ((condUnpack != null && condUnpack.Lanes.Count > 1) || (lhsUnpack != null && lhsUnpack.Lanes.Count > 1) || (rhsUnpack != null && rhsUnpack.Lanes.Count > 1))
+        {
+            var cond = (Expr)result["cond"];
+            var lhs = (Expr)result["lhs"];
+            var rhs = (Expr)result["rhs"];
+            var candidate = (Expr)result[Pattern];
+            var condPackedAxes = (condUnpack != null && condUnpack.Lanes.Count > 1) ? condUnpack.Axes : Array.Empty<int>();
+            var lhsPackedAxes = (lhsUnpack != null && lhsUnpack.Lanes.Count > 1) ? lhsUnpack.Axes : Array.Empty<int>();
+            var rhsPackedAxes = (rhsUnpack != null && rhsUnpack.Lanes.Count > 1) ? rhsUnpack.Axes : Array.Empty<int>();
+            var condLanes = condPackedAxes.Count > 0 ? condUnpack!.Lanes : Array.Empty<int>();
+            var lhsLanes = lhsPackedAxes.Count > 0 ? lhsUnpack!.Lanes : Array.Empty<int>();
+            var rhsLanes = rhsPackedAxes.Count > 0 ? rhsUnpack!.Lanes : Array.Empty<int>();
+
+            var ret = PackWhere.AddCandidate(cond, lhs, rhs, candidate, condPackedAxes.ToArray(), lhsPackedAxes.ToArray(), rhsPackedAxes.ToArray(), condLanes.ToArray(), lhsLanes.ToArray(), rhsLanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return ret;
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class PackGatherPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        PatternMatch.F.CPU.IsPack(
+            "pack",
+            "caller",
+            _ => true,
+            IsGather(
+                "gather",
+                "callee",
+                _ => true,
+                IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+                IsWildcard("index")));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var pack = (IR.CPU.Pack)result["pack"];
+        if (pack.Axes.Count > 1)
+        {
+            var callee = (Call)result["callee"];
+            var op = callee.Target as IR.Tensors.Gather;
+            var input = (Expr)result["input"];
+            var index = (Expr)result["index"];
+            var axis = op!.Axis;
+            var dims = Enumerable.Range(0, axis).Concat([-1]).Concat(Enumerable.Range(axis + index.CheckedShape.Rank, input.CheckedShape.Rank - axis - 1));
+            if (!pack.Axes.All(a => dims.Contains(a)))
+            {
+                return null;
+            }
+
+            var ret = PackGather.AddCandidate(callee, input, index, pack.Axes.ToArray(), pack.Lanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return IR.F.CPU.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class GatherUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        IsGather(
+            "gather",
+            "caller",
+            _ => true,
+            PatternMatch.F.CPU.IsUnpack(
+                "unpack",
+                "callee",
+                _ => true,
+                IsWildcard("input")),
+            IsWildcard("index"));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var unpack = (IR.CPU.Unpack)result["unpack"];
+        if (unpack.Axes.Count > 1)
+        {
+            var caller = (Call)result["caller"];
+            var callee = (Call)result["callee"];
+            var index = (Expr)result["index"];
+
+            var ret = PackGather.AddCandidate(caller, callee, index, unpack.Axes.ToArray(), unpack.Lanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return ret;
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class PackExpandPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        PatternMatch.F.CPU.IsPack(
+            "pack",
+            "caller",
+            _ => true,
+            IsExpand(
+                "expand",
+                "callee",
+                _ => true,
+                IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+                IsTensorConst("shape") with { TypePattern = IsIntegral() }));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var pack = (IR.CPU.Pack)result["pack"];
+        if (pack.Axes.Count > 1)
+        {
+            var callee = (Call)result["callee"];
+            var input = (Expr)result["input"];
+            var shape = ((TensorConst)result["shape"]).Value.ToArray<long>();
+
+            var ret = PackExpand.AddCandidate(callee, input, shape, pack.Axes.ToArray(), pack.Lanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return IR.F.CPU.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class ExpandUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        IsExpand(
+            "expand",
+            "caller",
+            _ => true,
+            PatternMatch.F.CPU.IsUnpack(
+                "unpack",
+                "callee",
+                _ => true,
+                IsWildcard("input")),
+            IsTensorConst("shape") with { TypePattern = IsIntegral() });
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var unpack = (IR.CPU.Unpack)result["unpack"];
+        if (unpack.Axes.Count > 1)
+        {
+            var caller = (Call)result["caller"];
+            var callee = (Call)result["callee"];
+            var shape = ((TensorConst)result["shape"]).Value.ToArray<long>();
+
+            var ret = PackExpand.AddCandidate(caller, callee, shape, unpack.Axes.ToArray(), unpack.Lanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return ret;
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class PackReshapePropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        PatternMatch.F.CPU.IsPack(
+            "pack",
+            "caller",
+            _ => true,
+            IsReshape(
+                "reshape",
+                "callee",
+                _ => true,
+                IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+                IsTensorConst("newShape") with { TypePattern = IsIntegral() }));
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var pack = (IR.CPU.Pack)result["pack"];
+        if (pack.Axes.Count > 1)
+        {
+            var input = (Expr)result["input"];
+            var shape = ((TensorConst)result["shape"]).Value.ToArray<long>();
+
+            if (!IRUtility.TryGetShapeMapMatrix(input.CheckedShape.ToValueArray(), shape, out var mat))
+            {
+                return null;
+            }
+
+            // TODO: more complex case
+            var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
+            var packAxes = new int[input.CheckedShape.Rank];
+            var packLanes = new int[input.CheckedShape.Rank];
+            for (int i = 0; i < pack.Axes.Count; i++)
+            {
+                var a = pack.Axes[i];
+                if (backwardDict[a].Count > 1)
+                {
+                    return null;
+                }
+                else
+                {
+                    packAxes[a] = backwardDict[a][0];
+                    packLanes[a] = pack.Lanes[i];
+                }
+            }
+
+            if (packAxes.Distinct().Count() != packAxes.Length)
+            {
+                return null;
+            }
+
+            var ret = PackReshape.AddCandidate(input, shape, forwardDict, backwardDict, packAxes, packLanes).FirstOrDefault();
+            if (ret is not null)
+            {
+                return IR.F.CPU.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
+            }
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed class ReshapeUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        IsReshape(
+            "reshape",
+            "caller",
+            _ => true,
+            PatternMatch.F.CPU.IsUnpack(
+                "unpack",
+                "callee",
+                _ => true,
+                IsWildcard("input")) with
+            { TypePattern = HasFixedShape() },
+            IsTensorConst("newShape") with { TypePattern = IsIntegral() });
+
+    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    {
+        var unpack = (IR.CPU.Unpack)result["unpack"];
+        if (unpack.Axes.Count > 1)
+        {
+            var callee = (Call)result["callee"];
+            var shape = ((TensorConst)result["newShape"]).Value.ToArray<long>();
+
+            if (!IRUtility.TryGetShapeMapMatrix(callee.CheckedShape.ToValueArray(), shape, out var mat))
+            {
+                return null;
+            }
+
+            var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
+
+            var ret = PackReshape.AddCandidate(callee, shape, forwardDict, backwardDict, unpack.Axes.ToArray(), unpack.Lanes.ToArray()).FirstOrDefault();
+            if (ret is not null)
+            {
+                return ret;
+            }
+        }
+
+        return null;
+    }
+}
