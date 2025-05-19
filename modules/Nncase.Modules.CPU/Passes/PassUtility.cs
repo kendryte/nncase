@@ -122,13 +122,6 @@ public static class PassUtility
                 }
 
                 break;
-            case IR.Tensors.Gather gather:
-                if (moduleKind == "xpu")
-                {
-                    return false;
-                }
-
-                break;
             default:
                 break;
         }
