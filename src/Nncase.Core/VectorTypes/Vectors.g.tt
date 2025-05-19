@@ -16,10 +16,17 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Nncase;
 
 // NOTE fixed array not suppot generic
+
+public interface IVector<T>
+{
+    static int Count { get; }
+}
 
 <# 
 foreach (var (lanesA, lanesB) in new[] { 
@@ -29,8 +36,8 @@ foreach (var (lanesA, lanesB) in new[] {
 var typeName = lanesA == 0 ? $"Vector{lanesB.ToString()}<T>" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}<T>";
 #>
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, ISubtractionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, IMultiplyOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>, IDivisionOperators<<#=typeName#>, <#=typeName#>, <#=typeName#>>
-    where T : unmanaged, IEquatable<T>, INumber<T>
+public unsafe struct <#=typeName#> : IVector<<#=typeName#>>, IEquatable<<#=typeName#>>
+    where T : unmanaged, IEquatable<T>
 {
 <# if (lanesA == 0) {#>
 <# foreach (var i in Enumerable.Range(0, lanesB)) { #>
@@ -43,14 +50,25 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
 <#}}#>
 <#}#>
 
-    public static <#=typeName#> Create(T[<#=(lanesA == 0) ? "" : ","#>] array) 
+    public static <#=typeName#> Create(T[] array) 
     {
         <#=typeName#> vec = default;
-        var src = array.AsSpan<#= lanesA == 0 ? "" : "2D"#>();
-        var dest = vec.AsSpan<#= lanesA == 0 ? "" : "2D"#>();
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
         src.CopyTo(dest);
         return vec;
     }
+<# if (lanesA != 0) {#>
+
+    public static <#=typeName#> Create(T[,] array) 
+    {
+        <#=typeName#> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
+    }
+<#}#>
 
 <# if (lanesA == 0) {#>
     public T this[int i]
@@ -68,6 +86,8 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
 
     public bool Equals(<#=typeName#> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is <#=typeName#> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 <# if (lanesA != 0) {#>
@@ -76,16 +96,16 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => <#=lanesA#>;
+    public static int Height => <#=lanesA#>;
 
-    public int Width => <#=lanesB#>;
+    public static int Width => <#=lanesB#>;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 <# } else {#>
-    public int Count => <#=lanesB#>;
+    public static int Count => <#=lanesB#>;
 <#}#>
 
-<#foreach (var op in new string[] { "+", "-" , "*", "/" }) {#>
+<#foreach (var op in new string[] { }) {#>
     public static <#=typeName#> operator <#=op#>(<#=typeName#> left, <#=typeName#> right) 
     {
         <#=typeName#> res = default;
@@ -101,7 +121,7 @@ public unsafe struct <#=typeName#> : IEquatable<<#=typeName#>>, IAdditionOperato
 
 <#}#>
 
-    public override string ToString() 
+    public override string ToString()
     {
 <# if (lanesA == 0) {#>
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";

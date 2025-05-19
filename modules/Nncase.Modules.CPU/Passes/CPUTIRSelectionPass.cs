@@ -133,14 +133,16 @@ public sealed class CPUTIRSelectionPass : TIRSelectionPass
                 return TIR.F.CPU.Reshape(arguments[0], output);
             case IR.NN.UpdatePagedAttentionKVCache upkv:
                 output = arguments[1];
-                return TIR.F.CPU.UpdatePagedAttentionKVCache(arguments[0], arguments[1], upkv.CacheKind, upkv.LayerId);
+                return TIR.F.CPU.UpdatePagedAttentionKVCache(arguments[0], arguments[1], upkv.CacheKind, upkv.LayerId, upkv.Layout);
+            case IR.NN.GatherPagedAttentionKVCache gakv:
+                return TIR.F.CPU.GatherPagedAttentionKVCache(arguments[0], arguments[1], output);
             case IR.NN.CreatePagedAttentionKVCache ctkv:
                 return TIR.F.CPU.CreatePagedAttentionKVCache(ctkv.Config, arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], output);
             case IR.NN.IdentityPagedAttentionKVCache ctkv:
                 output = arguments[0];
                 return TIR.F.CPU.IdentityPagedAttentionKVCache(arguments[0], arguments[1], arguments[2], arguments[3], arguments[4], arguments[5], arguments[6], arguments[7], arguments[8]);
             case IR.NN.PagedAttention pgat:
-                return TIR.F.CPU.PagedAttention(arguments[0], arguments[1], arguments[2], pgat.LayerId, output);
+                return TIR.F.CPU.PagedAttention(arguments[0], arguments[1], arguments[2], pgat.LayerId, output, pgat.Layout);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }
