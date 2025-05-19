@@ -950,7 +950,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 6, 1, 1, indicesShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackGather(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackGather(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -1580,12 +1580,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Math.Compare(op, lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackCompare(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackCompare(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -1599,11 +1599,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Tensors.Expand(input, newShape);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackExpand(1, Lane);
+        var rule = new Passes.Rules.NTT.PackExpand(1, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -1621,13 +1621,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Tensors.Where(cond, lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { cond, IR.F.Random.Normal(DataTypes.Boolean, 0, 1, 1, condShape).Evaluate() },
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackWhere(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackWhere(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -1643,12 +1643,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var input2 = new Var(new TensorType(DataTypes.Float32, inShape2));
         var pre = IR.F.Tensors.Concat(new IR.Tuple(input1, input2), axis);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input1, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape1).Evaluate() },
             { input2, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, inShape2).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackConcat(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackConcat(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -1665,12 +1665,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var updates = new Var(new TensorType(DataTypes.Float32, updatesShape));
         var pre = IR.F.Tensors.ScatterND(input, indices, updates);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape).Evaluate() },
             { updates, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, updatesShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackScatterND(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackScatterND(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);

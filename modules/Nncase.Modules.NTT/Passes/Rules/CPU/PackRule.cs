@@ -534,8 +534,8 @@ public sealed class PackBinary : PackRule
 
         var alignedLhsPackedAxes = lhsPackedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
         var alignedRhsPackedAxes = rhsPackedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
-        var alignedLhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
-        var alignedRhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
+        var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
+        var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
         if (alignedLhsPackedAxes.Any(a => alignedRhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedRhsPackedAxes.Contains(a))
         || alignedRhsPackedAxes.Any(a => alignedLhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedLhsPackedAxes.Contains(a)))
         {
@@ -1000,10 +1000,10 @@ public sealed class PackSlice : PackRule
     public override Pattern Pattern { get; } = IsSlice(
       "target",
       IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-      IsFixedShape("begins") with { TypePattern = IsIntegral() },
-      IsFixedShape("ends") with { TypePattern = IsIntegral() },
-      IsFixedShape("axes") with { TypePattern = IsIntegral() },
-      IsFixedShape("strides") with { TypePattern = IsIntegral() });
+      IsFixedShape("begins"),
+      IsFixedShape("ends"),
+      IsFixedShape("axes"),
+      IsFixedShape("strides"));
 
     public static List<Expr> AddCandidate(Expr input, Expr candidate, long[] begins, long[] ends, long[] axes, long[] strides, int[] packAxes, int[] lanes)
     {
@@ -1114,13 +1114,13 @@ public sealed class PackConcat : PackRule
             var patterns = new Pattern[exprs.Length];
             for (var i = 0; i < patterns.Length; i++)
             {
-                patterns[i] = IsWildcard($"input_{i}", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() };
+                patterns[i] = IsWildcard($"input_{i}", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = IsFloat() & !IsVector() };
             }
 
             return patterns;
         })));
 
-    public static List<Expr> AddCandidate(Expr[] inputs, Expr candidate, int axis, int[] packAxes, int[] lanes)
+    public static List<Expr> AddCandidate(BaseExpr[] inputs, Expr candidate, int axis, int[] packAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         if (packAxes.Length == 0)
@@ -1133,7 +1133,7 @@ public sealed class PackConcat : PackRule
         for (var i = 0; i < inputs.Length; i++)
         {
             var inShape = inputs[i].CheckedShape;
-            packedInputs[i] = IR.F.CPU.Pack(PackUtility.PadForPack(inputs[i], inShape, packAxes, lanes, 0f, out pads), lanes, packAxes);
+            packedInputs[i] = IR.F.NTT.Pack(PackUtility.PadForPack((Expr)inputs[i], inShape, packAxes, lanes, 0f, out pads), lanes, packAxes);
 
             // todo support padings.
             if (pads != null && pads.Any(x => !x.IsFixed))
@@ -1143,7 +1143,7 @@ public sealed class PackConcat : PackRule
         }
 
         var concat = IR.F.Tensors.Concat(new IR.Tuple(packedInputs), axis);
-        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(concat, lanes, packAxes), candidate.CheckedShape, pads!);
+        var post = PackUtility.SliceForPack(IR.F.NTT.Unpack(concat, lanes, packAxes), candidate.CheckedShape, pads!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1156,7 +1156,7 @@ public sealed class PackConcat : PackRule
     {
         var rets = new List<Expr>();
 
-        var tupleInputs = (IReadOnlyList<Expr>)result["tupleInputs"];
+        var tupleInputs = (IReadOnlyList<BaseExpr>)result["tupleInputs"];
         var op = (IR.Tensors.Concat)result["concat"];
         var axis = op.Axis;
         var candidate = (Expr)result[Pattern];
@@ -1181,8 +1181,8 @@ public sealed class PackCompare : PackRule
     public override Pattern Pattern { get; } = IsCompare(
       "target",
       _ => true,
-      IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-      IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("lhs", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("rhs", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
     public static List<Expr> AddCandidate(IR.Math.Compare op, Expr lhs, Expr rhs, Expr candidate, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes)
     {
@@ -1203,16 +1203,16 @@ public sealed class PackCompare : PackRule
             return rets;
         }
 
-        var alignedLhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
-        var alignedRhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
+        var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
+        var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
         if (alignedLhsPackedAxes.Any(a => alignedRhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedRhsPackedAxes.Contains(a))
         || alignedRhsPackedAxes.Any(a => alignedLhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedLhsPackedAxes.Contains(a)))
         {
             return rets;
         }
 
-        var packedLhs = IR.F.CPU.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
-        var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+        var packedLhs = IR.F.NTT.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
+        var packedRhs = IR.F.NTT.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
         // todo support padings.
         if (lhsPadNums.Any(x => !x.IsFixed)
@@ -1222,7 +1222,7 @@ public sealed class PackCompare : PackRule
         }
 
         var compare = IR.F.Math.Compare(op.CompareOp, packedLhs, packedRhs);
-        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(compare, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums! : rhsPadNums!);
+        var post = PackUtility.SliceForPack(IR.F.NTT.Unpack(compare, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), candidate.CheckedShape, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums! : rhsPadNums!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1336,8 +1336,8 @@ public sealed class PackExpand : PackRule
       "target",
       "call",
       _ => true,
-      IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
-      IsTensorConst("shape") with { TypePattern = IsIntegral() });
+      IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() },
+      IsFixedShape("shape"));
 
     public static List<Expr> AddCandidate(Call call, Expr input, long[] shape, int[] packedAxes, int[] lanes)
     {
@@ -1354,7 +1354,7 @@ public sealed class PackExpand : PackRule
             return rets;
         }
 
-        var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var packedInput = IR.F.NTT.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
         // todo support padings.
         if (padsInput != null && padsInput.Any(x => !x.IsFixed))
@@ -1370,7 +1370,7 @@ public sealed class PackExpand : PackRule
         }
 
         var cast = IR.F.Tensors.Expand(packedInput, packedNewShape);
-        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(cast, lanes, packedAxes), call.CheckedShape, padsInput!);
+        var post = PackUtility.SliceForPack(IR.F.NTT.Unpack(cast, lanes, packedAxes), call.CheckedShape, padsInput!);
         if (cast.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1384,10 +1384,10 @@ public sealed class PackExpand : PackRule
         var rets = new List<Expr>();
         var call = (Call)result["call"];
         var input = (Expr)result["input"];
-        var shape = ((TensorConst)result["shape"]).Value.ToArray<long>();
+        var shape = ((RankedShape)result["shape"]).ToValueArray();
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             rets.AddRange(AddCandidate(call, input, shape, [i], [laneSize]));
         }
@@ -1407,9 +1407,9 @@ public sealed class PackWhere : PackRule
         "target",
         "call",
         _ => true,
-        IsWildcard("condition", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
-        IsWildcard("lhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
-        IsWildcard("rhs", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() });
+        IsWildcard("condition", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() },
+        IsWildcard("lhs", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() },
+        IsWildcard("rhs", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() });
 
     public static List<Expr> AddCandidate(Expr condition, Expr lhs, Expr rhs, Expr candidate, int[] conditionPackedAxes, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] conditionLanes, int[] lhsLanes, int[] rhsLanes)
     {
@@ -1439,9 +1439,9 @@ public sealed class PackWhere : PackRule
             return rets;
         }
 
-        var alignedCondShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - conditionShape.Rank).Concat(conditionShape).ToArray();
-        var alignedLhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
-        var alignedRhsShape = Enumerable.Repeat(new Dimension(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
+        var alignedCondShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - conditionShape.Rank).Concat(conditionShape).ToArray();
+        var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
+        var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
         if (alignedConditionPackedAxes.Any(a => alignedLhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedLhsPackedAxes.Contains(a))
         || alignedConditionPackedAxes.Any(a => alignedRhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedRhsPackedAxes.Contains(a))
         || alignedLhsPackedAxes.Any(a => alignedCondShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedConditionPackedAxes.Contains(a))
@@ -1452,9 +1452,9 @@ public sealed class PackWhere : PackRule
             return rets;
         }
 
-        var packedCondition = IR.F.CPU.Pack(PackUtility.PadForPack(condition, conditionShape, conditionPackedAxes, conditionLanes, 0f, out var conditionPadNums), conditionLanes, conditionPackedAxes);
-        var packedLhs = IR.F.CPU.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
-        var packedRhs = IR.F.CPU.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+        var packedCondition = IR.F.NTT.Pack(PackUtility.PadForPack(condition, conditionShape, conditionPackedAxes, conditionLanes, 0f, out var conditionPadNums), conditionLanes, conditionPackedAxes);
+        var packedLhs = IR.F.NTT.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
+        var packedRhs = IR.F.NTT.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
         // todo support padings.
         if (conditionPadNums.Any(x => !x.IsFixed)
@@ -1470,7 +1470,7 @@ public sealed class PackWhere : PackRule
         var outLanes = allLanes[maxIndex];
         var outPackAxes = new[] { conditionPackedAxes, lhsPackedAxes, rhsPackedAxes }.ElementAt(maxIndex);
         var outPadNums = new[] { conditionPadNums, lhsPadNums, rhsPadNums }.ElementAt(maxIndex);
-        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(compare, outLanes, outPackAxes), candidate.CheckedShape, outPadNums);
+        var post = PackUtility.SliceForPack(IR.F.NTT.Unpack(compare, outLanes, outPackAxes), candidate.CheckedShape, outPadNums);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1521,7 +1521,7 @@ public sealed class PackGather : PackRule
         "target",
         "call",
         _ => true,
-        IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+        IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() },
         IsWildcard("index"));
 
     public static List<Expr> AddCandidate(Call call, Expr input, Expr index, int[] packedAxes, int[] lanes)
@@ -1535,7 +1535,7 @@ public sealed class PackGather : PackRule
             return rets;
         }
 
-        var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var packedInput = IR.F.NTT.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
         // todo support padings.
         if (padsInput != null && padsInput.Any(x => !x.IsFixed))
@@ -1544,7 +1544,7 @@ public sealed class PackGather : PackRule
         }
 
         var cast = IR.F.Tensors.Gather(packedInput, axis, index);
-        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(cast, lanes, packedAxes), call.CheckedShape, padsInput!);
+        var post = PackUtility.SliceForPack(IR.F.NTT.Unpack(cast, lanes, packedAxes), call.CheckedShape, padsInput!);
         if (cast.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1561,7 +1561,7 @@ public sealed class PackGather : PackRule
         var index = (Expr)result["index"];
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             rets.AddRange(AddCandidate(call, input, index, [i], [laneSize]));
         }
@@ -1581,9 +1581,9 @@ public sealed class PackScatterND : PackRule
         "target",
         "call",
         _ => true,
-        IsWildcard("input", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() },
+        IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() },
         IsTensorConst("indices"),
-        IsWildcard("updates", e => e is not Call { Target: IR.CPU.Unpack }) with { TypePattern = !IsVector() });
+        IsWildcard("updates", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() });
 
     public static List<Expr> AddCandidate(Call call, Expr input, TensorConst indices, Expr updates, int[] packedAxes, int[] lanes)
     {
@@ -1596,9 +1596,9 @@ public sealed class PackScatterND : PackRule
             return rets;
         }
 
-        var packedInput = IR.F.CPU.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var packedInput = IR.F.NTT.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
         var updatesPackedAxes = packedAxes.Select(a => a - (inShape.Rank - updates.CheckedShape.Rank)).ToArray();
-        var packedUpdates = IR.F.CPU.Pack(PackUtility.PadForPack(updates, updates.CheckedShape, updatesPackedAxes, lanes, 0f, out var padsUpdates), lanes, updatesPackedAxes);
+        var packedUpdates = IR.F.NTT.Pack(PackUtility.PadForPack(updates, updates.CheckedShape, updatesPackedAxes, lanes, 0f, out var padsUpdates), lanes, updatesPackedAxes);
 
         // todo support padings.
         if (padsInput != null && padsInput.Any(x => !x.IsFixed))
@@ -1607,7 +1607,7 @@ public sealed class PackScatterND : PackRule
         }
 
         var cast = IR.F.Tensors.ScatterND(packedInput, indices, packedUpdates);
-        var post = PackUtility.SliceForPack(IR.F.CPU.Unpack(cast, lanes, packedAxes), inShape, padsInput!);
+        var post = PackUtility.SliceForPack(IR.F.NTT.Unpack(cast, lanes, packedAxes), inShape, padsInput!);
         if (cast.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1625,7 +1625,7 @@ public sealed class PackScatterND : PackRule
         var updates = (Expr)result["updates"];
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
-        for (int i = 0; i < input.CheckedShape.Count; i++)
+        for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
             rets.AddRange(AddCandidate(call, input, indices, updates, [i], [laneSize]));
         }
