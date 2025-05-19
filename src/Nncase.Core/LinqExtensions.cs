@@ -138,4 +138,16 @@ public static class LinqExtensions
 
         return acc;
     }
+
+    public static T Product<T>(this IEnumerable<T> source)
+        where T : INumber<T>
+    {
+        T acc = T.One;
+        foreach (var item in source)
+        {
+            acc *= item;
+        }
+
+        return acc;
+    }
 }

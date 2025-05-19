@@ -134,14 +134,16 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.Reshape((Expr)arguments[0], output);
             case IR.NN.UpdatePagedAttentionKVCache upkv:
                 output = (Expr)arguments[1];
-                return TIR.F.NTT.UpdatePagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], upkv.CacheKind, upkv.LayerId);
+                return TIR.F.NTT.UpdatePagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], upkv.CacheKind, upkv.LayerId, upkv.Layout);
+            case IR.NN.GatherPagedAttentionKVCache gakv:
+                return TIR.F.NTT.GatherPagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], output);
             case IR.NN.CreatePagedAttentionKVCache ctkv:
                 return TIR.F.NTT.CreatePagedAttentionKVCache(ctkv.Config, (Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], output);
             case IR.NN.IdentityPagedAttentionKVCache ctkv:
                 output = (Expr)arguments[0];
                 return TIR.F.NTT.IdentityPagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], (Expr)arguments[8]);
             case IR.NN.PagedAttention pgat:
-                return TIR.F.NTT.PagedAttention((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], pgat.LayerId, output);
+                return TIR.F.NTT.PagedAttention((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], pgat.LayerId, output, pgat.Layout);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

@@ -487,6 +487,15 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.Reshape reshape:
                     IndentScope.Writer.Write($"reshape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
+                case TIR.NTT.UpdatePagedAttentionKVCache updatePagedAttentionKVCache:
+                    IndentScope.Writer.IndWrite($"update_paged_attention_kv_cache<{updatePagedAttentionKVCache.Layout.ToC()}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, caching::attention_cache_kind::{updatePagedAttentionKVCache.CacheKind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {updatePagedAttentionKVCache.LayerId});\n");
+                    break;
+                case TIR.NTT.GatherPagedAttentionKVCache gakv:
+                    IndentScope.Writer.IndWrite($"gather_paged_attention_kv_cache({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                    break;
+                case TIR.NTT.PagedAttention pagedAttention:
+                    IndentScope.Writer.IndWrite($"paged_attention<{pagedAttention.Layout.ToC()}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[3], local: true).Name});\n");
+                    break;
                 default:
                     throw new NotSupportedException(kop.ToString());
             }

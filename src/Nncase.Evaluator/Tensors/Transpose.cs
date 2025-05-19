@@ -50,33 +50,11 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Transpose tr)
     {
-        var inputValue = context.GetArgumentValue(tr, Transpose.Input);
+        var inputValue = context.GetArgumentValueAsTensor(tr, Transpose.Input);
         var perm = context.GetArgumentValueAsArray<long>(tr, Transpose.Perm);
-        OrtKISharp.Tensor input;
-        var inputOrg = inputValue.AsTensor();
-        var dataType = inputOrg.ElementType;
+        return Value.FromTensor(inputValue.Transpose(perm));
 
-        if (dataType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
-        {
-            var interType = new VectorType(DataTypes.Float32, vType.Lanes);
-            input = Nncase.IR.F.Tensors.Cast(inputOrg, interType).Evaluate().AsTensor().ToOrtTensor();
-        }
-        else if (dataType is not VectorType && dataType.IsFloat() && dataType != DataTypes.Float32)
-        {
-            input = Nncase.IR.F.Tensors.Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-        }
-        else
-        {
-            input = context.GetOrtArgumentValue(tr, Transpose.Input);
-        }
-
-        if (inputValue.Type is TensorType { DType: VectorType vectorType })
-        {
-            var newPerm = perm.Concat(Enumerable.Range(0, vectorType.Lanes.Count).Select(i => (long)(i + perm.Length))).ToArray();
-            var output = OrtKI.Transpose(input, newPerm);
-            return Value.FromTensor(Tensor.FromBytes(new TensorType(vectorType, output.Shape.Select(i => (int)i).SkipLast(vectorType.Lanes.Count).ToArray()), output.BytesBuffer.ToArray()));
-        }
-
+#if false
         // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
         if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
         {
@@ -117,6 +95,7 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
         {
             return OrtKI.Transpose(input, perm).ToValue();
         }
+#endif
     }
 
     /// <inheritdoc/>

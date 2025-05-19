@@ -5,6 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
@@ -14,7 +17,7 @@ using OrtKISharp;
 namespace Nncase.Evaluator.NN;
 
 public abstract record RefAttentionKVCache(
-    AttentionConfig Config,
+    IAttentionConfig Config,
     int NumSeqs,
     int NumTokens,
     Tensor<long> ContextLens,
@@ -25,8 +28,9 @@ public abstract record RefAttentionKVCache(
     public long SeqLen(int requestId) => SeqLens[requestId];
 }
 
+[JsonConverter(typeof(PagedAttentionKVCacheJsonConverterFactory))]
 public sealed record RefPagedAttentionKVCache(
-    AttentionConfig Config,
+    IAttentionConfig Config,
     int NumSeqs,
     int NumTokens,
     Tensor<long> ContextLens,
@@ -42,9 +46,9 @@ public sealed record RefPagedAttentionKVCache(
         ContextLens,
         SeqLens), IPagedAttentionKVCache
 {
-    public IPagedAttentionConfig PagedAttentionConfig => (PagedAttentionConfig)Config;
+    IPagedAttentionConfig IPagedAttentionKVCache.Config => (IPagedAttentionConfig)Config;
 
-    IPagedAttentionConfig IPagedAttentionKVCache.Config => PagedAttentionConfig;
+    private IPagedAttentionConfig PagedAttentionConfig => (IPagedAttentionConfig)Config;
 
     public Tensor GetBlockId(int seqId, int contextId)
     {
@@ -82,13 +86,18 @@ public sealed record RefPagedAttentionKVCache(
 
     public void UpdateSlots(AttentionCacheKind kind, int layerId, int headId, Tensor slots)
     {
-        // slots : [num_tokens, numHeads, headDim ]
+        // slots : [num_tokens, numHeads, headDim]
         for (int i = 0; i < NumTokens; i++)
         {
             var slotId = GetSlotId(i);
             var slot = slots.View([i, headId, 0], [1, 1, slots.Dimensions[2]]).Squeeze([0, 1]);
             UpdateSlot(kind, layerId, headId, slotId, slot);
         }
+    }
+
+    public long[] LogicalCacheDimensions()
+    {
+        return KVCaches.Dimensions.ToArray();
     }
 
     private Tensor GetSlotViewFromStorage(AttentionCacheKind kind, int layerId, int headId, Tensor slotId)
@@ -106,40 +115,40 @@ public sealed record RefPagedAttentionKVCache(
         var blockShape = blockView.Dimensions;
         var blockLayout = PagedAttentionConfig.BlockLayout;
 
-        // PagedAttentionDimKind[] defaultLayout = [PagedAttentionDimKind.BlockSize, PagedAttentionDimKind.HeadDim];
+        // PagedKVCacheDimKind[] defaultLayout = [PagedKVCacheDimKind.BlockSize, PagedKVCacheDimKind.HeadDim];
         int[] defaultLayout = [-1, -1, -1, 0, -1, 1];
         long[] defaultStarts = [blockOffset, 0];
         long[] defaultShape = [1, PagedAttentionConfig.HeadDim];
-        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim) is int i && i != -1)
+        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim) is int i && i != -1)
         {
             defaultShape[1] /= PagedAttentionConfig.Lanes[i];
         }
 
         var starts = blockLayout.Select(i => defaultStarts[defaultLayout[(int)i]]).ToArray();
         var shape = blockLayout.Select(i => defaultShape[defaultLayout[(int)i]]).ToArray();
-        return blockView.View(starts, shape).Squeeze([blockLayout.IndexOf(PagedAttentionDimKind.BlockSize)]);
+        return blockView.View(starts, shape).Squeeze([blockLayout.IndexOf(PagedKVCacheDimKind.BlockSize)]);
     }
 
     private Tensor GetBlockViewFromStorage(AttentionCacheKind kind, int layerId, int headId, Tensor blockId)
     {
         // blockId: [len(topo) + 1].
         var blockIdValue = (long)blockId[blockId.Dimensions[^1] - 1];
-        PagedAttentionDimKind[] defaultLayout = [PagedAttentionDimKind.NumBlocks, PagedAttentionDimKind.NumLayers, PagedAttentionDimKind.KV, PagedAttentionDimKind.BlockSize, PagedAttentionDimKind.NumKVHeads, PagedAttentionDimKind.HeadDim];
+        PagedKVCacheDimKind[] defaultLayout = [PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.BlockSize, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim];
         long[] defaultStarts = [blockIdValue, layerId, (long)kind, 0, (long)headId, 0];
         long[] defaultShape = [1, 1, 1, PagedAttentionConfig.BlockSize, 1, PagedAttentionConfig.HeadDim];
-        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim) is int i && i != -1)
+        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim) is int i && i != -1)
         {
             defaultShape[^1] /= PagedAttentionConfig.Lanes[i];
         }
 
         var starts = PagedAttentionConfig.CacheLayout.Select(i => defaultStarts[(int)i]).ToArray();
         var shape = PagedAttentionConfig.CacheLayout.Select(i => defaultShape[(int)i]).ToArray();
-        var squeeze_axes = Enumerable.Range(0, PagedAttentionConfig.CacheLayout.Count).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedAttentionDimKind.BlockSize or PagedAttentionDimKind.HeadDim)).Select(i => i + PagedAttentionConfig.Topology.Count).ToArray();
+        var squeeze_axes = Enumerable.Range(0, PagedAttentionConfig.CacheLayout.Count).Where(i => PagedAttentionConfig.CacheLayout[i] is not (PagedKVCacheDimKind.BlockSize or PagedKVCacheDimKind.HeadDim)).Select(i => (long)i + PagedAttentionConfig.ShardingAxes.Count).ToArray();
 
         // process the topology.
-        var topo_starts = Enumerable.Range(0, PagedAttentionConfig.Topology.Count).Select(i => (long)blockId[i]).ToArray();
-        var topo_shape = Enumerable.Range(0, PagedAttentionConfig.Topology.Count).Select(i => 1L).ToArray();
-        var topo_squeeze = Enumerable.Range(0, PagedAttentionConfig.Topology.Count).Select(i => i).ToArray();
+        var topo_starts = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => (long)blockId[i]).ToArray();
+        var topo_shape = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => 1L).ToArray();
+        var topo_squeeze = Enumerable.Range(0, PagedAttentionConfig.ShardingAxes.Count).Select(i => (long)i).ToArray();
 
         var final_starts = topo_starts.Concat(starts).ToArray();
         var final_shape = topo_shape.Concat(shape).ToArray();
@@ -312,5 +321,101 @@ public sealed class CreatePagedAttentionKVCacheEvaluator : ITypeInferencer<Creat
         {
             Config = target.Config,
         });
+    }
+}
+
+public sealed class PagedAttentionKVCacheJsonConverterFactory : JsonConverterFactory
+{
+    public override bool CanConvert(Type typeToConvert)
+    {
+        return typeof(IPagedAttentionKVCache).IsAssignableFrom(typeToConvert);
+    }
+
+    public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
+    {
+        return new PagedAttentionKVCacheJsonConverter();
+    }
+}
+
+internal sealed class PagedAttentionKVCacheJsonConverter : JsonConverter<IPagedAttentionKVCache>
+{
+    public override IPagedAttentionKVCache? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    {
+        if (reader.TokenType != JsonTokenType.StartObject)
+        {
+            throw new JsonException("Expected StartObject token");
+        }
+
+        using var doc = JsonDocument.ParseValue(ref reader);
+        var root = doc.RootElement;
+
+        var config = JsonSerializer.Deserialize<IPagedAttentionConfig>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.Config)).GetRawText(),
+            options)!;
+
+        var numSeqs = root.GetProperty(nameof(RefPagedAttentionKVCache.NumSeqs)).GetInt32();
+        var numTokens = root.GetProperty(nameof(RefPagedAttentionKVCache.NumTokens)).GetInt32();
+        var numBlocks = root.GetProperty(nameof(RefPagedAttentionKVCache.NumBlocks)).GetInt32();
+
+        var contextLens = JsonSerializer.Deserialize<Tensor<long>>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.ContextLens)).GetRawText(),
+            options)!;
+
+        var seqLens = JsonSerializer.Deserialize<Tensor<long>>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.SeqLens)).GetRawText(),
+            options)!;
+
+        var blockTable = JsonSerializer.Deserialize<Tensor<long>>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.BlockTable)).GetRawText(),
+            options)!;
+
+        var slotMapping = JsonSerializer.Deserialize<Tensor<long>>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.SlotMapping)).GetRawText(),
+            options)!;
+
+        var kvCaches = JsonSerializer.Deserialize<Tensor>(
+            root.GetProperty(nameof(RefPagedAttentionKVCache.KVCaches)).GetRawText(),
+            options)!;
+
+        return new RefPagedAttentionKVCache(
+            config,
+            numSeqs,
+            numTokens,
+            contextLens,
+            seqLens,
+            blockTable,
+            slotMapping,
+            numBlocks,
+            kvCaches);
+    }
+
+    public override void Write(Utf8JsonWriter writer, IPagedAttentionKVCache value, JsonSerializerOptions options)
+    {
+        var cache = (RefPagedAttentionKVCache)value;
+        writer.WriteStartObject();
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.Config));
+        JsonSerializer.Serialize(writer, (IPagedAttentionConfig)cache.Config, options);
+
+        writer.WriteNumber(nameof(RefPagedAttentionKVCache.NumSeqs), cache.NumSeqs);
+        writer.WriteNumber(nameof(RefPagedAttentionKVCache.NumTokens), cache.NumTokens);
+        writer.WriteNumber(nameof(RefPagedAttentionKVCache.NumBlocks), cache.NumBlocks);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.ContextLens));
+        JsonSerializer.Serialize(writer, cache.ContextLens, options);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.SeqLens));
+        JsonSerializer.Serialize(writer, cache.SeqLens, options);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.BlockTable));
+        JsonSerializer.Serialize(writer, cache.BlockTable, options);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.SlotMapping));
+        JsonSerializer.Serialize(writer, cache.SlotMapping, options);
+
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.KVCaches));
+        JsonSerializer.Serialize(writer, cache.KVCaches, options);
+
+        writer.WriteEndObject();
     }
 }

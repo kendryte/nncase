@@ -4,8 +4,8 @@
 using DryIoc;
 using Nncase.Evaluator.Imaging;
 using Nncase.Evaluator.Math;
-using Nncase.Evaluator.NN;
 using Nncase.Evaluator.Tensors;
+using Nncase.Evaluator.TIR.CPU;
 using Nncase.Hosting;
 using Nncase.IR.Tensors;
 
@@ -58,5 +58,6 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<UpdatePagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<CreatePagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<IdentityPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<GatherPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
     }
 }

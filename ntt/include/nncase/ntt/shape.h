@@ -250,6 +250,9 @@ DEFINE_SQUEEZE_FIXED_DIMS_IMPL(strides)
 
 template <class Dims> struct is_fixed_dims : std::false_type {};
 
+template <class T, T... Dims>
+struct is_fixed_dims<fixed_dims<T, Dims...>> : std::true_type {};
+
 template <size_t... Dims>
 struct is_fixed_dims<fixed_shape<Dims...>> : std::true_type {};
 
@@ -592,6 +595,36 @@ constexpr auto squeeze_strides(ranked_shape<Rank> axes,
     for (size_t axis = 0; axis < strides.rank(); axis++) {
         if (!axes.contains(axis)) {
             new_strides[cnt++] = strides[axis];
+        }
+    }
+    return new_strides;
+}
+
+template <size_t Rank, class TShape>
+constexpr auto unsqueeze_shape(ranked_shape<Rank> axes, TShape shape) noexcept {
+    ranked_shape<shape.rank() + axes.rank()> new_shape;
+    size_t cnt = 0;
+
+    for (size_t axis = 0; axis < new_shape.rank(); axis++) {
+        if (axes.contains(axis)) {
+            new_shape[axis] = 1;
+        } else {
+            new_shape[axis] = shape[cnt++];
+        }
+    }
+    return new_shape;
+}
+
+template <size_t Rank, class TShape>
+constexpr auto unsqueeze_strides(ranked_shape<Rank> axes,
+                                 TShape strides) noexcept {
+    ranked_strides<strides.rank() + axes.rank()> new_strides;
+    size_t cnt = 0;
+    for (size_t axis = 0; axis < new_strides.rank(); axis++) {
+        if (axes.contains(axis)) {
+            new_strides[axis] = strides[cnt];
+        } else {
+            new_strides[axis] = strides[cnt++];
         }
     }
     return new_strides;

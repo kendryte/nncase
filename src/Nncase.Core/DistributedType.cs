@@ -21,10 +21,7 @@ public enum HierarchyKind : byte
     SMT = 1,
 }
 
-// [JsonDerivedType(typeof(SBPSplit), "S")]
-// [JsonDerivedType(typeof(SBPPartial), "P")]
-// [JsonDerivedType(typeof(SBPBroadCast), "B")]
-// [JsonDerivedType(typeof(SBPImplicit), "I")]
+[JsonConverter(typeof(SBPConverter))]
 public abstract record SBP
 {
     public static SBPBroadCast B => SBPBroadCast.Instance;
@@ -32,6 +29,8 @@ public abstract record SBP
     public static SBPPartial P(ReduceOp op = ReduceOp.Sum) => new SBPPartial(op);
 
     public static SBPSplit S(IRArray<int> axes) => new SBPSplit(axes);
+
+    public static SBPSplit S(params int[] axes) => new SBPSplit(axes);
 }
 
 public sealed record SBPSplit(IRArray<int> Axes) : SBP
