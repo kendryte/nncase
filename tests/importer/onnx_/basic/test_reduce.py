@@ -82,7 +82,7 @@ reduce_ops = [
     'ReduceMax',
     'ReduceMean',
     'ReduceMin',
-    #'ReduceProd',
+    # 'ReduceProd',
     'ReduceSum',
 ]
 

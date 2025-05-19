@@ -18,101 +18,101 @@ namespace Nncase.Tests.TransformTest;
 
 public sealed class UnitTestSubstitutor : TestClassBase
 {
-  /// <summary>
-  /// the substitutor can't change the inner function var.
-  /// </summary>
-  [Fact]
-  public void TestSubstitutorFailed()
-  {
-    var loop_i = new DimVar("loop_i");
-    T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
-    var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
-      T.Load(hd, loop_i)).Build();
+    /// <summary>
+    /// the substitutor can't change the inner function var.
+    /// </summary>
+    [Fact]
+    public void TestSubstitutorFailed()
+    {
+        var loop_i = new DimVar("loop_i");
+        T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
+          T.Load(hd, loop_i)).Build();
 
-    var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
+        var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 
-    var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
-    var main_func = new Function("main", new Call(prim_wrapper, input), input);
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
+        var main_func = new Function("main", new Call(prim_wrapper, input), input);
 
-    Assert.True(CompilerServices.InferenceType(main_func));
+        Assert.True(CompilerServices.InferenceType(main_func));
 
-    Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
-    var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
+        Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
+        var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
-    var main_func_2 = substitutor.Rewrite(main_func);
-    Assert.True(object.ReferenceEquals(main_func, main_func_2));
-  }
+        var main_func_2 = substitutor.Rewrite(main_func);
+        Assert.True(object.ReferenceEquals(main_func, main_func_2));
+    }
 
-  /// <summary>
-  /// Substitute the prim func var.
-  /// </summary>
-  [Fact]
-  public void TestSubstitutorTrue()
-  {
-    var loop_i = new DimVar("loop_i");
-    T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
-    var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
-      T.Load(hd, loop_i)).Build();
+    /// <summary>
+    /// Substitute the prim func var.
+    /// </summary>
+    [Fact]
+    public void TestSubstitutorTrue()
+    {
+        var loop_i = new DimVar("loop_i");
+        T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
+          T.Load(hd, loop_i)).Build();
 
-    Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
-    var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
+        Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
+        var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
-    var prim_func_2 = substitutor.Rewrite(prim_func_1);
-    Assert.True(prim_func_2 is PrimFunction { Body: Sequential { Count: 1 } sequential } && sequential[0] is Call { Arguments: var parameters } && parameters[1] is DimConst { Value: 1 });
-  }
+        var prim_func_2 = substitutor.Rewrite(prim_func_1);
+        Assert.True(prim_func_2 is PrimFunction { Body: Sequential { Count: 1 } sequential } && sequential[0] is Call { Arguments: var parameters } && parameters[1] is DimConst { Value: 1 });
+    }
 
-  /// <summary>
-  /// visit the stackvm var.
-  /// </summary>
-  [Fact]
-  public void TestSubstitutorTrue2()
-  {
-    var loop_i = new DimVar("loop_i");
-    T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
-    var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Int64, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
-      T.Load(hd, loop_i)).Build();
+    /// <summary>
+    /// visit the stackvm var.
+    /// </summary>
+    [Fact]
+    public void TestSubstitutorTrue2()
+    {
+        var loop_i = new DimVar("loop_i");
+        T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), MemoryLocation.Input, out var hd);
+        var prim_func_1 = T.PrimFunc("prim_func_1", "k?", T.CreateBufferVar(new(DataTypes.Float32, new[] { 1, 2, 3, 4 }), out var input_a), T.CreateBufferVar(new(DataTypes.Int64, new[] { 1, 2, 3, 4 }), out var input_b)).Body(
+          T.Load(hd, loop_i)).Build();
 
-    var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
+        var prim_wrapper = new PrimFunctionWrapper(prim_func_1, 1);
 
-    var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
-    var main_func = new Function("main", new Call(prim_wrapper, input) + IR.F.Shapes.AsTensor(loop_i), input);
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
+        var main_func = new Function("main", new Call(prim_wrapper, input) + IR.F.Shapes.AsTensor(loop_i), input);
 
-    Assert.True(CompilerServices.InferenceType(main_func));
+        Assert.True(CompilerServices.InferenceType(main_func));
 
-    Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
-    var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
+        Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
+        var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
-    var main_func_2 = substitutor.Rewrite(main_func);
-    Assert.True(CompilerServices.InferenceType(main_func_2));
+        var main_func_2 = substitutor.Rewrite(main_func);
+        Assert.True(CompilerServices.InferenceType(main_func_2));
 
-    Assert.True(object.ReferenceEquals(main_func, main_func_2));
+        Assert.True(object.ReferenceEquals(main_func, main_func_2));
 
-    Assert.True(main_func_2 is Function { Body: Call { Target: IR.Math.Binary, Arguments: var binary_param } } &&
-              binary_param[0] is Call { Target: PrimFunctionWrapper wrapper } &&
-              object.Equals(prim_wrapper, wrapper) &&
-               binary_param[1] is Call { Target: AsTensor });
-  }
+        Assert.True(main_func_2 is Function { Body: Call { Target: IR.Math.Binary, Arguments: var binary_param } } &&
+                  binary_param[0] is Call { Target: PrimFunctionWrapper wrapper } &&
+                  object.Equals(prim_wrapper, wrapper) &&
+                   binary_param[1] is Call { Target: AsTensor });
+    }
 
-  /// <summary>
-  /// try substitute the same function twice.
-  /// </summary>
-  [Fact]
-  public void TestSubstitutorTrue3()
-  {
-    var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
-    var loop_i = new DimVar("loop_i");
-    var main_func = new Function("main", 3 + loop_i, input);
+    /// <summary>
+    /// try substitute the same function twice.
+    /// </summary>
+    [Fact]
+    public void TestSubstitutorTrue3()
+    {
+        var input = new Var("input", new TensorType(DataTypes.Float32, new[] { 1, 2, 3, 4 }));
+        var loop_i = new DimVar("loop_i");
+        var main_func = new Function("main", 3 + loop_i, input);
 
-    Assert.True(CompilerServices.InferenceType(main_func));
+        Assert.True(CompilerServices.InferenceType(main_func));
 
-    Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
-    var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
+        Dictionary<BaseExpr, Dimension> vmap = new() { { loop_i, 1 } };
+        var substitutor = Mutator.Substitute(e => vmap.TryGetValue(e, out var res) ? res : null)();
 
-    var main_func_2 = substitutor.Rewrite(main_func);
-    Assert.True(CompilerServices.InferenceType(main_func_2));
+        var main_func_2 = substitutor.Rewrite(main_func);
+        Assert.True(CompilerServices.InferenceType(main_func_2));
 
-    Assert.True(object.ReferenceEquals(main_func, main_func_2));
+        Assert.True(object.ReferenceEquals(main_func, main_func_2));
 
-    Assert.True(main_func_2 is Function { Body: DimConst { Value: 4 } });
-  }
+        Assert.True(main_func_2 is Function { Body: DimConst { Value: 4 } });
+    }
 }

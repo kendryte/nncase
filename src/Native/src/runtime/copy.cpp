@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/runtime/copy.h>
 #include <cstring>
+#include <nncase/runtime/copy.h>
 
 using namespace nncase;
 using namespace nncase::runtime;

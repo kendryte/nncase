@@ -584,48 +584,46 @@ void test_unary_binary() {
     }
 
     // 2d binary
-    { // pack and broadcast
-        {
-            ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ta;
-            ntt::tensor<float, ntt::fixed_shape<8>> tb;
-            std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
-            std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
-            ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 4, 2>> pa,
-                pc;
-            ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2>> pb;
-            ntt::pack<1, 2>(ta, pa);
-            ntt::pack<0>(tb, pb);
-            ntt::binary<ntt::ops::add>(pa, pb, pc.view());
-        }
-    }
+    {// pack and broadcast
+     {ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ta;
+    ntt::tensor<float, ntt::fixed_shape<8>> tb;
+    std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+    std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
+    ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 4, 2>> pa, pc;
+    ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2>> pb;
+    ntt::pack<1, 2>(ta, pa);
+    ntt::pack<0>(tb, pb);
+    ntt::binary<ntt::ops::add>(pa, pb, pc.view());
+}
+}
 
-    // swish
-    {
-        ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
-        ntt::tensor<float, ntt::fixed_shape<3, 24>> tb;
-        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        ntt::unary<ntt::ops::swish>(ta, tb);
+// swish
+{
+    ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
+    ntt::tensor<float, ntt::fixed_shape<3, 24>> tb;
+    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+    ntt::unary<ntt::ops::swish>(ta, tb);
 
-        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
-        ntt::pack<1>(ta, pa);
-        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pb;
-        ntt::unary<ntt::ops::swish>(pa, pb);
-    }
+    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
+    ntt::pack<1>(ta, pa);
+    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pb;
+    ntt::unary<ntt::ops::swish>(pa, pb);
+}
 
-    // swishb
-    {
-        ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
-        ntt::tensor<float, ntt::fixed_shape<1>> tb;
-        ntt::tensor<float, ntt::fixed_shape<3, 24>> tc;
-        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        std::iota(tb.elements().begin(), tb.elements().end(), 1.f);
-        ntt::binary<ntt::ops::swishb>(ta, tb, tc);
+// swishb
+{
+    ntt::tensor<float, ntt::fixed_shape<3, 24>> ta;
+    ntt::tensor<float, ntt::fixed_shape<1>> tb;
+    ntt::tensor<float, ntt::fixed_shape<3, 24>> tc;
+    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+    std::iota(tb.elements().begin(), tb.elements().end(), 1.f);
+    ntt::binary<ntt::ops::swishb>(ta, tb, tc);
 
-        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
-        ntt::pack<1>(ta, pa);
-        ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pc;
-        ntt::binary<ntt::ops::swishb>(pa, tb, pc);
-    }
+    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pa;
+    ntt::pack<1>(ta, pa);
+    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 3>> pc;
+    ntt::binary<ntt::ops::swishb>(pa, tb, pc);
+}
 }
 
 void test_tensor_view() {

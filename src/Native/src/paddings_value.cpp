@@ -12,10 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/paddings_value.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <nncase/paddings_value.h>
 #include <numeric>
 
 using namespace nncase;
