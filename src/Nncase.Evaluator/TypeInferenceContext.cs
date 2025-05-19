@@ -17,7 +17,7 @@ internal sealed class TypeInferenceContext : ITypeInferenceContext
 {
     public BaseCall? CurrentCall { get; set; }
 
-    public Expr GetArgument(Op op, ParameterInfo parameter)
+    public BaseExpr GetArgument(Op op, ParameterInfo parameter)
     {
         if (op.GetType() == parameter.OwnerType)
         {
@@ -29,7 +29,7 @@ internal sealed class TypeInferenceContext : ITypeInferenceContext
         }
     }
 
-    public Expr[] GetArguments(Op op, params ParameterInfo[] paramsInfo)
+    public BaseExpr[] GetArguments(Op op, params ParameterInfo[] paramsInfo)
     {
         return paramsInfo.Select(info => GetArgument(op, info)).ToArray();
     }

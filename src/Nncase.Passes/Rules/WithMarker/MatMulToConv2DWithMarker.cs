@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
@@ -42,8 +43,8 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
 
     private Expr? GetReplace(Marker marker, Call matMulCall, Expr a, Expr b, Marker am, Marker bm)
     {
-        var aShape = a.CheckedShape;
-        var bShape = b.CheckedShape;
+        var aShape = (RankedShape)a.CheckedShape;
+        var bShape = (RankedShape)b.CheckedShape;
         if (aShape.Count > 2 && aShape.ToValueArray()[..^2].Aggregate(1L, (sum, x) => sum * x) != 1)
         {
             return null;
@@ -54,9 +55,9 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
             return null;
         }
 
-        var if_shape = new Shape(new[] { aShape[^2].FixedValue, aShape[^1].FixedValue, 1, 1 });
-        var w_shape = new Shape(new[] { bShape[^1].FixedValue, bShape[^2].FixedValue, 1, 1 });
-        var of_shape = new Shape(new[] { aShape[^2].FixedValue, bShape[^1].FixedValue });
+        var if_shape = new RankedShape(new[] { aShape[^2].FixedValue, aShape[^1].FixedValue, 1, 1 });
+        var w_shape = new RankedShape(new[] { bShape[^1].FixedValue, bShape[^2].FixedValue, 1, 1 });
+        var of_shape = new RankedShape(new[] { aShape[^2].FixedValue, bShape[^1].FixedValue });
 
         var if_reshape = Reshape(a, if_shape);
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
@@ -65,8 +66,8 @@ public sealed partial class MatMulToConv2DWithMarker : IRewriteRule
             am.With(target: if_reshape),
             bm.With(target: w_reshape),
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
-            Tensor.FromScalar(1, [2]),
-            Tensor.FromScalar(0, [2, 2]),
+            Shape.Repeat(1, 2),
+            Paddings.Zeros(2),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);
@@ -103,9 +104,9 @@ public sealed partial class BroadcastMatMulToConv2DWithMarker : IRewriteRule
             return null;
         }
 
-        var if_shape = new Shape(new[] { aShape[0].FixedValue * aShape[1].FixedValue, aShape[2].FixedValue, 1, 1 });
-        var w_shape = new Shape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
-        var of_shape = new Shape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
+        var if_shape = new RankedShape(new[] { aShape[0].FixedValue * aShape[1].FixedValue, aShape[2].FixedValue, 1, 1 });
+        var w_shape = new RankedShape(new[] { bShape[1].FixedValue, bShape[0].FixedValue, 1, 1 });
+        var of_shape = new RankedShape(new[] { aShape[0].FixedValue, aShape[1].FixedValue, bShape[1].FixedValue });
 
         var if_reshape = Reshape(am, if_shape);
         var w_tp = Transpose(b, Tensor.From<int>(new[] { 1, 0 })).InheritMetaData(b);
@@ -115,8 +116,8 @@ public sealed partial class BroadcastMatMulToConv2DWithMarker : IRewriteRule
             am.With(target: if_reshape),
             bm.With(target: w_reshape),
             Tensor.FromScalar(0.0f, w_shape[0].FixedValue),
-            Tensor.FromScalar(1, [2]),
-            Tensor.FromScalar(0, [2, 2]),
+            Shape.Repeat(1, 2),
+            Paddings.Zeros(2),
             new int[] { 1, 1 },
             PadMode.Constant,
             1).InheritMetaData(matMulCall);

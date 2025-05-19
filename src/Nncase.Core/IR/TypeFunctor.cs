@@ -33,6 +33,10 @@ public abstract class TypeFunctor<TResult, TContext>
             TupleType t => VisitType(t, context),
             CallableType t => VisitType(t, context),
             DistributedType t => VisitType(t, context),
+            DimensionType t => VisitType(t, context),
+            ShapeType t => VisitType(t, context),
+            PaddingType t => VisitType(t, context),
+            PaddingsType t => VisitType(t, context),
             _ => DefaultVisitType(type, context),
         };
     }
@@ -100,6 +104,38 @@ public abstract class TypeFunctor<TResult, TContext>
     /// <param name="context">Context.</param>
     /// <returns>Result.</returns>
     public virtual TResult VisitType(DistributedType type, TContext context) => DefaultVisitType(type, context);
+
+    /// <summary>
+    /// Visit dimension type.
+    /// </summary>
+    /// <param name="type">Dimension type.</param>
+    /// <param name="context">Context.</param>
+    /// <returns>Result.</returns>
+    public virtual TResult VisitType(DimensionType type, TContext context) => DefaultVisitType(type, context);
+
+    /// <summary>
+    /// Visit shape type.
+    /// </summary>
+    /// <param name="type">Shape type.</param>
+    /// <param name="context">Context.</param>
+    /// <returns>Result.</returns>
+    public virtual TResult VisitType(ShapeType type, TContext context) => DefaultVisitType(type, context);
+
+    /// <summary>
+    /// Visit padding type.
+    /// </summary>
+    /// <param name="type">Padding type.</param>
+    /// <param name="context">Context.</param>
+    /// <returns>Result.</returns>
+    public virtual TResult VisitType(PaddingType type, TContext context) => DefaultVisitType(type, context);
+
+    /// <summary>
+    /// Visit paddings type.
+    /// </summary>
+    /// <param name="type">Padding type.</param>
+    /// <param name="context">Context.</param>
+    /// <returns>Result.</returns>
+    public virtual TResult VisitType(PaddingsType type, TContext context) => DefaultVisitType(type, context);
 
     /// <summary>
     /// Default visit routine.

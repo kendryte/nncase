@@ -9,6 +9,7 @@ using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
@@ -109,30 +110,28 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     public IRType Visit(ITypeInferenceContext context, Pad target)
     {
         var input = context.CheckArgumentType<IRType>(target, Pad.Input);
-        var paddingsType = context.CheckArgumentTensorTypeOrBroadcast(target, Pad.Pads);
-        var paddings = context.GetArgument(target, Pad.Pads);
-        var padValue = context.GetArgument(target, Pad.Value);
+        var paddings = (Paddings)context.GetArgument(target, Pad.Pads);
+        var padValue = (Expr)context.GetArgument(target, Pad.Value);
         return input switch
         {
-            DistributedType distributedType => Visit(distributedType, paddingsType, paddings, padValue),
-            TensorType tensorType => TypeInference.PadType(tensorType, paddingsType, paddings, padValue),
+            DistributedType distributedType => Visit(distributedType, paddings, padValue),
+            TensorType tensorType => TypeInference.PadType(tensorType, paddings, padValue),
             AnyType anyType => anyType,
             _ => new InvalidType("The pad input type not support"),
         };
     }
 
-    public IRType Visit(DistributedType input, TensorType paddingsType, Expr paddings, Expr padValue)
+    public IRType Visit(DistributedType input, Paddings paddings, Expr padValue)
     {
-        if (TypeInference.PadType(input.TensorType, paddingsType, paddings, padValue) is not TensorType tensorType)
+        if (TypeInference.PadType(input.TensorType, paddings, padValue) is not TensorType tensorType)
         {
             return new InvalidType("pad infer type failed");
         }
 
         var ndsbp = new SBP[input.TensorType.Shape.Rank];
-        if (paddings is TensorConst tc)
+        if (paddings.IsFixed)
         {
-            var pads = tc.Value.ToArray<int>();
-            var padsPerDim = Enumerable.Range(0, pads.Length / 2).Select(i => pads[2 * i] + pads[(2 * i) + 1]).ToArray();
+            var padsPerDim = Enumerable.Range(0, paddings.Rank).Select(i => paddings[i].Sum().FixedValue).ToArray();
             for (var i = 0; i < input.AxisPolices.Count; i++)
             {
                 if (input.AxisPolices[i] is SBPSplit split && padsPerDim[i] != 0)

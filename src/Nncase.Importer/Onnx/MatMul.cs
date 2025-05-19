@@ -13,7 +13,7 @@ namespace Nncase.Importer
     {
         private Expr VisitMatMul(in NodeProto op)
         {
-            var (a, b) = GetInputExprs(op, 0, 1);
+            var (a, b) = GetInputExprs<Expr, Expr>(op, 0, 1);
 
             // /mlp_2/Mul_output_0、/mlp_3/Mul_output_0、/mlp_21/Mul_output_0
             if (a.Metadata.OutputNames![0] == "/mlp_2/Mul_output_0")

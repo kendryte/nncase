@@ -40,19 +40,19 @@ public sealed class BufferRegion : Expr
 #endif
 
     public BufferRegion(Expr buffer, ReadOnlySpan<Range> region)
-        : base(ArrayUtility.Concat(buffer, SpanUtility.UnsafeCast<Range, Expr>(region)))
+        : base(ArrayUtility.Concat(buffer, SpanUtility.UnsafeCast<Range, BaseExpr>(region)))
     {
     }
 
     /// <summary>
     /// Gets the buffer of the buffer region.
     /// </summary>
-    public Expr Buffer => Operands[0];
+    public Expr Buffer => (Expr)Operands[0];
 
     /// <summary>
     /// Gets the region array of the buffer region.
     /// </summary>
-    public ReadOnlySpan<Range> Region => SpanUtility.UnsafeCast<Expr, Range>(Operands.Slice(1));
+    public ReadOnlySpan<Range> Region => SpanUtility.UnsafeCast<BaseExpr, Range>(Operands.Slice(1));
 
     /// <summary>
     /// Gets new buffer region.
@@ -65,7 +65,7 @@ public sealed class BufferRegion : Expr
                   tp.Second.Stop switch
                   {
                       // if stop is neg, add the shape
-                      Call { Target: IR.Math.Unary { UnaryOp: UnaryOp.Neg } } => throw new NotSupportedException("Neg Region!"),
+                      Dimension d when d.Metadata.Range?.Min < 0 => throw new NotSupportedException("Neg Region!"),
 
                       // else return the origin range.
                       _ => tp.Second,

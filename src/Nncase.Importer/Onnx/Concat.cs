@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitConcat(NodeProto op)
         {
-            var inputs = Enumerable.Range(0, op.Input.Count).Select(x => GetInputExpr(op, x)).ToArray();
+            var inputs = Enumerable.Range(0, op.Input.Count).Select(x => GetInputExpr<Expr>(op, x)).ToArray();
             var axis = GetIntAttribute(op, "axis");
             return F.Tensors.Concat(new Tuple(inputs), (int)axis);
         }

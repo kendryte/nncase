@@ -8,14 +8,14 @@ Marker,true,false,Default,,Target;Attribute
 None,true,false,Default,,
 Op,true,false,Default,,
 PrimFunctionWrapper,true,true,BaseFunction,,Target
-Shape,true,false,Default,IR.,@Dimensions
+FunctionWrapper,true,true,BaseFunction,,Target
 TensorConst,true,false,Const,,
 Tuple,true,false,Default,IR.,@Fields
 TupleConst,true,false,Const,,
 MemSpan,true,false,Default,TIR.,Start;Size;
 Var,true,false,Default,,
 Block,true,false,Default,TIR.,Body;InitBody;@IterVars;@Reads;@Writes;@AllocBuffers;Predicate
-Buffer,true,false,Default,TIR.,MemSpan;@Dimensions;@Strides;
+Buffer,true,false,Default,TIR.,MemSpan;@Dimensions;@Strides;!DistributedType
 BufferRegion,true,false,Default,TIR.,Buffer;@Region
 For,true,false,Default,TIR.,LoopVar;Domain;Body
 IfThenElse,true,false,Default,TIR.,Condition;Then;Else
@@ -24,6 +24,7 @@ PrimFunction,true,true,BaseFunction,TIR.,@Parameters;Body
 Sequential,true,false,Default,TIR.,@Fields
 Range,true,false,Default,TIR.,Start;Stop;Step
 IterVar,true,false,Default,TIR.,Value;Dom
+Return,true,false,Default,TIR.,@Values
 # Affine
 AffineExpr,false,false,Default,Affine.,
 AffineSymbolBase,false,false,AffineExpr,Affine.,
@@ -43,3 +44,29 @@ Load,true,false,Default,Affine.,Source;Region
 For,true,false,Default,Affine.,Domain;Body
 # Buffers
 BufferOf,true,false,Default,Buffers.,Input
+# Shapes
+Dimension,false,false,Default,,
+AsDim,true,false,Dimension,,Dim
+UnknownDim,true,false,Dimension,,
+DimVar,true,false,Dimension,,
+DimConst,true,false,Dimension,,
+DimPower,true,false,Dimension,,Dim
+DimFraction,true,false,Dimension,,Numerator;Denominator
+DimRemainder,true,false,Dimension,,Numerator;Denominator
+DimProduct,true,false,Dimension,,@Operands
+DimSum,true,false,Dimension,,@Operands
+DimAbs,true,false,Dimension,,Operand
+DimClamp,true,false,Dimension,,Operand;MinValue;MaxValue
+DimCompareAndSelect,true,false,Dimension,,Value;Expected;TrueValue;FalseValue
+DimMin,true,false,Dimension,,@Operands
+DimMax,true,false,Dimension,,@Operands
+DimPositive,true,false,Dimension,,Operand;Extent
+DimAt,true,false,Dimension,,Shape;Index
+Padding,true,false,Default,IR.Shapes.,Before;After
+Paddings,true,false,Default,IR.Shapes.,@Values
+Shape,false,false,Default,,
+RankedShape,true,false,Shape,,@Dimensions
+UnrankedShape,true,false,Shape,,Value
+InvalidShape,true,false,Shape,,
+ShapeVar,true,false,Shape,,
+ShapeOf,true,false,Shape,IR.Shapes.,Value

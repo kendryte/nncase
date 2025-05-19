@@ -47,5 +47,5 @@ public sealed class TestVisitor : ExprVisitor<bool, IRType>
     }
 
     /// <inheritdoc/>
-    protected override bool DefaultVisitLeaf(Expr expr) => true;
+    protected override bool DefaultVisitLeaf(BaseExpr expr) => true;
 }

@@ -60,6 +60,7 @@ public sealed class EGraphMatcher
     {
         return (pattern, enode.Expr) switch
         {
+            // Expr
             (VarPattern varPat, Var var) => VisitLeaf(matchScopes, varPat, enode, var),
             (TensorConstPattern constPat, TensorConst con) => VisitLeaf(matchScopes, constPat, enode, con),
             (TupleConstPattern constPat, TupleConst con) => VisitLeaf(matchScopes, constPat, enode, con),
@@ -71,8 +72,18 @@ public sealed class EGraphMatcher
             (MarkerPattern mkPat, Marker mk) => Visit(matchScopes, mkPat, enode, mk),
             (TuplePattern tuplePat, IR.Tuple tuple) => Visit(matchScopes, tuplePat, enode, tuple),
             (IOpPattern opPat, Op op) => VisitLeaf(matchScopes, opPat, enode, op),
+
+            // Dimension
+            (DimensionPattern dimPat, Dimension dim) => VisitLeaf(matchScopes, dimPat, enode, dim),
+
+            // Shape
+            (RankedShapePattern shapePat, RankedShape shape) => Visit(matchScopes, shapePat, enode, shape),
+            (ShapePattern shapePat, Shape shape) => VisitLeaf(matchScopes, shapePat, enode, shape),
+
+            // BaseExpr
+            (ExprPattern exprPattern, BaseExpr expr) => VisitLeaf(matchScopes, exprPattern, enode, expr),
+
             (OrPattern orPat, _) => Visit(matchScopes, orPat, enode, enode.Expr),
-            (ExprPattern exprPattern, Expr expr) => VisitLeaf(matchScopes, exprPattern, enode, expr),
             _ => Array.Empty<MatchScope>(),
         };
     }
@@ -93,7 +104,7 @@ public sealed class EGraphMatcher
         return newScopes;
     }
 
-    private IReadOnlyList<MatchScope> VisitLeaf(IReadOnlyList<MatchScope> matchScopes, IPattern pattern, ENode enode, Expr expr)
+    private IReadOnlyList<MatchScope> VisitLeaf(IReadOnlyList<MatchScope> matchScopes, IPattern pattern, ENode enode, BaseExpr expr)
     {
         var context = new MatchContext(matchScopes, pattern, expr);
 
@@ -113,7 +124,7 @@ public sealed class EGraphMatcher
 
         if (context.HasCandidates
             && pattern.MatchLeaf(expr)
-            && pattern.Parameters.MatchLeaf(SpanUtility.UnsafeCast<Var, Expr>(expr.Parameters), out var paramsPattern))
+            && pattern.Parameters.MatchLeaf(SpanUtility.UnsafeCast<IVar, BaseExpr>(expr.Parameters), out var paramsPattern))
         {
             var newScopes = Visit(context.Candidates, pattern.Body, enode.Children[0]);
             if (newScopes.Count > 0)
@@ -238,7 +249,26 @@ public sealed class EGraphMatcher
         return context.NewScopes;
     }
 
-    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, OrPattern pattern, ENode enode, Expr expr)
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, RankedShapePattern pattern, ENode enode, RankedShape expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr)
+            && pattern.Dimensions.MatchLeaf(SpanUtility.UnsafeCast<Dimension, BaseExpr>(expr.Dimensions), out var argsPattern))
+        {
+            var newScopes = Visit(context.Candidates, pattern.Dimensions, argsPattern, enode.Children);
+            if (newScopes.Count > 0)
+            {
+                context.NewScopes.AddRange(newScopes);
+                context.MatchCandidates(pattern, expr);
+            }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, OrPattern pattern, ENode enode, BaseExpr expr)
     {
         var context = new MatchContext(matchScopes, pattern, expr);
 

@@ -8,6 +8,7 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
@@ -101,7 +102,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
     private IRType Visit(ITypeInferenceContext context, Conv2D target, TensorType input, TensorType weights)
     {
         var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
-        return TypeInference.Conv2DType(input, weights, args[0], args[1], args[2], args[3]);
+        return TypeInference.Conv2DType(input, weights, (Shape)args[0], (Paddings)args[1], (Shape)args[2], args[3].AsDim());
     }
 
     private IRType Visit(ITypeInferenceContext context, Conv2D target, DistributedType input, DistributedType weights, DistributedType bias)

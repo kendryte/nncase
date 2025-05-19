@@ -20,37 +20,37 @@ public class UnitTestExprOperators
     public void TestGetItemOfTensorWithScalarIndex()
     {
         var a = (Expr)new[] { 1, 2, 3 };
-        Assert.Equal(a[0], 1);
-        Assert.Equal(a[1], 2);
-        Assert.Equal(a[2], 3);
+        Assert.Equal((Expr)1, a[0]);
+        Assert.Equal((Expr)2, a[1]);
+        Assert.Equal((Expr)3, a[2]);
     }
 
     [Fact]
     public void TestGetItemOfTensorWithScalarExprIndex()
     {
         var a = (Expr)new[] { 1, 2, 3 };
-        Assert.NotEqual(a[(Expr)0], 1);
-        Assert.NotEqual(a[(Expr)1], 2);
-        Assert.NotEqual(a[(Expr)2], 3);
+        Assert.NotEqual(1, a[(Dimension)0]);
+        Assert.NotEqual(2, a[(Dimension)1]);
+        Assert.NotEqual(3, a[(Dimension)2]);
     }
 
     [Fact]
     public void TestGetItemOfTupleWithScalarIndex()
     {
-        var a = (Expr)new IR.Tuple([1, 2, 3]);
-        Assert.Equal(a[0], 1);
-        Assert.Equal(a[1], 2);
-        Assert.Equal(a[2], 3);
+        var a = new IR.Tuple([(Expr)1, (Expr)2, (Expr)3]);
+        Assert.Equal((Expr)1, a[0]);
+        Assert.Equal((Expr)2, a[1]);
+        Assert.Equal((Expr)3, a[2]);
     }
 
     [Fact]
     public void TestGetItemOfStackWithScalarIndex()
     {
-        var a = (Expr)new IR.Tuple([1, 2, 3]);
+        var a = new IR.Tuple([(Expr)1, (Expr)2, (Expr)3]);
         var b = IR.F.Tensors.Stack(a, 0);
-        Assert.Equal(b[0], 1);
-        Assert.Equal(b[1], 2);
-        Assert.Equal(b[2], 3);
+        Assert.True(b[0] is Call);
+        Assert.True(b[1] is Call);
+        Assert.True(b[2] is Call);
     }
 
     [Fact]
@@ -58,9 +58,9 @@ public class UnitTestExprOperators
     {
         var a = Enumerable.Range(1, 3).Select(x => (Expr)new[] { x }).ToArray();
         var b = IR.F.Tensors.Concat(new IR.Tuple(a), 0);
-        Assert.Equal(b[0], 1);
-        Assert.Equal(b[1], 2);
-        Assert.Equal(b[2], 3);
+        Assert.True(b[0] is Call);
+        Assert.True(b[1] is Call);
+        Assert.True(b[2] is Call);
     }
 
     [Fact]

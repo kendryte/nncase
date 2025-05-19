@@ -33,9 +33,9 @@ public class UnitTestEvaluator : TestClassBase
         var x = new Var("x", TensorType.Scalar(DataTypes.Int32));
         var func = new Function("main", ((x * 10) - 200) / 5, new[] { x });
 
-        Assert.Equal(cfunc(10), new Call(func, 10).Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(cfunc(10), new Call(func, (Expr)10).Evaluate().AsTensor().ToScalar<int>());
 
-        Assert.Equal(cfunc(10) + cfunc(12), (new Call(func, 10) + new Call(func, 12)).Evaluate().AsTensor().ToScalar<int>());
+        Assert.Equal(cfunc(10) + cfunc(12), (new Call(func, (Expr)10) + new Call(func, (Expr)12)).Evaluate().AsTensor().ToScalar<int>());
     }
 
     [Fact]
@@ -96,11 +96,11 @@ public class UnitTestEvaluator : TestClassBase
     [Fact]
     public void TestLoadStore()
     {
-        var loop_i = new Var(TensorType.Scalar(DataTypes.Int32));
+        var loop_i = new DimVar();
         T.CreateBuffer(new(DataTypes.Float32, new[] { 1, 2, 3 }), MemoryLocation.Input, out var bf);
         var load = T.Load(bf, loop_i);
         CompilerServices.InferenceType(load);
-        var store = T.Store(bf, loop_i, IR.F.Tensors.Cast(loop_i, DataTypes.Float32));
+        var store = T.Store(bf, loop_i, IR.F.Tensors.Cast(IR.F.Shapes.AsTensor(loop_i), DataTypes.Float32));
         CompilerServices.InferenceType(store);
     }
 

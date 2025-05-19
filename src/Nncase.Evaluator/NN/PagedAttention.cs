@@ -47,7 +47,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     {
         var q = context.GetOrtArgumentValue(target, PagedAttention.Q);
         var kvCaches = context.GetArgumentValueAsTensor<Reference<IPagedAttentionKVCache>>(target, PagedAttention.KVCaches);
-        return RefPagedAttn(q, kvCaches, 1.0f, target.LayerId, target.QLayout).ToValue();
+        return RefPagedAttn(q, kvCaches, 1.0f, target.LayerId, target.Layout).ToValue();
     }
 
     private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, float scale, int layerId, IRArray<AttentionDimKind> qlayout)
@@ -61,12 +61,12 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         var cache = kvCaches.Single().Value;
 
         // unpack for q
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
             query = query.Unpack(qlayout.IndexOf(AttentionDimKind.Dim));
         }
 
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.NumKVHeads))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
         {
             query = query.Unpack(qlayout.IndexOf(AttentionDimKind.Head));
         }
@@ -126,17 +126,59 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         }
 
         // repack for output
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.NumKVHeads))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
         {
-            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedAttentionDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
+            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
         }
 
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
-            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedAttentionDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
+            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
         }
 
         return concat_output;
+    }
+
+    private static void GatherKVCore(IPagedAttentionKVCache cache, int numBlocksForSeq, int seqId, AttentionCacheKind cacheKind, int layerId, int seqLen, int blockSizeAxis, List<OrtKISharp.Tensor> caches)
+    {
+        for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
+        {
+            for (int i = 0; i < numBlocksForSeq; i++)
+            {
+                var blockId = cache.GetBlockId(seqId, i);
+
+                var headIdCopy = headId;
+                var blockIdCopy = blockId.AsContiguous(true);
+
+                // process sharding axes.
+                for (int shardId = 0; shardId < cache.Config.ShardingAxes.Count; shardId++)
+                {
+                    switch (cache.Config.ShardingAxes[shardId])
+                    {
+                        case PagedKVCacheDimKind.NumKVHeads when blockIdCopy[shardId] is -1L:
+                            var headTile = cache.Config.NumKVHeads / (int)cache.LogicalCacheDimensions()[shardId];
+                            blockIdCopy[shardId] = System.Math.DivRem(headId, headTile, out headIdCopy);
+                            break;
+                        case PagedKVCacheDimKind.NumBlocks when blockIdCopy[shardId] is not -1L:
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(cache));
+                    }
+                }
+
+                var block = cache.GetBlock(cacheKind, layerId, headIdCopy, blockIdCopy);
+                var blockOrt = block.ToOrtTensor();
+
+                // slice
+                var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
+                if (validSlotCount < cache.Config.BlockSize)
+                {
+                    blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
+                }
+
+                caches.Add(blockOrt);
+            }
+        }
     }
 
     private static OrtKISharp.Tensor GatherKV(AttentionCacheKind cacheKind, IPagedAttentionKVCache cache, int seqId, int layerId, long queryLen, long seqLen, long queryStart)
@@ -148,13 +190,13 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
         // block layout is construct from `head dim, block_size`. but we don't know the concrete shape.
         var blockLayout = cache.Config.BlockLayout;
-        var blockSizeAxis = blockLayout.IndexOf(PagedAttentionDimKind.BlockSize);
+        var blockSizeAxis = blockLayout.IndexOf(PagedKVCacheDimKind.BlockSize);
         if (blockSizeAxis < 0)
         {
             throw new InvalidOperationException("block layout not contain block size");
         }
 
-        var headDimAxis = blockLayout.IndexOf(PagedAttentionDimKind.HeadDim);
+        var headDimAxis = blockLayout.IndexOf(PagedKVCacheDimKind.HeadDim);
         if (headDimAxis < 0)
         {
             throw new InvalidOperationException("block layout not contain head dim");
@@ -162,79 +204,19 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
         int totalKVHeads = cache.Config.NumKVHeads;
 
-        if (cache.Config.Topology.Count > 0)
-        {
-            // var (num_seqs, num_kv_head, head_dim) = (slots.Dimensions[0], slots.Dimensions[1], slots.Dimensions[2]);
-            if (cache.Config.Topology is [1, 2])
-            {
-                // for xpu
-                totalKVHeads *= 2; // recover kv heads.
-                for (int did = 0; did < 2; did++)
-                {
-                    for (int h_id = 0; h_id < cache.Config.NumKVHeads; h_id++)
-                    {
-                        for (int i = 0; i < numBlocksForSeq; i++)
-                        {
-                            var blockId = cache.GetBlockId(seqId, i);
-                            if (blockId[0] is not -1L)
-                            {
-                                throw new NotSupportedException();
-                            }
-
-                            var tmp_blockId = Tensor.Zeros(blockId.ElementType, blockId.Dimensions);
-                            blockId.CopyTo(tmp_blockId);
-                            tmp_blockId[0] = did;
-
-                            // 这部分还是可以复用的。
-                            var block = cache.GetBlock(cacheKind, layerId, h_id, tmp_blockId);
-                            var blockOrt = block.ToOrtTensor();
-
-                            // slice
-                            var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
-                            if (validSlotCount < cache.Config.BlockSize)
-                            {
-                                blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
-                            }
-
-                            caches.Add(blockOrt);
-                        }
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (int headId = 0; headId < cache.Config.NumKVHeads; headId++)
-            {
-                for (int i = 0; i < numBlocksForSeq; i++)
-                {
-                    var blockId = cache.GetBlockId(seqId, i);
-                    var block = cache.GetBlock(cacheKind, layerId, headId, blockId);
-                    var blockOrt = block.ToOrtTensor();
-
-                    // slice
-                    var validSlotCount = (int)System.Math.Min(seqLen - (i * cache.Config.BlockSize), cache.Config.BlockSize);
-                    if (validSlotCount < cache.Config.BlockSize)
-                    {
-                        blockOrt = OrtKI.Slice(blockOrt, new long[] { 0L }, new long[] { validSlotCount }, new long[] { blockSizeAxis }, new long[] { 1 });
-                    }
-
-                    caches.Add(blockOrt);
-                }
-            }
-        }
+        GatherKVCore(cache, (int)numBlocksForSeq, seqId, cacheKind, layerId, (int)seqLen, blockSizeAxis, caches);
 
         // caches is (head * blocks) * [BlockLayout + lanes], concat at block size axis.
         var concatCache = OrtKI.Concat(caches.ToArray(), blockSizeAxis);
 
         // unpack head dim
-        if (cache.Config.PackedAxes.Contains(PagedAttentionDimKind.HeadDim))
+        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
             concatCache = concatCache.Unpack(headDimAxis);
         }
 
         // transpose to [num_head * seq_len, head_dim]
-        if (blockLayout is [PagedAttentionDimKind.HeadDim, PagedAttentionDimKind.BlockSize])
+        if (blockLayout is [PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize])
         {
             concatCache = OrtKI.Transpose(concatCache, [1, 0]);
         }
@@ -246,34 +228,40 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concatCache; // [num_heads, seq_len, head_dim]
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, TensorType extra)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra)
     {
-        var headDim = q.Shape[target.QLayout.IndexOf(AttentionDimKind.Head)];
-        var dims = q.Shape.ToArray();
-        dims[^1] = headDim;
-        return q with { Shape = dims };
+        return q;
     }
 
     private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra)
     {
+        // for xpu.
         if (q.Placement.Name == "cdxyt")
         {
-            // for xpu.
             if (!extra.AxisPolices.All(p => p is SBPBroadCast))
             {
                 return new InvalidType("extra should be broadcast!");
             }
 
-            // seq split at x, head split at die and y
-            var seqAxis = target.QLayout.IndexOf(AttentionDimKind.Seq);
-            var headAxis = target.QLayout.IndexOf(AttentionDimKind.Head);
-            var dimAxis = target.QLayout.IndexOf(AttentionDimKind.Dim);
+            if (!target.Layout.SequenceEqual([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]))
+            {
+                return new InvalidType("layout should be [head, dim, seq]");
+            }
+
+            // seq split at x, head split at die and y, please check head size > 2*4.
+            var seqAxis = target.Layout.IndexOf(AttentionDimKind.Seq);
+            var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
+            var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);
             if (q.AxisPolices[seqAxis] is SBPSplit { Axes: [2] } &&
                 q.AxisPolices[headAxis] is SBPSplit { Axes: [1, 3] } &&
                 q.AxisPolices[dimAxis] is SBPBroadCast)
             {
                 return q;
             }
+        }
+        else if (q.Placement.Hierarchy.SequenceEqual([1]) && q.AxisPolices.All(x => x is SBPBroadCast))
+        {
+            return q;
         }
 
         return new InvalidType("not support distributed type");

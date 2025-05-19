@@ -22,12 +22,12 @@ public sealed partial class FoldNopSlice : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsSlice(
         IsWildcard("input") with { TypePattern = HasFixedShape() },
-        IsTensorConst("begins"),
-        IsTensorConst("ends"),
-        IsTensorConst("axes"),
-        IsTensorConst("strides"));
+        IsFixedShape("begins"),
+        IsFixedShape("ends"),
+        IsFixedShape("axes"),
+        IsFixedShape("strides"));
 
-    private Expr? GetReplace(Expr input, Tensor<int> begins, Tensor<int> ends, Tensor<int> axes, Tensor<int> strides)
+    private Expr? GetReplace(Expr input, Tensor<long> begins, Tensor<long> ends, Tensor<long> axes, Tensor<long> strides)
     {
         var inShape = input.CheckedShape;
         for (int i = 0; i < axes.Length; i++)
@@ -53,11 +53,11 @@ public sealed partial class FoldTwoSlices : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSlice(
-        IsSlice(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsTensorConst("begins1"), IsTensorConst("ends1"), IsTensorConst("axes1"), IsTensorConst("strides1")),
-        IsTensorConst("begins2"),
-        IsTensorConst("ends2"),
-        IsTensorConst("axes2"),
-        IsTensorConst("strides2"));
+        IsSlice(IsWildcard("input") with { TypePattern = HasFixedShape() }, IsFixedShape("begins1"), IsFixedShape("ends1"), IsFixedShape("axes1"), IsFixedShape("strides1")),
+        IsFixedShape("begins2"),
+        IsFixedShape("ends2"),
+        IsFixedShape("axes2"),
+        IsFixedShape("strides2"));
 
     private Expr? GetReplace(Expr input, int[] begins1, long[] ends1, int[] axes1, int[] strides1, int[] begins2, long[] ends2, int[] axes2, int[] strides2)
     {

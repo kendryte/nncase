@@ -3,38 +3,77 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Nncase.CodeGen;
-using Nncase.CodeGen.StackVM;
+using Nncase.CodeGen.NTT;
 using Nncase.IR;
+using Nncase.Passes.Transforms;
 using Nncase.Runtime.Interop;
 using Nncase.Schedule;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
+using Nncase.TIR;
 using Xunit;
 
 namespace Nncase.Tests.SimulatorTest;
 
 [AutoSetupTestMethod(InitSession = false)]
-public class UnitTestInterop : TestClassBase
+public class UnitTestInteropIntegrated : TestClassBase
 {
     private readonly byte[] _kmodel;
 
-    public UnitTestInterop()
+    public UnitTestInteropIntegrated()
     {
-        var x = new Var("x", new TensorType(DataTypes.Float32, new[] { 1 }));
-        var y = x + 1.0f;
-        var main = new Function("main", y, new[] { x });
+        CompileOptions.TargetOptions = new NTTTargetOptions();
+
+        var type = new TensorType(DataTypes.Float32, new[] { 1 });
+        var x = new Var("x", type);
+        var body = T.Sequential().Body(
+            T.AttachBuffer(1.0f, out var constBuffer),
+            TIR.F.NTT.Binary(BinaryOp.Add, x, constBuffer, T.CreateBuffer(type, MemoryLocation.Output, out var outBuffer)),
+            T.Return(outBuffer)).Build();
+        var main = new PrimFunction("main_prim", CPUTarget.Kind, body, new[] { x });
+        BufferizePass.Bufferize(main);
         var module = new IRModule(main);
         var target = CompilerServices.GetTarget(CPUTarget.Kind);
-        var stackVMModuleBuilder = new StackVMModuleBuilder();
-        var modelBuilder = new ModelBuilder(target, CompileOptions, stackVMModuleBuilder);
+        var modelBuilder = new ModelBuilder(target, CompileOptions);
         var linkedModel = modelBuilder.Build(module);
         using var output = new MemoryStream();
         linkedModel.Serialize(output);
         _kmodel = output.ToArray();
     }
 
+    [Fact]
+    public void TestRTInterpreterLoadModel()
+    {
+        var interp = RTInterpreter.Create();
+        interp.LoadModel(_kmodel, true);
+        var entry = interp.Entry;
+        Assert.NotNull(entry);
+        Assert.Equal(1u, entry!.ParamsCount);
+    }
+
+    [Fact]
+    public void TestRTInterpreterRunModel()
+    {
+        var interp = RTInterpreter.Create();
+        interp.LoadModel(_kmodel, true);
+        var entry = interp.Entry;
+        Assert.NotNull(entry);
+
+        var input = RTTensor.FromTensor(new[] { 2.0f });
+        var result = (RTTensor)entry!.Invoke(input);
+        var buffer = result.Buffer.Buffer.AsHost()!;
+        using (var mmOwner = buffer.Map(RTMapAccess.Read))
+        {
+            Assert.Equal(new[] { 3.0f }, MemoryMarshal.Cast<byte, float>(mmOwner.Memory.Span).ToArray());
+        }
+    }
+}
+
+public class UnitTestInterop
+{
     [Fact]
     public void TestCreateRTInterpreter()
     {
@@ -117,37 +156,35 @@ public class UnitTestInterop : TestClassBase
     }
 
     [Fact]
-    public void TestRTInterpreterLoadModel()
-    {
-        var interp = RTInterpreter.Create();
-        interp.LoadModel(_kmodel, true);
-        var entry = interp.Entry;
-        Assert.NotNull(entry);
-        Assert.Equal(1u, entry!.ParamsCount);
-    }
-
-    [Fact]
-    public void TestRTInterpreterRunModel()
-    {
-        var interp = RTInterpreter.Create();
-        interp.LoadModel(_kmodel, true);
-        var entry = interp.Entry;
-        Assert.NotNull(entry);
-
-        var input = RTTensor.FromTensor(new[] { 2.0f });
-        var result = (RTTensor)entry!.Invoke(input);
-        var buffer = result.Buffer.Buffer.AsHost()!;
-        using (var mmOwner = buffer.Map(RTMapAccess.Read))
-        {
-            Assert.Equal(new[] { 3.0f }, MemoryMarshal.Cast<byte, float>(mmOwner.Memory.Span).ToArray());
-        }
-    }
-
-    [Fact]
     public void TestRTDatatype()
     {
-        var dt1 = RTDataType.FromTypeCode(Runtime.TypeCode.Int16);
-        Assert.False(dt1.IsInvalid);
+        {
+            var dt1 = RTDataType.FromTypeCode(Runtime.TypeCode.Int16);
+            Assert.False(dt1.IsInvalid);
+        }
+
+        {
+            var dt = new IR.NN.PagedAttentionKVCacheType();
+            var rdt = RTDataType.From(dt);
+            Assert.IsType<RTValueType>(rdt);
+            var rvt = rdt as RTValueType;
+            var bytes = dt.Uuid.ToByteArray();
+            var uuid = new System.Guid(bytes);
+            Assert.Equal(dt.Uuid, uuid);
+            Assert.Equal(dt.Uuid, rvt!.Uuid);
+        }
+
+        {
+            var dtt = new IR.NN.PagedAttentionKVCacheType();
+            var dt = new ReferenceType(dtt);
+            var rdt = RTDataType.From(dt);
+            Assert.IsType<RTReferenceType>(rdt);
+            var rrt = rdt as RTReferenceType;
+            var rvt = rrt!.ElemType;
+            Assert.IsType<RTValueType>(rvt);
+            var rvvt = rvt as RTValueType;
+            Assert.Equal(dtt.Uuid, rvvt!.Uuid);
+        }
     }
 
     [Fact]
@@ -182,7 +219,7 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(intVal, fields[0].ToValue());
         Assert.Equal(floatVal, fields[1].ToValue());
     }
-#if false
+
     [Fact]
     public void TestRTAttentionConfig()
     {
@@ -197,27 +234,94 @@ public class UnitTestInterop : TestClassBase
         Assert.Equal(3, r_a.NumLayers);
         Assert.Equal(2, r_a.NumKVHeads);
         Assert.Equal(1, r_a.HeadDim);
+        {
+            var b = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedKVCacheDimKind.BlockSize, IR.NN.PagedKVCacheDimKind.HeadDim, IR.NN.PagedKVCacheDimKind.KV, IR.NN.PagedKVCacheDimKind.NumBlocks, IR.NN.PagedKVCacheDimKind.NumKVHeads, IR.NN.PagedKVCacheDimKind.NumLayers }, [], [], [], []);
+            var r_ = RTAttentionConfig.FromConfig(b);
+            Assert.IsType<RTPagedAttentionConfig>(r_);
+            var r_b = (RTPagedAttentionConfig)r_;
+            Assert.Equal(b.NumLayers, r_b.NumLayers);
+            Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
+            Assert.Equal(b.HeadDim, r_b.HeadDim);
+            Assert.Equal(b.BlockSize, r_b.BlockSize);
+            r_b.NumLayers = 3;
+            r_b.NumKVHeads = 2;
+            r_b.HeadDim = 1;
+            r_b.BlockSize = 0;
+            Assert.Equal(3, r_b.NumLayers);
+            Assert.Equal(2, r_b.NumKVHeads);
+            Assert.Equal(1, r_b.HeadDim);
+            Assert.Equal(0, r_b.BlockSize);
 
-        var b = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers], [], [], DataTypes.Float16);
-        var r_b = (RTPagedAttentionConfig)RTAttentionConfig.FromConfig(b);
-        Assert.Equal(b.NumLayers, r_b.NumLayers);
-        Assert.Equal(b.NumKVHeads, r_b.NumKVHeads);
-        Assert.Equal(b.HeadDim, r_b.HeadDim);
-        Assert.Equal(b.BlockSize, r_b.BlockSize);
-        r_b.NumLayers = 3;
-        r_b.NumKVHeads = 2;
-        r_b.HeadDim = 1;
-        r_b.BlockSize = 0;
-        Assert.Equal(3, r_b.NumLayers);
-        Assert.Equal(2, r_b.NumKVHeads);
-        Assert.Equal(1, r_b.HeadDim);
-        Assert.Equal(0, r_b.BlockSize);
+            Assert.Empty(r_b.PackedAxes);
+            Assert.Empty(r_b.Lanes);
+            r_b.PackedAxes = new[] { IR.NN.PagedKVCacheDimKind.HeadDim };
+            r_b.Lanes = new[] { 64 };
+            Assert.True(r_b.PackedAxes.SequenceEqual(new[] { IR.NN.PagedKVCacheDimKind.HeadDim }));
+            Assert.True(r_b.Lanes.SequenceEqual(new[] { 64 }));
+
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                r_b.Lanes = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+            });
+        }
+
+        {
+            var config = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedKVCacheDimKind.BlockSize, IR.NN.PagedKVCacheDimKind.HeadDim, IR.NN.PagedKVCacheDimKind.KV, IR.NN.PagedKVCacheDimKind.NumBlocks, IR.NN.PagedKVCacheDimKind.NumKVHeads, IR.NN.PagedKVCacheDimKind.NumLayers }, new[] { IR.NN.PagedKVCacheDimKind.HeadDim }, new[] { 32 }, new[] { IR.NN.PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(1, 2) });
+            var rtConfig = RTAttentionConfig.FromConfig(config);
+            Assert.IsType<RTPagedAttentionConfig>(rtConfig);
+            var rtPagedConfig = (RTPagedAttentionConfig)rtConfig;
+            Assert.True(rtPagedConfig.AxisPolicies.SequenceEqual([SBP.S(1, 2)]));
+        }
     }
 
     [Fact]
+    public void TestRTAttentionKVCache()
+    {
+        var pagedConfig = new IR.NN.PagedAttentionConfig(
+            NumLayers: 2,
+            NumKVHeads: 4,
+            HeadDim: 32,
+            KVType: DataTypes.Float32,
+            BlockSize: 16,
+            CacheLayout: new[]
+            {
+                IR.NN.PagedKVCacheDimKind.NumBlocks,
+                IR.NN.PagedKVCacheDimKind.NumLayers,
+                IR.NN.PagedKVCacheDimKind.KV,
+                IR.NN.PagedKVCacheDimKind.BlockSize,
+                IR.NN.PagedKVCacheDimKind.NumKVHeads,
+                IR.NN.PagedKVCacheDimKind.HeadDim,
+            },
+            PackedAxes: new[] { IR.NN.PagedKVCacheDimKind.HeadDim },
+            Lanes: new[] { 32 },
+            new[] { IR.NN.PagedKVCacheDimKind.NumBlocks },
+            new[] { SBP.S(0) });
+
+        var contextLens = Tensor.From(new[] { 64L });
+        var seqLens = Tensor.From(new[] { 128L });
+        var blockTable = Tensor.From(new long[] { 0, -1, -1, -1 }); // Example block table
+        var slotMapping = Tensor.From(new long[] { 5, 4, 3, 2, 1 }); // Example slot mapping
+
+        var rtPagedConfig = RTPagedAttentionConfig.FromConfig(pagedConfig);
+
+        var rtContextLens = RTTensor.FromTensor(contextLens);
+        var rtSeqLens = RTTensor.FromTensor(seqLens);
+        var rtBlockTable = RTTensor.FromTensor(blockTable);
+        var rtSlotMapping = RTTensor.FromTensor(slotMapping);
+        var rtpagedAttn = RTPagedAttentionKVCache.Create(
+            rtPagedConfig, 1, 64, rtContextLens, rtSeqLens, rtBlockTable, rtSlotMapping, 15, [1]);
+
+        Assert.Equal(15, rtpagedAttn.NumBlocks);
+
+        var totensor = Tensor.FromScalar(new Reference<IR.NN.IPagedAttentionKVCache>(rtpagedAttn));
+        RTTensor.FromTensor(totensor);
+    }
+
+#if false
+    [Fact]
     public void TestRTPagedAttentionScheduler()
     {
-        var cfg = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedAttentionDimKind.BlockSize, IR.NN.PagedAttentionDimKind.HeadDim, IR.NN.PagedAttentionDimKind.KV, IR.NN.PagedAttentionDimKind.NumBlocks, IR.NN.PagedAttentionDimKind.NumKVHeads, IR.NN.PagedAttentionDimKind.NumLayers], [], [], DataTypes.Float32);
+        var cfg = new IR.NN.PagedAttentionConfig(1, 2, 3, 4, [IR.NN.PagedKVCacheDimKind.BlockSize, IR.NN.PagedKVCacheDimKind.HeadDim, IR.NN.PagedKVCacheDimKind.KV, IR.NN.PagedKVCacheDimKind.NumBlocks, IR.NN.PagedKVCacheDimKind.NumKVHeads, IR.NN.PagedKVCacheDimKind.NumLayers], [], [], DataTypes.Float32);
         var s = RTPagedAttentionScheduler.Create(cfg, 128, 1238);
 
         var sessionIds = Tensor.From([1L]);

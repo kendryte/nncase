@@ -15,6 +15,7 @@ using Nncase.Evaluator.Math;
 using Nncase.Evaluator.NN;
 using Nncase.Evaluator.Random;
 using Nncase.Evaluator.RNN;
+using Nncase.Evaluator.Shapes;
 using Nncase.Evaluator.TIR;
 using Nncase.Hosting;
 
@@ -39,6 +40,7 @@ public static class EvaluatorApplicationPart
             .RegisterModule<NNModule>()
             .RegisterModule<RandomModule>()
             .RegisterModule<RNNModule>()
+            .RegisterModule<ShapesModule>()
             .RegisterModule<TensorsModule>()
             .RegisterModule<TIRModule>();
     }

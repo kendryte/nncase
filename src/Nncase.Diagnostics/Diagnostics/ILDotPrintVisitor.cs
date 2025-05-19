@@ -26,6 +26,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.IR.Buffers;
+using Nncase.IR.Shapes;
 
 namespace Nncase.Diagnostics;
 
@@ -69,7 +70,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
 {
     private readonly DotGraph _dotGraph;
     private readonly List<(string, DotGraph)> _subdotGraphs;
-    private readonly Dictionary<Expr, ILDotOption> _exprMemo = new(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<BaseExpr, ILDotOption> _exprMemo = new(ReferenceEqualityComparer.Instance);
     private readonly Dictionary<Var, int> _varColorMemo = new(ReferenceEqualityComparer.Instance);
     private readonly PrinterFlags _flags;
     private int _idCounter;
@@ -100,7 +101,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
 
     public override string DefaultVisitType(IRType type)
     {
-        var feedDict = new Dictionary<Expr, string>();
+        var feedDict = new Dictionary<BaseExpr, string>();
 
         foreach (var var in CollectShapeExprs(type).OfType<Var>())
         {
@@ -296,7 +297,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
                 CellSpacing = 0,
             };
 
-            var connect_list = new List<(Expr, string)>();
+            var connect_list = new List<(BaseExpr, string)>();
 
             // 1. the connect type.
             table.AddRow(row =>
@@ -480,7 +481,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
                 CellSpacing = 0,
             };
 
-            var connect_list = new List<(Expr, string)>();
+            var connect_list = new List<(BaseExpr, string)>();
 
             // 1. the connect type.
             table.AddRow(row =>
@@ -540,6 +541,176 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         return result;
     }
 
+    protected override ILDotOption VisitRankedShape(RankedShape expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            var id = _idCounter++;
+            string exprId = "\"" + id.ToString() + "\"";
+
+            var table = new DotHtmlTable
+            {
+                BorderWidth = 0,
+                CellBorderWidth = 1,
+                CellSpacing = 0,
+            };
+
+            var connect_list = new List<(BaseExpr, string)>();
+
+            // 1. the connect type.
+            table.AddRow(row =>
+            {
+                row.AddCell("RankedShape"); // key wrods type.
+                int count = 0;
+                foreach (var child in expr.Dimensions)
+                {
+                    var childnode = Visit(child);
+                    var portName = $"P{count++}";
+                    row.AddCell(childnode.IsDotNode ? string.Empty : childnode.Str, cell => cell.PortName = portName);
+                    if (childnode.IsDotNode)
+                    {
+                        connect_list.Add((child, portName));
+                    }
+                }
+            });
+
+            // 3. make crrent node.
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
+
+            // 4. connect edge.
+            foreach (var (child, port_name) in connect_list)
+            {
+                _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
+                {
+                    edge.Head.Endpoint.Port = new DotEndpointPort(port_name);
+                });
+            }
+
+            result = new(dotNode);
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+    protected override ILDotOption VisitDimension(Dimension expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            result = new(CompilerServices.Print(expr));
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+    protected override ILDotOption VisitPadding(Padding expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            var id = _idCounter++;
+            string exprId = "\"" + id.ToString() + "\"";
+
+            var table = new DotHtmlTable
+            {
+                BorderWidth = 0,
+                CellBorderWidth = 1,
+                CellSpacing = 0,
+            };
+
+            var connect_list = new List<(BaseExpr, string)>();
+
+            // 1. the connect type.
+            table.AddRow(row =>
+            {
+                row.AddCell("Padding"); // key wrods type.
+                int count = 0;
+                foreach (var child in new[] { expr.Before, expr.After })
+                {
+                    var childnode = Visit(child);
+                    var portName = $"P{count++}";
+                    row.AddCell(childnode.IsDotNode ? string.Empty : childnode.Str, cell => cell.PortName = portName);
+                    if (childnode.IsDotNode)
+                    {
+                        connect_list.Add((child, portName));
+                    }
+                }
+            });
+
+            // 3. make crrent node.
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
+
+            // 4. connect edge.
+            foreach (var (child, port_name) in connect_list)
+            {
+                _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
+                {
+                    edge.Head.Endpoint.Port = new DotEndpointPort(port_name);
+                });
+            }
+
+            result = new(dotNode);
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
+    protected override ILDotOption VisitPaddings(Paddings expr)
+    {
+        if (!_exprMemo.TryGetValue(expr, out var result))
+        {
+            var id = _idCounter++;
+            string exprId = "\"" + id.ToString() + "\"";
+
+            var table = new DotHtmlTable
+            {
+                BorderWidth = 0,
+                CellBorderWidth = 1,
+                CellSpacing = 0,
+            };
+
+            var connect_list = new List<(BaseExpr, string)>();
+
+            // 1. the connect type.
+            table.AddRow(row =>
+            {
+                row.AddCell("Paddings"); // key wrods type.
+                int count = 0;
+                foreach (var child in expr.Values)
+                {
+                    var childnode = Visit(child);
+                    var portName = $"P{count++}";
+                    row.AddCell(childnode.IsDotNode ? string.Empty : childnode.Str, cell => cell.PortName = portName);
+                    if (childnode.IsDotNode)
+                    {
+                        connect_list.Add((child, portName));
+                    }
+                }
+            });
+
+            // 3. make crrent node.
+            var dotNode = _dotGraph.Nodes.Add(exprId);
+            dotNode.ToPlainHtmlNode(table);
+
+            // 4. connect edge.
+            foreach (var (child, port_name) in connect_list)
+            {
+                _dotGraph.Edges.Add(Visit(child).DotNode, dotNode, edge =>
+                {
+                    edge.Head.Endpoint.Port = new DotEndpointPort(port_name);
+                });
+            }
+
+            result = new(dotNode);
+            _exprMemo.Add(expr, result);
+        }
+
+        return result;
+    }
+
     private static void SaveToFileCore(DotGraph dotGraph, string name, string prefix, string dumpDir)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
@@ -557,6 +728,14 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         }
     }
 
+    private void VisitArray(ReadOnlySpan<IVar> exprs)
+    {
+        foreach (var expr in exprs)
+        {
+            Visit((Expr)expr);
+        }
+    }
+
     private void UpdateVarColor(Var expr)
     {
         if (!_varColorMemo.TryGetValue(expr, out var _))
@@ -570,7 +749,7 @@ internal sealed class ILDotPrintVisitor : ExprFunctor<ILDotOption, string>
         return new DotColor(Utility.BaseColors[_varColorMemo[expr] % Utility.BaseColors.Length]);
     }
 
-    private List<Expr> CollectShapeExprs(IRType irType)
+    private List<BaseExpr> CollectShapeExprs(IRType irType)
     {
         var shapes = new List<Shape>();
 

@@ -12,9 +12,9 @@ namespace Nncase.IR;
 
 public static class IRHelpers
 {
-    public static IRType? GetRawCheckedType(Expr expr) => expr.RawCheckedType;
+    public static IRType? GetRawCheckedType(BaseExpr expr) => expr.RawCheckedType;
 
-    public static void SetRawCheckedType(Expr expr, IRType? value) => expr.RawCheckedType = value;
+    public static void SetRawCheckedType(BaseExpr expr, IRType? value) => expr.RawCheckedType = value;
 
     public static void DCE(BaseFunction function)
     {
@@ -22,13 +22,13 @@ public static class IRHelpers
     }
 
     [Conditional("DEBUG")]
-    public static void DCESanity(Expr root)
+    public static void DCESanity(BaseExpr root)
     {
         using var exprPin = new ExprPinner(root);
         var exprs = ExprCollector.Collect(root);
-        var users = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
+        var users = new HashSet<BaseExpr>(ReferenceEqualityComparer.Instance);
 
-        void AddUsers(Expr expr)
+        void AddUsers(BaseExpr expr)
         {
             if (expr is not ExprUser
                 && expr.IsAlive
@@ -52,14 +52,9 @@ public static class IRHelpers
         }
     }
 
-    public static void ReplaceAllUsesWith(Expr old, Expr @new)
+    public static HashSet<DimVar> GetDynamicDimVars()
     {
-        old.ReplaceAllUsesWith(@new);
-    }
-
-    public static HashSet<Var> GetDynamicDimVars()
-    {
-        return CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions.VarMap.SelectMany(x => x.Value).OfType<Var>().ToHashSet((IEqualityComparer<Var>)ReferenceEqualityComparer.Instance);
+        return CompileSessionScope.GetCurrentThrowIfNull().CompileOptions.ShapeBucketOptions.VarMap.SelectMany(x => x.Value).OfType<DimVar>().ToHashSet((IEqualityComparer<DimVar>)ReferenceEqualityComparer.Instance);
     }
 
     public static string GetIdentityName(string name)

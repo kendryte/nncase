@@ -32,7 +32,7 @@ public sealed partial class CombineGLMTuple : IRewriteRule
 {
     private static readonly Pattern Input = IsSplit(
       "split",
-      IsWildcard("input"),
+      IsWildcard("input") with { TypePattern = HasRankedShape() },
       IsTensorConst("axis"),
       IsTensorConst("sections"));
 
@@ -58,9 +58,10 @@ public sealed partial class CombineGLMTuple : IRewriteRule
                 return patterns;
             })));
 
-    private Expr? GetReplace(Expr input, Call concatCall, IReadOnlyList<Expr> tupleInputs, IMatchResult matchResult)
+    private Expr? GetReplace(Expr input, Call concatCall, IReadOnlyList<BaseExpr> tupleInputs, IMatchResult matchResult)
     {
-        var expandShape = input.CheckedShape.ToValueList().Concat([2]).ToArray();
+        var inShape = (RankedShape)input.CheckedShape;
+        var expandShape = new RankedShape([.. inShape, 2]);
         return Reshape(Expand(Unsqueeze(input, new[] { -1 }), expandShape), expandShape.SkipLast(2).Concat([expandShape[^1] * expandShape[^2]]).ToArray());
     }
 }

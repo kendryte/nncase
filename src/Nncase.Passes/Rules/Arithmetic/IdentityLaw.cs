@@ -174,6 +174,6 @@ public sealed partial class XDivX : IRewriteRule
     private Expr? GetReplace(Expr x)
     {
         var value = Tensor.Ones(x.CheckedDataType, [1]);
-        return Tensors.ConstantOfShape(Tensors.ShapeOf(x), value);
+        return Tensors.ConstantOfShape(x.CheckedShape, value);
     }
 }

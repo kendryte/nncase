@@ -5,7 +5,7 @@ using System.Reflection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using static Nncase.IR.F.Tensors;
-using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
+using Fx = System.Func<Nncase.IR.BaseExpr, Nncase.IR.BaseExpr>;
 using ParameterInfo = Nncase.IR.ParameterInfo;
 using Tuple = Nncase.IR.Tuple;
 
@@ -47,7 +47,7 @@ public static class Utility
     public static Fx WithTmpBF16(Fx inputCtor)
     {
         Fx WithTmpBF16Impl(Fx inCtor) => input => Cast(
-            inCtor(Cast(input, DataTypes.BFloat16)),
+            (Expr)inCtor(Cast((Expr)input, DataTypes.BFloat16)),
             input.CheckedDataType);
 
         return Apply(WithTmpBF16Impl, inputCtor);
@@ -56,7 +56,7 @@ public static class Utility
     public static Fx WithTmpType(Fx inputCtor, DataType dt)
     {
         Fx WithTmpTypeImpl(Fx inputCtor) => input =>
-            Cast(inputCtor(Cast(input, dt)), input.CheckedDataType);
+            Cast((Expr)inputCtor(Cast((Expr)input, dt)), input.CheckedDataType);
 
         return Apply(WithTmpTypeImpl, inputCtor);
     }
@@ -67,7 +67,7 @@ public static class Utility
             input =>
                 ((Func<long[], Expr>)(shape =>
                         Reshape(
-                            inCtor(Reshape(input, Get4DGNNEShape(shape))),
+                            (Expr)inCtor(Reshape((Expr)input, Get4DGNNEShape(shape))),
                             originOutShape)))(input.CheckedShape.ToValueArray());
 
         return Apply(WithTmpGNNEShape, inputCtor);

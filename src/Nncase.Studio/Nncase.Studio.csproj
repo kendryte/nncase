@@ -35,7 +35,7 @@
         <ProjectReference Include="..\Nncase.Simulator\Nncase.Simulator.csproj" />
         <ProjectReference Include="..\Nncase.Quantization\Nncase.Quantization.csproj" />
         <ProjectReference Include="..\Nncase.Passes\Nncase.Passes.csproj" />
-        <ProjectReference Include="..\..\modules\Nncase.Modules.StackVM\Nncase.Modules.StackVM.csproj" />
+        <ProjectReference Include="..\..\modules\Nncase.Modules.NTT\Nncase.Modules.NTT.csproj" />
     </ItemGroup>
 
     <ItemGroup>

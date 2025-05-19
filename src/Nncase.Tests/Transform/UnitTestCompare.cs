@@ -22,7 +22,7 @@ public class UnitTestCompare
     public void TestGetChannelAxis()
     {
         Assert.Equal(1, TensorUtil.GetChannelAxis(new[] { 1, 2, 4, 8 }));
-        Assert.Equal(1, TensorUtil.GetChannelAxis(new Shape(new[] { 1, 2, 4, 8 })));
+        Assert.Equal(1, TensorUtil.GetChannelAxis(new RankedShape(new[] { 1, 2, 4, 8 })));
     }
 
     [Fact]

@@ -18,7 +18,7 @@ namespace Nncase.Importer
     {
         private Expr VisitUpsample(in NodeProto op)
         {
-            var (input, scales) = GetInputExprs(op, 0, 1);
+            var (input, scales) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var inputShape = F.Tensors.ShapeOf(input);
             var roi = Enumerable.Repeat((Expr)0f, input.CheckedShape.Rank).ToList();
             for (var i = 0; i < input.CheckedShape.Rank; i++)

@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/type.h"
 #include "section.h"
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/runtime/span_reader.h>
-#include <nncase/runtime/stackvm/op_profile.h>
 #include <nncase/runtime/type_serializer.h>
 
 using namespace nncase;
@@ -117,8 +117,25 @@ result<type> runtime_function::parameter_type(size_t index) const noexcept {
     return ok(parameter_types_[index]);
 }
 
+uint32_t runtime_function::return_size() const noexcept {
+    auto tuple_t = return_type().as<tuple_type>();
+    return tuple_t.is_ok() ? tuple_t.unwrap()->fields().size() : 1;
+}
+
 const type &runtime_function::return_type() const noexcept {
     return return_type_;
+}
+
+result<type> runtime_function::return_type(size_t index) const noexcept {
+    auto tuple_t = return_type().as<tuple_type>();
+    if (tuple_t.is_ok()) {
+        CHECK_WITH_ERR(index < tuple_t.unwrap()->fields().size(),
+                       std::errc::result_out_of_range);
+        return ok(tuple_t.unwrap()->fields()[index]);
+    } else {
+        CHECK_WITH_ERR(index == 0, std::errc::result_out_of_range);
+        return ok(return_type_);
+    }
 }
 
 result<void> runtime_function::initialize(

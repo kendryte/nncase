@@ -265,7 +265,7 @@ public static class Testing
             interp.LoadModel(kmodel_path);
             var entry = interp.Entry!;
 
-            var rtInputs = input_tensors.Select(Nncase.Runtime.Interop.RTTensor.FromTensor).ToArray();
+            var rtInputs = input_tensors.Select(Runtime.Interop.RTTensor.FromTensor).ToArray();
             return entry.Invoke(rtInputs).ToValue();
         }
     }
@@ -350,7 +350,7 @@ public class ModuleCase
 
     public IRModule Module { get; }
 
-    public IReadOnlyList<Var> Vars { get; }
+    public IReadOnlyList<IVar> Vars { get; }
 
     public IReadOnlyList<Tensor> Inputs { get; }
 }

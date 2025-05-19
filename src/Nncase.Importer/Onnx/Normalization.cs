@@ -15,16 +15,15 @@ namespace Nncase.Importer
     {
         public static Expr ReshapeToByChannel(Expr v)
         {
-            return F.Tensors.Reshape(
-                v, F.Tensors.Concat(
-                    new IR.Tuple(F.Tensors.ShapeOf(v), new long[] { 1 }, new long[] { 1 }), 0));
+            var rank = F.Tensors.Rank(v).AsDim();
+            return F.Tensors.Unsqueeze(v, [rank, rank + 1]);
         }
 
         private Expr VisitBatchNormalization(in NodeProto op)
         {
-            var x = GetInputExpr(op, 0);
-            var (scale, bias) = GetInputExprs(op, 1, 2);
-            var (mean, var) = GetInputExprs(op, 3, 4);
+            var x = GetInputExpr<Expr>(op, 0);
+            var (scale, bias) = GetInputExprs<Expr, Expr>(op, 1, 2);
+            var (mean, var) = GetInputExprs<Expr, Expr>(op, 3, 4);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
             var mom = GetFloatAttribute(op, "momentum", 0.9f);
             return F.NN.BatchNormalization(x, scale, bias, mean, var, eps, mom);
@@ -32,15 +31,15 @@ namespace Nncase.Importer
 
         private Expr VisitInstanceNormalization(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var (scale, bias) = GetInputExprs(op, 1, 2);
+            var input = GetInputExpr<Expr>(op, 0);
+            var (scale, bias) = GetInputExprs<Expr, Expr>(op, 1, 2);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
             return F.NN.InstanceNormalization(input, scale, bias, eps);
         }
 
         private Expr VisitLpNormalization(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var axis = GetIntAttribute(op, "axis", -1);
             var p = GetIntAttribute(op, "p", 2);
             return F.NN.LpNormalization(input, axis, p);
@@ -48,7 +47,7 @@ namespace Nncase.Importer
 
         private Expr VisitLRN(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 0.0001f);
             var beta = GetFloatAttribute(op, "beta", 0.75f);
             var bias = GetFloatAttribute(op, "bias", 1.0f);

@@ -19,7 +19,7 @@ public class GraphTiler
 {
     public Dictionary<TileNode, TiledFunc> SolveMemo { get; } = new Dictionary<TileNode, TiledFunc>(new ITreeNodeComparer());
 
-    public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, ICpuTargetOptions targetOptions, string moduleKind)
+    public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, INTTTargetOptions targetOptions, string moduleKind)
     {
         int[] memoryCapacities = targetOptions.MemoryCapacities;
         int[] memoryBandWidths = targetOptions.MemoryBandWidths;
@@ -583,7 +583,7 @@ public class GraphTiler
         }
     }
 
-    public (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, ICpuTargetOptions targetOptions)
+    public (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, INTTTargetOptions targetOptions)
     {
         // bufferize root graph.
         var bufferGraphMemo = rootGraph.Bufferize();
@@ -632,7 +632,7 @@ public class GraphTiler
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
-                result.Visit(primTree, new(bodyBuilder, Array.Empty<Expr>()));
+                result.Visit(primTree, new(bodyBuilder, Array.Empty<Dimension>()));
                 var parameters = inputBids.Concat(outputBids).Select(k => (Var)result.PrimBufferMemo[k]).ToArray();
                 var funcBuilder = T.PrimFunc(funcName, moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
@@ -666,7 +666,7 @@ public class GraphTiler
         return (resultMemo, objectValue);
     }
 
-    public Expr Tile(Expr preExpr, string moduleKind, ICpuTargetOptions targetOptions)
+    public BaseExpr Tile(BaseExpr preExpr, string moduleKind, INTTTargetOptions targetOptions)
     {
 #if true
         var topLevel = targetOptions.MemoryCapacities.Length;
@@ -677,7 +677,7 @@ public class GraphTiler
         }
 
         var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, targetOptions);
-        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (Expr)kv.Key, kv => resultMemo[kv.Value]));
+        var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (BaseExpr)kv.Key, kv => (BaseExpr)resultMemo[kv.Value]));
         return cloner.Clone(preExpr, default);
 #else
         var topLevel = targetOptions.MemoryCapacities.Length;

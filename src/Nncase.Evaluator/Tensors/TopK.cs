@@ -63,7 +63,8 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
 
     private IRType Visit(ITypeInferenceContext context, TopK target, TensorType x, TensorType k)
     {
-        if (x.Shape.IsUnranked || k.Shape.IsUnranked)
+        if (x.Shape is not RankedShape xShape
+            || k.Shape is not RankedShape)
         {
             return new TupleType(new[] { x, new TensorType(DataTypes.Int64, Shape.Unranked) });
         }
@@ -81,13 +82,13 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
             && context.GetArgument(target, TopK.K) is TensorConst kConst)
         {
             var axis = Util.PositiveIndex(axisConst.Value.ToScalar<int>(), x);
-            var shapeArr = x.Shape.ToArray();
+            var shapeArr = xShape.ToArray();
             shapeArr[axis] = kConst.Value.ToArray<int>()[0];
-            shape = new Shape(shapeArr);
+            shape = new RankedShape(shapeArr);
         }
         else
         {
-            shape = Shape.Unknown(x.Shape.Rank - 1);
+            shape = Shape.Unknown(xShape.Rank - 1);
         }
 
         return new TupleType(new[] { x with { Shape = shape }, new TensorType(DataTypes.Int64, shape) });

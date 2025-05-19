@@ -7,6 +7,8 @@ using System.ComponentModel;
 using System.Data;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using DryIoc;
@@ -34,7 +36,7 @@ public interface ICompilerServicesProvider
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Is fully inferenced.</returns>
-    bool InferenceType(Expr expr);
+    bool InferenceType(BaseExpr expr);
 
     /// <summary>
     /// Inference operator.
@@ -49,13 +51,13 @@ public interface ICompilerServicesProvider
 
     string Print(IRType type, Diagnostics.PrinterFlags flags);
 
-    string Print(Expr expr, Diagnostics.PrinterFlags flags);
+    string Print(BaseExpr expr, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.{ext}`
     /// else write to {dumpPath}/{prefix}_{expr.Type.name}.il`.
     /// </summary>
-    void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags);
+    void DumpIR(BaseExpr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// if expr is callable will write to {dumpPath}/{prefix}_{callable.name}.dot`.
@@ -63,7 +65,7 @@ public interface ICompilerServicesProvider
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags);
+    void DumpDotIR(BaseExpr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags);
 
     /// <summary>
     /// dump the expr as csharp code.
@@ -72,7 +74,7 @@ public interface ICompilerServicesProvider
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
     /// <param name="randConst">false for save const into bin.</param>
-    void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst);
+    void DumpCSharpIR(BaseExpr expr, string prefix, string dumpDir, bool randConst);
 
     /// <summary>
     /// dump the expr as csharp code.
@@ -80,7 +82,7 @@ public interface ICompilerServicesProvider
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    void DumpPatternIR(Expr expr, string prefix, string dumpDir);
+    void DumpPatternIR(BaseExpr expr, string prefix, string dumpDir);
 
     /// <summary>
     /// Evaluate the expression tree.
@@ -89,7 +91,7 @@ public interface ICompilerServicesProvider
     /// <param name="varsValues">Optional vars' values.</param>
     /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
+    IValue Evaluate(BaseExpr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null);
 
     /// <summary>
     /// Evaluate operator.
@@ -106,14 +108,14 @@ public interface ICompilerServicesProvider
     /// <param name="expr">Expression.</param>
     /// <param name="compileOptions">options.</param>
     /// <returns>Evaluate result.</returns>
-    Cost EvaluateCost(Expr expr, CompileOptions compileOptions);
+    Cost EvaluateCost(BaseExpr expr, CompileOptions compileOptions);
 
     /// <summary>
     /// Evaluate metric of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Evaluate result.</returns>
-    Dictionary<Expr, Metric> EvaluateMetric(Expr expr);
+    Dictionary<BaseExpr, Metric> EvaluateMetric(BaseExpr expr);
 
     /// <summary>
     /// Evaluate cost of operator.
@@ -139,7 +141,7 @@ public interface ICompilerServicesProvider
     /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
+    bool TryMatch(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Match expression as root.
@@ -149,7 +151,7 @@ public interface ICompilerServicesProvider
     /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
+    bool TryMatchRoot(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result);
 
     /// <summary>
     /// Rewrite expression.
@@ -158,7 +160,7 @@ public interface ICompilerServicesProvider
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
+    BaseExpr Rewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
 
     /// <summary>
     /// Match enodes as root.
@@ -176,7 +178,7 @@ public interface ICompilerServicesProvider
     /// <param name="pattern">Pattern.</param>
     /// <param name="results">Match results.</param>
     /// <returns>Match success.</returns>
-    public bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
+    bool TryEMatchRoot(BaseExpr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results);
 
     /// <summary>
     /// Get target.
@@ -193,7 +195,7 @@ public interface ICompilerServicesProvider
     /// <param name="options">Options.</param>
     /// <param name="compileOptions">compileOptions.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions);
+    BaseExpr ERewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions);
 
     /// <summary>
     /// Using EGraph rewrite expression.
@@ -243,12 +245,28 @@ public static class CompilerServices
         _provider = serviceProvider.GetRequiredService<ICompilerServicesProvider>();
     }
 
+    public static void Convert<TFrom, TTo>(ReadOnlySpan<TFrom> source, Span<TTo> dest, CastMode castMode = CastMode.KDefault)
+        where TFrom : unmanaged, IEquatable<TFrom>
+        where TTo : unmanaged, IEquatable<TTo>
+    {
+        if (typeof(TFrom) == typeof(TTo))
+        {
+            var sourceSpan = MemoryMarshal.Cast<TFrom, TTo>(source);
+            sourceSpan.CopyTo(dest);
+        }
+        else
+        {
+            var converter = DataTypeService.GetConverter<TFrom, TTo>();
+            converter.ConvertTo(source, dest, castMode);
+        }
+    }
+
     /// <summary>
     /// Inference type of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Is fully inferenced.</returns>
-    public static bool InferenceType(this Expr expr)
+    public static bool InferenceType(this BaseExpr expr)
     {
         return Provider.InferenceType(expr);
     }
@@ -273,7 +291,7 @@ public static class CompilerServices
     /// <param name="varsValues">Optional vars' values.</param>
     /// <param name="evaluator_cache"> Optional evaluator cache. </param>
     /// <returns>Evaluate result.</returns>
-    public static IValue Evaluate(this Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
+    public static IValue Evaluate(this BaseExpr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         return Provider.Evaluate(expr, varsValues, evaluator_cache);
     }
@@ -296,7 +314,7 @@ public static class CompilerServices
     /// <param name="expr">Expression.</param>
     /// <param name="compileOptions">compileOptions.</param>
     /// <returns>Evaluate result.</returns>
-    public static Cost EvaluateCost(Expr expr, CompileOptions compileOptions)
+    public static Cost EvaluateCost(BaseExpr expr, CompileOptions compileOptions)
     {
         return Provider.EvaluateCost(expr, compileOptions);
     }
@@ -314,7 +332,7 @@ public static class CompilerServices
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Evaluate result.</returns>
-    public static Dictionary<Expr, Metric> EvaluateMetric(Expr expr) => Provider.EvaluateMetric(expr);
+    public static Dictionary<BaseExpr, Metric> EvaluateMetric(BaseExpr expr) => Provider.EvaluateMetric(expr);
 
     public static MicroKernelInfo GetOpMicroKernelInfo(Op op, MicroKernelContext context) => Provider.GetOpMicroKernelInfo(op, context);
 
@@ -361,7 +379,7 @@ public static class CompilerServices
     /// <param name="pattern">Match pattern.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    public static bool TryMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
+    public static bool TryMatchRoot(BaseExpr expr, IPattern pattern, [MaybeNullWhen(false)] out IMatchResult result)
     {
         return Provider.TryMatchRoot(expr, pattern, new MatchOptions(), out result);
     }
@@ -374,7 +392,7 @@ public static class CompilerServices
     /// <param name="options">Match options.</param>
     /// <param name="result">Match result.</param>
     /// <returns>Match success.</returns>
-    public static bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    public static bool TryMatchRoot(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
         return Provider.TryMatchRoot(expr, pattern, options, out result);
     }
@@ -386,7 +404,7 @@ public static class CompilerServices
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    public static Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
+    public static BaseExpr Rewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
     {
         return Provider.Rewrite(expr, rules, options);
     }
@@ -399,7 +417,7 @@ public static class CompilerServices
     /// <param name="options">Options.</param>
     /// <param name="compileOptions">compileOptions.</param>
     /// <returns>Rewrited expression.</returns>
-    public static Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
+    public static BaseExpr ERewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
     {
         return Provider.ERewrite(expr, rules, options, compileOptions);
     }
@@ -460,7 +478,7 @@ public static class CompilerServices
     /// <returns>Result.</returns>
     public static string? PrintOp(Op op, IPrintOpContext context) => Provider.PrintOp(op, context);
 
-    public static void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Normal) =>
+    public static void DumpIR(BaseExpr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Normal) =>
       Provider.DumpIR(expr, prefix, dumpPath, flags);
 
     /// <summary>
@@ -469,7 +487,7 @@ public static class CompilerServices
     /// not support prim func/prim func wrapper.
     /// </remarks>
     /// </summary>
-    public static void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Normal) =>
+    public static void DumpDotIR(BaseExpr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Normal) =>
       Provider.DumpDotIR(expr, prefix, dumpPath, flags);
 
     /// <summary>
@@ -479,7 +497,7 @@ public static class CompilerServices
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
     /// <param name="randConst">randConst = false will save the const into bin.</param>
-    public static void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst = true) =>
+    public static void DumpCSharpIR(BaseExpr expr, string prefix, string dumpDir, bool randConst = true) =>
       Provider.DumpCSharpIR(expr, prefix, dumpDir, randConst);
 
     /// <summary>
@@ -488,12 +506,12 @@ public static class CompilerServices
     /// <param name="expr">expression.</param>
     /// <param name="prefix">file prefix.</param>
     /// <param name="dumpDir">file dump ir.</param>
-    public static void DumpPatternIR(Expr expr, string prefix, string dumpDir) =>
+    public static void DumpPatternIR(BaseExpr expr, string prefix, string dumpDir) =>
       Provider.DumpPatternIR(expr, prefix, dumpDir);
 
     public static string Print(IRType type, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Minimal | Diagnostics.PrinterFlags.SkipDimensionExpr) => Provider.Print(type, flags);
 
-    public static string Print(Expr expr, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Minimal | Diagnostics.PrinterFlags.SkipDimensionExpr) => Provider.Print(expr, flags);
+    public static string Print(BaseExpr expr, Diagnostics.PrinterFlags flags = Diagnostics.PrinterFlags.Minimal | Diagnostics.PrinterFlags.SkipDimensionExpr) => Provider.Print(expr, flags);
 
     /// <summary>
     /// Get target.
@@ -610,7 +628,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public IDataTypeServiceProvider DataTypeService { get; }
 
     /// <inheritdoc/>
-    public IValue Evaluate(Expr expr, IReadOnlyDictionary<Var, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
+    public IValue Evaluate(BaseExpr expr, IReadOnlyDictionary<IVar, IValue>? varsValues = null, Dictionary<Type, IEvaluator>? evaluator_cache = null)
     {
         return _evaluateProvider.Evaluate(expr, varsValues, evaluator_cache);
     }
@@ -628,7 +646,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public bool InferenceType(Expr expr)
+    public bool InferenceType(BaseExpr expr)
     {
         return _typeInferenceProvider.InferenceType(expr);
     }
@@ -640,44 +658,44 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     public string Print(IRType type, PrinterFlags flags) => _irprinterProvider.Print(type, flags);
 
     /// <inheritdoc/>
-    public string Print(Expr expr, PrinterFlags flags) => _irprinterProvider.Print(expr, flags);
+    public string Print(BaseExpr expr, PrinterFlags flags) => _irprinterProvider.Print(expr, flags);
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags) =>
+    public void DumpIR(BaseExpr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags) =>
       _irprinterProvider.DumpIR(expr, prefix, dumpPath, flags);
 
     /// <inheritdoc/>
-    public void DumpDotIR(Expr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags) =>
+    public void DumpDotIR(BaseExpr expr, string prefix, string dumpPath, Diagnostics.PrinterFlags flags) =>
     _irprinterProvider.DumpDotIR(expr, prefix, dumpPath, flags);
 
     /// <inheritdoc/>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst) =>
+    public void DumpCSharpIR(BaseExpr expr, string prefix, string dumpDir, bool randConst) =>
     _irprinterProvider.DumpCSharpIR(expr, prefix, dumpDir, randConst);
 
     /// <inheritdoc/>
-    public void DumpPatternIR(Expr expr, string prefix, string dumpDir) =>
+    public void DumpPatternIR(BaseExpr expr, string prefix, string dumpDir) =>
     _irprinterProvider.DumpPatternIR(expr, prefix, dumpDir);
 
     /// <inheritdoc/>
-    public bool TryMatch(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    public bool TryMatch(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
         return _matchProvider.TryMatch(expr, pattern, options, out result);
     }
 
     /// <inheritdoc/>
-    public bool TryMatchRoot(Expr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
+    public bool TryMatchRoot(BaseExpr expr, IPattern pattern, MatchOptions options, [MaybeNullWhen(false)] out IMatchResult result)
     {
         return _matchProvider.TryMatchRoot(expr, pattern, options, out result);
     }
 
     /// <inheritdoc/>
-    public Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
+    public BaseExpr Rewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options)
     {
         return _rewriteProvider.Rewrite(expr, rules, options);
     }
 
     /// <inheritdoc/>
-    public Cost EvaluateCost(Expr expr, CompileOptions compileOptions)
+    public Cost EvaluateCost(BaseExpr expr, CompileOptions compileOptions)
     {
         return _costEvaluateProvider.EvaluateCost(expr, compileOptions);
     }
@@ -689,7 +707,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public Dictionary<Expr, Metric> EvaluateMetric(Expr expr) => _metricEvaluateProvider.EvaluateMetric(expr);
+    public Dictionary<BaseExpr, Metric> EvaluateMetric(BaseExpr expr) => _metricEvaluateProvider.EvaluateMetric(expr);
 
     /// <inheritdoc/>
     public Metric EvaluateOpMetric(Op op, IMetricEvaluateContext context) => _metricEvaluateProvider.EvaluateOpMetric(op, context);
@@ -699,7 +717,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         return _eGraphMatchProvider.TryMatchRoot(enodes, pattern, out results);
     }
 
-    public bool TryEMatchRoot(Expr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
+    public bool TryEMatchRoot(BaseExpr expr, IPattern pattern, [MaybeNullWhen(false)] out IReadOnlyList<IMatchResult> results)
     {
         return _eGraphMatchProvider.TryEMatchRoot(expr, pattern, out results);
     }
@@ -709,7 +727,7 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
         return _targetProvider.GetTarget(name);
     }
 
-    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
+    public BaseExpr ERewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
     {
         return _eGraphrewriteProvider.ERewrite(expr, rules, options, compileOptions);
     }

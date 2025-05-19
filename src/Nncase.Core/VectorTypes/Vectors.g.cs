@@ -9,13 +9,20 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 namespace Nncase;
 
 // NOTE fixed array not suppot generic
 
+public interface IVector<T>
+{
+    static int Count { get; }
+}
+
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector4<T> : IEquatable<Vector4<T>>
+public unsafe struct Vector4<T> : IVector<Vector4<T>>, IEquatable<Vector4<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -40,18 +47,21 @@ public unsafe struct Vector4<T> : IEquatable<Vector4<T>>
 
     public bool Equals(Vector4<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector4<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 4;
+    public static int Count => 4;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector8<T> : IEquatable<Vector8<T>>
+public unsafe struct Vector8<T> : IVector<Vector8<T>>, IEquatable<Vector8<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -80,18 +90,21 @@ public unsafe struct Vector8<T> : IEquatable<Vector8<T>>
 
     public bool Equals(Vector8<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector8<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 8;
+    public static int Count => 8;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector16<T> : IEquatable<Vector16<T>>
+public unsafe struct Vector16<T> : IVector<Vector16<T>>, IEquatable<Vector16<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -128,18 +141,21 @@ public unsafe struct Vector16<T> : IEquatable<Vector16<T>>
 
     public bool Equals(Vector16<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector16<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 16;
+    public static int Count => 16;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32<T> : IEquatable<Vector32<T>>
+public unsafe struct Vector32<T> : IVector<Vector32<T>>, IEquatable<Vector32<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -192,18 +208,21 @@ public unsafe struct Vector32<T> : IEquatable<Vector32<T>>
 
     public bool Equals(Vector32<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector32<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 32;
+    public static int Count => 32;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64<T> : IEquatable<Vector64<T>>
+public unsafe struct Vector64<T> : IVector<Vector64<T>>, IEquatable<Vector64<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -288,18 +307,21 @@ public unsafe struct Vector64<T> : IEquatable<Vector64<T>>
 
     public bool Equals(Vector64<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector64<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 64;
+    public static int Count => 64;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector128<T> : IEquatable<Vector128<T>>
+public unsafe struct Vector128<T> : IVector<Vector128<T>>, IEquatable<Vector128<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -448,18 +470,21 @@ public unsafe struct Vector128<T> : IEquatable<Vector128<T>>
 
     public bool Equals(Vector128<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector128<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
-    public int Count => 128;
+    public static int Count => 128;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         return $"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan())}>";
     }
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>
+public unsafe struct Vector4x4<T> : IVector<Vector4x4<T>>, IEquatable<Vector4x4<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -479,6 +504,15 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>
     private T _item_3_2;
     private T _item_3_3;
 
+    public static Vector4x4<T> Create(T[] array) 
+    {
+        Vector4x4<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector4x4<T> Create(T[,] array) 
     {
         Vector4x4<T> vec = default;
@@ -496,6 +530,8 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>
 
     public bool Equals(Vector4x4<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector4x4<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -503,13 +539,14 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 4;
+    public static int Height => 4;
 
-    public int Width => 4;
+    public static int Width => 4;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -527,7 +564,7 @@ public unsafe struct Vector4x4<T> : IEquatable<Vector4x4<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>
+public unsafe struct Vector8x8<T> : IVector<Vector8x8<T>>, IEquatable<Vector8x8<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -595,6 +632,15 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>
     private T _item_7_6;
     private T _item_7_7;
 
+    public static Vector8x8<T> Create(T[] array) 
+    {
+        Vector8x8<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector8x8<T> Create(T[,] array) 
     {
         Vector8x8<T> vec = default;
@@ -612,6 +658,8 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>
 
     public bool Equals(Vector8x8<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector8x8<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -619,13 +667,14 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 8;
+    public static int Height => 8;
 
-    public int Width => 8;
+    public static int Width => 8;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -643,7 +692,7 @@ public unsafe struct Vector8x8<T> : IEquatable<Vector8x8<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>
+public unsafe struct Vector16x16<T> : IVector<Vector16x16<T>>, IEquatable<Vector16x16<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -903,6 +952,15 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>
     private T _item_15_14;
     private T _item_15_15;
 
+    public static Vector16x16<T> Create(T[] array) 
+    {
+        Vector16x16<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector16x16<T> Create(T[,] array) 
     {
         Vector16x16<T> vec = default;
@@ -920,6 +978,8 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>
 
     public bool Equals(Vector16x16<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector16x16<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -927,13 +987,14 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 16;
+    public static int Height => 16;
 
-    public int Width => 16;
+    public static int Width => 16;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -951,7 +1012,7 @@ public unsafe struct Vector16x16<T> : IEquatable<Vector16x16<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>
+public unsafe struct Vector32x16<T> : IVector<Vector32x16<T>>, IEquatable<Vector32x16<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -1467,6 +1528,15 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>
     private T _item_31_14;
     private T _item_31_15;
 
+    public static Vector32x16<T> Create(T[] array) 
+    {
+        Vector32x16<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector32x16<T> Create(T[,] array) 
     {
         Vector32x16<T> vec = default;
@@ -1484,6 +1554,8 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>
 
     public bool Equals(Vector32x16<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector32x16<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -1491,13 +1563,14 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 32;
+    public static int Height => 32;
 
-    public int Width => 16;
+    public static int Width => 16;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -1515,7 +1588,7 @@ public unsafe struct Vector32x16<T> : IEquatable<Vector32x16<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>
+public unsafe struct Vector32x32<T> : IVector<Vector32x32<T>>, IEquatable<Vector32x32<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -2543,6 +2616,15 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>
     private T _item_31_30;
     private T _item_31_31;
 
+    public static Vector32x32<T> Create(T[] array) 
+    {
+        Vector32x32<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector32x32<T> Create(T[,] array) 
     {
         Vector32x32<T> vec = default;
@@ -2560,6 +2642,8 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>
 
     public bool Equals(Vector32x32<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector32x32<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -2567,13 +2651,14 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 32;
+    public static int Height => 32;
 
-    public int Width => 32;
+    public static int Width => 32;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -2591,7 +2676,7 @@ public unsafe struct Vector32x32<T> : IEquatable<Vector32x32<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>
+public unsafe struct Vector32x64<T> : IVector<Vector32x64<T>>, IEquatable<Vector32x64<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -4643,6 +4728,15 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>
     private T _item_31_62;
     private T _item_31_63;
 
+    public static Vector32x64<T> Create(T[] array) 
+    {
+        Vector32x64<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector32x64<T> Create(T[,] array) 
     {
         Vector32x64<T> vec = default;
@@ -4660,6 +4754,8 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>
 
     public bool Equals(Vector32x64<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector32x64<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -4667,13 +4763,14 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 32;
+    public static int Height => 32;
 
-    public int Width => 64;
+    public static int Width => 64;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -4691,7 +4788,7 @@ public unsafe struct Vector32x64<T> : IEquatable<Vector32x64<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>
+public unsafe struct Vector32x128<T> : IVector<Vector32x128<T>>, IEquatable<Vector32x128<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -8791,6 +8888,15 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>
     private T _item_31_126;
     private T _item_31_127;
 
+    public static Vector32x128<T> Create(T[] array) 
+    {
+        Vector32x128<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector32x128<T> Create(T[,] array) 
     {
         Vector32x128<T> vec = default;
@@ -8808,6 +8914,8 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>
 
     public bool Equals(Vector32x128<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector32x128<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -8815,13 +8923,14 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 32;
+    public static int Height => 32;
 
-    public int Width => 128;
+    public static int Width => 128;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -8839,7 +8948,7 @@ public unsafe struct Vector32x128<T> : IEquatable<Vector32x128<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>
+public unsafe struct Vector64x32<T> : IVector<Vector64x32<T>>, IEquatable<Vector64x32<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -10891,6 +11000,15 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>
     private T _item_63_30;
     private T _item_63_31;
 
+    public static Vector64x32<T> Create(T[] array) 
+    {
+        Vector64x32<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector64x32<T> Create(T[,] array) 
     {
         Vector64x32<T> vec = default;
@@ -10908,6 +11026,8 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>
 
     public bool Equals(Vector64x32<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector64x32<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -10915,13 +11035,14 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 64;
+    public static int Height => 64;
 
-    public int Width => 32;
+    public static int Width => 32;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -10939,7 +11060,7 @@ public unsafe struct Vector64x32<T> : IEquatable<Vector64x32<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>
+public unsafe struct Vector64x64<T> : IVector<Vector64x64<T>>, IEquatable<Vector64x64<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -15039,6 +15160,15 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>
     private T _item_63_62;
     private T _item_63_63;
 
+    public static Vector64x64<T> Create(T[] array) 
+    {
+        Vector64x64<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector64x64<T> Create(T[,] array) 
     {
         Vector64x64<T> vec = default;
@@ -15056,6 +15186,8 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>
 
     public bool Equals(Vector64x64<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector64x64<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -15063,13 +15195,14 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 64;
+    public static int Height => 64;
 
-    public int Width => 64;
+    public static int Width => 64;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -15087,7 +15220,7 @@ public unsafe struct Vector64x64<T> : IEquatable<Vector64x64<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>
+public unsafe struct Vector64x128<T> : IVector<Vector64x128<T>>, IEquatable<Vector64x128<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -23283,6 +23416,15 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>
     private T _item_63_126;
     private T _item_63_127;
 
+    public static Vector64x128<T> Create(T[] array) 
+    {
+        Vector64x128<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector64x128<T> Create(T[,] array) 
     {
         Vector64x128<T> vec = default;
@@ -23300,6 +23442,8 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>
 
     public bool Equals(Vector64x128<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector64x128<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -23307,13 +23451,14 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 64;
+    public static int Height => 64;
 
-    public int Width => 128;
+    public static int Width => 128;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");
@@ -23331,7 +23476,7 @@ public unsafe struct Vector64x128<T> : IEquatable<Vector64x128<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>
+public unsafe struct Vector128x64<T> : IVector<Vector128x64<T>>, IEquatable<Vector128x64<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -31527,6 +31672,15 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>
     private T _item_127_62;
     private T _item_127_63;
 
+    public static Vector128x64<T> Create(T[] array) 
+    {
+        Vector128x64<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
     public static Vector128x64<T> Create(T[,] array) 
     {
         Vector128x64<T> vec = default;
@@ -31544,6 +31698,8 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>
 
     public bool Equals(Vector128x64<T> other) => AsSpan().SequenceEqual(other.AsSpan());
 
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector128x64<T> other && Equals(other);
+
     public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
 
 
@@ -31551,13 +31707,14 @@ public unsafe struct Vector128x64<T> : IEquatable<Vector128x64<T>>
 
     public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
 
-    public int Height => 128;
+    public static int Height => 128;
 
-    public int Width => 64;
+    public static int Width => 64;
 
-    public int Count => Height * Width;
+    public static int Count => Height * Width;
 
-    public override string ToString() 
+
+    public override string ToString()
     {
         var sb = new System.Text.StringBuilder();
         sb.Append("<");

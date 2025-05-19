@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Passes;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
@@ -66,10 +67,10 @@ public sealed partial class FoldConv2DAddMul : RewriteRule<CallPattern>
         _addPattern,
         IsTensorConst("weights"),
         IsTensorConst("bias"),
-        IsWildcard("strides"),
-        IsWildcard("paddings"),
-        IsWildcard("dilation"),
-        IsWildcard("groups"),
+        IsShape("strides"),
+        IsPaddings("paddings"),
+        IsShape("dilation"),
+        IsDimension("groups"),
         IsWildcard("fusedClamp"));
 
     private static bool CheckConstTensor(Tensor t)
@@ -89,7 +90,7 @@ public sealed partial class FoldConv2DAddMul : RewriteRule<CallPattern>
         return true;
     }
 
-    private Expr? GetReplace(Call conv2dCall, IR.NN.Conv2D conv2d, Tensor<float> weights, Tensor<float> bias, Expr strides, Expr paddings, Expr dilation, Expr groups, Expr fusedClamp, Tensor<float> addConst, Tensor<float> mulConst, Expr input)
+    private Expr? GetReplace(Call conv2dCall, IR.NN.Conv2D conv2d, Tensor<float> weights, Tensor<float> bias, Shape strides, Paddings paddings, Shape dilation, Dimension groups, Expr fusedClamp, Tensor<float> addConst, Tensor<float> mulConst, Expr input)
     {
         long ic = weights.Shape[1].FixedValue;
         if (mulConst.Length != ic || addConst.Length != ic)
@@ -110,8 +111,8 @@ public sealed partial class FoldConv2DAddMul : RewriteRule<CallPattern>
           ValueRange<float>.Full.Max,
         });
 
-        var addBias = addConv + Reshape(bias, new[] { 1, bias.Shape[0].FixedValue, 1, 1 });
+        var addBias = addConv + Reshape(bias, new[] { 1, bias.Shape[0], 1, 1 });
 
-        return Conv2D(input, newWeights, Reshape(addBias, new[] { bias.Shape[0].FixedValue }), strides, paddings, dilation, conv2d.PadMode, groups, fusedClamp);
+        return Conv2D(input, newWeights, Reshape(addBias, new[] { bias.Shape[0] }), strides, paddings, dilation, conv2d.PadMode, groups, fusedClamp);
     }
 }

@@ -45,7 +45,7 @@ public sealed class ModulePartitionPass : ModulePass
         return Task.FromResult(module);
     }
 
-    private Expr PerformPartition(IRModule module, string funcName, Expr pre)
+    private Expr PerformPartition(IRModule module, string funcName, BaseExpr pre)
     {
         var dynamicVars = IRHelpers.GetDynamicDimVars();
 
@@ -60,7 +60,7 @@ public sealed class ModulePartitionPass : ModulePass
         var condenseAlgo = new CondensationGraphAlgorithm<ExprVertex, ExprEdge>(biGraph);
         condenseAlgo.IsEdgeCompatible += (algo, arg) =>
         {
-            bool CheckField(Expr expr)
+            bool CheckField(BaseExpr expr)
             {
                 return expr switch
                 {
@@ -111,7 +111,7 @@ public sealed class ModulePartitionPass : ModulePass
         // 3. reconstruction
         var constructor = new DistributedReconstructor(module, funcName, ModuleCompiler, CompileSession.CompileOptions, condenseAlgo);
         var post = constructor.Construct();
-        return post;
+        return (Expr)post;
     }
 }
 
@@ -134,7 +134,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
     public CompileOptions CompileOptions { get; }
 
-    protected override Expr OnAtomCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
+    protected override BaseExpr OnAtomCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
         if (cluster.Vertices.First().Expr is Call call && ModuleCompiler.IsSupportedCall(call, CompileOptions))
         {
@@ -147,10 +147,10 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
     protected override Expr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
         var pairs = GetClusterArgumentPairs(cluster);
-        var processedParams = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
-        var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-        var @params = new List<Var>();
-        var arguments = new List<Expr>();
+        var processedParams = new HashSet<BaseExpr>(ReferenceEqualityComparer.Instance);
+        var extractDict = new Dictionary<BaseExpr, BaseExpr>(ReferenceEqualityComparer.Instance);
+        var @params = new List<IVar>();
+        var arguments = new List<BaseExpr>();
         var dynamicVars = IRHelpers.GetDynamicDimVars();
 
         foreach (var dimVar in dynamicVars)
@@ -172,7 +172,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
             Var @var;
             Expr extract;
-            if (pre is Var preVar && dynamicVars.Contains(preVar))
+            if (pre is IVar preVar && dynamicVars.Contains(preVar))
             {
                 continue;
             }
@@ -216,7 +216,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
         var cloner = new ExprClusterCloner(extractDict);
         var outVertices = cluster.OutVertices(Algo.ClusteredGraph).ToArray();
-        var clones = new List<Expr>();
+        var clones = new List<BaseExpr>();
         foreach (var outVertex in outVertices)
         {
             clones.Add(cloner.Clone(outVertex.Expr, default));
@@ -228,15 +228,15 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
         return new Call(func, arguments.ToArray());
     }
 
-    private Expr PostProcess(List<Expr> clones)
+    private BaseExpr PostProcess(List<BaseExpr> clones)
     {
-        Expr PostProcessSingle(Expr cloned, out bool changed)
+        BaseExpr PostProcessSingle(BaseExpr cloned, out bool changed)
         {
             changed = false;
             switch (cloned)
             {
                 case IR.Tuple tp:
-                    var nFields = new List<Expr>();
+                    var nFields = new List<BaseExpr>();
                     foreach (var item in tp.Fields)
                     {
                         nFields.Add(PostProcessSingle(item, out var childChanged));

@@ -23,27 +23,201 @@ using Nncase.Runtime.Interop;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
 using Nncase.Utilities;
+using OrtKISharp;
 using Xunit;
+using static Nncase.Evaluator.OrtKIExtensions;
 
 namespace Nncase.Tests.TargetTest;
 
 public class CpuKernelCase
 {
-    public CpuKernelCase(string name, Fusion fusion, Var[] vars, Tensor[] inputs)
+    public CpuKernelCase(string name, Fusion fusion, IVar[] vars, Tensor[] inputs, Tensor[] rtinputs)
     {
         Name = name;
         Fusion = fusion;
         Vars = vars;
         Inputs = inputs;
+        RTInputs = rtinputs;
     }
 
     public string Name { get; }
 
     public Fusion Fusion { get; }
 
-    public IReadOnlyList<Var> Vars { get; }
+    public IReadOnlyList<IVar> Vars { get; }
 
     public IReadOnlyList<Tensor> Inputs { get; }
+
+    public IReadOnlyList<Tensor> RTInputs { get; set; }
+}
+
+public sealed class TestUpdatePagedAttentionCase : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture, int[], int>
+{
+    private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
+    [
+        ("prefill", [4L], [4L]),
+
+        // ("prefill*2", [12L, 15L], [12L, 15L]),
+        // ("extend", [4L], [8L]),
+        // ("prefill+extend", [4L, 4L], [4L, 8L]),
+        // ("prefill+decode", [4L, 1L], [4L, 9L]),
+    ];
+
+    private static readonly Runtime.TypeCode[] TypeConfigs = [
+        Runtime.TypeCode.Float32,
+        Runtime.TypeCode.Float16,
+    ];
+
+    private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
+    [
+        (2, 2, 64),
+
+        // (1, 1, 64),
+        // (4, 4, 128),
+    ];
+
+    private static readonly (int Layer, int BlockSize, int NumBlocks)[] CacheConfigs = [
+        (1, 4, 8),
+
+        // (1, 16, 8),
+        // (1, 32, 16),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
+    [
+        (new[] {
+            PagedKVCacheDimKind.NumLayers,
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Sharding, SBPSplit[] Policies, int[] Hierarchy)[] ShardingConfigs =
+    [
+        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }, [1]),
+    ];
+
+    private static readonly (AttentionDimKind[] QLayout, AttentionDimKind[] KLayout)[] QKLayoutConfigs =
+    [
+        ([AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head],
+         [AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head]),
+    ];
+
+    public TestUpdatePagedAttentionCase()
+    {
+        int count = 0;
+        foreach (var (name, queryLens, seqLens) in TestScenarios)
+        {
+            foreach (var (numQHeads, numKVHeads, headDim) in HeadConfigs)
+            {
+                foreach (var (numLayer, blockSize, numBlocks) in CacheConfigs)
+                {
+                    foreach (var typeCode in TypeConfigs)
+                    {
+                        foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
+                        {
+                            foreach (var (shardingAxes, axisPolicies, hierarchy) in ShardingConfigs)
+                            {
+                                foreach (var (qlayout, klayout) in QKLayoutConfigs)
+                                {
+                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, packedAxes, shardingAxes, axisPolicies, qlayout, klayout), hierarchy, count++);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+public sealed class TestPagedAttentionCase : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture, int[], int>
+{
+    private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
+    [
+        ("prefill", [4L], [4L]),
+
+        // ("prefill*2", [12L, 15L], [12L, 15L]),
+        // ("extend", [4L], [8L]),
+        // ("prefill+extend", [4L, 4L], [4L, 8L]),
+        // ("prefill+decode", [4L, 1L], [4L, 9L]),
+    ];
+
+    private static readonly Runtime.TypeCode[] TypeConfigs = [
+        Runtime.TypeCode.Float32,
+
+        // Runtime.TypeCode.Float16,
+    ];
+
+    private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
+    [
+        (1, 1, 64),
+
+        // (1, 1, 64),
+        // (4, 4, 128),
+    ];
+
+    private static readonly (int Layer, int BlockSize, int NumBlocks)[] CacheConfigs = [
+        (1, 4, 8),
+
+        // (1, 16, 8),
+        // (1, 32, 16),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
+    [
+        (new[] {
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.NumLayers,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Sharding, SBPSplit[] Policies, int[] Hierarchy)[] ShardingConfigs =
+    [
+        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }, [1]),
+    ];
+
+    private static readonly (AttentionDimKind[] QLayout, AttentionDimKind[] KLayout)[] QKLayoutConfigs =
+    [
+        ([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq],
+         [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]),
+    ];
+
+    public TestPagedAttentionCase()
+    {
+        int count = 0;
+        foreach (var (name, queryLens, seqLens) in TestScenarios)
+        {
+            foreach (var (numQHeads, numKVHeads, headDim) in HeadConfigs)
+            {
+                foreach (var (numLayer, blockSize, numBlocks) in CacheConfigs)
+                {
+                    foreach (var typeCode in TypeConfigs)
+                    {
+                        foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
+                        {
+                            foreach (var (shardingAxes, axisPolicies, hierarchy) in ShardingConfigs)
+                            {
+                                foreach (var (qlayout, klayout) in QKLayoutConfigs)
+                                {
+                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, packedAxes, shardingAxes, axisPolicies, qlayout, klayout), hierarchy, count++);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 [CollectionDefinition(nameof(NotThreadSafeResourceCollection), DisableParallelization = true)]
@@ -58,7 +232,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public UnitTestCPUKernels()
     {
         DefaultTargetName = CPUTarget.Kind;
-        CompileOptions.TargetOptions = new CpuTargetOptions();
+        CompileOptions.TargetOptions = new NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Compile | Diagnostics.DumpFlags.Schedule | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
@@ -96,13 +270,139 @@ public sealed class UnitTestCPUKernels : TestClassBase
     };
 
     [Theory]
+    [ClassData(typeof(TestUpdatePagedAttentionCase))]
+    public async Task TestUpdatePagedAttentionCase(PagedAttentionKVCacheTestFixture fixture, int[] hierarchy, int count)
+    {
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.Packing = false;
+
+        var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
+        var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
+        var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
+
+        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
+
+        var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
+
+        var feedDict = new Dictionary<IVar, IValue>();
+        var rtFeedDict = new Dictionary<IVar, IValue>();
+        {
+            var queryTensor = referenceResults.GetQueryTensor();
+            feedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            rtFeedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            for (int layerId = 0; layerId < fixture.Config.NumLayers; layerId++)
+            {
+                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                rtFeedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                rtFeedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+            }
+
+            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+
+            var rtkvObj = RTPagedAttentionKVCache.Create(
+                    RTPagedAttentionConfig.FromConfig(fixture.Config),
+                    kvinputs.KVCacheObj.NumSeqs,
+                    kvinputs.KVCacheObj.NumTokens,
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTable),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
+                    kvinputs.KVCacheObj.NumBlocks,
+                    kvinputs.KVCacheObj.KVCaches.Dimensions[..fixture.Config.ShardingAxes.Count].ToArray().Select(i => (int)i).ToArray());
+            {
+                var logicalKVShape = kvinputs.KVCacheObj.KVCaches.Dimensions.ToArray();
+                foreach (var topoIndices in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
+                {
+                    var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - hierarchy.Length)).ToArray();
+                    var shape = Enumerable.Repeat(1L, hierarchy.Length).Concat(logicalKVShape[hierarchy.Length..]).ToArray();
+                    var kvStorage = kvinputs.KVCacheObj.KVCaches.View(indices, shape);
+                    rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+                }
+            }
+
+            rtFeedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
+        }
+
+        await RunCases($"Theory{count}", feedDict, new[] { testKernel.Root }, rtFeedDict);
+    }
+
+    [Theory]
+    [ClassData(typeof(TestPagedAttentionCase))]
+    public async Task TestPagedAttentionCase(PagedAttentionKVCacheTestFixture fixture, int[] hierarchy, int count)
+    {
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.Packing = false;
+
+        var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
+        var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: false, IncreaseBy: [AttentionDimKind.Head, AttentionDimKind.Seq], ResetForKV: true);
+        var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
+
+        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config);
+
+        var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
+
+        var feedDict = new Dictionary<IVar, IValue>();
+        var rtFeedDict = new Dictionary<IVar, IValue>();
+        {
+            var queryTensor = referenceResults.GetQueryTensor();
+            feedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            rtFeedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            for (int layerId = 0; layerId < fixture.Config.NumLayers; layerId++)
+            {
+                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                rtFeedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                rtFeedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+            }
+
+            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+
+            var rtkvObj = RTPagedAttentionKVCache.Create(
+                    RTPagedAttentionConfig.FromConfig(fixture.Config),
+                    kvinputs.KVCacheObj.NumSeqs,
+                    kvinputs.KVCacheObj.NumTokens,
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTable),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
+                    kvinputs.KVCacheObj.NumBlocks,
+                    kvinputs.KVCacheObj.KVCaches.Dimensions[..fixture.Config.ShardingAxes.Count].ToArray().Select(i => (int)i).ToArray());
+            {
+                var logicalKVShape = kvinputs.KVCacheObj.KVCaches.Dimensions.ToArray();
+                foreach (var topoIndices in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
+                {
+                    var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - hierarchy.Length)).ToArray();
+                    var shape = Enumerable.Repeat(1L, hierarchy.Length).Concat(logicalKVShape[hierarchy.Length..]).ToArray();
+                    var kvStorage = kvinputs.KVCacheObj.KVCaches.View(indices, shape);
+                    rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+                }
+            }
+
+            rtFeedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
+        }
+
+        await RunCases($"Theory{count}", feedDict, new[] { testKernel.Root }, rtFeedDict);
+    }
+
+    [Theory]
     [InlineData(new object[] { new[] { 32, 64 }, false, new[] { 64, 48 }, false, new[] { 48, 16 }, true, new[] { 1 }, 0 })]
     [InlineData(new object[] { new[] { 128, 256 }, true, new[] { 256, 384 }, false, new[] { 384, 512 }, true, new[] { 2 }, 1 })]
     [InlineData(new object[] { new[] { 1024, 2048 }, false, new[] { 2048, 1024 }, true, new[] { 1024, 3072 }, true, new[] { 4 }, 2, true })]
     [InlineData(new object[] { new[] { 128, 256 }, true, new[] { 256, 384 }, false, new[] { 384, 512 }, true, new[] { 8 }, 3, false })]
     public async Task TestTileFlowCase(int[] ashape, bool constA, int[] bshape, bool constB, int[] eshape, bool constE, int[] hierarchy, int count, bool packing = false)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -116,7 +416,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr e = constE ? Const.FromValue(IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, eshape).Evaluate()) : new Var("e", new TensorType(DataTypes.Float32, eshape));
         var f = IR.F.Tensors.MatMul(d, e);
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (a is Var va)
         {
             feedDict.Add(va, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate());
@@ -139,7 +439,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [MemberData(nameof(TestReshardData))]
     public async Task TestReshard(long[] shape, int[] hierarchy, List<int[][]> sbps, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -148,7 +448,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var inputType = new TensorType(DataTypes.Float32, shape);
         var input = new Var(inputType);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, shape).Evaluate() },
         };
 
@@ -172,7 +472,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData([new long[] { 64, 128 }, new int[] { 2, 4, 8 }, 3])]
     public async Task TestGatherReduceScatter(long[] shape, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -181,7 +481,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var inputType = new TensorType(DataTypes.Float32, shape);
         var input = new Var(inputType);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             // { input, IR.F.Tensors.ConstantOfShape(shape, 1.0f).Evaluate() },
             { input, IR.F.Random.Normal(DataTypes.Float32, 1.0f, 1.0f, 1, shape).Evaluate() },
         };
@@ -223,7 +523,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var f = new Var("f", new TensorType(DataTypes.Float32, fshape));
         var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { a, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() },
             { b, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() },
             { d, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, dshape).Evaluate() },
@@ -236,15 +536,15 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [Fact]
     public async Task TestDynamicMatmulBinaryBinary()
     {
-        var dimM = Var.SizeVar("m");
+        var dimM = new DimVar("m");
         dimM.Metadata.Range = new(1, 384 * 2);
-        var ashape = new[] { 1, 64, 384, 128 };
-        var bshape = new[] { 1, 64, 128, 384 };
+        var ashape = new long[] { 1, 64, 384, 128 };
+        var bshape = new long[] { 1, 64, 128, 384 };
         var aDims = ashape.Select(x => (Dimension)x).ToArray();
         aDims[^2] = dimM;
 
-        var a = new Var("a", new TensorType(DataTypes.Float32, new Shape(aDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(a, aDims.Select(x => x.ToExpr()).ToArray());
+        var a = new Var("a", new TensorType(DataTypes.Float32, new RankedShape(aDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(a, aDims.Select(x => x).ToArray());
         var b = new Var("b", new TensorType(DataTypes.Float32, bshape));
         var c = IR.F.Tensors.MatMul(a, b);
         var dshape = new[] { 1 };
@@ -254,7 +554,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var f = new Var("f", new TensorType(DataTypes.Float32, fshape));
         var g = IR.F.Math.Binary(BinaryOp.Add, e, f);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { a, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, ashape).Evaluate() },
             { b, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, bshape).Evaluate() },
             { d, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, dshape).Evaluate() },
@@ -271,11 +571,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.NN.Swish(input);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackSwish(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackSwish(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -286,17 +586,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestUnary(long[] shape, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackUnary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -307,7 +607,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 40), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -315,15 +615,15 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var dimVars = new[] { "n", "c", "h", "w" }.Select((x, i) =>
         {
-            var v = Var.SizeVar(x);
+            var v = new DimVar(x);
             v.Metadata.Range = new(1, shape[i] * 2);
             return v;
         }).ToArray();
-        var input = new Var(new TensorType(DataTypes.Float32, new Shape(dimVars[0], dimVars[1], shape[2], dimVars[3])));
+        var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(dimVars[0], dimVars[1], shape[2], dimVars[3])));
         CompileOptions.ShapeBucketOptions.VarMap.Add(input, dimVars);
 
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
             { dimVars[0], Value.FromTensor(shape[0]) },
             { dimVars[1], Value.FromTensor(shape[1]) },
@@ -331,7 +631,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { dimVars[3], Value.FromTensor(shape[3]) },
         };
 
-        var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackUnary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -341,7 +641,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [MemberData(nameof(TestPackBinaryData))]
     public async Task TestPackBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[][] sbps, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -352,12 +652,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Math.Binary(op, lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackBinary(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackBinary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
 
@@ -365,7 +665,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             foreach (var post in posts)
             {
-                var call = ExprCollector.Collect(post).Where(e => e is Call { Target: IR.CPU.PackedBinary or IR.Math.Binary }).First();
+                var call = ExprCollector.Collect(post).Where(e => e is Call { Target: IR.NTT.PackedBinary or IR.Math.Binary }).First();
                 call.Metadata = new() { OutputNames = new[] { "call" } };
             }
 
@@ -395,31 +695,31 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { BinaryOp.Mul, new long[] { 1, 8, 64, 2 * 8 }, new long[] { 1, 1, 64, 2 * 8 }, new[] { 4 }, new[] { 2 }, 3 })] // broadcast
     public async Task TestDynamicPackBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[] sbps, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
-        var dimH = Var.SizeVar("h");
+        var dimH = new DimVar("h");
         dimH.Metadata.Range = new(1, 128);
         var inputDims = lhsShape.Select(x => (Dimension)x).ToArray();
         inputDims[^2] = dimH;
 
-        var lhsDynShape = new Shape(inputDims);
+        var lhsDynShape = new RankedShape(inputDims);
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsDynShape));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, inputDims.Select(x => x.ToExpr()).ToArray());
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, inputDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Math.Binary(op, lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
             { dimH, Value.FromTensor(lhsShape[^2]) },
         };
 
-        var rule = new Passes.Rules.CPU.PackBinary(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackBinary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -436,13 +736,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var bias = new Var(new TensorType(DataTypes.Float32, pshape));
         var pre = IR.F.NN.InstanceNormalization(input, scale, bias, epsion);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
             { scale, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
             { bias, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, pshape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackInstanceNorm(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackInstanceNorm(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -456,11 +756,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Imaging.ResizeImage(resizeMode, input, Array.Empty<float>(), newSize);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackResizeImage(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackResizeImage(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -482,11 +782,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2));
         var pre = IR.F.Tensors.Cast(casted2, DataTypes.Float32);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackCast(1, Lane);
+        var rule = new Passes.Rules.NTT.PackCast(1, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -502,7 +802,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 256 }, false, true, new[] { 2 }, 6 })]
     public async Task TestPackMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -516,7 +816,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (!constA)
         {
             feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
@@ -527,7 +827,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
         }
 
-        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane, transB: true);
+        var rule = new Passes.Rules.NTT.PackMatMul(2, Lane, transB: true);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
@@ -545,7 +845,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 512, 512 }, false, true, new[] { 2, 4 }, 7 })]
     public async Task TestDynamicPackMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -553,9 +853,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var lhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(lhsShape, 1.0f).Evaluate().AsTensor();
         var rhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(rhsShape, 1.0f).Evaluate().AsTensor();
 
-        var dimM = Var.SizeVar("m");
+        var dimM = new DimVar("m");
         dimM.Metadata.Range = new(1, 1024);
-        var dimK = Var.SizeVar("k");
+        var dimK = new DimVar("k");
         dimK.Metadata.Range = new(1, 1024);
 
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
@@ -570,31 +870,31 @@ public sealed class UnitTestCPUKernels : TestClassBase
             rhsDims[^2] = dimK;
         }
 
-        var lhsDynShape = new Shape(lhsDims);
-        var rhsDynShape = new Shape(rhsDims);
+        var lhsDynShape = new RankedShape(lhsDims);
+        var rhsDynShape = new RankedShape(rhsDims);
         Expr lhs = constA ? lhsTensor : new Var(new TensorType(DataTypes.Float32, lhsDynShape));
         Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsDynShape));
 
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>
+        var feedDict = new Dictionary<IVar, IValue>
         {
             { dimM, Value.FromTensor(lhsShape[^2]) },
             { dimK, Value.FromTensor(rhsShape[^2]) },
         };
         if (!constA)
         {
-            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)lhs, lhsDims.Select(x => x).ToArray());
             feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
         }
 
         if (!constB)
         {
-            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)rhs, rhsDims.Select(x => x.ToExpr()).ToArray());
+            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)rhs, rhsDims.Select(x => x).ToArray());
             feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
         }
 
-        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane, transB: true);
+        var rule = new Passes.Rules.NTT.PackMatMul(2, Lane, transB: true);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
@@ -608,7 +908,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 2, 384, 512 }, new long[] { 2, 512, 512 }, false, false, new[] { 2, 4, 8 }, 3 })]
     public async Task TestSUMMA(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -620,7 +920,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (!constA)
         {
             feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
@@ -631,7 +931,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
         }
 
-        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane, transB: false);
+        var rule = new Passes.Rules.NTT.PackMatMul(2, Lane, transB: false);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
@@ -645,7 +945,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, shape));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, indicesShape));
         var pre = IR.F.Tensors.Gather(vhidden_in, axis, vposition_ids); // f32[1,384,128]
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { vhidden_in, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
             { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 6, 1, 1, indicesShape).Evaluate() },
         };
@@ -660,7 +960,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [MemberData(nameof(TestPackReduceData))]
     public async Task TestPackReduce(ReduceOp reduceOp, long[] shape, int[] axes, float init, bool keepDims, int[] hierarchy, int[][] splitedAxes, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -671,12 +971,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var input = new Var(tensorType);
         var pre = IR.F.Tensors.Reduce(reduceOp, input, axes, init, keepDims);
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        IEnumerable<Expr> posts;
-        var rule = new Passes.Rules.CPU.PackReduce(Rank, Lane);
+        IEnumerable<BaseExpr> posts;
+        var rule = new Passes.Rules.NTT.PackReduce(Rank, Lane);
         if (!CompilerServices.TryMatch(pre, rule.Pattern, out var result))
         {
             return;
@@ -688,7 +988,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             foreach (var post in posts)
             {
-                if (post is Call { Target: IR.CPU.Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.CPU.PackedReduce } packedReduceCall)
+                if (post is Call { Target: IR.NTT.Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.NTT.PackedReduce } packedReduceCall)
                 {
                     packedReduceCall.Arguments[0].Metadata = new() { OutputNames = new[] { "reduceIn" } };
                 }
@@ -735,7 +1035,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = IR.F.Math.Binary(BinaryOp.Add, v7, new float[3, 1, 1] { { { 0.6403651f } }, { { -0.7995949f } }, { { 0.46802735f } } }); // f32[1,3,28,28]
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
@@ -749,7 +1049,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData([new long[] { 1, 8192, 384 }, new long[] { 1, 64, 128, 384 }, 1, new[] { 8 }, 2])]
     public async Task TestPackReshape(long[] inshape, long[] outshape, int packRank, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -761,11 +1061,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = IR.F.Tensors.Reshape(input, outshape);
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inshape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackReshape(packRank, Lane);
+        var rule = new Passes.Rules.NTT.PackReshape(packRank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{number}", feedDict, posts);
@@ -783,11 +1083,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = v4;
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, Value.FromTensor(Tensor.From(Enumerable.Range(0, (int)TensorUtilities.GetProduct(shape)).Select(i => (float)i).ToArray(), shape)) },
         };
 
-        var rule = new Passes.Rules.CPU.PackTranspose(rank, Lane);
+        var rule = new Passes.Rules.NTT.PackTranspose(rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{number}", feedDict, posts);
@@ -797,7 +1097,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData([new[] { 2, 4 }, 0])]
     public async Task TestTransposeMatmul(int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Packing = true;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
@@ -818,11 +1118,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = v28;
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
-            { v13, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v13.CheckedShape.ToValueArrayExpr()).Evaluate() },
-            { v15, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v15.CheckedShape.ToValueArrayExpr()).Evaluate() },
-            { v19, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v19.CheckedShape.ToValueArrayExpr()).Evaluate() },
-            { v24, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v24.CheckedShape.ToValueArrayExpr()).Evaluate() },
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { v13, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v13.CheckedShape).Evaluate() },
+            { v15, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v15.CheckedShape).Evaluate() },
+            { v19, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v19.CheckedShape).Evaluate() },
+            { v24, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, v24.CheckedShape).Evaluate() },
         };
 
         var posts = new[] { pre };
@@ -844,13 +1144,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var pre = IR.F.NN.Conv2D(input, weights, bias, strides, new[,] { { padding[0], padding[1] }, { padding[2], padding[3] } }, dilation, PadMode.Constant, groups);
         var outShape = pre.CheckedShape.ToValueArray();
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inputShape).Evaluate() },
             { weights, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, wShape).Evaluate() },
         };
 
-        Expr post = Passes.Rules.CPU.PackConv2D.AddCandidate(input, weights, bias, strides, padding, wShape, outShape);
-        Expr post2 = Passes.Rules.CPU.PackConv2D.AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, Lane);
+        Expr post = Passes.Rules.NTT.PackConv2D.AddCandidate(input, weights, bias, strides, padding, wShape, outShape);
+        Expr post2 = Passes.Rules.NTT.PackConv2D.AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, Lane);
         var posts = new[] { pre, post, post2 };
         await RunCases($"Theory{count}", feedDict, posts);
     }
@@ -860,7 +1160,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 64, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 8 }, 1 })]
     public async Task TestMatMulReshapeUnary(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -876,7 +1176,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             unary = IR.F.Math.Unary(item, unary);
         }
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -889,7 +1189,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData([new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new[] { 8 }, 0])]
     public async Task TestPackPropagation(long[] lhsShape, long[] rhsShape, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -897,7 +1197,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -908,20 +1208,20 @@ public sealed class UnitTestCPUKernels : TestClassBase
             IR.F.Math.Binary(BinaryOp.Add, lhs, 1f),
             IR.F.Tensors.Unsqueeze(lhs, new[] { 0 }),
         };
-        var posts = new List<Expr>();
+        var posts = new List<BaseExpr>();
 
         foreach (var c in candidates)
         {
             var matmul = IR.F.Tensors.MatMul(c, rhs);
 
-            var rule = new Passes.Rules.CPU.PackMatMul(2, Lane);
+            var rule = new Passes.Rules.NTT.PackMatMul(2, Lane);
             CompilerServices.TryMatch(matmul, rule.Pattern, out var result);
             var context = new Passes.RunPassContext();
             var packed = rule.GetReplaceCandidates(result!, context);
             var rules = new IRewriteRule[] {
-                new Nncase.Passes.Rules.CPU.PackUnaryPropagation(),
-                new Nncase.Passes.Rules.CPU.PackBinaryPropagation(),
-                new Nncase.Passes.Rules.CPU.PackUnsqueezePropagation(),
+                new Nncase.Passes.Rules.NTT.PackUnaryPropagation(),
+                new Nncase.Passes.Rules.NTT.PackBinaryPropagation(),
+                new Nncase.Passes.Rules.NTT.PackUnsqueezePropagation(),
             };
             posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(ret, rules, context)));
         }
@@ -933,7 +1233,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData([new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new[] { 8 }, 0])]
     public async Task TestUnpackPropagation(long[] lhsShape, long[] rhsShape, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -943,21 +1243,21 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane);
+        var rule = new Passes.Rules.NTT.PackMatMul(2, Lane);
         CompilerServices.TryMatch(matmul, rule.Pattern, out var result);
         var context = new Passes.RunPassContext();
-        var packed = rule.GetReplaceCandidates(result!, context);
-        var posts = packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Unary(UnaryOp.Abs, ret), [new Nncase.Passes.Rules.CPU.UnaryUnpackPropagation()], context)).ToList();
-        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Binary(BinaryOp.Add, ret, 1f), [new Nncase.Passes.Rules.CPU.BinaryUnpackPropagation()], context)));
-        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Transpose(ret, new[] { 0, 2, 1 }), [new Nncase.Passes.Rules.CPU.TransposeUnpackPropagation()], context)));
-        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Unsqueeze(ret, new[] { 2 }), [new Nncase.Passes.Rules.CPU.UnsqueezeUnpackPropagation()], context)));
-        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Reduce(ReduceOp.Max, ret, new[] { 2 }, 0f, true), [new Nncase.Passes.Rules.CPU.ReduceUnpackPropagation()], context)));
+        var packed = rule.GetReplaceCandidates(result!, context).Cast<Expr>();
+        var posts = packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Unary(UnaryOp.Abs, ret), [new Nncase.Passes.Rules.NTT.UnaryUnpackPropagation()], context)).ToList();
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Binary(BinaryOp.Add, ret, 1f), [new Nncase.Passes.Rules.NTT.BinaryUnpackPropagation()], context)));
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Transpose(ret, new[] { 0, 2, 1 }), [new Nncase.Passes.Rules.NTT.TransposeUnpackPropagation()], context)));
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Unsqueeze(ret, new[] { 2 }), [new Nncase.Passes.Rules.NTT.UnsqueezeUnpackPropagation()], context)));
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Reduce(ReduceOp.Max, ret, new[] { 2 }, 0f, true), [new Nncase.Passes.Rules.NTT.ReduceUnpackPropagation()], context)));
         await RunCases($"Theory{number}", feedDict, posts);
     }
 
@@ -967,19 +1267,19 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public async Task TestDynamicMatMulReshapeUnary(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.Compile;
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
-        var dimM = Var.SizeVar("m");
+        var dimM = new DimVar("m");
         dimM.Metadata.Range = new(1, 64);
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
         lhsDims[^2] = dimM;
 
-        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+        var lhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(lhsDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
         var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
@@ -989,7 +1289,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             unary = IR.F.Math.Unary(item, unary);
         }
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -1003,7 +1303,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 48, 64, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
     public async Task TestReshapeAndUnsqueeze(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -1012,8 +1312,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
 
-        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x.ToExpr()).ToArray());
+        var lhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(lhsDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDims.Select(x => x).ToArray());
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
         var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
@@ -1023,9 +1323,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
             unary = IR.F.Math.Unary(item, unary);
         }
 
-        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
+        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, new RankedShape(0));
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -1038,21 +1338,21 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, 48, -1, 16 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 0 })]
     public async Task TestDynamicReshapeAndUnsqueeze(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
-        var dimN = Var.SizeVar("n");
+        var dimN = new DimVar("n");
         dimN.Metadata.Range = new(1, 1200);
         var rhsDims = rhsShape.Select(x => (Dimension)x).ToArray();
         rhsDims[^1] = dimN;
 
-        var lhs = new Var(new TensorType(DataTypes.Float32, new Shape(lhsShape)));
-        var rhs = new Var(new TensorType(DataTypes.Float32, new Shape(rhsDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDims.Select(x => x.ToExpr()).ToArray());
+        var lhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(lhsShape)));
+        var rhs = new Var(new TensorType(DataTypes.Float32, new RankedShape(rhsDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDims.Select(x => x).ToArray());
         var matmul = IR.F.Tensors.MatMul(lhs, rhs);
         var reshaped = IR.F.Tensors.Reshape(matmul, newShape);
         var unary = reshaped;
@@ -1061,9 +1361,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
             unary = IR.F.Math.Unary(item, unary);
         }
 
-        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, 0);
+        var unsqueezed = IR.F.Tensors.Unsqueeze(unary, new RankedShape(0));
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, rhsShape).Evaluate() },
@@ -1077,7 +1377,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 2, 48, 512 }, new long[] { 0 }, new[] { 1 }, 0 })]
     public async Task TestGetItem(long[] inShape, long[] indices, int[] hierarchy, int number)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
@@ -1086,13 +1386,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var inDims = inShape.Select(x => (Dimension)x).ToArray();
 
-        var input = new Var(new TensorType(DataTypes.Float32, new Shape(inDims)));
-        CompileOptions.ShapeBucketOptions.VarMap.Add(input, inDims.Select(x => x.ToExpr()).ToArray());
+        var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(inDims)));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(input, inDims.Select(x => x).ToArray());
 
         var output = IR.F.Tensors.GetItem(input, indices);
         output = IR.F.Math.Unary(UnaryOp.Cos, output);
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape).Evaluate() },
         };
@@ -1111,11 +1411,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
             return;
         }
 
-        ((CpuTargetOptions)CompileOptions.TargetOptions).Packing = packing;
+        ((NTTTargetOptions)CompileOptions.TargetOptions).Packing = packing;
         var hierarchy = new[] { 2, 4 };
-        ((CpuTargetOptions)CompileOptions.TargetOptions).Hierarchies[0] = hierarchy;
-        ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
-        ((CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        ((NTTTargetOptions)CompileOptions.TargetOptions).Hierarchies[0] = hierarchy;
+        ((NTTTargetOptions)CompileOptions.TargetOptions).HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        ((NTTTargetOptions)CompileOptions.TargetOptions).HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
         var vhidden_in = new Var("vhidden_in", new TensorType(DataTypes.Float32, new[] { 1, 384, 8192 }));
         var vattn_mask = new Var("vattn_mask", new TensorType(DataTypes.Float32, new[] { 1, 1, 384, 384 }));
         var vposition_ids = new Var("vposition_ids", new TensorType(DataTypes.Int64, new[] { 1, 384 }));
@@ -1171,7 +1471,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = v46;
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { vhidden_in, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 13,  new[] { 1, 384, 8192 }).Evaluate() },
             { vattn_mask, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 14,  new[] { 1, 1, 384, 384 }).Evaluate() },
             { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 383, 1, 15, new[] { 1, 384 }).Evaluate() },
@@ -1187,7 +1487,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { true, 1 })] // enable packing
     public async Task TestVAEDecRes(bool packing, int count)
     {
-        CompileOptions.TargetOptions = new CpuTargetOptions() { Packing = packing };
+        CompileOptions.TargetOptions = new NTTTargetOptions() { Packing = packing };
         var vlatent_sample = new Var("vlatent_sample", new TensorType(DataTypes.Float32, new[] { 1, 4, 64, 64 }));
         Expr pre;
         {
@@ -1210,7 +1510,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             pre = IR.F.Math.Binary(BinaryOp.Add, v1, v15); // f32[1,512,64,64]
         }
 
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { vlatent_sample, IR.F.Random.Normal(DataTypes.Float32, 0, 0.1, 13,  new[] { 1, 4, 64, 64 }).Evaluate() },
         };
 
@@ -1222,7 +1522,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 33, 512 }, new long[] { 512, 255 }, false, false, new[] { 8 }, 0 })]
     public async Task TestNonUiniformDistMatmul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -1234,7 +1534,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Tensors.MatMul(lhs, rhs);
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (!constA)
         {
             feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
@@ -1245,7 +1545,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
         }
 
-        var rule = new Passes.Rules.CPU.PackMatMul(2, Lane, transB: false);
+        var rule = new Passes.Rules.NTT.PackMatMul(2, Lane, transB: false);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
@@ -1256,17 +1556,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 4, 4, 255 }, new[] { 8 }, 0 })]
     public async Task TestNonUiniformDistUnary(long[] shape, int[] hierarchy, int count)
     {
-        var targetOptions = (CpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
-        var feedDict = new Dictionary<Var, IValue>() {
+        var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.CPU.PackUnary(Rank, Lane);
+        var rule = new Passes.Rules.NTT.PackUnary(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -1376,7 +1676,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
-    internal async Task RunCases(string dumpDir, Dictionary<Var, IValue> feedDict, IEnumerable<Expr> posts)
+    internal async Task RunCases(string dumpDir, Dictionary<IVar, IValue> feedDict, IEnumerable<BaseExpr> posts, Dictionary<IVar, IValue>? feedDictRT = null)
     {
         var postArray = posts.ToArray();
         using var pinner = new ExprPinner(postArray);
@@ -1385,7 +1685,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 #if DEBUG
             System.Console.WriteLine(CompilerServices.Print(postArray[i]));
 #endif
-            var kernelCase = new CpuKernelCase($"Case{i}", new Fusion("kernel", CPUTarget.Kind, postArray[i], feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray());
+            var kernelCase = new CpuKernelCase($"Case{i}", new Fusion("kernel", CPUTarget.Kind, postArray[i], feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray(), feedDictRT?.Values.Select(v => v.AsTensor()).ToArray() ?? []);
             await Run(dumpDir, kernelCase);
         }
     }
@@ -1411,23 +1711,31 @@ public sealed class UnitTestCPUKernels : TestClassBase
 #if DEBUG
         for (var i = 0; i < inputs.Length; i++)
         {
-            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.bin"))
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"input_{i}.json"))
             {
-                fs.Write(inputs[i].BytesBuffer);
+                JsonSerializer.Serialize(fs, inputs[i], JsonSerializerOptions.Default);
             }
         }
 
         for (int i = 0; i < outputs.Length; i++)
         {
-            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_{i}.bin"))
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"output_{i}.json"))
             {
-                fs.Write(outputs[i].BytesBuffer);
+                JsonSerializer.Serialize(fs, outputs[i], JsonSerializerOptions.Default);
             }
         }
 #endif
         await Compile(module);
         var (kmodel_path, _) = Testing.BuildKModel("test", module, CompileSession, false);
-        var actuals = Testing.RunKModel(kmodel_path, Diagnostics.DumpScope.Current.Directory, inputs).AsTensors();
+        Tensor[] actuals;
+        if (kernelCase.RTInputs.Any())
+        {
+            actuals = Testing.RunKModel(kmodel_path, Diagnostics.DumpScope.Current.Directory, kernelCase.RTInputs.ToArray()).AsTensors();
+        }
+        else
+        {
+            actuals = Testing.RunKModel(kmodel_path, Diagnostics.DumpScope.Current.Directory, inputs).AsTensors();
+        }
 #if DEBUG
         for (int i = 0; i < actuals.Length; i++)
         {
@@ -1449,11 +1757,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var pmgr = CompileSession.CreatePassManager("pmgr");
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
-        compiler.ModulePartitionPass(pmgr);
         compiler.AutoDistributedPass(pmgr);
         compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
-        pmgr.Add<ReplaceDimVarWithShapeOfPass>();
         await pmgr.RunAsync(module);
     }
 }

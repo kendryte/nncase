@@ -32,7 +32,7 @@ struct xpu_block_entry_params_t {
     size_t did;
     size_t cid;
     size_t xpu_id_offset;
-    std::byte *const *inouts;
+    std::byte *const *input_descs;
     const std::byte *rdata;
 };
 

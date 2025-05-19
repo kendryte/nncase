@@ -23,7 +23,7 @@ public interface IRewriteProvider
     /// <param name="rules">Rewrite rules.</param>
     /// <param name="options">Options.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr Rewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
+    BaseExpr Rewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options);
 }
 
 /// <summary>
@@ -39,7 +39,7 @@ public interface IEGraphRewriteProvider
     /// <param name="options">Options.</param>
     /// <param name="compileOptions">compileOptions.</param>
     /// <returns>Rewrited expression.</returns>
-    Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions);
+    BaseExpr ERewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions);
 
     /// <summary>
     /// Rewrite egraph.

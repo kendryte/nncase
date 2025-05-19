@@ -41,7 +41,7 @@ public sealed partial class EGraph : IEGraph
     /// Initializes a new instance of the <see cref="EGraph"/> class.
     /// </summary>
     /// <param name="expr">Root expression.</param>
-    public EGraph(Expr expr)
+    public EGraph(BaseExpr expr)
     {
         Root = Add(expr);
     }
@@ -58,7 +58,7 @@ public sealed partial class EGraph : IEGraph
     public int Version => _version;
 
     /// <inheritdoc/>
-    public EClass Add(Expr expr)
+    public EClass Add(BaseExpr expr)
     {
         if (expr.CheckedType is null)
         {
@@ -117,7 +117,7 @@ public sealed partial class EGraph : IEGraph
         }
     }
 
-    public EClass AddENode(Expr expr, IRArray<EClass> children)
+    public EClass AddENode(BaseExpr expr, IRArray<EClass> children)
     {
         // TODO: concurrent safe
         EClass eclass;
@@ -233,7 +233,7 @@ public sealed partial class EGraph : IEGraph
             _graph = graph;
         }
 
-        protected override EClass DefaultVisitLeaf(Expr expr)
+        protected override EClass DefaultVisitLeaf(BaseExpr expr)
         {
             EClass[]? operands;
             if (expr is BaseFunction baseFunction && !CanVisitFunctionBody(baseFunction))

@@ -39,7 +39,7 @@ public class UnitTestAddMarker : TestClassBase
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, new[] { 1, 3, 8, 8 });
         var b = Relu(a);
-        var pre = IR.F.Math.RangeOfMarker(new[] { 1, 2, 3, 4 }, b);
+        var pre = IR.F.Math.RangeOfMarker((Expr)new[] { 1, 2, 3, 4 }, b);
         CompilerServices.InferenceType(pre);
     }
 
@@ -55,7 +55,7 @@ public class UnitTestAddMarker : TestClassBase
     [Fact]
     public void TestAddMarkerAllConst()
     {
-        var pre = IR.F.Math.RangeOfMarker(new[] { 4, 5, 6, 7 }, new[] { 1, 2, 3, 4 });
+        var pre = IR.F.Math.RangeOfMarker((Expr)new[] { 4, 5, 6, 7 }, new[] { 1, 2, 3, 4 });
         CompilerServices.InferenceType(pre);
     }
 
@@ -67,7 +67,7 @@ public class UnitTestAddMarker : TestClassBase
         var c = new IR.Tuple(b, b, b, b);
         var d = new IR.Tuple(c, c, c, c);
         var e = new IR.Tuple(d, d, d, d);
-        var pre = IR.F.Math.RangeOfMarker(new[] { 4, 5, 6, 7 }, e);
+        var pre = IR.F.Math.RangeOfMarker(e, new[] { 4, 5, 6, 7 });
         CompilerServices.InferenceType(pre);
     }
 

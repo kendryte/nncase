@@ -40,10 +40,10 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
             IsTensorConst("perm")),
             "transposeMarker");
 
-    private Expr? GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<Expr> arguments, int[] perm, Marker transposeMarker, Marker outputMarker)
+    private Expr? GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<BaseExpr> arguments, int[] perm, Marker transposeMarker, Marker outputMarker)
     {
         // todo: argument 1 is marker
-        var newArgs = new List<Expr>();
+        var newArgs = new List<BaseExpr>();
         foreach (var arg in arguments)
         {
             if (arg.CheckedShape.IsScalar)
@@ -53,7 +53,7 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
             }
             else if (arg.CheckedShape.Rank <= perm.Length)
             {
-                newArgs.Add(transposeMarker.With(target: Transpose(arg, perm.Select(p => p - (perm.Length - arg.CheckedShape.Rank)).Where(p => p >= 0).ToArray())));
+                newArgs.Add(transposeMarker.With(target: Transpose((Expr)arg, perm.Select(p => p - (perm.Length - arg.CheckedShape.Rank)).Where(p => p >= 0).ToArray())));
                 continue;
             }
             else
@@ -81,7 +81,7 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
           {
               var patterns = new Pattern[inputs.Length];
               patterns[0] = HasMarker(
-                  IsTranspose(IsWildcard("input"), IsWildcard("perm")),
+                  IsTranspose(IsWildcard("input"), IsShape("perm")),
                   "inputMarker");
               for (int i = 1; i < inputs.Length; i++)
               {
@@ -92,19 +92,19 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
           })),
           "outputMarker");
 
-    private Expr? GetReplace(Call actCall, ActivationOp activation, Expr input, IReadOnlyList<Expr> parameters, Expr perm, Marker inputMarker, Marker outputMarker)
+    private Expr? GetReplace(Call actCall, ActivationOp activation, Expr input, IReadOnlyList<BaseExpr> parameters, Shape perm, Marker inputMarker, Marker outputMarker)
     {
         // note the prelu scope can be broadcast with inputs.
         if (activation is PRelu && parameters[1].CheckedShape.Rank > 1)
         {
-            if (perm is not TensorConst const_perm || parameters[1] is not TensorConst slope)
+            if (!perm.IsFixed || parameters[1] is not TensorConst slope)
             {
                 return null;
             }
 
             // eg. transpose(input,perm) shape = [1,32,32,8], scope = [1,1,8]
             Expr new_slope;
-            var perms = const_perm.Value.ToArray<int>();
+            var perms = perm.ToValueArray();
             if (slope.Value.Shape.Rank == input.CheckedShape.Rank - 1)
             {
                 if (perms[0] != 0)
@@ -149,7 +149,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
             IsCall("call", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
         {
             var patterns = new Pattern[inputs.Length];
-            patterns[0] = HasMarker(IsReshape(IsWildcard("input"), IsWildcard("shape")), "inputMarker");
+            patterns[0] = HasMarker(IsReshape(IsWildcard("input"), IsShape("shape")), "inputMarker");
             for (int i = 1; i < inputs.Length; i++)
             {
                 patterns[i] = IsWildcard();
@@ -159,7 +159,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
         })),
             "outMarker");
 
-    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Expr shape, Marker inputMarker, Marker outMarker)
+    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<BaseExpr> parameters, Shape shape, Marker inputMarker, Marker outMarker)
     {
         // TODO: Not support PRelu for now.
         if (activation is PRelu)
@@ -245,13 +245,14 @@ public partial class FoldTransposeBinaryActTranspose : RewriteRule<Pattern>
         {
             // transpose shape check
             // input no marker
+            var rhsShape = (RankedShape)rhs.CheckedShape;
             if (rhs is Marker m)
             {
-                var constRhs = m.With(target: Reshape(m.Target, new[] { rhs.CheckedShape.Size, 1, 1 }).Evaluate().AsTensor());
+                var constRhs = m.With(target: (Expr)Reshape((Expr)m.Target, [rhsShape.Prod(), 1, 1]).Evaluate().AsTensor());
                 return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, constRhs).InheritMetaData(bnCall)), alpha).InheritMetaData(call));
             }
 
-            return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, Reshape(rhs, new[] { rhs.CheckedShape.Size, 1, 1 }))), alpha).InheritMetaData(call));
+            return outMarker.With(target: LeakyRelu(bnMarker.With(target: Add(input, Reshape(rhs, [rhsShape.Prod(), 1, 1]))), alpha).InheritMetaData(call));
         }
 
         return null;

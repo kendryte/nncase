@@ -111,7 +111,7 @@ internal class GenerateCandidate
 [Generator]
 internal class EvaluatorGenerator : IIncrementalGenerator
 {
-    private INamedTypeSymbol? _exprSymobl;
+    private INamedTypeSymbol? _baseExprSymobl;
     private INamedTypeSymbol? _tensorSymobl;
     private INamedTypeSymbol? _parameterInfoSymobl;
     private INamedTypeSymbol? _irTypeSymobl;
@@ -150,7 +150,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
 
     private IEnumerable<GenerateCandidate> GetSemanticTargetForGeneration(GeneratorSyntaxContext ctx)
     {
-        _exprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.Expr");
+        _baseExprSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.BaseExpr");
         _tensorSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Tensor");
         _irTypeSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.IR.IRType");
         _iEvaluateContextSymobl ??= ctx.SemanticModel.Compilation.GetTypeByMetadataName("Nncase.Evaluator.IEvaluateContext");
@@ -280,7 +280,7 @@ internal class EvaluatorGenerator : IIncrementalGenerator
                 InterfaceKind.ITypeInferencer => paramType switch
                 {
                     { IsReferenceType: true } x when x.IsInheritFrom(_irTypeSymobl) => $"CheckArgumentType<{x}>",
-                    var x when SymbolEqualityComparer.Default.Equals(x, _exprSymobl) => $"GetArgument",
+                    var x when SymbolEqualityComparer.Default.Equals(x, _baseExprSymobl) => $"GetArgument",
                     _ => throw new NotSupportedException($"Convert {cand.Class.Name} Params {paramType.ToDisplayString()} For ITypeInferencer Impl!"),
                 },
 

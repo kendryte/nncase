@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitFlatten(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var axis = GetIntAttribute(op, "axis", 1);
             return F.Tensors.Flatten(input, axis);
         }

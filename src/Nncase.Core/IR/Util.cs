@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System.Runtime.InteropServices;
+using Nncase.IR.Shapes;
 using static Nncase.IR.F.Tensors;
 using Cast = Nncase.IR.Tensors.Cast;
 
@@ -9,24 +10,18 @@ namespace Nncase.IR
 {
     public class Util
     {
-        public static int PositiveIndex(int index, TensorType input)
+        public static long PositiveIndex(long index, TensorType input)
         {
             return PositiveIndex(index, input.Shape.Rank);
         }
 
-        public static int PositiveIndex(int index, int rank)
+        public static long PositiveIndex(long index, int rank)
         {
             return index < 0 ? index + rank : index;
         }
 
-        public static Expr GetConvTransposeOutputShape(Expr inShape, Expr wShape, Expr strides, Expr outPadding, Expr paddings, Expr dilations, string autoPad, Expr group)
+        public static RankedShape GetConvTransposeOutputShape(Shape inShape, Shape wShape, Shape strides, Shape outPadding, Paddings paddings, Shape dilations, string autoPad, Dimension group)
         {
-            inShape = Cast(inShape, DataTypes.Int64);
-            wShape = Cast(wShape, DataTypes.Int64);
-            strides = Cast(strides, DataTypes.Int64);
-            dilations = Cast(dilations, DataTypes.Int64);
-            paddings = Cast(paddings, DataTypes.Int64);
-            outPadding = Cast(outPadding, DataTypes.Int64);
             var iN = inShape[0];
             _ = inShape[1];
             var iH = inShape[2];
@@ -34,7 +29,7 @@ namespace Nncase.IR
             var oc = wShape[0] * group;
             var wH = wShape[2];
             var wW = wShape[3];
-            var outShape = new List<Expr>();
+            var outShape = new List<Dimension>();
             outShape.Add(iN);
             outShape.Add(oc);
             if (autoPad is "SAME_UPPER" or "SAME_LOWER")
@@ -48,15 +43,15 @@ namespace Nncase.IR
                 outShape.Add(ComputeOutSize(iW, wW, strides, outPadding, paddings, dilations, 1));
             }
 
-            return F.Tensors.Stack(new IR.Tuple(CollectionsMarshal.AsSpan(outShape)), 0);
+            return new RankedShape(CollectionsMarshal.AsSpan(outShape));
         }
 
-        private static Expr ComputeOutSize(Expr inputSize, Expr weightSize, Expr strides, Expr outPaddings, Expr paddings, Expr dilations, int offset)
+        private static Dimension ComputeOutSize(Dimension inputSize, Dimension weightSize, Shape strides, Shape outPaddings, Paddings paddings, Shape dilations, int offset)
         {
             return (strides[offset] * (inputSize - 1L))
                 + outPaddings[offset]
                 + (((weightSize - 1L)
-                    * dilations[offset]) + 1L) - paddings[offset][0] - paddings[offset][1];
+                    * dilations[offset]) + 1L) - paddings[offset].Sum();
         }
     }
 }

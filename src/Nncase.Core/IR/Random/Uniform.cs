@@ -31,7 +31,7 @@ public sealed partial class Uniform : Op
     /// <summary>
     /// Gets shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Uniform), 3, "shape", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(Uniform), 3, "shape", IsShapeType());
 
     public DataType Type { get; }
 

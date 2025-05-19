@@ -31,7 +31,7 @@ public sealed class UnFoldBlock : ExprRewriter
                         lets[i].Item1.Body(lets[i + 1].Item1);
                     }
 
-                    var map = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
+                    var map = new Dictionary<BaseExpr, BaseExpr>(ReferenceEqualityComparer.Instance);
                     for (int i = 0; i < expr.AllocBuffers.Length; i++)
                     {
                         map.Add(expr.AllocBuffers[i], lets[i].v);

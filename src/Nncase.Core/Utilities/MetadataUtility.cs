@@ -20,7 +20,8 @@ public static class MetadataUtility
     /// Inherit MetaData.
     /// </summary>
     ///
-    public static Expr InheritMetaData(this Expr newCall, Expr oldCall)
+    public static T InheritMetaData<T>(this T newCall, BaseExpr oldCall)
+        where T : BaseExpr
     {
         if (oldCall.Metadata != null && oldCall.Metadata!.OutputNames != null)
         {

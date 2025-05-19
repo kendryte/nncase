@@ -36,7 +36,7 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
     /// <summary>
     /// Gets expression memo.
     /// </summary>
-    public Dictionary<Expr, TExprResult> ExprMemo { get; } = new(ReferenceEqualityComparer.Instance);
+    public Dictionary<BaseExpr, TExprResult> ExprMemo { get; } = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>
     /// Gets type memo.
@@ -133,6 +133,50 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
         return MarkVisited(type, VisitTypeLeaf(type, context));
     }
 
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(DimensionType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(ShapeType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(PaddingType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
+    /// <inheritdoc/>
+    public override TTypeResult VisitType(PaddingsType type, TContext context)
+    {
+        if (HasVisited(type, out var result))
+        {
+            return result;
+        }
+
+        return MarkVisited(type, VisitTypeLeaf(type, context));
+    }
+
     /// <summary>
     /// Visit any type leaf.
     /// </summary>
@@ -169,6 +213,26 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
     public virtual TTypeResult VisitTypeLeaf(DistributedType type, TContext context) => DefaultVisitTypeLeaf(type, context);
 
     /// <summary>
+    /// Visit dimension type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(DimensionType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit shape type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(ShapeType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit padding type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(PaddingType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
+    /// Visit paddings type leaf.
+    /// </summary>
+    public virtual TTypeResult VisitTypeLeaf(PaddingsType type, TContext context) => DefaultVisitTypeLeaf(type, context);
+
+    /// <summary>
     /// Default visit leaf routine.
     /// </summary>
     public virtual TTypeResult DefaultVisitTypeLeaf(IRType type, TContext context)
@@ -187,7 +251,7 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
     /// <summary>
     /// Whether this expression is not visited before.
     /// </summary>
-    protected bool HasVisited(Expr expr, [MaybeNullWhen(false)] out TExprResult result)
+    protected bool HasVisited(BaseExpr expr, [MaybeNullWhen(false)] out TExprResult result)
         => ExprMemo.TryGetValue(expr, out result);
 
     /// <summary>
@@ -201,7 +265,7 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
     /// </summary>
     /// <param name="expr">Expression to visit.</param>
     /// <param name="result">Visit result.</param>
-    protected TExprResult MarkVisited(Expr expr, TExprResult result)
+    protected TExprResult MarkVisited(BaseExpr expr, TExprResult result)
     {
         ExprMemo[expr] = result;
         return result;
@@ -228,22 +292,22 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
         return ReferenceEquals(baseFunction, VisitRoot);
     }
 
-    protected bool CanVisitAttributes(Expr expr)
+    protected bool CanVisitAttributes(BaseExpr expr)
     {
         // Avoid infinite loop
-        return _visitAttributes && expr is not Shape;
+        return _visitAttributes;
     }
 
     /// <summary>
     /// Default leaf visit routine.
     /// </summary>
-    protected virtual TExprResult DefaultVisitLeaf(Expr expr, TContext context)
+    protected virtual TExprResult DefaultVisitLeaf(BaseExpr expr, TContext context)
     {
         throw new NotImplementedException($"Unhandled visit leaf routine for {expr.GetType()}.");
     }
 
     /// <inheritdoc/>
-    protected override TExprResult DispatchVisit(Expr expr, TContext context)
+    protected override TExprResult DispatchVisit(BaseExpr expr, TContext context)
     {
         if (HasVisited(expr, out var result))
         {
@@ -253,7 +317,7 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
         return MarkVisited(expr, base.DispatchVisit(expr, context));
     }
 
-    protected virtual void VisitOperands(Expr expr, TContext context)
+    protected virtual void VisitOperands(BaseExpr expr, TContext context)
     {
         foreach (var operand in expr.Operands)
         {
@@ -261,7 +325,7 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult, TContext> : 
         }
     }
 
-    protected virtual void VisitAttributes(Expr expr, TContext context)
+    protected virtual void VisitAttributes(BaseExpr expr, TContext context)
     {
         if (_visitAttributes)
         {
@@ -293,27 +357,27 @@ public abstract partial class ExprVisitor<TExprResult, TTypeResult> : ExprVisito
     /// <summary>
     /// Visit <see cref="Expr"/>.
     /// </summary>
-    public TExprResult Visit(Expr expr) => Visit(expr, default);
+    public TExprResult Visit(BaseExpr expr) => Visit(expr, default);
 
     /// <summary>
     /// Default visit routine.
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Result.</returns>
-    protected internal virtual TExprResult DefaultVisit(Expr expr) => base.DefaultVisit(expr, default);
+    protected internal virtual TExprResult DefaultVisit(BaseExpr expr) => base.DefaultVisit(expr, default);
 
     /// <inheritdoc/>
-    protected internal sealed override TExprResult DefaultVisit(Expr expr, Unit context) => DefaultVisit(expr);
+    protected internal sealed override TExprResult DefaultVisit(BaseExpr expr, Unit context) => DefaultVisit(expr);
 
     /// <summary>
     /// Default leaf visit routine.
     /// </summary>
-    protected virtual TExprResult DefaultVisitLeaf(Expr expr) => base.DefaultVisitLeaf(expr, default);
+    protected virtual TExprResult DefaultVisitLeaf(BaseExpr expr) => base.DefaultVisitLeaf(expr, default);
 
-    protected sealed override TExprResult DefaultVisitLeaf(Expr expr, Unit context) => DefaultVisitLeaf(expr);
+    protected sealed override TExprResult DefaultVisitLeaf(BaseExpr expr, Unit context) => DefaultVisitLeaf(expr);
 
-    protected virtual TExprResult DispatchVisit(Expr expr) => base.DispatchVisit(expr, default);
+    protected virtual TExprResult DispatchVisit(BaseExpr expr) => base.DispatchVisit(expr, default);
 
     /// <inheritdoc/>
-    protected sealed override TExprResult DispatchVisit(Expr expr, Unit context) => DispatchVisit(expr);
+    protected sealed override TExprResult DispatchVisit(BaseExpr expr, Unit context) => DispatchVisit(expr);
 }

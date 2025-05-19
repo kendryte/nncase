@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace Nncase.IR;
 
 public interface IExprBuilder<out T>
-    where T : Expr
+    where T : BaseExpr
 {
     T Build();
 }

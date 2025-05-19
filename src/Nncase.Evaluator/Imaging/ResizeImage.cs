@@ -111,7 +111,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     public IRType Visit(ITypeInferenceContext context, ResizeImage target)
     {
         var input = context.CheckArgumentType<IRType>(target, ResizeImage.Input);
-        var newSize = context.GetArgument(target, ResizeImage.NewSize);
+        var newSize = (Shape)context.GetArgument(target, ResizeImage.NewSize);
 
         return input switch
         {
@@ -121,12 +121,12 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         };
     }
 
-    public IRType Visit(TensorType input, Expr newSize)
+    public IRType Visit(TensorType input, Shape newSize)
     {
         return TypeInference.ResizeType(input, newSize, null);
     }
 
-    public IRType Visit(DistributedType input, Expr newSize)
+    public IRType Visit(DistributedType input, Shape newSize)
     {
         if (Visit(input.TensorType, newSize) is not TensorType tensorType)
         {

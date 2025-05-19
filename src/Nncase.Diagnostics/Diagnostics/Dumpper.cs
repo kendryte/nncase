@@ -34,25 +34,25 @@ internal sealed class Dumpper : IDumpper
         return new Dumpper(subDumpFlags, Path.Join(_dumpDirectory, subDirectory));
     }
 
-    public void DumpIR(Expr expr, string prefix, string? reletivePath = null, PrinterFlags flags = PrinterFlags.Minimal)
+    public void DumpIR(BaseExpr expr, string prefix, string? reletivePath = null, PrinterFlags flags = PrinterFlags.Minimal)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
         CompilerServices.DumpIR(expr, prefix, EnsureWritable(path), flags);
     }
 
-    public void DumpDotIR(Expr expr, string prefix, string? reletivePath = null)
+    public void DumpDotIR(BaseExpr expr, string prefix, string? reletivePath = null)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
         CompilerServices.DumpDotIR(expr, prefix, EnsureWritable(path), PrinterFlags.Minimal);
     }
 
-    public void DumpCSharpIR(Expr expr, string prefix, string? reletivePath = null)
+    public void DumpCSharpIR(BaseExpr expr, string prefix, string? reletivePath = null)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
         CompilerServices.DumpCSharpIR(expr, prefix, EnsureWritable(path));
     }
 
-    public void DumpPatternIR(Expr expr, string prefix, string? reletivePath = null)
+    public void DumpPatternIR(BaseExpr expr, string prefix, string? reletivePath = null)
     {
         var path = Path.Join(_dumpDirectory, reletivePath);
         CompilerServices.DumpPatternIR(expr, prefix, EnsureWritable(path));

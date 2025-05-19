@@ -146,19 +146,19 @@ public partial class EGraphPrinter
     }
 }
 
-internal sealed class ENodeTypeComparer : IComparer<Expr>
+internal sealed class ENodeTypeComparer : IComparer<BaseExpr>
 {
     public static readonly ENodeTypeComparer Instance = new();
 
-    public int Compare(Expr? x, Expr? y) => (x, y) switch
+    public int Compare(BaseExpr? x, BaseExpr? y) => (x, y) switch
     {
         (null, null) => 0,
-        (Expr, null) => 1,
-        (null, Expr) => -1,
-        (Expr, Expr) => GetPriority(x).CompareTo(GetPriority(y)),
+        (BaseExpr, null) => 1,
+        (null, BaseExpr) => -1,
+        (BaseExpr, BaseExpr) => GetPriority(x).CompareTo(GetPriority(y)),
     };
 
-    private int GetPriority(Expr x) => x switch
+    private int GetPriority(BaseExpr x) => x switch
     {
         Marker => 0,
         Const => 1,

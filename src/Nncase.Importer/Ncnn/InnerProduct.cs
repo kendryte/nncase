@@ -27,7 +27,7 @@ public partial class NcnnImporter
 
         var numInput = weightDataSize / numOutput;
 
-        var input = Tensors.Unsqueeze(GetInputExprs(layer, 0), new[] { 0 });
+        var input = Tensors.Unsqueeze(GetInputExprs<Expr>(layer, 0), new[] { 0 });
         var weights = Tensors.Transpose(_modelBin.LoadFloat32(new[] { numOutput, numInput }, true), new[] { 1, 0 });
 
         Expr output = IR.F.Math.MatMul(input, weights);

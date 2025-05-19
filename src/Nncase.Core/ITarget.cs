@@ -35,7 +35,7 @@ public enum NocArchitecture : byte
     CrossBar = 1,
 }
 
-public interface ICpuTargetOptions : ITargetOptions
+public interface INTTTargetOptions : ITargetOptions
 {
     string ModelName { get; set; }
 

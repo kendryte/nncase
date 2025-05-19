@@ -31,7 +31,7 @@ public abstract partial record Pattern(string? Name) : IPattern
       System.HashCode.Combine(EqualityComparer<Type>.Default.GetHashCode(EqualityContract));
 
     /// <inheritdoc/>
-    public abstract bool MatchLeaf(Expr input);
+    public abstract bool MatchLeaf(BaseExpr input);
 
     /// <summary>
     /// Print members.
@@ -51,7 +51,7 @@ public abstract partial record Pattern(string? Name) : IPattern
 /// </summary>
 /// <typeparam name="TExpr">Expression type.</typeparam>
 public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
-    where TExpr : Expr
+    where TExpr : BaseExpr
 {
     /// <summary>
     /// Gets pattern for CheckedType, defulat match IR Type.
@@ -65,7 +65,7 @@ public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
     }
 
     /// <inheritdoc/>
-    public sealed override bool MatchLeaf(Expr input) => input is TExpr expr && MatchLeaf(expr);
+    public sealed override bool MatchLeaf(BaseExpr input) => input is TExpr expr && MatchLeaf(expr);
 
     /// <summary>
     /// Match leaf impl.
@@ -79,7 +79,7 @@ public record Pattern<TExpr>(string? Name) : Pattern(Name), IPattern<TExpr>
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Is Matched.</returns>
-    private bool MatchCheckedType(Expr expr) => (TypePattern, expr.CheckedType) switch
+    private bool MatchCheckedType(BaseExpr expr) => (TypePattern, expr.CheckedType) switch
     {
         (null, _) => true,
         (TypePattern pattern, IRType type) => pattern.MatchLeaf(type),

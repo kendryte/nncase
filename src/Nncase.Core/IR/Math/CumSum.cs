@@ -26,7 +26,7 @@ public sealed partial class CumSum : Op
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(CumSum), 1, "axis");
+    public static readonly ParameterInfo Axis = new(typeof(CumSum), 1, "axis", IsDimensionType());
 
     /// <summary>
     /// Gets exclusive.

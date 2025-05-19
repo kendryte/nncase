@@ -63,5 +63,42 @@ public static class SpanUtility
             }
         }
     }
-#pragma warning restore CS8500 // 这会获取托管类型的地址、获取其大小或声明指向它的指针
+#pragma warning restore CS8500
+
+    public static T[] Concat<T>(ReadOnlySpan<T> first, ReadOnlySpan<T> second)
+    {
+        var result = new T[first.Length + second.Length];
+        first.CopyTo(result);
+        second.CopyTo(result.AsSpan(first.Length));
+        return result;
+    }
+
+    public static ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] array)
+    {
+        return MemoryMarshal.CreateReadOnlySpan(ref MemoryMarshal.GetArrayDataReference(array), array.Length);
+    }
+
+    public static ReadOnlySpan<T> AsReadOnlySpan<T>(this T[] array, int start, int length)
+    {
+        if (start < 0 || length < 0 || start + length > array.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(start), "Start or length is out of range.");
+        }
+
+        return MemoryMarshal.CreateReadOnlySpan(ref MemoryMarshal.GetArrayDataReference(array), array.Length).Slice(start, length);
+    }
+
+    public static bool ReferenceContains<T>(this ReadOnlySpan<T> span, T value)
+        where T : class
+    {
+        foreach (var item in span)
+        {
+            if (ReferenceEquals(item, value))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

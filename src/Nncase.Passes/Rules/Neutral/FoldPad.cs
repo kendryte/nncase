@@ -8,6 +8,7 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
@@ -25,11 +26,11 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed partial class FoldNopPad : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsPad(padMode => true, IsWildcard("input"), IsTensorConst("pads", IsIntegral()), IsWildcard());
+    public IPattern Pattern { get; } = IsPad(padMode => true, IsWildcard("input"), IsFixedPaddings("pads"), IsWildcard());
 
-    private Expr? GetReplace(Expr input, TensorConst pads)
+    private Expr? GetReplace(Expr input, Paddings pads)
     {
-        if (pads.Value.Cast<int>().All(x => x == 0))
+        if (pads.All(x => x == Padding.Zero))
         {
             return input;
         }
@@ -48,20 +49,18 @@ public sealed partial class FoldTwoPads : IRewriteRule
     public IPattern Pattern { get; } =
         IsPad(
             PadMode.Constant,
-            IsPad(PadMode.Constant, IsWildcard("input"), IsTensorConst("pads1", IsIntegral()), IsWildcard("padValue1")),
-            IsTensorConst("pads2", IsIntegral()),
+            IsPad(PadMode.Constant, IsWildcard("input"), IsPaddings("pads1"), IsWildcard("padValue1")),
+            IsPaddings("pads2"),
             IsWildcard("padValue2"));
 
-    private Expr? GetReplace(Expr input, TensorConst pads1, TensorConst pads2, Expr padValue1, Expr padValue2)
+    private Expr? GetReplace(Expr input, Paddings pads1, Paddings pads2, Expr padValue1, Expr padValue2)
     {
         if (padValue1.Equals(padValue2))
         {
-            var (t1, t2) = (pads1.Value.Cast<int>(), pads2.Value.Cast<int>());
-            var newt = new Tensor<int>(t1.Dimensions);
-            for (int i = 0; i < t1.Dimensions[0]; i++)
+            var newt = new Padding[pads1.Rank];
+            for (int i = 0; i < newt.Length; i++)
             {
-                newt[i, 0] = t1[i, 0] + t2[i, 0];
-                newt[i, 1] = t1[i, 1] + t2[i, 1];
+                newt[i] = pads1[i] + pads2[i];
             }
 
             return Pad(input, newt, PadMode.Constant, padValue1);
@@ -83,17 +82,17 @@ public sealed partial class FoldConv2DPads : IRewriteRule
         MaybeMarker(IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
-            IsTensorConst("ext_pad"),
+            IsFixedPaddings("ext_pad"),
             IsTensorConst("ext_pad_init"))),
         IsWildcard("weights"),
         IsWildcard("bias"),
-        IsWildcard("stride"),
-        IsTensorConst("padding"),
-        IsWildcard("dilation"),
-        IsWildcard("groups"),
+        IsShape("stride"),
+        IsPaddings("padding"),
+        IsShape("dilation"),
+        IsDimension("groups"),
         IsWildcard("fusedClamp"));
 
-    private Expr? GetReplace(Conv2D conv, Expr input, Expr weights, Expr bias, Expr stride, Tensor<int> padding, Expr dilation, Expr groups, Expr fusedClamp, Tensor<int> ext_pad, float ext_pad_init)
+    private Expr? GetReplace(Conv2D conv, Expr input, Expr weights, Expr bias, Shape stride, Tensor<int> padding, Shape dilation, Dimension groups, Expr fusedClamp, Tensor<int> ext_pad, float ext_pad_init)
     {
         if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
               ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
@@ -122,29 +121,27 @@ public sealed partial class FoldReduceWindow2DPads : IRewriteRule
         IsPad(
             pad => pad.PadMode == PadMode.Constant,
             IsWildcard("input"),
-            IsTensorConst("ext_pad"),
+            IsPaddings("ext_pad"),
             IsTensorConst("ext_pad_init")),
         IsWildcard("initValue"),
-        IsWildcard("filter"),
-        IsWildcard("stride"),
-        IsTensorConst("padding"),
-        IsWildcard("dilation"),
+        IsShape("filter"),
+        IsShape("stride"),
+        IsPaddings("padding"),
+        IsShape("dilation"),
         IsWildcard("ceilMode"),
         IsWildcard("countIncludePad"));
 
-    private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Expr filter, Expr stride, Tensor<int> padding, Expr dilation, Expr ceilMode, Expr countIncludePad, Tensor<int> ext_pad, float ext_pad_init)
+    private Expr? GetReplace(ReduceWindow2D pdp, Expr input, Expr initValue, Shape filter, Shape stride, Paddings padding, Shape dilation, Expr ceilMode, Expr countIncludePad, Paddings ext_pad, float ext_pad_init)
     {
-        if (!(ext_pad[0, 0] == 0 && ext_pad[0, 1] == 0 &&
-              ext_pad[1, 0] == 0 && ext_pad[1, 1] == 0))
+        if (!(ext_pad[0] == Padding.Zero &&
+              ext_pad[1] == Padding.Zero))
         {
             return null;
         }
 
-        var new_pad = padding.Clone();
-        new_pad[0, 0] += ext_pad[2, 0];
-        new_pad[0, 1] += ext_pad[2, 1];
-        new_pad[1, 0] += ext_pad[3, 0];
-        new_pad[1, 1] += ext_pad[3, 1];
+        var new_pad = padding.ToArray();
+        new_pad[0] += ext_pad[2];
+        new_pad[1] += ext_pad[3];
         return ReduceWindow2D(pdp.ReduceOp, input, initValue, filter, stride, new_pad, dilation, ceilMode, countIncludePad);
     }
 }

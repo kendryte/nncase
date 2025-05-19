@@ -17,12 +17,12 @@ public interface IExprUserAnalysisResult : IAnalysisResult
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Users.</returns>
-    IEnumerable<Expr> this[Expr expr] { get; }
+    IEnumerable<BaseExpr> this[BaseExpr expr] { get; }
 }
 
 internal sealed class ExprUserAnalysisResult : IExprUserAnalysisResult
 {
-    public IEnumerable<Expr> this[Expr expr]
+    public IEnumerable<BaseExpr> this[BaseExpr expr]
     {
         get
         {

@@ -20,15 +20,15 @@ public sealed class RandomCalibrationDatasetProvider : ICalibrationDatasetProvid
     /// </summary>
     /// <param name="vars">Input parameters.</param>
     /// <param name="samplesCount">Samples count.</param>
-    public RandomCalibrationDatasetProvider(IReadOnlyList<Var> vars, int samplesCount)
+    public RandomCalibrationDatasetProvider(IReadOnlyList<IVar> vars, int samplesCount)
     {
         Count = samplesCount;
         Samples = Enumerable.Range(0, samplesCount).Select(i =>
         {
-            var values = new Dictionary<Var, IValue>();
+            var values = new Dictionary<IVar, IValue>();
             foreach (var var in vars)
             {
-                CompilerServices.InferenceType(var);
+                CompilerServices.InferenceType((Expr)var);
                 var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
                 var value = IR.F.Random.Normal(var.CheckedDataType, 0, 1, 0, shape).Evaluate();
                 values.Add(var, value);
@@ -42,5 +42,5 @@ public sealed class RandomCalibrationDatasetProvider : ICalibrationDatasetProvid
     public int? Count { get; }
 
     /// <inheritdoc/>
-    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+    public IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> Samples { get; }
 }

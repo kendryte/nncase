@@ -9,8 +9,8 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
-using CallbacksRegister = System.Action<string, System.Action<Nncase.IR.Expr>>;
-using TensorGetter = System.Func<Nncase.IR.Expr, Nncase.Tensor[]>;
+using CallbacksRegister = System.Action<string, System.Action<Nncase.IR.BaseExpr>>;
+using TensorGetter = System.Func<Nncase.IR.BaseExpr, Nncase.Tensor[]>;
 
 namespace Nncase.Evaluator;
 

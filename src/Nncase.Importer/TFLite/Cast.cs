@@ -11,7 +11,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitCast(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
+            var input = GetInputExprs<Expr>(op, 0);
             var output = GetOutputTensor(op, 0);
             return Cast(input, GetDataType(output.Type));
         }

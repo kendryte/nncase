@@ -20,23 +20,22 @@ namespace Nncase.Importer
 
         private Expr PadV2(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var padMode = GetPadMode(op);
             var paddings = GetIntsAttribute(op, "pads");
-            var pads = Tensor.From<long>(paddings, [2, 4]);
             var value = GetFloatAttribute(op, "value", 0f);
-            return Pad(input, ToNncasePadFormat(pads), padMode, value);
+            return Pad(input, ToNncasePadFormat((Const)paddings), padMode, value);
         }
 
         // `pads` should be a 1D tensor of shape [2 * input_rank].
         // `pads` format should be: [x1_begin, x2_begin,...,x1_end, x2_end,...]
         private Expr PadV11(in NodeProto op)
         {
-            var (input, pads) = GetInputExprs(op, 0, 1);
+            var (input, pads) = GetInputExprs<Expr, BaseExpr>(op, 0, 1);
             var padMode = GetPadMode(op);
 
             // GetInputExpr will get a Tensor with shape [1], but padValue is a scalar
-            var padValue = GetOptionInputExpr(op, 2)
+            var padValue = GetOptionInputExpr<Expr>(op, 2)
                 .Match(
                     x => SliceIndex(Stack(new IR.Tuple(x), 0), 0),
                     () => 0f);

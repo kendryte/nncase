@@ -7,9 +7,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Helpers;
@@ -26,6 +28,7 @@ namespace Nncase;
 /// where all values are represented.
 /// </summary>
 /// <typeparam name="T">type contained within the Tensor. Typically a value type such as int, double, float, etc.</typeparam>
+[JsonConverter(typeof(IO.TensorJsonConverterFactory))]
 public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollection<T>,
     IReadOnlyCollection<T>, IList<T>, IReadOnlyList<T>, IEquatable<Tensor<T>>
     where T : struct, IEquatable<T>
@@ -430,8 +433,25 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                 throw new InvalidCastException();
             }
 
+            var fromType = typeof(T);
+            var toType = typeof(TTo);
+            var toDimensions = Dimensions.ToArray();
+
+            if (fromType.IsGenericType && fromType.GetInterface(typeof(IVector<>).Name) is Type && !toType.IsGenericType)
+            {
+                var count = (int)fromType.GetProperty("Count", BindingFlags.Public | BindingFlags.Static)?.GetValue(this)!;
+                if (toDimensions.Rank == 0)
+                {
+                    toDimensions = [count];
+                }
+                else
+                {
+                    toDimensions[^1] *= count;
+                }
+            }
+
             var converter = (ISpanConverter<T, TTo>)CompilerServices.DataTypeService.GetConverter(typeof(T), typeof(TTo));
-            var tensor = new Tensor<TTo>(Dimensions);
+            var tensor = new Tensor<TTo>(toDimensions);
             converter.ConvertTo(Buffer.Span, tensor.Buffer.Span, castMode);
             return tensor;
         }

@@ -110,7 +110,7 @@ public class UnitTestCombineReshape : TransformTestBase
         Expr rhs = leftConst ? new Var("b", new TensorType(DataTypes.Float32, rShape)) :
             rShape.Sum() == 1 ? 0.2f : Const.FromValue(Random.Normal(DataTypes.Float32, 0, 1, 4, rShape).Evaluate());
 
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         if (leftConst)
         {
             feedDict.Add((Var)rhs, Random.Normal(DataTypes.Float32, 0, 1, 1, rShape).Evaluate());
@@ -131,9 +131,9 @@ public class UnitTestCombineReshape : TransformTestBase
         var a = new Var("a", new TensorType(DataTypes.Float32, lShape));
         var b = new Var("b", new TensorType(DataTypes.Float32, rShape));
 
-        var normal = new Dictionary<Var, IValue>() { { a, Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate() }, { b, Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate() }, };
+        var normal = new Dictionary<IVar, IValue>() { { a, Random.Normal(DataTypes.Float32, 0, 1, 0, lShape).Evaluate() }, { b, Random.Normal(DataTypes.Float32, 0, 1, 0, rShape).Evaluate() }, };
 
-        Expr s = shape;
+        Shape s = shape;
         var rootPre = Math.Binary(BinaryOp.Add, Tensors.Reshape(a, s), Tensors.Reshape(b, s));
         TestMatched<CombineBinaryReshape>(rootPre, normal);
     }
@@ -165,7 +165,7 @@ public class UnitTestCombineReshape : TransformTestBase
     public void TestCombineUnaryReshapePositive(UnaryOp opType, long[] inShape, long[] shape)
     {
         var a = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = Math.Unary(opType, Tensors.Reshape(a, shape));
         TestMatched<CombineUnaryReshape>(rootPre, normal);
@@ -190,7 +190,7 @@ public class UnitTestCombineReshape : TransformTestBase
     public void TestCombineReshapePadPositive(long[] inShape, long[] shape, int[] pads)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = Tensors.Reshape(NN.Pad(a, Tensor.From(pads, [pads.Length / 2, 2]), PadMode.Constant, 0f), shape);
         TestMatched<CombineReshapePad>(rootPre, normal);
@@ -210,7 +210,7 @@ public class UnitTestCombineReshape : TransformTestBase
     public void TestCombineReshapeTransposePostive(long[] inShape, long[] perm, long[] newshape)
     {
         var input = new Var("input", new TensorType(DataTypes.Float32, inShape));
-        var feed_dict = new Dictionary<Var, IValue>
+        var feed_dict = new Dictionary<IVar, IValue>
         {
             { input, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate() },
         };

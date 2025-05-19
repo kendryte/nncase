@@ -8,7 +8,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
+using Nncase.IO;
 
 namespace Nncase;
 
@@ -54,6 +56,7 @@ public sealed record PointerType(DataType ElemType) : DataType
 /// <summary>
 /// the abstract datatype record.
 /// </summary>
+[JsonConverter(typeof(DataTypeJsonConverter))]
 public abstract record DataType
 {
     internal DataType()

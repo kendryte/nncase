@@ -22,7 +22,7 @@ namespace Nncase.Importer
 
         private Expr VisitRandomNormalLike(NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var dtype = GetOptionIntAttribute(op, "dtype").
                 Match(
                     GetDataType,
@@ -45,7 +45,7 @@ namespace Nncase.Importer
 
         private Expr VisitRandomUniformLike(NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var dtype = GetOptionIntAttribute(op, "dtype").
                 Match(
                     GetDataType,

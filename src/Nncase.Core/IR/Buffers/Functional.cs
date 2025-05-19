@@ -18,8 +18,8 @@ public static class Buffer
     /// <summary>
     /// the placeholder for this expr's ddr pointer.
     /// </summary>
-    public static Call DDrOf(Expr input) =>
-        new Call(new DDrOf(), input);
+    public static Call AddressOf(Expr input) =>
+        new Call(new AddressOf(), input);
 
     public static BufferOf BufferOf(Expr input) => new BufferOf(input);
 
@@ -43,13 +43,13 @@ public static class Buffer
     /// <summary>
     /// create the uninitialized buffer.
     /// </summary>
-    public static Call Uninitialized(DataType dataType, TIR.MemoryLocation memoryLocation, Expr shape) => new Call(new Uninitialized(dataType, memoryLocation, new IRArray<SBP>(), new Placement(new IRArray<int>(), string.Empty)), shape);
+    public static Call Uninitialized(DataType dataType, TIR.MemoryLocation memoryLocation, Shape shape) => new Call(new Uninitialized(dataType, memoryLocation, new IRArray<SBP>(), new Placement(new IRArray<int>(), string.Empty)), shape);
 
-    public static Call Uninitialized(DataType dataType, TIR.MemoryLocation memoryLocation, Expr shape, IRArray<SBP> ndsbp, Placement placement) => new Call(new Uninitialized(dataType, memoryLocation, ndsbp, placement), shape);
+    public static Call Uninitialized(DataType dataType, TIR.MemoryLocation memoryLocation, Shape shape, IRArray<SBP> ndsbp, Placement placement) => new Call(new Uninitialized(dataType, memoryLocation, ndsbp, placement), shape);
 
     public static Call Allocate(Expr size, DataType dataType, TIR.MemoryLocation location, bool malloc = true) => new Call(new Allocate(dataType, location, malloc), size);
 
     public static Call AllocateBufferView(Expr buffer) => new Call(new AllocateBufferView(), buffer);
 
-    public static Call BufferSubview(Expr buffer, Expr offset, Expr shape) => new Call(new BufferSubview(), buffer, offset, shape);
+    public static Call BufferSubview(Expr buffer, Shape offset, Shape shape) => new Call(new BufferSubview(), buffer, offset, shape);
 }

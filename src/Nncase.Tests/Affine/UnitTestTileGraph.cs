@@ -34,7 +34,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.Get1PackMN, new (IntMergePoint, bool)[] { (new(2, 0, 2), true), (new(2, 1, 2), true), (new(2, 0, 1), true), (new(2, 1, 1), true), (new(3, 2, 2), true), (new(5, 4, 2), true) }, MergeTileGraphChecker2, 2 },
     };
 
-    public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<Expr>, int> SolveTileGraphDatas = new()
+    public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BaseExpr>, int> SolveTileGraphDatas = new()
     {
         { FunctionSamples.Get5, [], SolveTileGraphChecker0, 0 },
         { FunctionSamples.Get1, [new(1, 0, 2)], (_) => { }, 1 },
@@ -61,7 +61,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     public UnitTestTileGraph()
     {
-        CompileOptions.TargetOptions = new Targets.CpuTargetOptions();
+        CompileOptions.TargetOptions = new Targets.NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.Tiling;
 #endif
@@ -273,7 +273,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     public void TestBuildTileGraph(Func<Function> functor, int count)
     {
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 #if DEBUG
         Dumpper.DumpIR(post, $"post{count}");
 #endif
@@ -293,7 +293,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     public void TestMergeTileGraph(Func<Function> functor, (IntMergePoint, bool)[] mergePoints, Action<TieredTileGraph> checker, int count)
     {
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 #if DEBUG
         Dumpper.DumpIR(post, $"post{count}");
 #endif
@@ -322,11 +322,11 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     [Theory]
     [MemberData(nameof(SolveTileGraphDatas))]
-    public void TestSolveTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<Expr> action, int count)
+    public void TestSolveTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BaseExpr> action, int count)
     {
-        var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
         var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
@@ -344,7 +344,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
         var tiler = new Schedule.GraphTiler();
         using var scope = new Diagnostics.DumpScope($"{count}");
-        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, (INTTTargetOptions)CompileOptions.TargetOptions);
         action(result);
     }
 
@@ -352,9 +352,9 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(MCTSDatas))]
     public void TestMCTS(Func<Function> functor, int count)
     {
-        var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
         var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
@@ -375,9 +375,9 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(BufferizeTileGraphDatas))]
     public void TestBufferizeTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BufferGraph> action, int count)
     {
-        var targetOptions = (ICpuTargetOptions)CompileOptions.TargetOptions;
+        var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
         var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
@@ -400,7 +400,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     public void TestPrimTreeEqualityComparer()
     {
         var func = FunctionSamples.Get3();
-        var post = new CPUAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
+        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
         var grid = (IR.Affine.Grid)((Function)post).Body;
         var rootGraph = GraphBuilder.Build(grid, 2, out _);
 #if DEBUG
@@ -427,7 +427,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     {
     }
 
-    private static void SolveTileGraphChecker0(Expr post)
+    private static void SolveTileGraphChecker0(BaseExpr post)
     {
         Assert.IsType<IR.Function>(post);
         Assert.IsType<IR.Tuple>(((IR.Function)post).Body);

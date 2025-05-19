@@ -21,7 +21,7 @@ public sealed partial class ConstantOfShape : Op
     /// <summary>
     /// Gets Shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(ConstantOfShape), 0, "shape", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(ConstantOfShape), 0, "shape", IsShapeType());
 
     /// <summary>
     /// Gets Value.

@@ -13,11 +13,11 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitWhere(in tflite.Operator op)
         {
-            var cond = GetInputExprs(op, 0);
+            var cond = GetInputExprs<Expr>(op, 0);
             return op.InputsLength switch
             {
                 1 => Where(cond, Array.Empty<float>(), Array.Empty<float>(), true),
-                3 => Where(cond, GetInputExprs(op, 1), GetInputExprs(op, 2), true),
+                3 => Where(cond, GetInputExprs<Expr>(op, 1), GetInputExprs<Expr>(op, 2), true),
                 _ => throw new NotImplementedException("Not Impl for where which has 2 input"),
             };
         }

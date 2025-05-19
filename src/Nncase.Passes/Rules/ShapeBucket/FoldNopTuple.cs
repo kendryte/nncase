@@ -34,7 +34,7 @@ public class FoldNopTuple : FunctionPass
         }
     }
 
-    internal class FoldNopTupleVisitior : ExprVisitor<Expr, Unit>
+    internal class FoldNopTupleVisitior : ExprVisitor<BaseExpr, Unit>
     {
         private bool _changed;
 
@@ -43,9 +43,9 @@ public class FoldNopTuple : FunctionPass
         {
         }
 
-        protected override Expr DefaultVisitLeaf(Expr expr) => expr;
+        protected override BaseExpr DefaultVisitLeaf(BaseExpr expr) => expr;
 
-        protected override Expr VisitLeafTuple(Tuple expr)
+        protected override BaseExpr VisitLeafTuple(Tuple expr)
         {
             if (!_changed && expr.Users.All(user => user is Call { Target: GetItem }))
             {

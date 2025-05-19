@@ -11,7 +11,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitL2Normalization(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
+            var input = GetInputExprs<Expr>(op, 0);
             return F.NN.L2Normalization(input);
         }
     }

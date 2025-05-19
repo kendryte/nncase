@@ -19,7 +19,7 @@ public abstract class Const : Expr
     /// </summary>
     /// <param name="valueType">Type of value.</param>
     public Const(IRType valueType)
-        : base(Array.Empty<Expr>())
+        : base(Array.Empty<BaseExpr>())
     {
         ValueType = valueType;
     }
@@ -135,11 +135,6 @@ public abstract class Const : Expr
     /// <returns>Created constant expression.</returns>
     public static TensorConst FromTensor(Tensor tensor)
       => new(tensor);
-
-    /// <summary>
-    /// convert shape to const expr.
-    /// </summary>
-    public static Const FromShape(Shape shape) => FromTensor(Tensor.From<long>(shape.ToValueArray()));
 
     /// <summary>
     /// Convert value to const expr.

@@ -39,31 +39,31 @@ public partial class TFLiteImporter
 
     private Expr VisitLogistic(in tflite.Operator op)
     {
-        var input = GetInputExprs(op, 0);
+        var input = GetInputExprs<Expr>(op, 0);
         return F.NN.Sigmoid(input);
     }
 
     private Expr VisitRelu(in tflite.Operator op)
     {
-        var input = GetInputExprs(op, 0);
+        var input = GetInputExprs<Expr>(op, 0);
         return F.NN.Relu(input);
     }
 
     private Expr VisitRelu6(in tflite.Operator op)
     {
-        var input = GetInputExprs(op, 0);
+        var input = GetInputExprs<Expr>(op, 0);
         return F.NN.Relu6(input);
     }
 
     private Expr VisitPRelu(in tflite.Operator op)
     {
-        var (input, slope) = GetInputExprs(op, 0, 1);
+        var (input, slope) = GetInputExprs<Expr, Expr>(op, 0, 1);
         return F.NN.PRelu(input, slope);
     }
 
     private Expr VisitLeakyRelu(in tflite.Operator op)
     {
-        var input = GetInputExprs(op, 0);
+        var input = GetInputExprs<Expr>(op, 0);
         var node = F.NN.LeakyRelu(input, op.BuiltinOptionsAsLeakyReluOptions().Alpha);
 
         List<string> outputNames = new() { GetOutputTensor(op, 0).Name };
@@ -74,7 +74,7 @@ public partial class TFLiteImporter
 
     private Expr VisitHardSwish(in tflite.Operator op)
     {
-        var input = GetInputExprs(op, 0);
+        var input = GetInputExprs<Expr>(op, 0);
         return F.NN.HardSwish(input);
     }
 }

@@ -126,7 +126,7 @@ public sealed class UnitTestEGraphRewriteFactory : TestClassBase
     [MemberData(nameof(DataAll))]
     public Task RunAllAsync(IRewriteCase @case) => RunCoreAsync(@case);
 
-    private static long CountRunTicks(Function pre, IReadOnlyDictionary<Var, IValue> feed_dict, out IValue ret)
+    private static long CountRunTicks(Function pre, IReadOnlyDictionary<IVar, IValue> feed_dict, out IValue ret)
     {
         long pre_time;
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();

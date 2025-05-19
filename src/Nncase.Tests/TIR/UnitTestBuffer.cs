@@ -33,7 +33,7 @@ public class UnitTestTBuffer
     {
         // var m = T.SizeVar("m");
         // var n = T.SizeVar("n");
-        // var dict = new Dictionary<Var, IValue>() {
+        // var dict = new Dictionary<IVar, IValue>() {
         //       { n, Value.FromTensor(1) },
         //       { m, Value.FromTensor(3) },
         //     };

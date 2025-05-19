@@ -22,7 +22,7 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     public UnitTestBufferScheduler()
     {
         DefaultTargetName = Targets.CPUTarget.Kind;
-        CompileOptions.TargetOptions = new Targets.CpuTargetOptions();
+        CompileOptions.TargetOptions = new Targets.NTTTargetOptions();
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.Schedule | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
@@ -83,38 +83,39 @@ public sealed class UnitTestBufferScheduler : TestClassBase
     [MemberData(nameof(ScheduleGetItemDatas))]
     public async Task TestScheduleGetItem(Func<Function> fusionGetter, int capacity, int number)
     {
-        ((Targets.CpuTargetOptions)CompileOptions.TargetOptions).HierarchySizes[^1] = capacity;
+        ((Targets.NTTTargetOptions)CompileOptions.TargetOptions).HierarchySizes[^1] = capacity;
         var fusion = fusionGetter();
-        var dupVars = fusion.Parameters.AsValueEnumerable().Select(v => new Var(v.TypeAnnotation)).ToArray();
-
-        var module = new IRModule(new Function("main", new Call(fusion, dupVars), dupVars));
+        var vars = fusion.Parameters.AsValueEnumerable().Select(x => (Var)x).ToArray();
+        var module = new IRModule(fusion);
         module.Add(fusion);
 
-        var inputs = dupVars.AsValueEnumerable().Select(v =>
+        var inputs = vars.AsValueEnumerable().Select(v =>
         {
             var ttype = v.CheckedTensorType;
             return IR.F.Random.Normal(ttype.DType, ttype.Shape.ToValueArray()).Evaluate().AsTensor();
         }).ToArray();
 
-        var kernelCase = new ModuleCase($"case{number}", module, dupVars, inputs);
+        var kernelCase = new ModuleCase($"case{number}", module, vars, inputs);
         await Testing.CompileAndRun(kernelCase, CompileOptions, CompileSession, Compile);
     }
 
     private async Task Compile(IRModule module)
     {
         var passManager = CompileSession.CreatePassManager("pmgr");
-        passManager.Add<CPUTIRSelectionPass>();
+        passManager.Add<NTTTIRSelectionPass>();
         passManager.Add<AddFunctionToModule>();
 
         // todo add auto fusion merge pass here.
         passManager.Add<PrimFuncPass>().Configure(p =>
         {
+            p.Add<Passes.Mutators.RemoveFunctionWrapper>();
             p.Add<Passes.Mutators.UnFoldBlock>();
             p.Add<Passes.Mutators.FlattenSequential>();
             p.Add<Passes.Mutators.TailLoopStripping>();
             p.Add<Passes.Mutators.FoldConstCall>();
         });
 
+        passManager.Add<RemoveUnusedFunctions>();
         passManager.AddWithName<BufferizePass>("BufferizePass");
 
         passManager.AddWithName<PrimFuncPass>("InstStage").Configure(p =>

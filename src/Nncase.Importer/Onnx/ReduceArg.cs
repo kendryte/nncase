@@ -12,7 +12,7 @@ namespace Nncase.Importer
         private Expr VisitReduceArg(in NodeProto op, ReduceArgOp reduceArgOp)
         {
             // op version > 11 have select_last_index
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var axis = GetIntAttribute(op, "axis", 0);
             var keepDims = GetBoolAttribute(op, "keepdims", true);
             var selectLastIndex = GetBoolAttribute(op, "select_last_index", false);

@@ -352,7 +352,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         e = '"'
         target_options: object = None
         if target == 'cpu' or target == 'xpu':
-            target_options = nncase.CpuTargetOptions()
+            target_options = nncase.NTTTargetOptions()
             for k, v in values.items():
                 is_enum = False
                 try:

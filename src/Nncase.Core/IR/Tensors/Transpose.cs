@@ -20,5 +20,5 @@ public sealed partial class Transpose : Op
     /// <summary>
     /// Gets perm.
     /// </summary>
-    public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm", HasRank(1) & IsIntegral());
+    public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm", IsShapeType());
 }

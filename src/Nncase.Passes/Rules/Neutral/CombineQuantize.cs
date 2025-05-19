@@ -39,7 +39,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
         IsTuple("tuple", IsVArgsRepeat("tupleInputs", () => IsWildcard()))),
       IsWildcard("quantParam"));
 
-    private Expr? GetReplace(Quantize quantize, IReadOnlyList<Expr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options, Expr tuple)
+    private Expr? GetReplace(Quantize quantize, IReadOnlyList<BaseExpr> tupleInputs, IR.Tensors.Concat concat, Expr quantParam, RunPassContext options, IR.Tuple tuple)
     {
         if (options.Driver is DataflowPass)
         {
@@ -79,7 +79,7 @@ public sealed partial class CombineQuantizeConcat : RewriteRule<Pattern>
             }
         }
 
-        return Concat(new IR.Tuple(tupleInputs.Select(e => IR.F.Math.Quantize(e, quantParam, quantize.TargetType)).ToArray()), concat.Axis);
+        return Concat(new IR.Tuple(tupleInputs.Select(e => IR.F.Math.Quantize((Expr)e, quantParam, quantize.TargetType)).ToArray()), concat.Axis);
     }
 }
 
@@ -102,7 +102,7 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
                 "reshape",
                 "reshapeCall",
                 IsWildcard("input") with { TypePattern = HasShape(sp => !(checkShapeSize && sp.ToValueArray().Any(s => s >= 65536)), "CheckedShape") },
-                IsWildcard("shape")),
+                IsShape("shape")),
             IsWildcard("quantParam"));
     }
 
@@ -114,7 +114,7 @@ public sealed partial class CombineQuantizeReshape : RewriteRule<Pattern>
     /// <inheritdoc/>
     public override Pattern Pattern { get; }
 
-    private Expr? GetReplace(Quantize quantize, Call reshapeCall, Expr input, Expr shape, Expr quantParam, RunPassContext context)
+    private Expr? GetReplace(Quantize quantize, Call reshapeCall, Expr input, Shape shape, Expr quantParam, RunPassContext context)
     {
         if (context.Driver is DataflowPass)
         {
@@ -146,9 +146,9 @@ public sealed partial class CombineReshapeQuantize : RewriteRule<Pattern>
             _ => true,
             IsWildcard("input"),
             IsWildcard("quantParam")),
-        IsWildcard("shape"));
+        IsShape("shape"));
 
-    private Expr? GetReplace(Quantize quantize, Call quantizeCall, Expr input, Expr shape, Expr quantParam, RunPassContext options)
+    private Expr? GetReplace(Quantize quantize, Call quantizeCall, Expr input, Shape shape, Expr quantParam, RunPassContext options)
     {
         var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
 
@@ -177,21 +177,15 @@ public sealed partial class CombineQuantizeTranspose : RewriteRule<Pattern>
             "transpose",
             "transposeCall",
             IsWildcard("input"),
-            IsWildcard("perm")),
+            IsShape("perm")),
         IsWildcard("quantParam"));
 
-    private Expr? GetReplace(Quantize quantize, Call transposeCall, Expr input, Expr perm, Expr quantParam, RunPassContext options)
+    private Expr? GetReplace(Quantize quantize, Call transposeCall, Expr input, Shape perm, Expr quantParam, RunPassContext options)
     {
-        try
+        if (options.TryGetAnalysis<IExprUserAnalysisResult>(out var userAnalysis)
+            && userAnalysis[transposeCall].Count() > 1)
         {
-            var userAnalysis = options.GetAnalysis<IExprUserAnalysisResult>();
-            if (userAnalysis[transposeCall].Count() > 1)
-            {
-                return null;
-            }
-        }
-        catch (System.Exception)
-        {
+            return null;
         }
 
         return Transpose(Quantize(input, quantParam, quantize.TargetType), perm);

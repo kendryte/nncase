@@ -19,9 +19,9 @@ public sealed class UnitTestFusion
     [Fact]
     public void FusionWithUpdatesProperties()
     {
-        var fusion = new Fusion("myFunc", "module", 1, new Var("x", DataTypes.Int32));
+        var fusion = new Fusion("myFunc", "module", (Expr)1, new Var("x", DataTypes.Int32));
 
-        var updatedFusion = fusion.With(name: "newFunc", body: default(bool), parameters: new[] { new Var("y", DataTypes.Boolean) });
+        var updatedFusion = fusion.With(name: "newFunc", body: (Expr)false, parameters: new[] { new Var("y", DataTypes.Boolean) });
 
         Assert.Equal("newFunc", updatedFusion.Name);
         Assert.Equal(DataTypes.Boolean, updatedFusion.Body.CheckedType);
@@ -34,6 +34,6 @@ public sealed class UnitTestFusion
         var expect = parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
         Assert.Equal(expect, fusion.ParameterTypes);
 
-        Assert.NotNull(new Fusion("module", 1, default(ReadOnlySpan<Var>)));
+        Assert.NotNull(new Fusion("module", (Expr)1, default(ReadOnlySpan<IVar>)));
     }
 }

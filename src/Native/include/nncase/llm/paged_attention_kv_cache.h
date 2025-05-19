@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "attention_kv_cache.h"
+#include "nncase/runtime/runtime_op_utility.h"
 #include "paged_attention_config.h"
 
 namespace nncase::llm {
@@ -27,43 +28,68 @@ class NNCASE_API paged_attention_kv_cache_node
 
   public:
     paged_attention_kv_cache_node(paged_attention_config config,
-                                  size_t num_seqs, size_t num_tokens,
+                                  int32_t num_seqs, int32_t num_tokens,
                                   tensor context_lens, tensor seq_lens,
-                                  tensor block_tables, tensor slot_mapping,
-                                  tensor kv_caches) noexcept;
+                                  tensor block_table, tensor slot_mapping,
+                                  int32_t num_blocks,
+                                  const dims_t &kv_shape) noexcept
+        : attention_kv_cache_node(config, num_seqs, num_tokens, context_lens,
+                                  seq_lens),
+          block_table_(std::move(block_table)),
+          slot_mapping_(std::move(slot_mapping)),
+          num_blocks_(num_blocks),
+          kv_shape_(kv_shape),
+          kv_strides_(runtime::get_default_strides(kv_shape)),
+          kv_storages_(runtime::compute_size(kv_shape)) {}
 
     paged_attention_config config() const noexcept {
         auto cfg = attention_kv_cache_node::config();
-        auto pcfg = cfg.as<paged_attention_config>().unwrap();
+        auto pcfg = cfg.as<paged_attention_config>().expect(
+            "paged attention kv cache can't get paged attention config");
         return pcfg;
     }
 
-    void config(paged_attention_config config) noexcept {
-        attention_kv_cache_node::config(std::move(config));
+    int32_t num_blocks() const noexcept { return num_blocks_; }
+
+    void block_table(tensor block_table) noexcept {
+        block_table_ = block_table;
     }
 
-    tensor get_block_ids(int seq_id) const;
-    tensor get_slot_ids() const;
-    tensor get_block(attention_cache_kind kind, int layer_id, int head_id,
-                     const tensor &block_id) const;
-    void update_block(attention_cache_kind kind, int layer_id, int head_id,
-                      const tensor &block_id, const tensor &block);
-    tensor get_slot(attention_cache_kind kind, int layer_id, int head_id,
-                    const tensor &slot_id) const;
-    void update_slot(attention_cache_kind kind, int layer_id, int head_id,
-                     const tensor &slot_id, const tensor &slot);
-    void update_slots(attention_cache_kind kind, int layer_id, int head_id,
-                      const tensor &slot_ids, const tensor &slots);
+    tensor block_table() const noexcept { return block_table_; }
 
-    tensor block_tables() const noexcept { return block_tables_; }
+    void slot_mapping(tensor slot_mapping) noexcept {
+        slot_mapping_ = slot_mapping;
+    }
+
     tensor slot_mapping() const noexcept { return slot_mapping_; }
-    tensor kv_caches() const noexcept { return kv_caches_; }
+
+    void kv_cache(dims_t indices, tensor kv_storage) noexcept {
+        auto index = runtime::linear_offset(indices, kv_strides_);
+        kv_storages_[index] = kv_storage;
+    }
+
+    tensor kv_cache(dims_t indices) const noexcept {
+        auto index = runtime::linear_offset(indices, kv_strides_);
+        return kv_storages_[index];
+    }
+
+    void kv_cache(int index, tensor kv_storage) noexcept {
+        kv_storages_[index] = kv_storage;
+    }
+
+    tensor kv_cache(int index) const noexcept { return kv_storages_[index]; }
+
+    const dims_t &kv_shape() const noexcept { return kv_shape_; }
+
+    const auto &kv_storages() const noexcept { return kv_storages_; }
 
   private:
-    tensor context_lens_;
     tensor seq_lens_;
-    tensor block_tables_;
+    tensor block_table_;
     tensor slot_mapping_;
-    tensor kv_caches_;
+    int32_t num_blocks_;
+    dims_t kv_shape_;
+    strides_t kv_strides_;
+    std::vector<tensor> kv_storages_;
 };
 } // namespace nncase::llm

@@ -11,8 +11,8 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitRange(in tflite.Operator op)
         {
-            var (start, limit) = GetInputExprs(op, 0, 1);
-            var delta = GetInputExprs(op, 2);
+            var (start, limit) = GetInputExprs<Expr, Expr>(op, 0, 1);
+            var delta = GetInputExprs<Expr>(op, 2);
             return Range(start, limit, delta);
         }
     }

@@ -32,7 +32,7 @@ public sealed partial class ResizeImage : Op
     /// <summary>
     /// Gets new_size.
     /// </summary>
-    public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", HasShape(new[] { 4 }));
+    public static readonly ParameterInfo NewSize = new(typeof(ResizeImage), 2, "new_size", IsShapeType());
 
     /// <summary>
     /// Gets CubicCoeffA.

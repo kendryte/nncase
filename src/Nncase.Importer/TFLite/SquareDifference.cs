@@ -11,7 +11,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitSquareDifference(in tflite.Operator op)
         {
-            var (input1, input2) = GetInputExprs(op, 0, 1);
+            var (input1, input2) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var val = input1 - input2;
             return val * val;
         }

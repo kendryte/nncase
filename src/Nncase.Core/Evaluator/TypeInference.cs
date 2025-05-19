@@ -3,14 +3,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Nncase.Utilities;
 using static Nncase.IR.TypePatternUtility;
@@ -139,7 +138,7 @@ public static class TypeInference
         {
             for (int i = 0; i < inputs.Length; i++)
             {
-                var inShape = inputs[i].Shape;
+                var inShape = (RankedShape)inputs[i].Shape;
                 var inExtend = outputRank - inShape.Rank;
                 var inDimIndex = dimIndex - inExtend;
                 var inDim = inDimIndex < 0 ? 1 : inShape[inDimIndex];
@@ -177,56 +176,53 @@ public static class TypeInference
                 }
                 else
                 {
-                    outputShape[dimIndex] = IR.F.Math.Max(non1Dims.Select(x => x.Value));
+                    outputShape[dimIndex] = Dimension.Max(non1Dims.ToArray());
                 }
             }
         }
 
-        return new TensorType(dataType, new Shape(outputShape));
+        return new TensorType(dataType, new RankedShape(outputShape));
     }
 
     /// <summary>
     /// Conv2D Type Infer.
     /// </summary>
-    public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation, Expr groups)
+    public static IRType Conv2DType(TensorType input, TensorType weights, Shape strides, Paddings paddings, Shape dilations, Dimension groups)
     {
-        if (input.Shape.IsUnranked)
+        if (input.Shape is RankedShape inShape)
         {
-            return input with { Shape = Shape.Unknown(4) };
-        }
-
-        var outShape = input.Shape.ToList();
-        outShape[1] = weights.Shape[0];
-        if (groups is TensorConst groups_con &&
-            input.Shape.IsFixed &&
-            weights.Shape.IsFixed)
-        {
-            var groups_v = groups_con.Value.ToScalar<int>();
-            if (!(input.Shape[1].FixedValue >= groups_v && (input.Shape[1].FixedValue % groups_v) == 0))
+            var outShape = inShape.ToList();
+            outShape[1] = weights.Shape[0];
+            if (groups.IsFixed &&
+                input.Shape.IsFixed &&
+                weights.Shape.IsFixed)
             {
-                return new InvalidType($"The Input Channel / Groups Error ({input.Shape[1].FixedValue}/{groups_v})");
+                var groups_v = groups.FixedValue;
+                if (!(input.Shape[1].FixedValue >= groups_v && (input.Shape[1].FixedValue % groups_v) == 0))
+                {
+                    return new InvalidType($"The Input Channel / Groups Error ({input.Shape[1].FixedValue}/{groups_v})");
+                }
+
+                if ((input.Shape[1] / groups_v) != weights.Shape[1])
+                {
+                    return new InvalidType($"The input channel {input.Shape[1]} / {groups_v} != {weights.Shape[1]}");
+                }
             }
 
-            if ((input.Shape[1] / groups_v) != weights.Shape[1])
+            for (int i = 0; i < 2; i++)
             {
-                return new InvalidType($"The input channel {input.Shape[1]} / {groups_v} != {weights.Shape[1]}");
+                outShape[i + 2] = GetWindowedOutputSize(
+                    input.Shape[i + 2] + paddings[i].Before + paddings[i].After,
+                    weights.Shape[i + 2],
+                    strides[i],
+                    dilations[i],
+                    false);
             }
+
+            return input with { Shape = new RankedShape(outShape) };
         }
 
-        outShape[2] = GetWindowedOutputSize(
-            input.Shape[2] + padding[0, 0] + padding[0, 1],
-            weights.Shape[2],
-            stride[0],
-            dilation[0],
-            false);
-        outShape[3] = GetWindowedOutputSize(
-            input.Shape[3] + padding[1, 0] + padding[1, 1],
-            weights.Shape[3],
-            stride[1],
-            dilation[1],
-            false);
-
-        return input with { Shape = new Shape(outShape) };
+        return input with { Shape = Shape.Unknown(4) };
     }
 
     /// <summary>
@@ -261,20 +257,20 @@ public static class TypeInference
         return (size + padding.Before + padding.After - effective_filter_size + stride) / stride;
     }
 
-    public static Expr GetPaddings(Shape inputShape, Shape weightsShape, Expr strides, Expr dilations, bool same, bool lower = false)
+    public static Paddings GetPaddings(Shape inputShape, Shape weightsShape, Shape strides, Shape dilations, bool same, bool lower = false)
     {
         var padH = GetWindowedPadding(inputShape[2], weightsShape[2], strides[0], dilations[0], same, lower);
         var padW = GetWindowedPadding(inputShape[3], weightsShape[3], strides[1], dilations[1], same, lower);
-        return Dimension.ConcatPadding(padH, padW);
+        return new[] { padH, padW };
     }
 
-    public static Dimension[] GetWindowedPadding(Dimension inputSize, Dimension filter, Dimension stride, Dimension dilation, bool same, bool lower = false)
+    public static Padding GetWindowedPadding(Dimension inputSize, Dimension filter, Dimension stride, Dimension dilation, bool same, bool lower = false)
     {
         var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);
         return GetWindowedPaddingValue(inputSize, outputSize, filter, stride, dilation, lower);
     }
 
-    public static Dimension[] GetWindowedPaddingValue(Dimension inputSize, Dimension outputSize, Dimension filter, Dimension stride, Dimension dilation, bool lower)
+    public static Padding GetWindowedPaddingValue(Dimension inputSize, Dimension outputSize, Dimension filter, Dimension stride, Dimension dilation, bool lower)
     {
         var effectiveFilterSize = ((filter - 1L) * dilation) + 1L;
         var padding = Dimension.Max(0L, ((outputSize - 1L) * stride) + effectiveFilterSize - inputSize);
@@ -282,28 +278,23 @@ public static class TypeInference
         var after = padding - (padding / 2L);
         if (lower)
         {
-            return [Dimension.Max(before, after), Dimension.Min(before, after)];
+            return (Dimension.Max(before, after), Dimension.Min(before, after));
         }
 
-        return [before, after];
+        return (before, after);
     }
 
     /// <summary>
     /// Pad Type Infer.
     /// </summary>
-    public static IRType PadType(TensorType input, TensorType padsType, Expr pads, Expr pad)
+    public static IRType PadType(TensorType input, Paddings pads, Expr padValue)
     {
-        if (input.Shape.IsUnranked)
+        if (input.Shape is not RankedShape inShape)
         {
             return input;
         }
 
-        if (padsType.Shape.IsUnranked || padsType.Shape.Rank != 2 || !padsType.Shape[0].IsFixed)
-        {
-            return new InvalidType($"The padding shape {padsType.Shape} is not support!");
-        }
-
-        if (pad.CheckedType is TensorType padValueType)
+        if (padValue.CheckedType is TensorType padValueType)
         {
             if (padValueType.DType != input.DType)
             {
@@ -312,37 +303,47 @@ public static class TypeInference
             }
         }
 
-        var newShape = input.Shape.ToList();
-        var channel = (int)padsType.Shape[0].FixedValue;
-        for (int i = 0; i < channel; i++)
+        var newShape = inShape.ToList();
+        var channel = pads.Rank;
+        if (channel > newShape.Count)
         {
-            newShape[newShape.Count - channel + i] += pads[i, 0] + pads[i, 1];
+            return new InvalidType($"Pads rank {channel} is greater than input rank {newShape.Count}");
         }
 
-        return new TensorType(input.DType, new Shape(newShape));
+        for (int i = 0; i < channel; i++)
+        {
+            newShape[newShape.Count - channel + i] += pads[i].Sum();
+        }
+
+        return new TensorType(input.DType, new RankedShape(newShape));
     }
 
     /// <summary>
     /// ReduceWindow2D Type Infer.
     /// </summary>
-    public static IRType ReduceWindow2DType(TensorType input, Expr filter, Expr stride, Expr padding, Expr ceilMode)
+    public static IRType ReduceWindow2DType(TensorType input, Shape filters, Shape strides, Paddings paddings, Expr ceilMode)
     {
-        if (padding.CheckedShape.Rank != 2)
+        if (paddings.Rank != 2)
         {
-            return new InvalidType($"The padding shape {padding.CheckedShape} is not support!");
+            return new InvalidType($"The padding shape {paddings.Rank} is not support!");
         }
 
-        var outShape = input.Shape.ToArray();
+        if (input.Shape is not RankedShape inShape)
+        {
+            return input;
+        }
+
+        var outShape = inShape.ToArray();
         if (ceilMode is TensorConst ceilModeValue)
         {
             var ceilModeV = ceilModeValue.Value.ToScalar<bool>();
 
-            var padh = padding[0, 0] + padding[0, 1];
-            var padw = padding[1, 0] + padding[1, 1];
-            outShape[2] = GetWindowedOutputSize(input.Shape[2] + padh, filter[0], filter[0], 1L, false, ceilModeV);
-            outShape[3] = GetWindowedOutputSize(input.Shape[3] + padw, filter[1], filter[1], 1L, false, ceilModeV);
+            var padh = paddings[0].Before + paddings[0].After;
+            var padw = paddings[1].Before + paddings[1].After;
+            outShape[2] = GetWindowedOutputSize(inShape[2] + padh, filters[0], filters[0], 1L, false, ceilModeV);
+            outShape[3] = GetWindowedOutputSize(inShape[3] + padw, filters[1], filters[1], 1L, false, ceilModeV);
 
-            return input with { Shape = new Shape(outShape) };
+            return input with { Shape = new RankedShape(outShape) };
         }
 
         throw new NotImplementedException("CeilMode is not constant");
@@ -351,9 +352,9 @@ public static class TypeInference
     /// <summary>
     /// Reduce Type Infer.
     /// </summary>
-    public static IRType ReduceType(TensorType input, Expr keepDims, Expr axis)
+    public static IRType ReduceType(TensorType input, Expr keepDims, Shape axes)
     {
-        if (input.Shape.IsUnranked)
+        if (input.Shape is not RankedShape inShape)
         {
             return input;
         }
@@ -364,14 +365,13 @@ public static class TypeInference
         }
 
         if (keepDims is TensorConst keepDimsV &&
-            axis is TensorConst axisValue)
+            axes.IsFixed)
         {
-            var axes = axisValue.Value.Cast<int>();
             var keepDimsValue = keepDimsV.Value.ToScalar<int>();
-            var outShape = input.Shape.ToArray();
-            foreach (var a in axes)
+            var outShape = inShape.ToArray();
+            foreach (var a in (RankedShape)axes)
             {
-                var ax = Util.PositiveIndex(a, input);
+                var ax = Dimension.Positive(a, input.Shape.Rank).FixedValue;
                 if (keepDimsValue == 1)
                 {
                     outShape[ax] = 1;
@@ -382,18 +382,18 @@ public static class TypeInference
                 }
             }
 
-            return input with { Shape = new Shape(outShape.Where(x => x != 0)) };
+            return input with { Shape = new RankedShape(outShape.Where(x => x != 0)) };
         }
 
         return input with { Shape = Shape.Unranked };
     }
 
-    public static Shape ApplyPerm(Shape inShape, int[] perm)
+    public static RankedShape ApplyPerm(RankedShape inShape, Shape perm)
     {
         var outShape = inShape.ToArray();
         foreach (var i in Enumerable.Range(0, inShape.Rank))
         {
-            outShape[i] = inShape[perm[i]];
+            outShape[i] = inShape[perm[i].FixedValue];
         }
 
         return outShape;
@@ -405,9 +405,9 @@ public static class TypeInference
     public static IRType PackType(TensorType input, IRArray<int> lanes, IRArray<int> axes)
     {
         var vType = new VectorType(input.DType, lanes);
-        if (input.Shape.IsRanked)
+        if (input.Shape is RankedShape inShape)
         {
-            var dims = input.Shape.ToList();
+            var dims = inShape.ToList();
             foreach (var (lane, axis) in lanes.Zip(axes))
             {
                 if (dims[axis].IsFixed)
@@ -416,7 +416,7 @@ public static class TypeInference
                 }
             }
 
-            return new TensorType(vType, new Shape(dims));
+            return new TensorType(vType, new RankedShape(dims));
         }
 
         return new TensorType(vType, Shape.Unranked);
@@ -429,15 +429,15 @@ public static class TypeInference
             return new InvalidType("input.DType is not VectorType vtype");
         }
 
-        if (input.Shape.IsRanked)
+        if (input.Shape is RankedShape inShape)
         {
-            var dims = input.Shape.ToList();
+            var dims = inShape.ToList();
             foreach (var (lanes, axis) in vtype.Lanes.Zip(axes))
             {
                 dims[axis] *= lanes;
             }
 
-            return new TensorType(vtype.ElemType, new Shape(dims));
+            return new TensorType(vtype.ElemType, new RankedShape(dims));
         }
 
         return new TensorType(vtype.ElemType, Shape.Unranked);
@@ -446,43 +446,52 @@ public static class TypeInference
     /// <summary>
     /// Transpose Type Infer.
     /// </summary>
-    public static IRType TransposeType(TensorType input, Expr perm)
+    public static IRType TransposeType(TensorType input, Shape perm)
     {
-        if (perm is TensorConst permValue)
+        if (input.Shape is not RankedShape inShape)
         {
-            if (input.Shape.IsUnranked)
-            {
-                return input;
-            }
-
-            var permt = permValue.Value.ToArray<int>();
-            if (input.Shape.Rank != permt.Length)
-            {
-                return new InvalidType("Transpose shoud perm.size == inShape.size");
-            }
-
-            var outShape = ApplyPerm(input.Shape, permt);
-            return input with { Shape = outShape };
+            return input;
         }
 
-        return input with { Shape = Shape.Unranked };
+        if (!perm.IsFixed)
+        {
+            return input with { Shape = Shape.Unranked };
+        }
+
+        if (inShape.Rank != perm.Rank)
+        {
+            return new InvalidType("Transpose shoud perm.size == inShape.size");
+        }
+
+        var outShape = ApplyPerm(inShape, perm);
+        return input with { Shape = outShape };
     }
 
     /// <summary>
     /// Resize Type Infer.
     /// </summary>
-    public static IRType ResizeType(TensorType input, Expr newSize, TensorType? inputbbox)
+    public static IRType ResizeType(TensorType input, Shape newSize, TensorType? inputbbox)
     {
-        var outShape = input.Shape.ToArray();
+        if (input.Shape is not RankedShape inShape)
+        {
+            return input;
+        }
+
+        if (newSize is not RankedShape rankedNewSize)
+        {
+            return input with { Shape = Shape.Unranked };
+        }
+
+        var outShape = inShape.ToArray();
         switch (outShape.Length)
         {
             case 2 or 3: // [h,w] ,[h,w,c]
-                outShape[0] = newSize[0];
-                outShape[1] = newSize[1];
+                outShape[0] = rankedNewSize[0];
+                outShape[1] = rankedNewSize[1];
                 break;
             case > 3: // resize [n,c,h,w]
-                outShape[^2] = newSize[^2]; // h
-                outShape[^1] = newSize[^1]; // w
+                outShape[^2] = rankedNewSize[^2]; // h
+                outShape[^1] = rankedNewSize[^1]; // w
                 break;
         }
 
@@ -492,7 +501,7 @@ public static class TypeInference
             outShape[0] = outShape[0] * inputbbox.Shape[0].FixedValue;
         }
 
-        return input with { Shape = new Shape(outShape) };
+        return input with { Shape = new RankedShape(outShape) };
     }
 
     /// <summary>
@@ -581,44 +590,39 @@ public static class TypeInference
 
     public static Shape ExpandShape(Shape inShape, Shape expandShape)
     {
-        if (inShape.IsUnranked || expandShape.IsUnranked)
+        if (inShape is not RankedShape inRankedShape
+            || expandShape is not RankedShape expandRankedShape)
         {
             return Shape.Unranked;
         }
 
-        var dimExtends = expandShape.Rank - inShape.Rank;
-        var newDims = expandShape.ToArray();
+        var dimExtends = expandRankedShape.Rank - inRankedShape.Rank;
+        var newDims = expandRankedShape.ToArray();
 
         // dimsExtends may be negative
         for (int i = Math.Max(0, dimExtends); i < newDims.Length; i++)
         {
             var inDimIndex = i - dimExtends;
             ref var dimValue = ref newDims[i];
-            dimValue = Dimension.Select(dimValue, 1L, inShape[inDimIndex], dimValue);
+            dimValue = Dimension.Select(dimValue, 1L, inRankedShape[inDimIndex], dimValue);
         }
 
-        newDims = inShape.Take(dimExtends < 0 ? -dimExtends : 0).Concat(newDims).ToArray();
-        return new Shape(newDims);
+        newDims = inRankedShape.Take(dimExtends < 0 ? -dimExtends : 0).Concat(newDims).ToArray();
+        return new RankedShape(newDims);
     }
 
-    public static Shape ReshapeShape(Shape inShape, Expr newShape, TensorType? shapeType = null)
+    public static Shape ReshapeShape(Shape inShape, Shape newShape)
     {
-        shapeType ??= newShape.CheckedType switch
-        {
-            TensorType t => t,
-            DistributedType dt when dt.AxisPolices.All(x => x is SBPBroadCast) => dt.TensorType,
-            _ => throw new TypeInferenceInterruptException(new InvalidType("Invalid shape type")),
-        };
-
-        if (inShape.IsUnranked || shapeType.Shape.IsUnranked || !shapeType.Shape[0].IsFixed)
+        if (inShape is not RankedShape inRankedShape
+            || newShape is not RankedShape newRankedShape)
         {
             return Shape.Unranked;
         }
 
-        var rank = (int)shapeType.Shape[0].FixedValue;
-        var shapeDims = new Shape((from i in Enumerable.Range(0, rank)
-                                   let dim = newShape[i]
-                                   select i < inShape.Rank ? Dimension.Select(dim, 0, inShape[i], dim) : dim).ToArray());
+        var rank = newShape.Rank;
+        var shapeDims = new RankedShape((from i in Enumerable.Range(0, rank)
+                                         let dim = newRankedShape[i]
+                                         select i < inRankedShape.Rank ? Dimension.Select(dim, 0, inRankedShape[i], dim) : dim).ToArray());
         var minus1DimCount = shapeDims.Count(x => x.IsFixed && x.FixedValue == -1);
         var outputShape = new Dimension[rank];
 
@@ -627,32 +631,17 @@ public static class TypeInference
             throw new TypeInferenceInterruptException(new InvalidType($"More than one -1 in the shape is not supported"));
         }
 
-        var minus1DimValue = FixedAndDynamicDimension.TryDivExactly(inShape.ProdFixedAndDynamic(), shapeDims.ProdFixedAndDynamic());
-        if (!minus1DimValue.HasValue || (minus1DimValue.Value.Dynamic is null && minus1DimValue.Value.Fixed > 1))
+        if (!Dimension.TryDivExactly(inRankedShape.Prod(), shapeDims.Prod(), out var minus1DimValue)
+            || (minus1DimValue is DimConst dc && dc.Value > 1))
         {
             throw new TypeInferenceInterruptException(new InvalidType($"Cannot reshape {inShape} to {shapeDims}"));
         }
 
-        var minus1Dim = FixedAndDynamicDimension.Abs(minus1DimValue.Value);
+        var minus1Dim = Dimension.Abs(minus1DimValue);
         for (var i = 0; i < rank; i++)
         {
             var shapeDim = shapeDims[i];
-            if (shapeDim.IsFixed)
-            {
-                outputShape[i] = shapeDim.FixedValue == -1 ? minus1Dim.ToDimension() : shapeDim;
-            }
-            else
-            {
-                switch (shapeDim)
-                {
-                    case Dimension { Value: Var }:
-                        outputShape[i] = shapeDim;
-                        break;
-                    default:
-                        outputShape[i] = Dimension.Select(shapeDim, -1L, minus1Dim.ToDimension(), shapeDim);
-                        break;
-                }
-            }
+            outputShape[i] = Dimension.Select(shapeDim, -1L, minus1Dim, shapeDim);
         }
 
         return outputShape;

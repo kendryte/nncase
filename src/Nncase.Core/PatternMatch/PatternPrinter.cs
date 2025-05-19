@@ -224,6 +224,114 @@ public static class PatternPrinter
             return name;
         }
 
+        public override string Visit(MarkerPattern pattern)
+        {
+            if (_names.TryGetValue(pattern, out var name))
+            {
+                return name;
+            }
+
+            var attribute = Visit(pattern.Attribute);
+            var target = Visit(pattern.Target);
+            name = $"marker({attribute}@{target})";
+            _names.Add(pattern, name);
+            name += $": {VisitType(pattern.TypePattern)}";
+            return name;
+        }
+
+        public override string Visit(DimensionPattern pattern)
+        {
+            if (_names.TryGetValue(pattern, out var name))
+            {
+                return name;
+            }
+
+            name = "dim";
+            _names.Add(pattern, name);
+            name += $": {VisitType(pattern.TypePattern)}";
+            return name;
+        }
+
+        public override string Visit(ShapePattern pattern)
+        {
+            if (_names.TryGetValue(pattern, out var name))
+            {
+                return name;
+            }
+
+            name = "shape";
+            _names.Add(pattern, name);
+            name += $": {VisitType(pattern.TypePattern)}";
+            return name;
+        }
+
+        public override string Visit(RankedShapePattern pattern)
+        {
+            if (_names.TryGetValue(pattern, out var name))
+            {
+                return name;
+            }
+
+            name = "ranked_shape";
+            _names.Add(pattern, name);
+            name += $": {VisitType(pattern.TypePattern)}";
+            return name;
+        }
+
+        public override string Visit(PaddingPattern pattern)
+        {
+            if (_names.TryGetValue(pattern, out var name))
+            {
+                return name;
+            }
+
+            name = "padding";
+            _names.Add(pattern, name);
+            name += $": {VisitType(pattern.TypePattern)}";
+            return name;
+        }
+
+        public override string Visit(PaddingsPattern pattern)
+        {
+            if (_names.TryGetValue(pattern, out var name))
+            {
+                return name;
+            }
+
+            name = "paddings";
+            _names.Add(pattern, name);
+            name += $": {VisitType(pattern.TypePattern)}";
+            return name;
+        }
+
+        public override string Visit(OrPattern pattern)
+        {
+            if (_names.TryGetValue(pattern, out var name))
+            {
+                return name;
+            }
+
+            var conditionA = Visit(pattern.ConditionA);
+            var conditionB = Visit(pattern.ConditionB);
+            name = $"{conditionA} or {conditionB}";
+            _names.Add(pattern, name);
+            return name;
+        }
+
+        public override string Visit(VArgsPattern pattern)
+        {
+            if (_names.TryGetValue(pattern, out var name))
+            {
+                return name;
+            }
+
+            var fields = pattern.Fields.Select(Visit).ToArray();
+            name = AllocateTempVar(pattern);
+            Ident().Write($"{name} = ({string.Join(", ", fields)})");
+            _textWriter.WriteLine();
+            return name;
+        }
+
         /// <inheritdoc/>
         public override string VisitType(TypePattern? pattern) => pattern?.Reason ?? string.Empty;
 

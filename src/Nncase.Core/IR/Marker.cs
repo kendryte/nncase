@@ -59,7 +59,7 @@ public sealed class Marker : Expr, IEquatable<Marker?>
     /// <param name="name">Name will belong to <see cref="WellknownMarkerNames"/>.</param>
     /// <param name="target">expr target.</param>
     /// <param name="attribute">expr attribute.</param>
-    public Marker(string name, Expr target, Expr attribute)
+    public Marker(string name, BaseExpr target, BaseExpr attribute)
         : base(new[] { target, attribute })
     {
         _name = name;
@@ -67,9 +67,9 @@ public sealed class Marker : Expr, IEquatable<Marker?>
 
     public string Name => _name;
 
-    public Expr Target => Operands[0];
+    public BaseExpr Target => Operands[0];
 
-    public Expr Attribute => Operands[1];
+    public BaseExpr Attribute => Operands[1];
 
     /// <summary>
     /// Gets or sets the mix quant info.
@@ -103,7 +103,7 @@ public sealed class Marker : Expr, IEquatable<Marker?>
         return other is not null && base.Equals(other) && Name == other.Name;
     }
 
-    public Marker With(string? name = null, Expr? target = null, Expr? attribute = null, MixQuantInfo? mixQuantInfo = null, AdaQuantInfo? adaQuantInfo = null, IRMetadata? metadata = null)
+    public Marker With(string? name = null, BaseExpr? target = null, BaseExpr? attribute = null, MixQuantInfo? mixQuantInfo = null, AdaQuantInfo? adaQuantInfo = null, IRMetadata? metadata = null)
         => new Marker(name ?? Name, target ?? Target, attribute ?? Attribute)
         {
             MixQuantInfo = mixQuantInfo ?? MixQuantInfo,

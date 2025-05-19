@@ -16,7 +16,7 @@ namespace Nncase.IR.Affine;
 public sealed class For : Expr
 {
     public For(int memoryLevel, AffineMap domain, Expr body)
-        : base(new Expr[] { domain, body })
+        : base(new BaseExpr[] { domain, body })
     {
         MemoryLevel = memoryLevel;
     }
@@ -27,7 +27,7 @@ public sealed class For : Expr
 
     public AffineMap Domain => (AffineMap)Operands[0];
 
-    public Expr Body => Operands[1];
+    public Expr Body => (Expr)Operands[1];
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitFor(this, context);
 

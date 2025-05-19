@@ -4,8 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CommunityToolkit.HighPerformance;
+using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Passes.Rules.ShapeExpr;
 using Nncase.PatternMatch;
@@ -27,19 +30,21 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsSpaceToBatch(
-        IsWildcard("input") with { TypePattern = HasRank() },
-        IsWildcard("blockShape") with { TypePattern = HasFixedShape() },
-        IsWildcard("paddings"));
+        IsWildcard("input") with { TypePattern = HasRankedShape() },
+        IsShape("blockShape") with { TypePattern = HasFixedShape() },
+        IsPaddings("paddings"));
 
-    public Expr? GetReplace(Expr input, Expr blockShape, Expr paddings)
+    public Expr? GetReplace(Expr input, RankedShape blockShape, Paddings paddings)
     {
-        var spatialSize = (int)blockShape.CheckedShape.Size;
+        // TODO: rewrite to use shape expr
+#if false
+        var spatialSize = (int)blockShape.Size;
         var remainShapeSize = input.CheckedShape.Rank - spatialSize - 1;
-        var newPaddings = Enumerable.Repeat((Expr)0, (1 + spatialSize + remainShapeSize) * 2).ToArray();
+        var newPaddings = Enumerable.Repeat((Dimension)0, (1 + spatialSize + remainShapeSize) * 2).ToArray();
         for (int i = 0; i < spatialSize; i++)
         {
-            newPaddings[1 + i] = paddings[i, 0];
-            newPaddings[1 + (newPaddings.Length / 2) + i] = paddings[i, 1];
+            newPaddings[1 + i] = paddings[i].Before;
+            newPaddings[1 + (newPaddings.Length / 2) + i] = paddings[i].After;
         }
 
         var tmpPaddings = Stack(new IR.Tuple(newPaddings), 0);
@@ -78,6 +83,8 @@ public partial class SplitSpaceToBatch : RewriteRule<Pattern>
         var rt = Transpose(reshape1, perm);
         var reshape2 = Reshape(rt, reshappedShape2);
         return NHWCToNCHW(reshape2);
+#endif
+        return null;
     }
 
     private T[] RangeExec<T>(long end, Func<int, T> f)
@@ -96,26 +103,32 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
 {
     /// <inheritdoc/>
     public override Pattern Pattern { get; } = IsBatchToSpace(
-        IsWildcard("input") with { TypePattern = HasRank() },
-        IsWildcard("blockShape") with { TypePattern = HasFixedShape() },
-        IsWildcard("crop"));
+        IsWildcard("input") with { TypePattern = HasRankedShape() },
+        IsFixedShape("blockShape"),
+        IsPaddings("crop"));
 
-    public Expr? GetReplace(Expr input, Expr blockShape, Expr crop)
+    public Expr? GetReplace(Expr input, RankedShape blockShape, Paddings crop)
     {
         // to nhwc
         var input0 = NCHWToNHWC(input);
-        var blockLen = (int)blockShape.CheckedShape.Size;
-        var xLen = input0.CheckedShape.Rank;
-        var xShape = ShapeOf(input0);
-        var spatial = ShapeExprUtility.Slice(xShape, 1, blockLen + 1);
-        var depth = ShapeExprUtility.Slice(xShape, blockLen + 1, xLen);
-        var targetSpatial = spatial * blockShape;
+        var blockLen = blockShape.Rank;
+        var xShape = (RankedShape)input0.CheckedShape;
+        var xLen = xShape.Rank;
+        var spatial = xShape[1..(blockLen + 1)];
+        var depth = xShape[(blockLen + 1)..];
+        var targetSpatial = spatial.AsValueEnumerable().Select((x, i) => x * blockShape[i]).ToArray();
 
-        var ccat1 = Concat(new IR.Tuple(spatial, blockShape), 0);
-        var re1 = Reshape(ccat1, new[] { ccat1.CheckedShape[0].FixedValue / blockLen, blockLen });
-        var interLeave = Reshape(Transpose(re1, new long[] { 1, 0 }), new long[] { -1 });
-        var shape1 = Concat(new IR.Tuple(new long[] { -1 }, interLeave, depth), 0);
+        Dimension[] ccat1 = [.. spatial, .. blockShape];
+        var interLeave = new Dimension[blockLen, ccat1.Length / blockLen];
+        for (int i = 0; i < blockLen; i++)
+        {
+            for (int j = 0; j < spatial.Length; j++)
+            {
+                interLeave[i, j] = ccat1[i + (j * blockLen)];
+            }
+        }
 
+        Dimension[] shape1 = [-1, .. interLeave, .. depth];
         var g1 = BoostRange(2, (2 * blockLen) + 1, 2);
         var g2 = BoostRange(1, (2 * blockLen) + 1, 2);
         var g3 = BoostRange(0, xLen + blockLen).ToArray()[1 + (2 * blockLen)];
@@ -123,18 +136,23 @@ public partial class SplitBatchToSpace : RewriteRule<Pattern>
 
         var perm = GetPerm(xLen, blockLen);
 
-        var newShape = indices.Select(i => shape1[i]).ToArray();
-        var x2 = Reshape(input0, Stack(new IR.Tuple(newShape), 0));
+        var newShape = new RankedShape(indices.Select(i => shape1[i]).ToArray());
+        var x2 = Reshape(input0, newShape);
         var tr2 = Transpose(x2, perm);
-        var shape2 = Concat(new IR.Tuple(new[] { -1 }, targetSpatial, depth), 0);
+        Dimension[] shape2 = [-1, .. targetSpatial, .. depth];
         var x3 = Reshape(tr2, shape2);
 
-        var cropTransposed = Transpose(crop, new long[] { 1, 0 });
-        var cropArray = Reshape(cropTransposed, new long[] { -1 });
-        var w = cropTransposed.CheckedShape[1].FixedValue;
-        var cropStart = ShapeExprUtility.Slice(cropArray, 0, w);
-        var cropEnd = ShapeExprUtility.Slice(cropArray, w, w + w);
-        var endRange = targetSpatial - cropEnd;
+        var cropArray = new Dimension[2 * crop.Count];
+        for (int i = 0; i < crop.Count; i++)
+        {
+            cropArray[i] = crop[i].Before;
+            cropArray[crop.Count + i] = crop[i].After;
+        }
+
+        var w = crop.Count;
+        var cropStart = cropArray[0..w];
+        var cropEnd = cropArray[w..];
+        var endRange = targetSpatial.Select((x, i) => x - cropEnd[i]).ToArray();
         var axesConst = BoostRange(1, blockLen + 1).ToArray();
         var strideConst = Enumerable.Repeat(1, axesConst.Length).ToArray();
         var result = Slice(x3, cropStart, endRange, axesConst, strideConst);

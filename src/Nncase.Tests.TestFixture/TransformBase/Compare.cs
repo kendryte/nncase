@@ -474,7 +474,7 @@ public record CompareResultByChannel(float Cos, AccuracyLossInfo[] LossInfo)
     public override string ToString()
     {
         var err = Losses;
-        var percent = (float)err.Length / new Shape(Shape).Prod().FixedValue;
+        var percent = (float)err.Length / new RankedShape(Shape).Prod().FixedValue;
         return $"CompareResultByChannel Cos:{Cos} \nLossCount/InputSize: {percent}\nLoss:\n{SerializeByColumn(err)}";
     }
 }

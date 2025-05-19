@@ -26,10 +26,10 @@ public sealed partial class Split : Op
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Split), 1, "axis", IsScalar() & IsIntegral());
+    public static readonly ParameterInfo Axis = new(typeof(Split), 1, "axis", IsDimensionType());
 
     /// <summary>
     /// Gets sections.
     /// </summary>
-    public static readonly ParameterInfo Sections = new(typeof(Split), 2, "sections", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Sections = new(typeof(Split), 2, "sections", IsShapeType());
 }

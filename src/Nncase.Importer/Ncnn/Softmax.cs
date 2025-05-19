@@ -20,7 +20,7 @@ public partial class NcnnImporter
     {
         var axis = layer.ParamDict.Get(0, 0);
 
-        var input = GetInputExprs(layer, 0);
+        var input = GetInputExprs<Expr>(layer, 0);
         var output = NN.Softmax(input, axis);
         return output;
     }

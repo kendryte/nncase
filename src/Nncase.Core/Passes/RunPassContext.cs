@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -67,7 +68,16 @@ public record RunPassContext
     /// <summary>
     /// Gets analysis results.
     /// </summary>
-    public void GetAnalysis<T>(out T analysis)
+    public bool TryGetAnalysis<T>([MaybeNullWhen(false)] out T analysis)
         where T : IAnalysisResult
-        => analysis = GetAnalysis<T>();
+    {
+        if (AnalysisResults.TryGetValue(typeof(T), out var result))
+        {
+            analysis = (T)result;
+            return true;
+        }
+
+        analysis = default;
+        return false;
+    }
 }

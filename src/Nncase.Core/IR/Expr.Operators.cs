@@ -21,7 +21,7 @@ public partial class Expr
     /// get the item from the expr.
     /// </summary>
     /// <param name="index"> expr. </param>
-    public Expr this[Expr index] => F.Tensors.GetItem(this, index);
+    public override Expr this[Dimension index] => F.Tensors.GetItem(this, index);
 
     /// <summary>
     /// get the item from the expr.
@@ -30,14 +30,9 @@ public partial class Expr
     public Expr this[long index] =>
         this switch
         {
-            TensorConst tc when tc.Value.Rank == 1 => Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
-            TupleConst tc => tc.Value[(int)index].AsTensor(),
-            Shape shape => shape.Dimensions[(int)index],
-            IR.Tuple t => t[(int)index],
-            Call { Target: Concat { Axis: 0 } } c when c[Concat.Input] is IR.Tuple tp && tp.Fields[0].CheckedType is TensorType { Shape: { IsFixed: true, Size: 1 } } => c[Concat.Input][index][0],
-            Call { Target: Reshape } c when c[Reshape.Shape] is TensorConst tc && tc.Value.Length == 1 && tc.Value.Cast<long>()[0] == 1 => c[Reshape.Input],
-            Call { Target: Stack } c => c[Stack.Inputs][index],
-            _ => this[(Expr)index],
+            TensorConst tc when tc.Value.Rank == 1 => (Expr)Tensor.FromScalar(tc.Value.ElementType, tc.Value[index]),
+            TupleConst tc => (Expr)tc.Value[(int)index].AsTensor(),
+            _ => F.Tensors.GetItem(this, index),
         };
 
     /// <summary>
@@ -48,15 +43,14 @@ public partial class Expr
         this switch
         {
             TensorConst tc when tc.Value.Rank == indices.Length => Tensor.FromScalar(tc.Value.ElementType, tc.Value[indices]),
-            Call { Target: Stack } c when indices.Length == 2 => c[Stack.Inputs][indices[0]][indices[1]],
-            _ => this[indices.Select(x => (Expr)x).ToArray()],
+            _ => this[indices.Select(x => (Dimension)x).ToArray()],
         };
 
     /// <summary>
     /// get the item from the expr.
     /// </summary>
     /// <returns> expr. </returns>
-    public Expr this[params Expr[] indices]
+    public Expr this[params Dimension[] indices]
     {
         get
         {
@@ -66,7 +60,7 @@ public partial class Expr
             }
             else
             {
-                return F.Tensors.GetItem(this, F.Tensors.Stack(new IR.Tuple(indices), 0));
+                return F.Tensors.GetItem(this, indices);
             }
         }
     }
@@ -80,15 +74,8 @@ public partial class Expr
             if (index.IsFromEnd)
             {
                 var shape = (CheckedType as TensorType)?.Shape;
-                if (shape?.IsRanked == true)
-                {
-                    var newIndex = shape[0] - index.Value;
-                    return newIndex.IsFixed ? this[newIndex.FixedValue] : this[newIndex.ToExpr()];
-                }
-                else
-                {
-                    return this[IR.F.Tensors.ShapeOf(this)[0] - (long)index.Value];
-                }
+                var newIndex = shape?.IsRanked == true ? shape[0] - index.Value : IR.F.Tensors.Rank(this).AsDim() - index.Value;
+                return IR.F.Tensors.GetItem(this, newIndex);
             }
 
             return this[(long)index.Value];
