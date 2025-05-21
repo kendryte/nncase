@@ -240,12 +240,14 @@ result<void> run_core(const std::string &kmodel_path,
 
                     for (size_t o = 0; o < ret_tensors.size(); o++) {
                         auto ret_tensor = ret_tensors[o];
-                        auto output_pool = read_file(files[parameters.size() + o]);
+                        auto output_pool =
+                            read_file(files[parameters.size() + o]);
                         std::span<std::byte> output_pool_span = {
                             reinterpret_cast<std::byte *>(output_pool.data()),
                             output_pool.size()};
-                        try_var(_,
-                                hrt::create(ret_tensor->dtype(), dims_t(ret_tensor->shape()), output_pool_span, true));
+                        try_var(_, hrt::create(ret_tensor->dtype(),
+                                               dims_t(ret_tensor->shape()),
+                                               output_pool_span, true));
                         try_(compare_tensor(ret_tensor, _.impl()));
                     }
                 }
@@ -271,7 +273,8 @@ result<void> run_core(const std::string &kmodel_path,
  * @return int
  */
 int main(int argc, char **argv) {
-    std::cout << "case " << argv[0] << " build " << __DATE__ << " " << __TIME__ << std::endl;
+    std::cout << "case " << argv[0] << " build " << __DATE__ << " " << __TIME__
+              << std::endl;
 
     cxxopts::Options options("nncase-interp", "NNCASE interpreter CLI tool");
 
