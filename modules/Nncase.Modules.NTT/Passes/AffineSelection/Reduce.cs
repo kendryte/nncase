@@ -10,7 +10,7 @@ namespace Nncase.Passes;
 
 public partial class NTTAffineSelectionPass
 {
-    private Expr SelectReduce(IR.NTT.PackedReduce reduce, Call call, Expr output)
+    public Expr SelectReduce(IR.NTT.PackedReduce reduce, Call call, Expr output)
     {
         var input = (Expr)call[IR.NTT.PackedReduce.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 }
