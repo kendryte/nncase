@@ -27,17 +27,8 @@ using Tuple = System.Tuple;
 
 namespace Nncase.Importer
 {
-    // public partial class HuggingFaceImporter
-    // {
     public class Qwen3 : HuggingFaceModel
     {
-        // private ModelInitContext? _context;
-
-        // public override void Initialize(ModelInitContext context, string dir)
-        // {
-        //     base.Initialize(context, dir);
-        //     _context = context;
-        // }
         public override Tuple<Call, Call, Call> QKVCompute(int count, Expr hiddenStates, Dimension batchSize, Dimension seqLen, Dimension headDim)
         {
             var hidden_shape = new RankedShape(batchSize, seqLen, -1L, headDim);
