@@ -1010,7 +1010,7 @@ public sealed class PackExpandPropagation : RewriteRule<Pattern>
                 "callee",
                 _ => true,
                 IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() },
-                IsTensorConst("shape") with { TypePattern = IsIntegral() }));
+                IsFixedShape("shape")));
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext context)
     {
@@ -1019,7 +1019,7 @@ public sealed class PackExpandPropagation : RewriteRule<Pattern>
         {
             var callee = (Call)result["callee"];
             var input = (Expr)result["input"];
-            var shape = ((TensorConst)result["shape"]).Value.ToArray<long>();
+            var shape = ((RankedShape)result["shape"]).ToValueArray();
 
             var ret = PackExpand.AddCandidate(callee, input, shape, pack.Axes.ToArray(), pack.Lanes.ToArray()).FirstOrDefault();
             if (ret is not null)
@@ -1045,7 +1045,7 @@ public sealed class ExpandUnpackPropagation : RewriteRule<Pattern>
                 "callee",
                 _ => true,
                 IsWildcard("input")),
-            IsTensorConst("shape") with { TypePattern = IsIntegral() });
+            IsFixedShape("shape"));
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext context)
     {
@@ -1054,7 +1054,7 @@ public sealed class ExpandUnpackPropagation : RewriteRule<Pattern>
         {
             var caller = (Call)result["caller"];
             var callee = (Call)result["callee"];
-            var shape = ((TensorConst)result["shape"]).Value.ToArray<long>();
+            var shape = ((RankedShape)result["shape"]).ToValueArray();
 
             var ret = PackExpand.AddCandidate(caller, callee, shape, unpack.Axes.ToArray(), unpack.Lanes.ToArray()).FirstOrDefault();
             if (ret is not null)
@@ -1080,7 +1080,7 @@ public sealed class PackReshapePropagation : RewriteRule<Pattern>
                 "callee",
                 _ => true,
                 IsWildcard("input", e => e is not Call { Target: IR.NTT.Unpack }) with { TypePattern = !IsVector() },
-                IsTensorConst("newShape") with { TypePattern = IsIntegral() }));
+                IsFixedShape("newShape")));
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext context)
     {
@@ -1088,7 +1088,7 @@ public sealed class PackReshapePropagation : RewriteRule<Pattern>
         if (pack.Axes.Count > 1)
         {
             var input = (Expr)result["input"];
-            var shape = ((TensorConst)result["shape"]).Value.ToArray<long>();
+            var shape = ((RankedShape)result["shape"]).ToValueArray();
 
             if (!IRUtility.TryGetShapeMapMatrix(input.CheckedShape.ToValueArray(), shape, out var mat))
             {
@@ -1143,7 +1143,7 @@ public sealed class ReshapeUnpackPropagation : RewriteRule<Pattern>
                 _ => true,
                 IsWildcard("input")) with
             { TypePattern = HasFixedShape() },
-            IsTensorConst("newShape") with { TypePattern = IsIntegral() });
+            IsFixedShape("newShape"));
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext context)
     {
@@ -1151,7 +1151,7 @@ public sealed class ReshapeUnpackPropagation : RewriteRule<Pattern>
         if (unpack.Axes.Count > 1)
         {
             var callee = (Call)result["callee"];
-            var shape = ((TensorConst)result["newShape"]).Value.ToArray<long>();
+            var shape = ((RankedShape)result["newShape"]).ToValueArray();
 
             if (!IRUtility.TryGetShapeMapMatrix(callee.CheckedShape.ToValueArray(), shape, out var mat))
             {
