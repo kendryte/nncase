@@ -23,7 +23,7 @@ public sealed class UnitTestMutators : TestClassBase
     public UnitTestMutators()
     {
 #if DEBUG
-        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite;
+        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.PassIR;
 #endif
     }
 
@@ -35,23 +35,23 @@ public sealed class UnitTestMutators : TestClassBase
         T.CreateBuffer(new TensorType(DataTypes.BFloat16, new[] { 9 }), MemoryLocation.Data, out var glb_if_pong);
         PrimFunction main;
         {
-            main = T.PrimFunc("main", Callable.StackVMModuleKind, ddr_if).Body(
+            main = T.PrimFunc("main", Callable.CPUModuleKind, ddr_if).Body(
                    T.Unrolled(out var w, (0, 48, 9)).Body(
                      new Call(
                          new LoadT(),
                          new BufferRegion(
                            ddr_if,
-                           new Range[] { (w, Min(w + 9L, 48L)) }),
+                           new Range[] { (w, Dimension.Min(w + 9L, 48L)) }),
                          GetItem(
                              new Tuple(new[] {
                           new BufferRegion(
                               glb_if_ping,
-                              new Range[] { (0, Min(w + 9L, 48L) - w) }),
+                              new Range[] { (0, Dimension.Min(w + 9L, 48L) - w) }),
                           new BufferRegion(
                               glb_if_pong,
-                              new Range[] { (0, Min(w + 9L, 48L) - w) }),
+                              new Range[] { (0, Dimension.Min(w + 9L, 48L) - w) }),
                           }),
-                             Mod(w / 9L, 2L)))))
+                             w / 9L % 2L))))
            .Build();
         }
 
@@ -95,7 +95,7 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestUnRollLoopSequential()
     {
-        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(// (*i8) -> ()
+        var main = T.PrimFunc("main", Callable.CPUModuleKind).Body(// (*i8) -> ()
             T.Unrolled(out var i, (0, 32, 4)).Body(// ()
               T.Unrolled(out var j, (0, 16, 4)).Body(// ()
                 T.Unrolled(out var k, (0, 18, 6)).Body(// ()
@@ -123,7 +123,7 @@ public sealed class UnitTestMutators : TestClassBase
 
         PrimFunction main;
         {
-            main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(
+            main = T.PrimFunc("main", Callable.CPUModuleKind).Body(
              T.Unrolled(out var n, (0, 3, 3)).Body(
                T.Unrolled(out var c, (0, 16, 10)).Body(
                  T.Unrolled(out var h, (0, 24, 5)).Body(
@@ -132,17 +132,17 @@ public sealed class UnitTestMutators : TestClassBase
                          new LoadT(),
                          new BufferRegion(
                            ddr_if,
-                           new TIR.Range[] { (n, IR.F.Math.Min(n + 3L, 3L)),
-                                        (c, IR.F.Math.Min(c + 10L, 16L)),
-                                        (h, IR.F.Math.Min(h + 5L, 24L)),
-                                        (w, IR.F.Math.Min(w + 9L, 24L)),
+                           new TIR.Range[] { (n, Dimension.Min(n + 3L, 3L)),
+                                        (c, Dimension.Min(c + 10L, 16L)),
+                                        (h, Dimension.Min(h + 5L, 24L)),
+                                        (w, Dimension.Min(w + 9L, 24L)),
                                          }),
                          new BufferRegion(
                            glb_if,
-                           new TIR.Range[] { (0, IR.F.Math.Min(n + 3L, 3L) - n),
-                                        (0, IR.F.Math.Min(c + 10L, 16L) - c),
-                                        (0, IR.F.Math.Min(h + 5L, 24L) - h),
-                                        (0, IR.F.Math.Min(w + 9L, 24L) - w),
+                           new TIR.Range[] { (0, IR.Dimension.Min(n + 3L, 3L) - n),
+                                        (0, Dimension.Min(c + 10L, 16L) - c),
+                                        (0, Dimension.Min(h + 5L, 24L) - h),
+                                        (0, Dimension.Min(w + 9L, 24L) - w),
                                          })))))))
            .Build();
         }
@@ -206,7 +206,7 @@ public sealed class UnitTestMutators : TestClassBase
 
         PrimFunction main;
         {
-            main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(
+            main = T.PrimFunc("main", Callable.CPUModuleKind).Body(
              T.Unrolled(out var n, (0, 3, 3)).Body(
                T.Unrolled(out var c, (0, 16, 10)).Body(
                  T.Unrolled(out var h, (0, 24, 5)).Body(
@@ -215,34 +215,34 @@ public sealed class UnitTestMutators : TestClassBase
                          new LoadT(),
                          new BufferRegion(
                            ddr_if,
-                           new TIR.Range[] { (n, IR.F.Math.Min(n + 3L, 3L)),
-                                        (c, IR.F.Math.Min(c + 10L, 16L)),
-                                        (h, IR.F.Math.Min(h + 5L, 24L)),
-                                        (w, IR.F.Math.Min(w + 9L, 24L)),
+                           new TIR.Range[] { (n, Dimension.Min(n + 3L, 3L)),
+                                        (c, Dimension.Min(c + 10L, 16L)),
+                                        (h, Dimension.Min(h + 5L, 24L)),
+                                        (w, Dimension.Min(w + 9L, 24L)),
                                          }),
                          new BufferRegion(
                            glb_if,
-                           new TIR.Range[] { (0, IR.F.Math.Min(n + 3L, 3L) - n),
-                                        (0, IR.F.Math.Min(c + 10L, 16L) - c),
-                                        (0, IR.F.Math.Min(h + 5L, 24L) - h),
-                                        (0, IR.F.Math.Min(w + 9L, 24L) - w),
+                           new TIR.Range[] { (0, Dimension.Min(n + 3L, 3L) - n),
+                                        (0, Dimension.Min(c + 10L, 16L) - c),
+                                        (0, Dimension.Min(h + 5L, 24L) - h),
+                                        (0, Dimension.Min(w + 9L, 24L) - w),
                                          })),
-                     T.Unrolled(out var tcu_h, (h, IR.F.Math.Min(h + 5L, 24L), 2L)).Body(
+                     T.Unrolled(out var tcu_h, (h, Dimension.Min(h + 5L, 24L), 2L)).Body(
                       new Call(
                          new LoadT(),
                          new BufferRegion(
                            ddr_if,
-                           new TIR.Range[] { (n, IR.F.Math.Min(n + 3L, 3L)),
-                                        (c, IR.F.Math.Min(c + 10L, 16L)),
-                                        (h + tcu_h, IR.F.Math.Min(h + tcu_h + 2L, 24L)),
-                                        (w, IR.F.Math.Min(w + 9L, 24L)),
+                           new TIR.Range[] { (n, Dimension.Min(n + 3L, 3L)),
+                                        (c, Dimension.Min(c + 10L, 16L)),
+                                        (h + tcu_h, Dimension.Min(h + tcu_h + 2L, 24L)),
+                                        (w, Dimension.Min(w + 9L, 24L)),
                                          }),
                          new BufferRegion(
                            glb_if,
-                           new TIR.Range[] { (0, IR.F.Math.Min(n + 3L, 3L) - n),
-                                        (0, IR.F.Math.Min(c + 10L, 16L) - c),
-                                        (tcu_h, IR.F.Math.Min(h + tcu_h + 2L, 24L) - h),
-                                        (0, IR.F.Math.Min(w + 9L, 24L) - w),
+                           new TIR.Range[] { (0, Dimension.Min(n + 3L, 3L) - n),
+                                        (0, Dimension.Min(c + 10L, 16L) - c),
+                                        (tcu_h, Dimension.Min(h + tcu_h + 2L, 24L) - h),
+                                        (0, Dimension.Min(w + 9L, 24L) - w),
                                          }))))))))
            .Build();
         }
@@ -281,14 +281,14 @@ public sealed class UnitTestMutators : TestClassBase
                                         h..System.Math.Min(h + 5, 24),
                                         w..System.Math.Min(w + 9, 24),
                             };
-                            Assert.True(ddrPp.SequenceEqual(getRegion(count, LoadT.DdrPp)));
+                            Assert.Equal(ddrPp, getRegion(count, LoadT.DdrPp));
                             var glbPp = new System.Range[] {
                                         0..(System.Math.Min(n + 3, 3) - n),
                                         0..(System.Math.Min(c + 10, 16) - c),
                                         0..(System.Math.Min(h + 5, 24) - h),
                                         0..(System.Math.Min(w + 9, 24) - w),
                             };
-                            Assert.True(glbPp.SequenceEqual(getRegion(count, LoadT.GlbPp)));
+                            Assert.Equal(glbPp, getRegion(count, LoadT.GlbPp));
                             count++;
                             for (int tcu_h = h; tcu_h < System.Math.Min(h + 5, 24); tcu_h += 2)
                             {
@@ -298,14 +298,14 @@ public sealed class UnitTestMutators : TestClassBase
                                         (h + tcu_h)..System.Math.Min(h + tcu_h + 2, 24),
                                         w..System.Math.Min(w + 9, 24),
                                 };
-                                Assert.True(ddrPp2.SequenceEqual(getRegion(count, LoadT.DdrPp)));
+                                Assert.Equal(ddrPp2, getRegion(count, LoadT.DdrPp));
                                 var glbPp2 = new System.Range[] {
                                         0..(System.Math.Min(n + 3, 3) - n),
                                         0..(System.Math.Min(c + 10, 16) - c),
                                         tcu_h..(System.Math.Min(h + tcu_h + 2, 24) - h),
                                         0..(System.Math.Min(w + 9, 24) - w),
                                 };
-                                Assert.True(glbPp2.SequenceEqual(getRegion(count, LoadT.GlbPp)));
+                                Assert.Equal(glbPp2, getRegion(count, LoadT.GlbPp));
                                 count++;
                             }
                         }
@@ -318,10 +318,10 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestFoldLet()
     {
-        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(// (*i8) -> ()
+        var main = T.PrimFunc("main", Callable.CPUModuleKind).Body(// (*i8) -> ()
           T.Unrolled(out var i, (0, 32, 4)).Body(// ()
-            T.Let(out var a, (Expr)10L - (Expr)2L).Body(
-              T.Let(out var b, (Expr)10L + (Expr)2L).Body(
+            T.LetDim(out var a, (Dimension)10L - (Dimension)2L).Body(
+              T.LetDim(out var b, (Dimension)10L + (Dimension)2L).Body(
                 new Call(new ExtraW(), i + a + b)))))
         .Build();
 
@@ -339,13 +339,13 @@ public sealed class UnitTestMutators : TestClassBase
     [Fact]
     public async Task TestFoldLet2()
     {
-        var main = T.PrimFunc("main", Callable.StackVMModuleKind).Body(// (*i8) -> ()
+        var main = T.PrimFunc("main", Callable.CPUModuleKind).Body(// (*i8) -> ()
             T.Let(out var tcu_h_chunk, IR.F.Math.Min(10 + 9L, 32L) - 10L).Body(
               T.Let(out var n_active_tcu, IR.F.Tensors.Cast(IR.F.Math.Ceil(48.0f / IR.F.Tensors.Cast(tcu_h_chunk, DataTypes.Float32)), DataTypes.Int64)).Body(
                 T.If(IR.F.Math.Equal(n_active_tcu, 1L)).Then(
-                  new Call(new ExtraW(), 123))
+                  new Call(new ExtraW(), (Dimension)123))
                 .Else(
-                  new Call(new ExtraW(), 456)))))
+                  new Call(new ExtraW(), (Dimension)456)))))
         .Build();
 
         CompilerServices.InferenceType(main);
@@ -372,7 +372,7 @@ public sealed class UnitTestMutators : TestClassBase
 
         PrimFunction main;
         {
-            main = T.PrimFunc("main", Callable.StackVMModuleKind, ddr_if, ddr_of).Body(
+            main = T.PrimFunc("main", Callable.CPUModuleKind, ddr_if, ddr_of).Body(
              T.Unrolled(out var n, (0, 3, 3)).Body(
                T.Unrolled(out var c, (0, 16, 10)).Body(
                  T.Unrolled(out var h, (0, 24, 5)).Body(
@@ -384,11 +384,11 @@ public sealed class UnitTestMutators : TestClassBase
 
         var pass = new PrimFuncPass { Name = "AssginBuffer" };
         pass.Add<UnRollLoopSequential>();
-        pass.Add<Substitutor>(Expr? (Expr e) =>
+        pass.Add<Substitutor>(BaseExpr? (BaseExpr e) =>
         {
             if (e is Call { } call && call.Arguments[0] is Var physicalBuffer && bufferIndexMap.TryGetValue(physicalBuffer, out var index))
             {
-                return index;
+                return (Dimension)index;
             }
 
             return null;
@@ -398,8 +398,8 @@ public sealed class UnitTestMutators : TestClassBase
         {
             var getIndex = (int i, ParameterInfo info) =>
             {
-                var index = (TensorConst)((Call)post.Body.Fields[i])[info];
-                return index.Value.ToScalar<int>();
+                var index = (DimConst)((Call)post.Body.Fields[i])[info];
+                return index.Value;
             };
             int count = 0;
             for (int n = 0; n < 3; n += 3)

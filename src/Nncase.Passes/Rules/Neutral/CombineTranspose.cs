@@ -9,6 +9,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
@@ -35,14 +36,14 @@ public sealed partial class CombineBinaryTranspose : IRewriteRule
     /// </summary>
     public CombineBinaryTranspose()
     {
-        var perm = IsWildcard("perm");
+        var perm = IsShape("perm");
         Pattern = IsBinary("binary", "binaryCall", x => true, IsTranspose(IsWildcard("x"), perm), IsTranspose(IsWildcard("y"), perm));
     }
 
     /// <inheritdoc/>
     public IPattern Pattern { get; init; }
 
-    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, Expr perm)
+    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, Shape perm)
     {
         return Transpose(Binary(binary.BinaryOp, x, y).InheritMetaData(binaryCall), perm);
     }
@@ -104,7 +105,7 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
     /// </summary>
     public CombineConstBinaryTranspose()
     {
-        var perm = IsWildcard("perm");
+        var perm = IsFixedShape("perm");
         Pattern = IsAlt(
             IsBinary(
                 "binary",
@@ -123,15 +124,14 @@ public sealed partial class CombineConstBinaryTranspose : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; init; }
 
-    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, Expr perm)
+    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, int[] perm)
     {
-        var permV = ((TensorConst)perm).Value.ToArray<int>();
-        if (permV.Length == 0)
+        if (perm.Length == 0)
         {
             return null;
         }
 
-        var expandDim = perm.CheckedShape.Size - permV[perm.CheckedShape.Size - 1] - 1;
+        var expandDim = perm.Length - perm[perm.Length - 1] - 1;
 
         if (x is Const)
         {
@@ -188,9 +188,9 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
         IsAlt(
           IsBinary("binary", "binaryCall", _ => true, IsWildcard("x", x => x is not Const), IsTensorConst("y")),
           IsBinary("binary", "binaryCall", _ => true, IsTensorConst("x"), IsWildcard("y", x => x is not Const))),
-        IsTensorConst("perm"));
+        IsFixedShape("perm"));
 
-    private Const GetNewConst(TensorConst oldConst, Expr input, TensorConst perm)
+    private Const GetNewConst(TensorConst oldConst, Expr input, Shape perm)
     {
         long[] newConstShape;
         if (oldConst.Value.Shape.Rank < input.CheckedShape.Rank)
@@ -205,7 +205,7 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
         return (Const)Const.FromValue(Transpose(Tensor.FromBytes(oldConst.Value.ElementType, oldConst.Value.BytesBuffer.ToArray(), newConstShape), perm).Evaluate()).InheritMetaData(oldConst);
     }
 
-    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, TensorConst perm)
+    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, Shape perm)
     {
         if (x is TensorConst && y.CheckedShape.Rank != binaryCall.CheckedShape.Rank)
         {
@@ -244,19 +244,19 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
                    var patterns = new Pattern[exprs.Length];
                    for (var i = 0; i < patterns.Length; i++)
                    {
-                       patterns[i] = IsTranspose(IsWildcard($"input_{i}"), IsTensorConst($"perm_{i}"));
+                       patterns[i] = IsTranspose(IsWildcard($"input_{i}"), IsFixedShape($"perm_{i}"));
                    }
 
                    return patterns;
                })));
 
-    private Expr? GetReplace(IR.Tensors.Concat concat, Call concatCall, IReadOnlyList<Expr> tupleInputs, IMatchResult matchResult)
+    private Expr? GetReplace(IR.Tensors.Concat concat, Call concatCall, IReadOnlyList<BaseExpr> tupleInputs, IMatchResult matchResult)
     {
         int axis = concat.Axis;
         var inputs = Enumerable.Range(0, tupleInputs.Count).Select(i => (Expr)matchResult[$"input_{i}"]);
-        var perms = new HashSet<Tensor<int>>(Enumerable.Range(0, tupleInputs.Count).Select(i => ((TensorConst)matchResult[$"perm_{i}"]).Value.Cast<int>(CastMode.KDefault)));
+        var perms = new HashSet<Tensor<long>>(Enumerable.Range(0, tupleInputs.Count).Select(i => Tensor.From(((Shape)matchResult[$"perm_{i}"]).ToValueArray())));
 
-        Tensor<int> perm;
+        Tensor<long> perm;
         if (perms.Count == 1)
         {
             perm = perms.Single();
@@ -266,7 +266,7 @@ public sealed partial class CombineTransposeConcat : IRewriteRule
             return null;
         }
 
-        return Transpose(Concat(new IR.Tuple(inputs.ToArray()), perm[axis]).InheritMetaData(concatCall), perm);
+        return Transpose(Concat(new IR.Tuple(inputs.ToArray()), (int)perm[axis]).InheritMetaData(concatCall), perm);
     }
 }
 
@@ -282,22 +282,22 @@ public sealed partial class CombineTransposePad : IRewriteRule
         "pad",
         "padCall",
         x => true,
-        IsTranspose(IsWildcard("input"), IsTensorConst("perm")),
-        IsTensorConst("pads"),
+        IsTranspose(IsWildcard("input"), IsFixedShape("perm")),
+        IsPaddings("pads"),
         IsWildcard("padValue"));
 
-    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue)
+    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Paddings pads, Expr padValue)
     {
         var inv_perm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
-        var newPads = new List<Expr>();
+        var newPads = new List<Padding>();
         for (var i = 0; i < inv_perm.Length; i++)
         {
-            newPads.Add(Stack(new IR.Tuple(pads[inv_perm[i].i, 0], pads[inv_perm[i].i, 1]), 0));
+            newPads.Add(pads[inv_perm[i].i]);
 
             // newPads[i] = pads[perm[i]];
         }
 
-        var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0).Evaluate().AsTensor(), pad.PadMode, padValue).InheritMetaData(padCall);
+        var p = Pad(input, newPads.ToArray(), pad.PadMode, padValue).InheritMetaData(padCall);
         return Transpose(p, perm);
     }
 }
@@ -318,20 +318,19 @@ public sealed partial class CombinePadTranspose : IRewriteRule
             "padCall",
             y => true,
             IsWildcard("input"),
-            IsTensorConst("pads"),
+            IsPaddings("pads"),
             IsTensorConst("padValue")),
-        IsTensorConst("perm"));
+        IsFixedShape("perm"));
 
-    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue)
+    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Paddings pads, Expr padValue)
     {
-        var newPads = new List<int>();
+        var newPads = new List<Padding>();
         for (int i = 0; i < perm.Length; i++)
         {
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2]);
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[(perm[i] * 2) + 1]);
+            newPads.Add(pads[perm[i]]);
         }
 
-        return Pad(Transpose(input, perm), Tensor.From<int>(newPads.ToArray(), pads.CheckedShape), pad.PadMode, padValue).InheritMetaData(padCall);
+        return Pad(Transpose(input, perm), newPads.ToArray(), pad.PadMode, padValue).InheritMetaData(padCall);
     }
 }
 
@@ -347,8 +346,8 @@ public sealed partial class CombineTransposeReduce : IRewriteRule
         "reduce",
         "reduceCall",
         x => true,
-        IsTranspose("tp", "tpCall", _ => true, IsWildcard("input"), IsTensorConst("perm")),
-        IsTensorConst("axis"),
+        IsTranspose("tp", "tpCall", _ => true, IsWildcard("input"), IsFixedShape("perm")),
+        IsFixedShape("axis"),
         IsWildcard("initValue"),
         IsTensorConst("keepDims", IsBoolScalar()));
 
@@ -401,9 +400,9 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
         "trans",
         IsReshape(
             IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsTensorConst("newShape")) with
+            IsFixedShape("newShape")) with
         { TypePattern = HasFixedShape() },
-        IsTensorConst("perm"));
+        IsFixedShape("perm"));
 
     private Expr? GetReplace(Call trans, Expr input, long[] newShape, int[] perm)
     {
@@ -440,9 +439,9 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
 public sealed partial class CombineUnaryTranspose : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsUnary("unary", "unaryCall", x => true, IsTranspose(IsWildcard("input"), IsWildcard("perm")));
+    public IPattern Pattern { get; } = IsUnary("unary", "unaryCall", x => true, IsTranspose(IsWildcard("input"), IsShape("perm")));
 
-    private Expr? GetReplace(Unary unary, Call unaryCall, Expr input, Expr perm)
+    private Expr? GetReplace(Unary unary, Call unaryCall, Expr input, Shape perm)
     {
         return Transpose(Unary(unary.UnaryOp, input).InheritMetaData(unaryCall), perm);
     }
@@ -458,11 +457,11 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
     public IPattern Pattern { get; } =
         IsTranspose(
             IsCall("actCall", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("arguments", () => IsWildcard() with { TypePattern = HasFixedShape() })),
-            IsTensorConst("perm"));
+            IsFixedShape("perm"));
 
-    private Expr? GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<Expr> arguments, int[] perm)
+    private Expr? GetReplace(Call actCall, ActivationOp activation, IReadOnlyList<BaseExpr> arguments, int[] perm)
     {
-        var newArgs = new List<Expr>();
+        var newArgs = new List<BaseExpr>();
         foreach (var arg in arguments)
         {
             if (arg.CheckedShape.IsScalar)
@@ -472,7 +471,7 @@ public sealed partial class CombineTransposeActivations : IRewriteRule
             }
             else if (arg.CheckedShape.Rank <= perm.Length)
             {
-                newArgs.Add(Transpose(arg, perm.Select(p => p - (perm.Length - arg.CheckedShape.Rank)).Where(p => p >= 0).ToArray()));
+                newArgs.Add(Transpose((Expr)arg, perm.Select(p => p - (perm.Length - arg.CheckedShape.Rank)).Where(p => p >= 0).ToArray()));
                 continue;
             }
             else
@@ -498,7 +497,7 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
       IsCall("actCall", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
       {
           var patterns = new Pattern[inputs.Length];
-          patterns[0] = IsTranspose(IsWildcard("input"), IsWildcard("perm"));
+          patterns[0] = IsTranspose(IsWildcard("input"), IsShape("perm"));
           for (int i = 1; i < inputs.Length; i++)
           {
               patterns[i] = IsWildcard();
@@ -507,19 +506,19 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
           return patterns;
       }));
 
-    private Expr? GetReplace(Call actCall, ActivationOp activation, Expr input, IReadOnlyList<Expr> parameters, Expr perm)
+    private Expr? GetReplace(Call actCall, ActivationOp activation, Expr input, IReadOnlyList<BaseExpr> parameters, Shape perm)
     {
         // note the prelu scope can be broadcast with inputs.
         if (activation is PRelu && parameters[1].CheckedShape.Rank > 1)
         {
-            if (perm is not TensorConst const_perm || parameters[1] is not TensorConst slope)
+            if (!perm.IsFixed || parameters[1] is not TensorConst slope)
             {
                 return null;
             }
 
             // eg. transpose(input,perm) shape = [1,32,32,8], scope = [1,1,8]
             Expr new_slope;
-            var perms = const_perm.Value.ToArray<int>();
+            var perms = perm.ToValueArray();
             if (slope.Value.Shape.Rank == input.CheckedShape.Rank - 1)
             {
                 if (perms[0] != 0)

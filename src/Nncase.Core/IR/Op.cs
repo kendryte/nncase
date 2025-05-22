@@ -112,7 +112,7 @@ public abstract class Op : Expr
     private ParameterInfo[]? _parameters;
 
     public Op()
-        : base(Array.Empty<Expr>())
+        : base(Array.Empty<BaseExpr>())
     {
     }
 

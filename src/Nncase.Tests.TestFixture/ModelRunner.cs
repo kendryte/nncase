@@ -12,16 +12,16 @@ namespace Nncase.Tests
     {
         private readonly int _count = 1;
 
-        private readonly IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> _samples;
+        private readonly IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> _samples;
 
-        public SelfInputCalibrationDatasetProvider(IReadOnlyDictionary<Var, IValue> sample)
+        public SelfInputCalibrationDatasetProvider(IReadOnlyDictionary<IVar, IValue> sample)
         {
             _samples = new[] { sample }.ToAsyncEnumerable();
         }
 
         public int? Count => _count;
 
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples => _samples;
+        public IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> Samples => _samples;
     }
 
     /// <summary>

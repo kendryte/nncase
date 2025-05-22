@@ -62,7 +62,7 @@ public class UnitTestFoldBinary : TransformTestBase
     public void TestFoldNopBinaryPositive(BinaryOp binaryOp, long[] aShape, float bValue, int index)
     {
         var a = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, aShape).Evaluate());
         var rootPre = Math.Binary(binaryOp, Math.Binary(binaryOp, a, bValue), bValue);
         TestMatched<FoldNopBinary>(rootPre, normal);

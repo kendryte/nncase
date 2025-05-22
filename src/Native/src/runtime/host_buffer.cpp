@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../kernels/stackvm/optimized/opt_ops.h"
 #include <nncase/runtime/allocator.h>
+#include <nncase/runtime/copy.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/host_buffer.h>
 
@@ -112,21 +112,9 @@ host_buffer_node::copy_to(buffer_t dest, size_t src_start, size_t dest_start,
                           datatype_t datatype, std::span<const size_t> shape,
                           std::span<const size_t> src_strides,
                           std::span<const size_t> dest_strides) noexcept {
-    axes_t begins(shape.size(), 0);
-    axes_t ends(shape.size(), 0);
-    axes_t strides(shape.size(), 1);
-    for (size_t i = 0; i < ends.size(); i++) {
-        ends[i] = (int64_t)shape[i];
-    }
-
     try_var(dest_host, dest.as<host_buffer_t>());
-    try_var(src_map, map(map_read));
-    try_var(dest_map, dest_host->map(map_write));
-    return kernels::stackvm::optimized::slice(
-        datatype, src_map.buffer().data() + src_start * datatype->size_bytes(),
-        dest_map.buffer().data() + dest_start * datatype->size_bytes(), shape,
-        src_strides, dest_strides, begins, ends, strides,
-        kernels::default_kernel_context());
+    return runtime::copy(this, dest_host, src_start, dest_start, datatype,
+                         shape, src_strides, dest_strides);
 }
 
 result<mapped_buffer> host_buffer_slice::map(map_access_t access) noexcept {

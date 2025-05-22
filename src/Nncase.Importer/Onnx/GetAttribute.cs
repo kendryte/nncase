@@ -73,20 +73,21 @@ namespace Nncase.Importer
             return GetIntAttribute(n, attr, defaultValue ? 1 : 0) != 0;
         }
 
-        private Expr ComputeDefaultAxes(Expr input)
+        private RankedShape ComputeDefaultAxes(Expr input)
         {
             if (input.CheckedShape.IsRanked)
             {
                 return Enumerable.Range(0, input.CheckedShape.Rank).Select(i => (long)i).ToArray();
             }
 
-            return F.Tensors.Range(0L, F.Tensors.Rank(input), 1L);
+            throw new NotSupportedException(
+                $"Cannot compute default axes for {input} because its rank is not known.");
         }
 
-        private Expr GetAxesAttribute(NodeProto n, Expr input)
+        private RankedShape GetAxesAttribute(NodeProto n, Expr input)
         {
             return GetOptionIntsAttribute(n, "axes")
-                .Map(x => (Expr)Tensor.From<long>(x))
+                .Map(x => new RankedShape(x))
                 .Or(ComputeDefaultAxes(input));
         }
 
@@ -95,7 +96,7 @@ namespace Nncase.Importer
             return GetAttrUnSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray());
         }
 
-        private Tensor GetTensorIntsAttribute(NodeProto n, string attr)
+        private Tensor<long> GetTensorIntsAttribute(NodeProto n, string attr)
         {
             return Tensor.From<long>(GetIntsAttribute(n, attr));
         }

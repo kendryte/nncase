@@ -13,10 +13,10 @@ namespace Nncase.Evaluator;
 /// </summary>
 internal sealed class MetricEvaluateContext : IMetricEvaluateContext
 {
-    private readonly Dictionary<Expr, Metric> _exprMemo;
+    private readonly Dictionary<BaseExpr, Metric> _exprMemo;
     private Call? _currentCall;
 
-    public MetricEvaluateContext(Dictionary<Expr, Metric> exprMemo)
+    public MetricEvaluateContext(Dictionary<BaseExpr, Metric> exprMemo)
     {
         _exprMemo = exprMemo;
     }
@@ -50,7 +50,7 @@ internal sealed class MetricEvaluateContext : IMetricEvaluateContext
         return (T)CurrentCall.CheckedType;
     }
 
-    private Expr GetArgumentExpr(Op op, ParameterInfo parameter)
+    private BaseExpr GetArgumentExpr(Op op, ParameterInfo parameter)
     {
         if (op.GetType() == parameter.OwnerType)
         {
@@ -62,7 +62,7 @@ internal sealed class MetricEvaluateContext : IMetricEvaluateContext
         }
     }
 
-    private Metric GetMetric(Expr expr)
+    private Metric GetMetric(BaseExpr expr)
     {
         return _exprMemo[expr];
     }

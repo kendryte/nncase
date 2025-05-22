@@ -57,7 +57,7 @@ public class QuantizerChecker : FunctionPass, IRulesPass
         _analysisTypes.Add(typeof(T));
     }
 
-    public async Task<IReadOnlyDictionary<Var, IValue>> GetFirstElementAsync(IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> asyncEnumerable)
+    public async Task<IReadOnlyDictionary<IVar, IValue>> GetFirstElementAsync(IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> asyncEnumerable)
     {
         await foreach (var element in asyncEnumerable)
         {

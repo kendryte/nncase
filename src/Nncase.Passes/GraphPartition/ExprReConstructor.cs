@@ -24,9 +24,9 @@ public class ExprReconstructor<TVertex, TEdge>
 
     public CondensationGraphAlgorithm<TVertex, TEdge> Algo { get; }
 
-    protected Dictionary<ClusteredBidirectionalGraph<TVertex, TEdge>, Expr> ClusterMemo { get; }
+    protected Dictionary<ClusteredBidirectionalGraph<TVertex, TEdge>, BaseExpr> ClusterMemo { get; }
 
-    public Expr Construct()
+    public BaseExpr Construct()
     {
         var dfsVisitor = new QuikGraph.Algorithms.TopologicalSort.SourceFirstTopologicalSortAlgorithm<ClusteredBidirectionalGraph<TVertex, TEdge>, Edge<ClusteredBidirectionalGraph<TVertex, TEdge>>>(Algo.CondensedGraph);
         dfsVisitor.Compute();
@@ -38,13 +38,13 @@ public class ExprReconstructor<TVertex, TEdge>
         return ClusterMemo[dfsVisitor.SortedVertices[^1]];
     }
 
-    protected virtual IEnumerable<(Expr Pre, Expr Post)> GetClusterArgumentPairs(ClusteredBidirectionalGraph<TVertex, TEdge> cluster)
+    protected virtual IEnumerable<(BaseExpr Pre, BaseExpr Post)> GetClusterArgumentPairs(ClusteredBidirectionalGraph<TVertex, TEdge> cluster)
     {
-        var pairs = new List<(Expr Pre, Expr Post)>();
+        var pairs = new List<(BaseExpr Pre, BaseExpr Post)>();
         foreach (var inEdge in cluster.InEdges(Algo.ClusteredGraph))
         {
             // get in Expr
-            Expr postArg;
+            BaseExpr postArg;
             var sourceCluster = Algo.VertexMap[inEdge.Source];
             var sourceOutVertices = sourceCluster.OutVertices(Algo.ClusteredGraph).ToArray();
             if (sourceOutVertices.Length == 1)
@@ -64,22 +64,22 @@ public class ExprReconstructor<TVertex, TEdge>
         return pairs;
     }
 
-    protected virtual Expr OnFinishCluster(ClusteredBidirectionalGraph<TVertex, TEdge> cluster, int sortIndex)
+    protected virtual BaseExpr OnFinishCluster(ClusteredBidirectionalGraph<TVertex, TEdge> cluster, int sortIndex)
     {
         return cluster.VertexCount == 1 ? OnAtomCluster(cluster, sortIndex) : OnComplexCluster(cluster, sortIndex);
     }
 
-    protected virtual Expr OnAtomCluster(ClusteredBidirectionalGraph<TVertex, TEdge> cluster, int sortIndex)
+    protected virtual BaseExpr OnAtomCluster(ClusteredBidirectionalGraph<TVertex, TEdge> cluster, int sortIndex)
     {
         var pairs = GetClusterArgumentPairs(cluster);
-        var cloner = new ExprClusterCloner(pairs.ToDictionary(p => p.Pre, p => p.Post, new ReferenceEqualityComparer<Expr>()));
+        var cloner = new ExprClusterCloner(pairs.ToDictionary(p => p.Pre, p => p.Post, new ReferenceEqualityComparer<BaseExpr>()));
         return cloner.Clone(cluster.Vertices.First().Expr, default);
     }
 
-    protected virtual Expr OnComplexCluster(ClusteredBidirectionalGraph<TVertex, TEdge> cluster, int sortIndex)
+    protected virtual BaseExpr OnComplexCluster(ClusteredBidirectionalGraph<TVertex, TEdge> cluster, int sortIndex)
     {
         var pairs = GetClusterArgumentPairs(cluster);
-        var cloner = new ExprClusterCloner(pairs.ToDictionary(p => p.Pre, p => p.Post, new ReferenceEqualityComparer<Expr>()));
+        var cloner = new ExprClusterCloner(pairs.ToDictionary(p => p.Pre, p => p.Post, new ReferenceEqualityComparer<BaseExpr>()));
         var outVertices = cluster.OutVertices().ToArray();
         if (outVertices.Length == 1)
         {
@@ -87,7 +87,7 @@ public class ExprReconstructor<TVertex, TEdge>
         }
         else
         {
-            var fields = new List<Expr>();
+            var fields = new List<BaseExpr>();
             foreach (var outVertex in outVertices)
             {
                 fields.Add(cloner.Clone(outVertex.Expr, default));
@@ -100,14 +100,14 @@ public class ExprReconstructor<TVertex, TEdge>
 
 public class ExprClusterCloner : ExprCloner<Unit>
 {
-    public ExprClusterCloner(Dictionary<Expr, Expr> extractMemo)
+    public ExprClusterCloner(Dictionary<BaseExpr, BaseExpr> extractMemo)
     {
         ExtractMemo = extractMemo;
     }
 
-    public Dictionary<Expr, Expr> ExtractMemo { get; }
+    public Dictionary<BaseExpr, BaseExpr> ExtractMemo { get; }
 
-    protected override Expr DispatchVisit(Expr expr, Unit context)
+    protected override BaseExpr DispatchVisit(BaseExpr expr, Unit context)
     {
         if (HasVisited(expr, out var result))
         {

@@ -18,15 +18,15 @@ namespace Nncase.Importer
 
         private Expr SqueezeV11(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var axes = GetOptionIntsAttribute(op, "axes").Or(System.Array.Empty<long>());
             return Squeeze(input, axes);
         }
 
         private Expr SqueezeV13(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var axes = GetOptionInputExpr(op, 1, Tensor.From<long>(System.Array.Empty<long>()));
+            var input = GetInputExpr<Expr>(op, 0);
+            var axes = GetOptionInputExpr<Shape>(op, 1, Shape.Scalar);
             return Squeeze(input, axes);
         }
     }

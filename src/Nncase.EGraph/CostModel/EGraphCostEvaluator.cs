@@ -8,6 +8,7 @@ using System.Linq;
 using Nncase.CostModel;
 using Nncase.Evaluator;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Passes;
 
 namespace Nncase.CostModel;
@@ -128,6 +129,8 @@ internal sealed class EGraphCostEvaluator
             Marker marker => Visit(enode, marker),
             None none => Visit(enode, none),
             BaseFunction baseFunction => Visit(enode, baseFunction),
+            DimConst dimConst => VisitLeaf(enode, () => Cost.Zero),
+            Dimension or Shape or Padding or Paddings => Visit(enode, costs => new Cost { [CostFactorNames.CPUCycles] = 1 } + (_accumulate ? costs.Sum() : Cost.Zero)),
             _ => throw new ArgumentException("Unsupported expression type."),
         };
     }

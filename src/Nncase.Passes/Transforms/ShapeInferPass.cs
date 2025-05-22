@@ -24,6 +24,7 @@ public sealed class ShapeInferPass : DataflowPass
     {
         Add<Rules.Neutral.IntegralPromotion>();
         Add<Rules.Neutral.FoldConstCall>();
+        Add<Rules.Neutral.FoldConstDimension>();
         Add<Rules.Neutral.FoldShapeOf>();
     }
 

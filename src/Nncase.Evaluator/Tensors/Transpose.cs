@@ -20,26 +20,25 @@ namespace Nncase.Evaluator.Tensors;
 public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpose>, ICostEvaluator<Transpose>,
     IMetricEvaluator<Transpose>
 {
-    public static IRType Visit(TensorType input, Expr permExpr)
+    public static IRType Visit(TensorType input, Shape perm)
     {
-        return TypeInference.TransposeType(input, permExpr);
+        return TypeInference.TransposeType(input, perm);
     }
 
-    public static IRType Visit(DistributedType input, Expr permExpr)
+    public static IRType Visit(DistributedType input, Shape perm)
     {
-        if (Visit(input.TensorType, permExpr) is not TensorType tensorType)
+        if (Visit(input.TensorType, perm) is not TensorType tensorType)
         {
             throw new InvalidOperationException();
         }
 
-        if (permExpr is TensorConst permValue)
+        if (perm.IsFixed)
         {
-            var perm = permValue.Value.ToArray<int>();
             var ndsbp = new SBP[tensorType.Shape.Rank];
 
             for (int i = 0; i < ndsbp.Length; i++)
             {
-                ndsbp[i] = input.AxisPolices[perm[i]];
+                ndsbp[i] = input.AxisPolices[(int)perm[i].FixedValue];
             }
 
             return new DistributedType(tensorType, ndsbp, input.Placement);
@@ -51,33 +50,11 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Transpose tr)
     {
-        var inputValue = context.GetArgumentValue(tr, Transpose.Input);
+        var inputValue = context.GetArgumentValueAsTensor(tr, Transpose.Input);
         var perm = context.GetArgumentValueAsArray<long>(tr, Transpose.Perm);
-        OrtKISharp.Tensor input;
-        var inputOrg = inputValue.AsTensor();
-        var dataType = inputOrg.ElementType;
+        return Value.FromTensor(inputValue.Transpose(perm));
 
-        if (dataType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
-        {
-            var interType = new VectorType(DataTypes.Float32, vType.Lanes);
-            input = Nncase.IR.F.Tensors.Cast(inputOrg, interType).Evaluate().AsTensor().ToOrtTensor();
-        }
-        else if (dataType is not VectorType && dataType.IsFloat() && dataType != DataTypes.Float32)
-        {
-            input = Nncase.IR.F.Tensors.Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-        }
-        else
-        {
-            input = context.GetOrtArgumentValue(tr, Transpose.Input);
-        }
-
-        if (inputValue.Type is TensorType { DType: VectorType vectorType })
-        {
-            var newPerm = perm.Concat(Enumerable.Range(0, vectorType.Lanes.Count).Select(i => (long)(i + perm.Length))).ToArray();
-            var output = OrtKI.Transpose(input, newPerm);
-            return Value.FromTensor(Tensor.FromBytes(new TensorType(vectorType, output.Shape.Select(i => (int)i).SkipLast(vectorType.Lanes.Count).ToArray()), output.BytesBuffer.ToArray()));
-        }
-
+#if false
         // when HasBindedMixQuantInfo is true, eval will do simulation of quant/dequant for some inputs, this is used for evaluate accumulated quant error for layers.
         if (context.CurrentCall.EnodeBestQuantConfigWithCosine != null)
         {
@@ -118,18 +95,19 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
         {
             return OrtKI.Transpose(input, perm).ToValue();
         }
+#endif
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Transpose target)
     {
         var input = context.CheckArgumentType<IRType>(target, Transpose.Input);
-        var permExpr = context.GetArgument(target, Transpose.Perm);
+        var perm = (Shape)context.GetArgument(target, Transpose.Perm);
 
         return input switch
         {
-            DistributedType d => Visit(d, permExpr),
-            TensorType t => Visit(t, permExpr),
+            DistributedType d => Visit(d, perm),
+            TensorType t => Visit(t, perm),
             AnyType => AnyType.Default,
             _ => new InvalidType(input.GetType().ToString()),
         };

@@ -319,6 +319,12 @@ public class Compiler : ICompiler
         var target = _compileSession.Target;
         target.RegisterTIRSelectionPass(passManager, _compileSession.CompileOptions);
         passManager.Add<AddFunctionToModule>();
+
+        passManager.AddWithName<PrimFuncPass>("RemoveFunctionWrapper").Configure(p =>
+        {
+            p.Add<Passes.Mutators.RemoveFunctionWrapper>();
+        });
+
         passManager.Add<RemoveUnusedFunctions>();
         passManager.Add<InferRangePass>();
         passManager.Add<OptimizeByRangePass>();
@@ -352,7 +358,6 @@ public class Compiler : ICompiler
             "TargetDependentPass");
         await RunPassAsync(QuantizePass, "QuantizePass");
 
-        await RunPassAsync(ModulePartitionPass, "ModulePartitionPass");
         await RunPassAsync(AutoPackingPass, "AutoPackingPass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
         await RunPassAsync(AutoTilingPass, "AutoTilingPass");
@@ -362,8 +367,7 @@ public class Compiler : ICompiler
         await RunPassAsync(
             p =>
             {
-                // target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions);
-                p.Add<ReplaceDimVarWithShapeOfPass>();
+                target.RegisterTargetDependentBeforeCodeGen(p, _compileSession.CompileOptions);
             },
             "TargetDependentBeforeCodeGen");
         if (DumpScope.Current.IsEnabled(DumpFlags.Compile))

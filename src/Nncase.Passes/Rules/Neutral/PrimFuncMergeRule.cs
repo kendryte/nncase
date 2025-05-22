@@ -43,7 +43,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
         return patterns;
     }));
 
-    private Expr? GetReplace(Call caller, PrimFunctionWrapper callerWrapper, IReadOnlyList<Expr> callerParams, IMatchResult result, RunPassContext context)
+    private Expr? GetReplace(Call caller, PrimFunctionWrapper callerWrapper, IReadOnlyList<BaseExpr> callerParams, IMatchResult result, RunPassContext context)
     {
         var userAnalysis = context.GetAnalysis<IExprUserAnalysisResult>();
 
@@ -57,7 +57,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
 
             var callee = (Call)result[$"callee_{i}"];
             var calleeWrapper = (PrimFunctionWrapper)result[$"calleeWrapper_{i}"];
-            var calleeParams = (IReadOnlyList<Expr>)result[$"callee_{i}Params"];
+            var calleeParams = (IReadOnlyList<BaseExpr>)result[$"callee_{i}Params"];
 
             // when callee used by other caller, give up merge.
             if (userAnalysis[callee].Except(new[] { caller }).Any())
@@ -78,7 +78,7 @@ public sealed partial class PrimFuncMergeRule : RewriteRule<PatternMatch.Pattern
         return null;
     }
 
-    private Expr? Process(Call caller, PrimFunctionWrapper callerWrapper, IReadOnlyList<Expr> callerParams, Call callee, PrimFunctionWrapper calleeWrapper, IReadOnlyList<Expr> calleeParams)
+    private Expr? Process(Call caller, PrimFunctionWrapper callerWrapper, IReadOnlyList<BaseExpr> callerParams, Call callee, PrimFunctionWrapper calleeWrapper, IReadOnlyList<BaseExpr> calleeParams)
     {
         var calleeFunc = calleeWrapper.Target;
         var callerFunc = callerWrapper.Target;

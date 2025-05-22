@@ -22,12 +22,12 @@ public abstract partial class ExprFunctor<TExprResult, TTypeResult, TContext> : 
     /// <summary>
     /// Gets visit root.
     /// </summary>
-    protected Expr? VisitRoot { get; private set; }
+    protected BaseExpr? VisitRoot { get; private set; }
 
     /// <summary>
     /// Visit <see cref="Expr"/>.
     /// </summary>
-    public TExprResult Visit(Expr expr, TContext context)
+    public TExprResult Visit(BaseExpr expr, TContext context)
     {
         VisitRoot ??= expr;
         return DispatchVisit(expr, context);
@@ -47,12 +47,12 @@ public abstract partial class ExprFunctor<TExprResult, TTypeResult, TContext> : 
     /// <param name="expr">Expression.</param>
     /// <param name="context">Context.</param>
     /// <returns>Result.</returns>
-    protected internal virtual TExprResult DefaultVisit(Expr expr, TContext context)
+    protected internal virtual TExprResult DefaultVisit(BaseExpr expr, TContext context)
     {
         throw new NotImplementedException($"Unhandled visit routine for {expr.GetType()}.");
     }
 
-    protected virtual TExprResult DispatchVisit(Expr expr, TContext context) => expr.Accept(this, context);
+    protected virtual TExprResult DispatchVisit(BaseExpr expr, TContext context) => expr.Accept(this, context);
 }
 
 /// <summary>
@@ -65,7 +65,10 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     /// <summary>
     /// Visit <see cref="Expr"/>.
     /// </summary>
-    public TExprResult Visit(Expr expr) => Visit(expr, default);
+    public TExprResult Visit(BaseExpr expr) => Visit(expr, default);
+
+    public TExprResult Visit<T>(T var)
+        where T : class, IVar => Visit((BaseExpr)(IVar)var, default);
 
     /// <summary>
     /// Visit type.
@@ -131,6 +134,34 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     public virtual TTypeResult VisitType(DistributedType type) => base.VisitType(type, default);
 
     /// <summary>
+    /// Visit dimension type.
+    /// </summary>
+    /// <param name="type">Dimension type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(DimensionType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit shape type.
+    /// </summary>
+    /// <param name="type">Shape type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(ShapeType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit padding type.
+    /// </summary>
+    /// <param name="type">Padding type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(PaddingType type) => base.VisitType(type, default);
+
+    /// <summary>
+    /// Visit paddings type.
+    /// </summary>
+    /// <param name="type">Padding type.</param>
+    /// <returns>Result.</returns>
+    public virtual TTypeResult VisitType(PaddingsType type) => base.VisitType(type, default);
+
+    /// <summary>
     /// Default visit routine.
     /// </summary>
     /// <param name="type">Type.</param>
@@ -162,6 +193,18 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     public sealed override TTypeResult VisitType(DistributedType type, Unit context) => VisitType(type);
 
     /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(DimensionType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(ShapeType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(PaddingType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
+    public sealed override TTypeResult VisitType(PaddingsType type, Unit context) => VisitType(type);
+
+    /// <inheritdoc/>
     public sealed override TTypeResult DefaultVisitType(IRType type, Unit context) => DefaultVisitType(type);
 
     /// <summary>
@@ -169,13 +212,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult> : ExprFunctor<TExprRe
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Result.</returns>
-    protected internal virtual TExprResult DefaultVisit(Expr expr) => base.DefaultVisit(expr, default);
+    protected internal virtual TExprResult DefaultVisit(BaseExpr expr) => base.DefaultVisit(expr, default);
 
     /// <inheritdoc/>
-    protected internal sealed override TExprResult DefaultVisit(Expr expr, Unit context) => DefaultVisit(expr);
+    protected internal sealed override TExprResult DefaultVisit(BaseExpr expr, Unit context) => DefaultVisit(expr);
 
-    protected virtual TExprResult DispatchVisit(Expr expr) => base.DispatchVisit(expr, default);
+    protected virtual TExprResult DispatchVisit(BaseExpr expr) => base.DispatchVisit(expr, default);
 
     /// <inheritdoc/>
-    protected sealed override TExprResult DispatchVisit(Expr expr, Unit context) => DispatchVisit(expr);
+    protected sealed override TExprResult DispatchVisit(BaseExpr expr, Unit context) => DispatchVisit(expr);
 }

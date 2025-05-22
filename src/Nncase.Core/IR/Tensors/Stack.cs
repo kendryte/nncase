@@ -26,5 +26,5 @@ public sealed partial class Stack : Op
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(Stack), 1, "axis", IsScalar() & IsIntegral());
+    public static readonly ParameterInfo Axis = new(typeof(Stack), 1, "axis", IsDimensionType());
 }

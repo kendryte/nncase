@@ -69,7 +69,7 @@ public static class Math
     public static Call Clamp<T>(Expr input, ValueRange<T> range)
         where T : unmanaged, IEquatable<T>, IComparable<T>
     {
-        return new Call(new Clamp(), input, Tensor.FromScalar(range.Min), Tensor.FromScalar(range.Max));
+        return new Call(new Clamp(), input, (Expr)Tensor.FromScalar(range.Min), (Expr)Tensor.FromScalar(range.Max));
     }
 
     /// <summary>
@@ -413,14 +413,14 @@ public static class Math
     /// <param name="message">requrie message.</param>
     public static Call Require(Expr predicate, Expr value, [System.Runtime.CompilerServices.CallerArgumentExpression("predicate")] string? message = null) => new Call(new Require(message!), predicate, value);
 
-    public static Call RangeOf(Expr input)
+    public static Call RangeOf(BaseExpr input)
     {
         var call = (Call)new Call(new RangeOf(), input).InheritMetaData(input);
 
         return call;
     }
 
-    public static Call RangeOf(Expr input, bool isRangeOfWeight)
+    public static Call RangeOf(BaseExpr input, bool isRangeOfWeight)
     {
         var rangeOf = new RangeOf();
         rangeOf.IsRangeOfWeight = isRangeOfWeight;
@@ -443,14 +443,14 @@ public static class Math
     /// attach the rangeof on the target, when run the egraph pass, will replace the rangeof expression with the constant.
     /// </summary>
     /// <returns> new marker expression. </returns>
-    public static Marker RangeOfMarker(Expr target, Expr range)
+    public static Marker RangeOfMarker(BaseExpr target, Expr range)
     {
         var marker = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
 
         return marker;
     }
 
-    public static Marker RangeOfMarker(Expr target, Expr range, DataType markerQuantType)
+    public static Marker RangeOfMarker(BaseExpr target, Expr range, DataType markerQuantType)
     {
         var marker = (Marker)new Marker(WellknownMarkerNames.RangeOf, target, range).InheritMetaData(target);
         if (marker.MixQuantInfo == null)

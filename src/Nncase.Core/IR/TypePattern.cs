@@ -116,20 +116,17 @@ public static partial class TypePatternUtility
     public static TypePattern HasFixedShape() => HasShape(shape => shape.IsFixed, "HasFixedShape");
 
     /// <summary>
-    /// the tensor has FixedShape.
+    /// the tensor has RankedShape.
     /// </summary>
     /// <returns>TypePattern.</returns>
-    public static TypePattern HasRank() => HasShape(shape => shape.IsRanked, "HasRank");
+    public static TypePattern HasRankedShape() => HasShape(shape => shape.IsRanked, "HasRank");
 
     /// <summary>
     /// is target shape.
     /// </summary>
-    public static TypePattern HasShape(Shape target_shape) => HasShape(
-      inshape =>
-        inshape.Rank == target_shape.Rank &&
-        inshape.Zip(target_shape).All(
-          (dim) => dim.Second.IsAssignableFrom(dim.First)),
-      $"Shape = {target_shape}");
+    public static TypePattern HasShape(Shape targetShape) => HasShape(
+        targetShape.IsAssignableFrom,
+        $"Shape = {targetShape}");
 
     /// <summary>
     /// is custom rank.
@@ -279,4 +276,28 @@ public static partial class TypePatternUtility
     /// is scalar quant param.
     /// </summary>
     public static TypePattern IsQuantParamType() => IsScalar() & HasDataType(new QuantParamType());
+
+    public static TypePattern IsDimensionType() => new TypePattern(
+        x => x switch
+        {
+            DimensionType stype => true,
+            _ => false,
+        },
+        "IsDimensionType");
+
+    public static TypePattern IsShapeType() => new TypePattern(
+        x => x switch
+        {
+            ShapeType stype => true,
+            _ => false,
+        },
+        "IsShapeType");
+
+    public static TypePattern IsPaddingsType() => new TypePattern(
+        x => x switch
+        {
+            PaddingsType stype => true,
+            _ => false,
+        },
+        "IsPaddingsType");
 }

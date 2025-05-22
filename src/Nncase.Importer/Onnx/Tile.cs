@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitTile(in NodeProto op)
         {
-            var (input, repeats) = GetInputExprs(op, 0, 1);
+            var (input, repeats) = GetInputExprs<Expr, Shape>(op, 0, 1);
             return Tile(input, repeats);
         }
     }

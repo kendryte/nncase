@@ -11,13 +11,13 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitSoftMax(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
+            var input = GetInputExprs<Expr>(op, 0);
             return F.NN.Softmax(input, -1);
         }
 
         private Expr VisitLogSoftMax(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
+            var input = GetInputExprs<Expr>(op, 0);
             return F.NN.LogSoftmax(input, -1);
         }
     }

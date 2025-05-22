@@ -69,14 +69,9 @@ inline void register_runtime_tensor(py::module &m) {
                         to_rt_strides(src_buffer.itemsize, src_buffer.strides),
                         std::span(reinterpret_cast<std::byte *>(src_buffer.ptr),
                                   src_buffer.size * src_buffer.itemsize),
-                        [=](std::byte *) {
-                            if (!py::detail::is_py_shutdown()) {
-                                py::gil_scoped_acquire gil;
-                                arr.dec_ref();
-                            }
-                        })
+                        true, hrt::pool_shared)
                         .unwrap_or_throw();
-                arr.inc_ref();
+                // arr.inc_ref();
                 return tensor;
             })
         .def("copy_to",

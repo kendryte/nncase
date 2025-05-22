@@ -95,7 +95,7 @@ internal sealed class SimplifyProvider : ISimplifyProvider
 
             using var compileScope = new CompileSessionScope(CompileSessionScope.Current ?? _compileSession);
             using var dumpScope = new DumpScope(NullDumpper.Instance);
-            simplifiedExpr = CompilerServices.Rewrite(simplifiedExpr, _rules, new RunPassContext());
+            simplifiedExpr = (Expr)CompilerServices.Rewrite(simplifiedExpr, _rules, new RunPassContext());
             return simplifiedExpr;
         }
 
@@ -113,24 +113,30 @@ internal sealed class SimplifyProvider : ISimplifyProvider
             return true;
         }
 
-        maxShape = new long[shape.Rank];
-        if (!shape.Metadata.Range.HasValue)
+        if (shape is RankedShape rankedShape)
         {
-            new InferRangeVisitor().Visit(shape);
-        }
-
-        for (int i = 0; i < shape.Rank; i++)
-        {
-            var max = shape.Dimensions[i].Metadata.Range!.Value.Max;
-            if (max >= int.MaxValue)
+            maxShape = new long[rankedShape.Rank];
+            if (!rankedShape.Metadata.Range.HasValue)
             {
-                maxShape = null;
-                return false;
+                new InferRangeVisitor().Visit(rankedShape);
             }
 
-            maxShape[i] = (long)max;
+            for (int i = 0; i < rankedShape.Rank; i++)
+            {
+                var max = rankedShape.Dimensions[i].Metadata.Range!.Value.Max;
+                if (max >= int.MaxValue)
+                {
+                    maxShape = null;
+                    return false;
+                }
+
+                maxShape[i] = (long)max;
+            }
+
+            return true;
         }
 
-        return true;
+        maxShape = null;
+        return false;
     }
 }

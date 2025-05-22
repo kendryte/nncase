@@ -24,10 +24,10 @@ public sealed partial class FocusFull : RewriteRule<Pattern>
       "concatCall",
       _ => true,
       PatternMatch.Utility.IsTuple("tp", new[] {
-        IsSlice(Input, IsTensorConst("begin0"), IsTensorConst("end0"), IsTensorConst("axes0"), IsTensorConst("stride0")),
-        IsSlice(Input, IsTensorConst("begin1"), IsTensorConst("end1"), IsTensorConst("axes1"), IsTensorConst("stride1")),
-        IsSlice(Input, IsTensorConst("begin2"), IsTensorConst("end2"), IsTensorConst("axes2"), IsTensorConst("stride2")),
-        IsSlice(Input, IsTensorConst("begin3"), IsTensorConst("end3"), IsTensorConst("axes3"), IsTensorConst("stride3")),
+        IsSlice(Input, IsFixedShape("begin0"), IsFixedShape("end0"), IsFixedShape("axes0"), IsFixedShape("stride0")),
+        IsSlice(Input, IsFixedShape("begin1"), IsFixedShape("end1"), IsFixedShape("axes1"), IsFixedShape("stride1")),
+        IsSlice(Input, IsFixedShape("begin2"), IsFixedShape("end2"), IsFixedShape("axes2"), IsFixedShape("stride2")),
+        IsSlice(Input, IsFixedShape("begin3"), IsFixedShape("end3"), IsFixedShape("axes3"), IsFixedShape("stride3")),
       }));
 
     private Expr? GetReplace(IR.Tensors.Concat concat, Call concatCall, Expr input, int[] begin0, long[] end0, int[] axes0, int[] stride0, int[] begin1, long[] end1, int[] axes1, int[] stride1, int[] begin2, long[] end2, int[] axes2, int[] stride2, int[] begin3, long[] end3, int[] axes3, int[] stride3)

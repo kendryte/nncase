@@ -96,7 +96,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
         return true;
     }
 
-    private Expr? GetReplace(Call call, Op op, IReadOnlyList<Expr> callParams, RunPassContext context)
+    private BaseExpr? GetReplace(Call call, Op op, IReadOnlyList<BaseExpr> callParams, RunPassContext context)
     {
         bool configExist = CompileSession.CompileOptions.QuantizeOptions.QuantScheme != string.Empty;
         bool useAutoMixQuant = CompileSession.CompileOptions.QuantizeOptions.BindQuantMethod;
@@ -114,7 +114,7 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
             return null;
         }
 
-        var pairs = new Dictionary<Expr, Expr>();
+        var pairs = new Dictionary<BaseExpr, BaseExpr>();
         if (list is null)
         {
             list = Enumerable.Range(0, length).ToArray();
@@ -138,16 +138,16 @@ public partial class AddRangeOfAndMarker : RewriteRule<Pattern>
                     {
                         if (isWeights)
                         {
-                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.WQuantType));
+                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker((Expr)callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.WQuantType));
                         }
                         else
                         {
-                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.QuantType));
+                            pairs.Add(callParams[i], IR.F.Math.RangeOfMarker((Expr)callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights), CompileSession.CompileOptions.QuantizeOptions.QuantType));
                         }
                     }
                     else
                     {
-                        pairs.Add(callParams[i], IR.F.Math.RangeOfMarker(callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights)));
+                        pairs.Add(callParams[i], IR.F.Math.RangeOfMarker((Expr)callParams[i], IR.F.Math.RangeOf(callParams[i], isWeights)));
                     }
                 }
             }

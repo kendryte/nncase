@@ -115,7 +115,7 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
         public int GetHashCode([DisallowNull] Expr obj) => obj.CheckedType.GetHashCode();
     }
 
-    private sealed class ExprStructuralEqualityVisitor : ExprVisitor<bool, Unit, Expr>
+    private sealed class ExprStructuralEqualityVisitor : ExprVisitor<bool, Unit, BaseExpr>
     {
         public ExprStructuralEqualityVisitor(Dictionary<Var, Var> varMap)
         {
@@ -124,7 +124,7 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
 
         public Dictionary<Var, Var> VarMap { get; }
 
-        protected override bool DispatchVisit(Expr expr, Expr context)
+        protected override bool DispatchVisit(BaseExpr expr, BaseExpr context)
         {
             if (HasVisited(expr, out var result))
             {
@@ -134,7 +134,7 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
             return MarkVisited(expr, VisitExpr(expr, context));
         }
 
-        private bool VisitExpr(Expr expr, Expr other)
+        private bool VisitExpr(BaseExpr expr, BaseExpr other)
         {
             if (expr.GetType() == other.GetType() && expr.Operands.Length == other.Operands.Length)
             {
@@ -157,7 +157,7 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
 
     private sealed class ExprStructuralHashCodeVisitor : ExprVisitor<int, Unit>
     {
-        protected override int DispatchVisit(Expr expr)
+        protected override int DispatchVisit(BaseExpr expr)
         {
             if (HasVisited(expr, out var result))
             {
@@ -167,7 +167,7 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
             return MarkVisited(expr, VisitExpr(expr));
         }
 
-        private int VisitExpr(Expr expr)
+        private int VisitExpr(BaseExpr expr)
         {
             if (expr.Operands.Length == 0)
             {

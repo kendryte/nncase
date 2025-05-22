@@ -71,9 +71,9 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
             return new InvalidType("Tuple count should not be zero");
         }
 
-        if (context.GetArgument(target, Stack.Axis) is TensorConst axis_con)
+        if (context.GetArgument(target, Stack.Axis) is DimConst axis_con)
         {
-            var axis_v = axis_con.Value.ToScalar<int>();
+            var axis_v = axis_con.Value;
             var firstType = inputs[0];
             if (inputs.Any(x => x != firstType))
             {
@@ -94,13 +94,17 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
                     return new InvalidType("Axis must be zero when stack scalar");
                 }
 
-                tensorType = tensorType with { Shape = new Shape(inputs.Count) };
+                tensorType = tensorType with { Shape = new RankedShape(inputs.Count) };
+            }
+            else if (tensorType.Shape is RankedShape inShape)
+            {
+                var outshape = inShape.ToList();
+                outshape.Insert((int)axis_v, inputs.Count);
+                tensorType = tensorType with { Shape = new RankedShape(outshape) };
             }
             else
             {
-                var outshape = tensorType.Shape.ToList();
-                outshape.Insert(axis_v, inputs.Count);
-                tensorType = tensorType with { Shape = new Shape(outshape) };
+                tensorType = tensorType with { Shape = Shape.Unranked };
             }
 
             return firstType is DistributedType dt2 ? dt2 with { TensorType = tensorType } : tensorType;

@@ -11,20 +11,20 @@ using Nncase.TIR;
 
 namespace Nncase.IR;
 
-public sealed class ExprCollector : ExprWalker<List<Expr>>
+public sealed class ExprCollector : ExprWalker<List<BaseExpr>>
 {
     private ExprCollector()
     {
     }
 
-    public static IReadOnlyList<Expr> Collect(Expr expr)
+    public static IReadOnlyList<BaseExpr> Collect(BaseExpr expr)
     {
-        var exprs = new List<Expr>();
+        var exprs = new List<BaseExpr>();
         new ExprCollector().Visit(expr, exprs);
         return exprs;
     }
 
-    protected override Unit DefaultVisitLeaf(Expr expr, List<Expr> context)
+    protected override Unit DefaultVisitLeaf(BaseExpr expr, List<BaseExpr> context)
     {
         context.Add(expr);
         return default;

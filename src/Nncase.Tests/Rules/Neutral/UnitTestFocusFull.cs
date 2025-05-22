@@ -23,7 +23,7 @@ public class UnitTestFocusFull : TransformTestBase
     {
         var shape = new[] { 1, 3, 640, 640 };
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
-        var feedDict = new Dictionary<Var, IValue> { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate() } };
+        var feedDict = new Dictionary<IVar, IValue> { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate() } };
 
         var s0 = IR.F.Tensors.Slice(input, new long[] { 0, 0 }, new long[] { 640, 640 }, new[] { 2, 3 }, new[] { 2, 2 });
         var s1 = IR.F.Tensors.Slice(input, new long[] { 1, 0 }, new long[] { 640, 640 }, new[] { 2, 3 }, new[] { 2, 2 });

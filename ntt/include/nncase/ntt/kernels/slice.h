@@ -52,14 +52,14 @@ auto slice_fill(const TInShape &in_shape, const TBegins &begins_value,
             auto min = (-1) * max - 1;
 
             // check starts
-            begin_values[i] = begins_value(idx) < min   ? min
-                              : begins_value(idx) > max ? max
-                                                        : begins_value(idx);
+            begin_values[i] = int64_t(begins_value[idx]) < min ? min
+                              : begins_value[idx] > max        ? max
+                                                        : begins_value[idx];
 
             // check stops
-            end_values[i] = ends_value(idx) < min   ? min
-                            : ends_value(idx) > max ? max
-                                                    : ends_value(idx);
+            end_values[i] = int64_t(ends_value[idx]) < min ? min
+                            : ends_value[idx] > max        ? max
+                                                           : ends_value[idx];
 
             // check steps
             if (strides_value.rank()) {

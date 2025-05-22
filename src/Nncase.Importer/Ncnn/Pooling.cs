@@ -36,16 +36,16 @@ public partial class NcnnImporter
         var outH = layer.ParamDict.Get(18, outW);
 
         Expr pooling;
-        var input = CHWToNCHW(GetInputExprs(layer, 0));
+        var input = CHWToNCHW(GetInputExprs<Expr>(layer, 0));
         (var reduceOp, var initValue) = poolingType switch
         {
             0 => (ReduceOp.Max, float.NegativeInfinity),
             1 => (ReduceOp.Mean, 0f),
             _ => throw new NotSupportedException($"Unsupported pooling type: {poolingType}."),
         };
-        var filter = Tensor.From(new[] { kernelH, kernelW }, [2]);
-        var stride = Tensor.From(new[] { strideH, strideW }, [2]);
-        var dilation = Tensor.FromScalar(0, [2, 2]);
+        var filter = new RankedShape(kernelH, kernelW);
+        var stride = new RankedShape(strideH, strideW);
+        var dilation = Shape.Repeat(0, 2);
 
         if (globalPooling)
         {
@@ -54,13 +54,13 @@ public partial class NcnnImporter
         else if (adaptivePooling)
         {
             var padding = Tensor.FromScalar(0, [2, 2]);
-            var inShape = Tensors.ShapeOf(input);
+            var inShape = Tensors.ShapeOf(input).AsShape();
             var w = inShape[3];
             var h = inShape[2];
             var kernelExtentH = h - outH + 1;
             var kernelExtentW = w - outW + 1;
-            var adaptiveFilter = Tensors.Stack(new IR.Tuple(kernelExtentH, kernelExtentW), 0);
-            var adaptiveStride = Tensor.FromScalar(1, 2);
+            var adaptiveFilter = new RankedShape(kernelExtentH, kernelExtentW);
+            var adaptiveStride = Shape.Repeat(1, 2);
 
             pooling = NN.ReduceWindow2D(reduceOp, input, initValue, adaptiveFilter, adaptiveStride, padding, dilation, false, avgpoolCountIncludePad);
         }
@@ -84,11 +84,11 @@ public partial class NcnnImporter
                 if (padMode == 0)
                 {
                     // full padding
-                    var tailW = ((w + padLeft + padRight - kernelW) % strideW).ToExpr();
-                    var tailH = ((h + padTop + padBottom - kernelH) % strideH).ToExpr();
+                    var tailW = (w + padLeft + padRight - kernelW) % strideW;
+                    var tailH = (h + padTop + padBottom - kernelH) % strideH;
 
-                    var tailPadW = IR.F.Math.Select(IR.F.Math.Equal(tailW, 0L), 0L, tailW);
-                    var tailPadH = IR.F.Math.Select(IR.F.Math.Equal(tailH, 0L), 0L, tailH);
+                    var tailPadW = Dimension.Select(tailW, 0L, 0L, tailW);
+                    var tailPadH = Dimension.Select(tailH, 0L, 0L, tailH);
 
                     paddingH = [padTop, padBottom + tailPadH];
                     paddingW = [padLeft, padRight + tailPadW];

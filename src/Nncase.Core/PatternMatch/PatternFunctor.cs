@@ -35,6 +35,14 @@ public abstract class PatternFunctor<TPatternResult, TTypeResult> : TypePatternF
             CallPattern call => Visit(call),
             TuplePattern tuple => Visit(tuple),
             IOpPattern op => Visit(op),
+            MarkerPattern marker => Visit(marker),
+            DimensionPattern dim => Visit(dim),
+            ShapePattern shape => Visit(shape),
+            RankedShapePattern shape => Visit(shape),
+            PaddingPattern padding => Visit(padding),
+            PaddingsPattern paddings => Visit(paddings),
+            OrPattern orPattern => Visit(orPattern),
+            VArgsPattern vArgs => Visit(vArgs),
             _ => DefaultVisit(pattern),
         };
     }
@@ -101,6 +109,62 @@ public abstract class PatternFunctor<TPatternResult, TTypeResult> : TypePatternF
     /// <param name="pattern">Operator pattern.</param>
     /// <returns>Result.</returns>
     public virtual TPatternResult Visit(IOpPattern pattern) => DefaultVisit(pattern);
+
+    /// <summary>
+    /// Visit marker pattern.
+    /// </summary>
+    /// <param name="pattern">Or pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TPatternResult Visit(MarkerPattern pattern) => DefaultVisit(pattern);
+
+    /// <summary>
+    /// Visit dimension pattern.
+    /// </summary>
+    /// <param name="pattern">Or pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TPatternResult Visit(DimensionPattern pattern) => DefaultVisit(pattern);
+
+    /// <summary>
+    /// Visit shape pattern.
+    /// </summary>
+    /// <param name="pattern">Or pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TPatternResult Visit(ShapePattern pattern) => DefaultVisit(pattern);
+
+    /// <summary>
+    /// Visit ranked shape pattern.
+    /// </summary>
+    /// <param name="pattern">Or pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TPatternResult Visit(RankedShapePattern pattern) => DefaultVisit(pattern);
+
+    /// <summary>
+    /// Visit padding pattern.
+    /// </summary>
+    /// <param name="pattern">Or pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TPatternResult Visit(PaddingPattern pattern) => DefaultVisit(pattern);
+
+    /// <summary>
+    /// Visit paddings pattern.
+    /// </summary>
+    /// <param name="pattern">Or pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TPatternResult Visit(PaddingsPattern pattern) => DefaultVisit(pattern);
+
+    /// <summary>
+    /// Visit or pattern.
+    /// </summary>
+    /// <param name="pattern">Or pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TPatternResult Visit(OrPattern pattern) => DefaultVisit(pattern);
+
+    /// <summary>
+    /// Visit vargs pattern.
+    /// </summary>
+    /// <param name="pattern">Or pattern.</param>
+    /// <returns>Result.</returns>
+    public virtual TPatternResult Visit(VArgsPattern pattern) => DefaultVisit(pattern);
 
     /// <summary>
     /// Default visit routine.

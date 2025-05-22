@@ -14,10 +14,11 @@
  */
 #pragma once
 #include "runtime_module.h"
-#include <nncase/kernels/kernel_context.h>
 #include <nncase/ntt/arch/cpu/runtime.h>
+#include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/tensor.h>
+#include <vector>
 
 #if WIN32
 #include "loaders/pe/pe_loader.h"
@@ -43,8 +44,10 @@ class cpu_runtime_function final : public runtime_function {
                                 value_t return_value) noexcept override;
 
   private:
-    result<void>
-    run(std::span<nncase::ntt::runtime::thread_inout_desc> inouts) noexcept;
+    result<void> run(std::byte *output_data) noexcept;
+    result<tensor> create_output_tensor(size_t output_id,
+                                        std::span<value_t> parameters,
+                                        std::byte *output_data) noexcept;
 
   private:
 #if WIN32
@@ -56,6 +59,11 @@ class cpu_runtime_function final : public runtime_function {
 #endif
 
     block_entry_t block_entry_;
+    host_buffer_t output_buffer_;
+    std::vector<ntt::runtime::thread_inout_desc> input_descs_;
+    std::vector<ntt::runtime::thread_inout_desc> output_descs_;
+    std::vector<dims_t> output_shapes_;
+    std::vector<dims_t> output_strides_;
 };
 
 END_NS_NNCASE_RT_MODULE

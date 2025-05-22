@@ -93,8 +93,8 @@ public sealed class UnitTestPatternMatch
     {
         var targetFunc = new Function(new Normal(DataTypes.Float32));
         var funcPattern = new FunctionPattern(IsOp<Normal>("normal"), IsVArgs(), null);
-        Assert.True(CompilerServices.TryMatchRoot(new Call(targetFunc, 1f), IsCall(null, funcPattern, IsWildcard()), out _));
-        Assert.True(CompilerServices.TryMatchRoot(new Call(targetFunc, 1f), IsCall(null, funcPattern, IsVArgs(IsWildcard())), out _));
+        Assert.True(CompilerServices.TryMatchRoot(new Call(targetFunc, (Expr)1f), IsCall(null, funcPattern, IsWildcard()), out _));
+        Assert.True(CompilerServices.TryMatchRoot(new Call(targetFunc, (Expr)1f), IsCall(null, funcPattern, IsVArgs(IsWildcard())), out _));
 
         Assert.True(CompilerServices.TryMatchRoot(IR.F.Random.Normal(DataTypes.Float32), IsCall(null, IsOp<Normal>("normal"), IsWildcard(), IsWildcard(), IsWildcard(), IsWildcard()), out _));
 
@@ -110,18 +110,16 @@ public sealed class UnitTestPatternMatch
 
         Assert.Equal(IsTupleConst(_ => true).Value, IsTupleConst().Value);
 
-        Assert.Equal(new List<Dimension>(1), GetShape(1));
-
-        var tuplePattern1 = new TuplePattern(new IR.Tuple(new[] { 1 }), "tuplePattern1");
-        var tuplePattern2 = new TuplePattern(new IR.Tuple(new[] { 2 }), "tuplePattern2");
+        var tuplePattern1 = new TuplePattern(new IR.Tuple(new[] { (Expr)1 }), "tuplePattern1");
+        var tuplePattern2 = new TuplePattern(new IR.Tuple(new[] { (Expr)2 }), "tuplePattern2");
         Assert.NotEqual(tuplePattern1, tuplePattern2);
 
         var tupleConstPattern1 = new TupleConstPattern(new TupleConst(new TupleValue(new[] { Value.FromConst(1F) })), null);
         var tupleConstPattern2 = new TupleConstPattern(new TupleConst(new TupleValue(new[] { Value.FromConst(2F) })), null);
         Assert.NotEqual(tupleConstPattern1, tupleConstPattern2);
 
-        var markerPattern1 = new MarkerPattern(new Marker(null!, 1, 1), null);
-        var markerPattern2 = new MarkerPattern(new Marker(null!, 2, 1), null);
+        var markerPattern1 = new MarkerPattern(new Marker(null!, (Expr)1, (Expr)1), null);
+        var markerPattern2 = new MarkerPattern(new Marker(null!, (Expr)2, (Expr)1), null);
         Assert.NotEqual(markerPattern1, markerPattern2);
 
         var expect = IsAlt(

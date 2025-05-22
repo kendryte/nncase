@@ -19,7 +19,7 @@ namespace Nncase.Diagnostics;
 internal sealed class PatternPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter _scope;
-    private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<BaseExpr, string> _names = new Dictionary<BaseExpr, string>(ReferenceEqualityComparer.Instance);
     private int _localId;
 
     public PatternPrintVisitor(TextWriter textWriter, int indentLevel)
@@ -217,7 +217,23 @@ internal sealed class PatternPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
-    private string AllocateTempVar(Expr expr)
+    /// <inheritdoc/>
+    protected override string VisitShape(Shape expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = IsShape(name: \"{name}\"));\n");
+
+        // AppendCheckedType(expr.CheckedType);
+        _scope.IndWriteLine();
+        return name;
+    }
+
+    private string AllocateTempVar(BaseExpr expr)
     {
         var name = $"v{_localId++}";
         _names.Add(expr, name);

@@ -8,7 +8,7 @@ namespace Nncase.Schedule.TileGraph;
 
 public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITreeNodeVisitor<Dictionary<BufferIdentity, IntExpr>, Unit>
 {
-    public TreeSolverWritesInitializer(int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
+    public TreeSolverWritesInitializer(int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, INTTTargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
         TopLevel = topLevel;
@@ -16,7 +16,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITree
 
     public int TopLevel { get; }
 
-    public static void Init(ITreeNode tree, int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, ICpuTargetOptions targetOptions)
+    public static void Init(ITreeNode tree, int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, INTTTargetOptions targetOptions)
     {
         var initzer = new TreeSolverWritesInitializer(topLevel, solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions);
         tree.Accept(initzer, new());

@@ -27,7 +27,7 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
         _logger = logger;
     }
 
-    public Expr ERewrite(Expr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
+    public BaseExpr ERewrite(BaseExpr expr, IEnumerable<IRewriteRule> rules, RunPassContext options, CompileOptions compileOptions)
     {
         if (expr.CheckedType is null)
         {

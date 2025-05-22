@@ -14,14 +14,14 @@ using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.IR.CPU;
 using Nncase.IR.Distributed;
 using Nncase.IR.F;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.NTT;
 using Nncase.Passes;
 using Nncase.Passes.Analysis;
-using Nncase.Passes.Rules.CPU;
+using Nncase.Passes.Rules.NTT;
 using Nncase.Passes.Transforms;
 using Nncase.PatternMatch;
 using Nncase.Targets;
@@ -55,7 +55,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -63,7 +63,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -90,7 +90,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -98,7 +98,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -127,7 +127,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -135,7 +135,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -164,7 +164,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -172,7 +172,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -204,7 +204,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         var input_tensor1 = Testing.Rand<float>(1, 32, 32);
         var input_tensor2 = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input1, Value.FromTensor(input_tensor1) },
             { input2, Value.FromTensor(input_tensor2) },
@@ -213,7 +213,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -244,7 +244,7 @@ public class UnitTestGraphPartition : TestClassBase
 
         var input_tensor1 = Testing.Rand<float>(1, 32, 32);
         var input_tensor2 = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input1, Value.FromTensor(input_tensor1) },
             { input2, Value.FromTensor(input_tensor2) },
@@ -253,7 +253,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -280,7 +280,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -288,7 +288,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -315,7 +315,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Boxing>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -323,7 +323,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -353,7 +353,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -361,7 +361,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -391,7 +391,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -399,7 +399,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -432,7 +432,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -440,7 +440,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -472,7 +472,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -480,7 +480,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -510,7 +510,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -518,7 +518,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -547,7 +547,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Binary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -555,7 +555,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -583,7 +583,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Boxing>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -591,7 +591,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -621,7 +621,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -629,7 +629,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();
@@ -658,7 +658,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Boxing>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -666,7 +666,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -697,7 +697,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<Unary>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -705,7 +705,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -733,7 +733,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<IR.Tensors.Concat>();
 
         var input_tensor = Testing.Rand<float>(1, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -741,7 +741,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -773,7 +773,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<IR.Tensors.Concat>();
 
         var input_tensor = Testing.Rand<float>(3, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -781,7 +781,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
 
         await prmg.RunAsync(module);
 
@@ -813,7 +813,7 @@ public class UnitTestGraphPartition : TestClassBase
         var pre_number = tv.CountCallOp<IR.Tensors.GetItem>();
 
         var input_tensor = Testing.Rand<float>(2, 32, 32);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
             { input, Value.FromTensor(input_tensor) },
         };
@@ -821,7 +821,7 @@ public class UnitTestGraphPartition : TestClassBase
         var module = new IRModule(main);
 
         var prmg = CompileSession.CreatePassManager("prmg");
-        prmg.Add<ModulePartitionPass>(new CPUModuleCompiler());
+        prmg.Add<ModulePartitionPass>(new NTTModuleCompiler());
         await prmg.RunAsync(module);
 
         tv.Clear();

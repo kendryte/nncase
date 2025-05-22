@@ -14,7 +14,6 @@
  */
 
 #include <algorithm>
-#include <nncase/kernels/kernel_utils.h>
 #include <nncase/llm/paged_attention_kv_cache.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>

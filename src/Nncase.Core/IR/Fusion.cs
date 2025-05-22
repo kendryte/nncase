@@ -18,8 +18,8 @@ public class Fusion : BaseFunction
     /// Initializes a new instance of the <see cref="Fusion"/> class.
     /// build function.
     /// </summary>
-    public Fusion(string name, string moduleKind, Expr body, ReadOnlySpan<Var> parameters)
-        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
+    public Fusion(string name, string moduleKind, BaseExpr body, ReadOnlySpan<IVar> parameters)
+        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<IVar, BaseExpr>(parameters)))
     {
     }
 
@@ -27,7 +27,7 @@ public class Fusion : BaseFunction
     /// Initializes a new instance of the <see cref="Fusion"/> class.
     /// build function.
     /// </summary>
-    public Fusion(string moduleKind, Expr body, ReadOnlySpan<Var> parameters)
+    public Fusion(string moduleKind, BaseExpr body, ReadOnlySpan<IVar> parameters)
         : this($"func_{_globalFusionIndex++}", moduleKind, body, parameters)
     {
     }
@@ -36,8 +36,8 @@ public class Fusion : BaseFunction
     /// Initializes a new instance of the <see cref="Fusion"/> class.
     /// build function.
     /// </summary>
-    public Fusion(string name, string moduleKind, Expr body, params Var[] parameters)
-        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<Var, Expr>(parameters)))
+    public Fusion(string name, string moduleKind, BaseExpr body, params IVar[] parameters)
+        : base(name, moduleKind, ArrayUtility.Concat(body, SpanUtility.UnsafeCast<IVar, BaseExpr>(parameters)))
     {
     }
 
@@ -45,24 +45,24 @@ public class Fusion : BaseFunction
     /// Initializes a new instance of the <see cref="Fusion"/> class.
     /// build function.
     /// </summary>
-    public Fusion(string moduleKind, Expr body, params Var[] parameters)
+    public Fusion(string moduleKind, BaseExpr body, params IVar[] parameters)
         : this($"func_{_globalFusionIndex++}", moduleKind, body, parameters)
     {
     }
 
-    public Expr Body => Operands[0];
+    public BaseExpr Body => Operands[0];
 
-    public ReadOnlySpan<Var> Parameters => SpanUtility.UnsafeCast<Expr, Var>(Operands[1..]);
+    public ReadOnlySpan<IVar> Parameters => SpanUtility.UnsafeCast<BaseExpr, IVar>(Operands[1..]);
 
     /// <summary>
     /// Gets get all parameter checked types.
     /// </summary>
-    public override IEnumerable<IRType?> ParameterTypes => Parameters.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+    public override IEnumerable<IRType> ParameterTypes => Parameters.AsValueEnumerable().Select(x => ((Expr)x).CheckedType).ToArray();
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitFusion(this, context);
 
-    public Fusion With(string? name = null, string? moduleKind = null, Expr? body = null, Var[]? parameters = null)
+    public Fusion With(string? name = null, string? moduleKind = null, BaseExpr? body = null, IVar[]? parameters = null)
         => new Fusion(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters);
 }

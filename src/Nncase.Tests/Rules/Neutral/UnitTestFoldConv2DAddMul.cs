@@ -58,7 +58,7 @@ public class UnitTestFoldConv2DAddMul : TransformTestBase
             rootPre = v3;
         }
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
         };
@@ -116,7 +116,7 @@ public class UnitTestFoldConv2DAddMul : TransformTestBase
             rootPre = v6;
         }
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
         };

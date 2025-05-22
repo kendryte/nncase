@@ -16,7 +16,7 @@ namespace Nncase.CodeGen
             DumpUtility.WriteResult(file, idInfo);
         }
 
-        public static void WriteDebugInfo(uint fnId, uint moduleId, List<(Expr Expr, (long Min, long Max) Range)> sourceMap)
+        public static void WriteDebugInfo(uint fnId, uint moduleId, List<(BaseExpr Expr, (long Min, long Max) Range)> sourceMap)
         {
             var dir = DumpScope.Current.Directory;
 
@@ -32,7 +32,7 @@ namespace Nncase.CodeGen
         }
 
         // todo: refactor this
-        public static string ToStr(Expr expr)
+        public static string ToStr(BaseExpr expr)
         {
             string str;
             if (expr is Call call)

@@ -10,9 +10,6 @@ using Nncase.IR;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
-using static Nncase.Evaluator.TypeInference;
-using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
 using Range = Nncase.IR.Tensors.Range;
 using Reshape = Nncase.IR.Tensors.Reshape;
 
@@ -103,18 +100,19 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         }
         else
         {
-            var inShape = inType.TensorType.Shape;
+            var inShape = (RankedShape)inType.TensorType.Shape;
+            var rankedNewSymbolShape = (RankedShape)newSymbolShape;
 
             // check is unsequeeze/sequeeze
-            if (Enumerable.SequenceEqual(inShape.Where(i => i != 1).ToArray(), newSymbolShape.Where(i => i != 1).ToArray()))
+            if (Enumerable.SequenceEqual(inShape.Where(i => i != 1).ToArray(), rankedNewSymbolShape.Where(i => i != 1).ToArray()))
             {
-                if (inShape.Count < newSymbolShape.Count)
+                if (inShape.Count < rankedNewSymbolShape.Count)
                 {
                     var axis = 0;
                     var axisMap = new Dictionary<int, int>();
                     if (!inShape.IsScalar)
                     {
-                        for (var n = 0; n < newSymbolShape.Count; n++)
+                        for (var n = 0; n < rankedNewSymbolShape.Count; n++)
                         {
                             if (newSymbolShape[n] == inShape[axis])
                             {
@@ -140,16 +138,16 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
                     return inType with { TensorType = new TensorType(inType.TensorType.DType, newSymbolShape), AxisPolices = DistributedUtility.NDSBPToAxisPolices(ndsbp, newSymbolShape.Rank) };
                 }
-                else if (inShape.Count > newSymbolShape.Count)
+                else if (inShape.Count > rankedNewSymbolShape.Count)
                 {
                     var axis = 0;
                     var axisMap = new Dictionary<int, int>();
                     for (var o = 0; o < inShape.Count; o++)
                     {
-                        if (axis < newSymbolShape.Count && inShape[o] == newSymbolShape[axis])
+                        if (axis < rankedNewSymbolShape.Count && inShape[o] == newSymbolShape[axis])
                         {
                             axisMap.Add(o, axis++);
-                            if (axis >= newSymbolShape.Count)
+                            if (axis >= rankedNewSymbolShape.Count)
                             {
                                 break;
                             }
@@ -265,7 +263,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         }
         else if (dataType is not VectorType && dataType.IsFloat() && dataType != DataTypes.Float32)
         {
-            input = Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+            input = Nncase.IR.F.Tensors.Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
         }
         else
         {
@@ -279,7 +277,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         }
 
         var tensorType = context.CurrentCall.CheckedTensorType;
-        var allowzero = tensorType.Shape.Contains(0) ? 1L : 0L;
+        var allowzero = tensorType.Shape is RankedShape rankedShape && rankedShape.Contains(0) ? 1L : 0L;
         if (tensorType.DType is VectorType vtype)
         {
             shape = shape.Concat(vtype.Lanes.Select(i => (long)i)).ToArray();
@@ -335,9 +333,8 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
     private IRType Visit(ITypeInferenceContext context, Reshape target, TensorType input)
     {
-        var shape = context.GetDimensionArgument(target, Reshape.Shape);
-        var shapeType = context.CheckArgumentTensorTypeOrBroadcast(target, Reshape.Shape);
-        var outShape = TypeInference.ReshapeShape(input.Shape, shape, shapeType);
+        var shape = (Shape)context.GetArgument(target, Reshape.Shape);
+        var outShape = TypeInference.ReshapeShape(input.Shape, shape);
         return input with { Shape = outShape };
     }
 

@@ -11,8 +11,8 @@ namespace Nncase.Importer
     {
         private Expr VisitWhere(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var (x, y) = GetInputExprs(op, 1, 2);
+            var input = GetInputExpr<Expr>(op, 0);
+            var (x, y) = GetInputExprs<Expr, Expr>(op, 1, 2);
             return Where(input, x, y);
         }
     }

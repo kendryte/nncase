@@ -23,7 +23,7 @@ internal sealed class DataFlowRewriter : ExprRewriter
 {
     private readonly IRewriteRule _rule;
     private readonly RunPassContext _options;
-    private readonly HashSet<Expr> _dontInheritExprs = new HashSet<Expr>(ReferenceEqualityComparer.Instance);
+    private readonly HashSet<BaseExpr> _dontInheritExprs = new HashSet<BaseExpr>(ReferenceEqualityComparer.Instance);
 
     public DataFlowRewriter(IRewriteRule rule, RunPassContext options)
         : base(visitAttributes: true)
@@ -32,7 +32,7 @@ internal sealed class DataFlowRewriter : ExprRewriter
         _options = options;
     }
 
-    protected override Expr DefaultRewriteLeaf(Expr expr)
+    protected override BaseExpr DefaultRewriteLeaf(BaseExpr expr)
     {
         if ((_options.RewriteOnce, IsMutated) switch
         {
@@ -55,7 +55,7 @@ internal sealed class DataFlowRewriter : ExprRewriter
         return expr;
     }
 
-    protected override Expr DispatchVisit(Expr expr, Unit context)
+    protected override BaseExpr DispatchVisit(BaseExpr expr, Unit context)
     {
         var replace = base.DispatchVisit(expr, context);
         if (!_dontInheritExprs.Contains(expr))

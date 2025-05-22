@@ -5,15 +5,22 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Nncase;
+
+public interface IReference
+{
+    object Value { get; }
+}
 
 /// <summary>
 /// Reference type.
 /// </summary>
 /// <typeparam name="T">Elem type.</typeparam>
-public struct Reference<T> : IEquatable<Reference<T>>
+[JsonConverter(typeof(IO.ReferenceJsonConverter))]
+public struct Reference<T> : IReference, IEquatable<Reference<T>>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="Reference{T}"/> struct.
@@ -33,6 +40,8 @@ public struct Reference<T> : IEquatable<Reference<T>>
     /// Gets value.
     /// </summary>
     public T Value { get; }
+
+    object IReference.Value => Value!;
 
     /// <summary>
     /// Compare two pointers.
@@ -85,5 +94,5 @@ public sealed record ReferenceType(DataType ElemType) : DataType
     public override Type CLRType { get; } = typeof(Reference<>).MakeGenericType(ElemType.CLRType);
 
     /// <inheritdoc/>
-    public override int SizeInBytes => ElemType.SizeInBytes;
+    public override int SizeInBytes => ElemType.SizeInBytes; // todo set at 8.
 }

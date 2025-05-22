@@ -78,7 +78,7 @@ public class K210Target : ITarget
         {
             return new KPUModuleBuilder();
         }
-        else if (moduleKind == Callable.StackVMModuleKind)
+        else if (moduleKind == Callable.CPUModuleKind)
         {
             return new StackVMModuleBuilder();
         }

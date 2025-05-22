@@ -108,8 +108,7 @@ inline result<void> alloc_output(value_t &output, datatype_t dtype,
                                  std::span<const size_t> out_shape) {
     // TODO: copy back output
     if (output.empty()) {
-        try_var(typecode, to_typecode(dtype));
-        try_var(out_tensor, hrt::create(typecode, dims_t(out_shape)));
+        try_var(out_tensor, hrt::create(dtype, dims_t(out_shape)));
         output = out_tensor.impl();
     } else {
         try_var(out_tensor, output.as<tensor>());

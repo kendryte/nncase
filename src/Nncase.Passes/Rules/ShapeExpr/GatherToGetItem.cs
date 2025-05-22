@@ -16,7 +16,7 @@ public sealed partial class GatherToGetItem : RewriteRule<Pattern>
     // (Gather(input, 0, 0) -> GetItem(input)
     public override Pattern Pattern => IsGather("gather", 0, IsWildcard("input"), IsTensorConst("index") with { TypePattern = IsScalar() });
 
-    private Expr? GetReplace(Expr input, int index)
+    private BaseExpr? GetReplace(Expr input, int index)
     {
         return input[index];
     }

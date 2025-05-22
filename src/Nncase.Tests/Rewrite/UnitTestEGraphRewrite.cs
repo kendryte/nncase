@@ -86,7 +86,7 @@ public class UnitTestEGraphRewrite : TestClassBase
 
         var post = CompilerServices.ERewrite(pre, new IRewriteRule[] { new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.SubIsAddOpposite(), new Passes.Rules.Arithmetic.DoubleOppositeIsEmpty(), new Passes.Rules.Arithmetic.XAddNegX(), new Passes.Rules.Arithmetic.ZeroIsNegZero(), new Passes.Rules.Arithmetic.XAdd0(), new Passes.Rules.Neutral.FoldConstCall() }, new(), CompileOptions);
 
-        Assert.Equal(post, 0);
+        Assert.Equal(post, (Expr)0);
     }
 
     [Fact(Skip = "EGraph Bug")]

@@ -20,7 +20,7 @@ public interface ITypeInferenceProvider
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Is fully inferenced.</returns>
-    bool InferenceType(Expr expr);
+    bool InferenceType(BaseExpr expr);
 
     /// <summary>
     /// Inference operator.

@@ -103,7 +103,6 @@ add_subdirectory(src/Native/src)
 add_subdirectory(ntt)
 
 if(BUILD_TESTING)
-    add_subdirectory(tests/kernels)
 endif()
 
 # Python binding

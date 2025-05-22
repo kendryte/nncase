@@ -23,5 +23,5 @@ public interface ICalibrationDatasetProvider
     /// <summary>
     /// Gets the samples.
     /// </summary>
-    IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+    IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> Samples { get; }
 }

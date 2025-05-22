@@ -120,7 +120,11 @@ public static class DumpUtility
         return $"shape:{SerializeByRow(dims)}";
     }
 
-    public static string SerializeShape(Shape shape) => SerializeShape(shape.ToArray());
+    public static string SerializeShape(Shape shape) => shape switch
+    {
+        RankedShape rankedShape when rankedShape.IsFixed => SerializeShape(rankedShape.ToValueArray()),
+        _ => shape.ToString(),
+    };
 
     public static string PathJoinByCreate(string root, params string[] paths)
     {
@@ -218,7 +222,7 @@ public static class BinFileUtil
         }
     }
 
-    public static Tensor ReadBinFile(string path, DataType dt, Shape shape)
+    public static Tensor ReadBinFile(string path, DataType dt, RankedShape shape)
     {
         using (var stream = new FileStream(Path.Join(path), FileMode.Open, FileAccess.Read, FileShare.None))
         using (var reader = new BinaryReader(stream))

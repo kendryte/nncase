@@ -188,8 +188,8 @@ public class UnitTestExprPattern
     public void TestVArgsPatternFunc()
     {
         var pat = IsTuple(IsVArgsRepeat(() => IsConst()));
-        var expr1 = new IR.Tuple(1, 2, 3, 4, 5, 6);
-        var expr2 = new IR.Tuple(new Var("x"), 2, 3, 4, 5, 6);
+        var expr1 = new IR.Tuple((Expr)1, (Expr)2, (Expr)3, (Expr)4, (Expr)5, (Expr)6);
+        var expr2 = new IR.Tuple(new Var("x"), (Expr)2, (Expr)3, (Expr)4, (Expr)5, (Expr)6);
 
         Assert.True(CompilerServices.TryMatchRoot(expr1, pat, out _));
         Assert.Equal(pat.Fields.Count, expr1.Fields.Length);

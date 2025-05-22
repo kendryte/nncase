@@ -13,7 +13,7 @@ namespace Nncase.Importer
     {
         private Expr VisitReshape(in NodeProto op)
         {
-            var (input, shape) = GetInputExprs(op, 0, 1);
+            var (input, shape) = GetInputExprs<Expr, Shape>(op, 0, 1);
 
             // allowzero has been avaliable since opset 14
             var allowZero = GetBoolAttribute(op, "allowzero", false);

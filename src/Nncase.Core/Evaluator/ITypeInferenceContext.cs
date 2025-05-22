@@ -22,13 +22,7 @@ public interface ITypeInferenceContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument expression.</returns>
-    Expr GetArgument(Op op, ParameterInfo parameter);
-
-    Expr GetDimensionArgument(Op op, ParameterInfo parameter)
-    {
-        var arg = GetArgument(op, parameter);
-        return CompilerServices.FastSimplifyForDimension(arg);
-    }
+    BaseExpr GetArgument(Op op, ParameterInfo parameter);
 
     /// <summary>
     /// Get arguments expression.
@@ -36,7 +30,7 @@ public interface ITypeInferenceContext
     /// <param name="op">Operator.</param>
     /// <param name="paramsInfo">ParamsInfo.</param>
     /// <returns>The arguments expression.</returns>
-    Expr[] GetArguments(Op op, params ParameterInfo[] paramsInfo);
+    BaseExpr[] GetArguments(Op op, params ParameterInfo[] paramsInfo);
 
     /// <summary>
     /// Get argument type.

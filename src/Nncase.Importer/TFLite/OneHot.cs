@@ -11,8 +11,8 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitOneHot(in tflite.Operator op)
         {
-            var (indices, depth) = GetInputExprs(op, 0, 1);
-            var (onValue, offValue) = GetInputExprs(op, 2, 3);
+            var (indices, depth) = GetInputExprs<Expr, Expr>(op, 0, 1);
+            var (onValue, offValue) = GetInputExprs<Expr, Expr>(op, 2, 3);
             return F.NN.OneHot(
                 OneHotMode.Normal,
                 indices,

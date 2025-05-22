@@ -14,7 +14,7 @@ public enum LoopMode
     Serial,
 
     /// <summary>
-    /// Parallel execution on CPU.
+    /// Parallel execution on NTT.
     /// </summary>
     Parallel,
 

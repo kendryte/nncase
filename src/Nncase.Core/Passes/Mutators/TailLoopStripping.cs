@@ -16,16 +16,16 @@ public sealed class TailLoopStripping : ExprRewriter
     /// <inheritdoc/>
     protected override Expr RewriteLeafFor(For expr)
     {
-        if (!(expr.Domain.Start is TensorConst start &&
-            expr.Domain.Stop is TensorConst stop &&
-            expr.Domain.Step is TensorConst step))
+        if (!(expr.Domain.Start is DimConst start &&
+            expr.Domain.Stop is DimConst stop &&
+            expr.Domain.Step is DimConst step))
         {
             return expr;
         }
 
-        int startv = start.Value.ToScalar<int>();
-        int stopv = stop.Value.ToScalar<int>();
-        int stepv = step.Value.ToScalar<int>();
+        long startv = start.Value;
+        long stopv = stop.Value;
+        long stepv = step.Value;
 
         var extent = stopv - startv;
         var (_, rem) = Math.DivRem(extent, stepv);
@@ -35,8 +35,8 @@ public sealed class TailLoopStripping : ExprRewriter
         }
 
         Dictionary<Type, Evaluator.IEvaluator> evaluator_cache = new();
-        Dictionary<Expr, Expr> cseMemo = new();
-        var vmaps = new Dictionary<Var, TensorConst>(ReferenceEqualityComparer.Instance) { { expr.LoopVar, stopv - rem } };
+        Dictionary<BaseExpr, BaseExpr> cseMemo = new();
+        var vmaps = new Dictionary<IVar, long>(ReferenceEqualityComparer.Instance) { { expr.LoopVar, stopv - rem } };
         var tailBody = new LoopBodyCloner(vmaps, evaluator_cache, cseMemo).Clone(expr.Body, default);
         Expr mainBody = (stopv - rem == startv) ? T.Nop() : new TIR.For(expr.LoopVar, new TIR.Range(expr.Domain.Start, expr.Domain.Stop - rem, expr.Domain.Step), expr.Mode, expr.Body);
         return T.Sequential(mainBody, tailBody);

@@ -123,35 +123,35 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
     public static Pattern SingleEndPattern(string endCall, Pattern inputPattern) =>
         IsCallWildcard(endCall, IsOp<TEnd>(endCall + "Op"), inputPattern);
 
-    protected virtual Call? GetReplace(Call midCall, Op midCallOp, IReadOnlyList<Expr> midCallParams, Expr output, IMatchResult result)
+    protected virtual Call? GetReplace(Call midCall, Op midCallOp, IReadOnlyList<BaseExpr> midCallParams, BaseExpr output, IMatchResult result)
     {
         var newInputs = new List<Var>();
-        var newParams = new List<Expr>();
+        var newParams = new List<BaseExpr>();
 
         // 1. update all input call (replace first input by var)
         var midPairs = InputPatterns
             .Where(p => ((Call)midCallParams[p.Item1.Index]).Arguments[0] is not Const)
             .Select((p, i) =>
             {
-                var beginCallParams = (IReadOnlyList<Expr>)result[p.Item2.Arguments];
+                var beginCallParams = (IReadOnlyList<BaseExpr>)result[p.Item2.Arguments];
                 var newVar = new Var($"input_{i}", beginCallParams[0].CheckedType!);
                 var newParam = beginCallParams[0];
                 newInputs.Add(newVar);
                 newParams.Add(newParam);
                 var newBeginCall = ReplaceCallParams((Expr)result[p.Item2.Target], beginCallParams, (newParam, newVar));
-                return (p.Item1, (Expr)newBeginCall);
+                return (p.Item1, (BaseExpr)newBeginCall);
             }).ToArray();
 
         // 2. update mid compute call
         var newMidCall = ReplaceCallParams(midCallOp, midCallParams, midPairs);
 
         // 3. update output.
-        Expr newOutput = output switch
+        BaseExpr newOutput = output switch
         {
             IR.Tuple endtuple => ReplaceTupleFields(endtuple, midCall, newMidCall, result),
             Call endCall => ReplaceCallParams(
                 (Expr)result["outputOp"],
-                (IReadOnlyList<Expr>)result["outputParams"],
+                (IReadOnlyList<BaseExpr>)result["outputParams"],
                 (midCall, newMidCall)),
             _ => throw new NotSupportedException("not suppoerted output type"),
         };
@@ -162,17 +162,17 @@ public partial class ComplexFusion<TMid, TBegin, TEnd> : FusionMaker
         return fusion;
     }
 
-    private Expr ReplaceTupleFields(IR.Tuple tuple, Call midCall, Call newMidCall, IMatchResult result)
+    private BaseExpr ReplaceTupleFields(IR.Tuple tuple, Call midCall, Call newMidCall, IMatchResult result)
     {
         // Deq + GetItem + LSTM
         return new IR.Tuple(
             tuple.Fields.AsValueEnumerable().Select((end, i) =>
                 ReplaceCallFirstParam(
                     (Expr)result[$"{_endName}Op_{i}"],
-                    (IReadOnlyList<Expr>)result[$"output_{i}Params"],
+                    (IReadOnlyList<BaseExpr>)result[$"output_{i}Params"],
                     ReplaceCallParams(
                         (Expr)result[$"getItemOp_{i}"],
-                        (IReadOnlyList<Expr>)result[$"getItem_{i}Params"],
+                        (IReadOnlyList<BaseExpr>)result[$"getItem_{i}Params"],
                         (midCall, newMidCall)))).ToArray());
     }
 }
@@ -192,7 +192,7 @@ public partial class SingleInputFusion<T, TBegin, TEnd> : FusionMaker
             IsOp<T>("midOp"),
             IsCallWildcard("beginCall", IsOp<TBegin>("beginOp"), IsWildcard("input"))));
 
-    private Call? GetReplace(Call endCall, Op endOp, IReadOnlyList<Expr> endCallParams, Call midCall, Op midOp, IReadOnlyList<Expr> midCallParams, Call beginCall, Op beginOp, IReadOnlyList<Expr> beginCallParams, Expr input)
+    private Call? GetReplace(Call endCall, Op endOp, IReadOnlyList<BaseExpr> endCallParams, Call midCall, Op midOp, IReadOnlyList<BaseExpr> midCallParams, Call beginCall, Op beginOp, IReadOnlyList<BaseExpr> beginCallParams, Expr input)
     {
         var newInput = new Var(input.CheckedType!);
         var newBeginCall = ReplaceCallParams(beginOp, beginCallParams, (input, newInput));
@@ -220,11 +220,11 @@ public partial class DoubleInputFusion<T, TBegin, TEnd> : FusionMaker
             IsCallWildcard("beginLhsCall", IsOp<TBegin>("beginLhsOp"), IsWildcard("lhs")),
             IsCallWildcard("beginRhsCall", IsOp<TBegin>("beginRhsOp"), IsWildcard("rhs"))));
 
-    private Call GetReplace(Call endCall, Op endOp, IReadOnlyList<Expr> endCallParams, Call midCall, Op midOp, IReadOnlyList<Expr> midCallParams, Call beginLhsCall, Op beginLhsOp, IReadOnlyList<Expr> beginLhsCallParams, Call beginRhsCall, Op beginRhsOp, IReadOnlyList<Expr> beginRhsCallParams, Expr lhs, Expr rhs)
+    private Call GetReplace(Call endCall, Op endOp, IReadOnlyList<BaseExpr> endCallParams, Call midCall, Op midOp, IReadOnlyList<BaseExpr> midCallParams, Call beginLhsCall, Op beginLhsOp, IReadOnlyList<BaseExpr> beginLhsCallParams, Call beginRhsCall, Op beginRhsOp, IReadOnlyList<BaseExpr> beginRhsCallParams, Expr lhs, Expr rhs)
     {
         var newArgs = new List<Var>();
         var newParams = new List<Expr>();
-        var replace_pairs = new List<(int, Expr)>();
+        var replace_pairs = new List<(int, BaseExpr)>();
         if (lhs is not TensorConst)
         {
             var arg = new Var(lhs.CheckedType!);
@@ -266,7 +266,7 @@ public partial class DataTransferFusion<TLoad, TStore> : FusionMaker
         IsCallWildcard("ldCall", IsOp<TLoad>("ldOp"), IsWildcard("input")));
 
     // replace input with var
-    private Call? GetReplace(Call stCall, Op stOp, IReadOnlyList<Expr> stCallParams, Call ldCall, Op ldOp, IReadOnlyList<Expr> ldCallParams, Expr input)
+    private Call? GetReplace(Call stCall, Op stOp, IReadOnlyList<BaseExpr> stCallParams, Call ldCall, Op ldOp, IReadOnlyList<BaseExpr> ldCallParams, Expr input)
     {
         var newArg = new Var(input.CheckedType!);
         var newLdCall = ReplaceCallParams(ldOp, ldCallParams, (input, newArg));

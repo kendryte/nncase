@@ -46,7 +46,7 @@ public class UnitTestCombineQuantize : TransformTestBase
     public void TestCombineQuantizeConcatPositive(long[][] inShapes, int axis, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         for (int i = 0; i < inShapes.Length; i++)
         {
             var v = new Var(i.ToString(), new TensorType(DataTypes.Float32, inShapes[i]));
@@ -67,7 +67,7 @@ public class UnitTestCombineQuantize : TransformTestBase
         var v253 = ReduceWindow2D(ReduceOp.Max, v251, -3.4028235E+38, new[] { 5L, 5L }, new[] { 1L, 1L }, new[,] { { 2L, 2L }, { 2L, 2L } }, new[] { 1L, 1L }, false, false); // f32[1,256,20,20]
         var v255 = ReduceWindow2D(ReduceOp.Max, v253, -3.4028235E+38, new[] { 5L, 5L }, new[] { 1L, 1L }, new[,] { { 2L, 2L }, { 2L, 2L } }, new[] { 1L, 1L }, false, false); // f32[1,256,20,20]
         var body = IR.F.Math.Quantize(IR.F.Tensors.Concat(new IR.Tuple(v253, v255), 1), new QuantParam(1, 0.323f), DataTypes.UInt8);
-        _ = new Dictionary<Var, IValue>() { { input, IR.F.Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, new[] { 1, 256, 20, 20 }).Evaluate() }, };
+        _ = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, new[] { 1, 256, 20, 20 }).Evaluate() }, };
         var rootPre = new Function(body, input);
         TestNotMatch<CombineQuantizeConcat>(rootPre);
     }
@@ -77,7 +77,7 @@ public class UnitTestCombineQuantize : TransformTestBase
     public void TestCombineQuantizeReshapePositive(long[][] shapes, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         var v = new Var("input", new TensorType(DataTypes.Float32, shapes[0]));
         parameters.Add(v);
         feedDict.Add(v, IR.F.Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, shapes[0]).Evaluate());
@@ -91,7 +91,7 @@ public class UnitTestCombineQuantize : TransformTestBase
     public void TestCombineReshapeQuantizePositive(long[][] shapes, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         var v = new Var("input", new TensorType(DataTypes.Float32, shapes[0]));
         parameters.Add(v);
         feedDict.Add(v, IR.F.Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, shapes[0]).Evaluate());
@@ -125,7 +125,7 @@ public class UnitTestCombineQuantize : TransformTestBase
     public void TestCombineQuantizeTransposePositive(long[][] shape_and_perm, DataType destType, QuantParam quantParam)
     {
         var parameters = new List<Var>();
-        var feedDict = new Dictionary<Var, IValue>();
+        var feedDict = new Dictionary<IVar, IValue>();
         var v = new Var("input", new TensorType(DataTypes.Float32, shape_and_perm[0]));
         parameters.Add(v);
         feedDict.Add(v, Random.Uniform(DataTypes.Float32, 1.0f, -1.0f, 0, shape_and_perm[0]).Evaluate());

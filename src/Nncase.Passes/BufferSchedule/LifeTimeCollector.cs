@@ -14,7 +14,7 @@ namespace Nncase.Passes.BufferSchedule;
 
 public class LifeTimeUpdater : ExprFunctor<Unit, Unit, LifeTimeUpdater.Context>
 {
-    protected override Unit DefaultVisit(Expr expr, Context context) => default;
+    protected override Unit DefaultVisit(BaseExpr expr, Context context) => default;
 
     protected override Unit VisitTuple(IR.Tuple expr, Context context)
     {
@@ -166,7 +166,7 @@ public class LifeTimeCollector : ExprVisitor<Unit, Unit>
         return d;
     }
 
-    protected override Unit DefaultVisitLeaf(Expr expr) => default;
+    protected override Unit DefaultVisitLeaf(BaseExpr expr) => default;
 
     protected override Unit VisitLeafCall(Call expr)
     {

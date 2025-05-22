@@ -70,7 +70,7 @@ public class UnitTestDistributeSchema : TestClassBase
     public async Task TestLoadScheme()
     {
         var path = Path.Join(SolutionDirectory, "src/Nncase.Tests/Distributed/hidden_in.json");
-        var options = new Nncase.Targets.CpuTargetOptions()
+        var options = new Nncase.Targets.NTTTargetOptions()
         {
             Hierarchies = new[] { new[] { 8, 8, 4 } },
             HierarchyNames = "cbt",

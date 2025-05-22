@@ -32,7 +32,7 @@ public class FusionGroupMutator : ExprRewriter
     /// <param name="passOptions">pass options. </param>
     public FusionGroupMutator(IMergeRewriteRule fusionRule, RunPassContext passOptions)
     {
-        passOptions.GetAnalysis(out _userAnalysis);
+        _userAnalysis = passOptions.GetAnalysis<IExprUserAnalysisResult>();
         Rule = fusionRule;
         PassOptions = passOptions;
     }
@@ -63,7 +63,7 @@ public class FusionGroupMutator : ExprRewriter
     /// </summary>
     /// <param name="merged_fusion_body">merged fusion body.</param>
     /// <returns>rewrited body.</returns>
-    public virtual Expr MergedFusionRewriteCallBack(Expr merged_fusion_body)
+    public virtual BaseExpr MergedFusionRewriteCallBack(BaseExpr merged_fusion_body)
     {
         return merged_fusion_body;
     }
@@ -100,7 +100,7 @@ public class FusionGroupMutator : ExprRewriter
         return false;
     }
 
-    protected override Expr VisitFusion(Fusion expr, Unit context) => base.VisitFusion(expr, context);
+    protected override BaseExpr VisitFusion(Fusion expr, Unit context) => base.VisitFusion(expr, context);
 
     /// <inheritdoc/>
     protected override Expr RewriteLeafCall(Call expr)

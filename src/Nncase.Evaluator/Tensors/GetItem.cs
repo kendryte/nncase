@@ -48,7 +48,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     public IRType Visit(ITypeInferenceContext context, GetItem target)
     {
         var input = context.CheckArgumentType<IRType>(target, GetItem.Input);
-        var index = context.CheckArgumentTensorTypeOrBroadcast(target, GetItem.Index);
+        var index = context.CheckArgumentType<IRType>(target, GetItem.Index);
 
         return input switch
         {
@@ -82,25 +82,30 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         return input[index.AsTensor().ToScalar<int>()];
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, TensorType input, TensorType index)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, TensorType input, IRType index)
     {
         var indexExpr = context.GetArgument(target, GetItem.Index);
-        if (input.Shape.IsUnranked)
+        if (input.Shape is not RankedShape inShape)
         {
             return input;
         }
 
-        if (indexExpr is TensorConst indexV)
+        var indices = indexExpr switch
         {
-            var indices = indexV.Value.ToArray<int>();
-            if (indices.Length > input.Shape.Rank)
+            DimConst dc => new[] { dc.Value },
+            RankedShape rs when rs.IsFixed => rs.ToValueArray(),
+            _ => null,
+        };
+        if (indices is not null)
+        {
+            if (indices.Length > inShape.Rank)
             {
                 return new InvalidType("GetItem index count should smaller than in shape rank");
             }
 
-            if (indices.Length == input.Shape.Rank)
+            if (indices.Length == inShape.Rank)
             {
-                foreach (var (i, dim) in indices.Zip(input.Shape))
+                foreach (var (i, dim) in indices.Zip(inShape))
                 {
                     if (dim.IsFixed && i >= dim.FixedValue)
                     {
@@ -110,23 +115,23 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             }
         }
 
-        var shape = index.Shape switch
+        Shape shape = index switch
         {
-            { IsScalar: true } => new Shape(input.Shape.Skip(1)),
-            { IsFixed: true } => index.Shape[0].FixedValue == input.Shape.Rank ?
+            DimensionType => new RankedShape(inShape.Skip(1)),
+            ShapeType st when st.Rank != null => st.Rank == inShape.Rank ?
                                  Shape.Scalar :
-                                 new Shape(input.Shape.Skip((int)index.Shape[0].FixedValue)),
+                                 new RankedShape(inShape.Skip(st.Rank.Value)),
             _ => Shape.Unranked,
         };
         return new TensorType(input.DType, shape);
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, TupleType input, TensorType index)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, TupleType input, IRType index)
     {
         var indexExpr = context.GetArgument(target, GetItem.Index);
-        if (indexExpr is TensorConst @const)
+        if (indexExpr is DimConst @const)
         {
-            var indexValue = @const.Value.ToScalar<int>();
+            var indexValue = (int)@const.Value;
             if (indexValue < 0)
             {
                 return new InvalidType($"The Input Tuple Count = {input.Count}, But Index = {indexValue}");
@@ -153,7 +158,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         }
     }
 
-    private IRType Visit(ITypeInferenceContext context, GetItem target, DistributedType input, TensorType index)
+    private IRType Visit(ITypeInferenceContext context, GetItem target, DistributedType input, IRType index)
     {
         var outputType = (TensorType)Visit(context, target, input.TensorType, index);
         var ndsbp = input.AxisPolices.Skip(input.TensorType.Shape.Rank - outputType.Shape.Rank).ToArray();
@@ -161,8 +166,8 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
         {
             if (ndsbp[i] is SBPSplit)
             {
-                if ((index.Shape.IsScalar && i == 0)
-                    || i < index.Shape[0].FixedValue)
+                if ((index is DimensionType && i == 0)
+                    || i < ((ShapeType)index).Rank)
                 {
                     return new InvalidType("not support");
                 }

@@ -18,8 +18,8 @@ namespace Nncase.Importer
 
         private Expr ReduceCore(in NodeProto op, ReduceOp reduceOp, Expr initValue, Func<Expr, Expr> f, long opVersion = 999)
         {
-            var input = GetInputExpr(op, 0);
-            Expr axis;
+            var input = GetInputExpr<Expr>(op, 0);
+            Shape axis;
 
             if ((reduceOp == ReduceOp.Sum && opVersion < 13) || (reduceOp != ReduceOp.Sum && GetOpSet(op) < 18))
             {
@@ -29,7 +29,7 @@ namespace Nncase.Importer
             {
                 if (op.Input.Count > 1)
                 {
-                    axis = GetInputExpr(op, 1);
+                    axis = GetInputExpr<Shape>(op, 1);
                 }
                 else
                 {

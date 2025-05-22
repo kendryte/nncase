@@ -14,14 +14,14 @@ public class UnitTestFoldNopIf : TransformTestBase
     [Fact]
     public void CondIsConst()
     {
-        TestMatched<FoldNopIf>(new If(true, new Function(1), new Function(2)));
-        TestMatched<FoldNopIf>(new If(false, new Function(1), new Function(2)));
+        TestMatched<FoldNopIf>(new If(true, new Function((Expr)1), new Function((Expr)2)));
+        TestMatched<FoldNopIf>(new If(false, new Function((Expr)1), new Function((Expr)2)));
     }
 
     [Fact]
     public void CondIsExpr()
     {
         var input = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
-        TestNotMatch<FoldNopIf>(new If(input, new Function(1), new Function(2)));
+        TestNotMatch<FoldNopIf>(new If(input, new Function((Expr)1), new Function((Expr)2)));
     }
 }

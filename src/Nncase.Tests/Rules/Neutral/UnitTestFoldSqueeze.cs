@@ -19,7 +19,7 @@ public class UnitTestFoldSqueeze : TransformTestBase
         var input = Testing.Rand<float>(1, 3, 24);
         var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
         var expr = Squeeze(Unsqueeze(inputVar, new[] { -3 }), new[] { 1 });
-        TestMatched<FoldSqueezeUnsqueeze>(expr, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
+        TestMatched<FoldSqueezeUnsqueeze>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 
     [Fact]
@@ -28,6 +28,6 @@ public class UnitTestFoldSqueeze : TransformTestBase
         var input = Testing.Rand<float>(1, 1, 3, 24);
         var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
         var expr = Unsqueeze(Squeeze(inputVar, new[] { 1 }), new[] { -3 });
-        TestMatched<FoldUnsqueezeSqueeze>(expr, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
+        TestMatched<FoldUnsqueezeSqueeze>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 }

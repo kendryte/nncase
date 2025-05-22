@@ -36,14 +36,8 @@ public class NormalEvaluator : IEvaluator<Normal>, ITypeInferencer<Normal>, ICos
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Normal target)
     {
-        if (context.GetArgument(target, Normal.Shape) is TensorConst shapeValue)
-        {
-            return new TensorType(target.Type, new Shape(shapeValue.Value.ToArray<long>()));
-        }
-        else
-        {
-            return new TensorType(target.Type, Shape.Unranked);
-        }
+        var shape = (Shape)context.GetArgument(target, Normal.Shape);
+        return new TensorType(target.Type, shape);
     }
 
     /// <inheritdoc/>

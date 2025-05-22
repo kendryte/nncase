@@ -12,8 +12,8 @@ namespace Nncase.Importer
     {
         private Expr VisitTrilu(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var k = GetOptionInputExpr(op, 1).Or(0L);
+            var input = GetInputExpr<Expr>(op, 0);
+            var k = GetOptionInputExpr<Expr>(op, 1).Or(0L);
             var upper = GetIntAttribute(op, "upper", 1);
             return Trilu(input, k, upper);
         }

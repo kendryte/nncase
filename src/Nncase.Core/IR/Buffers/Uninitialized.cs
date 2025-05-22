@@ -16,7 +16,7 @@ public sealed partial class Uninitialized : Op
     /// <summary>
     /// the shape.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(Uninitialized), 0, "shape", IsIntegral() & IsTensor() & HasRank(1));
+    public static readonly ParameterInfo Shape = new(typeof(Uninitialized), 0, "shape", IsShapeType());
 
     public DataType DType { get; }
 

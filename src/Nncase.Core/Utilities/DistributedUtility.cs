@@ -182,7 +182,7 @@ public static class DistributedUtility
         return divisors;
     }
 
-    public static bool TryGetDividedTensorType(DistributedType distributedType, [System.Diagnostics.CodeAnalysis.MaybeNullWhen(false)] out TensorType tensorType)
+    public static bool TryGetDividedTensorType(DistributedType distributedType, [MaybeNullWhen(false)] out TensorType tensorType)
     {
         tensorType = null;
         var divisors = GetDivisors(distributedType);
@@ -405,7 +405,7 @@ public static class DistributedUtility
         return (offset, shape);
     }
 
-    private static (Shape Tile, Shape Shape) GetDividedTile(DistributedType distributedType)
+    private static (RankedShape Tile, RankedShape Shape) GetDividedTile(DistributedType distributedType)
     {
         var shape = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
         var tiles = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);

@@ -18,7 +18,7 @@ public class ModelInitContext
 
     private List<Var?>? _inputs = new List<Var?>();
 
-    private Dictionary<string, Var>? _dynVarMap = new Dictionary<string, Var>();
+    private Dictionary<string, DimVar>? _dynVarMap = new Dictionary<string, DimVar>();
 
     private Dictionary<string, int>? _fixVarMap = new Dictionary<string, int>();
 
@@ -51,7 +51,7 @@ public class ModelInitContext
         set { _inputs = value; }
     }
 
-    public Dictionary<string, Var>? DynVarMap
+    public Dictionary<string, DimVar>? DynVarMap
     {
         get { return _dynVarMap; }
         set { _dynVarMap = value; }
@@ -122,6 +122,9 @@ public partial class HuggingFaceImporter : BaseImporter
             case "Qwen2ForCausalLM":
                 _model = new Qwen2();
                 break;
+            case "Qwen3ForCausalLM":
+                _model = new Qwen3();
+                break;
             case "LlamaForCausalLM":
                 _model = new Llama3_2();
                 break;
@@ -135,7 +138,7 @@ public partial class HuggingFaceImporter : BaseImporter
         _model!.Initialize(_modelContext, huggingFaceDir);
     }
 
-    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Expr[]> VarMap) CreateInputs()
+    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
     {
         return _model.CreateInputs();
     }
@@ -145,7 +148,7 @@ public partial class HuggingFaceImporter : BaseImporter
         _model.VisitForCausalLM();
     }
 
-    protected override Expr CreateOutputs()
+    protected override BaseExpr CreateOutputs()
     {
         return _model.CreateOutputs();
     }

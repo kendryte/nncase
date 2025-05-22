@@ -51,7 +51,7 @@ internal struct MatchContext
         }
     }
 
-    public MatchContext(IReadOnlyList<MatchScope> matchScopes, IPattern pattern, Expr expr)
+    public MatchContext(IReadOnlyList<MatchScope> matchScopes, IPattern pattern, BaseExpr expr)
         : this(matchScopes, scope =>
         {
             if (scope.TryGetMemo(pattern, out var oldExpr))
@@ -66,7 +66,7 @@ internal struct MatchContext
     {
     }
 
-    public MatchContext(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IReadOnlyList<Expr> exprs)
+    public MatchContext(IReadOnlyList<MatchScope> matchScopes, VArgsPattern pattern, IReadOnlyList<BaseExpr> exprs)
         : this(matchScopes, scope =>
         {
             if (scope.TryGetMemo(pattern, out var oldExprs))
@@ -88,7 +88,7 @@ internal struct MatchContext
 
     public bool HasCandidates => Candidates.Count > 0;
 
-    public void MatchCandidates(IPattern pattern, Expr expr)
+    public void MatchCandidates(IPattern pattern, BaseExpr expr)
     {
         if (HasCandidates)
         {
@@ -96,7 +96,7 @@ internal struct MatchContext
         }
     }
 
-    public void MatchCandidates(VArgsPattern pattern, IReadOnlyList<Expr> exprs)
+    public void MatchCandidates(VArgsPattern pattern, IReadOnlyList<BaseExpr> exprs)
     {
         if (HasCandidates)
         {

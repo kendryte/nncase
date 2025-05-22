@@ -21,7 +21,7 @@ public sealed class Program
     internal static async Task Extract(string inputFile, [CallerFilePath] string? callerFilePath = null)
     {
         var extractor = new CommandExtractor();
-        var optionType = typeof(Nncase.Targets.CpuTargetOptions);
+        var optionType = typeof(Nncase.Targets.NTTTargetOptions);
         extractor.Extract(optionType);
 
         var directory = Path.GetDirectoryName(callerFilePath);

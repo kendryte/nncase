@@ -19,7 +19,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 {
     private readonly Dictionary<ITileable, Dictionary<BufferIdentity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, long>> levelNodeBufferBoxs, Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> levelTreeBufferLifeness, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, ICpuTargetOptions targetOptions, string moduleKind)
+    public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, long>> levelNodeBufferBoxs, Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> levelTreeBufferLifeness, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, INTTTargetOptions targetOptions, string moduleKind)
         : base(null!, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         PrimBufferGraph = primBufferGraph;
@@ -56,7 +56,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         var (parentbuilder, partentOffsets) = context;
 
         var loopBuilders = new ISequentialBuilder<TIR.For>[value.DomainRelation.Map.Results.Length];
-        var loopVars = new Var[value.DomainRelation.Map.Results.Length];
+        var loopVars = new DimVar[value.DomainRelation.Map.Results.Length];
 
         var nodeMemo = TileNodeMemo[value];
 
@@ -69,14 +69,14 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             loopVars[i] = loopVar;
         }
 
-        var initOffsets = Enumerable.Repeat<Expr>(0L, loopVars.Length).ToArray();
+        var initOffsets = Enumerable.Repeat<Dimension>(0L, loopVars.Length).ToArray();
         foreach (var (k, v) in TileableNodeMemo[value].DimsMap)
         {
             initOffsets[k] += partentOffsets[v];
         }
 
         // forwardOffsets[0] means partentOffsets, forwardOffsets[i] means partentOffsets[0:i] + loop vars[0:i]
-        var forwardOffsets = new Expr[loopVars.Length + 1][];
+        var forwardOffsets = new Dimension[loopVars.Length + 1][];
         for (int i = 0; i < loopVars.Length + 1; i++)
         {
             var offsets = forwardOffsets[i] = initOffsets.ToArray();
@@ -113,14 +113,14 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                             // for cpu we can use tensor view.
                             if (TargetOptions.UnifiedMemoryArch)
                             {
-                                subView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
+                                subView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, viewInfo.Shape);
                             }
                             else
                             {
                                 // for device we should use copy.
                                 var offset = LevelBufferOffsets[sl][new(value, bid)];
                                 var dtype = viewInfo.Buffer.CheckedDataType;
-                                var shape = bufferInfo.Shapes[i].Select(i => (Expr)i).ToArray();
+                                var shape = bufferInfo.Shapes[i].Select(i => (Dimension)i).ToArray();
                                 subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetStrides(shape), distributedType);
                             }
                         }
@@ -131,7 +131,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                         var letBuilder = T.Let(out subViewVar, subView, $"{bid}_L{value.Level}");
                         if (!TargetOptions.UnifiedMemoryArch)
                         {
-                            var srcBufView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
+                            var srcBufView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, viewInfo.Shape);
                             if (kernelInfo.BufferInfos[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Read))
                             {
                                 if (bid.Node.Op.GetType().Name.Contains("Matmul", StringComparison.Ordinal) && bid.IsOutput)
@@ -220,16 +220,16 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             var bid = new BufferIdentity(value.Wrapped, i);
             var viewInfo = GetParentSubViewInfo(value.Level, value, bid, value.DomainRelation.Map * OpNodeMemo[value].Maps[i], partentOffsets, OpNodeMemo[value].Shapes[i]);
 
-            buffers[i] = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, new IR.Tuple(viewInfo.Shape.Select(x => (Expr)x).ToArray()));
+            buffers[i] = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, viewInfo.Shape);
         }
 
-        var bodyVarReplaces = new Dictionary<Expr, Expr>();
+        var bodyVarReplaces = new Dictionary<BaseExpr, BaseExpr>();
         for (int i = 0; i < value.Grid.BodyParameters.Length; i++)
         {
             bodyVarReplaces.Add(value.Grid.BodyParameters[i], buffers[i]);
         }
 
-        var domain = new IR.Tuple(partentOffsets.Select(off => new IR.Tuple(off, 0L)).ToArray());
+        var domain = new IR.Tuple(partentOffsets.Select(off => new IR.Tuple(IR.F.Shapes.AsTensor(off), (Expr)0L)).ToArray());
         bodyVarReplaces.Add(value.Grid.DomainParameter, domain);
         var nestBody = new ReplacingExprCloner(bodyVarReplaces).Clone(value.Grid.Body, default);
         parentbuilder.Body(nestBody);
@@ -358,7 +358,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         return buffer;
     }
 
-    private bool TryGetParerntBuffer(ITreeNode node, BufferIdentity bid, out Expr parentBuffer, out IR.Tuple parentOffsets)
+    private bool TryGetParerntBuffer(ITreeNode node, BufferIdentity bid, out Expr parentBuffer, out Shape parentOffsets)
     {
         var cbid = bid;
         var parentNode = node.Parent;
@@ -381,23 +381,23 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         return false;
     }
 
-    private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITreeNode node, BufferIdentity bid, AffineMap map, Expr[] forwardOffsets, long[] shapeExprs)
+    private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITreeNode node, BufferIdentity bid, AffineMap map, Dimension[] forwardOffsets, long[] shapeExprs)
     {
-        var offset = new IR.Tuple(map.Apply(forwardOffsets, Enumerable.Repeat<Expr>(0L, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
+        var offset = new RankedShape(map.Apply(forwardOffsets, Enumerable.Repeat<Dimension>(0L, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray());
         var shape = shapeExprs.ToArray();
         bool innerAllocated = false;
         if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))
         {
-            var subOffset = new Expr[offset.Count];
+            var subOffset = new Dimension[offset.Rank];
             for (int j = 0; j < subOffset.Length; j++)
             {
-                var x = offset.Fields[j] - parentOffsets.Fields[j];
+                var x = offset[j] - parentOffsets[j];
                 subOffset[j] = x;
 
                 // CompilerServices.ERewrite(x, new Passes.IRewriteRule[] { new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.XNegX(), new Passes.Rules.Arithmetic.XNegX0() }, new(), CompileOptions);
             }
 
-            offset = new IR.Tuple(subOffset);
+            offset = new RankedShape(subOffset);
         }
         else
         {
@@ -453,15 +453,15 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         return (TIR.Buffer)buffer;
     }
 
-    public sealed record Context(ISequentialBuilder<Expr> ParentBuilder, Expr[] ForwardOffsets)
+    public sealed record Context(ISequentialBuilder<Expr> ParentBuilder, Dimension[] ForwardOffsets)
     {
     }
 
-    public sealed record ParentSubViewInfo(Expr Buffer, IR.Tuple Offsets, long[] Shape, bool InnerAllocated)
+    public sealed record ParentSubViewInfo(Expr Buffer, Shape Offsets, long[] Shape, bool InnerAllocated)
     {
     }
 
-    public sealed record SubViewInfo(Expr Buffer, IR.Tuple Offsets)
+    public sealed record SubViewInfo(Expr Buffer, Shape Offsets)
     {
     }
 }

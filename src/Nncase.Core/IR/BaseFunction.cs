@@ -14,7 +14,7 @@ namespace Nncase.IR;
 /// </summary>
 public abstract class BaseFunction : Callable
 {
-    public BaseFunction(string name, string moduleKind, Expr[] operands)
+    public BaseFunction(string name, string moduleKind, BaseExpr[] operands)
         : base(name, moduleKind, operands)
     {
         SchedResult = new();
@@ -28,5 +28,7 @@ public abstract class BaseFunction : Callable
     /// <summary>
     /// Gets parameter types.
     /// </summary>
-    public abstract IEnumerable<IRType?> ParameterTypes { get; }
+    public abstract IEnumerable<IRType> ParameterTypes { get; }
+
+    public bool IsEntry { get; set; }
 }

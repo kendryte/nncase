@@ -11,7 +11,7 @@ namespace Nncase.Importer
     {
         private Expr VisitReverseSequence(in NodeProto op)
         {
-            var (input, seqLens) = GetInputExprs(op, 0, 1);
+            var (input, seqLens) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var batchAxis = GetBoolAttribute(op, "batch_axis", true);
             var timeAxis = GetBoolAttribute(op, "time_axis", false);
             return F.Tensors.ReverseSequence(input, seqLens, batchAxis, timeAxis);

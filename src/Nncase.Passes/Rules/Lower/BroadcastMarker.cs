@@ -38,19 +38,19 @@ public partial class BroadcastInputMarker : RewriteRule<Pattern>
             IsRangeOfMarker($"input_marker_{i}", IsWildcard($"marker_target_{i}"), IsWildcard($"marker_attribute_{i}"))),
         IsWildcard($"input_{i}"));
 
-    public Expr? GetReplace(Call outer, Expr outerTarget, IReadOnlyList<Expr> outerParams, IMatchResult result)
+    public Expr? GetReplace(Call outer, Expr outerTarget, IReadOnlyList<BaseExpr> outerParams, IMatchResult result)
     {
         if (!Enumerable.Range(0, outerParams.Count).Select(i => result.GetValueOrDefault($"input_marker_{i}")).Any(e => e is not null))
         {
             return null;
         }
 
-        var newArgs = new Expr[outerParams.Count];
+        var newArgs = new BaseExpr[outerParams.Count];
         for (int i = 0; i < outerParams.Count; i++)
         {
             if (result.GetValueOrDefault($"input_marker_{i}") is Marker marker && result[$"marker_target_{i}"] is Expr target && result[$"marker_attribute_{i}"] is Expr range)
             {
-                newArgs[i] = IR.F.Math.RangeOfMarker(outerParams[i], range).With(mixQuantInfo: marker.MixQuantInfo, adaQuantInfo: marker.AdaQuantInfo);
+                newArgs[i] = IR.F.Math.RangeOfMarker((Expr)outerParams[i], range).With(mixQuantInfo: marker.MixQuantInfo, adaQuantInfo: marker.AdaQuantInfo);
             }
             else
             {
@@ -71,9 +71,9 @@ public partial class BroadcastOutputMarker : RewriteRule<Pattern>
         IsCallWildcard("output", IsOp<Op>("outputTarget", NotChangeRangeOp), IsCallWildcard("input", IsWildcard("inputTarget"))),
         IsWildcard("range"));
 
-    public Expr? GetReplace(Marker marker, Expr range, Call output, Op outputTarget, IReadOnlyList<Expr> outputParams)
+    public Expr? GetReplace(Marker marker, Expr range, Call output, Op outputTarget, IReadOnlyList<BaseExpr> outputParams)
     {
-        return ReplaceCallFirstParam(outputTarget, outputParams, IR.F.Math.RangeOfMarker(outputParams[0], range).With(adaQuantInfo: marker.AdaQuantInfo, mixQuantInfo: marker.MixQuantInfo));
+        return ReplaceCallFirstParam(outputTarget, outputParams, IR.F.Math.RangeOfMarker((Expr)outputParams[0], range).With(adaQuantInfo: marker.AdaQuantInfo, mixQuantInfo: marker.MixQuantInfo));
     }
 }
 
