@@ -255,7 +255,7 @@ template <class T1, class T2> struct not_equal {
 
 template <class T1, class T2> struct less {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return v1 < v2;
+        return (unsigned char)(v1 < v2);
     }
 };
 

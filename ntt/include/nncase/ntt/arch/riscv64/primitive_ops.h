@@ -1654,7 +1654,7 @@ REGISTER_RVV_WHERE_OP(float, where_float32)
 // compare
 #define RVV_COMPARE_OP(op, dtype, vl, kernel)                                  \
     template <> struct op<ntt::vector<dtype, vl>, ntt::vector<dtype, vl>> {    \
-        ntt::vector<bool, vl>                                                  \
+        ntt::vector<unsigned char, vl>                                                  \
         operator()(const ntt::vector<dtype, vl> &v1,                           \
                    const ntt::vector<dtype, vl> &v2) const noexcept {          \
             return kernel(v1, v2, vl);                                         \
@@ -1662,14 +1662,14 @@ REGISTER_RVV_WHERE_OP(float, where_float32)
     };                                                                         \
                                                                                \
     template <> struct op<ntt::vector<dtype, vl>, dtype> {                     \
-        ntt::vector<bool, vl> operator()(const ntt::vector<dtype, vl> &v,      \
+        ntt::vector<unsigned char, vl> operator()(const ntt::vector<dtype, vl> &v,      \
                                          const dtype &s) const noexcept {      \
             return kernel(v, s, vl);                                           \
         }                                                                      \
     };                                                                         \
                                                                                \
     template <> struct op<dtype, ntt::vector<dtype, vl>> {                     \
-        ntt::vector<bool, vl>                                                  \
+        ntt::vector<unsigned char, vl>                                                  \
         operator()(const dtype &s,                                             \
                    const ntt::vector<dtype, vl> &v) const noexcept {           \
             return kernel(s, v, vl);                                           \

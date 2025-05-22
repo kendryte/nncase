@@ -33,7 +33,7 @@ void benchmark_ntt_compare(std::string op_name, T lhs_low, T lhs_high, T rhs_low
 #endif
 
     using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>;
-    using tensor_type1 = ntt::tensor<ntt::vector<bool, N>, ntt::fixed_shape<size2>>;
+    using tensor_type1 = ntt::tensor<ntt::vector<unsigned char, N>, ntt::fixed_shape<size2>>;
                 
     tensor_type ntt_lhs, ntt_rhs;
     NttTest::init_tensor(ntt_lhs, lhs_low, lhs_high);
