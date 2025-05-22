@@ -172,7 +172,7 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
 
         foreach (var (pre, post) in pairs)
         {
-            if (pre is not (Call or Var or If))
+            if (pre is not (Call or Var or If or IR.Tuple))
             {
                 continue;
             }
@@ -196,25 +196,10 @@ internal sealed class DistributedReconstructor : ExprReconstructor<ExprVertex, E
                     for (int i = 0; i < tupleType.Fields.Count; i++)
                     {
                         var field = tupleType.Fields[i];
-
-                        if (dynamicVars.Contains(((IR.Tuple)pre).Fields[i]))
-                        {
-                            // can't skip, extractFields will miss some var.
-                            @var = (Var)((IR.Tuple)pre).Fields[i];
-                        }
-                        else if (((IR.Tuple)pre).Fields[i] is TensorConst tensorConst)
-                        {
-                            extractFields[i] = tensorConst;
-                            continue;
-                        }
-                        else
-                        {
-                            @var = new Var(field) { Metadata = pre.Metadata };
-                            @params.Add(@var);
-                            arguments.Add(post[i]);
-                        }
-
+                        @var = new Var(field) { Metadata = pre.Metadata };
                         extractFields[i] = @var;
+                        @params.Add(@var);
+                        arguments.Add(post[i]);
                     }
 
                     extractDict.Add(pre, new IR.Tuple(extractFields));

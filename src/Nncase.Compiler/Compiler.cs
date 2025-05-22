@@ -100,6 +100,7 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.BroadcastReshapeOutputNames>();
             p.Add<Passes.Rules.Neutral.BroadcastNopPadOutputNames>();
         });
+        passManager.Add<OptimizeByRangePass>();
         passManager.Add<ShapeInferPass>();
         RegisterPreAndPostProcess(passManager);
     }

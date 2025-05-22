@@ -61,6 +61,8 @@ public sealed class ModuleConvertPass : ModulePass
             parameters.Add(item);
         }
 
+        parameters = parameters.Distinct().ToList();
+
         var func = new Function($"{funcName}_kernel", ModuleCompiler.ModuleKind, pre.Body, parameters.ToArray());
         module.Add(func);
         return new Call(func, parameters.ToArray());
