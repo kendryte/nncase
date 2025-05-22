@@ -56,6 +56,7 @@ namespace Nncase.Importer
             var queryStates = Linear(hiddenStates, qProjW, qProjB, ifScaleQ, wScaleQ, $"model.layers.{count}.self_attn.q_proj");
             queryStates = IR.F.Tensors.Reshape(queryStates, hidden_shape1);
             queryStates = LLMLayerNorm(queryStates, $"model.layers.{count}.self_attn.q_norm.weight");
+
             // batch_size, num_heads, seq_len, head_dim
             queryStates = IR.F.Tensors.Transpose(queryStates, new long[] { 0, 2, 1, 3 });
 
