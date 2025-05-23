@@ -21,7 +21,7 @@ public partial class ReshapeExpand : RewriteRule<Pattern>
         null,
         "expand",
         IsWildcard("input") with { TypePattern = HasFixedShape() },
-        IsTensorConst("shape") with { TypePattern = HasShape(shape => shape[0].FixedValue > 4, string.Empty) });
+        IsFixedShape("shape") with { TypePattern = HasShape(shape => shape[0].FixedValue > 4, string.Empty) });
 
     private Expr? GetReplace(Expr expand, Expr input, long[] shape, RunPassContext context)
     {

@@ -84,7 +84,7 @@ public sealed partial class NormAxisReduceArg : RewriteRule<CallPattern>
 public sealed partial class NormAxisReshape : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsReshape("reshape", "call", IsWildcard("input") with { TypePattern = HasFixedShape() }, IsTensorConst("newShape")) with { TypePattern = HasFixedShape() };
+    public override CallPattern Pattern { get; } = IsReshape("reshape", "call", IsWildcard("input") with { TypePattern = HasFixedShape() }, IsFixedShape("newShape")) with { TypePattern = HasFixedShape() };
 
     private Expr? GetReplace(Call call, Expr input, long[] newShape)
     {

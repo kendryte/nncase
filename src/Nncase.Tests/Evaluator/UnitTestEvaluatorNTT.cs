@@ -51,7 +51,7 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
             {
                 var col = IR.F.NTT.Im2col(IR.F.NTT.Pack(input, new[] { 4 }, new[] { 1 }), new[] { weightShape[2], weightShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
                 var newW = IR.F.Tensors.Reshape(IR.F.NTT.Pack(weights, new[] { 4 }, new[] { 1 }), new[] { weightShape[0], weightShape[1] / 4 * weightShape[2] * weightShape[3] });
-                var matmul = IR.F.NTT.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
+                var matmul = IR.F.NTT.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }, false, false, false); // [oc, b*oh*ow]
                 var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
                 var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
                 post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
