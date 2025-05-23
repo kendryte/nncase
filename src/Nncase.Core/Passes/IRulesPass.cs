@@ -37,7 +37,7 @@ public interface IRulesAddable
     /// Add rule result.
     /// </summary>
     /// <typeparam name="T">Descriptor type.</typeparam>
-    public struct AddResult<T> : IRulesAddable
+    private struct AddResult<T> : IRulesAddable
         where T : class, IRewriteRule
     {
         private readonly IRulesPass _rulesPass;
