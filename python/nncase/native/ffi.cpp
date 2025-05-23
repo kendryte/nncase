@@ -366,7 +366,9 @@ PYBIND11_MODULE(_nncase, m) {
                                                 std::move(fn_params_arr));
         }));
 
-    py::class_<rtvalue>(m, "RTValue")
+    py::class_<ivalue>(m, "IValue");
+
+    py::class_<rtvalue, ivalue>(m, "RTValue")
         .def_static(
             "from_runtime_tensor",
             [](const runtime_tensor &tensor) { return rtvalue(tensor.impl()); })
@@ -396,19 +398,29 @@ PYBIND11_MODULE(_nncase, m) {
         std::vector<clr_object_handle_t> param_handles(params.size());
         std::vector<clr_object_handle_t> input_handles(inputs.size());
         for (size_t i = 0; i < param_handles.size(); i++) {
-            param_handles[i] = params[i].cast<var &>().get();
+            param_handles[i] = params[i].cast<clr::expr &>().get();
         }
         for (size_t i = 0; i < input_handles.size(); i++) {
-            input_handles[i] = inputs[i].cast<rtvalue &>().get();
+            input_handles[i] = inputs[i].cast<clr::ivalue &>().get();
         }
 
         array params_arr(nncase_array_var, param_handles.data(), inputs.size());
-        array inputs_arr(nncase_array_rtvalue, input_handles.data(),
+        array inputs_arr(nncase_array_object, input_handles.data(),
                          inputs.size());
         return expr.evaluate(params_arr, inputs_arr);
     });
 
-    py::class_<var, expr>(m, "Var");
+    py::enum_<nncase_dimension_kind_t>(m, "DimensionKind")
+        .value("Fixed", nncase_dimension_kind_fixed)
+        .value("Dynamic", nncase_dimension_kind_dynamic)
+        .value("Unknown", nncase_dimension_kind_unknown);
+
+    py::class_<dimension, expr>(m, "Dimension")
+        .def_property_readonly("kind", &dimension::kind);
+
+    py::class_<var, expr>(m, "Var").def("dimensions", [](var &var) {
+        return var.dimensions().to_vector<dimension>();
+    });
 
     py::class_<function, expr>(m, "Function")
         .def_property_readonly("body", &function::body)

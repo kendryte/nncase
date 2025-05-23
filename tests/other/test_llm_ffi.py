@@ -278,8 +278,8 @@ def test_paged_attention_scheduler():
     block_table[2, 0, 0] == 0 + session_ids[2] * (max_model_len // config.block_size)
     block_table[2, 1, 0] == 1 + session_ids[2] * (max_model_len // config.block_size)
 
-    slot_mapping = kv_cache.slot_mapping.to_runtime_tensor().to_numpy()
-    kv_caches = kv_cache.kv_caches.to_runtime_tensor().to_numpy()
+    ivalue = kv_cache.as_ivalue()
+    assert ivalue is not None
 
     # Test with different parameters - empty session
     empty_session_ids = []
@@ -306,6 +306,14 @@ def test_paged_attention_scheduler():
         # Expected behavior
         pass
 
+    # get the test function.
+    test_func = scheduler.create_test_function(
+        8,
+        [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head,
+            nncase._nncase.AttentionDimKind.Dim],
+        [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head, nncase._nncase.AttentionDimKind.Dim])
+    assert len(test_func.parameters) == 1 + 1 + config.num_layers * 2
+
 
 def test_paged_attention_scheduler_distributed():
     num_layers = 1
@@ -315,19 +323,20 @@ def test_paged_attention_scheduler_distributed():
     num_blocks = 256
     max_sessions = 16
     max_model_len = (block_size * num_blocks) // max_sessions
+    kv_type = np.dtype(np.float16)
 
     # Create PagedAttentionConfig
     config = nncase.PagedAttentionConfig(
         num_layers,
         num_kv_heads,
         head_dim,
-        np.dtype(np.float16),
+        kv_type,
         block_size,
         [nncase.PagedKVCacheDimKind.NumBlocks,
          nncase.PagedKVCacheDimKind.NumLayers,
+         nncase.PagedKVCacheDimKind.NumKVHeads,
          nncase.PagedKVCacheDimKind.KV,
          nncase.PagedKVCacheDimKind.BlockSize,
-         nncase.PagedKVCacheDimKind.NumKVHeads,
          nncase.PagedKVCacheDimKind.HeadDim],
         [nncase.PagedKVCacheDimKind.HeadDim],
         [128 // 2],
@@ -344,7 +353,9 @@ def test_paged_attention_scheduler_distributed():
     scheduler = nncase._nncase.RefPagedAttentionScheduler(
         config, num_blocks, max_model_len, hierarchy)
 
-    kvcache = scheduler.schedule([0], [512])
+    session_ids = [0]
+    query_lens = [512]
+    kvcache = scheduler.schedule(session_ids, query_lens)
     block_table = kvcache.block_table.to_runtime_tensor().to_numpy()
     assert block_table.shape == (1, 2, 3)
     assert np.allclose(block_table, np.array([[[-1, 0, 0], [-1, 0, 1]]], np.int64))
@@ -364,24 +375,42 @@ def test_paged_attention_scheduler_distributed():
     slot_mapping_ref[0, :] = [-1, 0, 512]
     assert np.allclose(slot_mapping, slot_mapping_ref)
 
+    # get the test function.
+    num_q_heads = 8
+    test_func = scheduler.create_test_function(
+        num_q_heads,
+        [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head,
+            nncase._nncase.AttentionDimKind.Dim],
+        [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head, nncase._nncase.AttentionDimKind.Dim])
+    assert len(test_func.parameters) == 1 + 1 + config.num_layers * 2
+
+    parameters = test_func.parameters
+    q_var_dims = parameters[0].dimensions()
+    assert len(q_var_dims) == 3
+    assert q_var_dims[0].kind == nncase._nncase.DimensionKind.Dynamic
+
+    body = test_func.body
+    parameters.append(q_var_dims[0])  # all inputs are [seq,head,dim] layout
+    inputs = []
+    ref_q = np.random.rand(np.sum(query_lens), num_q_heads, head_dim).astype(kv_type)
+    ref_k = np.random.rand(np.sum(query_lens), num_kv_heads, head_dim).astype(kv_type)
+    ref_v = np.random.rand(np.sum(query_lens), num_kv_heads, head_dim).astype(kv_type)
+    inputs.append(nncase._nncase.RTValue.from_runtime_tensor(
+        nncase.RuntimeTensor.from_numpy(ref_q)))
+    inputs.append(nncase._nncase.RTValue.from_runtime_tensor(
+        nncase.RuntimeTensor.from_numpy(ref_k)))
+    inputs.append(nncase._nncase.RTValue.from_runtime_tensor(
+        nncase.RuntimeTensor.from_numpy(ref_v)))
+    inputs.append(kvcache.as_ivalue())
+    inputs.append(nncase._nncase.RTValue.from_runtime_tensor(
+        nncase.RuntimeTensor.from_numpy(np.array(np.sum(query_lens), np.int64))))
+    result = body.evaluate(parameters, inputs)
+    result_ref = result.to_runtime_tensor().to_numpy()
+
 
 def test_create_object_tensor():
-    num_layers = 32
-    num_kv_heads = 8
-    head_dim = 64
-    block_size = 128
+    pass
 
-    config = nncase.PagedAttentionConfig(
-        num_layers,
-        num_kv_heads,
-        head_dim,
-        np.dtype(np.float16),
-        block_size
-    )
 
-    kvcache = nncase.PagedAttentionKVCache(config)
-
-    nncase.RuntimeTensor.from_object([])
-    
 if __name__ == "__main__":
     pytest.main(['-vvs', __file__])

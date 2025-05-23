@@ -22,36 +22,6 @@ public partial class NTT
         return new Call(new Store(), input);
     }
 
-    public static Expr Pack(Expr input, int[] lanes, int[] axes)
-    {
-        if (lanes.Length != axes.Length)
-        {
-            throw new NotSupportedException();
-        }
-
-        if (axes.Length == 0)
-        {
-            return input;
-        }
-
-        return new Call(new Pack(lanes, axes), input);
-    }
-
-    public static Expr Unpack(Expr input, int[] lanes, int[] axes)
-    {
-        if (lanes.Length != axes.Length)
-        {
-            throw new NotSupportedException();
-        }
-
-        if (axes.Length == 0)
-        {
-            return input;
-        }
-
-        return new Call(new Unpack(lanes, axes), input);
-    }
-
     public static Expr PackedSoftmax(Expr input, int axis, IRArray<int> packedAxes)
     {
         return new Call(new PackedSoftmax(axis, packedAxes), input);

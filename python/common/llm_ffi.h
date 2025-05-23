@@ -34,6 +34,11 @@ namespace py = pybind11;
 namespace nncase {
 
 inline void register_llm_evaluator(py::module &m) {
+    py::enum_<llm::attention_dim_kind>(m, "AttentionDimKind")
+        .value("Seq", llm::attention_dim_kind::seq)
+        .value("Head", llm::attention_dim_kind::head)
+        .value("Dim", llm::attention_dim_kind::dim);
+
     py::class_<clr::ref_paged_attention_kv_cache>(m, "RefPagedAttentionKVCache")
         .def_property_readonly("num_seqs",
                                &clr::ref_paged_attention_kv_cache::num_seqs)
@@ -50,7 +55,8 @@ inline void register_llm_evaluator(py::module &m) {
         .def_property_readonly("slot_mapping",
                                &clr::ref_paged_attention_kv_cache::slot_mapping)
         .def_property_readonly("kv_caches",
-                               &clr::ref_paged_attention_kv_cache::kv_caches);
+                               &clr::ref_paged_attention_kv_cache::kv_caches)
+        .def("as_ivalue", &clr::ref_paged_attention_kv_cache::as_ivalue);
 
     py::class_<clr::ref_paged_attention_scheduler>(m,
                                                    "RefPagedAttentionScheduler")
@@ -60,16 +66,29 @@ inline void register_llm_evaluator(py::module &m) {
             return clr::ref_paged_attention_scheduler(config, num_blocks,
                                                       max_model_len, hierarchy);
         }))
-        .def("schedule", [](clr::ref_paged_attention_scheduler &self,
-                            const std::vector<int64_t> &session_ids,
-                            const std::vector<int64_t> &query_lens) {
-            if (session_ids.size() != query_lens.size()) {
-                throw std::runtime_error(
-                    "session_ids and query_lens must have the same "
-                    "length");
-            }
-            return self.schedule(session_ids, query_lens);
-        });
+        .def("schedule",
+             [](clr::ref_paged_attention_scheduler &self,
+                const std::vector<int64_t> &session_ids,
+                const std::vector<int64_t> &query_lens) {
+                 if (session_ids.size() != query_lens.size()) {
+                     throw std::runtime_error(
+                         "session_ids and query_lens must have the same "
+                         "length");
+                 }
+                 return self.schedule(session_ids, query_lens);
+             })
+        .def("create_test_function",
+             [](clr::ref_paged_attention_scheduler &self, int32_t num_q_heads,
+                const std::vector<llm::attention_dim_kind> &q_layout,
+                const std::vector<llm::attention_dim_kind> &kv_layout) {
+                 if (q_layout.size() != kv_layout.size() ||
+                     q_layout.size() != 3) {
+                     throw std::runtime_error(
+                         "layout size must be 3 and equal");
+                 }
+                 return self.create_test_function(num_q_heads, q_layout,
+                                                  kv_layout);
+             });
 }
 
 inline void register_llm(NNCASE_UNUSED py::module &m) {

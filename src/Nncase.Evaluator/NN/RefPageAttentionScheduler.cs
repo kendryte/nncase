@@ -137,6 +137,12 @@ public sealed class RefPagedAttentionScheduler
         return new RefPagedAttentionKVCache(_config, numSeqs, numTokens, contextLensTensor, seqLensTensor, blockTableTensor, slotMappingTensor, _numBlocks, _kvCaches);
     }
 
+    public IR.Function CreateTestFunction(int numQHeads, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout)
+    {
+        var (root, queryVar, kVVars, kVCacheObjVar) = RefPagedAttentionKVCache.BuildPagedAttentionKernel([], [_maxModelLen], numQHeads, _numBlocks, qLayout, kvLayout, _config);
+        return new IR.Function(root, new Var[] { queryVar }.Concat(kVVars.SelectMany(i => i).ToArray()).Concat(new Var[] { kVCacheObjVar }).ToArray());
+    }
+
     private class SessionInfo
     {
         public long SlotStart { get; set; }

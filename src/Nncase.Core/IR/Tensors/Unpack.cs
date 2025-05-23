@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.PatternMatch;
 
-namespace Nncase.IR.NTT;
+namespace Nncase.IR.Tensors;
 
 /// <summary>
 /// Unpack expression.

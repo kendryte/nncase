@@ -284,7 +284,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
+        var testKernel = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -347,7 +347,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: false, IncreaseBy: [AttentionDimKind.Head, AttentionDimKind.Seq], ResetForKV: true);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config);
+        var testKernel = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config);
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -986,7 +986,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             foreach (var post in posts)
             {
-                if (post is Call { Target: IR.NTT.Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.NTT.PackedReduce } packedReduceCall)
+                if (post is Call { Target: IR.Tensors.Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.NTT.PackedReduce } packedReduceCall)
                 {
                     packedReduceCall.Arguments[0].Metadata = new() { OutputNames = new[] { "reduceIn" } };
                 }

@@ -31,6 +31,7 @@ public enum ArrayElementKind
     /// </summary>
     RTValue = 0,
     Var = 1,
+    Object = 2,
 }
 
 /// <summary>
@@ -135,7 +136,8 @@ public unsafe struct CApiMT
 
     // KV Cache Scheduler.
     public delegate* unmanaged<IntPtr, int, int, int*, nuint, IntPtr> CreateRefPagedAttentionSchedulerPtr;
-    public delegate* unmanaged<nint, long*, long*, nuint, IntPtr> RefPagedAttentionSchedulePtr;
+    public delegate* unmanaged<nint, long*, long*, nuint, IntPtr> RefPagedAttentionSchedulerSchedulePtr;
+    public delegate* unmanaged<IntPtr, int, int*, int*, nuint, IntPtr> RefPagedAttentionSchedulerCreateTestFunctionPtr;
 
     // KV Cache property getters
     public delegate* unmanaged<IntPtr, int> RefPagedAttentionKVCacheGetNumSeqsPtr;
@@ -146,6 +148,13 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetSlotMappingPtr;
     public delegate* unmanaged<IntPtr, int> RefPagedAttentionKVCacheGetNumBlocksPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetKVCachesPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheAsIValuePtr;
+
+    // Var functions
+    public delegate* unmanaged<IntPtr, IntPtr> VarGetDimensionsPtr;
+
+    // Dimension functions
+    public delegate* unmanaged<IntPtr, byte> DimensionGetKindPtr;
 }
 
 /// <summary>
@@ -252,7 +261,8 @@ public static unsafe class CApi
 
         // KV Cache Scheduler
         mt->CreateRefPagedAttentionSchedulerPtr = &CreateRefPagedAttentionScheduler;
-        mt->RefPagedAttentionSchedulePtr = &RefPagedAttentionSchedule;
+        mt->RefPagedAttentionSchedulerSchedulePtr = &RefPagedAttentionSchedulerSchedule;
+        mt->RefPagedAttentionSchedulerCreateTestFunctionPtr = &RefPagedAttentionSchedulerCreateTestFunction;
 
         // KV Cache property getters
         mt->RefPagedAttentionKVCacheGetNumSeqsPtr = &RefPagedAttentionKVCacheGetNumSeqs;
@@ -263,6 +273,13 @@ public static unsafe class CApi
         mt->RefPagedAttentionKVCacheGetSlotMappingPtr = &RefPagedAttentionKVCacheGetSlotMapping;
         mt->RefPagedAttentionKVCacheGetNumBlocksPtr = &RefPagedAttentionKVCacheGetNumBlocks;
         mt->RefPagedAttentionKVCacheGetKVCachesPtr = &RefPagedAttentionKVCacheGetKVCaches;
+        mt->RefPagedAttentionKVCacheAsIValuePtr = &RefPagedAttentionKVCacheAsIValue;
+
+        // Var functions
+        mt->VarGetDimensionsPtr = &VarGetDimensions;
+
+        // Dimension functions
+        mt->DimensionGetKindPtr = &DimensionGetKind;
     }
 
     [UnmanagedCallersOnly]
@@ -271,7 +288,8 @@ public static unsafe class CApi
         return kind switch
         {
             ArrayElementKind.RTValue => ArrayCreateImpl<RTValue>(elements, length),
-            ArrayElementKind.Var => ArrayCreateImpl<Var>(elements, length),
+            ArrayElementKind.Var => ArrayCreateImpl<IVar>(elements, length),
+            ArrayElementKind.Object => ArrayCreateImpl<object>(elements, length),
             _ => IntPtr.Zero,
         };
     }
@@ -621,10 +639,15 @@ public static unsafe class CApi
     {
         var expr = Get<BaseExpr>(exprHandle);
         var fnParams = Get<IVar[]>(fnParamsHandle);
-        var inputs = Get<RTValue[]>(inputsHandle); // switch to IValue
+        var inputs = Get<object[]>(inputsHandle);
         var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
             x => x.First,
-            x => x.Second.ToValue()));
+            x => x.Second switch
+            {
+                IValue iValue => iValue,
+                RTValue rTValue => rTValue.ToValue(),
+                _ => throw new ArgumentException($"Unsupported type {x.Second.GetType()}", nameof(inputsHandle)),
+            }));
         var rtValue = RTValue.FromValue(result);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtValue));
     }
@@ -1068,13 +1091,23 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static IntPtr RefPagedAttentionSchedule(IntPtr handle, [In] long* sessionIdsPtr, [In] long* queryLensPtr, nuint numQueries)
+    private static IntPtr RefPagedAttentionSchedulerSchedule(IntPtr handle, [In] long* sessionIdsPtr, [In] long* queryLensPtr, nuint numQueries)
     {
         var scheduler = Get<Evaluator.NN.RefPagedAttentionScheduler>(handle);
         var sessionIds = To1DArray(sessionIdsPtr, numQueries);
         var queryLens = To1DArray(queryLensPtr, numQueries);
         var refPagedAttentionKVCache = scheduler.Schedule(sessionIds, queryLens);
         return GCHandle.ToIntPtr(GCHandle.Alloc(refPagedAttentionKVCache));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionSchedulerCreateTestFunction(IntPtr handle, int numQHeads, int* qLayoutPtr, int* kvLayoutPtr, nuint layoutLength)
+    {
+        var scheduler = Get<Evaluator.NN.RefPagedAttentionScheduler>(handle);
+        var qLayout = To1DArray(qLayoutPtr, layoutLength).Select(i => (AttentionDimKind)i).ToArray();
+        var kvLayout = To1DArray(kvLayoutPtr, layoutLength).Select(i => (AttentionDimKind)i).ToArray();
+        var func = scheduler.CreateTestFunction(numQHeads, qLayout, kvLayout);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(func));
     }
 
     [UnmanagedCallersOnly]
@@ -1136,6 +1169,39 @@ public static unsafe class CApi
         var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
         var rtTensor = RTTensor.FromTensor(kvCache.KVCaches);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtTensor));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionKVCacheAsIValue(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        var value = Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCache)));
+        return GCHandle.ToIntPtr(GCHandle.Alloc(value));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr VarGetDimensions(IntPtr varHandle)
+    {
+        var variable = Get<Var>(varHandle);
+
+        if (variable.TypeAnnotation is TensorType tensorType)
+        {
+            var shape = tensorType.Shape;
+            if (shape is RankedShape rankedShape)
+            {
+                var dimensions = rankedShape.Dimensions.ToArray();
+                return GCHandle.ToIntPtr(GCHandle.Alloc(dimensions));
+            }
+        }
+
+        return GCHandle.ToIntPtr(GCHandle.Alloc(Array.Empty<Dimension>()));
+    }
+
+    [UnmanagedCallersOnly]
+    private static byte DimensionGetKind(IntPtr dimensionHandle)
+    {
+        var dimension = Get<Dimension>(dimensionHandle);
+        return (byte)dimension.Kind;
     }
 
     private static T Get<T>(IntPtr handle)

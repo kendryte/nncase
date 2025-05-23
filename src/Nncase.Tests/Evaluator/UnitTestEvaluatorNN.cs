@@ -898,7 +898,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var dataGeneratorOptions = new TestFixture.PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = TestFixture.PagedAttentionKVCacheTestFixture.PrepareReferenceResults(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.Config.NumKVHeads, testFixture.Config.HeadDim, testFixture.Config.NumLayers, testFixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = TestFixture.PagedAttentionKVCacheTestFixture.CreateTestKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
+        var testKernel = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
 
         var kvinputs = TestFixture.PagedAttentionKVCacheTestFixture.PrepareKVInputs(testFixture.QueryLens, testFixture.SeqLens, testFixture.ContextLens, testFixture.NumBlocks, placement, referenceResults, testFixture.Config);
 

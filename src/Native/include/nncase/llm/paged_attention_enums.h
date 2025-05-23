@@ -26,4 +26,6 @@ enum class paged_kvcache_dim_kind : int32_t {
 };
 
 enum class attention_cache_kind : int32_t { key = 0, value };
+
+enum class attention_dim_kind : int32_t { seq = 0, head, dim };
 } // namespace nncase::llm

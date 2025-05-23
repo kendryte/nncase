@@ -172,6 +172,98 @@ public sealed record RefPagedAttentionKVCache(
         blockTableTensor[indices] = physicalBlockId;
     }
 
+    /// <summary>
+    /// all vars are [seq,head,dim] layout.
+    /// </summary>
+    public static (Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar) BuildPagedAttentionKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false)
+    {
+        var numTokens = queryLens.Sum();
+        var numTokensVar = new IR.DimVar("num_tokens");
+        Shape defaultQDimenions = numTokens == 0 ? new RankedShape(numTokensVar, numQHeads, config.HeadDim) : new long[] { numTokens, numQHeads, config.HeadDim };
+        var queryVar = new Var("query", new TensorType(config.KVPrimType, defaultQDimenions));
+        var kvVars = new List<Var[]>();
+        var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(
+            new ReferenceType(new PagedAttentionKVCacheType { Config = config })));
+
+        // Create vars for each layer
+        Shape defaultKDimenions = numTokens == 0 ? new RankedShape(numTokensVar, config.NumKVHeads, config.HeadDim) : new long[] { numTokens, config.NumKVHeads, config.HeadDim };
+        for (int layerId = 0; layerId < config.NumLayers; layerId++)
+        {
+            var keyVar = new Var($"key_{layerId}", new TensorType(config.KVPrimType, defaultKDimenions));
+            var valueVar = new Var($"value_{layerId}", new TensorType(config.KVPrimType, defaultKDimenions));
+            kvVars.Add([keyVar, valueVar]);
+        }
+
+        // Build computation graph
+        var (q_lanes, q_packed_axes) = GetQKVPackParams(config, qLayout);
+        var (kv_lanes, kv_packed_axes) = GetQKVPackParams(config, kvLayout);
+        var transedQuery = IR.F.Tensors.Transpose(queryVar, qLayout.Select(x => (int)x).ToArray());
+        var packedQuery = q_lanes.Length > 0 ? IR.F.Tensors.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
+        Expr updatedKVCache = None.Default;
+        for (int layerId = 0; layerId < config.NumLayers; layerId++)
+        {
+            var (keyVar, valueVar) = (kvVars[layerId][0], kvVars[layerId][1]);
+
+            var transedKey = IR.F.Tensors.Transpose(keyVar, kvLayout.Select(x => (int)x).ToArray());
+            var packedKey = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
+            updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
+                packedKey,
+                kvCacheObjVar,
+                AttentionCacheKind.Key,
+                layerId,
+                kvLayout);
+
+            var transValue = IR.F.Tensors.Transpose(valueVar, kvLayout.Select(x => (int)x).ToArray());
+            var packedValue = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transValue, kv_lanes, kv_packed_axes) : transValue;
+            updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
+                packedValue,
+                updatedKVCache,
+                AttentionCacheKind.Value,
+                layerId,
+                kvLayout);
+
+            // Apply attention for current layer
+            packedQuery = IR.F.NN.PagedAttention(
+                packedQuery,
+                updatedKVCache,
+                numTokens == 0 ? IR.F.Buffer.Uninitialized(config.KVPrimType, Nncase.TIR.MemoryLocation.Data, new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1)) : Tensor.Zeros(config.KVPrimType, [numQHeads, queryLens.Max(), seqLens.Max() + 1]), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
+                layerId,
+                qLayout);
+        }
+
+        // unpack query.
+        var unpacked = q_lanes.Length > 0 ? IR.F.Tensors.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
+        Expr root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
+
+        if (testUpdateKVCache)
+        {
+            root = IR.F.NN.GatherPagedAttentionKVCache(new[] { 0L }, updatedKVCache, numBlocks);
+        }
+
+        return (root, queryVar, kvVars, kvCacheObjVar);
+    }
+
+    public static (int[] Lanes, int[] Axes) GetQKVPackParams(IPagedAttentionConfig config, AttentionDimKind[] qLayout)
+    {
+        var lanes = new List<int>();
+        var axes = new List<int>();
+        for (int i = 0; i < config.PackedAxes.Count; i++)
+        {
+            if (config.PackedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
+            {
+                axes.Add(config.PackedAxes[i] switch
+                {
+                    PagedKVCacheDimKind.NumKVHeads => qLayout.IndexOf(AttentionDimKind.Head),
+                    PagedKVCacheDimKind.HeadDim => qLayout.IndexOf(AttentionDimKind.Dim),
+                    _ => throw new ArgumentOutOfRangeException(nameof(config)),
+                });
+                lanes.Add(config.Lanes[i]);
+            }
+        }
+
+        return (lanes.ToArray(), axes.ToArray());
+    }
+
     private Tensor GetSlotViewFromStorage(AttentionCacheKind kind, int layerId, int headId, Tensor slotId)
     {
         // slot_id : [len(topo) + 1].
