@@ -14,22 +14,24 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../loop.h"
 #include "../shape_infer/reduce_axis.h"
-#include "../utility.h"
+#include "../tensor_traits.h"
 #include <tuple>
 
 namespace nncase::ntt {
-
-template <size_t Axis, IsTensor... TInputs, IsTensor TOut>
-void concat(const std::tuple<TInputs...> &inputs, TOut &&output) {
-    auto domain = shape_infer::reduced_shape_by_axis<Axis>(output.shape());
-    auto in_index = ranked_shape<domain.rank()>{};
+template <Tensor... TInputs, class TOut, FixedDimension TAxis>
+void concat(const std::tuple<TInputs...> &inputs, TOut &&output,
+            const TAxis &axis) {
+    const auto domain =
+        shape_infer::reduced_shape_by_axis<TAxis::value>(output.shape());
+    dynamic_shape_t<domain.rank()> in_index{};
     apply(domain, [&](auto index) {
         loop<domain.rank()>([&](auto i) { in_index[i] = index[i]; });
         loop<sizeof...(TInputs)>([&](auto i) {
             auto input = std::get<i>(inputs);
-            for (in_index[Axis] = 0; in_index[Axis] < input.shape()[Axis];
-                 in_index[Axis]++, index[Axis]++) {
+            for (in_index[axis] = 0; in_index[axis] < input.shape()[axis];
+                 in_index[axis]++, index[axis]++) {
                 output(index) = input(in_index);
             }
         });

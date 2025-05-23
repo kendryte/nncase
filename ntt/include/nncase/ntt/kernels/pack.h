@@ -22,13 +22,14 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <class TIn, class TOut, size_t... Axes> class pack_impl {
+template <Tensor TIn, Tensor TOut, size_t AxesRank> class pack_impl {
   public:
     using TElem = typename TIn::element_type;
     using TVec = typename std::decay_t<TOut>::element_type;
 
-    constexpr void operator()(const TIn &input, TOut &output) {
-        constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
+    template <FixedDimensions TAxes>
+    constexpr void operator()(const TIn &input, TOut &output,
+                              const TAxes &axes) {
         constexpr auto in_rank = TIn::rank();
         constexpr auto out_rank = TOut::rank();
         constexpr auto elem_rank = TVec::rank();
@@ -38,13 +39,13 @@ template <class TIn, class TOut, size_t... Axes> class pack_impl {
         auto conti_dims_output =
             contiguous_dims(output.shape(), output.strides());
 
-        if (sizeof...(Axes) == 2 && axes[0] + 1 == axes[1] &&
+        if (axes.rank() == 2 && axes[0_dim] + 1 == axes[1_dim] &&
             conti_dims_input == in_rank && conti_dims_output == out_rank) {
-            ntt::u_pack2d<TIn, TOut, Axes...>(input, output);
+            ntt::u_pack2d<TIn, TOut, axes[0_dim], axes[1_dim]>(input, output);
         } else {
             auto out_shape = output.shape();
             constexpr auto rank = out_rank + elem_rank;
-            ranked_shape<rank> domain{};
+            dynamic_shape_t<rank> domain{};
             for (size_t i = 0, j = 0; i < rank; i++) {
                 if (i < out_rank)
                     domain[i] = out_shape[i];
@@ -72,14 +73,16 @@ template <class TIn, class TOut, size_t... Axes> class pack_impl {
 };
 
 // 1D packing
-template <IsFixedTensor TIn, IsFixedTensor TOut, size_t PackAxis>
-class pack_impl<TIn, TOut, PackAxis> {
+template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
   public:
     using TVec = typename std::decay_t<TOut>::element_type;
 
     static inline constexpr size_t VecLen = TVec::shape().length();
 
-    constexpr void operator()(const TIn &input, TOut &output) {
+    template <FixedDimensions TAxes>
+    constexpr void operator()(const TIn &input, TOut &output,
+                              const TAxes &axes) {
+        constexpr auto PackAxis = axes[0_dim];
         auto in_p = input.elements().data();
         auto out_p = output.elements().data();
         constexpr auto rank = TIn::rank();
@@ -95,12 +98,12 @@ class pack_impl<TIn, TOut, PackAxis> {
                 reinterpret_cast<const TVec *>(in_p), 1, out_p, 1,
                 output.shape().length());
         } else {
-            apply<0>(input, output, in_p, out_p);
+            apply<0, PackAxis>(input, output, in_p, out_p);
         }
     }
 
   private:
-    template <size_t Axis, class TInP, class TOutP>
+    template <size_t Axis, size_t PackAxis, class TInP, class TOutP>
     constexpr void apply(const TIn &input, TOut &output, TInP in_p,
                          TOutP out_p) {
         if constexpr (Axis < PackAxis) {
@@ -155,9 +158,9 @@ class pack_impl<TIn, TOut, PackAxis> {
 };
 } // namespace detail
 
-template <size_t... Axes, class TIn, class TOut>
-void pack(const TIn &input, TOut &&output) noexcept {
-    detail::pack_impl<std::decay_t<TIn>, std::decay_t<TOut>, Axes...> impl;
-    impl(input, output);
+template <Tensor TIn, class TOut, FixedDimensions TAxes>
+void pack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+    detail::pack_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
+    impl(input, output, axes);
 }
 } // namespace nncase::ntt

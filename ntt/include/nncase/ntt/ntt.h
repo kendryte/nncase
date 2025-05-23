@@ -26,7 +26,6 @@
 #include "kernels/gather.h"
 #include "kernels/get_item.h"
 #include "kernels/im2col.h"
-#include "kernels/instance_norm.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
 #include "kernels/pad.h"

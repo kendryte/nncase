@@ -13,27 +13,21 @@
  * limitations under the License.
  */
 #pragma once
-#include "../apply.h"
-#include "../tensor_ops.h"
 #include "../tensor_traits.h"
-#include "../ukernels.h"
-#include "../utility.h"
 #include "copy.h"
-#include <type_traits>
+#include "nncase/ntt/dimension.h"
+#include "nncase/ntt/shape.h"
 
 namespace nncase::ntt {
-
-template <class TIn, class TIndices, class TOut>
+template <Tensor TIn, class TIndices, class TOut>
+    requires(Dimensions<TIndices> || Dimension<TIndices>)
 void get_item(const TIn &input, const TIndices &indices, TOut &&output) {
-    constexpr size_t indices_rank = TIndices::rank();
-    ranked_shape<indices_rank> indices_dims{};
-    if constexpr (indices_rank) {
-        for (size_t i = 0; i < indices_dims.rank(); i++) {
-            indices_dims[i] = positive_index(indices[i], input.shape()[i]);
-        }
+    if constexpr (Dimensions<TIndices>) {
+        const auto positive_indices = positive_index(indices, input.shape());
+        tensor_copy(input.view(positive_indices), output);
     } else {
-        indices_dims[0] = indices(fixed_shape<0>{});
+        auto new_indices = make_dims(indices);
+        get_item(input, new_indices, output);
     }
-    tensor_copy(input.view(indices_dims), output);
 }
 } // namespace nncase::ntt

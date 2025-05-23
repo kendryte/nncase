@@ -19,34 +19,44 @@
 #include <type_traits>
 
 namespace nncase::ntt::detail {
-template <class Shape> class shape_storage {
+template <Shape TShape> class shape_storage {
   public:
-    template <class TDummy = Shape,
-              class = std::enable_if_t<FixedShape<TDummy>>>
-    constexpr shape_storage() noexcept : shape_{} {}
+    constexpr shape_storage(TShape shape) noexcept : shape_(shape) {}
 
-    shape_storage(Shape shape) : shape_(shape) {}
-
-    static constexpr auto rank() noexcept { return Shape::rank(); }
-    constexpr const Shape &shape() const noexcept { return shape_; }
+    static constexpr auto rank() noexcept { return TShape::rank(); }
+    constexpr const TShape &shape() const noexcept { return shape_; }
+    constexpr size_t size() const noexcept { return shape().length(); }
 
   private:
-    Shape shape_;
+    TShape shape_;
 };
 
-template <class Strides> class strides_storage {
+template <FixedShape TShape> class shape_storage<TShape> {
   public:
-    template <class TDummy = Strides,
-              class = std::enable_if_t<FixedStrides<TDummy>>>
-    constexpr strides_storage() noexcept : strides_{} {}
+    constexpr shape_storage() noexcept = default;
+    constexpr shape_storage(TShape) noexcept {}
 
-    strides_storage(Strides strides) : strides_(strides) {}
+    static constexpr auto rank() noexcept { return TShape::rank(); }
+    static constexpr TShape shape() noexcept { return TShape{}; }
+    static constexpr size_t size() noexcept { return shape().length(); }
+};
 
-    constexpr Strides &strides() noexcept { return strides_; }
-    constexpr const Strides &strides() const noexcept { return strides_; }
+template <Strides TStrides> class strides_storage {
+  public:
+    constexpr strides_storage(TStrides strides) noexcept : strides_(strides) {}
+
+    constexpr const TStrides &strides() const noexcept { return strides_; }
 
   private:
-    Strides strides_;
+    TStrides strides_;
+};
+
+template <FixedStrides TStrides> class strides_storage<TStrides> {
+  public:
+    constexpr strides_storage() noexcept = default;
+    constexpr strides_storage(TStrides) noexcept {}
+
+    static constexpr TStrides strides() noexcept { return TStrides{}; }
 };
 
 template <class Shape, class Strides>
@@ -60,9 +70,5 @@ struct NTT_EMPTY_BASES tensor_size_impl : public shape_storage<Shape>,
 
     tensor_size_impl(Shape shape, Strides strides)
         : shape_storage<Shape>(shape), strides_storage<Strides>(strides) {}
-
-    constexpr size_t size() const noexcept {
-        return shape_storage<Shape>::shape().length();
-    }
 };
 } // namespace nncase::ntt::detail

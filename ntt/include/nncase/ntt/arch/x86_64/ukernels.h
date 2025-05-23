@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../../ukernels.h"
+#include "nncase/ntt/shape.h"
 #include "nncase/ntt/vector.h"
 
 namespace nncase::ntt::ukernels {
@@ -202,11 +203,10 @@ class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
 };
 
 template <class TIn, class TOut, size_t... Axes>
-requires(sizeof...(Axes) > 0 &&
-         (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
-              Axes...}) ==
-          (TIn::rank() - 1))) class u_pack2d<true, TIn, TOut, float,
-                                             vector<float, 8, 8>, Axes...> {
+    requires(sizeof...(Axes) > 0 &&
+             (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
+                  Axes...}) == (TIn::rank() - 1)))
+class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
   public:
     constexpr void operator()(const TIn &input, TOut &output) noexcept {
         using TVec = vector<float, 8, 8>;
@@ -246,12 +246,12 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
         constexpr auto lanes = TVec::shape();
         auto out_shape = output.shape();
 
-        ranked_shape<out_rank> domain{};
+        dynamic_shape_t<out_rank> domain{};
         for (size_t i = 0; i < out_rank; i++) {
             domain[i] = out_shape[i];
         }
-        ranked_shape<in_rank> inner_domain{};
-        ranked_shape<in_rank> outer_domain{};
+        dynamic_shape_t<in_rank> inner_domain{};
+        dynamic_shape_t<in_rank> outer_domain{};
 
         auto outer_index = slice_index<axes[0]>(domain);
         auto packed_index = slice_index<sizeof...(Axes)>(domain, axes[0]);
@@ -308,8 +308,8 @@ class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
         constexpr auto in_rank = T1::rank();
         auto in_shape = input.shape();
 
-        ranked_shape<in_rank> inner_domain{};
-        ranked_shape<in_rank> domain{};
+        dynamic_shape_t<in_rank> inner_domain{};
+        dynamic_shape_t<in_rank> domain{};
         for (size_t i = 0; i < in_rank; i++) {
             domain[i] = in_shape[i];
         }
@@ -357,18 +357,18 @@ class u_unpack_2d_fixed<low_axis_stride, 8, high_axis_stride, 8, TIn, float,
         constexpr auto in_rank = TIn::rank();
         auto in_shape = input.shape();
 
-        ranked_shape<in_rank> domain{};
+        dynamic_shape_t<in_rank> domain{};
         for (size_t i = 0; i < in_rank; i++) {
             domain[i] = in_shape[i];
         }
-        ranked_shape<in_rank> inner_domain{};
+        dynamic_shape_t<in_rank> inner_domain{};
 
         auto packed_index = slice_index<2>(domain, axes[0]);
         auto inner_index =
             slice_index<in_rank - (axes[1] + 1)>(domain, axes[1] + 1);
         auto inner_size = inner_index.length();
 
-        ranked_shape<Axis2> tile_domain{};
+        dynamic_shape_t<Axis2> tile_domain{};
         for (size_t i = 0; i < Axis2; i++) {
             tile_domain[i] = in_shape[i];
         }

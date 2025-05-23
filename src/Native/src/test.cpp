@@ -76,6 +76,43 @@ void test_matmul_normal() {
         assert(tg(0, 1, 1, 0) == 630.f);
         assert(tg(0, 1, 2, 0) == 1070.f);
     }
+
+    // fixed shape
+    {
+        auto shape = ntt::fixed_shape_v<1, 16>;
+        auto dim1 = shape[dim_zero];
+        static_assert(dim1.value == 1);
+        auto dim2 = shape[dim_one];
+        static_assert(dim2.value == 16);
+        auto sub_dim = dim2 - shape.rank();
+        static_assert(sub_dim.value == 14);
+        static_assert(FixedDimension<decltype(sub_dim)>);
+    }
+
+    // fixed
+    {
+        auto shape = ntt::fixed_shape_v<1, 16>;
+        auto ta = ntt::make_tensor<float>(shape);
+        auto tb = ntt::make_tensor<float>(shape);
+        auto tc = ntt::make_tensor<float>(shape);
+        std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+        ntt::unary<ntt::ops::sin>(ta, tb.view());
+        assert(tb(0, 0) == sinf(1.f));
+        ntt::binary<ntt::ops::mul>(ta, tb, tc);
+        assert(tc(0, 0) == sinf(1.f));
+    }
+
+    // ranked
+    {
+        auto shape = ntt::make_ranked_shape(1, 16);
+        ntt::tensor<float, ntt::ranked_shape<2>> ta(shape), tb(shape),
+            tc(shape);
+        std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+        ntt::unary<ntt::ops::sin>(ta, tb.view());
+        assert(tb(0, 0) == sinf(1.f));
+        ntt::binary<ntt::ops::mul>(ta, tb, tc);
+        assert(tc(0, 0) == sinf(1.f));
+    }
 }
 
 void test_pack() {
@@ -243,6 +280,21 @@ void test_pack() {
                 }
             }
         });
+    }
+    // 2d binary
+    { // pack and broadcast
+        {
+            ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ta;
+            ntt::tensor<float, ntt::fixed_shape<8>> tb;
+            std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+            std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
+            ntt::tensor<ntt::vector<float, 4, 4>, ntt::fixed_shape<1, 4, 2>> pa,
+                pc;
+            ntt::tensor<ntt::vector<float, 4>, ntt::fixed_shape<2>> pb;
+            ntt::pack<1, 2>(ta, pa);
+            ntt::pack<0>(tb, pb);
+            ntt::binary<ntt::ops::add>(pa, pb, pc.view());
+        }
     }
 
     // unpack(fixed_shape + fixed_shape)

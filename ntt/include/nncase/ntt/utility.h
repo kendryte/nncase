@@ -24,13 +24,13 @@ constexpr auto get_safe_stride(const TTensor &tensor,
                                const TOutShape &out_shape) noexcept {
     auto dim_ext = out_shape.rank() - tensor.rank();
     if constexpr (Axis < dim_ext) {
-        return fixed_dim_zero;
+        return dim_zero;
     } else {
         auto actual_axis = fixed_dim_v<Axis> - dim_ext;
         auto actual_dim = tensor.shape()[actual_axis];
         if constexpr (FixedDimension<std::decay_t<decltype(actual_dim)>>) {
             if constexpr (actual_dim == 1) {
-                return fixed_dim_zero;
+                return dim_zero;
             } else {
                 return tensor.strides()[actual_axis];
             }

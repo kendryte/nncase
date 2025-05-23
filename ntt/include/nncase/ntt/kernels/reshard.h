@@ -41,7 +41,7 @@ namespace detail {
 template <class SrcTensor, class DestTensor> struct reshard_impl;
 
 // shard
-template <IsScalar SrcScalar, IsShardedTensor DestTensor>
+template <Scalar SrcScalar, ShardedTensor DestTensor>
 struct reshard_impl<SrcScalar, DestTensor> {
     using mesh_type = typename DestTensor::mesh_type;
     using sharding_type = typename DestTensor::sharding_type;
@@ -57,7 +57,7 @@ struct reshard_impl<SrcScalar, DestTensor> {
     }
 };
 
-template <IsTensor SrcTensor, IsShardedTensor DestTensor>
+template <Tensor SrcTensor, ShardedTensor DestTensor>
 struct reshard_impl<SrcTensor, DestTensor> {
     using mesh_type = typename DestTensor::mesh_type;
     using sharding_type = typename DestTensor::sharding_type;
@@ -78,13 +78,13 @@ struct reshard_impl<SrcTensor, DestTensor> {
 };
 
 template <size_t Rank> struct slice_with_global_offset {
-    ranked_shape<Rank> global_offset;
-    ranked_shape<Rank> local_offset;
-    ranked_shape<Rank> shape;
+    dynamic_shape_t<Rank> global_offset;
+    dynamic_shape_t<Rank> local_offset;
+    dynamic_shape_t<Rank> shape;
 };
 
 // unshard
-template <IsShardedTensor SrcTensor, IsTensor DestTensor>
+template <ShardedTensor SrcTensor, Tensor DestTensor>
 struct reshard_impl<SrcTensor, DestTensor> {
     using mesh_type = typename SrcTensor::mesh_type;
     using sharding_type = typename SrcTensor::sharding_type;
@@ -199,7 +199,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
     static constexpr auto get_non_split_mesh_dims() noexcept {
         constexpr auto non_split_mesh_axes = get_non_split_mesh_axes();
-        ranked_shape<non_split_mesh_axes.rank()> non_split_mesh_dims{};
+        dynamic_shape_t<non_split_mesh_axes.rank()> non_split_mesh_dims{};
         for (size_t i = 0; i < non_split_mesh_dims.rank(); i++) {
             auto axis = non_split_mesh_axes[i];
             non_split_mesh_dims[i] = mesh_type::shape_type::at(axis);
@@ -210,7 +210,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
     static constexpr auto get_non_split_mesh_indexes(
         const typename mesh_type::index_type &shard_index) noexcept {
         constexpr auto non_split_mesh_axes = get_non_split_mesh_axes();
-        ranked_shape<non_split_mesh_axes.rank()> non_split_mesh_indexes{};
+        dynamic_shape_t<non_split_mesh_axes.rank()> non_split_mesh_indexes{};
         for (size_t i = 0; i < non_split_mesh_axes.rank(); i++) {
             auto axis = non_split_mesh_axes[i];
             non_split_mesh_indexes[i] = shard_index[axis];
@@ -228,7 +228,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
         // Split non-split axes into split_count groups, based on each size of
         // the tensor dimensions.
         constexpr auto non_split_tensor_axes = get_non_split_tensor_axes();
-        ranked_shape<non_split_tensor_axes.rank()> split_counts{};
+        dynamic_shape_t<non_split_tensor_axes.rank()> split_counts{};
 
         // 1. Calculate the initial split counts.
         {
@@ -326,7 +326,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
         constexpr auto non_split_axes_count =
             std::count_if(split_axes_mask.begin(), split_axes_mask.end(),
                           [](auto x) { return x == 0; });
-        ranked_shape<non_split_axes_count> non_split_axes{};
+        dynamic_shape_t<non_split_axes_count> non_split_axes{};
         size_t non_split_axis_index = 0;
         for (size_t i = 0; i < split_axes_mask.rank(); i++) {
             if (split_axes_mask[i] == 0) {
@@ -336,8 +336,9 @@ struct reshard_impl<SrcTensor, DestTensor> {
         return non_split_axes;
     }
 
-    static constexpr ranked_shape<rank> get_split_tensor_axes_mask() noexcept {
-        ranked_shape<rank> split_axes{};
+    static constexpr dynamic_shape_t<rank>
+    get_split_tensor_axes_mask() noexcept {
+        dynamic_shape_t<rank> split_axes{};
         auto mark_split_axes_impl = [&]<size_t Axis>() {
             using policy_t =
                 std::tuple_element_t<Axis,
@@ -359,7 +360,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
         constexpr auto non_split_axes_count =
             std::count_if(split_axes_mask.begin(), split_axes_mask.end(),
                           [](auto x) { return x == 0; });
-        ranked_shape<non_split_axes_count> non_split_axes{};
+        dynamic_shape_t<non_split_axes_count> non_split_axes{};
         size_t non_split_axis_index = 0;
         for (size_t i = 0; i < split_axes_mask.rank(); i++) {
             if (split_axes_mask[i] == 0) {
@@ -369,9 +370,9 @@ struct reshard_impl<SrcTensor, DestTensor> {
         return non_split_axes;
     }
 
-    static constexpr ranked_shape<mesh_type::rank()>
+    static constexpr dynamic_shape_t<mesh_type::rank()>
     get_split_mesh_axes_mask() noexcept {
-        ranked_shape<mesh_type::rank()> split_axes{};
+        dynamic_shape_t<mesh_type::rank()> split_axes{};
         auto mark_split_axes_impl = [&]<size_t Axis>() {
             using policy_t =
                 std::tuple_element_t<Axis,
@@ -393,7 +394,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
 };
 
 // reshard
-template <IsShardedTensor SrcTensor, IsShardedTensor DestTensor>
+template <ShardedTensor SrcTensor, ShardedTensor DestTensor>
 struct reshard_impl<SrcTensor, DestTensor> {
     using mesh_type = typename SrcTensor::mesh_type;
     using src_sharding_type = typename SrcTensor::sharding_type;
@@ -411,7 +412,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
     void copy_to_global(const SrcTensor &src) noexcept {
         using local_tensor_type = typename SrcTensor::local_tensor_type;
         using src_shape_type = typename SrcTensor::shape_type;
-        if constexpr (IsFixedDims<src_shape_type>) {
+        if constexpr (FixedShape<src_shape_type>) {
             constexpr auto global_size = linear_size(
                 src_shape_type{}, default_strides(src_shape_type{}));
             auto global_buffer = std::span<

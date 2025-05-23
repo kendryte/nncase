@@ -18,6 +18,9 @@
 
 namespace nncase::ntt {
 template <typename T>
+concept Vector = std::decay_t<T>::IsVector;
+
+template <typename T>
 concept ShardedTensor = requires {
     typename T::sharding_type;
     typename T::mesh_type;
@@ -27,13 +30,11 @@ template <typename T>
 concept Tensor = requires {
     typename T::shape_type;
     typename T::strides_type;
-} && !ShardedTensor<T>;
+} && !ShardedTensor<T> && !Vector<T>;
 
 template <typename T>
-concept FixedTensor = FixedDimensions<typename T::shape_type> &&
+concept FixedTensor = Tensor<T> && FixedDimensions<typename T::shape_type> &&
                       FixedDimensions<typename T::strides_type>;
-template <typename T>
-concept Vector = std::decay_t<T>::IsVector;
 
 template <typename T>
 concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
@@ -49,6 +50,10 @@ template <class T> struct element_or_scalar_type {
 };
 
 template <Tensor T> struct element_or_scalar_type<T> {
+    using type = typename T::element_type;
+};
+
+template <Vector T> struct element_or_scalar_type<T> {
     using type = typename T::element_type;
 };
 

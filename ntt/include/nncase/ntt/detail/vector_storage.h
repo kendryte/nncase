@@ -80,8 +80,8 @@ struct vector_storage_traits<T, OuterLane, InnerLanes...> {
     static constexpr decltype(auto) element_at(buffer_type &vec,
                                                const TIndex &index) noexcept {
         auto &inner_vector = vec[index[0]];
-        auto remaining_index = slice_index<IndexRank - 1>(index, 1);
-        if constexpr (IndexRank > 1) {
+        const auto remaining_index = index.template slice<1>();
+        if constexpr (TIndex::rank() > 1) {
             return inner_vector(remaining_index);
         } else {
             return inner_vector;
@@ -92,8 +92,8 @@ struct vector_storage_traits<T, OuterLane, InnerLanes...> {
     static constexpr decltype(auto) element_at(const buffer_type &vec,
                                                const TIndex &index) noexcept {
         auto &inner_vector = vec[index[0]];
-        auto remaining_index = slice_index<IndexRank - 1>(index, 1);
-        if constexpr (IndexRank > 1) {
+        const auto remaining_index = index.template slice<1>();
+        if constexpr (TIndex::rank() > 1) {
             return inner_vector(remaining_index);
         } else {
             return inner_vector;

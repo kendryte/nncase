@@ -49,4 +49,24 @@ template <> struct vload_scalar<ntt::vector<float, 8, 8>> {
         return out;
     }
 };
+
+template <bool AccC>
+struct vmma<AccC, false, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
+            ntt::vector<float, 8, 8>> {
+    ntt::vector<float, 8, 8>
+    operator()(const ntt::vector<float, 8, 8> &lhs,
+               const ntt::vector<float, 8, 8> &rhs,
+               const ntt::vector<float, 8, 8> &v3) const noexcept {
+        ntt::vector<float, 8, 8> output;
+        for (size_t k = 0; k < 8; k++) {
+            for (size_t m = 0; m < 8; m++) {
+                output(m) = (k != 0 || AccC)
+                                ? ntt::mul_add(lhs(m, k), rhs(k),
+                                               k == 0 ? v3(m) : output(m))
+                                : ntt::mul(lhs(m, k), rhs(k));
+            }
+        }
+        return output;
+    }
+};
 } // namespace nncase::ntt::vector_ops

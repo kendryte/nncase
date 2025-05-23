@@ -126,7 +126,7 @@ template <> struct asin<ntt::vector<float, 8>> {
         // 计算符号掩码和绝对值
         const __m256 neg_mask = _mm256_cmp_ps(v, zero, _CMP_LT_OS); // v < 0.0
         const __m256 abs_mask = _mm256_set1_ps(-0.0f); // 位掩码，用于计算绝对值
-        __m256 x = _mm256_andnot_ps(abs_mask, v); // 绝对值
+        __m256 x = _mm256_andnot_ps(abs_mask, v);      // 绝对值
 
         // 初始化偏移量和乘法因子
         const __m256 mul1 =
@@ -889,26 +889,6 @@ template <> struct reduce<min, float, ntt::vector<float, 8>> {
     }
 };
 
-template <bool AccC>
-struct mma<AccC, false, ntt::vector<float, 8, 8>, ntt::vector<float, 8, 8>,
-           ntt::vector<float, 8, 8>> {
-    ntt::vector<float, 8, 8>
-    operator()(const ntt::vector<float, 8, 8> &lhs,
-               const ntt::vector<float, 8, 8> &rhs,
-               const ntt::vector<float, 8, 8> &v3) const noexcept {
-        ntt::vector<float, 8, 8> output;
-        for (size_t k = 0; k < 8; k++) {
-            for (size_t m = 0; m < 8; m++) {
-                output(m) = (k != 0 || AccC)
-                                ? ntt::mul_add(lhs(m, k), rhs(k),
-                                               k == 0 ? v3(m) : output(m))
-                                : ntt::mul(lhs(m, k), rhs(k));
-            }
-        }
-        return output;
-    }
-};
-
 // pow
 template <> struct pow<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
@@ -994,7 +974,7 @@ template <> struct equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 // equal: vector vs scalar
 template <> struct equal<ntt::vector<float, 8>, float> {
     ntt::vector<bool, 8> operator()(const ntt::vector<float, 8> &v1,
-                                     const float &f2) const noexcept {
+                                    const float &f2) const noexcept {
         ntt::vector<bool, 8> output;
         auto v2 = _mm256_set1_ps(f2);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
@@ -1031,7 +1011,7 @@ template <> struct not_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 // not_equal: vector vs scalar
 template <> struct not_equal<ntt::vector<float, 8>, float> {
     ntt::vector<bool, 8> operator()(const ntt::vector<float, 8> &v1,
-                                     const float &f2) const noexcept {
+                                    const float &f2) const noexcept {
         ntt::vector<bool, 8> output;
         auto v2 = _mm256_set1_ps(f2);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
@@ -1068,7 +1048,7 @@ template <> struct greater<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 // greater: vector vs scalar
 template <> struct greater<ntt::vector<float, 8>, float> {
     ntt::vector<bool, 8> operator()(const ntt::vector<float, 8> &v1,
-                                     const float &f2) const noexcept {
+                                    const float &f2) const noexcept {
         ntt::vector<bool, 8> output;
         auto v2 = _mm256_set1_ps(f2);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
@@ -1106,7 +1086,7 @@ struct greater_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 // greater_or_equal: vector vs scalar
 template <> struct greater_or_equal<ntt::vector<float, 8>, float> {
     ntt::vector<bool, 8> operator()(const ntt::vector<float, 8> &v1,
-                                     const float &f2) const noexcept {
+                                    const float &f2) const noexcept {
         ntt::vector<bool, 8> output;
         auto v2 = _mm256_set1_ps(f2);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
@@ -1143,7 +1123,7 @@ template <> struct less<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 // less: vector vs scalar
 template <> struct less<ntt::vector<float, 8>, float> {
     ntt::vector<bool, 8> operator()(const ntt::vector<float, 8> &v1,
-                                     const float &f2) const noexcept {
+                                    const float &f2) const noexcept {
         ntt::vector<bool, 8> output;
         auto v2 = _mm256_set1_ps(f2);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
@@ -1180,7 +1160,7 @@ template <> struct less_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 // less_or_equal: vector vs scalar
 template <> struct less_or_equal<ntt::vector<float, 8>, float> {
     ntt::vector<bool, 8> operator()(const ntt::vector<float, 8> &v1,
-                                     const float &f2) const noexcept {
+                                    const float &f2) const noexcept {
         ntt::vector<bool, 8> output;
         auto v2 = _mm256_set1_ps(f2);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);

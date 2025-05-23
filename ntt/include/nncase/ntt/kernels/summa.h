@@ -15,6 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../shape_infer/matmul.h"
+#include "../tensor.h"
 #include "../ukernels.h"
 #include "matmul.h"
 #ifdef NNCASE_XPU_MODULE
@@ -22,9 +23,7 @@
 #else
 #include "nncase/ntt/arch/cpu/topology.h"
 #endif
-#include "nncase/ntt/primitive_ops.h"
-#include "nncase/ntt/shape.h"
-#include "nncase/ntt/utility.h"
+#include <numeric>
 #include <type_traits>
 
 using namespace nncase;
@@ -32,30 +31,15 @@ using namespace nncase::ntt;
 using namespace nncase::ntt::distributed;
 
 namespace nncase::ntt {
-template <bool AccumulateC, class TLhs, class TRhs, class TOut,
-          typename LhsPackedAxes = fixed_shape<>,
-          typename LhsPadedNums = fixed_shape<>,
-          typename RhsPackedAxes = fixed_shape<>,
-          typename RhsPadedNums = fixed_shape<>>
+template <bool AccumulateC = false, bool TransposedA = false,
+          bool TransposedB = false, class TLhs, class TRhs, class TOut,
+          FixedDimensions LhsPackedAxes, FixedDimensions LhsPadedNums,
+          FixedDimensions RhsPackedAxes, FixedDimensions RhsPadedNums>
 void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-           [[maybe_unused]] LhsPackedAxes lhsPackedAxes = {},
-           [[maybe_unused]] LhsPadedNums lhsPadedNums = {},
-           [[maybe_unused]] RhsPackedAxes rhsPackedAxes = {},
-           [[maybe_unused]] RhsPadedNums rhsPadedNums = {}) {
-    summa<AccumulateC, false, false>(lhs, rhs, output, lhsPackedAxes,
-                                     lhsPadedNums, rhsPackedAxes, rhsPadedNums);
-}
-
-template <bool AccumulateC, bool TransposedA, bool TransposedB, class TLhs,
-          class TRhs, class TOut, typename LhsPackedAxes = fixed_shape<>,
-          typename LhsPadedNums = fixed_shape<>,
-          typename RhsPackedAxes = fixed_shape<>,
-          typename RhsPadedNums = fixed_shape<>>
-void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-           [[maybe_unused]] LhsPackedAxes lhsPackedAxes = {},
-           [[maybe_unused]] LhsPadedNums lhsPadedNums = {},
-           [[maybe_unused]] RhsPackedAxes rhsPackedAxes = {},
-           [[maybe_unused]] RhsPadedNums rhsPadedNums = {}) {
+           [[maybe_unused]] LhsPackedAxes lhsPackedAxes = fixed_shape_v<>,
+           [[maybe_unused]] LhsPadedNums lhsPadedNums = fixed_shape_v<>,
+           [[maybe_unused]] RhsPackedAxes rhsPackedAxes = fixed_shape_v<>,
+           [[maybe_unused]] RhsPadedNums rhsPadedNums = fixed_shape_v<>) {
     static_assert(TransposedA == false && TransposedB == false,
                   "not supported for now");
     using TLhsElem = typename TLhs::local_tensor_type::element_type;
@@ -99,18 +83,12 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     constexpr auto LhsRank = TLhs::local_tensor_type::rank();
     constexpr auto RhsRank = TRhs::local_tensor_type::rank();
     constexpr auto OutRank = std::decay_t<TOut>::local_tensor_type::rank();
-    ntt::ranked_shape<OutRank> CShape;
-    ntt::ranked_strides<OutRank> CStrides;
-    for (auto i = 0; i < OutRank; i++) {
-        CShape.at(i) = out_local_tensor.shape().at(i);
-        CStrides.at(i) = out_local_strides::at(i);
-    }
+    const auto CShape = out_local_tensor.shape().template slice<0, OutRank>();
+    const auto CStrides =
+        out_local_tensor.strides().template slice<0, OutRank>();
 
-    auto C = ntt::tensor_view<TOutElem, ntt::ranked_shape<OutRank>,
-                              ntt::ranked_strides<OutRank>>(
-        std::span<TOutElem>(output.local().buffer().data(),
-                            CShape[0] * CStrides[0]),
-        CShape, CStrides);
+    auto C = ntt::make_tensor_view<TOutElem>(output.local().buffer().data(),
+                                             CShape, CStrides);
 
     // TODO: start from different k_offset can reduce confliction
     for (size_t k_offset = 0; k_offset < K; k_offset += lcm_K) {
@@ -130,31 +108,20 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                 auto B_remote =
                     rhs.template remote<rhs_mesh_type::scope>(rhs_mesh_index);
 
-                ntt::ranked_shape<LhsRank> AShape;
-                ntt::ranked_strides<LhsRank> AStrides;
-                for (auto i = 0; i < LhsRank - 1; i++)
-                    AShape.at(i) = lhs_local_tensor.shape().at(i);
-                for (auto i = 0; i < LhsRank; i++)
-                    AStrides.at(i) = A_remote.strides()[i];
-                AShape.at(LhsRank - 1) = local_K_rhs;
+                const auto AShape = lhs_local_tensor.shape()
+                                        .template slice<0, LhsRank - 1>()
+                                        .append(local_K_rhs);
+                const auto AStrides =
+                    A_remote.strides().template slice<0, LhsRank>();
+                const auto BShape =
+                    rhs_local_tensor.shape().template slice<0, RhsRank>();
+                const auto BStrides =
+                    B_remote.strides().template slice<0, RhsRank>();
 
-                ntt::ranked_shape<RhsRank> BShape;
-                ntt::ranked_strides<RhsRank> BStrides;
-                for (auto i = 0; i < RhsRank; i++) {
-                    BShape.at(i) = rhs_local_tensor.shape().at(i);
-                    BStrides.at(i) = B_remote.strides()[i];
-                }
-
-                auto A = ntt::tensor_view<TLhsElem, ntt::ranked_shape<LhsRank>,
-                                          ntt::ranked_strides<LhsRank>>(
-                    std::span<TLhsElem>(A_remote.buffer().data() + rhs_k_offset,
-                                        AShape[0] * AStrides[0]),
-                    AShape, AStrides);
-                auto B = ntt::tensor_view<TRhsElem, ntt::ranked_shape<RhsRank>,
-                                          ntt::ranked_strides<RhsRank>>(
-                    std::span<TRhsElem>(B_remote.buffer().data(),
-                                        BShape[0] * BStrides[0]),
-                    BShape, BStrides);
+                auto A = ntt::make_tensor_view<TLhsElem>(
+                    A_remote.buffer().data() + rhs_k_offset, AShape, AStrides);
+                auto B = ntt::make_tensor_view<TRhsElem>(
+                    B_remote.buffer().data(), BShape, BStrides);
 
                 if (global_rhs_k == 0) {
                     ntt::matmul<AccumulateC, TransposedA, TransposedB>(
@@ -182,33 +149,22 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                 auto A_remote =
                     lhs.template remote<rhs_mesh_type::scope>(lhs_mesh_index);
 
-                ntt::ranked_shape<RhsRank> BShape;
-                ntt::ranked_strides<RhsRank> BStrides;
-                for (auto i = 0; i < RhsRank - 1; i++)
-                    BShape.at(i) = rhs_local_tensor.shape().at(i);
-                for (auto i = 0; i < RhsRank; i++)
-                    BStrides.at(i) = B_remote.strides()[i];
-                BShape.at(RhsRank - 1) = local_K_lhs;
+                const auto BShape = rhs_local_tensor.shape()
+                                        .template slice<0, RhsRank - 1>()
+                                        .append(local_K_lhs);
+                const auto BStrides =
+                    B_remote.strides().template slice<0, RhsRank>();
 
-                ntt::ranked_shape<LhsRank> AShape;
-                ntt::ranked_strides<LhsRank> AStrides;
-                for (auto i = 0; i < LhsRank; i++) {
-                    AShape.at(i) = lhs_local_tensor.shape().at(i);
-                    AStrides.at(i) = A_remote.strides()[i];
-                }
-
-                auto B = ntt::tensor_view<TRhsElem, ntt::ranked_shape<RhsRank>,
-                                          ntt::ranked_strides<RhsRank>>(
-                    std::span<TRhsElem>(B_remote.buffer().data() +
-                                            lhs_k_offset *
-                                                BStrides[rhs_rank - 2],
-                                        BShape[0] * BStrides[0]),
+                const auto AShape =
+                    lhs_local_tensor.shape().template slice<0, LhsRank>();
+                const auto AStrides =
+                    A_remote.strides().template slice<0, LhsRank>();
+                auto B = ntt::make_tensor_view<TRhsElem>(
+                    B_remote.buffer().data() +
+                        lhs_k_offset * BStrides.template at<rhs_rank - 2>(),
                     BShape, BStrides);
-                auto A = ntt::tensor_view<TLhsElem, ntt::ranked_shape<LhsRank>,
-                                          ntt::ranked_strides<LhsRank>>(
-                    std::span<TLhsElem>(A_remote.buffer().data(),
-                                        AShape[0] * AStrides[0]),
-                    AShape, AStrides);
+                auto A = ntt::make_tensor_view<TLhsElem>(
+                    A_remote.buffer().data(), AShape, AStrides);
 
                 if (global_lhs_k == 0) {
                     ntt::matmul<AccumulateC, TransposedA, TransposedB>(
@@ -224,7 +180,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     }
 
     // TODO: remove this when summa tiling is ready
-    if constexpr (IsVector<TLhsElem> && IsVector<TRhsElem>) {
+    if constexpr (Vector<TLhsElem> && Vector<TRhsElem>) {
         if constexpr (TLhsElem::shape_type::rank() == 2 &&
                       TRhsElem::shape_type::rank() == 2 &&
                       TOutElem::shape_type::at(0) == 64 &&

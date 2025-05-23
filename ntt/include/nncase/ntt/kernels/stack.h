@@ -20,11 +20,9 @@
 #include <tuple>
 
 namespace nncase::ntt {
-
-template <size_t Axis, IsTensor... TInputs, IsTensor TOut>
+template <size_t Axis, Tensor... TInputs, class TOut>
 void stack(const std::tuple<TInputs...> &inputs, TOut &&output) {
-    auto domain = to_ranked_shape(output.shape());
-    domain[Axis] = 1;
+    auto domain = output.shape().template replace_at<Axis>(dim_one);
     apply(domain, [&](auto out_index) {
         auto left_shape = slice_dims<Axis>(out_index);
         auto right_shape = slice_dims<output.rank() - Axis - 1>(out_index);

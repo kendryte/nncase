@@ -18,15 +18,13 @@
 #include "../tensor_ops.h"
 #include "../utility.h"
 #include "copy.h"
+#include "nncase/ntt/shape.h"
 
 namespace nncase::ntt {
-
 namespace scatter_nd_detail {
-
-template <IsFixedTensor TIn, IsFixedTensor TIndex, IsFixedTensor TUpdates,
-          IsFixedTensor TOut>
+template <Tensor TIn, Tensor TIndex, Tensor TUpdates, Tensor TOut>
 void scatter_nd_impl(const TIn &input, const TIndex &indices,
-                     const TUpdates &updates, TOut &&output) noexcept {
+                     const TUpdates &updates, TOut &output) noexcept {
     using TIElem = typename TIn::element_type;
     [[maybe_unused]] constexpr auto in_shape = typename TIn::shape_type{};
     constexpr auto indices_shape = typename TIndex::shape_type{};
@@ -40,20 +38,19 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
         typename std::decay_t<TOut>::strides_type{};
 
     ntt::tensor_copy(input, output);
-    constexpr auto k = indices_shape.rank() - 1;
+    constexpr auto k = indices_shape.rank() - dim_one;
     auto update_indices = slice_dims<k>(indices_shape);
     auto update_indices_strides = slice_dims<k>(indices_strides);
 
     auto in_strides_ = slice_dims<indices_shape.at(k)>(in_strides);
 
-    auto updates_strides_ =
-        slice_dims<update_indices.rank()>(updates_strides);
+    auto updates_strides_ = slice_dims<update_indices.rank()>(updates_strides);
     auto updates_size = sizeof(TIElem);
     for (auto i = update_indices.rank(); i < updates_shape.rank(); ++i) {
         updates_size *= updates_shape.at(i);
     }
 
-    static_assert(IsScalar<typename std::decay_t<TOut>::element_type>,
+    static_assert(Scalar<typename std::decay_t<TOut>::element_type>,
                   "Only support scalar type for now");
 
     apply(update_indices, [&](auto idx) {
@@ -62,7 +59,7 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
 
         auto data_indices_begin = indices.elements().data() +
                                   linear_offset(idx, update_indices_strides);
-        ranked_shape<indices_shape.at(k)> data_indices_dim;
+        dynamic_shape_t<indices_shape.at(k)> data_indices_dim;
         for (auto i = 0; i < indices_shape.at(k); ++i) {
             data_indices_dim.at(i) = *(data_indices_begin + i);
         }

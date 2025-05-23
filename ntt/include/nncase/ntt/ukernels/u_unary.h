@@ -24,11 +24,11 @@ template <class Op, class T, bool Arch> struct u_unary_policy {
 
 template <class Op, class T, bool Arch> struct u_unary {
   public:
-    constexpr void operator()(const T *input, size_t input_stride, T *output,
-                              size_t output_stride, size_t count) noexcept {
+    constexpr void operator()(Op &op, const T *input, size_t input_stride,
+                              T *output, size_t output_stride,
+                              size_t count) noexcept {
         using policy_t = u_unary_policy<Op, T, Arch>;
         constexpr auto unroll = policy_t::unroll;
-        Op op;
         while (count / unroll) {
             for (size_t i = 0; i < unroll; i++) {
                 *output = op(*input);
@@ -48,7 +48,8 @@ template <class Op, class T, bool Arch> struct u_unary {
 
 template <class T, bool Arch> struct u_unary<ops::copy<T>, T, Arch> {
   public:
-    constexpr void operator()(const T *input, size_t input_stride, T *output,
+    constexpr void operator()(ops::copy<T> &, const T *input,
+                              size_t input_stride, T *output,
                               size_t output_stride, size_t count) noexcept {
         if (input_stride == 1 && output_stride == 1) {
             memcpy(output, input, count * sizeof(T));
@@ -64,9 +65,9 @@ template <class T, bool Arch> struct u_unary<ops::copy<T>, T, Arch> {
 } // namespace ukernels
 
 template <class Op, class T>
-constexpr void u_unary(const T *input, size_t input_stride, T *output,
+constexpr void u_unary(Op &op, const T *input, size_t input_stride, T *output,
                        size_t output_stride, size_t count) noexcept {
     ukernels::u_unary<Op, T, true> impl;
-    impl(input, input_stride, output, output_stride, count);
+    impl(op, input, input_stride, output, output_stride, count);
 }
 } // namespace nncase::ntt

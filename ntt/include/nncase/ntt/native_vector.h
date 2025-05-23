@@ -34,14 +34,14 @@
     static element_type_ get_element(const native_type &array,                 \
                                      const TIndex &index) noexcept {           \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
-        return array[index[fixed_dim_zero]];                                   \
+        return array[index[dim_zero]];                                   \
     }                                                                          \
                                                                                \
     template <Dimensions TIndex>                                               \
     static void set_element(native_type &array, const TIndex &index,           \
                             element_type_ value) noexcept {                    \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
-        array[index[fixed_dim_zero]] = value;                                  \
+        array[index[dim_zero]] = value;                                  \
     }
 
 #define NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT_CAST(                           \
@@ -53,12 +53,12 @@
                                      const TIndex &index) noexcept {           \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
         return reinterpret_cast<const cast_type &>(                            \
-            array)[index[fixed_dim_zero]];                                     \
+            array)[index[dim_zero]];                                     \
     }                                                                          \
                                                                                \
     template <Dimensions TIndex>                                               \
     static void set_element(native_type &array, const TIndex &index,           \
                             element_type_ value) noexcept {                    \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
-        reinterpret_cast<cast_type &>(array)[index[fixed_dim_zero]] = value;   \
+        reinterpret_cast<cast_type &>(array)[index[dim_zero]] = value;   \
     }

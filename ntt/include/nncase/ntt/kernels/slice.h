@@ -15,6 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../utility.h"
+#include "nncase/ntt/shape.h"
 #include <cstdint>
 
 namespace nncase::ntt {
@@ -84,10 +85,10 @@ auto slice_fill(const TInShape &in_shape, const TBegins &begins_value,
  * @param input input tensor
  * @param output output tensor
  */
-template <typename TAxes, typename TStrides, typename TIn, typename TBegins,
-          typename TEnds, typename TOut>
-void slice(const TIn &input, const TBegins &begins, const TEnds &ends,
-           TOut &&output) {
+template <FixedDimensions TAxes, Dimensions TStrides, Tensor TIn,
+          typename TBegins, typename TEnds, typename TOut>
+void slice(const TIn &input, TOut &&output, const TAxes &axes,
+           const TBegins &begins, const TEnds &ends) {
     auto [begin_values, end_values, strides_values] = slice_detail::slice_fill(
         input.shape(), begins, ends, TStrides{}, TAxes{});
     apply(input.shape(),

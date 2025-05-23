@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../loop.h"
+#include "nncase/ntt/shape.h"
 #include <cstddef>
 #include <type_traits>
 
@@ -56,7 +57,7 @@ class u_pack2d {
         constexpr auto lanes = TVec::shape();
         auto out_shape = output.shape();
         constexpr auto rank = out_rank + elem_rank;
-        ranked_shape<rank> domain{};
+        dynamic_shape_t<rank> domain{};
         for (size_t i = 0, j = 0; i < rank; i++) {
             if (i < out_rank)
                 domain[i] = out_shape[i];

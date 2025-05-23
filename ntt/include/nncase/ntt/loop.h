@@ -14,20 +14,23 @@
  * limitations under the License.
  */
 #pragma once
+#include "dimension.h"
 #include <cstddef>
 #include <utility>
 
 namespace nncase::ntt {
 namespace detail {
-template <size_t... Index, class Callable>
-static constexpr void loop_impl(Callable &&f, std::index_sequence<Index...>) {
-    (f(std::integral_constant<size_t, Index>{}), ...);
+template <dim_t... Index, class Callable>
+static constexpr void loop_impl(Callable &&f,
+                                std::integer_sequence<dim_t, Index...>) {
+    (f(fixed_dim_v<Index>), ...);
 }
 
 } // namespace detail
 
-template <size_t N, class Callable> static constexpr void loop(Callable &&f) {
-    detail::loop_impl(std::forward<Callable>(f), std::make_index_sequence<N>{});
+template <dim_t N, class Callable> static constexpr void loop(Callable &&f) {
+    detail::loop_impl(std::forward<Callable>(f),
+                      std::make_integer_sequence<dim_t, N>{});
 }
 
 } // namespace nncase::ntt

@@ -23,32 +23,11 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <class TCond, class TX, class TY, class TOut> class where_impl {
+template <Tensor TCond, Tensor TX, Tensor TY, Tensor TOut> class where_impl {
   public:
     constexpr void operator()(const TCond &cond, const TX &x, const TY &y,
                               TOut &output) {
-        constexpr auto out_shape = TOut::shape();
-
-        apply(out_shape, [&](auto index) {
-            const auto cond_index =
-                shape_infer::reduced_index_by_shape(index, cond.shape());
-            const auto x_index =
-                shape_infer::reduced_index_by_shape(index, x.shape());
-            const auto y_index =
-                shape_infer::reduced_index_by_shape(index, y.shape());
-
-            output(index) = cond(cond_index) ? x(x_index) : y(y_index);
-        });
-    }
-};
-
-template <IsFixedTensor TCond, IsFixedTensor TX, IsFixedTensor TY,
-          IsFixedTensor TOut>
-class where_impl<TCond, TX, TY, TOut> {
-  public:
-    constexpr void operator()(const TCond &cond, const TX &x, const TY &y,
-                              TOut &output) {
-        constexpr auto conti_dims =
+        const auto conti_dims =
             std::min({contiguous_dims(TCond::shape(), TCond::strides()),
                       contiguous_dims(TX::shape(), TX::strides()),
                       contiguous_dims(TY::shape(), TY::strides()),

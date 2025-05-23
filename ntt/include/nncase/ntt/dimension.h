@@ -12,9 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
 #include <algorithm>
 #include <cstdint>
 #include <type_traits>
+#include <utility>
 
 namespace nncase::ntt {
 using dim_t = int64_t;
@@ -25,8 +27,8 @@ template <dim_t Value> struct fixed_dim : std::integral_constant<dim_t, Value> {
 
 template <dim_t Value> inline constexpr fixed_dim<Value> fixed_dim_v{};
 
-inline constexpr fixed_dim<0> fixed_dim_zero{};
-inline constexpr fixed_dim<1> fixed_dim_one{};
+inline constexpr fixed_dim<0> dim_zero{};
+inline constexpr fixed_dim<1> dim_one{};
 
 template <class T> struct is_fixed_dim_t : std::false_type {};
 
@@ -102,6 +104,24 @@ constexpr auto min(const TDims &...dims) noexcept {
         return fixed_dim_v<std::min({TDims::value...})>;
     } else {
         return std::min({dim_value(dims)...});
+    }
+}
+
+template <Dimension... TDims>
+constexpr auto max(const TDims &...dims) noexcept {
+    if constexpr ((... && FixedDimension<TDims>)) {
+        return fixed_dim_v<std::max({TDims::value...})>;
+    } else {
+        return std::max({dim_value(dims)...});
+    }
+}
+
+template <bool Cond, class T, class F>
+constexpr decltype(auto) select(T &&true_value, F &&false_value) {
+    if constexpr (Cond) {
+        return std::forward<T>(true_value);
+    } else {
+        return std::forward<F>(false_value);
     }
 }
 } // namespace nncase::ntt

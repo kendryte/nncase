@@ -23,7 +23,7 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <class TIn, class TOut> class reshape_impl {
+template <Tensor TIn, Tensor TOut> class reshape_impl {
   public:
     constexpr void operator()(const TIn &input, TOut &output) {
         const size_t size = input.size();
@@ -38,8 +38,8 @@ template <class TIn, class TOut> class reshape_impl {
 };
 } // namespace detail
 
-template <class TIn, class TOut> void reshape(const TIn &input, TOut &&output) {
-    detail::reshape_impl<std::decay_t<TIn>, std::decay_t<TOut>>()(input,
-                                                                  output);
+template <Tensor TIn, class TOut>
+void reshape(const TIn &input, TOut &&output) {
+    detail::reshape_impl<TIn, std::decay_t<TOut>>()(input, output);
 }
 } // namespace nncase::ntt
