@@ -103,7 +103,14 @@ public sealed class ModulePartitionPass : ModulePass
             {
                 algo.FormatVertex += (s, arg) =>
                 {
-                    arg.VertexFormat.Label = $"{arg.Vertex.Expr.GetType().Name}";
+                    arg.VertexFormat.Label = arg.Vertex.Expr switch
+                    {
+                        Call call => $"call({call.Target switch { Op op => op.GetType().Name, BaseFunction f => f.Name, _ => "unknown" }})",
+                        Var var => $"%{var.Name}#{var.GlobalVarIndex})",
+                        Op op => $"op({op.GetType().Name})",
+                        BaseFunction f => $"func({f.Name})",
+                        Expr e => $"{e.GetType().Name}",
+                    };
                 };
             });
         }

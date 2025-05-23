@@ -26,5 +26,5 @@ public sealed partial class ConstantOfShape : Op
     /// <summary>
     /// Gets Value.
     /// </summary>
-    public static readonly ParameterInfo Value = new(typeof(ConstantOfShape), 1, "value");
+    public static readonly ParameterInfo Value = new(typeof(ConstantOfShape), 1, "value", ParameterKind.Input);
 }
