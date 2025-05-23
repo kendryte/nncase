@@ -418,7 +418,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitDimOrShape(args[1]).Name});\n");
                     break;
                 case TIR.NTT.Pad pad:
-                    WriteWithProfiler($"pad<{string.Join(",", pad.Paddings)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
+                    WriteWithProfiler($"pad({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
                     break;
                 case TIR.NTT.Reduce reduce:
                     WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axes)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<{string.Join(",", reduce.PadedNums)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
