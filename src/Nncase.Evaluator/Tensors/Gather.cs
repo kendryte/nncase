@@ -93,9 +93,9 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             return invalid;
         }
 
-        if (input.AxisPolices.Any(sbp => sbp is SBPSplit split && input.AxisPolices.IndexOf(split) == axis))
+        if (index.AxisPolices.Any(sbp => sbp is SBPSplit))
         {
-            return new InvalidType($"the input can't split on {axis}");
+            return new InvalidType($"the index can't be split");
         }
 
         var ndsbp = input.AxisPolices[..axis].ToArray().Concat(index.AxisPolices).Concat(input.AxisPolices[(axis + 1)..].ToArray()).ToArray();

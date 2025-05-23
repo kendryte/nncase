@@ -63,6 +63,11 @@ public class Fusion : BaseFunction
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitFusion(this, context);
 
+    public override BaseFunction With(string? name = null, string? moduleKind = null)
+    {
+        return new Fusion(name ?? Name, moduleKind ?? ModuleKind, Body, Parameters);
+    }
+
     public Fusion With(string? name = null, string? moduleKind = null, BaseExpr? body = null, IVar[]? parameters = null)
         => new Fusion(name ?? Name, moduleKind ?? ModuleKind, body ?? Body, parameters ?? Parameters);
 }

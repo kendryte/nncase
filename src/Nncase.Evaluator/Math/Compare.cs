@@ -84,6 +84,19 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
 
         var a = context.GetOrtArgumentValue(target, Compare.Lhs);
         var b = context.GetOrtArgumentValue(target, Compare.Rhs);
+        var lhsLaneNum = context.CurrentCall.Arguments[0].CheckedDataType is VectorType vt1 ? vt1.Lanes.Count : 0;
+        var rhsLaneNum = context.CurrentCall.Arguments[1].CheckedDataType is VectorType vt2 ? vt2.Lanes.Count : 0;
+        var maxLaneSize = System.Math.Max(lhsLaneNum, rhsLaneNum);
+        if (lhsLaneNum < maxLaneSize)
+        {
+            a = OrtKI.Unsqueeze(a, Enumerable.Range(-maxLaneSize, maxLaneSize - rhsLaneNum).Select(a => (long)a).ToArray());
+        }
+
+        if (rhsLaneNum < maxLaneSize)
+        {
+            b = OrtKI.Unsqueeze(b, Enumerable.Range(-maxLaneSize, maxLaneSize - rhsLaneNum).Select(a => (long)a).ToArray());
+        }
+
         return target.CompareOp switch
         {
             CompareOp.Equal => OrtKI.Equal(a, b).ToValue(),
@@ -172,7 +185,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         var broadcastType = TypeInference.BroadcastType(lhs, rhs);
         if (broadcastType is TensorType tensorType)
         {
-            return tensorType with { DType = DataTypes.Boolean };
+            return tensorType with { DType = lhs.DType is VectorType lvt ? lvt with { ElemType = DataTypes.Boolean } : rhs.DType is VectorType rvt ? rvt with { ElemType = DataTypes.Boolean } : DataTypes.Boolean };
         }
 
         return broadcastType;

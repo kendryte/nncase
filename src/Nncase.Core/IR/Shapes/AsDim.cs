@@ -36,6 +36,16 @@ public sealed class AsDim : Dimension, IEquatable<AsDim?>
         return other is not null && Dim.Equals(other.Dim);
     }
 
+    public override Dimension Simplify()
+    {
+        if (Dim is TensorConst tc)
+        {
+            return new DimConst(tc.Value.ToScalar<long>());
+        }
+
+        return this;
+    }
+
     public override string ToString() => $"as({Dim})";
 
     /// <inheritdoc/>

@@ -69,6 +69,12 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.PackUnsqueeze>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackReshape>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackSlice>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackGather>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackCompare>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackConcat>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackExpand>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackWhere>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackScatterND>(rank, lane);
         pass.Add<Passes.Rules.Neutral.FoldConstCall>();
         pass.Add<Passes.Rules.NTT.FoldPackUnpack>();
         pass.Add<Passes.Rules.NTT.FoldPackConcatUnpack>();

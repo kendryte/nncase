@@ -32,9 +32,11 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
             var axis = cat.Axis;
             var interType = new VectorType(DataTypes.Float32, vType.Lanes);
             var input = inputOrg.Select(t => Cast(t, interType).Evaluate().AsTensor().ToOrtTensor()).ToArray();
-            return Value.FromTensor(OrtKI.Concat(input, axis).ToTensor().CastTo(dataType));
+            var output = OrtKI.Concat(input, axis).ToTensor();
+            var outShape = context.Evaluate(context.CurrentCall.CheckedShape).AsTensor().ToArray<long>();
+            return Value.FromTensor(Tensor.FromBytes(context.CurrentCall.CheckedDataType, output.BytesBuffer.ToArray(), outShape));
         }
-        else if (dataType.IsFloat() && dataType != DataTypes.Float32)
+        else if (dataType.IsFloat() && dataType is not VectorType && dataType != DataTypes.Float32)
         {
             var axis = cat.Axis;
             var input = inputOrg.Select(t => Cast(t, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor()).ToArray();

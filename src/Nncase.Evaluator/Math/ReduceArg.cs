@@ -111,10 +111,10 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
         }
 
         var inshape = distributedType.TensorType.Shape;
-        if (context.GetArgument(target, ReduceArg.Axis) is TensorConst axisValue &&
+        if (context.GetArgument(target, ReduceArg.Axis) is DimConst axisValue &&
             context.GetArgument(target, ReduceArg.KeepDims) is TensorConst keepDimsValue)
         {
-            var axis = axisValue.Value.ToScalar<int>();
+            var axis = (int)axisValue.Value;
             axis = axis >= 0 ? axis : inshape.Rank + axis;
             var ndsbp = new SBP[inshape.Rank];
             for (int i = 0; i < ndsbp.Length; i++)

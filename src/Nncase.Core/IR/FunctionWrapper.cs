@@ -54,6 +54,11 @@ public sealed class FunctionWrapper : BaseFunction
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitFunctionWrapper(this, context);
 
+    public override BaseFunction With(string? name = null, string? moduleKind = null)
+    {
+        return new FunctionWrapper(name ?? Name, moduleKind ?? ModuleKind, Target);
+    }
+
     public FunctionWrapper With(string? name = null, string? moduleKind = null, BaseFunction? target = null)
         => new FunctionWrapper(name ?? Name, moduleKind ?? ModuleKind, target ?? Target);
 }

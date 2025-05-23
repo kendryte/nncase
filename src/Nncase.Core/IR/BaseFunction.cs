@@ -31,4 +31,6 @@ public abstract class BaseFunction : Callable
     public abstract IEnumerable<IRType> ParameterTypes { get; }
 
     public bool IsEntry { get; set; }
+
+    public abstract BaseFunction With(string? name = null, string? moduleKind = null);
 }

@@ -99,7 +99,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Tensors.Concat concat:
                 return TIR.F.NTT.Concat(((IR.Tuple)arguments[0]).Fields.AsValueEnumerable().Select(x => (Expr)x).ToArray(), output, concat.Axis);
             case IR.Tensors.Transpose trans:
-                return TIR.F.NTT.Transpose((Expr)arguments[0], output, ((TensorConst)call[IR.Tensors.Transpose.Perm]).Value.ToArray<int>());
+                return TIR.F.NTT.Transpose((Expr)arguments[0], output, ((RankedShape)call[IR.Tensors.Transpose.Perm]).ToValueArray().ToInts());
             case IR.NN.Swish swish:
                 return TIR.F.NTT.Swish((Expr)arguments[0], output, ((TensorConst)call[IR.NN.Swish.Beta]).Value.ToScalar<float>());
             case IR.Tensors.Gather gather:
@@ -109,7 +109,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Math.Reduce reduce:
                 return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, Array.Empty<int>(), Array.Empty<int>(), ((RankedShape)call[IR.Math.Reduce.Axes]).ToValueArray().Select(x => Util.PositiveIndex(x, arguments[0].CheckedTensorType)).OrderBy(a => a).ToArray().ToInts(), ((TensorConst)call[IR.Math.Reduce.KeepDims]).Value.ToArray<bool>()[0], reduce.ReduceOp);
             case IR.Math.ReduceArg reduceArg:
-                return TIR.F.NTT.ReduceArg((Expr)arguments[0], output, ((TensorConst)call[IR.Math.ReduceArg.Axis]).Value.ToArray<int>()[0], ((TensorConst)call[IR.Math.ReduceArg.KeepDims]).Value.ToArray<bool>()[0], ((TensorConst)call[IR.Math.ReduceArg.SelectLastIndex]).Value.ToArray<bool>()[0], reduceArg.ReduceArgOp, reduceArg.DestType);
+                return TIR.F.NTT.ReduceArg((Expr)arguments[0], output, (int)((DimConst)call[IR.Math.ReduceArg.Axis]).FixedValue, ((TensorConst)call[IR.Math.ReduceArg.KeepDims]).Value.ToArray<bool>()[0], ((TensorConst)call[IR.Math.ReduceArg.SelectLastIndex]).Value.ToArray<bool>()[0], reduceArg.ReduceArgOp, reduceArg.DestType);
             case IR.Tensors.Cast cast:
                 return TIR.F.NTT.Cast((Expr)arguments[0], output, cast.NewType, cast.CastMode);
             case IR.Tensors.Where where:
@@ -144,6 +144,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.IdentityPagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], (Expr)arguments[8]);
             case IR.NN.PagedAttention pgat:
                 return TIR.F.NTT.PagedAttention((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], pgat.LayerId, output, pgat.Layout);
+            case IR.Shapes.AsTensor asTensor:
+                return call;
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

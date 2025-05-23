@@ -406,6 +406,27 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
         return other is not null && Operand.Equals(other.Operand) && MinValue.Equals(other.MinValue) && MaxValue.Equals(other.MaxValue);
     }
 
+    public override Dimension Simplify()
+    {
+        var operandRange = Operand.Metadata.Range!.Value;
+        var minValueRange = MinValue.Metadata.Range!.Value;
+        var maxValueRange = MaxValue.Metadata.Range!.Value;
+        if (operandRange.Max <= minValueRange.Min)
+        {
+            return MinValue;
+        }
+        else if (operandRange.Min >= maxValueRange.Max)
+        {
+            return MaxValue;
+        }
+        else if (operandRange.Min >= minValueRange.Min && operandRange.Max <= maxValueRange.Max)
+        {
+            return Operand;
+        }
+
+        return this;
+    }
+
     public override string ToString() => $"clamp({Operand}, {MinValue}, {MaxValue})";
 
     /// <inheritdoc/>
@@ -468,6 +489,21 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
         }
 
         return other is not null && Value.Equals(other.Value) && Expected.Equals(other.Expected) && TrueValue.Equals(other.TrueValue) && FalseValue.Equals(other.FalseValue);
+    }
+
+    public override Dimension Simplify()
+    {
+        if (Value == FalseValue && Expected == TrueValue)
+        {
+            if (Value.IsFixed)
+            {
+                return new DimConst(Value.FixedValue);
+            }
+
+            return Value;
+        }
+
+        return this;
     }
 
     public override string ToString() => $"({Value} == {Expected} ? {TrueValue} : {FalseValue})";

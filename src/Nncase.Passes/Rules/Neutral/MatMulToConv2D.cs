@@ -268,16 +268,16 @@ public sealed partial class Conv2DToMatmul : IRewriteRule
             IsWildcard("input") with { TypePattern = HasFixedShape() },
             IsTensorConst("weights"),
             IsTensorConst("bias"),
-            IsTensorConst("strides"),
-            IsTensorConst("paddings"),
-            IsTensorConst("dilation"),
-            IsTensorConst("groups"),
+            IsFixedShape("strides"),
+            IsFixedPaddings("paddings"),
+            IsFixedShape("dilation"),
+            IsFixedDimension("groups"),
             IsTensorConst("fusedClamp")) with
         {
             TypePattern = HasFixedShape(),
         };
 
-    private Expr? GetReplace(Expr conv2d, Expr input, Expr weights, Tensor<float> bias, int[] strides, Tensor<int> paddings, int[] dilation, int groups, float[] fusedClamp)
+    private Expr? GetReplace(Expr conv2d, Expr input, Expr weights, Tensor<float> bias, int[] strides, Paddings paddings, int[] dilation, int groups, float[] fusedClamp)
     {
         var inDType = input.CheckedDataType;
         var inShape = (RankedShape)input.CheckedShape;
@@ -290,7 +290,7 @@ public sealed partial class Conv2DToMatmul : IRewriteRule
 
         if (!(inShape[^1] == 1 && inShape[^2] == 1 && outShape[^1] == 1 && outShape[^2] == 1 &&
             filterH == 1 && filterW == 1 && groups == 1 && strides.All(s => s == 1) &&
-            paddings.ToArray().All(p => p == 0) && dilation.ToArray().All(d => d == 1)))
+            paddings.ToArray().All(p => p == Padding.Zero) && dilation.ToArray().All(d => d == 1)))
         {
             return null;
         }

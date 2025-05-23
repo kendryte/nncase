@@ -72,6 +72,11 @@ public sealed class PrimFunctionWrapper : BaseFunction
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitPrimFunctionWrapper(this, context);
 
+    public override BaseFunction With(string? name = null, string? moduleKind = null)
+    {
+        return new PrimFunctionWrapper(name ?? Name, Target, ParametersCount, TypeHints.ToArray());
+    }
+
     public PrimFunctionWrapper With(string? name = null, PrimFunction? target = null, int? parametersCount = null, IRType[]? hints = null)
         => new PrimFunctionWrapper(name ?? Name, target ?? Target, parametersCount ?? ParametersCount, hints ?? TypeHints.ToArray());
 }

@@ -4,6 +4,7 @@
 using System;
 using Nncase.CostModel;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.Utilities.ShapeExprUtility;
@@ -46,15 +47,23 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
             return new InvalidType($"Range Begin must be scalar, but get {begin.CheckedShape}");
         }
 
-        if (begin is TensorConst beginConst && end is TensorConst endConst && step is TensorConst stepConst)
+        switch (begin, end, step)
         {
-            var dim = (long)MathF.Ceiling((beginConst.Value.ToScalar<float>() + endConst.Value.ToScalar<float>()) / stepConst.Value.ToScalar<float>());
-            return new TensorType(dType, new RankedShape(dim));
-        }
-        else
-        {
-            var dim = IR.F.Tensors.Cast(IR.F.Math.CeilDiv(begin + end, step), DataTypes.Int64).AsDim();
-            return new TensorType(dType, new RankedShape(dim));
+            case (TensorConst beginConst, TensorConst endConst, TensorConst stepConst):
+                var dim1 = (long)MathF.Ceiling((endConst.Value.ToScalar<float>() - beginConst.Value.ToScalar<float>()) / stepConst.Value.ToScalar<float>());
+                return new TensorType(dType, new RankedShape(dim1));
+            case (Call { Target: AsTensor } tBegin, Call { Target: AsTensor } tEnd, TensorConst stc) when stc.Value.ToScalar<long>() == 1:
+                var dim2 = (Dimension)tEnd[AsTensor.Input] - (Dimension)tBegin[AsTensor.Input];
+                return new TensorType(dType, new RankedShape(dim2));
+            case (TensorConst beginConst, Call { Target: AsTensor } tEnd, TensorConst stc) when stc.Value.ToScalar<long>() == 1:
+                var dim3 = (Dimension)tEnd[AsTensor.Input] - (Dimension)beginConst.Value.ToScalar<long>();
+                return new TensorType(dType, new RankedShape(dim3));
+            case (Call { Target: AsTensor } tBegin, TensorConst endConst, TensorConst stc) when stc.Value.ToScalar<long>() == 1:
+                var dim4 = (Dimension)endConst.Value.ToScalar<long>() - (Dimension)tBegin[AsTensor.Input];
+                return new TensorType(dType, new RankedShape(dim4));
+            default:
+                var dim5 = IR.F.Tensors.Cast(IR.F.Math.CeilDiv(end - begin, step), DataTypes.Int64).AsDim();
+                return new TensorType(dType, new RankedShape(dim5));
         }
     }
 

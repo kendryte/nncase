@@ -31,11 +31,11 @@ public sealed partial class DecomposeSoftmax : IRewriteRule
             "softmaxCall",
             _ => true,
             IsWildcard("input"),
-            IsTensorConst("axis"));
+            IsFixedDimension("axis"));
 
-    private Expr? GetReplace(Expr input, Call softmaxCall, int[] axis)
+    private Expr? GetReplace(Expr input, Call softmaxCall, int axis)
     {
-        var normalizedaxes = axis.Select(axes => axes < 0 ? axes + input.CheckedShape.Rank : axes).ToArray();
+        var normalizedaxes = new[] { axis < 0 ? axis + input.CheckedShape.Rank : axis };
         var max = input.CheckedDataType switch
         {
             var x when x == DataTypes.Float32 => IR.F.Tensors.ReduceMax(input, normalizedaxes, float.MinValue, true),
