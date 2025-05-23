@@ -411,7 +411,7 @@ public static class DistributedUtility
         var tiles = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
         for (var d = 0; d < shape.Length; d++)
         {
-            if (distributedType.AxisPolices[d] is SBPSplit split)
+            if (distributedType.AxisPolices.Count > d && distributedType.AxisPolices[d] is SBPSplit split)
             {
                 var divisor = split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
                 tiles[d] = (tiles[d] + divisor - 1) / divisor;

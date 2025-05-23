@@ -35,19 +35,62 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             return Value.FromTensor(Tensor.From<long>(result, [result.Length, condTensor.Rank]));
         }
 
-        var cond = context.GetOrtArgumentValue(where, Where.Cond);
+        var cond = context.GetArgumentValue(where, Where.Cond).AsTensor();
         var x = context.GetArgumentValue(where, Where.X).AsTensor();
         var y = context.GetArgumentValue(where, Where.Y).AsTensor();
-        var originType = x.ElementType;
-        if (originType.IsFloat() && originType != DataTypes.Float32)
+        var condType = cond.ElementType;
+        var xType = x.ElementType;
+        var yType = y.ElementType;
+        if (xType is VectorType { ElemType: DataType xElemType } xVType && xElemType != DataTypes.Float32)
+        {
+            var interType = new VectorType(DataTypes.Float32, xVType.Lanes);
+            x = Nncase.IR.F.Tensors.Cast(x, interType).Evaluate().AsTensor();
+        }
+        else if (xType.IsFloat() && xType is not VectorType && xType != DataTypes.Float32)
         {
             x = x.CastTo(DataTypes.Float32);
+        }
+
+        if (yType is VectorType { ElemType: DataType elemType } yVType && elemType != DataTypes.Float32)
+        {
+            var interType = new VectorType(DataTypes.Float32, yVType.Lanes);
+            y = Nncase.IR.F.Tensors.Cast(y, interType).Evaluate().AsTensor();
+        }
+        else if (yType.IsFloat() && yType is not VectorType && yType != DataTypes.Float32)
+        {
             y = y.CastTo(DataTypes.Float32);
         }
 
+        var condOrt = cond.ToOrtTensor();
         var xOrt = x.ToOrtTensor();
         var yOrt = y.ToOrtTensor();
-        return OrtKI.Where(cond, xOrt, yOrt).Cast(originType.ToOrtType()).ToValue();
+        var condLaneNum = condType is VectorType vt1 ? vt1.Lanes.Count : 0;
+        var xLaneNum = xType is VectorType vt2 ? vt2.Lanes.Count : 0;
+        var yLaneNum = yType is VectorType vt3 ? vt3.Lanes.Count : 0;
+        var maxLaneSize = System.Math.Max(System.Math.Max(condLaneNum, xLaneNum), yLaneNum);
+        if (condLaneNum < maxLaneSize)
+        {
+            condOrt = OrtKI.Unsqueeze(condOrt, Enumerable.Range(-maxLaneSize, maxLaneSize - condLaneNum).Select(a => (long)a).ToArray());
+        }
+
+        if (xLaneNum < maxLaneSize)
+        {
+            xOrt = OrtKI.Unsqueeze(xOrt, Enumerable.Range(-maxLaneSize, maxLaneSize - xLaneNum).Select(a => (long)a).ToArray());
+        }
+
+        if (yLaneNum < maxLaneSize)
+        {
+            yOrt = OrtKI.Unsqueeze(yOrt, Enumerable.Range(-maxLaneSize, maxLaneSize - yLaneNum).Select(a => (long)a).ToArray());
+        }
+
+        if (maxLaneSize > 0)
+        {
+            var output = OrtKI.Where(condOrt, xOrt, yOrt);
+            var outShape = context.Evaluate(context.CurrentCall.CheckedShape).AsTensor().ToArray<long>();
+            return Value.FromTensor(Tensor.FromBytes(context.CurrentCall.CheckedDataType, output.BytesBuffer.ToArray(), outShape));
+        }
+
+        return Value.FromTensor(OrtKI.Where(condOrt, xOrt, yOrt).ToTensor().CastTo(context.CurrentCall.CheckedDataType));
     }
 
     /// <inheritdoc/>

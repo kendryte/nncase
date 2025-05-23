@@ -172,8 +172,7 @@ public static class OrtKIExtensions
         private void InitializeUnmanaged<T>(Tensor<T> tensor)
             where T : unmanaged, IEquatable<T>
         {
-            var span = MemoryMarshal.Cast<T, byte>(tensor.Buffer.Span);
-            _tensor.GetBuffer<byte>().CopyTo(span);
+            _tensor.GetBuffer<T>().CopyTo(tensor.Buffer.Span);
         }
     }
 }

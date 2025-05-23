@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include "../half.h"
 #include "tensor_traits.h"
 #include "vector.h"
-#include  "../half.h"
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -173,6 +173,7 @@ template <class T1, class T2> struct mul {
 
 template <class T1, class T2> struct div {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        static_assert(std::is_same_v<T1, T2>, "T1 and T2 must be same type");
         return v1 / v2;
     }
 };
@@ -254,7 +255,7 @@ template <class T1, class T2> struct not_equal {
 
 template <class T1, class T2> struct less {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return v1 < v2;
+        return (unsigned char)(v1 < v2);
     }
 };
 
@@ -405,8 +406,8 @@ constexpr TResult mma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
     return ops::mma<AccC, TransA, T1, T2, TResult>()(v1, v2, v3);
 }
 
-template <template <class T1, class T2> class BinaryOp, IsTensorOrScalar TResult,
-          IsTensorOrScalar T>
+template <template <class T1, class T2> class BinaryOp,
+          IsTensorOrScalar TResult, IsTensorOrScalar T>
 constexpr TResult reduce(const T &v, TResult init_value) noexcept {
     return ops::reduce<BinaryOp, TResult, T>()(v, init_value);
 }
@@ -512,7 +513,7 @@ template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
 
 // swish(v) = v / (exp(-v) + 1)
 template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
-    return v / (ntt::exp(-v) + 1);
+    return v / (ntt::exp(-v) + (T)1);
 }
 
 // swishb(v) = v / (exp(-v*beta) + 1)

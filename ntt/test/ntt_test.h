@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/float8.h"
+#include "nncase/half.h"
 #include "nncase/ntt/apply.h"
 #include "nncase/ntt/ntt.h"
 #include "nncase/ntt/shape.h"
-#include "nncase/half.h"
 #include <assert.h>
 #include <iostream>
 #include <random>
@@ -86,7 +87,17 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
                  T stop = static_cast<T>(1)) {
     std::random_device rd;
     std::mt19937 gen(rd());
-    if (std::is_same_v<T, int8_t>) {
+    if constexpr (std::is_same_v<T, float_e4m3_t>) {
+        std::uniform_real_distribution<float> dis(start, stop);
+        ntt::apply(tensor.shape(), [&](auto &index) {
+            tensor(index) = static_cast<float_e4m3_t>(dis(gen));
+        });
+    } else if constexpr (std::is_same_v<T, float_e5m2_t>) {
+        std::uniform_real_distribution<float> dis(start, stop);
+        ntt::apply(tensor.shape(), [&](auto &index) {
+            tensor(index) = static_cast<float_e5m2_t>(dis(gen));
+        });
+    } else if (std::is_same_v<T, int8_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int8_t>(dis(gen));
@@ -139,9 +150,9 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if (std::is_same_v<T,half>){
+    } else if (std::is_same_v<T, half>) {
         std::uniform_real_distribution<float> dis(start, stop);
-         ntt::apply(tensor.shape(), [&](auto &index) {
+        ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<half>(dis(gen));
         });
     } else if (std::is_same_v<T, double>) {

@@ -34,13 +34,14 @@ public static class CompilerHostBuilderExtensions
     /// <returns>Created host builder.</returns>
     public static IHostBuilder ConfigureCompiler(this IHostBuilder hostBuilder, Action<ICompilerBuilder>? configureCompiler = null)
     {
+        var plugins = LoadPlugins();
         hostBuilder.UseServiceProviderFactory(new DryIocServiceProviderFactory())
             .ConfigureContainer<Container>(ConfigureBuiltinModules)
             .ConfigureServices(ConfigureServices)
             .ConfigureLogging(ConfigureLogging);
 
         hostBuilder.ConfigureContainer<Container>(x => configureCompiler?.Invoke(new CompilerBuilder(x)));
-        hostBuilder.ConfigureContainer<Container>(ConfigurePlugins);
+        hostBuilder.ConfigureContainer<Container>(x => ConfigurePlugins(x, plugins));
         return hostBuilder;
     }
 
@@ -72,10 +73,15 @@ public static class CompilerHostBuilderExtensions
         loggingBuilder.AddConsole();
     }
 
-    private static void ConfigurePlugins(Container builder)
+    private static IReadOnlyList<IPlugin> LoadPlugins()
     {
-        var pluginLoader = builder.Resolve<PluginLoader>();
-        var plugins = pluginLoader.LoadPlugins();
+        var logger = LoggerFactory.Create(ConfigureLogging).CreateLogger<PluginLoader>();
+        var pluginLoader = new PluginLoader(logger);
+        return pluginLoader.LoadPlugins();
+    }
+
+    private static void ConfigurePlugins(Container builder, IReadOnlyList<IPlugin> plugins)
+    {
         foreach (var plugin in plugins)
         {
             plugin.ConfigureServices(builder);

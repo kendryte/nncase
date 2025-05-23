@@ -22,7 +22,9 @@ internal class BFloat16Converters :
     ISpanConverter<BFloat16, Half>,
     ISpanConverter<BFloat16, float>,
     ISpanConverter<BFloat16, double>,
-    ISpanConverter<BFloat16, BFloat16>
+    ISpanConverter<BFloat16, BFloat16>,
+    ISpanConverter<BFloat16, Float8E4M3>,
+    ISpanConverter<BFloat16, Float8E5M2>
 {
     public void ConvertTo(ReadOnlySpan<BFloat16> source, Span<bool> dest, CastMode castMode)
     {
@@ -317,6 +319,42 @@ internal class BFloat16Converters :
         for (int i = 0; i < source.Length; i++)
         {
             dest[i] = source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<BFloat16> source, Span<Float8E4M3> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = (Float8E4M3)(float)source[i];
+        }
+    }
+
+    public void ConvertTo(ReadOnlySpan<BFloat16> source, Span<Float8E5M2> dest, CastMode castMode)
+    {
+        if (castMode == CastMode.Exact)
+        {
+            throw new InvalidCastException();
+        }
+
+        if (dest.Length < source.Length)
+        {
+            throw new ArgumentException("Dest buffer is not sufficient.");
+        }
+
+        for (int i = 0; i < source.Length; i++)
+        {
+            dest[i] = (Float8E5M2)(float)source[i];
         }
     }
 
