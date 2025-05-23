@@ -478,11 +478,5 @@ PYBIND11_MODULE(_nncase, m) {
 
     register_runtime_tensor(m);
     register_llm(m);
-    // register_kv_cache(m);
-
-    // py::class_<paged_attention_kv_cache>(m, "AttentionKVCache");
-
-    // py::class_<, typename options>
-
     // register_llm_interpreter(m);
 }

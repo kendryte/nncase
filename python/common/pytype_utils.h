@@ -81,6 +81,36 @@ pybind11::dtype to_dtype(const datatype_t type) {
     return to_dtype(primtype.unwrap()->typecode());
 }
 
+typecode_t from_dtype(pybind11::dtype dtype) {
+    namespace py = pybind11;
+
+    if (dtype.is(py::dtype::of<bool>()))
+        return dt_boolean;
+    else if (dtype.is(py::dtype::of<uint8_t>()))
+        return dt_uint8;
+    else if (dtype.is(py::dtype::of<uint16_t>()))
+        return dt_uint16;
+    else if (dtype.is(py::dtype::of<uint32_t>()))
+        return dt_uint32;
+    else if (dtype.is(py::dtype::of<uint64_t>()))
+        return dt_uint64;
+    else if (dtype.is(py::dtype::of<int8_t>()))
+        return dt_int8;
+    else if (dtype.is(py::dtype::of<int16_t>()))
+        return dt_int16;
+    else if (dtype.is(py::dtype::of<int32_t>()))
+        return dt_int32;
+    else if (dtype.is(py::dtype::of<int64_t>()))
+        return dt_int64;
+    else if (dtype.is(py::dtype("float16")))
+        return dt_float16;
+    else if (dtype.is(py::dtype::of<float>()))
+        return dt_float32;
+    else if (dtype.is(py::dtype::of<double>()))
+        return dt_float64;
+    throw std::runtime_error("Unsupported dtype " + std::string(dtype.str()));
+}
+
 typecode_t from_dtype(pybind11::array array) {
     namespace py = pybind11;
 

@@ -296,6 +296,30 @@ typedef struct {
     clr_object_handle_t (*target_create)(const char *target_name,
                                          size_t target_name_length);
     bool (*target_exists)(const char *target_name, size_t target_name_length);
+
+    clr_object_handle_t (*create_ref_paged_attention_scheduler)(
+        clr_object_handle_t config, int32_t num_blocks, int32_t max_model_len,
+        const int32_t *hierarchy, size_t hierarchy_length);
+    clr_object_handle_t (*ref_paged_attention_schedule)(
+        clr_object_handle_t scheduler, const int64_t *session_ids,
+        const int64_t *query_lens, size_t num_queries);
+
+    int32_t (*ref_paged_attention_kv_cache_get_num_seqs)(
+        clr_object_handle_t kv_cache);
+    int32_t (*ref_paged_attention_kv_cache_get_num_tokens)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_context_lens)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_seq_lens)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_block_table)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_slot_mapping)(
+        clr_object_handle_t kv_cache);
+    int32_t (*ref_paged_attention_kv_cache_get_num_blocks)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_kv_caches)(
+        clr_object_handle_t kv_cache);
 } nncase_api_mt_t;
 
 NNCASE_API nncase_api_mt_t *nncase_clr_api();
@@ -937,6 +961,78 @@ class compile_session : public clr_object_base {
     clr::compiler compiler() {
         return {std::in_place,
                 nncase_clr_api()->compile_session_get_compiler(obj_.get())};
+    }
+};
+
+class ref_paged_attention_kv_cache : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    int32_t num_seqs() const {
+        return nncase_clr_api()->ref_paged_attention_kv_cache_get_num_seqs(
+            obj_.get());
+    }
+
+    int32_t num_tokens() const {
+        return nncase_clr_api()->ref_paged_attention_kv_cache_get_num_tokens(
+            obj_.get());
+    }
+
+    int32_t num_blocks() const {
+        return nncase_clr_api()->ref_paged_attention_kv_cache_get_num_blocks(
+            obj_.get());
+    }
+
+    rtvalue context_lens() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_context_lens(
+                    obj_.get())};
+    }
+
+    rtvalue seq_lens() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_seq_lens(
+                    obj_.get())};
+    }
+
+    rtvalue block_table() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_block_table(
+                    obj_.get())};
+    }
+
+    rtvalue slot_mapping() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_slot_mapping(
+                    obj_.get())};
+    }
+
+    rtvalue kv_caches() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_kv_caches(
+                    obj_.get())};
+    }
+};
+
+class ref_paged_attention_scheduler : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    ref_paged_attention_scheduler(llm::paged_attention_config &config,
+                                  int32_t num_blocks, int32_t max_model_len,
+                                  const std::vector<int32_t> &hierarchy) {
+        auto clone_config = llm::paged_attention_config(config);
+        obj_ = nncase_clr_api()->create_ref_paged_attention_scheduler(
+            clone_config.detach(), num_blocks, max_model_len, hierarchy.data(),
+            hierarchy.size());
+    }
+
+    ref_paged_attention_kv_cache
+    schedule(const std::vector<int64_t> &session_ids,
+             const std::vector<int64_t> &query_lens) {
+        return {std::in_place, nncase_clr_api()->ref_paged_attention_schedule(
+                                   obj_.get(), session_ids.data(),
+                                   query_lens.data(), session_ids.size())};
     }
 };
 } // namespace nncase::clr

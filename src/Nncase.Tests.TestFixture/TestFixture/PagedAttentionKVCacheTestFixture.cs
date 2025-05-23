@@ -376,8 +376,7 @@ public sealed class PagedAttentionKVCacheTestFixture
                 {
                     for (long logical_slot_id = alignedSeqStartLocs[seqId]; logical_slot_id < alignedSeqStartLocs[seqId] + contextLens[seqId]; logical_slot_id++)
                     {
-                        var indices = new long[] { tokenId, 0 };
-                        PrepareSlotMappingId(tempSlotMappingTensor, [tokenId, 0], logical_slot_id, numBlocks, placement, config);
+                        RefPagedAttentionKVCache.MaterializeSlotMappingId(tempSlotMappingTensor, [tokenId, 0], logical_slot_id, numBlocks, placement, config);
                         tokenId++;
                     }
                 }
@@ -409,38 +408,10 @@ public sealed class PagedAttentionKVCacheTestFixture
         // 3. create block table/slot mapping tensor.
         for (int seqId = 0; seqId < seqLens.Length; seqId++)
         {
-            for (long j = 0, logicalSlotId = alignedSeqStartLocs[seqId]; logicalSlotId < alignedSeqStartLocs[seqId] + alignedSeqLens[seqId]; logicalSlotId += config.BlockSize, j++)
+            for (long itemId = 0, logicalSlotId = alignedSeqStartLocs[seqId]; logicalSlotId < alignedSeqStartLocs[seqId] + alignedSeqLens[seqId]; logicalSlotId += config.BlockSize, itemId++)
             {
                 var logicalBlockId = logicalSlotId / config.BlockSize;
-                var indices = new long[] { seqId, j, 0 };
-                long physicalBlockId = logicalBlockId;
-
-                for (int topoId = 0; topoId < config.ShardingAxes.Count; topoId++)
-                {
-                    switch (config.ShardingAxes[topoId])
-                    {
-                        case PagedKVCacheDimKind.NumBlocks:
-                            var parallelism = config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
-                            if (numBlocks < parallelism && !DistributedUtility.IsDivideExactly(numBlocks, parallelism))
-                            {
-                                throw new InvalidOperationException("numBlocks < parallelism");
-                            }
-
-                            var numBlockTile = numBlocks / parallelism;
-                            var value = (int)Math.DivRem(physicalBlockId, numBlockTile, out physicalBlockId);
-                            blockTableTensor[indices] = value;
-                            break;
-                        case PagedKVCacheDimKind.NumKVHeads:
-                            blockTableTensor[indices] = -1;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(config));
-                    }
-
-                    indices[^1]++;
-                }
-
-                blockTableTensor[indices] = physicalBlockId;
+                RefPagedAttentionKVCache.MaterializeBlockTable(blockTableTensor, [seqId, itemId, 0], logicalBlockId, numBlocks, placement, config);
             }
         }
 
@@ -451,7 +422,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         {
             for (long logicalSlotId = alignedContextEndLocs[seqId]; logicalSlotId < alignedContextEndLocs[seqId] + queryLens[seqId]; logicalSlotId++)
             {
-                PrepareSlotMappingId(slotMappingTensor, [tokenId, 0], logicalSlotId, numBlocks, placement, config);
+                RefPagedAttentionKVCache.MaterializeSlotMappingId(slotMappingTensor, [tokenId, 0], logicalSlotId, numBlocks, placement, config);
                 tokenId++;
             }
         }
@@ -469,38 +440,6 @@ public sealed class PagedAttentionKVCacheTestFixture
             numBlocks,
             logicalKVCacheTensor);
         return new(kvInputs, kvcacheObj);
-    }
-
-    public static void PrepareSlotMappingId(Tensor<long> slotMappingTensor, long[] indices, long logicalSlotId, int numBlocks, Placement placement, IPagedAttentionConfig config)
-    {
-        var physicalSlotId = logicalSlotId;
-
-        for (int shardId = 0; shardId < config.ShardingAxes.Count; shardId++)
-        {
-            switch (config.ShardingAxes[shardId])
-            {
-                case PagedKVCacheDimKind.NumBlocks:
-                    var parallelism = config.AxisPolicies[shardId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
-                    if (numBlocks < parallelism && !DistributedUtility.IsDivideExactly(numBlocks, parallelism))
-                    {
-                        throw new InvalidOperationException("numBlocks < parallelism");
-                    }
-
-                    var numBlockTile = numBlocks / parallelism * config.BlockSize;
-                    var value = (int)Math.DivRem(physicalSlotId, numBlockTile, out physicalSlotId);
-                    slotMappingTensor[indices] = value;
-                    break;
-                case PagedKVCacheDimKind.NumKVHeads when config.AxisPolicies[shardId].Axes.Count == 1:
-                    slotMappingTensor[indices] = -1; // todo should matching the kv sharding.
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(config));
-            }
-
-            indices[^1]++;
-        }
-
-        slotMappingTensor[indices] = physicalSlotId;
     }
 
     public static Tensor<float> ReferenceInputGenerator(long[] dimensions, ref float startValue, DataGeneratorOptions options)

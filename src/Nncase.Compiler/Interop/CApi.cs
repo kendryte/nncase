@@ -132,7 +132,20 @@ public unsafe struct CApiMT
     public delegate* unmanaged<CStreamMT*, IntPtr, IntPtr> StreamCreatePtr;
     public delegate* unmanaged<byte*, nuint, IntPtr> TargetCreatePtr;
     public delegate* unmanaged<byte*, nuint, byte> TargetExistsPtr;
-    public delegate* unmanaged<IntPtr, IntPtr, nuint, IntPtr> TargetCreatePagedAttentionSchedulerPtr;
+
+    // KV Cache Scheduler.
+    public delegate* unmanaged<IntPtr, int, int, int*, nuint, IntPtr> CreateRefPagedAttentionSchedulerPtr;
+    public delegate* unmanaged<nint, long*, long*, nuint, IntPtr> RefPagedAttentionSchedulePtr;
+
+    // KV Cache property getters
+    public delegate* unmanaged<IntPtr, int> RefPagedAttentionKVCacheGetNumSeqsPtr;
+    public delegate* unmanaged<IntPtr, int> RefPagedAttentionKVCacheGetNumTokensPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetContextLensPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetSeqLensPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetBlockTablePtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetSlotMappingPtr;
+    public delegate* unmanaged<IntPtr, int> RefPagedAttentionKVCacheGetNumBlocksPtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetKVCachesPtr;
 }
 
 /// <summary>
@@ -236,6 +249,20 @@ public static unsafe class CApi
         mt->StreamCreatePtr = &StreamCreate;
         mt->TargetCreatePtr = &TargetCreate;
         mt->TargetExistsPtr = &TargetExists;
+
+        // KV Cache Scheduler
+        mt->CreateRefPagedAttentionSchedulerPtr = &CreateRefPagedAttentionScheduler;
+        mt->RefPagedAttentionSchedulePtr = &RefPagedAttentionSchedule;
+
+        // KV Cache property getters
+        mt->RefPagedAttentionKVCacheGetNumSeqsPtr = &RefPagedAttentionKVCacheGetNumSeqs;
+        mt->RefPagedAttentionKVCacheGetNumTokensPtr = &RefPagedAttentionKVCacheGetNumTokens;
+        mt->RefPagedAttentionKVCacheGetContextLensPtr = &RefPagedAttentionKVCacheGetContextLens;
+        mt->RefPagedAttentionKVCacheGetSeqLensPtr = &RefPagedAttentionKVCacheGetSeqLens;
+        mt->RefPagedAttentionKVCacheGetBlockTablePtr = &RefPagedAttentionKVCacheGetBlockTable;
+        mt->RefPagedAttentionKVCacheGetSlotMappingPtr = &RefPagedAttentionKVCacheGetSlotMapping;
+        mt->RefPagedAttentionKVCacheGetNumBlocksPtr = &RefPagedAttentionKVCacheGetNumBlocks;
+        mt->RefPagedAttentionKVCacheGetKVCachesPtr = &RefPagedAttentionKVCacheGetKVCaches;
     }
 
     [UnmanagedCallersOnly]
@@ -594,7 +621,7 @@ public static unsafe class CApi
     {
         var expr = Get<BaseExpr>(exprHandle);
         var fnParams = Get<IVar[]>(fnParamsHandle);
-        var inputs = Get<RTValue[]>(inputsHandle);
+        var inputs = Get<RTValue[]>(inputsHandle); // switch to IValue
         var result = CompilerServices.Evaluate(expr, fnParams.Zip(inputs).ToDictionary(
             x => x.First,
             x => x.Second.ToValue()));
@@ -1030,6 +1057,85 @@ public static unsafe class CApi
         {
             return 0;
         }
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr CreateRefPagedAttentionScheduler(IntPtr configHandle, int numBlocks, int maxModelLen, [In] int* hierarchyPtr, nuint hierarchyLength)
+    {
+        var config = RTPagedAttentionConfig.FromHandle(configHandle); // add ref on caller side.
+        var hierarchy = To1DArray(hierarchyPtr, hierarchyLength);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(new Evaluator.NN.RefPagedAttentionScheduler(config, numBlocks, maxModelLen, hierarchy)));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionSchedule(IntPtr handle, [In] long* sessionIdsPtr, [In] long* queryLensPtr, nuint numQueries)
+    {
+        var scheduler = Get<Evaluator.NN.RefPagedAttentionScheduler>(handle);
+        var sessionIds = To1DArray(sessionIdsPtr, numQueries);
+        var queryLens = To1DArray(queryLensPtr, numQueries);
+        var refPagedAttentionKVCache = scheduler.Schedule(sessionIds, queryLens);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(refPagedAttentionKVCache));
+    }
+
+    [UnmanagedCallersOnly]
+    private static int RefPagedAttentionKVCacheGetNumSeqs(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        return kvCache.NumSeqs;
+    }
+
+    [UnmanagedCallersOnly]
+    private static int RefPagedAttentionKVCacheGetNumTokens(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        return kvCache.NumTokens;
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionKVCacheGetContextLens(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        var rtTensor = RTTensor.FromTensor(kvCache.ContextLens);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtTensor));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionKVCacheGetSeqLens(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        var rtTensor = RTTensor.FromTensor(kvCache.SeqLens);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtTensor));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionKVCacheGetBlockTable(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        var rtTensor = RTTensor.FromTensor(kvCache.BlockTable);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtTensor));
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionKVCacheGetSlotMapping(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        var rtTensor = RTTensor.FromTensor(kvCache.SlotMapping);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtTensor));
+    }
+
+    [UnmanagedCallersOnly]
+    private static int RefPagedAttentionKVCacheGetNumBlocks(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        return kvCache.NumBlocks;
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionKVCacheGetKVCaches(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        var rtTensor = RTTensor.FromTensor(kvCache.KVCaches);
+        return GCHandle.ToIntPtr(GCHandle.Alloc(rtTensor));
     }
 
     private static T Get<T>(IntPtr handle)
