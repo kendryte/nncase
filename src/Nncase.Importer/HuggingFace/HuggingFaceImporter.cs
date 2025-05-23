@@ -122,6 +122,9 @@ public partial class HuggingFaceImporter : BaseImporter
             case "Qwen2ForCausalLM":
                 _model = new Qwen2();
                 break;
+            case "Qwen3ForCausalLM":
+                _model = new Qwen3();
+                break;
             case "LlamaForCausalLM":
                 _model = new Llama3_2();
                 break;
