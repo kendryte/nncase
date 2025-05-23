@@ -226,4 +226,19 @@ public partial class NTT
     {
         return new Call(new Stack(axis), inputs.Concat(new[] { ret }).ToArray());
     }
+
+    public static Expr ShapeOf(Expr inputs, Expr ret)
+    {
+        return new Call(new TIR.NTT.ShapeOf(), inputs, ret);
+    }
+
+    public static Expr ConstantOfShape(Expr shape, Expr value, Expr ret)
+    {
+        return new Call(new TIR.NTT.ConstantOfShape(), shape, value, ret);
+    }
+
+    public static Expr Range(Expr begin, Expr end, Expr step, Expr ret)
+    {
+        return new Call(new TIR.NTT.Range(), begin, end, step, ret);
+    }
 }

@@ -19,13 +19,13 @@ from huggingface_test_runner import HuggingfaceTestRunner, download_from_hugging
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
-def test_qwen2(request):
+def test_qwen3(request):
     cfg = """
     [compile_opt]
     shape_bucket_enable = true
-    shape_bucket_range_info = { "sequence_length"=[1, 1024] }
+    shape_bucket_range_info = { "batch_size"=[1,4], "sequence_length"=[1, 1024] }
     shape_bucket_segments_count = 2
-    shape_bucket_fix_var_map = { "batch_size"=1 }
+    shape_bucket_fix_var_map = {  }
     
     [huggingface_options]
     output_attentions = true
@@ -39,7 +39,7 @@ def test_qwen2(request):
     batch = 1
 
     [generator.inputs.text]
-    args = 'tests/importer/huggingface_/prompt_qwen.txt'
+    args = 'tests/importer/huggingface_/prompt.txt'
 
     [generator.calibs]
     method = 'text'
@@ -47,16 +47,11 @@ def test_qwen2(request):
     batch = 1
 
     [generator.calibs.text]
-    args = 'tests/importer/huggingface_/prompt_qwen.txt'
-
-    #TODO: Need remove!
-    [target]
-    [target.cpu]
-    infer = false
+    args = 'tests/importer/huggingface_/prompt.txt'
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "Qwen/Qwen2.5-0.5B-Instruct"
+    model_name = "Qwen/Qwen3-0.6B"
 
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
@@ -68,4 +63,4 @@ def test_qwen2(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vvs', __file__])
+    pytest.main(['-vv', __file__])

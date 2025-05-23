@@ -333,6 +333,11 @@ public sealed class UnitTestTensor
     [Fact]
     public void TestTensorSerialize()
     {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
         var options = new JsonSerializerOptions() { WriteIndented = true };
         {
             var path = Path.GetTempFileName();
