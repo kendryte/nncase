@@ -108,7 +108,8 @@ typecode_t from_dtype(pybind11::dtype dtype) {
         return dt_float32;
     else if (dtype.is(py::dtype::of<double>()))
         return dt_float64;
-    throw std::runtime_error("Unsupported dtype " + std::string(dtype.str()));
+    throw std::runtime_error("Unsupported dtype " +
+                             (std::string)py::str(dtype));
 }
 
 typecode_t from_dtype(pybind11::array array) {
