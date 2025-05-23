@@ -251,6 +251,7 @@ jobs:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
           NNCASE_TILING_MAX_SOLUTIONS: 1
         run: |
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/llm_ffi.xml pytest tests/other/ --doctest-modules --junitxml=test_results/llm_ffi.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/llm_huggingface.xml pytest tests/importer/huggingface_/ --doctest-modules --junitxml=test_results/llm_huggingface.xml
 
       - name: Upload Coverage

@@ -935,7 +935,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
