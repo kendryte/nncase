@@ -26,7 +26,7 @@ foreach (var ir in irs)
 {
 #>
     /// <inheritdoc/>
-    protected sealed override Expr VisitLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, TContext context)
+    protected sealed override BaseExpr VisitLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, TContext context)
     {
         return RewriteLeaf<#=ir.Name#>(expr, context);
     }
@@ -42,7 +42,7 @@ foreach (var ir in irs)
     /// <summary>
     /// Rewrite leaf <see cref="<#=ir.Namespace#><#=ir.Name#>"/>.
     /// </summary>
-    protected virtual Expr RewriteLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, TContext context) => <#=func#>(expr, context);
+    protected virtual BaseExpr RewriteLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, TContext context) => <#=func#>(expr, context);
 
 <#
 }
@@ -59,10 +59,10 @@ foreach (var ir in irs)
     /// <summary>
     /// Rewrite leaf <see cref="<#=ir.Namespace#><#=ir.Name#>"/>.
     /// </summary>
-    protected virtual Expr RewriteLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr) => <#=func#>(expr);
+    protected virtual BaseExpr RewriteLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr) => <#=func#>(expr);
 
     /// <inheritdoc />
-    protected sealed override Expr RewriteLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, Unit context) => RewriteLeaf<#=ir.Name#>(expr);
+    protected sealed override BaseExpr RewriteLeaf<#=ir.Name#>(<#=ir.Namespace#><#=ir.Name#> expr, Unit context) => RewriteLeaf<#=ir.Name#>(expr);
 
 <#
 }

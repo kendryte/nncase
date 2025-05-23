@@ -30,14 +30,14 @@ public sealed partial class InlineFunction : RewriteRule<Pattern>
     private Expr? GetReplace(Call expr)
     {
         var target = (Function)expr.Target;
-        if (target.ModuleKind == Callable.StackVMModuleKind)
+        if (target.ModuleKind == Callable.CPUModuleKind)
         {
             var count = ExprCollector.Collect(target.Body).Count;
             if (count <= MaxInlineSize)
             {
                 var mapper = target.Parameters.ToArray().Zip(expr.Arguments.ToArray(), (p, a) => (p, a)).ToDictionary(x => x.p, x => x.a);
                 var cloner = new FunctionBodyCloner(mapper);
-                return cloner.Visit(target.Body, Unit.Default);
+                return (Expr)cloner.Visit(target.Body, Unit.Default);
             }
         }
 
@@ -47,14 +47,19 @@ public sealed partial class InlineFunction : RewriteRule<Pattern>
 
 internal sealed class FunctionBodyCloner : ExprCloner<Unit>
 {
-    private readonly Dictionary<Var, Expr> _mapper;
+    private readonly Dictionary<IVar, BaseExpr> _mapper;
 
-    public FunctionBodyCloner(Dictionary<Var, Expr> mapper)
+    public FunctionBodyCloner(Dictionary<IVar, BaseExpr> mapper)
     {
         _mapper = mapper;
     }
 
-    protected override Expr VisitLeafVar(Var expr, Unit context)
+    protected override BaseExpr VisitLeafVar(Var expr, Unit context)
+    {
+        return _mapper[expr];
+    }
+
+    protected override BaseExpr VisitDimVar(DimVar expr, Unit context)
     {
         return _mapper[expr];
     }

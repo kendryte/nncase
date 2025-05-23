@@ -27,6 +27,10 @@ public static class TypeSerializer
                 writer.Write((byte)Runtime.TypeCode.Pointer);
                 Serialize(writer, t.ElemType);
                 break;
+            case ReferenceType t:
+                writer.Write((byte)Runtime.TypeCode.ReferenceType);
+                Serialize(writer, t.ElemType);
+                break;
             case ValueType t:
                 writer.Write((byte)Runtime.TypeCode.ValueType);
                 writer.Write(t.Uuid.ToByteArray());
@@ -71,6 +75,9 @@ public static class TypeSerializer
 
                 writer.Write((byte)TypeSignatureToken.End);
                 break;
+            case DimensionType:
+                Serialize(writer, TensorType.Scalar(DataTypes.Int64));
+                break;
             default:
                 throw new ArgumentException($"Unsupported type: {type}");
         }
@@ -85,7 +92,7 @@ public static class TypeSerializer
         else
         {
             writer.Write((byte)1);
-            foreach (var dim in shape)
+            foreach (var dim in (RankedShape)shape)
             {
                 if (dim.Kind == DimensionKind.Fixed)
                 {

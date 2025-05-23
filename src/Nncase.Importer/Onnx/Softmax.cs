@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
@@ -19,30 +20,27 @@ namespace Nncase.Importer
                 : SoftmaxV13(op);
         }
 
-        private Expr SoftmaxV1Process(in NodeProto op, Func<Expr, Expr, Expr> f)
+        private Expr SoftmaxV1Process(in NodeProto op, Func<Expr, Dimension, Expr> f)
         {
-            var input = GetSingleInputExpr(op);
-            var axis = GetIntAttribute(op, "axis", 1);
-            var inShape = ShapeOf(input);
-            Expr axisExpr = axis < 0
-                ? Unsqueeze(axis + Rank(input), 0L)
-                : Tensor.From<long>(new[] { axis });
-            var first = Prod(Slice(inShape, new[] { 0L }, axisExpr, 1));
-            var second = Prod(Slice(inShape, axisExpr, Unsqueeze(Rank(input), 0L), 1));
-            var beforeShape = Stack(new IR.Tuple(first, second), 0);
-            var afterShape = ShapeOf(input);
+            var input = GetSingleInputExpr<Expr>(op);
+            var rank = input.CheckedShape.Rank;
+            var axis = (int)Dimension.Positive(GetIntAttribute(op, "axis", 1), rank).FixedValue;
+            var inShape = (RankedShape)ShapeOf(input).AsShape();
+            var first = TensorUtilities.GetProduct(inShape[..axis]);
+            var second = TensorUtilities.GetProduct(inShape[axis..]);
+            var beforeShape = new RankedShape(first, second);
             return Reshape(
                 f(
                     Reshape(input, beforeShape),
                     1L),
-                afterShape);
+                inShape);
         }
 
-        private Expr SoftmaxV13Process(in NodeProto op, Func<Expr, Expr, Expr> f)
+        private Expr SoftmaxV13Process(in NodeProto op, Func<Expr, Dimension, Expr> f)
         {
-            var input = GetSingleInputExpr(op);
+            var input = GetSingleInputExpr<Expr>(op);
             var axis = GetIntAttribute(op, "axis", -1);
-            return f(input, IR.F.Math.Select(axis < 0, Rank(input) + axis, axis));
+            return f(input, Dimension.Positive(axis, Rank(input).AsDim()));
         }
 
         private Expr SoftmaxV1(in NodeProto op)
@@ -74,13 +72,13 @@ namespace Nncase.Importer
 
         private Expr VisitSoftplus(in NodeProto op)
         {
-            var input = GetSingleInputExpr(op);
+            var input = GetSingleInputExpr<Expr>(op);
             return Softplus(input);
         }
 
         private Expr VisitSoftsign(in NodeProto op)
         {
-            var input = GetSingleInputExpr(op);
+            var input = GetSingleInputExpr<Expr>(op);
             return Softsign(input);
         }
     }

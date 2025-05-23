@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.TypePatternUtility;
@@ -48,11 +49,11 @@ public class BaseFunction
 public sealed partial class BroadcastNopPadOutputNames : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsPad("pad", "padCall", padMode => true, IsWildcard("input"), IsTensorConst("pads"), IsWildcard("padValue"));
+    public IPattern Pattern { get; } = IsPad("pad", "padCall", padMode => true, IsWildcard("input"), IsFixedPaddings("pads"), IsWildcard("padValue"));
 
-    private Expr? GetReplace(Call padCall, Expr input, TensorConst pads, Expr padValue)
+    private Expr? GetReplace(Call padCall, Expr input, Paddings pads, Expr padValue)
     {
-        if (pads.Value.Cast<int>().All(x => x == 0))
+        if (pads.All(x => x == Padding.Zero))
         {
             return BaseFunction.BroadcastOutputNames(padCall, input);
         }
@@ -70,7 +71,7 @@ public sealed partial class BroadcastReshapeOutputNames : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsReshape("reshape", "reshapeCall", IsWildcard("input"), IsWildcard("newShape"));
 
-    private Expr? GetReplace(Call reshapeCall, Expr input, Expr newShape)
+    private Expr? GetReplace(Call reshapeCall, Expr input)
     {
         return BaseFunction.BroadcastOutputNames(reshapeCall, input);
     }
@@ -83,9 +84,9 @@ public sealed partial class BroadcastReshapeOutputNames : IRewriteRule
 public sealed partial class BroadcastTransposeOutputNames : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsTranspose("tp", "tpCall", _ => true, IsWildcard("input"), IsTensorConst("perm"));
+    public IPattern Pattern { get; } = IsTranspose("tp", "tpCall", _ => true, IsWildcard("input"), IsFixedShape("perm"));
 
-    private Expr? GetReplace(Call tpCall, Expr input, Tensor<int> perm)
+    private Expr? GetReplace(Call tpCall, Expr input)
     {
         return BaseFunction.BroadcastOutputNames(tpCall, input);
     }

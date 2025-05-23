@@ -11,7 +11,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
 {
     private readonly Dictionary<TileNode, List<long>> _bounds = new();
 
-    public TreeSolverPythonPrinter(Assignment solution, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo, ICpuTargetOptions targetOptions)
+    public TreeSolverPythonPrinter(Assignment solution, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo, INTTTargetOptions targetOptions)
         : base(solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions)
     {
         Solution = solution;

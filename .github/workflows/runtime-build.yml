@@ -50,7 +50,7 @@ jobs:
         run: |
           conan install . --build=missing -s build_type=${{matrix.config.buildType}} -pr:a=toolchains/${{matrix.config.name}}.profile.jinja -o "&:runtime=True" -o "&:python=True" -o "&:tests=True"
           cmake --preset conan-runtime-release
-          
+
       - name: Build & Install
         run: |
           cmake --build build/${{matrix.config.buildType}} --config ${{matrix.config.buildType}}
@@ -59,7 +59,6 @@ jobs:
       - name: Test
         run: |
           cd build/${{matrix.config.buildType}}
-          ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
           ctest -C ${{matrix.config.buildType}} --test-dir ntt/test/ctest --output-on-failure -j4
         if: runner.os != 'Windows'
 
@@ -108,7 +107,7 @@ jobs:
 
           wget https://dav.sunnycase.moe/d/ci/nncase/${{matrix.config.qemu}}.tgz -O qemu.tgz
           sudo tar xf qemu.tgz -C /usr/local/bin
-          sudo chmod +rx /usr/local/bin/qemu-*
+          sudo chmod a+x /usr/local/bin/${{matrix.config.qemu}}
           echo "TESTS_EXECUTABLE_LOADER=${{matrix.config.qemu}}" >> $GITHUB_ENV
           echo "TESTS_EXECUTABLE_LOADER_ARGUMENTS=${{matrix.config.loaderArgs}};$GITHUB_WORKSPACE/${{matrix.config.toolchainFile}}/sysroot" >> $GITHUB_ENV
           echo "CC=$GITHUB_WORKSPACE/${{matrix.config.toolchainFile}}/bin/${{matrix.config.toolchainPrefix}}gcc" >> $GITHUB_ENV
@@ -136,7 +135,6 @@ jobs:
         shell: bash
         run: |
           cd build/${{matrix.config.buildType}}
-          ctest -C ${{matrix.config.buildType}} --test-dir tests/kernels --output-on-failure -j4
           ctest -C ${{matrix.config.buildType}} --test-dir ntt/test/ctest --output-on-failure -j4
 
       - name: Upload nncaseruntime Build Artifact

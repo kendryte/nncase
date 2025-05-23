@@ -47,7 +47,7 @@ public partial class NcnnImporter
             throw new NotSupportedException($"Unsupported pad value: {padValue}.");
         }
 
-        var input = CHWToNCHW(GetInputExprs(layer, 0));
+        var input = CHWToNCHW(GetInputExprs<Expr>(layer, 0));
 
         Dimension[] paddingH;
         Dimension[] paddingW;
@@ -79,8 +79,8 @@ public partial class NcnnImporter
             paddingW = [padLeft, padRight];
         }
 
-        var stride = Tensor.From(new[] { strideH, strideW }, [2]);
-        var dilation = Tensor.From(new[] { dilationH, dilationW }, [2]);
+        var stride = new[] { strideH, strideW };
+        var dilation = new[] { dilationH, dilationW };
         var clampRange = ToFloatClampRange(activationType, activationParams);
         var clamp = Tensor.From(new[] { clampRange.Min, clampRange.Max }, [2]);
         var padding = Dimension.ConcatPadding(paddingH, paddingW);

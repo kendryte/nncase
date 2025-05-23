@@ -193,7 +193,7 @@ internal static class HuggingFaceUtils
             {
                 var datatype = ConvertToDataDType(keyValuePair.Value.DataType!);
 
-                var shape = new Shape(keyValuePair.Value.Shape!);
+                var shape = new RankedShape(keyValuePair.Value.Shape!);
                 if (
                     keyValuePair.Value.Offsets![1] - keyValuePair.Value.Offsets[0]
                     != datatype.SizeInBytes * shape.Size)

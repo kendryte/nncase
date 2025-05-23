@@ -17,17 +17,7 @@ namespace Nncase.Passes.Transforms;
 
 public sealed class BufferizePass : FunctionPass
 {
-    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
-    {
-        if (input is PrimFunction primFunc)
-        {
-            Bufferize(primFunc);
-        }
-
-        return Task.FromResult(input);
-    }
-
-    private void Bufferize(PrimFunction func)
+    public static void Bufferize(PrimFunction func)
     {
         var lifetimes = new LifetimeCollector().Collect(func);
         var scheduleResult = BufferScheduler.Schedule(lifetimes);
@@ -36,6 +26,7 @@ public sealed class BufferizePass : FunctionPass
             DumpSchedule(scheduleResult);
         }
 
+        AssignOutputResult(func, scheduleResult);
         AssignDataResult(func, scheduleResult);
         AssignRdataResult(func, scheduleResult);
         AssignLocalRdataResult(func, scheduleResult);
@@ -47,42 +38,61 @@ public sealed class BufferizePass : FunctionPass
         func.SchedResult.IsScheduled = true;
     }
 
-    private void AssignDataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
+    {
+        if (input is PrimFunction primFunc)
+        {
+            Bufferize(primFunc);
+        }
+
+        return Task.FromResult(input);
+    }
+
+    private static void AssignOutputResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    {
+        if (scheduleResult.TryGetValue(MemoryLocation.Output, out var dataResult))
+        {
+            func.SchedResult.OutputAlign = Math.Max(8, (ulong)dataResult.Alignment);
+            func.SchedResult.OutputUsage = (ulong)dataResult.MemoryPoolSize;
+        }
+    }
+
+    private static void AssignDataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         if (scheduleResult.TryGetValue(MemoryLocation.Data, out var dataResult))
         {
-            func.SchedResult.DataAlign = (ulong)dataResult.Alignment;
+            func.SchedResult.DataAlign = Math.Max(8, (ulong)dataResult.Alignment);
             func.SchedResult.DataUsage = (ulong)dataResult.MemoryPoolSize;
         }
     }
 
-    private void AssignRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void AssignRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         if (scheduleResult.TryGetValue(MemoryLocation.Rdata, out var rdataResult))
         {
             foreach (var lifetime in rdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.DDrOf.Input];
+                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.Rdatas.Add(constValue, range);
             }
         }
     }
 
-    private void AssignLocalRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void AssignLocalRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         if (scheduleResult.TryGetValue(MemoryLocation.ThreadLocalRdata, out var localRdataResult))
         {
             foreach (var lifetime in localRdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.DDrOf.Input];
+                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.LocalRdatas.Add(constValue, range);
             }
         }
     }
 
-    private void DumpSchedule(IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void DumpSchedule(IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
         foreach (var locationResult in scheduleResult)
         {
@@ -124,8 +134,8 @@ buffers = [
             int bufferId = 0;
             foreach (var lifetime in locationResult.Value.Buffers)
             {
-                var dims = new Shape(lifetime.Buffer.Dimensions).Select(x => $"'{x}'");
-                var strides = new Shape(lifetime.Buffer.Strides).ToValueArray();
+                var dims = new RankedShape(lifetime.Buffer.Dimensions).Select(x => $"'{x}'");
+                var strides = new RankedShape(lifetime.Buffer.Strides).Select(x => $"'{x}'");
                 wr.WriteLine($"ScheduledBuffer('{lifetime.Buffer.Name}', {bufferId}, {lifetime.Time}, {lifetime.Memory}, ConstraintsMode.No, [{string.Join(",", dims)}], [{string.Join(",", strides)}], {false}),");
                 bufferId++;
             }
@@ -152,9 +162,9 @@ color_dict = {}
 for buffer in buffers:
   source['name'].append(buffer.name)
   width = buffer.time_interval.end - buffer.time_interval.start
-  x = buffer.time_interval.start
+  x = buffer.time_interval.start + (width / 2)
   height = buffer.mem_interval.end - buffer.mem_interval.start
-  y = buffer.mem_interval.start
+  y = buffer.mem_interval.start + (height / 2)
   y_range_max = max(y_range_max, y)
   x_range_max = max(x_range_max, buffer.time_interval.end)
   source['x'].append(x)
@@ -203,6 +213,11 @@ show(p)");
             if (_buffers.TryGetValue(expr, out var lifetime))
             {
                 var start = Tensor.FromPointer((ulong)lifetime.Memory.Start, expr.ElemType);
+                if (start.ElementType is PointerType { ElemType: ReferenceType { ElemType: IR.NN.PagedAttentionKVCacheType ntype } } && expr.ElemType is ReferenceType { ElemType: IR.NN.PagedAttentionKVCacheType oldType })
+                {
+                    ntype.Config = oldType.Config;
+                }
+
                 var memSpan = expr.MemSpan.With(start: start);
                 return expr.With(memSpan: memSpan);
             }

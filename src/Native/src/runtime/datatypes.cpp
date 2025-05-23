@@ -30,6 +30,18 @@ prim_type_t datatype_t::float16(std::in_place, dt_float16);
 prim_type_t datatype_t::float32(std::in_place, dt_float32);
 prim_type_t datatype_t::float64(std::in_place, dt_float64);
 prim_type_t datatype_t::bfloat16(std::in_place, dt_bfloat16);
+prim_type_t datatype_t::float8e4m3(std::in_place, dt_float8e4m3);
+prim_type_t datatype_t::float8e5m2(std::in_place, dt_float8e5m2);
+value_type_t datatype_t::attention_kv_cache(std::in_place,
+                                            uuid_t({35, 198, 126, 104, 151, 17,
+                                                    132, 70, 131, 200, 56, 218,
+                                                    54, 248, 207, 165}),
+                                            8);
+value_type_t datatype_t::paged_attention_kv_cache(
+    std::in_place,
+    uuid_t({22, 80, 149, 246, 133, 241, 251, 70, 170, 95, 253, 206, 161, 200,
+            158, 246}),
+    8);
 
 result<prim_type_t> datatype_t::from_typecode(typecode_t typecode) {
     switch (typecode) {
@@ -59,6 +71,10 @@ result<prim_type_t> datatype_t::from_typecode(typecode_t typecode) {
         return ok(datatype_t::float64);
     case dt_bfloat16:
         return ok(datatype_t::bfloat16);
+    case dt_float8e4m3:
+        return ok(datatype_t::float8e4m3);
+    case dt_float8e5m2:
+        return ok(datatype_t::float8e5m2);
     default:
         return err(std::errc::invalid_argument);
     }

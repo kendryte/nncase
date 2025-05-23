@@ -9,6 +9,7 @@ using Nncase.CostModel;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.Utilities;
 using OrtKISharp;
 using static Nncase.Evaluator.EvaluatorUtil;
@@ -26,9 +27,26 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pad pad)
     {
-        var input = context.GetOrtArgumentValue(pad, Pad.Input);
+        var input = context.GetArgumentValue(pad, Pad.Input);
         var pads = context.GetInt64OrtTensorArgumentValue(pad, Pad.Pads);
-        var constValue = context.GetOrtArgumentValue(pad, Pad.Value);
+        var constValue = context.GetArgumentValue(pad, Pad.Value);
+
+        DataType? inType = null;
+        try
+        {
+            inType = context.CurrentCall.Arguments[Pad.Input.Index].CheckedDataType;
+            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
+            {
+                input = Cast(input.AsTensor(), DataTypes.Float32).Evaluate();
+                constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
+            }
+        }
+        catch
+        {
+        }
+
+        var inputOrt = input.AsTensor().ToOrtTensor();
+        var constValueOrt = constValue.AsTensor().ToOrtTensor();
 
         var mode = pad.PadMode switch
         {
@@ -49,7 +67,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
 
                 // input feature map quantParam count should be 1 since input feature map quant is by tensor.
                 Trace.Assert(quantParam.Count == 1);
-                var inputFloat = input.ToArray<float>();
+                var inputFloat = inputOrt.ToArray<float>();
                 for (var i = 0; i < inputFloat.Length; i++)
                 {
                     var inputBufQuant = (double)((inputFloat[i] / (double)quantParam[0].Scale) + quantParam[0].ZeroPoint);
@@ -62,17 +80,29 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
                     inputFloat[i] = (float)inputBufDeQuant;
                 }
 
-                input = OrtKISharp.Tensor.MakeTensor(inputFloat, input.Shape);
+                inputOrt = OrtKISharp.Tensor.MakeTensor(inputFloat, inputOrt.Shape);
             }
         }
 
         if (pad.PadMode == PadMode.Symmetric)
         {
-            return SymmetricPad(input, ToOnnxPadFormat(pads), constValue).ToValue();
+            var ret = SymmetricPad(inputOrt, ToOnnxPadFormat(pads), constValueOrt).ToValue();
+            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
+            {
+                ret = Cast(ret.AsTensor(), inType).Evaluate().AsTensor();
+            }
+
+            return ret;
         }
         else
         {
-            return OrtKI.Pad(input, ToOnnxPadFormat(pads), constValue, mode).ToValue();
+            var ret = OrtKI.Pad(inputOrt, ToOnnxPadFormat(pads), constValueOrt, mode).ToValue();
+            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
+            {
+                ret = Cast(ret.AsTensor(), inType).Evaluate().AsTensor();
+            }
+
+            return ret;
         }
     }
 
@@ -80,26 +110,52 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     public IRType Visit(ITypeInferenceContext context, Pad target)
     {
         var input = context.CheckArgumentType<IRType>(target, Pad.Input);
-        var paddingsType = context.CheckArgumentTensorTypeOrBroadcast(target, Pad.Pads);
-        var paddings = context.GetArgument(target, Pad.Pads);
-        var padValue = context.GetArgument(target, Pad.Value);
+        var paddings = (Paddings)context.GetArgument(target, Pad.Pads);
+        var padValue = (Expr)context.GetArgument(target, Pad.Value);
         return input switch
         {
-            DistributedType distributedType => Visit(distributedType, paddingsType, paddings, padValue),
-            TensorType tensorType => TypeInference.PadType(tensorType, paddingsType, paddings, padValue),
+            DistributedType distributedType => Visit(distributedType, paddings, padValue),
+            TensorType tensorType => TypeInference.PadType(tensorType, paddings, padValue),
             AnyType anyType => anyType,
             _ => new InvalidType("The pad input type not support"),
         };
     }
 
-    public IRType Visit(DistributedType input, TensorType paddingsType, Expr paddings, Expr padValue)
+    public IRType Visit(DistributedType input, Paddings paddings, Expr padValue)
     {
-        if (TypeInference.PadType(input.TensorType, paddingsType, paddings, padValue) is not TensorType tensorType)
+        if (TypeInference.PadType(input.TensorType, paddings, padValue) is not TensorType tensorType)
         {
             return new InvalidType("pad infer type failed");
         }
 
-        return new DistributedType(tensorType, input.AxisPolices, input.Placement);
+        var ndsbp = new SBP[input.TensorType.Shape.Rank];
+        if (paddings.IsFixed)
+        {
+            var padsPerDim = Enumerable.Range(0, paddings.Rank).Select(i => paddings[i].Sum().FixedValue).ToArray();
+            for (var i = 0; i < input.AxisPolices.Count; i++)
+            {
+                if (input.AxisPolices[i] is SBPSplit split && padsPerDim[i] != 0)
+                {
+                    return new InvalidType("pad not support split on axes for now.");
+                }
+
+                ndsbp[i] = input.AxisPolices[i];
+            }
+        }
+        else
+        {
+            for (var i = 0; i < input.AxisPolices.Count; i++)
+            {
+                if (input.AxisPolices[i] is SBPSplit)
+                {
+                    return new InvalidType("dynamic pad not support split on axes for now.");
+                }
+
+                ndsbp[i] = input.AxisPolices[i];
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbp, input.Placement);
     }
 
     /// <inheritdoc/>

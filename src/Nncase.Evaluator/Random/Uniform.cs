@@ -30,14 +30,8 @@ public class UniformEvaluator : IEvaluator<Uniform>, ITypeInferencer<Uniform>, I
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Uniform target)
     {
-        if (context.GetArgument(target, Uniform.Shape) is TensorConst shapeValue)
-        {
-            return new TensorType(target.Type, new Shape(shapeValue.Value.ToArray<long>()));
-        }
-        else
-        {
-            return new TensorType(target.Type, Shape.Unranked);
-        }
+        var shape = (Shape)context.GetArgument(target, Uniform.Shape);
+        return new TensorType(target.Type, shape);
     }
 
     /// <inheritdoc/>

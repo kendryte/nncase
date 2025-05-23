@@ -28,9 +28,9 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Range target)
     {
-        var begin = context.GetArgument(target, Range.Begin);
-        var end = context.GetArgument(target, Range.End);
-        var step = context.GetArgument(target, Range.Step);
+        var begin = (Expr)context.GetArgument(target, Range.Begin);
+        var end = (Expr)context.GetArgument(target, Range.End);
+        var step = (Expr)context.GetArgument(target, Range.Step);
         var dType = begin.CheckedDataType;
         if (!(begin.CheckedDataType == end.CheckedDataType &&
               end.CheckedDataType == step.CheckedDataType))
@@ -48,13 +48,13 @@ public class RangeEvaluator : IEvaluator<Range>, ITypeInferencer<Range>, ICostEv
 
         if (begin is TensorConst beginConst && end is TensorConst endConst && step is TensorConst stepConst)
         {
-            var dim = (long)MathF.Ceiling(beginConst.Value.ToScalar<float>() + endConst.Value.ToScalar<float>()) / stepConst.Value.ToScalar<float>();
-            return new TensorType(dType, new Shape(dim));
+            var dim = (long)MathF.Ceiling((beginConst.Value.ToScalar<float>() + endConst.Value.ToScalar<float>()) / stepConst.Value.ToScalar<float>());
+            return new TensorType(dType, new RankedShape(dim));
         }
         else
         {
-            var dim = IR.F.Tensors.Cast(IR.F.Math.CeilDiv(begin + end, step), DataTypes.Int64);
-            return new TensorType(dType, new Shape(dim));
+            var dim = IR.F.Tensors.Cast(IR.F.Math.CeilDiv(begin + end, step), DataTypes.Int64).AsDim();
+            return new TensorType(dType, new RankedShape(dim));
         }
     }
 

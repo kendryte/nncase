@@ -31,21 +31,15 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     public IValue Visit(IEvaluateContext context, Slice sl)
     {
         OrtKISharp.Tensor input;
-
-        var inputOrg = context.GetArgumentValue(sl, Slice.Input).AsTensor();
-        var dataType = inputOrg.ElementType;
-        if (dataType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
+        var inputTensor = context.GetArgumentValueAsTensor(sl, Slice.Input);
+        var inputElemType = inputTensor.ElementType;
+        if (TryGetTempDataType(inputTensor.ElementType, out var tempType))
         {
-            var interType = new VectorType(DataTypes.Float32, vType.Lanes);
-            input = Nncase.IR.F.Tensors.Cast(inputOrg, interType).Evaluate().AsTensor().ToOrtTensor();
-        }
-        else if (dataType is not VectorType && dataType.IsFloat() && dataType != DataTypes.Float32)
-        {
-            input = Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+            input = inputTensor.CastTo(tempType).ToOrtTensor();
         }
         else
         {
-            input = context.GetOrtArgumentValue(sl, Slice.Input);
+            input = inputTensor.ToOrtTensor();
         }
 
         var begins = context.GetInt64OrtTensorArgumentValue(sl, Slice.Begins);
@@ -53,13 +47,37 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var axes = context.GetInt64OrtTensorArgumentValue(sl, Slice.Axes);
         var strides = context.GetInt64OrtTensorArgumentValue(sl, Slice.Strides);
         var sliced = OrtKI.Slice(input, begins, ends, axes, strides);
-        if (dataType.IsFloat() && dataType != DataTypes.Float32)
+
+        switch (context.CurrentCall.CheckedType)
         {
-            return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor().CastTo(dataType) : sliced.ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
-        }
-        else
-        {
-            return Value.FromTensor(context.CurrentCall.CheckedType is AnyType ? sliced.ToTensor() : sliced.ToTensor(context.CurrentCall.CheckedTensorType));
+            case AnyType:
+                {
+                    var slicedTensor = sliced.ToTensor();
+                    if (tempType is not null)
+                    {
+                        slicedTensor = slicedTensor.CastTo(inputElemType);
+                    }
+
+                    return Value.FromTensor(slicedTensor);
+                }
+
+            case TensorType tensorType:
+                {
+                    Tensor slicedTensor;
+                    if (tempType is not null)
+                    {
+                        slicedTensor = sliced.ToTensor(tensorType with { DType = tempType }).CastTo(inputElemType);
+                    }
+                    else
+                    {
+                        slicedTensor = sliced.ToTensor(tensorType);
+                    }
+
+                    return Value.FromTensor(slicedTensor);
+                }
+
+            default:
+                throw new NotSupportedException("Unsupported type.");
         }
     }
 
@@ -67,10 +85,6 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     public IRType Visit(ITypeInferenceContext context, Slice target)
     {
         var input = context.CheckArgumentType<IRType>(target, Slice.Input);
-        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Begins);
-        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Ends);
-        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Axes);
-        context.CheckArgumentTensorTypeOrBroadcast(target, Slice.Strides);
         return input switch
         {
             TensorType t => Visit(context, target, t),
@@ -104,21 +118,21 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
     /// <param name="axes">Axes.</param>
     /// <param name="input">Input type.</param>
     /// <param name="f">(index in axis, axis, inDim) -> outDim.</param>
-    private static Shape ApplyAxis(int[] axes, TensorType input, Func<int, int, Dimension, Dimension> f)
+    private static Shape ApplyAxis(long[] axes, TensorType input, Func<int, long, Dimension, Dimension> f)
     {
-        if (input.Shape.IsUnranked)
+        if (input.Shape is not RankedShape inShape)
         {
             return Shape.Unranked;
         }
 
-        var outShape = input.Shape.ToArray();
+        var outShape = inShape.ToArray();
         for (int i = 0; i < axes.Length; i++)
         {
             var axisV = axes[i];
             var axis = axisV < 0
-                ? axisV + input.Shape.Rank
+                ? axisV + inShape.Rank
                 : axisV;
-            outShape[axis] = f(i, axis, input.Shape[axis]);
+            outShape[axis] = f(i, axis, inShape[axis]);
         }
 
         return outShape;
@@ -126,16 +140,8 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
 
     private static Dimension TranslateBeginEnd(Dimension x, Dimension dim, long lowerBound, long upperBoundBias)
     {
-        if (x.IsFixed)
-        {
-            var newX = x.FixedValue < 0 ? dim + x : x;
-            return Dimension.Clamp(newX, lowerBound, dim + upperBoundBias);
-        }
-        else
-        {
-            var newX = Select(x.Value < 0L, (dim + x).ToExpr(), x.ToExpr());
-            return Dimension.Clamp(newX, lowerBound, dim + upperBoundBias);
-        }
+        var newX = Dimension.Positive(x, dim);
+        return Dimension.Clamp(newX, lowerBound, dim + upperBoundBias);
     }
 
     private IRType Visit(ITypeInferenceContext context, Slice target, TensorType input)
@@ -145,26 +151,26 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return input;
         }
 
-        if (input.Shape.IsRanked && input.Shape.Count == 0)
+        if (input.Shape.IsScalar)
         {
             return new InvalidType("Slice Input should not scalar");
         }
 
-        var axes = ((TensorConst)context.GetDimensionArgument(target, Slice.Axes)).Value.ToArray<int>();
-        var strides = ((TensorConst)context.GetDimensionArgument(target, Slice.Strides)).Value.ToArray<long>();
-        var begins = context.GetDimensionArgument(target, Slice.Begins);
-        var ends = context.GetDimensionArgument(target, Slice.Ends);
-        if (begins.CheckedShape.IsFixed)
+        var axes = ((Shape)context.GetArgument(target, Slice.Axes)).ToValueArray();
+        var strides = ((Shape)context.GetArgument(target, Slice.Strides)).ToValueArray();
+        var begins = (Shape)context.GetArgument(target, Slice.Begins);
+        var ends = (Shape)context.GetArgument(target, Slice.Ends);
+        if (begins.IsRanked)
         {
-            if (ends.CheckedShape.IsFixed)
+            if (ends.IsRanked)
             {
-                if (begins.CheckedShape[0].FixedValue != ends.CheckedShape[0].FixedValue)
+                if (begins.Rank != ends.Rank)
                 {
                     return new InvalidType("Slice begins, ends, strides should be same length");
                 }
             }
 
-            if (begins.CheckedShape[0].FixedValue != strides.Length)
+            if (begins.Rank != strides.Length)
             {
                 return new InvalidType("Slice begins, ends, strides should be same length");
             }
@@ -206,12 +212,38 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             return new InvalidType("not support input tensor type infer");
         }
 
-        var axes = ((TensorConst)context.GetArgument(target, Slice.Axes)).Value.ToArray<int>();
+        var axes = ((Shape)context.GetArgument(target, Slice.Axes)).ToValueArray();
         if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && axes.Contains(i)))
         {
             return new InvalidType("not support input tensor type infer");
         }
 
         return new DistributedType((TensorType)outType, input.AxisPolices, input.Placement);
+    }
+
+    private bool TryGetTempDataType(DataType dataType, out DataType tempType)
+    {
+        tempType = null!;
+        bool change = false;
+
+        switch (dataType)
+        {
+            case PrimType pt when pt == DataTypes.Float8E4M3 || pt == DataTypes.Float8E5M2:
+                tempType = DataTypes.Float32;
+                change = true;
+                break;
+            case VectorType vtype:
+                if (TryGetTempDataType(vtype.ElemType, out var tempElemType))
+                {
+                    tempType = vtype with { ElemType = tempElemType };
+                    change = true;
+                }
+
+                break;
+            default:
+                break;
+        }
+
+        return change;
     }
 }

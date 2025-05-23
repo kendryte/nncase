@@ -18,7 +18,7 @@ namespace Nncase.IR;
 public sealed class None : Expr, IEquatable<None?>
 {
     private None()
-        : base(Array.Empty<Expr>())
+        : base(Array.Empty<BaseExpr>())
     {
     }
 

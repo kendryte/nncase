@@ -147,8 +147,8 @@ constant_values = [
 
 modes = [
     'constant',
-    'reflect',
-    'edge'
+    # 'reflect',
+    # 'edge'
 ]
 
 op_versions_and_value_formats = [

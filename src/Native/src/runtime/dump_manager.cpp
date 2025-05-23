@@ -7,7 +7,6 @@
 #endif
 #include <nncase/runtime/dump_manager.h>
 #include <nncase/runtime/result.h>
-#include <nncase/runtime/stackvm/opcode.h>
 
 #if defined(__nds_v5)
 #include <experimental/filesystem>
@@ -30,12 +29,6 @@ void dump_manager::set_dump_root(std::string root) {
     dump_root_ = dump_root.string();
     // reset count for each dir
     count_ = 1;
-}
-
-void dump_manager::dump_op(
-    nncase::runtime::stackvm::tensor_function_t tensor_funct) {
-    auto func_str = to_string(tensor_funct);
-    dump_op(func_str);
 }
 
 void dump_manager::dump_op(const std::string &func_str) {

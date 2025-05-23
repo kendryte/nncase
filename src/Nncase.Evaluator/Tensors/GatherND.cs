@@ -65,17 +65,19 @@ public class GatherNDEvaluator : IEvaluator<GatherND>, ITypeInferencer<GatherND>
     {
         if (context.GetArgument(target, GatherND.BatchDims) is TensorConst batchDimsValue)
         {
-            var lastIndexDims = index.Shape[index.Shape.Count - 1];
+            var inShape = (RankedShape)input.Shape;
+            var indexShape = (RankedShape)index.Shape;
+            var lastIndexDims = indexShape[^1];
             if (!lastIndexDims.IsFixed)
             {
                 return new InvalidType("GatherND input last dim is dynamic, can't infer result shape");
             }
 
             // result shape = index_shape[:-1] + input_shape[index_shape[-1] + batch_dims:]
-            var dimensions = index.Shape.ToArray()[..(index.Shape.Rank - 1)];
+            var dimensions = indexShape[..(index.Shape.Rank - 1)];
             var d = (int)lastIndexDims.FixedValue + batchDimsValue.Value.ToScalar<int>();
-            var shapeValue = dimensions.Concat(input.Shape.ToArray()[d..]);
-            return new TensorType(input.DType, new IR.Shape(shapeValue));
+            var shapeValue = new RankedShape([.. dimensions, .. inShape[d..]]);
+            return new TensorType(input.DType, shapeValue);
         }
         else
         {

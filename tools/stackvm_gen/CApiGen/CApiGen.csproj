@@ -48,6 +48,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\modules\Nncase.Modules.CPU\Nncase.Modules.CPU.csproj" />
+    <ProjectReference Include="..\..\..\modules\Nncase.Modules.NTT\Nncase.Modules.NTT.csproj" />
   </ItemGroup>
 </Project>

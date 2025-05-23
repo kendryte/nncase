@@ -39,7 +39,7 @@ public abstract class BufferScheduler
                 }
             }
         }
-        else if (memoryLocation is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata)
+        else if (memoryLocation is MemoryLocation.Output or MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata)
         {
             var scheduler = new LinearBufferScheduler(memoryLocation);
             if (scheduler.TrySchedule(lifetimes, out var result))
@@ -56,7 +56,7 @@ public abstract class BufferScheduler
         var result = new Dictionary<MemoryLocation, BufferScheduleResult>();
         foreach (var group in lifetimes.GroupBy(x => x.Buffer.MemSpan.Location))
         {
-            if (group.Key is MemoryLocation.Data or MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata)
+            if (group.Key is MemoryLocation.Output or MemoryLocation.Data or MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata)
             {
                 result.Add(group.Key, Schedule(group.Key, group));
             }

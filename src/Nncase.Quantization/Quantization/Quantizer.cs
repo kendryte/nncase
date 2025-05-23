@@ -37,7 +37,7 @@ internal partial class Quantizer
         MarkMarkers();
     }
 
-    public Dictionary<ENode, List<Tensor>> GetMarkerOutputGroundTruth(List<IReadOnlyDictionary<Var, IValue>> samples)
+    public Dictionary<ENode, List<Tensor>> GetMarkerOutputGroundTruth(List<IReadOnlyDictionary<IVar, IValue>> samples)
     {
         var markerOutputGroundTruth = new Dictionary<ENode, List<Tensor>>(ReferenceEqualityComparer.Instance);
         foreach (var sample in samples)
@@ -63,7 +63,7 @@ internal partial class Quantizer
         return markerOutputGroundTruth;
     }
 
-    public void DumpCosineAndMRE(Dictionary<ENode, List<Tensor>> markerOutputGroundTruth, List<IReadOnlyDictionary<Var, IValue>> samples)
+    public void DumpCosineAndMRE(Dictionary<ENode, List<Tensor>> markerOutputGroundTruth, List<IReadOnlyDictionary<IVar, IValue>> samples)
     {
         var cosineError = new Dictionary<string, float[]>();
         var mreError = new Dictionary<string, float[]>();
@@ -648,7 +648,7 @@ internal partial class Quantizer
         foreach (var range in ranges)
         {
             var value = new[] { range.Value.Min, range.Value.Max };
-            var rangeEclass = _graph.Add(value);
+            var rangeEclass = _graph.Add((Expr)value);
             var rangeOfEclass = _graph.Find(range.Key);
             _graph.Union(rangeOfEclass, rangeEclass);
         }

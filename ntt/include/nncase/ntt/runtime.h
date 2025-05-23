@@ -32,9 +32,29 @@ namespace nncase::ntt::runtime {
 struct thread_inout_desc {
     std::byte *data;
     size_t size;
-    const size_t *shape;
-    const size_t *strides;
+    size_t *shape;
+    size_t *strides;
     size_t rank;
+};
+
+struct thread_paged_attention_kv_cache_desc {
+    size_t num_seqs;
+    size_t num_tokens;
+    int64_t *context_lens; // [num_seqs]
+    size_t context_lens_size;
+    int64_t *seq_lens; // [num_seqs]
+    size_t seq_lens_size;
+
+    // Paged attention specific parameters
+    int64_t *block_table;         // [num_seqs][num_context][block_table_size]
+    size_t block_table_shape[3];  // [dim0, dim1, dim2]
+    int64_t *slot_mapping;        // [num_tokens][slot_mapping_size]
+    size_t slot_mapping_shape[2]; // [dim0, dim1]
+    size_t num_blocks;
+
+    // KV storage related
+    std::array<intptr_t, 128> kv_storages; // Raw pointers to KV storage data
+    std::array<int32_t, 8> kv_shape;
 };
 
 void *thread_alloc(size_t bytes, size_t alignment);
@@ -42,6 +62,10 @@ void thread_free(void *ptr);
 } // namespace nncase::ntt::runtime
 
 extern "C" void
-thread_main(const nncase::ntt::runtime::thread_inout_desc *inouts,
+thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
+            nncase::ntt::runtime::thread_inout_desc *const output_descs,
             const std::byte *rdata, const std::byte *local_rdata,
-            nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__> program_ids);
+            std::byte *output,
+            nncase::ntt::ranked_shape<
+                (size_t)nncase::ntt::distributed::topology::count__>
+                program_ids);

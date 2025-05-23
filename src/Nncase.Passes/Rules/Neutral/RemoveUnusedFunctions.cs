@@ -32,28 +32,43 @@ public sealed class RemoveUnusedFunctions : ModulePass
     {
         while (true)
         {
-            var funcsToRemove = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
-            foreach (var func in input.Functions)
+            var funcs = new HashSet<BaseFunction>(ReferenceEqualityComparer.Instance);
+            if (input.Entry is not null)
             {
-                IRHelpers.DCE(func);
-                if (!ReferenceEquals(func, input.Entry)
-                    && func.Users.Count() == 1)
-                {
-                    funcsToRemove.Add(func);
-                }
+                funcs.Add(input.Entry);
+                var collector = new FuncCollector(funcs);
+                collector.Visit(input.Entry);
             }
 
-            if (funcsToRemove.Count == 0)
+            var toRemove = input.Functions.Except(funcs).ToArray();
+            if (toRemove.Length == 0)
             {
                 break;
             }
 
-            foreach (var func in funcsToRemove)
+            foreach (var funcToRemove in toRemove)
             {
-                input.Remove(func);
+                input.Remove(funcToRemove);
             }
         }
 
         return Task.FromResult(input);
+    }
+
+    private class FuncCollector : ExprWalker
+    {
+        public FuncCollector(HashSet<BaseFunction> funcs)
+            : base(true)
+        {
+            Funcs = funcs;
+        }
+
+        public HashSet<BaseFunction> Funcs { get; }
+
+        protected override Unit VisitLeafBaseFunction(BaseFunction expr)
+        {
+            Funcs.Add(expr);
+            return default;
+        }
     }
 }

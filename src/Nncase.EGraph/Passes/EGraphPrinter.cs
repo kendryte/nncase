@@ -23,6 +23,7 @@ using GiGraph.Dot.Types.Styling;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
 
@@ -283,21 +284,12 @@ public partial class EGraphPrinter
 
         protected override string VisitNone(None expr) => "None";
 
-        protected override string VisitShape(Shape shape) =>
-            shape.Kind switch
-            {
-                ShapeKind.Invalid => "Invalid",
-                ShapeKind.Unranked => "Unranked",
-                _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
-            };
+        protected override string VisitShape(Shape shape) => shape.ToString();
 
-        private string VisitDimension(Dimension dimension) =>
-            dimension.Kind switch
-            {
-                DimensionKind.Unknown => "?",
-                DimensionKind.Fixed => dimension.FixedValue.ToString(),
-                DimensionKind.Dynamic => dimension.Value is Var var ? $"%{var.Name}" : "...",
-                _ => throw new NotSupportedException(dimension.Kind.ToString()),
-            };
+        protected override string VisitDimension(Dimension expr) => expr.ToString();
+
+        protected override string VisitPadding(Padding expr) => expr.ToString();
+
+        protected override string VisitPaddings(Paddings expr) => expr.ToString();
     }
 }

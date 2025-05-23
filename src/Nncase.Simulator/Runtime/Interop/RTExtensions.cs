@@ -38,4 +38,18 @@ public static class RTExtensions
         TypeCode.Float8E5M2 => DataTypes.Float8E5M2,
         _ => throw new ArgumentOutOfRangeException(nameof(rt_dtype)),
     };
+
+    public static DataType ToDataType(this RTDataType rtDtype)
+    {
+        switch (rtDtype.TypeCode)
+        {
+            case TypeCode.VectorType:
+                var rtVectorType = (RTVectorType)RTDataType.FromRTDataType(rtDtype);
+                return new VectorType(rtVectorType.ElementType.ToDataType(), rtVectorType.Lanes);
+            case TypeCode tc when tc >= TypeCode.Boolean && tc <= TypeCode.Float8E5M2:
+                return ToPrimType(rtDtype);
+            default:
+                throw new ArgumentOutOfRangeException(nameof(rtDtype));
+        }
+    }
 }

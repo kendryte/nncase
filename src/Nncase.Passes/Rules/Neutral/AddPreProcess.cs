@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Imaging;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.Passes;
 using Nncase.PatternMatch;
 using OrtKISharp;
@@ -60,7 +61,7 @@ public sealed class AddPreProcess : ModulePass
             var a = new Var(new TensorType(newType[(int)inputType], inputShape));
 
             Expr newInput = a;
-            var oldShape = input.CheckedShape;
+            var oldShape = ((Expr)input).CheckedShape;
 
             // Convert new input to NCHW
             var newInputPerm = Array.Empty<int>();
@@ -121,7 +122,7 @@ public sealed class AddPreProcess : ModulePass
             {
                 var qP = QuantParamOf(QuantMode.UnsignedMode, new[] { inputRange[0], inputRange[1] }, 8);
                 var dequantize = Dequantize(newInput, qP, DataTypes.Float32);
-                List<string> outputNames = new() { input.Metadata.OutputNames?[0] + "_PreDequantize" };
+                List<string> outputNames = new() { ((Expr)input).Metadata.OutputNames?[0] + "_PreDequantize" };
                 dequantize.Metadata.OutputNames = outputNames;
                 newInput = dequantize;
             }
@@ -144,7 +145,7 @@ public sealed class AddPreProcess : ModulePass
                 {
                     var ratio = Math.Min(modelH / (float)h, modelW / (float)w);
 
-                    var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 0, 0, 0, 0 }, new Shape(new[] { 4, 2 }));
+                    var pads = Enumerable.Repeat(Padding.Zero, 4).ToArray();
 
                     var resizeH = Math.Round(h * ratio);
                     var resizeW = Math.Round(w * ratio);
@@ -153,10 +154,8 @@ public sealed class AddPreProcess : ModulePass
                     var padW = modelW - resizeW;
                     var resizeShape = new int[] { n, c, (int)resizeH, (int)resizeW };
 
-                    pads[2, 0] = (int)Math.Round((padH / 2) - 0.1);
-                    pads[2, 1] = (int)padH - (int)Math.Round((padH / 2) - 0.1);
-                    pads[3, 0] = (int)Math.Round((padW / 2) - 0.1);
-                    pads[3, 1] = (int)padW - (int)Math.Round((padW / 2) - 0.1);
+                    pads[2] = ((int)Math.Round((padH / 2) - 0.1), (int)padH - (int)Math.Round((padH / 2) - 0.1));
+                    pads[3] = ((int)Math.Round((padW / 2) - 0.1), (int)padW - (int)Math.Round((padW / 2) - 0.1));
 
                     newInput = IR.F.NN.Pad(
                         IR.F.Imaging.ResizeImage(
@@ -191,8 +190,8 @@ public sealed class AddPreProcess : ModulePass
 
                 meanCall.Metadata.OutputNames = new[] { "Mean" };
                 stdCall.Metadata.OutputNames = new[] { "Std" };
-                var subMean = (newInput - meanCall).With(metadata: new IRMetadata() { OutputNames = new[] { input.Metadata.OutputNames?[0] + "_SubMean" } });
-                var divStd = (subMean / stdCall).With(metadata: new IRMetadata() { OutputNames = new[] { input.Metadata.OutputNames?[0] + "_DivStd" } });
+                var subMean = (newInput - meanCall).With(metadata: new IRMetadata() { OutputNames = new[] { ((Expr)input).Metadata.OutputNames?[0] + "_SubMean" } });
+                var divStd = (subMean / stdCall).With(metadata: new IRMetadata() { OutputNames = new[] { ((Expr)input).Metadata.OutputNames?[0] + "_DivStd" } });
                 newInput = divStd;
 
                 // newInput = Binary(BinaryOp.Div, Binary(BinaryOp.Sub, newInput, Tensor.From(mean, new []{1,3,1,1})), Const.FromTensor(std) );

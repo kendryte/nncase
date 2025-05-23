@@ -26,6 +26,8 @@ public sealed partial class Cast : Op
 
     public CastMode CastMode { get; }
 
+    public IRArray<int> PackAxes { get; }
+
     /// <inheritdoc/>
     public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}";
 }

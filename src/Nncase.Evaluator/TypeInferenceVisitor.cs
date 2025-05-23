@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 
 namespace Nncase.Evaluator;
@@ -59,9 +60,9 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         VerifySubField(expr, expr.Buffer, TypePatternUtility.IsTensor());
         foreach (var r in expr.Region)
         {
-            VerifySubField(expr, r.Start, TypePatternUtility.IsIntegralScalar());
-            VerifySubField(expr, r.Stop, TypePatternUtility.IsIntegralScalar());
-            VerifySubField(expr, r.Stop, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, r.Start, TypePatternUtility.IsDimensionType());
+            VerifySubField(expr, r.Stop, TypePatternUtility.IsDimensionType());
+            VerifySubField(expr, r.Stop, TypePatternUtility.IsDimensionType());
         }
 
         // TODO: need infer the sub region shape/stride
@@ -75,15 +76,15 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         VerifySubField(expr, expr.MemSpan, TypePatternUtility.IsPointer() | TypePatternUtility.IsNoneType());
         foreach (var r in expr.Dimensions)
         {
-            VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, r, TypePatternUtility.IsDimensionType());
         }
 
         foreach (var r in expr.Strides)
         {
-            VerifySubField(expr, r, TypePatternUtility.IsIntegralScalar());
+            VerifySubField(expr, r, TypePatternUtility.IsDimensionType());
         }
 
-        var type = new TensorType(expr.ElemType, new Shape(expr.Dimensions));
+        var type = new TensorType(expr.ElemType, new RankedShape(expr.Dimensions));
         return type;
     }
 
@@ -111,9 +112,9 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <inheritdoc/>
     protected override IRType VisitLeafFor(Nncase.TIR.For expr)
     {
-        VerifySubField(expr, expr.Domain.Start, TypePatternUtility.IsIntegralScalar());
-        VerifySubField(expr, expr.Domain.Stop, TypePatternUtility.IsIntegralScalar());
-        VerifySubField(expr, expr.LoopVar, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Domain.Start, TypePatternUtility.IsDimensionType());
+        VerifySubField(expr, expr.Domain.Stop, TypePatternUtility.IsDimensionType());
+        VerifySubField(expr, expr.LoopVar, TypePatternUtility.IsDimensionType());
         VerifySubField(expr, expr.Body, TypePatternUtility.IsUnit());
 
         var type = TupleType.Void;
@@ -125,7 +126,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         foreach (var p in expr.Parameters)
         {
-            VerifySubField(expr, p);
+            VerifySubField(expr, (BaseExpr)p);
         }
 
         VerifySubField(expr, expr.Body);
@@ -140,7 +141,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         foreach (var p in expr.Parameters)
         {
-            VerifySubField(expr, p);
+            VerifySubField(expr, (Expr)p);
         }
 
         VerifySubField(expr, expr.Body);
@@ -221,7 +222,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     {
         foreach (var p in expr.Parameters)
         {
-            VerifySubField(expr, p);
+            VerifySubField(expr, (BaseExpr)p);
         }
 
         VerifySubField(expr, expr.Body);
@@ -238,9 +239,12 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
-    protected override IRType VisitLeafShape(Shape expr)
+    /// <inheritdoc/>
+    protected override IRType VisitLeafFunctionWrapper(FunctionWrapper expr)
     {
-        return NoneType.Default;
+        var returnType = ((CallableType)expr.Target.CheckedType).ReturnType;
+        var type = new CallableType(TupleType.Void, new(expr.ParameterTypes.Append(returnType)));
+        return type;
     }
 
     protected override IRType VisitLeafGrid(Grid expr)
@@ -293,6 +297,17 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
+    protected override IRType VisitLeafReturn(Return expr)
+    {
+        var valueTypes = expr.Values.AsValueEnumerable().Select(x => x.CheckedType).ToArray();
+        return valueTypes.Length switch
+        {
+            0 => TupleType.Void,
+            1 => valueTypes[0],
+            _ => new TupleType(valueTypes),
+        };
+    }
+
     /// <inheritdoc/>
     protected override IRType VisitLeafSequential(Sequential expr)
     {
@@ -301,7 +316,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
             VerifySubField(expr, expr.Fields[i], null, $"Sequential Line {i}");
         }
 
-        var type = TupleType.Void;
+        var type = expr.Fields.Length > 0 ? expr.Fields[^1].CheckedType : TupleType.Void;
         return type;
     }
 
@@ -324,10 +339,36 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
         return type;
     }
 
+    protected override IRType VisitLeafDimension(Dimension expr)
+    {
+        return expr.Kind switch
+        {
+            DimensionKind.Fixed => DimensionType.Fixed,
+            DimensionKind.Dynamic => DimensionType.Dynamic,
+            DimensionKind.Unknown => DimensionType.Unknown,
+            _ => throw new ArgumentOutOfRangeException(nameof(expr), expr, "Invalid DimensionKind"),
+        };
+    }
+
+    protected override IRType VisitLeafShape(Shape expr)
+    {
+        return new ShapeType(expr.Kind, expr.IsRanked ? expr.Rank : null);
+    }
+
+    protected override IRType VisitLeafPadding(Padding expr)
+    {
+        return new PaddingType(expr.Kind);
+    }
+
+    protected override IRType VisitLeafPaddings(Paddings expr)
+    {
+        return new PaddingsType(expr.Kind, expr.Count);
+    }
+
     protected override IRType VisitLeafMemSpan(MemSpan expr)
     {
         VerifySubField(expr, expr.Start, TypePatternUtility.IsNoneType() | TypePatternUtility.IsIntegralScalar() | TypePatternUtility.IsPointer());
-        VerifySubField(expr, expr.Size, TypePatternUtility.IsIntegralScalar());
+        VerifySubField(expr, expr.Size, TypePatternUtility.IsDimensionType());
         return expr.Start.CheckedType;
     }
 
@@ -341,24 +382,24 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
 
         Visit(expr.Expression);
 
-        if (expr.Var.TypeAnnotation is not AnyType)
+        if (expr.Var is Var var && var.TypeAnnotation is not AnyType)
         {
             // now we need custom visit the var.
             type = new InvalidType("The Let Bind Var Must Be Any Type!");
-            SetCheckedType(expr.Var, type);
+            SetCheckedType(var, type);
             SetCheckedType(expr.Body, type);
             return type;
         }
         else
         {
             // now change the var checkedtype
-            SetCheckedType(expr.Var, expr.Expression.CheckedType);
+            SetCheckedType((BaseExpr)expr.Var, expr.Expression.CheckedType);
             Visit(expr.Body);
             return VisitLeafLet(expr);
         }
     }
 
-    protected override IRType DispatchVisit(Expr expr)
+    protected override IRType DispatchVisit(BaseExpr expr)
     {
         if (IRHelpers.GetRawCheckedType(expr) is null)
         {
@@ -378,7 +419,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <summary>
     /// Verify the expression sub field type is valid.
     /// </summary>
-    private void VerifySubField(Expr parent, Expr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
+    private void VerifySubField(BaseExpr parent, BaseExpr field, TypePattern? pattern = null, [CallerArgumentExpression("field")] string? exprMsg = null)
     {
         pattern ??= TypePatternUtility.IsIRType();
         if (field.CheckedType is InvalidType invalidType)
@@ -398,7 +439,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <summary>
     /// set expr's current type.
     /// </summary>
-    private void SetCheckedType(Expr expr, IRType type)
+    private void SetCheckedType(BaseExpr expr, IRType type)
     {
         // note can't determine whether to update checkedtype
         // eg. old call[x,y] shape is [5,6]

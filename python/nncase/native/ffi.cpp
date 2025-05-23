@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 #include "pytype_utils.h"
+#include "runtime_tensor.h"
 #include "type_casters.h"
-#include <iostream>
+#include <llm_ffi.h>
 #include <nncase/compiler.h>
+#include <nncase/llm/paged_attention_kv_cache.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/version.h>
@@ -24,7 +26,6 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
-#include <sstream>
 
 namespace py = pybind11;
 using namespace nncase;
@@ -48,8 +49,6 @@ PYBIND11_MODULE(_nncase, m) {
                  }));
     m.def("initialize", nncase_clr_initialize);
     m.def("launch_debugger", []() { nncase_clr_api()->luanch_debugger(); });
-
-#include "runtime_tensor.inl"
 
     py::enum_<nncase_model_quant_mode_t>(m, "ModelQuantMode")
         .value("NoQuant", nncase_mqm_no_quant)
@@ -95,6 +94,10 @@ PYBIND11_MODULE(_nncase, m) {
                       py::overload_cast<const huggingface_options &>(
                           &import_options::huggingface_options));
 
+    py::enum_<huggingface_attenion_backend>(m, "HuggingFaceAttentionBackend")
+        .value("Default", huggingface_attenion_backend::_default)
+        .value("PagedAttention", huggingface_attenion_backend::paged_attention);
+
     py::class_<huggingface_options>(m, "HuggingFaceOptions")
         .def(py::init())
         .def_property(
@@ -107,7 +110,12 @@ PYBIND11_MODULE(_nncase, m) {
             py::overload_cast<bool>(&huggingface_options::output_hidden_states))
         .def_property("use_cache",
                       py::overload_cast<>(&huggingface_options::use_cache),
-                      py::overload_cast<bool>(&huggingface_options::use_cache));
+                      py::overload_cast<bool>(&huggingface_options::use_cache))
+        .def_property(
+            "attention_backend",
+            py::overload_cast<>(&huggingface_options::attention_backend),
+            py::overload_cast<huggingface_attenion_backend>(
+                &huggingface_options::attention_backend));
 
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
@@ -271,7 +279,7 @@ PYBIND11_MODULE(_nncase, m) {
       .value("SMT", hierarchy_kind_smt);
 
 
-    py::class_<cpu_target_options>(m, "CpuTargetOptions")
+    py::class_<cpu_target_options>(m, "NTTTargetOptions")
       .def(py::init())
       .def_property(
         "ModelName",
@@ -467,4 +475,14 @@ PYBIND11_MODULE(_nncase, m) {
              })
         .def("run",
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
+
+    register_runtime_tensor(m);
+    register_llm(m);
+    // register_kv_cache(m);
+
+    // py::class_<paged_attention_kv_cache>(m, "AttentionKVCache");
+
+    // py::class_<, typename options>
+
+    // register_llm_interpreter(m);
 }

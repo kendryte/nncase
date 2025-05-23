@@ -42,11 +42,12 @@ public abstract record IRType
             AnyType => 0,
             _ => 1,
         },
-        (TensorType t1, TensorType t2) => (t1, t2) switch
+        (TensorType t1, TensorType t2) => (t1.Shape, t2.Shape) switch
         {
-            var p when p.t1.Shape.Rank != p.t2.Shape.Rank ||
-                       p.t1.DType != p.t2.DType => throw new InvalidDataException($"The {this} can't compare with {rhs}"),
-            var p => p.t1.Shape.Where(d => d.IsFixed).Count().CompareTo(p.t2.Shape.Where(d => d.IsFixed).Count()),
+            (UnrankedShape, UnrankedShape) => 0,
+            (InvalidShape, InvalidShape) => 0,
+            (RankedShape s1, RankedShape s2) when s1.Rank == s2.Rank => s1.Where(d => d.IsFixed).Count().CompareTo(s2.Where(d => d.IsFixed).Count()),
+            _ => throw new InvalidDataException($"The {this} can't compare with {rhs}"),
         },
         (TupleType t1, TupleType t2) => (t1, t2) switch
         {
@@ -145,6 +146,7 @@ public sealed record TensorType(DataType DType, Shape Shape) : IRType
     {
         PrimType ptype => ptype.GetDisplayName() + (Shape.IsScalar ? string.Empty : Shape.ToString()),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
+        ReferenceType { ElemType: DataType etype } => $"&{etype.GetDisplayName()}",
         ValueType => $"{DType}",
         VectorType vtype => $"{vtype.ElemType}<{string.Join(",", vtype.Lanes)}>" + (Shape.IsScalar ? string.Empty : Shape.ToString()),
         _ => throw new NotSupportedException(DType.GetType().Name),
@@ -208,4 +210,36 @@ public sealed record NoneType : IRType
     private NoneType()
     {
     }
+}
+
+public sealed record DimensionType(DimensionKind Kind) : IRType
+{
+    public static readonly DimensionType Fixed = new(DimensionKind.Fixed);
+
+    public static readonly DimensionType Dynamic = new(DimensionKind.Dynamic);
+
+    public static readonly DimensionType Unknown = new(DimensionKind.Unknown);
+}
+
+public sealed record ShapeType(ShapeKind Kind, int? Rank = null) : IRType
+{
+    public static readonly ShapeType Scalar = new(ShapeKind.Fixed);
+
+    public static readonly ShapeType Unranked = new(ShapeKind.Unranked);
+
+    public static readonly ShapeType Invalid = new(ShapeKind.Invalid);
+
+    public static ShapeType Fixed(int rank) => new(ShapeKind.Fixed, rank);
+
+    public static ShapeType Unknown(int rank) => new(ShapeKind.HasUnknownDimension, rank);
+}
+
+public sealed record PaddingType(ShapeKind Kind) : IRType
+{
+    public static readonly PaddingType Fixed = new(ShapeKind.Fixed);
+}
+
+public sealed record PaddingsType(ShapeKind Kind, int Rank) : IRType
+{
+    public static PaddingsType Fixed(int rank) => new(ShapeKind.Fixed, rank);
 }

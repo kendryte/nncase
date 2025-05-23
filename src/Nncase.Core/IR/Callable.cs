@@ -15,11 +15,11 @@ namespace Nncase.IR;
 public abstract class Callable : Expr
 {
     /// <summary>
-    /// StackVM module kind.
+    /// CPU module kind.
     /// </summary>
-    public const string StackVMModuleKind = "stackvm";
+    public const string CPUModuleKind = "cpu";
 
-    public Callable(string name, string moduleKind, Expr[] operands)
+    public Callable(string name, string moduleKind, BaseExpr[] operands)
         : base(operands)
     {
         Name = name;

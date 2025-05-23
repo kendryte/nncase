@@ -22,6 +22,10 @@ internal interface IDataTypeServiceProvider
     DataType GetDataTypeFromType(Type type);
 
     ISpanConverter GetConverter(Type fromType, Type toType);
+
+    public ISpanConverter<TFrom, TTo> GetConverter<TFrom, TTo>()
+        where TFrom : unmanaged, IEquatable<TFrom>
+        where TTo : unmanaged, IEquatable<TTo> => (ISpanConverter<TFrom, TTo>)GetConverter(typeof(TFrom), typeof(TTo));
 }
 
 internal class DataTypeServiceProvider : IDataTypeServiceProvider
@@ -88,7 +92,12 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
 
     public ValueType GetValueTypeFromType(Type type)
     {
-        return _valueTypes[type.TypeHandle];
+        if (!_valueTypes.TryGetValue(type.TypeHandle, out var valueType))
+        {
+            throw new KeyNotFoundException($"can't find value type for {type.Name}!");
+        }
+
+        return valueType;
     }
 
     private class PointerSpanConverter<TElem, TTo> : ISpanConverter<Pointer<TElem>, TTo>

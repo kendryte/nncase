@@ -45,7 +45,7 @@ public class UnitTestBatchNormToBinary : TransformTestBase
     public void TestBatchNormToBinaryPositive(long[] shape)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, shape));
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, shape).Evaluate());
         var oc = shape[1];
         var bn = IR.F.NN.BatchNormalization(

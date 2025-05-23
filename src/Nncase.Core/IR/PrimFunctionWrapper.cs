@@ -28,7 +28,7 @@ public sealed class PrimFunctionWrapper : BaseFunction
     /// <param name="parametersCount">Arguments count.</param>
     /// <param name="hints">the type hints.</param>
     public PrimFunctionWrapper(string name, PrimFunction target, int parametersCount, params IRType[] hints)
-        : base(name, StackVMModuleKind, new Expr[] { target })
+        : base(name, CPUModuleKind, [target])
     {
         ParametersCount = parametersCount;
         TypeHints = hints;
@@ -60,13 +60,13 @@ public sealed class PrimFunctionWrapper : BaseFunction
         {
             var outputParams = Target.Parameters.AsValueEnumerable().Skip(ParametersCount).ToArray();
             return outputParams.Length == 1
-                ? (TypeHints.Count <= ParametersCount ? outputParams[0].CheckedType : TypeHints[ParametersCount])
-                : new TupleType(outputParams.Select((x, i) => TypeHints.Count <= ParametersCount ? x.CheckedType! : TypeHints[ParametersCount + i]));
+                ? (TypeHints.Count <= ParametersCount ? ((Expr)outputParams[0]).CheckedType : TypeHints[ParametersCount])
+                : new TupleType(outputParams.Select((x, i) => TypeHints.Count <= ParametersCount ? ((Expr)x).CheckedType! : TypeHints[ParametersCount + i]));
         }
     }
 
     /// <inheritdoc/>
-    public override IEnumerable<IRType> ParameterTypes => Target.Parameters.AsValueEnumerable().Take(ParametersCount).Select((x, i) => TypeHints.Count <= ParametersCount ? x.CheckedType : TypeHints[i]).ToArray();
+    public override IEnumerable<IRType> ParameterTypes => Target.Parameters.AsValueEnumerable().Take(ParametersCount).Select((x, i) => TypeHints.Count <= ParametersCount ? ((Expr)x).CheckedType : TypeHints[i]).ToArray();
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)

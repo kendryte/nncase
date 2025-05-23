@@ -1,0 +1,7 @@
+@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.Reduce>
+@(Model.Indent)if (@Html.Raw(Model.Arguments[2].Symbol.Name)) {
+@(Model.Indent)  reduce_@(Model.Target.ReduceOp.ToC())<fixed_shape<@(string.Join(",", Model.Target.Axes))>, fixed_shape<@(string.Join(",", Model.Target.PackedAxes))>, fixed_shape<@(string.Join(",", Model.Target.PadedNums))>, true>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name));
+@(Model.Indent)} else {
+@(Model.Indent)  reduce_@(Model.Target.ReduceOp.ToC())<fixed_shape<@(string.Join(",", Model.Target.Axes))>, fixed_shape<@(string.Join(",", Model.Target.PackedAxes))>, fixed_shape<@(string.Join(",", Model.Target.PadedNums))>, false>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name));
+@(Model.Indent)}
+

@@ -23,7 +23,7 @@ public class UnitTestFoldGetItemShapeOf : TransformTestBase
     {
         var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown, 24 }));
         var data = Testing.Rand<float>(1, 3, 24, 24);
-        var dict = new Dictionary<Var, IValue> { { input, Value.FromTensor(data) } };
+        var dict = new Dictionary<IVar, IValue> { { input, Value.FromTensor(data) } };
         TestMatched<FoldGetItemShapeOf>(ShapeOf(input)[1], dict);
     }
 
@@ -32,17 +32,17 @@ public class UnitTestFoldGetItemShapeOf : TransformTestBase
     {
         var input = new Var(new TensorType(DataTypes.Float32, new[] { 1, 3, Dimension.Unknown, 24 }));
         var data = Testing.Rand<float>(1, 3, 24, 24);
-        var dict = new Dictionary<Var, IValue> { { input, Value.FromTensor(data) } };
+        var dict = new Dictionary<IVar, IValue> { { input, Value.FromTensor(data) } };
         TestMatched<FoldGetItemShapeOf>(Cast(ShapeOf(input), DataTypes.Int32)[1], dict);
     }
 
     [Fact]
     public void TestFoldGetItemShapeOfWithDynamic()
     {
-        var dim = new Var(TensorType.Scalar(DataTypes.Int64));
+        var dim = new DimVar();
         var input = new Var(new TensorType(DataTypes.Float32, new Dimension[] { 1, 3, dim, 24 }));
         var data = Testing.Rand<float>(1, 3, 24, 24);
-        var dict = new Dictionary<Var, IValue> { { dim, Value.FromTensor(24L) }, { input, Value.FromTensor(data) } };
+        var dict = new Dictionary<IVar, IValue> { { dim, Value.FromTensor(24L) }, { input, Value.FromTensor(data) } };
         TestMatched<FoldGetItemShapeOf>(ShapeOf(input)[2], dict);
     }
 }

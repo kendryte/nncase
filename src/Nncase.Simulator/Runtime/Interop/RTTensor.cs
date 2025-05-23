@@ -188,17 +188,50 @@ public class RTTensor : RTValue
     /// <returns>Created runtime tensor.</returns>
     public static unsafe RTTensor FromTensor(Tensor tensor)
     {
-        var dtype = (PrimType)tensor.ElementType;
-        var sizeBytes = (uint)tensor.BytesBuffer.Length;
-        var buffer = RTBufferAllocator.Host.Allocate(sizeBytes).AsHost()!;
-        using (var mem = buffer.Map(RTMapAccess.Write))
+        var dtype = tensor.ElementType;
+        RTHostBuffer buffer;
+        uint sizeBytes;
+        if (dtype is ReferenceType)
         {
-            tensor.BytesBuffer.CopyTo(mem.Memory.Span);
+            var elemSize = sizeof(IntPtr);
+            sizeBytes = (uint)tensor.Length * (uint)elemSize;
+            buffer = RTBufferAllocator.Host.Allocate(sizeBytes).AsHost()!;
+            using (var mem = buffer.Map(RTMapAccess.Write))
+            {
+                if (tensor.Shape.IsScalar)
+                {
+                    if (tensor[[]] is IReference { Value: RTObject rtObject })
+                    {
+                        var handle = rtObject.DangerousGetHandle();
+                        Native.ObjectAddRef(handle);
+
+                        // todo: need add allocate options for auto release objects.
+                        MemoryMarshal.AsBytes([handle]).CopyTo(mem.Memory.Span);
+                    }
+                    else
+                    {
+                        throw new NotSupportedException("only support RTObject for reference type tensor!");
+                    }
+                }
+                else
+                {
+                    throw new NotSupportedException("only support scalar tensor for reference type tensor!");
+                }
+            }
+        }
+        else
+        {
+            sizeBytes = (uint)tensor.BytesBuffer.Length;
+            buffer = RTBufferAllocator.Host.Allocate(sizeBytes).AsHost()!;
+            using (var mem = buffer.Map(RTMapAccess.Write))
+            {
+                tensor.BytesBuffer.CopyTo(mem.Memory.Span);
+            }
         }
 
         var dims = MemoryMarshal.Cast<int, uint>(tensor.Dimensions.ToInts());
         var strides = MemoryMarshal.Cast<int, uint>(tensor.Strides.ToInts());
-        return Create(RTDataType.FromTypeCode(dtype.TypeCode), dims, strides, new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = sizeBytes });
+        return Create(RTDataType.From(dtype), dims, strides, new RTBufferSlice { Buffer = buffer, Start = 0, SizeBytes = sizeBytes });
     }
 
     /// <summary>
@@ -207,16 +240,17 @@ public class RTTensor : RTValue
     /// <returns>Copied tensor.</returns>
     public Tensor ToTensor()
     {
-        var dtype = DataType.FromTypeCode(ElementType.TypeCode);
+        var dtype = ElementType.ToDataType();
         var dims = MemoryMarshal.Cast<uint, int>(Dimensions);
         _ = MemoryMarshal.Cast<uint, int>(Strides);
         if (Buffer.SizeBytes > 0)
         {
-            var hostBuffer = Buffer.Buffer.AsHost()!;
-            using var owner = hostBuffer.Map(RTMapAccess.Read);
-            return Tensor.FromBytes(new TensorType(dtype, new(dims.ToArray())), owner.Memory.ToArray());
+            var outHost = Buffer.Buffer.AsHost()!;
+            using var owner = outHost.Map(RTMapAccess.Read);
+            var outHostSlice = owner.Memory.Slice((int)Buffer.Start, (int)Buffer.SizeBytes);
+            return Tensor.FromBytes(new TensorType(dtype, dims.ToArray()), outHostSlice.ToArray());
         }
 
-        return Tensor.FromBytes(new TensorType(dtype, new(dims.ToArray())), Array.Empty<byte>());
+        return Tensor.FromBytes(new TensorType(dtype, dims.ToArray()), Array.Empty<byte>());
     }
 }

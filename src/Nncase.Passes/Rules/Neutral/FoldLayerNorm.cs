@@ -79,10 +79,10 @@ public sealed partial class FoldLayerNormPattern1 : RewriteRule<CallPattern>
     {
         if (subCall[Binary.Lhs] == rd1Call[Reduce.Input] && divCall[Binary.Lhs] == subCall)
         {
-            var axis = addBetaCall.CheckedShape.Count - gamma.CheckedShape.Count;
+            var axis = addBetaCall.CheckedShape.Rank - gamma.CheckedShape.Rank;
             bool cFirst = false;
             var axes = rd1Call[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
-            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Rank - 1 && axes[0] != -1)
             {
                 cFirst = true;
             }
@@ -147,10 +147,10 @@ public sealed partial class FoldLayerNormPattern2 : RewriteRule<CallPattern>
         if ((subCall[Binary.Lhs] == rd1Call[Reduce.Input] || subCall[Binary.Rhs] == rd1Call[Reduce.Input]) &&
             divCall[Binary.Lhs] == subCall)
         {
-            var axis = addBetaCall.CheckedShape.Count - gamma.CheckedShape.Count;
+            var axis = addBetaCall.CheckedShape.Rank - gamma.CheckedShape.Rank;
             bool cFirst = false;
             var axes = rd1Call[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
-            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Rank - 1 && axes[0] != -1)
             {
                 cFirst = true;
             }
@@ -223,10 +223,10 @@ public sealed partial class FoldLayerNormPattern3 : RewriteRule<CallPattern>
         if (mulMuCall[Binary.Lhs] == subMuCall[Binary.Rhs] && mulMuCall[Binary.Rhs] == mulXCall[Binary.Rhs] &&
             mulXCall[Binary.Lhs] == subMuCall[Binary.Lhs] && mulXCall[Binary.Lhs] == rdMuCall[Reduce.Input])
         {
-            var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
+            var axis = addAllCall.CheckedShape.Rank - gamma.CheckedShape.Rank;
             bool cFirst = false;
             var axes = rdMuCall[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
-            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Rank - 1 && axes[0] != -1)
             {
                 cFirst = true;
             }
@@ -301,10 +301,10 @@ public sealed partial class FoldLayerNormPattern4 : RewriteRule<CallPattern>
         if (subMulCall[Binary.Lhs] == subMulCall[Binary.Rhs] && mulXCall[Binary.Rhs] == mulMuCall[Binary.Rhs] &&
             subCall[Binary.Lhs] == mulXCall[Binary.Lhs] && subCall[Binary.Rhs] == mulMuCall[Binary.Lhs] && mulXCall[Binary.Lhs] == meanCall[Reduce.Input])
         {
-            var axis = addAllCall.CheckedShape.Count - gamma.CheckedShape.Count;
+            var axis = addAllCall.CheckedShape.Rank - gamma.CheckedShape.Rank;
             bool cFirst = false;
             var axes = meanCall[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
-            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Rank - 1 && axes[0] != -1)
             {
                 cFirst = true;
             }
@@ -361,11 +361,11 @@ public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
     {
         if (input == pow2Call[Binary.Lhs] && one.Value.Cast<float>().Single() == 1f && two.Value.Cast<float>().Single() == 2f)
         {
-            var axis = pow2Call.CheckedShape.Count - gamma.CheckedShape.Count;
-            var beta = Tensor.FromScalar(0f, gamma.CheckedShape);
+            var axis = pow2Call.CheckedShape.Rank - gamma.CheckedShape.Rank;
+            var beta = Tensor.FromScalar(0f, gamma.CheckedShape.ToValueArray());
             bool cFirst = false;
             var axes = rdVarCall[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
-            if (axes.Length == 1 && axes[0] != input.CheckedShape.Count - 1 && axes[0] != -1)
+            if (axes.Length == 1 && axes[0] != input.CheckedShape.Rank - 1 && axes[0] != -1)
             {
                 cFirst = true;
             }
@@ -414,12 +414,12 @@ public sealed partial class ConvertLayerNormChannelFirstToLast : RewriteRule<Cal
         int axis = ln.Axis;
         float eps = ln.Epsilon;
         bool useMean = ln.UseMean;
-        if ((axis == x.CheckedShape.Count - 1) || (axis == -1))
+        if ((axis == x.CheckedShape.Rank - 1) || (axis == -1))
         {
             return null;
         }
 
-        var inPerm = GetPermWithAxis(axis, x.CheckedShape.Count);
+        var inPerm = GetPermWithAxis(axis, x.CheckedShape.Rank);
         var outPerm = new List<int>();
         for (int i = 0; i < inPerm.Count; i++)
         {
@@ -430,21 +430,21 @@ public sealed partial class ConvertLayerNormChannelFirstToLast : RewriteRule<Cal
         var newBias = bias;
 
         // the permutation of scale and bias must be the same.
-        if (scale.CheckedShape.Count != 1 && bias.CheckedShape.Count != 1)
+        if (scale.CheckedShape.Rank != 1 && bias.CheckedShape.Rank != 1)
         {
-            int axisGap = x.CheckedShape.Count - scale.CheckedShape.Count;
+            int axisGap = x.CheckedShape.Rank - scale.CheckedShape.Rank;
             if (axisGap > axis)
             {
                 // Never reach here.
                 return null;
             }
 
-            var constPerm = GetPermWithAxis(axis - axisGap, scale.CheckedShape.Count);
+            var constPerm = GetPermWithAxis(axis - axisGap, scale.CheckedShape.Rank);
 
             newScale = Tensors.Transpose(scale, constPerm.ToArray());
             newBias = Tensors.Transpose(bias, constPerm.ToArray());
         }
 
-        return Tensors.Transpose(LayerNorm(x.CheckedShape.Count - 1, eps, Tensors.Transpose(x, inPerm.ToArray()), newScale, newBias, useMean, true), outPerm.ToArray());
+        return Tensors.Transpose(LayerNorm(x.CheckedShape.Rank - 1, eps, Tensors.Transpose(x, inPerm.ToArray()), newScale, newBias, useMean, true), outPerm.ToArray());
     }
 }

@@ -23,7 +23,7 @@ public interface IRewriteRule
     /// <param name="result">Match result.</param>
     /// <param name="context">Run pass context.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
-    Expr? GetReplace(IMatchResult result, RunPassContext context);
+    BaseExpr? GetReplace(IMatchResult result, RunPassContext context);
 
     /// <summary>
     /// Get replaced experssions.
@@ -31,16 +31,10 @@ public interface IRewriteRule
     /// <param name="result">Match result.</param>
     /// <param name="context">Run pass context.</param>
     /// <returns>Replace expression or null if nothing changed.</returns>
-    List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
+    IReadOnlyList<BaseExpr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
     {
-        var candidates = new List<Expr> { };
         var expr = GetReplace(result, context);
-        if (expr is not null)
-        {
-            candidates.Add(expr);
-        }
-
-        return candidates;
+        return expr is null ? Array.Empty<BaseExpr>() : [expr];
     }
 }
 

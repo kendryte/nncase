@@ -24,7 +24,7 @@ public sealed partial class Load : Op
     /// <summary>
     /// Gets index.
     /// </summary>
-    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsIntegralScalar());
+    public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsDimensionType());
 
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;

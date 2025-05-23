@@ -48,7 +48,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
 
     public override Unit DefaultVisitTypeLeaf(IRType type, Unit context) => default;
 
-    protected override ValueRange<double> DispatchVisit(Expr expr)
+    protected override ValueRange<double> DispatchVisit(BaseExpr expr)
     {
         if (expr.Metadata.Range is null)
         {
@@ -58,7 +58,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         return expr.Metadata.Range!.Value;
     }
 
-    protected override ValueRange<double> DefaultVisitLeaf(Expr expr)
+    protected override ValueRange<double> DefaultVisitLeaf(BaseExpr expr)
     {
         return expr.Metadata.Range ?? ValueRange<double>.Full;
     }
@@ -89,14 +89,19 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         }
     }
 
-    protected override ValueRange<double> VisitLeafShape(Shape expr)
+    protected override ValueRange<double> VisitLeafUnrankedShape(UnrankedShape expr)
+    {
+        return Visit(expr.Value);
+    }
+
+    protected override ValueRange<double> VisitLeafRankedShape(RankedShape expr)
     {
         if (!expr.Any())
         {
             return ValueRange<double>.Full;
         }
 
-        var ranges = expr.Select(x => x.IsFixed ? new ValueRange<double>(x.FixedValue, x.FixedValue) : Visit(x.Value)).ToArray();
+        var ranges = expr.Select(Visit).ToArray();
         return new ValueRange<double>(ranges.Min(x => x.Min), ranges.Max(x => x.Max));
     }
 
@@ -112,8 +117,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         {
             Binary binary => InferenceBinary(expr, binary.BinaryOp),
             Boxing => Visit(expr[Boxing.Input]),
-            Cast => expr[Cast.Input].Metadata.Range ?? ValueRange<double>.Full,
-            Clamp => InferenceClamp(expr[Clamp.Input], expr[Clamp.Min], expr[Clamp.Max]),
+            Clamp => InferenceClamp((Expr)expr[Clamp.Input], (Expr)expr[Clamp.Min], (Expr)expr[Clamp.Max]),
             Concat => Visit(expr[Concat.Input]),
             Gather => Visit(expr[Gather.Input]),
             GetItem => Visit(expr[GetItem.Input]),
@@ -281,7 +285,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
         return new ValueRange<double>(values.Min(), values.Max());
     }
 
-    private ValueRange<double> InferenceRange(Expr begin, Expr end, Expr step)
+    private ValueRange<double> InferenceRange(BaseExpr begin, BaseExpr end, BaseExpr step)
     {
         var startRange = Visit(begin);
         var endRange = Visit(end);

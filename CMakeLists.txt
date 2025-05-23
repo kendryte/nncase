@@ -3,7 +3,7 @@
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 
 if(NOT DEFINED NNCASE_VERSION)
-    set(NNCASE_VERSION "3.3.0")
+    set(NNCASE_VERSION "3.4.0")
 endif()
 
 if(DEFINED ENV{NNCASE_VERSION_SUFFIX})
@@ -103,7 +103,6 @@ add_subdirectory(src/Native/src)
 add_subdirectory(ntt)
 
 if(BUILD_TESTING)
-    add_subdirectory(tests/kernels)
 endif()
 
 # Python binding

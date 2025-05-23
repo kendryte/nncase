@@ -67,7 +67,7 @@ public static class TensorUtilities
     /// <summary>
     /// Get the Expr Product.
     /// </summary>
-    public static Expr GetProduct(ReadOnlySpan<Expr> dimensions, int startIndex = 0)
+    public static Dimension GetProduct(ReadOnlySpan<Dimension> dimensions, int startIndex = 0)
     {
         if (dimensions.Length == 0)
         {
@@ -81,7 +81,7 @@ public static class TensorUtilities
             product *= dimension;
         }
 
-        return product.ToExpr();
+        return product;
     }
 
     public static bool IsAscending(ReadOnlySpan<long> values)
@@ -157,11 +157,11 @@ public static class TensorUtilities
     /// <summary>
     /// get strides.
     /// </summary>
-    public static Expr[] GetStrides(ReadOnlySpan<Expr> dimensions, bool reverseStride = false)
+    public static Dimension[] GetStrides(ReadOnlySpan<Dimension> dimensions, bool reverseStride = false)
     {
         if (dimensions.IsEmpty)
         {
-            return Array.Empty<Expr>();
+            return Array.Empty<Dimension>();
         }
 
         var strides = new Dimension[dimensions.Length];
@@ -184,7 +184,7 @@ public static class TensorUtilities
             }
         }
 
-        return strides.Select(x => x.ToExpr()).ToArray();
+        return strides;
     }
 
     public static void SplitStrides(long[] strides, int[] splitAxes, long[] newStrides, long stridesOffset, long[] splitStrides, long splitStridesOffset)
@@ -367,6 +367,23 @@ public static class TensorUtilities
     }
 
     /// <summary>
+    /// from end to front calculate the number of contiguous dimensions.
+    /// </summary>
+    public static int GetContiguousDims(ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
+    {
+        var def_strides = GetStrides(dimensions);
+        for (int i = strides.Length - 1; i >= 0; --i)
+        {
+            if (strides[i] != def_strides[i])
+            {
+                return dimensions.Length - i - 1;
+            }
+        }
+
+        return dimensions.Length;
+    }
+
+    /// <summary>
     /// check the dimensions selected range is contiguous.
     /// </summary>
     public static bool IsContiguousSlice(ReadOnlySpan<long> dimensions, ReadOnlySpan<System.Range> slices, out int contiguousStart)
@@ -450,15 +467,19 @@ public static class TensorUtilities
 
     public static int[] ToInts(this long[] longs) => ToInts((ReadOnlySpan<long>)longs);
 
-    public static long GetSize(Span<long> shapes, Span<long> strides, int elementSize)
+    public static long GetSize(ReadOnlySpan<long> shapes, ReadOnlySpan<long> strides, int elementSize)
     {
-        long size = 0;
+        long max_stride = 1, max_shape = 1;
         for (int i = 0; i < shapes.Length; i++)
         {
-            size += (shapes[i] - 1) * strides[i];
+            if ((shapes[i] == 1 ? 0 : strides[i]) >= max_stride)
+            {
+                max_stride = strides[i];
+                max_shape = shapes[i];
+            }
         }
 
-        size += 1;
+        long size = max_stride * max_shape;
         return size * elementSize;
     }
 
@@ -482,30 +503,30 @@ public static class TensorUtilities
         return (maxSize, strides);
     }
 
-    public static (Expr MaxSize, Expr[] Strides) GetTensorMaxSizeAndStridesExpr(TensorType tensorType, DistributedType? distributedType)
+    public static (Dimension MaxSize, Dimension[] Strides) GetTensorMaxSizeAndStridesExpr(TensorType tensorType, DistributedType? distributedType)
     {
         var (maxSize, strides) = GetTensorMaxSizeAndStrides(tensorType, distributedType);
-        return (maxSize, strides.Select(x => (Expr)x).ToArray());
+        return (maxSize, strides.Select(x => (Dimension)x).ToArray());
     }
 
-    public static (Expr Size, Expr[] Strides) GetTensorSizeAndContiguousStrides(TensorType tensorType, DistributedType? distributedType)
+    public static (Dimension Size, Dimension[] Strides) GetTensorSizeAndContiguousStrides(TensorType tensorType, DistributedType? distributedType)
     {
-        Expr[] dims;
-        Expr[] strides;
+        Dimension[] dims;
+        Dimension[] strides;
         if (distributedType is null)
         {
-            dims = tensorType.Shape.Dimensions.ToArray();
+            dims = ((RankedShape)tensorType.Shape).Dimensions.ToArray();
             strides = GetStrides(dims);
         }
         else
         {
             var dividedType = DistributedUtility.GetDividedTensorType(distributedType);
-            dims = dividedType.Shape.Dimensions.ToArray();
+            dims = ((RankedShape)dividedType.Shape).Dimensions.ToArray();
             strides = GetStrides(dims);
         }
 
         var size = (Dimension)GetProduct(dims) * tensorType.DType.SizeInBytes;
-        return (size.ToExpr(), strides);
+        return (size, strides);
     }
 
     public static (long MaxSize, long[] Strides) GetTensorMaxSizeAndStrides(IRType type)

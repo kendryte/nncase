@@ -30,7 +30,7 @@ typedef struct {
     uint32_t bdim;
     uint32_t cdim;
     uint32_t reserved0;
-} desc_header;
+} module_desc_header;
 
 cpu_runtime_module::cpu_runtime_module() noexcept
     : tdim_(0), bdim_(0), cdim_(0) {
@@ -50,7 +50,7 @@ result<void> cpu_runtime_module::initialize_before_functions(
     runtime_module_init_context &context) noexcept {
     try_(context.read_section(
         ".desc", [this](auto reader, size_t) -> result<void> {
-            auto header = reader.template read<desc_header>();
+            auto header = reader.template read<module_desc_header>();
             this->tdim_ = header.tdim;
             this->bdim_ = header.bdim;
             this->cdim_ = header.cdim;
@@ -62,14 +62,6 @@ result<void> cpu_runtime_module::initialize_before_functions(
     try_set(local_rdata_, context.get_or_read_section(
                               ".local_rdata", local_rdata_storage_, false));
     return ok();
-}
-
-kernels::kernel_context &cpu_runtime_module::kernel_context() noexcept {
-    auto &context = kernels::default_kernel_context();
-#ifdef NNCASE_DUMP_MANAGER
-    context.dump_manager = interp().dump_manager();
-#endif
-    return context;
 }
 
 result<std::unique_ptr<runtime_function>>

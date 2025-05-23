@@ -23,34 +23,29 @@ namespace Nncase.Importer
 
         private Expr SliceV1(in NodeProto op)
         {
-            var input = GetSingleInputExpr(op);
+            var input = GetSingleInputExpr<Expr>(op);
             var axesExpr = GetAxesAttribute(op, input);
-            var starts = GetTensorIntsAttribute(op, "starts");
-            var ends = GetTensorIntsAttribute(op, "ends");
+            var starts = GetIntsAttribute(op, "starts");
+            var ends = GetIntsAttribute(op, "ends");
             return Slice(
                 input,
                 starts,
                 ends,
                 axesExpr,
-                Expand(1L, Tensor.From<long>(new long[] { ends.Length })));
+                Shape.Repeat(1L, ends.Length));
         }
 
         private Expr SliceV10(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var (starts, ends) = GetInputExprs(op, 1, 2);
+            var input = GetInputExpr<Expr>(op, 0);
+            var (starts, ends) = GetInputExprs<Shape, Shape>(op, 1, 2);
 
             // not supported none step when starts is dynamic
             // steps.size should eq starts.size
             starts.InferenceType();
-            var axes = GetOptionInputExpr(op, 3).Or(ComputeDefaultAxes(input));
-            var steps = GetOptionInputExpr(op, 4).Or(Expand(1, starts.CheckedShape.ToValueArray()));
+            var axes = GetOptionInputExpr<Shape>(op, 3).Or(ComputeDefaultAxes(input));
+            var steps = GetOptionInputExpr<Shape>(op, 4).Or(Shape.Repeat(1, starts.Rank));
             return Slice(input, starts, ends, axes, steps);
-        }
-
-        private Call ExpandOneToRank(Expr input, long value, long rankOffset = 0)
-        {
-            return Expand(value, Unsqueeze(Rank(input) - rankOffset, new[] { 0 }));
         }
     }
 }

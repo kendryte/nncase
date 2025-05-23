@@ -3,7 +3,6 @@
 #include <iostream>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/host_buffer.h>
-#include <nncase/runtime/stackvm/opcode.h>
 #include <nncase/tensor.h>
 #include <nncase/type.h>
 #include <nncase/value.h>
@@ -42,8 +41,6 @@ class NNCASE_API dump_manager {
     void set_append(bool app) { append_ = app; }
 
     void set_dump_root(std::string root);
-
-    void dump_op(nncase::runtime::stackvm::tensor_function_t tensor_funct);
 
     void dump_op(const std::string &op);
 

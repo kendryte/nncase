@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.Buffers;
 
@@ -21,12 +22,12 @@ public sealed partial class BufferSubview : Op
     /// <summary>
     /// Get the offset parameter.
     /// </summary>
-    public static readonly ParameterInfo Offset = new(typeof(BufferSubview), 1, "offset");
+    public static readonly ParameterInfo Offset = new(typeof(BufferSubview), 1, "offset", IsShapeType());
 
     /// <summary>
     /// Get the shape parameter.
     /// </summary>
-    public static readonly ParameterInfo Shape = new(typeof(BufferSubview), 2, "shape");
+    public static readonly ParameterInfo Shape = new(typeof(BufferSubview), 2, "shape", IsShapeType());
 
     /// <inheritdoc/>
     public override bool CanFoldConstCall => false;

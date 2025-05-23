@@ -54,5 +54,12 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<OneHotEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SpaceToBatchEvaluator>(reuse: Reuse.Singleton);
+
+        // attention
+        registrator.RegisterManyInterface<PagedAttentionEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UpdatePagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<CreatePagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<IdentityPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<GatherPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
     }
 }

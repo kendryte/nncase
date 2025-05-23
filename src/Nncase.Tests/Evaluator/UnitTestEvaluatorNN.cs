@@ -5,20 +5,113 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
-using Nncase.IR.Tensors;
+using Nncase.IR.NN;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
-using static Nncase.IR.F.NN;
-using static Nncase.IR.F.Tensors;
-using static Nncase.Utilities.DumpUtility;
-using Random = Nncase.IR.F.Random;
 
 namespace Nncase.Tests.EvaluatorTest;
+
+public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture>
+{
+    private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
+    [
+        ("prefill", [4L], [4L]),
+        ("prefill*2", [12L, 15L], [12L, 15L]),
+        ("extend", [4L], [8L]),
+        ("prefill+extend", [4L, 4L], [4L, 8L]),
+        ("prefill+decode", [4L, 1L], [4L, 9L]),
+    ];
+
+    private static readonly Runtime.TypeCode[] TypeConfigs = [
+        Runtime.TypeCode.Float32,
+        Runtime.TypeCode.Float16,
+    ];
+
+    private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
+    [
+        (1, 1, 64),
+        (2, 2, 64),
+        (4, 4, 128),
+        (32, 8, 128),
+        (64, 8, 128),
+    ];
+
+    private static readonly (int Layer, int BlockSize, int NumBlocks)[] CacheConfigs = [
+        (1, 4, 8),
+        (1, 16, 8),
+        (1, 32, 16),
+        (1, 128, 32),
+        (1, 256, 32),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
+    [
+        (new[] {
+            PagedKVCacheDimKind.NumLayers,
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+        (new[] {
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.NumLayers,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Sharding, SBPSplit[] Policies)[] ShardingConfigs =
+    [
+        (Array.Empty<PagedKVCacheDimKind>(), Array.Empty<SBPSplit>()),
+        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }),
+    ];
+
+    private static readonly (AttentionDimKind[] QLayout, AttentionDimKind[] KLayout)[] QKLayoutConfigs =
+    [
+        ([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim],
+         [AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head]),
+        ([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq],
+         [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]),
+    ];
+
+    public PagedAttentionKVCacheTestData()
+    {
+        foreach (var (name, queryLens, seqLens) in TestScenarios)
+        {
+            foreach (var (numQHeads, numKVHeads, headDim) in HeadConfigs)
+            {
+                foreach (var (numLayer, blockSize, numBlocks) in CacheConfigs)
+                {
+                    foreach (var typeCode in TypeConfigs)
+                    {
+                        foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
+                        {
+                            foreach (var (shardingAxes, axisPolicies) in ShardingConfigs)
+                            {
+                                foreach (var (qlayout, klayout) in QKLayoutConfigs)
+                                {
+                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, packedAxes, shardingAxes, axisPolicies, qlayout, klayout));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 public class UnitTestEvaluatorNN : TestClassBase
 {
@@ -263,14 +356,14 @@ public class UnitTestEvaluatorNN : TestClassBase
             pads: new long[] { 1, 1, 1, 1 },
             strides: new long[] { 1, 1 });
 
-        var outShape = Tensor.From(new long[] { 1, 2, 5, 5 }, new Shape(4));
+        var outShape = Tensor.From(new long[] { 1, 2, 5, 5 }, new RankedShape(4));
         var expr = IR.F.NN.Conv2DTranspose(
             input.ToTensor(),
             weight.ToTensor(),
             bias.ToTensor(),
             outShape,
             stride: new[] { 1, 1 },
-            padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, [4]),
+            padding: Tensor.From<long>(new long[] { 1, 1, 1, 1 }, [2, 2]),
             outputPadding: Tensor.From<long>(new long[] { 0, 0 }, [2]),
             dilation: new[] { 1, 1 },
             PadMode.Constant,
@@ -372,7 +465,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var momentum = 0.5F;
 
         var expect = OrtKI.BatchNormalization(x, scale, b, mean, var, epsilon, momentum);
-        var expr = BatchNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), mean.ToTensor(), var.ToTensor(), epsilon, momentum);
+        var expr = IR.F.NN.BatchNormalization(x.ToTensor(), scale.ToTensor(), b.ToTensor(), mean.ToTensor(), var.ToTensor(), epsilon, momentum);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }
@@ -424,7 +517,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var a = new int[] { 1, 2, 0, 3 };
         var indices = Tensor.From(a, [4]);
         var depth = 5;
-        var values = Tensor.From(new float[] { 0, 1 }, new Shape(new[] { 2 }));
+        var values = Tensor.From(new float[] { 0, 1 }, new RankedShape(new[] { 2 }));
         var axis = 0L;
 
         var b = new float[] { 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 };
@@ -441,7 +534,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var a = new float[] { 1, 2, 0, 3 };
         var indices = Tensor.From(a, [4]);
         var depth = 5F;
-        var values = Tensor.From(new float[] { 0, 1 }, new Shape(new[] { 2 }));
+        var values = Tensor.From(new float[] { 0, 1 }, new RankedShape(new[] { 2 }));
         var axis = 1L;
 
         var expect = OrtKI.OneHot(indices.ToOrtTensor(), depth, values.ToOrtTensor(), axis);
@@ -456,7 +549,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     {
         var tinput = OrtKI.Random(1, 1, 2, 3);
         var input = tinput.ToTensor();
-        var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new Shape(new[] { 4, 2 }));
+        var pads = Tensor.From<int>(new[] { 0, 0, 0, 0, 1, 1, 2, 2 }, new RankedShape(new[] { 4, 2 }));
         var value = Tensor.FromScalar<float>(1.0f);
         var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
         CompilerServices.InferenceType(expr);
@@ -469,7 +562,7 @@ public class UnitTestEvaluatorNN : TestClassBase
     {
         var tinput = OrtKI.Random(1, 1, 2, 3);
         var input = tinput.ToTensor();
-        var pads = Tensor.From<long>(new long[] { 0, 0, 1, 2, 2, 4, 5, 6 }, new Shape(4, 2));
+        var pads = Tensor.From<long>(new long[] { 0, 0, 1, 2, 2, 4, 5, 6 }, new RankedShape(4, 2));
         var value = Tensor.FromScalar<float>(2.0f);
         var expr = NN.Pad(input, pads, Nncase.PadMode.Constant, value);
         CompilerServices.InferenceType(expr);
@@ -485,7 +578,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var constant = OrtKISharp.Tensor.FromScalar(1F);
         var expect = OrtKI.Pad(input, ortPads, constant, "constant");
 
-        var nncaesPads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var nncaesPads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new RankedShape(4, 2));
         var expr = NN.Pad(input.ToTensor(), nncaesPads, Nncase.PadMode.Constant, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -499,7 +592,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var constant = OrtKISharp.Tensor.FromScalar(1F);
         var expect = OrtKI.Pad(input, ortPads, constant, "reflect");
 
-        var nncasePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var nncasePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new RankedShape(4, 2));
         var expr = NN.Pad(input.ToTensor(), nncasePads, Nncase.PadMode.Reflect, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -509,8 +602,8 @@ public class UnitTestEvaluatorNN : TestClassBase
     public void TestPadReflect2()
     {
         var input = new Var();
-        var feed = new Dictionary<Var, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, new long[] { 1, 3, 4, 5 }).Evaluate() }, };
-        var output = NN.Pad(IR.F.Math.Abs(input), Tensor.FromArray(new long[,] { { 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 } }), PadMode.Reflect, 0.0f);
+        var feed = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 12, new long[] { 1, 3, 4, 5 }).Evaluate() }, };
+        var output = NN.Pad(IR.F.Math.Abs(input), Tensor.From(new long[,] { { 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 } }), PadMode.Reflect, 0.0f);
         CompilerServices.InferenceType(output);
         var outputArray = output.Evaluate(feed).AsTensor().ToArray<float>();
         Assert.Contains(outputArray, f => f > 0.0f);
@@ -523,8 +616,8 @@ public class UnitTestEvaluatorNN : TestClassBase
         var b = new float[] { 1, 1, 2, 3, 3, 1, 1, 2, 3, 3, 4, 4, 5, 6, 6, 4, 4, 5, 6, 6 };
         var expect = OrtKISharp.Tensor.MakeTensor(b, new long[] { 1, 1, 4, 5 });
 
-        var input = Tensor.From(a, new Shape(1, 1, 2, 3));
-        var pads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var input = Tensor.From(a, new RankedShape(1, 1, 2, 3));
+        var pads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new RankedShape(4, 2));
         var constant = 0F;
         var expr = NN.Pad(input, pads, Nncase.PadMode.Symmetric, constant);
         CompilerServices.InferenceType(expr);
@@ -539,7 +632,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var constant = OrtKISharp.Tensor.FromScalar(1F);
         var expect = OrtKI.Pad(input, ortPads, constant, "edge");
 
-        var nncaePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new Shape(4, 2));
+        var nncaePads = Tensor.From<long>(new long[] { 0, 0, 0, 0, 1, 1, 1, 1 }, new RankedShape(4, 2));
         var expr = NN.Pad(input.ToTensor(), nncaePads, Nncase.PadMode.Edge, constant.ToTensor());
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
@@ -660,12 +753,108 @@ public class UnitTestEvaluatorNN : TestClassBase
         var output = new float[] { 1, 3, 9, 11, 2, 4, 10, 12, 5, 7, 13, 15, 6, 8, 14, 16 };
         var expect = Tensor.From(output, [4, 2, 2, 1]);
         var crops = new long[] { 0, 0, 0, 0 };
-        var expr = NCHWToNHWC(IR.F.NN.SpaceToBatch(
-            NHWCToNCHW(input).Evaluate().AsTensor(),
+        var expr = IR.F.Tensors.NCHWToNHWC(IR.F.NN.SpaceToBatch(
+            IR.F.Tensors.NHWCToNCHW(input).Evaluate().AsTensor(),
             Tensor.From(shape, [2]),
             Tensor.From(crops, [2, 2])));
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor());
+    }
+
+    [Theory]
+    [InlineData([true])]
+    [InlineData([false])]
+    public void TestScaledDotProductAttention(bool isCausal)
+    {
+        var q = OrtKISharp.Tensor.MakeTensor(Enumerable.Range(0, 5 * 4).Select(i => (float)i).ToArray(), [5, 4]);
+        var k = OrtKISharp.Tensor.MakeTensor(Enumerable.Range(1, 5 * 4).Select(i => (float)i).ToArray(), [5, 4]);
+        var v = OrtKISharp.Tensor.MakeTensor(Enumerable.Range(2, 5 * 4).Select(i => (float)i).ToArray(), [5, 4]);
+        var s = TestFixture.PagedAttentionKVCacheTestFixture.ScaledDotProductAttention(q, k, v, isCausal: isCausal, scale: 1.0f);
+        var span = s.GetBuffer<float>().ToArray();
+
+        if (isCausal)
+        {
+            Assert.True(span.SequenceEqual([
+                2.0f,
+                3.0f,
+                4.0f,
+                5.0f,
+                6.0f,
+                7.0f,
+                8.0f,
+                9.0f,
+                10.0f,
+                11.0f,
+                12.0f,
+                13.0f,
+                14.0f,
+                15.0f,
+                16.0f,
+                17.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f]));
+        }
+        else
+        {
+            Assert.True(span.SequenceEqual([
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f]));
+        }
+    }
+
+    [Theory]
+    [ClassData(typeof(PagedAttentionKVCacheTestData))]
+    public void TestPagedAttention(TestFixture.PagedAttentionKVCacheTestFixture testFixture)
+    {
+        var placement = new IR.Placement(new[] { 1 }, "t");
+        var dataGeneratorOptions = new TestFixture.PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
+        var referenceResults = TestFixture.PagedAttentionKVCacheTestFixture.PrepareReferenceResults(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.Config.NumKVHeads, testFixture.Config.HeadDim, testFixture.Config.NumLayers, testFixture.Config.KVPrimType, dataGeneratorOptions);
+
+        var testKernel = TestFixture.PagedAttentionKVCacheTestFixture.CreateTestKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
+
+        var kvinputs = TestFixture.PagedAttentionKVCacheTestFixture.PrepareKVInputs(testFixture.QueryLens, testFixture.SeqLens, testFixture.ContextLens, testFixture.NumBlocks, placement, referenceResults, testFixture.Config);
+
+        var feedDict = new Dictionary<IVar, IValue>();
+        {
+            feedDict.Add(testKernel.QueryVar, Value.FromTensor(referenceResults.GetQueryTensor()));
+            for (int layerId = 0; layerId < testFixture.Config.NumLayers; layerId++)
+            {
+                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+            }
+
+            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+        }
+
+        // 4. evaluate and compare
+        {
+            // var refTensor = OrtKI.Concat(refOutputs.ToArray(), 1L).ToTensor();
+            var refTensor = referenceResults.GetOutputTensor();
+            var actualTensor = testKernel.Root.Evaluate(feedDict).AsTensor();
+
+            var cos = Comparator.CosSimilarity(refTensor, actualTensor);
+            Assert.True(cos > 0.999, $"cos: {cos} ");
+        }
     }
 
     private void DoHardmax(OrtKISharp.Tensor ortTensor, Tensor nncaseTensor, long axis)

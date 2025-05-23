@@ -11,8 +11,8 @@ namespace Nncase.Importer
     {
         private Expr VisitRange(in NodeProto op)
         {
-            var (start, limit) = GetInputExprs(op, 0, 1);
-            var delta = GetInputExpr(op, 2);
+            var (start, limit) = GetInputExprs<Expr, Expr>(op, 0, 1);
+            var delta = GetInputExpr<Expr>(op, 2);
 
             // todo:for float?
             return F.Tensors.Range(start, limit, delta);

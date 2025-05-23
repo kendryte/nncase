@@ -12,5 +12,5 @@ namespace Nncase;
 public interface ITensorInitializer
 {
     void Initialize<T>(Tensor<T> tensor)
-        where T : unmanaged, IEquatable<T>;
+        where T : struct, IEquatable<T>;
 }

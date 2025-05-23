@@ -25,17 +25,17 @@ namespace Nncase.Importer.TFLite
 
         private Expr VisitConv2D(in tflite.Operator op)
         {
-            var (input, weights) = GetInputExprs(op, 0, 1);
+            var (input, weights) = GetInputExprs<Expr, Expr>(op, 0, 1);
             input = F.Tensors.NHWCToNCHW(input);
             weights = F.Tensors.NHWCToNCHW(weights);
-            var bias = GetInputExprs(op, 2);
+            var bias = GetInputExprs<Expr>(op, 2);
             var options = op.BuiltinOptionsAsConv2DOptions();
             var strideH = options.StrideH;
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
             var dilationW = options.DilationWFactor;
-            var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
-            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
+            var stride = new RankedShape(strideH, strideW);
+            var dilation = new RankedShape(dilationH, dilationW);
             var padding = TypeInference.GetPaddings(input.CheckedShape, weights.CheckedShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             var inputQuantParams = GetInputQuantParams(op, 0);
@@ -115,8 +115,8 @@ namespace Nncase.Importer.TFLite
 
         private Expr VisitDepthwiseConv2D(in tflite.Operator op)
         {
-            var (input, weights) = GetInputExprs(op, 0, 1);
-            var bias = GetInputExprs(op, 2);
+            var (input, weights) = GetInputExprs<Expr, Expr>(op, 0, 1);
+            var bias = GetInputExprs<Expr>(op, 2);
             input = F.Tensors.NHWCToNCHW(input);
             weights = F.Tensors.Transpose(weights, new[] { 3, 0, 1, 2 });
             var options = op.BuiltinOptionsAsDepthwiseConv2DOptions();
@@ -124,8 +124,8 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
             var dilationW = options.DilationWFactor;
-            var stride = Tensor.From<int>(new[] { strideH, strideW }, [2]);
-            var dilation = Tensor.From<int>(new[] { dilationH, dilationW }, [2]);
+            var stride = new RankedShape(strideH, strideW);
+            var dilation = new RankedShape(dilationH, dilationW);
             var padding = TypeInference.GetPaddings(input.CheckedShape, weights.CheckedShape, stride, dilation, options.Padding == tflite.Padding.SAME, false);
             var depthMul = options.DepthMultiplier;
             if (depthMul != 1)

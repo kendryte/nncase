@@ -13,17 +13,18 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.Evaluator;
 
-internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
+internal sealed partial class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
 {
     private readonly EvaluateContext _context;
-    private readonly IReadOnlyDictionary<Var, IValue> _varsValues;
+    private readonly IReadOnlyDictionary<IVar, IValue> _varsValues;
     private readonly EvaluatorDumpManager _dumpManager;
     private readonly Dictionary<Type, IEvaluator> _evaluator_cache;
 
-    public EvaluateVisitor(IReadOnlyDictionary<Var, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
+    public EvaluateVisitor(IReadOnlyDictionary<IVar, IValue> varsValues, Dictionary<Type, IEvaluator> evaluator_cache)
     {
         _context = new EvaluateContext(this, ExprMemo);
         _evaluator_cache = evaluator_cache;
@@ -69,6 +70,35 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
             throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
         }
 
+        switch (expr.CheckedType, value.Type)
+        {
+            case (AnyType, _):
+                return value;
+            case (TensorType checkedTensorType, TensorType valueTensorType):
+                if (!checkedTensorType.Shape.IsAssignableFrom(valueTensorType.Shape))
+                {
+                    throw new ArgumentException(
+                        $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {valueTensorType.Shape}");
+                }
+
+                switch (checkedTensorType.DType, valueTensorType.DType)
+                {
+                    case (ReferenceType a, ReferenceType b):
+                        if (!a.ElemType.CLRType.IsAssignableFrom(b.ElemType.CLRType))
+                        {
+                            throw new ArgumentException($"Reference DataType mismatch. The Var {expr.Name} Require {a} But Give {b}");
+                        }
+
+                        break;
+                    case (DataType a, DataType b) when a != b:
+                        throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {a} But Give {b}");
+                }
+
+                return value;
+            default:
+                break;
+        }
+
         if (expr.CheckedType is not AnyType)
         {
             if (value.Type is TensorType resultType)
@@ -78,12 +108,6 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
                     if (expr.CheckedDataType != resultType.DType)
                     {
                         throw new ArgumentException($"DataType mismatch. The Var {expr.Name} Require {expr.CheckedDataType} But Give {resultType.DType}");
-                    }
-
-                    if (!expr.CheckedShape.IsAssignableFrom(resultType.Shape))
-                    {
-                        throw new ArgumentException(
-                            $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {resultType.Shape}");
                     }
                 }
             }
@@ -141,13 +165,7 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
         return cond ? EvaluateCallable(expr.Then, expr.Arguments) : EvaluateCallable(expr.Else, expr.Arguments);
     }
 
-    protected override IValue VisitLeafShape(Shape expr)
-    {
-        var dims = expr.Dimensions.AsValueEnumerable().Select(x => ExprMemo[x].AsTensor().ToScalar<long>()).ToArray();
-        return new ShapeValue(dims);
-    }
-
-    private IValue EvaluateCallable(Expr callable, ReadOnlySpan<Expr> arguments)
+    private IValue EvaluateCallable(Expr callable, ReadOnlySpan<BaseExpr> arguments)
     {
         return callable switch
         {
@@ -158,9 +176,9 @@ internal sealed class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisposable
         };
     }
 
-    private IReadOnlyDictionary<Var, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<Var> parameters, ReadOnlySpan<Expr> arguments)
+    private IReadOnlyDictionary<IVar, IValue> CreateFunctionEvaluateArguments(ReadOnlySpan<IVar> parameters, ReadOnlySpan<BaseExpr> arguments)
     {
-        var values = new Dictionary<Var, IValue>(_varsValues);
+        var values = new Dictionary<IVar, IValue>(_varsValues);
         for (int i = 0; i < parameters.Length; i++)
         {
             values.Add(parameters[i], ExprMemo[arguments[i]]);

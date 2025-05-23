@@ -9,7 +9,7 @@ using Nncase.IR;
 
 namespace Nncase.PatternMatch;
 
-public delegate IReadOnlyList<Pattern> PatternGenerator(ReadOnlySpan<Expr> exprs);
+public delegate IReadOnlyList<Pattern> PatternGenerator(ReadOnlySpan<BaseExpr> exprs);
 
 /// <summary>
 /// Pattern for varadic expressions.
@@ -35,7 +35,7 @@ public sealed record VArgsPattern(PatternGenerator FieldsGenerator, string? Name
     /// </summary>
     /// <param name="fields">Fields patterns.</param>
     /// <param name="name">name.</param>
-    public VArgsPattern(IEnumerable<Expr> fields, string? name)
+    public VArgsPattern(IEnumerable<BaseExpr> fields, string? name)
         : this(x => fields.Select(f => (Pattern)f).ToArray(), name)
     {
         Fields = fields.Select(f => (Pattern)f).ToArray();
@@ -49,7 +49,7 @@ public sealed record VArgsPattern(PatternGenerator FieldsGenerator, string? Name
 
     public IEnumerator<Pattern> GetEnumerator() => Fields.GetEnumerator();
 
-    public bool MatchLeaf(ReadOnlySpan<Expr> input, out IReadOnlyList<Pattern> fields)
+    public bool MatchLeaf(ReadOnlySpan<BaseExpr> input, out IReadOnlyList<Pattern> fields)
     {
         Fields = fields = FieldsGenerator(input);
 
@@ -62,7 +62,7 @@ public sealed record VArgsPattern(PatternGenerator FieldsGenerator, string? Name
     }
 
     /// <inheritdoc/>
-    public override bool MatchLeaf(Expr input) => false;
+    public override bool MatchLeaf(BaseExpr input) => false;
 
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable)Fields).GetEnumerator();
 }

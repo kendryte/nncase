@@ -20,7 +20,7 @@ namespace Nncase.Importer
     {
         private Expr VisitConv2DTranspose(NodeProto op)
         {
-            var (input, weights) = GetInputExprs(op, 0, 1);
+            var (input, weights) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var group = GetIntAttribute(op, "group", 1);
             var bias = GetBias(op, weights, true, group);
             var strides = GetStrideAttribute(op).ToArray<long>().ToList();
@@ -46,8 +46,8 @@ namespace Nncase.Importer
                 .Match(
                     o => Tensor.From<long>(o),
                     () => IR.Util.GetConvTransposeOutputShape(
-                        ShapeOf(input),
-                        ShapeOf(weights),
+                        ShapeOf(input).AsShape(),
+                        ShapeOf(weights).AsShape(),
                         strides.ToArray(),
                         outputPadding,
                         pads,

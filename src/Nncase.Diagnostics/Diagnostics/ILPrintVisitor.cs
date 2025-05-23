@@ -15,6 +15,7 @@ using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Buffers;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Nncase.Utilities;
 
@@ -92,12 +93,12 @@ internal sealed class PrintOpContext : IPrintOpContext
 internal sealed class ILPrintVisitor : ExprFunctor<string, string>
 {
     private readonly IndentedWriter _writer;
-    private readonly List<Dictionary<Expr, string>> _stackedMemos;
+    private readonly List<Dictionary<BaseExpr, string>> _stackedMemos;
     private readonly List<int> _stackedSSANumbers;
     private readonly List<int> _stackedScopeDepthOffSets;
     private readonly List<int> _stackedVisitDepthOffSets;
 
-    public ILPrintVisitor(IndentedWriter printer, PrinterFlags printerFlags, IReadOnlyDictionary<Expr, string> feedDict)
+    public ILPrintVisitor(IndentedWriter printer, PrinterFlags printerFlags, IReadOnlyDictionary<BaseExpr, string> feedDict)
     {
         _writer = printer;
         Flags = printerFlags;
@@ -133,6 +134,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     {
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : VisitShape(type.Shape)),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
+        ReferenceType { ElemType: DataType rtype } => $"&{rtype.GetDisplayName()}",
         ValueType => $"{type.DType}",
         VectorType vtype => $"{vtype.ElemType.GetDisplayName()}<{string.Join(",", vtype.Lanes)}>" + (type.Shape.IsScalar ? string.Empty : VisitShape(type.Shape)),
         _ => throw new NotSupportedException(type.DType.GetType().Name),
@@ -145,19 +147,19 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     public override string VisitType(DistributedType type)
     {
-        var shape = type.TensorType.Shape.ToArray();
+        var shape = CompilerServices.GetMaxShape(type.TensorType.Shape);
+        bool[] usedCeil = new bool[shape.Length];
         foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
-                if (shape[r].IsFixed)
-                {
-                    shape[r] = shape[r] / split.Axes.Select(a => type.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                }
+                var divisor = split.Axes.Select(a => type.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                usedCeil[r] = shape[r] % divisor != 0;
+                shape[r] = (shape[r] + divisor - 1) / divisor;
             }
         }
 
-        var sshape = shape.Select(s => s.ToString()).ToArray();
+        var sshape = shape.Select((s, idx) => usedCeil[idx] ? $"⌈{s}⌉" : s.ToString()).ToArray();
         foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
@@ -169,7 +171,7 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         return $"{{{VisitType(type.TensorType)}, ({string.Join(',', type.AxisPolices)}), [{string.Join(',', sshape)}]}}";
     }
 
-    protected override string DispatchVisit(Expr expr)
+    protected override string DispatchVisit(BaseExpr expr)
     {
         if (_stackedMemos[^1].TryGetValue(expr, out var name))
         {
@@ -385,6 +387,39 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
     }
 
     /// <inheritdoc/>
+    protected override string VisitFunctionWrapper(FunctionWrapper expr)
+    {
+        if (Flags.HasFlag(PrinterFlags.Inline))
+        {
+            return expr.Name;
+        }
+
+        using var subScope = NestedScope();
+        var name = $"%{expr.Name}";
+
+        // 1. Function signature
+        _writer.WInd().Write($"{name} = func_wrapper({string.Join(", ", expr.ParameterTypes.Select(x => x == null ? string.Empty : VisitType(x)))})");
+        AppendCheckedType(expr.CheckedType, expr.Metadata.Range, " {");
+
+        // 2. Function body
+        if (ShouldEnterScope())
+        {
+            using (IndentScope())
+            {
+                Visit(expr.Target);
+            }
+        }
+        else
+        {
+            _writer.WInd().WriteLine("...");
+        }
+
+        // 3. Function closing
+        _writer.WInd().WriteLine("}");
+        return name;
+    }
+
+    /// <inheritdoc/>
     protected override string VisitOp(Op expr)
     {
         return expr.GetType().Name;
@@ -526,39 +561,17 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
-    protected override string VisitShape(Shape shape) =>
-        shape.Kind switch
-        {
-            ShapeKind.Invalid => "[invalid]",
-            ShapeKind.Unranked => "[*]",
-            _ => $"[{string.Join(',', shape.Select(VisitDimension))}]",
-        };
+    protected override string VisitShape(Shape shape) => shape.ToString();
+
+    protected override string VisitDimension(Dimension expr) => expr.ToString();
+
+    protected override string VisitPadding(Padding expr) => expr.ToString();
+
+    protected override string VisitPaddings(Paddings expr) => expr.ToString();
 
     private string GetNextSSANumber()
     {
         return $"%{_stackedSSANumbers[^1]++}";
-    }
-
-    private string VisitDimension(Dimension dimension) =>
-        dimension.Kind switch
-        {
-            DimensionKind.Unknown => "?",
-            DimensionKind.Fixed => $"{dimension.FixedValue}L",
-            DimensionKind.Dynamic => VisitDimensionExpr(dimension.Value),
-            _ => throw new NotSupportedException(dimension.Kind.ToString()),
-        };
-
-    private string VisitDimensionExpr(Expr expr)
-    {
-        if (Flags.HasFlag(PrinterFlags.SkipDimensionExpr))
-        {
-            return "...";
-        }
-
-        using (NestedScope(Flags | PrinterFlags.Inline, visitDepthDiff: -VisitDepth, scopeDepthDiff: -1))
-        {
-            return Visit(expr);
-        }
     }
 
     private void AppendCheckedType(IRType? type, ValueRange<double>? range, string end = "", bool hasNewLine = true)

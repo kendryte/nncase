@@ -30,7 +30,7 @@ internal sealed class IRPrinterProvider : IPrinterProvider
     }
 
     /// <inheritdoc/>
-    public void DumpIR(Expr expr, string prefix, string dumpPath, PrinterFlags flags)
+    public void DumpIR(BaseExpr expr, string prefix, string dumpPath, PrinterFlags flags)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
         string ext = (flags.HasFlag(PrinterFlags.Script) || expr is PrimFunction) ? "script" : "il";
@@ -51,13 +51,13 @@ internal sealed class IRPrinterProvider : IPrinterProvider
                 new ScriptPrintVisitor(dumpWriter, flags).Visit(expr);
                 break;
             default:
-                new ILPrintVisitor(dumpWriter, flags, new Dictionary<Expr, string>()).Visit(expr);
+                new ILPrintVisitor(dumpWriter, flags, new Dictionary<BaseExpr, string>()).Visit(expr);
                 break;
         }
     }
 
     /// <inheritdoc/>
-    public void DumpDotIR(Expr expr, string prefix, string dumpDir, PrinterFlags flags)
+    public void DumpDotIR(BaseExpr expr, string prefix, string dumpDir, PrinterFlags flags)
     {
         if (string.IsNullOrEmpty(dumpDir))
         {
@@ -74,7 +74,7 @@ internal sealed class IRPrinterProvider : IPrinterProvider
     }
 
     /// <inheritdoc/>
-    public void DumpCSharpIR(Expr expr, string prefix, string dumpDir, bool randConst)
+    public void DumpCSharpIR(BaseExpr expr, string prefix, string dumpDir, bool randConst)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
         string ext = "cs";
@@ -103,7 +103,7 @@ internal sealed class IRPrinterProvider : IPrinterProvider
     }
 
     /// <inheritdoc/>
-    public void DumpPatternIR(Expr expr, string prefix, string dumpDir)
+    public void DumpPatternIR(BaseExpr expr, string prefix, string dumpDir)
     {
         var nprefix = prefix.Any() ? prefix + "_" : prefix;
         string ext = "cs";
@@ -126,11 +126,11 @@ internal sealed class IRPrinterProvider : IPrinterProvider
     {
         var stream = Stream.Null;
         using var dumpWriter = new IndentedWriter(stream);
-        return new ILPrintVisitor(dumpWriter, flags, new Dictionary<Expr, string>()).VisitType(type);
+        return new ILPrintVisitor(dumpWriter, flags, new Dictionary<BaseExpr, string>()).VisitType(type);
     }
 
     /// <inheritdoc/>
-    public string Print(Expr expr, PrinterFlags flags)
+    public string Print(BaseExpr expr, PrinterFlags flags)
     {
         using var stream = new MemoryStream(128 * 1024 * 1024);
 
@@ -142,7 +142,11 @@ internal sealed class IRPrinterProvider : IPrinterProvider
             }
             else
             {
-                new ILPrintVisitor(writer, flags, new Dictionary<Expr, string>()).Visit(expr);
+                var result = new ILPrintVisitor(writer, flags, new Dictionary<BaseExpr, string>()).Visit(expr);
+                if (writer.BaseStream.Position == 0)
+                {
+                    writer.Write(result);
+                }
             }
         }
 

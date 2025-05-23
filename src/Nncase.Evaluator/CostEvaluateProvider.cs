@@ -22,7 +22,7 @@ internal sealed class CostEvaluateProvider : ICostEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public Cost EvaluateCost(Expr expr, CompileOptions compileOptions)
+    public Cost EvaluateCost(BaseExpr expr, CompileOptions compileOptions)
     {
         if (expr.CheckedType is null)
         {

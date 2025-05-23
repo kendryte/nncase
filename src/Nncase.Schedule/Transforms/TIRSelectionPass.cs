@@ -5,10 +5,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
+using System.Runtime.CompilerServices;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.Passes.Transforms;
 
@@ -26,27 +28,42 @@ public abstract class TIRSelectionPass : FunctionPass
         if (input.ModuleKind == ModuleKind
             && input is Function func)
         {
-            var visitor = new TIRSelectionVisitor(this);
+            var callers = func.Users.Where(x => x is Call or FunctionWrapper).ToArray();
+            var isEntry = callers.Length == 0;
+            var visitor = new TIRSelectionVisitor(this, isEntry);
             (var newBody, var outBuffers) = visitor.Select(func);
-
             var inBuffers = func.Parameters.ToArray();
-            var outputBufferShapes = outBuffers.Select(x => (ElemType: x.CheckedDataType, Shape: x.CheckedShape.ToValueArrayExpr())).ToArray();
-            var primFunc = new PrimFunction(
-                $"{input.Name}_prim",
-                ModuleKind,
-                newBody,
-                inBuffers.Concat(outBuffers).ToArray());
-            var primWrapper = new PrimFunctionWrapper(input.Name, primFunc, inBuffers.Length);
-            AddOutputBufferAllocsToCallers(func, outBuffers);
-            return Task.FromResult((BaseFunction)primWrapper);
+
+            if (isEntry)
+            {
+                // Allocate output buffers in the entry function
+                var primFunc = new PrimFunction(
+                    $"{input.Name}_prim",
+                    ModuleKind,
+                    newBody,
+                    inBuffers.ToArray());
+                return Task.FromResult((BaseFunction)primFunc);
+            }
+            else
+            {
+                // Allocate output buffers in the caller functions
+                var primFunc = new PrimFunction(
+                    $"{input.Name}_prim",
+                    ModuleKind,
+                    newBody,
+                    inBuffers.Concat(outBuffers).ToArray());
+                var primWrapper = new PrimFunctionWrapper(input.Name, primFunc, inBuffers.Length);
+                AddOutputBufferAllocsToCallers(func, outBuffers, callers.OfType<Call>());
+                return Task.FromResult((BaseFunction)primWrapper);
+            }
         }
 
         return Task.FromResult(input);
     }
 
-    protected abstract Expr SelectCall(Call call, IReadOnlyList<Expr> arguments, Expr output);
+    protected abstract Expr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments, ref Expr output);
 
-    protected IRType GetArgumentType(Expr argument)
+    protected IRType GetArgumentType(BaseExpr argument)
     {
         return argument switch
         {
@@ -55,16 +72,15 @@ public abstract class TIRSelectionPass : FunctionPass
         };
     }
 
-    private void AddOutputBufferAllocsToCallers(Function function, IEnumerable<Var> outputBuffers)
+    private void AddOutputBufferAllocsToCallers(Function function, IEnumerable<Var> outputBuffers, IEnumerable<Call> callers)
     {
-        var callers = function.Users.OfType<Call>().ToArray();
-        var outputBufferShapes = outputBuffers.Select(x => (ElemType: x.CheckedDataType, Shape: x.CheckedShape.ToValueArrayExpr())).ToArray();
+        var outputBufferShapes = outputBuffers.Select(x => (ElemType: x.CheckedDataType, Shape: x.CheckedShape)).ToArray();
         foreach (var caller in callers)
         {
             var outputAllocs = outputBufferShapes.Select(x => IR.F.Buffer.Uninitialized(x.ElemType, TIR.MemoryLocation.Data, x.Shape));
             var newArgs = caller.Arguments.ToArray().Concat(outputAllocs).ToArray();
             var newCaller = caller.With(arguments: newArgs);
-            IRHelpers.ReplaceAllUsesWith(caller, newCaller);
+            ReplaceUtility.ReplaceAllUsesWith(caller, newCaller);
         }
     }
 
@@ -73,37 +89,54 @@ public abstract class TIRSelectionPass : FunctionPass
     private sealed class TIRSelectionVisitor : ExprCloner<Unit>
     {
         private readonly TIRSelectionPass _selectionPass;
+        private readonly bool _isEntry;
         private readonly List<Expr> _body = new();
         private int _bufferIndex;
 
-        public TIRSelectionVisitor(TIRSelectionPass selectionPass)
+        public TIRSelectionVisitor(TIRSelectionPass selectionPass, bool isEntry)
         {
             _selectionPass = selectionPass;
+            _isEntry = isEntry;
         }
 
         public SelectionResult Select(Function function)
         {
             Visit(function.Body, Unit.Default);
 
-            // Add necessary copy calls
-            var outBuffers = function.Body is IR.Tuple tuple
-                ? tuple.Fields.AsValueEnumerable().Select(x => (Var)ExprMemo[x]).ToArray()
-                : [(Var)ExprMemo[function.Body]];
-
-            for (int i = 0; i < outBuffers.Length; i++)
+            var outBuffers = function.Body switch
             {
-                var previousBuffers = outBuffers.AsSpan(0, i);
-                var currentBuffer = outBuffers[i];
-                if (previousBuffers.Contains(currentBuffer)
-                    || function.Parameters.Contains(currentBuffer))
+                IR.Tuple tuple => tuple.Fields.AsValueEnumerable().Select(x => (Expr)ExprMemo[x]).ToArray(),
+                var body => ExprMemo[function.Body] switch
                 {
-                    var newBuffer = currentBuffer.With($"out_{_bufferIndex++}");
-                    _body.Add(T.Memcopy(newBuffer, currentBuffer));
-                    outBuffers[i] = newBuffer;
-                }
-            }
+                    IR.Tuple bodyTuple => bodyTuple.Fields.AsValueEnumerable().Select(x => (Expr)x).ToArray(),
+                    var x => [(Expr)x],
+                },
+            };
 
-            return new(new Sequential(_body.ToArray()), outBuffers);
+            if (_isEntry)
+            {
+                _body.Add(T.Return(outBuffers));
+                return new(new Sequential(_body.ToArray()), Array.Empty<Var>());
+            }
+            else
+            {
+                // Add necessary copy calls
+                for (int i = 0; i < outBuffers.Length; i++)
+                {
+                    var previousBuffers = outBuffers.AsReadOnlySpan(0, i);
+                    var currentBuffer = outBuffers[i];
+                    if (currentBuffer is not Var
+                        || previousBuffers.ReferenceContains(currentBuffer)
+                        || function.Parameters.ReferenceContains((Var)currentBuffer))
+                    {
+                        var newBuffer = new Var($"out_{_bufferIndex++}", _selectionPass.GetArgumentType(currentBuffer));
+                        _body.Add(T.Memcopy(newBuffer, currentBuffer));
+                        outBuffers[i] = newBuffer;
+                    }
+                }
+
+                return new(new Sequential(_body.ToArray()), outBuffers.Cast<Var>().ToArray());
+            }
         }
 
         protected sealed override Expr VisitLeafTensorConst(TensorConst expr, Unit context)
@@ -113,17 +146,29 @@ public abstract class TIRSelectionPass : FunctionPass
 
         protected sealed override Expr VisitLeafVar(Var expr, Unit context) => expr;
 
-        protected sealed override Expr VisitLeafCall(Call expr, Unit context)
+        protected sealed override BaseExpr VisitLeafCall(Call expr, Unit context)
         {
             var args = expr.Arguments.AsValueEnumerable().Select(x => ExprMemo[x]).ToArray();
             return SelectCall(expr, args);
         }
 
-        private Expr SelectCall(Call call, IReadOnlyList<Expr> arguments)
+        protected override BaseExpr VisitLeafIf(If expr, Unit context)
         {
-            if (call.Target is IR.Tensors.GetItem && arguments[IR.Tensors.GetItem.Input.Index] is IR.Tuple tuple && call[IR.Tensors.GetItem.Index] is TensorConst index)
+            var output = CreateOutputBuffer(expr);
+            var condition = (Expr)Visit(expr.Condition, context);
+            return T.Let(out var outputVar, (Expr)output).Body(
+                T.Assign(out var arguments, expr.Arguments.AsValueEnumerable().Select(x => ExprMemo[x]).ToArray().Append(outputVar).ToArray()),
+                T.If(condition)
+                    .Then(new Call(new FunctionWrapper(_selectionPass.ModuleKind, expr.Then), arguments))
+                    .Else(new Call(new FunctionWrapper(_selectionPass.ModuleKind, expr.Else), arguments)))
+                .Build();
+        }
+
+        private BaseExpr SelectCall(Call call, IReadOnlyList<BaseExpr> arguments)
+        {
+            if (call.Target is IR.Tensors.GetItem && arguments[IR.Tensors.GetItem.Input.Index] is IR.Tuple tuple && call[IR.Tensors.GetItem.Index] is DimConst index)
             {
-                return tuple[index.Value.ToScalar<int>()];
+                return tuple[index.Value];
             }
             else
             {
@@ -131,25 +176,53 @@ public abstract class TIRSelectionPass : FunctionPass
                 var newCall = call.Target switch
                 {
                     PrimFunctionWrapper { Target: TIR.PrimFunction deviceFunc } => new Call(deviceFunc, arguments.Append(output).ToArray()),
-                    _ => _selectionPass.SelectCall(call, arguments, output),
+                    Function fn => new Call(new FunctionWrapper(_selectionPass.ModuleKind, fn), arguments.Append(output).ToArray()),
+                    _ => _selectionPass.SelectCall(call, arguments, ref Unsafe.As<BaseExpr, Expr>(ref output)),
                 };
                 _body.Add(newCall);
                 return output;
             }
         }
 
-        private Expr CreateOutputBuffer(Call expr)
+        private BaseExpr CreateOutputBuffer(Expr expr)
         {
             var root = VisitRoot!;
+            var memoryLocation = MemoryLocation.Data;
+            string namePrefix = "call_";
             if (ReferenceEquals(root, expr)
                 || (root is IR.Tuple tuple && tuple.Fields.AsValueEnumerable().Contains(expr, ReferenceEqualityComparer.Instance)))
             {
-                return new Var($"out_{_bufferIndex++}", expr.CheckedType);
+                namePrefix = "out_";
+                if (_isEntry)
+                {
+                    memoryLocation = MemoryLocation.Output;
+                }
+                else
+                {
+                    return new Var($"{namePrefix}{_bufferIndex++}", expr.CheckedType);
+                }
+            }
+
+            if (expr.CheckedType is TupleType tt)
+            {
+                var fields = tt.Fields.AsValueEnumerable().Select(x => CreateBuffer(x, memoryLocation)).ToArray();
+                return new IR.Tuple(fields);
             }
             else
             {
-                return T.CreateBuffer(expr.CheckedTensorType, MemoryLocation.Data, out _, $"call_{_bufferIndex++}", expr.CheckedType as DistributedType);
+                return CreateBuffer(expr.CheckedType, memoryLocation);
             }
+        }
+
+        private TIR.Buffer CreateBuffer(IRType type, MemoryLocation memoryLocation)
+        {
+            var tensorType = type switch
+            {
+                DistributedType dt => dt.TensorType,
+                TensorType tt => tt,
+                _ => throw new ArgumentException($"Unsupported type: {type}"),
+            };
+            return T.CreateBuffer(tensorType, memoryLocation, out _, $"buffer_{_bufferIndex++}", type as DistributedType);
         }
     }
 }

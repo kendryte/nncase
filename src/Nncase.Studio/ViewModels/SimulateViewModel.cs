@@ -190,7 +190,7 @@ public partial class SimulateViewModel : ViewModelBase
         var paramList = Context.Params!;
         foreach ((var tensor, var param) in RuntimeInput.Zip(paramList))
         {
-            var tt = (TensorType)param.TypeAnnotation;
+            var tt = (TensorType)param.CheckedType;
             if (tensor.ElementType != tt.DType)
             {
                 Context.OpenDialog($"{param.Name} input datatype mismatch");
@@ -199,7 +199,7 @@ public partial class SimulateViewModel : ViewModelBase
                 }
             }
 
-            if (tt.Shape.Count != tensor.Shape.Count || tt.Shape.Zip(tensor.Shape)
+            if (tt.Shape.Rank != tensor.Shape.Rank || tt.Shape.Zip(tensor.Shape)
                     .Any(pair => pair.First.IsFixed && pair.First != pair.Second))
             {
                 Context.OpenDialog($"{param.Name} input shape mismatch");

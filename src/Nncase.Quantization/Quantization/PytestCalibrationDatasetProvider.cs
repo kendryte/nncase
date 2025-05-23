@@ -25,7 +25,7 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
     /// </summary>
     /// <param name="vars">Input parameters.</param>
     /// <param name="dataset">Dataset folder path.</param>
-    public PytestCalibrationDatasetProvider(IReadOnlyList<Var> vars, string dataset)
+    public PytestCalibrationDatasetProvider(IReadOnlyList<IVar> vars, string dataset)
     {
         Trace.Assert(Directory.Exists(dataset), "The dataset folder path must be valid!");
 
@@ -47,14 +47,14 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
         Count = _sampleSets.Length;
         Samples = _sampleSets.Select(samples =>
         {
-            var values = new Dictionary<Var, IValue>();
+            var values = new Dictionary<IVar, IValue>();
 
             // check the sample length equal with vars length
             Trace.Assert(samples.Length == vars.Count, "The dataset samples length not match model inputs length!");
             foreach (var (sample, var) in samples.Zip(vars))
             {
                 IValue value;
-                switch (var.CheckedType)
+                switch (((Expr)var).CheckedType)
                 {
                     case TensorType tensorType:
                         {
@@ -88,7 +88,7 @@ public sealed class PytestCalibrationDatasetProvider : ICalibrationDatasetProvid
     public int? Count { get; }
 
     /// <inheritdoc/>
-    public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+    public IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> Samples { get; }
 
     /// <summary>
     /// try parse the sample item.

@@ -21,7 +21,7 @@ public sealed partial class LogSoftmax : Op
     /// <summary>
     /// Gets axis.
     /// </summary>
-    public static readonly ParameterInfo Axis = new(typeof(LogSoftmax), 1, "axis", IsIntegralScalar());
+    public static readonly ParameterInfo Axis = new(typeof(LogSoftmax), 1, "axis", IsDimensionType());
 }
 
 /// <summary>

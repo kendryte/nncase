@@ -10,6 +10,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
@@ -38,14 +39,14 @@ public sealed partial class CombineBinaryReshape : IRewriteRule
     /// </summary>
     public CombineBinaryReshape()
     {
-        var shape = IsWildcard("shape");
+        var shape = IsShape("shape");
         Pattern = IsBinary("binary", "call", x => true, IsReshape(IsWildcard("x"), shape), IsReshape(IsWildcard("y"), shape));
     }
 
     /// <inheritdoc/>
     public IPattern Pattern { get; init; }
 
-    private Expr? GetReplace(Binary binary, Call call, Expr x, Expr y, Expr shape)
+    private Expr? GetReplace(Binary binary, Call call, Expr x, Expr y, Shape shape)
     {
         if (x.CheckedShape == y.CheckedShape)
         {
@@ -68,7 +69,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
     /// </summary>
     public CombineConstBinaryReshape()
     {
-        var shape = IsTensorConst("shape");
+        var shape = IsFixedShape("shape");
         var input = IsReshape(IsWildcard("input") with { TypePattern = HasFixedShape() }, shape);
         var @const = IsConst("constInput") with { TypePattern = HasRank(1) | HasRank(0) };
         Pattern = IsAlt(IsCallWildcard("call", IsOp<Binary>("binary"), input, @const), IsCallWildcard("call", IsOp<Binary>("binary"), @const, input));
@@ -77,9 +78,9 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
     /// <inheritdoc/>
     public IPattern Pattern { get; init; }
 
-    private Expr? GetReplace(Binary binary, Call call, IReadOnlyList<Expr> callParams, Expr input, TensorConst constInput, TensorConst shape)
+    private Expr? GetReplace(Binary binary, Call call, IReadOnlyList<BaseExpr> callParams, Expr input, TensorConst constInput, Shape shape)
     {
-        var oldShape = shape.Value.ToArray<long>();
+        var oldShape = shape.ToValueArray();
         var significantShape = oldShape.Where(x => x > 1).ToArray();
 
         bool leftConst = ReferenceEquals(callParams[0], constInput);
@@ -106,7 +107,7 @@ public sealed partial class CombineConstBinaryReshape : IRewriteRule
                         binary.BinaryOp,
                         leftConst ? Reshape(constInput, newConstShape.ToArray()) : input,
                         leftConst ? input : Reshape(constInput, newConstShape.ToArray())).InheritMetaData(call),
-                    call.CheckedShape.ToValueArrayExpr());
+                    call.CheckedShape);
                 res.InferenceType();
                 return res;
             }
@@ -128,9 +129,9 @@ public sealed partial class CombineUnaryReshape : IRewriteRule
             "unary",
             "call",
             _ => true,
-            IsReshape(IsWildcard("input"), IsWildcard("shape")));
+            IsReshape(IsWildcard("input"), IsShape("shape")));
 
-    private Expr? GetReplace(Unary unary, Call call, Expr input, Expr shape)
+    private Expr? GetReplace(Unary unary, Call call, Expr input, Shape shape)
     {
         return Reshape(
             Unary(unary.UnaryOp, input).InheritMetaData(call),
@@ -149,7 +150,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
         IsCall("call", IsOp<ActivationOp>("activation", op => true), IsVArgsRepeat("parameters", (inputs) =>
         {
             var patterns = new Pattern[inputs.Length];
-            patterns[0] = IsReshape(IsWildcard("input"), IsWildcard("shape"));
+            patterns[0] = IsReshape(IsWildcard("input"), IsShape("shape"));
             for (int i = 1; i < inputs.Length; i++)
             {
                 patterns[i] = IsWildcard();
@@ -158,7 +159,7 @@ public sealed partial class CombineActivationsReshape : IRewriteRule
             return patterns;
         }));
 
-    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<Expr> parameters, Expr shape)
+    private Expr? GetReplace(ActivationOp activation, Call call, Expr input, IReadOnlyList<BaseExpr> parameters, Shape shape)
     {
         // TODO: Not support PRelu for now.
         if (activation is PRelu)
@@ -184,11 +185,11 @@ public sealed partial class CombineReshapePad : IRewriteRule
             "reshape",
             "reshapeCall",
             _ => true,
-            IsPad("pad", "padCall", _ => true, IsWildcard("input"), IsTensorConst("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() },
+            IsPad("pad", "padCall", _ => true, IsWildcard("input"), IsPaddings("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() },
             IsWildcard("shape")) with
         { TypePattern = HasFixedShape() };
 
-    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, int[] pads, Expr value)
+    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Shape shape, Paddings pads, Expr value)
     {
         // only support pattern like melgan
         var reshapeRank = reshapeCall.CheckedShape.Rank;
@@ -198,7 +199,7 @@ public sealed partial class CombineReshapePad : IRewriteRule
         {
             return Pad(
             Reshape(input, Enumerable.Repeat(1L, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray()).InheritMetaData(reshapeCall),
-            Tensor.From(Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(), [reshapeRank, 2]),
+            Enumerable.Repeat(Padding.Zero, reshapeRank - padRank).Concat(pads).ToArray(),
             pad.PadMode,
             value).InheritMetaData(padCall);
         }
@@ -230,9 +231,9 @@ public sealed partial class CombineReshapeTranspose : IRewriteRule
             null,
             "trans",
             IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsTensorConst("perm")) with
+            IsFixedShape("perm")) with
         { TypePattern = HasFixedShape() },
-        IsTensorConst("newShape"));
+        IsFixedShape("newShape"));
 
     private Expr? GetReplace(Expr input, Call trans, long[] newShape, int[] perm)
     {
@@ -250,7 +251,7 @@ public sealed partial class CombineReshapeTranspose : IRewriteRule
             var inv = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
             var invViewAxis = inv.Where(tp => tp.i == viewAxis).First().p;
             var invPerm = perm.ToList();
-            var invNewShape = input.CheckedShape.ToValueList();
+            var invNewShape = ((RankedShape)input.CheckedShape).ToList();
             invNewShape.RemoveAt(invViewAxis);
             invPerm.Remove(invViewAxis);
             return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(input, invNewShape.ToArray()), invPerm.Select(i => i > invViewAxis ? i - 1 : i).ToArray());

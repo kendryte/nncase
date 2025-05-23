@@ -24,7 +24,7 @@ public sealed class LifetimeCollector
         return lifetimes.Values.Select(x => x.Lifetime).ToArray();
     }
 
-    private static bool TryGetBuffer(Expr expr, [MaybeNullWhen(false)] out TIR.Buffer buffer)
+    private static bool TryGetBuffer(BaseExpr expr, [MaybeNullWhen(false)] out TIR.Buffer buffer)
     {
         switch (expr)
         {
@@ -61,7 +61,7 @@ public sealed class LifetimeCollector
 
         protected override Unit VisitLeafBuffer(TIR.Buffer expr)
         {
-            if (expr.MemSpan.Start is None or Call { Target: IR.Buffers.DDrOf })
+            if (expr.MemSpan.Start is None or Call { Target: IR.Buffers.AddressOf })
             {
                 (var bufferSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(expr.CheckedTensorType, expr.DistributedType);
                 var lifetime = new BufferLifetime(expr) { Memory = new(0, bufferSize) };
@@ -81,7 +81,7 @@ public sealed class LifetimeCollector
             return default;
         }
 
-        private void AcquireBuffer(Expr expr)
+        private void AcquireBuffer(BaseExpr expr)
         {
             if (expr is IR.Tuple tuple)
             {
@@ -92,7 +92,7 @@ public sealed class LifetimeCollector
             }
             else if (TryGetBuffer(expr, out var buffer))
             {
-                if (buffer.MemSpan.Start is None or Call { Target: IR.Buffers.DDrOf })
+                if (buffer.MemSpan.Start is None or Call { Target: IR.Buffers.AddressOf })
                 {
                     ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
                     record.RefCount++;
@@ -113,7 +113,7 @@ public sealed class LifetimeCollector
 
         protected override Unit VisitLeafBuffer(TIR.Buffer expr)
         {
-            if (expr.MemSpan.Start is None or Call { Target: IR.Buffers.DDrOf })
+            if (expr.MemSpan.Start is None or Call { Target: IR.Buffers.AddressOf })
             {
                 ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, expr);
                 record.Lifetime.Time.Start = _currentAge;
@@ -133,7 +133,7 @@ public sealed class LifetimeCollector
             return default;
         }
 
-        private void ReleaseBuffer(Expr expr)
+        private void ReleaseBuffer(BaseExpr expr)
         {
             if (expr is IR.Tuple tuple)
             {
@@ -144,7 +144,7 @@ public sealed class LifetimeCollector
             }
             else if (TryGetBuffer(expr, out var buffer))
             {
-                if (buffer.MemSpan.Start is None or Call { Target: IR.Buffers.DDrOf })
+                if (buffer.MemSpan.Start is None or Call { Target: IR.Buffers.AddressOf })
                 {
                     ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
                     if (--record.RefCount == 0)

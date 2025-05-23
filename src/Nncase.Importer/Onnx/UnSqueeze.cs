@@ -19,14 +19,14 @@ namespace Nncase.Importer
 
         private Expr UnsqueezeV1(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var axes = Tensor.From<long>(GetIntsAttribute(op, "axes"));
             return Unsqueeze(input, axes);
         }
 
         private Expr UnsqueezeV13(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var input = GetInputExpr<Expr>(op, 0);
             var axes = GetOptionInputExpr(op, 1, ComputeDefaultAxes(input));
             return Unsqueeze(input, axes);
         }

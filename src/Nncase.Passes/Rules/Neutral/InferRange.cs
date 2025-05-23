@@ -17,7 +17,7 @@ public sealed partial class InferRange : RewriteRule<Pattern>
 {
     public override Pattern Pattern => IsWildcard("expr", expr => expr.Metadata.Range is null);
 
-    private Expr GetReplace(Expr expr)
+    private BaseExpr GetReplace(BaseExpr expr)
     {
         var visitor = new InferRangeVisitor();
         visitor.Visit(expr);

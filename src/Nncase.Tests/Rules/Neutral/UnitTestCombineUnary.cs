@@ -109,7 +109,7 @@ public class UnitTestCombineUnary : TransformTestBase
     public void TestCombinePadUnaryPositive(UnaryOp opType, long[] inShape, int[,] paddings, PadMode padM, float padValue)
     {
         var a = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Pad(a, paddings, padM, padValue));
         TestMatched<CombinePadUnary>(rootPre, normal);
@@ -119,7 +119,7 @@ public class UnitTestCombineUnary : TransformTestBase
     public void TestCombinePadAbs()
     {
         var a = new Var();
-        var feeds = new Dictionary<Var, IValue>();
+        var feeds = new Dictionary<IVar, IValue>();
         feeds.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, new long[] { 1, 3, 4, 5 }).Evaluate());
         var pre = IR.F.Math.Unary(UnaryOp.Abs, Pad(a, new int[,] { { 1, 1 }, { -1, -1 }, { 1, 1 }, { 3, 3 } }, PadMode.Reflect, 0.0f));
         var rules = new[] { new CombinePadUnary() };
@@ -145,7 +145,7 @@ public class UnitTestCombineUnary : TransformTestBase
     public void TestCombineSliceUnaryPositive(UnaryOp opType, long[] inShape, long[] begins, long[] ends, int[] axes, int[] strides)
     {
         var a = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Slice(a, begins, ends, axes, strides));
         TestMatched<CombineSliceUnary>(rootPre, normal);
@@ -156,7 +156,7 @@ public class UnitTestCombineUnary : TransformTestBase
     public void TestCombineReshapeUnaryPositive(UnaryOp opType, long[] inShape, int[] outShape)
     {
         var a = new Var("input", new TensorType(DataTypes.Float32, inShape));
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Reshape(a, outShape));
         TestMatched<CombineReshapeUnary>(rootPre, normal);
@@ -167,7 +167,7 @@ public class UnitTestCombineUnary : TransformTestBase
     public void TestCombineTranposeUnaryPositive(UnaryOp opType, long[] inShape, int[] perm)
     {
         var a = new Var();
-        var normal = new Dictionary<Var, IValue>();
+        var normal = new Dictionary<IVar, IValue>();
         normal.Add(a, Random.Normal(DataTypes.Float32, 0, 1, 0, inShape).Evaluate());
         var rootPre = IR.F.Math.Unary(opType, Tensors.Transpose(a, perm));
         TestMatched<CombineTransposeUnary>(rootPre, normal);

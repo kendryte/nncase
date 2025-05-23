@@ -1,0 +1,24 @@
+@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.Matmul>
+@{
+}
+
+@(Model.Indent){
+@if (Model.Arguments[3].Symbol.Name != "nullptr")
+{
+@:@(Model.Indent)if (@Html.Raw(Model.Arguments[3].Symbol.Name)) {
+@:@(Model.Indent)  constexpr std::string_view function_name = "matmul";
+@:@(Model.Indent)  auto_profiler profiler(function_name, runtime::profiling_level::device);
+@:@(Model.Indent)  matmul<true, @(Model.Target.TransposeA.ToString().ToLowerInvariant()), @(Model.Target.TransposeB.ToString().ToLowerInvariant())>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), fixed_shape<@string.Join(",", Model.Target.LhsPackedAxes)>{},  fixed_shape<@string.Join(",", Model.Target.LhsPadedNums)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPackedAxes)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPadedNums)>{});
+@:@(Model.Indent)} else {
+@:@(Model.Indent)  constexpr std::string_view function_name = "matmul";
+@:@(Model.Indent)  auto_profiler profiler(function_name, runtime::profiling_level::device);
+@:@(Model.Indent)  matmul<false, @(Model.Target.TransposeA.ToString().ToLowerInvariant()), @(Model.Target.TransposeB.ToString().ToLowerInvariant())>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), fixed_shape<@string.Join(",", Model.Target.LhsPackedAxes)>{},  fixed_shape<@string.Join(",", Model.Target.LhsPadedNums)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPackedAxes)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPadedNums)>{});
+@:@(Model.Indent)}
+}
+else
+{
+@:@(Model.Indent)  constexpr std::string_view function_name = "matmul";
+@:@(Model.Indent)  auto_profiler profiler(function_name, runtime::profiling_level::device);
+@:@(Model.Indent)  matmul<false, @(Model.Target.TransposeA.ToString().ToLowerInvariant()), @(Model.Target.TransposeB.ToString().ToLowerInvariant())>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), fixed_shape<@string.Join(",", Model.Target.LhsPackedAxes)>{},  fixed_shape<@string.Join(",", Model.Target.LhsPadedNums)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPackedAxes)>{}, fixed_shape<@string.Join(",", Model.Target.RhsPadedNums)>{});
+}
+@(Model.Indent)}

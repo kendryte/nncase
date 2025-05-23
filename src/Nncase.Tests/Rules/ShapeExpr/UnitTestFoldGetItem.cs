@@ -34,7 +34,7 @@ public class UnitTestFoldGetItem : TransformTestBase
         var abs = IR.F.Math.Abs(inputVar);
         var s = Stack(new IR.Tuple(new[] { abs[0], abs[1], abs[2] }), 0);
         var body = new If(true, new[] { 3, 2, 1 }, s);
-        TestMatched<FoldStackGetItem>(body, new Dictionary<Var, IValue> { { inputVar, Value.FromTensor(input) } });
+        TestMatched<FoldStackGetItem>(body, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 #endif
 

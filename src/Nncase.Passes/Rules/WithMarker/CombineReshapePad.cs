@@ -9,6 +9,7 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.IR.F.Math;
@@ -37,12 +38,12 @@ public sealed partial class CombineReshapePad : IRewriteRule
                 "reshape",
                 "reshapeCall",
                 _ => true,
-                HasMarker(IsPad("pad", "padCall", _ => true, HasMarker(IsWildcard("input"), "marker"), IsTensorConst("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() }, "padOutMarker"),
+                HasMarker(IsPad("pad", "padCall", _ => true, HasMarker(IsWildcard("input"), "marker"), IsPaddings("pads"), IsTensorConst("value")) with { TypePattern = HasFixedShape() }, "padOutMarker"),
                 IsWildcard("shape")) with
             { TypePattern = HasFixedShape() },
             "outMarker");
 
-    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, int[] pads, Expr value, Marker marker, IMatchResult result)
+    private Expr? GetReplace(Reshape reshape, Call reshapeCall, Pad pad, Call padCall, Expr input, Expr shape, Paddings pads, Expr value, Marker marker, IMatchResult result)
     {
         // only support pattern like melgan
         var reshapeRank = reshapeCall.CheckedShape.Rank;
@@ -55,9 +56,7 @@ public sealed partial class CombineReshapePad : IRewriteRule
                         marker.With(target: input),
                         Enumerable.Repeat(1L, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray())
                     .InheritMetaData(reshapeCall)),
-                Tensor.From(
-                    Enumerable.Repeat(0, (reshapeRank - padRank) * 2).Concat(pads).ToArray(),
-                    [reshapeRank, 2]),
+                Enumerable.Repeat(Padding.Zero, (reshapeRank - padRank) * 2).Concat(pads).ToArray(),
                 pad.PadMode,
                 value).InheritMetaData(padCall);
             var outMarker = result.GetValueOrDefault("outMarker");
@@ -87,22 +86,22 @@ public sealed partial class CombineTransposePad : IRewriteRule
         "padCall",
         x => true,
         HasMarker(IsTranspose(IsWildcard("input"), IsTensorConst("perm")), "marker"),
-        IsTensorConst("pads"),
+        IsPaddings("pads"),
         IsWildcard("padValue")),
         "outMarker");
 
-    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue, Marker marker, IMatchResult result)
+    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Paddings pads, Expr padValue, Marker marker, IMatchResult result)
     {
         var inv_perm = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
-        var newPads = new List<Expr>();
+        var newPads = new List<Padding>();
         for (var i = 0; i < inv_perm.Length; i++)
         {
-            newPads.Add(Stack(new IR.Tuple(pads[inv_perm[i].i, 0], pads[inv_perm[i].i, 1]), 0));
+            newPads.Add(pads[inv_perm[i].i]);
 
             // newPads[i] = pads[perm[i]];
         }
 
-        var p = Pad(input, Stack(new IR.Tuple(newPads.ToArray()), 0).Evaluate().AsTensor(), pad.PadMode, padValue).InheritMetaData(padCall);
+        var p = Pad(input, newPads.ToArray(), pad.PadMode, padValue).InheritMetaData(padCall);
         var newTranspose = Transpose(marker.With(target: p), perm);
         var outMarker = result.GetValueOrDefault("outMarker");
         if (outMarker != null)
@@ -132,24 +131,23 @@ public sealed partial class CombinePadTranspose : IRewriteRule
             "padCall",
             y => true,
             IsWildcard("input"),
-            IsTensorConst("pads"),
+            IsPaddings("pads"),
             IsTensorConst("padValue")),
             "marker"),
         IsTensorConst("perm")),
         "outMarker");
 
-    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Expr pads, Expr padValue, Marker marker, IMatchResult result)
+    private Expr GetReplace(Pad pad, Call padCall, Expr input, int[] perm, Paddings pads, Expr padValue, Marker marker, IMatchResult result)
     {
-        var newPads = new List<int>();
+        var newPads = new List<Padding>();
         for (int i = 0; i < perm.Length; i++)
         {
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[perm[i] * 2]);
-            newPads.Add(((TensorConst)pads).Value.ToArray<int>()[(perm[i] * 2) + 1]);
+            newPads.Add(pads[perm[i]]);
         }
 
         var newPad = Pad(
             marker.With(target: Transpose(input, perm)),
-            Tensor.From<int>(newPads.ToArray(), pads.CheckedShape),
+            newPads.ToArray(),
             pad.PadMode,
             padValue).InheritMetaData(padCall);
         var outMarker = result.GetValueOrDefault("outMarker");

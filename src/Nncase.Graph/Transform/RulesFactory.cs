@@ -61,7 +61,7 @@ public class TemplateRule : IRewriteRule
     public IPattern Pattern { get; }
 
     /// <inheritdoc/>
-    public Expr? GetReplace(IMatchResult result, RunPassContext options)
+    public BaseExpr? GetReplace(IMatchResult result, RunPassContext options)
     {
         var converter = new ExprGeneratorVisitor(result);
         if (_predicate is null || (_predicate is not null && converter.Visit(_predicate).Evaluate().AsTensor().ToScalar<bool>()))
@@ -74,7 +74,7 @@ public class TemplateRule : IRewriteRule
 }
 
 /// <inheritdoc/>
-internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
+internal sealed class ExprGeneratorVisitor : PatternVisitor<BaseExpr, IRType>
 {
     private readonly IMatchResult _result;
 
@@ -84,55 +84,55 @@ internal sealed class ExprGeneratorVisitor : PatternVisitor<Expr, IRType>
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(CallPattern pattern)
+    public override BaseExpr VisitLeaf(CallPattern pattern)
     {
-        return new Call(PatternMemo[pattern.Target], pattern.Arguments.Select(p => PatternMemo[p]).ToArray());
+        return new Call((Expr)PatternMemo[pattern.Target], pattern.Arguments.Select(p => PatternMemo[p]).ToArray());
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(ConstPattern pattern)
-    {
-        return _result.Get(pattern);
-    }
-
-    /// <inheritdoc/>
-    public override Expr VisitLeaf(TensorConstPattern pattern)
+    public override BaseExpr VisitLeaf(ConstPattern pattern)
     {
         return _result.Get(pattern);
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(TupleConstPattern pattern)
+    public override BaseExpr VisitLeaf(TensorConstPattern pattern)
     {
         return _result.Get(pattern);
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(FunctionPattern pattern)
+    public override BaseExpr VisitLeaf(TupleConstPattern pattern)
     {
-        return new Function(PatternMemo[pattern.Body], pattern.Parameters.Select(p => (Var)PatternMemo[p]).ToArray());
+        return _result.Get(pattern);
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(IOpPattern pattern)
+    public override BaseExpr VisitLeaf(FunctionPattern pattern)
     {
-        return (Expr)_result[pattern];
+        return new Function((Expr)PatternMemo[pattern.Body], pattern.Parameters.Select(p => (Var)PatternMemo[p]).ToArray());
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(TuplePattern pattern)
+    public override BaseExpr VisitLeaf(IOpPattern pattern)
+    {
+        return (BaseExpr)_result[pattern];
+    }
+
+    /// <inheritdoc/>
+    public override BaseExpr VisitLeaf(TuplePattern pattern)
     {
         return new IR.Tuple(pattern.Fields.Select(f => PatternMemo[f]).ToArray());
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(VarPattern pattern)
+    public override BaseExpr VisitLeaf(VarPattern pattern)
     {
         return _result.Get(pattern);
     }
 
     /// <inheritdoc/>
-    public override Expr VisitLeaf(ExprPattern pattern)
+    public override BaseExpr VisitLeaf(ExprPattern pattern)
     {
         return _result.Get(pattern);
     }

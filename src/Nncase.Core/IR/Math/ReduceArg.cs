@@ -27,7 +27,7 @@ public sealed partial class ReduceArg : Op
     /// Gets Axis.
     /// </summary>
     /// <remarks>Named dim in torch.</remarks>
-    public static readonly ParameterInfo Axis = new(typeof(ReduceArg), 1, "axis", IsIntegralScalar());
+    public static readonly ParameterInfo Axis = new(typeof(ReduceArg), 1, "axis", IsDimensionType());
 
     /// <summary>
     /// Gets whether to keep dims.

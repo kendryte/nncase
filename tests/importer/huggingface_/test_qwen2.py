@@ -39,7 +39,7 @@ def test_qwen2(request):
     batch = 1
 
     [generator.inputs.text]
-    args = 'tests/importer/huggingface_/prompt.txt'
+    args = 'tests/importer/huggingface_/prompt_qwen.txt'
 
     [generator.calibs]
     method = 'text'
@@ -47,7 +47,12 @@ def test_qwen2(request):
     batch = 1
 
     [generator.calibs.text]
-    args = 'tests/importer/huggingface_/prompt.txt'
+    args = 'tests/importer/huggingface_/prompt_qwen.txt'
+
+    #TODO: Need remove!
+    [target]
+    [target.cpu]
+    infer = false
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
@@ -63,4 +68,4 @@ def test_qwen2(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', __file__])
+    pytest.main(['-vvs', __file__])

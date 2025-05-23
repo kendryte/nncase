@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "caching.h"
 #include "distributed.h"
 #include "kernels/binary.h"
 #include "kernels/cast.h"
@@ -31,6 +32,7 @@
 #include "kernels/pack.h"
 #include "kernels/pad.h"
 #include "kernels/range.h"
+#include "kernels/paged_attention.h"
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
 #include "kernels/reshape.h"

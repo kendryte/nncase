@@ -37,10 +37,10 @@ public sealed partial class FoldTwoReduce : IRewriteRule
                 "rd1Call",
                 _ => true,
                 IsWildcard("input"),
-                IsTensorConst("axis1"),
+                IsFixedShape("axis1"),
                 IsTensorConst("initValue1"),
                 IsTensorConst("keepDims1")),
-            IsTensorConst("axis2"),
+            IsFixedShape("axis2"),
             IsTensorConst("initValue2"),
             IsTensorConst("keepDims2")) with
     {

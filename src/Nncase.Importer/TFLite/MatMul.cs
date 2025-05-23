@@ -19,7 +19,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitMatMul(in tflite.Operator op, bool isFullyConnected = true)
         {
-            var (input, other) = GetInputExprs(op, 0, 1);
+            var (input, other) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var inTensor = GetInputTensor(op, 0);
             var otherTensor = GetInputTensor(op, 1);
 
@@ -62,7 +62,7 @@ namespace Nncase.Importer.TFLite
             }
 
             var bias = op.InputsLength == 3 && op.Inputs(2) != -1
-                ? GetInputExprs(op, 2)
+                ? GetInputExprs<Expr>(op, 2)
                 : Expand(Cast(0, GetDataType(GetInputTensor(op, 0).Type)), new[] { otherTensor.Shape(0) }).Evaluate().AsTensor();
 
             var matmul = MatMul(lhs, rhs);

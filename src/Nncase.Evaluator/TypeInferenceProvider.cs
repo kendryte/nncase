@@ -42,7 +42,7 @@ internal class TypeInferenceProvider : ITypeInferenceProvider
     }
 
     /// <inheritdoc/>
-    public bool InferenceType(Expr expr)
+    public bool InferenceType(BaseExpr expr)
     {
         var visitor = new TypeInferenceVisitor();
         visitor.Visit(expr);

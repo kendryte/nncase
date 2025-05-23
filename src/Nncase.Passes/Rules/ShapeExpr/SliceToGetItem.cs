@@ -26,13 +26,13 @@ public partial class SliceToGetItem : RewriteRule<Pattern>
     public override Pattern Pattern => IsSqueeze(
         IsSlice(
             IsWildcard("input") with { TypePattern = HasRank(1) },
-            IsTensorConst("begins"),
-            IsTensorConst("ends"),
-            IsTensorConst("axes"),
-            IsTensorConst("strides", strides => strides.Value.ToArray<int>()[0] == 1)),
-        IsTensorConst("dims"));
+            IsFixedShape("begins"),
+            IsFixedShape("ends"),
+            IsFixedShape("axes"),
+            IsRankedShape("strides", strides => strides.IsFixed && strides[0].FixedValue == 1)),
+        IsFixedShape("dims"));
 
-    private Expr? GetReplace(Expr input, int[] begins, int[] ends)
+    private BaseExpr? GetReplace(Expr input, int[] begins, int[] ends)
     {
         if ((ends[0] - begins[0]) == 1)
         {

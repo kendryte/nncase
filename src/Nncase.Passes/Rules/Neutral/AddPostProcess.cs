@@ -40,14 +40,14 @@ public sealed class AddPostProcess : ModulePass
 
         if (preProcess && modelLayout != outputLayout && outputLayout != string.Empty)
         {
-            Expr newOutput;
+            BaseExpr newOutput;
             if (entry.Body is IR.Tuple tuple)
             {
-                newOutput = new IR.Tuple(tuple.Fields.ToArray().Select((field, i) => AddTranspose(outputLayout, modelLayout, field)).ToArray());
+                newOutput = new IR.Tuple(tuple.Fields.ToArray().Select((field, i) => AddTranspose(outputLayout, modelLayout, (Expr)field)).ToArray());
             }
             else
             {
-                newOutput = AddTranspose(outputLayout, modelLayout, entry.Body);
+                newOutput = AddTranspose(outputLayout, modelLayout, (Expr)entry.Body);
             }
 
             var newEntry = entry.With(body: newOutput);

@@ -118,14 +118,14 @@ public class UnitTestDumpQuantError : TestClassBase
     {
         private const int CountValue = 5;
 
-        public SolidCalibrationDatasetProvider(IEnumerable<Var> vars)
+        public SolidCalibrationDatasetProvider(IEnumerable<IVar> vars)
         {
             Samples = Enumerable.Range(0, CountValue).Select(i =>
             {
-                var values = new Dictionary<Var, IValue>();
+                var values = new Dictionary<IVar, IValue>();
                 foreach (var var in vars)
                 {
-                    CompilerServices.InferenceType(var);
+                    CompilerServices.InferenceType((Expr)var);
                     var shape = var.CheckedShape.Select(d => d.IsUnknown ? 1 : d.FixedValue).ToArray();
 
                     long shapeSize = 1;
@@ -150,6 +150,6 @@ public class UnitTestDumpQuantError : TestClassBase
 
         public int? Count => CountValue;
 
-        public IAsyncEnumerable<IReadOnlyDictionary<Var, IValue>> Samples { get; }
+        public IAsyncEnumerable<IReadOnlyDictionary<IVar, IValue>> Samples { get; }
     }
 }

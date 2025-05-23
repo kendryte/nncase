@@ -1,0 +1,179 @@
+@using System.Linq
+@using NetFabric.Hyperlinq
+@using Nncase
+@using Nncase.IR
+@model Nncase.CodeGen.NTT.KernelMainModel
+@{
+  var inputCount = Model.PrimFunction.Parameters.Length;
+}
+
+#include <nncase/ntt/runtime.h>
+#include <nncase/ntt/caching.h>
+#include "topo_aware_runtime.h"
+#include <nncase/float8.h>
+#include <nncase/half.h>
+#include <nncase/bfloat16.h>
+@foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).SkipLast(1)){
+@:uint8_t L@(i+1)Data[@(s)];
+}
+#include "../device.h"
+#include "kernel.h"
+
+//alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
+nncase::ntt::tensor<uintptr_t[2], nncase::ntt::distributed::topology_shape_t> global_local_data_ptr;
+nncase::ntt::tensor<uintptr_t, nncase::ntt::distributed::topology_shape_t> global_local_rdata_ptr;
+
+extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
+  nncase::ntt::runtime::thread_inout_desc *const output_descs,
+  const std::byte *rdata,
+  const std::byte *local_rdata,
+  std::byte *output,
+  nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__> program_ids) {
+  /* prepare inputs */
+  @{
+    var names = new List<string>();
+  }
+  @foreach(var (input,i) in Model.PrimFunction.Parameters.ToArray().Select((input,i)=>(input,i)))
+  {
+    var name = IRHelpers.GetIdentityName(input.Name);
+    if (input is DimVar)
+    {
+      names.Add(name);
+  @:int64_t @Html.Raw(name) = *(int64_t *)input_descs[@i].data;
+    }
+    else
+    {
+      names.Add(name);
+      var shape = input.CheckedShape;
+      var rank = shape.Rank;
+      var sizeStr = $"input_descs[{i}].size / {input.CheckedDataType.SizeInBytes}";
+      var elemType = input.CheckedDataType.ToC();
+      var dimType = shape.IsFixed ? $"fixed_shape<{string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].FixedValue))}>" : $"ranked_shape<{rank}>";
+      var stridesType = $"ranked_strides<{rank}>";
+      var dimStr = shape.IsFixed ? ", {}" : $", make_ranked_shape({string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].IsFixed ? $"{shape[d].FixedValue}" : $"input_descs[{i}].shape[{d}]"))})";
+      var strideStr = $", make_ranked_strides({string.Join(", ", Enumerable.Range(0, rank).Select(d => $"input_descs[{i}].strides[{d}]"))})";
+      if (input.CheckedDataType is ReferenceType referenceType) {
+        if (referenceType.ElemType is Nncase.IR.NN.PagedAttentionKVCacheType kvcacheType) {
+          var size = TensorUtilities.GetProduct(shape.ToValueArray()); // todo: support dynamic shape
+          var kv_tensor_shape = kvcacheType.Config.AxisPolicies.Select(p => p.Axes.Select(i => Model.Options.Hierarchies[0][i]).Product()).ToArray();
+          var kv_tensor_size = kv_tensor_shape.Product();
+          if (kv_tensor_size > 128) {
+            throw new NotSupportedException("KVCache tensor size is too large!");
+          }
+          var placement = new Placement(Model.Options.Hierarchies[0], Model.Options.HierarchyNames, Model.Options.HierarchyKind);
+
+  @:std::span<runtime::thread_paged_attention_kv_cache_desc> p@(name)_descs((runtime::thread_paged_attention_kv_cache_desc*)input_descs[@i].data, input_descs[@i].size / sizeof(runtime::thread_paged_attention_kv_cache_desc));
+  @:using paged_attention_kv_cache_mesh_t = @Html.Raw(KernelUtility.PlacementToC(placement));
+  @:using paged_attention_kv_cache_config_t = @Html.Raw(kvcacheType.Config.ToC());
+  @:using paged_attention_kv_cache_t = caching::paged_attention_kv_cache<paged_attention_kv_cache_mesh_t, paged_attention_kv_cache_config_t>;
+  @:alignas(paged_attention_kv_cache_t) std::byte p@(name)[sizeof(paged_attention_kv_cache_t) * @size];
+  @:for (size_t i = 0; i < @size; ++i) {
+    var init_list = string.Join(',', Enumerable.Range(0, kv_tensor_size).Select(j => $"desc.kv_storages[{j}]"));
+    @:auto desc = p@(name)_descs[i];
+    @:auto ptr = (paged_attention_kv_cache_t*)p@(name) + i;
+    @:new (ptr) paged_attention_kv_cache_t(desc.num_seqs, desc.num_tokens, tensor_view<int64_t, ranked_shape<1>> (std::span(desc.context_lens, desc.context_lens_size), ntt::make_ranked_shape(desc.context_lens_size)), tensor_view<int64_t, ranked_shape<1>> (std::span(desc.seq_lens, desc.seq_lens_size), ntt::make_ranked_shape(desc.seq_lens_size)), tensor_view<int64_t, ranked_shape<3>> (std::span(desc.block_table, desc.block_table_shape[0]*desc.block_table_shape[1]*desc.block_table_shape[2]), make_ranked_shape(desc.block_table_shape[0],desc.block_table_shape[1],desc.block_table_shape[2])), tensor_view<int64_t, ranked_shape<2>> (std::span(desc.slot_mapping, desc.slot_mapping[0]*desc.slot_mapping[1]), make_ranked_shape(desc.slot_mapping_shape[0],desc.slot_mapping_shape[1])), desc.num_blocks, ntt::tensor<intptr_t, ntt::fixed_shape<@(string.Join(',', kv_tensor_shape))>> (std::array<intptr_t, @(kv_tensor_size)> {@Html.Raw(init_list)}));
+  @:}
+  @:tensor_view<paged_attention_kv_cache_t, @Html.Raw(dimType), @Html.Raw(stridesType)> @(name)(std::span<paged_attention_kv_cache_t, @size>((paged_attention_kv_cache_t *)p@(name), @size)@Html.Raw(dimStr)@Html.Raw(strideStr));
+        }
+      } else {
+  @:std::span<@Html.Raw(elemType)> p@(name)((@Html.Raw(elemType) *)input_descs[@i].data, @Html.Raw(sizeStr));
+  @:tensor_view<@Html.Raw(elemType), @Html.Raw(dimType), @Html.Raw(stridesType)> @(name)(p@(name)@Html.Raw(dimStr)@Html.Raw(strideStr));
+      }
+    }
+  @:
+  }
+  /* prepare rdatas */
+  @foreach(var (b,i) in Model.RDataBuffers.OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
+  {
+    names.Add(b.Name);
+    if (b.Distributed == null)
+    {
+  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(rdata + @b.Offset), @b.Size);
+  @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.DimensionsStr), @Html.Raw(b.StridesStr)> @(b.Name)(p@(b.Name));
+    }
+    else
+    {
+  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(local_rdata + @b.Offset), @b.Size);
+  @:sharded_tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.DimensionsStr), @Html.Raw(b.Distributed), @Html.Raw(b.StridesStr)> @(b.Name)(p@(b.Name));
+    }
+  @:
+  }
+
+  @if (Model.Options.Hierarchies.Length > 1) {
+    throw new NotSupportedException($"not support multi form topology!");
+  }
+  
+  auto local_data = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.DataSize, @Model.Alignment);
+  global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[0] = (uintptr_t)local_data;
+  global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[1] = (uintptr_t)local_data + @Model.DataSize;
+  global_local_rdata_ptr(program_ids[0], program_ids[1], program_ids[2]) = (uintptr_t)local_rdata;
+  @(Model.PrimFunction.Name)(@(string.Concat(names.Select(x => $"{x}, ")))local_data, output, output_descs);
+  nncase::ntt::runtime::thread_free(local_data);
+}
+
+#ifdef NNCASE_STANDALONE
+int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
+  std::byte *inputs[@inputCount];
+  size_t align = @(Model.Alignment);
+  @foreach(var (b,i) in Model.PrimFunction.Parameters.ToArray().OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
+  {
+  @:inputs[@i] = (std::byte *)nncase::ntt::runtime::thread_alloc(sizeof(@Html.Raw(b.ElemType)) * @b.Size, align);
+  }
+
+  std::byte* rdata = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.RDataSize, align);
+  std::byte* local_rdata = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.LocalRdataPoolSize, align);
+  uint64_t local_rdata_header[@Model.Options.Hierarchies[0][^1] * 2];
+  for (size_t tid = 0; tid < tdim(); tid++) {
+    local_rdata_header[tid * 2] = tid * ( @Model.LocalRdataPoolSize / tdim());
+  }
+
+#ifdef __APPLE__
+  pthread_key_t cpu_thread_context_key_ = {};
+  pthread_key_create(&cpu_thread_context_key_, [](void *ptr) { delete (nncase::ntt::runtime::cpu_thread_context_t *)ptr; });
+#endif
+
+  std::vector<std::thread> blocks;
+  for (size_t cid = 0; cid < cdim(); cid++) {
+    for (size_t bid = 0; bid < bdim(); bid++) {
+      blocks.emplace_back([cid, bid, inputs, rdata, local_rdata_header, local_rdata
+#ifdef __APPLE__
+      , &cpu_thread_context_key_
+#endif
+      ] {
+        nncase::ntt::runtime::cpu_block_entry_params_t block_entry_params{
+            .tdim = tdim(),
+            .bdim = bdim(),
+            .cdim = cdim(),
+            .bid = bid,
+            .cid = cid,
+            .cpu_id_offset = (cid * bdim() + bid) * tdim(),
+            .inouts = nullptr,
+            .rdata = rdata,
+            .local_rdata_header = local_rdata_header,
+            .local_rdata = local_rdata,
+#ifdef __APPLE__
+            .cpu_thread_context_key = cpu_thread_context_key_,
+#endif
+        };
+
+        block_entry(block_entry_params);
+      });
+    }
+  }
+
+  for (auto &block : blocks) {
+    block.join();
+  }
+    
+    
+#ifdef __APPLE__
+  pthread_key_delete(cpu_thread_context_key_);
+#endif
+
+  for (size_t i = 0; i < @inputCount; i++) {
+    nncase::ntt::runtime::thread_free(inputs[i]);
+  }
+  nncase::ntt::runtime::thread_free(rdata);
+  return 0;
+}
+#endif

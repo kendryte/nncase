@@ -11,7 +11,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitShape(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
+            var input = GetInputExprs<Expr>(op, 0);
 
             // DType of ShapeOf in TF is int32
             // but in onnx it's int64

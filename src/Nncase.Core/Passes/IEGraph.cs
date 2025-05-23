@@ -40,7 +40,7 @@ public interface IEGraph
     /// </summary>
     /// <param name="expr">Expression.</param>
     /// <returns>Eclass of this node.</returns>
-    EClass Add(Expr expr);
+    EClass Add(BaseExpr expr);
 
     /// <summary>
     /// Find eclass of enode.

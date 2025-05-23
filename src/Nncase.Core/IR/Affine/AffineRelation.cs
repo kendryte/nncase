@@ -12,23 +12,25 @@ using Nncase.Utilities;
 
 namespace Nncase.IR.Affine;
 
-public sealed class AffineRelation : Expr
+public sealed class AffineRelation : BaseExpr
 {
     private readonly int _domainsCount;
     private readonly int _symbolsCount;
 
     public AffineRelation(ReadOnlySpan<AffineDim> domains, ReadOnlySpan<AffineSymbol> symbols, ReadOnlySpan<AffineExpr> results)
-            : base(domains.ToArray().AsEnumerable<Expr>().Concat(symbols.ToArray()).Concat(results.ToArray()))
+            : base(domains.ToArray().AsEnumerable<BaseExpr>().Concat(symbols.ToArray()).Concat(results.ToArray()))
     {
         _domainsCount = domains.Length;
         _symbolsCount = symbols.Length;
     }
 
-    public ReadOnlySpan<AffineDim> Domains => SpanUtility.UnsafeCast<Expr, AffineDim>(Operands.Slice(0, _domainsCount));
+    public ReadOnlySpan<AffineDim> Domains => SpanUtility.UnsafeCast<BaseExpr, AffineDim>(Operands.Slice(0, _domainsCount));
 
-    public ReadOnlySpan<AffineSymbol> Symbols => SpanUtility.UnsafeCast<Expr, AffineSymbol>(Operands.Slice(_domainsCount, _symbolsCount));
+    public ReadOnlySpan<AffineSymbol> Symbols => SpanUtility.UnsafeCast<BaseExpr, AffineSymbol>(Operands.Slice(_domainsCount, _symbolsCount));
 
-    public ReadOnlySpan<AffineExpr> Results => SpanUtility.UnsafeCast<Expr, AffineExpr>(Operands.Slice(_domainsCount + _symbolsCount));
+    public ReadOnlySpan<AffineExpr> Results => SpanUtility.UnsafeCast<BaseExpr, AffineExpr>(Operands.Slice(_domainsCount + _symbolsCount));
+
+    public override BaseExpr this[Dimension index] => throw new NotSupportedException();
 
     public static AffineRelation operator *(AffineRelation lhs, AffineRelation rhs)
     {
@@ -88,12 +90,12 @@ public sealed class AffineRelation : Expr
         return new AffineRelation(domains, default, results);
     }
 
-    public Expr Apply(ReadOnlySpan<Expr> dims, IReadOnlyDictionary<AffineSymbol, Expr>? symbols = null)
+    public Expr Apply(ReadOnlySpan<Dimension> dims, IReadOnlyDictionary<AffineSymbol, Dimension>? symbols = null)
     {
-        var newResults = new Expr[Results.Length];
+        var newResults = new Dimension[Results.Length];
         for (int i = 0; i < newResults.Length; i++)
         {
-            newResults[i] = Results[i].Apply(dims, Array.Empty<Expr>(), symbols);
+            newResults[i] = Results[i].Apply(dims, Array.Empty<Dimension>(), symbols);
         }
 
         return newResults;

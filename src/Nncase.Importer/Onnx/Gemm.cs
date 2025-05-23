@@ -12,7 +12,7 @@ namespace Nncase.Importer
     {
         private Expr VisitGemm(in NodeProto op)
         {
-            var (a, b) = GetInputExprs(op, 0, 1);
+            var (a, b) = GetInputExprs<Expr, Expr>(op, 0, 1);
             var alpha = GetFloatAttribute(op, "alpha", 1.0f);
             var transA = GetBoolAttribute(op, "transA", false);
             var transB = GetBoolAttribute(op, "transB", false);
@@ -36,7 +36,7 @@ namespace Nncase.Importer
 
             if (op.Input.Count == 3)
             {
-                var bias = GetInputExpr(op, 2);
+                var bias = GetInputExpr<Expr>(op, 2);
                 var beta = GetFloatAttribute(op, "beta", 1.0f);
                 if (beta != 1.0f)
                 {

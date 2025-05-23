@@ -81,8 +81,8 @@ public class UnitTestFusionGroup : TestClassBase
     [Fact]
     public void TestFusionMergeCandidateComparer()
     {
-        var f1 = new Fusion("main", Callable.StackVMModuleKind, None.Default, Array.Empty<Var>());
-        var f2 = new Fusion("main", Callable.StackVMModuleKind, None.Default, Array.Empty<Var>());
+        var f1 = new Fusion("main", Callable.CPUModuleKind, None.Default, Array.Empty<Var>());
+        var f2 = new Fusion("main", Callable.CPUModuleKind, None.Default, Array.Empty<Var>());
         var h1 = new HashSet<Fusion>() { f1, f2 };
         var h2 = new HashSet<Fusion>() { f1, f2 };
         Assert.Equal(FusionGroupMutator.GroupedMatchOptions.GetCandidateHashCode(h1), FusionGroupMutator.GroupedMatchOptions.GetCandidateHashCode(h2));
@@ -110,7 +110,7 @@ public class UnitTestFusionGroup : TestClassBase
 #endif
 
         var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, Value.FromTensor(input_tensor) },
         };
@@ -174,7 +174,7 @@ public class UnitTestFusionGroup : TestClassBase
         }
 
         var input_tensor = Testing.Rand<float>(1, 3, 224, 224);
-        var feed_dict = new Dictionary<Var, IValue>(ReferenceEqualityComparer.Instance)
+        var feed_dict = new Dictionary<IVar, IValue>(ReferenceEqualityComparer.Instance)
         {
           { input, Value.FromTensor(input_tensor) },
         };
@@ -276,9 +276,9 @@ internal sealed class TestReconstructor : ExprReconstructor<ExprVertex, ExprEdge
     protected override Expr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
         var pairs = GetClusterArgumentPairs(cluster);
-        var paramDict = new Dictionary<Expr, Var>(ReferenceEqualityComparer.Instance);
-        var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-        var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+        var paramDict = new Dictionary<BaseExpr, Var>(ReferenceEqualityComparer.Instance);
+        var extractDict = new Dictionary<BaseExpr, BaseExpr>(ReferenceEqualityComparer.Instance);
+        var argumentDict = new Dictionary<Var, BaseExpr>(ReferenceEqualityComparer.Instance);
         foreach (var (pre, post) in pairs)
         {
             if (pre is not (Call or Var or If))
@@ -301,7 +301,7 @@ internal sealed class TestReconstructor : ExprReconstructor<ExprVertex, ExprEdge
 
         var cloner = new ExprClusterCloner(extractDict);
         var outVertices = cluster.OutVertices(Algo.ClusteredGraph).ToArray();
-        var clones = new List<Expr>();
+        var clones = new List<BaseExpr>();
         foreach (var outVertex in outVertices)
         {
             clones.Add(cloner.Clone(outVertex.Expr, default));
@@ -312,15 +312,15 @@ internal sealed class TestReconstructor : ExprReconstructor<ExprVertex, ExprEdge
         return new Call(fusion, paramDict.Values.OfType<Var>().Select(v => argumentDict[v]).ToArray());
     }
 
-    private Expr PostProcess(List<Expr> clones)
+    private BaseExpr PostProcess(List<BaseExpr> clones)
     {
-        Expr PostProcessSingle(Expr cloned, out bool changed)
+        BaseExpr PostProcessSingle(BaseExpr cloned, out bool changed)
         {
             changed = false;
             switch (cloned)
             {
                 case IR.Tuple tp:
-                    var nFields = new List<Expr>();
+                    var nFields = new List<BaseExpr>();
                     foreach (var item in tp.Fields)
                     {
                         nFields.Add(PostProcessSingle(item, out var childChanged));

@@ -17,7 +17,7 @@ public partial class Tensor
     /// <typeparam name="T">Scalar type.</typeparam>
     /// <returns>Casted array.</returns>
     public T[] ToArray<T>()
-        where T : unmanaged, IEquatable<T>
+        where T : struct, IEquatable<T>
         => Cast<T>().ToArray();
 
     /// <summary>
@@ -26,7 +26,7 @@ public partial class Tensor
     /// <typeparam name="T">Scalar type.</typeparam>
     /// <returns>Casted scalar.</returns>
     public T ToScalar<T>()
-      where T : unmanaged, IEquatable<T>
+      where T : struct, IEquatable<T>
     {
         var tensor = Cast<T>();
         if (tensor.Length != 1)
@@ -50,4 +50,14 @@ public partial class Tensor
 
         throw new InvalidCastException($"This tensor is not a string!");
     }
+
+    public abstract Tensor View(ReadOnlySpan<long> starts, ReadOnlySpan<long> shape);
+
+    public abstract Tensor Squeeze(params long[] axes);
+
+    public abstract Tensor Transpose(ReadOnlySpan<long> perm);
+
+    public abstract void CopyTo(Tensor dest);
+
+    public abstract Tensor AsContiguous(bool force = false);
 }

@@ -13,7 +13,7 @@ using Nncase.Tests.TestFixture;
 using Nncase.TIR;
 using OrtKISharp;
 using Xunit;
-using Fx = System.Func<Nncase.IR.Expr, Nncase.IR.Expr>;
+using Fx = System.Func<Nncase.IR.BaseExpr, Nncase.IR.BaseExpr>;
 
 namespace Nncase.Tests.CoreTest;
 
@@ -29,7 +29,7 @@ public sealed class UnitTestGetReplaceUtility
     public void WithTmp4DShape_WhenGivenFunctionAndOutputShape_ShouldInsertRehsapeBeforeAndAfterCall()
     {
         var input = IR.F.Random.Normal(DataTypes.UInt8, new[] { 1, 2, 3, 4 });
-        Fx inputCtor = expr => IR.F.Tensors.Flatten(expr, 1);
+        Fx inputCtor = expr => IR.F.Tensors.Flatten((Expr)expr, 1);
         var originOutShape = new long[] { 1, 2, 3, 4 };
 
         var output = Utility.WithTmp4DShape(inputCtor, originOutShape)(input);
@@ -42,7 +42,7 @@ public sealed class UnitTestGetReplaceUtility
     public void WithTmpType_WhenGivenFunctionAndDataType_ShouldInsertCastBeforeAndAfterCall()
     {
         var input = IR.F.Random.Normal(DataTypes.UInt8, new[] { 1, 2, 3, 4 });
-        Fx inputCtor = expr => IR.F.Tensors.Flatten(expr, 1);
+        Fx inputCtor = expr => IR.F.Tensors.Flatten((Expr)expr, 1);
         var dataType = DataTypes.Float32;
 
         var output = Utility.WithTmpType(inputCtor, dataType)(input);
@@ -54,7 +54,7 @@ public sealed class UnitTestGetReplaceUtility
     public void WithTmpBF16_WhenGivenFunction_ShouldInsertCastBeforeAndAfterCall()
     {
         var input = IR.F.Random.Normal(DataTypes.Float32, new[] { 1, 2, 3, 4 });
-        Fx inputCtor = expr => IR.F.Tensors.Flatten(expr, 1);
+        Fx inputCtor = expr => IR.F.Tensors.Flatten((Expr)expr, 1);
 
         var output = Utility.WithTmpBF16(inputCtor)(input);
 
@@ -66,7 +66,7 @@ public sealed class UnitTestGetReplaceUtility
     {
         var input = IR.F.Random.Normal(DataTypes.UInt8, new[] { 1, 2, 3, 4 });
         Fx inputCtor = expr =>
-            IR.F.NN.Pad(expr, new[,] { { 0, 0 }, { 0, 0 }, { 1, 1 }, { 1, 1 } }, PadMode.Constant, (byte)0);
+            IR.F.NN.Pad((Expr)expr, new[,] { { 0, 0 }, { 0, 0 }, { 1, 1 }, { 1, 1 } }, PadMode.Constant, (byte)0);
 
         var output = Utility.Apply(f => expr => f(expr), inputCtor)(input);
 

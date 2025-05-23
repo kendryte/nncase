@@ -141,7 +141,7 @@ class unary_impl<ranked_shape<Rank>, InStrides, OutStrides> {
             auto output_p =
                 output.buffer().data() + linear_offset(index, output.strides());
             unary_contiguous<Op>(input_p, output_p, inner_size);
-        } else if constexpr (Axis + 1 < Rank) {
+        } else if constexpr (Axis < Rank) {
             const auto dim = input.shape()[Axis];
             for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {
                 apply<Op, TIn, TOut, Axis + 1>(op, index, conti_dims, input,

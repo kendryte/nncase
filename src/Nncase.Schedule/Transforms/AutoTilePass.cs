@@ -131,7 +131,7 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
 
     public CompileOptions CompileOptions { get; }
 
-    protected override Expr OnAtomCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
+    protected override BaseExpr OnAtomCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
         using var subscope = new Diagnostics.DumpScope($"cluster_{sortIndex}", Diagnostics.DumpFlags.Tiling);
         var pairs = GetClusterArgumentPairs(cluster);
@@ -139,8 +139,8 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
         var expr = vertex.Expr;
         if (expr is Grid)
         {
-            var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-            var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+            var extractDict = new Dictionary<BaseExpr, BaseExpr>(ReferenceEqualityComparer.Instance);
+            var argumentDict = new Dictionary<Var, BaseExpr>(ReferenceEqualityComparer.Instance);
             foreach (var (pre, post) in pairs)
             {
                 if (pre is Const)
@@ -157,8 +157,8 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
             }
 
             var cloner = new ExprClusterCloner(extractDict);
-            Expr cloned = cloner.Clone(expr, default);
-            var tiled = Tiler.Tile(cloned, ModuleKind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+            var cloned = (Expr)cloner.Clone(expr, default);
+            var tiled = Tiler.Tile(cloned, ModuleKind, (INTTTargetOptions)CompileOptions.TargetOptions);
             var substitutor = new Mutators.Substitutor(e =>
             {
                 if (e is Var v && argumentDict.TryGetValue(v, out var arg))
@@ -174,17 +174,17 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
         }
         else
         {
-            var cloner = new ExprClusterCloner(pairs.ToDictionary(p => p.Pre, p => p.Post, new ReferenceEqualityComparer<Expr>()));
+            var cloner = new ExprClusterCloner(pairs.ToDictionary(p => p.Pre, p => p.Post, new ReferenceEqualityComparer<BaseExpr>()));
             return cloner.Clone(expr, default);
         }
     }
 
-    protected override Expr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
+    protected override BaseExpr OnComplexCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
         using var subscope = new Diagnostics.DumpScope($"cluster_{sortIndex}", Diagnostics.DumpFlags.Tiling);
         var pairs = GetClusterArgumentPairs(cluster);
-        var extractDict = new Dictionary<Expr, Expr>(ReferenceEqualityComparer.Instance);
-        var argumentDict = new Dictionary<Var, Expr>(ReferenceEqualityComparer.Instance);
+        var extractDict = new Dictionary<BaseExpr, BaseExpr>(ReferenceEqualityComparer.Instance);
+        var argumentDict = new Dictionary<Var, BaseExpr>(ReferenceEqualityComparer.Instance);
         foreach (var (pre, post) in pairs)
         {
             if (pre is Const)
@@ -203,14 +203,14 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
         // todo sometimes internal grid have outside dependence, so we can't fuse it when tiling.
         var cloner = new ExprClusterCloner(extractDict);
         var outVertices = cluster.OutVertices(Algo.ClusteredGraph).ToArray();
-        var clones = new List<Expr>();
+        var clones = new List<BaseExpr>();
         foreach (var outVertex in outVertices)
         {
             clones.Add(cloner.Clone(outVertex.Expr, default));
         }
 
-        Expr cloned = clones.Count == 1 ? clones[0] : new IR.Tuple(clones.ToArray());
-        var tiled = Tiler.Tile(cloned, ModuleKind, (ICpuTargetOptions)CompileOptions.TargetOptions);
+        var cloned = clones.Count == 1 ? clones[0] : new IR.Tuple(clones.ToArray());
+        var tiled = Tiler.Tile(cloned, ModuleKind, (INTTTargetOptions)CompileOptions.TargetOptions);
         var substitutor = new Mutators.Substitutor(e =>
         {
             if (e is Var v && argumentDict.TryGetValue(v, out var arg))

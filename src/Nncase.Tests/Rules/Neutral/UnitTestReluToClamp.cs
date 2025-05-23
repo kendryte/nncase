@@ -38,7 +38,7 @@ public class UnitTestReluToClamp : TransformTestBase
         var input = new Var("input", new TensorType(DataTypes.Float32, shape));
         var rootPre = new Call(op, input);
 
-        var feedDict = new Dictionary<Var, IValue>()
+        var feedDict = new Dictionary<IVar, IValue>()
         {
           { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, shape).Evaluate() },
         };

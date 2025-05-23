@@ -28,7 +28,7 @@ public sealed class FoldIfThen : ExprRewriter
     }
 
     /// <inheritdoc/>
-    protected override Expr RewriteLeafCall(Call expr)
+    protected override BaseExpr RewriteLeafCall(Call expr)
     {
         if (expr is { Target: IR.Math.Select } && expr[IR.Math.Select.Predicate] is TensorConst tc)
         {

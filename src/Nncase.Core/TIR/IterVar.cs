@@ -11,8 +11,8 @@ namespace Nncase.TIR;
 /// </summary>
 public sealed class IterVar : Expr
 {
-    public IterVar(Range dom, IterationMode mode, Var value)
-        : base(new Expr[] { dom, value })
+    public IterVar(Range dom, IterationMode mode, DimVar value)
+        : base([dom, value])
     {
         Mode = mode;
     }
@@ -30,11 +30,11 @@ public sealed class IterVar : Expr
     /// <summary>
     /// Gets the looping variable.
     /// </summary>
-    public Var Value => (Var)Operands[1];
+    public DimVar Value => (DimVar)Operands[1];
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitIterVar(this, context);
 
-    public IterVar With(Range? dom = null, IterationMode? mode = null, Var? value = null)
+    public IterVar With(Range? dom = null, IterationMode? mode = null, DimVar? value = null)
         => new(dom ?? Dom, mode ?? Mode, value ?? Value);
 }

@@ -20,15 +20,6 @@ namespace Nncase.Tests.ImporterTest;
 public class UnitTestUtil
 {
     [Fact]
-    public void TestPadTranslate()
-    {
-        var pads = IR.F.NN.Pad(OrtKI.Random(1, 2, 4, 8).ToTensor(), new[,] { { 0, 1, 0, 1 }, { 1, 0, 1, 0 } }, PadMode.Constant, 0f);
-        Assert.Equal(
-            IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(pads, new[] { -1, 2 }), new[] { 1, 0 }),
-            Util.PadTranslate(pads));
-    }
-
-    [Fact]
     public void TestZeroTensor()
     {
         Assert.Equal(new TensorConst(Tensor.From<int>(new[] { 0 })), Util.ZeroTensor());
@@ -38,11 +29,11 @@ public class UnitTestUtil
     public void TestComputeSplit()
     {
         var input = OrtKI.Random(1, 2, 4, 8).ToTensor();
-        var outputSize = 4L;
+        var outputSize = 4;
         var axis = -1L;
         var expr = Util.ComputeSplit(input, outputSize, axis);
 
-        var expect = IR.F.Tensors.Expand(Util.ShapeIndex(input, (int)axis) / outputSize, IR.F.Tensors.Stack(new Tuple(outputSize), 0));
+        var expect = Shape.Repeat(Util.ShapeIndex(input, (int)axis) / outputSize, outputSize);
         Assert.Equal(expr, expect);
     }
 }

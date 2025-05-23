@@ -26,7 +26,7 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
 
     public TieredTileGraph RootGraph { get; }
 
-    public static TieredTileGraph Build(Expr expr, int topLevel, out Dictionary<Grid, TieredTileGraph> exprMemo)
+    public static TieredTileGraph Build(BaseExpr expr, int topLevel, out Dictionary<Grid, TieredTileGraph> exprMemo)
     {
         var builder = new GraphBuilder(topLevel);
         builder.Visit(expr);
@@ -34,7 +34,7 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
         return builder.RootGraph;
     }
 
-    protected override Unit DefaultVisitLeaf(Expr expr) => default;
+    protected override Unit DefaultVisitLeaf(BaseExpr expr) => default;
 
     protected override Unit VisitLeafGrid(Grid current)
     {

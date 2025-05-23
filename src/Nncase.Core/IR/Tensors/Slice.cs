@@ -26,20 +26,20 @@ public sealed partial class Slice : Op
     /// <summary>
     /// Gets begins.
     /// </summary>
-    public static readonly ParameterInfo Begins = new(typeof(Slice), 1, "begins", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Begins = new(typeof(Slice), 1, "begins", IsShapeType());
 
     /// <summary>
     /// Gets ends.
     /// </summary>
-    public static readonly ParameterInfo Ends = new(typeof(Slice), 2, "ends", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Ends = new(typeof(Slice), 2, "ends", IsShapeType());
 
     /// <summary>
     /// Gets axes.
     /// </summary>
-    public static readonly ParameterInfo Axes = new(typeof(Slice), 3, "axes", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Axes = new(typeof(Slice), 3, "axes", IsShapeType());
 
     /// <summary>
     /// Gets strides.
     /// </summary>
-    public static readonly ParameterInfo Strides = new(typeof(Slice), 4, "strides", IsIntegral() & HasRank(1));
+    public static readonly ParameterInfo Strides = new(typeof(Slice), 4, "strides", IsShapeType());
 }

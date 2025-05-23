@@ -11,13 +11,13 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitReduce(in tflite.Operator op, ReduceOp reduceOp, float initValue)
         {
-            var (input, axis) = GetInputExprs(op, 0, 1);
+            var (input, axis) = GetInputExprs<Expr, Shape>(op, 0, 1);
             return Reduce(reduceOp, input, axis, initValue, op.BuiltinOptionsAsReducerOptions().KeepDims);
         }
 
         private Expr VisitReduceArg(in tflite.Operator op, ReduceArgOp reduceArgOp)
         {
-            var (input, axis) = GetInputExprs(op, 0, 1);
+            var (input, axis) = GetInputExprs<Expr, Dimension>(op, 0, 1);
             var outType = reduceArgOp switch
             {
                 ReduceArgOp.ArgMin => op.BuiltinOptionsAsArgMaxOptions().OutputType,

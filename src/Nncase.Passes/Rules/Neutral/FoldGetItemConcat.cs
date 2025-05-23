@@ -15,11 +15,11 @@ namespace Nncase.Passes.Rules.Neutral;
 [RuleGenerator]
 public partial class FoldGetItemConcat : RewriteRule<Pattern>
 {
-    public override Pattern Pattern => IsGetItem(null, "getItem", ConcatPattern, IsTensorConst("index", IsScalar() | HasShape(new Shape(1L))));
+    public override Pattern Pattern => IsGetItem(null, "getItem", ConcatPattern, IsDimension("index") | IsShape("index", Shape.Unknown(1)));
 
     public Pattern ConcatPattern => IsConcat(0, IsTuple("input"));
 
-    private Expr? GetReplace(IR.Tuple input, int index)
+    private BaseExpr? GetReplace(IR.Tuple input, int index)
     {
         return input.Fields[index];
     }

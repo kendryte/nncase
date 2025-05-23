@@ -11,7 +11,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitFill(in tflite.Operator op)
         {
-            var (shape, value) = GetInputExprs(op, 0, 1);
+            var (shape, value) = GetInputExprs<Shape, Expr>(op, 0, 1);
             return F.Tensors.ConstantOfShape(shape, value);
         }
     }

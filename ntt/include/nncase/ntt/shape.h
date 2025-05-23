@@ -111,6 +111,18 @@ template <class T, T... Dims> struct fixed_dims_base {
         return (false || ... || (Dims == value));
     }
 
+    static constexpr int64_t indexof(T value) noexcept {
+        int64_t it = -1;
+        for (size_t j = 0; j < sizeof...(Dims); j++) {
+            if (at(j) == value) {
+                it = j;
+                break;
+            }
+        }
+
+        return it;
+    }
+
     constexpr T operator[](size_t index) const noexcept { return at(index); }
 };
 
@@ -136,6 +148,11 @@ template <class T, size_t Rank> struct ranked_dims_base {
 
     constexpr bool contains(T value) const noexcept {
         return std::find(begin(), end(), value) != end();
+    }
+
+    constexpr int64_t indexof(T value) const noexcept {
+        auto it = std::find(begin(), end(), value);
+        return it != end() ? std::distance(begin(), it) : -1;
     }
 
     std::array<T, Rank> dims_;
@@ -233,6 +250,9 @@ DEFINE_SQUEEZE_FIXED_DIMS_IMPL(strides)
 
 template <class Dims> struct is_fixed_dims : std::false_type {};
 
+template <class T, T... Dims>
+struct is_fixed_dims<fixed_dims<T, Dims...>> : std::true_type {};
+
 template <size_t... Dims>
 struct is_fixed_dims<fixed_shape<Dims...>> : std::true_type {};
 
@@ -260,8 +280,8 @@ inline constexpr bool is_ranked_dims_v = is_ranked_dims<T>::value;
     template <class ShapeA, class ShapeB> struct common_##name##_type;         \
                                                                                \
     template <size_t... Dims>                                                  \
-    struct common_##name##_type<fixed_##name<Dims...>,                         \
-                                fixed_##name<Dims...>> {                       \
+    struct common_##name##                                                     \
+        _type<fixed_##name<Dims...>, fixed_##name<Dims...>> {                  \
         using type = fixed_##name<Dims...>;                                    \
     };                                                                         \
                                                                                \
@@ -538,6 +558,18 @@ constexpr auto squeeze_shape(fixed_shape<Axes...> axes, TShape shape) noexcept {
     }
 }
 
+template <size_t Rank, class TShape>
+constexpr auto squeeze_shape(ranked_shape<Rank> axes, TShape shape) noexcept {
+    ranked_shape<shape.rank() - axes.rank()> new_shape;
+    size_t cnt = 0;
+    for (size_t axis = 0; axis < shape.rank(); axis++) {
+        if (!axes.contains(axis)) {
+            new_shape[cnt++] = shape[axis];
+        }
+    }
+    return new_shape;
+}
+
 template <size_t... Axes, class TStrides>
 constexpr auto squeeze_strides(fixed_shape<Axes...> axes,
                                TStrides strides) noexcept {
@@ -553,6 +585,49 @@ constexpr auto squeeze_strides(fixed_shape<Axes...> axes,
         }
         return new_strides;
     }
+}
+
+template <size_t Rank, class TShape>
+constexpr auto squeeze_strides(ranked_shape<Rank> axes,
+                               TShape strides) noexcept {
+    ranked_strides<strides.rank() - axes.rank()> new_strides;
+    size_t cnt = 0;
+    for (size_t axis = 0; axis < strides.rank(); axis++) {
+        if (!axes.contains(axis)) {
+            new_strides[cnt++] = strides[axis];
+        }
+    }
+    return new_strides;
+}
+
+template <size_t Rank, class TShape>
+constexpr auto unsqueeze_shape(ranked_shape<Rank> axes, TShape shape) noexcept {
+    ranked_shape<shape.rank() + axes.rank()> new_shape;
+    size_t cnt = 0;
+
+    for (size_t axis = 0; axis < new_shape.rank(); axis++) {
+        if (axes.contains(axis)) {
+            new_shape[axis] = 1;
+        } else {
+            new_shape[axis] = shape[cnt++];
+        }
+    }
+    return new_shape;
+}
+
+template <size_t Rank, class TShape>
+constexpr auto unsqueeze_strides(ranked_shape<Rank> axes,
+                                 TShape strides) noexcept {
+    ranked_strides<strides.rank() + axes.rank()> new_strides;
+    size_t cnt = 0;
+    for (size_t axis = 0; axis < new_strides.rank(); axis++) {
+        if (axes.contains(axis)) {
+            new_strides[axis] = strides[cnt];
+        } else {
+            new_strides[axis] = strides[cnt++];
+        }
+    }
+    return new_strides;
 }
 
 template <size_t RankA, size_t RankB>

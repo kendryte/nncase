@@ -171,7 +171,7 @@ public sealed class ScopeWriter
     /// </summary>
     /// <param name="var">var name.</param>
     /// <param name="prefix">prefix name.</param>
-    public IPrintSymbol GetUniqueVarSymbol(Var @var, string prefix = "")
+    public IPrintSymbol GetUniqueVarSymbol(IVar @var, string prefix = "")
     {
         if (!_globalVarCountMap.TryGetValue(prefix + @var.Name + "#" + @var.GlobalVarIndex.ToString(), out var count))
         {
@@ -236,7 +236,7 @@ public sealed class IndentMananger : IDisposable
 internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
 {
     private readonly ScopeWriter _scope;
-    private readonly Dictionary<Expr, string> _names = new Dictionary<Expr, string>(ReferenceEqualityComparer.Instance);
+    private readonly Dictionary<BaseExpr, string> _names = new Dictionary<BaseExpr, string>(ReferenceEqualityComparer.Instance);
     private readonly BinaryWriter _constWriter;
     private readonly bool _randConst;
     private int _localId;
@@ -303,6 +303,10 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
     /// <inheritdoc/>
     public override string VisitType(TupleType type) =>
         $"({string.Join(", ", type.Fields.Select(VisitType))})";
+
+    public override string VisitType(DimensionType type) => "dim";
+
+    public override string VisitType(ShapeType type) => "shape";
 
     /// <inheritdoc/>
     protected override string VisitCall(Call expr)
@@ -465,7 +469,34 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         return name;
     }
 
-    private string AllocateTempVar(Expr expr)
+    protected override string VisitRankedShape(RankedShape expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        var dims = expr.Dimensions.AsValueEnumerable().Select(Visit);
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = new RankedShape({StringUtility.Join(", ", dims)})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
+    protected override string VisitDimension(Dimension expr)
+    {
+        if (_names.TryGetValue(expr, out var name))
+        {
+            return name;
+        }
+
+        name = AllocateTempVar(expr);
+        _scope.IndWrite($"var {name} = new Dimension({expr})");
+        AppendCheckedType(expr.CheckedType);
+        return name;
+    }
+
+    private string AllocateTempVar(BaseExpr expr)
     {
         var name = $"v{_localId++}";
         _names.Add(expr, name);
@@ -497,6 +528,8 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
         TupleType ttype => $"new TupleType({string.Join(",", ttype.Fields)})",
         AnyType => "AnyType.Default",
         NoneType => "NoneType.Default",
+        DimensionType dt => $"new DimensionType(DimensionKind.{dt.Kind})",
+        ShapeType st => $"new ShapeType(ShapeKind.{st.Kind}, {st.Rank})",
         _ => "AnyType.Default",
     };
 
@@ -519,7 +552,7 @@ internal sealed class CSharpPrintVisitor : ExprFunctor<string, string>
             PrimType primType => tc.Value.Shape switch
             {
                 Shape { IsScalar: true } => tc.Value.GetArrayString(false),
-                Shape x when x.Size <= 8 => $"new {primType.GetBuiltInName()}[{GetArrayComma(x)}]{tc.Value.GetArrayString(false)}",
+                RankedShape x when x.Size <= 8 => $"new {primType.GetBuiltInName()}[{GetArrayComma(x)}]{tc.Value.GetArrayString(false)}",
                 _ => GetCSharpConstFromFile(tc),
             },
             ValueType valueType => GetCSharpConstFromFile(tc),

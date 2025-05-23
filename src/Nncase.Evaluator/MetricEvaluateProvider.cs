@@ -21,7 +21,7 @@ internal sealed class MetricEvaluateProvider : IMetricEvaluateProvider
         _serviceProvider = serviceProvider;
     }
 
-    public Dictionary<Expr, Metric> EvaluateMetric(Expr expr)
+    public Dictionary<BaseExpr, Metric> EvaluateMetric(BaseExpr expr)
     {
         if (expr.CheckedType is null)
         {

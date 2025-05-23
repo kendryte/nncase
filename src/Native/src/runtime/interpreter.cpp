@@ -116,9 +116,7 @@ size_t interpreter::inputs_size() const noexcept {
 }
 
 size_t interpreter::outputs_size() const noexcept {
-    auto &ret_type = entry_function_->return_type();
-    auto tuple_t = ret_type.as<tuple_type>();
-    return tuple_t.is_ok() ? tuple_t.unwrap()->fields().size() : 1;
+    return entry_function_->return_size();
 }
 
 tensor_type interpreter::input_tensor_type(size_t index) const noexcept {
