@@ -898,27 +898,27 @@ public class UnitTestEvaluatorNN : TestClassBase
         var dataGeneratorOptions = new TestFixture.PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = TestFixture.PagedAttentionKVCacheTestFixture.PrepareReferenceResults(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.Config.NumKVHeads, testFixture.Config.HeadDim, testFixture.Config.NumLayers, testFixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
 
         var kvinputs = TestFixture.PagedAttentionKVCacheTestFixture.PrepareKVInputs(testFixture.QueryLens, testFixture.SeqLens, testFixture.ContextLens, testFixture.NumBlocks, placement, referenceResults, testFixture.Config);
 
         var feedDict = new Dictionary<IVar, IValue>();
         {
-            feedDict.Add(testKernel.QueryVar, Value.FromTensor(referenceResults.GetQueryTensor()));
+            feedDict.Add(queryVar, Value.FromTensor(referenceResults.GetQueryTensor()));
             for (int layerId = 0; layerId < testFixture.Config.NumLayers; layerId++)
             {
-                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                feedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
             }
 
-            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+            feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
         }
 
         // 4. evaluate and compare
         {
             // var refTensor = OrtKI.Concat(refOutputs.ToArray(), 1L).ToTensor();
             var refTensor = referenceResults.GetOutputTensor();
-            var actualTensor = testKernel.Root.Evaluate(feedDict).AsTensor();
+            var actualTensor = root.Evaluate(feedDict).AsTensor();
 
             var cos = Comparator.CosSimilarity(refTensor, actualTensor);
             Assert.True(cos > 0.999, $"cos: {cos} ");

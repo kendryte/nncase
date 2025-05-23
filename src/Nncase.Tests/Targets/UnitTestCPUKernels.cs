@@ -284,7 +284,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -292,17 +292,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rtFeedDict = new Dictionary<IVar, IValue>();
         {
             var queryTensor = referenceResults.GetQueryTensor();
-            feedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
-            rtFeedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            feedDict.Add(queryVar, Value.FromTensor(queryTensor));
+            rtFeedDict.Add(queryVar, Value.FromTensor(queryTensor));
             for (int layerId = 0; layerId < fixture.Config.NumLayers; layerId++)
             {
-                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
-                rtFeedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                rtFeedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                feedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                rtFeedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                rtFeedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
             }
 
-            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+            feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
 
             var rtkvObj = RTPagedAttentionKVCache.Create(
                     RTPagedAttentionConfig.FromConfig(fixture.Config),
@@ -325,10 +325,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 }
             }
 
-            rtFeedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
+            rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 
-        await RunCases($"Theory{count}", feedDict, new[] { testKernel.Root }, rtFeedDict);
+        await RunCases($"Theory{count}", feedDict, new[] { root }, rtFeedDict);
     }
 
     [Theory]
@@ -347,7 +347,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: false, IncreaseBy: [AttentionDimKind.Head, AttentionDimKind.Seq], ResetForKV: true);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config);
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -355,17 +355,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rtFeedDict = new Dictionary<IVar, IValue>();
         {
             var queryTensor = referenceResults.GetQueryTensor();
-            feedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
-            rtFeedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            feedDict.Add(queryVar, Value.FromTensor(queryTensor));
+            rtFeedDict.Add(queryVar, Value.FromTensor(queryTensor));
             for (int layerId = 0; layerId < fixture.Config.NumLayers; layerId++)
             {
-                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
-                rtFeedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                rtFeedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                feedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                rtFeedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                rtFeedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
             }
 
-            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+            feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
 
             var rtkvObj = RTPagedAttentionKVCache.Create(
                     RTPagedAttentionConfig.FromConfig(fixture.Config),
@@ -388,10 +388,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 }
             }
 
-            rtFeedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
+            rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 
-        await RunCases($"Theory{count}", feedDict, new[] { testKernel.Root }, rtFeedDict);
+        await RunCases($"Theory{count}", feedDict, new[] { root }, rtFeedDict);
     }
 
     [Theory]
