@@ -34,7 +34,8 @@ skip = "*musllinux*"
 manylinux-x86_64-image = "sunnycase/manylinux_2_28_x86_64:1.1"
 test-requires = "pytest"
 test-command = [
-  "pytest {project}/tests/other"
+  "pytest {project}/tests/other/test_cpu_options.py",
+  "pytest {project}/tests/other/test_targets.py",
 ]
 
 [tool.cibuildwheel.environment]

@@ -15,185 +15,336 @@
 #pragma once
 // #include "nncase/runtime/duca_paged_attention_kv_cache.h"
 // #include <nncase/runtime/interpreter_for_causal_lm.h>
-#include "type_casters.h"
+#include "pytype_utils.h"
+#include <nncase/compiler.h>
 #include <nncase/llm/attention_config.h>
 #include <nncase/llm/paged_attention_config.h>
+#include <nncase/llm/paged_attention_enums.h>
 #include <nncase/llm/paged_attention_kv_cache.h>
 #include <nncase/object.h>
 #include <pybind11/detail/common.h>
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 
 using namespace nncase::runtime;
 namespace py = pybind11;
 
 namespace nncase {
+
+inline void register_llm_evaluator(py::module &m) {
+    py::enum_<llm::attention_dim_kind>(m, "AttentionDimKind")
+        .value("Seq", llm::attention_dim_kind::seq)
+        .value("Head", llm::attention_dim_kind::head)
+        .value("Dim", llm::attention_dim_kind::dim);
+
+    py::class_<clr::ref_paged_attention_kv_cache>(m, "RefPagedAttentionKVCache")
+        .def_property_readonly("num_seqs",
+                               &clr::ref_paged_attention_kv_cache::num_seqs)
+        .def_property_readonly("num_tokens",
+                               &clr::ref_paged_attention_kv_cache::num_tokens)
+        .def_property_readonly("num_blocks",
+                               &clr::ref_paged_attention_kv_cache::num_blocks)
+        .def_property_readonly("context_lens",
+                               &clr::ref_paged_attention_kv_cache::context_lens)
+        .def_property_readonly("seq_lens",
+                               &clr::ref_paged_attention_kv_cache::seq_lens)
+        .def_property_readonly("block_table",
+                               &clr::ref_paged_attention_kv_cache::block_table)
+        .def_property_readonly("slot_mapping",
+                               &clr::ref_paged_attention_kv_cache::slot_mapping)
+        .def_property_readonly("kv_caches",
+                               &clr::ref_paged_attention_kv_cache::kv_caches)
+        .def("as_ivalue", &clr::ref_paged_attention_kv_cache::as_ivalue);
+
+    py::class_<clr::ref_paged_attention_scheduler>(m,
+                                                   "RefPagedAttentionScheduler")
+        .def(py::init([](llm::paged_attention_config config, int32_t num_blocks,
+                         int32_t max_model_len,
+                         const std::vector<int32_t> &hierarchy) {
+            return clr::ref_paged_attention_scheduler(config, num_blocks,
+                                                      max_model_len, hierarchy);
+        }))
+        .def("schedule",
+             [](clr::ref_paged_attention_scheduler &self,
+                const std::vector<int64_t> &session_ids,
+                const std::vector<int64_t> &query_lens) {
+                 if (session_ids.size() != query_lens.size()) {
+                     throw std::runtime_error(
+                         "session_ids and query_lens must have the same "
+                         "length");
+                 }
+                 return self.schedule(session_ids, query_lens);
+             })
+        .def("create_test_function",
+             [](clr::ref_paged_attention_scheduler &self, int32_t num_q_heads,
+                const std::vector<llm::attention_dim_kind> &q_layout,
+                const std::vector<llm::attention_dim_kind> &kv_layout) {
+                 if (q_layout.size() != kv_layout.size() ||
+                     q_layout.size() != 3) {
+                     throw std::runtime_error(
+                         "layout size must be 3 and equal");
+                 }
+                 return self.create_test_function(num_q_heads, q_layout,
+                                                  kv_layout);
+             });
+}
+
 inline void register_llm(NNCASE_UNUSED py::module &m) {
-    // py::class_<object_node, object>(m, "Object");
+    py::enum_<llm::paged_kvcache_dim_kind>(m, "PagedKVCacheDimKind")
+        .value("NumBlocks", llm::paged_kvcache_dim_kind::num_blocks)
+        .value("NumLayers", llm::paged_kvcache_dim_kind::num_layers)
+        .value("KV", llm::paged_kvcache_dim_kind::kv)
+        .value("BlockSize", llm::paged_kvcache_dim_kind::block_size)
+        .value("NumKVHeads", llm::paged_kvcache_dim_kind::num_kv_heads)
+        .value("HeadDim", llm::paged_kvcache_dim_kind::head_dim);
 
-    // py::class_<attention_config_node, object_node, attention_config>(
-    //     m, "AttentionConfig")
-    //     .def(py::init([](size_t num_layers, size_t num_kv_heads,
-    //                      size_t head_dim, nncase::typecode_t kv_type) {
-    //         return attention_config(std::in_place, num_layers, num_kv_heads,
-    //                                 head_dim, kv_type);
-    //     }))
-    //     .def_property(
-    //         "num_layers",
-    //         py::overload_cast<>(&attention_config_node::num_layers,
-    //         py::const_),
-    //         py::overload_cast<size_t>(&attention_config_node::num_layers))
-    //     .def_property(
-    //         "num_kv_heads",
-    //         py::overload_cast<>(&attention_config_node::num_kv_heads,
-    //                             py::const_),
-    //         py::overload_cast<size_t>(&attention_config_node::num_kv_heads))
-    //     .def_property(
-    //         "head_dim",
-    //         py::overload_cast<>(&attention_config_node::head_dim,
-    //         py::const_),
-    //         py::overload_cast<size_t>(&attention_config_node::head_dim));
+    py::class_<object_node, object>(m, "Object");
 
-    // py::class_<paged_attention_config_node, attention_config_node,
-    //            paged_attention_config>(m, "PagedAttentionConfig")
-    //     .def(
-    //         py::init([](size_t num_layers, size_t num_kv_heads, size_t
-    //         head_dim,
-    //                     nncase::typecode_t kv_type, size_t block_size) {
-    //             return paged_attention_config(std::in_place, num_layers,
-    //                                           num_kv_heads, head_dim,
-    //                                           kv_type, block_size);
-    //         }))
-    //     .def_property("block_size",
-    //                   py::overload_cast<>(
-    //                       &paged_attention_config_node::block_size,
-    //                       py::const_),
-    //                   py::overload_cast<size_t>(
-    //                       &paged_attention_config_node::block_size));
+    // Base class AttentionConfig
+    py::class_<llm::attention_config_node, object_node, llm::attention_config>(
+        m, "AttentionConfig")
+        .def(py::init([](size_t num_layers, size_t num_kv_heads,
+                         size_t head_dim, py::dtype kv_prim_type) {
+            return llm::attention_config(std::in_place, num_layers,
+                                         num_kv_heads, head_dim,
+                                         nncase::from_dtype(kv_prim_type));
+        }))
+        .def_property(
+            "num_layers",
+            py::overload_cast<>(&llm::attention_config_node::num_layers,
+                                py::const_),
+            py::overload_cast<size_t>(&llm::attention_config_node::num_layers))
+        .def_property(
+            "num_kv_heads",
+            py::overload_cast<>(&llm::attention_config_node::num_kv_heads,
+                                py::const_),
+            py::overload_cast<size_t>(
+                &llm::attention_config_node::num_kv_heads))
+        .def_property(
+            "head_dim",
+            py::overload_cast<>(&llm::attention_config_node::head_dim,
+                                py::const_),
+            py::overload_cast<size_t>(&llm::attention_config_node::head_dim))
+        .def_property(
+            "kv_type",
+            [](const llm::attention_config &self) {
+                return nncase::to_dtype(self->kv_prim_type());
+            },
+            [](llm::attention_config &self, py::dtype value) {
+                self->kv_prim_type(nncase::from_dtype(value));
+            });
 
-    // py::class_<paged_attention_scheduler>(m, "PagedAttentionScheduler")
-    //     .def(py::init<int>())
-    //     .def("initialize", &paged_attention_scheduler::initialize)
-    //     .def("schedule", &paged_attention_scheduler::schedule);
+    py::class_<llm::paged_attention_config_node, llm::attention_config_node,
+               llm::paged_attention_config>(m, "PagedAttentionConfig")
+        .def(py::init(
+                 [](size_t num_layers, size_t num_kv_heads, size_t head_dim,
+                    py::dtype kv_prim_type, size_t block_size,
+                    const std::array<llm::paged_kvcache_dim_kind, 6>
+                        cache_layout = {},
+                    const std::vector<llm::paged_kvcache_dim_kind> packed_axes =
+                        {},
+                    const std::vector<size_t> lanes = {},
+                    const std::vector<llm::paged_kvcache_dim_kind>
+                        sharding_axes = {},
+                    const std::vector<std::vector<size_t>> axis_policies = {}) {
+                     std::vector<dims_t> policies;
+                     for (auto &&item : axis_policies) {
+                         policies.emplace_back(item.begin(), item.end());
+                     }
+                     return llm::paged_attention_config(
+                                std::in_place, num_layers, num_kv_heads,
+                                head_dim, nncase::from_dtype(kv_prim_type),
+                                block_size, cache_layout, packed_axes,
+                                dims_t{lanes.begin(), lanes.end()},
+                                sharding_axes, policies)
+                         .detach();
+                 }),
+             py::arg("num_layers"), py::arg("num_kv_heads"),
+             py::arg("head_dim"), py::arg("kv_type"), py::arg("block_size"),
+             py::arg("cache_layout") =
+                 std::array<llm::paged_kvcache_dim_kind, 6>{},
+             py::arg("packed_axes") =
+                 std::vector<llm::paged_kvcache_dim_kind>{},
+             py::arg("lanes") = std::vector<size_t>{},
+             py::arg("sharding_axes") =
+                 std::vector<llm::paged_kvcache_dim_kind>{},
+             py::arg("axis_policies") = std::vector<std::vector<size_t>>{})
+        .def_property(
+            "block_size",
+            py::overload_cast<>(&llm::paged_attention_config_node::block_size,
+                                py::const_),
+            py::overload_cast<size_t>(
+                &llm::paged_attention_config_node::block_size))
+        .def_property(
+            "cache_layout",
+            py::overload_cast<>(&llm::paged_attention_config_node::cache_layout,
+                                py::const_),
+            py::overload_cast<
+                const std::array<llm::paged_kvcache_dim_kind, 6> &>(
+                &llm::paged_attention_config_node::cache_layout))
+        .def_property_readonly(
+            "block_layout",
+            py::overload_cast<>(&llm::paged_attention_config_node::block_layout,
+                                py::const_))
+        .def_property(
+            "packed_axes",
+            [](const llm::paged_attention_config_node &self) {
+                auto axes = self.packed_axes();
+                return std::vector<llm::paged_kvcache_dim_kind>(axes.begin(),
+                                                                axes.end());
+            },
+            [](llm::paged_attention_config_node &self,
+               const std::vector<llm::paged_kvcache_dim_kind> &packed_axes) {
+                self.packed_axes(packed_axes);
+            })
+        .def_property(
+            "lanes",
+            [](const llm::paged_attention_config_node &self) {
+                auto lanes = self.lanes();
+                return std::vector<int>(lanes.begin(), lanes.end());
+            },
+            [](llm::paged_attention_config_node &self,
+               const std::vector<int> &lanes) { self.lanes(lanes); })
+        .def_property(
+            "sharding_axes",
+            [](const llm::paged_attention_config_node &self) {
+                auto axes = self.sharding_axes();
+                return std::vector<llm::paged_kvcache_dim_kind>(axes.begin(),
+                                                                axes.end());
+            },
+            [](llm::paged_attention_config_node &self,
+               const std::vector<llm::paged_kvcache_dim_kind> &sharding_axes) {
+                self.sharding_axes(sharding_axes);
+            })
+        .def_property(
+            "axis_policies",
+            [](const llm::paged_attention_config_node &self) {
+                std::vector<std::vector<size_t>> policies;
+                for (auto &&item : self.axis_policies()) {
+                    policies.push_back(
+                        std::vector<size_t>(item.begin(), item.end()));
+                }
+                return policies;
+            },
+            [](llm::paged_attention_config_node &self,
+               const std::vector<std::vector<size_t>> &axis_policies) {
+                std::vector<dims_t> policies(axis_policies.size());
+                for (size_t i = 0; i < axis_policies.size(); i++) {
+                    policies[i] = dims_t(axis_policies[i].begin(),
+                                         axis_policies[i].end());
+                }
+                self.axis_policies(policies);
+            })
+        .def("set_axis_policy", [](llm::paged_attention_config_node &self,
+                                   int32_t i,
+                                   const std::vector<size_t> &axis_policy) {
+            if (i < 0 || i >= self.axis_policies().size() ||
+                axis_policy.size() > 8) {
+                throw std::out_of_range("Index out of range");
+            }
+            self.axis_policies(i,
+                               dims_t(axis_policy.begin(), axis_policy.end()));
+        });
+
+    py::class_<llm::paged_attention_kv_cache_node, object_node,
+               llm::paged_attention_kv_cache>(m, "PagedAttentionKVCache")
+        .def(py::init([](llm::paged_attention_config config) {
+            return llm::paged_attention_kv_cache(std::in_place, config, 0, 0,
+                                                 tensor(), tensor(), tensor(),
+                                                 tensor(), 0, dims_t{})
+                .detach();
+        }))
+        .def_property_readonly(
+            "config",
+            [](const llm::paged_attention_kv_cache_node &self) {
+                return self.config().detach();
+            })
+        .def_property(
+            "num_seqs",
+            py::overload_cast<>(&llm::paged_attention_kv_cache_node::num_seqs,
+                                py::const_),
+            py::overload_cast<int32_t>(
+                &llm::paged_attention_kv_cache_node::num_seqs))
+        .def_property(
+            "num_tokens",
+            py::overload_cast<>(&llm::paged_attention_kv_cache_node::num_tokens,
+                                py::const_),
+            py::overload_cast<int32_t>(
+                &llm::paged_attention_kv_cache_node::num_tokens))
+        .def_property(
+            "context_lens",
+            [](const llm::paged_attention_kv_cache_node &self) {
+                return runtime_tensor(self.context_lens());
+            },
+            [](llm::paged_attention_kv_cache_node &self,
+               const runtime_tensor &context_lens) {
+                self.context_lens(context_lens.impl());
+            })
+        .def_property(
+            "seq_lens",
+            [](const llm::paged_attention_kv_cache_node &self) {
+                return runtime_tensor(self.seq_lens());
+            },
+            [](llm::paged_attention_kv_cache_node &self,
+               const runtime_tensor &seq_lens) {
+                self.seq_lens(seq_lens.impl());
+            })
+        .def_property(
+            "block_table",
+            [](const llm::paged_attention_kv_cache_node &self) {
+                return runtime_tensor(self.block_table());
+            },
+            [](llm::paged_attention_kv_cache_node &self,
+               const runtime_tensor &block_table) {
+                self.block_table(block_table.impl());
+            })
+        .def_property(
+            "slot_mapping",
+            [](const llm::paged_attention_kv_cache_node &self) {
+                return runtime_tensor(self.slot_mapping());
+            },
+            [](llm::paged_attention_kv_cache_node &self,
+               const runtime_tensor &slot_mapping) {
+                self.slot_mapping(slot_mapping.impl());
+            })
+        .def_property(
+            "num_blocks",
+            py::overload_cast<>(&llm::paged_attention_kv_cache_node::num_blocks,
+                                py::const_),
+            py::overload_cast<int32_t>(
+                &llm::paged_attention_kv_cache_node::num_blocks))
+        .def("kv_cache",
+             [](llm::paged_attention_kv_cache_node &self,
+                const std::vector<size_t> &indices,
+                const runtime_tensor &kv_storage) {
+                 if (indices.size() != self.kv_shape().size()) {
+                     throw std::invalid_argument(
+                         "Indices size does not match kv_topo size");
+                 }
+                 self.kv_cache(dims_t(indices.begin(), indices.end()),
+                               kv_storage.impl());
+             })
+        .def("kv_cache",
+             [](const llm::paged_attention_kv_cache_node &self,
+                const std::vector<size_t> &indices) {
+                 return runtime_tensor(
+                     self.kv_cache(dims_t(indices.begin(), indices.end())));
+             })
+        .def_property(
+            "kv_topo",
+            [](const llm::paged_attention_kv_cache_node &self) {
+                return std::vector<size_t>(self.kv_shape().begin(),
+                                           self.kv_shape().end());
+            },
+            [](llm::paged_attention_kv_cache_node &self,
+               const std::vector<size_t> &kv_topo) {
+                py::print("When re-setting kv_topo, the kv_cache also need",
+                          "to be re-set");
+                self.kv_shape(dims_t(kv_topo.begin(), kv_topo.end()));
+            });
+
+    register_llm_evaluator(m);
 }
 } // namespace nncase
-
-// PYBIND11_MAKE_OPAQUE(std::vector<runtime_tensor>)
-// PYBIND11_MAKE_OPAQUE(std::vector<std::vector<runtime_tensor>>)
-// PYBIND11_MAKE_OPAQUE(std::vector<std::vector<std::vector<runtime_tensor>>>)
-
-// inline void register_llm_interpreter(py::module &m) {
-//     py::class_<interpreter_for_causal_lm>(m, "InterpreterForCausalLM")
-//         .def(py::init<>())
-//         .def("load_model",
-//              [](interpreter &interp, std::span<const std::byte> buffer) {
-//                  interp.load_model(buffer, false).unwrap_or_throw();
-//              })
-//         .def("load_model",
-//              [](interpreter &interp, nncase::runtime::stream &stream) {
-//                  interp.load_model(stream).unwrap_or_throw();
-//              })
-//         .def("__call__", [](py::object input_ids_obj, py::object
-//         input_mask_obj,
-//                             py::object position_ids_obj,
-//                             py::object attention_kv_cache_obj,
-//                             NNCASE_UNUSED py::kwargs kwargs) {
-//             runtime_tensor input_ids;
-
-//             if (py::isinstance<runtime_tensor>(input_ids_obj)) {
-//                 input_ids = py::cast<runtime_tensor>(input_ids_obj);
-//             } else {
-//                 throw py::type_error(
-//                     "input_ids must be a runtime_tensor or None");
-//             }
-
-//             std::optional<runtime_tensor> input_mask;
-//             if (py::isinstance<py::none>(input_mask_obj)) {
-//             } else if (py::isinstance<runtime_tensor>(input_mask_obj)) {
-//                 input_mask = py::cast<runtime_tensor>(input_mask_obj);
-//             }
-
-//             std::optional<runtime_tensor> position_ids;
-//             if (py::isinstance<py::none>(position_ids_obj)) {
-//             } else if (py::isinstance<runtime_tensor>(position_ids_obj)) {
-//                 position_ids = py::cast<runtime_tensor>(position_ids_obj);
-//             }
-
-//             std::optional<attention_kv_cache> kv_cache;
-//             if (py::isinstance<py::none>(attention_kv_cache_obj)) {
-//             } else if (py::isinstance<attention_kv_cache>(
-//                            attention_kv_cache_obj)) {
-//                 kv_cache =
-//                 py::cast<attention_kv_cache>(attention_kv_cache_obj);
-//             }
-
-//             return py::none();
-//         });
-// }
-
-// inline void register_kv_cache(py::module &m) {
-
-//     // todo bind vector
-//     // py::bind_vector<std::vector<runtime_tensor>>(m, "RuntimeTensorList");
-//     // py::bind_vector<std::vector<std::vector<runtime_tensor>>>(
-//     //     m, "RuntimeTensorMatrix");
-//     //
-//     py::bind_vector<std::vector<std::vector<std::vector<runtime_tensor>>>>(
-//     //     m, "RuntimeTensorCube");
-//     // py::class_<attention_kv_cache>(m, "AttentionKVCache");
-
-//     py::class_<duca_paged_attention_kv_cache, attention_kv_cache>(
-//         m, "DUCAPagedAttentionKVCache")
-//         .def(py::init())
-//         .def_readwrite("num_prefills",
-//         &duca_paged_attention_kv_cache::num_prefills)
-//         .def_readwrite("num_prefill_tokens",
-//                        &duca_paged_attention_kv_cache::num_prefill_tokens)
-//         .def_readwrite("num_decode_tokens",
-//                        &duca_paged_attention_kv_cache::num_decode_tokens)
-//         .def_readwrite("block_tables",
-//         &duca_paged_attention_kv_cache::block_tables)
-//         .def_readwrite("slot_mapping",
-//         &duca_paged_attention_kv_cache::slot_mapping) .def_property(
-//             "kv_caches",
-//             [](const duca_paged_attention_kv_cache &self) {
-//                 auto value = py::list();
-//                 if (self.kv_caches.empty()) {
-//                     return value;
-//                 }
-
-//                 for (size_t i = 0; i < self.kv_caches.size(); i++) {
-//                     auto value_i = py::list();
-//                     for (size_t j = 0; j < self.kv_caches[i].size(); j++) {
-//                         auto value_j = py::list();
-//                         for (size_t k = 0; k < self.kv_caches[i][j].size();
-//                              k++) {
-//                             value_j.append(self.kv_caches[i][j][k]);
-//                         }
-//                         value_i.append(value_j);
-//                     }
-//                     value.append(value_i);
-//                 }
-//                 return value;
-//             },
-//             [](duca_paged_attention_kv_cache &self, const py::list &value) {
-//                 if (!self.kv_caches.empty()) {
-//                     throw py::value_error(
-//                         "can't assgin kv caches when it is not empty.");
-//                 }
-
-//                 self.kv_caches.resize(value.size());
-//                 for (size_t i = 0; i < value.size(); i++) {
-//                     auto value_i = py::cast<py::list>(value[i]);
-//                     self.kv_caches[i].resize(value_i.size());
-//                     for (size_t j = 0; j < value.size(); j++) {
-//                         auto value_j = py::cast<py::list>(value_i[j]);
-//                         self.kv_caches[i][j].resize(value_j.size());
-//                         for (size_t k = 0; k < value.size(); k++) {
-//                             self.kv_caches[i][j][k] =
-//                                 py::cast<runtime_tensor>(value_j[k]);
-//                         }
-//                     }
-//                 }
-//             });
-// }

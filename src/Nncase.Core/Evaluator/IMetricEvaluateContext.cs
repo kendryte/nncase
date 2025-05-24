@@ -21,7 +21,7 @@ public interface IMetricEvaluateContext
     /// </summary>
     /// <typeparam name="T">Return type.</typeparam>
     /// <returns>Casted return type.</returns>
-    public T GetReturnType<T>()
+    T GetReturnType<T>()
      where T : IRType;
 
     /// <summary>
@@ -31,7 +31,7 @@ public interface IMetricEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>Casted argument type.</returns>
-    public T GetArgumentType<T>(Op op, ParameterInfo parameter)
+    T GetArgumentType<T>(Op op, ParameterInfo parameter)
      where T : IRType;
 
     /// <summary>
@@ -41,6 +41,6 @@ public interface IMetricEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>Casted argument type.</returns>
-    public T GetArgument<T>(Op op, ParameterInfo parameter)
+    T GetArgument<T>(Op op, ParameterInfo parameter)
       where T : Expr;
 }

@@ -11,13 +11,11 @@ using System.Runtime.InteropServices;
 using CommunityToolkit.HighPerformance;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.NTT;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
-using static Nncase.IR.F.Tensors;
 
-namespace Nncase.Evaluator.IR.NTT;
+namespace Nncase.Evaluator.Tensors;
 
 public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>, IEvaluator<Pack>
 {
@@ -26,14 +24,14 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
     {
         if (context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E5M2)
         {
-            var input = Cast(context.GetArgumentValue(target, Pack.Input).AsTensor(), DataTypes.Float32);
+            var input = IR.F.Tensors.Cast(context.GetArgumentValue(target, Pack.Input).AsTensor(), DataTypes.Float32);
             var inputOrt = input.Evaluate().AsTensor().ToOrtTensor();
             foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
             {
                 inputOrt = inputOrt.Pack(lanes, axis);
             }
 
-            var output = Cast(inputOrt.ToTensor(), context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType).Evaluate().AsTensor();
+            var output = IR.F.Tensors.Cast(inputOrt.ToTensor(), context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType).Evaluate().AsTensor();
 
             return Value.FromTensor(Tensor.FromBytes(new VectorType(output.ElementType, target.Lanes), output.BytesBuffer.ToArray(), inputOrt.Shape.SkipLast(target.Lanes.Count).Select(i => i).ToArray()));
         }

@@ -19,7 +19,7 @@ public interface IParameterList<T>
     /// <summary>
     /// get parameter info.
     /// </summary>
-    public T this[ParameterInfo parameter] { get; }
+    T this[ParameterInfo parameter] { get; }
 }
 
 public abstract class BaseCall : Expr, IParameterList<BaseExpr>

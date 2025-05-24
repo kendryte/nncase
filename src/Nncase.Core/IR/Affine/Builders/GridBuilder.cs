@@ -28,7 +28,7 @@ public interface IGridBuilder : IExprBuilder<Grid>
 
     IGridBuilder Write(Expr buffer, AffineMap accessMap, out Var parameter);
 
-    public IGridBuilder Domain(int dims, out Var parameter);
+    IGridBuilder Domain(int dims, out Var parameter);
 }
 
 internal class GridBuilder : IGridBuilder

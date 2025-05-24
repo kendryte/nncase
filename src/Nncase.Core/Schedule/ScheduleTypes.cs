@@ -18,18 +18,18 @@ public interface IScheduler
     /// <summary>
     /// Gets or sets the current target.
     /// </summary>
-    public ITarget Target { get; set; }
+    ITarget Target { get; set; }
 
     /// <summary>
     /// Gets or sets the main module.
     /// </summary>
-    public IR.IRModule Module { get; set; }
+    IR.IRModule Module { get; set; }
 
     /// <summary>
     /// multi stage schedules.
     /// relay IR -> TIR -> lowered TIR.
     /// </summary>
-    public IR.IRModule Schedule(bool skip_buffer_alias = false);
+    IR.IRModule Schedule(bool skip_buffer_alias = false);
 }
 
 public record struct Interval
