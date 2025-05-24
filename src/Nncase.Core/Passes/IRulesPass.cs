@@ -37,7 +37,9 @@ public interface IRulesAddable
     /// Add rule result.
     /// </summary>
     /// <typeparam name="T">Descriptor type.</typeparam>
-    private struct AddResult<T> : IRulesAddable
+#pragma warning disable IDE0040 // Remove accessibility modifiers
+    public struct AddResult<T> : IRulesAddable
+#pragma warning restore IDE0040 // Remove accessibility modifiers
         where T : class, IRewriteRule
     {
         private readonly IRulesPass _rulesPass;
