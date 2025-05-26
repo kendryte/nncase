@@ -33,7 +33,7 @@ import warnings
 
 os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import _nncase
-from _nncase import RuntimeTensor, RTValue, TensorDesc, Simulator, NTTTargetOptions, NocArchitecture, HierarchyKind, MemoryAccessArchitecture, PagedKVCacheDimKind, AttentionConfig, PagedAttentionConfig, PagedAttentionKVCache
+from _nncase import RuntimeTensor, RTValue, TensorDesc, Simulator, NTTTargetOptions, NocArchitecture, HierarchyKind, HuggingFaceOptions, MemoryAccessArchitecture, PagedKVCacheDimKind, AttentionConfig, PagedAttentionConfig, PagedAttentionKVCache
 
 
 def _initialize():
@@ -439,18 +439,6 @@ class ShapeBucketOptions:
         self.range_info = {}
         self.segments_count = 2
         self.fix_var_map = {}
-
-
-class HuggingFaceOptions:
-    output_attentions: bool
-    output_hidden_states: bool
-    use_cache: bool
-
-    def __init__(self) -> None:
-        self.output_attentions = False
-        self.output_hidden_states = False
-        self.use_cache = True
-
 
 class AutoModelForCausalLM():
     def __init__(

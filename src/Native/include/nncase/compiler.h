@@ -154,6 +154,12 @@ typedef struct {
         clr_object_handle_t huggingface_options);
     void (*huggingface_options_set_attention_backend)(
         clr_object_handle_t huggingface_options, uint8_t value);
+    void (*huggingface_options_set_config)(
+        clr_object_handle_t huggingface_options, clr_object_handle_t config_handle);
+    int32_t (*huggingface_options_get_max_model_len)(
+        clr_object_handle_t huggingface_options);
+    void (*huggingface_options_set_max_model_len)(
+        clr_object_handle_t huggingface_options, int32_t value);
     clr_object_handle_t (*compile_options_create)();
     void (*compile_options_set_input_file)(clr_object_handle_t compile_options,
                                            const char *input_file,
@@ -605,6 +611,19 @@ class huggingface_options : public clr_object_base {
     void attention_backend(huggingface_attenion_backend value) {
         nncase_clr_api()->huggingface_options_set_attention_backend(obj_.get(),
                                                                     value);
+    }
+    
+    void config(const llm::paged_attention_config &config) {
+        auto clone_config = llm::paged_attention_config(config);
+        nncase_clr_api()->huggingface_options_set_config(obj_.get(), clone_config.detach());
+    }
+    
+    int32_t max_model_len() {
+        return nncase_clr_api()->huggingface_options_get_max_model_len(obj_.get());
+    }
+    
+    void max_model_len(int32_t value) {
+        nncase_clr_api()->huggingface_options_set_max_model_len(obj_.get(), value);
     }
 };
 

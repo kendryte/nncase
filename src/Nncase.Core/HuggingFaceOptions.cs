@@ -22,7 +22,9 @@ public record HuggingFaceOptions
 
     public HuggingFaceAttentionBackendKind AttenionBackend { get; set; }
 
-    public PagedAttentionConfig Config { get; set; }
+    public IAttentionConfig Config { get; set; } = null!;
+
+    public int MaxModelLen { get; set; } = 512;
 
     public static HuggingFaceOptions Default => new();
 }

@@ -118,7 +118,7 @@ public abstract class HuggingFaceModel
         //         0, // _dynVarMap["history_len"],
         //         headDim)));
         var pastKeyValue = new Var("kvCache", TensorType.Scalar(
-            new ReferenceType(new PagedAttentionKVCacheType { Config = Context.ImportOptions!.HuggingFaceOptions.Config })));
+            new ReferenceType(new PagedAttentionKVCacheType { Config = (IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config })));
 
         Context.Inputs.Add(inputIds);
         Context.Inputs.Add(null); // attentionMask
@@ -377,7 +377,7 @@ public abstract class HuggingFaceModel
             int count,
             Expr hiddenStates,
             Expr pastKeyValues,
-            Tuple<Expr,Expr> positionEmbeddings)
+            Tuple<Expr, Expr> positionEmbeddings)
     {
         var residual = hiddenStates;
         hiddenStates = LLMLayerNorm(
@@ -525,7 +525,9 @@ public abstract class HuggingFaceModel
         var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([1]));
         positionIdsExpanded = IR.F.Tensors.Cast(positionIdsExpanded, DataTypes.Float32);
 
-        var freqs = IR.F.Math.MatMul(invFreq, positionIdsExpanded).With(metadata: new IRMetadata() { OutputNames =
+        var freqs = IR.F.Math.MatMul(invFreq, positionIdsExpanded).With(metadata: new IRMetadata()
+        {
+            OutputNames =
             ["RotaryEmbedding"],
         });
         freqs = IR.F.Tensors.Transpose(freqs, new long[] { 0, 2, 1 });
@@ -814,9 +816,9 @@ public abstract class HuggingFaceModel
         // // update kv with cache
         // if (paskKeyValues != null)
         {
-        //     (keyStates, valueStates) = UpdateKVWithCache(count, keyStates, valueStates, paskKeyValues);
-        //     // 这里先假设kv 的shape 是 numKVhead，seq， headDim （batchsize维度squeeze掉）
-        //     // transpose to (seq, kvhead, headDim) need 1,0,2 ,这里的dim需要写输入对应的dim
+            //     (keyStates, valueStates) = UpdateKVWithCache(count, keyStates, valueStates, paskKeyValues);
+            //     // 这里先假设kv 的shape 是 numKVhead，seq， headDim （batchsize维度squeeze掉）
+            //     // transpose to (seq, kvhead, headDim) need 1,0,2 ,这里的dim需要写输入对应的dim
             AttentionDimKind[] kvLayout = { AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim };
             AttentionDimKind[] qLayout = { AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim };
             // FIXME: use pagedAttention Config instead of null.

@@ -54,6 +54,9 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsUseCachePtr;
     public delegate* unmanaged<IntPtr, byte> HuggingFaceOptionsGetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsSetAttentionBackendPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> HuggingFaceOptionsSetConfigPtr;
+    public delegate* unmanaged<IntPtr, int> HuggingFaceOptionsGetMaxModelLenPtr;
+    public delegate* unmanaged<IntPtr, int, void> HuggingFaceOptionsSetMaxModelLenPtr;
     public delegate* unmanaged<IntPtr> CompileOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFormatPtr;
@@ -179,6 +182,9 @@ public static unsafe class CApi
         mt->HuggingFaceOptionsUseCachePtr = &HuggingFaceOptionsUseCache;
         mt->HuggingFaceOptionsGetAttentionBackendPtr = &HuggingFaceOptionsGetAttentionBackend;
         mt->HuggingFaceOptionsSetAttentionBackendPtr = &HuggingFaceOptionsSetAttentionBackend;
+        mt->HuggingFaceOptionsSetConfigPtr = &HuggingFaceOptionsSetConfig;
+        mt->HuggingFaceOptionsGetMaxModelLenPtr = &HuggingFaceOptionsGetMaxModelLen;
+        mt->HuggingFaceOptionsSetMaxModelLenPtr = &HuggingFaceOptionsSetMaxModelLen;
         mt->CompileOptionsCreatePtr = &CompileOptionsCreate;
         mt->CompileOptionsSetInputFilePtr = &CompileOptionsSetInputFile;
         mt->CompileOptionsSetInputFormatPtr = &CompileOptionsSetInputFormat;
@@ -401,6 +407,25 @@ public static unsafe class CApi
     private static byte HuggingFaceOptionsGetAttentionBackend(IntPtr handle)
     {
         return (byte)Get<HuggingFaceOptions>(handle).AttenionBackend;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsSetConfig(IntPtr handle, IntPtr configHandle)
+    {
+        // todo : support rtattention config.
+        Get<HuggingFaceOptions>(handle).Config = RTPagedAttentionConfig.FromHandle(configHandle);
+    }
+
+    [UnmanagedCallersOnly]
+    private static int HuggingFaceOptionsGetMaxModelLen(IntPtr handle)
+    {
+        return Get<HuggingFaceOptions>(handle).MaxModelLen;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsSetMaxModelLen(IntPtr handle, int value)
+    {
+        Get<HuggingFaceOptions>(handle).MaxModelLen = value;
     }
 
     [UnmanagedCallersOnly]

@@ -134,6 +134,14 @@ def test_paged_attention_config():
     assert 1 == len(config.axis_policies)  # At least one policy should exist
 
 
+def test_huggface_options():
+    opt = nncase.HuggingFaceOptions()
+    opt.use_cache = True
+    opt.max_model_len = 1234
+    cfg = nncase.PagedAttentionConfig(1, 2, 3, np.dtype(np.float32), 16)
+    opt.config = cfg
+
+
 def test_paged_attention_kvcache():
     num_layers = 32
     num_kv_heads = 8

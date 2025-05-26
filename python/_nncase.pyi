@@ -138,6 +138,8 @@ class HuggingFaceAttentionBackend:
 
 class HuggingFaceOptions:
     attention_backend: HuggingFaceAttentionBackend
+    config: PagedAttentionConfig
+    max_model_len: int
     output_attentions: bool
     output_hidden_states: bool
     use_cache: bool
