@@ -8,13 +8,11 @@ using System.Linq;
 using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.NTT;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
 using OrtKISharp;
-using static Nncase.IR.F.Tensors;
 
-namespace Nncase.Evaluator.IR.NTT;
+namespace Nncase.Evaluator.Tensors;
 
 public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Unpack>, IEvaluator<Unpack>
 {
@@ -26,7 +24,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
         if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
         {
             var newType = new VectorType(DataTypes.Float32, target.Lanes.Select(l => l / 4).ToArray());
-            var input = Cast(context.GetArgumentValue(target, Unpack.Input).AsTensor(), newType, CastMode.KDefault, target.Axes);
+            var input = IR.F.Tensors.Cast(context.GetArgumentValue(target, Unpack.Input).AsTensor(), newType, CastMode.KDefault, target.Axes);
             var inputOrt = input.Evaluate().AsTensor().ToOrtTensor();
 
             foreach (var axis in target.Axes.Reverse())
@@ -34,7 +32,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
                 inputOrt = inputOrt.Unpack(axis);
             }
 
-            var output = Cast(inputOrt.ToTensor(), elementType).Evaluate().AsTensor();
+            var output = IR.F.Tensors.Cast(inputOrt.ToTensor(), elementType).Evaluate().AsTensor();
             return Value.FromTensor(output);
         }
         else

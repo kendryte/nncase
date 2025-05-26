@@ -50,6 +50,7 @@ class NNCASE_API paged_attention_kv_cache_node
     }
 
     int32_t num_blocks() const noexcept { return num_blocks_; }
+    void num_blocks(int32_t num_blocks) noexcept { num_blocks_ = num_blocks; }
 
     void block_table(tensor block_table) noexcept {
         block_table_ = block_table;
@@ -80,6 +81,11 @@ class NNCASE_API paged_attention_kv_cache_node
     tensor kv_cache(int index) const noexcept { return kv_storages_[index]; }
 
     const dims_t &kv_shape() const noexcept { return kv_shape_; }
+    void kv_shape(const dims_t &kv_shape) noexcept {
+        kv_shape_ = kv_shape;
+        kv_storages_.clear();
+        kv_strides_ = runtime::get_default_strides(kv_shape_);
+    }
 
     const auto &kv_storages() const noexcept { return kv_storages_; }
 

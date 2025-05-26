@@ -47,7 +47,7 @@ public class UnitTestDumpQuantError : TestClassBase
 
         var output = conv;
         await TestDumpQuantErrorMainPassesAsync(input, output, string.Empty);
-        Assert.True(File.Exists(CompileOptions.DumpDir + "/Passes/2_AssignRanges/" + "quant_error.csv"));
+        Assert.True(File.Exists(Dumpper.Directory + "/Passes/2_AssignRanges/" + "quant_error.csv"));
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class UnitTestDumpQuantError : TestClassBase
         var output = conv;
         var resourceName = Path.Join(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "Quant", "conv2d.quant.json");
         await TestDumpQuantErrorMainPassesAsync(input, output, resourceName);
-        Assert.True(File.Exists(CompileOptions.DumpDir + "/Passes/2_AssignRanges/" + "quant_error.csv"));
+        Assert.True(File.Exists(Dumpper.Directory + "/Passes/2_AssignRanges/" + "quant_error.csv"));
     }
 
     private async Task TestDumpQuantErrorMainPassesAsync(Var input, Expr output, string resourceName)

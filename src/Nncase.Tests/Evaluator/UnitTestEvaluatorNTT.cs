@@ -49,9 +49,9 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
         {
             if (pack)
             {
-                var col = IR.F.NTT.Im2col(IR.F.NTT.Pack(input, new[] { 4 }, new[] { 1 }), new[] { weightShape[2], weightShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
-                var newW = IR.F.Tensors.Reshape(IR.F.NTT.Pack(weights, new[] { 4 }, new[] { 1 }), new[] { weightShape[0], weightShape[1] / 4 * weightShape[2] * weightShape[3] });
-                var matmul = IR.F.NTT.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
+                var col = IR.F.NTT.Im2col(IR.F.Tensors.Pack(input, new[] { 4 }, new[] { 1 }), new[] { weightShape[2], weightShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
+                var newW = IR.F.Tensors.Reshape(IR.F.Tensors.Pack(weights, new[] { 4 }, new[] { 1 }), new[] { weightShape[0], weightShape[1] / 4 * weightShape[2] * weightShape[3] });
+                var matmul = IR.F.NTT.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }, false, false, false); // [oc, b*oh*ow]
                 var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
                 var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
                 post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
@@ -93,9 +93,9 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
         Expr post;
         {
             var lanes = Enumerable.Repeat(Lanes, packedAxes.Length).ToArray();
-            var packed = IR.F.NTT.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, float.NegativeInfinity, out var pads), lanes, packedAxes);
-            var softmax = IR.F.NTT.PackedSoftmax(packed, axis, packedAxes);
-            post = PackUtility.SliceForPack(IR.F.NTT.Unpack(softmax, packedAxes), shape, pads);
+            var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, float.NegativeInfinity, out var pads), lanes, packedAxes);
+            var softmax = IR.F.Tensors.PackedSoftmax(packed, axis, packedAxes);
+            post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(softmax, packedAxes), shape, pads);
         }
 
         var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
@@ -154,24 +154,24 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
         Expr post;
         {
             var lanes = Enumerable.Repeat(Lanes, packedAxes.Length).ToArray();
-            var packedInput = IR.F.NTT.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+            var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
             var pAxes = packedAxes.Where(i => i >= axis).Select(i => i - axis).ToArray();
             var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
             if (pAxes.Length > 0)
             {
-                packedScale = IR.F.NTT.Pack(packedScale, Enumerable.Repeat(Lanes, pAxes.Length).ToArray(), pAxes);
+                packedScale = IR.F.Tensors.Pack(packedScale, Enumerable.Repeat(Lanes, pAxes.Length).ToArray(), pAxes);
             }
 
             var packedBias = PackUtility.PadForPack(bias, pshape, pAxes, lanes, 0f, out var padsBias);
             if (pAxes.Length > 0)
             {
-                packedBias = IR.F.NTT.Pack(packedBias, Enumerable.Repeat(Lanes, pAxes.Length).ToArray(), pAxes);
+                packedBias = IR.F.Tensors.Pack(packedBias, Enumerable.Repeat(Lanes, pAxes.Length).ToArray(), pAxes);
             }
 
-            var layernorm = IR.F.NTT.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, false, packedAxes, padsInput);
+            var layernorm = IR.F.Tensors.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, false, packedAxes, padsInput);
 
-            post = PackUtility.SliceForPack(IR.F.NTT.Unpack(layernorm, packedAxes), shape, padsInput);
+            post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(layernorm, packedAxes), shape, padsInput);
         }
 
         var feedDict = new Dictionary<IVar, IValue>() {
@@ -238,9 +238,9 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
         Expr post;
         {
             var lLanes = Enumerable.Repeat(Lanes, lhsPackedAxes.Length).ToArray();
-            var packedLhs = IR.F.NTT.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lLanes, 0f, out var lhsPadNums), lLanes, lhsPackedAxes);
+            var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lLanes, 0f, out var lhsPadNums), lLanes, lhsPackedAxes);
             var rLanes = Enumerable.Repeat(Lanes, rhsPackedAxes.Length).ToArray();
-            var packedRhs = IR.F.NTT.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rLanes, 0f, out var rhsPadNums), rLanes, rhsPackedAxes);
+            var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rLanes, 0f, out var rhsPadNums), rLanes, rhsPackedAxes);
 
             var matmul = IR.F.NTT.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
             var lhsAlign = System.Math.Max(lhsShape.Length, rhsShape.Length) - lhsShape.Length;
@@ -248,7 +248,7 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
             post = matmul;
             if (lhsPackedAxes.Length == 2 && rhsPackedAxes.Length == 2)
             {
-                post = PackUtility.SliceForPack(IR.F.NTT.Unpack(matmul, new[] { lhsAlign + lhsPackedAxes[0], rhsAlign + rhsPackedAxes[1] }), pre.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
+                post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(matmul, new[] { lhsAlign + lhsPackedAxes[0], rhsAlign + rhsPackedAxes[1] }), pre.CheckedShape.ToValueArray(), new[] { lhsPadNums[0], rhsPadNums[1] });
             }
         }
 
@@ -333,13 +333,13 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
         Expr post;
         {
             var lhsLanes = Enumerable.Repeat(Lanes, lhsPackedAxes.Length).ToArray();
-            var packedLhs = IR.F.NTT.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
+            var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
             var rhsLanes = Enumerable.Repeat(Lanes, rhsPackedAxes.Length).ToArray();
-            var packedRhs = IR.F.NTT.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+            var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
             var binary = IR.F.NTT.PackedBinary(packedLhs, packedRhs, op, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
 
-            post = PackUtility.SliceForPack(IR.F.NTT.Unpack(binary, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), pre.CheckedShape.ToValueArray(), lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
+            post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(binary, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPackedAxes : rhsPackedAxes), pre.CheckedShape.ToValueArray(), lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums : rhsPadNums);
         }
 
         if (!valid)
@@ -396,9 +396,9 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
         Expr post;
         {
             var lanes = Enumerable.Repeat(Lanes, packedAxes.Length).ToArray();
-            var packed = IR.F.NTT.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+            var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
             var swish = IR.F.NN.Swish(packed, 1.23f);
-            post = PackUtility.SliceForPack(IR.F.NTT.Unpack(swish, packedAxes), shape, pads);
+            post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(swish, packedAxes), shape, pads);
         }
 
         var feedDict = new Dictionary<IVar, IValue>() { { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() } };
@@ -516,7 +516,7 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
         var pre = IR.F.Tensors.Concat(new IR.Tuple(inputs), axis);
         int count = 1;
         var feedDict = shapes.Zip(inputs).ToDictionary(kv => kv.Second, kv => IR.F.Random.Normal(DataTypes.Float32, 0, 1, count++, kv.First).Evaluate());
-        var post = IR.F.Tensors.Concat(new IR.Tuple(inputs.Zip(packedAxes).Select(p => IR.F.NTT.Pack(p.First, Enumerable.Repeat(Lanes, p.Second.Length).ToArray(), p.Second)).ToArray()), axis);
+        var post = IR.F.Tensors.Concat(new IR.Tuple(inputs.Zip(packedAxes).Select(p => IR.F.Tensors.Pack(p.First, Enumerable.Repeat(Lanes, p.Second.Length).ToArray(), p.Second)).ToArray()), axis);
         post.Evaluate(feedDict);
     }
 #endif

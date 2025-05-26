@@ -24,9 +24,9 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null, bool transB = false)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null, bool transB = false, DataType outputDataType = null!)
     {
-        if (VisitTensorType(a.TensorType, b.TensorType, packingK, dimInfo) is not TensorType outType)
+        if (VisitTensorType(a.TensorType, b.TensorType, packingK, dimInfo, outputDataType) is not TensorType outType)
         {
             return new InvalidType($"{a.TensorType} {b.TensorType} not support");
         }
@@ -242,7 +242,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new DistributedType(a.TensorType, ndsbp, a.Placement);
     }
 
-    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, DimInfo? dimInfo = null)
+    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, DimInfo? dimInfo = null, DataType outputDataType = null!)
     {
         if (lhs.Shape is not RankedShape lhsShape
             || rhs.Shape is not RankedShape rhsShape)
@@ -266,7 +266,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
         if (lhsDType == DataTypes.Float8E4M3 || lhsDType == DataTypes.Float8E5M2 || lhsDType == DataTypes.Int8)
         {
-            dtype = DataTypes.Float32;
+            dtype = outputDataType;
         }
 
         if (lhs.DType is VectorType vl1 && rhs.DType is not VectorType)
@@ -286,14 +286,19 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             }
 
             dtype = vr1;
+            if (vr1.ElemType == DataTypes.Float8E4M3)
+            {
+                var interType = new VectorType(outputDataType, vr1.Lanes);
+                dtype = interType;
+            }
         }
         else if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
         {
             // pack k or m&n
             var elemType = vl.ElemType;
-            if (elemType.IsFloat() && elemType != DataTypes.Float32)
+            if (elemType.IsFloat() && elemType != outputDataType)
             {
-                elemType = DataTypes.Float32;
+                elemType = outputDataType;
             }
 
             if (vl.Lanes.Count == 1 && vr.Lanes.Count == 1)
@@ -337,13 +342,14 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new TensorType(dtype, front.Concat(end).ToArray());
     }
 
-    public static IValue InferValue(DataType dataType, Tensor lhs, Tensor rhs)
+    public static IValue InferValue(DataType dataType, Tensor lhs, Tensor rhs, DataType outputDataType = null!)
     {
         if (dataType.IsFloat() && dataType != DataTypes.Float32)
         {
             var lhsOrt = Cast(lhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
             var rhsOrt = Cast(rhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-            var ret = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
+            var result = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
+            var ret = Cast(result, outputDataType).Evaluate().AsTensor();
             return Value.FromTensor(ret);
         }
         else
@@ -360,7 +366,8 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var dataType = context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType;
         var lhs = context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor();
         var rhs = context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor();
-        return InferValue(dataType, lhs, rhs);
+        var outputDataType = matMul.OutputDataType;
+        return InferValue(dataType, lhs, rhs, outputDataType);
     }
 
     /// <inheritdoc/>
@@ -368,10 +375,11 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         var lhs = context.CheckArgumentType<IRType>(target, MatMul.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, MatMul.Rhs);
+        var outputDataType = target.OutputDataType;
         return (lhs, rhs) switch
         {
-            (DistributedType a, DistributedType b) => VisitDistributedType(a, b),
-            (TensorType a, TensorType b) => VisitTensorType(a, b),
+            (DistributedType a, DistributedType b) => VisitDistributedType(a, b, false, null, false, outputDataType),
+            (TensorType a, TensorType b) => VisitTensorType(a, b, false, null, outputDataType),
             _ => new InvalidType($"{lhs} {rhs} not support"),
         };
     }

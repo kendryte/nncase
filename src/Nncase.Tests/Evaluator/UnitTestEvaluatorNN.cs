@@ -113,6 +113,74 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
     }
 }
 
+public sealed class PagedAttentionSchedulerTestData : TheoryData<PagedAttentionConfig, int[]>
+{
+    private static readonly Runtime.TypeCode[] TypeConfigs = [
+        Runtime.TypeCode.Float32,
+        Runtime.TypeCode.Float16,
+    ];
+
+    private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
+    [
+        (64, 8, 128),
+    ];
+
+    private static readonly (int Layer, int BlockSize, int NumBlocks)[] CacheConfigs = [
+        (1, 256, 32),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
+    [
+        (new[] {
+            PagedKVCacheDimKind.NumLayers,
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+        (new[] {
+            PagedKVCacheDimKind.NumBlocks,
+            PagedKVCacheDimKind.NumLayers,
+            PagedKVCacheDimKind.KV,
+            PagedKVCacheDimKind.NumKVHeads,
+            PagedKVCacheDimKind.HeadDim,
+            PagedKVCacheDimKind.BlockSize,
+         },
+         new[] { PagedKVCacheDimKind.HeadDim }),
+    ];
+
+    private static readonly (PagedKVCacheDimKind[] Sharding, SBPSplit[] Policies, int[] Hierarchy)[] ShardingConfigs =
+    [
+        (Array.Empty<PagedKVCacheDimKind>(), Array.Empty<SBPSplit>(), Array.Empty<int>()),
+        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }, new[] { 1 }),
+        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }, new[] { 8 }),
+    ];
+
+    public PagedAttentionSchedulerTestData()
+    {
+        foreach (var (numQHeads, numKVHeads, headDim) in HeadConfigs)
+        {
+            foreach (var (numLayer, blockSize, numBlocks) in CacheConfigs)
+            {
+                foreach (var typeCode in TypeConfigs)
+                {
+                    foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
+                    {
+                        foreach (var (shardingAxes, axisPolicies, hierarchy) in ShardingConfigs)
+                        {
+                            var kvType = PrimType.FromTypeCode(typeCode);
+                            var config = new PagedAttentionConfig(numLayer, numKVHeads, headDim, kvType, blockSize, cacheLayout, packedAxes, new[] { 128 / kvType.SizeInBytes }, shardingAxes, axisPolicies);
+                            Add(config, hierarchy);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 public class UnitTestEvaluatorNN : TestClassBase
 {
     [Fact]
@@ -830,30 +898,142 @@ public class UnitTestEvaluatorNN : TestClassBase
         var dataGeneratorOptions = new TestFixture.PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = TestFixture.PagedAttentionKVCacheTestFixture.PrepareReferenceResults(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.Config.NumKVHeads, testFixture.Config.HeadDim, testFixture.Config.NumLayers, testFixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = TestFixture.PagedAttentionKVCacheTestFixture.CreateTestKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
 
         var kvinputs = TestFixture.PagedAttentionKVCacheTestFixture.PrepareKVInputs(testFixture.QueryLens, testFixture.SeqLens, testFixture.ContextLens, testFixture.NumBlocks, placement, referenceResults, testFixture.Config);
 
         var feedDict = new Dictionary<IVar, IValue>();
         {
-            feedDict.Add(testKernel.QueryVar, Value.FromTensor(referenceResults.GetQueryTensor()));
+            feedDict.Add(queryVar, Value.FromTensor(referenceResults.GetQueryTensor()));
             for (int layerId = 0; layerId < testFixture.Config.NumLayers; layerId++)
             {
-                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                feedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
             }
 
-            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+            feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
         }
 
         // 4. evaluate and compare
         {
             // var refTensor = OrtKI.Concat(refOutputs.ToArray(), 1L).ToTensor();
             var refTensor = referenceResults.GetOutputTensor();
-            var actualTensor = testKernel.Root.Evaluate(feedDict).AsTensor();
+            var actualTensor = root.Evaluate(feedDict).AsTensor();
 
             var cos = Comparator.CosSimilarity(refTensor, actualTensor);
             Assert.True(cos > 0.999, $"cos: {cos} ");
+        }
+    }
+
+    [Theory]
+    [ClassData(typeof(PagedAttentionSchedulerTestData))]
+    public void TestPagedAttentionScheduler(PagedAttentionConfig config, int[] hierarchy)
+    {
+        // 1. singele session prefill test
+        {
+            int numBlocks = 32;
+            int maxSessions = 4;
+            int maxModelLen = config.BlockSize * (numBlocks / maxSessions);
+
+            var scheduler = new Evaluator.NN.RefPagedAttentionScheduler(config, numBlocks, maxModelLen, hierarchy);
+            {
+                long[] sessionIds = [1];
+                long[] queryLens = [64];
+                var kvCache = scheduler.Schedule(sessionIds, queryLens);
+
+                Assert.Equal(1, kvCache.NumSeqs);
+                Assert.Equal(64, kvCache.NumTokens);
+
+                Assert.True(kvCache.SeqLens.SequenceEqual([64]));
+                Assert.True(kvCache.ContextLens.SequenceEqual([0]));
+            }
+
+            // session id to large.
+            Assert.Throws<InvalidOperationException>(() =>
+            {
+                long[] sessionIds = [maxSessions + 1];
+                long[] queryLens = [64];
+                var kvCache = scheduler.Schedule(sessionIds, queryLens);
+            });
+        }
+
+        // 2. multi prefills.
+        {
+            int numBlocks = 32;
+            int maxSessions = 8;
+            int maxModelLen = config.BlockSize * (numBlocks / maxSessions);
+
+            var scheduler = new Evaluator.NN.RefPagedAttentionScheduler(config, numBlocks, maxModelLen, hierarchy);
+
+            long[] sessionIds = [1, 2, 3];
+            long[] queryLens = [32, 48, 64];
+
+            var kvCache = scheduler.Schedule(sessionIds, queryLens);
+
+            Assert.Equal(3, kvCache.NumSeqs);
+            Assert.Equal(144, kvCache.NumTokens); // 32+48+64
+
+            var seqLens = kvCache.SeqLens.ToArray<long>();
+            Assert.Equal(32, seqLens[0]);
+            Assert.Equal(48, seqLens[1]);
+            Assert.Equal(64, seqLens[2]);
+
+            var contextLens = kvCache.ContextLens.ToArray<long>();
+            Assert.Equal(0, contextLens[0]);
+            Assert.Equal(0, contextLens[1]);
+            Assert.Equal(0, contextLens[2]);
+        }
+
+        // 3. single session prefill and decode.
+        {
+            int numBlocks = 32;
+            int maxSessions = 8;
+            int maxModelLen = config.BlockSize * (numBlocks / maxSessions);
+
+            var scheduler = new Evaluator.NN.RefPagedAttentionScheduler(config, numBlocks, maxModelLen, hierarchy);
+
+            // prefill
+            long[] sessionIds1 = [2];
+            long[] queryLens1 = [48];
+
+            var kvCache1 = scheduler.Schedule(sessionIds1, queryLens1);
+
+            Assert.Equal(1, kvCache1.NumSeqs);
+            Assert.Equal(48, kvCache1.NumTokens);
+
+            var seqLens1 = kvCache1.SeqLens.ToArray<long>();
+            Assert.Equal(48, seqLens1[0]);
+
+            var contextLens1 = kvCache1.ContextLens.ToArray<long>();
+            Assert.Equal(0, contextLens1[0]);
+
+            long[] sessionIds2 = [2];
+            long[] queryLens2 = [1];
+
+            var kvCache2 = scheduler.Schedule(sessionIds2, queryLens2);
+
+            Assert.Equal(1, kvCache2.NumSeqs);
+            Assert.Equal(1, kvCache2.NumTokens);
+
+            var seqLens2 = kvCache2.SeqLens.ToArray<long>();
+            Assert.Equal(49, seqLens2[0]); // 48 + 1
+
+            var contextLens2 = kvCache2.ContextLens.ToArray<long>();
+            Assert.Equal(48, contextLens2[0]);
+
+            long[] sessionIds3 = [2];
+            long[] queryLens3 = [1];
+
+            var kvCache3 = scheduler.Schedule(sessionIds3, queryLens3);
+
+            Assert.Equal(1, kvCache3.NumSeqs);
+            Assert.Equal(1, kvCache3.NumTokens);
+
+            var seqLens3 = kvCache3.SeqLens.ToArray<long>();
+            Assert.Equal(50, seqLens3[0]); // 49 + 1
+
+            var contextLens3 = kvCache3.ContextLens.ToArray<long>();
+            Assert.Equal(49, contextLens3[0]);
         }
     }
 

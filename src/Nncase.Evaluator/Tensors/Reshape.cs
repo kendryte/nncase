@@ -284,6 +284,10 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         }
 
         var reshaped = OrtKI.Reshape(input, shape, allowzero);
+        if (dataType is not VectorType && dataType != DataTypes.Float32)
+        {
+            reshaped = OrtKI.Cast(OrtKI.Reshape(input, shape, allowzero), (int)dataType.ToOrtType());
+        }
 
         if (dataType.IsFloat() && dataType != DataTypes.Float32)
         {
