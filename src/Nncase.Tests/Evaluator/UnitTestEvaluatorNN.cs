@@ -17,7 +17,7 @@ using Xunit;
 
 namespace Nncase.Tests.EvaluatorTest;
 
-public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture>
+public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture, Placement>
 {
     private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
     [
@@ -72,10 +72,10 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
          new[] { PagedKVCacheDimKind.HeadDim }),
     ];
 
-    private static readonly (PagedKVCacheDimKind[] Sharding, SBPSplit[] Policies)[] ShardingConfigs =
+    private static readonly (PagedKVCacheDimKind[] Sharding, SBPSplit[] Policies, Placement Placement)[] ShardingConfigs =
     [
-        (Array.Empty<PagedKVCacheDimKind>(), Array.Empty<SBPSplit>()),
-        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }),
+        (Array.Empty<PagedKVCacheDimKind>(), Array.Empty<SBPSplit>(), new Placement(new[] { 1 }, "t")),
+        (new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }, new Placement(new[] { 1 }, "t")),
     ];
 
     private static readonly (AttentionDimKind[] QLayout, AttentionDimKind[] KLayout)[] QKLayoutConfigs =
@@ -98,11 +98,11 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
                     {
                         foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
                         {
-                            foreach (var (shardingAxes, axisPolicies) in ShardingConfigs)
+                            foreach (var (shardingAxes, axisPolicies, placement) in ShardingConfigs)
                             {
                                 foreach (var (qlayout, klayout) in QKLayoutConfigs)
                                 {
-                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, packedAxes, shardingAxes, axisPolicies, qlayout, klayout));
+                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, packedAxes, shardingAxes, axisPolicies, qlayout, klayout), placement);
                                 }
                             }
                         }
@@ -110,6 +110,8 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
                 }
             }
         }
+
+        Add(new TestFixture.PagedAttentionKVCacheTestFixture([4], [4], 4, 2, 32, 8, 32, Runtime.TypeCode.Float32, 1, [PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize], [PagedKVCacheDimKind.HeadDim], new[] { PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(0) }, [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]), new Placement(new[] { 1 }, "t"));
     }
 }
 
@@ -891,10 +893,65 @@ public class UnitTestEvaluatorNN : TestClassBase
     }
 
     [Theory]
-    [ClassData(typeof(PagedAttentionKVCacheTestData))]
-    public void TestPagedAttention(TestFixture.PagedAttentionKVCacheTestFixture testFixture)
+    [InlineData([true])]
+    public void TestScaledDotProductAttentionGQA(bool isCausal)
     {
-        var placement = new IR.Placement(new[] { 1 }, "t");
+        var q = OrtKISharp.Tensor.MakeTensor(new float[] { 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3 }, [4, 4, 1]);
+        var k = OrtKISharp.Tensor.MakeTensor(new float[] { 0, 0, 0, 0, 1, 1, 1, 1 }, [2, 4, 1]);
+        var v = OrtKISharp.Tensor.MakeTensor(new float[] { 2, 2, 2, 2, 3, 3, 3, 3 }, [2, 4, 1]);
+        var s = TestFixture.PagedAttentionKVCacheTestFixture.ScaledDotProductAttention(q, k, v, isCausal: isCausal, scale: 1.0f);
+        var span = s.GetBuffer<float>().ToArray();
+
+        if (isCausal)
+        {
+            Assert.True(span.SequenceEqual([
+                2.0f,
+                2.0f,
+                2.0f,
+                2.0f,
+                2.0f,
+                2.0f,
+                2.0f,
+                2.0f,
+                3.0f,
+                3.0f,
+                3.0f,
+                3.0f,
+                3.0f,
+                3.0f,
+                3.0f,
+                3.0f,]));
+        }
+        else
+        {
+            Assert.True(span.SequenceEqual([
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f,
+                18.0f,
+                19.0f,
+                20.0f,
+                21.0f]));
+        }
+    }
+
+    [Theory]
+    [ClassData(typeof(PagedAttentionKVCacheTestData))]
+    public void TestPagedAttention(TestFixture.PagedAttentionKVCacheTestFixture testFixture, Placement placement)
+    {
         var dataGeneratorOptions = new TestFixture.PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = TestFixture.PagedAttentionKVCacheTestFixture.PrepareReferenceResults(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.Config.NumKVHeads, testFixture.Config.HeadDim, testFixture.Config.NumLayers, testFixture.Config.KVPrimType, dataGeneratorOptions);
 
