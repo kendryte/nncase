@@ -13,8 +13,11 @@
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
+from collections import namedtuple
+import math
+from typing import List
 import pytest
-# import nncase
+import torch
 import numpy as np
 import nncase
 
@@ -408,8 +411,131 @@ def test_paged_attention_scheduler_distributed():
     result_ref = result.to_runtime_tensor().to_numpy()
 
 
-def test_create_object_tensor():
-    pass
+HeadConfig = namedtuple('HeadConfig', ['num_layers', 'num_q_heads', 'num_kv_heads', 'head_dim'])
+BlockConfig = namedtuple('BlockConfig', ['block_size', 'num_blocks', 'max_sessions'])
+ShardingConfig = namedtuple('ShardingConfig', ['sharding_axes', 'axis_policies', 'hierarchy'])
+
+
+def evaluate(test_func: nncase._nncase.Function, *ref_inputs: List[np.ndarray | nncase._nncase.RTValue]) -> np.ndarray:
+    var_params = []
+    rt_values = []
+    for i in range(len(ref_inputs)):
+        param = test_func.parameters[i]
+        input = ref_inputs[i]
+        var_params.append(param)
+        if isinstance(input, np.ndarray):
+            rt_values.append(nncase._nncase.RTValue.from_runtime_tensor(
+                nncase.RuntimeTensor.from_numpy(input)))
+        elif isinstance(input, nncase._nncase.RTValue):
+            rt_values.append(input)
+        elif isinstance(input, nncase._nncase.IValue):
+            rt_values.append(input)
+
+    result = test_func.body.evaluate(var_params, rt_values)
+    return result.to_runtime_tensor().to_numpy()
+
+
+def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0,
+                                 is_causal=False, scale=None, enable_gqa=False) -> torch.Tensor:
+    L, S = query.size(-2), key.size(-2)
+    scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
+    attn_bias = torch.zeros(L, S, dtype=query.dtype, device=query.device)
+    if is_causal:
+        assert attn_mask is None
+        temp_mask = torch.ones(L, S, dtype=torch.bool).tril(diagonal=0)
+        attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
+        attn_bias.to(query.dtype)
+
+    if attn_mask is not None:
+        if attn_mask.dtype == torch.bool:
+            attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf"))
+        else:
+            attn_bias = attn_mask + attn_bias
+
+    if enable_gqa:
+        key = key.repeat_interleave(query.size(-3) // key.size(-3), -3)
+        value = value.repeat_interleave(query.size(-3) // value.size(-3), -3)
+
+    attn_weight = query @ key.transpose(-2, -1) * scale_factor
+    attn_weight += attn_bias
+    attn_weight = torch.softmax(attn_weight, dim=-1)
+    attn_weight = torch.dropout(attn_weight, dropout_p, train=True)
+    return attn_weight @ value
+
+
+@pytest.mark.parametrize("head_config", [HeadConfig(1, 4, 2, 1)])
+@pytest.mark.parametrize("block_config", [BlockConfig(128, 32, 8)])
+@pytest.mark.parametrize("kv_type", [np.dtype(np.float32)])
+@pytest.mark.parametrize("cache_layout", [[nncase.PagedKVCacheDimKind.NumBlocks,
+                                           nncase.PagedKVCacheDimKind.NumLayers,
+                                           nncase.PagedKVCacheDimKind.NumKVHeads,
+                                           nncase.PagedKVCacheDimKind.KV,
+                                           nncase.PagedKVCacheDimKind.BlockSize,
+                                           nncase.PagedKVCacheDimKind.HeadDim]])
+@pytest.mark.parametrize("packed_axes", [[]])
+@pytest.mark.parametrize("sharding_config", [ShardingConfig([nncase.PagedKVCacheDimKind.NumBlocks], [[0]], [1])])
+def test_paged_attention_with_sdpa(head_config, block_config, kv_type: np.dtype, cache_layout, packed_axes, sharding_config):
+    (num_layers, num_q_heads, num_kv_heads, head_dim) = head_config
+    (block_size,
+     num_blocks, max_sessions) = block_config
+    max_model_len = (block_size * num_blocks) // max_sessions
+    lanes = [128 / kv_type.itemsize for axes in packed_axes]
+    (sharding_axes, axis_policies, hierarchy) = sharding_config
+
+    config = nncase.PagedAttentionConfig(
+        num_layers,
+        num_kv_heads,
+        head_dim,
+        kv_type,
+        block_size,
+        cache_layout,
+        packed_axes,
+        lanes,
+        sharding_axes,
+        axis_policies)
+
+    scheduler = nncase._nncase.RefPagedAttentionScheduler(
+        config, num_blocks, max_model_len, hierarchy)
+
+    session_ids = [0]
+    query_lens = [8]
+    kvcache = scheduler.schedule(session_ids, query_lens)
+
+    test_func = scheduler.create_test_function(
+        num_q_heads,
+        [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head,
+            nncase._nncase.AttentionDimKind.Dim],
+        [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head, nncase._nncase.AttentionDimKind.Dim])
+    assert len(test_func.parameters) == 1 + 1 + config.num_layers * 2
+
+    # seq, head, dim
+    queries_len = np.sum(query_lens)
+    ref_q = np.zeros([queries_len, num_q_heads, head_dim]).astype(kv_type)
+    for i in range(num_q_heads):
+        ref_q[:, i, :] = i
+    ref_k = np.zeros([queries_len, num_kv_heads, head_dim]).astype(kv_type)
+    for i in range(num_kv_heads):
+        ref_k[:, i, :] = i
+    ref_v = np.zeros([queries_len, num_kv_heads, head_dim]).astype(kv_type)
+    for i in range(num_kv_heads):
+        ref_v[:, i, :] = num_kv_heads + i
+
+    # note sdpa requires [head, seq, dim] layout
+    ref_output = scaled_dot_product_attention(
+        torch.from_numpy(np.transpose(ref_q, [1, 0, 2])),
+        torch.from_numpy(np.transpose(ref_k, [1, 0, 2])),
+        torch.from_numpy(np.transpose(ref_v, [1, 0, 2])),
+        is_causal=True,
+        enable_gqa=num_q_heads != num_kv_heads).numpy()
+    ref_output = np.transpose(ref_output, [1, 0, 2])
+
+    actual_output = evaluate(
+        test_func,
+        ref_q,
+        ref_k,
+        ref_v,
+        kvcache.as_ivalue())
+    assert np.allclose(actual_output, ref_output)
 
 
 if __name__ == "__main__":

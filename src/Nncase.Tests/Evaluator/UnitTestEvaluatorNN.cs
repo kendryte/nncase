@@ -993,17 +993,15 @@ public class UnitTestEvaluatorNN : TestClassBase
             int maxModelLen = config.BlockSize * (numBlocks / maxSessions);
 
             var scheduler = new Evaluator.NN.RefPagedAttentionScheduler(config, numBlocks, maxModelLen, hierarchy);
-            {
-                long[] sessionIds = [1];
-                long[] queryLens = [64];
-                var kvCache = scheduler.Schedule(sessionIds, queryLens);
+            long[] sessionIds = [1];
+            long[] queryLens = [64];
+            var kvCache = scheduler.Schedule(sessionIds, queryLens);
 
-                Assert.Equal(1, kvCache.NumSeqs);
-                Assert.Equal(64, kvCache.NumTokens);
+            Assert.Equal(1, kvCache.NumSeqs);
+            Assert.Equal(64, kvCache.NumTokens);
 
-                Assert.True(kvCache.SeqLens.SequenceEqual([64]));
-                Assert.True(kvCache.ContextLens.SequenceEqual([0]));
-            }
+            Assert.True(kvCache.SeqLens.SequenceEqual([64]));
+            Assert.True(kvCache.ContextLens.SequenceEqual([0]));
 
             // session id to large.
             Assert.Throws<InvalidOperationException>(() =>
@@ -1011,6 +1009,17 @@ public class UnitTestEvaluatorNN : TestClassBase
                 long[] sessionIds = [maxSessions + 1];
                 long[] queryLens = [64];
                 var kvCache = scheduler.Schedule(sessionIds, queryLens);
+            });
+
+            var qHead = 8;
+            var func = scheduler.CreateTestFunction(qHead, [AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim], [AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]);
+
+            func.Evaluate(new Dictionary<IVar, IValue>()
+            {
+                { func.Parameters[0], Value.FromTensor(Tensor.Zeros(config.KVPrimType, [64, config.NumKVHeads, config.HeadDim])) },
+                { func.Parameters[1], Value.FromTensor(Tensor.Zeros(config.KVPrimType, [64, qHead, config.HeadDim])) },
+                { func.Parameters[2], Value.FromTensor(Tensor.Zeros(config.KVPrimType, [64, qHead, config.HeadDim])) },
+                { func.Parameters[3], Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCache))) },
             });
         }
 
