@@ -423,16 +423,16 @@ internal static class ModelUtils
             partialRotaryFactor = (float)Convert.ToDouble(config["partial_rotary_factor"]);
         }
 
-        int headDim;
+        long headDim;
 
-        if (config.TryGetValue("head_dim", out var headDimObj) && headDimObj is int headDim1)
+        if (config.TryGetValue("head_dim", out var headDimObj))
         {
-            headDim = headDim1;
+            headDim = (long)headDimObj;
         }
         else
         {
-            int hiddenSize = (int)(long)config["hidden_size"];
-            int numAttentionHeads = (int)(long)config["num_attention_heads"];
+            long hiddenSize = (long)config["hidden_size"];
+            long numAttentionHeads = (long)config["num_attention_heads"];
             headDim = hiddenSize / numAttentionHeads;
         }
 

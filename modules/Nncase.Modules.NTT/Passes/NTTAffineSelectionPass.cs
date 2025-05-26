@@ -12,17 +12,15 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.IR.Tensors;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using Nncase.Passes.Transforms;
 using Nncase.Targets;
 using Nncase.TIR;
-using Pack = Nncase.IR.Tensors.Pack;
 
 namespace Nncase.Passes;
 
-public sealed partial class NTTAffineSelectionPass : AffineSelectionPass
+public partial class NTTAffineSelectionPass : AffineSelectionPass
 {
     private readonly CompileOptions _compileOptions;
 
@@ -40,11 +38,11 @@ public sealed partial class NTTAffineSelectionPass : AffineSelectionPass
                 return SelectPackedBinary(op, call, output);
             case IR.NTT.PackedMatMul:
                 return SelectMatMul((Op)call.Target, call, output);
-            case Pack op:
+            case IR.Tensors.Pack op:
                 return SelectPack(op, call, output);
             case IR.NTT.PackedReduce op:
                 return SelectReduce(op, call, output);
-            case Unpack op:
+            case IR.Tensors.Unpack op:
                 return SelectUnpack(op, call, output);
             case IR.Math.Binary op:
                 return SelectBinary(op, call, output);

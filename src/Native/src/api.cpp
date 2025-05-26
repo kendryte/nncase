@@ -532,7 +532,7 @@ int nncase_attention_config_set_head_dim(
 int nncase_attention_config_get_kv_type(
     nncase::llm::attention_config_node *config, nncase::typecode_t *kv_type) {
     if (config && kv_type) {
-        *kv_type = config->kv_type();
+        *kv_type = config->kv_prim_type();
         return 0;
     }
     return -EINVAL;
@@ -541,7 +541,7 @@ int nncase_attention_config_get_kv_type(
 int nncase_attention_config_set_kv_type(
     nncase::llm::attention_config_node *config, nncase::typecode_t kv_type) {
     if (config) {
-        config->kv_type(kv_type);
+        config->kv_prim_type(kv_type);
         return 0;
     }
     return -EINVAL;

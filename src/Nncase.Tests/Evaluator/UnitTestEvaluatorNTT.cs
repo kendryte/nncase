@@ -51,7 +51,7 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
             {
                 var col = IR.F.NTT.Im2col(IR.F.Tensors.Pack(input, new[] { 4 }, new[] { 1 }), new[] { weightShape[2], weightShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
                 var newW = IR.F.Tensors.Reshape(IR.F.Tensors.Pack(weights, new[] { 4 }, new[] { 1 }), new[] { weightShape[0], weightShape[1] / 4 * weightShape[2] * weightShape[3] });
-                var matmul = IR.F.NTT.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }); // [oc, b*oh*ow]
+                var matmul = IR.F.NTT.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, new[] { 0 }, new[] { 0 }, false, false, false); // [oc, b*oh*ow]
                 var newBias = IR.F.Tensors.Reshape(bias, new[] { weightShape[0], 1 });
                 var add = IR.F.Tensors.Reshape(matmul + newBias, new[] { outShape[1], outShape[0], outShape[2], outShape[3] });
                 post = IR.F.Tensors.Transpose(add, new[] { 1, 0, 2, 3 });
@@ -94,7 +94,7 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
         {
             var lanes = Enumerable.Repeat(Lanes, packedAxes.Length).ToArray();
             var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, shape, packedAxes, lanes, float.NegativeInfinity, out var pads), lanes, packedAxes);
-            var softmax = IR.F.NTT.PackedSoftmax(packed, axis, packedAxes);
+            var softmax = IR.F.Tensors.PackedSoftmax(packed, axis, packedAxes);
             post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(softmax, packedAxes), shape, pads);
         }
 
@@ -169,7 +169,7 @@ public sealed class UnitTestEvaluatorNTT : TestClassBase
                 packedBias = IR.F.Tensors.Pack(packedBias, Enumerable.Repeat(Lanes, pAxes.Length).ToArray(), pAxes);
             }
 
-            var layernorm = IR.F.NTT.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, false, packedAxes, padsInput);
+            var layernorm = IR.F.Tensors.PackedLayerNorm(packedInput, packedScale, packedBias, axis, 1e-6f, false, packedAxes, padsInput);
 
             post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(layernorm, packedAxes), shape, padsInput);
         }

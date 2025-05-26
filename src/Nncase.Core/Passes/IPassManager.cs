@@ -43,7 +43,7 @@ public interface IPassManager : IPassesAddable
     /// <summary>
     /// Gets name.
     /// </summary>
-    public string Name { get; }
+    string Name { get; }
 
     /// <summary>
     /// Run passes and update the module.

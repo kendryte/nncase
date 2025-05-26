@@ -21,14 +21,15 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
-        var dimensions = input.Dimensions.ToArray();
-        if (cast.NewType is VectorType vt)
+        if (cast.NewType is VectorType vt && !cast.PackAxes.IsDefaultOrEmpty)
         {
+            var dimensions = input.Dimensions.ToArray();
             var scale = 1f * vt.ElemType.SizeInBytes / ((VectorType)input.ElementType).ElemType.SizeInBytes;
             cast.PackAxes.ToArray().ForEach(a => dimensions[a] = (int)(dimensions[a] * scale));
+            return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode, dimensions));
         }
 
-        return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode, dimensions));
+        return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
     }
 
     /// <inheritdoc/>
@@ -74,20 +75,24 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     {
         if (input.DType is VectorType vt)
         {
-            if (target.PackAxes.Any(a => input.Shape[a] is { IsFixed: false }))
+            if (!target.PackAxes.IsDefaultOrEmpty && target.PackAxes.Any(a => input.Shape[a] is { IsFixed: false }))
             {
                 return new InvalidType("Pack axes must be fixed");
             }
 
-            var scale = 1f * ((VectorType)target.NewType).ElemType.SizeInBytes / vt.ElemType.SizeInBytes;
-            if (target.PackAxes.Any(a => input.Shape[a].FixedValue * scale % 1 != 0))
+            var scale = 1f;
+            var newShape = input.Shape.ToArray();
+            if (!target.PackAxes.IsDefaultOrEmpty)
             {
-                return new InvalidType("Pack axes must be divisible by scale");
+                scale = 1f * ((VectorType)target.NewType).ElemType.SizeInBytes / vt.ElemType.SizeInBytes;
+                if (target.PackAxes.Any(a => input.Shape[a].FixedValue * scale % 1 != 0))
+                {
+                    return new InvalidType("Pack axes must be divisible by scale");
+                }
+
+                target.PackAxes.ToArray().ForEach(a => newShape[a] = (int)(newShape[a].FixedValue * scale));
             }
 
-            // var outType = new VectorType(((VectorType)target.NewType).ElemType, vt.Lanes.Select(l => (int)(l / scale)).ToArray());
-            var newShape = input.Shape.ToArray();
-            target.PackAxes.ToArray().ForEach(a => newShape[a] = (int)(newShape[a].FixedValue * scale));
             return new TensorType(target.NewType, newShape);
         }
 

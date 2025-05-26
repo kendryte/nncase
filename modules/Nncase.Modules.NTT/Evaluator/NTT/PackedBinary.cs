@@ -30,16 +30,15 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         var b = context.GetOrtArgumentValue(target, PackedBinary.Rhs);
         _ = System.Math.Max(target.LhsPackedAxes.Count, target.RhsPackedAxes.Count);
 
-        switch (target.LhsPackedAxes.Count, target.RhsPackedAxes.Count)
+        var maxLaneSize = System.Math.Max(target.LhsPackedAxes.Count, target.RhsPackedAxes.Count);
+        if (target.LhsPackedAxes.Count < maxLaneSize)
         {
-            case (2, 1):
-                b = OrtKI.Unsqueeze(b, new long[] { -2 });
-                break;
-            case (1, 2):
-                a = OrtKI.Unsqueeze(a, new long[] { -2 });
-                break;
-            default:
-                break;
+            a = OrtKI.Unsqueeze(a, Enumerable.Range(-maxLaneSize, maxLaneSize - target.LhsPackedAxes.Count).Select(a => (long)a).ToArray());
+        }
+
+        if (target.RhsPackedAxes.Count < maxLaneSize)
+        {
+            b = OrtKI.Unsqueeze(b, Enumerable.Range(-maxLaneSize, maxLaneSize - target.RhsPackedAxes.Count).Select(a => (long)a).ToArray());
         }
 
         var binary = target.BinaryOp switch
@@ -77,7 +76,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         uint macPerElement = 1;
         if (lhs is TensorType { Shape: RankedShape lhsShape })
         {
-            macPerElement = lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
+            macPerElement = !lhsShape.IsScalar && lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
         }
         else if (lhs is DistributedType distributedType)
         {
