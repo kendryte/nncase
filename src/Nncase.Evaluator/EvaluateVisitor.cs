@@ -21,6 +21,7 @@ internal sealed partial class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisp
 {
     private readonly EvaluateContext _context;
     private readonly IReadOnlyDictionary<IVar, IValue> _varsValues;
+    private readonly Dictionary<IVar, IValue> _dimVarsValues;
     private readonly EvaluatorDumpManager _dumpManager;
     private readonly Dictionary<Type, IEvaluator> _evaluator_cache;
 
@@ -29,6 +30,7 @@ internal sealed partial class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisp
         _context = new EvaluateContext(this, ExprMemo);
         _evaluator_cache = evaluator_cache;
         _varsValues = varsValues;
+        _dimVarsValues = new();
         _dumpManager = new EvaluatorDumpManager(DumpScope.Current.CreateSubDummper("Evaluate", null), expr => _context.GetValue(expr).AsTensors());
         _dumpManager.RegisterDumpCallbacks(RegisterBeforeCallback, RegisterAfterCallback);
     }
@@ -67,7 +69,10 @@ internal sealed partial class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisp
     {
         if (!_varsValues.TryGetValue(expr, out var value))
         {
-            throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
+            if (!_dimVarsValues.TryGetValue(expr, out value))
+            {
+                throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
+            }
         }
 
         switch (expr.CheckedType, value.Type)
@@ -79,6 +84,30 @@ internal sealed partial class EvaluateVisitor : ExprVisitor<IValue, Unit>, IDisp
                 {
                     throw new ArgumentException(
                         $"Shape mismatch. The Var {expr.Name} Require {expr.CheckedShape} But Give {valueTensorType.Shape}");
+                }
+
+                switch (checkedTensorType.Shape, valueTensorType.Shape)
+                {
+                    case (RankedShape checkedShape, RankedShape valueShape):
+                        for (int i = 0; i < checkedShape.Count; i++)
+                        {
+                            switch (checkedShape[i], valueShape[i])
+                            {
+                                case (DimVar { Kind: DimensionKind.Dynamic } dimVar, Dimension { Kind: DimensionKind.Fixed }):
+                                    if (!_dimVarsValues.ContainsKey(dimVar))
+                                    {
+                                        _dimVarsValues.Add(dimVar, Value.FromConst(valueShape[i].FixedValue));
+                                    }
+
+                                    break;
+                                default:
+                                    break;
+                            }
+                        }
+
+                        break;
+                    default:
+                        break;
                 }
 
                 switch (checkedTensorType.DType, valueTensorType.DType)

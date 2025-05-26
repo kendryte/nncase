@@ -37,7 +37,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         QLayout = qLayout;
         KLayout = kLayout;
         var kvPrimType = DataType.FromTypeCode(kvPrimTypeCode);
-        var lane = 128 / kvPrimType.SizeInBytes;
+        var lanes = packedAxes.Select(i => 128 / kvPrimType.SizeInBytes).ToArray();
         Config = new PagedAttentionConfig(
             numLayers,
             numKVHeads,
@@ -46,7 +46,7 @@ public sealed class PagedAttentionKVCacheTestFixture
             blockSize,
             cacheLayout,
             packedAxes,
-            new[] { lane },
+            lanes,
             shardingAxes,
             axisPolicies);
     }
@@ -97,7 +97,14 @@ public sealed class PagedAttentionKVCacheTestFixture
         // gqa
         if (key.Shape[0] != query.Shape[0])
         {
-            key = OrtKI.Tile(key, new long[] { query.Shape[0] / key.Shape[0], 1, 1 });
+            // interleave repeat.
+            var repeatCount = (int)(query.Shape[0] / key.Shape[0]);
+            var indices = Enumerable.Range(0, (int)key.Shape[0]).
+                Select(i => Enumerable.Repeat(i, repeatCount)).
+                SelectMany(i => i).
+                Select(i => (long)i).
+                ToArray();
+            key = OrtKI.Gather(key, indices, 0);
         }
 
         var perm = Enumerable.Range(0, key.Shape.Length).Select(i => (long)i).ToArray();
@@ -115,7 +122,13 @@ public sealed class PagedAttentionKVCacheTestFixture
         // gqa
         if (value.Shape[0] != query.Shape[0])
         {
-            value = OrtKI.Tile(value, new long[] { query.Shape[0] / value.Shape[0], 1, 1 });
+            var repeatCount = (int)(query.Shape[0] / value.Shape[0]);
+            var indices = Enumerable.Range(0, (int)value.Shape[0]).
+                Select(i => Enumerable.Repeat(i, repeatCount)).
+                SelectMany(i => i).
+                Select(i => (long)i).
+                ToArray();
+            value = OrtKI.Gather(value, indices, 0);
         }
 
         return OrtKI.MatMul(attnWeight, value); // [Hq,L,Ev]
