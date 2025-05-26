@@ -307,7 +307,9 @@ class gather_impl<ranked_shape<Rank>, InStrides, ranked_shape<IndicesRank>, Indi
         }
     }
 };
-// weights: dynamic indices: static
+
+// weights: dynamic
+// indices: static
 template <size_t Rank, class InStrides, size_t... IndicesDims, class IndicesStrides>
 class gather_impl<ranked_shape<Rank>, InStrides, fixed_shape<IndicesDims...>, IndicesStrides> {
 public:
@@ -318,20 +320,57 @@ public:
         ranked_shape<Rank> in_index;
         ranked_shape<indices_rank> indices_index;
 
-        apply(output.shape(), [&](auto out_index) {
-            loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+        if constexpr (IsShardedTensor<TA>) {
+            using TensorTypeA = typename TA::local_tensor_type;
+            using element_type = element_or_scalar_t<TensorTypeA>;
+            using mesh_type = typename TA::mesh_type;
+            using sharding_type = typename TA::sharding_type;
 
-            loop<indices_rank>([&](auto i) {
-                indices_index[i] = out_index[Axis + i];
+            auto local_mesh_index = mesh_type::local_index();
+            auto global_offset = sharding_type::global_offset(input.shape(), local_mesh_index);
+            auto local_shape = input.local().shape();
+
+            size_t axis_global_start = global_offset[Axis];
+            size_t axis_global_end = axis_global_start + local_shape[Axis];
+
+            apply(output.shape(), [&](auto out_index) {
+                // in_index[:axis] = out_index[:axis]
+                loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+                // in_index[axis] = indices(indices_index)
+                loop<indices_rank>(
+                    [&](auto i) { indices_index[i] = out_index[i + Axis]; });
+                auto global_idx = indices(indices_index);
+
+                if (global_idx >= axis_global_start && global_idx < axis_global_end) {
+                    in_index[Axis] = global_idx - axis_global_start;
+
+                    // in_index[axis:] = out_index[axis:]
+                    loop<Rank - (Axis + 1)>([&](auto i) {
+                        in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                    });
+                    output(out_index) = input.local()(in_index);
+                } else {
+                    // Index is outside the local shard's range, fill with zeros
+                    output(out_index) = element_or_scalar_t<element_type>{0};
+                }
             });
-            in_index[Axis] = indices(indices_index);
+        } else {
+            apply(output.shape(), [&](auto out_index) {
+                loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
 
-            loop<Rank - Axis - 1>([&](auto i) {
-                in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                loop<indices_rank>([&](auto i) {
+                    indices_index[i] = out_index[Axis + i];
+                });
+                in_index[Axis] = indices(indices_index);
+
+                loop<Rank - Axis - 1>([&](auto i) {
+                    in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                });
+
+                output(out_index) = input(in_index);
             });
-
-            output(out_index) = input(in_index);
-        });
+        }    
     }
 };
 
@@ -348,20 +387,58 @@ public:
         ranked_shape<rank> in_index;
         ranked_shape<indices_rank> indices_index;
 
-        apply(output.shape(), [&](auto out_index) {
-            loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+         if constexpr (IsShardedTensor<TA>) {
+                        using TensorTypeA = typename TA::local_tensor_type;
+            using element_type = element_or_scalar_t<TensorTypeA>;
+            using mesh_type = typename TA::mesh_type;
+            using sharding_type = typename TA::sharding_type;
 
-            loop<indices_rank>([&](auto i) {
-                indices_index[i] = out_index[Axis + i];
+            auto local_mesh_index = mesh_type::local_index();
+            auto global_offset = sharding_type::global_offset(input.shape(), local_mesh_index);
+            auto local_shape = input.local().shape();
+
+            size_t axis_global_start = global_offset[Axis];
+            size_t axis_global_end = axis_global_start + local_shape[Axis];
+
+            apply(output.shape(), [&](auto out_index) {
+                // in_index[:axis] = out_index[:axis]
+                loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+                // in_index[axis] = indices(indices_index)
+                loop<indices_rank>(
+                    [&](auto i) { indices_index[i] = out_index[i + Axis]; });
+                auto global_idx = indices(indices_index);
+
+                if (global_idx >= axis_global_start && global_idx < axis_global_end) {
+                    in_index[Axis] = global_idx - axis_global_start;
+
+                    // in_index[axis:] = out_index[axis:]
+                    loop<rank - (Axis + 1)>([&](auto i) {
+                        in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                    });
+                    output(out_index) = input.local()(in_index);
+                } else {
+                    // Index is outside the local shard's range, fill with zeros
+                    output(out_index) = element_or_scalar_t<element_type>{0};
+                }
             });
-            in_index[Axis] = indices(indices_index);
+        } else {
 
-            loop<rank - Axis - 1>([&](auto i) {
-                in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+            apply(output.shape(), [&](auto out_index) {
+                loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+                loop<indices_rank>([&](auto i) {
+                    indices_index[i] = out_index[Axis + i];
+                });
+                in_index[Axis] = indices(indices_index);
+
+                loop<rank - Axis - 1>([&](auto i) {
+                    in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                });
+
+                output(out_index) = input(in_index);
             });
-
-            output(out_index) = input(in_index);
-        });
+        }
     }
 };
 
@@ -372,9 +449,8 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
 
     if constexpr (IsShardedTensor<TA>) {
         using TensorTypeA = typename TA::local_tensor_type;
-        using TensorTypeB = typename TB::local_tensor_type;
         detail::gather_impl<typename TensorTypeA::shape_type, typename TensorTypeA::strides_type,
-                        typename TensorTypeB::shape_type, typename TensorTypeB::strides_type>
+                        typename TB::shape_type, typename TB::strides_type>
         impl;
         impl.template operator()<Axis>(input, indices, output);
     } else {
