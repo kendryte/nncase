@@ -566,7 +566,15 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     str = CSourceUtilities.ConvertClamp(op, arguments);
                     break;
                 case IR.Shapes.AsTensor op:
-                    str = $"ntt::tensor<int64_t, ntt::fixed_shape<>>{{ {arguments[0].Name} }}";
+                    if (expr.CheckedType is TensorType { IsScalar: true })
+                    {
+                        str = $"ntt::tensor<int64_t, ntt::fixed_shape<>>{{ {arguments[0].Name} }}";
+                    }
+                    else
+                    {
+                        str = $"ntt::tensor<int64_t, ntt::fixed_shape<{expr.CheckedShape.Rank}>>{{ {arguments[0].Name} }}";
+                    }
+
                     break;
                 default:
                     throw new NotSupportedException(expr.Target.GetType().Name);
