@@ -298,8 +298,9 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
         var max = (double)Bias;
         foreach (var operand in Operands)
         {
-            min = min + operand.Metadata.Range!.Value.Min;
-            max = max + operand.Metadata.Range!.Value.Max;
+            var range = operand.Metadata.Range ?? ValueRange<double>.Full;
+            min = min + range.Min;
+            max = max + range.Max;
         }
 
         return new ValueRange<double>(min, max);
