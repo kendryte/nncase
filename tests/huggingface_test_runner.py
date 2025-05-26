@@ -11,6 +11,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 import torch
 from huggingface_hub import snapshot_download
 from safetensors.torch import load_file, save_file
+from npy2json import convert_npy_to_json
 
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
@@ -171,6 +172,7 @@ class HuggingfaceTestRunner(TestRunner):
                 dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), logits)
                 dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), logits)
                 dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), logits)
+                convert_npy_to_json(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
                 outputs.append(logits)
                 count += 1
             if (self.cfg['huggingface_options']['use_cache']):
@@ -185,6 +187,7 @@ class HuggingfaceTestRunner(TestRunner):
                     dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), past_kv)
                     dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), past_kv)
                     dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), past_kv)
+                    convert_npy_to_json(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
                     outputs.append(past_kv)
                     count += 1
             if (self.cfg['huggingface_options']['output_attentions']):
@@ -196,6 +199,7 @@ class HuggingfaceTestRunner(TestRunner):
                         self.case_dir, f'cpu_result_{count}.txt'), attentions)
                     dump_npy_file(os.path.join(
                         self.case_dir, f'cpu_result_{count}.npy'), attentions)
+                    convert_npy_to_json(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
                     outputs.append(attentions)
                     count += 1
             if (self.cfg['huggingface_options']['output_hidden_states']):
@@ -207,6 +211,7 @@ class HuggingfaceTestRunner(TestRunner):
                         self.case_dir, f'cpu_result_{count}.txt'), hidden_states)
                     dump_npy_file(os.path.join(
                         self.case_dir, f'cpu_result_{count}.npy'), hidden_states)
+                    convert_npy_to_json(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
                     outputs.append(hidden_states)
                     count += 1
 
