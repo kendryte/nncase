@@ -91,7 +91,13 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             var k = GatherKV(AttentionCacheKind.Key, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
             if (k.Shape[0] != q.Shape[1])
             {
-                k = OrtKI.Tile(k, new long[] { q.Shape[1] / k.Shape[0], 1, 1 });
+                var repeatCount = (int)(q.Shape[1] / k.Shape[0]);
+                var indices = Enumerable.Range(0, (int)k.Shape[0]).
+                    Select(i => Enumerable.Repeat(i, repeatCount)).
+                    SelectMany(i => i).
+                    Select(i => (long)i).
+                    ToArray();
+                k = OrtKI.Gather(k, indices, 0);
             }
 
             var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS"); // [num_heads, query_len, seq_len] [H,L,S]
@@ -108,7 +114,13 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             var v = GatherKV(AttentionCacheKind.Value, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
             if (v.Shape[0] != q.Shape[1])
             {
-                v = OrtKI.Tile(v, new long[] { q.Shape[1] / v.Shape[0], 1, 1 });
+                var repeatCount = (int)(q.Shape[1] / v.Shape[0]);
+                var indices = Enumerable.Range(0, (int)v.Shape[0]).
+                    Select(i => Enumerable.Repeat(i, repeatCount)).
+                    SelectMany(i => i).
+                    Select(i => (long)i).
+                    ToArray();
+                v = OrtKI.Gather(v, indices, 0);
             }
 
             var output = OrtKI.Einsum([attn, v], "HLS,HSE->LHE"); // [query_len, num_heads, head_dim] [L,H,E]

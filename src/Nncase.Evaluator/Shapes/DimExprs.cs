@@ -19,7 +19,10 @@ internal partial class EvaluateVisitor
     {
         if (!_varsValues.TryGetValue(expr, out var value))
         {
-            throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
+            if (!_dimVarsValues.TryGetValue(expr, out value))
+            {
+                throw new ArgumentException($"Must Set Input For Var {expr.Name}!");
+            }
         }
 
         if (value is TensorValue tv && tv.Type == DataTypes.Int64)

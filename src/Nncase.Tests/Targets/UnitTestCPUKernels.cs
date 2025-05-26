@@ -156,6 +156,7 @@ public sealed class TestPagedAttentionCase : TheoryData<TestFixture.PagedAttenti
     private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
     [
         (1, 1, 64),
+        (4, 2, 32),
 
         // (1, 1, 64),
         // (4, 4, 128),
