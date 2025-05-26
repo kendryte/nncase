@@ -506,7 +506,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                                    f'{name}_{input_idx}_{batch_idx}.txt'), data)
                     np.save(os.path.join(self.case_dir, name,
                                          f'{name}_{input_idx}_{batch_idx}.npy'), data)
-                    convert_npy_to_json(os.path.join(self.case_dir, name, f'{name}_{input_idx}_{batch_idx}.npy'), self.case_dir)
+                    convert_npy_to_json(os.path.join(self.case_dir, name,
+                                                     f'{name}_{input_idx}_{batch_idx}.npy'), self.case_dir)
                 samples.append(data)
             input['data'] = samples
 
