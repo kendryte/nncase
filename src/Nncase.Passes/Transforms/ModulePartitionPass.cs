@@ -110,6 +110,7 @@ public sealed class ModulePartitionPass : ModulePass
                         Op op => $"op({op.GetType().Name})",
                         BaseFunction f => $"func({f.Name})",
                         Expr e => $"{e.GetType().Name}",
+                        _ => throw new NotImplementedException(),
                     };
                 };
             });

@@ -23,7 +23,7 @@ public abstract class HuggingFaceModel
         Context = context;
     }
 
-    public virtual (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
+    public virtual (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
     {
         var hiddenSize = (long)Context!.Config!["hidden_size"];
         _ = (long)Context.Config!["num_hidden_layers"];
@@ -38,7 +38,7 @@ public abstract class HuggingFaceModel
 
         Context.Inputs = [];
         Context.DynVarMap = new Dictionary<string, DimVar>();
-        var varMap = new Dictionary<Var, Dimension[]>();
+        var varMap = new Dictionary<IVar, Dimension[]>();
 
         var bucketOptions = Context.CompileSession!.CompileOptions.ShapeBucketOptions;
         Context.FixVarMap = bucketOptions.FixVarMap;
@@ -123,11 +123,15 @@ public abstract class HuggingFaceModel
         // _inputs.Add(positionIds);
         // _inputs.Add(pastKeyValue);
         varMap[inputIds] = inputIdsShapeExpr;
+        if (!Context.FixVarMap.ContainsKey("sequence_length"))
+        {
+            varMap[Context.DynVarMap["sequence_length"]] = [Context.DynVarMap["sequence_length"]];
+        }
 
         // varMap[attentionMask] = attentionMaskShapeExpr;
         // varMap[positionIds] = positionIdsShapeExpr;
         // varMap[pastKeyValue] = pastKeyValueShapeExpr;
-        var inputs = new List<Var> { };
+        var inputs = new List<IVar> { };
 
         // for the input is optional
         foreach (var input in Context.Inputs)

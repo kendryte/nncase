@@ -133,7 +133,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             {
                 var dimVarName = Visit(dimVar).Name;
                 var tensorVarName = Visit(tensorVar).Name;
-                IndentScope.Writer.IndWrite($"auto {dimVarName} = {tensorVarName}.shape()[{dimIndex}];\n");
+                IndentScope.Writer.IndWrite($"auto {dimVarName} = (int){tensorVarName}.shape()[{dimIndex}];\n");
             }
         }
     }
@@ -341,7 +341,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         var operands = expr.Operands.AsValueEnumerable().Select(x => Visit(x).Name);
         var values = StringUtility.Join(", ", operands);
         symbol = expr.IsFixed ? new($"fixed_dims<{values}>", $"fixed_dims<{values}>{{}}")
-            : new($"ranked_dims<{values.Length}>", $"make_ranked_dims({values})");
+            : new($"ranked_dims<{values.Length}>", $"make_ranked_shape({values})");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -414,5 +414,5 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         return varMap;
     }
 
-    private record struct DimVarInfo(Var TensorVar, int DimIndex);
+    private record struct DimVarInfo(IVar TensorVar, int DimIndex);
 }
