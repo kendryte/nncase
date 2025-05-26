@@ -421,7 +421,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Transpose transpose:
-                    WriteWithProfiler($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitDimOrShape(args[1]).Name});\n");
+                    WriteWithProfiler($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Pad pad:
                     WriteWithProfiler($"pad<{string.Join(",", pad.Paddings)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
@@ -565,6 +565,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case IR.Math.Clamp op:
                     str = CSourceUtilities.ConvertClamp(op, arguments);
                     break;
+                case IR.Shapes.AsTensor op:
+                    str = $"ntt::tensor<int64_t, ntt::fixed_shape<>>{{ {arguments[0].Name} }}";
+                    break;
                 default:
                     throw new NotSupportedException(expr.Target.GetType().Name);
             }
@@ -675,7 +678,11 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         {
             if (field is Call call)
             {
-                IndentScope.Writer.IndWrite(Visit(call).Name);
+                var name = Visit(call).Name;
+                if (call.Target is not IR.Shapes.AsTensor)
+                {
+                    IndentScope.Writer.IndWrite(name);
+                }
             }
             else
             {

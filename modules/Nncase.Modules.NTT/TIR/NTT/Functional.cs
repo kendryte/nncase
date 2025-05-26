@@ -232,7 +232,7 @@ public partial class NTT
         return new Call(new TIR.NTT.ShapeOf(), inputs, ret);
     }
 
-    public static Expr ConstantOfShape(Expr shape, Expr value, Expr ret)
+    public static Expr ConstantOfShape(Shape shape, Expr value, Expr ret)
     {
         return new Call(new TIR.NTT.ConstantOfShape(), shape, value, ret);
     }
