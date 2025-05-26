@@ -133,7 +133,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             {
                 var dimVarName = Visit(dimVar).Name;
                 var tensorVarName = Visit(tensorVar).Name;
-                IndentScope.Writer.IndWrite($"auto {dimVarName} = (int){tensorVarName}.shape()[{dimIndex}];\n");
+                IndentScope.Writer.IndWrite($"auto {dimVarName} = {tensorVarName}.shape()[{dimIndex}];\n");
             }
         }
     }
@@ -181,7 +181,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        symbol = new("int64_t", $"std::clamp({Visit(expr.Operand).Name}, {Visit(expr.MinValue).Name}, {Visit(expr.MaxValue).Name})");
+        symbol = new("int64_t", $"std::clamp<int64_t>({Visit(expr.Operand).Name}, {Visit(expr.MinValue).Name}, {Visit(expr.MaxValue).Name})");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
