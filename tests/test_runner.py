@@ -503,6 +503,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                                    f'{name}_{input_idx}_{batch_idx}.bin'), data)
                         dump_txt_file(os.path.join(self.case_dir, name,
                                                    f'{name}_{input_idx}_{batch_idx}.txt'), data)
+                    np.save(os.path.join(self.case_dir, name,
+                                            f'{name}_{input_idx}_{batch_idx}.npy'), data)
                 samples.append(data)
             input['data'] = samples
 
