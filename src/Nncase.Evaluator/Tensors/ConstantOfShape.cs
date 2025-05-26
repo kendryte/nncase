@@ -27,15 +27,20 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, ConstantOfShape target)
     {
-        var value = context.CheckArgumentType<TensorType>(target, ConstantOfShape.Value);
+        var value = context.CheckArgumentType<IRType>(target, ConstantOfShape.Value);
         var shape = (Shape)context.GetArgument(target, ConstantOfShape.Shape);
-        var type = value.DType;
-        return new TensorType(type, shape);
+
+        return (value, shape) switch
+        {
+            (TensorType v, Shape s) => Visit(v, s),
+            (DistributedType v, Shape s) => Visit(v, s),
+            _ => new InvalidType($"ConstantOfShape with {value} and {shape}"),
+        };
     }
 
     public Cost Visit(ICostEvaluateContext context, ConstantOfShape target)
     {
-        var ret = context.GetReturnType<TensorType>();
+        var ret = context.GetReturnType<IRType>();
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(ret),
@@ -45,10 +50,21 @@ public class ConstantOfShapeEvaluator : IEvaluator<ConstantOfShape>, ITypeInfere
 
     public Metric Visit(IMetricEvaluateContext context, ConstantOfShape target)
     {
-        var ret = context.GetReturnType<TensorType>();
+        var ret = context.GetReturnType<IRType>();
         return new()
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(ret),
         };
+    }
+
+    private IRType Visit(TensorType value, Shape shape)
+    {
+        return new TensorType(value.DType, shape);
+    }
+
+    private IRType Visit(DistributedType value, Shape shape)
+    {
+        var ndsbp = Enumerable.Repeat(SBP.B, shape.Rank).ToArray();
+        return new DistributedType(new TensorType(value.TensorType.DType, shape), ndsbp, value.Placement);
     }
 }
