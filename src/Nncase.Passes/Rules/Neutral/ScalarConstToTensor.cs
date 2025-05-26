@@ -25,7 +25,7 @@ public partial class ScalarConstToTensor : RewriteRule<Pattern>
     {
         // FIXME: AsValueEnumerable() causes stack overflow
         var scalarArgsCount = call.Arguments.ToArray().Count(a => a is TensorConst { Value: Tensor { Shape.IsScalar: true } });
-        if (scalarArgsCount > 0 && scalarArgsCount < call.Arguments.Length - 1)
+        if (scalarArgsCount > 0 && scalarArgsCount < call.Arguments.Length)
         {
             var arguments = call.Arguments.AsValueEnumerable().Select(e => e switch { TensorConst { Value: Tensor { Shape.IsScalar: true } } tc => Const.FromTensor(Tensor.FromBytes(tc.CheckedDataType, tc.Value.BytesBuffer.ToArray(), [1])), _ => e }).ToArray();
             return call.With(arguments: arguments);
