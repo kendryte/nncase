@@ -986,7 +986,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             foreach (var post in posts)
             {
-                if (post is Call { Target: IR.NTT.Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.NTT.PackedReduce } packedReduceCall)
+                if (post is Call { Target: Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.NTT.PackedReduce } packedReduceCall)
                 {
                     packedReduceCall.Arguments[0].Metadata = new() { OutputNames = new[] { "reduceIn" } };
                 }

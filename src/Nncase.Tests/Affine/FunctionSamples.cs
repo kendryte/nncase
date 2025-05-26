@@ -73,10 +73,10 @@ public static class FunctionSamples
         {
             var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
             var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
-            var c = IR.F.NTT.PackedMatMul(IR.F.NTT.Pack(a, new[] { 4, 4 }, new[] { 0, 1 }), IR.F.NTT.Pack(b, new[] { 4, 4 }, new[] { 0, 1 }), new[] { 0, 1 }, Array.Empty<int>(), new[] { 0, 1 }, Array.Empty<int>());
+            var c = IR.F.NTT.PackedMatMul(IR.F.Tensors.Pack(a, new[] { 4, 4 }, new[] { 0, 1 }), IR.F.Tensors.Pack(b, new[] { 4, 4 }, new[] { 0, 1 }), new[] { 0, 1 }, Array.Empty<int>(), new[] { 0, 1 }, Array.Empty<int>());
             var d = IR.F.Math.Exp(c);
             var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
-            var f = IR.F.NTT.PackedMatMul(d, IR.F.NTT.Pack(e, new[] { 4 }, new[] { 0 }), new[] { 0, 1 }, Array.Empty<int>(), new[] { 0 }, Array.Empty<int>());
+            var f = IR.F.NTT.PackedMatMul(d, IR.F.Tensors.Pack(e, new[] { 4 }, new[] { 0 }), new[] { 0, 1 }, Array.Empty<int>(), new[] { 0 }, Array.Empty<int>());
             func = new("main", CPUTarget.Kind, f, [a, b, e]);
         }
 

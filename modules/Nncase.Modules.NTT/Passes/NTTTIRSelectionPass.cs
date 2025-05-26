@@ -12,6 +12,7 @@ using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Shapes;
+using Nncase.IR.Tensors;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using Nncase.Passes.Transforms;
@@ -47,9 +48,9 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return T.Memcopy(output, (Expr)arguments[0]);
             case IR.Math.Binary binary:
                 return GenerateBinary(binary.BinaryOp, arguments, output);
-            case IR.NTT.Pack pack:
+            case Pack pack:
                 return TIR.F.NTT.Pack((Expr)arguments[0], output, pack.Lanes, pack.Axes);
-            case IR.NTT.Unpack unpack:
+            case Unpack unpack:
                 return TIR.F.NTT.Unpack((Expr)arguments[0], output, unpack.Lanes, unpack.Axes);
             case IR.NTT.PackedBinary packedBinary:
                 return TIR.F.NTT.Binary(packedBinary.BinaryOp, (Expr)arguments[0], (Expr)arguments[1], output);

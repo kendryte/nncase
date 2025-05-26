@@ -21,7 +21,35 @@ namespace Nncase.IR.F;
 public static class Tensors
 {
     public static Call Transpose(Expr input, Shape perm) => new Call(new Transpose(), input, perm);
+    public static Expr Pack(Expr input, int[] lanes, int[] axes)
+    {
+        if (lanes.Length != axes.Length)
+        {
+            throw new NotSupportedException();
+        }
 
+        if (axes.Length == 0)
+        {
+            return input;
+        }
+
+        return new Call(new Pack(lanes, axes), input);
+    }
+
+    public static Expr Unpack(Expr input, int[] lanes, int[] axes)
+    {
+        if (lanes.Length != axes.Length)
+        {
+            throw new NotSupportedException();
+        }
+
+        if (axes.Length == 0)
+        {
+            return input;
+        }
+
+        return new Call(new Unpack(lanes, axes), input);
+    }
     public static Expr NHWCToNCHW(Expr input)
     {
         int[] perm;

@@ -9,9 +9,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IO;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.Passes.Transforms;
 using Nncase.Tests.TestFixture;
 using Xunit;
+using TypeCode = Nncase.Runtime.TypeCode;
 
 namespace Nncase.Tests.ImporterTest;
 
@@ -49,10 +51,11 @@ public class UnitTestImporter : TestClassBase
         Assert.True(module.Entry!.InferenceType());
     }
 
-    [Fact(Skip = "There is no HuggingFace model. HuggingFaceImport will be tested in pytest!")]
+    // [Fact(Skip = "There is no HuggingFace model. HuggingFaceImport will be tested in pytest!")]
+    [Fact]
     public async Task TestImportHuggingFace()
     {
-        var file = "/compiler/Qwen2.5-0.5B-Instruct/"; // TODO: need a relative path!
+        var file = "/Users/curio/Canaan/nncase/tests/llm/Qwen/Qwen2.5-0.5B-Instruct"; // TODO: need a relative path!
         var importOptions = new ImportOptions();
         importOptions.HuggingFaceOptions.OutputAttentions = true;
         importOptions.HuggingFaceOptions.OutputHiddenStates = true;

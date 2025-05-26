@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.NTT;
+using Nncase.IR.Tensors;
 
 namespace Nncase.IR.F;
 
@@ -20,36 +21,6 @@ public partial class NTT
     public static Call Store(Expr input)
     {
         return new Call(new Store(), input);
-    }
-
-    public static Expr Pack(Expr input, int[] lanes, int[] axes)
-    {
-        if (lanes.Length != axes.Length)
-        {
-            throw new NotSupportedException();
-        }
-
-        if (axes.Length == 0)
-        {
-            return input;
-        }
-
-        return new Call(new Pack(lanes, axes), input);
-    }
-
-    public static Expr Unpack(Expr input, int[] lanes, int[] axes)
-    {
-        if (lanes.Length != axes.Length)
-        {
-            throw new NotSupportedException();
-        }
-
-        if (axes.Length == 0)
-        {
-            return input;
-        }
-
-        return new Call(new Unpack(lanes, axes), input);
     }
 
     public static Expr PackedSoftmax(Expr input, int axis, IRArray<int> packedAxes)

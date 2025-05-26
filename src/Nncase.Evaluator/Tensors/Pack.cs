@@ -2,44 +2,35 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 #pragma warning disable SA1010, SA1008
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Net.Http.Headers;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using CommunityToolkit.HighPerformance;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.NTT;
 using Nncase.IR.Tensors;
-using Nncase.Utilities;
-using OrtKISharp;
 using static Nncase.IR.F.Tensors;
 
-namespace Nncase.Evaluator.IR.NTT;
+namespace Nncase.Evaluator.Tensors;
 
 public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>, IEvaluator<Pack>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Pack target)
+    public IValue Visit(IEvaluateContext context, IR.Tensors.Pack target)
     {
-        if (context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E5M2)
+        if (context.CurrentCall.Arguments[IR.Tensors.Pack.Input.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[IR.Tensors.Pack.Input.Index].CheckedDataType == DataTypes.Float8E5M2)
         {
-            var input = Cast(context.GetArgumentValue(target, Pack.Input).AsTensor(), DataTypes.Float32);
+            var input = Cast(context.GetArgumentValue(target, IR.Tensors.Pack.Input).AsTensor(), DataTypes.Float32);
             var inputOrt = input.Evaluate().AsTensor().ToOrtTensor();
             foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
             {
                 inputOrt = inputOrt.Pack(lanes, axis);
             }
 
-            var output = Cast(inputOrt.ToTensor(), context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType).Evaluate().AsTensor();
+            var output = Cast(inputOrt.ToTensor(), context.CurrentCall.Arguments[IR.Tensors.Pack.Input.Index].CheckedDataType).Evaluate().AsTensor();
 
             return Value.FromTensor(Tensor.FromBytes(new VectorType(output.ElementType, target.Lanes), output.BytesBuffer.ToArray(), inputOrt.Shape.SkipLast(target.Lanes.Count).Select(i => i).ToArray()));
         }
         else
         {
-            var input = context.GetOrtArgumentValue(target, Pack.Input);
+            var input = context.GetOrtArgumentValue(target, IR.Tensors.Pack.Input);
             foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
             {
                 input = input.Pack(lanes, axis);
@@ -53,7 +44,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Pack target)
     {
-        var input = context.CheckArgumentType<IRType>(target, Pack.Input);
+        var input = context.CheckArgumentType<IRType>(target, IR.Tensors.Pack.Input);
 
         return input switch
         {
@@ -67,7 +58,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Pack target)
     {
-        var inputType = context.GetArgumentType<IRType>(target, Pack.Input);
+        var inputType = context.GetArgumentType<IRType>(target, IR.Tensors.Pack.Input);
         var outputType = context.GetReturnType<IRType>();
 
         return new()

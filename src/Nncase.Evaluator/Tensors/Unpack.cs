@@ -2,31 +2,25 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 #pragma warning disable SA1010, SA1008
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
-using Nncase.IR.NTT;
 using Nncase.IR.Tensors;
-using Nncase.Utilities;
-using OrtKISharp;
 using static Nncase.IR.F.Tensors;
 
-namespace Nncase.Evaluator.IR.NTT;
+namespace Nncase.Evaluator.Tensors;
 
 public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Unpack>, IEvaluator<Unpack>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unpack target)
     {
-        var dt = context.CurrentCall.Arguments[Unpack.Input.Index].CheckedDataType;
+        var dt = context.CurrentCall.Arguments[IR.Tensors.Unpack.Input.Index].CheckedDataType;
         var elementType = dt is VectorType vt ? vt.ElemType : dt;
         if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
         {
             var newType = new VectorType(DataTypes.Float32, target.Lanes.Select(l => l / 4).ToArray());
-            var input = Cast(context.GetArgumentValue(target, Unpack.Input).AsTensor(), newType, CastMode.KDefault, target.Axes);
+            var input = Cast(context.GetArgumentValue(target, IR.Tensors.Unpack.Input).AsTensor(), newType, CastMode.KDefault, target.Axes);
             var inputOrt = input.Evaluate().AsTensor().ToOrtTensor();
 
             foreach (var axis in target.Axes.Reverse())
@@ -39,7 +33,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
         }
         else
         {
-            var input = context.GetOrtArgumentValue(target, Unpack.Input);
+            var input = context.GetOrtArgumentValue(target, IR.Tensors.Unpack.Input);
             foreach (var axis in target.Axes.Reverse())
             {
                 input = input.Unpack(axis);
@@ -52,7 +46,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Unpack target)
     {
-        var input = context.CheckArgumentType<IRType>(target, Unpack.Input);
+        var input = context.CheckArgumentType<IRType>(target, IR.Tensors.Unpack.Input);
 
         return input switch
         {
@@ -66,7 +60,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Unpack target)
     {
-        var inputType = context.GetArgumentType<IRType>(target, Unpack.Input);
+        var inputType = context.GetArgumentType<IRType>(target, IR.Tensors.Unpack.Input);
         var outputType = context.GetReturnType<IRType>();
 
         return new()

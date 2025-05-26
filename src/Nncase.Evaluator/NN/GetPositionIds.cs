@@ -1,0 +1,85 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.Linq;
+using Nncase.CostModel;
+using Nncase.IR;
+using Nncase.IR.NN;
+using Nncase.IR.Shapes;
+using Nncase.IR.Tensors;
+using Nncase.Utilities;
+using Tuple = System.Tuple;
+
+namespace Nncase.Evaluator.NN;
+
+/// <summary>
+/// Evaluator for <see cref="GetPositionIds"/>.
+/// </summary>
+public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferencer<GetPositionIds>, ICostEvaluator<GetPositionIds>, IMetricEvaluator<GetPositionIds>
+{
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, GetPositionIds s)
+    {
+        var input = context.GetArgumentValueAsTensor(s, GetPositionIds.Input);
+        var kvCache = context.GetArgumentValue(s, GetPositionIds.KVCache);
+        var rangePair = GetRange(kvCache.AsTensor().Cast<Reference<IPagedAttentionKVCache>>());
+
+        var allRanges = new List<Expr>();
+        foreach (var item in rangePair)
+        {
+            allRanges.Add(IR.F.Tensors.Range(IR.F.Shapes.AsTensor(item.Item1), IR.F.Shapes.AsTensor(item.Item2), 1L));
+        }
+
+        var cachePositions = IR.F.Tensors.Stack(new IR.Tuple(allRanges.ToArray()), -1);
+        var positionIds = IR.F.Tensors.Cast(IR.F.Tensors.Unsqueeze(cachePositions, new RankedShape(0)), input.ElementType).Evaluate();
+        return positionIds;
+    }
+
+    /// <inheritdoc/>
+    public IRType Visit(ITypeInferenceContext context, GetPositionIds target)
+    {
+        var input = context.CheckArgumentType<TensorType>(target, GetPositionIds.Input);
+        var outDims = input.Shape[-1].AsDim(); // q.shape[-1] is seqLens, obtain all user's seq.
+
+        return new TensorType(input.DType,  [outDims]);
+    }
+
+    public Cost Visit(ICostEvaluateContext context, GetPositionIds target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, GetPositionIds.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
+    public Metric Visit(IMetricEvaluateContext context, GetPositionIds target)
+    {
+        var inputType = context.GetArgumentType<TensorType>(target, GetPositionIds.Input);
+        var returnType = context.GetReturnType<TensorType>();
+        return new()
+        {
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
+    private static List<Tuple<long, long>> GetRange(Tensor<Reference<IPagedAttentionKVCache>> kvCache)
+    {
+        var cache = kvCache.Single().Value;
+        var range = new List<Tuple<long, long>>();
+        for (int i = 0; i < cache.NumSeqs; i++)
+        {
+            var historyLen = cache.ContextLen(i);
+            var seqLen = cache.SeqLen(i);
+            range.Add(Tuple.Create(historyLen, seqLen)); // seqLen in silicaLLM is tokens num after this forward.
+        }
+
+        return range;
+    }
+}

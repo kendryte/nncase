@@ -259,14 +259,14 @@ public sealed class PagedAttentionKVCacheTestFixture
         var (q_lanes, q_packed_axes) = GetQKVPackParams(config, qLayout);
         var (kv_lanes, kv_packed_axes) = GetQKVPackParams(config, kvLayout);
         var transedQuery = IR.F.Tensors.Transpose(queryVar, qLayout.Select(x => (int)x).ToArray());
-        var packedQuery = q_lanes.Length > 0 ? IR.F.NTT.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
+        var packedQuery = q_lanes.Length > 0 ? IR.F.Tensors.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
         Expr updatedKVCache = None.Default;
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
             var (keyVar, valueVar) = (kvVars[layerId][0], kvVars[layerId][1]);
 
             var transedKey = IR.F.Tensors.Transpose(keyVar, kvLayout.Select(x => (int)x).ToArray());
-            var packedKey = kv_lanes.Length > 0 ? IR.F.NTT.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
+            var packedKey = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedKey,
                 kvCacheObjVar,
@@ -275,7 +275,7 @@ public sealed class PagedAttentionKVCacheTestFixture
                 kvLayout);
 
             var transValue = IR.F.Tensors.Transpose(valueVar, kvLayout.Select(x => (int)x).ToArray());
-            var packedValue = kv_lanes.Length > 0 ? IR.F.NTT.Pack(transValue, kv_lanes, kv_packed_axes) : transValue;
+            var packedValue = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transValue, kv_lanes, kv_packed_axes) : transValue;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedValue,
                 updatedKVCache,
@@ -293,7 +293,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         }
 
         // unpack query.
-        var unpacked = q_lanes.Length > 0 ? IR.F.NTT.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
+        var unpacked = q_lanes.Length > 0 ? IR.F.Tensors.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
         Expr root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
 
         if (testUpdateKVCache)
