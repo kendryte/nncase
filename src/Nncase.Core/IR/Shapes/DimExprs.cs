@@ -298,9 +298,8 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
         var max = (double)Bias;
         foreach (var operand in Operands)
         {
-            var range = operand.Metadata.Range ?? ValueRange<double>.Full;
-            min = System.Math.Min(min, range.Min);
-            max = System.Math.Max(max, range.Max);
+            min = min + operand.Metadata.Range!.Value.Min;
+            max = max + operand.Metadata.Range!.Value.Max;
         }
 
         return new ValueRange<double>(min, max);
@@ -354,7 +353,7 @@ public sealed class DimAbs : Dimension, IEquatable<DimAbs?>
                 System.Math.Abs(operandRange.Min),
                 System.Math.Abs(operandRange.Max),
             };
-            return new ValueRange<double>(ranges.Min(), ranges.Max());
+            return new ValueRange<double>(0d, ranges.Max());
         }
 
         return ValueRange<double>.Full;
@@ -408,18 +407,17 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
 
     public override Dimension Simplify()
     {
-        var operandRange = Operand.Metadata.Range!.Value;
-        var minValueRange = MinValue.Metadata.Range!.Value;
-        var maxValueRange = MaxValue.Metadata.Range!.Value;
-        if (operandRange.Max <= minValueRange.Min)
+        var left = (Operand - MinValue).Metadata.Range!.Value;
+        var right = (Operand - MaxValue).Metadata.Range!.Value;
+        if (left.Max <= 0)
         {
             return MinValue;
         }
-        else if (operandRange.Min >= maxValueRange.Max)
+        else if (right.Min >= 0)
         {
             return MaxValue;
         }
-        else if (operandRange.Min >= minValueRange.Min && operandRange.Max <= maxValueRange.Max)
+        else if (left.Min >= 0 && right.Max <= 0)
         {
             return Operand;
         }
@@ -434,9 +432,8 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
 
     private ValueRange<double> InferRange()
     {
-        var operandRange = Operand.Metadata.Range!.Value;
-        var min = System.Math.Max(operandRange.Min, MinValue.Metadata.Range!.Value.Min);
-        var max = System.Math.Min(operandRange.Max, MaxValue.Metadata.Range!.Value.Max);
+        var min = MinValue.Metadata.Range!.Value.Min;
+        var max = MaxValue.Metadata.Range!.Value.Max;
         return new ValueRange<double>(min, max);
     }
 }
