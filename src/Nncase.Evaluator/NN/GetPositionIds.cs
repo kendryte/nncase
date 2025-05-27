@@ -28,15 +28,10 @@ public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferenc
         var kvCache = context.GetArgumentValue(s, GetPositionIds.KVCache);
         var rangePair = GetRange(kvCache.AsTensor().Cast<Reference<IPagedAttentionKVCache>>());
 
-        var allRanges = new List<Expr>();
-        foreach (var item in rangePair)
-        {
-            allRanges.Add(IR.F.Tensors.Range(IR.F.Shapes.AsTensor(item.Item1), IR.F.Shapes.AsTensor(item.Item2), 1L));
-        }
-
-        var cachePositions = IR.F.Tensors.Stack(new IR.Tuple(allRanges.ToArray()), -1);
-        var positionIds = IR.F.Tensors.Cast(IR.F.Tensors.Unsqueeze(cachePositions, new RankedShape(0)), input.ElementType).Evaluate();
-        return positionIds;
+        var positionIds = rangePair.Select(item => LinqUtility.Range(item.Item1, (int)(item.Item2 - item.Item1))).
+            SelectMany(i => i).
+            Select(i => (float)i).ToArray();
+        return Value.FromTensor(Tensor.From(positionIds));
     }
 
     /// <inheritdoc/>
@@ -45,7 +40,7 @@ public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferenc
         var input = context.CheckArgumentType<TensorType>(target, GetPositionIds.Input);
         var outDims = input.Shape[-2].AsDim(); // q.shape[-2] is seqLens, obtain all user's seq.
 
-        return new TensorType(input.DType,  [outDims]);
+        return new TensorType(input.DType, [outDims]);
     }
 
     public Cost Visit(ICostEvaluateContext context, GetPositionIds target)

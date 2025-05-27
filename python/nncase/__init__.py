@@ -175,7 +175,7 @@ class Compiler:
         self._compile_options.shape_bucket_options = self._shape_bucket_options
 
     def init_target_options(self, compile_options: CompileOptions) -> None:
-        if hasattr(compile_options, "target_options"):
+        if hasattr(compile_options, "target_options") and compile_options.target_options is not None:
             self._compile_options.set_cpu_target_options(compile_options.target_options)
 
     def compile(self) -> None:

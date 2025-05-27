@@ -99,7 +99,7 @@ public class StackEvaluator : IEvaluator<Stack>, ITypeInferencer<Stack>, ICostEv
             else if (tensorType.Shape is RankedShape inShape)
             {
                 var outshape = inShape.ToList();
-                outshape.Insert((int)axis_v, inputs.Count);
+                outshape.Insert((int)(axis_v < 0 ? inShape.Count + axis_v : axis_v), inputs.Count);
                 tensorType = tensorType with { Shape = new RankedShape(outshape) };
             }
             else
