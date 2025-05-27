@@ -36,7 +36,7 @@ constexpr auto get_safe_stride(const TTensor &tensor,
             }
         } else {
             if (actual_dim == 1) {
-                return 0;
+                return (dim_t)0;
             } else {
                 return dim_value(tensor.strides()[actual_axis]);
             }

@@ -39,7 +39,10 @@ template <class T>
 inline constexpr bool is_fixed_dim_v = is_fixed_dim_t<T>::value;
 
 template <class T>
-concept Dimension = is_fixed_dim_v<T> || std::is_integral_v<T>;
+concept DynamicDimension = std::is_integral_v<T>;
+
+template <class T>
+concept Dimension = is_fixed_dim_v<T> || DynamicDimension<T>;
 
 template <class T>
 concept FixedDimension = is_fixed_dim_v<T>;
@@ -113,6 +116,20 @@ constexpr auto max(const TDims &...dims) noexcept {
         return fixed_dim_v<std::max({TDims::value...})>;
     } else {
         return std::max({dim_value(dims)...});
+    }
+}
+
+template <Dimension TIndex, Dimension TExtent>
+constexpr auto positive_index(const TIndex &index,
+                              [[maybe_unused]] const TExtent &dim) {
+    if constexpr (FixedDimension<TIndex>) {
+        if constexpr (TIndex::value < 0) {
+            return index + dim;
+        } else {
+            return index;
+        }
+    } else {
+        return index < 0 ? index + dim : index;
     }
 }
 

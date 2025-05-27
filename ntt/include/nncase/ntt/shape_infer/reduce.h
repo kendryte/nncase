@@ -15,6 +15,7 @@
 #pragma once
 #include "../shape.h"
 #include "nncase/ntt/dimension.h"
+#include <type_traits>
 
 namespace nncase::ntt::shape_infer {
 namespace detail {
@@ -25,8 +26,8 @@ constexpr auto reduced_index_by_shape_dim(const TIndex &src_index,
     const auto axis_v = fixed_dim_v<Axis>;
     const auto lhs = src_index[axis_v + dims_ext];
     const auto rhs = shape[axis_v];
-    if constexpr (FixedDimension<decltype(lhs)> &&
-                  FixedDimension<decltype(rhs)>) {
+    if constexpr (FixedDimension<std::decay_t<decltype(lhs)>> &&
+                  FixedDimension<std::decay_t<decltype(rhs)>>) {
         return fixed_dim_v<(lhs >= rhs ? 0 : lhs)>;
     } else {
         return lhs >= rhs ? 0 : dim_value(lhs);

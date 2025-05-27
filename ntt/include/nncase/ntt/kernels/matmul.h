@@ -25,12 +25,12 @@ namespace detail {
 
 template <typename T>
 concept HasValidRank = requires(T t) {
-    { T::rank() } -> std::convertible_to<size_t>;
+    T::rank();
     requires T::rank() >= 2;
 };
 
 template <typename T>
-concept IsValidMatmulTensor = IsTensor<T> && HasValidRank<T>;
+concept ValidMatmulTensor = Tensor<T> && HasValidRank<T>;
 
 template <class TLhs, class TRhs, typename LhsPackedAxes,
           typename RhsPackedAxes, bool TransposedA = false,
@@ -96,9 +96,10 @@ class matmul_impl;
  * @brief 1D-packed matmul with non transposed A/B or tranposed B.
  * @remarks Loop orders: (m, n, k)
  */
-template <bool AccumulateC, bool TransposedB, IsValidMatmulTensor TLhs, IsValidMatmulTensor TRhs,
-          IsValidMatmulTensor TOut, typename LhsPackedAxes, typename LhsPadedNums,
-          typename RhsPackedAxes, typename RhsPadedNums>
+template <bool AccumulateC, bool TransposedB, ValidMatmulTensor TLhs,
+          ValidMatmulTensor TRhs, ValidMatmulTensor TOut,
+          typename LhsPackedAxes, typename LhsPadedNums, typename RhsPackedAxes,
+          typename RhsPadedNums>
 class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                   LhsPackedAxes, LhsPadedNums, RhsPackedAxes, RhsPadedNums> {
     using TOutElem = typename TOut::element_type;
@@ -117,9 +118,7 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
         const auto domain =
             output.shape().template slice<0, TOut::rank() - 2>();
         ntt::apply(domain, [&](auto out_offset_prefix) {
-            dynamic_shape_t<TOut::rank()> out_offset{};
-            std::copy(out_offset_prefix.begin(), out_offset_prefix.end(),
-                      out_offset.begin());
+            const auto out_offset = out_offset_prefix.append(0_dim, 0_dim);
             const auto lhs_offset =
                 shape_infer::reduced_index_by_shape(out_offset, lhs.shape());
             const auto rhs_offset =
@@ -142,15 +141,15 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
   private:
     template <class TA, class TB, class TC>
     constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c) {
-        size_t M = c.shape()[c.rank() - 2];
-        size_t N = c.shape()[c.rank() - 1];
-        size_t K = a.shape()[a.rank() - 1];
+        const auto M = c.shape()[c.rank() - 2_dim];
+        const auto N = c.shape()[c.rank() - 1_dim];
+        const auto K = a.shape()[a.rank() - 1_dim];
         constexpr auto m0_tile = policy_t::m0_tile;
         constexpr auto n0_tile = policy_t::n0_tile;
 
-        size_t m1 = 0;
+        dim_t m1 = 0;
         for (; m1 < M / m0_tile * m0_tile; m1 += m0_tile) {
-            size_t n1 = 0;
+            dim_t n1 = 0;
             for (; n1 < N / n0_tile * n0_tile; n1 += n0_tile) {
                 matmul_2d_l0<m0_tile, n0_tile>(a, b, c, K, m1, n1);
             }
@@ -207,8 +206,10 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
  */
 template <bool AccumulateC = false, bool TransposedA = false,
           bool TransposedB = false, Tensor TLhs, Tensor TRhs, class TOut,
-          FixedDimensions LhsPackedAxes, FixedDimensions LhsPadedNums,
-          FixedDimensions RhsPackedAxes, FixedDimensions RhsPadedNums>
+          FixedDimensions LhsPackedAxes = shape_t<>,
+          FixedDimensions LhsPadedNums = shape_t<>,
+          FixedDimensions RhsPackedAxes = shape_t<>,
+          FixedDimensions RhsPadedNums = shape_t<>>
 void matmul(
     const TLhs &lhs, const TRhs &rhs, TOut &&output,
     [[maybe_unused]] const LhsPackedAxes &lhsPackedAxes = fixed_shape_v<>,
@@ -221,9 +222,9 @@ void matmul(
     static_assert(RhsPackedAxes::rank() == 0 || RhsPackedAxes::rank() == 1 ||
                       RhsPackedAxes::rank() == 2,
                   "currently only support 0~2d pack!");
-    static_assert(LhsPadedNums::rank() == 0 || LhsPadedNums::length() == 0,
+    static_assert(LhsPadedNums::rank() == 0 || lhsPadedNums.length() == 0,
                   "currently only support no pad!");
-    static_assert(RhsPadedNums::rank() == 0 || RhsPadedNums::length() == 0,
+    static_assert(RhsPadedNums::rank() == 0 || rhsPadedNums.length() == 0,
                   "currently only support no pad!");
 
     detail::matmul_impl<AccumulateC, TransposedA, TransposedB, TLhs, TRhs,

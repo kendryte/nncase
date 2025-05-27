@@ -100,6 +100,39 @@ constexpr auto generate_dims_impl(TGenerator &&generator) noexcept {
     return generate_impl(std::make_integer_sequence<dim_t, Rank>());
 }
 
+struct default_aggregate_selector {
+    template <class T>
+    constexpr decltype(auto) operator()(T &&value) const noexcept {
+        return std::forward<T>(value);
+    }
+};
+
+template <dim_t Axis, class TDims, class TAccumulate, class TFunc,
+          class TSelector, dim_t... I>
+constexpr auto aggregate_impl(const TDims &dims, TAccumulate &&seed,
+                              TFunc &&func, TSelector &&selector,
+                              std::integer_sequence<dim_t, I...>) noexcept {
+    auto new_seed = func(std::forward<TAccumulate>(seed),
+                         dims[fixed_dim_v<Axis>], fixed_dim_v<Axis>);
+    if constexpr (Axis + 1 < dims.rank()) {
+        return aggregate_impl<Axis + 1>(dims, std::move(new_seed),
+                                        std::forward<TFunc>(func),
+                                        std::forward<TSelector>(selector),
+                                        std::integer_sequence<dim_t, I...>{});
+    } else {
+        return selector(std::move(new_seed));
+    }
+}
+
+template <dim_t ReplaceAxis, dim_t CntIndex, class TDims, Dimension TDim>
+constexpr auto replace_dim_impl(const TDims &dims, const TDim &dim) noexcept {
+    if constexpr (ReplaceAxis == CntIndex) {
+        return dim;
+    } else {
+        return dims.template at<CntIndex>();
+    }
+}
+
 template <dims_usage Usage, template <class... TDims> class Derived,
           Dimension... TDims>
 struct dims_base {
@@ -199,34 +232,60 @@ struct dims_base {
     }
 
     template <FixedDimension TIndex>
-    constexpr auto &operator[](const TIndex &) noexcept {
-        return at(TIndex{});
+    constexpr decltype(auto) operator[](const TIndex &) noexcept {
+        return at<TIndex::value>();
+    }
+
+    template <class TAccumulate, class TFunc,
+              class TSelector = default_aggregate_selector>
+    constexpr decltype(auto) aggregate(
+        TAccumulate &&seed, [[maybe_unused]] TFunc &&func,
+        [[maybe_unused]] TSelector &&selector = TSelector{}) const noexcept {
+        if constexpr (rank() == 0) {
+            return selector(std::forward<TAccumulate>(seed));
+        } else {
+            return aggregate_impl<0>(
+                *this, std::forward<TAccumulate>(seed),
+                std::forward<TFunc>(func), std::forward<TSelector>(selector),
+                std::make_integer_sequence<dim_t, rank()>{});
+        }
     }
 
     template <Dimension TIndex>
-    constexpr auto at(const TIndex &) const noexcept {
+    constexpr auto at([[maybe_unused]] const TIndex &index) const noexcept {
         if constexpr (FixedDimension<TIndex>) {
-            return std::get<TIndex::value>(dims_);
+            return at<TIndex::value>();
         } else {
-            return to_array()[TIndex{}];
+            const auto pos_index = positive_index(index, rank());
+            return to_array()[pos_index];
         }
     }
 
     template <FixedDimension TIndex>
-    constexpr auto &at(const TIndex &) noexcept {
-        return std::get<TIndex::value>(dims_);
+    constexpr decltype(auto) at(const TIndex &) noexcept {
+        return at<TIndex::value>();
     }
 
-    template <size_t TIndex> constexpr auto at() const noexcept {
-        return std::get<TIndex>(dims_);
+    template <dim_t Index> constexpr auto at() const noexcept {
+        constexpr auto PositiveIndex = positive_index(Index, rank());
+        if constexpr (is_fixed()) {
+            return std::tuple_element_t<PositiveIndex, decltype(dims_)>{};
+        } else {
+            return std::get<PositiveIndex>(dims_);
+        }
     }
 
-    template <size_t TIndex> constexpr auto &at() noexcept {
-        return std::get<TIndex>(dims_);
+    template <dim_t Index> constexpr decltype(auto) at() noexcept {
+        constexpr auto PositiveIndex = positive_index(Index, rank());
+        if constexpr (is_fixed()) {
+            return std::tuple_element_t<PositiveIndex, decltype(dims_)>{};
+        } else {
+            return std::get<PositiveIndex>(dims_);
+        }
     }
 
-    constexpr auto begin() const noexcept { return iterator(); }
-    constexpr auto end() const noexcept { return iterator(rank()); }
+    constexpr auto begin() const noexcept { return iterator(*this, 0); }
+    constexpr auto end() const noexcept { return iterator(*this, rank()); }
 
     constexpr auto last() const noexcept { return at<rank() - 1>(); }
     constexpr auto &last() noexcept { return at<rank() - 1>(); }
@@ -249,8 +308,7 @@ struct dims_base {
             (void)this;
             return make_dims_impl<Derived>(at(fixed_dim_v<I>)..., values...);
         };
-        return append_impl(
-            values..., std::make_index_sequence<rank() + sizeof...(UDims)>());
+        return append_impl(values..., std::make_index_sequence<rank()>());
     }
 
     template <Dimension... UDims>
@@ -264,7 +322,7 @@ struct dims_base {
         return prepend_impl(values..., std::make_index_sequence<rank()>());
     }
 
-    template <size_t Index> constexpr auto remove_at() {
+    template <size_t Index> constexpr auto remove_at() const noexcept {
         auto remove_impl = [this]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
             return make_dims_impl<Derived>(at<(I < Index ? I : I + 1)>()...);
@@ -272,14 +330,16 @@ struct dims_base {
         return remove_impl(std::make_index_sequence<rank() - 1>());
     }
 
-    template <size_t Index, Dimension TDim>
-    constexpr auto replace_at(const TDim &dim) {
+    template <dim_t Index, Dimension TDim>
+    constexpr auto replace_at(const TDim &dim) const noexcept {
+        constexpr auto PositiveIndex = positive_index(Index, rank());
         auto replace_impl = [&dim,
                              this]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
-            return make_dims_impl<Derived>((I == Index ? dim : at<I>())...);
+            return make_dims_impl<Derived>(
+                replace_dim_impl<PositiveIndex, I>(*this, dim)...);
         };
-        return replace_impl(std::make_index_sequence<rank() - 1>());
+        return replace_impl(std::make_index_sequence<rank()>());
     }
 
     constexpr auto reverse() const noexcept {
@@ -310,7 +370,7 @@ struct dims_base {
                                            other.at(fixed_dim_v<U>)...);
         };
         return concat_impl(std::make_index_sequence<rank()>(),
-                           std::make_index_sequence<other.rank()>());
+                           std::make_index_sequence<sizeof...(UDims)>());
     }
 
     constexpr std::array<dim_t, rank()> to_array() const noexcept {
@@ -379,44 +439,45 @@ template <Dimensions TDims> struct empty_dims_alike_type;
 template <Dimensions TDims>
 using empty_dims_alike_t = typename empty_dims_alike_type<TDims>::type;
 
-#define DEFINE_NTT_MAKE_DIMS(type)                                             \
+#define DEFINE_NTT_MAKE_DIMS(dims_type)                                        \
     template <size_t Rank>                                                     \
-    using dynamic_##type##_t = detail::dynamic_dims_t<type##_t, Rank>;         \
+    using dynamic_##dims_type##_t =                                            \
+        detail::dynamic_dims_t<dims_type##_t, Rank>;                           \
                                                                                \
     template <Dimension... TDims>                                              \
-    struct empty_dims_alike_type<type##_t<TDims...>> {                         \
-        using type = type##_t<>;                                               \
+    struct empty_dims_alike_type<dims_type##_t<TDims...>> {                    \
+        using type = dims_type##_t<>;                                          \
     };                                                                         \
                                                                                \
     template <Dimension... TDims>                                              \
-    constexpr auto make_##type(const TDims &...dims) noexcept {                \
-        return detail::make_dims_impl<type##_t>(dims...);                      \
+    constexpr auto make_##dims_type(const TDims &...dims) noexcept {           \
+        return detail::make_dims_impl<dims_type##_t>(dims...);                 \
     }                                                                          \
                                                                                \
     template <dim_t... Dims>                                                   \
-    inline constexpr auto fixed_##type##_v =                                   \
-        detail::fixed_dims_impl_v<type##_t, Dims...>;                          \
+    inline constexpr auto fixed_##dims_type##_v =                              \
+        detail::fixed_dims_impl_v<dims_type##_t, Dims...>;                     \
                                                                                \
-    template <size_t Rank> constexpr auto make_zeros_##type() noexcept {       \
-        return detail::make_zeros_dims_impl<type##_t, Rank>();                 \
+    template <size_t Rank> constexpr auto make_zeros_##dims_type() noexcept {  \
+        return detail::make_zeros_dims_impl<dims_type##_t, Rank>();            \
     }                                                                          \
                                                                                \
-    template <size_t Rank> constexpr auto make_ones_##type() noexcept {        \
-        return detail::make_ones_dims_impl<type##_t, Rank>();                  \
+    template <size_t Rank> constexpr auto make_ones_##dims_type() noexcept {   \
+        return detail::make_ones_dims_impl<dims_type##_t, Rank>();             \
     }                                                                          \
                                                                                \
-    template <size_t Rank> constexpr auto make_index_##type() noexcept {       \
-        return detail::make_index_dims_impl<type##_t, Rank>();                 \
+    template <size_t Rank> constexpr auto make_index_##dims_type() noexcept {  \
+        return detail::make_index_dims_impl<dims_type##_t, Rank>();            \
     }                                                                          \
                                                                                \
     template <size_t Rank, Dimension TDim>                                     \
-    constexpr auto make_repeat_##type(const TDim &dim) noexcept {              \
-        return detail::make_repeat_dims_impl<type##_t, Rank>(dim);             \
+    constexpr auto make_repeat_##dims_type(const TDim &dim) noexcept {         \
+        return detail::make_repeat_dims_impl<dims_type##_t, Rank>(dim);        \
     }                                                                          \
                                                                                \
     template <size_t Rank, class TGenerator>                                   \
-    constexpr auto generate_##type(TGenerator &&generator) noexcept {          \
-        return detail::generate_dims_impl<type##_t, Rank>(generator);          \
+    constexpr auto generate_##dims_type(TGenerator &&generator) noexcept {     \
+        return detail::generate_dims_impl<dims_type##_t, Rank>(generator);     \
     }
 
 DEFINE_NTT_MAKE_DIMS(dims)
@@ -581,8 +642,8 @@ constexpr auto linear_size(const TShape &shape,
 
 namespace detail {
 template <Shape TShape, Strides TStrides>
-constexpr size_t contiguous_dims_impl(const TShape &shape,
-                                      const TStrides &strides) {
+constexpr dim_t contiguous_dims_impl(const TShape &shape,
+                                     const TStrides &strides) {
     auto def_strides = default_strides(shape);
     for (ptrdiff_t i = (ptrdiff_t)strides.rank() - 1; i >= 0; --i) {
         if (strides[i] != def_strides[i]) {
@@ -688,20 +749,16 @@ dynamic_shape_t<Rank> get_reduced_offset(Index in_offset) {
 
 namespace detail {
 template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
-    static_assert(CntAxis < Axes::rank(), "CntAxis out of bounds");
-
     template <Dimensions TSrcDims, Dimensions TResultDims>
     constexpr auto operator()(const TSrcDims &src_dims,
-                              const TResultDims &result_dims) noexcept {
-        auto new_result_dims = [&src_dims, &result_dims] {
-            if constexpr (Axes::contains(CntAxis)) {
-                return result_dims.append(src_dims.at(CntAxis));
-            } else {
-                return result_dims;
-            }
-        }();
-        if constexpr (CntAxis + 1 < Axes::rank()) {
-            return squeeze_dims_impl<Axes, CntAxis + 1>{}(src_dims,
+                              const TResultDims &result_dims) {
+        static_assert(CntAxis < TSrcDims::rank(), "CntAxis out of bounds");
+        auto new_result_dims =
+            ntt::select<Axes{}.contains(fixed_dim_v<CntAxis>)>(
+                result_dims,
+                result_dims.append(src_dims[fixed_dim_v<CntAxis>]));
+        if constexpr (CntAxis + 1 < TSrcDims::rank()) {
+            return squeeze_dims_impl<Axes, CntAxis + 1>()(src_dims,
                                                           new_result_dims);
         } else {
             return new_result_dims;
@@ -711,7 +768,7 @@ template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
 } // namespace detail
 
 template <Dimensions TDims, FixedShape TAxes>
-constexpr auto squeeze_dims(const TDims &dims, const TAxes &) noexcept {
+constexpr auto squeeze_dims(const TDims &dims, const TAxes &) {
     return detail::squeeze_dims_impl<TAxes, 0>{}(dims,
                                                  empty_dims_alike_t<TDims>{});
 }
@@ -728,20 +785,6 @@ bool operator==([[maybe_unused]] const TDimsA &lhs,
             }
         }
         return true;
-    }
-}
-
-template <Dimension TIndex, Dimension TExtent>
-constexpr auto positive_index(const TIndex &index,
-                              [[maybe_unused]] const TExtent &dim) {
-    if constexpr (FixedDimension<TIndex>) {
-        if constexpr (TIndex::value < 0) {
-            return index + dim;
-        } else {
-            return index;
-        }
-    } else {
-        return index < 0 ? index + dim : index;
     }
 }
 

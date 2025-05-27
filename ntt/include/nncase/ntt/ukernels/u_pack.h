@@ -14,7 +14,8 @@
  */
 #pragma once
 #include "../loop.h"
-#include "nncase/ntt/shape.h"
+#include "../shape.h"
+#include "../tensor_traits.h"
 #include <cstddef>
 #include <type_traits>
 
@@ -25,19 +26,22 @@ template <class T1, class T2, bool Arch> struct u_pack_policy {
     static constexpr size_t unroll = 4;
 };
 
-template <size_t M, size_t N, size_t MStrides, bool Arch, class TIn, class TOut>
-class u_pack {
+template <bool Arch, Scalar TIn, Vector TOut> class u_pack {
   public:
-    constexpr void operator()(const TIn *input, TOut *output) noexcept {
+    template <Dimension TM, Dimension TN, Dimension TMStrides>
+    constexpr void operator()(const TIn *input, const TM &M, const TN &N,
+                              const TMStrides &m_strides,
+                              TOut *output) noexcept {
         for (size_t j = 0; j < N; j++) {
             for (size_t i = 0; i < M; i++) {
-                output[j](i) = input[i * MStrides + j];
+                output[j](i) = input[i * m_strides + j];
             }
         }
 
-        if constexpr (M < TOut::shape_type::length()) {
+        const auto out_length = typename TOut::shape_type{}.length();
+        if (M < out_length) {
             for (size_t j = 0; j < N; j++) {
-                for (size_t i = M; i < TOut::shape_type::length(); i++) {
+                for (size_t i = M; i < out_length; i++) {
                     output[j](i) = (TIn)0;
                 }
             }
@@ -45,58 +49,53 @@ class u_pack {
     }
 };
 
-template <bool Arch, class TIn, class TOut, class TElem, class TVec,
-          size_t... Axes>
+template <bool Arch, class TIn, class TOut, class TElem, class TVec>
 class u_pack2d {
   public:
-    constexpr void operator()(const TIn &input, TOut &output) noexcept {
-        constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
+    template <FixedDimensions TAxes>
+    constexpr void operator()(const TIn &input, const TAxes &axes,
+                              TOut &output) noexcept {
         constexpr auto in_rank = TIn::rank();
         constexpr auto out_rank = TOut::rank();
-        constexpr auto elem_rank = TVec::rank();
         constexpr auto lanes = TVec::shape();
         auto out_shape = output.shape();
-        constexpr auto rank = out_rank + elem_rank;
-        dynamic_shape_t<rank> domain{};
-        for (size_t i = 0, j = 0; i < rank; i++) {
-            if (i < out_rank)
-                domain[i] = out_shape[i];
-            else
-                domain[i] = lanes[j++];
-        }
-
+        const auto domain = out_shape.concat(lanes);
         apply(domain, [&](auto index) {
-            auto out_index = slice_index<out_rank>(index);
-            auto in_index = slice_index<in_rank>(index);
-            auto elem_index = slice_index<elem_rank>(index, out_rank);
+            const auto out_index = index.template slice<0, out_rank>();
+            const auto in_index_template = index.template slice<0, in_rank>();
+            const auto elem_index = index.template slice<out_rank>();
+
             bool skip = false;
-            loop<axes.size()>([&](auto i) {
-                in_index[axes[i]] =
-                    in_index[axes[i]] * lanes[i] + index[out_rank + i];
-                if (in_index[axes[i]] >= input.shape()[axes[i]]) {
-                    skip = true;
-                }
-            });
+            const auto in_index =
+                axes.aggregate(in_index_template, [&](const auto &cnt_in_index,
+                                                      auto axis, auto i) {
+                    const auto in_dim =
+                        cnt_in_index[axis] * lanes[i] + index[out_rank + i];
+                    if (in_dim >= input.shape()[axis]) {
+                        skip = true;
+                    }
+                    return cnt_in_index.template replace_at<axis>(in_dim);
+                });
             output(out_index)(elem_index) = skip ? (TElem)0 : input(in_index);
         });
     }
 };
 } // namespace ukernels
 
-template <size_t M, size_t N, size_t MStrides, class TIn, class TOut>
-constexpr void u_pack(const TIn *input, TOut *output) noexcept {
-    ukernels::u_pack<M, N, MStrides, true, std::decay_t<TIn>,
-                     std::decay_t<TOut>>
-        impl;
-    impl(input, output);
+template <Scalar TIn, Dimension TM, Dimension TN, Dimension TMStrides,
+          Vector TOut>
+constexpr void u_pack(const TIn *input, const TM &M, const TN &N,
+                      const TMStrides &m_strides, TOut *output) noexcept {
+    ukernels::u_pack<true, std::decay_t<TIn>, std::decay_t<TOut>> impl;
+    impl(input, M, N, m_strides, output);
 }
 
-template <class TIn, class TOut, size_t... Axes>
-constexpr void u_pack2d(const TIn &input, TOut &output) noexcept {
+template <class TIn, FixedDimensions TAxes, class TOut>
+constexpr void u_pack2d(const TIn &input, const TAxes &axes,
+                        TOut &output) noexcept {
     using TElem = typename TIn::element_type;
     using TVec = typename std::decay_t<TOut>::element_type;
-    ukernels::u_pack2d<true, TIn, TOut, TElem, TVec, Axes...> impl;
-    impl(input, output);
+    ukernels::u_pack2d<true, TIn, TOut, TElem, TVec> impl;
+    impl(input, axes, output);
 }
-
 } // namespace nncase::ntt

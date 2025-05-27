@@ -231,20 +231,19 @@ class basic_tensor
         return t_view.squeeze(make_index_shape<Index::rank()>());
     }
 
+    constexpr tensor_view<T, TShape, TStrides> view() noexcept {
+        return view(make_zeros_shape<TShape::rank()>(), shape());
+    }
+
     template <Shape TNewShape>
     constexpr auto reshape(TNewShape shape) noexcept {
         return make_tensor_view(buffer(), shape, default_strides(shape));
     }
 
-    template <FixedShape TAxes>
-    constexpr auto squeeze(const TAxes &axes) noexcept {
+    template <FixedShape TAxes> constexpr auto squeeze(const TAxes &axes) {
         auto new_shape = squeeze_dims(shape(), axes);
         auto new_strides = squeeze_dims(strides(), axes);
         return make_tensor_view<T>(buffer(), new_shape, new_strides);
-    }
-
-    constexpr tensor_view<T, TShape, TStrides> view() noexcept {
-        return view(make_zeros_shape<TShape::rank()>(), shape());
     }
 
     template <Dimensions TIndex>

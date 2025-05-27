@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "apply.h"
 #include "primitive_ops.h"
 #include "tensor_traits.h"
 #include "vector.h"
@@ -28,7 +29,8 @@ struct tensor_unary_impl<Op, TVector> {
 
     constexpr TVector operator()(const TVector &v) const noexcept {
         TVector value;
-        apply(v.shape(), [&](auto index) { value(index) = op_(v(index)); });
+        ntt::apply(v.shape(),
+                   [&](auto index) { value(index) = op_(v(index)); });
         return value;
     }
 
@@ -67,17 +69,17 @@ struct tensor_binary_impl<Op, TVector, T2> {
         TVector value;
         if constexpr (Vector<T2>) {
             if constexpr (TVector::rank() == 2 && T2::rank() == 1) {
-                apply(v1.shape(), [&](auto index) {
-                    value(index) = op_(v1(index), v2(*index.rbegin()));
+                ntt::apply(v1.shape(), [&](auto index) {
+                    value(index) = op_(v1(index), v2(index[1_dim]));
                 });
             } else {
-                apply(v1.shape(), [&](auto index) {
+                ntt::apply(v1.shape(), [&](auto index) {
                     value(index) = op_(v1(index), v2(index));
                 });
             }
         } else {
-            apply(v1.shape(),
-                  [&](auto index) { value(index) = op_(v1(index), v2); });
+            ntt::apply(v1.shape(),
+                       [&](auto index) { value(index) = op_(v1(index), v2); });
         }
 
         return value;
@@ -113,8 +115,8 @@ struct tensor_binary_impl<Op, TScalar, TVector> {
     constexpr TVector operator()(const TScalar &v1,
                                  const TVector &v2) const noexcept {
         TVector value;
-        apply(v2.shape(),
-              [&](auto index) { value(index) = op_(v1, v2(index)); });
+        ntt::apply(v2.shape(),
+                   [&](auto index) { value(index) = op_(v1, v2(index)); });
         return value;
     }
 
@@ -137,17 +139,17 @@ struct tensor_compare_impl<Op, TVector, T2> {
         if constexpr (Vector<T2>) {
             if constexpr (TVector::shape().rank() == 2 &&
                           T2::shape().rank() == 1) {
-                apply(v1.shape(), [&](auto index) {
+                ntt::apply(v1.shape(), [&](auto index) {
                     value(index) = op_(v1(index), v2(*index.rbegin()));
                 });
             } else {
-                apply(v1.shape(), [&](auto index) {
+                ntt::apply(v1.shape(), [&](auto index) {
                     value(index) = op_(v1(index), v2(index));
                 });
             }
         } else {
-            apply(v1.shape(),
-                  [&](auto index) { value(index) = op_(v1(index), v2); });
+            ntt::apply(v1.shape(),
+                       [&](auto index) { value(index) = op_(v1(index), v2); });
         }
 
         return value;
@@ -185,8 +187,8 @@ struct tensor_compare_impl<Op, TScalar, TVector> {
     constexpr TOut operator()(const TScalar &v1,
                               const TVector &v2) const noexcept {
         TOut value;
-        apply(v2.shape(),
-              [&](auto index) { value(index) = op_(v1, v2(index)); });
+        ntt::apply(v2.shape(),
+                   [&](auto index) { value(index) = op_(v1, v2(index)); });
         return value;
     }
 
@@ -262,8 +264,8 @@ template <Vector TVector> struct inner_product<TVector, TVector> {
         using result_type = decltype(op_(std::declval<element_type>(),
                                          std::declval<element_type>()));
         result_type value{};
-        apply(v1.shape(),
-              [&](auto index) { value += op_(v1(index), v2(index)); });
+        ntt::apply(v1.shape(),
+                   [&](auto index) { value += op_(v1(index), v2(index)); });
         return value;
     }
 
@@ -284,7 +286,7 @@ struct outer_product<TVector1, TVector2> {
             vector<typename TVector1::element_type, TVector1::shape().length(),
                    TVector2::shape().length()>;
         result_type value{};
-        apply(value.shape(), [&](auto index) {
+        ntt::apply(value.shape(), [&](auto index) {
             value(index) = op_(v1(index[0]), v2(index[1]));
         });
         return value;
@@ -301,11 +303,11 @@ template <Vector TVector, class T2> struct mul_add<TVector, T2, TVector> {
                               const TVector &v3) const noexcept {
         TVector value;
         if constexpr (Vector<T2>) {
-            apply(v1.shape(), [&](auto index) {
+            ntt::apply(v1.shape(), [&](auto index) {
                 value(index) = op_(v1(index), v2(index), v3(index));
             });
         } else {
-            apply(v1.shape(), [&](auto index) {
+            ntt::apply(v1.shape(), [&](auto index) {
                 value(index) = op_(v1(index), v2, v3(index));
             });
         }
@@ -323,7 +325,7 @@ struct mul_add<TScalar, TVector, TVector> {
     constexpr auto operator()(const TScalar &s1, const TVector &v2,
                               const TVector &v3) const noexcept {
         TVector value;
-        apply(v3.shape(), [&](auto index) {
+        ntt::apply(v3.shape(), [&](auto index) {
             value(index) = op_(s1, v2(index), v3(index));
         });
         return value;
@@ -340,11 +342,11 @@ template <class T1, Vector T2, Vector T3> struct where<T1, T2, T3> {
                               const T3 &v2) const noexcept {
         T2 value;
         if constexpr (Vector<T1>) {
-            apply(v1.shape(), [&](auto index) {
+            ntt::apply(v1.shape(), [&](auto index) {
                 value(index) = op_(condition(index), v1(index), v2(index));
             });
         } else {
-            apply(v1.shape(), [&](auto index) {
+            ntt::apply(v1.shape(), [&](auto index) {
                 value(index) = op_(condition, v1(index), v2(index));
             });
         }
@@ -362,7 +364,7 @@ template <class T1, Scalar T2, Vector TVector> struct where<T1, T2, TVector> {
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const TVector &v2) const noexcept {
         TVector value;
-        apply(v2.shape(), [&](auto index) {
+        ntt::apply(v2.shape(), [&](auto index) {
             value(index) = op_(condition(index), v1, v2(index));
         });
 
@@ -379,7 +381,7 @@ template <class T1, Vector TVector, Scalar T2> struct where<T1, TVector, T2> {
     constexpr auto operator()(const T1 &condition, const TVector &v1,
                               const T2 &v2) const noexcept {
         TVector value;
-        apply(v1.shape(), [&](auto index) {
+        ntt::apply(v1.shape(), [&](auto index) {
             value(index) = op_(condition(index), v1(index), v2);
         });
 
@@ -397,7 +399,7 @@ template <Vector T1, Scalar T2, Scalar T3> struct where<T1, T2, T3> {
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const T3 &v2) const noexcept {
         TOut value;
-        apply(condition.shape(), [&](auto index) {
+        ntt::apply(condition.shape(), [&](auto index) {
             value(index) = op_(condition(index), v1, v2);
         });
 
@@ -413,7 +415,7 @@ template <Scalar T1, Scalar T2, Vector T3> struct where<T1, T2, T3> {
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const T3 &v2) const noexcept {
         T3 value;
-        apply(v2.shape(), [&](auto index) {
+        ntt::apply(v2.shape(), [&](auto index) {
             value(index) = op_(condition, v1, v2(index));
         });
 
@@ -429,7 +431,7 @@ template <Scalar T1, Vector T2, Scalar T3> struct where<T1, T2, T3> {
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const T3 &v2) const noexcept {
         T2 value;
-        apply(v1.shape(), [&](auto index) {
+        ntt::apply(v1.shape(), [&](auto index) {
             value(index) = op_(condition, v1(index), v2);
         });
 
@@ -472,8 +474,8 @@ template <Vector TVector, Scalar TScalar> struct clamp<TVector, TScalar> {
     constexpr auto operator()(const TVector &v, const TScalar &min,
                               const TScalar &max) const noexcept {
         TVector value;
-        apply(v.shape(),
-              [&](auto index) { value(index) = op_(v(index), min, max); });
+        ntt::apply(v.shape(),
+                   [&](auto index) { value(index) = op_(v(index), min, max); });
         return value;
     }
 
@@ -486,7 +488,8 @@ template <Vector TVector1, Vector TVector2> struct cast<TVector1, TVector2> {
     using to_type = typename TVector2::element_type;
     constexpr auto operator()(const TVector1 &v) const noexcept {
         TVector2 value;
-        apply(v.shape(), [&](auto index) { value(index) = op_(v(index)); });
+        ntt::apply(v.shape(),
+                   [&](auto index) { value(index) = op_(v(index)); });
         return value;
     }
 
@@ -500,8 +503,9 @@ template <Vector TVector1, Vector TVector2> struct cast<TVector1, TVector2> {
         size_t count = 0;
 
         auto process_tensor = [&](const auto &tensor) {
-            apply(tensor.shape(),
-                  [&](auto index) { value(count++) = op_(tensor(index)); });
+            ntt::apply(tensor.shape(), [&](auto index) {
+                value(count++) = op_(tensor(index));
+            });
         };
 
         (..., process_tensor(tensors));
@@ -526,8 +530,8 @@ template <Vector TVector1, Vector TVector2> struct cast<TVector1, TVector2> {
 
         size_t count = 0;
         for (size_t i = 0; i < type_scale; i++) {
-            apply(Output(i).shape(),
-                  [&](auto index) { Output(i)(index) = op_(v(count++)); });
+            ntt::apply(Output(i).shape(),
+                       [&](auto index) { Output(i)(index) = op_(v(count++)); });
         }
 
         return Output;

@@ -51,17 +51,23 @@ class elementwise_impl {
                          TOutput &output, TOutP &out_p, TArgs &&...args) {
         if (Axis + conti_dims >= TOutput::rank()) {
             // 1. In contiguous axes
-            const auto rest_rank = TOutput::rank() - fixed_dim_v<Axis>;
-            auto apply_contiguous =
-                [&]<size_t... I>(std::index_sequence<I...>) {
-                    return derived().template apply_contiguous<Axis>(
-                        std::get<I>(inputs_p)...,
-                        inputs.shape()
-                            .template slice<rest_rank,
-                                            inputs.rank() - rest_rank>()...,
-                        out_p, std::forward<TArgs>(args)...);
-                };
-            apply_contiguous(std::make_index_sequence<sizeof...(TInputs)>());
+            constexpr auto rest_rank = TOutput::rank() - fixed_dim_v<Axis>;
+            constexpr auto min_rank = ntt::min(inputs.rank()..., output.rank());
+            if constexpr (min_rank >= rest_rank) {
+                // If all inputs and output have enough rank, we can apply
+                // contiguous directly.
+                auto apply_contiguous =
+                    [&]<size_t... I>(std::index_sequence<I...>) {
+                        return derived().template apply_contiguous<Axis>(
+                            std::get<I>(inputs_p)...,
+                            inputs.shape()
+                                .template slice<rest_rank,
+                                                inputs.rank() - rest_rank>()...,
+                            out_p, std::forward<TArgs>(args)...);
+                    };
+                apply_contiguous(
+                    std::make_index_sequence<sizeof...(TInputs)>());
+            }
         } else if constexpr (Axis + 1 < TOutput::rank()) {
             // 2. Out of contiguous axes
             for (size_t i = 0; i < output.shape()[fixed_dim_v<Axis>]; i++) {

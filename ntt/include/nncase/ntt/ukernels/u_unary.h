@@ -24,7 +24,7 @@ template <class Op, class T, bool Arch> struct u_unary_policy {
 
 template <class Op, class T, bool Arch> struct u_unary {
   public:
-    constexpr void operator()(Op &op, const T *input, size_t input_stride,
+    constexpr void operator()(const Op &op, const T *input, size_t input_stride,
                               T *output, size_t output_stride,
                               size_t count) noexcept {
         using policy_t = u_unary_policy<Op, T, Arch>;
@@ -48,7 +48,7 @@ template <class Op, class T, bool Arch> struct u_unary {
 
 template <class T, bool Arch> struct u_unary<ops::copy<T>, T, Arch> {
   public:
-    constexpr void operator()(ops::copy<T> &, const T *input,
+    constexpr void operator()(const ops::copy<T> &, const T *input,
                               size_t input_stride, T *output,
                               size_t output_stride, size_t count) noexcept {
         if (input_stride == 1 && output_stride == 1) {
@@ -65,8 +65,8 @@ template <class T, bool Arch> struct u_unary<ops::copy<T>, T, Arch> {
 } // namespace ukernels
 
 template <class Op, class T>
-constexpr void u_unary(Op &op, const T *input, size_t input_stride, T *output,
-                       size_t output_stride, size_t count) noexcept {
+constexpr void u_unary(const Op &op, const T *input, size_t input_stride,
+                       T *output, size_t output_stride, size_t count) noexcept {
     ukernels::u_unary<Op, T, true> impl;
     impl(op, input, input_stride, output, output_stride, count);
 }
