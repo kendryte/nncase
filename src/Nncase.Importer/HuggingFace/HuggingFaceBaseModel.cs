@@ -813,6 +813,8 @@ public abstract class HuggingFaceModel
         // // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
         queryStates = IR.F.Tensors.Squeeze(queryStates, [0]);
+        keyStates = IR.F.Tensors.Squeeze(keyStates, [0]);
+        valueStates = IR.F.Tensors.Squeeze(valueStates, [0]);
 
         AttentionDimKind[] qSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         AttentionDimKind[] kvSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
