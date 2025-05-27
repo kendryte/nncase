@@ -159,16 +159,16 @@ public sealed class DimFraction : Dimension, IEquatable<DimFraction?>
     {
         if (Numerator.Metadata.Range is ValueRange<double> numRange && Denominator.Metadata.Range is ValueRange<double> denRange)
         {
-            long[] ranges = DivMode == DimDivideMode.FloorDiv ? [
-                (long)numRange.Min / (long)denRange.Min,
-                (long)numRange.Min / (long)denRange.Max,
-                (long)numRange.Max / (long)denRange.Min,
-                (long)numRange.Max / (long)denRange.Max,
+            double[] ranges = DivMode == DimDivideMode.FloorDiv ? [
+                System.Math.Floor(numRange.Min / denRange.Min),
+                System.Math.Floor(numRange.Min / denRange.Max),
+                System.Math.Floor(numRange.Max / denRange.Min),
+                System.Math.Floor(numRange.Max / denRange.Max),
             ] : [
-                MathUtility.CeilDiv((long)numRange.Min, (long)denRange.Min),
-                MathUtility.CeilDiv((long)numRange.Min, (long)denRange.Max),
-                MathUtility.CeilDiv((long)numRange.Max, (long)denRange.Min),
-                MathUtility.CeilDiv((long)numRange.Max, (long)denRange.Max),
+                System.Math.Ceiling(numRange.Min / denRange.Min),
+                System.Math.Ceiling(numRange.Min / denRange.Max),
+                System.Math.Ceiling(numRange.Max / denRange.Min),
+                System.Math.Ceiling(numRange.Max / denRange.Max),
             ];
             return new(ranges.Min(), ranges.Max());
         }
