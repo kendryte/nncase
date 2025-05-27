@@ -387,13 +387,11 @@ public abstract class HuggingFaceModel
 
         // TODO: using `config.attn_implementation` to choose attention implementation
         // self attention
-        var (hiddenStatesTmp, pastKeyValuesTmp) = LLMSelfAttention(
+        (hiddenStates, pastKeyValues) = LLMSelfAttention(
             count,
             hiddenStates,
             pastKeyValues,
             positionEmbeddings);
-        pastKeyValues = pastKeyValuesTmp;
-        hiddenStates = hiddenStatesTmp;
         hiddenStates = residual + hiddenStates;
 
         // fully Connected
@@ -524,7 +522,7 @@ public abstract class HuggingFaceModel
 
         invFreq = IR.F.Tensors.Expand(invFreq, shape_tensor);
 
-        var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([0,1]));
+        var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([0, 1]));
         positionIdsExpanded = IR.F.Tensors.Cast(positionIdsExpanded, DataTypes.Float32);
 
         var freqs = IR.F.Math.MatMul(invFreq, positionIdsExpanded).With(metadata: new IRMetadata()
@@ -814,7 +812,7 @@ public abstract class HuggingFaceModel
 
         // // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
-        hiddenStates = queryStates;
+        hiddenStates = IR.F.Tensors.Squeeze(queryStates, [0]);
         //
         // // update kv with cache
         // if (paskKeyValues != null)
@@ -865,23 +863,25 @@ public abstract class HuggingFaceModel
         // hiddenStates = hiddenStatesTmp;
         //
         // // inputShape.Add(-1);
-        // var inputShape = new RankedShape(batch_size, seq_len, -1L);
-        // hiddenStates = IR.F.Tensors.Reshape(hiddenStates, inputShape);
-        // var oProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
-        //
-        // Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.input_scale", out var ifScaleO);
-        // Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.weight_scale", out var wScaleO);
-        // hiddenStates = Linear(hiddenStates, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
+
         //
         // var mergedKeyValue = MergeKV(keyStates, valueStates);
-        AttentionDimKind[] layout = [AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim];
+        AttentionDimKind[] layout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         hiddenStates = IR.F.NN.PagedAttention(
             hiddenStates,
             paskKeyValues,
             Tensor.Zeros(DataType.FromTypeCode(TypeCode.Float16), [1, 2, 3]) /*Config*/,
             count,
             layout);
+            
+        hiddenStates = IR.F.Tensors.Unsqueeze(hiddenStates, [0]);
+        var inputShape = new RankedShape(1, seq_len, -1L);
+        hiddenStates = IR.F.Tensors.Reshape(hiddenStates, inputShape);
+        var oProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
 
+        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.input_scale", out var ifScaleO);
+        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.weight_scale", out var wScaleO);
+        hiddenStates = Linear(hiddenStates, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
         return System.Tuple.Create(hiddenStates, paskKeyValues/*selfAttenWeight, mergedKeyValue*/);
     }
 
