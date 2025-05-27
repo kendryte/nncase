@@ -374,7 +374,7 @@ public abstract class HuggingFaceModel
         }
     }
 
-    public virtual Tuple<Expr, Expr, Expr> DecodeLayer(
+    public virtual Tuple<Expr, Expr, Expr, Expr> DecodeLayer(
             int count,
             Expr hiddenStates,
             Expr pastKeyValues,
@@ -387,12 +387,13 @@ public abstract class HuggingFaceModel
 
         // TODO: using `config.attn_implementation` to choose attention implementation
         // self attention
-        var hiddenStatesTmp = LLMSelfAttention(
+        var (hiddenStatesTmp, pastKeyValuesTmp) = LLMSelfAttention(
             count,
             hiddenStates,
             pastKeyValues,
             positionEmbeddings);
-        hiddenStates = hiddenStatesTmp.Item1;
+        pastKeyValues = pastKeyValuesTmp;
+        hiddenStates = hiddenStatesTmp;
         hiddenStates = residual + hiddenStates;
 
         // fully Connected
@@ -409,7 +410,7 @@ public abstract class HuggingFaceModel
 
         // if (outputAttentions == true && selfAttenKV is not null)
         // {
-        return System.Tuple.Create<Expr, Expr, Expr>(output, null /*outAttention*/, null/*currentKV*/);
+        return System.Tuple.Create<Expr, Expr, Expr, Expr>(output, pastKeyValues, null /*outAttention*/, null/*currentKV*/);
 
         // }
 
@@ -517,13 +518,13 @@ public abstract class HuggingFaceModel
     {
         var positionIds = IR.F.NN.GetPositionIds(x, kvObject);
 
-        var batch_size = positionIds.CheckedShape[0];
+        var batch_size = x.CheckedShape[0];
         var dim_div_2 = invFreq.CheckedShape[1];
         var shape_tensor = new RankedShape(batch_size, dim_div_2, 1L);
 
         invFreq = IR.F.Tensors.Expand(invFreq, shape_tensor);
 
-        var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([1]));
+        var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([0,1]));
         positionIdsExpanded = IR.F.Tensors.Cast(positionIdsExpanded, DataTypes.Float32);
 
         var freqs = IR.F.Math.MatMul(invFreq, positionIdsExpanded).With(metadata: new IRMetadata()
@@ -789,7 +790,7 @@ public abstract class HuggingFaceModel
         }
     }
 
-    public virtual Tuple<Expr> LLMSelfAttention(
+    public virtual Tuple<Expr, Expr> LLMSelfAttention(
                 int count,
                 Expr hiddenStates,
                 Expr paskKeyValues,
@@ -813,6 +814,7 @@ public abstract class HuggingFaceModel
 
         // // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
+        hiddenStates = queryStates;
         //
         // // update kv with cache
         // if (paskKeyValues != null)
@@ -821,7 +823,7 @@ public abstract class HuggingFaceModel
             //     // 这里先假设kv 的shape 是 numKVhead，seq， headDim （batchsize维度squeeze掉）
             //     // transpose to (seq, kvhead, headDim) need 1,0,2 ,这里的dim需要写输入对应的dim
             AttentionDimKind[] kvLayout = { AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim };
-            AttentionDimKind[] qLayout = { AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim };
+            AttentionDimKind[] qLayout = { AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim };
             // FIXME: use pagedAttention Config instead of null.
             var (kvLanes, kvPackedAxis) = ModelUtils.GetQKVPackParams((IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config, qLayout);
             keyStates = IR.F.Tensors.Squeeze(keyStates, [0]);
@@ -880,7 +882,7 @@ public abstract class HuggingFaceModel
             count,
             layout);
 
-        return System.Tuple.Create(hiddenStates/*selfAttenWeight, mergedKeyValue*/);
+        return System.Tuple.Create(hiddenStates, paskKeyValues/*selfAttenWeight, mergedKeyValue*/);
     }
 
     public virtual Tuple<Expr, List<Expr>, List<Expr>, List<Expr>> LLMModel(
@@ -963,12 +965,12 @@ public abstract class HuggingFaceModel
             // var (hiddenStatesTmp, selfAttenWeights) = DecodeLayer(i, hiddenStates, casualMask, positionIds,
             //     pastKeyValues, outputAttentions,
             //     useCache, cachePosition, positionEmbeddings);
-            var (hiddenStatesTmp, outAttention, currentKV) = DecodeLayer(
+            var (hiddenStatesTmp, pastKeyValuesTmp, outAttention, currentKV) = DecodeLayer(
                 i,
                 hiddenStates,
                 pastKeyValues,
                 positionEmbeddings);
-
+            pastKeyValues = pastKeyValuesTmp;
             hiddenStates = hiddenStatesTmp;
 
             // if (Context.ImportOptions.HuggingFaceOptions.OutputAttentions)
