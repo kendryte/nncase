@@ -452,8 +452,6 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
         generator = Generator()
         for input_idx, input in enumerate(inputs):
-            if not isinstance(input, Dict):
-                continue
             samples = []
             input_shape = []
             dtype = input['dtype']
@@ -495,6 +493,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         add_generation_prompt=True
                     )
                     data = self.tokenizer([text], return_tensors="np").input_ids
+                    if dtype == 'PagedAttentionKVCache':
+                        data = input['scheduler'].schedule([0], [data.shape[1]])
                 if not test_utils.in_ci():
                     if method == 'text':
                         dump_txt_file(os.path.join(self.case_dir, name,

@@ -13,6 +13,7 @@ from huggingface_hub import snapshot_download
 from safetensors.torch import load_file, save_file
 import nncase
 
+
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
     print(f" Downloading \033[32m\033[1m {model_name} \033[0m from huggingface ... ")
     model_dir = os.path.join(os.path.dirname(__file__), "llm", model_name)
@@ -31,7 +32,7 @@ def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=Fa
             # if the model can't access in huggingface hub, you can download it from other source and put it in the cache dir ($HF_HOME/hub)
             # e.g.: modelscope download --model LLM-Research/Llama-3.2-1B-Instruct --local_dir $HF_HOME/hub/LLM-Research/Llama-3.2-1B-Instruct
             cache_model_dir = os.path.join(hf_home_env, "hub", model_name)
-            if(os.path.exists(cache_model_dir)):
+            if (os.path.exists(cache_model_dir)):
                 model_path = cache_model_dir
             else:
                 model_path = snapshot_download(repo_id=model_name)
@@ -108,6 +109,7 @@ def restore_weights(model_dir):
             os.rename(org_path, restored_path)
             print(f"Restored: {restored_path}")
 
+
 def to_np_type(t: str):
     '''
     string to np.type
@@ -118,6 +120,7 @@ def to_np_type(t: str):
         return np.float16
     else:
         return None
+
 
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
@@ -133,7 +136,7 @@ class HuggingfaceTestRunner(TestRunner):
     def cpu_infer(self, model_file: List[str]):
         outputs = []
         for idx, input in enumerate(self.inputs):
-            if not isinstance(input, Dict):
+            if idx != 0:
                 continue
             '''
             {
@@ -153,9 +156,9 @@ class HuggingfaceTestRunner(TestRunner):
             # model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
             if not test_utils.in_ci():
                 dump_bin_file(os.path.join(self.case_dir, "input",
-                                           f'input_{idx}.bin'), input['data'][idx])
+                                           f'input_{idx}.bin'), input['data'][0])
                 dump_txt_file(os.path.join(self.case_dir, "input",
-                                           f'input_{idx}.txt'), input['data'][idx])
+                                           f'input_{idx}.txt'), input['data'][0])
 
             # TODO: add attention_mask in inputs
             result = self.model.forward(
@@ -226,11 +229,11 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
-        
-        
+
         self.num_kv_heads = config.num_key_value_heads
         self.num_layers = config.num_hidden_layers
-        self.head_dim = config.head_dim if hasattr(config, "head_dim") else config.hidden_size // config.num_attention_heads
+        self.head_dim = config.head_dim if hasattr(
+            config, "head_dim") else config.hidden_size // config.num_attention_heads
 
         paged_attention_config = self.cfg['paged_attention_config']
 
@@ -239,11 +242,14 @@ class HuggingfaceTestRunner(TestRunner):
         self.max_sessions = paged_attention_config['max_sessions']
         self.max_model_len = (self.block_size * self.num_blocks) // self.max_sessions
         self.kv_type = np.dtype(to_np_type(paged_attention_config['kv_type']))
-        self.cache_layout = [getattr(nncase.PagedKVCacheDimKind, item) for item in paged_attention_config['cache_layout']]
+        self.cache_layout = [getattr(nncase.PagedKVCacheDimKind, item)
+                             for item in paged_attention_config['cache_layout']]
         # [ nncase.PagedKVCacheDimKind.it for it in paged_attention_config['cache_layout'] ]
-        self.packed_axes = [getattr(nncase.PagedKVCacheDimKind, item) for item in paged_attention_config['packed_axes']]
+        self.packed_axes = [getattr(nncase.PagedKVCacheDimKind, item)
+                            for item in paged_attention_config['packed_axes']]
         self.lanes = paged_attention_config['lanes']
-        self.sharding_axes = [getattr(nncase.PagedKVCacheDimKind, item) for item in paged_attention_config['sharding_axes']]
+        self.sharding_axes = [getattr(nncase.PagedKVCacheDimKind, item)
+                              for item in paged_attention_config['sharding_axes']]
         self.axis_policies = paged_attention_config['axis_policies']
 
         self.kv_cache_config = nncase.PagedAttentionConfig(
@@ -260,10 +266,6 @@ class HuggingfaceTestRunner(TestRunner):
         )
 
         self.cfg['huggingface_options']['config'] = self.kv_cache_config
-        
-        scheduler = nncase._nncase.RefPagedAttentionScheduler(
-            self.kv_cache_config, self.num_blocks, self.max_model_len, [1])
-        self.kv_cache_obj = scheduler.schedule([0], [256])
 
         if hasattr(config, "quantization_config"):
             dequantize_weights(model_path)
@@ -294,8 +296,15 @@ class HuggingfaceTestRunner(TestRunner):
         self.inputs.append(input_dict)
         self.calibs.append(copy.deepcopy(input_dict))
 
-        self.inputs.append(self.kv_cache_obj)
-        self.calibs.append(self.kv_cache_obj)
+        input_scheduler = nncase._nncase.RefPagedAttentionScheduler(
+            self.kv_cache_config, self.num_blocks, self.max_model_len, [1])
+        calibs_scheduler = nncase._nncase.RefPagedAttentionScheduler(
+            self.kv_cache_config, self.num_blocks, self.max_model_len, [1])
+
+        self.inputs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
+                           shape=[], model_shape=[], scheduler=input_scheduler))
+        self.calibs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
+                           shape=[], model_shape=[], scheduler=calibs_scheduler))
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_huggingface(model_content, import_options)

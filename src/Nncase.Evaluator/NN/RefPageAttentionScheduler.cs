@@ -91,7 +91,7 @@ public sealed class RefPagedAttentionScheduler
 
             if (seqLens[seqId] > _maxModelLen)
             {
-                throw new InvalidOperationException("The sequence length is larger than max model length!");
+                throw new InvalidOperationException($"The sequence length {seqLens[seqId]} is larger than max model length {_maxModelLen}!");
             }
 
             maxSeqLen = System.Math.Max(maxSeqLen, seqLens[seqId]);

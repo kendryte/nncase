@@ -882,7 +882,7 @@ public abstract class HuggingFaceModel
 
         output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qPackedAxis) : output;
         output = IR.F.Tensors.Transpose(output, ModelUtils.GetLayoutPerm(qDestLayout, qSrcLayout));
-        output = IR.F.Tensors.Transpose(output, ShapeExprUtility.GetPermutation(output, [0, 1]));
+        output = IR.F.Tensors.Transpose(output, new[] { 1, 0, 2 });
         output = IR.F.Tensors.Unsqueeze(output, new long[] { 0 });
 
         output = IR.F.Tensors.Reshape(output, new RankedShape(1, seq_len, -1L));
