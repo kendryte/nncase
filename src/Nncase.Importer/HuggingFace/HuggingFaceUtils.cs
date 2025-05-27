@@ -554,6 +554,11 @@ internal static class ModelUtils
 
         return (lanes.ToArray(), axes.ToArray());
     }
+
+    public static int[] GetLayoutPerm(AttentionDimKind[] inputLayout, AttentionDimKind[] targetLayout)
+    {
+        return targetLayout.Select(i => inputLayout.IndexOf(i)).ToArray();
+    }
 }
 
 internal class SafetensorsEntry

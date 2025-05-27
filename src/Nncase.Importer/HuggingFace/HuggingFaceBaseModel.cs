@@ -812,28 +812,28 @@ public abstract class HuggingFaceModel
 
         // // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
-        hiddenStates = IR.F.Tensors.Squeeze(queryStates, [0]);
-        //
+        queryStates = IR.F.Tensors.Squeeze(queryStates, [0]);
+
+        AttentionDimKind[] qSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
+        AttentionDimKind[] kvSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
+
         // // update kv with cache
         // if (paskKeyValues != null)
         {
             //     (keyStates, valueStates) = UpdateKVWithCache(count, keyStates, valueStates, paskKeyValues);
             //     // 这里先假设kv 的shape 是 numKVhead，seq， headDim （batchsize维度squeeze掉）
             //     // transpose to (seq, kvhead, headDim) need 1,0,2 ,这里的dim需要写输入对应的dim
-            AttentionDimKind[] kvLayout = { AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim };
-            AttentionDimKind[] qLayout = { AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim };
-            // FIXME: use pagedAttention Config instead of null.
-            var (kvLanes, kvPackedAxis) = ModelUtils.GetQKVPackParams((IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config, qLayout);
-            keyStates = IR.F.Tensors.Squeeze(keyStates, [0]);
-            var transK = IR.F.Tensors.Transpose(keyStates, kvLayout.Select(x => (int)x).ToArray());
+            AttentionDimKind[] kvDestLayout = { AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq };
+            var (kvLanes, kvPackedAxis) = ModelUtils.GetQKVPackParams((IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config, kvDestLayout);
+            var kvPerms = ModelUtils.GetLayoutPerm(kvSrcLayout, kvDestLayout);
+            var transK = IR.F.Tensors.Transpose(keyStates, kvPerms);
             var packedK = kvLanes.Length > 0 ? IR.F.Tensors.Pack(transK, kvLanes, kvPackedAxis) : transK;
-            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedK, paskKeyValues, AttentionCacheKind.Key, count, kvLayout);
-            valueStates = IR.F.Tensors.Squeeze(valueStates, [0]);
-            var transV = IR.F.Tensors.Transpose(valueStates, kvLayout.Select(x => (int)x).ToArray());
+            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedK, paskKeyValues, AttentionCacheKind.Key, count, kvDestLayout);
+            var transV = IR.F.Tensors.Transpose(valueStates, kvPerms);
             var packedV = kvLanes.Length > 0 ? IR.F.Tensors.Pack(transV, kvLanes, kvPackedAxis) : transV;
-            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedV, paskKeyValues, AttentionCacheKind.Key, count, kvLayout);
+            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedV, paskKeyValues, AttentionCacheKind.Key, count, kvDestLayout);
         }
-        //
+
         // // TODO: sliding window
         // // var slidingWindow = 0;
         // // if (_config!.Keys.Contains("use_sliding_window") && _config!["use_sliding_window"] != null &&
@@ -866,23 +866,29 @@ public abstract class HuggingFaceModel
 
         //
         // var mergedKeyValue = MergeKV(keyStates, valueStates);
-        AttentionDimKind[] layout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
-        hiddenStates = IR.F.NN.PagedAttention(
-            hiddenStates,
+        AttentionDimKind[] qDestLayout = { AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq };
+        var qPerm = ModelUtils.GetLayoutPerm(qSrcLayout, qDestLayout);
+        var (qLanes, qPackedAxis) = ModelUtils.GetQKVPackParams((IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config, qDestLayout);
+        var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
+        var packedQ = qLanes.Length > 0 ? IR.F.Tensors.Pack(transQ, qLanes, qPackedAxis) : transQ;
+        var output = IR.F.NN.PagedAttention(
+            packedQ,
             paskKeyValues,
-            Tensor.Zeros(DataType.FromTypeCode(TypeCode.Float16), [1, 2, 3]) /*Config*/,
+            Tensor.Zeros(DataTypes.UInt8, [1024]) /*Config*/,
             count,
-            layout);
-            
-        hiddenStates = IR.F.Tensors.Unsqueeze(hiddenStates, [0]);
-        var inputShape = new RankedShape(1, seq_len, -1L);
-        hiddenStates = IR.F.Tensors.Reshape(hiddenStates, inputShape);
+            qDestLayout);
+
+        output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qPackedAxis) : output;
+        output = IR.F.Tensors.Transpose(output, ModelUtils.GetLayoutPerm(qDestLayout, qSrcLayout));
+        output = IR.F.Tensors.Unsqueeze(output, new long[] { 0 });
+
+        output = IR.F.Tensors.Reshape(output, new RankedShape(1, seq_len, -1L));
         var oProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
 
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.input_scale", out var ifScaleO);
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.weight_scale", out var wScaleO);
-        hiddenStates = Linear(hiddenStates, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
-        return System.Tuple.Create(hiddenStates, paskKeyValues/*selfAttenWeight, mergedKeyValue*/);
+        output = Linear(output, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
+        return System.Tuple.Create(output, paskKeyValues/*selfAttenWeight, mergedKeyValue*/);
     }
 
     public virtual Tuple<Expr, List<Expr>, List<Expr>, List<Expr>> LLMModel(
