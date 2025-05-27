@@ -11,7 +11,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 import torch
 from huggingface_hub import snapshot_download
 from safetensors.torch import load_file, save_file
-
+import nncase
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
     print(f" Downloading \033[32m\033[1m {model_name} \033[0m from huggingface ... ")
@@ -108,6 +108,16 @@ def restore_weights(model_dir):
             os.rename(org_path, restored_path)
             print(f"Restored: {restored_path}")
 
+def to_np_type(t: str):
+    '''
+    string to np.type
+    '''
+    if t == "float32":
+        return np.float32
+    elif t == "float16":
+        return np.float16
+    else:
+        return None
 
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
@@ -123,6 +133,8 @@ class HuggingfaceTestRunner(TestRunner):
     def cpu_infer(self, model_file: List[str]):
         outputs = []
         for idx, input in enumerate(self.inputs):
+            if not isinstance(input, Dict):
+                continue
             '''
             {
                 'input_ids': tensor([[151644, 8948, ... 198, 151644, 77091, 198]]),
@@ -214,11 +226,50 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
+        
+        
+        self.num_kv_heads = config.num_key_value_heads
+        self.num_layers = config.num_hidden_layers
+        self.head_dim = config.head_dim if hasattr(config, "head_dim") else config.hidden_size // config.num_attention_heads
+
+        paged_attention_config = self.cfg['paged_attention_config']
+
+        self.block_size = paged_attention_config['block_size']
+        self.num_blocks = paged_attention_config['num_blocks']
+        self.max_sessions = paged_attention_config['max_sessions']
+        self.max_model_len = (self.block_size * self.num_blocks) // self.max_sessions
+        self.kv_type = np.dtype(to_np_type(paged_attention_config['kv_type']))
+        self.cache_layout = [getattr(nncase.PagedKVCacheDimKind, item) for item in paged_attention_config['cache_layout']]
+        # [ nncase.PagedKVCacheDimKind.it for it in paged_attention_config['cache_layout'] ]
+        self.packed_axes = [getattr(nncase.PagedKVCacheDimKind, item) for item in paged_attention_config['packed_axes']]
+        self.lanes = paged_attention_config['lanes']
+        self.sharding_axes = [getattr(nncase.PagedKVCacheDimKind, item) for item in paged_attention_config['sharding_axes']]
+        self.axis_policies = paged_attention_config['axis_policies']
+
+        self.kv_cache_config = nncase.PagedAttentionConfig(
+            self.num_layers,
+            self.num_kv_heads,
+            self.head_dim,
+            self.kv_type,
+            self.block_size,
+            self.cache_layout,
+            self.packed_axes,
+            self.lanes,
+            self.sharding_axes,
+            self.axis_policies
+        )
+
+        self.cfg['huggingface_options']['config'] = self.kv_cache_config
+        
+        scheduler = nncase._nncase.RefPagedAttentionScheduler(
+            self.kv_cache_config, self.num_blocks, self.max_model_len, [1])
+        self.kv_cache_obj = scheduler.schedule([0], [256])
+
         if hasattr(config, "quantization_config"):
             dequantize_weights(model_path)
             delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, config=config, torch_dtype="auto" if not torch.backends.mps.is_available() else 'cpu', device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
+            model_path, config=config, torch_dtype="auto", device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
         restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
@@ -242,6 +293,9 @@ class HuggingfaceTestRunner(TestRunner):
             input_dict['model_shape'] = [1, "sequence_length"]
         self.inputs.append(input_dict)
         self.calibs.append(copy.deepcopy(input_dict))
+
+        self.inputs.append(self.kv_cache_obj)
+        self.calibs.append(self.kv_cache_obj)
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_huggingface(model_content, import_options)

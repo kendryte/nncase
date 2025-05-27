@@ -59,11 +59,11 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.clear(self.case_dir)
         os.makedirs(self.case_dir)
 
-        self.inputs: List[Dict] = []
-        self.calibs: List[Dict] = []
-        self.outputs: List[Dict] = []
+        self.inputs: List[Any] = []
+        self.calibs: List[Any] = []
+        self.outputs: List[Any] = []
         self.model_type: str = ""
-        self.pre_process: List[Dict] = []
+        self.pre_process: List[Any] = []
 
         self.num_pattern = re.compile("(\d+)")
         # [n, c, h, w].zip default_shape => [(n, 1), (c, 1), (h, 48), (w, 48)]
@@ -392,8 +392,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         import_opt = self.cfg['huggingface_options']
         e = '"'
         for k, v in import_opt.items():
-            exec(
-                f"import_options.huggingface_options.{k} = {e + v + e if isinstance(v, str) else v}")
+            setattr(import_options.huggingface_options, k, v)
 
         return import_options
 
@@ -453,6 +452,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
 
         generator = Generator()
         for input_idx, input in enumerate(inputs):
+            if not isinstance(input, Dict):
+                continue
             samples = []
             input_shape = []
             dtype = input['dtype']

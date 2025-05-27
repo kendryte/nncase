@@ -31,8 +31,12 @@ class Evaluator:
 
     def set_inputs(self, evaluator):
         for idx, i in enumerate(self.inputs):
-            input_tensor: nncase.RuntimeTensor = nncase.RuntimeTensor.from_numpy(
+            input_tensor: nncase.RuntimeTensor = None
+            if isinstance(i, Dict):
+                input_tensor= nncase.RuntimeTensor.from_numpy(
                 self.transform_input((i['data']), self.cfg['compile_opt']['input_type'], "infer")[0])
+            else:
+                input_tensor = i.as_ivalue()
             evaluator.set_input_tensor(idx, input_tensor)
 
     def dump_outputs(self, evaluator, eval_dir):

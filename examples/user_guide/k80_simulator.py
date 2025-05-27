@@ -133,7 +133,6 @@ def main(model_path, dump_path, input_file):
             nncase.PagedKVCacheDimKind.HeadDim],
         [nncase.PagedKVCacheDimKind.HeadDim],
         [128 // 2],
-        # [nncase.PagedKVCacheDimKind.NumKVHeads, nncase.PagedKVCacheDimKind.NumBlocks],
         [nncase.PagedKVCacheDimKind.NumBlocks],
         [[0]],  # [[1], [2, 3]]
     )
@@ -161,10 +160,11 @@ def main(model_path, dump_path, input_file):
         result = evaluator.get_output_tensor(i).to_numpy()
         print(result.shape)
         result.tofile(os.path.join(dump_path, "nncase_result_{}.bin".format(i)))
+        np.save(os.path.join(dump_path, "nncase_result_{}.npy".format(i)), result)
 
 
 if __name__ == "__main__":
-    model_path = "/Users/lisa/Documents/nncase/tests/llm/Qwen/Qwen2.5-0.5B-Instruct"
-    dump_path = "/Users/lisa/Documents/nncase/tests_output/qwen/"
-    input_file = "/Users/lisa/Documents/nncase/examples/user_guide/qwen_input.bin"
+    model_path = "/Users/curio/Canaan/nncase/tests/llm/Qwen/Qwen2.5-0.5B-Instruct"
+    dump_path = "/Users/curio/Canaan/nncase/tests_output/qwen/"
+    input_file = "/Users/curio/Canaan/nncase/tests_output/test_qwen2/input/input_0.bin"
     main(model_path, dump_path, input_file)

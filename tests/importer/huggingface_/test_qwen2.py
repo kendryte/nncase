@@ -23,7 +23,7 @@ def test_qwen2(request):
     cfg = """
     [huggingface_options]
     output_attentions = false
-    output_hidden_states = true
+    output_hidden_states = false
     use_cache = false
 
     [generator]
