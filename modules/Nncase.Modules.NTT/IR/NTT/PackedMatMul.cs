@@ -29,6 +29,8 @@ public sealed partial class PackedMatMul : Op
 
     public DataType OutputDataType { get; }
 
+    public QuantizedWeightsInfo QuantizedWeightsInfo { get; }
+
     public IRArray<int> LhsPackedAxes { get; }
 
     public IRArray<int> LhsPadedNums { get; }

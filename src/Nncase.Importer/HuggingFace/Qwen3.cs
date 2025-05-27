@@ -42,6 +42,16 @@ namespace Nncase.Importer
 
             Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.input_scale", out var ifScaleQ);
             Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.weight_scale", out var wScaleQ);
+            if (ifScaleQ == null)
+            {
+                Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.input_scale_inv", out ifScaleQ);
+            }
+
+            if (wScaleQ == null)
+            {
+                Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.weight_scale_inv", out wScaleQ);
+            }
+
             var queryStates = Linear(hiddenStates, qProjW, qProjB, ifScaleQ, wScaleQ, $"model.layers.{count}.self_attn.q_proj");
             queryStates = IR.F.Tensors.Reshape(queryStates, hidden_shape);
             queryStates = LLMLayerNorm(queryStates, $"model.layers.{count}.self_attn.q_norm.weight");

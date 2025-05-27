@@ -31,4 +31,6 @@ public sealed partial class MatMul : Op
     /// Gets TransposeLhs.
     /// </summary>
     public DataType OutputDataType { get; }
+
+    public QuantizedWeightsInfo QuantizedWeightsInfo { get; }
 }

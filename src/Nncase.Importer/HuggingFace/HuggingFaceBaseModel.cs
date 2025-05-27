@@ -263,7 +263,15 @@ public abstract class HuggingFaceModel
 
     public virtual Call Linear(Expr expr, Tensor weight, Tensor? bias = null, Tensor? scaleIf = null, Tensor? scaleW = null, string layerName = "")
     {
-        if (scaleIf is not null && scaleW is not null)
+        var blockSizeArray = new long[] { 0, 0 };
+        var quantConfig = Context!.Config?["quantization_config"] as Dictionary<string, object>;
+        if (quantConfig != null && quantConfig.TryGetValue("weight_block_size", out var blockSizeObj))
+        {
+            var blockSizeList = blockSizeObj as List<object>;
+            blockSizeArray = blockSizeList?.Cast<long>().ToArray();
+        }
+
+        if (scaleIf is not null && scaleW is not null && blockSizeArray?[0] == 0 && blockSizeArray?[1] == 0)
         {
             // TODO: only support by tensor quant now!
             if (scaleIf.Rank > 1 || scaleW.Rank > 1)
@@ -302,7 +310,7 @@ public abstract class HuggingFaceModel
 
             return result;
         }
-        else if (scaleIf is null && scaleW is not null)
+        else if (scaleIf is null && scaleW is not null && blockSizeArray?[0] == 0 && blockSizeArray?[1] == 0)
         {
             long[] axes = new long[] { expr.CheckedShape.Rank - 1 };
             var max = Nncase.IR.F.Tensors.ReduceMax(expr, axes, float.MinValue, 1);
@@ -347,6 +355,19 @@ public abstract class HuggingFaceModel
             }
 
             result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, result, deqScaleB);
+            if (bias != null)
+            {
+                result = IR.F.Math.Add(result, bias);
+            }
+
+            return result;
+        }
+        else if (scaleW is not null && blockSizeArray?[0] > 0 && blockSizeArray?[1] > 0)
+        {
+            var transposeScaleW = IR.F.Tensors.Transpose(scaleW, new long[] { 1, 0 }).Evaluate().AsTensor();
+            var quantizedWeightsInfo = new QuantizedWeightsInfo(transposeScaleW, blockSizeArray[0], blockSizeArray[1]);
+            var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 });
+            var result = IR.F.Math.MatMul(expr, transposed_weight, expr.CheckedDataType, quantizedWeightsInfo).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
             if (bias != null)
             {
                 result = IR.F.Math.Add(result, bias);

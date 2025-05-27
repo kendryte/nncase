@@ -96,6 +96,20 @@ def dequantize_weights(model_dir):
                                 f"\033[31m weight_tensor {weight_key} and scale_tensor {key} shape not match! \033[0m")
                     else:
                         print(f"Warning: Corresponding weight {weight_key} not found, skipping.")
+                else:
+                    if key.endswith('weight_scale_inv'):
+                        scale_tensor = state_dict[key].to(torch.float32)
+                        weight_key = key.replace('.weight_scale_inv', '.weight')
+                        if weight_key in state_dict:
+                            weight_tensor = state_dict[weight_key]
+                            weight_fp32 = weight_tensor.to(torch.float32)
+                            block_row = weight_fp32.shape[0] // scale_tensor.shape[0]
+                            block_col = weight_fp32.shape[1] // scale_tensor.shape[1]
+                            scale_expanded = scale_tensor.repeat_interleave(block_row, dim=0).repeat_interleave(block_col, dim=1)
+                            scaled_weight = weight_fp32 * scale_expanded
+                            state_dict[weight_key] = scaled_weight
+                        else:
+                            print(f"Warning: Corresponding weight {weight_key} not found, skipping.")
 
             save_file(state_dict, filepath)
 
