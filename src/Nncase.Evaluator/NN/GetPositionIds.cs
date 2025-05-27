@@ -43,7 +43,7 @@ public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferenc
     public IRType Visit(ITypeInferenceContext context, GetPositionIds target)
     {
         var input = context.CheckArgumentType<TensorType>(target, GetPositionIds.Input);
-        var outDims = input.Shape[-1].AsDim(); // q.shape[-1] is seqLens, obtain all user's seq.
+        var outDims = input.Shape[-2].AsDim(); // q.shape[-2] is seqLens, obtain all user's seq.
 
         return new TensorType(input.DType,  [outDims]);
     }

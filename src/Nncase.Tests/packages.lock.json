@@ -466,6 +466,14 @@
         "resolved": "1.3.0",
         "contentHash": "WXnEcGwmXfa8gW9N2MlcaPNUzM3NLMwnAhacbtH554F8YcoXbIkTB+uGa1Aa+9gyb/9JZgYVHnmADgJUKP52nA=="
       },
+      "NETStandard.Library": {
+        "type": "Transitive",
+        "resolved": "2.0.3",
+        "contentHash": "st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A==",
+        "dependencies": {
+          "Microsoft.NETCore.Platforms": "1.1.0"
+        }
+      },
       "StyleCop.Analyzers.Unstable": {
         "type": "Transitive",
         "resolved": "1.2.0.556",
@@ -927,6 +935,7 @@
         "type": "Project",
         "dependencies": {
           "MethodBoundaryAspect.Fody": "[2.0.149, )",
+          "NETStandard.Library": "[2.0.3, )",
           "Nncase.CodeGen": "[1.0.0, )",
           "Nncase.Compiler": "[1.0.0, )",
           "Nncase.Core": "[1.0.0, )",

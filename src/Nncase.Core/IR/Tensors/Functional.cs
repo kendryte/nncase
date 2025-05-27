@@ -21,6 +21,7 @@ namespace Nncase.IR.F;
 public static class Tensors
 {
     public static Call Transpose(Expr input, Shape perm) => new Call(new Transpose(), input, perm);
+
     public static Expr NHWCToNCHW(Expr input)
     {
         int[] perm;
