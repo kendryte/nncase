@@ -30,4 +30,6 @@ public sealed partial class PagedAttention : Op
     public int LayerId { get; }
 
     public IRArray<AttentionDimKind> Layout { get; }
+
+    public override string DisplayProperty() => $"LayerId: {LayerId}, Layout [{string.Join(',', Layout)}]";
 }

@@ -833,7 +833,7 @@ public abstract class HuggingFaceModel
             paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedK, paskKeyValues, AttentionCacheKind.Key, count, kvDestLayout);
             var transV = IR.F.Tensors.Transpose(valueStates, kvPerms);
             var packedV = kvLanes.Length > 0 ? IR.F.Tensors.Pack(transV, kvLanes, kvPackedAxis) : transV;
-            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedV, paskKeyValues, AttentionCacheKind.Key, count, kvDestLayout);
+            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedV, paskKeyValues, AttentionCacheKind.Value, count, kvDestLayout);
         }
 
         // // TODO: sliding window
