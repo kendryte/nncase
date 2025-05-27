@@ -94,13 +94,13 @@ public class QuantizedWeightsInfo
 
     public long WeightGroupSizeW => _weightGroupSizeW;
 
-    public long ScalesGroupCountH => _scales!.Dimensions[0];
+    public long ScalesGroupCountH => _scales.Rank > 0 ? _scales?.Dimensions[0] ?? 0 : 0;
 
-    public long ScalesGroupCountW => _scales!.Dimensions[1];
+    public long ScalesGroupCountW => _scales.Rank > 0 ? _scales?.Dimensions[1] ?? 0 : 0;
 
-    public long BiasesGroupCountH => _biases?.Dimensions[0] ?? 0;
+    public long BiasesGroupCountH => _biases?.Rank > 0 ? _biases?.Dimensions[0] ?? 0 : 0;
 
-    public long BiasesGroupCountW => _biases?.Dimensions[1] ?? 0;
+    public long BiasesGroupCountW => _biases?.Rank > 0 ? _biases?.Dimensions[1] ?? 0 : 0;
 
     public long TotalScaleEntries => (long)ScalesGroupCountH * ScalesGroupCountW;
 
