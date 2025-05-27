@@ -114,10 +114,10 @@ int main(int argc, char *argv[]) {
     benchmark_ntt_cast<float, bool>(-100.f, 100.f);
     benchmark_ntt_cast<bool, float>(0, 1);
     benchmark_ntt_cast<float, float_e4m3_t>(-1000.f, 1000.f);
-    benchmark_ntt_cast<float_e4m3_t, float>((float_e4m3_t)-448.f,
-                                            (float_e4m3_t)448.f);
-    benchmark_ntt_cast<float_e4m3_t, bfloat16>((float_e4m3_t)-448.f,
-                                               (float_e4m3_t)448.f);
-    benchmark_ntt_cast<float_e4m3_t, half>((float_e4m3_t)-448.f,
-                                           (float_e4m3_t)448.f);
+    // benchmark_ntt_cast<float_e4m3_t, float>((float_e4m3_t)-448.f,
+    //                                         (float_e4m3_t)448.f);
+    // benchmark_ntt_cast<float_e4m3_t, bfloat16>((float_e4m3_t)-448.f,
+    //                                            (float_e4m3_t)448.f);
+    // benchmark_ntt_cast<float_e4m3_t, half>((float_e4m3_t)-448.f,
+    //                                        (float_e4m3_t)448.f);
 }
