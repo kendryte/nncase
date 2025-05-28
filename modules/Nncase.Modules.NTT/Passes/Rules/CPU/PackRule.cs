@@ -298,7 +298,8 @@ public sealed class PackMatMul : PackRule
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var outputDataType = ((Nncase.IR.Math.MatMul)result["matmul"]).OutputDataType;
-        var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape, outputDataType);
+        var quantizedWeightsInfo = ((Nncase.IR.Math.MatMul)result["matmul"]).QuantizedWeightsInfo;
+        var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape, outputDataType, quantizedWeightsInfo);
 
         // pack A's k and B's k
         // AddCandidate(rcontext, PackKind.K, PackKind.K);
@@ -332,7 +333,7 @@ public sealed class PackMatMul : PackRule
 
     private void AddCandidate(RuleContext context, IR.NTT.PackedMatMul.PackKind lhsPack, IR.NTT.PackedMatMul.PackKind rhsPack, bool transA = false, bool transB = false)
     {
-        var (rets, lhs, rhs, candidate, _, _, outputDataType) = context;
+        var (rets, lhs, rhs, candidate, _, _, outputDataType, quantizedWeightsInfo) = context;
         var lhsShape = context.LhsShape.ToArray();
         var rhsShape = context.RhsShape.ToArray();
         var lhsLaneSize = Lane / lhs.CheckedDataType.SizeInBytes;
@@ -412,7 +413,7 @@ public sealed class PackMatMul : PackRule
             return;
         }
 
-        var matmul = IR.F.NTT.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums.Select(x => (int)x.FixedValue).ToArray(), rhsPackedAxes, rhsPadNums.Select(x => (int)x.FixedValue).ToArray(), transA, transB, false, outputDataType);
+        var matmul = IR.F.NTT.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, lhsPadNums.Select(x => (int)x.FixedValue).ToArray(), rhsPackedAxes, rhsPadNums.Select(x => (int)x.FixedValue).ToArray(), transA, transB, false, outputDataType, quantizedWeightsInfo);
 
         var outRank = System.Math.Max(lhsShape.Length, rhsShape.Length);
         var lhsAlign = outRank - lhsShape.Length;
@@ -449,7 +450,7 @@ public sealed class PackMatMul : PackRule
         }
     }
 
-    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, Shape LhsShape, Shape RhsShape, DataType OutputDataType)
+    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, Shape LhsShape, Shape RhsShape, DataType OutputDataType, QuantizedWeightsInfo QuantizedWeightsInfo)
     {
     }
 }
