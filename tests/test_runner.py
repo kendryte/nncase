@@ -231,7 +231,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         if os.path.exists(case_dir):
             shutil.rmtree(case_dir)
 
-    @ abstractmethod
+    @abstractmethod
     def parse_model(self, model_path: Union[List[str], str]):
         pass
 
@@ -446,7 +446,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     file_list.append(os.path.join(args, file))
             file_list.sort()
         elif method == 'text':
-            assert(not os.path.isdir(args))
+            assert (not os.path.isdir(args))
             file_list.append(args)
         else:
             assert '{0} : not supported generator method'.format(method)
@@ -483,7 +483,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_numpy(file_list[idx])
                 elif method == 'text':
                     data = generator.from_text(file_list[0])
-                    assert(len(data) >= idx, "prompt not enough for calib")
+                    assert (len(data) >= idx, "prompt not enough for calib")
                     messages = [
                         {"role": "system", "content": "You are a assistant!"},
                         {"role": "user", "content": data[idx]}
@@ -505,11 +505,15 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                                    f'{name}_{input_idx}_{batch_idx}.bin'), data)
                         dump_txt_file(os.path.join(self.case_dir, name,
                                                    f'{name}_{input_idx}_{batch_idx}.txt'), data)
-                    if dtype is not 'PagedAttentionKVCache':
+                    if dtype != 'PagedAttentionKVCache':
                         np.save(os.path.join(self.case_dir, name,
-                                            f'{name}_{input_idx}_{batch_idx}.npy'), data)
+                                             f'{name}_{input_idx}_{batch_idx}.npy'), data)
                         convert_npy_to_json(os.path.join(self.case_dir, name,
-                                                        f'{name}_{input_idx}_{batch_idx}.npy'), self.case_dir)
+                                                         f'{name}_{input_idx}_{batch_idx}.npy'),
+                                            os.path.join(self.case_dir, name))
+                    elif dtype == 'PagedAttentionKVCache':
+                        data.dump_json(os.path.join(self.case_dir, name,
+                                       f'{name}_{input_idx}_{batch_idx}.json'))
                 samples.append(data)
             input['data'] = samples
 

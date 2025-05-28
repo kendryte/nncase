@@ -26,23 +26,20 @@
 namespace nncase::ntt {
 
 template <class TKVCache, class TOut>
-void get_position_ids(TKVCache kv_cache_tensor, TOut output){
+void get_position_ids(TKVCache kv_cache_tensor, TOut output) {
     using TOutType = typename std::decay_t<TOut>;
     using TOutElem = typename TOutType::element_type;
 
     auto &kv_cache = kv_cache_tensor(0);
-    using kv_cache_t = typename std::decay_t<decltype(kv_cache)>;
-    using config_t = typename kv_cache_t::config_t;
-    const auto output_size = output.size();
-    size_t i = 0;
-    for(size_t seq_id = 0; seq_id <kv_cache.num_seqs(); seq_id++){
-        size_t history_len = kv_cache.context_len(seq_id);
+    size_t out_i = 0;
+    for (size_t seq_id = 0; seq_id < kv_cache.num_seqs(); seq_id++) {
+        size_t context_len = kv_cache.context_len(seq_id);
         size_t seq_len = kv_cache.seq_len(seq_id);
-        auto user_range = seq_len - history_len;
-        for(size_t user_i = 0; user_i < user_range, i < output_size; i++, user_i++)
-        {
-            output(i) = (TOutType)history_len + (TOutType)user_i * 1;
-        }  
+        auto query_len = seq_len - context_len;
+        for (size_t i = 0; i < query_len; i++) {
+            output(out_i) = (TOutElem)(context_len + i);
+            out_i++;
+        }
     }
 }
 } // namespace nncase::ntt

@@ -152,7 +152,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 output = call;
                 return call;
             case IR.NN.GetPositionIds getPositionIds:
-                return TIR.F.NTT.GetPositionIds((Expr)arguments[0], output);
+                return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

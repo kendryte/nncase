@@ -67,7 +67,6 @@ public abstract class HuggingFaceModel
         //     Context.DynVarMap["batch_size"] = new DimVar("batch_size");
         //     Context.DynVarMap["batch_size"].Metadata.Range = new(1, 4);
         // }
-
         var inputIdsShapeExpr = new Dimension[]
         {
             Context.FixVarMap.ContainsKey("batch_size") ? Context.FixVarMap["batch_size"] : Context.DynVarMap["batch_size"],
@@ -176,7 +175,6 @@ public abstract class HuggingFaceModel
         // {
         //     hiddenStates = Context.Outputs["hiddenStates"];
         // }
-
         var output = new List<Expr?> { logits, kvCache, outAttention, hiddenStates };
         output.RemoveAll(item => item == null);
 
@@ -413,10 +411,9 @@ public abstract class HuggingFaceModel
 
         // if (outputAttentions == true && selfAttenKV is not null)
         // {
-        return System.Tuple.Create<Expr, Expr, Expr, Expr>(output, pastKeyValues, null /*outAttention*/, null/*currentKV*/);
+        return System.Tuple.Create<Expr, Expr, Expr, Expr>(output, pastKeyValues, null! /*outAttention*/, null! /*currentKV*/);
 
         // }
-
         // return Tuple.Create<Call, Call>(output, null);
     }
 
@@ -736,12 +733,12 @@ public abstract class HuggingFaceModel
         */
         // TODO:consider flash attention v2
         Dimension historyLen = 0L;
+
         // if (pastKeyValues != null)
         // {
         //     // FIXME: use api to get historyLen.
         //     historyLen = pastKeyValues.CheckedShape[-2];
         // }
-
         var batchSize = inputsEmbeds.CheckedShape[0];
         var seqLen = inputsEmbeds.CheckedShape[1];
         var targetLength = historyLen + seqLen + 1L;
@@ -832,9 +829,7 @@ public abstract class HuggingFaceModel
         // // update kv with cache
         // if (paskKeyValues != null)
         {
-            //     (keyStates, valueStates) = UpdateKVWithCache(count, keyStates, valueStates, paskKeyValues);
-            //     // 这里先假设kv 的shape 是 numKVhead，seq， headDim （batchsize维度squeeze掉）
-            //     // transpose to (seq, kvhead, headDim) need 1,0,2 ,这里的dim需要写输入对应的dim
+            // (keyStates, valueStates) = UpdateKVWithCache(count, keyStates, valueStates, paskKeyValues);
             AttentionDimKind[] kvDestLayout = { AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq };
             var (kvLanes, kvPackedAxis) = ModelUtils.GetQKVPackParams((IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config, kvDestLayout);
             var kvPerms = ModelUtils.GetLayoutPerm(kvSrcLayout, kvDestLayout);
@@ -865,6 +860,7 @@ public abstract class HuggingFaceModel
         //
         // // qwen2 use eager_attention_forward
         var scaling = Tensor.FromScalar((float)(1.0f / System.Math.Sqrt((double)head_dim)));
+
         // var (hiddenStatesTmp, selfAttenWeight) = EagerAttentionForward(
         //     queryStates,
         //     keyStates,
@@ -968,8 +964,6 @@ public abstract class HuggingFaceModel
         //     attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         // )
         // Call? casualMask = null;
-
-        //
         var (invFreq_, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
 
         var invFreq = Tensor.FromArray(invFreq_.ToArray());
@@ -983,9 +977,9 @@ public abstract class HuggingFaceModel
         // var allSelfAttns = new List<Expr>();
         // var allKVcaches = new List<Expr>();
         Expr? allHiddenStates = null;
-        Expr? allSelfAttns = null;
-        Expr? allKVcaches = null;
 
+        // Expr? allSelfAttns = null;
+        // Expr? allKVcaches = null;
         // _ = new List<Tuple<Call, Call>>();
         for (int i = 0; i < (int)(long)Context!.Config!["num_hidden_layers"]; i++)
         {
@@ -1032,7 +1026,6 @@ public abstract class HuggingFaceModel
         //     // allHiddenStates.Add(IR.F.Tensors.Unsqueeze(lastHiddenStates, new long[] { 0 }));
         //     allHiddenStates = IR.F.Tensors.Concat(new IR.Tuple(allHiddenStates!, IR.F.Tensors.Unsqueeze(lastHiddenStates, new long[] { 0 })), 0);
         // }
-
         return lastHiddenStates;
 
         // return Tuple.Create(lastHiddenStates, allSelfAttns, allKVcaches);
@@ -1138,6 +1131,7 @@ public abstract class HuggingFaceModel
 
         // FIXIT: this is work around for bfloat16
         Context.Outputs!.Add("logits", IR.F.Tensors.Cast(lmHead, DataTypes.Float32));
+
         // if (Context.ImportOptions!.HuggingFaceOptions.OutputAttentions)
         // {
         //     var outAttention = IR.F.Tensors.Concat(new IR.Tuple(allSelfAttns.ToArray()), 0);

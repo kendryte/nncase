@@ -155,7 +155,8 @@ typedef struct {
     void (*huggingface_options_set_attention_backend)(
         clr_object_handle_t huggingface_options, uint8_t value);
     void (*huggingface_options_set_config)(
-        clr_object_handle_t huggingface_options, clr_object_handle_t config_handle);
+        clr_object_handle_t huggingface_options,
+        clr_object_handle_t config_handle);
     int32_t (*huggingface_options_get_max_model_len)(
         clr_object_handle_t huggingface_options);
     void (*huggingface_options_set_max_model_len)(
@@ -339,6 +340,10 @@ typedef struct {
         clr_object_handle_t kv_cache);
     clr_object_handle_t (*ref_paged_attention_kv_cache_as_ivalue)(
         clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_as_rtvalue)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_dump_json)(
+        clr_object_handle_t kv_cache, const char *bytes, size_t length);
 
     // var functions
     clr_object_handle_t (*var_get_dimensions)(clr_object_handle_t var);
@@ -612,18 +617,21 @@ class huggingface_options : public clr_object_base {
         nncase_clr_api()->huggingface_options_set_attention_backend(obj_.get(),
                                                                     value);
     }
-    
+
     void config(const llm::paged_attention_config &config) {
         auto clone_config = llm::paged_attention_config(config);
-        nncase_clr_api()->huggingface_options_set_config(obj_.get(), clone_config.detach());
+        nncase_clr_api()->huggingface_options_set_config(obj_.get(),
+                                                         clone_config.detach());
     }
-    
+
     int32_t max_model_len() {
-        return nncase_clr_api()->huggingface_options_get_max_model_len(obj_.get());
+        return nncase_clr_api()->huggingface_options_get_max_model_len(
+            obj_.get());
     }
-    
+
     void max_model_len(int32_t value) {
-        nncase_clr_api()->huggingface_options_set_max_model_len(obj_.get(), value);
+        nncase_clr_api()->huggingface_options_set_max_model_len(obj_.get(),
+                                                                value);
     }
 };
 
@@ -1075,6 +1083,17 @@ class ref_paged_attention_kv_cache : public clr_object_base {
         return {std::in_place,
                 nncase_clr_api()->ref_paged_attention_kv_cache_as_ivalue(
                     obj_.get())};
+    }
+
+    rtvalue as_rtvalue() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_as_rtvalue(
+                    obj_.get())};
+    }
+
+    void dump_json(const std::string &file_path) {
+        nncase_clr_api()->ref_paged_attention_kv_cache_dump_json(
+            obj_.get(), file_path.data(), file_path.length());
     }
 };
 

@@ -90,15 +90,22 @@ class Inference:
 
     def set_infer_input(self, sim, compile_opt):
         for idx, value in enumerate(self.inputs):
-            data = self.transform_input(
-                value['data'], compile_opt['input_type'], "infer")[0]
-            dtype = compile_opt['input_type']
-            if compile_opt['preprocess'] and dtype != 'float32':
-                if not test_utils.in_ci():
-                    dump_bin_file(os.path.join(self.case_dir, f'input_{idx}_{dtype}.bin'), data)
-                    dump_txt_file(os.path.join(self.case_dir, f'input_{idx}_{dtype}.txt'), data)
-
-            sim.set_input_tensor(idx, nncase.RuntimeTensor.from_numpy(data))
+            new_data = None
+            data = value['data']
+            dtype = value['dtype']
+            if dtype == 'PagedAttentionKVCache':
+              new_data = data[0].as_rtvalue()
+              new_data = new_data.to_runtime_tensor()
+            else:
+              new_data = self.transform_input(
+                  data, compile_opt['input_type'], "infer")[0]
+              input_type = compile_opt['input_type']
+              if compile_opt['preprocess'] and input_type != 'float32':
+                  if not test_utils.in_ci():
+                      dump_bin_file(os.path.join(self.case_dir, f'input_{idx}_{input_type}.bin'), new_data)
+                      dump_txt_file(os.path.join(self.case_dir, f'input_{idx}_{input_type}.txt'), new_data)
+              new_data = nncase.RuntimeTensor.from_numpy(new_data)
+            sim.set_input_tensor(idx, new_data)
 
     def dump_kmodel_desc(self, file):
         input_shapes = data_shape_list_string(self.inputs)
