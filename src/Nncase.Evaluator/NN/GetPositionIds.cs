@@ -24,7 +24,6 @@ public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferenc
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, GetPositionIds s)
     {
-        var input = context.GetArgumentValueAsTensor(s, GetPositionIds.Input);
         var kvCache = context.GetArgumentValue(s, GetPositionIds.KVCache);
         var rangePair = GetRange(kvCache.AsTensor().Cast<Reference<IPagedAttentionKVCache>>());
 
@@ -37,10 +36,13 @@ public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferenc
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, GetPositionIds target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, GetPositionIds.Input);
-        var outDims = input.Shape[-2].AsDim(); // q.shape[-2] is seqLens, obtain all user's seq.
-
-        return new TensorType(input.DType, [outDims]);
+        var input = context.GetArgument(target, GetPositionIds.Input);
+        return input switch
+        {
+            TensorConst sizeConst => new TensorType(DataTypes.Float32, new RankedShape(sizeConst.Value.ToScalar<long>())),
+            Call { Target: AsTensor } sizeCall => new TensorType(DataTypes.Float32, new RankedShape(sizeCall[AsTensor.Input].AsDim())),
+            _ => new InvalidType($"GetPositionIds input must be TensorConst or Call with AsTensor, but got {input}"),
+        };
     }
 
     public Cost Visit(ICostEvaluateContext context, GetPositionIds target)

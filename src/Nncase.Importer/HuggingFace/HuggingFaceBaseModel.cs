@@ -519,7 +519,7 @@ public abstract class HuggingFaceModel
 
     public virtual Tuple<Expr, Expr> RotaryEmbedding(Expr x, Expr kvObject, Expr invFreq, float attentionScaling)
     {
-        var positionIds = IR.F.NN.GetPositionIds(x, kvObject);
+        var positionIds = IR.F.NN.GetPositionIds(IR.F.Shapes.AsTensor(x.CheckedShape[1]), kvObject);
 
         var batch_size = x.CheckedShape[0];
         var dim_div_2 = invFreq.CheckedShape[1];

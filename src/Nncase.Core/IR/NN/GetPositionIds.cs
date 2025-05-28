@@ -20,7 +20,7 @@ public sealed partial class GetPositionIds : Op
     /// <summary>
     /// Gets Q.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(GetPositionIds), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(GetPositionIds), 0, "input", ParameterKind.Attribute);
 
     /// <summary>
     /// Gets kvCache.
