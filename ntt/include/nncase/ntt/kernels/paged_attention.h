@@ -297,7 +297,7 @@ void paged_attention(
         // s = q * k^T : [head_q, query_len, seq_len]
         for (size_t q_head_id = 0; q_head_id < q_shape[head_index];
              q_head_id++) {
-            auto k_head_id = q_head_id / num_kv_heads;
+            auto k_head_id = q_head_id / (q_shape[head_index] / num_kv_heads);
             q_slice_start[head_index] = q_head_id;
 
             for (size_t q_id = 0, q_id_batch = query_start_loc;
@@ -388,7 +388,7 @@ void paged_attention(
         auto s_slice_start = ntt::ranked_shape<3>();
         for (size_t q_head_id = 0; q_head_id < q_shape[head_index];
              q_head_id++) {
-            auto v_head_id = q_head_id / num_kv_heads;
+            auto v_head_id = q_head_id / (q_shape[head_index] / num_kv_heads);
             s_slice_start[0] = q_head_id;
             q_slice_start[head_index] = q_head_id;
             for (size_t q_id = 0, q_id_batch = query_start_loc;
