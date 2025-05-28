@@ -165,7 +165,9 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 #undef SPECIALIZE_U_BINARY
 
 // clamp
-template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
+template <> struct u_clamp_policy<true> {
+    static constexpr size_t unroll = 8;
+};
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
@@ -173,7 +175,9 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> { static constexpr size_t unroll = 4; };
+template <> struct u_cast_policy<true> {
+    static constexpr size_t unroll = 4;
+};
 
 // matmul
 template <>
@@ -257,8 +261,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
                 2, 8, vector<float, NTT_VLEN / 32>, float,
                 vector<float, NTT_VLEN / 32>, true> {
     template <class TA, class TB, class TC>
-    constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              size_t K) noexcept {
+    constexpr void operator()(const TA &a, const TB &b, TC &c0, size_t K,
+                              [[maybe_unused]] float scaleLhs = 1.0f,
+                              [[maybe_unused]] float scaleRhs = 1.0f) noexcept {
         NTT_ASSUME(K > 0);
 
         register fixed_vfloat32m1_t c0_0_0 asm("v0") = {};
