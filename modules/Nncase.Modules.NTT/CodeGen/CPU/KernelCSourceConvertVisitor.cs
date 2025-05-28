@@ -512,6 +512,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.PagedAttention pagedAttention:
                     IndentScope.Writer.IndWrite($"paged_attention<{pagedAttention.Layout.ToC()}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name});\n");
                     break;
+                case TIR.NTT.GetPositionIds getPositionIds:
+                    IndentScope.Writer.IndWrite($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    break;
                 default:
                     throw new NotSupportedException(kop.ToString());
             }

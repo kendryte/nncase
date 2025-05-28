@@ -151,6 +151,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Shapes.AsTensor asTensor:
                 output = call;
                 return call;
+            case IR.NN.GetPositionIds getPositionIds:
+                return TIR.F.NTT.GetPositionIds((Expr)arguments[0], output);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

@@ -241,4 +241,9 @@ public partial class NTT
     {
         return new Call(new TIR.NTT.Range(), begin, end, step, ret);
     }
+
+    public static Expr GetPositionIds(Expr kvCache, Expr ret)
+    {
+        return new Call(new TIR.NTT.GetPositionIds(), kvCache, ret);
+    }
 }
