@@ -1097,7 +1097,7 @@ void test_pad() {
     ntt::tensor<float, ntt::fixed_shape<1, 2, 3>> td;
     ntt::tensor<float, ntt::fixed_shape<8, 2, 3>> te;
     std::iota(td.elements().begin(), td.elements().end(), 0.f);
-    ntt::pad<0, 7, 0, 0, 0, 0>(td, te, 1.3f);
+    ntt::pad(td, te, 1.3f, ntt::make_ranked_shape(0, 7, 0, 0, 0, 0));
     assert(te(0, 0, 1) == 1.f);
     assert(te(1, 0, 1) == 1.3f);
     assert(te(2, 0, 1) == 1.3f);
