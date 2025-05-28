@@ -271,6 +271,21 @@ public abstract class Dimension : BaseExpr
             return Unknown;
         }
 
+        var left = (value - min).Metadata.Range!.Value;
+        var right = (value - max).Metadata.Range!.Value;
+        if (left.Max <= 0)
+        {
+            return min;
+        }
+        else if (right.Min >= 0)
+        {
+            return max;
+        }
+        else if (left.Min >= 0 && right.Max <= 0)
+        {
+            return value;
+        }
+
         return new DimClamp(value, min, max);
     }
 

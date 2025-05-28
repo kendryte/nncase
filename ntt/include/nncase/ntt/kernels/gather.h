@@ -25,11 +25,14 @@ namespace nncase::ntt {
 
 namespace detail {
 
-template <class Shape, class InStrides, class OutStrides> class gather_impl;
+template <class Shape, class InStrides, class IndexShape, class IndicesStrides> class gather_impl;
 
-template <size_t... Dims, size_t... InStrides, size_t... OutStrides>
+// weights: static
+// indices: static
+template <size_t... Dims, size_t... InStrides, size_t... IndicesRank, size_t... IndicesStrides>
 class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
-                  fixed_strides<OutStrides...>> {
+                  fixed_shape<IndicesRank...>,
+                  fixed_strides<IndicesStrides...>> {
   public:
     template <size_t Axis, typename TA, typename TB, typename TC>
     constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
@@ -240,8 +243,10 @@ class gather_impl<fixed_shape<Dims...>, fixed_strides<InStrides...>,
     }
 };
 
-template <size_t Rank, class InStrides, class OutStrides>
-class gather_impl<ranked_shape<Rank>, InStrides, OutStrides> {
+// weights: dynamic
+// indices: dynamic
+template <size_t Rank, class InStrides, size_t IndicesRank, class IndicesStrides>
+class gather_impl<ranked_shape<Rank>, InStrides, ranked_shape<IndicesRank>, IndicesStrides> {
   public:
     template <size_t Axis, typename TA, typename TB, typename TC>
     constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
@@ -303,6 +308,140 @@ class gather_impl<ranked_shape<Rank>, InStrides, OutStrides> {
     }
 };
 
+// weights: dynamic
+// indices: static
+template <size_t Rank, class InStrides, size_t... IndicesDims, class IndicesStrides>
+class gather_impl<ranked_shape<Rank>, InStrides, fixed_shape<IndicesDims...>, IndicesStrides> {
+public:
+    template <size_t Axis, typename TA, typename TB, typename TC>
+    constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
+        constexpr size_t indices_rank = sizeof...(IndicesDims);
+
+        ranked_shape<Rank> in_index;
+        ranked_shape<indices_rank> indices_index;
+
+        if constexpr (IsShardedTensor<TA>) {
+            using TensorTypeA = typename TA::local_tensor_type;
+            using element_type = element_or_scalar_t<TensorTypeA>;
+            using mesh_type = typename TA::mesh_type;
+            using sharding_type = typename TA::sharding_type;
+
+            auto local_mesh_index = mesh_type::local_index();
+            auto global_offset = sharding_type::global_offset(input.shape(), local_mesh_index);
+            auto local_shape = input.local().shape();
+
+            size_t axis_global_start = global_offset[Axis];
+            size_t axis_global_end = axis_global_start + local_shape[Axis];
+
+            apply(output.shape(), [&](auto out_index) {
+                // in_index[:axis] = out_index[:axis]
+                loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+                // in_index[axis] = indices(indices_index)
+                loop<indices_rank>(
+                    [&](auto i) { indices_index[i] = out_index[i + Axis]; });
+                auto global_idx = indices(indices_index);
+
+                if (global_idx >= axis_global_start && global_idx < axis_global_end) {
+                    in_index[Axis] = global_idx - axis_global_start;
+
+                    // in_index[axis:] = out_index[axis:]
+                    loop<Rank - (Axis + 1)>([&](auto i) {
+                        in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                    });
+                    output(out_index) = input.local()(in_index);
+                } else {
+                    // Index is outside the local shard's range, fill with zeros
+                    output(out_index) = element_or_scalar_t<element_type>{0};
+                }
+            });
+        } else {
+            apply(output.shape(), [&](auto out_index) {
+                loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+                loop<indices_rank>([&](auto i) {
+                    indices_index[i] = out_index[Axis + i];
+                });
+                in_index[Axis] = indices(indices_index);
+
+                loop<Rank - Axis - 1>([&](auto i) {
+                    in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                });
+
+                output(out_index) = input(in_index);
+            });
+        }    
+    }
+};
+
+// weights: static
+// indices: dynamic
+template <size_t... Dims, class InStrides, size_t IndicesRank, class IndicesStrides>
+class gather_impl<fixed_shape<Dims...>, InStrides, ranked_shape<IndicesRank>, IndicesStrides> {
+public:
+    template <size_t Axis, typename TA, typename TB, typename TC>
+    constexpr void operator()(const TA &input, const TB &indices, TC &&output) {
+        constexpr size_t rank = sizeof...(Dims);
+        constexpr size_t indices_rank = IndicesRank;
+
+        ranked_shape<rank> in_index;
+        ranked_shape<indices_rank> indices_index;
+
+         if constexpr (IsShardedTensor<TA>) {
+                        using TensorTypeA = typename TA::local_tensor_type;
+            using element_type = element_or_scalar_t<TensorTypeA>;
+            using mesh_type = typename TA::mesh_type;
+            using sharding_type = typename TA::sharding_type;
+
+            auto local_mesh_index = mesh_type::local_index();
+            auto global_offset = sharding_type::global_offset(input.shape(), local_mesh_index);
+            auto local_shape = input.local().shape();
+
+            size_t axis_global_start = global_offset[Axis];
+            size_t axis_global_end = axis_global_start + local_shape[Axis];
+
+            apply(output.shape(), [&](auto out_index) {
+                // in_index[:axis] = out_index[:axis]
+                loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+                // in_index[axis] = indices(indices_index)
+                loop<indices_rank>(
+                    [&](auto i) { indices_index[i] = out_index[i + Axis]; });
+                auto global_idx = indices(indices_index);
+
+                if (global_idx >= axis_global_start && global_idx < axis_global_end) {
+                    in_index[Axis] = global_idx - axis_global_start;
+
+                    // in_index[axis:] = out_index[axis:]
+                    loop<rank - (Axis + 1)>([&](auto i) {
+                        in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                    });
+                    output(out_index) = input.local()(in_index);
+                } else {
+                    // Index is outside the local shard's range, fill with zeros
+                    output(out_index) = element_or_scalar_t<element_type>{0};
+                }
+            });
+        } else {
+
+            apply(output.shape(), [&](auto out_index) {
+                loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
+
+                loop<indices_rank>([&](auto i) {
+                    indices_index[i] = out_index[Axis + i];
+                });
+                in_index[Axis] = indices(indices_index);
+
+                loop<rank - Axis - 1>([&](auto i) {
+                    in_index[Axis + 1 + i] = out_index[Axis + indices_rank + i];
+                });
+
+                output(out_index) = input(in_index);
+            });
+        }
+    }
+};
+
 } // namespace detail
 
 template <size_t Axis, typename TA, typename TB, typename TC>
@@ -311,12 +450,12 @@ void gather(const TA &input, const TB &indices, TC &&output) noexcept {
     if constexpr (IsShardedTensor<TA>) {
         using TensorTypeA = typename TA::local_tensor_type;
         detail::gather_impl<typename TensorTypeA::shape_type, typename TensorTypeA::strides_type,
-                        typename std::decay_t<TC>::strides_type>
+                        typename TB::shape_type, typename TB::strides_type>
         impl;
         impl.template operator()<Axis>(input, indices, output);
     } else {
         detail::gather_impl<typename TA::shape_type, typename TA::strides_type,
-                        typename std::decay_t<TC>::strides_type>
+                        typename TB::shape_type, typename TB::strides_type>
         impl;
         impl.template operator()<Axis>(input, indices, output);
     }

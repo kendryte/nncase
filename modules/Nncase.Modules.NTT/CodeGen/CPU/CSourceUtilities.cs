@@ -12,7 +12,7 @@ namespace Nncase.CodeGen.NTT;
 
 internal static class CSourceUtilities
 {
-    public static string ContertBinary(Binary binary, CSymbol[] arguments)
+    public static string ConvertBinary(Binary binary, CSymbol[] arguments)
     {
         var lhs = arguments[Binary.Lhs.Index].Name;
         var rhs = arguments[Binary.Rhs.Index].Name;
@@ -49,7 +49,7 @@ internal static class CSourceUtilities
         return false;
     }
 
-    internal static string ContertUnary(Unary op, CSymbol[] arguments)
+    internal static string ConvertUnary(Unary op, CSymbol[] arguments)
     {
         var input = arguments[Unary.Input.Index].Name;
         string str;
@@ -66,7 +66,7 @@ internal static class CSourceUtilities
         return str;
     }
 
-    internal static string ContertCompare(Compare op, CSymbol[] arguments)
+    internal static string ConvertCompare(Compare op, CSymbol[] arguments)
     {
         var lhs = arguments[Compare.Lhs.Index].Name;
         var rhs = arguments[Compare.Rhs.Index].Name;
@@ -74,12 +74,21 @@ internal static class CSourceUtilities
         return str;
     }
 
-    internal static string ContertSelect(Select s, CSymbol[] arguments)
+    internal static string ConvertSelect(Select s, CSymbol[] arguments)
     {
         var p = arguments[Select.Predicate.Index].Name;
         var lhs = arguments[Select.TrueValue.Index].Name;
         var rhs = arguments[Select.FalseValue.Index].Name;
         string str = $"({p} ? {lhs} : {rhs})";
+        return str;
+    }
+
+    internal static string ConvertClamp(Clamp op, CSymbol[] arguments)
+    {
+        var input = arguments[Clamp.Input.Index].Name;
+        var min = arguments[Clamp.Min.Index].Name;
+        var max = arguments[Clamp.Max.Index].Name;
+        string str = $"std::clamp({input}, {min}, {max})";
         return str;
     }
 }

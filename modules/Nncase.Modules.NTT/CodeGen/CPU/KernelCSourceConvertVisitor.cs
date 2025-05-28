@@ -421,7 +421,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Transpose transpose:
-                    WriteWithProfiler($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitDimOrShape(args[1]).Name});\n");
+                    WriteWithProfiler($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Pad pad:
                     WriteWithProfiler($"pad<{string.Join(",", pad.Paddings)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
@@ -494,6 +494,15 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.Reshape reshape:
                     IndentScope.Writer.Write($"reshape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
+                case TIR.NTT.ShapeOf shapeOf:
+                    IndentScope.Writer.Write($"shapeof({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    break;
+                case TIR.NTT.Range range:
+                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name},{VisitBuffer(args[2], local: true).Name},{VisitBuffer(args[3], local: true).Name});\n");
+                    break;
+                case TIR.NTT.ConstantOfShape constantOfShape:
+                    IndentScope.Writer.Write($"constant_of_shape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                    break;
                 case TIR.NTT.UpdatePagedAttentionKVCache updatePagedAttentionKVCache:
                     IndentScope.Writer.IndWrite($"update_paged_attention_kv_cache<{updatePagedAttentionKVCache.Layout.ToC()}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, caching::attention_cache_kind::{updatePagedAttentionKVCache.CacheKind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {updatePagedAttentionKVCache.LayerId});\n");
                     break;
@@ -533,16 +542,16 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             switch (expr.Target)
             {
                 case IR.Math.Binary op:
-                    str = CSourceUtilities.ContertBinary(op, arguments);
+                    str = CSourceUtilities.ConvertBinary(op, arguments);
                     break;
                 case IR.Math.Unary op:
-                    str = CSourceUtilities.ContertUnary(op, arguments);
+                    str = CSourceUtilities.ConvertUnary(op, arguments);
                     break;
                 case IR.Math.Compare op:
-                    str = CSourceUtilities.ContertCompare(op, arguments);
+                    str = CSourceUtilities.ConvertCompare(op, arguments);
                     break;
                 case IR.Math.Select op:
-                    str = CSourceUtilities.ContertSelect(op, arguments);
+                    str = CSourceUtilities.ConvertSelect(op, arguments);
                     break;
                 case TIR.Load op:
                     str = $"{arguments[0].Name}[{arguments[1].Name}]";
@@ -553,8 +562,22 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.PtrOf op:
                     str = op.PtrName;
                     break;
+                case IR.Math.Clamp op:
+                    str = CSourceUtilities.ConvertClamp(op, arguments);
+                    break;
+                case IR.Shapes.AsTensor op:
+                    if (expr.CheckedType is TensorType { IsScalar: true })
+                    {
+                        str = $"ntt::tensor<int64_t, ntt::fixed_shape<>>{{ {arguments[0].Name} }}";
+                    }
+                    else
+                    {
+                        str = $"ntt::tensor<int64_t, ntt::fixed_shape<{expr.CheckedShape.Rank}>>{{ {arguments[0].Name} }}";
+                    }
+
+                    break;
                 default:
-                    throw new NotSupportedException();
+                    throw new NotSupportedException(expr.Target.GetType().Name);
             }
         }
 
@@ -663,7 +686,11 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         {
             if (field is Call call)
             {
-                IndentScope.Writer.IndWrite(Visit(call).Name);
+                var name = Visit(call).Name;
+                if (call.Target is not IR.Shapes.AsTensor)
+                {
+                    IndentScope.Writer.IndWrite(name);
+                }
             }
             else
             {

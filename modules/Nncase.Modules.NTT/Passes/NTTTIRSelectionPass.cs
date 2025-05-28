@@ -99,7 +99,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Tensors.Concat concat:
                 return TIR.F.NTT.Concat(((IR.Tuple)arguments[0]).Fields.AsValueEnumerable().Select(x => (Expr)x).ToArray(), output, concat.Axis);
             case IR.Tensors.Transpose trans:
-                return TIR.F.NTT.Transpose((Expr)arguments[0], output, ((TensorConst)call[IR.Tensors.Transpose.Perm]).Value.ToArray<int>());
+                return TIR.F.NTT.Transpose((Expr)arguments[0], output, ((RankedShape)call[IR.Tensors.Transpose.Perm]).ToValueArray().ToInts());
             case IR.NN.Swish swish:
                 return TIR.F.NTT.Swish((Expr)arguments[0], output, ((TensorConst)call[IR.NN.Swish.Beta]).Value.ToScalar<float>());
             case IR.Tensors.Gather gather:
@@ -144,6 +144,13 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.IdentityPagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], (Expr)arguments[8]);
             case IR.NN.PagedAttention pgat:
                 return TIR.F.NTT.PagedAttention((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], pgat.LayerId, output, pgat.Layout);
+            case IR.Tensors.ConstantOfShape constantOfShape:
+                return TIR.F.NTT.ConstantOfShape((Shape)arguments[0], (Expr)arguments[1], output);
+            case IR.Tensors.Range range:
+                return TIR.F.NTT.Range((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output);
+            case IR.Shapes.AsTensor asTensor:
+                output = call;
+                return call;
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

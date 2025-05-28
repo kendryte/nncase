@@ -21,20 +21,30 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 def test_qwen2(request):
     cfg = """
+    [compile_opt]
+    shape_bucket_enable = true
+    shape_bucket_range_info = { }
+    shape_bucket_segments_count = 2
+    shape_bucket_fix_var_map = { "batch_size"=1, "sequence_length"=256 }
+    
     [huggingface_options]
-    output_attentions = false
+    output_attentions = true
     output_hidden_states = true
-    use_cache = false
+    use_cache = true
 
     [generator]
     [generator.inputs]
     method = 'text'
+    number = 1
+    batch = 1
 
     [generator.inputs.text]
     args = 'tests/importer/huggingface_/prompt_qwen.txt'
 
     [generator.calibs]
     method = 'text'
+    number = 1
+    batch = 1
 
     [generator.calibs.text]
     args = 'tests/importer/huggingface_/prompt_qwen.txt'

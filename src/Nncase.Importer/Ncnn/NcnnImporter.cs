@@ -61,9 +61,9 @@ public sealed partial class NcnnImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
+    protected override (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
     {
-        var varMap = new Dictionary<Var, Dimension[]>();
+        var varMap = new Dictionary<IVar, Dimension[]>();
         return (_inputs, varMap);
     }
 
