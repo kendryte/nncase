@@ -445,6 +445,35 @@ public abstract class HuggingFaceModel
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.up_proj.weight_scale", out var wScaleUp);
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.down_proj.input_scale", out var ifScaleDown);
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.down_proj.weight_scale", out var wScaleDown);
+        if (ifScaleGate == null)
+        {
+            Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.gate_proj.input_scale_inv", out ifScaleGate);
+        }
+
+        if (wScaleGate == null)
+        {
+            Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.gate_proj.weight_scale_inv", out wScaleGate);
+        }
+
+        if (ifScaleUp == null)
+        {
+            Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.up_proj.input_scale_inv", out ifScaleUp);
+        }
+
+        if (wScaleUp == null)
+        {
+            Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.up_proj.weight_scale_inv", out wScaleUp);
+        }
+
+        if (ifScaleDown == null)
+        {
+            Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.down_proj.input_scale_inv", out ifScaleDown);
+        }
+
+        if (wScaleDown == null)
+        {
+            Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.down_proj.weight_scale_inv", out wScaleDown);
+        }
 
         var tmp = Linear(hiddenStates, gateProjW, null, ifScaleGate, wScaleGate, $"model.layers.{count}.mlp.gate_proj");
         if (Context!.Config!.ContainsKey("hidden_act"))
@@ -883,6 +912,16 @@ public abstract class HuggingFaceModel
 
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.input_scale", out var ifScaleO);
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.weight_scale", out var wScaleO);
+        if (ifScaleO == null)
+        {
+            Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.input_scale_inv", out ifScaleO);
+        }
+
+        if (wScaleO == null)
+        {
+            Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.weight_scale_inv", out wScaleO);
+        }
+
         hiddenStates = Linear(hiddenStates, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
 
         var mergedKeyValue = MergeKV(keyStates, valueStates);

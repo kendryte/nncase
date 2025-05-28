@@ -68,6 +68,16 @@ namespace Nncase.Importer
 
             Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.input_scale", out var ifScaleK);
             Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.weight_scale", out var wScaleK);
+            if (ifScaleK == null)
+            {
+                Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.input_scale_inv", out ifScaleK);
+            }
+
+            if (wScaleK == null)
+            {
+                Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.weight_scale_inv", out wScaleK);
+            }
+
             var keyStates = Linear(hiddenStates, kProjW, kProjB, ifScaleK, wScaleK, $"model.layers.{count}.self_attn.k_proj");
             keyStates = IR.F.Tensors.Reshape(keyStates, hidden_shape);
             keyStates = LLMLayerNorm(keyStates, $"model.layers.{count}.self_attn.k_norm.weight");
@@ -82,6 +92,16 @@ namespace Nncase.Importer
 
             Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.input_scale", out var ifScaleV);
             Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.weight_scale", out var wScaleV);
+            if (ifScaleV == null)
+            {
+                Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.input_scale_inv", out ifScaleV);
+            }
+
+            if (wScaleV == null)
+            {
+                Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.weight_scale_inv", out wScaleV);
+            }
+
             var valueStates = Linear(hiddenStates, vProjW, vProjB, ifScaleV, wScaleV, $"model.layers.{count}.self_attn.v_proj");
             valueStates = IR.F.Tensors.Reshape(valueStates, hidden_shape);
             valueStates = IR.F.Tensors.Transpose(valueStates, new long[] { 0, 2, 1, 3 });

@@ -360,12 +360,34 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         }
     }
 
+    public Tensor DequantizeWeights(Tensor weights, QuantizedWeightsInfo quantizedWeightsInfo)
+    {
+        var scaledWeights = Tensor.Zeros<float>(weights.Shape);
+
+        for (long i = 0; i < weights.Dimensions[0]; i++)
+        {
+            for (long j = 0; j < weights.Dimensions[1]; j++)
+            {
+                var weightValue = weights[i, j];
+                scaledWeights[i, j] = (float)weightValue * quantizedWeightsInfo.GetScaleByIndex(i, j);
+            }
+        }
+
+        return scaledWeights;
+    }
+
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, MatMul matMul)
     {
         var dataType = context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType;
         var lhs = context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor();
         var rhs = context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor();
+        var quantizedWeightsInfo = matMul.QuantizedWeightsInfo;
+        if (quantizedWeightsInfo.IsValid)
+        {
+            rhs = DequantizeWeights(rhs, quantizedWeightsInfo);
+        }
+
         var outputDataType = matMul.OutputDataType;
         return InferValue(dataType, lhs, rhs, outputDataType);
     }
