@@ -72,7 +72,7 @@ result<gsl::span<const gsl::byte>> runtime_section_context::get_or_read_section(
             sr->read_span(mapped.buffer());
         }
 
-        span = allocate_shared && storage->has_physical_address()
+        span = allocate_shared
                    ? gsl::make_span(reinterpret_cast<const gsl::byte *>(
                                         storage->physical_address().unwrap()),
                                     body_size)
