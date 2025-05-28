@@ -770,7 +770,7 @@ public sealed class PackUnsqueeze : PackRule
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var axes = ((TensorConst)result["axes"]).Value.ToArray<int>();
+        var axes = ((RankedShape)result["axes"]).ToValueArray().ToInts();
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         for (int i = 0; i < input.CheckedShape.Rank; i++)

@@ -27,7 +27,7 @@ public abstract class HuggingFaceModel
         Context = context;
     }
 
-    public virtual (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
+    public virtual (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
     {
         var hiddenSize = (long)Context!.Config!["hidden_size"];
         _ = (long)Context.Config!["num_hidden_layers"];
@@ -42,7 +42,7 @@ public abstract class HuggingFaceModel
 
         Context.Inputs = [];
         Context.DynVarMap = new Dictionary<string, DimVar>();
-        var varMap = new Dictionary<Var, Dimension[]>();
+        var varMap = new Dictionary<IVar, Dimension[]>();
 
         var bucketOptions = Context.CompileSession!.CompileOptions.ShapeBucketOptions;
         Context.FixVarMap = bucketOptions.FixVarMap;
@@ -68,9 +68,11 @@ public abstract class HuggingFaceModel
         //     Context.DynVarMap["batch_size"].Metadata.Range = new(1, 4);
         // }
 
-        var inputIdsShapeExpr = new Dimension[] { 1L,
-            Context.DynVarMap["sequence_length"],
-                                                };
+        var inputIdsShapeExpr = new Dimension[]
+        {
+            Context.FixVarMap.ContainsKey("batch_size") ? Context.FixVarMap["batch_size"] : Context.DynVarMap["batch_size"],
+            Context.FixVarMap.ContainsKey("sequence_length") ? Context.FixVarMap["sequence_length"] : Context.DynVarMap["sequence_length"],
+        };
 
         // var attentionMaskShapeExpr = new Expr[]
         // {
@@ -91,9 +93,7 @@ public abstract class HuggingFaceModel
         //                                              headDim, };
         var inputIds = new Var(
             "input_ids",
-            new TensorType(DataTypes.Int64, new RankedShape(
-                                                 1L,
-                                                 Context.DynVarMap["sequence_length"])));
+            new TensorType(DataTypes.Int64, new RankedShape(inputIdsShapeExpr)));
 
         // var attentionMask = new Var(
         //     "attention_mask",
@@ -130,11 +130,15 @@ public abstract class HuggingFaceModel
         // _inputs.Add(positionIds);
         // _inputs.Add(pastKeyValue);
         varMap[inputIds] = inputIdsShapeExpr;
+        if (!Context.FixVarMap.ContainsKey("sequence_length"))
+        {
+            varMap[Context.DynVarMap["sequence_length"]] = [Context.DynVarMap["sequence_length"]];
+        }
 
         // varMap[attentionMask] = attentionMaskShapeExpr;
         // varMap[positionIds] = positionIdsShapeExpr;
         // varMap[pastKeyValue] = pastKeyValueShapeExpr;
-        var inputs = new List<Var> { };
+        var inputs = new List<IVar> { };
 
         // for the input is optional
         foreach (var input in Context.Inputs)
@@ -145,6 +149,7 @@ public abstract class HuggingFaceModel
             }
         }
 
+        Context.CompileSession.CompileOptions.ShapeBucketOptions.VarMap = varMap;
         return (inputs, varMap);
     }
 
@@ -172,7 +177,7 @@ public abstract class HuggingFaceModel
         //     hiddenStates = Context.Outputs["hiddenStates"];
         // }
 
-        var output = new List<Expr?> { logits, kvCache, outAttention, hiddenStates, };
+        var output = new List<Expr?> { logits, kvCache, outAttention, hiddenStates };
         output.RemoveAll(item => item == null);
 
         return new IR.Tuple([.. output!]);
@@ -496,14 +501,14 @@ public abstract class HuggingFaceModel
             var causalMask = IR.F.Tensors.Slice(
                     attentionMask,
                     new[] { 0L },
-                    new RankedShape(keyStates.CheckedShape[-2]),
+                    new RankedShape(keyStates.CheckedShape[^2]),
                     new[] { 3L },
                     new[] { 1L });
 
             attnWeights += causalMask;
         }
 
-        attnWeights = IR.F.Tensors.Cast(IR.F.NN.Softmax(IR.F.Tensors.Cast(attnWeights, DataTypes.Float32), -1L), valueStates.CheckedDataType);
+        attnWeights = IR.F.Tensors.Cast(IR.F.NN.Softmax(IR.F.Tensors.Cast(attnWeights, DataTypes.Float32), 3L), valueStates.CheckedDataType);
 
         Expr attnOutput = IR.F.Math.MatMul(attnWeights, valueStates, query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward1" } });
         attnOutput = IR.F.Tensors.Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
@@ -642,6 +647,7 @@ public abstract class HuggingFaceModel
                 (sequence_length, target_length), fill_value=min_dtype, dtype=dtype, device=device
             )
             diagonal_attend_mask = torch.arange(target_length, device=device) > cache_position.reshape(-1, 1)
+            ;
             */
             var diagonalAttendMask = IR.F.Tensors.Range(0L, IR.F.Shapes.AsTensor(targtLen), 1L) > IR.F.Tensors.Reshape(cachePosition, new long[] { -1, 1 });
 
@@ -656,7 +662,9 @@ public abstract class HuggingFaceModel
                     )
                     diagonal_attend_mask.bitwise_or_(sliding_attend_mask)
             */
-            casualMask = casualMask * IR.F.Tensors.Cast(diagonalAttendMask, casualMask.CheckedDataType);
+
+            // casualMask = casualMask * IR.F.Tensors.Cast(diagonalAttendMask, casualMask.CheckedDataType);
+            casualMask = IR.F.Tensors.Where(diagonalAttendMask, casualMask, IR.F.Tensors.Cast(0f, casualMask.CheckedDataType));
 
             // casualMask = casualMask[None, None, :, :].expand(batch_size, 1, -1, -1)
             var expandShape = new RankedShape(batchSize, 1L, seqLen, targtLen);
@@ -670,7 +678,7 @@ public abstract class HuggingFaceModel
             */
             if (attentionMask != null)
             {
-                var maskLength = attentionMask.CheckedShape[-1];
+                var maskLength = attentionMask.CheckedShape[^1];
                 var paddingMask = IR.F.Tensors.Slice(
                     casualMask,
                     new[] { 0L, 0L, 0L, 0L },
@@ -702,7 +710,7 @@ public abstract class HuggingFaceModel
                 var leftPart = IR.F.Tensors.Slice(
                     casualMask,
                     new RankedShape(maskLength),
-                    new RankedShape(casualMask.CheckedShape[-1]),
+                    new RankedShape(casualMask.CheckedShape[^1]),
                     new[] { -1L },
                     new[] { 1L });
                 casualMask = IR.F.Tensors.Concat(new IR.Tuple(maskPart, leftPart), -1);
@@ -739,16 +747,16 @@ public abstract class HuggingFaceModel
         var targetLength = historyLen + seqLen + 1L;
         if (attentionMask != null)
         {
-            targetLength = attentionMask.CheckedShape[-1];
+            targetLength = attentionMask.CheckedShape[^1];
         }
 
-        var dataType = inputsEmbeds.CheckedDataType;
+        var dtype = inputsEmbeds.CheckedDataType;
 
         Expr casualMask = Prepare4dCausalAttentionMaskWithCachePosition(
                                             attentionMask,
                                             seqLen,
                                             targetLength,
-                                            dataType,
+                                            dtype,
                                             cachePosition,
                                             batchSize,
                                             pastKeyValues);
@@ -894,7 +902,7 @@ public abstract class HuggingFaceModel
         return System.Tuple.Create(output, paskKeyValues/*selfAttenWeight, mergedKeyValue*/);
     }
 
-    public virtual Tuple<Expr, List<Expr>, List<Expr>, List<Expr>> LLMModel(
+    public virtual Expr LLMModel(
             Expr inputIds,
             Expr pastKeyValues)
     {
@@ -948,7 +956,6 @@ public abstract class HuggingFaceModel
         // )
         // Call? casualMask = null;
 
-
         //
         var (invFreq_, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
 
@@ -959,16 +966,27 @@ public abstract class HuggingFaceModel
 
         var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreqExpanded.Evaluate().AsTensor(), attentionScaling);
 
-        var allHiddenStates = new List<Expr>();
-        var allSelfAttns = new List<Expr>();
-        var allKVcaches = new List<Expr>();
+        // var allHiddenStates = new List<Expr>();
+        // var allSelfAttns = new List<Expr>();
+        // var allKVcaches = new List<Expr>();
+        Expr? allHiddenStates = null;
+        Expr? allSelfAttns = null;
+        Expr? allKVcaches = null;
 
         // _ = new List<Tuple<Call, Call>>();
         for (int i = 0; i < (int)(long)Context!.Config!["num_hidden_layers"]; i++)
         {
             if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)
             {
-                allHiddenStates.Add(IR.F.Tensors.Unsqueeze(hiddenStates, new long[] { 0 }));
+                // allHiddenStates.Add(IR.F.Tensors.Unsqueeze(hiddenStates, new long[] { 0 }));
+                if (i == 0)
+                {
+                    allHiddenStates = IR.F.Tensors.Unsqueeze(hiddenStates, new long[] { 0 });
+                }
+                else
+                {
+                    allHiddenStates = IR.F.Tensors.Concat(new IR.Tuple(allHiddenStates!, IR.F.Tensors.Unsqueeze(hiddenStates, new long[] { 0 })), 0);
+                }
             }
 
             // var (hiddenStatesTmp, selfAttenWeights) = DecodeLayer(i, hiddenStates, casualMask, positionIds,
@@ -996,12 +1014,13 @@ public abstract class HuggingFaceModel
         // the last one
         Expr lastHiddenStates = LLMLayerNorm(hiddenStates, "model.norm.weight");
 
-        if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)
-        {
-            allHiddenStates.Add(IR.F.Tensors.Unsqueeze(lastHiddenStates, new long[] { 0 }));
-        }
+        // if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)
+        // {
+        //     // allHiddenStates.Add(IR.F.Tensors.Unsqueeze(lastHiddenStates, new long[] { 0 }));
+        //     allHiddenStates = IR.F.Tensors.Concat(new IR.Tuple(allHiddenStates!, IR.F.Tensors.Unsqueeze(lastHiddenStates, new long[] { 0 })), 0);
+        // }
 
-        return System.Tuple.Create(lastHiddenStates, allKVcaches, allHiddenStates, allSelfAttns);
+        return lastHiddenStates;
 
         // return Tuple.Create(lastHiddenStates, allSelfAttns, allKVcaches);
     }
@@ -1092,7 +1111,7 @@ public abstract class HuggingFaceModel
         var position_ids = Context.Inputs[2];
         var pastKeyValues = Context.Inputs![3];
 
-        var (lastHiddenStates, allSelfKV, allHiddenStates, allSelfAttns) = LLMModel(
+        var lastHiddenStates = LLMModel(
             input_ids,
             pastKeyValues!);
 

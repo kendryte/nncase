@@ -100,6 +100,7 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.BroadcastReshapeOutputNames>();
             p.Add<Passes.Rules.Neutral.BroadcastNopPadOutputNames>();
         });
+        passManager.Add<OptimizeByRangePass>();
         passManager.Add<ShapeInferPass>();
         RegisterPreAndPostProcess(passManager);
     }
@@ -245,6 +246,9 @@ public class Compiler : ICompiler
             p.Add<BroadcastInputMarker>();
             p.Add<BroadcastOutputMarker>();
         });
+
+        passManager.Add<InferRangePass>();
+        passManager.Add<OptimizeByRangePass>();
     }
 
     public void QuantizePass(IPassManager passManager)
@@ -360,7 +364,10 @@ public class Compiler : ICompiler
 
         await RunPassAsync(AutoPackingPass, "AutoPackingPass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
+#if false
+        // TODO: Enable AutoTilingPass when it is ready.
         await RunPassAsync(AutoTilingPass, "AutoTilingPass");
+#endif
 
         await RunPassAsync(TIRPass, "TIRPass");
 

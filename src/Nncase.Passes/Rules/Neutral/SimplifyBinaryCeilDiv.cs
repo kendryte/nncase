@@ -1,36 +1,35 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
+using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.F.Tensors;
+using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.Neutral;
 
 [RuleGenerator]
-public sealed partial class FoldNopWhere : RewriteRule<Pattern>
+public partial class SimplifyBinaryCeilDiv : RewriteRule<Pattern>
 {
-    /// <inheritdoc/>
-    public override Pattern Pattern { get; } = IsWhere(
-        "where",
-        "call",
-        false,
-        IsTensorConst("condition"),
+    public override Pattern Pattern { get; } = IsBinary(
+        "binary",
+        "binaryCall",
+        x => x.BinaryOp is BinaryOp.CeilDiv,
         IsWildcard("lhs"),
-        IsWildcard("rhs"));
+        IsTensorConst("rhs"));
 
-    private Expr? GetReplace(bool condition, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Binary binary, Expr lhs, TensorConst rhs)
     {
-        if (Expr.Equals(lhs, rhs))
+        if (rhs.Value.ToScalar<int>() == 1)
         {
             return lhs;
         }
 
-        return condition ? lhs : rhs;
+        return null;
     }
 }

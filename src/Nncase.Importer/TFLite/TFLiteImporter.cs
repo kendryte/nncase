@@ -64,10 +64,10 @@ public sealed partial class TFLiteImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
+    protected override (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
     {
         var inputsCount = _subGraph.InputsLength;
-        var createdInputs = new Var[inputsCount];
+        var createdInputs = new IVar[inputsCount];
         var dynVarMap = Enumerable
             .Range(0, inputsCount)
             .SelectMany(i =>
@@ -86,7 +86,7 @@ public sealed partial class TFLiteImporter : BaseImporter
             throw new NotImplementedException();
         }
 
-        var varMap = new Dictionary<Var, Dimension[]>();
+        var varMap = new Dictionary<IVar, Dimension[]>();
         for (int i = 0; i < inputsCount; i++)
         {
             var inputId = _subGraph.Inputs(i);

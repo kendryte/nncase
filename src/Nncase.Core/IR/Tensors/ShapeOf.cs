@@ -20,5 +20,5 @@ public sealed partial class ShapeOf : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(ShapeOf), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(ShapeOf), 0, "input", ParameterKind.Input);
 }
