@@ -369,7 +369,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             for (long j = 0; j < weights.Dimensions[1]; j++)
             {
                 var weightValue = weights[i, j];
-                scaledWeights[i, j] = (float)weightValue * quantizedWeightsInfo.GetScaleByIndex(i, j);
+                scaledWeights[i, j] = (float)(Float8E4M3)weightValue * quantizedWeightsInfo.GetScaleByIndex(i, j);
             }
         }
 

@@ -364,10 +364,39 @@ public abstract class HuggingFaceModel
         }
         else if (scaleW is not null && blockSizeArray?[0] > 0 && blockSizeArray?[1] > 0)
         {
+            long[] axes = new long[] { expr.CheckedShape.Rank - 1 };
+            var max = Nncase.IR.F.Tensors.ReduceMax(expr, axes, float.MinValue, 1);
+            var min = Nncase.IR.F.Tensors.ReduceMin(expr, axes, float.MaxValue, 1);
+            var limit = Nncase.IR.F.Math.Max(Nncase.IR.F.Math.Abs(max), Nncase.IR.F.Math.Abs(min));
+            if (limit.CheckedDataType != DataTypes.Float32)
+            {
+                limit = Nncase.IR.F.Tensors.Cast(limit, DataTypes.Float32);
+            }
+
+            var qScaleA = Nncase.IR.F.Math.Div((float)Float8E4M3.MaxNormal, limit);
+            var deqScaleA = Nncase.IR.F.Math.Div(1.0f, qScaleA);
+
+            if (qScaleA.CheckedDataType != expr.CheckedDataType)
+            {
+                qScaleA = Nncase.IR.F.Tensors.Cast(qScaleA, expr.CheckedDataType);
+            }
+
+            var qInput = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, qScaleA);
+            qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Float8E4M3);
+
             var transposeScaleW = IR.F.Tensors.Transpose(scaleW, new long[] { 1, 0 }).Evaluate().AsTensor();
             var quantizedWeightsInfo = new QuantizedWeightsInfo(transposeScaleW, blockSizeArray[0], blockSizeArray[1]);
             var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 });
-            var result = IR.F.Math.MatMul(expr, transposed_weight, expr.CheckedDataType, quantizedWeightsInfo).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+            var qWeights = IR.F.Tensors.Cast(transposed_weight, DataTypes.Float8E4M3);
+            var qMatmul = IR.F.Math.MatMul(qInput, qWeights, expr.CheckedDataType, quantizedWeightsInfo).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+
+            if (deqScaleA.CheckedDataType != expr.CheckedDataType)
+            {
+                deqScaleA = Nncase.IR.F.Tensors.Cast(deqScaleA, expr.CheckedDataType);
+            }
+
+            var result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA);
+
             if (bias != null)
             {
                 result = IR.F.Math.Add(result, bias);
