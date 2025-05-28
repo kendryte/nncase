@@ -812,6 +812,8 @@ public abstract class HuggingFaceModel
             head_dim = (long)Context.Config["head_dim"];
         }
 
+        var pagedAttentionConfig = (IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config;
+
         var batch_size = hiddenStates.CheckedShape[0];
         var seq_len = hiddenStates.CheckedShape[1];
         var (queryStates, keyStates, valueStates) = QKVCompute(count, hiddenStates, batch_size, seq_len, head_dim);
@@ -862,7 +864,7 @@ public abstract class HuggingFaceModel
         // //     false);
         //
         // // qwen2 use eager_attention_forward
-        // float scaling = (float)(1.0f / System.Math.Sqrt((double)head_dim));
+        var scaling = Tensor.FromScalar((float)(1.0f / System.Math.Sqrt((double)head_dim)));
         // var (hiddenStatesTmp, selfAttenWeight) = EagerAttentionForward(
         //     queryStates,
         //     keyStates,
@@ -881,10 +883,21 @@ public abstract class HuggingFaceModel
         var (qLanes, qPackedAxis) = ModelUtils.GetQKVPackParams((IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config, qDestLayout);
         var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
         var packedQ = qLanes.Length > 0 ? IR.F.Tensors.Pack(transQ, qLanes, qPackedAxis) : transQ;
+
+        // cpu : [q_head, max_query_len, max_seq_len + 1 ]<primtype>
+        var extra_size = pagedAttentionConfig.KVPrimType.SizeInBytes * (long)Context.Config["num_attention_heads"] * Context.ImportOptions.HuggingFaceOptions.MaxModelLen * (Context.ImportOptions.HuggingFaceOptions.MaxModelLen + 1);
+
+        // xpu : 10 mb.
+        if (Context.CompileSession!.Target.Name == "xpu")
+        {
+            extra_size = 10 * 1024 * 1024;
+        }
+
         var output = IR.F.NN.PagedAttention(
             packedQ,
             paskKeyValues,
-            Tensor.Zeros(DataTypes.UInt8, [1024]) /*Config*/,
+            Tensor.Zeros(DataTypes.UInt8, [extra_size]),
+            scaling.CastTo(pagedAttentionConfig.KVPrimType, CastMode.KDefault),
             count,
             qDestLayout);
 

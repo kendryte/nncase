@@ -19,10 +19,12 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     {
         var q = context.CheckArgumentType<IRType>(target, PagedAttention.Q);
         var extra = context.CheckArgumentType<IRType>(target, PagedAttention.Extra);
+        var scale = context.CheckArgumentType<TensorType>(target, PagedAttention.Scale);
+
         return (q, extra) switch
         {
-            (DistributedType dq, DistributedType dextra) => Visit(context, target, dq, dextra),
-            (TensorType tq, TensorType textra) => Visit(context, target, tq, textra),
+            (DistributedType dq, DistributedType dextra) => Visit(context, target, dq, dextra, scale),
+            (TensorType tq, TensorType textra) => Visit(context, target, tq, textra, scale),
             _ => new InvalidType("not support type"),
         };
     }
@@ -47,10 +49,11 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     {
         var q = context.GetOrtArgumentValue(target, PagedAttention.Q);
         var kvCaches = context.GetArgumentValueAsTensor<Reference<IPagedAttentionKVCache>>(target, PagedAttention.KVCaches);
-        return RefPagedAttn(q, kvCaches, 1.0f, target.LayerId, target.Layout).ToValue();
+        var scale = context.GetOrtArgumentValue(target, PagedAttention.Scale); // must match to prim kv type.
+        return RefPagedAttn(q, kvCaches, scale, target.LayerId, target.Layout).ToValue();
     }
 
-    private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, float scale, int layerId, IRArray<AttentionDimKind> qlayout)
+    private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, OrtKISharp.Tensor scale, int layerId, IRArray<AttentionDimKind> qlayout)
     {
         // TODO: Support DP
         if (kvCaches.Length != 1)
@@ -84,9 +87,9 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         {
             var seqLen = cache.SeqLen(seqId);
             var queryLen = seqLen - cache.ContextLen(seqId);
-            var q = OrtKI.Slice(query, new long[] { queryStart }, new long[] { queryStart + queryLen }, new long[] { 0L }, new long[] { 1L });
 
-            q = q * OrtKI.Cast(scale, (long)q.DataType); // [query_len, num_heads, head_dim] [L,Hq,E]
+            // [query_len, num_heads, head_dim] [L,Hq,E]
+            var q = OrtKI.Slice(query, new long[] { queryStart }, new long[] { queryStart + queryLen }, new long[] { 0L }, new long[] { 1L });
 
             var k = GatherKV(AttentionCacheKind.Key, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
             if (k.Shape[0] != q.Shape[1])
@@ -100,7 +103,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 k = OrtKI.Gather(k, indices, 0);
             }
 
-            var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS"); // [num_heads, query_len, seq_len] [H,L,S]
+            var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS") * scale; // [num_heads, query_len, seq_len] [H,L,S]
 
             // compute causal mask
             var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen]));
@@ -240,13 +243,29 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concatCache; // [num_heads, seq_len, head_dim]
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra, TensorType scale)
     {
+        if (!scale.IsScalar || scale.DType is not PrimType primType)
+        {
+            return new InvalidType($"scale {scale} should be scalar");
+        }
+
+        if ((q.DType is PrimType qPrimType && qPrimType != primType) ||
+            (q.DType is VectorType v && v.ElemType is PrimType vPrimType && vPrimType != primType))
+        {
+            return new InvalidType($"q {q.DType} and scale {scale.DType} should have same dtype");
+        }
+
         return q;
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra, TensorType scale)
     {
+        if (Visit(context, target, q.TensorType, extra, scale) is InvalidType invalidType)
+        {
+            return invalidType;
+        }
+
         // for xpu.
         if (q.Placement.Name == "cdxyt")
         {

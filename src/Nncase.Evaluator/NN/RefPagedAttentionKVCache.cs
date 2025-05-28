@@ -227,6 +227,7 @@ public sealed record RefPagedAttentionKVCache(
                 packedQuery,
                 updatedKVCache,
                 numTokens == 0 ? IR.F.Buffer.Uninitialized(config.KVPrimType, Nncase.TIR.MemoryLocation.Data, new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1)) : Tensor.Zeros(config.KVPrimType, [numQHeads, queryLens.Max(), seqLens.Max() + 1]), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
+                Tensor.FromScalar(1.0f).CastTo(config.KVPrimType, CastMode.KDefault),
                 layerId,
                 qLayout);
         }

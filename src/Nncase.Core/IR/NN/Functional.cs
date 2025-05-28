@@ -121,5 +121,5 @@ public static class NN
 
     public static Expr IdentityPagedAttentionKVCache(Expr input, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches) => new Call(new IdentityPagedAttentionKVCache(), input, numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches);
 
-    public static Expr PagedAttention(Expr q, Expr kvCaches, Expr extra, int layerId, AttentionDimKind[] qlayout) => new Call(new PagedAttention(layerId, new IRArray<AttentionDimKind>(qlayout)), q, kvCaches, extra);
+    public static Expr PagedAttention(Expr q, Expr kvCaches, Expr extra, Expr scale, int layerId, AttentionDimKind[] qlayout) => new Call(new PagedAttention(layerId, new IRArray<AttentionDimKind>(qlayout)), q, kvCaches, extra, scale);
 }
