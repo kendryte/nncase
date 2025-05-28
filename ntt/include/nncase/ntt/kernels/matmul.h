@@ -98,9 +98,10 @@ class matmul_impl;
  * @brief 1D-packed matmul with non transposed A/B or tranposed B.
  * @remarks Loop orders: (m, n, k)
  */
-template <bool AccumulateC, bool TransposedB, IsValidMatmulTensor TLhs, IsValidMatmulTensor TRhs,
-          IsValidMatmulTensor TOut, typename LhsPackedAxes, typename LhsPadedNums,
-          typename RhsPackedAxes, typename RhsPadedNums>
+template <bool AccumulateC, bool TransposedB, IsValidMatmulTensor TLhs,
+          IsValidMatmulTensor TRhs, IsValidMatmulTensor TOut,
+          typename LhsPackedAxes, typename LhsPadedNums, typename RhsPackedAxes,
+          typename RhsPadedNums>
 class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                   LhsPackedAxes, LhsPadedNums, RhsPackedAxes, RhsPadedNums> {
     using TOutElem = typename TOut::element_type;
@@ -115,7 +116,8 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
     static constexpr auto m0_subtile = policy_t::m0_subtile;
 
   public:
-    void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
+    void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output,
+                    float scaleLhs = 1.0f, float scaleRhs = 1.0f) {
         auto domain = slice_dims<TOut::rank() - 2>(output.shape());
         ntt::apply(domain, [&](auto out_offset_prefix) {
             ranked_shape<TOut::rank()> out_offset{};
@@ -135,13 +137,14 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                          .squeeze(make_index_axes<rhs_shape.rank() - 2>());
             auto c = output.view(out_offset, out_shape)
                          .squeeze(make_index_axes<out_shape.rank() - 2>());
-            matmul_2d_l1(a, b, c);
+            matmul_2d_l1(a, b, c, scaleLhs, scaleRhs);
         });
     }
 
   private:
     template <class TA, class TB, class TC>
-    constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c) {
+    constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c,
+                                float scaleLhs = 1.0f, float scaleRhs = 1.0f) {
         size_t M = c.shape()[c.rank() - 2];
         size_t N = c.shape()[c.rank() - 1];
         size_t K = a.shape()[a.rank() - 1];
@@ -160,12 +163,14 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
         for (; m1 < scaled_M / m0_tile * m0_tile; m1 += m0_tile) {
             size_t n1 = 0;
             for (; n1 < scaled_N / n0_tile * n0_tile; n1 += n0_tile) {
-                matmul_2d_l0<m0_tile, n0_tile>(a, b, c, K, m1, n1);
+                matmul_2d_l0<m0_tile, n0_tile>(a, b, c, K, m1, n1, scaleLhs,
+                                               scaleRhs);
             }
 
             if (scaled_N % n0_tile) {
                 for (; n1 < scaled_N; n1++) {
-                    matmul_2d_l0<m0_tile, 1>(a, b, c, K, m1, n1);
+                    matmul_2d_l0<m0_tile, 1>(a, b, c, K, m1, n1, scaleLhs,
+                                             scaleRhs);
                 }
             }
         }
@@ -174,12 +179,14 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
             for (; m1 < scaled_M; m1++) {
                 size_t n1 = 0;
                 for (; n1 < scaled_N / n0_tile * n0_tile; n1 += n0_tile) {
-                    matmul_2d_l0<1, n0_tile>(a, b, c, K, m1, n1);
+                    matmul_2d_l0<1, n0_tile>(a, b, c, K, m1, n1, scaleLhs,
+                                             scaleRhs);
                 }
 
                 if (scaled_N % n0_tile) {
                     for (; n1 < scaled_N; n1++) {
-                        matmul_2d_l0<1, 1>(a, b, c, K, m1, n1);
+                        matmul_2d_l0<1, 1>(a, b, c, K, m1, n1, scaleLhs,
+                                           scaleRhs);
                     }
                 }
             }
@@ -188,7 +195,7 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
 
     template <size_t M0Tile, size_t N0Tile, class TA, class TB, class TC>
     void matmul_2d_l0(const TA &a, const TB &b, TC &c, size_t K, size_t m1,
-                      size_t n1) {
+                      size_t n1, float scaleLhs = 1.0f, float scaleRhs = 1.0f) {
 
         constexpr auto m0_scale =
             ukernels::u_type_scale<pack_kind, TA, TB, TC>::m0_scale;
@@ -210,7 +217,7 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                          TransposedB ? make_ranked_shape(N0Tile, K)
                                      : make_ranked_shape(K, N0Tile));
         ntt::u_matmul<pack_kind, AccumulateC, false, TransposedB, M0Tile,
-                      N0Tile>(a1, b1, c0, K);
+                      N0Tile>(a1, b1, c0, K, scaleLhs, scaleRhs);
     }
 };
 } // namespace detail
@@ -237,7 +244,9 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
             [[maybe_unused]] LhsPackedAxes lhsPackedAxes = {},
             [[maybe_unused]] LhsPadedNums lhsPadedNums = {},
             [[maybe_unused]] RhsPackedAxes rhsPackedAxes = {},
-            [[maybe_unused]] RhsPadedNums rhsPadedNums = {}) {
+            [[maybe_unused]] RhsPadedNums rhsPadedNums = {},
+            [[maybe_unused]] float scaleLhs = 1.0f,
+            [[maybe_unused]] float scaleRhs = 1.0f) {
     static_assert(LhsPackedAxes::rank() == 0 || LhsPackedAxes::rank() == 1 ||
                       LhsPackedAxes::rank() == 2,
                   "currently only support 0~2d pack!");
@@ -253,7 +262,7 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                         std::decay_t<TOut>, LhsPackedAxes, LhsPadedNums,
                         RhsPackedAxes, RhsPadedNums>
         impl;
-    impl(lhs, rhs, output);
+    impl(lhs, rhs, output, scaleLhs, scaleRhs);
 }
 
 template <bool AccumulateC, bool TransposedA, bool TransposedB, class TLhs,
@@ -265,7 +274,9 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
             [[maybe_unused]] LhsPackedAxes lhsPackedAxes = {},
             [[maybe_unused]] LhsPadedNums lhsPadedNums = {},
             [[maybe_unused]] RhsPackedAxes rhsPackedAxes = {},
-            [[maybe_unused]] RhsPadedNums rhsPadedNums = {}) {
+            [[maybe_unused]] RhsPadedNums rhsPadedNums = {},
+            [[maybe_unused]] float scaleLhs = 1.0f,
+            [[maybe_unused]] float scaleRhs = 1.0f) {
     static_assert(LhsPackedAxes::rank() == 0 || LhsPackedAxes::rank() == 1 ||
                       LhsPackedAxes::rank() == 2,
                   "currently only support 0~2d pack!");
@@ -281,6 +292,6 @@ void matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                         std::decay_t<TOut>, LhsPackedAxes, LhsPadedNums,
                         RhsPackedAxes, RhsPadedNums>
         impl;
-    impl(lhs, rhs, output);
+    impl(lhs, rhs, output, scaleLhs, scaleRhs);
 }
 } // namespace nncase::ntt

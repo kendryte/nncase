@@ -164,8 +164,9 @@ struct u_matmul_generic {
     using BStride = detail::b_stride_getter<TransposedB, N0Tile>::Stride;
 
     template <class TA, class TB, class TC>
-    constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              size_t K) noexcept {
+    constexpr void operator()(const TA &a, const TB &b, TC &c0, size_t K,
+                              float scaleLhs = 1.0f,
+                              float scaleRhs = 1.0f) noexcept {
 
         constexpr auto m0_scale =
             ukernels::u_type_scale<PackKind, TA, TB, TC>::m0_scale;
@@ -236,13 +237,15 @@ struct u_matmul_generic {
 
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = (float)a0_tmp[i](index);
+                        a0_grouped[i](index) =
+                            (float)a0_tmp[i](index) * scaleLhs;
                     });
                 });
 
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = (float)b0_tmp[i](index);
+                        b0_grouped[i](index) =
+                            (float)b0_tmp[i](index) * scaleRhs;
                     });
                 });
 
@@ -274,11 +277,16 @@ struct u_matmul_generic {
                 TRhsElemGrouped b0_grouped[N0Tile];
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = (float)a0_tmp[i](
-                            index[0] * a0_grouped[i].shape()[1] + index[1]);
+                        a0_grouped[i](index) =
+                            (float)a0_tmp[i](index[0] *
+                                                 a0_grouped[i].shape()[1] +
+                                             index[1]) *
+                            scaleLhs;
                     });
                 });
-                loop<N0Tile>([&](auto i) { b0_grouped[i] = (float)b0_tmp[i]; });
+                loop<N0Tile>([&](auto i) {
+                    b0_grouped[i] = (float)b0_tmp[i] * scaleRhs;
+                });
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
@@ -313,11 +321,16 @@ struct u_matmul_generic {
                 using TLhsElemGrouped = float;
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
-                loop<M0Tile>([&](auto i) { a0_grouped[i] = (float)a0_tmp[i]; });
+                loop<M0Tile>([&](auto i) {
+                    a0_grouped[i] = (float)a0_tmp[i] * scaleLhs;
+                });
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = (float)b0_tmp[i](
-                            index[0] * b0_grouped[i].shape()[1] + index[1]);
+                        b0_grouped[i](index) =
+                            (float)b0_tmp[i](index[0] *
+                                                 b0_grouped[i].shape()[1] +
+                                             index[1]) *
+                            scaleRhs;
                     });
                 });
 
@@ -360,14 +373,17 @@ struct u_matmul_generic {
                 TRhsElemGrouped b0_grouped[N0Tile];
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = (float)a0_tmp[i](
-                            index[0] * a0_grouped[i].shape()[1] + index[1],
-                            index[2]);
+                        a0_grouped[i](index) =
+                            (float)a0_tmp[i](
+                                index[0] * a0_grouped[i].shape()[1] + index[1],
+                                index[2]) *
+                            scaleLhs;
                     });
                 });
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = (float)b0_tmp[i](index);
+                        b0_grouped[i](index) =
+                            (float)b0_tmp[i](index) * scaleRhs;
                     });
                 });
 
@@ -413,14 +429,20 @@ struct u_matmul_generic {
 
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = (float)a0_tmp[i](
-                            index[0] * a0_grouped[i].shape()[1] + index[1]);
+                        a0_grouped[i](index) =
+                            (float)a0_tmp[i](index[0] *
+                                                 a0_grouped[i].shape()[1] +
+                                             index[1]) *
+                            scaleLhs;
                     });
                 });
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = (float)b0_tmp[i](
-                            index[0] * b0_grouped[i].shape()[1] + index[1]);
+                        b0_grouped[i](index) =
+                            (float)b0_tmp[i](index[0] *
+                                                 b0_grouped[i].shape()[1] +
+                                             index[1]) *
+                            scaleRhs;
                     });
                 });
 
@@ -467,16 +489,20 @@ struct u_matmul_generic {
                 TRhsElemGrouped b0_grouped[N0Tile];
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = (float)a0_tmp[i](
-                            index[0] * a0_grouped[i].shape()[1] + index[1],
-                            index[2]);
+                        a0_grouped[i](index) =
+                            (float)a0_tmp[i](
+                                index[0] * a0_grouped[i].shape()[1] + index[1],
+                                index[2]) *
+                            scaleLhs;
                     });
                 });
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = (float)b0_tmp[i](
-                            index[1],
-                            index[0] * b0_grouped[i].shape()[2] + index[2]);
+                        b0_grouped[i](index) =
+                            (float)b0_tmp[i](
+                                index[1], index[0] * b0_grouped[i].shape()[2] +
+                                              index[2]) *
+                            scaleRhs;
                     });
                 });
 
@@ -508,8 +534,12 @@ struct u_matmul_generic {
                 float a0_grouped[M0Tile];
                 float b0_grouped[N0Tile];
 
-                loop<M0Tile>([&](auto i) { a0_grouped[i] = (float)a0_tmp[i]; });
-                loop<N0Tile>([&](auto i) { b0_grouped[i] = (float)b0_tmp[i]; });
+                loop<M0Tile>([&](auto i) {
+                    a0_grouped[i] = (float)a0_tmp[i] * scaleLhs;
+                });
+                loop<N0Tile>([&](auto i) {
+                    b0_grouped[i] = (float)b0_tmp[i] * scaleRhs;
+                });
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
@@ -555,8 +585,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
                 Arch> {
     using BStride = detail::b_stride_getter<TransposedB, N0Tile>::Stride;
     template <class TA, class TB, class TC>
-    constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              size_t K) noexcept {
+    constexpr void operator()(const TA &a, const TB &b, TC &c0, size_t K,
+                              float scaleLhs = 1.0f,
+                              float scaleRhs = 1.0f) noexcept {
         using TSubOutElem = ntt::vector<typename TOutElem::element_type,
                                         TOutElem::shape().last()>;
         using policy_t =
@@ -617,7 +648,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
                              TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem,
                              TRhsElem, TOutElem, Arch>
                 impl;
-            impl(a, b, c0, K);
+            impl(a, b, c0, K, scaleLhs, scaleRhs);
         }
     }
 };
@@ -630,8 +661,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                 Arch> {
     using BStride = detail::b_stride_getter<TransposedB, N0Tile>::Stride;
     template <class TA, class TB, class TC>
-    constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              size_t K) noexcept {
+    constexpr void operator()(const TA &a, const TB &b, TC &c0, size_t K,
+                              float scaleLhs = 1.0f,
+                              float scaleRhs = 1.0f) noexcept {
         constexpr auto m0_scale =
             ukernels::u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB,
                                    TC>::m0_scale;
@@ -709,13 +741,17 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                     TLhsElemGrouped a0_grouped[M0Tile];
                     TRhsElemGrouped b0_grouped[N0Tile];
 
-                    loop<M0Tile>(
-                        [&](auto i) { a0_grouped[i] = (float)a0_tmp[i]; });
+                    loop<M0Tile>([&](auto i) {
+                        a0_grouped[i] = (float)a0_tmp[i] * scaleLhs;
+                    });
 
                     loop<N0Tile>([&](auto i) {
                         ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                            b0_grouped[i](index) = (float)b0_tmp[i](
-                                index[0] * b0_grouped[i].shape()[1] + index[1]);
+                            b0_grouped[i](index) =
+                                (float)b0_tmp[i](index[0] *
+                                                     b0_grouped[i].shape()[1] +
+                                                 index[1]) *
+                                scaleRhs;
                         });
                     });
 
@@ -764,8 +800,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
                 Arch> {
     using BStride = detail::b_stride_getter<TransposedB, N0Tile>::Stride;
     template <class TA, class TB, class TC>
-    constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              size_t K) noexcept {
+    constexpr void operator()(const TA &a, const TB &b, TC &c0, size_t K,
+                              float scaleLhs = 1.0f,
+                              float scaleRhs = 1.0f) noexcept {
         using TSubOutElem = ntt::vector<typename TOutElem::element_type,
                                         TOutElem::shape().last()>;
         using policy_t =
@@ -837,7 +874,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
                              TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem,
                              TRhsElem, TOutElem, Arch>
                 impl;
-            impl(a, b, c0, K);
+            impl(a, b, c0, K, scaleLhs, scaleRhs);
         }
     }
 };
@@ -846,13 +883,14 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
 template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
           bool TransposedA, bool TransposedB, size_t M0Tile, size_t N0Tile,
           class TA, class TB, class TC>
-constexpr void u_matmul(const TA &a, const TB &b, TC &c, size_t K) noexcept {
+constexpr void u_matmul(const TA &a, const TB &b, TC &c, size_t K,
+                        float scaleLhs = 1.0f, float scaleRhs = 1.0f) noexcept {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
     ukernels::u_matmul<PackKind, AccumulateC, TransposedA, TransposedB, M0Tile,
                        N0Tile, TLhsElem, TRhsElem, TOutElem, true>
         impl;
-    impl(a, b, c, K);
+    impl(a, b, c, K, scaleLhs, scaleRhs);
 }
 } // namespace nncase::ntt
