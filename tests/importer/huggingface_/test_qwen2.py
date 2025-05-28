@@ -23,9 +23,9 @@ def test_qwen2(request):
     cfg = """
     [compile_opt]
     shape_bucket_enable = true
-    shape_bucket_range_info = { }
+    shape_bucket_range_info = { "sequence_length"=[1,512] }
     shape_bucket_segments_count = 2
-    shape_bucket_fix_var_map = { "batch_size"=1, "sequence_length"=256 }
+    shape_bucket_fix_var_map = { "batch_size"=1 }
     
     [huggingface_options]
     output_attentions = false
@@ -52,7 +52,7 @@ def test_qwen2(request):
     #TODO: Need remove!
     [target]
     [target.cpu]
-    infer = false
+    infer = true
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
