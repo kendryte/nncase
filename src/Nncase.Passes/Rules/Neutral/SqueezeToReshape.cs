@@ -27,7 +27,7 @@ public sealed partial class SqueezeToReshape : IRewriteRule
 {
     /// <inheritdoc/>
     public IPattern Pattern { get; } = IsSqueeze(
-        IsWildcard("input") with { TypePattern = HasFixedShape() },
+        IsWildcard("input"),
         IsFixedShape("axes"));
 
     private Expr? GetReplace(Expr input, long[] axes)
