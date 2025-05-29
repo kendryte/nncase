@@ -13,32 +13,21 @@
  * limitations under the License.
  */
 #pragma once
-#include "../primitive_ops.h"
-#include "../ukernels/u_unary.h"
-#include "detail/elementwise_impl.h"
+#include "../apply.h"
+#include "detail/unary_like_impl.h"
 #include <type_traits>
 
 namespace nncase::ntt {
 namespace detail {
 template <Tensor TIn, Tensor TOut>
-class expand_impl
-    : public elementwise_impl<true, expand_impl<TIn, TOut>, TOut, TIn> {
+class expand_impl : public unary_like_impl<expand_impl<TIn, TOut>, TIn, TOut> {
     using TElem = typename TIn::element_type;
 
   public:
-    template <size_t Axis, class TInP, Shape TInRestShape, class TOutP,
-              Shape TOutRestShape>
-    constexpr void
-    apply_contiguous(TInP &in_p, const TInRestShape &in_rest_shape,
-                     TOutP &out_p, const TOutRestShape &out_rest_shape) {
-        if (in_rest_shape.length() == 1) {
-            ntt::u_unary(ntt::ops::copy<TElem>{}, in_p, dim_zero, out_p,
-                         dim_one, out_rest_shape.length());
-        } else {
-            // Non broadcast
-            ntt::u_unary(ntt::ops::copy<TElem>{}, in_p, dim_one, out_p, dim_one,
-                         out_rest_shape.length());
-        }
+    template <Tensor TBroadcastedIn>
+    void invoke_ukernel(const TBroadcastedIn &input, TOut &output) {
+        ntt::apply(output.shape(),
+                   [&](auto index) { output(index) = input(index); });
     }
 };
 

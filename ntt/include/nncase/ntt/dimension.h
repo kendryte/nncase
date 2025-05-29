@@ -36,7 +36,8 @@ template <dim_t Value>
 struct is_fixed_dim_t<fixed_dim<Value>> : std::true_type {};
 
 template <class T>
-inline constexpr bool is_fixed_dim_v = is_fixed_dim_t<T>::value;
+inline constexpr bool is_fixed_dim_v =
+    is_fixed_dim_t<std::remove_cv_t<T>>::value;
 
 template <class T>
 concept DynamicDimension = std::is_integral_v<T>;

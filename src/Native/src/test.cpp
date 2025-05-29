@@ -728,6 +728,16 @@ void test_cast() {
 }
 
 void test_expand() {
+    // [1, 3, 5, 7] strides = [3*5*7, 5*7, 7 , 1]
+    //          [1] strides = [1] -> shape [1, 3, 5, 7] strides = [0, 0, 0, 1]
+    // [1, 3, 5, 7] strides = [3*5*7, 5*7, 7 , 1]
+    //          [7] strides = [1] -> shape [1, 3, 5, 7] strides = [0, 0, 0, 1]
+    // [1, 3, 5, 7] strides = [3*5*7, 5*7, 7 , 1]
+    //       [5, 7] strides = [7, 1] -> shape [1, 3, 5, 7] strides = [0, 0, 7,
+    //       1]
+    // [1, 3, 5, 7] strides = [3*5*7, 5*7, 7 , 1]
+    //       [5, 1] strides = [1, 1] -> shape [1, 3, 5, 7] strides = [0, 0, 1,
+    //       1]
     auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 2>);
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 2>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
@@ -738,12 +748,11 @@ void test_expand() {
     assert(are_floats_equal(tb(1, 1), 1.f));
 }
 
-#if 0
 void test_where() {
-    ntt::tensor<bool, ntt::fixed_shape<2, 2>> tcond;
-    ntt::tensor<float, ntt::fixed_shape<2, 2>> tx;
-    ntt::tensor<float, ntt::fixed_shape<2, 2>> ty;
-    ntt::tensor<float, ntt::fixed_shape<2, 2>> tout;
+    auto tcond = ntt::make_tensor<bool>(ntt::fixed_shape_v<2, 2>);
+    auto tx = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 2>);
+    auto ty = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 2>);
+    auto tout = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 2>);
     tcond(0, 0) = true;
     tcond(0, 1) = false;
     tcond(1, 0) = false;
@@ -757,6 +766,7 @@ void test_where() {
     assert(are_floats_equal(tout(1, 1), 3.f));
 }
 
+#if 0
 void test_reduce_arg() {
     ntt::tensor<float, ntt::fixed_shape<2, 4>> ta;
     ta(0, 0) = 0.f;
@@ -814,12 +824,12 @@ int main() {
     test_reduce();
     test_cast();
     test_expand();
+    test_where();
 #if 0
     test_matmul_transpose_b();
     test_caching();
     test_unary_binary();
     test_tensor_view();
-    test_where();
     test_reduce_arg();
 #endif
 

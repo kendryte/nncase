@@ -24,10 +24,12 @@ class clamp_impl
     : public unary_like_impl<clamp_impl<TIn, TOut, TElem>, TIn, TOut> {
 
   public:
-    template <class T1>
-    constexpr void invoke_ukernel(const T1 *input, T1 *output, size_t extent,
-                                  const TElem &min, const TElem &max) {
-        ntt::u_clamp(input, 1, output, 1, min, max, extent);
+    template <Tensor TBroadcastedIn>
+    void invoke_ukernel(const TBroadcastedIn &input, TOut &output,
+                        const TElem &min, const TElem &max) {
+        ntt::apply(output.shape(), [&](auto index) {
+            output(index) = ntt::clamp(input(index), min, max);
+        });
     }
 };
 } // namespace detail

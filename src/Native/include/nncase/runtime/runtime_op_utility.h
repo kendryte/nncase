@@ -62,6 +62,13 @@ inline std::size_t compute_strides(const shape_type &shape,
         data_size =
             strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
     }
+
+    // Post process: replace the stride with 0 if the shape is 1.
+    for (size_t i = 0; i < shape.size(); i++) {
+        if (shape[i] == 1) {
+            strides[i] = 0;
+        }
+    }
     return static_cast<std::size_t>(data_size);
 }
 } // namespace detail

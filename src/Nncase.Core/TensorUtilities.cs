@@ -141,6 +141,15 @@ public static class TensorUtilities
             }
         }
 
+        // Post process: replace the stride with 0 if the dimension is 1.
+        foreach (ref var cntStride in strides.AsSpan())
+        {
+            if (cntStride == T.One)
+            {
+                cntStride = T.Zero;
+            }
+        }
+
         return strides;
     }
 
@@ -182,6 +191,12 @@ public static class TensorUtilities
                 strides[i] = stride;
                 stride *= dimensions[i];
             }
+        }
+
+        // Post process: replace the stride with 0 if the dimension is 1.
+        foreach (ref var cntStride in strides.AsSpan())
+        {
+            cntStride = Dimension.Select(cntStride, Dimension.One, Dimension.Zero, cntStride);
         }
 
         return strides;

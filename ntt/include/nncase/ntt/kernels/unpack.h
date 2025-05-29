@@ -75,7 +75,8 @@ template <Tensor TIn, Tensor TOut> class unpack_impl<TIn, TOut, 1> {
             else
                 ntt::u_unpack_1d_ranked<elem_shape[0_dim], TVec,
                                         typename TOut::element_type>(
-                    pin, 1, input.strides()[fixed_dim_v<PackAxis>], pout,
+                    pin, 1,
+                    input.shape().template slice<PackAxis + 1>().length(), pout,
                     count);
         } else {
             const auto domain = input.shape().concat(elem_shape);
@@ -117,8 +118,9 @@ template <Tensor TIn, Tensor TOut> class unpack_impl<TIn, TOut, 2> {
             ntt::u_unpack_2d_ranked<elem_shape[0_dim], elem_shape[1_dim], TIn,
                                     typename TOut::element_type, PackAxis0,
                                     PackAxis1>(
-                input, 1, input_strides[PackAxis0], input_strides[PackAxis1],
-                pout, count);
+                input, 1, input_shape.template slice<PackAxis0 + 1>().length(),
+                input_shape.template slice<PackAxis1 + 1>().length(), pout,
+                count);
         } else {
             const auto domain = input.shape().concat(elem_shape);
             apply(domain, [&](auto index) {

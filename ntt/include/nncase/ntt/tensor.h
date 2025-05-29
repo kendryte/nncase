@@ -77,7 +77,7 @@ constexpr auto make_unique_fixed_tensor() {
 template <ScalarOrVector T, class TBuffer, Shape TShape, Strides TStrides>
 constexpr auto make_tensor_view(TBuffer &&buffer, const TShape &shape,
                                 const TStrides &strides) {
-    if constexpr (std::is_pointer_v<TBuffer>) {
+    if constexpr (std::is_pointer_v<std::decay_t<TBuffer>>) {
         return tensor_view<T, TShape, TStrides>(
             make_span(buffer, shape, strides), shape, strides);
     } else {
@@ -172,45 +172,41 @@ class basic_tensor
                               dynamic_shape_t<shape_type::rank()>{shape()[0]});
     }
 
-    template <Dimensions Index, Shape UShape>
-    constexpr tensor_view<T, UShape, TStrides>
-    view(const Index &index, const UShape &shape) noexcept {
-        if constexpr (FixedStrides<TStrides>) {
-            auto offset = linear_offset(index, strides());
-            auto begin = elements().data() + offset;
-            if constexpr (FixedShape<UShape>) {
-                constexpr size_t size = linear_size(UShape{}, TStrides{});
-                return {std::span<T, size>(begin, size), shape, TStrides{}};
-            } else {
-                size_t size = linear_size(shape, TStrides{});
-                return {std::span(begin, size), shape, strides()};
-            }
-        } else {
-            return {elements().subspan(linear_offset(index, strides()),
-                                       linear_size(shape, strides())),
-                    shape, strides()};
-        }
+    template <Shape UShape>
+    constexpr auto broadcast_to(const UShape &new_shape) {
+        static_assert(UShape::rank() >= TShape::rank(),
+                      "Broadcast shape must have rank greater than or equal to "
+                      "the tensor shape");
+        auto new_strides =
+            broadcast_strides<UShape::rank() - rank()>(strides());
+        return make_tensor_view<T>(elements(), new_shape, new_strides);
+    }
+
+    template <Shape UShape>
+    constexpr auto broadcast_to(const UShape &new_shape) const {
+        static_assert(UShape::rank() >= TShape::rank(),
+                      "Broadcast shape must have rank greater than or equal to "
+                      "the tensor shape");
+        auto new_strides =
+            broadcast_strides<UShape::rank() - rank()>(strides());
+        return make_tensor_view<const T>(elements(), new_shape, new_strides);
     }
 
     template <Dimensions Index, Shape UShape>
-    constexpr tensor_view<const T, UShape, TStrides>
-    view(const Index &index, const UShape &shape) const noexcept {
-        if constexpr (FixedStrides<TStrides>) {
-            auto offset = linear_offset(index, strides());
-            auto begin = elements().data() + offset;
-            if constexpr (FixedShape<UShape>) {
-                constexpr size_t size = linear_size(UShape{}, TStrides{});
-                return {std::span<const T, size>(begin, size), shape,
-                        TStrides{}};
-            } else {
-                size_t size = linear_size(shape, strides());
-                return {std::span(begin, size), shape, strides()};
-            }
-        } else {
-            return {elements().subspan(linear_offset(index, strides()),
-                                       linear_size(shape, strides())),
-                    shape, strides()};
-        }
+    constexpr auto view(const Index &index, const UShape &shape) noexcept {
+        auto offset = linear_offset(index, strides());
+        auto begin = elements().data() + offset;
+        return make_tensor_view<T>(begin, shape,
+                                   canonicalize_strides(shape, strides()));
+    }
+
+    template <Dimensions Index, Shape UShape>
+    constexpr auto view(const Index &index,
+                        const UShape &shape) const noexcept {
+        auto offset = linear_offset(index, strides());
+        auto begin = elements().data() + offset;
+        return make_tensor_view<const T>(
+            begin, shape, canonicalize_strides(shape, strides()));
     }
 
     template <Dimensions Index>

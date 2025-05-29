@@ -22,15 +22,12 @@ template <Tensor TLhs, Tensor TRhs, Tensor TOut>
 class compare_impl : public binary_like_impl<compare_impl<TLhs, TRhs, TOut>,
                                              TLhs, TRhs, TOut> {
   public:
-    template <class TLhsElem, Dimension TLhsStride, class TRhsElem,
-              Dimension TRhsStride, class TOutElem, Dimension TOutStride,
-              class Op>
-    void invoke_ukernel(const TLhsElem *lhs, const TLhsStride &lhs_stride,
-                        const TRhsElem *rhs, const TRhsStride &rhs_stride,
-                        TOutElem *output, const TOutStride &output_stride,
-                        size_t extent, Op &op) {
-        ntt::u_compare(op, lhs, lhs_stride, rhs, rhs_stride, output,
-                       output_stride, extent);
+    template <Tensor TBroadcastedLhs, Tensor TBroadcastedRhs, class Op>
+    void invoke_ukernel(const TBroadcastedLhs &lhs, const TBroadcastedRhs &rhs,
+                        TOut &output, const Op &op) {
+        ntt::apply(output.shape(), [&](auto index) {
+            output(index) = op(lhs(index), rhs(index));
+        });
     }
 };
 } // namespace detail
@@ -38,8 +35,8 @@ class compare_impl : public binary_like_impl<compare_impl<TLhs, TRhs, TOut>,
 template <template <class T1, class T2> class Op, Tensor TLhs, Tensor TRhs,
           class TOut>
 void compare(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-             const Op<typename TLhs::element_type, typename TRhs::element_type>
-                 &op = {}) {
+             const Op<std::remove_cv_t<typename TLhs::element_type>,
+                      std::remove_cv_t<typename TRhs::element_type>> &op = {}) {
     static_assert(std::is_same_v<typename TLhs::element_type,
                                  typename TRhs::element_type>,
                   "compare only support same element type now");

@@ -17,26 +17,15 @@
 
 namespace nncase::ntt::detail {
 template <class TDerived, Tensor TIn, Tensor TOut>
-class unary_like_impl : public elementwise_impl<false, TDerived, TOut, TIn> {
+class unary_like_impl : public elementwise_impl<TDerived, TOut, TIn> {
 
   public:
-    using elementwise_impl<false, TDerived, TOut, TIn>::derived;
+    using elementwise_impl<TDerived, TOut, TIn>::derived;
 
-    template <size_t Axis, class TInP, Shape TInRestShape, class TOutP,
-              class TOutRestShape, class... TArgs>
-    constexpr void apply_contiguous(TInP &in_p, const TInRestShape &rest_shape,
-                                    TOutP &out_p, const TOutRestShape &,
-                                    TArgs &&...args) {
-        const auto inner_size = rest_shape.length();
-        unary_contiguous(in_p, out_p, inner_size, std::forward<TArgs>(args)...);
-    }
-
-  private:
-    template <class T1, class T2, class... TArgs>
-    constexpr void unary_contiguous(const T1 *input, T2 *output, size_t extent,
-                                    TArgs &&...args) {
-        derived().invoke_ukernel(input, output, extent,
-                                 std::forward<TArgs>(args)...);
+    template <Tensor TBroadcastedIn, class... TArgs>
+    constexpr void apply(const TBroadcastedIn &input, TOut &output,
+                         TArgs &&...args) {
+        derived().invoke_ukernel(input, output, std::forward<TArgs>(args)...);
     }
 };
 } // namespace nncase::ntt::detail

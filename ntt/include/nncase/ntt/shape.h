@@ -486,6 +486,22 @@ DEFINE_NTT_MAKE_DIMS(strides)
 
 #undef DEFINE_NTT_MAKE_DIMS
 
+template <Shape TShape, Strides TStrides>
+constexpr auto canonicalize_strides(const TShape &shape,
+                                    const TStrides &strides) noexcept {
+    static_assert(TShape::rank() == TStrides::rank(),
+                  "Shape and strides must have the same rank");
+    // Replace the stride with 0 if the shape is 1
+    return generate_strides<TShape::rank()>([&](auto axis) {
+        const auto dim = shape[axis];
+        if constexpr (FixedDimension<decltype(dim)>) {
+            return ntt::select<(dim == 1)>(dim_zero, strides[axis]);
+        } else {
+            return dim == 1 ? 0 : dim_value(strides[axis]);
+        }
+    });
+}
+
 namespace detail {
 template <size_t Axis, Shape TShape> struct default_strides_impl {
     static_assert(Axis > 0 && Axis <= TShape::rank(), "Axis out of bounds");
@@ -493,27 +509,34 @@ template <size_t Axis, Shape TShape> struct default_strides_impl {
     template <Strides TStrides>
     constexpr auto
     operator()([[maybe_unused]] const TShape &shape,
-               [[maybe_unused]] const TStrides &strides) noexcept {
-        auto new_stride = [&shape, &strides]() {
+               [[maybe_unused]] const TStrides &cnt_strides) noexcept {
+        auto new_stride = [&shape, &cnt_strides]() {
             if constexpr (Axis == TShape::rank()) {
                 (void)shape;
-                (void)strides;
+                (void)cnt_strides;
                 return dim_one;
             } else {
                 auto dim = shape[fixed_dim_v<Axis>];
-                auto last_stride = strides[dim_zero];
+                auto last_stride = cnt_strides[dim_zero];
                 return last_stride * dim;
             }
         }();
-        auto new_strides = strides.prepend(new_stride);
+        auto new_strides = cnt_strides.prepend(new_stride);
         if constexpr (Axis == 1) {
-            return new_strides;
+            return canonicalize_strides(shape, new_strides);
         } else {
             return default_strides_impl<Axis - 1, TShape>{}(shape, new_strides);
         }
     }
 };
 } // namespace detail
+
+template <dim_t ExtendRank, Strides TStrides>
+constexpr auto broadcast_strides(const TStrides &strides) noexcept {
+    static_assert(ExtendRank >= 0,
+                  "Extend rank must be greater than or equal to 0");
+    return make_zeros_strides<ExtendRank>().concat(strides);
+}
 
 template <Shape TShape>
 constexpr auto default_strides([[maybe_unused]] const TShape shape) noexcept {

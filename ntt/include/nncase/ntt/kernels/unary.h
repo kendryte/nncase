@@ -15,24 +15,24 @@
 #pragma once
 #include "../ukernels.h"
 #include "detail/unary_like_impl.h"
-#include "nncase/ntt/ukernels/u_unary.h"
 
 namespace nncase::ntt {
 namespace detail {
 template <Tensor TIn, Tensor TOut>
 class unary_impl : public unary_like_impl<unary_impl<TIn, TOut>, TIn, TOut> {
   public:
-    template <class T1, class Op>
-    constexpr void invoke_ukernel(const T1 *input, T1 *output, size_t extent,
-                                  Op &op) {
-        ntt::u_unary(op, input, 1, output, 1, extent);
+    template <Tensor TBroadcastedIn, class Op>
+    void invoke_ukernel(const TBroadcastedIn &input, TOut &output,
+                        const Op &op) {
+        ntt::apply(output.shape(),
+                   [&](auto index) { output(index) = op(input(index)); });
     }
 };
 } // namespace detail
 
 template <template <class T> class Op, Tensor TIn, class TOut>
 void unary(const TIn &input, TOut &&output,
-           const Op<std::decay_t<typename TIn::element_type>> &op = {}) {
+           const Op<std::remove_cv_t<typename TIn::element_type>> &op = {}) {
     detail::unary_impl<TIn, std::decay_t<TOut>> impl;
     impl(input, output, op);
 }
