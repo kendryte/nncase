@@ -414,6 +414,10 @@ public static class TypeInference
                 {
                     dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lane);
                 }
+                else
+                {
+                    dims[axis] = dims[axis] / lane;
+                }
             }
 
             return new TensorType(vType, new RankedShape(dims));

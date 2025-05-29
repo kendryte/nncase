@@ -54,15 +54,15 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.NTT.PackedBinary packedBinary:
                 return TIR.F.NTT.Binary(packedBinary.BinaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
             case IR.NTT.PackedMatMul packed_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolices[^1] is SBPSplit:
-                return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packed_mat_mul_summa.LhsPackedAxes, packed_mat_mul_summa.LhsPadedNums, packed_mat_mul_summa.RhsPackedAxes, packed_mat_mul_summa.RhsPadedNums, packed_mat_mul_summa.TransposeA, packed_mat_mul_summa.TransposeB);
+                return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packed_mat_mul_summa.LhsPackedAxes, packed_mat_mul_summa.RhsPackedAxes, packed_mat_mul_summa.TransposeA, packed_mat_mul_summa.TransposeB);
             case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolices[^1] is SBPSplit:
                 return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
             case IR.NTT.PackedMatMul packedMatMul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packedMatMul.LhsPackedAxes, packedMatMul.LhsPadedNums, packedMatMul.RhsPackedAxes, packedMatMul.RhsPadedNums, packedMatMul.TransposeA, packedMatMul.TransposeB, packedMatMul.FusedReduce);
+                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packedMatMul.LhsPackedAxes, packedMatMul.RhsPackedAxes, packedMatMul.TransposeA, packedMatMul.TransposeB, packedMatMul.FusedReduce);
             case IR.Math.MatMul matmul:
                 return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
             case IR.CustomNTT.MatMul matmul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.LhsPackedAxes, matmul.LhsPadedNums, matmul.RhsPackedAxes, matmul.RhsPadedNums, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath);
+                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.LhsPackedAxes, matmul.RhsPackedAxes, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath);
             case IR.NN.Conv2D conv:
                 {
                     var input = call[IR.NN.Conv2D.Input];
@@ -105,7 +105,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Tensors.Gather gather:
                 return TIR.F.NTT.Gather((Expr)arguments[0], (Expr)arguments[1], output, gather.Axis);
             case IR.NN.Pad pad when pad.PadMode == PadMode.Constant:
-                return TIR.F.NTT.Pad((Expr)arguments[0], output, Tensor.From(((Paddings)call[IR.NN.Pad.Pads]).ToValueArray()).ToArray(), ((TensorConst)call[IR.NN.Pad.Value]).Value.ToArray<float>()[0]);
+                return TIR.F.NTT.Pad((Expr)arguments[0], output, ((Paddings)call[IR.NN.Pad.Pads]).Select(p => new[] { p.Before, p.After }).SelectMany(p => p).ToArray(), ((TensorConst)call[IR.NN.Pad.Value]).Value.ToArray<float>()[0]);
             case IR.Math.Reduce reduce:
                 return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, Array.Empty<int>(), Array.Empty<int>(), ((RankedShape)call[IR.Math.Reduce.Axes]).ToValueArray().Select(x => Util.PositiveIndex(x, arguments[0].CheckedTensorType)).OrderBy(a => a).ToArray().ToInts(), ((TensorConst)call[IR.Math.Reduce.KeepDims]).Value.ToArray<bool>()[0], reduce.ReduceOp);
             case IR.Math.ReduceArg reduceArg:

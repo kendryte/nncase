@@ -75,10 +75,10 @@ public sealed class DimRemainder : Dimension, IEquatable<DimRemainder?>
         if (Numerator.Metadata.Range is ValueRange<double> numRange && Denominator.Metadata.Range is ValueRange<double> denRange)
         {
             var ranges = new[] {
-                (long)numRange.Min % (long)denRange.Min,
-                (long)numRange.Min % (long)denRange.Max,
-                (long)numRange.Max % (long)denRange.Min,
-                (long)numRange.Max % (long)denRange.Max,
+                (long)(numRange.Min % denRange.Min),
+                (long)(numRange.Min % denRange.Max),
+                (long)(numRange.Max % denRange.Min),
+                (long)(numRange.Max % denRange.Max),
             };
             return new(ranges.Min(), ranges.Max());
         }

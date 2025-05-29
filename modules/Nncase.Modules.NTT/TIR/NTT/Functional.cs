@@ -45,24 +45,24 @@ public partial class NTT
         return new Call(new TIR.NTT.Binary(binaryOp), lhs, rhs, output);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "")
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "")
     {
-        return new Call(new Matmul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums, transA, transB, fusedReduce, cSourcePath), lhs, rhs, output, loadC);
+        return new Call(new Matmul(lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce, cSourcePath), lhs, rhs, output, loadC);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC)
     {
-        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), false, false, false, null), lhs, rhs, output, loadC);
+        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null), lhs, rhs, output, loadC);
     }
 
-    public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false)
+    public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false)
     {
-        return new Call(new SUMMA(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums, transA, transB), lhs, rhs, output, loadC);
+        return new Call(new SUMMA(lhsPackedAxes, rhsPackedAxes, transA, transB), lhs, rhs, output, loadC);
     }
 
     public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC)
     {
-        return new Call(new SUMMA(new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), new IRArray<int>(), false, false), lhs, rhs, output, loadC);
+        return new Call(new SUMMA(new IRArray<int>(), new IRArray<int>(), false, false), lhs, rhs, output, loadC);
     }
 
     public static Expr Pack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
@@ -162,7 +162,7 @@ public partial class NTT
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    public static Expr Pad(Expr input, Expr ret, long[] pads, float padValue)
+    public static Expr Pad(Expr input, Expr ret, Dimension[] pads, float padValue)
     {
         return new Call(new Pad(pads, padValue), input, ret);
     }
