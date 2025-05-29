@@ -51,8 +51,7 @@ public class UnitTestImporter : TestClassBase
         Assert.True(module.Entry!.InferenceType());
     }
 
-    // [Fact(Skip = "There is no HuggingFace model. HuggingFaceImport will be tested in pytest!")]
-    [Fact]
+    [Fact(Skip = "There is no HuggingFace model. HuggingFaceImport will be tested in pytest!")]
     public async Task TestImportHuggingFace()
     {
         var file = "/Users/curio/Canaan/nncase/tests/llm/Qwen/Qwen2.5-0.5B-Instruct"; // TODO: need a relative path!

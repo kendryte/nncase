@@ -26,17 +26,21 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed partial class SqueezeToReshape : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsSqueeze(
+    public IPattern Pattern { get; } = IsSqueeze("target", "call",
         IsWildcard("input"),
         IsFixedShape("axes"));
 
-    private Expr? GetReplace(Expr input, long[] axes)
+    private Expr? GetReplace(Call call, Expr input, long[] axes)
     {
+        if (axes.Length == 0)
+        {
+            // If axes is empty, we can return the input directly.
+            return call;
+        }
+
         var inShape = (RankedShape)input.CheckedShape;
         var axesArray = axes.Select(x => Util.PositiveIndex(x, inShape.Rank)).ToArray();
-        var newShape = axesArray.Length == 0
-            ? input.CheckedShape.Where(d => !d.IsFixed || d.FixedValue != 1)
-            : input.CheckedShape.Where((_, i) => !axesArray.Contains(i));
+        var newShape = input.CheckedShape.Where((_, i) => !axesArray.Contains(i));
         return Reshape(input, new RankedShape(newShape.ToArray()));
     }
 }
