@@ -58,7 +58,7 @@ template <typename T> ortki::DataType primitive_type2ort_type() {
     return ort_type;
 }
 
-template <ntt::Tensor TTensor> ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
+template <ntt::TensorOrVector TTensor> ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
     using T = typename std::decay_t<TTensor>::element_type;
     void *buffer;
     if constexpr (ntt::Vector<TTensor>) {
@@ -106,7 +106,7 @@ ntt2ort(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor) {
     return make_tensor(buffer, ort_type, shape, r2);
 }
 
-template <ntt::Tensor TTensor>
+template <ntt::TensorOrVector TTensor>
 void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
     size_t size = 0;
     void *ort_ptr = tensor_buffer(ort_tensor, &size);

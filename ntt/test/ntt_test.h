@@ -174,7 +174,7 @@ void init_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor,
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
 }
 
-template <ntt::Tensor TTensor>
+template <ntt::TensorOrVector TTensor>
 bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;

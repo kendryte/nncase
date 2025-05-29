@@ -676,7 +676,7 @@ using namespace ortki;
         NttTest::ort2ntt(ort_output, ntt_output2);                             \
         EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));        \
     }                                                                          \
-    TEST(UnaryTest##ort_name##, vector) {                                      \
+    TEST(UnaryTest##ort_name, vector) {                                        \
         TEST_VECTOR(float)                                                     \
         TEST_VECTOR(int32_t)                                                   \
         TEST_VECTOR(int64_t)                                                   \
