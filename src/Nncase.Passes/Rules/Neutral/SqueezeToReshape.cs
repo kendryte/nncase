@@ -26,7 +26,9 @@ namespace Nncase.Passes.Rules.Neutral;
 public sealed partial class SqueezeToReshape : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsSqueeze("target", "call",
+    public IPattern Pattern { get; } = IsSqueeze(
+        "target",
+        "call",
         IsWildcard("input"),
         IsFixedShape("axes"));
 
