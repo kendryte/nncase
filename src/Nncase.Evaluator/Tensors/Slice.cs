@@ -184,10 +184,10 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
             if (stride < 0)
             {
                 // document in onnx operators:
-                // for positive stepping and [0, dims[axes[i]]-1] for negative stepping.
+                // starts[i] is clamped into the range [0, dims[axes[i]]-1].
                 var begin = TranslateBeginEnd(begins[i], inDim, 0, -1);
 
-                // while for negative stepping it is clamped to [-1, dims[axes[i]]-1].
+                // end[i] is clamped into the range [-1, dims[axes[i]]-1].
                 var end = TranslateBeginEnd(ends[i], inDim, -1, -1);
                 return Dimension.CeilDiv(begin - end, Dimension.Abs(stride));
             }

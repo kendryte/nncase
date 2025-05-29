@@ -14,6 +14,7 @@
 //  */
 // #pragma once
 // #include "../loop.h"
+// #include "nncase/ntt/shape.h"
 // #include <cstddef>
 // #include <type_traits>
 
@@ -143,9 +144,8 @@
 // };
 // } // namespace ukernels
 
-// template <IsFixedDims TPerm, IsFixedTensor TIn, IsFixedTensor TOut, size_t Rank,
-//           size_t... Index>
-// constexpr void u_transpose(const TIn &input, TOut &output,
+// template <Tensor TIn, Tensor TOut, FixedDimensions TPerms, size_t... Index>
+// constexpr void u_transpose(const TIn &input, TOut &output, const TPerms &perms,
 //                            std::index_sequence<Index...>) noexcept {
 
 //     constexpr std::array<size_t, Rank> dims_compressed =

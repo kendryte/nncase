@@ -235,9 +235,8 @@ class basic_tensor
         return view(make_zeros_shape<TShape::rank()>(), shape());
     }
 
-    template <Shape TNewShape>
-    constexpr auto reshape(TNewShape shape) noexcept {
-        return make_tensor_view(buffer(), shape, default_strides(shape));
+    template <Shape TNewShape> constexpr auto reshape(const TNewShape &shape) {
+        return make_tensor_view<T>(buffer(), shape, default_strides(shape));
     }
 
     template <FixedShape TAxes> constexpr auto squeeze(const TAxes &axes) {

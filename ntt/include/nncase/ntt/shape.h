@@ -19,7 +19,6 @@
 #include <cstddef>
 #include <cstring>
 #include <span>
-#include <sys/stat.h>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -82,10 +81,10 @@ constexpr auto make_ones_dims_impl() noexcept {
     return make_repeat_dims_impl<Derived, Rank>(dim_one);
 }
 
-template <template <class... TDims> class Derived, size_t Rank>
+template <template <class... TDims> class Derived, size_t Rank, dim_t Start = 0>
 constexpr auto make_index_dims_impl() noexcept {
     auto index_impl = []<size_t... I>(std::index_sequence<I...>) {
-        return make_dims_impl<Derived>(fixed_dim_v<I>...);
+        return make_dims_impl<Derived>(fixed_dim_v<Start + I>...);
     };
     return index_impl(std::make_index_sequence<Rank>());
 }
@@ -312,6 +311,20 @@ struct dims_base {
     }
 
     template <Dimension... UDims>
+    constexpr Derived<TDims..., UDims...>
+    concat(const Derived<UDims...> &other) const noexcept {
+        auto concat_impl = [this, &other]<size_t... I, size_t... U>(
+                               std::index_sequence<I...>,
+                               std::index_sequence<U...>) {
+            (void)this;
+            return make_dims_impl<Derived>(at(fixed_dim_v<I>)...,
+                                           other.at(fixed_dim_v<U>)...);
+        };
+        return concat_impl(std::make_index_sequence<rank()>(),
+                           std::make_index_sequence<sizeof...(UDims)>());
+    }
+
+    template <Dimension... UDims>
     constexpr Derived<UDims..., TDims...>
     prepend(const UDims &...values) const noexcept {
         auto prepend_impl = [this]<size_t... I>(const UDims &...values,
@@ -357,20 +370,6 @@ struct dims_base {
             return make_dims_impl<Derived>(at<I + Start>()...);
         };
         return slice_impl(std::make_index_sequence<Rank>());
-    }
-
-    template <Dimension... UDims>
-    constexpr Derived<TDims..., UDims...>
-    concat(const Derived<UDims...> &other) const noexcept {
-        auto concat_impl = [this, &other]<size_t... I, size_t... U>(
-                               std::index_sequence<I...>,
-                               std::index_sequence<U...>) {
-            (void)this;
-            return make_dims_impl<Derived>(at(fixed_dim_v<I>)...,
-                                           other.at(fixed_dim_v<U>)...);
-        };
-        return concat_impl(std::make_index_sequence<rank()>(),
-                           std::make_index_sequence<sizeof...(UDims)>());
     }
 
     constexpr std::array<dim_t, rank()> to_array() const noexcept {
@@ -466,8 +465,9 @@ using empty_dims_alike_t = typename empty_dims_alike_type<TDims>::type;
         return detail::make_ones_dims_impl<dims_type##_t, Rank>();             \
     }                                                                          \
                                                                                \
-    template <size_t Rank> constexpr auto make_index_##dims_type() noexcept {  \
-        return detail::make_index_dims_impl<dims_type##_t, Rank>();            \
+    template <size_t Rank, dim_t Start = 0>                                    \
+    constexpr auto make_index_##dims_type() noexcept {                         \
+        return detail::make_index_dims_impl<dims_type##_t, Rank, Start>();     \
     }                                                                          \
                                                                                \
     template <size_t Rank, Dimension TDim>                                     \
@@ -700,53 +700,6 @@ constexpr bool in_bound(const Index &index, const Shape &shape) {
     return false;
 }
 
-template <size_t Rank, class Index, class Shape, size_t DimsExt>
-constexpr dynamic_shape_t<Rank> get_reduced_offset(Index in_offset,
-                                                   Shape reduced_shape) {
-    dynamic_shape_t<Rank> off;
-    for (size_t i = 0; i < reduced_shape.rank(); i++) {
-        off.at(i) = (in_offset.at(i + DimsExt) >= reduced_shape.at(i))
-                        ? 0
-                        : in_offset.at(i + DimsExt);
-    }
-    return off;
-}
-
-template <size_t Rank, class Index, class Shape>
-dynamic_shape_t<Rank> get_reduced_offset(Index in_offset, Shape reduced_shape) {
-    dynamic_shape_t<Rank> off;
-    const auto dims_ext = in_offset.rank() - reduced_shape.rank();
-    for (size_t i = 0; i < reduced_shape.rank(); i++) {
-        if (in_offset.at(i + dims_ext) >= reduced_shape.at(i))
-            off.at(i) = 0;
-        else
-            off.at(i) = in_offset.at(i + dims_ext);
-    }
-
-    return off;
-}
-
-template <size_t Axes, size_t Rank, class Index>
-dynamic_shape_t<Rank> get_reduced_offset(Index in_offset) {
-    dynamic_shape_t<Rank> off;
-    for (size_t i = 0; i < Axes; i++) {
-        off.at(i) = in_offset.at(i);
-    }
-
-    if constexpr (in_offset.rank() == Rank) {
-        off.at(Axes) = 0;
-        for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
-            off.at(i) = in_offset.at(i);
-        }
-    } else {
-        for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
-            off.at(i - 1) = in_offset.at(i);
-        }
-    }
-
-    return off;
-}
-
 namespace detail {
 template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
     template <Dimensions TSrcDims, Dimensions TResultDims>
@@ -774,8 +727,8 @@ constexpr auto squeeze_dims(const TDims &dims, const TAxes &) {
 }
 
 template <Dimensions TDimsA, Dimensions TDimsB>
-bool operator==([[maybe_unused]] const TDimsA &lhs,
-                [[maybe_unused]] const TDimsB &rhs) noexcept {
+constexpr bool operator==([[maybe_unused]] const TDimsA &lhs,
+                          [[maybe_unused]] const TDimsB &rhs) noexcept {
     if constexpr (TDimsA::rank() != TDimsB::rank()) {
         return false;
     } else {
@@ -803,3 +756,21 @@ constexpr auto positive_axes(const TAxes &axes, const TExtent &dim) {
         [&axes, &dim](auto axis) { return positive_index(axes[axis], dim); });
 }
 } // namespace nncase::ntt
+
+namespace std {
+// structured bindings support
+template <nncase::ntt::Dimensions TDims>
+struct tuple_size<TDims> : std::integral_constant<size_t, TDims::rank()> {};
+
+template <size_t I, template <class... TDims> class Derived,
+          nncase::ntt::Dimension... TDims>
+    requires(nncase::ntt::Dimensions<Derived<TDims...>>)
+struct tuple_element<I, Derived<TDims...>> {
+    using type = std::tuple_element_t<I, std::tuple<TDims...>>;
+};
+
+template <size_t I, nncase::ntt::Dimensions TDims>
+constexpr auto get(const TDims &dims) noexcept {
+    return dims.template at<I>();
+}
+} // namespace std

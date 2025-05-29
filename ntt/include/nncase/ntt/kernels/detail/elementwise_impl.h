@@ -61,9 +61,11 @@ class elementwise_impl {
                         return derived().template apply_contiguous<Axis>(
                             std::get<I>(inputs_p)...,
                             inputs.shape()
-                                .template slice<rest_rank,
-                                                inputs.rank() - rest_rank>()...,
-                            out_p, std::forward<TArgs>(args)...);
+                                .template slice<inputs.rank() - rest_rank>()...,
+                            out_p,
+                            output.shape()
+                                .template slice<output.rank() - rest_rank>(),
+                            std::forward<TArgs>(args)...);
                     };
                 apply_contiguous(
                     std::make_index_sequence<sizeof...(TInputs)>());

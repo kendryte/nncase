@@ -23,9 +23,10 @@ class unary_like_impl : public elementwise_impl<false, TDerived, TOut, TIn> {
     using elementwise_impl<false, TDerived, TOut, TIn>::derived;
 
     template <size_t Axis, class TInP, Shape TInRestShape, class TOutP,
-              class... TArgs>
+              class TOutRestShape, class... TArgs>
     constexpr void apply_contiguous(TInP &in_p, const TInRestShape &rest_shape,
-                                    TOutP &out_p, TArgs &&...args) {
+                                    TOutP &out_p, const TOutRestShape &,
+                                    TArgs &&...args) {
         const auto inner_size = rest_shape.length();
         unary_contiguous(in_p, out_p, inner_size, std::forward<TArgs>(args)...);
     }

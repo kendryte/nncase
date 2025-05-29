@@ -16,32 +16,33 @@
 #include "../apply.h"
 #include "../loop.h"
 #include "../tensor.h"
+#include "nncase/ntt/dimension.h"
 #include <cstddef>
 
 namespace nncase::ntt {
 namespace detail {
-template <Tensor TA, Tensor TB, Tensor TC, size_t Axis> class gather_impl {
+template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
   public:
     inline static constexpr auto rank = TA::rank();
     inline static constexpr auto indices_rank = TB::rank();
 
-    constexpr void operator()(const TA &input, const TB &indices, TC &output) {
+    template <FixedDimension TAxis>
+    constexpr void operator()(const TA &input, const TB &indices, TC &output,
+                              const TAxis &axis) noexcept {
         dynamic_shape_t<rank> in_index{};
-        dynamic_shape_t<indices_rank> indices_index{};
-        apply(output.shape(), [&](auto out_index) {
+        ntt::apply(output.shape(), [&](auto out_index) {
+            // indices_index = out_index[axis:]
+            const auto indices_index =
+                out_index.template slice<axis, indices_rank>();
+
             // in_index[:axis] = out_index[:axis]
-            loop<Axis>([&](auto i) { in_index[i] = out_index[i]; });
-
             // in_index[axis] = indices(indices_index)
-            loop<indices_rank>(
-                [&](auto i) { indices_index[i] = out_index[i + Axis]; });
-            in_index.template at<Axis>() = indices(indices_index);
-
-            // in_index[axis:] = out_index[axis:]
-            loop<rank - (Axis + 1)>([&](auto i) {
-                in_index.template at<Axis + 1 + i>() =
-                    out_index[Axis + indices_rank + i];
-            });
+            // in_index[axis:] = out_index[indices_rank+axis:]
+            const auto in_index =
+                out_index.template slice<0, axis>()
+                    .append((dim_t)indices(indices_index))
+                    .concat(out_index.template slice<axis + indices_rank,
+                                                     rank - (axis + 1)>());
             output(out_index) = input(in_index);
         });
     }
@@ -49,9 +50,10 @@ template <Tensor TA, Tensor TB, Tensor TC, size_t Axis> class gather_impl {
 
 } // namespace detail
 
-template <size_t Axis, Tensor TA, Tensor TB, class TC>
-void gather(const TA &input, const TB &indices, TC &&output) noexcept {
-    detail::gather_impl<TA, TB, std::decay_t<TC>, Axis> impl;
-    impl.template operator()<Axis>(input, indices, output);
+template <Tensor TA, Tensor TB, class TC, FixedDimension TAxis>
+void gather(const TA &input, const TB &indices, TC &&output,
+            const TAxis &axis) noexcept {
+    detail::gather_impl<TA, TB, std::decay_t<TC>> impl;
+    impl(input, indices, output, axis);
 }
 } // namespace nncase::ntt

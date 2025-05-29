@@ -23,11 +23,13 @@ class binary_like_impl
     using elementwise_impl<true, TDerived, TOut, TLhs, TRhs>::derived;
 
     template <size_t Axis, class TLhsP, class TRhsP, Shape TLhsRestShape,
-              Shape TRhsRestShape, class TOutP, class... TArgs>
+              Shape TRhsRestShape, class TOutP, Shape TOutRestShape,
+              class... TArgs>
     constexpr void apply_contiguous(TLhsP &lhs_p, TRhsP &rhs_p,
                                     const TLhsRestShape &lhs_rest_shape,
                                     const TRhsRestShape &rhs_rest_shape,
-                                    TOutP &out_p, TArgs &&...args) {
+                                    TOutP &out_p, const TOutRestShape &,
+                                    TArgs &&...args) {
         if (lhs_rest_shape.length() == 1) {
             return binary_left_broadcast(lhs_p, rhs_p, out_p,
                                          rhs_rest_shape.length(),

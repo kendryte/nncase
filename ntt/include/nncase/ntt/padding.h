@@ -66,6 +66,9 @@ template <dim_t Before, dim_t After>
 inline constexpr auto fixed_padding_v =
     make_padding(fixed_dim_v<Before>, fixed_dim_v<After>);
 
+template <Padding... TPaddings>
+constexpr auto make_paddings(const TPaddings &...paddings) noexcept;
+
 template <Padding... TPaddings> class paddings_t {
   public:
     using paddings_type = std::tuple<TPaddings...>;
@@ -101,6 +104,31 @@ template <Padding... TPaddings> class paddings_t {
     template <FixedDimension TIndex>
     constexpr auto &operator[](const TIndex &) noexcept {
         return at(TIndex{});
+    }
+
+    template <Padding... UPaddings>
+    constexpr paddings_t<TPaddings..., UPaddings...>
+    append(const UPaddings &...values) const noexcept {
+        auto append_impl = [this]<size_t... I>(const UPaddings &...values,
+                                               std::index_sequence<I...>) {
+            (void)this;
+            return make_paddings(at(fixed_dim_v<I>)..., values...);
+        };
+        return append_impl(values..., std::make_index_sequence<rank()>());
+    }
+
+    template <Padding... UPaddings>
+    constexpr paddings_t<TPaddings..., UPaddings...>
+    concat(const paddings_t<UPaddings...> &other) const noexcept {
+        auto concat_impl = [this, &other]<size_t... I, size_t... U>(
+                               std::index_sequence<I...>,
+                               std::index_sequence<U...>) {
+            (void)this;
+            return make_paddings(at(fixed_dim_v<I>)...,
+                                 other.at(fixed_dim_v<U>)...);
+        };
+        return concat_impl(std::make_index_sequence<rank()>(),
+                           std::make_index_sequence<sizeof...(UPaddings)>());
     }
 
     template <Dimension TIndex>
@@ -166,19 +194,71 @@ using dynamic_paddings_t =
 } // namespace detail
 
 template <Padding... TPaddings>
-constexpr auto make_padding_impl(const TPaddings &...paddings) noexcept {
+constexpr auto make_paddings(const TPaddings &...paddings) noexcept {
     return paddings_t<TPaddings...>{paddings...};
 }
 
 template <size_t Rank, Padding TPadding>
-constexpr auto make_repeat_paddings_impl(const TPadding &padding) noexcept {
+constexpr auto make_repeat_paddings(const TPadding &padding) noexcept {
     auto repeat_impl = [padding]<size_t... I>(std::index_sequence<I...>) {
-        return make_padding_impl(((void)I, padding)...);
+        return make_paddings(((void)I, padding)...);
     };
     return repeat_impl(std::make_index_sequence<Rank>());
 }
 
-template <size_t Rank> constexpr auto make_zeros_paddings_impl() noexcept {
-    return make_repeat_paddings_impl<Rank>(padding_zero);
+template <size_t Rank> constexpr auto make_zeros_paddings() noexcept {
+    return make_repeat_paddings<Rank>(padding_zero);
 }
+
+namespace detail {
+template <dim_t... Values> struct fixed_paddings_impl;
+
+template <dim_t Before, dim_t After> struct fixed_paddings_impl<Before, After> {
+    inline static constexpr auto value =
+        make_paddings(make_padding(fixed_dim_v<Before>, fixed_dim_v<After>));
+};
+
+template <dim_t Before, dim_t After, dim_t... Values>
+struct fixed_paddings_impl<Before, After, Values...> {
+    inline static constexpr auto value =
+        fixed_paddings_impl<Before, After>::value.concat(
+            fixed_paddings_impl<Values...>::value);
+};
+} // namespace detail
+
+template <dim_t... Values>
+inline constexpr auto fixed_paddings_v =
+    detail::fixed_paddings_impl<Values...>::value;
 } // namespace nncase::ntt
+
+namespace std {
+// structured bindings support
+template <nncase::ntt::Padding TPadding>
+struct tuple_size<TPadding> : std::integral_constant<size_t, 2> {};
+
+template <size_t I, nncase::ntt::Dimension TBefore,
+          nncase::ntt::Dimension TAfter>
+struct tuple_element<I, nncase::ntt::padding_t<TBefore, TAfter>> {
+    static_assert(I < 2, "Index out of bounds for padding_t");
+    using type = std::conditional_t<I == 0, TBefore, TAfter>;
+};
+
+template <size_t I, nncase::ntt::Padding TPadding>
+constexpr auto get(const TPadding &padding) noexcept {
+    return padding.template at<I>();
+}
+
+template <nncase::ntt::Paddings TPaddings>
+struct tuple_size<TPaddings>
+    : std::integral_constant<size_t, TPaddings::rank()> {};
+
+template <size_t I, nncase::ntt::Padding... TPaddings>
+struct tuple_element<I, nncase::ntt::padding_t<TPaddings...>> {
+    using type = std::tuple_element_t<I, std::tuple<TPaddings...>>;
+};
+
+template <size_t I, nncase::ntt::Paddings TPaddings>
+constexpr auto get(const TPaddings &paddings) noexcept {
+    return paddings.template at<I>();
+}
+} // namespace std

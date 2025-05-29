@@ -18,7 +18,7 @@
 #include "../ukernels.h"
 #include "../utility.h"
 #include "nncase/ntt/dimension.h"
-#include "nncase/ntt/shape.h"
+#include "nncase/ntt/tensor_traits.h"
 #include <limits>
 
 namespace nncase::ntt {
@@ -50,9 +50,8 @@ class inner_reduce_impl<Op, Accumulate, TIn, TOut, 1> {
     }
 };
 
-template <reduce_op Op, bool Accumulate, Tensor TIn, Tensor TOut,
-          FixedDimensions Axes, FixedDimensions PackedAxes,
-          FixedDimensions PadedNums, bool LoadPrevious>
+template <reduce_op Op, bool LoadPrevious, Tensor TIn, Tensor TOut,
+          FixedDimensions PadedNums>
 class reduce_impl {
     using TInElem = typename TIn::element_type;
     using TOutElem = typename TOut::element_type;
@@ -71,14 +70,16 @@ class reduce_impl {
     }
 
   public:
-    constexpr void operator()(const TIn &input, TOut &output) {
+    template <FixedDimensions TReduceAxes, FixedDimensions PackedAxes>
+    constexpr void operator()(const TIn &input, TOut &output,
+                              const TReduceAxes &reduce_axes,
+                              const PackedAxes &packed_axes) {
         ntt::apply(output.shape(), [&](auto index) {
             auto reduced_in = (TInElem)initial_value();
-            apply_reduce(
-                input,
-                shape_infer::reduce_source_begin_index<TIn::rank(), Axes>(
-                    index),
-                reduced_in);
+            auto source_index =
+                shape_infer::reduce_source_index_template<TIn::rank()>(
+                    index, reduce_axes);
+            apply_reduce(input, source_index, reduced_in, reduce_axes);
             TOutElem reduced_out;
             if constexpr (Scalar<TOutElem>) {
                 reduced_out = ntt::reduce<
@@ -87,7 +88,8 @@ class reduce_impl {
             } else if constexpr (Vector<TOutElem> && TInElem::rank() == 2 &&
                                  TOutElem::rank() == 1) {
                 constexpr auto inner_axis =
-                    PackedAxes::at(0) == Axes::at(0) ? 0 : 1;
+                    ntt::select<(packed_axes.at(0) == reduce_axes.at(0))>(
+                        0_dim, 1_dim);
                 inner_reduce_impl<Op, false, TInElem, TOutElem, inner_axis>
                     inner_impl;
                 inner_impl(reduced_in, reduced_out);
@@ -105,39 +107,40 @@ class reduce_impl {
 
             // Mean
             if constexpr (Op == reduce_op::mean) {
-                constexpr auto reduce_axis = Axes{}.template at<0>();
-                size_t inner_size =
+                constexpr auto reduce_axis = reduce_axes[0_dim];
+                const auto inner_size =
                     input.shape()
-                        .template slice<reduce_axis, Axes::rank()>()
+                        .template slice<reduce_axis, TReduceAxes::rank()>()
                         .length();
-                if constexpr (Vector<TOutElem>) {
-                    inner_size *= TInElem::shape_type::length();
-                }
-
-                if constexpr (Vector<TOutElem>) {
-                    inner_size /= TOutElem::shape_type::length();
-                }
-
                 auto denom = (TOutScalar)inner_size;
+                if constexpr (Vector<TOutElem>) {
+                    const auto inner_size_unpacked = inner_size *
+                                                     TInElem::shape().length() /
+                                                     TOutElem::shape().length();
+                    denom = (TOutScalar)inner_size_unpacked;
+                }
                 output(index) /= denom;
             }
         });
     }
 
   private:
-    template <Shape TInIndex>
+    template <Shape TInIndex, FixedDimensions TReduceAxes>
     constexpr void apply_reduce(const TIn &input, TInIndex &index,
-                                TInElem &reduced_in) {
-        auto src_tensor =
-            input.view(index, reduce_source_shape_type<Axes>(input.shape()));
-        auto conti_dims =
+                                TInElem &reduced_in,
+                                const TReduceAxes &reduce_axes) {
+        auto src_tensor = input.view(
+            index,
+            shape_infer::sub_reduce_source_shape(input.shape(), reduce_axes));
+        const auto conti_dims =
             contiguous_dims(src_tensor.shape(), src_tensor.strides());
         if (conti_dims > 1) {
             dynamic_shape_t<TIn::rank()> src_index{};
             apply_contiguous_reduce<0>(src_index, conti_dims, src_tensor,
                                        reduced_in);
         } else {
-            apply_non_contiguous_reduce<0>(input, index, reduced_in);
+            apply_non_contiguous_reduce<0>(input, index, reduced_in,
+                                           reduce_axes);
         }
     }
 
@@ -164,72 +167,63 @@ class reduce_impl {
         }
     }
 
-    template <size_t ReduceIndex, Shape TInIndex>
+    template <size_t ReduceIndex, Shape TInIndex, FixedDimensions TReduceAxes>
     constexpr void apply_non_contiguous_reduce(const TIn &input,
                                                TInIndex &index,
-                                               TInElem &reduced_in) {
-        constexpr size_t Axis = Axes::at(ReduceIndex);
-        if constexpr (ReduceIndex < Axes::rank() - 1) {
-            for (size_t i = 0; i < input.shape()[Axis]; i++) {
-                index[Axis] = i;
+                                               TInElem &reduced_in,
+                                               const TReduceAxes &reduce_axes) {
+        const auto axis = reduce_axes[fixed_dim_v<ReduceIndex>];
+        if constexpr (ReduceIndex < TReduceAxes::rank() - 1) {
+            for (size_t i = 0; i < input.shape()[axis]; i++) {
+                index[axis] = i;
                 apply_non_contiguous_reduce<ReduceIndex + 1>(input, index,
                                                              reduced_in);
             }
         } else {
             const TInElem *in_p = &input(index);
-            reduced_in = ntt::u_reduce<Op>(in_p, input.strides()[Axis],
-                                           input.shape()[Axis], reduced_in);
+            reduced_in = ntt::u_reduce<Op>(in_p, input.strides()[axis],
+                                           input.shape()[axis], reduced_in);
         }
     }
 };
 } // namespace detail
 
-template <reduce_op Op, FixedDimensions Axes, FixedDimensions PackedAxes,
-          FixedDimensions PadedNums, bool LoadPrevious = false, Tensor TIn,
-          class TOut>
-void reduce(const TIn &input, TOut &&output) noexcept {
-    static_assert(PadedNums::rank() == 0 ||
-                      (PadedNums::rank() == 1 && PadedNums::at(0) == 0) ||
-                      (PadedNums::rank() == 2 && PadedNums::at(0) == 0 &&
-                       PadedNums::at(1) == 0),
+template <reduce_op Op, bool LoadPrevious = false, Tensor TIn, class TOut,
+          FixedDimensions TReduceAxes, FixedDimensions PackedAxes = shape_t<>,
+          FixedDimensions PadedNums =
+              decltype(make_zeros_shape<PackedAxes::rank()>())>
+void reduce(const TIn &input, TOut &&output,
+            [[maybe_unused]] const TReduceAxes &reduce_axes,
+            [[maybe_unused]] const PackedAxes &packed_axes = {},
+            [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
+    static_assert(paded_nums == make_zeros_shape<PackedAxes::rank()>(),
                   "not support padding");
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");
-    detail::reduce_impl<Op, false, TIn, std::decay_t<TOut>, Axes, PackedAxes,
-                        PadedNums, LoadPrevious>
+    detail::reduce_impl<Op, LoadPrevious, TIn, std::decay_t<TOut>, PadedNums>
         impl;
-    impl(input, output);
+    impl(input, output, reduce_axes, packed_axes);
 }
 
-template <FixedDimensions Axes, FixedDimensions PackedAxes = shape_t<>,
-          FixedDimensions PadedNums = shape_t<>, bool LoadPrevious = false,
-          Tensor TIn, class TOut>
-void reduce_sum(const TIn &input, TOut &&output) noexcept {
-    return reduce<reduce_op::sum, Axes, PackedAxes, PadedNums, LoadPrevious>(
-        input, std::forward<TOut>(output));
-}
+#define DEFINE_NTT_REDUCE(op)                                                  \
+    template <bool LoadPrevious = false, Tensor TIn, class TOut,               \
+              FixedDimensions TReduceAxes,                                     \
+              FixedDimensions PackedAxes = shape_t<>,                          \
+              FixedDimensions PadedNums =                                      \
+                  decltype(make_zeros_shape<PackedAxes::rank()>())>            \
+    void reduce_##op(const TIn &input, TOut &&output,                          \
+                     const TReduceAxes &reduce_axes,                           \
+                     const PackedAxes &packed_axes = {},                       \
+                     const PadedNums &paded_nums = {}) noexcept {              \
+        return reduce<reduce_op::op, LoadPrevious>(                            \
+            input, std::forward<TOut>(output), reduce_axes, packed_axes,       \
+            paded_nums);                                                       \
+    }
 
-template <FixedDimensions Axes, FixedDimensions PackedAxes = shape_t<>,
-          FixedDimensions PadedNums = shape_t<>, bool LoadPrevious = false,
-          Tensor TIn, class TOut>
-void reduce_min(const TIn &input, TOut &&output) noexcept {
-    return reduce<reduce_op::min, Axes, PackedAxes, PadedNums, LoadPrevious>(
-        input, std::forward<TOut>(output));
-}
+DEFINE_NTT_REDUCE(mean)
+DEFINE_NTT_REDUCE(min)
+DEFINE_NTT_REDUCE(max)
+DEFINE_NTT_REDUCE(sum)
 
-template <FixedDimensions Axes, FixedDimensions PackedAxes = shape_t<>,
-          FixedDimensions PadedNums = shape_t<>, bool LoadPrevious = false,
-          Tensor TIn, class TOut>
-void reduce_max(const TIn &input, TOut &&output) noexcept {
-    return reduce<reduce_op::max, Axes, PackedAxes, PadedNums, LoadPrevious>(
-        input, std::forward<TOut>(output));
-}
-
-template <FixedDimensions Axes, FixedDimensions PackedAxes = shape_t<>,
-          FixedDimensions PadedNums = shape_t<>, bool LoadPrevious = false,
-          Tensor TIn, class TOut>
-void reduce_mean(const TIn &input, TOut &&output) noexcept {
-    return reduce<reduce_op::mean, Axes, PackedAxes, PadedNums, LoadPrevious>(
-        input, std::forward<TOut>(output));
-}
+#undef DEFINE_NTT_REDUCE
 } // namespace nncase::ntt

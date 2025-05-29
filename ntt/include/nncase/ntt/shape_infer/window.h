@@ -31,7 +31,7 @@ template <Dimension TSize, Dimension TFilter, Dimension TStride,
           Dimension TDilation, Padding TPadding>
 constexpr auto windowed_output_size(const TSize &size, const TFilter &filter,
                                     const TStride &stride,
-                                    const TStride &dilation,
+                                    const TDilation &dilation,
                                     const TPadding &padding) noexcept {
     auto effective_filter_size = (filter - dim_one) * dilation + dim_one;
     return (size + padding.sum() - effective_filter_size + stride) / stride;

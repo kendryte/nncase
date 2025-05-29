@@ -34,13 +34,15 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
 
         const auto domain = input.shape().concat(elem_shape);
         apply(domain, [&](auto index) {
-            auto in_index = slice_index<rank>(index);
-            auto elem_index = slice_index<elem_rank>(index, rank);
-            auto out_index = slice_index<rank>(index);
-            loop<axes.size()>([&](auto i) {
-                out_index[axes[i]] =
-                    out_index[axes[i]] * TVec::shape()[i] + index[rank + i];
-            });
+            const auto in_index = index.template slice<0, rank>();
+            const auto elem_index = index.template slice<rank, elem_rank>();
+            const auto out_index_template = index.template slice<0, rank>();
+            const auto out_index =
+                axes.aggregate(out_index_template, [&](const auto cnt_out_index,
+                                                       auto axis, auto i) {
+                    return cnt_out_index.template replace_at<axis>(
+                        cnt_out_index[axis] * elem_shape[i] + index[rank + i]);
+                });
             output(out_index) = input(in_index)(elem_index);
         });
     }
@@ -67,8 +69,9 @@ template <Tensor TIn, Tensor TOut> class unpack_impl<TIn, TOut, 1> {
             auto pout = output.buffer().data();
             auto count = input.shape().length();
             if constexpr (PackAxis == (rank - 1))
-                ntt::u_unary<ntt::ops::copy<TVec>, TVec>(
-                    pin, 1, reinterpret_cast<TVec *>(pout), 1, count);
+                // FIXME: Unaligned copy
+                ntt::u_unary(ntt::ops::copy<TVec>{}, pin, 1,
+                             reinterpret_cast<TVec *>(pout), 1, count);
             else
                 ntt::u_unpack_1d_ranked<elem_shape[0_dim], TVec,
                                         typename TOut::element_type>(
@@ -77,12 +80,13 @@ template <Tensor TIn, Tensor TOut> class unpack_impl<TIn, TOut, 1> {
         } else {
             const auto domain = input.shape().concat(elem_shape);
             apply(domain, [&](auto index) {
-                auto in_index = slice_index<rank>(index);
-                auto elem_index = slice_index<elem_rank>(index, rank);
-                auto out_index = slice_index<rank>(index);
-                out_index[fixed_dim_v<PackAxis>] =
-                    out_index[fixed_dim_v<PackAxis>] * elem_shape[0_dim] +
-                    index[rank];
+                const auto in_index = index.template slice<0, rank>();
+                const auto elem_index = index.template slice<rank, elem_rank>();
+                const auto out_index_template = index.template slice<0, rank>();
+                const auto out_index =
+                    out_index_template.template replace_at<PackAxis>(
+                        out_index_template[PackAxis] * elem_shape[0_dim] +
+                        index[rank]);
                 output(out_index) = input(in_index)(elem_index);
             });
         }
@@ -118,13 +122,16 @@ template <Tensor TIn, Tensor TOut> class unpack_impl<TIn, TOut, 2> {
         } else {
             const auto domain = input.shape().concat(elem_shape);
             apply(domain, [&](auto index) {
-                auto in_index = slice_index<rank>(index);
-                auto elem_index = slice_index<elem_rank>(index, rank);
-                auto out_index = slice_index<rank>(index);
-                loop<axes.size()>([&](auto i) {
-                    out_index[axes[i]] =
-                        out_index[axes[i]] * elem_shape[i] + index[rank + i];
-                });
+                const auto in_index = index.template slice<0, rank>();
+                const auto elem_index = index.template slice<rank, elem_rank>();
+                const auto out_index_template = index.template slice<0, rank>();
+                const auto out_index = axes.aggregate(
+                    out_index_template,
+                    [&](const auto cnt_out_index, auto axis, auto i) {
+                        return cnt_out_index.template replace_at<axis>(
+                            cnt_out_index[axis] * elem_shape[i] +
+                            index[rank + i]);
+                    });
                 output(out_index) = input(in_index)(elem_index);
             });
         }

@@ -161,6 +161,9 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
 void pack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+    using TVec = typename std::decay_t<TOut>::element_type;
+    static_assert(TVec::rank() == TAxes::rank(),
+                  "Output vector rank must match axes rank");
     detail::pack_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
     impl(input, output, axes);
 }

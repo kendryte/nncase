@@ -63,22 +63,32 @@ struct reduce_source_begin_index_impl {
 template <class Index, class Shape>
 constexpr auto reduced_index_by_shape(const Index &src_index,
                                       const Shape &shape) noexcept {
-    auto impl = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
-        return make_shape(
-            detail::reduced_index_by_shape_dim<Axes>(src_index, shape)...);
-    };
-    return impl(std::make_index_sequence<Shape::rank()>());
+    return generate_shape<Shape::rank()>([&](auto axis) {
+        return detail::reduced_index_by_shape_dim<axis>(src_index, shape);
+    });
 }
 
-template <size_t InRank, FixedDimensions ReduceAxes, Shape TOutIndex>
-constexpr auto reduce_source_begin_index(const TOutIndex &out_index) noexcept {
+template <size_t InRank, Shape TOutIndex, FixedDimensions TReduceAxes>
+constexpr auto reduce_source_index_template(
+    const TOutIndex &out_index,
+    [[maybe_unused]] const TReduceAxes &reduce_axes) noexcept {
     // Keep dims
     if constexpr (InRank == TOutIndex::rank()) {
         return out_index;
     } else {
-        return detail::reduce_source_begin_index_impl<InRank, ReduceAxes,
+        return detail::reduce_source_begin_index_impl<InRank, TReduceAxes,
                                                       TOutIndex>{}(
             fixed_shape_v<>, out_index);
     }
+}
+
+template <Shape TInShape, FixedDimensions TReduceAxes>
+constexpr auto sub_reduce_source_shape(
+    const TInShape &in_shape,
+    [[maybe_unused]] const TReduceAxes &reduce_axes) noexcept {
+    return generate_shape<TInShape::rank()>([&](auto axis) {
+        return ntt::select<TReduceAxes{}.contains(axis)>(in_shape[axis],
+                                                         dim_one);
+    });
 }
 } // namespace nncase::ntt::shape_infer

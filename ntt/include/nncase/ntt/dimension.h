@@ -101,6 +101,21 @@ constexpr auto operator%(const TLhs &, const TRhs &) noexcept {
     return fixed_dim_v<TLhs::value % TRhs::value>;
 }
 
+template <Dimension TDim, Dimension TLowerBound, Dimension TUpperBound>
+constexpr auto clamp(const TDim &dim, const TLowerBound &lower_bound,
+                     const TUpperBound &upper_bound) noexcept {
+    if constexpr (FixedDimension<TDim> && FixedDimension<TLowerBound> &&
+                  FixedDimension<TUpperBound>) {
+        static_assert(TLowerBound::value <= TUpperBound::value,
+                      "Lower bound must be less than or equal to upper bound");
+        return fixed_dim_v<std::clamp(dim.value, lower_bound.value,
+                                      upper_bound.value)>;
+    } else {
+        return std::clamp(dim_value(dim), dim_value(lower_bound),
+                          dim_value(upper_bound));
+    }
+}
+
 template <Dimension... TDims>
 constexpr auto min(const TDims &...dims) noexcept {
     if constexpr ((... && FixedDimension<TDims>)) {

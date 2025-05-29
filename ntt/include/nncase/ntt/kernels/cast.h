@@ -70,8 +70,8 @@ template <Tensor TIn, Tensor TOut> class cast_impl {
             for (index[fixed_dim_v<Axis>] = 0;
                  index[fixed_dim_v<Axis>] < rest_dims[dim_zero];
                  index[fixed_dim_v<Axis>]++) {
-                apply<Axis + 1>(conti_dims, rest_dims.slice(1), index, input,
-                                output);
+                apply<Axis + 1>(conti_dims, rest_dims.template slice<1>(),
+                                index, input, output);
             }
         }
     }

@@ -13,69 +13,40 @@
  * limitations under the License.
  */
 #pragma once
-#include "../apply.h"
-#include "../loop.h"
-#include "../tensor_ops.h"
-#include "../utility.h"
+#include "../primitive_ops.h"
+#include "../ukernels/u_unary.h"
+#include "detail/elementwise_impl.h"
+#include <type_traits>
 
 namespace nncase::ntt {
-
-namespace expand_detail {
+namespace detail {
 template <Tensor TIn, Tensor TOut>
-void expand_impl(const TIn &input, TOut &output) noexcept {
-    constexpr auto in_rank = TIn::shape_type::rank();
-    auto in_shape = input.shape();
-    auto out_shape = output.shape();
+class expand_impl
+    : public elementwise_impl<true, expand_impl<TIn, TOut>, TOut, TIn> {
+    using TElem = typename TIn::element_type;
 
-    using TIElem = typename TIn::element_type;
-    using TOElem = typename std::decay_t<TOut>::element_type;
-
-    static_assert(Scalar<TOElem> && Scalar<TIElem>,
-                  "Only support scalar type for now");
-
-    auto conti_dims_input = contiguous_dims(input.shape(), input.strides());
-    auto conti_dims_output = contiguous_dims(output.shape(), output.strides());
-
-    auto expand_dims_cnt = 0;
-    auto before_expand_dims = 1;
-    auto after_expand_dims = 1;
-    auto expand_dim = 0;
-    for (size_t i = 0; i < in_rank; i++) {
-        if (in_shape[i] != out_shape[i]) {
-            expand_dims_cnt++;
-            expand_dim = out_shape[i];
-        }
-        if (expand_dims_cnt == 0) {
-            before_expand_dims *= in_shape[i];
+  public:
+    template <size_t Axis, class TInP, Shape TInRestShape, class TOutP,
+              Shape TOutRestShape>
+    constexpr void
+    apply_contiguous(TInP &in_p, const TInRestShape &in_rest_shape,
+                     TOutP &out_p, const TOutRestShape &out_rest_shape) {
+        if (in_rest_shape.length() == 1) {
+            ntt::u_unary(ntt::ops::copy<TElem>{}, in_p, dim_zero, out_p,
+                         dim_one, out_rest_shape.length());
         } else {
-            after_expand_dims *= in_shape[i];
+            // Non broadcast
+            ntt::u_unary(ntt::ops::copy<TElem>{}, in_p, dim_one, out_p, dim_one,
+                         out_rest_shape.length());
         }
     }
+};
 
-    auto in_ptr = reinterpret_cast<const TIElem *>(input.elements().data());
-    auto out_ptr = reinterpret_cast<TOElem *>(output.elements().data());
-    auto pattern_size = after_expand_dims * sizeof(TIElem);
-    if (conti_dims_input == in_rank && conti_dims_output == in_rank &&
-        expand_dims_cnt == 1 && after_expand_dims > 256) {
-        for (size_t i = 0; i < before_expand_dims; i++) {
-            for (size_t j = 0; j < expand_dim; j++) {
-                std::memcpy(out_ptr, in_ptr, pattern_size);
-                out_ptr += after_expand_dims;
-            }
-            in_ptr += after_expand_dims;
-        }
-    } else {
-        apply(out_shape, [&](auto index) {
-            const auto in_index = get_reduced_offset<in_rank>(index, in_shape);
-            output(index) = input(in_index);
-        });
-    }
-}
-
-} // namespace expand_detail
+} // namespace detail
 
 template <Tensor TIn, typename TOut>
 void expand(const TIn &input, TOut &&output) noexcept {
-    expand_detail::expand_impl(input, output);
+    detail::expand_impl<TIn, std::decay_t<TOut>> impl;
+    impl(input, output);
 }
 } // namespace nncase::ntt

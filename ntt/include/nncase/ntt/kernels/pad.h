@@ -17,24 +17,21 @@
 #include "../loop.h"
 #include "../padding.h"
 #include "../utility.h"
-#include "nncase/ntt/shape.h"
 
 namespace nncase::ntt {
 namespace pad_detail {
-template <Tensor TIn, Paddings TPaddings, Scalar TElem, Tensor TOut>
+template <Tensor TIn, Tensor TOut, Paddings TPaddings, ScalarOrVector TElem>
 void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
               const TElem &pad_alue) {
-    const auto input_shape = input.shape();
     constexpr auto rank = TIn::shape().rank();
-    const auto output_shape = output.shape();
-    dynamic_shape_t<rank> in_index{};
-    apply(output_shape, [&](auto out_index) {
+    ntt::apply(output.shape(), [&](auto out_index) {
         bool dopad = false;
-        loop<rank>([&](auto i) {
-            in_index[i] = out_index[i] - paddings.at(i).before;
-            if (in_index[i] < 0 || in_index[i] >= input_shape.at(i)) {
+        const auto in_index = generate_shape<rank>([&](auto i) {
+            auto in_dim = out_index[i] - paddings[i].before;
+            if (in_dim < 0 || in_dim >= input.shape()[i]) {
                 dopad = true;
             }
+            return in_dim;
         });
         if (dopad) {
             output(out_index) = pad_alue;
@@ -52,12 +49,11 @@ void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
  * @param output output tensor.
  * @param pad_alue pad value.
  */
-template <Tensor TIn, Paddings TPaddings,
-          Scalar TElem = element_or_scalar_t<typename TIn::element_type>,
-          class TOut>
+template <Tensor TIn, class TOut, Paddings TPaddings,
+          ScalarOrVector TElem = typename TIn::element_type>
     requires(TIn::rank() == TPaddings::rank())
 void pad(const TIn &input, TOut &&output, const TPaddings &paddings,
          const TElem &pad_alue = {}) noexcept {
-    pad_detail::pad_impl(input, paddings, pad_alue, output);
+    pad_detail::pad_impl(input, output, paddings, pad_alue);
 }
 } // namespace nncase::ntt
