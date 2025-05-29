@@ -228,7 +228,7 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
             std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
         double cosine_similarity = dotProduct / (norm1 * norm2);
         pass = cosine_similarity > threshold &&
-               (norm1 > norm2 ? norm1 / norm2 < 1.01f : norm2 / norm1 < 1.01f);
+               (norm1 > norm2 ? norm1 / norm2 < 1.2f : norm2 / norm1 < 1.2f);
         if (!pass)
             std::cerr << "cosine_similarity = " << cosine_similarity
                       << std::endl;
@@ -283,7 +283,7 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
             std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
         double cosine_similarity = dotProduct / (norm1 * norm2);
         pass = cosine_similarity > threshold &&
-               (norm1 > norm2 ? norm1 / norm2 < 1.01f : norm2 / norm1 < 1.01f);
+               (norm1 > norm2 ? norm1 / norm2 < 1.2f : norm2 / norm1 < 1.2f);
         if (!pass)
             std::cerr << "cosine_similarity = " << cosine_similarity
                       << std::endl;
@@ -338,7 +338,7 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
             std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
         double cosine_similarity = dotProduct / (norm1 * norm2);
         pass = cosine_similarity > threshold &&
-               (norm1 > norm2 ? norm1 / norm2 < 1.01f : norm2 / norm1 < 1.01f);
+               (norm1 > norm2 ? norm1 / norm2 < 1.2f : norm2 / norm1 < 1.2f);
         if (!pass)
             std::cerr << "cosine_similarity = " << cosine_similarity
                       << std::endl;

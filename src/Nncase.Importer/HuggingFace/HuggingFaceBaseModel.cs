@@ -264,7 +264,13 @@ public abstract class HuggingFaceModel
     public virtual Call Linear(Expr expr, Tensor weight, Tensor? bias = null, Tensor? scaleIf = null, Tensor? scaleW = null, string layerName = "")
     {
         var blockSizeArray = new long[] { 0, 0 };
-        var quantConfig = Context!.Config?["quantization_config"] as Dictionary<string, object>;
+        Dictionary<string, object>? quantConfig = null;
+
+        if (Context?.Config != null && Context.Config.ContainsKey("quantization_config"))
+        {
+            quantConfig = Context.Config["quantization_config"] as Dictionary<string, object>;
+        }
+
         if (quantConfig != null && quantConfig.TryGetValue("weight_block_size", out var blockSizeObj))
         {
             var blockSizeList = blockSizeObj as List<object>;
