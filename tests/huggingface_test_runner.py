@@ -311,9 +311,9 @@ class HuggingfaceTestRunner(TestRunner):
             self.kv_cache_config, self.num_blocks, self.max_model_len, [1])
 
         self.inputs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
-                           shape=[], model_shape=[], scheduler=input_scheduler))
+                                shape=[], model_shape=[], scheduler=input_scheduler))
         self.calibs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
-                           shape=[], model_shape=[], scheduler=calibs_scheduler))
+                                shape=[], model_shape=[], scheduler=calibs_scheduler))
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_huggingface(model_content, import_options)

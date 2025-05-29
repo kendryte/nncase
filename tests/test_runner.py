@@ -513,7 +513,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                             os.path.join(self.case_dir, name))
                     elif dtype == 'PagedAttentionKVCache':
                         data.dump_json(os.path.join(self.case_dir, name,
-                                       f'{name}_{input_idx}_{batch_idx}.json'))
+                                                    f'{name}_{input_idx}_{batch_idx}.json'))
                 samples.append(data)
             input['data'] = samples
 

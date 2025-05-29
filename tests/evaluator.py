@@ -37,7 +37,7 @@ class Evaluator:
                 input_tensor = data[0].as_ivalue()
             else:
                 input_tensor = nncase.RuntimeTensor.from_numpy(
-                self.transform_input(data, self.cfg['compile_opt']['input_type'], "infer")[0])
+                    self.transform_input(data, self.cfg['compile_opt']['input_type'], "infer")[0])
             evaluator.set_input_tensor(idx, input_tensor)
 
     def dump_outputs(self, evaluator, eval_dir):

@@ -999,7 +999,7 @@ public abstract class HuggingFaceModel
             // var (hiddenStatesTmp, selfAttenWeights) = DecodeLayer(i, hiddenStates, casualMask, positionIds,
             //     pastKeyValues, outputAttentions,
             //     useCache, cachePosition, positionEmbeddings);
-            var (hiddenStatesTmp, pastKeyValuesTmp, outAttention, currentKV) = DecodeLayer(
+            var (hiddenStatesTmp, pastKeyValuesTmp, _, _) = DecodeLayer(
                 i,
                 hiddenStates,
                 pastKeyValues,
@@ -1113,8 +1113,8 @@ public abstract class HuggingFaceModel
         }
 
         Var input_ids = Context.Inputs![0]!;
-        var attention_mask = Context.Inputs[1];
-        var position_ids = Context.Inputs[2];
+        _ = Context.Inputs[1];
+        _ = Context.Inputs[2];
         var pastKeyValues = Context.Inputs![3];
 
         var lastHiddenStates = LLMModel(

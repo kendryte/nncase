@@ -440,6 +440,7 @@ class ShapeBucketOptions:
         self.segments_count = 2
         self.fix_var_map = {}
 
+
 class AutoModelForCausalLM():
     def __init__(
         self,
