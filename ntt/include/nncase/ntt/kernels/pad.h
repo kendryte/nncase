@@ -21,12 +21,12 @@ namespace nncase::ntt {
 
 namespace pad_detail {
 
-template <IsTensor TIn, IsTensor TOut, typename TElem, size_t... Ints>
+template <IsTensor TIn, IsTensor TOut, typename TElem, typename Paddings>
 void pad_impl(const TIn &input, TOut &&output, const TElem &padValue,
-              const fixed_shape<Ints...> paddings) {
+              const Paddings &paddings) noexcept {
     auto input_shape = input.shape();
     constexpr auto rank = TIn::shape_type::rank();
-    static_assert(sizeof...(Ints) == rank * 2, "the paddings not support!");
+    static_assert(Paddings::rank() == rank * 2, "the paddings not support!");
     auto output_shape = output.shape();
     // constexpr auto input_strides = TIn::strides();
     // constexpr auto output_strides = std::decay_t<TOut>::strides();
@@ -57,8 +57,8 @@ void pad_impl(const TIn &input, TOut &&output, const TElem &padValue,
  * @param output output tensor.
  * @param padValue pad value.
  */
-template <size_t... Paddings, typename TIn, typename TOut, typename TElem>
-void pad(const TIn &input, TOut &&output, const TElem &padValue) noexcept {
-    pad_detail::pad_impl(input, output, padValue, fixed_shape<Paddings...>{});
+template <typename Paddings, typename TIn, typename TOut, typename TElem>
+void pad(const TIn &input, TOut &&output, const TElem &padValue, const Paddings &paddings) noexcept {
+    pad_detail::pad_impl(input, output, padValue, paddings);
 }
 } // namespace nncase::ntt

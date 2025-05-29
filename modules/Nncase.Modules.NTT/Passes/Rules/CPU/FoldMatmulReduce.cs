@@ -31,7 +31,7 @@ public sealed partial class FoldPackedMatmulReduce : IRewriteRule
     {
         if (call.CheckedType is DistributedType dt && dt.AxisPolices.Any(s => s is SBPPartial))
         {
-            var newMatmul = new IR.NTT.PackedMatMul(mm.OutputDataType, mm.LhsPackedAxes, mm.LhsPadedNums, mm.RhsPackedAxes, mm.RhsPadedNums, mm.TransposeA, mm.TransposeB, true);
+            var newMatmul = new IR.NTT.PackedMatMul(mm.OutputDataType, mm.LhsPackedAxes, mm.RhsPackedAxes, mm.TransposeA, mm.TransposeB, true);
             return new Call(newMatmul, lhs, rhs);
         }
 

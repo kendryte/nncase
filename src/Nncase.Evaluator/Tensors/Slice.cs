@@ -218,7 +218,11 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         }
 
         var axes = ((Shape)context.GetArgument(target, Slice.Axes)).ToValueArray();
-        if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && axes.Contains(i)))
+        var begins = (Shape)context.GetArgument(target, Slice.Begins);
+        var ends = (Shape)context.GetArgument(target, Slice.Ends);
+        var strides = (Shape)context.GetArgument(target, Slice.Strides);
+        var efficientAxes = axes.Where(a => !(begins[axes.IndexOf(a)] is { IsFixed: true, FixedValue: 0 } && strides[axes.IndexOf(a)] is { IsFixed: true, FixedValue: 1 } && input.TensorType.Shape[a] == ends[axes.IndexOf(a)])).ToArray();
+        if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && efficientAxes.Contains(i)))
         {
             return new InvalidType("not support input tensor type infer");
         }

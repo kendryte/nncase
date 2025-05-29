@@ -84,13 +84,13 @@ public sealed partial class NormAxisReduceArg : RewriteRule<CallPattern>
 public sealed partial class NormAxisReshape : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsReshape("reshape", "call", IsWildcard("input") with { TypePattern = HasFixedShape() }, IsFixedShape("newShape")) with { TypePattern = HasFixedShape() };
+    public override CallPattern Pattern { get; } = IsReshape("reshape", "call", IsWildcard("input"), IsRankedShape("newShape"));
 
-    private Expr? GetReplace(Call call, Expr input, long[] newShape)
+    private Expr? GetReplace(Call call, Expr input, Shape newShape)
     {
-        if (newShape.Any(dim => dim < 0))
+        if (newShape.Any(dim => dim.IsFixed && dim.FixedValue < 0))
         {
-            return IR.F.Tensors.Reshape(input, call.CheckedShape.ToValueArray());
+            return IR.F.Tensors.Reshape(input, call.CheckedShape);
         }
 
         return null;
