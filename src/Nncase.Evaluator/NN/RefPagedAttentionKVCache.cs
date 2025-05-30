@@ -175,10 +175,10 @@ public sealed record RefPagedAttentionKVCache(
     /// <summary>
     /// all vars are [seq,head,dim] layout.
     /// </summary>
-    public static (Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar) BuildPagedAttentionKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false)
+    public static (Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar) BuildPagedAttentionKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false, long numTokensUpperBound = 0)
     {
         var numTokens = queryLens.Sum();
-        var numTokensVar = new IR.DimVar("num_tokens");
+        var numTokensVar = new IR.DimVar("num_tokens") { Metadata = { Range = new(1.0f, numTokensUpperBound) } };
         Shape defaultQDimenions = numTokens == 0 ? new RankedShape(numTokensVar, numQHeads, config.HeadDim) : new long[] { numTokens, numQHeads, config.HeadDim };
         var queryVar = new Var("query", new TensorType(config.KVPrimType, defaultQDimenions));
         var kvVars = new List<Var[]>();
@@ -226,7 +226,8 @@ public sealed record RefPagedAttentionKVCache(
             packedQuery = IR.F.NN.PagedAttention(
                 packedQuery,
                 updatedKVCache,
-                numTokens == 0 ? IR.F.Buffer.Uninitialized(config.KVPrimType, Nncase.TIR.MemoryLocation.Data, new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1)) : Tensor.Zeros(config.KVPrimType, [numQHeads, queryLens.Max(), seqLens.Max() + 1]), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
+                Tensor.Zeros(DataTypes.UInt8, [10 * 1024 * 1024]),
+                // numTokens == 0 ? IR.F.Buffer.Uninitialized(config.KVPrimType, Nncase.TIR.MemoryLocation.Data, new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1)) : Tensor.Zeros(config.KVPrimType, [numQHeads, queryLens.Max(), seqLens.Max() + 1]), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
                 Tensor.FromScalar(1.0f).CastTo(config.KVPrimType, CastMode.KDefault),
                 layerId,
                 qLayout);
