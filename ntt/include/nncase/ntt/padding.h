@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "compiler_defs.h"
 #include "dimension.h"
 #include "shape.h"
 #include <array>
@@ -34,8 +35,8 @@ template <Dimension TBefore, Dimension TAfter> struct padding_t {
         return {dim_value(before), dim_value(after)};
     }
 
-    [[no_unique_address]] TBefore before;
-    [[no_unique_address]] TAfter after;
+    NTT_NO_UNIQUE_ADDRESS TBefore before;
+    NTT_NO_UNIQUE_ADDRESS TAfter after;
 };
 
 inline constexpr padding_t<fixed_dim<0>, fixed_dim<0>> padding_zero{};
@@ -164,7 +165,7 @@ template <Padding... TPaddings> class paddings_t {
     }
 
   private:
-    [[no_unique_address]] std::tuple<TPaddings...> paddings_;
+    NTT_NO_UNIQUE_ADDRESS std::tuple<TPaddings...> paddings_;
 };
 
 template <class T>

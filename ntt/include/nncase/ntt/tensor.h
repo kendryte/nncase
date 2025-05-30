@@ -261,4 +261,9 @@ class basic_tensor
         return this->operator()(make_shape(index...));
     }
 };
+
+static_assert(sizeof(tensor_view<float, shape_t<fixed_dim<1>>,
+                                 strides_t<fixed_dim<1>>>) ==
+                  sizeof(std::span<float, 1>),
+              "fixed tensor_view size should be same as std::span");
 } // namespace nncase::ntt

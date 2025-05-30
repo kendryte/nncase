@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "compiler_defs.h"
 #include "dimension.h"
 #include <array>
 #include <cmath>
@@ -405,7 +406,7 @@ struct dims_base {
     }
 
   private:
-    [[no_unique_address]] std::tuple<TDims...> dims_;
+    NTT_NO_UNIQUE_ADDRESS std::tuple<TDims...> dims_;
 };
 } // namespace detail
 

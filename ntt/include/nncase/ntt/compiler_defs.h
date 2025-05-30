@@ -24,6 +24,7 @@
 #ifdef _MSC_VER
 #define NTT_ASSUME(...)
 #define NTT_UNREACHABLE() __assume(0)
+#define NTT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
 #elif __GNUC__
 #define NTT_ASSUME(...)                                                        \
     do {                                                                       \
@@ -31,7 +32,9 @@
             __builtin_unreachable();                                           \
     } while (0)
 #define NTT_UNREACHABLE() __builtin_unreachable()
+#define NTT_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #else
 #define NTT_ASSUME(...) __builtin_assume(__VA_ARGS__)
 #define NTT_UNREACHABLE() __builtin_unreachable()
+#define NTT_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #endif
