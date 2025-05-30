@@ -56,7 +56,8 @@ using dynamic_dims_t =
 
 template <template <class... TDims> class Derived, Dimension... TDims>
 constexpr auto make_dims_impl(const TDims &...dims) noexcept {
-    return Derived<cannonical_dim_t<TDims>...>{dims...};
+    return Derived<cannonical_dim_t<TDims>...>{
+        static_cast<cannonical_dim_t<TDims>>(dims)...};
 }
 
 template <template <class... TDims> class Derived, dim_t... Dims>

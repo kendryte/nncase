@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../../loop.h"
 #include "../../primitive_ops.h"
 #include "arch_types.h"
 #include "avx_mathfun.h"
@@ -921,10 +922,10 @@ template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float, 8>> {
     auto operator()(const ntt::vector<float, 8> &v1,
                     const ntt::vector<float, 8> &v2) const noexcept {
         ntt::vector<float, 8, 8> result;
-        for (size_t i = 0; i < 8; i++) {
+        loop<8_dim>([&](auto i) {
             auto a_broadcast = _mm256_set1_ps(v1(i));
             result(i) = _mm256_mul_ps(a_broadcast, v2);
-        }
+        });
         return result;
     }
 };

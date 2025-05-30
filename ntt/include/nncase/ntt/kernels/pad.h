@@ -51,7 +51,7 @@ void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
  */
 template <Tensor TIn, class TOut, Paddings TPaddings,
           ScalarOrVector TElem = typename TIn::element_type>
-    requires(TIn::rank() == TPaddings::rank())
+    requires(bool(TIn::rank() == TPaddings::rank()))
 void pad(const TIn &input, TOut &&output, const TPaddings &paddings,
          const TElem &pad_alue = {}) noexcept {
     pad_detail::pad_impl(input, output, paddings, pad_alue);

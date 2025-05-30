@@ -219,7 +219,7 @@ void test_pack() {
             ntt::loop<inIndex.rank()>([&](auto &i) { inIndex[i] = index[i]; });
             auto b = tb(index);
             auto start = index[1_dim];
-            for (size_t i = 0; i < 8; i++) {
+            for (ntt::dim_t i = 0; i < 8; i++) {
                 index[1_dim] = start * 8 + i;
                 auto va = ta(index);
                 auto vb = b(i);
@@ -245,7 +245,7 @@ void test_pack() {
             ntt::loop<inIndex.rank()>([&](auto &i) { inIndex[i] = index[i]; });
             auto b = tb(index);
             auto start = index[1_dim];
-            for (size_t i = 0; i < 8; i++) {
+            for (ntt::dim_t i = 0; i < 8; i++) {
                 index[1_dim] = start * 8 + i;
                 auto va = ta(index);
                 auto vb = b(i);
