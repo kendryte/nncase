@@ -20,11 +20,12 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         var q = context.CheckArgumentType<IRType>(target, PagedAttention.Q);
         var extra = context.CheckArgumentType<IRType>(target, PagedAttention.Extra);
         var scale = context.CheckArgumentType<TensorType>(target, PagedAttention.Scale);
+        var kvcaches = context.CheckArgumentType<TensorType>(target, PagedAttention.KVCaches);
 
         return (q, extra) switch
         {
-            (DistributedType dq, DistributedType dextra) => Visit(context, target, dq, dextra, scale),
-            (TensorType tq, TensorType textra) => Visit(context, target, tq, textra, scale),
+            (DistributedType dq, DistributedType dextra) => Visit(context, target, dq, dextra, scale, kvcaches),
+            (TensorType tq, TensorType textra) => Visit(context, target, tq, textra, scale, kvcaches, out _),
             _ => new InvalidType("not support type"),
         };
     }
@@ -243,8 +244,16 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concatCache; // [num_heads, seq_len, head_dim]
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra, TensorType scale)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra, TensorType scale, TensorType kvCaches, out PagedAttentionKVCacheType pagedAttentionKVCacheType)
     {
+        pagedAttentionKVCacheType = null!;
+        if (kvCaches.DType is not ReferenceType { ElemType: PagedAttentionKVCacheType kVCacheType })
+        {
+            return new InvalidType("kv cache type not support!");
+        }
+
+        pagedAttentionKVCacheType = kVCacheType;
+
         if (!scale.IsScalar || scale.DType is not PrimType primType)
         {
             return new InvalidType($"scale {scale} should be scalar");
@@ -259,9 +268,9 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return q;
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra, TensorType scale)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra, TensorType scale, TensorType kvCaches)
     {
-        if (Visit(context, target, q.TensorType, extra, scale) is InvalidType invalidType)
+        if (Visit(context, target, q.TensorType, extra, scale, kvCaches, out var kVCacheType) is InvalidType invalidType)
         {
             return invalidType;
         }
@@ -277,6 +286,36 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             if (!target.Layout.SequenceEqual([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]))
             {
                 return new InvalidType("layout should be [head, dim, seq]");
+            }
+
+            if (kVCacheType.Config is not IPagedAttentionConfig config)
+            {
+                return new InvalidType("kv cache has not config!");
+            }
+
+            if (!config.CacheLayout.SequenceEqual([PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize]))
+            {
+                return new InvalidType("kv cache block layout not support!");
+            }
+
+            if (!config.PackedAxes.SequenceEqual([PagedKVCacheDimKind.HeadDim]))
+            {
+                return new InvalidType("kv cache pack axes not support!");
+            }
+
+            if ((config.Lanes[0] * config.KVPrimType.SizeInBytes) != 128)
+            {
+                return new InvalidType("kv cache packed lanes not support!");
+            }
+
+            if (!config.ShardingAxes.SequenceEqual([PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.NumBlocks]))
+            {
+                return new InvalidType("kv cache sharding axes not support!");
+            }
+
+            if (!config.AxisPolicies[0].Axes.SequenceEqual([1]) || !config.AxisPolicies[1].Axes.SequenceEqual([2, 3]))
+            {
+                return new InvalidType("kv cache axis policies not support!");
             }
 
             // seq split at x, head split at die and y, please check head size > 2*4.

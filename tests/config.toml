@@ -58,6 +58,7 @@ packed_axes = ["HeadDim"]
 lanes = [32]
 sharding_axes = ["NumBlocks"]
 axis_policies = [[0]]
+hierarchy = [1]
 
 [infer_report_opt]
 enabled = false

@@ -260,6 +260,7 @@ class HuggingfaceTestRunner(TestRunner):
         self.sharding_axes = [getattr(nncase.PagedKVCacheDimKind, item)
                               for item in paged_attention_config['sharding_axes']]
         self.axis_policies = paged_attention_config['axis_policies']
+        self.hierarchy = paged_attention_config['hierarchy']
 
         self.kv_cache_config = nncase.PagedAttentionConfig(
             self.num_layers,
@@ -306,9 +307,9 @@ class HuggingfaceTestRunner(TestRunner):
         self.calibs.append(copy.deepcopy(input_dict))
 
         input_scheduler = nncase._nncase.RefPagedAttentionScheduler(
-            self.kv_cache_config, self.num_blocks, self.max_model_len, [1])
+            self.kv_cache_config, self.num_blocks, self.max_model_len, self.hierarchy)
         calibs_scheduler = nncase._nncase.RefPagedAttentionScheduler(
-            self.kv_cache_config, self.num_blocks, self.max_model_len, [1])
+            self.kv_cache_config, self.num_blocks, self.max_model_len, self.hierarchy)
 
         self.inputs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
                                 shape=[], model_shape=[], scheduler=input_scheduler))
