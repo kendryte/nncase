@@ -16,6 +16,7 @@
 #include "../../ukernels.h"
 #include "nncase/ntt/arch/riscv64/arch_types.h"
 #include "nncase/ntt/compiler_defs.h"
+#include "nncase/ntt/dimension.h"
 #include "nncase/ntt/vector.h"
 #include <cstddef>
 #include <riscv_vector.h>
@@ -165,7 +166,9 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 #undef SPECIALIZE_U_BINARY
 
 // clamp
-template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
+template <> struct u_clamp_policy<true> {
+    static constexpr size_t unroll = 8;
+};
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
@@ -173,7 +176,9 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> { static constexpr size_t unroll = 4; };
+template <> struct u_cast_policy<true> {
+    static constexpr size_t unroll = 4;
+};
 
 // matmul
 template <>
@@ -587,21 +592,20 @@ template <class T1, class T2> struct u_pack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
 };
 
-template <size_t N, size_t MStrides>
-class u_pack<NTT_VLEN / 32, N, MStrides, true, float,
-             vector<float, NTT_VLEN / 32>> {
+template <> class u_pack<true, float, vector<float, NTT_VLEN / 32>> {
   public:
-    constexpr void operator()(const float *input,
+    template <Dimension TM, Dimension TN, Dimension TMStrides>
+    constexpr void operator()(const float *input, const TM &M, const TN &N,
+                              const TMStrides &m_strides,
                               vector<float, NTT_VLEN / 32> *output) noexcept {
         constexpr size_t vl = NTT_VLEN / 32;
-        if constexpr (N % vl != 0) {
-            ukernels::u_pack<vl, N, MStrides, false, float, vector<float, vl>>
-                impl;
-            impl(input, output);
+        if (N % vl != 0) {
+            ukernels::u_pack<false, float, vector<float, vl>> impl;
+            impl(input, M, N, m_strides, output);
         } else {
             using policy_t = u_pack_policy<float, vector<float, vl>, true>;
             constexpr auto unroll = policy_t::unroll;
-            constexpr auto in_strides1 = sizeof(float) * MStrides;
+            constexpr auto in_strides1 = sizeof(float) * m_strides;
             constexpr auto in_strides2 = sizeof(float);
             asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
@@ -672,12 +676,15 @@ class u_pack<NTT_VLEN / 32, N, MStrides, true, float,
     }
 };
 
-template <class TIn, class TOut, size_t PackAxis1, size_t PackAxis2>
+template <class TIn, class TOut>
 class u_pack2d<true, TIn, TOut, float,
-               vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, PackAxis1,
-               PackAxis2> {
+               vector<float, NTT_VLEN / 32, NTT_VLEN / 32>> {
   public:
-    constexpr void operator()(const TIn &input, TOut &output) noexcept {
+    template <FixedDimensions TAxes>
+    constexpr void operator()(const TIn &input, const TAxes &,
+                              TOut &output) noexcept {
+        constexpr auto PackAxis1 = TAxes{}[0_dim];
+        constexpr auto PackAxis2 = TAxes{}[1_dim];
         constexpr size_t vl = NTT_VLEN / 32;
         auto input_shape = input.shape();
         auto out_stride = output.strides();
@@ -990,10 +997,9 @@ class u_pack2d<true, TIn, TOut, float,
                 }
             }
         } else {
-            ukernels::u_pack2d<false, TIn, TOut, float, vector<float, vl, vl>,
-                               PackAxis1, PackAxis2>
+            ukernels::u_pack2d<false, TIn, TOut, float, vector<float, vl, vl>>
                 impl;
-            impl(input, output);
+            impl(input, TAxes{}, output);
         }
     }
 };

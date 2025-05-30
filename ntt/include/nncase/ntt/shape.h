@@ -300,7 +300,7 @@ struct dims_base {
                 (false || ... ||
                  std::conditional_t<
                      FixedDimension<TDims>,
-                     std::integral_constant<bool, TDims::value == TDim::value>,
+                     std::integral_constant<bool, TDims{} == TDim::value>,
                      std::false_type>{});
             if constexpr (fixed_contains) {
                 return std::true_type{};
