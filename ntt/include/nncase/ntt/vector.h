@@ -61,17 +61,15 @@ class basic_vector
     template <Dimension... Indices>
     constexpr decltype(auto)
     operator()(const Indices &...index) const noexcept {
-        return this->operator()(
-            dynamic_shape_t<sizeof...(index)>{static_cast<dim_t>(index)...});
+        return this->operator()(make_shape(index...));
     }
 
     template <Dimension... Indices>
     constexpr decltype(auto) operator()(const Indices &...index) noexcept {
-        return this->operator()(
-            dynamic_shape_t<sizeof...(index)>{static_cast<dim_t>(index)...});
+        return this->operator()(make_shape(index...));
     }
 
-    template <Shape TIndex>
+    template <Dimensions TIndex>
     constexpr decltype(auto) operator()(const TIndex &index) noexcept {
         if constexpr (requires { traits_type::element_at(buffer_, index); }) {
             return traits_type::element_at(buffer_, index);
@@ -81,7 +79,7 @@ class basic_vector
         }
     }
 
-    template <Shape TIndex>
+    template <Dimensions TIndex>
     constexpr decltype(auto) operator()(const TIndex &index) const noexcept {
         if constexpr (requires { traits_type::element_at(buffer_, index); }) {
             return traits_type::element_at(buffer_, index);

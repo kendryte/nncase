@@ -129,11 +129,11 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                 shape_infer::sub_matmul_shape(output.shape());
 
             auto a = lhs.view(lhs_offset, lhs_shape)
-                         .squeeze(make_index_shape<lhs_shape.rank() - 2>());
+                         .squeeze(make_index_shape<lhs_shape.rank() - 2_dim>());
             auto b = rhs.view(rhs_offset, rhs_shape)
-                         .squeeze(make_index_shape<rhs_shape.rank() - 2>());
+                         .squeeze(make_index_shape<rhs_shape.rank() - 2_dim>());
             auto c = output.view(out_offset, out_shape)
-                         .squeeze(make_index_shape<out_shape.rank() - 2>());
+                         .squeeze(make_index_shape<out_shape.rank() - 2_dim>());
             matmul_2d_l1(a, b, c);
         });
     }

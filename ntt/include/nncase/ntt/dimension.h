@@ -76,31 +76,38 @@ template <char... cv> inline constexpr auto operator"" _dim() {
     constexpr auto value = detail::char_literal<cv...>::to_int;
     return fixed_dim_v<value>;
 }
-
-template <FixedDimension TLhs, FixedDimension TRhs>
-constexpr auto operator+(const TLhs &, const TRhs &) noexcept {
-    return fixed_dim_v<TLhs::value + TRhs::value>;
+template <FixedDimension TDim> constexpr auto operator-(const TDim &) noexcept {
+    return fixed_dim_v<-TDim::value>;
 }
 
-template <FixedDimension TLhs, FixedDimension TRhs>
-constexpr auto operator-(const TLhs &, const TRhs &) noexcept {
-    return fixed_dim_v<TLhs::value - TRhs::value>;
-}
+#define DEFINE_NTT_DIM_BINARY_OP(op)                                           \
+    template <FixedDimension TLhs, FixedDimension TRhs>                        \
+    constexpr auto operator op(const TLhs &, const TRhs &) noexcept {          \
+        return fixed_dim_v<TLhs::value op TRhs::value>;                        \
+    }
 
-template <FixedDimension TLhs, FixedDimension TRhs>
-constexpr auto operator*(const TLhs &, const TRhs &) noexcept {
-    return fixed_dim_v<TLhs::value * TRhs::value>;
-}
+DEFINE_NTT_DIM_BINARY_OP(+)
+DEFINE_NTT_DIM_BINARY_OP(-)
+DEFINE_NTT_DIM_BINARY_OP(*)
+DEFINE_NTT_DIM_BINARY_OP(/)
+DEFINE_NTT_DIM_BINARY_OP(%)
 
-template <FixedDimension TLhs, FixedDimension TRhs>
-constexpr auto operator/(const TLhs &, const TRhs &) noexcept {
-    return fixed_dim_v<TLhs::value / TRhs::value>;
-}
+#undef DEFINE_NTT_DIM_BINARY_OP
 
-template <FixedDimension TLhs, FixedDimension TRhs>
-constexpr auto operator%(const TLhs &, const TRhs &) noexcept {
-    return fixed_dim_v<TLhs::value % TRhs::value>;
-}
+#define DEFINE_NTT_DIM_COMPARE_OP(op)                                          \
+    template <FixedDimension TLhs, FixedDimension TRhs>                        \
+    constexpr auto operator op(const TLhs &, const TRhs &) noexcept {          \
+        return std::integral_constant<bool, (TLhs::value op TRhs::value)>{};   \
+    }
+
+DEFINE_NTT_DIM_COMPARE_OP(==)
+DEFINE_NTT_DIM_COMPARE_OP(!=)
+DEFINE_NTT_DIM_COMPARE_OP(<)
+DEFINE_NTT_DIM_COMPARE_OP(<=)
+DEFINE_NTT_DIM_COMPARE_OP(>)
+DEFINE_NTT_DIM_COMPARE_OP(>=)
+
+#undef DEFINE_NTT_DIM_COMPARE_OP
 
 template <Dimension TDim, Dimension TLowerBound, Dimension TUpperBound>
 constexpr auto clamp(const TDim &dim, const TLowerBound &lower_bound,
@@ -109,8 +116,8 @@ constexpr auto clamp(const TDim &dim, const TLowerBound &lower_bound,
                   FixedDimension<TUpperBound>) {
         static_assert(TLowerBound::value <= TUpperBound::value,
                       "Lower bound must be less than or equal to upper bound");
-        return fixed_dim_v<std::clamp(dim.value, lower_bound.value,
-                                      upper_bound.value)>;
+        return fixed_dim_v<std::clamp(TDim::value, TLowerBound::value,
+                                      TUpperBound::value)>;
     } else {
         return std::clamp(dim_value(dim), dim_value(lower_bound),
                           dim_value(upper_bound));
@@ -149,12 +156,35 @@ constexpr auto positive_index(const TIndex &index,
     }
 }
 
-template <bool Cond, class T, class F>
-constexpr decltype(auto) select(T &&true_value, F &&false_value) {
-    if constexpr (Cond) {
-        return std::forward<T>(true_value);
-    } else {
-        return std::forward<F>(false_value);
+namespace detail {
+template <class Cond, class T, class F> struct select_impl;
+
+template <class Cond, Dimension T, Dimension F> struct select_impl<Cond, T, F> {
+    constexpr dim_t operator()(const Cond &cond, const T &true_dim,
+                               const F &false_dim) const noexcept {
+        return cond ? dim_value(true_dim) : dim_value(false_dim);
     }
+};
+
+template <bool Value, class T, class F>
+struct select_impl<std::integral_constant<bool, Value>, T, F> {
+    constexpr auto
+    operator()(const std::integral_constant<bool, Value> &,
+               [[maybe_unused]] const T &true_dim,
+               [[maybe_unused]] const F &false_dim) const noexcept {
+        if constexpr (Value) {
+            return true_dim;
+        } else {
+            return false_dim;
+        }
+    }
+};
+} // namespace detail
+
+template <class Cond, class T, class F>
+constexpr auto select(const Cond &cond, const T &true_dim,
+                      const F &false_dim) noexcept {
+    detail::select_impl<Cond, T, F> impl;
+    return impl(cond, true_dim, false_dim);
 }
 } // namespace nncase::ntt

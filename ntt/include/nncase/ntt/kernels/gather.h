@@ -28,8 +28,8 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
 
     template <FixedDimension TAxis>
     constexpr void operator()(const TA &input, const TB &indices, TC &output,
-                              const TAxis &axis) noexcept {
-        dynamic_shape_t<rank> in_index{};
+                              const TAxis &) noexcept {
+        constexpr auto axis = TAxis{};
         ntt::apply(output.shape(), [&](auto out_index) {
             // indices_index = out_index[axis:]
             const auto indices_index =

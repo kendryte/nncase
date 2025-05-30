@@ -40,14 +40,14 @@ constexpr auto translate_slice_params(const TInShape &in_shape,
         axes.aggregate(make_zeros_shape<rank>(), [&](const auto cnt_new_begins,
                                                      auto axis, auto i) {
             const auto in_dim = in_shape[axis];
-            return cnt_new_begins.template replace_at<axis>(
-                ntt::select<(steps[i] < 0)>(
-                    // for negative step: begins[i] is clamped into the range
-                    // [0, dims[axes[i]]-1].
-                    translate_begin_end(begins[i], in_dim, 0_dim, -1_dim),
-                    // for positive step: begins[i] is clamped into the range
-                    // [0, dims[axes[i]]].
-                    translate_begin_end(begins[i], in_dim, 0_dim, 0_dim)));
+            return cnt_new_begins.template replace_at<axis>(ntt::select(
+                steps[i] < dim_zero,
+                // for negative step: begins[i] is clamped into the range
+                // [0, dims[axes[i]]-1].
+                translate_begin_end(begins[i], in_dim, 0_dim, -1_dim),
+                // for positive step: begins[i] is clamped into the range
+                // [0, dims[axes[i]]].
+                translate_begin_end(begins[i], in_dim, 0_dim, 0_dim)));
         });
     const auto new_steps =
         axes.aggregate(make_ones_shape<rank>(), [&](const auto cnt_new_steps,
@@ -89,12 +89,14 @@ void slice(const TIn &input, TOut &&output, const TBegins &begins,
     auto in_strides = input.strides();
     auto out_strides = output.strides();
     using element_type = typename TIn::element_type;
-    apply(domain, [&](auto out_index) {
+    apply(domain, [&, new_begins = new_begins,
+                   new_steps = new_steps](auto out_index) {
         auto pout =
             output.buffer().data() + linear_offset(out_index, output.strides());
-        const auto in_index = generate_shape<rank>([&](auto i) {
-            return new_begins[i] + out_index[i] * new_steps[i];
-        });
+        const auto in_index = generate_shape<rank>(
+            [&, new_begins = new_begins, new_steps = new_steps](auto i) {
+                return new_begins[i] + out_index[i] * new_steps[i];
+            });
         auto pin =
             input.buffer().data() + linear_offset(in_index, input.strides());
         ntt::u_unary(ntt::ops::copy<element_type>{}, pin,

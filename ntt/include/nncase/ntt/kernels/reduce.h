@@ -72,8 +72,9 @@ class reduce_impl {
   public:
     template <FixedDimensions TReduceAxes, FixedDimensions PackedAxes>
     constexpr void operator()(const TIn &input, TOut &output,
-                              const TReduceAxes &reduce_axes,
-                              const PackedAxes &packed_axes) {
+                              const TReduceAxes &, const PackedAxes &) {
+        constexpr auto reduce_axes = TReduceAxes{};
+        constexpr auto packed_axes = PackedAxes{};
         ntt::apply(output.shape(), [&](auto index) {
             auto reduced_in = (TInElem)initial_value();
             auto source_index =
@@ -87,9 +88,8 @@ class reduce_impl {
                     TOutElem>(reduced_in);
             } else if constexpr (Vector<TOutElem> && TInElem::rank() == 2 &&
                                  TOutElem::rank() == 1) {
-                constexpr auto inner_axis =
-                    ntt::select<(packed_axes.at(0) == reduce_axes.at(0))>(
-                        0_dim, 1_dim);
+                constexpr auto inner_axis = ntt::select(
+                    packed_axes.at(0) == reduce_axes.at(0), 0_dim, 1_dim);
                 inner_reduce_impl<Op, false, TInElem, TOutElem, inner_axis>
                     inner_impl;
                 inner_impl(reduced_in, reduced_out);
@@ -107,7 +107,7 @@ class reduce_impl {
 
             // Mean
             if constexpr (Op == reduce_op::mean) {
-                constexpr auto reduce_axis = reduce_axes[0_dim];
+                const auto reduce_axis = reduce_axes[0_dim];
                 const auto inner_size =
                     input.shape()
                         .template slice<reduce_axis, TReduceAxes::rank()>()
@@ -196,7 +196,7 @@ void reduce(const TIn &input, TOut &&output,
             [[maybe_unused]] const TReduceAxes &reduce_axes,
             [[maybe_unused]] const PackedAxes &packed_axes = {},
             [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
-    static_assert(paded_nums == make_zeros_shape<PackedAxes::rank()>(),
+    static_assert(PadedNums{} == make_zeros_shape<PackedAxes::rank()>(),
                   "not support padding");
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");

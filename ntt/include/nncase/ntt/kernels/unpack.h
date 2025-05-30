@@ -56,7 +56,7 @@ template <Tensor TIn, Tensor TOut> class unpack_impl<TIn, TOut, 1> {
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, TOut &output,
                               const TAxes &axes) {
-        constexpr auto PackAxis = axes[0_dim];
+        const auto PackAxis = axes[0_dim];
         constexpr auto rank = TIn::rank();
         constexpr auto elem_rank = TVec::shape_type::rank();
         constexpr auto elem_shape = TVec::shape();

@@ -113,7 +113,7 @@ constexpr auto aggregate_impl(const TDims &dims, TAccumulate &&seed,
                               std::integer_sequence<dim_t, I...>) noexcept {
     auto new_seed = func(std::forward<TAccumulate>(seed),
                          dims[fixed_dim_v<Axis>], fixed_dim_v<Axis>);
-    if constexpr (Axis + 1 < dims.rank()) {
+    if constexpr (Axis + 1 < TDims::rank()) {
         return aggregate_impl<Axis + 1>(dims, std::move(new_seed),
                                         std::forward<TFunc>(func),
                                         std::forward<TSelector>(selector),
@@ -290,13 +290,36 @@ struct dims_base {
     constexpr auto &last() noexcept { return at<rank() - 1>(); }
 
     template <Dimension TDim>
-    constexpr bool contains([[maybe_unused]] const TDim &value) noexcept {
-        auto contains_impl = [this,
-                              value]<size_t... I>(std::index_sequence<I...>) {
-            (void)this;
-            return (false || ... || (at(fixed_dim_v<I>) == value));
-        };
-        return contains_impl(std::make_index_sequence<rank()>());
+    constexpr auto contains([[maybe_unused]] const TDim &value) const noexcept {
+        if constexpr (rank() == 0) {
+            return std::false_type{};
+        } else if constexpr (FixedDimension<TDim>) {
+            constexpr auto fixed_contains =
+                (false || ... ||
+                 std::conditional_t<
+                     FixedDimension<TDims>,
+                     std::integral_constant<bool, TDims::value == TDim::value>,
+                     std::false_type>{});
+            if constexpr (fixed_contains) {
+                return std::true_type{};
+            } else if constexpr (is_fixed()) {
+                return std::false_type{};
+            } else {
+                auto contains_impl =
+                    [this, value]<size_t... I>(std::index_sequence<I...>) {
+                        (void)this;
+                        return (false || ... || (at(fixed_dim_v<I>) == value));
+                    };
+                return contains_impl(std::make_index_sequence<rank()>());
+            }
+        } else {
+            auto contains_impl =
+                [this, value]<size_t... I>(std::index_sequence<I...>) {
+                    (void)this;
+                    return (false || ... || (at(fixed_dim_v<I>) == value));
+                };
+            return contains_impl(std::make_index_sequence<rank()>());
+        }
     }
 
     template <Dimension... UDims>
@@ -398,6 +421,7 @@ struct shape_t : detail::dims_base<dims_usage::shape, shape_t, TDims...> {
 
     constexpr size_t length() const noexcept {
         auto length_impl = [this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
             return (dim_one * ... * base_t::at(fixed_dim_v<I>));
         };
         return length_impl(std::make_index_sequence<base_t::rank()>());
@@ -495,7 +519,7 @@ constexpr auto canonicalize_strides(const TShape &shape,
     return generate_strides<TShape::rank()>([&](auto axis) {
         const auto dim = shape[axis];
         if constexpr (FixedDimension<decltype(dim)>) {
-            return ntt::select<(dim == 1)>(dim_zero, strides[axis]);
+            return ntt::select(dim == dim_one, dim_zero, strides[axis]);
         } else {
             return dim == 1 ? 0 : dim_value(strides[axis]);
         }
@@ -730,9 +754,8 @@ template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
                               const TResultDims &result_dims) {
         static_assert(CntAxis < TSrcDims::rank(), "CntAxis out of bounds");
         auto new_result_dims =
-            ntt::select<Axes{}.contains(fixed_dim_v<CntAxis>)>(
-                result_dims,
-                result_dims.append(src_dims[fixed_dim_v<CntAxis>]));
+            ntt::select(Axes{}.contains(fixed_dim_v<CntAxis>), result_dims,
+                        result_dims.append(src_dims[fixed_dim_v<CntAxis>]));
         if constexpr (CntAxis + 1 < TSrcDims::rank()) {
             return squeeze_dims_impl<Axes, CntAxis + 1>()(src_dims,
                                                           new_result_dims);

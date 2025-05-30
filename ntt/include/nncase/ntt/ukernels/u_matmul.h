@@ -18,6 +18,7 @@
 #include "nncase/ntt/primitive_ops.h"
 #include "nncase/ntt/shape.h"
 #include "u_mul_add.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 namespace ukernels {
@@ -59,9 +60,10 @@ struct u_matmul_generic {
 
         for (dim_t k1 = 0; k1 < K; k1++) {
             auto a0 = a.view(make_shape(0_dim, k1), fixed_shape_v<M0Tile, 1>);
-            auto b0 = b.view(ntt::select<TransposedB>(make_shape(0_dim, k1),
-                                                      make_shape(k1, 0_dim)),
-                             b_stride);
+            auto b0 = b.view(
+                ntt::select(std::integral_constant<bool, TransposedB>{},
+                            make_shape(0_dim, k1), make_shape(k1, 0_dim)),
+                b_stride);
             TLhsElem a0_tmp[M0Tile];
             TRhsElem b0_tmp[N0Tile];
 
@@ -70,8 +72,9 @@ struct u_matmul_generic {
             });
             ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
                 auto b0_index =
-                    ntt::select<TransposedB>(make_shape(index[0_dim], 0_dim),
-                                             make_shape(0_dim, index[0_dim]));
+                    ntt::select(std::integral_constant<bool, TransposedB>{},
+                                make_shape(index[0_dim], 0_dim),
+                                make_shape(0_dim, index[0_dim]));
                 b0_tmp[index[0]] = b0(b0_index);
             });
 

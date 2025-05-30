@@ -80,7 +80,7 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, TOut &output,
                               const TAxes &axes) {
-        constexpr auto PackAxis = axes[0_dim];
+        const auto PackAxis = axes[0_dim];
         auto in_p = input.elements().data();
         auto out_p = output.elements().data();
         constexpr auto rank = TIn::rank();
