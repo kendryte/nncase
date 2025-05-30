@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
@@ -32,7 +33,7 @@ public class UnitTestSqueezeToReshape : TransformTestBase
     public static IEnumerable<object[]> TestSqueezeToReshapeNegativeData =>
         new[]
         {
-            new object[] { new[] { 2, 1, 1, 8 }, Array.Empty<int>() },
+            new object[] { new Dimension[] { 2, 1, 1, 8 }, Array.Empty<int>() },
             new object[] { new[] { 2, 4, IR.Dimension.Unknown }, Array.Empty<int>() },
         };
 
