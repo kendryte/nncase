@@ -28,14 +28,15 @@ public sealed partial class UnSqueezeToReshape : IRewriteRule
     public IPattern Pattern { get; } = IsUnsqueeze(
         "target",
         "call",
-        IsWildcard("input"),
+        IsWildcard("input") with { TypePattern = HasRankedShape() },
         IsFixedShape("axes"));
 
-    private Expr? GetReplace(Expr call, Expr input, long[] axes)
+    private Expr? GetReplace(Call call, Expr input, long[] axes)
     {
         if (axes.Length == 0)
         {
-            return call;
+            // no axes to unsqueeze, return input.
+            return input;
         }
 
         var outputRank = input.CheckedShape.Rank + axes.Length;
