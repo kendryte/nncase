@@ -7,12 +7,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
-using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nncase;
 using Nncase.IR;
+using Nncase.IR.NN;
+
 using Tuple = System.Tuple;
 
 public class MyJsonConverter
@@ -529,6 +530,32 @@ internal static class ModelUtils
         }
 
         return data;
+    }
+
+    public static (int[] Lanes, int[] Axes) GetQKVPackParams(IPagedAttentionConfig config, AttentionDimKind[] qLayout)
+    {
+        var lanes = new List<int>();
+        var axes = new List<int>();
+        for (int i = 0; i < config.PackedAxes.Count; i++)
+        {
+            if (config.PackedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
+            {
+                axes.Add(config.PackedAxes[i] switch
+                {
+                    PagedKVCacheDimKind.NumKVHeads => qLayout.IndexOf(AttentionDimKind.Head),
+                    PagedKVCacheDimKind.HeadDim => qLayout.IndexOf(AttentionDimKind.Dim),
+                    _ => throw new ArgumentOutOfRangeException(nameof(config)),
+                });
+                lanes.Add(config.Lanes[i]);
+            }
+        }
+
+        return (lanes.ToArray(), axes.ToArray());
+    }
+
+    public static int[] GetLayoutPerm(AttentionDimKind[] inputLayout, AttentionDimKind[] targetLayout)
+    {
+        return targetLayout.Select(i => inputLayout.IndexOf(i)).ToArray();
     }
 }
 

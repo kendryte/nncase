@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 using Nncase.Passes;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Tests.TestFixture;
@@ -24,24 +25,26 @@ public class UnitTestUnSqueezeToReshape : TransformTestBase
     public static IEnumerable<object[]> TestUnSqueezeToReshapePositiveData =>
         new[]
         {
-            new object[] { new long[] { 2, 4, 8 }, new[] { 0 } },
-            new object[] { new long[] { 4, 6 }, new[] { 0, 2 } },
-            new object[] { new long[] { 4, 6 }, new[] { -4, -2 } },
+            new object[] { new Dimension[] { 2, 4, 8 }, new[] { 0 } },
+            new object[] { new Dimension[] { 4, 6 }, new[] { 0, 2 } },
+            new object[] { new Dimension[] { 4, 6 }, new[] { -4, -2 } },
+            new object[] { new Dimension[] { 2, 4, new DimVar() }, new[] { -1 } },
         };
 
     public static IEnumerable<object[]> TestUnSqueezeToReshapeNegativeData =>
-        new[] { new object[] { new[] { 2, 4, IR.Dimension.Unknown }, new[] { -1 } }, };
+        Array.Empty<object[]>();
 
     [Theory]
     [MemberData(nameof(TestUnSqueezeToReshapePositiveData))]
-    public void TestUnSqueezeToReshapePositive(long[] shape, int[] axes)
+    public void TestUnSqueezeToReshapePositive(Dimension[] shape, int[] axes)
     {
         var a = Random.Normal(DataTypes.Float32, 0, 1, 0, shape);
         var rootPre = Tensors.Unsqueeze(a, axes);
-        TestMatched<UnSqueezeToReshape>(rootPre);
+        var feed = shape.OfType<DimVar>().ToDictionary(d => (IVar)d, d => (IValue)Value.FromTensor(Tensor.FromScalar(8L)));
+        TestMatched<UnSqueezeToReshape>(rootPre, feed);
     }
 
-    [Theory]
+    [Theory(Skip = "TODO: has not negative case now")]
     [MemberData(nameof(TestUnSqueezeToReshapeNegativeData))]
     public void TestUnSqueezeToReshapeNegative(IR.Dimension[] shape, int[] axes)
     {

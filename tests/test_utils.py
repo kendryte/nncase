@@ -20,14 +20,18 @@ from pathlib import Path
 
 
 def dump_npy_file(file: str, ndarray: np.array):
-    np.save(file, ndarray)
+    if isinstance(ndarray, np.ndarray):
+        np.save(file, ndarray)
 
 
 def dump_bin_file(file: str, ndarray: np.array):
-    ndarray.tofile(file)
+    if isinstance(ndarray, np.ndarray):
+        ndarray.tofile(file)
 
 
 def dump_txt_file(save_path, ndarray: np.array, bit_16_represent=False):
+    if not isinstance(ndarray, np.ndarray):
+        return
     if bit_16_represent:
         np.save(save_path, _cast_bfloat16_then_float32(ndarray))
     else:

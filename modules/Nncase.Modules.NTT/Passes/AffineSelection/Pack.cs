@@ -5,14 +5,15 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
 using Nncase.TIR.NTT;
+using Pack = Nncase.IR.Tensors.Pack;
 
 namespace Nncase.Passes;
 
 public partial class NTTAffineSelectionPass
 {
-    private Expr SelectPack(IR.Tensors.Pack pack, Call call, Expr output)
+    private Expr SelectPack(Pack pack, Call call, Expr output)
     {
-        var input = (Expr)call[IR.Tensors.Pack.Input];
+        var input = (Expr)call[Pack.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
         {
             return call;

@@ -23,4 +23,6 @@ public sealed partial class UpdatePagedAttentionKVCache : Op
     public int LayerId { get; }
 
     public IRArray<AttentionDimKind> Layout { get; }
+
+    public override string DisplayProperty() => $"CacheKind: {CacheKind}, LayerId: {LayerId}, Layout [{string.Join(',', Layout)}]";
 }

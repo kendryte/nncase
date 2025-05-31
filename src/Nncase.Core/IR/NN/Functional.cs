@@ -111,6 +111,8 @@ public static class NN
     /// </summary>
     public static Call Swish(Expr input, Expr beta) => new Call(new Swish(), input, beta);
 
+    public static Call GetPositionIds(Expr input, Expr kvCache) => new Call(new GetPositionIds(), input, kvCache);
+
     public static Expr UpdatePagedAttentionKVCache(Expr slots, Expr kvCaches, AttentionCacheKind cacheKind, int layerId, AttentionDimKind[] layout) => new Call(new UpdatePagedAttentionKVCache(cacheKind, layerId, layout), slots, kvCaches);
 
     public static Expr GatherPagedAttentionKVCache(Expr shardId, Expr kvCaches, int numBlocks) => new Call(new GatherPagedAttentionKVCache(numBlocks), shardId, kvCaches);
@@ -119,5 +121,5 @@ public static class NN
 
     public static Expr IdentityPagedAttentionKVCache(Expr input, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches) => new Call(new IdentityPagedAttentionKVCache(), input, numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches);
 
-    public static Expr PagedAttention(Expr q, Expr kvCaches, Expr extra, int layerId, AttentionDimKind[] qlayout) => new Call(new PagedAttention(layerId, new IRArray<AttentionDimKind>(qlayout)), q, kvCaches, extra);
+    public static Expr PagedAttention(Expr q, Expr kvCaches, Expr extra, Expr scale, int layerId, AttentionDimKind[] qlayout) => new Call(new PagedAttention(layerId, new IRArray<AttentionDimKind>(qlayout)), q, kvCaches, extra, scale);
 }

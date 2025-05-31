@@ -21,7 +21,9 @@ public sealed partial class PagedAttention : NTTKernelOp
 
     public static readonly ParameterInfo Extra = new(typeof(PagedAttention), 2, "extra");
 
-    public static readonly ParameterInfo Output = new(typeof(PagedAttention), 3, "Output");
+    public static readonly ParameterInfo Scale = new(typeof(PagedAttention), 3, "scale");
+
+    public static readonly ParameterInfo Output = new(typeof(PagedAttention), 4, "Output");
 
     public int LayerId { get; }
 

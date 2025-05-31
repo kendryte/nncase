@@ -56,7 +56,9 @@ inline void register_llm_evaluator(py::module &m) {
                                &clr::ref_paged_attention_kv_cache::slot_mapping)
         .def_property_readonly("kv_caches",
                                &clr::ref_paged_attention_kv_cache::kv_caches)
-        .def("as_ivalue", &clr::ref_paged_attention_kv_cache::as_ivalue);
+        .def("as_ivalue", &clr::ref_paged_attention_kv_cache::as_ivalue)
+        .def("as_rtvalue", &clr::ref_paged_attention_kv_cache::as_rtvalue)
+        .def("dump_json", &clr::ref_paged_attention_kv_cache::dump_json);
 
     py::class_<clr::ref_paged_attention_scheduler>(m,
                                                    "RefPagedAttentionScheduler")

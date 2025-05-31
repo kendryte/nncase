@@ -48,6 +48,18 @@ output_attentions = false
 output_hidden_states = false
 use_cache = false
 
+[paged_attention_config]
+block_size = 256
+num_blocks = 16
+max_sessions = 16
+kv_type = "float32"
+cache_layout = ["NumBlocks","NumLayers","KV","NumKVHeads","HeadDim","BlockSize"]
+packed_axes = ["HeadDim"]
+lanes = [32]
+sharding_axes = ["NumBlocks"]
+axis_policies = [[0]]
+hierarchy = [1]
+
 [infer_report_opt]
 enabled = false
 priority = 100

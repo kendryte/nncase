@@ -11,6 +11,8 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.NN;
+using Nncase.Passes;
+using Nncase.Passes.Transforms;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
