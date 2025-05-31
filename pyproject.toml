@@ -66,9 +66,11 @@ archs = ["arm64"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
   "pip install auditwheel==6.0.0",
-  "if [ ! -d abseil-cpp ]; then git clone https://github.com/abseil/abseil-cpp.git && cd abseil-cpp && git checkout lts_2024_07_22 && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX={project}/local_install -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_CXX_STANDARD=14 && make -j$(sysctl -n hw.ncpu) && make install && cd ../../ && export DYLD_INSERT_LIBRARIES={project}/abseil-cpp/build/local_install/lib/:$DYLD_INSERT_LIBRARIES; fi"
+  "if [ ! -d abseil-cpp ]; then git clone https://github.com/abseil/abseil-cpp.git && cd abseil-cpp && git checkout lts_2024_07_22 && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=/usr/ -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_CXX_STANDARD=14 && make -j$(sysctl -n hw.ncpu) && make install && cd ../../ && export DYLD_INSERT_LIBRARIES=/usr/lib:$DYLD_INSERT_LIBRARIES; fi"
 ]
 
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "12"
 SYSTEM_VERSION_COMPAT = "0"
+LDFLAGS = "-L/usr/lib -Wl,-rpath,/usr/lib"
+
