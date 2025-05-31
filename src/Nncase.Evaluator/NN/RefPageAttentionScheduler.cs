@@ -139,7 +139,7 @@ public sealed class RefPagedAttentionScheduler
 
     public IR.Function CreateTestFunction(int numQHeads, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout)
     {
-        var (root, queryVar, kVVars, kVCacheObjVar) = RefPagedAttentionKVCache.BuildPagedAttentionKernel([], [_maxModelLen], numQHeads, _numBlocks, qLayout, kvLayout, _config, false, _maxModelLen);
+        var (root, queryVar, kVVars, kVCacheObjVar) = RefPagedAttentionKVCache.BuildPagedAttentionKernel([], [_maxModelLen], numQHeads, _numBlocks, qLayout, kvLayout, _config, new(false, true, _maxModelLen));
         return new IR.Function(root, new Var[] { queryVar }.Concat(kVVars.SelectMany(i => i).ToArray()).Concat(new Var[] { kVCacheObjVar }).ToArray());
     }
 

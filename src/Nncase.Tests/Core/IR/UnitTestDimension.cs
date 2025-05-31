@@ -133,4 +133,18 @@ public sealed class UnitTestDimension
         d4 = d1 / d3;
         Assert.Equal(DimensionKind.Unknown, d4.Kind);
     }
+
+    [Fact]
+    public void TestDimensionSum()
+    {
+        var dv = new DimVar("x");
+        var negdv = -dv;
+        var zero = dv + negdv;
+        Assert.Equal(zero, new DimConst(0));
+        var padding = new IR.Shapes.Padding(0, 128 - dv);
+        var paded = dv + padding.Sum();
+        Assert.Equal(paded, new DimConst(128));
+        var paded2 = padding.Sum() + dv;
+        Assert.Equal(paded2, new DimConst(128));
+    }
 }

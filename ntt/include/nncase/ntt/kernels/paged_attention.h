@@ -194,6 +194,11 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
             // slot mapping is broadcast, but slot maybe is sharding.
             auto global_token_id =
                 slots_global_offset[seq_index] + local_token_id;
+
+            // support plugin kernel style padding.
+            if (global_token_id >= kv_cache.num_tokens()) {
+                continue;
+            }
             auto slot_id = kv_cache.get_slot_id(global_token_id);
             local_slots_starts[seq_index] = local_token_id;
 

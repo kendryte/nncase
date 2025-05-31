@@ -175,18 +175,18 @@ public sealed record RefPagedAttentionKVCache(
     /// <summary>
     /// all vars are [seq,head,dim] layout.
     /// </summary>
-    public static (Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar) BuildPagedAttentionKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false, long numTokensUpperBound = 0)
+    public static (Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar) BuildPagedAttentionKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, BuildKernelOptions options)
     {
         var numTokens = queryLens.Sum();
-        var numTokensVar = new IR.DimVar("num_tokens") { Metadata = { Range = new(1.0f, numTokensUpperBound) } };
-        Shape defaultQDimenions = numTokens == 0 ? new RankedShape(numTokensVar, numQHeads, config.HeadDim) : new long[] { numTokens, numQHeads, config.HeadDim };
+        var numTokensVar = new IR.DimVar("num_tokens") { Metadata = { Range = new(1.0f, options.DynamicMaxTokens) } };
+        Shape defaultQDimenions = options.DynamicShape ? new RankedShape(numTokensVar, numQHeads, config.HeadDim) : new long[] { numTokens, numQHeads, config.HeadDim };
         var queryVar = new Var("query", new TensorType(config.KVPrimType, defaultQDimenions));
         var kvVars = new List<Var[]>();
         var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(
             new ReferenceType(new PagedAttentionKVCacheType { Config = config })));
 
         // Create vars for each layer
-        Shape defaultKDimenions = numTokens == 0 ? new RankedShape(numTokensVar, config.NumKVHeads, config.HeadDim) : new long[] { numTokens, config.NumKVHeads, config.HeadDim };
+        Shape defaultKDimenions = options.DynamicShape ? new RankedShape(numTokensVar, config.NumKVHeads, config.HeadDim) : new long[] { numTokens, config.NumKVHeads, config.HeadDim };
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
             var keyVar = new Var($"key_{layerId}", new TensorType(config.KVPrimType, defaultKDimenions));
@@ -197,14 +197,16 @@ public sealed record RefPagedAttentionKVCache(
         // Build computation graph
         var (q_lanes, q_packed_axes) = GetQKVPackParams(config, qLayout);
         var (kv_lanes, kv_packed_axes) = GetQKVPackParams(config, kvLayout);
-        var transedQuery = IR.F.Tensors.Transpose(queryVar, qLayout.Select(x => (int)x).ToArray());
+        var padedQuery = options.DynamicShape ? IR.F.NN.Pad(queryVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)queryVar;
+        var transedQuery = IR.F.Tensors.Transpose(padedQuery, qLayout.Select(x => (int)x).ToArray());
         var packedQuery = q_lanes.Length > 0 ? IR.F.Tensors.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
         Expr updatedKVCache = None.Default;
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
             var (keyVar, valueVar) = (kvVars[layerId][0], kvVars[layerId][1]);
 
-            var transedKey = IR.F.Tensors.Transpose(keyVar, kvLayout.Select(x => (int)x).ToArray());
+            var padedKey = options.DynamicShape ? IR.F.NN.Pad(keyVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)keyVar;
+            var transedKey = IR.F.Tensors.Transpose(padedKey, kvLayout.Select(x => (int)x).ToArray());
             var packedKey = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedKey,
@@ -213,7 +215,8 @@ public sealed record RefPagedAttentionKVCache(
                 layerId,
                 kvLayout);
 
-            var transValue = IR.F.Tensors.Transpose(valueVar, kvLayout.Select(x => (int)x).ToArray());
+            var padedValue = options.DynamicShape ? IR.F.NN.Pad(valueVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)valueVar;
+            var transValue = IR.F.Tensors.Transpose(padedValue, kvLayout.Select(x => (int)x).ToArray());
             var packedValue = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transValue, kv_lanes, kv_packed_axes) : transValue;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedValue,
@@ -234,9 +237,11 @@ public sealed record RefPagedAttentionKVCache(
 
         // unpack query.
         var unpacked = q_lanes.Length > 0 ? IR.F.Tensors.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
-        Expr root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
+        var untransed = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
+        var unpaded = options.DynamicShape ? IR.F.Tensors.Slice(untransed, new[] { 0 }, new Dimension[] { numTokensVar }, new[] { 0 }, new[] { 1 }) : untransed;
+        Expr root = unpaded;
 
-        if (testUpdateKVCache)
+        if (options.TestUpdateKVCache)
         {
             root = IR.F.NN.GatherPagedAttentionKVCache(new[] { 0L }, updatedKVCache, numBlocks);
         }
@@ -319,6 +324,10 @@ public sealed record RefPagedAttentionKVCache(
         var final_shape = topo_shape.Concat(shape).ToArray();
         var final_squeeze = topo_squeeze.Concat(squeeze_axes).ToArray();
         return KVCaches.View(final_starts, final_shape).Squeeze(final_squeeze);
+    }
+
+    public record class BuildKernelOptions(bool TestUpdateKVCache = false, bool DynamicShape = false, long DynamicMaxTokens = 128)
+    {
     }
 }
 
