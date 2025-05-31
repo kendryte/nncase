@@ -309,6 +309,9 @@ setup(name='nncase',
       version=find_version(),
       packages=['nncase'],
       package_dir={'': 'python'},
+      package_data={
+        'nncase': ['abseil-cpp/build/local_install/lib/*.dylib'],
+    },
       ext_modules=[CMakeExtension(name="_nncase", sourcedir='.')],
       cmdclass={
           'build_ext': BuildCMakeExt,
