@@ -72,5 +72,5 @@ before-build = [
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "12"
 SYSTEM_VERSION_COMPAT = "0"
-LDFLAGS = "-L$DYLD_INSERT_LIBRARIES -Wl,-rpath,$DYLD_INSERT_LIBRARIES"
+LDFLAGS = "-L$DYLD_INSERT_LIBRARIES -Wl,-rpath,@loader_path/abseil-cpp/build/local_install/lib/"
 
