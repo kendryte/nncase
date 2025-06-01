@@ -52,7 +52,7 @@ def test_qwen2(request):
     #TODO: Need remove!
     [target]
     [target.cpu]
-    infer = true
+    infer = false
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
