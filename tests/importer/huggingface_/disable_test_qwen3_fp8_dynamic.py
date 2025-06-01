@@ -63,7 +63,7 @@ def test_qwen3_fp8_dynamic(request):
 
     [paged_attention_config]
     block_size = 256
-    num_blocks = 64
+    num_blocks = 32
     max_sessions = 1
     kv_type = "float16"
     cache_layout = ["NumBlocks","NumLayers","NumKVHeads","KV","HeadDim","BlockSize"]
