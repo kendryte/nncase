@@ -26,6 +26,12 @@ namespace nncase::ntt {
 template <ScalarOrVector T, Shape TShape, Strides TStrides, bool IsView>
 class basic_tensor;
 
+template <ScalarOrVector T, Shape TShape, Strides TStrides, bool IsView,
+          class U>
+struct replace_element_type<basic_tensor<T, TShape, TStrides, IsView>, U> {
+    using type = basic_tensor<U, TShape, TStrides, IsView>;
+};
+
 template <ScalarOrVector T, Shape TShape, Strides TStrides>
 using tensor = basic_tensor<T, TShape, TStrides, false>;
 

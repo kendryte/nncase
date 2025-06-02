@@ -17,20 +17,21 @@
 #include "nncase/ntt/dimension.h"
 #include "nncase/ntt/primitive_ops.h"
 #include "nncase/ntt/shape.h"
+#include "nncase/ntt/tensor_traits.h"
 #include "u_mul_add.h"
 #include <type_traits>
 
 namespace nncase::ntt {
 namespace ukernels {
 namespace detail {
-template <bool TransposedB, dim_t N0Tile> struct b_stride_getter;
+template <bool TransposedB, dim_t N0Tile> struct b0_tile_getter;
 
-template <dim_t N0Tile> struct b_stride_getter<true, N0Tile> {
-    inline static constexpr auto stride = fixed_shape_v<N0Tile, 1>;
+template <dim_t N0Tile> struct b0_tile_getter<true, N0Tile> {
+    inline static constexpr auto tile = fixed_shape_v<N0Tile, 1>;
 };
 
-template <dim_t N0Tile> struct b_stride_getter<false, N0Tile> {
-    inline static constexpr auto stride = fixed_shape_v<1, N0Tile>;
+template <dim_t N0Tile> struct b0_tile_getter<false, N0Tile> {
+    inline static constexpr auto tile = fixed_shape_v<1, N0Tile>;
 };
 } // namespace detail
 
@@ -163,8 +164,8 @@ template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
           bool TransposedA, bool TransposedB, dim_t M0Tile, dim_t N0Tile,
           class TLhsElem, class TRhsElem, class TOutElem, bool Arch>
 struct u_matmul_generic {
-    inline static constexpr auto b_stride =
-        detail::b_stride_getter<TransposedB, N0Tile>::stride;
+    inline static constexpr auto b0_tile =
+        detail::b0_tile_getter<TransposedB, N0Tile>::tile;
 
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
@@ -185,10 +186,9 @@ struct u_matmul_generic {
                 AccumulateC ? c0(index) : TOutElem{};
         });
 
-        using TLhsElemExpanded =
-            cast_fixed_tensor_element_type<TOutElem, float>::type;
+        using TLhsElemExpanded = replace_element_type<TOutElem, float>::type;
         TLhsElemExpanded c0_grouped[m0_tile_scaled][n0_tile_scaled];
-        if constexpr (IsScalar<TLhsElemExpanded>) {
+        if constexpr (Scalar<TLhsElemExpanded>) {
             for (size_t i = 0; i < m0_tile_scaled; i++) {
                 for (size_t j = 0; j < n0_tile_scaled; j++) {
                     c0_grouped[i][j] = (float)c0_tmp[i][j];
@@ -205,11 +205,11 @@ struct u_matmul_generic {
         }
 
         for (size_t k1 = 0; k1 < K; k1++) {
-            auto a0 =
-                a.view(make_ranked_shape(0, k1), fixed_shape<M0Tile, 1>{});
-            auto b0 = b.view(TransposedB ? make_ranked_shape(0, k1)
-                                         : make_ranked_shape(k1, 0),
-                             BStride{});
+            auto a0 = a.view(make_shape(0, k1), fixed_shape_v<M0Tile, 1>);
+            auto b0 =
+                b.view(ntt::where(std::integral_constant<bool, TransposedB>{},
+                                  make_shape(0_dim, k1), make_shape(k1, 0_dim)),
+                       b0_tile);
             TLhsElem a0_tmp[M0Tile];
             TRhsElem b0_tmp[N0Tile];
 
@@ -219,19 +219,17 @@ struct u_matmul_generic {
             ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
                 auto b0_index =
                     ntt::where(std::integral_constant<bool, TransposedB>{},
-                                make_shape(index[0_dim], 0_dim),
-                                make_shape(0_dim, index[0_dim]));
+                               make_shape(index[0_dim], 0_dim),
+                               make_shape(0_dim, index[0_dim]));
                 b0_tmp[index[0]] = b0(b0_index);
             });
 
             if constexpr ((ukernels::mamtul_pack_kind::pack_k == PackKind) &&
                           (!same_type)) {
-                using TLhsElemExpanded =
-                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped = TLhsElemExpanded;
 
-                using TRhsElemExpanded =
-                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemExpanded = replace_element_t<TRhsElem, float>;
                 using TRhsElemGrouped = TRhsElemExpanded;
 
                 TLhsElemGrouped a0_grouped[M0Tile];
@@ -265,12 +263,10 @@ struct u_matmul_generic {
             } else if constexpr ((ukernels::mamtul_pack_kind::pack_m ==
                                   PackKind) &&
                                  (!same_type)) {
-                using TLhsElemExpanded =
-                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped =
-                    ntt::fixed_tensor_alike_t<TLhsElemExpanded, m0_scale,
-                                              TLhsElemExpanded::size() /
-                                                  m0_scale>;
+                    replace_lanes_t<TLhsElemExpanded, m0_scale,
+                                    TLhsElemExpanded::size() / m0_scale>;
 
                 using TRhsElemGrouped = float;
                 TLhsElemGrouped a0_grouped[M0Tile];
@@ -306,12 +302,10 @@ struct u_matmul_generic {
             } else if constexpr ((ukernels::mamtul_pack_kind::pack_n ==
                                   PackKind) &&
                                  (!same_type)) {
-                using TRhsElemExpanded =
-                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemExpanded = replace_element_t<TRhsElem, float>;
                 using TRhsElemGrouped =
-                    ntt::fixed_tensor_alike_t<TRhsElemExpanded, n0_scale,
-                                              TRhsElemExpanded::size() /
-                                                  n0_scale>;
+                    replace_lanes_t<TRhsElemExpanded, n0_scale,
+                                    TRhsElemExpanded::size() / n0_scale>;
 
                 using TLhsElemGrouped = float;
                 TLhsElemGrouped a0_grouped[M0Tile];
@@ -347,16 +341,13 @@ struct u_matmul_generic {
             } else if constexpr ((ukernels::mamtul_pack_kind::pack_mk ==
                                   PackKind) &&
                                  (!same_type)) {
-                using TLhsElemExpanded =
-                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped =
-                    ntt::fixed_tensor_alike_t<TLhsElemExpanded, m0_scale,
-                                              TLhsElemExpanded::shape()[0] /
-                                                  m0_scale,
-                                              TLhsElemExpanded::shape()[1]>;
+                    replace_lanes_t<TLhsElemExpanded, m0_scale,
+                                    TLhsElemExpanded::shape()[0] / m0_scale,
+                                    TLhsElemExpanded::shape()[1]>;
 
-                using TRhsElemExpanded =
-                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemExpanded = replace_element_t<TRhsElem, float>;
                 using TRhsElemGrouped = TRhsElemExpanded;
 
                 TLhsElemGrouped a0_grouped[M0Tile];
@@ -397,19 +388,15 @@ struct u_matmul_generic {
             } else if constexpr ((ukernels::mamtul_pack_kind::pack_mn ==
                                   PackKind) &&
                                  (!same_type)) {
-                using TLhsElemExpanded =
-                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped =
-                    ntt::fixed_tensor_alike_t<TLhsElemExpanded, m0_scale,
-                                              TLhsElemExpanded::size() /
-                                                  m0_scale>;
+                    vector<typename TLhsElemExpanded::element_type, m0_scale,
+                           TLhsElemExpanded::size() / m0_scale>;
 
-                using TRhsElemExpanded =
-                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
+                using TRhsElemExpanded = replace_element_t<TRhsElem, float>;
                 using TRhsElemGrouped =
-                    ntt::fixed_tensor_alike_t<TRhsElemExpanded, n0_scale,
-                                              TRhsElemExpanded::size() /
-                                                  n0_scale>;
+                    replace_lanes_t<TRhsElemExpanded, n0_scale,
+                                    TRhsElemExpanded::size() / n0_scale>;
 
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
@@ -452,19 +439,17 @@ struct u_matmul_generic {
             } else if constexpr ((ukernels::mamtul_pack_kind::pack_mkn ==
                                   PackKind) &&
                                  (!same_type)) {
-                using TLhsElemExpanded =
-                    cast_fixed_tensor_element_type<TLhsElem, float>::type;
+                using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped =
-                    ntt::fixed_tensor_alike_t<TLhsElemExpanded, m0_scale,
-                                              TLhsElemExpanded::shape()[0] /
-                                                  m0_scale,
-                                              TLhsElemExpanded::shape()[1]>;
+                    replace_lanes_t<TLhsElemExpanded, m0_scale,
+                                    TLhsElemExpanded::shape()[0] / m0_scale,
+                                    TLhsElemExpanded::shape()[1]>;
 
-                using TRhsElemExpanded =
-                    cast_fixed_tensor_element_type<TRhsElem, float>::type;
-                using TRhsElemGrouped = ntt::fixed_tensor_alike_t<
-                    TRhsElemExpanded, n0_scale, TRhsElemExpanded::shape()[0],
-                    TRhsElemExpanded::shape()[1] / n0_scale>;
+                using TRhsElemExpanded = replace_element_t<TRhsElem, float>;
+                using TRhsElemGrouped =
+                    replace_lanes_t<TRhsElemExpanded, n0_scale,
+                                    TRhsElemExpanded::shape()[0],
+                                    TRhsElemExpanded::shape()[1] / n0_scale>;
 
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
@@ -556,8 +541,8 @@ template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
 struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
                 TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
                 Arch> {
-    inline static constexpr auto b_stride =
-        detail::b_stride_getter<TransposedB, N0Tile>::stride;
+    inline static constexpr auto b0_tile =
+        detail::b0_tile_getter<TransposedB, N0Tile>::tile;
 
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
@@ -590,8 +575,8 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
                         a.view(make_shape(0_dim, k1), fixed_shape_v<M0Tile, 1>);
                     auto b0 =
                         b.view(ntt::where<TransposedB>(make_shape(0_dim, k1),
-                                                        make_shape(k1, 0_dim)),
-                               b_stride);
+                                                       make_shape(k1, 0_dim)),
+                               b0_tile);
 
                     ntt::apply(fixed_shape_v<m0_subtile>, [&](auto index) {
                         a0_tmp[index[0_dim]] = a0(0, 0)(sm1 + index[0_dim]);
@@ -632,8 +617,8 @@ template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
 struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                 TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
                 Arch> {
-    inline static constexpr auto b_stride =
-        detail::b_stride_getter<TransposedB, N0Tile>::stride;
+    inline static constexpr auto b0_tile =
+        detail::b0_tile_getter<TransposedB, N0Tile>::tile;
 
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
@@ -656,10 +641,9 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                 AccumulateC ? c0(index) : TOutElem{};
         });
 
-        using TLhsElemExpanded =
-            cast_fixed_tensor_element_type<TOutElem, float>::type;
+        using TLhsElemExpanded = replace_element_t<TOutElem, float>;
         TLhsElemExpanded c0_grouped[m0_tile_scaled][n0_tile_scaled];
-        if constexpr (IsScalar<TLhsElemExpanded>) {
+        if constexpr (Scalar<TLhsElemExpanded>) {
             for (size_t i = 0; i < m0_tile_scaled; i++) {
                 for (size_t j = 0; j < n0_tile_scaled; j++) {
                     c0_grouped[i][j] = (float)c0_tmp[i][j];
@@ -676,11 +660,11 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
         }
 
         for (size_t k1 = 0; k1 < K; k1++) {
-            auto a0 =
-                a.view(make_ranked_shape(0, k1), fixed_shape<M0Tile, 1>{});
-            auto b0 = b.view(TransposedB ? make_ranked_shape(0, k1)
-                                         : make_ranked_shape(k1, 0),
-                             BStride{});
+            auto a0 = a.view(make_shape(0, k1), fixed_shape_v<M0Tile, 1>);
+            auto b0 =
+                b.view(ntt::where(std::integral_constant<bool, TransposedB>{},
+                                  make_shape(0_dim, k1), make_shape(k1, 0_dim)),
+                       b0_tile);
             for (size_t sk1 = 0; sk1 < TLhsElem::shape()[0]; sk1++) {
                 using TSubLhsElem = typename TLhsElem::element_type;
                 using TSubRhsElem = ntt::vector<typename TRhsElem::element_type,
@@ -688,7 +672,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
 
                 TSubLhsElem a0_tmp[M0Tile];
                 TSubRhsElem b0_tmp[N0Tile];
-                ntt::apply(fixed_shape<M0Tile>{}, [&](auto index) {
+                ntt::apply(fixed_shape_v<M0Tile>, [&](auto index) {
                     a0_tmp[index[0]] = a0(index[0], 0)(sk1);
                 });
                 ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
@@ -704,11 +688,11 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                     using TLhsElemGrouped = TLhsElemExpanded;
 
                     using TRhsElemExpanded =
-                        cast_fixed_tensor_element_type<TSubRhsElem,
-                                                       float>::type;
-                    using TRhsElemGrouped = ntt::fixed_tensor_alike_t<
-                        TRhsElemExpanded, n0_scale,
-                        (TRhsElemExpanded::shape()[0] / n0_scale)>;
+                        replace_element_t<TSubRhsElem, float>;
+                    using TRhsElemGrouped =
+                        replace_lanes_t<TRhsElemExpanded, n0_scale,
+                                        (TRhsElemExpanded::shape()[0] /
+                                         n0_scale)>;
 
                     TLhsElemGrouped a0_grouped[M0Tile];
                     TRhsElemGrouped b0_grouped[N0Tile];
@@ -766,8 +750,8 @@ template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
 struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
                 TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
                 Arch> {
-    inline static constexpr auto b_stride =
-        detail::b_stride_getter<TransposedB, N0Tile>::stride;
+    inline static constexpr auto b0_tile =
+        detail::b0_tile_getter<TransposedB, N0Tile>::tile;
 
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
@@ -804,8 +788,8 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
                                          fixed_shape_v<M0Tile, 1>);
                         auto b0 = b.view(
                             ntt::where<TransposedB>(make_shape(0_dim, k1),
-                                                     make_shape(k1, 0_dim)),
-                            b_stride);
+                                                    make_shape(k1, 0_dim)),
+                            b0_tile);
 
                         TSubLhsElem a0_tmp[m0_subtile];
                         TSubRhsElem b0_tmp[N0Tile];

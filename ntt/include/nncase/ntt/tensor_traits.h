@@ -72,4 +72,11 @@ struct element_scalar_count<T>
 
 template <class T>
 inline constexpr size_t element_scalar_count_v = element_scalar_count<T>::value;
+
+template <class T, class U> struct replace_element_type {
+    using type = U;
+};
+
+template <class T, class U>
+using replace_element_t = typename replace_element_type<T, U>::type;
 } // namespace nncase::ntt

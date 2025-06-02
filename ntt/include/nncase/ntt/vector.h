@@ -100,4 +100,16 @@ class basic_vector
 };
 
 template <Scalar T, size_t... Lanes> using vector = basic_vector<T, Lanes...>;
+
+template <Scalar T, size_t... Lanes, class U>
+struct replace_element_type<vector<T, Lanes...>, U> {
+    using type = vector<U, Lanes...>;
+};
+
+template <Vector T, size_t... Lanes> struct replace_lanes_type {
+    using type = vector<typename T::element_type, Lanes...>;
+};
+
+template <Vector T, size_t... Lanes>
+using replace_lanes_t = typename replace_lanes_type<T, Lanes...>::type;
 } // namespace nncase::ntt

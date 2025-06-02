@@ -72,7 +72,7 @@ TEST(ClampTestFloat, PackM) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto shape2 = ntt::fixed_shape_v<M, N / P>;
+    auto shape2 = ntt::fixed_shape_v<M / P, N>;
     alignas(32) auto pack_input =
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =
@@ -114,7 +114,7 @@ TEST(ClampTestFloat, PackN) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto shape2 = ntt::fixed_shape_v<M / P, N>;
+    auto shape2 = ntt::fixed_shape_v<M, N / P>;
     alignas(32) auto pack_input =
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =

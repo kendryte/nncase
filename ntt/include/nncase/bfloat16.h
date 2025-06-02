@@ -184,7 +184,7 @@ DEFINE_BF16_BINARY_BOOLRET(>=)
 DEFINE_BF16_BINARY_BOOLRET(>)
 
 #define DEFINE_BF16_BINARY_SELF_MOD(x, op)                                     \
-    inline bfloat16 &operator x(bfloat16 &a, bfloat16 b) noexcept {            \
+    inline bfloat16 &operator x(bfloat16 & a, bfloat16 b) noexcept {           \
         a = a op b;                                                            \
         return a;                                                              \
     }
@@ -208,6 +208,8 @@ inline bool operator!=(const bfloat16 &lhs, const bfloat16 &rhs) noexcept {
 } // namespace nncase
 
 namespace std {
+template <> struct is_floating_point<nncase::bfloat16> : true_type {};
+
 template <> struct hash<nncase::bfloat16> {
     size_t operator()(const nncase::bfloat16 &v) const {
         return hash<float>()(static_cast<float>(v));
