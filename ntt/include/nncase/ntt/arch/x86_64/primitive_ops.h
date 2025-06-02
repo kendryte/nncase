@@ -175,9 +175,9 @@ template <> struct asinh<ntt::vector<float, 8>> {
 };
 
 // cast
-template <> struct cast<ntt::vector<bool, 8>, ntt::vector<float, 8>> {
+template <> struct cast<ntt::vector<unsigned char, 8>, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
-    operator()(const ntt::vector<bool, 8> &v) const noexcept {
+    operator()(const ntt::vector<unsigned char, 8> &v) const noexcept {
         __m256i mask = _mm256_setr_epi32(
             v(0) ? -1 : 0, v(1) ? -1 : 0, v(2) ? -1 : 0, v(3) ? -1 : 0,
             v(4) ? -1 : 0, v(5) ? -1 : 0, v(6) ? -1 : 0, v(7) ? -1 : 0);
@@ -191,8 +191,8 @@ template <> struct cast<ntt::vector<bool, 8>, ntt::vector<float, 8>> {
 };
 
 // cast
-template <> struct cast<ntt::vector<bool, 32>, ntt::vector<float, 8>> {
-    auto operator()(const ntt::vector<bool, 32> &v) const noexcept {
+template <> struct cast<ntt::vector<unsigned char, 32>, ntt::vector<float, 8>> {
+    auto operator()(const ntt::vector<unsigned char, 32> &v) const noexcept {
 
         ntt::vector<float, 4, 8> output;
         __m256i mask0 = _mm256_setr_epi32(
@@ -940,7 +940,7 @@ template <> struct clamp<ntt::vector<float, 8>, float> {
 
 // compare
 
-void decompress_bitwidth(__m256 cmp_mask, ntt::vector<bool, 8> &output) {
+void decompress_bitwidth(__m256 cmp_mask, ntt::vector<unsigned char, 8> &output) {
     __m256i one_epi32 = _mm256_set1_epi32(1); // 1 (32-bit)
     __m256i bool_vals =
         _mm256_and_si256(_mm256_castps_si256(cmp_mask),
@@ -962,10 +962,10 @@ void decompress_bitwidth(__m256 cmp_mask, ntt::vector<bool, 8> &output) {
 
 // equal: vector vs vector
 template <> struct equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
         decompress_bitwidth(cmp_mask, output);
         return output;
@@ -986,10 +986,10 @@ template <> struct equal<ntt::vector<float, 8>, float> {
 
 // equal: scalar vs vector
 template <> struct equal<float, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const float &f1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto v1 = _mm256_set1_ps(f1);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_EQ_OQ);
         decompress_bitwidth(cmp_mask, output);
@@ -999,10 +999,10 @@ template <> struct equal<float, ntt::vector<float, 8>> {
 
 // not_equal: vector vs vector
 template <> struct not_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
         decompress_bitwidth(cmp_mask, output);
         return output;
@@ -1023,10 +1023,10 @@ template <> struct not_equal<ntt::vector<float, 8>, float> {
 
 // not_equal: scalar vs vector
 template <> struct not_equal<float, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const float &f1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto v1 = _mm256_set1_ps(f1);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_NEQ_OQ);
         decompress_bitwidth(cmp_mask, output);
@@ -1036,10 +1036,10 @@ template <> struct not_equal<float, ntt::vector<float, 8>> {
 
 // greater: vector vs vector
 template <> struct greater<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
         decompress_bitwidth(cmp_mask, output);
         return output;
@@ -1060,10 +1060,10 @@ template <> struct greater<ntt::vector<float, 8>, float> {
 
 // greater: scalar vs vector
 template <> struct greater<float, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const float &f1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto v1 = _mm256_set1_ps(f1);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_GT_OQ);
         decompress_bitwidth(cmp_mask, output);
@@ -1074,10 +1074,10 @@ template <> struct greater<float, ntt::vector<float, 8>> {
 // greater_or_equal: vector vs vector
 template <>
 struct greater_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
         decompress_bitwidth(cmp_mask, output);
         return output;
@@ -1098,10 +1098,10 @@ template <> struct greater_or_equal<ntt::vector<float, 8>, float> {
 
 // greater_or_equal: scalar vs vector
 template <> struct greater_or_equal<float, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const float &f1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto v1 = _mm256_set1_ps(f1);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_GE_OQ);
         decompress_bitwidth(cmp_mask, output);
@@ -1111,10 +1111,10 @@ template <> struct greater_or_equal<float, ntt::vector<float, 8>> {
 
 // less: vector vs vector
 template <> struct less<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
         decompress_bitwidth(cmp_mask, output);
         return output;
@@ -1135,10 +1135,10 @@ template <> struct less<ntt::vector<float, 8>, float> {
 
 // less: scalar vs vector
 template <> struct less<float, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const float &f1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto v1 = _mm256_set1_ps(f1);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_LT_OQ);
         decompress_bitwidth(cmp_mask, output);
@@ -1148,10 +1148,10 @@ template <> struct less<float, ntt::vector<float, 8>> {
 
 // less_or_equal: vector vs vector
 template <> struct less_or_equal<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const ntt::vector<float, 8> &v1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);
         decompress_bitwidth(cmp_mask, output);
         return output;
@@ -1172,10 +1172,10 @@ template <> struct less_or_equal<ntt::vector<float, 8>, float> {
 
 // less_or_equal: scalar vs vector
 template <> struct less_or_equal<float, ntt::vector<float, 8>> {
-    ntt::vector<bool, 8>
+    ntt::vector<unsigned char, 8>
     operator()(const float &f1,
                const ntt::vector<float, 8> &v2) const noexcept {
-        ntt::vector<bool, 8> output;
+        ntt::vector<unsigned char, 8> output;
         auto v1 = _mm256_set1_ps(f1);
         auto cmp_mask = _mm256_cmp_ps(v1, v2, _CMP_LE_OQ);
         decompress_bitwidth(cmp_mask, output);
@@ -1187,10 +1187,10 @@ template <> struct less_or_equal<float, ntt::vector<float, 8>> {
 
 // where: vector condition, vector X, vector Y
 template <>
-struct where<ntt::vector<bool, 8>, ntt::vector<float, 8>,
+struct where<ntt::vector<unsigned char, 8>, ntt::vector<float, 8>,
              ntt::vector<float, 8>> {
     ntt::vector<float, 8>
-    operator()(const ntt::vector<bool, 8> &condition,
+    operator()(const ntt::vector<unsigned char, 8> &condition,
                const ntt::vector<float, 8> &x,
                const ntt::vector<float, 8> &y) const noexcept {
         __m256i mask_i = _mm256_setr_epi32(
@@ -1216,9 +1216,9 @@ template <> struct where<bool, ntt::vector<float, 8>, ntt::vector<float, 8>> {
 };
 
 // where: vector condition, scalar X, vector Y
-template <> struct where<ntt::vector<bool, 8>, float, ntt::vector<float, 8>> {
+template <> struct where<ntt::vector<unsigned char, 8>, float, ntt::vector<float, 8>> {
     ntt::vector<float, 8>
-    operator()(const ntt::vector<bool, 8> &condition, const float &x,
+    operator()(const ntt::vector<unsigned char, 8> &condition, const float &x,
                const ntt::vector<float, 8> &y) const noexcept {
         __m256 x_vec = _mm256_set1_ps(x);
         __m256i mask_i = _mm256_setr_epi32(
@@ -1234,8 +1234,8 @@ template <> struct where<ntt::vector<bool, 8>, float, ntt::vector<float, 8>> {
 };
 
 // where: vector condition, vector X, scalar Y
-template <> struct where<ntt::vector<bool, 8>, ntt::vector<float, 8>, float> {
-    ntt::vector<float, 8> operator()(const ntt::vector<bool, 8> &condition,
+template <> struct where<ntt::vector<unsigned char, 8>, ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<unsigned char, 8> &condition,
                                      const ntt::vector<float, 8> &x,
                                      const float &y) const noexcept {
         __m256 y_vec = _mm256_set1_ps(y);
@@ -1252,8 +1252,8 @@ template <> struct where<ntt::vector<bool, 8>, ntt::vector<float, 8>, float> {
 };
 
 // where: vector condition, scalar X, scalar Y
-template <> struct where<ntt::vector<bool, 8>, float, float> {
-    ntt::vector<float, 8> operator()(const ntt::vector<bool, 8> &condition,
+template <> struct where<ntt::vector<unsigned char, 8>, float, float> {
+    ntt::vector<float, 8> operator()(const ntt::vector<unsigned char, 8> &condition,
                                      const float &x,
                                      const float &y) const noexcept {
         __m256 x_vec = _mm256_set1_ps(x);

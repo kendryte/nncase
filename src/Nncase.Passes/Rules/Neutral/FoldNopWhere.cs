@@ -26,6 +26,11 @@ public sealed partial class FoldNopWhere : RewriteRule<Pattern>
 
     private Expr? GetReplace(bool condition, Expr lhs, Expr rhs)
     {
+        if (Expr.Equals(lhs, rhs))
+        {
+            return lhs;
+        }
+
         return condition ? lhs : rhs;
     }
 }

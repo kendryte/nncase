@@ -4,9 +4,11 @@
 using Nncase.IR;
 using Nncase.IR.Distributed;
 using Nncase.IR.NTT;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using static Nncase.PatternMatch.F.Distributed;
 using static Nncase.PatternMatch.F.NTT;
+using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.NTT;
@@ -29,7 +31,7 @@ public sealed partial class FoldPackedMatmulReduce : IRewriteRule
     {
         if (call.CheckedType is DistributedType dt && dt.AxisPolices.Any(s => s is SBPPartial))
         {
-            var newMatmul = new IR.NTT.PackedMatMul(mm.LhsPackedAxes, mm.LhsPadedNums, mm.RhsPackedAxes, mm.RhsPadedNums, mm.TransposeA, mm.TransposeB, true);
+            var newMatmul = new IR.NTT.PackedMatMul(mm.OutputDataType, mm.LhsPackedAxes, mm.RhsPackedAxes, mm.TransposeA, mm.TransposeB, true);
             return new Call(newMatmul, lhs, rhs);
         }
 
@@ -60,7 +62,7 @@ public sealed partial class SwapUnpackReduce : IRewriteRule
         {
             var newType = new DistributedType(dt.TensorType, dt.AxisPolices.Select(s => s is SBPPartial ? SBP.B : s).ToArray(), dt.Placement);
             var newBoxing = IR.F.Distributed.Boxing(call, newType);
-            return IR.F.NTT.Unpack(newBoxing, [.. unpack.Lanes], [.. unpack.Axes]);
+            return IR.F.Tensors.Unpack(newBoxing, [.. unpack.Lanes], [.. unpack.Axes]);
         }
 
         return null;

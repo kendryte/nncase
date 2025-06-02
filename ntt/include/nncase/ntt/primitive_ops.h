@@ -173,6 +173,7 @@ template <class T1, class T2> struct mul {
 
 template <class T1, class T2> struct div {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+        static_assert(std::is_same_v<T1, T2>, "T1 and T2 must be same type");
         return v1 / v2;
     }
 };
@@ -254,7 +255,7 @@ template <class T1, class T2> struct not_equal {
 
 template <class T1, class T2> struct less {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return v1 < v2;
+        return (unsigned char)(v1 < v2);
     }
 };
 
@@ -511,7 +512,7 @@ template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
 
 // swish(v) = v / (exp(-v) + 1)
 template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
-    return v / (ntt::exp(-v) + 1);
+    return v / (ntt::exp(-v) + (T)1);
 }
 
 // swishb(v) = v / (exp(-v*beta) + 1)

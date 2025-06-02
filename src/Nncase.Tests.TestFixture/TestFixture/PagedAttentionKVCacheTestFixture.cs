@@ -37,7 +37,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         QLayout = qLayout;
         KLayout = kLayout;
         var kvPrimType = DataType.FromTypeCode(kvPrimTypeCode);
-        var lane = 128 / kvPrimType.SizeInBytes;
+        var lanes = packedAxes.Select(i => 128 / kvPrimType.SizeInBytes).ToArray();
         Config = new PagedAttentionConfig(
             numLayers,
             numKVHeads,
@@ -46,7 +46,7 @@ public sealed class PagedAttentionKVCacheTestFixture
             blockSize,
             cacheLayout,
             packedAxes,
-            new[] { lane },
+            lanes,
             shardingAxes,
             axisPolicies);
     }
@@ -97,7 +97,14 @@ public sealed class PagedAttentionKVCacheTestFixture
         // gqa
         if (key.Shape[0] != query.Shape[0])
         {
-            key = OrtKI.Tile(key, new long[] { query.Shape[0] / key.Shape[0], 1, 1 });
+            // interleave repeat.
+            var repeatCount = (int)(query.Shape[0] / key.Shape[0]);
+            var indices = Enumerable.Range(0, (int)key.Shape[0]).
+                Select(i => Enumerable.Repeat(i, repeatCount)).
+                SelectMany(i => i).
+                Select(i => (long)i).
+                ToArray();
+            key = OrtKI.Gather(key, indices, 0);
         }
 
         var perm = Enumerable.Range(0, key.Shape.Length).Select(i => (long)i).ToArray();
@@ -115,7 +122,13 @@ public sealed class PagedAttentionKVCacheTestFixture
         // gqa
         if (value.Shape[0] != query.Shape[0])
         {
-            value = OrtKI.Tile(value, new long[] { query.Shape[0] / value.Shape[0], 1, 1 });
+            var repeatCount = (int)(query.Shape[0] / value.Shape[0]);
+            var indices = Enumerable.Range(0, (int)value.Shape[0]).
+                Select(i => Enumerable.Repeat(i, repeatCount)).
+                SelectMany(i => i).
+                Select(i => (long)i).
+                ToArray();
+            value = OrtKI.Gather(value, indices, 0);
         }
 
         return OrtKI.MatMul(attnWeight, value); // [Hq,L,Ev]
@@ -213,97 +226,6 @@ public sealed class PagedAttentionKVCacheTestFixture
         return new TensorType(lanes.Count == 0 ? config.KVPrimType : new VectorType(config.KVPrimType, lanes.ToArray()), dims);
     }
 
-    public static (int[] Lanes, int[] Axes) GetQKVPackParams(IPagedAttentionConfig config, AttentionDimKind[] qLayout)
-    {
-        var lanes = new List<int>();
-        var axes = new List<int>();
-        for (int i = 0; i < config.PackedAxes.Count; i++)
-        {
-            if (config.PackedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
-            {
-                axes.Add(config.PackedAxes[i] switch
-                {
-                    PagedKVCacheDimKind.NumKVHeads => qLayout.IndexOf(AttentionDimKind.Head),
-                    PagedKVCacheDimKind.HeadDim => qLayout.IndexOf(AttentionDimKind.Dim),
-                    _ => throw new ArgumentOutOfRangeException(nameof(config)),
-                });
-                lanes.Add(config.Lanes[i]);
-            }
-        }
-
-        return (lanes.ToArray(), axes.ToArray());
-    }
-
-    /// <summary>
-    /// all vars are [seq,head,dim] layout.
-    /// </summary>
-    public static TestKernel CreateTestKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false)
-    {
-        var numTokens = queryLens.Sum();
-        var defaultQDimenions = new long[] { numTokens, numQHeads, config.HeadDim };
-        var queryVar = new Var("query", new TensorType(config.KVPrimType, defaultQDimenions));
-        var kvVars = new List<Var[]>();
-        var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(
-            new ReferenceType(new PagedAttentionKVCacheType { Config = config })));
-
-        // Create vars for each layer
-        var defaultKDimenions = new long[] { numTokens, config.NumKVHeads, config.HeadDim };
-        for (int layerId = 0; layerId < config.NumLayers; layerId++)
-        {
-            var keyVar = new Var($"key_{layerId}", new TensorType(config.KVPrimType, defaultKDimenions));
-            var valueVar = new Var($"value_{layerId}", new TensorType(config.KVPrimType, defaultKDimenions));
-            kvVars.Add([keyVar, valueVar]);
-        }
-
-        // Build computation graph
-        var (q_lanes, q_packed_axes) = GetQKVPackParams(config, qLayout);
-        var (kv_lanes, kv_packed_axes) = GetQKVPackParams(config, kvLayout);
-        var transedQuery = IR.F.Tensors.Transpose(queryVar, qLayout.Select(x => (int)x).ToArray());
-        var packedQuery = q_lanes.Length > 0 ? IR.F.NTT.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
-        Expr updatedKVCache = None.Default;
-        for (int layerId = 0; layerId < config.NumLayers; layerId++)
-        {
-            var (keyVar, valueVar) = (kvVars[layerId][0], kvVars[layerId][1]);
-
-            var transedKey = IR.F.Tensors.Transpose(keyVar, kvLayout.Select(x => (int)x).ToArray());
-            var packedKey = kv_lanes.Length > 0 ? IR.F.NTT.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
-            updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
-                packedKey,
-                kvCacheObjVar,
-                AttentionCacheKind.Key,
-                layerId,
-                kvLayout);
-
-            var transValue = IR.F.Tensors.Transpose(valueVar, kvLayout.Select(x => (int)x).ToArray());
-            var packedValue = kv_lanes.Length > 0 ? IR.F.NTT.Pack(transValue, kv_lanes, kv_packed_axes) : transValue;
-            updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
-                packedValue,
-                updatedKVCache,
-                AttentionCacheKind.Value,
-                layerId,
-                kvLayout);
-
-            // Apply attention for current layer
-            packedQuery = IR.F.NN.PagedAttention(
-                packedQuery,
-                updatedKVCache,
-                Tensor.Zeros(config.KVPrimType, [numQHeads, queryLens.Max(), seqLens.Max() + 1]), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
-                layerId,
-                qLayout);
-        }
-
-        // unpack query.
-        var unpacked = q_lanes.Length > 0 ? IR.F.NTT.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
-        Expr root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
-
-        if (testUpdateKVCache)
-        {
-            root = IR.F.NN.GatherPagedAttentionKVCache(new[] { 0L }, updatedKVCache, numBlocks);
-        }
-
-        return new TestKernel(root, queryVar, kvVars, kvCacheObjVar);
-    }
-
     public static KVInputs PrepareKVInputs(long[] queryLens, long[] seqLens, long[] contextLens, int numBlocks, Placement placement, ReferenceResults referenceResults, IPagedAttentionConfig config)
     {
         // 0. create inputs tensor.
@@ -376,8 +298,7 @@ public sealed class PagedAttentionKVCacheTestFixture
                 {
                     for (long logical_slot_id = alignedSeqStartLocs[seqId]; logical_slot_id < alignedSeqStartLocs[seqId] + contextLens[seqId]; logical_slot_id++)
                     {
-                        var indices = new long[] { tokenId, 0 };
-                        PrepareSlotMappingId(tempSlotMappingTensor, [tokenId, 0], logical_slot_id, numBlocks, placement, config);
+                        RefPagedAttentionKVCache.MaterializeSlotMappingId(tempSlotMappingTensor, [tokenId, 0], logical_slot_id, numBlocks, placement, config);
                         tokenId++;
                     }
                 }
@@ -409,38 +330,10 @@ public sealed class PagedAttentionKVCacheTestFixture
         // 3. create block table/slot mapping tensor.
         for (int seqId = 0; seqId < seqLens.Length; seqId++)
         {
-            for (long j = 0, logicalSlotId = alignedSeqStartLocs[seqId]; logicalSlotId < alignedSeqStartLocs[seqId] + alignedSeqLens[seqId]; logicalSlotId += config.BlockSize, j++)
+            for (long itemId = 0, logicalSlotId = alignedSeqStartLocs[seqId]; logicalSlotId < alignedSeqStartLocs[seqId] + alignedSeqLens[seqId]; logicalSlotId += config.BlockSize, itemId++)
             {
                 var logicalBlockId = logicalSlotId / config.BlockSize;
-                var indices = new long[] { seqId, j, 0 };
-                long physicalBlockId = logicalBlockId;
-
-                for (int topoId = 0; topoId < config.ShardingAxes.Count; topoId++)
-                {
-                    switch (config.ShardingAxes[topoId])
-                    {
-                        case PagedKVCacheDimKind.NumBlocks:
-                            var parallelism = config.AxisPolicies[topoId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
-                            if (numBlocks < parallelism && !DistributedUtility.IsDivideExactly(numBlocks, parallelism))
-                            {
-                                throw new InvalidOperationException("numBlocks < parallelism");
-                            }
-
-                            var numBlockTile = numBlocks / parallelism;
-                            var value = (int)Math.DivRem(physicalBlockId, numBlockTile, out physicalBlockId);
-                            blockTableTensor[indices] = value;
-                            break;
-                        case PagedKVCacheDimKind.NumKVHeads:
-                            blockTableTensor[indices] = -1;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(config));
-                    }
-
-                    indices[^1]++;
-                }
-
-                blockTableTensor[indices] = physicalBlockId;
+                RefPagedAttentionKVCache.MaterializeBlockTable(blockTableTensor, [seqId, itemId, 0], logicalBlockId, numBlocks, placement, config);
             }
         }
 
@@ -451,7 +344,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         {
             for (long logicalSlotId = alignedContextEndLocs[seqId]; logicalSlotId < alignedContextEndLocs[seqId] + queryLens[seqId]; logicalSlotId++)
             {
-                PrepareSlotMappingId(slotMappingTensor, [tokenId, 0], logicalSlotId, numBlocks, placement, config);
+                RefPagedAttentionKVCache.MaterializeSlotMappingId(slotMappingTensor, [tokenId, 0], logicalSlotId, numBlocks, placement, config);
                 tokenId++;
             }
         }
@@ -469,38 +362,6 @@ public sealed class PagedAttentionKVCacheTestFixture
             numBlocks,
             logicalKVCacheTensor);
         return new(kvInputs, kvcacheObj);
-    }
-
-    public static void PrepareSlotMappingId(Tensor<long> slotMappingTensor, long[] indices, long logicalSlotId, int numBlocks, Placement placement, IPagedAttentionConfig config)
-    {
-        var physicalSlotId = logicalSlotId;
-
-        for (int shardId = 0; shardId < config.ShardingAxes.Count; shardId++)
-        {
-            switch (config.ShardingAxes[shardId])
-            {
-                case PagedKVCacheDimKind.NumBlocks:
-                    var parallelism = config.AxisPolicies[shardId].Axes.Select(axis => placement.Hierarchy[axis]).Product();
-                    if (numBlocks < parallelism && !DistributedUtility.IsDivideExactly(numBlocks, parallelism))
-                    {
-                        throw new InvalidOperationException("numBlocks < parallelism");
-                    }
-
-                    var numBlockTile = numBlocks / parallelism * config.BlockSize;
-                    var value = (int)Math.DivRem(physicalSlotId, numBlockTile, out physicalSlotId);
-                    slotMappingTensor[indices] = value;
-                    break;
-                case PagedKVCacheDimKind.NumKVHeads when config.AxisPolicies[shardId].Axes.Count == 1:
-                    slotMappingTensor[indices] = -1; // todo should matching the kv sharding.
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(config));
-            }
-
-            indices[^1]++;
-        }
-
-        slotMappingTensor[indices] = physicalSlotId;
     }
 
     public static Tensor<float> ReferenceInputGenerator(long[] dimensions, ref float startValue, DataGeneratorOptions options)

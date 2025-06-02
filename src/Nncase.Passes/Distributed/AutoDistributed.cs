@@ -1481,8 +1481,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         }
 
         // TODO: refactor here
-        if (expr.Target is not ScatterND &&
-            expr.Target is not IR.Distributed.Boxing &&
+        if ((expr.Target.GetType().Name == "PackedMatMul" || expr.Target is IR.Math.MatMul) &&
             (expr.CheckedType is TensorType or DistributedType) &&
             !CompilerServices.GetMaxShape(expr.CheckedShape).Contains(0) &&
             results.Count == 1 &&

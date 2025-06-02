@@ -391,14 +391,20 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.SUMMA summa:
                     var rdKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => i >= TargetOptions.HierarchyNames.Length - 2 ? "r" + TargetOptions.HierarchyNames[i] : string.Empty + TargetOptions.HierarchyNames[i]));
                     IndentScope.Writer.IndWrite($"{{tac::detail::tensor_reduce_sync_impl<reduce_op::sum, {rdKind}> impl; impl.reduce_group_sync();\n");
-                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape<{string.Join(",", summa.LhsPackedAxes)}>{{}}, fixed_shape<{string.Join(",", summa.LhsPadedNums)}>{{}}, fixed_shape<{string.Join(",", summa.RhsPackedAxes)}>{{}}, fixed_shape<{string.Join(",", summa.RhsPadedNums)}>{{}});\n");
+                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape<{string.Join(",", summa.LhsPackedAxes)}>{{}}, fixed_shape<>{{}}, fixed_shape<{string.Join(",", summa.RhsPackedAxes)}>{{}}, fixed_shape<>{{}});\n");
                     IndentScope.Writer.IndWrite($"impl.reduce_group_sync();}}\n");
                     break;
                 case TIR.Memcopy copy:
                     WriteWithProfiler($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");
                     break;
                 case TIR.NTT.Gather gather:
-                    WriteWithProfiler($"gather<{gather.Axis}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                    WriteWithProfiler($"gather<{gather.Axis}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                    if (args[0] is TIR.Buffer b && b.DistributedType?.AxisPolices[gather.Axis] is SBPSplit s)
+                    {
+                        var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                        WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                    }
+
                     break;
                 case TIR.NTT.Swish swish:
                     if (swish.Beta != 1.0f)
@@ -415,10 +421,10 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Transpose transpose:
-                    WriteWithProfiler($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitDimOrShape(args[1]).Name});\n");
+                    WriteWithProfiler($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Pad pad:
-                    WriteWithProfiler($"pad({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }} );\n");
+                    WriteWithProfiler($"pad({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }}, make_ranked_shape({string.Join(",", pad.Paddings)}));\n");
                     break;
                 case TIR.NTT.Reduce reduce:
                     WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axes)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<{string.Join(",", reduce.PadedNums)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
@@ -465,6 +471,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     {
                         if (grs.InType.AxisPolices.Any(s => s is SBPPartial))
                         {
+                            // deprecated
                             var sbpPartial = (SBPPartial)grs.InType.AxisPolices.Where(s => s is SBPPartial).Distinct().First();
                             var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.AxisPolices.Select((s, i) => (s is SBPPartial ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
                             WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{sbpPartial.Op.ToC()}, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
@@ -486,6 +493,15 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     break;
                 case TIR.NTT.Reshape reshape:
                     IndentScope.Writer.Write($"reshape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    break;
+                case TIR.NTT.ShapeOf shapeOf:
+                    IndentScope.Writer.Write($"shapeof({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    break;
+                case TIR.NTT.Range range:
+                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name},{VisitBuffer(args[2], local: true).Name},{VisitBuffer(args[3], local: true).Name});\n");
+                    break;
+                case TIR.NTT.ConstantOfShape constantOfShape:
+                    IndentScope.Writer.Write($"constant_of_shape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
                     break;
                 case TIR.NTT.UpdatePagedAttentionKVCache updatePagedAttentionKVCache:
                     IndentScope.Writer.IndWrite($"update_paged_attention_kv_cache<{updatePagedAttentionKVCache.Layout.ToC()}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, caching::attention_cache_kind::{updatePagedAttentionKVCache.CacheKind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {updatePagedAttentionKVCache.LayerId});\n");
@@ -526,16 +542,16 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             switch (expr.Target)
             {
                 case IR.Math.Binary op:
-                    str = CSourceUtilities.ContertBinary(op, arguments);
+                    str = CSourceUtilities.ConvertBinary(op, arguments);
                     break;
                 case IR.Math.Unary op:
-                    str = CSourceUtilities.ContertUnary(op, arguments);
+                    str = CSourceUtilities.ConvertUnary(op, arguments);
                     break;
                 case IR.Math.Compare op:
-                    str = CSourceUtilities.ContertCompare(op, arguments);
+                    str = CSourceUtilities.ConvertCompare(op, arguments);
                     break;
                 case IR.Math.Select op:
-                    str = CSourceUtilities.ContertSelect(op, arguments);
+                    str = CSourceUtilities.ConvertSelect(op, arguments);
                     break;
                 case TIR.Load op:
                     str = $"{arguments[0].Name}[{arguments[1].Name}]";
@@ -546,8 +562,22 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.PtrOf op:
                     str = op.PtrName;
                     break;
+                case IR.Math.Clamp op:
+                    str = CSourceUtilities.ConvertClamp(op, arguments);
+                    break;
+                case IR.Shapes.AsTensor op:
+                    if (expr.CheckedType is TensorType { IsScalar: true })
+                    {
+                        str = $"ntt::tensor<int64_t, ntt::fixed_shape<>>{{ {arguments[0].Name} }}";
+                    }
+                    else
+                    {
+                        str = $"ntt::tensor<int64_t, ntt::fixed_shape<{expr.CheckedShape.Rank}>>{{ {arguments[0].Name} }}";
+                    }
+
+                    break;
                 default:
-                    throw new NotSupportedException();
+                    throw new NotSupportedException(expr.Target.GetType().Name);
             }
         }
 
@@ -656,7 +686,11 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         {
             if (field is Call call)
             {
-                IndentScope.Writer.IndWrite(Visit(call).Name);
+                var name = Visit(call).Name;
+                if (call.Target is not IR.Shapes.AsTensor)
+                {
+                    IndentScope.Writer.IndWrite(name);
+                }
             }
             else
             {

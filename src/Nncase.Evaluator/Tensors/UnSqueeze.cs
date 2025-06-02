@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Tensors;
@@ -39,7 +40,13 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
         if (dataType.IsFloat() && dataType != DataTypes.Float32)
         {
-            return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
+            var unsequeeze = OrtKI.Unsqueeze(input, axes);
+            if (dataType is not VectorType && dataType != DataTypes.Float32)
+            {
+                unsequeeze = OrtKI.Cast(unsequeeze, (int)dataType.ToOrtType());
+            }
+
+            return Value.FromTensor(unsequeeze.ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
         }
         else
         {
@@ -109,21 +116,22 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     {
         var tensorType = (TensorType)Visit(context, target, input.TensorType);
 
-        var ndsbp = new SBP[tensorType.Shape.Rank];
+        var ndsbp = Enumerable.Repeat(SBP.B, tensorType.Shape.Rank).Select(b => (SBP)b).ToArray();
+        var dim = (RankedShape)context.GetArgument(target, Unsqueeze.Dim);
 
-        if (context.GetArgument(target, Unsqueeze.Dim) is TensorConst tdims)
+        if (dim.IsFixed)
         {
-            var dimsValue = tdims.Value.Cast<int>().ToArray().Select(d => d < 0 ? d + tensorType.Shape.Rank : d);
+            var dimsValue = dim.ToValueArray().Select(d => d < 0 ? d + tensorType.Shape.Rank : d);
             for (int i = 0; i < input.AxisPolices.Count; i++)
             {
                 var outAxis = i + dimsValue.Select(d => d <= i).Count(b => b);
                 if (dimsValue.Contains(outAxis))
                 {
-                    ndsbp[i] = SBP.B;
+                    ndsbp[outAxis] = SBP.B;
                 }
                 else
                 {
-                    ndsbp[i] = input.AxisPolices[i];
+                    ndsbp[outAxis] = input.AxisPolices[i];
                 }
             }
         }

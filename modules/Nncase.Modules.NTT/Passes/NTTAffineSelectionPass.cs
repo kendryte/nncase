@@ -20,7 +20,7 @@ using Nncase.TIR;
 
 namespace Nncase.Passes;
 
-public sealed partial class NTTAffineSelectionPass : AffineSelectionPass
+public partial class NTTAffineSelectionPass : AffineSelectionPass
 {
     private readonly CompileOptions _compileOptions;
 
@@ -38,11 +38,11 @@ public sealed partial class NTTAffineSelectionPass : AffineSelectionPass
                 return SelectPackedBinary(op, call, output);
             case IR.NTT.PackedMatMul:
                 return SelectMatMul((Op)call.Target, call, output);
-            case IR.NTT.Pack op:
+            case IR.Tensors.Pack op:
                 return SelectPack(op, call, output);
             case IR.NTT.PackedReduce op:
                 return SelectReduce(op, call, output);
-            case IR.NTT.Unpack op:
+            case IR.Tensors.Unpack op:
                 return SelectUnpack(op, call, output);
             case IR.Math.Binary op:
                 return SelectBinary(op, call, output);

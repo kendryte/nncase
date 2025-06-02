@@ -29,8 +29,15 @@ typedef void *nncase_stream_handle_t;
 
 typedef enum {
     nncase_array_rtvalue = 0,
-    nncase_array_var = 1
+    nncase_array_var = 1,
+    nncase_array_object = 2
 } nncase_array_element_kind_t;
+
+typedef enum {
+    nncase_dimension_kind_fixed = 0,
+    nncase_dimension_kind_dynamic = 1,
+    nncase_dimension_kind_unknown = 2
+} nncase_dimension_kind_t;
 
 typedef enum {
     nncase_mqm_no_quant = 0,
@@ -296,6 +303,42 @@ typedef struct {
     clr_object_handle_t (*target_create)(const char *target_name,
                                          size_t target_name_length);
     bool (*target_exists)(const char *target_name, size_t target_name_length);
+
+    clr_object_handle_t (*create_ref_paged_attention_scheduler)(
+        clr_object_handle_t config, int32_t num_blocks, int32_t max_model_len,
+        const int32_t *hierarchy, size_t hierarchy_length);
+    clr_object_handle_t (*ref_paged_attention_scheduler_schedule)(
+        clr_object_handle_t scheduler, const int64_t *session_ids,
+        const int64_t *query_lens, size_t num_queries);
+    clr_object_handle_t (
+        *ref_paged_attention_scheduler_create_computation_graph)(
+        clr_object_handle_t scheduler, int32_t num_q_heads,
+        const int32_t *q_layout, const int32_t *kv_layout, size_t layout_size);
+
+    int32_t (*ref_paged_attention_kv_cache_get_num_seqs)(
+        clr_object_handle_t kv_cache);
+    int32_t (*ref_paged_attention_kv_cache_get_num_tokens)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_context_lens)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_seq_lens)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_block_table)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_slot_mapping)(
+        clr_object_handle_t kv_cache);
+    int32_t (*ref_paged_attention_kv_cache_get_num_blocks)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_kv_caches)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_as_ivalue)(
+        clr_object_handle_t kv_cache);
+
+    // var functions
+    clr_object_handle_t (*var_get_dimensions)(clr_object_handle_t var);
+
+    //  Dimension functions
+    uint8_t (*dimension_get_kind)(clr_object_handle_t dimension);
 } nncase_api_mt_t;
 
 NNCASE_API nncase_api_mt_t *nncase_clr_api();
@@ -821,9 +864,14 @@ class target : public clr_object_base {
     }
 };
 
-class rtvalue : public clr_object_base {
+class ivalue : public clr_object_base {
   public:
     using clr_object_base::clr_object_base;
+};
+
+class rtvalue : public ivalue {
+  public:
+    using ivalue::ivalue;
 
     rtvalue(nncase::value_t value) {
         obj_ = nncase_clr_api()->rtvalue_from_handle(value.get());
@@ -845,9 +893,24 @@ class expr : public clr_object_base {
     }
 };
 
+class dimension : public expr {
+  public:
+    using expr::expr;
+
+    nncase_dimension_kind_t kind() {
+        return (nncase_dimension_kind_t)nncase_clr_api()->dimension_get_kind(
+            get());
+    }
+};
+
 class var : public expr {
   public:
     using expr::expr;
+
+    array dimensions() {
+        return {std::in_place,
+                nncase_clr_api()->var_get_dimensions(obj_.get())};
+    }
 };
 
 class base_function : public expr {
@@ -937,6 +1000,96 @@ class compile_session : public clr_object_base {
     clr::compiler compiler() {
         return {std::in_place,
                 nncase_clr_api()->compile_session_get_compiler(obj_.get())};
+    }
+};
+
+class ref_paged_attention_kv_cache : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    int32_t num_seqs() const {
+        return nncase_clr_api()->ref_paged_attention_kv_cache_get_num_seqs(
+            obj_.get());
+    }
+
+    int32_t num_tokens() const {
+        return nncase_clr_api()->ref_paged_attention_kv_cache_get_num_tokens(
+            obj_.get());
+    }
+
+    int32_t num_blocks() const {
+        return nncase_clr_api()->ref_paged_attention_kv_cache_get_num_blocks(
+            obj_.get());
+    }
+
+    rtvalue context_lens() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_context_lens(
+                    obj_.get())};
+    }
+
+    rtvalue seq_lens() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_seq_lens(
+                    obj_.get())};
+    }
+
+    rtvalue block_table() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_block_table(
+                    obj_.get())};
+    }
+
+    rtvalue slot_mapping() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_slot_mapping(
+                    obj_.get())};
+    }
+
+    rtvalue kv_caches() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_kv_caches(
+                    obj_.get())};
+    }
+
+    ivalue as_ivalue() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_as_ivalue(
+                    obj_.get())};
+    }
+};
+
+class ref_paged_attention_scheduler : public clr_object_base {
+  public:
+    using clr_object_base::clr_object_base;
+
+    ref_paged_attention_scheduler(llm::paged_attention_config &config,
+                                  int32_t num_blocks, int32_t max_model_len,
+                                  const std::vector<int32_t> &hierarchy) {
+        auto clone_config = llm::paged_attention_config(config);
+        obj_ = nncase_clr_api()->create_ref_paged_attention_scheduler(
+            clone_config.detach(), num_blocks, max_model_len, hierarchy.data(),
+            hierarchy.size());
+    }
+
+    ref_paged_attention_kv_cache
+    schedule(const std::vector<int64_t> &session_ids,
+             const std::vector<int64_t> &query_lens) {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_scheduler_schedule(
+                    obj_.get(), session_ids.data(), query_lens.data(),
+                    session_ids.size())};
+    }
+
+    function create_test_function(
+        int32_t num_q_heads,
+        const std::vector<llm::attention_dim_kind> &q_layout,
+        const std::vector<llm::attention_dim_kind> &kv_layout) {
+        return {std::in_place,
+                nncase_clr_api()
+                    ->ref_paged_attention_scheduler_create_computation_graph(
+                        obj_.get(), num_q_heads, (int *)q_layout.data(),
+                        (int *)kv_layout.data(), q_layout.size())};
     }
 };
 } // namespace nncase::clr

@@ -181,7 +181,6 @@ public class UnitTestVrp : TestClassBase
     [Fact]
     public void TestOverLap()
     {
-        // note ortools no overlap not support 0 size.
         var model = new CpModel();
 
         var x0 = model.NewIntervalVar(model.NewConstant(0), model.NewConstant(2), model.NewConstant(2), "x0");
@@ -204,7 +203,7 @@ public class UnitTestVrp : TestClassBase
         var solver = new CpSolver();
         var status = solver.Solve(model);
 
-        Assert.Equal(CpSolverStatus.Infeasible, status);
+        Assert.Equal(CpSolverStatus.Optimal, status);
     }
 
     private static void PrintSolution(in IDataModel data, in RoutingModel routing, in RoutingIndexManager manager, in Assignment solution)

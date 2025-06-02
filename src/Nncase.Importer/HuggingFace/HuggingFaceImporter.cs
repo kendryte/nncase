@@ -138,7 +138,7 @@ public partial class HuggingFaceImporter : BaseImporter
         _model!.Initialize(_modelContext, huggingFaceDir);
     }
 
-    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
+    protected override (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
     {
         return _model.CreateInputs();
     }

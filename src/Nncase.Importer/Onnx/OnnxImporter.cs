@@ -48,7 +48,7 @@ public sealed partial class OnnxImporter : BaseImporter
     }
 
     /// <inheritdoc/>
-    protected override (IEnumerable<Var> Inputs, Dictionary<Var, Dimension[]> VarMap) CreateInputs()
+    protected override (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
     {
         var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
         _fixVarMap = bucketOptions.FixVarMap;
@@ -67,7 +67,7 @@ public sealed partial class OnnxImporter : BaseImporter
             .ToDictionary(v => v.Name, v => v);
         var createdInputs = originInputs.Select(n => new Var(n.Name, GetIRType(n))).ToArray();
         var varMap = originInputs
-            .Select((v, i) => (createdInputs[i], GetOriginShape(v)))
+            .Select((v, i) => ((IVar)createdInputs[i], GetOriginShape(v)))
             .ToDictionary(tup => tup.Item1, tup => tup.Item2);
 
         CompileSession.CompileOptions.ShapeBucketOptions =

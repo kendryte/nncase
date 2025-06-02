@@ -34,7 +34,8 @@ skip = "*musllinux*"
 manylinux-x86_64-image = "sunnycase/manylinux_2_28_x86_64:1.1"
 test-requires = "pytest"
 test-command = [
-  "pytest {project}/tests/other"
+  "pytest {project}/tests/other/test_cpu_options.py",
+  "pytest {project}/tests/other/test_targets.py",
 ]
 
 [tool.cibuildwheel.environment]
@@ -51,7 +52,8 @@ before-build = [
 archs = ["x86_64"]
 before-build = [
   "rm -f {project}/CMakeUserPresets.json",
-  "pip install https://github.com/sunnycase/auditwheel/releases/download/6.0.0/auditwheel-6.0.0-py3-none-any.whl"
+  "pip install https://github.com/sunnycase/auditwheel/releases/download/6.0.0/auditwheel-6.0.0-py3-none-any.whl",
+  "if [ ! -d abseil-cpp ]; then git clone https://github.com/abseil/abseil-cpp.git && cd abseil-cpp && git checkout lts_2024_07_22 && mkdir build && cd build && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=/usr/ && make -j$(nproc) && make install; fi"
 ]
 repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 

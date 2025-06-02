@@ -128,6 +128,7 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             Select => InferenceSelect(expr),
             Unary unary => InferenceUnary(expr, unary.UnaryOp),
             Unsqueeze => Visit(expr[Unsqueeze.Input]),
+            IR.Tensors.Range => InferenceRange(expr[IR.Tensors.Range.Begin], expr[IR.Tensors.Range.End], expr[IR.Tensors.Range.Step]),
             _ => ValueRange<double>.Full,
         };
     }
@@ -280,6 +281,28 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             lhs.Min * rhs.Max,
             lhs.Max * rhs.Min,
             lhs.Max * rhs.Max,
+        };
+        return new ValueRange<double>(values.Min(), values.Max());
+    }
+
+    private ValueRange<double> InferenceRange(BaseExpr begin, BaseExpr end, BaseExpr step)
+    {
+        var startRange = Visit(begin);
+        var endRange = Visit(end);
+        var stepRange = Visit(step);
+
+        if (stepRange.Min == 0)
+        {
+            return ValueRange<double>.Full;
+        }
+
+        var values = new[]
+        {
+            // startRange is scaler const, all input are non-negative number (torch.arange)
+            // But nncase support negative number
+            // Here, we just need a range for creating buffer, equal or bigger than the real size.
+            Math.Min(startRange.Min, endRange.Min),
+            Math.Max(startRange.Max, endRange.Max),
         };
         return new ValueRange<double>(values.Min(), values.Max());
     }

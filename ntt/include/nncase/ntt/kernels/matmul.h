@@ -17,7 +17,6 @@
 #include "../shape_infer/matmul.h"
 #include "../shape_infer/reduce.h"
 #include "../ukernels.h"
-#include "nncase/ntt/shape.h"
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -147,29 +146,37 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
         constexpr auto m0_tile = policy_t::m0_tile;
         constexpr auto n0_tile = policy_t::n0_tile;
 
-        dim_t m1 = 0;
-        for (; m1 < M / m0_tile * m0_tile; m1 += m0_tile) {
-            dim_t n1 = 0;
-            for (; n1 < N / n0_tile * n0_tile; n1 += n0_tile) {
+        constexpr auto m0_scale =
+            ukernels::u_type_scale<pack_kind, TA, TB, TC>::m0_scale;
+        constexpr auto n0_scale =
+            ukernels::u_type_scale<pack_kind, TA, TB, TC>::n0_scale;
+
+        auto scaled_M = M / m0_scale;
+        auto scaled_N = N / n0_scale;
+
+        size_t m1 = 0;
+        for (; m1 < scaled_M / m0_tile * m0_tile; m1 += m0_tile) {
+            size_t n1 = 0;
+            for (; n1 < scaled_N / n0_tile * n0_tile; n1 += n0_tile) {
                 matmul_2d_l0<m0_tile, n0_tile>(a, b, c, K, m1, n1);
             }
 
-            if (N % n0_tile) {
-                for (; n1 < N; n1++) {
+            if (scaled_N % n0_tile) {
+                for (; n1 < scaled_N; n1++) {
                     matmul_2d_l0<m0_tile, 1>(a, b, c, K, m1, n1);
                 }
             }
         }
 
-        if (M % m0_tile) {
-            for (; m1 < M; m1++) {
+        if (scaled_M % m0_tile) {
+            for (; m1 < scaled_M; m1++) {
                 size_t n1 = 0;
-                for (; n1 < N / n0_tile * n0_tile; n1 += n0_tile) {
+                for (; n1 < scaled_N / n0_tile * n0_tile; n1 += n0_tile) {
                     matmul_2d_l0<1, n0_tile>(a, b, c, K, m1, n1);
                 }
 
-                if (N % n0_tile) {
-                    for (; n1 < N; n1++) {
+                if (scaled_N % n0_tile) {
+                    for (; n1 < scaled_N; n1++) {
                         matmul_2d_l0<1, 1>(a, b, c, K, m1, n1);
                     }
                 }
@@ -180,7 +187,20 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
     template <dim_t M0Tile, dim_t N0Tile, class TA, class TB, class TC>
     void matmul_2d_l0(const TA &a, const TB &b, TC &c, dim_t K, dim_t m1,
                       dim_t n1) {
-        auto c0 = c.view(make_shape(m1, n1), fixed_shape_v<M0Tile, N0Tile>);
+
+        constexpr auto m0_scale =
+            ukernels::u_type_scale<pack_kind, TA, TB, TC>::m0_scale;
+        constexpr auto n0_scale =
+            ukernels::u_type_scale<pack_kind, TA, TB, TC>::n0_scale;
+
+        constexpr auto m0_tile_scaled = m0_scale * M0Tile;
+        constexpr auto n0_tile_scaled = n0_scale * N0Tile;
+
+        auto m1_scaled = m0_scale * m1;
+        auto n1_scaled = n0_scale * n1;
+
+        auto c0 = c.view(make_shape(m1_scaled, n1_scaled),
+                         fixed_shape_v<m0_tile_scaled, n0_tile_scaled>);
         auto a1 = a.view(make_shape(m1, 0), make_shape(M0Tile, K));
         auto b1 =
             b.view(TransposedB ? make_shape(n1, 0) : make_shape(0, n1),

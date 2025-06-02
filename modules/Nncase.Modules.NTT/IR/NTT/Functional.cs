@@ -22,36 +22,6 @@ public partial class NTT
         return new Call(new Store(), input);
     }
 
-    public static Expr Pack(Expr input, int[] lanes, int[] axes)
-    {
-        if (lanes.Length != axes.Length)
-        {
-            throw new NotSupportedException();
-        }
-
-        if (axes.Length == 0)
-        {
-            return input;
-        }
-
-        return new Call(new Pack(lanes, axes), input);
-    }
-
-    public static Expr Unpack(Expr input, int[] lanes, int[] axes)
-    {
-        if (lanes.Length != axes.Length)
-        {
-            throw new NotSupportedException();
-        }
-
-        if (axes.Length == 0)
-        {
-            return input;
-        }
-
-        return new Call(new Unpack(lanes, axes), input);
-    }
-
     public static Expr PackedSoftmax(Expr input, int axis, IRArray<int> packedAxes)
     {
         return new Call(new PackedSoftmax(axis, packedAxes), input);
@@ -72,9 +42,14 @@ public partial class NTT
         return new Call(new InstacneNorm(epsilon, packedAxes, padedNums), input, scale, bias);
     }
 
-    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums, bool transA = false, bool transB = false, bool fusedReduce = false)
+    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false)
     {
-        return new Call(new PackedMatMul(lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums, transA, transB, fusedReduce), lhs, rhs);
+        return new Call(new PackedMatMul(DataTypes.Float32, lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce), lhs, rhs);
+    }
+
+    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, DataType outDataType = null!)
+    {
+        return new Call(new PackedMatMul(outDataType, lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce), lhs, rhs);
     }
 
     public static Expr PackedBinary(Expr lhs, Expr rhs, BinaryOp binaryOp, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)

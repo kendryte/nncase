@@ -10,9 +10,9 @@ namespace Nncase.Passes;
 
 public partial class NTTAffineSelectionPass
 {
-    private Expr SelectUnpack(IR.NTT.Unpack unpack, Call call, Expr output)
+    private Expr SelectUnpack(IR.Tensors.Unpack unpack, Call call, Expr output)
     {
-        var input = (Expr)call[IR.NTT.Unpack.Input];
+        var input = (Expr)call[IR.Tensors.Unpack.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
         {
             return call;

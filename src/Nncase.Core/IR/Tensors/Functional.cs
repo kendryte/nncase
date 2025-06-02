@@ -92,7 +92,9 @@ public static class Tensors
     public static Call ScatterND(Expr input, Expr indices, Expr updates) =>
         new Call(new ScatterND(), input, indices, updates);
 
-    public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
+    public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(DataTypes.Float32), input, other);
+
+    public static Call MatMul(Expr input, Expr other, DataType outDataType) => new Call(new MatMul(outDataType), input, other);
 
     public static Call Prod(Expr input)
     {
@@ -179,4 +181,34 @@ public static class Tensors
     public static Call IndexOf(Expr input, Expr value) => new Call(new IndexOf(), input, value);
 
     public static Call Trilu(Expr input, Expr k, Expr upper) => new Call(new Trilu(), input, k, upper);
+
+    public static Expr Pack(Expr input, int[] lanes, int[] axes)
+    {
+        if (lanes.Length != axes.Length)
+        {
+            throw new NotSupportedException();
+        }
+
+        if (axes.Length == 0)
+        {
+            return input;
+        }
+
+        return new Call(new Pack(lanes, axes), input);
+    }
+
+    public static Expr Unpack(Expr input, int[] lanes, int[] axes)
+    {
+        if (lanes.Length != axes.Length)
+        {
+            throw new NotSupportedException();
+        }
+
+        if (axes.Length == 0)
+        {
+            return input;
+        }
+
+        return new Call(new Unpack(lanes, axes), input);
+    }
 }

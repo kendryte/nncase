@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen;
 using Nncase.IR;
+using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Passes;
@@ -155,6 +156,7 @@ public sealed class TestPagedAttentionCase : TheoryData<TestFixture.PagedAttenti
     private static readonly (int NumQ, int NumKV, int Dim)[] HeadConfigs =
     [
         (1, 1, 64),
+        (4, 2, 32),
 
         // (1, 1, 64),
         // (4, 4, 128),
@@ -241,7 +243,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     public static int Lane => Vector256.IsHardwareAccelerated ? 32 : 16;
 
-    public static int Rank => 2;
+    public static int Rank => 1;
 
     public static TheoryData<long[], int[], List<int[][]>, int> TestReshardData { get; } = new()
     {
@@ -284,7 +286,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -292,17 +294,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rtFeedDict = new Dictionary<IVar, IValue>();
         {
             var queryTensor = referenceResults.GetQueryTensor();
-            feedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
-            rtFeedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            feedDict.Add(queryVar, Value.FromTensor(queryTensor));
+            rtFeedDict.Add(queryVar, Value.FromTensor(queryTensor));
             for (int layerId = 0; layerId < fixture.Config.NumLayers; layerId++)
             {
-                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
-                rtFeedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                rtFeedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                feedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                rtFeedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                rtFeedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
             }
 
-            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+            feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
 
             var rtkvObj = RTPagedAttentionKVCache.Create(
                     RTPagedAttentionConfig.FromConfig(fixture.Config),
@@ -325,10 +327,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 }
             }
 
-            rtFeedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
+            rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 
-        await RunCases($"Theory{count}", feedDict, new[] { testKernel.Root }, rtFeedDict);
+        await RunCases($"Theory{count}", feedDict, new[] { root }, rtFeedDict);
     }
 
     [Theory]
@@ -347,7 +349,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: false, IncreaseBy: [AttentionDimKind.Head, AttentionDimKind.Seq], ResetForKV: true);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var testKernel = PagedAttentionKVCacheTestFixture.CreateTestKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config);
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -355,17 +357,17 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var rtFeedDict = new Dictionary<IVar, IValue>();
         {
             var queryTensor = referenceResults.GetQueryTensor();
-            feedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
-            rtFeedDict.Add(testKernel.QueryVar, Value.FromTensor(queryTensor));
+            feedDict.Add(queryVar, Value.FromTensor(queryTensor));
+            rtFeedDict.Add(queryVar, Value.FromTensor(queryTensor));
             for (int layerId = 0; layerId < fixture.Config.NumLayers; layerId++)
             {
-                feedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                feedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
-                rtFeedDict.Add(testKernel.KVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
-                rtFeedDict.Add(testKernel.KVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                feedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                feedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
+                rtFeedDict.Add(kVVars[layerId][0], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 0)));
+                rtFeedDict.Add(kVVars[layerId][1], Value.FromTensor(kvinputs.GetKeyValueTensor(layerId, 1)));
             }
 
-            feedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
+            feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
 
             var rtkvObj = RTPagedAttentionKVCache.Create(
                     RTPagedAttentionConfig.FromConfig(fixture.Config),
@@ -388,10 +390,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 }
             }
 
-            rtFeedDict.Add(testKernel.KVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
+            rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 
-        await RunCases($"Theory{count}", feedDict, new[] { testKernel.Root }, rtFeedDict);
+        await RunCases($"Theory{count}", feedDict, new[] { root }, rtFeedDict);
     }
 
     [Theory]
@@ -774,7 +776,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
     [InlineData(new object[] { new long[] { 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
     [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
-
     public async Task TestPackCast(long[] shape, Nncase.Runtime.TypeCode type1, Nncase.Runtime.TypeCode type2, int count)
     {
         var input = new Var(new TensorType(DataTypes.Float32, shape));
@@ -935,7 +936,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
 
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
-        await RunCases(Path.Join(CompileOptions.DumpDir.ToString(), $"Theory{count}"), feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts);
     }
 
     [Theory]
@@ -950,7 +951,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { vposition_ids, IR.F.Random.Uniform(DataTypes.Int64, 6, 1, 1, indicesShape).Evaluate() },
         };
 
-        var posts = new[] { pre };
+        var rule = new Passes.Rules.NTT.PackGather(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
@@ -986,7 +989,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             foreach (var post in posts)
             {
-                if (post is Call { Target: IR.NTT.Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.NTT.PackedReduce } packedReduceCall)
+                if (post is Call { Target: IR.Tensors.Unpack } callUnPack && callUnPack.Arguments[0] is Call { Target: IR.NTT.PackedReduce } packedReduceCall)
                 {
                     packedReduceCall.Arguments[0].Metadata = new() { OutputNames = new[] { "reduceIn" } };
                 }
@@ -1565,6 +1568,110 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var rule = new Passes.Rules.NTT.PackUnary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { CompareOp.LowerThan, new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 0 })]
+    public async Task TestPackCompare(CompareOp op, long[] lhsShape, long[] rhsShape, int count)
+    {
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Math.Compare(op, lhs, rhs);
+
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.NTT.PackCompare(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 16, 1, 32 }, new long[] { 1, 16, 32, 32 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 1, 32, 32 }, new long[] { 1, 16, 32, 32 }, 1 })]
+    public async Task TestPackExpand(long[] shape, long[] newShape, int count)
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var pre = IR.F.Tensors.Expand(input, newShape);
+
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.NTT.PackExpand(1, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 0 })]
+    [InlineData(new object[] { new long[] { 1 }, new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 1 })]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1 }, new long[] { 1, 8, 64, 16 }, 2 })]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 1, 64, 16 }, new long[] { 1, 8, 64, 16 }, 3 })]
+    public async Task TestPackWhere(long[] condShape, long[] lhsShape, long[] rhsShape, int count)
+    {
+        var cond = new Var(new TensorType(DataTypes.Boolean, condShape));
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Tensors.Where(cond, lhs, rhs);
+
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { cond, IR.F.Random.Normal(DataTypes.Boolean, 0, 1, 1, condShape).Evaluate() },
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.NTT.PackWhere(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 1, 0 })]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 2, 1 })]
+    [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 3, 2 })]
+    public async Task TestPackConcat(long[] inShape1, long[] inShape2, int axis, int count)
+    {
+        var input1 = new Var(new TensorType(DataTypes.Float32, inShape1));
+        var input2 = new Var(new TensorType(DataTypes.Float32, inShape2));
+        var pre = IR.F.Tensors.Concat(new IR.Tuple(input1, input2), axis);
+
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { input1, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape1).Evaluate() },
+            { input2, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, inShape2).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.NTT.PackConcat(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 16, 16, 16 }, new long[] { 2, 1 }, new long[] { 16, 16, 16 }, 0 })]
+    [InlineData(new object[] { new long[] { 16, 16, 16 }, new long[] { 3, 2 }, new long[] { 16, 16 }, 1 })]
+    [InlineData(new object[] { new long[] { 16, 16, 256, 256 }, new long[] { 16, 16, 256, 256, 4 }, new long[] { 16, 16, 256, 256 }, 2 })]
+    public async Task TestPackScatterND(long[] inShape, long[] indicesShape, long[] updatesShape, int count)
+    {
+        var input = new Var(new TensorType(DataTypes.Float32, inShape));
+        var indices = IR.F.Random.Uniform(DataTypes.Int64, 15, 0, 1, indicesShape).Evaluate().AsTensor();
+        var updates = new Var(new TensorType(DataTypes.Float32, updatesShape));
+        var pre = IR.F.Tensors.ScatterND(input, indices, updates);
+
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, inShape).Evaluate() },
+            { updates, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, updatesShape).Evaluate() },
+        };
+
+        var rule = new Passes.Rules.NTT.PackScatterND(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);

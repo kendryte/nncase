@@ -31,7 +31,7 @@ public interface IEvaluateContext
 
     IValue Evaluate(BaseExpr expr);
 
-    public Option<IValue> GetOptionalArgumentValue(Op op, ParameterInfo parameter)
+    Option<IValue> GetOptionalArgumentValue(Op op, ParameterInfo parameter)
     {
         var v = GetArgumentValue(op, parameter);
         return v is NoneValue ? Option.None : Option.Some(v);
@@ -44,7 +44,7 @@ public interface IEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
-    public Tensor<T> GetArgumentValueAsTensor<T>(Op op, ParameterInfo parameter)
+    Tensor<T> GetArgumentValueAsTensor<T>(Op op, ParameterInfo parameter)
         where T : struct, IEquatable<T>
     {
         return GetArgumentValue(op, parameter).AsTensor().Cast<T>();
@@ -56,7 +56,7 @@ public interface IEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
-    public Tensor GetArgumentValueAsTensor(Op op, ParameterInfo parameter)
+    Tensor GetArgumentValueAsTensor(Op op, ParameterInfo parameter)
     {
         return GetArgumentValue(op, parameter).AsTensor();
     }
@@ -64,7 +64,7 @@ public interface IEvaluateContext
     /// <summary>
     /// Get argmument value as Tensors.
     /// </summary>
-    public Tensor[] GetArgumentValueAsTensors(Op op, ParameterInfo parameter)
+    Tensor[] GetArgumentValueAsTensors(Op op, ParameterInfo parameter)
     {
         return GetArgumentValue(op, parameter).AsTensors();
     }
@@ -76,13 +76,13 @@ public interface IEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
-    public T GetArgumentValueAsScalar<T>(Op op, ParameterInfo parameter)
+    T GetArgumentValueAsScalar<T>(Op op, ParameterInfo parameter)
         where T : struct, IEquatable<T>
     {
         return GetArgumentValue(op, parameter).AsTensor().ToScalar<T>();
     }
 
-    public T GetOptionArgumentValueAsScalar<T>(Op op, ParameterInfo parameter, T dft)
+    T GetOptionArgumentValueAsScalar<T>(Op op, ParameterInfo parameter, T dft)
         where T : struct, IEquatable<T>
     {
         return GetOptionalArgumentValue(op, parameter).Match(
@@ -97,7 +97,7 @@ public interface IEvaluateContext
     /// <param name="op">Operator.</param>
     /// <param name="parameter">Parameter.</param>
     /// <returns>The argument value.</returns>
-    public T[] GetArgumentValueAsArray<T>(Op op, ParameterInfo parameter)
+    T[] GetArgumentValueAsArray<T>(Op op, ParameterInfo parameter)
         where T : struct, IEquatable<T>
     {
         return GetArgumentValue(op, parameter).AsTensor().ToArray<T>();

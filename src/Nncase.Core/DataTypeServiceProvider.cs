@@ -23,7 +23,7 @@ internal interface IDataTypeServiceProvider
 
     ISpanConverter GetConverter(Type fromType, Type toType);
 
-    public ISpanConverter<TFrom, TTo> GetConverter<TFrom, TTo>()
+    ISpanConverter<TFrom, TTo> GetConverter<TFrom, TTo>()
         where TFrom : unmanaged, IEquatable<TFrom>
         where TTo : unmanaged, IEquatable<TTo> => (ISpanConverter<TFrom, TTo>)GetConverter(typeof(TFrom), typeof(TTo));
 }

@@ -21,5 +21,5 @@ public sealed partial class AsTensor : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(AsTensor), 0, "input", IsDimensionType() | IsShapeType(), ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(AsTensor), 0, "input", IsDimensionType() | IsShapeType());
 }

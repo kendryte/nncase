@@ -68,7 +68,7 @@ public class CSourceCompiler
     /// <returns> outPath. </returns>
     public string Compile(string sourcePath, string outPath)
     {
-        var errMsg = new StringBuilder();
+        var errMsg = new StringBuilder(8192);
         using (var errWriter = new StringWriter(errMsg))
         {
             using (var proc = new Process())
@@ -78,8 +78,26 @@ public class CSourceCompiler
                 proc.StartInfo.WorkingDirectory = Directory.GetCurrentDirectory();
                 proc.StartInfo.RedirectStandardError = true;
                 proc.StartInfo.RedirectStandardOutput = true;
-                proc.OutputDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
-                proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
+                proc.OutputDataReceived += (sender, e) =>
+                {
+                    try
+                    {
+                        errWriter.WriteLine(e.Data);
+                    }
+                    catch (ArgumentException)
+                    {
+                    }
+                };
+                proc.ErrorDataReceived += (sender, e) =>
+                {
+                    try
+                    {
+                        errWriter.WriteLine(e.Data);
+                    }
+                    catch (ArgumentException)
+                    {
+                    }
+                };
                 proc.Start();
                 proc.BeginErrorReadLine();
                 proc.BeginOutputReadLine();

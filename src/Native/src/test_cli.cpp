@@ -217,14 +217,41 @@ result<void> run_core(const std::string &kmodel_path,
         if (i == (loop_count - 1) && (parameters.size() < files.size())) {
             auto output_file = files[parameters.size()];
             if (std::filesystem::exists(output_file)) {
+                std::vector<tensor> ret_tensors;
+                if (ret.is_a<tensor>()) {
+                    try_var(t, ret.as<tensor>());
+                    ret_tensors.push_back(t);
+                } else {
+                    try_var(tp, ret.as<tuple>());
+                    for (size_t i = 0; i < tp->fields().size(); i++) {
+                        try_var(t, tp->fields()[i].as<tensor>());
+                        ret_tensors.push_back(t);
+                    }
+                }
+
                 // try compare
                 if (output_file.ends_with(".json")) {
-                    std::ifstream json_file(output_file);
-                    const nlohmann::json &json_data =
-                        nlohmann::json::parse(json_file);
-                    try_var(ts, deserialize_tensor(json_data));
-                    auto ret_tensor = ret.as<tensor>().expect("not a tensor");
-                    try_(compare_tensor(ret_tensor, ts));
+                    for (size_t o = 0; o < ret_tensors.size(); o++) {
+                        auto ret_tensor = ret_tensors[o];
+                        std::ifstream json_file(files[parameters.size() + o]);
+                        const nlohmann::json &json_data =
+                            nlohmann::json::parse(json_file);
+                        try_var(ts, deserialize_tensor(json_data));
+                        try_(compare_tensor(ret_tensor, ts));
+                    }
+                } else {
+                    for (size_t o = 0; o < ret_tensors.size(); o++) {
+                        auto ret_tensor = ret_tensors[o];
+                        auto output_pool =
+                            read_file(files[parameters.size() + o]);
+                        std::span<std::byte> output_pool_span = {
+                            reinterpret_cast<std::byte *>(output_pool.data()),
+                            output_pool.size()};
+                        try_var(_, hrt::create(ret_tensor->dtype(),
+                                               dims_t(ret_tensor->shape()),
+                                               output_pool_span, true));
+                        try_(compare_tensor(ret_tensor, _.impl()));
+                    }
                 }
             } else {
                 std::ofstream output_stream(output_file, std::ios::binary);
@@ -248,6 +275,9 @@ result<void> run_core(const std::string &kmodel_path,
  * @return int
  */
 int main(int argc, char **argv) {
+    std::cout << "case " << argv[0] << " build " << __DATE__ << " " << __TIME__
+              << std::endl;
+
     cxxopts::Options options("nncase-interp", "NNCASE interpreter CLI tool");
 
     // clang-format off

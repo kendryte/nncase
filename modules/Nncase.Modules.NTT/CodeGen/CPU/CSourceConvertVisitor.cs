@@ -181,7 +181,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             return symbol;
         }
 
-        symbol = new("int64_t", $"std::clamp({Visit(expr.Operand).Name}, {Visit(expr.MinValue).Name}, {Visit(expr.MaxValue).Name})");
+        symbol = new("int64_t", $"std::clamp<int64_t>({Visit(expr.Operand).Name}, {Visit(expr.MinValue).Name}, {Visit(expr.MaxValue).Name})");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -341,7 +341,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         var operands = expr.Operands.AsValueEnumerable().Select(x => Visit(x).Name);
         var values = StringUtility.Join(", ", operands);
         symbol = expr.IsFixed ? new($"fixed_dims<{values}>", $"fixed_dims<{values}>{{}}")
-            : new($"ranked_dims<{values.Length}>", $"make_ranked_dims({values})");
+            : new($"ranked_dims<{values.Length}>", $"make_ranked_shape({values})");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -414,5 +414,5 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         return varMap;
     }
 
-    private record struct DimVarInfo(Var TensorVar, int DimIndex);
+    private record struct DimVarInfo(IVar TensorVar, int DimIndex);
 }
