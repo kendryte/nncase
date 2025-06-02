@@ -359,6 +359,33 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         return symbol;
     }
 
+    protected override CSymbol VisitPadding(Padding expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var before = Visit(expr.Before).Name;
+        var after = Visit(expr.After).Name;
+        symbol = new("auto", $"ntt::make_padding({before}, {after})");
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitPaddings(Paddings expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var operands = expr.Operands.AsValueEnumerable().Select(x => Visit(x).Name);
+        symbol = new("auto", $"ntt::make_paddings({StringUtility.Join(", ", operands)})");
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
     protected CSymbol VisitDimOrShape(BaseExpr expr, CShapeKind shapeKind = CShapeKind.I64Dims)
     {
         var symbol = Visit(expr);
