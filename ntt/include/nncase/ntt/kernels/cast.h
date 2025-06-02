@@ -26,8 +26,8 @@ template <Tensor TIn, Tensor TOut> class cast_impl {
     inline static constexpr size_t rank = TIn::rank();
 
     inline static constexpr float scale =
-        (float)sizeof(typename TIn::element_type) /
-        sizeof(typename TOut::element_type);
+        (float)element_scalar_count_v<typename TOut::element_type> /
+        element_scalar_count_v<typename TIn::element_type>;
     inline static constexpr auto in_offset_scale = scale > 1.0f ? (size_t)scale
                                                                 : (size_t)1;
     inline static constexpr auto

@@ -61,7 +61,7 @@ struct u_matmul_generic {
         for (dim_t k1 = 0; k1 < K; k1++) {
             auto a0 = a.view(make_shape(0_dim, k1), fixed_shape_v<M0Tile, 1>);
             auto b0 = b.view(
-                ntt::select(std::integral_constant<bool, TransposedB>{},
+                ntt::where(std::integral_constant<bool, TransposedB>{},
                             make_shape(0_dim, k1), make_shape(k1, 0_dim)),
                 b_stride);
             TLhsElem a0_tmp[M0Tile];
@@ -72,7 +72,7 @@ struct u_matmul_generic {
             });
             ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
                 auto b0_index =
-                    ntt::select(std::integral_constant<bool, TransposedB>{},
+                    ntt::where(std::integral_constant<bool, TransposedB>{},
                                 make_shape(index[0_dim], 0_dim),
                                 make_shape(0_dim, index[0_dim]));
                 b0_tmp[index[0]] = b0(b0_index);
@@ -138,7 +138,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
                     auto a0 =
                         a.view(make_shape(0_dim, k1), fixed_shape_v<M0Tile, 1>);
                     auto b0 =
-                        b.view(ntt::select<TransposedB>(make_shape(0_dim, k1),
+                        b.view(ntt::where<TransposedB>(make_shape(0_dim, k1),
                                                         make_shape(k1, 0_dim)),
                                b_stride);
 
@@ -146,7 +146,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
                         a0_tmp[index[0_dim]] = a0(0, 0)(sm1 + index[0_dim]);
                     });
                     ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
-                        auto b0_index = ntt::select<TransposedB>(
+                        auto b0_index = ntt::where<TransposedB>(
                             make_shape(index[0_dim], 0_dim),
                             make_shape(0_dim, index[0_dim]));
                         b0_tmp[index[0_dim]] = b0(b0_index);
@@ -195,7 +195,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
 
         for (dim_t k1 = 0; k1 < K; k1++) {
             auto a0 = a.view(make_shape(0_dim, k1), fixed_shape_v<M0Tile, 1>);
-            auto b0 = b.view(ntt::select<TransposedB>(make_shape(0_dim, k1),
+            auto b0 = b.view(ntt::where<TransposedB>(make_shape(0_dim, k1),
                                                       make_shape(k1, 0_dim)),
                              b_stride);
 
@@ -211,7 +211,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                     a0_tmp[index[0]] = a0(index[0], 0)(sk1);
                 });
                 ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
-                    auto b0_index = ntt::select<TransposedB>(
+                    auto b0_index = ntt::where<TransposedB>(
                         make_shape(index[0_dim], 0_dim),
                         make_shape(0_dim, index[0_dim]));
                     b0_tmp[index[0]] = b0(b0_index)(sk1);
@@ -275,7 +275,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
                         auto a0 = a.view(make_shape(0_dim, k1),
                                          fixed_shape_v<M0Tile, 1>);
                         auto b0 = b.view(
-                            ntt::select<TransposedB>(make_shape(0_dim, k1),
+                            ntt::where<TransposedB>(make_shape(0_dim, k1),
                                                      make_shape(k1, 0_dim)),
                             b_stride);
 
@@ -287,7 +287,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
                                 a0(0_dim, 0_dim)(sm1 + index[0_dim], sk1);
                         });
                         ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
-                            auto b0_index = ntt::select<TransposedB>(
+                            auto b0_index = ntt::where<TransposedB>(
                                 make_shape(index[0_dim], 0_dim),
                                 make_shape(0_dim, index[0_dim]));
                             b0_tmp[index[0_dim]] = b0(b0_index)(sk1);

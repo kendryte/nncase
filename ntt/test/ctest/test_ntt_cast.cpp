@@ -96,10 +96,11 @@ TEST(CastTestFloat32ToInt32, Pack) {
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<int32_t, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<int32_t>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -156,10 +157,11 @@ TEST(CastTestInt32ToFloat32, Pack) {
         ntt::make_tensor<ntt::vector<int32_t, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -216,10 +218,11 @@ TEST(CastTestFloat32ToUint32, Pack) {
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<unsigned int, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<unsigned int>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -276,10 +279,11 @@ TEST(CastTestUint32ToFloat32, Pack) {
         ntt::make_tensor<ntt::vector<unsigned int, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -335,10 +339,11 @@ TEST(CastTestFloat32ToBool_1D, Pack) {
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<bool, P * 4>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<bool>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -368,10 +373,11 @@ TEST(CastTestFloat32ToBool_2D, Pack) {
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<bool, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<bool>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -427,10 +433,11 @@ TEST(CastTestBoolToFloat32_1D, Pack) {
         ntt::make_tensor<ntt::vector<bool, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -461,10 +468,11 @@ TEST(CastTestBoolToFloat32_2D, Pack) {
         ntt::make_tensor<ntt::vector<bool, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -483,8 +491,6 @@ TEST(CastTestFloat32ToFloat8E4M3, NoPack) {
     float max_input = 500.0f;
 
     auto shape = ntt::fixed_shape_v<M, N>;
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    using tensor_type2 = ntt::tensor<float_e4m3_t, ntt::fixed_shape<M, N>>;
 
     // init
     alignas(32) auto ntt_input = ntt::make_tensor<float>(shape);
@@ -523,10 +529,11 @@ TEST(CastTestFloat32ToFloat8E4M3, Pack) {
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<float_e4m3_t, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::cast(pack_input, pack_output);
     alignas(32) auto ntt_output1 = ntt::make_tensor<float_e4m3_t>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ;
 
     // float8
     alignas(32) auto ntt_output2 = ntt::make_tensor<float_e4m3_t>(shape1);

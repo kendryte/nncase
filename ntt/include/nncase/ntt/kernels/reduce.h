@@ -88,7 +88,7 @@ class reduce_impl {
                     TOutElem>(reduced_in);
             } else if constexpr (Vector<TOutElem> && TInElem::rank() == 2 &&
                                  TOutElem::rank() == 1) {
-                constexpr auto inner_axis = ntt::select(
+                constexpr auto inner_axis = ntt::where(
                     packed_axes.at(0) == reduce_axes.at(0), 0_dim, 1_dim);
                 inner_reduce_impl<Op, false, TInElem, TOutElem, inner_axis>
                     inner_impl;

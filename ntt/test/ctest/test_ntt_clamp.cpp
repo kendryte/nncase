@@ -77,10 +77,10 @@ TEST(ClampTestFloat, PackM) {
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::pack<0>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
     ntt::clamp(pack_input, pack_output, min_clamp, max_clamp);
     alignas(32) auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::unpack<0>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -119,10 +119,10 @@ TEST(ClampTestFloat, PackN) {
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
     alignas(32) auto pack_output =
         ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::pack<1>(ntt_input, pack_input);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<1>);
     ntt::clamp(pack_input, pack_output, min_clamp, max_clamp);
     alignas(32) auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::unpack<1>(pack_output, ntt_output1);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<1>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);

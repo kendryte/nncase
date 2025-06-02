@@ -87,7 +87,7 @@ constexpr auto sub_reduce_source_shape(
     const TInShape &in_shape,
     [[maybe_unused]] const TReduceAxes &reduce_axes) noexcept {
     return generate_shape<TInShape::rank()>([&](auto axis) {
-        return ntt::select(TReduceAxes{}.contains(axis), in_shape[axis],
+        return ntt::where(TReduceAxes{}.contains(axis), in_shape[axis],
                            dim_one);
     });
 }

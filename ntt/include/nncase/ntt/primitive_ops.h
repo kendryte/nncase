@@ -306,6 +306,13 @@ template <class T1, class T2> struct cast {
     }
 };
 
+// where
+template <class T1, class T2, class T3> struct where {
+    constexpr auto operator()(const T1 &condition, const T2 &x,
+                              const T3 &y) const {
+        return condition ? x : y;
+    }
+};
 } // namespace ops
 
 #define NTT_DEFINE_UNARY_FUNC_IMPL(op)                                         \
@@ -407,6 +414,11 @@ constexpr TResult reduce(const T &v) noexcept {
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_sum, ops::add)
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_max, ops::max)
 NTT_DEFINE_REDUCE_FUNC_IMPL(reduce_min, ops::min)
+
+template <ScalarOrVector T1, ScalarOrVector T2>
+constexpr T1 clamp(const T1 &v, const T2 &min, const T2 &max) noexcept {
+    return ops::clamp<T1, T2>()(v, min, max);
+}
 
 /**
  * @defgroup Builtin operators
@@ -514,13 +526,5 @@ mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
                                      const TResult &v3) const noexcept {
     return v1 * v2 + v3;
 }
-
-// where
-template <class T1, class T2, class T3> struct where {
-    constexpr auto operator()(const T1 &condition, const T2 &x,
-                              const T3 &y) const {
-        return condition ? x : y;
-    }
-};
 } // namespace ops
 } // namespace nncase::ntt

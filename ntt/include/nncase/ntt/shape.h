@@ -521,7 +521,7 @@ constexpr auto canonicalize_strides(const TShape &shape,
     return generate_strides<TShape::rank()>([&](auto axis) {
         const auto dim = shape[axis];
         if constexpr (FixedDimension<decltype(dim)>) {
-            return ntt::select(dim == dim_one, dim_zero, strides[axis]);
+            return ntt::where(dim == dim_one, dim_zero, strides[axis]);
         } else {
             return dim == 1 ? 0 : dim_value(strides[axis]);
         }
@@ -756,7 +756,7 @@ template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
                               const TResultDims &result_dims) {
         static_assert(CntAxis < TSrcDims::rank(), "CntAxis out of bounds");
         auto new_result_dims =
-            ntt::select(Axes{}.contains(fixed_dim_v<CntAxis>), result_dims,
+            ntt::where(Axes{}.contains(fixed_dim_v<CntAxis>), result_dims,
                         result_dims.append(src_dims[fixed_dim_v<CntAxis>]));
         if constexpr (CntAxis + 1 < TSrcDims::rank()) {
             return squeeze_dims_impl<Axes, CntAxis + 1>()(src_dims,

@@ -62,4 +62,14 @@ template <Vector T> struct element_or_scalar_type<T> {
 
 template <class T>
 using element_or_scalar_t = typename element_or_scalar_type<T>::type;
+
+template <class T>
+struct element_scalar_count : std::integral_constant<size_t, 1> {};
+
+template <Vector T>
+struct element_scalar_count<T>
+    : std::integral_constant<size_t, std::remove_cv_t<T>::size()> {};
+
+template <class T>
+inline constexpr size_t element_scalar_count_v = element_scalar_count<T>::value;
 } // namespace nncase::ntt

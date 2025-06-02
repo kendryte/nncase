@@ -40,7 +40,7 @@ constexpr auto translate_slice_params(const TInShape &in_shape,
         axes.aggregate(make_zeros_shape<rank>(), [&](const auto cnt_new_begins,
                                                      auto axis, auto i) {
             const auto in_dim = in_shape[axis];
-            return cnt_new_begins.template replace_at<axis>(ntt::select(
+            return cnt_new_begins.template replace_at<axis>(ntt::where(
                 steps[i] < dim_zero,
                 // for negative step: begins[i] is clamped into the range
                 // [0, dims[axes[i]]-1].

@@ -56,8 +56,6 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     auto lhs_local_tensor = lhs.local();
     auto rhs_local_tensor = rhs.local();
     auto out_local_tensor = output.local();
-    using out_local_strides =
-        typename std::decay_t<TOut>::local_tensor_type::strides_type;
 
     auto lhs_local_index = lhs_mesh_type::local_index();
     auto rhs_local_index = rhs_mesh_type::local_index();

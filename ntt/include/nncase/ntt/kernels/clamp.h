@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../primitive_ops.h"
 #include "../ukernels.h"
 #include "detail/unary_like_impl.h"
 
