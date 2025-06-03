@@ -163,13 +163,12 @@ class HuggingfaceTestRunner(TestRunner):
 
             # TODO: add attention_mask in inputs
             result = self.model.forward(
-                torch.from_numpy(input['data'][0]),
+                torch.from_numpy(np.expand_dims(input['data'][0], 0)),
                 return_dict=True,
                 use_cache=self.cfg['huggingface_options']['use_cache'],
                 output_attentions=self.cfg['huggingface_options']['output_attentions'],
                 output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
             )
-            input['data'][0] = input['data'][0][0]  # remove batch size dim.
 
             ''' will be used in future[pipeline run]
             # logits = self.model.generate(
@@ -181,7 +180,7 @@ class HuggingfaceTestRunner(TestRunner):
             '''
             count = 0
             if not test_utils.in_ci():
-                logits = result.logits.detach().numpy()
+                logits = result.logits.detach().numpy()[0]
                 # data = np.argmax(logits, 2).flatten()
                 # print(data)
                 # print(self.tokenizer.decode(data, skip_special_tokens=False))
