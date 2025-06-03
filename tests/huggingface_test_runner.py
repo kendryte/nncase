@@ -169,7 +169,7 @@ class HuggingfaceTestRunner(TestRunner):
                 output_attentions=self.cfg['huggingface_options']['output_attentions'],
                 output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
             )
-            input['data'][0] = input['data'][0][0] # remove batch size dim.
+            input['data'][0] = input['data'][0][0]  # remove batch size dim.
 
             ''' will be used in future[pipeline run]
             # logits = self.model.generate(
