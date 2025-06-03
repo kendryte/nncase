@@ -34,6 +34,67 @@ using namespace ortki;
     _TEST_VECTOR(T, 4)                                                         \
     _TEST_VECTOR(T, 8)
 
+#define PRINT_TENSOR(tensor)                                                  \
+    nncase::ntt::apply(tensor.shape(), [&](auto index) {                       \
+        printf("c[%ld, %ld] = %f\n", index[0], index[1],\
+                tensor(index));                                       \
+    });                                                                       \
+
+
+#define DECLARE_NTT_TENSOR(element_type, tensor_name, shape_param)                                            \
+    /* is fixed_shape */                                                        \
+    auto ntt_tensor_##tensor_name =  make_unique_tensor<element_type>(shape_param); \
+    NttTest::init_tensor(*ntt_tensor_##tensor_name, -10.f, 10.f)
+
+#define BINARY_TEST_BODY(lhs_name, rhs_name, out_name, golden_name, ntt_op, ort_op) \
+    /* ntt */ \
+    ntt::binary<ntt::ops::ntt_op>(*ntt_tensor_##lhs_name, *ntt_tensor_##rhs_name, *ntt_tensor_##out_name); \
+    /* ort */ \
+    auto ort_lhs = NttTest::ntt2ort(*ntt_tensor_##lhs_name); \
+    auto ort_rhs = NttTest::ntt2ort(*ntt_tensor_##rhs_name); \
+    auto ort_output = ortki_##ort_op(ort_lhs, ort_rhs); \
+    /* compare */ \
+    NttTest::ort2ntt(ort_output, *ntt_tensor_##golden_name); \
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_tensor_##out_name, *ntt_tensor_##golden_name));
+
+
+#define BINARY_TEST_BODY_DEBUG(lhs_name, rhs_name, out_name, golden_name, ntt_op, ort_op) \
+    /* ntt */ \
+    ntt::binary<ntt::ops::ntt_op>(*ntt_tensor_##lhs_name, *ntt_tensor_##rhs_name, *ntt_tensor_##out_name); \
+    /* ort */ \
+    auto ort_lhs = NttTest::ntt2ort(*ntt_tensor_##lhs_name); \
+    auto ort_rhs = NttTest::ntt2ort(*ntt_tensor_##rhs_name); \
+    auto ort_output = ortki_##ort_op(ort_lhs, ort_rhs); \
+    /* compare */ \
+    NttTest::ort2ntt(ort_output, *ntt_tensor_##golden_name); \
+    EXPECT_TRUE(NttTest::compare_tensor(*ntt_tensor_##out_name, *ntt_tensor_##golden_name));
+
+
+#define GENERATE_BINARY_TEST(test_group, test_name, \
+                            lhs_shape, rhs_shape, \
+                           element_type, ntt_op, ort_op) \
+TEST(test_group, test_name) { \
+                DECLARE_NTT_TENSOR(element_type, lhs, lhs_shape); \
+                DECLARE_NTT_TENSOR(element_type, rhs, rhs_shape); \
+                DECLARE_NTT_TENSOR(element_type, golden, output_shape); \
+                BINARY_TEST_BODY(lhs, rhs, out, golden, ntt_op, ort_op) \
+}
+
+#define DEBUG_BINARY_TEST(test_group, test_name, \
+                            lhs_shape, rhs_shape, \
+                           element_type, ntt_op, ort_op) \
+TEST(test_group, test_name) { \
+                DECLARE_NTT_TENSOR(element_type, lhs, lhs_shape); \
+                DECLARE_NTT_TENSOR(element_type, rhs, rhs_shape); \
+                auto output_shape = ntt::shape_infer::binary_output_sh binary_output_dimape(lhs_shape, rhs_shape); \
+                DECLARE_NTT_TENSOR(element_type, out, output_shape); \
+                DECLARE_NTT_TENSOR(element_type, golden, output_shape); \
+                BINARY_TEST_BODY(lhs, rhs, out, golden, ntt_op, ort_op) \
+}
+
+
+
+
 #define DEFINE_NTT_BINARY_TEST(ntt_name, ort_name)                             \
     TEST(BinaryTest##ort_name##Float, fixed_fixed_fixed) {                     \
         /* init */                                                             \
@@ -676,11 +737,12 @@ using namespace ortki;
         NttTest::ort2ntt(ort_output, ntt_output2);                             \
         EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));        \
     }                                                                          \
-    TEST(UnaryTest##ort_name, vector) {                                        \
+    TEST(UnaryTest##ort_name##, vector) {                                      \
         TEST_VECTOR(float)                                                     \
         TEST_VECTOR(int32_t)                                                   \
         TEST_VECTOR(int64_t)                                                   \
     }                                                                          \
+    */ \
                                                                                \
     int main(int argc, char *argv[]) {                                         \
         ::testing::InitGoogleTest(&argc, argv);                                \
