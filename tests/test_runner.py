@@ -60,11 +60,11 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         self.clear(self.case_dir)
         os.makedirs(self.case_dir)
 
-        self.inputs: List[Dict] = []
-        self.calibs: List[Dict] = []
-        self.outputs: List[Dict] = []
+        self.inputs: List[Any] = []
+        self.calibs: List[Any] = []
+        self.outputs: List[Any] = []
         self.model_type: str = ""
-        self.pre_process: List[Dict] = []
+        self.pre_process: List[Any] = []
 
         self.num_pattern = re.compile("(\d+)")
         # [n, c, h, w].zip default_shape => [(n, 1), (c, 1), (h, 48), (w, 48)]
@@ -231,7 +231,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         if os.path.exists(case_dir):
             shutil.rmtree(case_dir)
 
-    @ abstractmethod
+    @abstractmethod
     def parse_model(self, model_path: Union[List[str], str]):
         pass
 
@@ -393,8 +393,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         import_opt = self.cfg['huggingface_options']
         e = '"'
         for k, v in import_opt.items():
-            exec(
-                f"import_options.huggingface_options.{k} = {e + v + e if isinstance(v, str) else v}")
+            setattr(import_options.huggingface_options, k, v)
 
         return import_options
 
@@ -447,7 +446,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     file_list.append(os.path.join(args, file))
             file_list.sort()
         elif method == 'text':
-            assert(not os.path.isdir(args))
+            assert (not os.path.isdir(args))
             file_list.append(args)
         else:
             assert '{0} : not supported generator method'.format(method)
@@ -484,7 +483,7 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_numpy(file_list[idx])
                 elif method == 'text':
                     data = generator.from_text(file_list[0])
-                    assert(len(data) >= idx, "prompt not enough for calib")
+                    assert (len(data) >= idx, "prompt not enough for calib")
                     messages = [
                         {"role": "system", "content": "You are a assistant!"},
                         {"role": "user", "content": data[idx]}
@@ -495,6 +494,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         add_generation_prompt=True
                     )
                     data = self.tokenizer([text], return_tensors="np").input_ids
+                    if dtype == 'PagedAttentionKVCache':
+                        data = input['scheduler'].schedule([0], [data.shape[1]])
                 if not test_utils.in_ci():
                     if method == 'text':
                         dump_txt_file(os.path.join(self.case_dir, name,
@@ -504,10 +505,15 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                                                    f'{name}_{input_idx}_{batch_idx}.bin'), data)
                         dump_txt_file(os.path.join(self.case_dir, name,
                                                    f'{name}_{input_idx}_{batch_idx}.txt'), data)
-                    np.save(os.path.join(self.case_dir, name,
-                                         f'{name}_{input_idx}_{batch_idx}.npy'), data)
-                    convert_npy_to_json(os.path.join(self.case_dir, name,
-                                                     f'{name}_{input_idx}_{batch_idx}.npy'), self.case_dir)
+                    if dtype != 'PagedAttentionKVCache':
+                        np.save(os.path.join(self.case_dir, name,
+                                             f'{name}_{input_idx}_{batch_idx}.npy'), data)
+                        convert_npy_to_json(os.path.join(self.case_dir, name,
+                                                         f'{name}_{input_idx}_{batch_idx}.npy'),
+                                            os.path.join(self.case_dir, name))
+                    elif dtype == 'PagedAttentionKVCache':
+                        data.dump_json(os.path.join(self.case_dir, name,
+                                                    f'{name}_{input_idx}_{batch_idx}.json'))
                 samples.append(data)
             input['data'] = samples
 

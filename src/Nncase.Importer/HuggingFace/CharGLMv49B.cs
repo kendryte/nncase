@@ -21,7 +21,7 @@ namespace Nncase.Importer
         public override Call RotateHalf(Expr x)
         {
             var xShape = IR.F.Tensors.ShapeOf(x).AsShape();
-            x = IR.F.Tensors.Reshape(x, [xShape[0], xShape[1], xShape[2], xShape[3] / 2L, 2L]);
+            x = IR.F.Tensors.Reshape(x, [xShape[0], xShape[1], xShape[2] / 2L, 2L]);
             var x1 = IR.F.Tensors.Slice(
                 x,
                 new[] { 0L },
@@ -40,32 +40,32 @@ namespace Nncase.Importer
 
         public override System.Tuple<Call, Call> ApplyRotaryPosEmb(Expr q, Expr k, Expr cos, Expr sin, long unSqueezeDim = 1)
         {
-            cos = IR.F.Tensors.Unsqueeze(cos, Tensor.From<long>(new long[] { 1 }));
-            sin = IR.F.Tensors.Unsqueeze(sin, Tensor.From<long>(new long[] { 1 }));
+            cos = IR.F.Tensors.Unsqueeze(cos, Tensor.From<long>(new long[] { 0 }));
+            sin = IR.F.Tensors.Unsqueeze(sin, Tensor.From<long>(new long[] { 0 }));
 
             var cosShape = IR.F.Tensors.ShapeOf(cos).AsShape();
             var sinShape = IR.F.Tensors.ShapeOf(sin).AsShape();
 
-            var cosLastDim = new RankedShape(cosShape[-1]);
-            var sinLastDim = new RankedShape(sinShape[-1]);
+            var cosLastDim = new RankedShape(cosShape[^1]);
+            var sinLastDim = new RankedShape(sinShape[^1]);
 
             // repeat_interleave for cos & sin
-            cos = IR.F.Tensors.Slice(cos, new[] { 0L }, cosLastDim / 2L, new[] { 3L }, new[] { 1L });
+            cos = IR.F.Tensors.Slice(cos, new[] { 0L }, cosLastDim / 2L, new[] { -1L }, new[] { 1L });
             cos = IR.F.Tensors.Unsqueeze(cos, [-1]);
             cos = IR.F.Tensors.Concat(new IR.Tuple(cos, cos), -1);
             cos = IR.F.Tensors.Reshape(cos, cosShape);
 
-            sin = IR.F.Tensors.Slice(sin, new[] { 0L }, sinLastDim / 2L, new[] { 3L }, new[] { 1L });
+            sin = IR.F.Tensors.Slice(sin, new[] { 0L }, sinLastDim / 2L, new[] { -1L }, new[] { 1L });
             sin = IR.F.Tensors.Unsqueeze(sin, new RankedShape(-1));
             sin = IR.F.Tensors.Concat(new IR.Tuple(sin, sin), -1);
             sin = IR.F.Tensors.Reshape(sin, sinShape);
 
             var rotaryDim = new RankedShape(IR.F.Tensors.ShapeOf(cos).AsShape()[-1]);
 
-            var qRot = IR.F.Tensors.Slice(q, new[] { 0L }, rotaryDim, new[] { 3L }, new[] { 1L });
-            var qPass = IR.F.Tensors.Slice(q, rotaryDim, [IR.F.Tensors.ShapeOf(q).AsShape()[-1]], new[] { 3L }, new[] { 1L });
-            var kRot = IR.F.Tensors.Slice(k, new[] { 0L }, rotaryDim, new[] { 3L }, new[] { 1L });
-            var kPass = IR.F.Tensors.Slice(k, rotaryDim, [IR.F.Tensors.ShapeOf(k).AsShape()[-1]], new[] { 3L }, new[] { 1L });
+            var qRot = IR.F.Tensors.Slice(q, new[] { 0L }, rotaryDim, new[] { -1L }, new[] { 1L });
+            var qPass = IR.F.Tensors.Slice(q, rotaryDim, [IR.F.Tensors.ShapeOf(q).AsShape()[^1]], new[] { -1L }, new[] { 1L });
+            var kRot = IR.F.Tensors.Slice(k, new[] { 0L }, rotaryDim, new[] { -1L }, new[] { 1L });
+            var kPass = IR.F.Tensors.Slice(k, rotaryDim, [IR.F.Tensors.ShapeOf(k).AsShape()[^1]], new[] { -1L }, new[] { 1L });
 
             var qRotEmbed = IR.F.Math.Binary(
                 BinaryOp.Add,
@@ -92,7 +92,7 @@ namespace Nncase.Importer
             // gate, up_states = up_states.chunk(2, dim = -1)
             // dim == -1 mean can slice 1/2
             var gate = IR.F.Tensors.Slice(upStates, new[] { 0L }, upStatesShape / 2L, new[] { -1L }, new[] { 1L });
-            upStates = IR.F.Tensors.Slice(upStates, upStatesShape / 2L, [IR.F.Tensors.ShapeOf(upStates).AsShape()[-1]], new[] { -1L }, new[] { 1L });
+            upStates = IR.F.Tensors.Slice(upStates, upStatesShape / 2L, [IR.F.Tensors.ShapeOf(upStates).AsShape()[^1]], new[] { -1L }, new[] { 1L });
 
             if (_context!.Config!.ContainsKey("hidden_act"))
             {

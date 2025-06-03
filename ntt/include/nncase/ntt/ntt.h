@@ -26,6 +26,7 @@
 #include "kernels/expand.h"
 #include "kernels/gather.h"
 #include "kernels/get_item.h"
+#include "kernels/get_position_ids.h"
 #include "kernels/im2col.h"
 #include "kernels/instance_norm.h"
 #include "kernels/matmul.h"

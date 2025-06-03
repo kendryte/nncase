@@ -54,6 +54,9 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsUseCachePtr;
     public delegate* unmanaged<IntPtr, byte> HuggingFaceOptionsGetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsSetAttentionBackendPtr;
+    public delegate* unmanaged<IntPtr, IntPtr, void> HuggingFaceOptionsSetConfigPtr;
+    public delegate* unmanaged<IntPtr, int> HuggingFaceOptionsGetMaxModelLenPtr;
+    public delegate* unmanaged<IntPtr, int, void> HuggingFaceOptionsSetMaxModelLenPtr;
     public delegate* unmanaged<IntPtr> CompileOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFilePtr;
     public delegate* unmanaged<IntPtr, byte*, nuint, void> CompileOptionsSetInputFormatPtr;
@@ -149,6 +152,8 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, int> RefPagedAttentionKVCacheGetNumBlocksPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetKVCachesPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheAsIValuePtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheAsRTValuePtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> RefPagedAttentionKVCacheDumpJsonPtr;
 
     // Var functions
     public delegate* unmanaged<IntPtr, IntPtr> VarGetDimensionsPtr;
@@ -179,6 +184,9 @@ public static unsafe class CApi
         mt->HuggingFaceOptionsUseCachePtr = &HuggingFaceOptionsUseCache;
         mt->HuggingFaceOptionsGetAttentionBackendPtr = &HuggingFaceOptionsGetAttentionBackend;
         mt->HuggingFaceOptionsSetAttentionBackendPtr = &HuggingFaceOptionsSetAttentionBackend;
+        mt->HuggingFaceOptionsSetConfigPtr = &HuggingFaceOptionsSetConfig;
+        mt->HuggingFaceOptionsGetMaxModelLenPtr = &HuggingFaceOptionsGetMaxModelLen;
+        mt->HuggingFaceOptionsSetMaxModelLenPtr = &HuggingFaceOptionsSetMaxModelLen;
         mt->CompileOptionsCreatePtr = &CompileOptionsCreate;
         mt->CompileOptionsSetInputFilePtr = &CompileOptionsSetInputFile;
         mt->CompileOptionsSetInputFormatPtr = &CompileOptionsSetInputFormat;
@@ -274,6 +282,8 @@ public static unsafe class CApi
         mt->RefPagedAttentionKVCacheGetNumBlocksPtr = &RefPagedAttentionKVCacheGetNumBlocks;
         mt->RefPagedAttentionKVCacheGetKVCachesPtr = &RefPagedAttentionKVCacheGetKVCaches;
         mt->RefPagedAttentionKVCacheAsIValuePtr = &RefPagedAttentionKVCacheAsIValue;
+        mt->RefPagedAttentionKVCacheAsRTValuePtr = &RefPagedAttentionKVCacheAsRTValue;
+        mt->RefPagedAttentionKVCacheDumpJsonPtr = &RefPagedAttentionKVCacheDumpJson;
 
         // Var functions
         mt->VarGetDimensionsPtr = &VarGetDimensions;
@@ -401,6 +411,25 @@ public static unsafe class CApi
     private static byte HuggingFaceOptionsGetAttentionBackend(IntPtr handle)
     {
         return (byte)Get<HuggingFaceOptions>(handle).AttenionBackend;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsSetConfig(IntPtr handle, IntPtr configHandle)
+    {
+        // todo : support rtattention config.
+        Get<HuggingFaceOptions>(handle).Config = RTPagedAttentionConfig.FromHandle(configHandle);
+    }
+
+    [UnmanagedCallersOnly]
+    private static int HuggingFaceOptionsGetMaxModelLen(IntPtr handle)
+    {
+        return Get<HuggingFaceOptions>(handle).MaxModelLen;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsSetMaxModelLen(IntPtr handle, int value)
+    {
+        Get<HuggingFaceOptions>(handle).MaxModelLen = value;
     }
 
     [UnmanagedCallersOnly]
@@ -1176,6 +1205,54 @@ public static unsafe class CApi
     {
         var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
         var value = Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCache)));
+        return GCHandle.ToIntPtr(GCHandle.Alloc(value));
+    }
+
+    [UnmanagedCallersOnly]
+    private static void RefPagedAttentionKVCacheDumpJson(IntPtr handle, byte* bytes, nuint length)
+    {
+        var file_path = ToString(bytes, length);
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        var value = Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvCache));
+        using (var fs = File.OpenWrite(file_path))
+        {
+            System.Text.Json.JsonSerializer.Serialize(fs, value, System.Text.Json.JsonSerializerOptions.Default);
+        }
+    }
+
+    [UnmanagedCallersOnly]
+    private static IntPtr RefPagedAttentionKVCacheAsRTValue(IntPtr handle)
+    {
+        var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
+        if (kvCache.Config is not RTPagedAttentionConfig rtconfig)
+        {
+            throw new InvalidOperationException("RefPagedAttentionKVCache must be created with RTPagedAttentionConfig to use this method.");
+        }
+
+        var sharedCount = rtconfig.ShardingAxes.Count;
+        var logicalKVShape = kvCache.KVCaches.Dimensions.ToArray();
+        var sharedShape = logicalKVShape[..sharedCount];
+        var rtkvObj = RTPagedAttentionKVCache.Create(
+                    rtconfig,
+                    kvCache.NumSeqs,
+                    kvCache.NumTokens,
+                    RTTensor.FromTensor(kvCache.ContextLens),
+                    RTTensor.FromTensor(kvCache.SeqLens),
+                    RTTensor.FromTensor(kvCache.BlockTable),
+                    RTTensor.FromTensor(kvCache.SlotMapping),
+                    kvCache.NumBlocks,
+                    sharedShape.ToArray().Select(i => (int)i).ToArray());
+        {
+            foreach (var topoIndices in sharedShape.Select(i => Enumerable.Range(0, (int)i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
+            {
+                var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - sharedCount)).ToArray();
+                var shape = Enumerable.Repeat(1L, sharedCount).Concat(logicalKVShape[sharedCount..]).ToArray();
+                var kvStorage = kvCache.KVCaches.View(indices, shape).Squeeze(Utilities.LinqUtility.Range(0L, sharedCount).ToArray());
+                rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+            }
+        }
+
+        var value = RTTensor.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj)));
         return GCHandle.ToIntPtr(GCHandle.Alloc(value));
     }
 

@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.NTT;
+using Nncase.IR.Tensors;
 
 namespace Nncase.IR.F;
 

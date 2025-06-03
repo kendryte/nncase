@@ -17,11 +17,13 @@ import os
 import pytest
 from huggingface_test_runner import HuggingfaceTestRunner, download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
+print("getpid", os.getpid())
 
 
-def test_qwen2(request):
+def test_qwen3_fp8_dynamic(request):
     cfg = """
     [compile_opt]
+    dump_ir = true
     shape_bucket_enable = true
     shape_bucket_range_info = { "sequence_length"=[1,512] }
     shape_bucket_segments_count = 2
@@ -53,10 +55,27 @@ def test_qwen2(request):
     [target]
     [target.cpu]
     infer = false
+    [target.xpu]
+    infer = true
+
+    [target.xpu.target_options]
+    CustomOpScheme = "/root/workspace/nncase/tmp/paged_attn_scheme.json"
+
+    [paged_attention_config]
+    block_size = 256
+    num_blocks = 32
+    max_sessions = 1
+    kv_type = "float16"
+    cache_layout = ["NumBlocks","NumLayers","NumKVHeads","KV","HeadDim","BlockSize"]
+    packed_axes = ["HeadDim"]
+    lanes = [64]
+    sharding_axes = ["NumKVHeads","NumBlocks"]
+    axis_policies = [[1],[2,3]]
+    hierarchy = [1, 2, 8, 4, 4]
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "Qwen/Qwen2.5-0.5B-Instruct"
+    model_name = "Qwen3-0.6B-FP8-dynamic"
 
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)

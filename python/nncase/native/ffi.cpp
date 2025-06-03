@@ -115,7 +115,14 @@ PYBIND11_MODULE(_nncase, m) {
             "attention_backend",
             py::overload_cast<>(&huggingface_options::attention_backend),
             py::overload_cast<huggingface_attenion_backend>(
-                &huggingface_options::attention_backend));
+                &huggingface_options::attention_backend))
+        .def_property("config", nullptr,
+                      py::overload_cast<const llm::paged_attention_config &>(
+                          &huggingface_options::config))
+        .def_property(
+            "max_model_len",
+            py::overload_cast<>(&huggingface_options::max_model_len),
+            py::overload_cast<int32_t>(&huggingface_options::max_model_len));
 
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())

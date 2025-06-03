@@ -91,7 +91,7 @@ public sealed class RefPagedAttentionScheduler
 
             if (seqLens[seqId] > _maxModelLen)
             {
-                throw new InvalidOperationException("The sequence length is larger than max model length!");
+                throw new InvalidOperationException($"The sequence length {seqLens[seqId]} is larger than max model length {_maxModelLen}!");
             }
 
             maxSeqLen = System.Math.Max(maxSeqLen, seqLens[seqId]);
@@ -139,7 +139,7 @@ public sealed class RefPagedAttentionScheduler
 
     public IR.Function CreateTestFunction(int numQHeads, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout)
     {
-        var (root, queryVar, kVVars, kVCacheObjVar) = RefPagedAttentionKVCache.BuildPagedAttentionKernel([], [_maxModelLen], numQHeads, _numBlocks, qLayout, kvLayout, _config);
+        var (root, queryVar, kVVars, kVCacheObjVar) = RefPagedAttentionKVCache.BuildPagedAttentionKernel([], [_maxModelLen], numQHeads, _numBlocks, qLayout, kvLayout, _config, new(false, true, _maxModelLen));
         return new IR.Function(root, new Var[] { queryVar }.Concat(kVVars.SelectMany(i => i).ToArray()).Concat(new Var[] { kVCacheObjVar }).ToArray());
     }
 
