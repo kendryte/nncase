@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.NN;
@@ -69,7 +70,7 @@ public abstract class HuggingFaceModel
         // }
         var inputIdsShapeExpr = new Dimension[]
         {
-            Context.FixVarMap.ContainsKey("batch_size") ? Context.FixVarMap["batch_size"] : Context.DynVarMap["batch_size"],
+            // Context.FixVarMap.ContainsKey("batch_size") ? Context.FixVarMap["batch_size"] : Context.DynVarMap["batch_size"],
             Context.FixVarMap.ContainsKey("sequence_length") ? Context.FixVarMap["sequence_length"] : Context.DynVarMap["sequence_length"],
         };
 
@@ -209,8 +210,8 @@ public abstract class HuggingFaceModel
 
     public virtual System.Tuple<Call, Call> ApplyRotaryPosEmb(Expr q, Expr k, Expr cos, Expr sin, long unSqueezeDim = 1)
     {
-        cos = IR.F.Tensors.Unsqueeze(cos, Tensor.From<long>(new long[] { 1 }));
-        sin = IR.F.Tensors.Unsqueeze(sin, Tensor.From<long>(new long[] { 1 }));
+        cos = IR.F.Tensors.Unsqueeze(cos, Tensor.From<long>(new long[] { 0 }));
+        sin = IR.F.Tensors.Unsqueeze(sin, Tensor.From<long>(new long[] { 0 }));
 
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
@@ -232,7 +233,7 @@ public abstract class HuggingFaceModel
     // return torch.cat((-x2, x1), dim=-1)
     public virtual Call RotateHalf(Expr x)
     {
-        var xS3 = x.CheckedShape[3];
+        var xS3 = x.CheckedShape[^1];
         var x1 = IR.F.Tensors.Slice(
             x,
             new[] { 0L },
@@ -439,9 +440,9 @@ public abstract class HuggingFaceModel
         return Linear(tmp * Linear(hiddenStates, upProjW, null, ifScaleUp, wScaleUp, $"model.layers.{count}.mlp.up_proj"), downProjW, null, ifScaleDown, wScaleDown, $"model.layers.{count}.mlp.down_proj");
     }
 
-    public virtual Tuple<Call, Call, Call> QKVCompute(int count, Expr hiddenStates, Dimension batchSize, Dimension seqLen, Dimension headDim)
+    public virtual Tuple<Call, Call, Call> QKVCompute(int count, Expr hiddenStates, Dimension seqLen, Dimension headDim)
     {
-        var hidden_shape = new RankedShape(batchSize, seqLen, -1L, headDim);
+        var hidden_shape = new RankedShape(seqLen, -1L, headDim);
 
         var qProjW = Context!.ConstTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
         Tensor? qProjB = null;
@@ -456,7 +457,7 @@ public abstract class HuggingFaceModel
         queryStates = IR.F.Tensors.Reshape(queryStates, hidden_shape);
 
         // batch_size, num_heads, seq_len, head_dim
-        queryStates = IR.F.Tensors.Transpose(queryStates, new long[] { 0, 2, 1, 3 });
+        queryStates = IR.F.Tensors.Transpose(queryStates, new long[] { 1, 0, 2 });
 
         var kProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.weight"];
         Tensor? kProjB = null;
@@ -469,7 +470,7 @@ public abstract class HuggingFaceModel
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.weight_scale", out var wScaleK);
         var keyStates = Linear(hiddenStates, kProjW, kProjB, ifScaleK, wScaleK, $"model.layers.{count}.self_attn.k_proj");
         keyStates = IR.F.Tensors.Reshape(keyStates, hidden_shape);
-        keyStates = IR.F.Tensors.Transpose(keyStates, new long[] { 0, 2, 1, 3 });
+        keyStates = IR.F.Tensors.Transpose(keyStates, new long[] { 1, 0, 2 });
 
         var vProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.weight"];
         Tensor? vProjB = null;
@@ -482,7 +483,7 @@ public abstract class HuggingFaceModel
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.weight_scale", out var wScaleV);
         var valueStates = Linear(hiddenStates, vProjW, vProjB, ifScaleV, wScaleV, $"model.layers.{count}.self_attn.v_proj");
         valueStates = IR.F.Tensors.Reshape(valueStates, hidden_shape);
-        valueStates = IR.F.Tensors.Transpose(valueStates, new long[] { 0, 2, 1, 3 });
+        valueStates = IR.F.Tensors.Transpose(valueStates, new long[] { 1, 0, 2 });
         return System.Tuple.Create(queryStates, keyStates, valueStates);
     }
 
@@ -516,15 +517,15 @@ public abstract class HuggingFaceModel
 
     public virtual Tuple<Expr, Expr> RotaryEmbedding(Expr x, Expr kvObject, Expr invFreq, float attentionScaling)
     {
-        var positionIds = IR.F.NN.GetPositionIds(IR.F.Shapes.AsTensor(x.CheckedShape[1]), kvObject);
+        var positionIds = IR.F.NN.GetPositionIds(IR.F.Shapes.AsTensor(x.CheckedShape[0]), kvObject);
 
-        var batch_size = x.CheckedShape[0];
-        var dim_div_2 = invFreq.CheckedShape[1];
-        var shape_tensor = new RankedShape(batch_size, dim_div_2, 1L);
+        // var batch_size = x.CheckedShape[0];
+        var dim_div_2 = invFreq.CheckedShape[0];
+        var shape_tensor = new RankedShape(dim_div_2, 1L);
 
         invFreq = IR.F.Tensors.Expand(invFreq, shape_tensor);
 
-        var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([0, 1]));
+        var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([0]));
         positionIdsExpanded = IR.F.Tensors.Cast(positionIdsExpanded, DataTypes.Float32);
 
         var freqs = IR.F.Math.MatMul(invFreq, positionIdsExpanded).With(metadata: new IRMetadata()
@@ -532,7 +533,7 @@ public abstract class HuggingFaceModel
             OutputNames =
             ["RotaryEmbedding"],
         });
-        freqs = IR.F.Tensors.Transpose(freqs, new long[] { 0, 2, 1 });
+        freqs = IR.F.Tensors.Transpose(freqs, new long[] { 1, 0 });
 
         var emb = IR.F.Tensors.Concat(new IR.Tuple(freqs, freqs), -1);
 
@@ -776,7 +777,7 @@ public abstract class HuggingFaceModel
 
     public virtual Call Embeding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
     {
-        var embedingDim = embedingWeight.Shape[-1];
+        var embedingDim = embedingWeight.Shape[^1];
         var gatherResult = IR.F.Tensors.Gather(embedingWeight, 0, input);
         if (paddingIdx == null)
         {
@@ -784,9 +785,9 @@ public abstract class HuggingFaceModel
         }
         else
         {
-            var zeros = Tensor.Zeros(embedingWeight.ElementType, new long[] { 1, embedingDim.FixedValue });
+            var zeros = Tensor.Zeros(embedingWeight.ElementType, new long[] { embedingDim.FixedValue });
             var paddingMask = IR.F.Math.Equal(input, paddingIdx);
-            paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, new long[] { 2 });
+            paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, new long[] { 1 });
             paddingMask = IR.F.Tensors.Expand(paddingMask, gatherResult.CheckedShape);
             var results = IR.F.Tensors.Where(paddingMask, zeros, gatherResult);
             return results;
@@ -811,18 +812,18 @@ public abstract class HuggingFaceModel
 
         var pagedAttentionConfig = (IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config;
 
-        var batch_size = hiddenStates.CheckedShape[0];
-        var seq_len = hiddenStates.CheckedShape[1];
-        var (queryStates, keyStates, valueStates) = QKVCompute(count, hiddenStates, batch_size, seq_len, head_dim);
+        // var batch_size = hiddenStates.CheckedShape[0];
+        var seq_len = hiddenStates.CheckedShape[0];
+        var (queryStates, keyStates, valueStates) = QKVCompute(count, hiddenStates, seq_len, head_dim);
 
         var (cos, sin) = positionEmbeddings;
 
         // // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
-        queryStates = IR.F.Tensors.Squeeze(queryStates, [0]);
-        keyStates = IR.F.Tensors.Squeeze(keyStates, [0]);
-        valueStates = IR.F.Tensors.Squeeze(valueStates, [0]);
 
+        // queryStates = IR.F.Tensors.Squeeze(queryStates, [0]);
+        // keyStates = IR.F.Tensors.Squeeze(keyStates, [0]);
+        // valueStates = IR.F.Tensors.Squeeze(valueStates, [0]);
         AttentionDimKind[] qSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         AttentionDimKind[] kvSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
 
@@ -909,13 +910,14 @@ public abstract class HuggingFaceModel
         output = IR.F.Tensors.Transpose(output, ModelUtils.GetLayoutPerm(qDestLayout, qSrcLayout));
         output = seq_len is DimVar ? IR.F.Tensors.Slice(output, new[] { 0 }, new Dimension[] { seq_len }, new[] { 1 }, new[] { 1 }) : output;
         output = IR.F.Tensors.Transpose(output, new[] { 1, 0, 2 });
-        output = IR.F.Tensors.Unsqueeze(output, new long[] { 0 });
 
-        output = IR.F.Tensors.Reshape(output, new RankedShape(1, seq_len, -1L));
+        // output = IR.F.Tensors.Unsqueeze(output, new long[] { 0 });
+        output = IR.F.Tensors.Reshape(output, new RankedShape(seq_len, -1L));
         var oProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
 
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.input_scale", out var ifScaleO);
         Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.weight_scale", out var wScaleO);
+
         output = Linear(output, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
         return System.Tuple.Create(output, paskKeyValues/*selfAttenWeight, mergedKeyValue*/);
     }
@@ -978,7 +980,7 @@ public abstract class HuggingFaceModel
         var invFreq = Tensor.FromArray(invFreq_.ToArray());
 
         var invFreq_float = IR.F.Tensors.Cast(invFreq, DataTypes.Float32);
-        var invFreqExpanded = IR.F.Tensors.Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 0, 2 }));
+        var invFreqExpanded = IR.F.Tensors.Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 1 }));
 
         var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreqExpanded.Evaluate().AsTensor(), attentionScaling);
 
