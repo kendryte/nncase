@@ -26,7 +26,7 @@ namespace nncase::ntt {
 namespace softmax_detail {
 template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
           typename PackedAxes>
-void packed_on_axis_impl(const TIn &input, TOut &&output,
+void packed_softmax_impl(const TIn &input, TOut &&output,
                          [[maybe_unused]] PackedAxes packedAxes) {
     using TElem = typename TIn::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
@@ -78,10 +78,56 @@ void packed_on_axis_impl(const TIn &input, TOut &&output,
     });
 }
 
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
-          typename PackedAxes>
-void packed_softmax_1d(const TIn &input, TOut &&output, PackedAxes packedAxes) {
-    packed_on_axis_impl<Axis>(input, output, packedAxes);
+template <size_t Axis, class TIn, class TOut, typename PackedAxes>
+void packed_softmax_impl(const TIn &input, TOut &&output,
+                         [[maybe_unused]] PackedAxes packedAxes) {
+    using TElem = typename TIn::element_type;
+    auto input_shape = input.shape();
+    auto output_shape = output.shape();
+    static_assert(is_same_seq(input_shape, output_shape),
+                  "the input output shape not equal!");
+
+    constexpr auto need_reduce =
+        PackedAxes::rank() != 0 && Axis == PackedAxes::at(0);
+    auto domain = shape_infer::reduced_shape_by_axis<Axis>(input_shape);
+    apply(domain, [&](auto index) {
+        // max
+        TElem max_value = input(index);
+        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
+             index[Axis]++) {
+            max_value = max(max_value, input(index));
+        }
+
+        // reduce_max
+        if constexpr (need_reduce) {
+            max_value = (TElem)reduce_max(max_value);
+        }
+
+        // (x - reduce_max) * beta
+        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
+             index[Axis]++) {
+            output(index) = input(index) - max_value;
+        }
+
+        // exp((x - reduce_max) * beta) and sum
+        TElem sum = (TElem)0;
+        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
+             index[Axis]++) {
+            output(index) = exp(output(index));
+            sum += output(index);
+        }
+
+        // reduce sum
+        if constexpr (need_reduce) {
+            sum = (TElem)reduce_sum(sum);
+        }
+
+        // div
+        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
+             index[Axis]++) {
+            output(index) = output(index) / sum;
+        }
+    });
 }
 
 } // namespace softmax_detail
@@ -98,12 +144,11 @@ void packed_softmax_1d(const TIn &input, TOut &&output, PackedAxes packedAxes) {
  * @param output output output.
  * @param packedAxes  packed axes
  */
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
+template <size_t Axis, class TIn, class TOut,
           typename PackedAxes /* , typename PadedNums */>
 void packed_softmax(const TIn &input, TOut &&output,
                     PackedAxes packedAxes) noexcept {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d pack");
-    // static_assert(PadedNums::at(0) == 0, "currently not support pad");
-    softmax_detail::packed_softmax_1d<Axis>(input, output, packedAxes);
+    softmax_detail::packed_softmax_impl<Axis>(input, output, packedAxes);
 }
 } // namespace nncase::ntt
