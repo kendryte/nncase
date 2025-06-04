@@ -57,12 +57,15 @@ TEST(PackedSoftmax, NoPack1) {
 }
 
 TEST(PackedSoftmax, AxisIsPackedAxis0) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
-    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 2, 16>> buffer_2;
+    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16 / P, 16>>
+        buffer_2;
 
     pack<1>(buffer_1, buffer_2);
-    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 2, 16>> buffer_3;
+    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16 / P, 16>>
+        buffer_3;
     packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> ntt_output;
     unpack<1>(buffer_3, ntt_output);
@@ -78,12 +81,15 @@ TEST(PackedSoftmax, AxisIsPackedAxis0) {
 }
 
 TEST(PackedSoftmax, AxisIsPackedAxis1) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
-    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 16, 2>> buffer_2;
+    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16, 16 / P>>
+        buffer_2;
 
     pack<2>(buffer_1, buffer_2);
-    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 16, 2>> buffer_3;
+    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16, 16 / P>>
+        buffer_3;
     packed_softmax<2>(buffer_2, buffer_3, ntt::fixed_shape<2>{});
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> ntt_output;
     unpack<2>(buffer_3, ntt_output);
@@ -99,12 +105,15 @@ TEST(PackedSoftmax, AxisIsPackedAxis1) {
 }
 
 TEST(PackedSoftmax, AxisIsNotPackedAxis0) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
-    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 2, 16>> buffer_2;
+    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16 / P, 16>>
+        buffer_2;
 
     pack<1>(buffer_1, buffer_2);
-    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 2, 16>> buffer_3;
+    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16 / P, 16>>
+        buffer_3;
     packed_softmax<2>(buffer_2, buffer_3, ntt::fixed_shape<3>{});
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> ntt_output;
     unpack<1>(buffer_3, ntt_output);
@@ -120,12 +129,15 @@ TEST(PackedSoftmax, AxisIsNotPackedAxis0) {
 }
 
 TEST(PackedSoftmax, AxisIsNotPackedAxis1) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
-    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 16, 2>> buffer_2;
+    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16, 16 / P>>
+        buffer_2;
 
     pack<2>(buffer_1, buffer_2);
-    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<3, 16, 2>> buffer_3;
+    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16, 16 / P>>
+        buffer_3;
     packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<2>{});
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> ntt_output;
     unpack<2>(buffer_3, ntt_output);
