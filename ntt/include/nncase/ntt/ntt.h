@@ -32,8 +32,8 @@
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
 #include "kernels/pad.h"
-#include "kernels/range.h"
 #include "kernels/paged_attention.h"
+#include "kernels/range.h"
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
 #include "kernels/reshape.h"
@@ -42,6 +42,7 @@
 #include "kernels/scatter_nd.h"
 #include "kernels/shapeof.h"
 #include "kernels/slice.h"
+#include "kernels/softmax.h"
 #include "kernels/stack.h"
 #include "kernels/summa.h"
 #include "kernels/transpose.h"
@@ -81,7 +82,7 @@
 #include "arch/xpu/topology.h"
 #else
 #include "arch/cpu/distributed.h"
+#include "arch/cpu/profiling.h"
 #include "arch/cpu/runtime.h"
 #include "arch/cpu/topology.h"
-#include "arch/cpu/profiling.h"
 #endif
