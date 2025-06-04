@@ -83,9 +83,6 @@ void packed_softmax_impl(const TIn &input, TOut &&output,
                          [[maybe_unused]] PackedAxes packedAxes) {
     using TElem = typename TIn::element_type;
     auto input_shape = input.shape();
-    auto output_shape = output.shape();
-    static_assert(is_same_seq(input_shape, output_shape),
-                  "the input output shape not equal!");
 
     constexpr auto need_reduce =
         PackedAxes::rank() != 0 && Axis == PackedAxes::at(0);
