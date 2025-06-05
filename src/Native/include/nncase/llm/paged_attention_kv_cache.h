@@ -89,6 +89,9 @@ class NNCASE_API paged_attention_kv_cache_node
 
     const auto &kv_storages() const noexcept { return kv_storages_; }
 
+    void conversation_id(size_t id) noexcept { conversation_id_ = id; }
+    size_t conversation_id() const noexcept { return conversation_id_; }
+
   private:
     tensor seq_lens_;
     tensor block_table_;
@@ -97,5 +100,6 @@ class NNCASE_API paged_attention_kv_cache_node
     dims_t kv_shape_;
     strides_t kv_strides_;
     std::vector<tensor> kv_storages_;
+    size_t conversation_id_;
 };
 } // namespace nncase::llm

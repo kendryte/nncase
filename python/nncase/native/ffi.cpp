@@ -493,6 +493,7 @@ PYBIND11_MODULE(_nncase, m) {
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
 
     register_runtime_tensor(m);
-    register_llm(m);
+    register_runtime_llm_ffi(m);
+    register_ref_llm_ffi(m);
     // register_llm_interpreter(m);
 }
