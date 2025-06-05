@@ -59,7 +59,6 @@ public sealed class RefPagedAttentionScheduler
 
         var seqLens = new long[numSeqs];
         var contextLens = new long[numSeqs];
-        var seqLogicalSlotIds = new long[numSeqs][];
         long maxSeqLen = 0;
 
         // Process each session
@@ -95,12 +94,6 @@ public sealed class RefPagedAttentionScheduler
             }
 
             maxSeqLen = System.Math.Max(maxSeqLen, seqLens[seqId]);
-
-            seqLogicalSlotIds[seqId] = new long[queryLen];
-            for (int j = 0; j < queryLen; j++)
-            {
-                seqLogicalSlotIds[seqId][j] = info.SlotStart + contextLens[seqId] + j;
-            }
         }
 
         // start create tensors.
@@ -112,7 +105,6 @@ public sealed class RefPagedAttentionScheduler
         var blockTableTensor = Tensor.Zeros(blockTableTensorType.DType, blockTableTensorType.Shape.ToValueArray()).Cast<long>();
         for (int seqId = 0; seqId < numSeqs; seqId++)
         {
-            var logicalSlotIds = seqLogicalSlotIds[seqId];
             var info = _sessionInfos[sessionIds[seqId]];
             for (long itemId = 0, logicalSlotId = info.SlotStart; logicalSlotId < Utilities.MathUtility.AlignUp(info.SlotStart + seqLens[seqId], _config.BlockSize); logicalSlotId += _config.BlockSize, itemId++)
             {

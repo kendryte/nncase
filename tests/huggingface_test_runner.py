@@ -122,6 +122,11 @@ def to_np_type(t: str):
     else:
         return None
 
+def dump_data_to_file(dir_path, file_path, data):
+    dump_bin_file(os.path.join(dir_path, f'{file_path}.bin'), data)
+    dump_txt_file(os.path.join(dir_path, f'{file_path}.txt'), data)
+    dump_npy_file(os.path.join(dir_path, f'{file_path}.npy'), data)
+    convert_npy_to_json(os.path.join(dir_path, f'{file_path}.npy'), dir_path)
 
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
@@ -155,19 +160,19 @@ class HuggingfaceTestRunner(TestRunner):
             #     add_generation_prompt=True
             # )
             # model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
-            if not test_utils.in_ci():
-                dump_bin_file(os.path.join(self.case_dir, "input",
-                                           f'input_{idx}.bin'), input['data'][0])
-                dump_txt_file(os.path.join(self.case_dir, "input",
-                                           f'input_{idx}.txt'), input['data'][0])
+            # if not test_utils.in_ci():
+            #     dump_bin_file(os.path.join(self.case_dir, "input",
+            #                                f'input_{idx}.bin'), input['data'][0])
+            #     dump_txt_file(os.path.join(self.case_dir, "input",
+            #                                f'input_{idx}.txt'), input['data'][0])
 
             # TODO: add attention_mask in inputs
             result = self.model.forward(
-                torch.from_numpy(input['data'][0]),
+                torch.from_numpy(np.expand_dims(input['data'][0], 0)),
                 return_dict=True,
-                use_cache=self.cfg['huggingface_options']['use_cache'],
-                output_attentions=self.cfg['huggingface_options']['output_attentions'],
-                output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
+                use_cache=False,
+                output_attentions=False,
+                output_hidden_states= (True if self.cfg['huggingface_options']['output_hidden_states'] else False) if self.cfg['huggingface_options']['output_logits'] else True
             )
             input['data'][0] = input['data'][0][0]  # remove batch size dim.
 
@@ -180,58 +185,24 @@ class HuggingfaceTestRunner(TestRunner):
             # output = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
             '''
             count = 0
-            if not test_utils.in_ci():
-                logits = result.logits.detach().numpy()
-                # data = np.argmax(logits, 2).flatten()
-                # print(data)
-                # print(self.tokenizer.decode(data, skip_special_tokens=False))
-                dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), logits)
-                dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), logits)
-                dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), logits)
-                convert_npy_to_json(os.path.join(
-                    self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
-                outputs.append(logits)
-                count += 1
-            if (self.cfg['huggingface_options']['use_cache']):
+            if (self.cfg['huggingface_options']['output_logits']):
                 if not test_utils.in_ci():
-                    from transformers import DynamicCache
-                    if (isinstance(result.past_key_values, DynamicCache)):
-                        k = recursive_stack(result.past_key_values.key_cache)
-                        v = recursive_stack(result.past_key_values.value_cache)
-                        past_kv = torch.stack([k, v], 1).detach().numpy()
-                    else:
-                        past_kv = recursive_stack(result.past_key_values).detach().numpy()
-                    dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), past_kv)
-                    dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), past_kv)
-                    dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), past_kv)
-                    convert_npy_to_json(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
-                    outputs.append(past_kv)
+                    logits = result.logits.detach().numpy()[0]
+                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', logits )
+                    outputs.append(logits)
                     count += 1
-            if (self.cfg['huggingface_options']['output_attentions']):
+            else:
                 if not test_utils.in_ci():
-                    attentions = recursive_stack(result.attentions).detach().numpy()
-                    dump_bin_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.bin'), attentions)
-                    dump_txt_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.txt'), attentions)
-                    dump_npy_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), attentions)
-                    convert_npy_to_json(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
-                    outputs.append(attentions)
+                    hidden_states = recursive_stack(result.hidden_states).detach().numpy()[-1][0]
+                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
+                    outputs.append(hidden_states)
                     count += 1
+
             if (self.cfg['huggingface_options']['output_hidden_states']):
                 if not test_utils.in_ci():
                     hidden_states = recursive_stack(result.hidden_states).detach().numpy()
-                    dump_bin_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.bin'), hidden_states)
-                    dump_txt_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.txt'), hidden_states)
-                    dump_npy_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), hidden_states)
-                    convert_npy_to_json(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
+                    hidden_states = np.squeeze(hidden_states, 1)
+                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
                     outputs.append(hidden_states)
                     count += 1
 
@@ -290,12 +261,12 @@ class HuggingfaceTestRunner(TestRunner):
         self.generation_config.max_new_tokens = 64
         self.generation_config.do_sample = False
         self.generation_config.temperature = 0.0  # for Stable result
-        if (self.cfg['huggingface_options']['output_attentions']):
-            self.generation_config.output_attentions = True
+        if (self.cfg['huggingface_options']['output_logits']):
+            pass
+        else:
+            self.generation_config.output_hidden_states = True
         if (self.cfg['huggingface_options']['output_hidden_states']):
             self.generation_config.output_hidden_states = True
-        if (self.cfg['huggingface_options']['use_cache']):
-            self.generation_config.use_cache = True
 
         input_dict = {}
         for input_ in self.model.dummy_inputs:
