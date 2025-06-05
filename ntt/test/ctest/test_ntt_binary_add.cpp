@@ -14,8 +14,7 @@
  */
 #include "test_ntt_binary.h"
 
-//fixed fixed fixed group
-
+//fixed fixed fixed group, for demonstrate the basic test macro
 GENERATE_BINARY_TEST(BinaryTestAddFloat, fixed_fixed_fixed_normal,  
                             (fixed_shape_v<1, 3, 16, 16>), (fixed_shape_v<1, 3, 16, 16>), (fixed_shape_v<1, 3, 16, 16>),
                            float, add, Add) 
@@ -52,6 +51,13 @@ GENERATE_BINARY_TEST_GROUP(BinaryTestAddFloat, dynamic ,dynamic,dynamic,
                            
 
 
+DEFINE_test_vector(add, Add)
+
+TEST(BinaryTestAddFloat, vector) {                                        
+    TEST_VECTOR(float)                                                    
+    TEST_VECTOR(int32_t)                                                  
+    TEST_VECTOR(int64_t)                                                  
+}                                                                          
 
 int main(int argc, char *argv[]) {                                         
     ::testing::InitGoogleTest(&argc, argv);                                
