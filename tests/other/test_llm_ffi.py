@@ -320,7 +320,6 @@ def test_paged_attention_scheduler():
     rt_tensor = nncase.RuntimeTensor.from_object(rt_kv_cache)
     assert rt_tensor is not None
 
-
     # Test with different parameters - empty session
     empty_session_ids = []
     empty_query_lens = []

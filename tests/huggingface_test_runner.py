@@ -122,11 +122,13 @@ def to_np_type(t: str):
     else:
         return None
 
+
 def dump_data_to_file(dir_path, file_path, data):
     dump_bin_file(os.path.join(dir_path, f'{file_path}.bin'), data)
     dump_txt_file(os.path.join(dir_path, f'{file_path}.txt'), data)
     dump_npy_file(os.path.join(dir_path, f'{file_path}.npy'), data)
     convert_npy_to_json(os.path.join(dir_path, f'{file_path}.npy'), dir_path)
+
 
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
@@ -172,7 +174,8 @@ class HuggingfaceTestRunner(TestRunner):
                 return_dict=True,
                 use_cache=False,
                 output_attentions=False,
-                output_hidden_states= (True if self.cfg['huggingface_options']['output_hidden_states'] else False) if self.cfg['huggingface_options']['output_logits'] else True
+                output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
+                                      else False) if self.cfg['huggingface_options']['output_logits'] else True
             )
             input['data'][0] = input['data'][0][0]  # remove batch size dim.
 
@@ -188,7 +191,7 @@ class HuggingfaceTestRunner(TestRunner):
             if (self.cfg['huggingface_options']['output_logits']):
                 if not test_utils.in_ci():
                     logits = result.logits.detach().numpy()[0]
-                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', logits )
+                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', logits)
                     outputs.append(logits)
                     count += 1
             else:

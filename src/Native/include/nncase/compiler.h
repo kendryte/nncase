@@ -591,8 +591,7 @@ class huggingface_options : public clr_object_base {
 
     bool output_logits() { return true; }
     void output_logits(bool value) {
-        nncase_clr_api()->huggingface_options_output_logits(obj_.get(),
-                                                                value);
+        nncase_clr_api()->huggingface_options_output_logits(obj_.get(), value);
     }
 
     bool output_hidden_states() { return false; }

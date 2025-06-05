@@ -137,7 +137,7 @@ class Inference:
                 dump_txt_file(os.path.join(infer_dir, f'nncase_result_{i}.txt'), output)
                 dump_npy_file(os.path.join(infer_dir, f'nncase_result_{i}.npy'), output)
                 convert_npy_to_json(os.path.join(infer_dir, f'nncase_result_{i}.npy'),
-                                            infer_dir)
+                                    infer_dir)
         return outputs
 
     def send_msg(self, sock, msg):

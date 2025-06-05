@@ -61,7 +61,7 @@ class Evaluator:
                 dump_txt_file(os.path.join(eval_dir, f'nncase_result_{i}.txt'), result)
                 dump_npy_file(os.path.join(eval_dir, f'nncase_result_{i}.npy'), result)
                 convert_npy_to_json(os.path.join(eval_dir, f'nncase_result_{i}.npy'),
-                                            eval_dir)
+                                    eval_dir)
 
             results.append(result)
         return results

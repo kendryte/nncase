@@ -202,7 +202,8 @@ class paged_attention_scheduler_node : public object_node {
             seq_lens[seq_id] = context_lens[seq_id] + query_len;
 
             if (seq_lens[seq_id] > max_model_len_) {
-                throw std::runtime_error("The sequence length is larger than max model length !");
+                throw std::runtime_error(
+                    "The sequence length is larger than max model length !");
             }
 
             max_seq_len = std::max(max_seq_len, seq_lens[seq_id]);
