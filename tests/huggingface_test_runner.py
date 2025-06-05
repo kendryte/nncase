@@ -174,7 +174,8 @@ class HuggingfaceTestRunner(TestRunner):
                 return_dict=True,
                 use_cache=False,
                 output_attentions=False,
-                output_hidden_states= (True if self.cfg['huggingface_options']['output_hidden_states'] else False) if self.cfg['huggingface_options']['output_logits'] else True
+                output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
+                                      else False) if self.cfg['huggingface_options']['output_logits'] else True
             )
 
             ''' will be used in future[pipeline run]
