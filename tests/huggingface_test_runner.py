@@ -172,7 +172,7 @@ class HuggingfaceTestRunner(TestRunner):
                 return_dict=True,
                 use_cache=False,
                 output_attentions=False,
-                output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
+                output_hidden_states= (True if self.cfg['huggingface_options']['output_hidden_states'] else False) if self.cfg['huggingface_options']['output_logits'] else True
             )
 
             ''' will be used in future[pipeline run]
@@ -261,9 +261,9 @@ class HuggingfaceTestRunner(TestRunner):
         self.generation_config.do_sample = False
         self.generation_config.temperature = 0.0  # for Stable result
         if (self.cfg['huggingface_options']['output_logits']):
-            self.generation_config.output_attentions = True
+            pass
         else:
-            self.generation_config.output_attentions = False
+            self.generation_config.output_hidden_states = True
         if (self.cfg['huggingface_options']['output_hidden_states']):
             self.generation_config.output_hidden_states = True
 
