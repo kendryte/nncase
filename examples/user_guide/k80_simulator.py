@@ -149,12 +149,12 @@ def prepare_tokens(tokenizer, input_file):
     #     {"role": "system", "content": "You are a assistant!"},
     #     {"role": "user", "content": data[0]}
     # ]
-    # text = tokenizer.apply_chat_template(
-    #     messages,
-    #     tokenize=False,
-    #     add_generation_prompt=True
-    # )
-    data = tokenizer([data[0]], return_tensors="np").input_ids[0]
+    text = tokenizer.apply_chat_template(
+        data[0],
+        tokenize=False,
+        add_generation_prompt=True
+    )
+    data = tokenizer([text], return_tensors="np").input_ids[0]
 
     return data
 
@@ -217,10 +217,10 @@ def main(model_path, dump_path, input_file, is_eval):
             input_data.append(kv_cache_obj.as_ivalue())
             result = run_eval(interpreter, input_data)
             # print(result[0].shape)
-            new_tokens_index = torch.argmax(torch.from_numpy(result[0][-1]), dim=-1, keepdim=True)
-            new_tokens = tokenizer.decode(new_tokens_index, skip_special_tokens=True)
-            print(new_tokens, end=' ')
-            tokens = new_tokens_index.cpu().detach().numpy()
+            new_tokens_index = torch.argmax(torch.from_numpy(result[0]), dim=-1, keepdim=True)
+            new_tokens = tokenizer.batch_decode(new_tokens_index, skip_special_tokens=False)
+            print(*new_tokens, end=' ')
+            tokens = new_tokens_index.cpu().detach().numpy()[-1]
             input_data = []
             # input_data.append()
     else:
