@@ -29,6 +29,7 @@
 #include "kernels/get_position_ids.h"
 #include "kernels/im2col.h"
 #include "kernels/instance_norm.h"
+#include "kernels/layer_norm.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
 #include "kernels/pad.h"
