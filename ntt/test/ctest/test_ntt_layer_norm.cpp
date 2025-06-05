@@ -285,6 +285,63 @@ TEST(FixedShapeLayerNorm, Pack3) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
+TEST(FixedShapeLayerNorm, Pack4) {
+    // packed axis > layer norm axis
+
+    ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> input;
+    ntt::tensor<float, ntt::fixed_shape<16, 8>> scale;
+    ntt::tensor<float, ntt::fixed_shape<16, 8>> bias;
+    std::iota(input.elements().begin(), input.elements().end(), 0.f);
+    std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
+    std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
+
+    // packed axis < layer norm axis
+    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 16, 1>> packed_input;
+    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<16, 1>> packed_scale;
+    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<16, 1>> packed_bias;
+    ntt::tensor<ntt::vector<float, 8>, ntt::fixed_shape<1, 16, 1>>
+        packed_output;
+    pack<2>(input, packed_input);
+    pack<1>(scale, packed_scale);
+    pack<1>(bias, packed_bias);
+    packed_layer_norm<1>(packed_input, packed_scale, packed_bias, packed_output,
+                         ntt::vector<float, 8>::from_scalar(1E-06), true,
+                         ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+
+    ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ntt_output;
+    unpack<2>(packed_output, ntt_output);
+
+    const float array_golden[] = {
+        0.000000,   -0.691507,  -1.328887,  -1.912138,  -2.441260,  -2.916255,
+        -3.337121,  -3.703859,  -4.016469,  -4.274950,  -4.479303,  -4.629529,
+        -4.725626,  -4.767593,  -4.755434,  -4.689146,  -4.568729,  -4.394186,
+        -4.165514,  -3.882713,  -3.545782,  -3.154726,  -2.709541,  -2.210226,
+        -1.656784,  -1.049215,  -0.387516,  0.328310,   1.098267,   1.922350,
+        2.800560,   3.732901,   4.719368,   5.759966,   6.854689,   8.003542,
+        9.206524,   10.463631,  11.774870,  13.140234,  14.559729,  16.033350,
+        17.561102,  19.142979,  20.778986,  22.469122,  24.213385,  26.011776,
+        27.864296,  29.770945,  31.731720,  33.746624,  35.815659,  37.938820,
+        40.116108,  42.347527,  44.633072,  46.972744,  49.366547,  51.814476,
+        54.316536,  56.872723,  59.483036,  62.147480,  64.866051,  67.638748,
+        70.465576,  73.346535,  76.281616,  79.270836,  82.314178,  85.411644,
+        88.563240,  91.768967,  95.028824,  98.342804,  101.710915, 105.133148,
+        108.609520, 112.140015, 115.724640, 119.363388, 123.056267, 126.803276,
+        130.604416, 134.459671, 138.369080, 142.332581, 146.350250, 150.422012,
+        154.547913, 158.727951, 162.962128, 167.250412, 171.592834, 175.989380,
+        180.440048, 184.944855, 189.503784, 194.116852, 198.784027, 203.505356,
+        208.280792, 213.110367, 217.994064, 222.931900, 227.923859, 232.969940,
+        238.070160, 243.224503, 248.432968, 253.695557, 259.012299, 264.383148,
+        269.808105, 275.287231, 280.820496, 286.407837, 292.049347, 297.744995,
+        303.494720, 309.298584, 315.156616, 321.068756, 327.035034, 333.055420,
+        339.129944, 345.258606};
+
+    auto ntt_golden =
+        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 16, 8>>,
+                           float>(array_golden);
+
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+}
+
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
