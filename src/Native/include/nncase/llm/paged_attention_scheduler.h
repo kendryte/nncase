@@ -111,10 +111,7 @@ inline void materialize_slot_mapping_id(
             break;
         }
         default:
-            throw std::invalid_argument(
-                "Invalid sharding axis: " +
-                std::to_string(
-                    static_cast<int>(config->sharding_axes()[shard_id])));
+            throw std::invalid_argument("Invalid sharding axis");
         }
 
         indices.back()++;
@@ -205,10 +202,7 @@ class paged_attention_scheduler_node : public object_node {
             seq_lens[seq_id] = context_lens[seq_id] + query_len;
 
             if (seq_lens[seq_id] > max_model_len_) {
-                throw std::runtime_error("The sequence length " +
-                                         std::to_string(seq_lens[seq_id]) +
-                                         " is larger than max model length " +
-                                         std::to_string(max_model_len_) + "!");
+                throw std::runtime_error("The sequence length is larger than max model length !");
             }
 
             max_seq_len = std::max(max_seq_len, seq_lens[seq_id]);
