@@ -58,39 +58,57 @@ using namespace ortki;
     EXPECT_TRUE(NttTest::compare_tensor(*ntt_tensor_##out_name, *ntt_tensor_##golden_name));
 
 
-#define BINARY_TEST_BODY_DEBUG(lhs_name, rhs_name, out_name, golden_name, ntt_op, ort_op) \
-    /* ntt */ \
-    ntt::binary<ntt::ops::ntt_op>(*ntt_tensor_##lhs_name, *ntt_tensor_##rhs_name, *ntt_tensor_##out_name); \
-    /* ort */ \
-    auto ort_lhs = NttTest::ntt2ort(*ntt_tensor_##lhs_name); \
-    auto ort_rhs = NttTest::ntt2ort(*ntt_tensor_##rhs_name); \
-    auto ort_output = ortki_##ort_op(ort_lhs, ort_rhs); \
-    /* compare */ \
-    NttTest::ort2ntt(ort_output, *ntt_tensor_##golden_name); \
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_tensor_##out_name, *ntt_tensor_##golden_name));
 
 
 #define GENERATE_BINARY_TEST(test_group, test_name, \
-                            lhs_shape, rhs_shape, \
+                            lhs_shape, rhs_shape, output_shape, \
                            element_type, ntt_op, ort_op) \
 TEST(test_group, test_name) { \
                 DECLARE_NTT_TENSOR(element_type, lhs, lhs_shape); \
                 DECLARE_NTT_TENSOR(element_type, rhs, rhs_shape); \
-                DECLARE_NTT_TENSOR(element_type, golden, output_shape); \
-                BINARY_TEST_BODY(lhs, rhs, out, golden, ntt_op, ort_op) \
-}
-
-#define DEBUG_BINARY_TEST(test_group, test_name, \
-                            lhs_shape, rhs_shape, \
-                           element_type, ntt_op, ort_op) \
-TEST(test_group, test_name) { \
-                DECLARE_NTT_TENSOR(element_type, lhs, lhs_shape); \
-                DECLARE_NTT_TENSOR(element_type, rhs, rhs_shape); \
-                auto output_shape = ntt::shape_infer::binary_output_sh binary_output_dimape(lhs_shape, rhs_shape); \
                 DECLARE_NTT_TENSOR(element_type, out, output_shape); \
                 DECLARE_NTT_TENSOR(element_type, golden, output_shape); \
                 BINARY_TEST_BODY(lhs, rhs, out, golden, ntt_op, ort_op) \
 }
+
+
+#define GET_SHAPE_fixed(...) (fixed_shape_v<__VA_ARGS__>)
+#define GET_SHAPE_dynamic(...) (ntt::make_shape(__VA_ARGS__))
+
+#define MAKE_SUFFIX_IMPL(s1, s2, s3, suffix_type) s1##_##s2##_##s3##_##suffix_type
+#define MAKE_SUFFIX(s1, s2, s3, suffix_type) MAKE_SUFFIX_IMPL(s1, s2, s3, suffix_type)
+
+#define GENERATE_BINARY_TEST_GROUP(TestNamePrefix, LhsShapeType, RhsShapeType, OutShapeType, DataType, Ntt_op, Ort_op) \
+    GENERATE_BINARY_TEST(TestNamePrefix, MAKE_SUFFIX(LhsShapeType, RhsShapeType, OutShapeType, normal), \
+                         GET_SHAPE_##LhsShapeType(1, 3, 16, 16), \
+                         GET_SHAPE_##RhsShapeType(1, 3, 16, 16), \
+                         GET_SHAPE_##OutShapeType(1, 3, 16, 16), \
+                         DataType, Ntt_op, Ort_op) \
+    GENERATE_BINARY_TEST(TestNamePrefix, MAKE_SUFFIX(LhsShapeType, RhsShapeType, OutShapeType, broadcast_lhs_scalar), \
+                         GET_SHAPE_##LhsShapeType(1), \
+                         GET_SHAPE_##RhsShapeType(1, 3, 16, 16), \
+                         GET_SHAPE_##OutShapeType(1, 3, 16, 16), \
+                         DataType, Ntt_op, Ort_op) \
+    GENERATE_BINARY_TEST(TestNamePrefix, MAKE_SUFFIX(LhsShapeType, RhsShapeType, OutShapeType, broadcast_rhs_scalar), \
+                         GET_SHAPE_##LhsShapeType(1, 3, 16, 16), \
+                         GET_SHAPE_##RhsShapeType(1), \
+                         GET_SHAPE_##OutShapeType(1, 3, 16, 16), \
+                         DataType, Ntt_op, Ort_op) \
+    GENERATE_BINARY_TEST(TestNamePrefix, MAKE_SUFFIX(LhsShapeType, RhsShapeType, OutShapeType, broadcast_lhs_vector), \
+                         GET_SHAPE_##LhsShapeType(16), \
+                         GET_SHAPE_##RhsShapeType(1, 3, 16, 16), \
+                         GET_SHAPE_##OutShapeType(1, 3, 16, 16), \
+                         DataType, Ntt_op, Ort_op) \
+    GENERATE_BINARY_TEST(TestNamePrefix, MAKE_SUFFIX(LhsShapeType, RhsShapeType, OutShapeType, broadcast_rhs_vector), \
+                         GET_SHAPE_##LhsShapeType(1, 3, 16, 16), \
+                         GET_SHAPE_##RhsShapeType(16), \
+                         GET_SHAPE_##OutShapeType(1, 3, 16, 16), \
+                         DataType, Ntt_op, Ort_op) \
+    GENERATE_BINARY_TEST(TestNamePrefix, MAKE_SUFFIX(LhsShapeType, RhsShapeType, OutShapeType, broadcast_multidirectional), \
+                         GET_SHAPE_##LhsShapeType(1, 3, 1, 16), \
+                         GET_SHAPE_##RhsShapeType(3, 1, 16, 1), \
+                         GET_SHAPE_##OutShapeType(3, 3, 16, 16), \
+                         DataType, Ntt_op, Ort_op)
 
 
 
@@ -742,7 +760,7 @@ TEST(test_group, test_name) { \
         TEST_VECTOR(int32_t)                                                   \
         TEST_VECTOR(int64_t)                                                   \
     }                                                                          \
-    */ \
+     \
                                                                                \
     int main(int argc, char *argv[]) {                                         \
         ::testing::InitGoogleTest(&argc, argv);                                \

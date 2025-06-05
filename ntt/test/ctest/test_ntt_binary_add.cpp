@@ -14,42 +14,47 @@
  */
 #include "test_ntt_binary.h"
 
-// DEFINE_NTT_BINARY_TEST(add, Add)
-    TEST(BinaryTestAddFloat, fixed_fixed_fixed) {                     
-        /* init */                                                             
-        auto shape = fixed_shape_v<2, 2>;                              
-        auto ntt_lhs = make_unique_tensor<float>(shape);                       
-        auto ntt_rhs = make_unique_tensor<float>(shape);                       
-        NttTest::init_tensor(*ntt_lhs, -10.f, 10.f);                           
-        NttTest::init_tensor(*ntt_rhs, -10.f, 10.f);                           
-        printf("ntt_lhs:\n");
-        PRINT_TENSOR((*ntt_lhs));
-        printf("ntt_rhs:\n");
-        PRINT_TENSOR((*ntt_rhs));
-        /* ntt */                                                              
-        auto ntt_output1 = make_unique_tensor<float>(shape);                   
-        ntt::binary<ntt::ops::add>(*ntt_lhs, *ntt_rhs, *ntt_output1);     
-        printf("ntt_output1:\n");
-        PRINT_TENSOR((*ntt_output1));
-                                                                               
-        /* ort */                                                              
-        auto ort_lhs = NttTest::ntt2ort(*ntt_lhs);                             
-        auto ort_rhs = NttTest::ntt2ort(*ntt_rhs);                             
-        auto ort_output = ortki_Add(ort_lhs, ort_rhs);                  
-                                                                               
-        /* compare */                                                          
-        auto ntt_output2 = make_unique_tensor<float>(shape);                   
-        NttTest::ort2ntt(ort_output, *ntt_output2);                            
-        EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));      
-    }                 
+//fixed fixed fixed group
 
-// DEBUG_BINARY_TEST(BinaryTestAddFloat, fixed_fixed_fixed,  
-//                             (fixed_shape_v<2, 2>), (fixed_shape_v<2, 2>), 
-//                            float, add, Add) 
+GENERATE_BINARY_TEST(BinaryTestAddFloat, fixed_fixed_fixed_normal,  
+                            (fixed_shape_v<1, 3, 16, 16>), (fixed_shape_v<1, 3, 16, 16>), (fixed_shape_v<1, 3, 16, 16>),
+                           float, add, Add) 
+
+GENERATE_BINARY_TEST(BinaryTestAddFloat, fixed_fixed_fixed_broadcast_lhs_scalar,  
+                            (fixed_shape_v<1>), (fixed_shape_v<1, 3, 16, 16>), (fixed_shape_v<1, 3, 16, 16>),
+                           float, add, Add) 
+
+GENERATE_BINARY_TEST(BinaryTestAddFloat, fixed_fixed_fixed_broadcast_rhs_scalar,  
+                            (fixed_shape_v<1, 3, 16, 16>), (fixed_shape_v<1>), (fixed_shape_v<1, 3, 16, 16>),
+                           float, add, Add) 
+
+GENERATE_BINARY_TEST(BinaryTestAddFloat, fixed_fixed_fixed_broadcast_lhs_vector,  
+                            (fixed_shape_v<16>), (fixed_shape_v<1, 3, 16, 16>), (fixed_shape_v<1, 3, 16, 16>),
+                           float, add, Add) 
+
+GENERATE_BINARY_TEST(BinaryTestAddFloat, fixed_fixed_fixed_broadcast_rhs_vector,  
+                            (fixed_shape_v<1, 3, 16, 16>), (fixed_shape_v<16>), (fixed_shape_v<1, 3, 16, 16>),
+                           float, add, Add) 
+
+GENERATE_BINARY_TEST(BinaryTestAddFloat, fixed_fixed_fixed_broadcast_multidirectional,  
+                            (fixed_shape_v<1, 3, 1, 16>), (fixed_shape_v<3, 1, 16, 1>), (fixed_shape_v<3, 3, 16, 16>),
+                           float, add, Add) 
+
+//fixed dynamic dynamic group(with default shape)
+GENERATE_BINARY_TEST_GROUP(BinaryTestAddFloat, fixed, dynamic,dynamic,  
+                           float, add, Add) 
+//dynamic fixed dynamic group
+GENERATE_BINARY_TEST_GROUP(BinaryTestAddFloat, dynamic, fixed, dynamic,  
+                           float, add, Add) 
+//dynamic dynamic dynamic group
+GENERATE_BINARY_TEST_GROUP(BinaryTestAddFloat, dynamic ,dynamic,dynamic,  
+                           float, add, Add) 
+                           
 
 
-    int main(int argc, char *argv[]) {                                         
-        ::testing::InitGoogleTest(&argc, argv);                                
-        return RUN_ALL_TESTS();                                                
-    }
+
+int main(int argc, char *argv[]) {                                         
+    ::testing::InitGoogleTest(&argc, argv);                                
+    return RUN_ALL_TESTS();                                                
+}
 
