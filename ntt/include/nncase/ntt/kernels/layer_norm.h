@@ -112,11 +112,98 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
             output_p[i] = (norm[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
     });
 }
+
+template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
+          typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
+void within_axis_pack_impl(const TIn &input, const TScale &scale,
+                           const TBias &bias, TOut &&output, const TEp &epsilon,
+                           const bool &use_mean, PackedAxes, PadedNums) {
+    using TElem = typename TIn::element_type;
+    constexpr auto in_rank = TIn::rank();
+    auto input_shape = input.shape();
+    auto input_strides = input.strides();
+
+    ranked_shape<Axis> domain{};
+    for (size_t i = 0; i < Axis; i++) {
+        domain[i] = input_shape[i];
+    }
+
+    ranked_shape<Axis> strides{};
+    for (size_t i = 0; i < Axis; i++) {
+        strides[i] = input_strides[i];
+    }
+
+    size_t inner_size = 1;
+    for (size_t i = Axis; i < in_rank; i++) {
+        inner_size *= input_shape[i];
+    }
+
+    // auto domain = slice_dims<Axis>(input_shape);
+    // auto strides = slice_dims<Axis>(input_strides);
+
+    // size_t inner_size =
+    //     slice_dims<input_shape.rank() - Axis, Axis>(input_shape).length();
+
+    constexpr bool UseVectorReduce =
+        PackedAxes::rank() == 1 && PackedAxes::at(0) >= Axis;
+
+    TElem finner_size = (TElem)inner_size;
+    if constexpr (UseVectorReduce) {
+        finner_size = finner_size * (TElem)TElem::shape_type::length();
+    }
+
+    apply(domain, [&](auto index) {
+        const auto input_p =
+            input.elements().data() + linear_offset(index, strides);
+        const auto scale_p = scale.elements().data();
+        const auto bias_p = bias.elements().data();
+        auto output_p =
+            output.elements().data() + linear_offset(index, strides);
+
+        // compute mean
+        TElem mean1 = (TElem)0;
+        if (use_mean) {
+            for (size_t i = 0; i < inner_size; i++)
+                mean1 = mean1 + (input_p[i] / finner_size);
+            if constexpr (UseVectorReduce) {
+                mean1 = (TElem)reduce_sum(mean1);
+            }
+        }
+
+        // std::array<TElem, inner_size> sub;
+        std::vector<TElem> sub(inner_size);
+        for (auto i = 0; i < inner_size; i++)
+            sub[i] = input_p[i] - mean1;
+
+        // std::array<TElem, inner_size> pow;
+        std::vector<TElem> pow(inner_size);
+        for (auto i = 0; i < inner_size; i++)
+            pow[i] = sub[i] * sub[i];
+
+        TElem mean2 = (TElem)0;
+        for (auto i = 0; i < inner_size; i++)
+            mean2 = mean2 + (pow[i] / finner_size);
+        if constexpr (UseVectorReduce) {
+            mean2 = (TElem)reduce_sum(mean2);
+        }
+
+        TElem add = mean2 + epsilon;
+        TElem sqrt = ntt::sqrt(add);
+
+        // std::array<TElem, inner_size> norm;
+        std::vector<TElem> norm(inner_size);
+        for (auto i = 0; i < inner_size; i++)
+            norm[i] = sub[i] / sqrt;
+
+        for (auto i = 0; i < inner_size; i++)
+            output_p[i] = (norm[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
+    });
+}
+
 } // namespace packed_layer_norm_detail
 
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TScale,
-          IsFixedTensor TBias, IsFixedTensor TOut, typename TEp,
-          IsFixedDims PackedAxes, IsFixedDims PadedNums>
+template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
+          typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
 void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        TOut &&output, const TEp &epsilon, const bool &use_mean,
                        PackedAxes packedAxes, PadedNums padedNums) {
