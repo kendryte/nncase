@@ -126,7 +126,7 @@ class OnnxTestRunner(TestRunner):
                     input_shapes[input['name']] = input['shape']
 
                 onnx_model, check = onnxsim.simplify(
-                    onnx_model, input_shapes=input_shapes, dynamic_input_shape=self.dynamic)
+                    onnx_model, test_input_shapes=input_shapes)
                 assert check, "Simplified ONNX model could not be validated"
 
             print('[info]: preprocess ONNX model success: ', args)
@@ -190,7 +190,7 @@ class OnnxTestRunner(TestRunner):
         if self.dynamic and onnx_model.ByteSize() < 2147483648:
             input_shapes = list(map(lambda input: {input['name']: input['shape']}, self.inputs))
             input_shapes = dict(ChainMap(*input_shapes))
-            (onnx_model, _) = onnxsim.simplify(onnx_model, input_shapes=input_shapes)
+            (onnx_model, _) = onnxsim.simplify(onnx_model, test_input_shapes=input_shapes)
 
         # output
         for e in onnx_model.graph.output:

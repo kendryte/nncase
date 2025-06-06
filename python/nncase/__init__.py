@@ -158,7 +158,6 @@ class Compiler:
 
     def init_shape_bucket_options(self, compile_options: CompileOptions) -> None:
         self._shape_bucket_options = _nncase.ShapeBucketOptions()
-        self._shape_bucket_options.segments_count = compile_options.shape_bucket_segments_count
         self._shape_bucket_options.enable = compile_options.shape_bucket_enable
         self._shape_bucket_options.range_info = compile_options.shape_bucket_range_info
         self._shape_bucket_options.segments_count = compile_options.shape_bucket_segments_count
