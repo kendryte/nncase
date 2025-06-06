@@ -24,7 +24,7 @@ using namespace ortki;
 
 TEST(FixedShapePackedSoftmax, NoPack0) {
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> ntt_output;
     packed_softmax<1>(buffer_1, ntt_output, ntt::fixed_shape<>{});
@@ -41,7 +41,7 @@ TEST(FixedShapePackedSoftmax, NoPack0) {
 
 TEST(FixedShapePackedSoftmax, NoPack1) {
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> ntt_output;
     packed_softmax<2>(buffer_1, ntt_output, ntt::fixed_shape<>{});
@@ -59,7 +59,7 @@ TEST(FixedShapePackedSoftmax, NoPack1) {
 TEST(FixedShapePackedSoftmax, AxisIsPackedAxis0) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16 / P, 16>>
         buffer_2;
 
@@ -83,7 +83,7 @@ TEST(FixedShapePackedSoftmax, AxisIsPackedAxis0) {
 TEST(FixedShapePackedSoftmax, AxisIsPackedAxis1) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16, 16 / P>>
         buffer_2;
 
@@ -107,7 +107,7 @@ TEST(FixedShapePackedSoftmax, AxisIsPackedAxis1) {
 TEST(FixedShapePackedSoftmax, AxisIsNotPackedAxis0) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     ntt::tensor<float, ntt::fixed_shape<3, 16, 16>> buffer_1;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<3, 16 / P, 16>>
         buffer_2;
 
@@ -131,7 +131,7 @@ TEST(FixedShapePackedSoftmax, AxisIsNotPackedAxis0) {
 TEST(FixedShapePackedSoftmax, AxisIsNotPackedAxis1) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     ntt::tensor<float, ntt::fixed_shape<2, 8, 16>> buffer_1;
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<2, 8, 16 / P>> buffer_2;
 
     pack<2>(buffer_1, buffer_2);
@@ -156,7 +156,7 @@ TEST(RankedShapePackedSoftmax, NoPack0) {
     auto shape1 = ntt::make_ranked_shape(3, 16, 16);
 
     tensor_type1 buffer_1(shape1);
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     tensor_type1 ntt_output(shape1);
     packed_softmax<1>(buffer_1, ntt_output, ntt::fixed_shape<>{});
@@ -177,7 +177,7 @@ TEST(RankedShapePackedSoftmax, NoPack1) {
     auto shape1 = ntt::make_ranked_shape(3, 16, 16);
 
     tensor_type1 buffer_1(shape1);
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
     tensor_type1 ntt_output(shape1);
     packed_softmax<2>(buffer_1, ntt_output, ntt::fixed_shape<>{});
@@ -201,7 +201,7 @@ TEST(RankedShapePackedSoftmax, AxisIsPackedAxis0) {
     auto shape2 = ntt::make_ranked_shape(2, 16 / P, 8);
 
     tensor_type1 buffer_1(shape1);
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
     tensor_type2 buffer_2(shape2);
 
     pack<1>(buffer_1, buffer_2);
@@ -229,7 +229,7 @@ TEST(RankedShapePackedSoftmax, AxisIsPackedAxis1) {
     auto shape2 = ntt::make_ranked_shape(3, 16, 16 / P);
 
     tensor_type1 buffer_1(shape1);
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
     tensor_type2 buffer_2(shape2);
 
     pack<2>(buffer_1, buffer_2);
@@ -257,7 +257,7 @@ TEST(RankedShapePackedSoftmax, AxisIsNotPackedAxis0) {
     auto shape2 = ntt::make_ranked_shape(3, 16 / P, 16);
 
     tensor_type1 buffer_1(shape1);
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
     tensor_type2 buffer_2(shape2);
 
     pack<1>(buffer_1, buffer_2);
@@ -285,7 +285,7 @@ TEST(RankedShapePackedSoftmax, AxisIsNotPackedAxis1) {
     auto shape2 = ntt::make_ranked_shape(3, 16, 16 / P);
 
     tensor_type1 buffer_1(shape1);
-    std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
+    NttTest::init_tensor(buffer_1, -10.f, 10.f);
     tensor_type2 buffer_2(shape2);
 
     pack<2>(buffer_1, buffer_2);
