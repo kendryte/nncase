@@ -466,8 +466,8 @@ TEST(RankedShapeLayerNorm, Pack0) {
         ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
     using tensor_type4 =
         ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<2>>;
-    auto shape3 = ntt::make_ranked_shape(1, 2, 2);
-    auto shape4 = ntt::make_ranked_shape(2, 2);
+    auto shape3 = ntt::make_ranked_shape(1, 16 / P, 2);
+    auto shape4 = ntt::make_ranked_shape(16 / P, 2);
 
     tensor_type1 buffer_0(shape1);
     tensor_type2 buffer_1(shape2);
