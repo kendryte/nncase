@@ -23,7 +23,7 @@
 
 namespace nncase::ntt {
 
-namespace packed_layer_norm_detail {
+namespace packed_rms_norm_detail {
 
 template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TScale,
           IsFixedTensor TBias, IsFixedTensor TOut, typename TEp,
@@ -202,7 +202,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     });
 }
 
-} // namespace packed_layer_norm_detail
+} // namespace packed_rms_norm_detail
 
 template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
           typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
@@ -214,9 +214,8 @@ void packed_rms_norm(const TIn &input, const TScale &scale, const TBias &bias,
         static_assert(PadedNums::rank() == 0 ||
                           (PadedNums::rank() == 1 && PadedNums::at(0) == 0),
                       "not support padding");
-        packed_layer_norm_detail::within_axis_pack_impl<Axis>(
-            input, scale, bias, output, epsilon, use_mean, packedAxes,
-            padedNums);
+        packed_rms_norm_detail::within_axis_pack_impl<Axis>(
+            input, scale, bias, output, epsilon, packedAxes, padedNums);
     }
 }
 } // namespace nncase::ntt

@@ -40,6 +40,7 @@
 #include "kernels/reshape.h"
 #include "kernels/reshard.h"
 #include "kernels/resize_image.h"
+#include "kernels/rms_norm.h"
 #include "kernels/scatter_nd.h"
 #include "kernels/shapeof.h"
 #include "kernels/slice.h"
