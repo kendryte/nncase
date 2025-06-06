@@ -342,11 +342,6 @@ TEST(FixedShapeRMSNorm, Pack4) {
         nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 16, 8>>,
                            float>(array_golden);
 
-    ntt::apply(ntt_output.shape(), [&](auto index) {
-        std::cout << std::setprecision(6) << std::fixed << ntt_output(index)
-                  << "," << std::endl;
-    });
-
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
