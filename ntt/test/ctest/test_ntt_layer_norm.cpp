@@ -32,7 +32,7 @@ TEST(FixedShapeLayerNorm, NoPack0) {
 
     // no pack
     ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> ntt_output;
-    packed_layer_norm<1>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, true,
+    packed_layer_norm<1>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                          ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
 
     const float array_golden[] = {
@@ -60,7 +60,7 @@ TEST(FixedShapeLayerNorm, NoPack1) {
 
     // no pack
     ntt::tensor<float, ntt::fixed_shape<1, 16, 4>> ntt_output;
-    packed_layer_norm<2>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, true,
+    packed_layer_norm<2>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                          ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
 
     ntt::apply(ntt_output.shape(), [&](auto index) {
@@ -99,7 +99,7 @@ TEST(FixedShapeLayerNorm, NoPack2) {
 
     // no pack with pad
     ntt::tensor<float, ntt::fixed_shape<1, 13, 2>> ntt_output;
-    packed_layer_norm<1>(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06, true,
+    packed_layer_norm<1>(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06,
                          ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
 
     const float array_golden[] = {
@@ -135,7 +135,7 @@ TEST(FixedShapeLayerNorm, Pack0) {
     pack<0>(buffer_1, buffer_4);
     pack<0>(buffer_2, buffer_5);
     packed_layer_norm<1>(buffer_3, buffer_4, buffer_5, buffer_6,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
     ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> ntt_output;
@@ -178,7 +178,7 @@ TEST(FixedShapeLayerNorm, Pack1) {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 2, 16 / P>>
         output_packed;
     packed_layer_norm<2>(input_packed, scale_packed, bias_packed, output_packed,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<2>{}, ntt::fixed_shape<0>{});
 
     ntt::tensor<float, ntt::fixed_shape<1, 2, 16>> ntt_output;
@@ -214,7 +214,7 @@ TEST(FixedShapeLayerNorm, Pack2) {
     ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16 / P, 4>> buffer_4;
     pack<1>(buffer_0, buffer_3);
     packed_layer_norm<2>(buffer_3, buffer_1, buffer_2, buffer_4,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
     ntt::tensor<float, ntt::fixed_shape<1, 16, 4>> ntt_output;
@@ -256,7 +256,7 @@ TEST(FixedShapeLayerNorm, Pack3) {
         packed_output;
     pack<1>(input, packed_input);
     packed_layer_norm<2>(packed_input, scale, bias, packed_output,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
     ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ntt_output;
@@ -316,7 +316,7 @@ TEST(FixedShapeLayerNorm, Pack4) {
     pack<1>(scale, packed_scale);
     pack<1>(bias, packed_bias);
     packed_layer_norm<1>(packed_input, packed_scale, packed_bias, packed_output,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
     ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ntt_output;
@@ -369,7 +369,7 @@ TEST(RankedShapeLayerNorm, NoPack0) {
 
     // no pack
     tensor_type1 ntt_output(shape1);
-    packed_layer_norm<1>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, true,
+    packed_layer_norm<1>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                          ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
 
     tensor_type1 ntt_golden(shape1);
@@ -402,7 +402,7 @@ TEST(RankedShapeLayerNorm, NoPack1) {
 
     // no pack
     tensor_type1 ntt_output(shape1);
-    packed_layer_norm<2>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, true,
+    packed_layer_norm<2>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                          ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
 
     ntt::apply(ntt_output.shape(), [&](auto index) {
@@ -448,7 +448,7 @@ TEST(RankedShapeLayerNorm, NoPack2) {
 
     // no pack with pad
     tensor_type1 ntt_output(shape1);
-    packed_layer_norm<1>(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06, true,
+    packed_layer_norm<1>(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06,
                          ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
 
     tensor_type1 ntt_golden(shape1);
@@ -496,7 +496,7 @@ TEST(RankedShapeLayerNorm, Pack0) {
     pack<0>(buffer_1, buffer_4);
     pack<0>(buffer_2, buffer_5);
     packed_layer_norm<1>(buffer_3, buffer_4, buffer_5, buffer_6,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
     tensor_type1 ntt_output(shape1);
@@ -549,7 +549,7 @@ TEST(RankedShapeLayerNorm, Pack1) {
     ntt::pack<0>(bias, bias_packed);
     tensor_type3 output_packed(shape3);
     packed_layer_norm<2>(input_packed, scale_packed, bias_packed, output_packed,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<2>{}, ntt::fixed_shape<0>{});
 
     tensor_type1 ntt_output(shape1);
@@ -596,7 +596,7 @@ TEST(RankedShapeLayerNorm, Pack2) {
     tensor_type3 buffer_4(shape3);
     pack<1>(buffer_0, buffer_3);
     packed_layer_norm<2>(buffer_3, buffer_1, buffer_2, buffer_4,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
     tensor_type1 ntt_output(shape1);
@@ -649,7 +649,7 @@ TEST(RankedShapeLayerNorm, Pack3) {
     tensor_type3 packed_output(shape3);
     pack<1>(input, packed_input);
     packed_layer_norm<2>(packed_input, scale, bias, packed_output,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
     tensor_type1 ntt_output(shape1);
@@ -718,7 +718,7 @@ TEST(RankedShapeLayerNorm, Pack4) {
     pack<1>(scale, packed_scale);
     pack<1>(bias, packed_bias);
     packed_layer_norm<1>(packed_input, packed_scale, packed_bias, packed_output,
-                         ntt::vector<float, P>::from_scalar(1E-06), true,
+                         ntt::vector<float, P>::from_scalar(1E-06),
                          ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
 
     tensor_type1 ntt_output(shape1);

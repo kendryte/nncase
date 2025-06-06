@@ -68,7 +68,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         finner_size = finner_size * (TElem)TElem::shape_type::length();
     }
 
-    constexpr bool use_mean = true; // This can be a parameter if needed
+    constexpr bool use_mean = false; // This can be a parameter if needed
     apply(domain, [&](auto index) {
         const auto input_p =
             input.elements().data() + linear_offset(index, strides);
@@ -153,7 +153,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         finner_size = finner_size * (TElem)TElem::shape_type::length();
     }
 
-    constexpr bool use_mean = true; // This can be a parameter if needed
+    constexpr bool use_mean = false; // This can be a parameter if needed
     apply(domain, [&](auto index) {
         const auto input_p =
             input.elements().data() + linear_offset(index, strides);
@@ -206,16 +206,17 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 
 template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
           typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
-void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
-                       TOut &&output, const TEp &epsilon, PackedAxes packedAxes,
-                       PadedNums padedNums) {
+void packed_rms_norm(const TIn &input, const TScale &scale, const TBias &bias,
+                     TOut &&output, const TEp &epsilon, PackedAxes packedAxes,
+                     PadedNums padedNums) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
     if constexpr (PackedAxes::rank() <= 1) {
         static_assert(PadedNums::rank() == 0 ||
                           (PadedNums::rank() == 1 && PadedNums::at(0) == 0),
                       "not support padding");
         packed_layer_norm_detail::within_axis_pack_impl<Axis>(
-            input, scale, bias, output, epsilon, packedAxes, padedNums);
+            input, scale, bias, output, epsilon, use_mean, packedAxes,
+            padedNums);
     }
 }
 } // namespace nncase::ntt
