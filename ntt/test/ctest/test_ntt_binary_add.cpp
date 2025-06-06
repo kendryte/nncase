@@ -52,7 +52,6 @@ GENERATE_BINARY_TEST_GROUP(BinaryTestAddFloat, dynamic ,dynamic,dynamic,
 
 
 DEFINE_test_vector(add, Add)
-
 TEST(BinaryTestAddFloat, vector) {                                        
     TEST_VECTOR(float)                                                    
     TEST_VECTOR(int32_t)                                                  
