@@ -133,7 +133,8 @@ class paged_attention_scheduler_node : public object_node {
         : config_(std::move(config)),
           num_blocks_(num_blocks),
           max_model_len_(max_model_len),
-          hierarchy_(hierarchy.begin(), hierarchy.end()) {
+          hierarchy_(hierarchy.begin(), hierarchy.end()),
+          conversation_id_(0) {
         // Validate max_model_len is multiple of block_size
         if (max_model_len_ % config_->block_size() != 0) {
             throw std::invalid_argument(
@@ -285,7 +286,7 @@ class paged_attention_scheduler_node : public object_node {
         kv_cache_->context_lens(context_lens_tensor.impl());
         kv_cache_->block_table(block_tables_tensor.impl());
         kv_cache_->slot_mapping(slot_mapping_tensor.impl());
-        kv_cache_->conversation_id(kv_cache_->conversation_id() + 1);
+        kv_cache_->conversation_id(conversation_id_++);
         return kv_cache_;
     }
 
@@ -296,6 +297,7 @@ class paged_attention_scheduler_node : public object_node {
     dims_t hierarchy_;
     paged_attention_kv_cache kv_cache_;
     std::unordered_map<int64_t, detail::session_info> session_infos_;
+    size_t conversation_id_;
 };
 
 using paged_attention_scheduler = object_t<paged_attention_scheduler_node>;

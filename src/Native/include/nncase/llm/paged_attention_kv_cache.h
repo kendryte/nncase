@@ -40,7 +40,8 @@ class NNCASE_API paged_attention_kv_cache_node
           num_blocks_(num_blocks),
           kv_shape_(kv_shape),
           kv_strides_(runtime::get_default_strides(kv_shape)),
-          kv_storages_(runtime::compute_size(kv_shape)) {}
+          kv_storages_(runtime::compute_size(kv_shape)),
+          conversation_id_(0) {}
 
     paged_attention_config config() const noexcept {
         auto cfg = attention_kv_cache_node::config();
