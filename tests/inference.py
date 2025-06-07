@@ -26,6 +26,8 @@ from test_utils import *
 import time
 from html import escape
 
+from tests.npy2json import convert_npy_to_json
+
 
 def data_shape_list_string(data):
     return '\n'.join(map(lambda d: ' '.join(map(lambda x: str(x), d['model_shape'])), data))
@@ -134,6 +136,8 @@ class Inference:
                 dump_bin_file(os.path.join(infer_dir, f'nncase_result_{i}.bin'), output)
                 dump_txt_file(os.path.join(infer_dir, f'nncase_result_{i}.txt'), output)
                 dump_npy_file(os.path.join(infer_dir, f'nncase_result_{i}.npy'), output)
+                convert_npy_to_json(os.path.join(infer_dir, f'nncase_result_{i}.npy'),
+                                    infer_dir)
         return outputs
 
     def send_msg(self, sock, msg):

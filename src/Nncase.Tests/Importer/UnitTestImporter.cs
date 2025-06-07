@@ -56,9 +56,8 @@ public class UnitTestImporter : TestClassBase
     {
         var file = "/Users/curio/Canaan/nncase/tests/llm/Qwen/Qwen2.5-0.5B-Instruct"; // TODO: need a relative path!
         var importOptions = new ImportOptions();
-        importOptions.HuggingFaceOptions.OutputAttentions = true;
+        importOptions.HuggingFaceOptions.OutputLogits = true;
         importOptions.HuggingFaceOptions.OutputHiddenStates = true;
-        importOptions.HuggingFaceOptions.UseCache = true;
         var module = Importers.ImportHuggingFace(file, importOptions, CompileSession);
 
         await InferShapeAsync(module);

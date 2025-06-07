@@ -101,16 +101,13 @@ PYBIND11_MODULE(_nncase, m) {
     py::class_<huggingface_options>(m, "HuggingFaceOptions")
         .def(py::init())
         .def_property(
-            "output_attentions",
-            py::overload_cast<>(&huggingface_options::output_attentions),
-            py::overload_cast<bool>(&huggingface_options::output_attentions))
+            "output_logits",
+            py::overload_cast<>(&huggingface_options::output_logits),
+            py::overload_cast<bool>(&huggingface_options::output_logits))
         .def_property(
             "output_hidden_states",
             py::overload_cast<>(&huggingface_options::output_hidden_states),
             py::overload_cast<bool>(&huggingface_options::output_hidden_states))
-        .def_property("use_cache",
-                      py::overload_cast<>(&huggingface_options::use_cache),
-                      py::overload_cast<bool>(&huggingface_options::use_cache))
         .def_property(
             "attention_backend",
             py::overload_cast<>(&huggingface_options::attention_backend),
@@ -496,6 +493,7 @@ PYBIND11_MODULE(_nncase, m) {
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
 
     register_runtime_tensor(m);
-    register_llm(m);
+    register_runtime_llm_ffi(m);
+    register_ref_llm_ffi(m);
     // register_llm_interpreter(m);
 }

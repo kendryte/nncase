@@ -49,9 +49,8 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr> ImportOptionsCreatePtr;
     public delegate* unmanaged<IntPtr> HuggingFaceOptionsCreatePtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> ImportOptionsSetHuggingFaceOptionsPtr;
-    public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputAttentionsPtr;
+    public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputLogitsPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputHiddenStatesPtr;
-    public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsUseCachePtr;
     public delegate* unmanaged<IntPtr, byte> HuggingFaceOptionsGetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsSetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> HuggingFaceOptionsSetConfigPtr;
@@ -179,9 +178,8 @@ public static unsafe class CApi
         mt->ImportOptionsCreatePtr = &ImportOptionsCreate;
         mt->HuggingFaceOptionsCreatePtr = &HuggingFaceOptionsCreate;
         mt->ImportOptionsSetHuggingFaceOptionsPtr = &ImportOptionsSetHuggingFaceOptions;
-        mt->HuggingFaceOptionsOutputAttentionsPtr = &HuggingFaceOptionsOutputAttentions;
+        mt->HuggingFaceOptionsOutputLogitsPtr = &HuggingFaceOptionsOutputLogits;
         mt->HuggingFaceOptionsOutputHiddenStatesPtr = &HuggingFaceOptionsOutputHiddenStates;
-        mt->HuggingFaceOptionsUseCachePtr = &HuggingFaceOptionsUseCache;
         mt->HuggingFaceOptionsGetAttentionBackendPtr = &HuggingFaceOptionsGetAttentionBackend;
         mt->HuggingFaceOptionsSetAttentionBackendPtr = &HuggingFaceOptionsSetAttentionBackend;
         mt->HuggingFaceOptionsSetConfigPtr = &HuggingFaceOptionsSetConfig;
@@ -381,10 +379,10 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static void HuggingFaceOptionsOutputAttentions(IntPtr huggingFaceOptionsHandle, byte outputAttentions)
+    private static void HuggingFaceOptionsOutputLogits(IntPtr huggingFaceOptionsHandle, byte outputLogits)
     {
-        bool outputAttentionsBool = outputAttentions != 0;
-        Get<HuggingFaceOptions>(huggingFaceOptionsHandle).OutputAttentions = outputAttentionsBool;
+        bool outputLogitsBool = outputLogits != 0;
+        Get<HuggingFaceOptions>(huggingFaceOptionsHandle).OutputLogits = outputLogitsBool;
     }
 
     [UnmanagedCallersOnly]
@@ -392,13 +390,6 @@ public static unsafe class CApi
     {
         bool outputHiddenStatesBool = outputHiddenStates != 0;
         Get<HuggingFaceOptions>(huggingFaceOptionsHandle).OutputHiddenStates = outputHiddenStatesBool;
-    }
-
-    [UnmanagedCallersOnly]
-    private static void HuggingFaceOptionsUseCache(IntPtr huggingFaceOptionsHandle, byte useCache)
-    {
-        bool useCacheBool = useCache != 0;
-        Get<HuggingFaceOptions>(huggingFaceOptionsHandle).UseCache = useCacheBool;
     }
 
     [UnmanagedCallersOnly]

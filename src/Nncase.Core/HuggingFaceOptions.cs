@@ -14,12 +14,12 @@ public enum HuggingFaceAttentionBackendKind : byte
 
 public record HuggingFaceOptions
 {
-    public bool OutputAttentions { get; set; }
+    // public bool OutputAttentions { get; set; }
+    public bool OutputLogits { get; set; }
 
     public bool OutputHiddenStates { get; set; }
 
-    public bool UseCache { get; set; }
-
+    // public bool UseCache { get; set; }
     public HuggingFaceAttentionBackendKind AttenionBackend { get; set; }
 
     public IAttentionConfig Config { get; set; } = null!;

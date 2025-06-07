@@ -493,9 +493,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         tokenize=False,
                         add_generation_prompt=True
                     )
-                    data = self.tokenizer([text], return_tensors="np").input_ids
+                    data = self.tokenizer([text], return_tensors="np").input_ids[0]
                     if dtype == 'PagedAttentionKVCache':
-                        data = input['scheduler'].schedule([0], [data.shape[1]])
+                        data = input['scheduler'].schedule([0], [data.shape[0]])
                 if not test_utils.in_ci():
                     if method == 'text':
                         dump_txt_file(os.path.join(self.case_dir, name,

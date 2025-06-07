@@ -15,8 +15,10 @@
 #pragma once
 #include "nncase/ntt/utility.h"
 #include "nncase/object.h"
+#include "nncase/runtime/util.h"
 #include "pytype_utils.h"
 #include "type_casters.h"
+#include <nncase/llm/paged_attention_kv_cache.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
@@ -40,23 +42,38 @@ inline void register_runtime_tensor(py::module &m) {
         .def_readwrite("size", &tensor_desc::size);
 
     py::class_<runtime_tensor>(m, "RuntimeTensor")
-        // .def_static(
-        //     "from_object",
-        //     [](object obj) {
-        //         auto ref_type = nncase::reference_type_t(
-        //             std::in_place, datatype_t::attention_kv_cache);
-        //         auto tensor =
-        //             nncase::runtime::detail::create(
-        //                 ref_type, {},
-        //                 nncase::runtime::hrt::memory_pool_t::pool_cpu_only)
-        //                 .unwrap_or_throw();
-        //         auto host_buffer =
-        //         tensor->buffer().as_host().unwrap_or_throw(); auto
-        //         mapped_data = host_buffer.map(map_write).unwrap_or_throw();
-        //         auto dest_buffer =
-        //         ntt::span_cast<object>(mapped_data.buffer()); dest_buffer[0]
-        //         = obj; return runtime_tensor(tensor);
-        //     })
+        .def_static(
+            "from_object",
+            [](const object &obj) {
+                if (!obj.is_a<llm::paged_attention_kv_cache>()) {
+                    throw std::invalid_argument(
+                        "currently only support objects type "
+                        "llm::paged_attention_kv_cache");
+                }
+
+                auto ref_type = nncase::reference_type_t(
+                    std::in_place, datatype_t::paged_attention_kv_cache);
+
+                auto object_ptrs = new object_node *[1];
+                auto bytes_span = as_span<std::byte>(
+                    std::span<object_node *>(object_ptrs, 1));
+                hrt::data_deleter_t deleter = [](std::byte *ptr) {
+                    auto object_ptrs = reinterpret_cast<object_node **>(ptr);
+                    nncase_object_release(object_ptrs[0]);
+                    delete[] object_ptrs;
+                };
+
+                auto runtime_tensor =
+                    hrt::create(ref_type, {}, bytes_span, deleter)
+                        .unwrap_or_throw();
+
+                auto host_buffer =
+                    runtime_tensor.impl()->buffer().as_host().unwrap_or_throw();
+                auto mapped_data = host_buffer.map(map_write).unwrap_or_throw();
+                auto dest_buffer = as_span<object_node *>(mapped_data.buffer());
+                dest_buffer[0] = object(obj).detach();
+                return runtime_tensor;
+            })
         .def_static(
             "from_numpy",
             [](py::array arr) {
@@ -92,7 +109,12 @@ inline void register_runtime_tensor(py::module &m) {
              })
         .def_property_readonly(
             "dtype",
-            [](runtime_tensor &tensor) { return to_dtype(tensor.datatype()); })
+            [](runtime_tensor &tensor) {
+                if (tensor.impl()->dtype().is_a<prim_type_t>()) {
+                    return to_dtype(tensor.datatype());
+                }
+                return py::dtype("other");
+            })
         .def_property_readonly("shape", [](runtime_tensor &tensor) {
             return to_py_shape(tensor.shape());
         });

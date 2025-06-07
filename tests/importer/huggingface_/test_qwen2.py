@@ -25,12 +25,11 @@ def test_qwen2(request):
     shape_bucket_enable = true
     shape_bucket_range_info = { "sequence_length"=[1,512] }
     shape_bucket_segments_count = 2
-    shape_bucket_fix_var_map = { "batch_size"=1 }
+    shape_bucket_fix_var_map = { }
     
     [huggingface_options]
-    output_attentions = false
+    output_logits = true
     output_hidden_states = false
-    use_cache = false
 
     [generator]
     [generator.inputs]

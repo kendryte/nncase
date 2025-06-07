@@ -14,9 +14,9 @@
  */
 #pragma once
 #include "attention_config.h"
+#include "nncase/runtime/datatypes.h"
 #include "paged_attention_enums.h"
 #include <nncase/object.h>
-#include <ranges>
 #include <vector>
 
 namespace nncase::llm {
@@ -100,6 +100,82 @@ class paged_attention_config_node : public attention_config_node {
 
     void axis_policies(int32_t i, const dims_t axis_policy) noexcept {
         axis_policies_[i] = axis_policy;
+    }
+
+    datatype_t kv_type() const noexcept {
+        return lanes_.size() == 0
+                   ? datatype_t(prim_type_t(
+                         std::in_place, attention_config_node::kv_prim_type()))
+                   : datatype_t(vector_type_t(
+                         std::in_place, attention_config_node::kv_prim_type(),
+                         lanes_));
+    }
+
+    std::vector<size_t>
+    get_default_dimensions(size_t num_blocks) const noexcept {
+        return {num_blocks,  num_layers(),   2,
+                block_size_, num_kv_heads(), head_dim()};
+    }
+
+    std::vector<size_t> get_dimensions(size_t num_blocks) const noexcept {
+        auto default_dims = get_default_dimensions(num_blocks);
+        std::vector<size_t> dims;
+        dims.reserve(cache_layout_.size());
+        for (auto layout : cache_layout_) {
+            dims.push_back(default_dims[static_cast<size_t>(layout)]);
+        }
+        return dims;
+    }
+
+    dims_t get_block_table_dimensions(size_t num_seqs,
+                                      size_t max_seq_len) const noexcept {
+        size_t blocks_per_seq =
+            (max_seq_len + block_size_ - 1) / block_size_; // ceil division
+        return {num_seqs, blocks_per_seq, sharding_axes_.size() + 1};
+    }
+
+    dims_t get_slot_mapping_dimensions(size_t num_tokens) const noexcept {
+        return {num_tokens, sharding_axes_.size() + 1};
+    }
+
+    dims_t get_logical_shard_dimensions(size_t num_blocks,
+                                        dims_t hierarchy) const noexcept {
+        auto dims = get_default_dimensions(num_blocks);
+
+        // 1. process packed axes
+        for (size_t i = 0; i < packed_axes_.size() && i < lanes_.size(); i++) {
+            auto axis = static_cast<size_t>(packed_axes_[i]);
+            dims[axis] /= lanes_[i];
+        }
+
+        // 2. process sharding axes
+        std::vector<size_t> sharding_dims(sharding_axes_.size(), 1);
+        for (size_t i = 0; i < sharding_axes_.size(); i++) {
+            auto axis = static_cast<size_t>(sharding_axes_[i]);
+            const auto &policy = axis_policies_[i];
+            for (size_t j = 0; j < policy.size(); j++) {
+                dims[axis] /= hierarchy[policy[j]];
+                sharding_dims[i] *= hierarchy[policy[j]];
+            }
+        }
+
+        // 3. reorder dims according to cache layout
+        std::vector<size_t> cache_dims;
+        cache_dims.reserve(cache_layout_.size());
+        for (auto layout : cache_layout_) {
+            cache_dims.push_back(dims[static_cast<size_t>(layout)]);
+        }
+
+        // 4. concatenate sharding dims and cache dims
+        dims_t result;
+        for (auto d : sharding_dims) {
+            result.push_back(d);
+        }
+        for (auto d : cache_dims) {
+            result.push_back(d);
+        }
+
+        return result;
     }
 
   private:

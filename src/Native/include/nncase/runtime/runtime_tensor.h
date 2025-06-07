@@ -79,7 +79,7 @@ create(datatype_t datatype, dims_t shape, std::span<std::byte> data, bool copy,
        memory_pool_t pool = pool_shared_first,
        uintptr_t physical_address = 0) noexcept;
 NNCASE_API result<runtime_tensor>
-create(typecode_t datatype, dims_t shape, std::span<std::byte> data,
+create(datatype_t datatype, dims_t shape, std::span<std::byte> data,
        data_deleter_t data_deleter, memory_pool_t pool = pool_shared_first,
        uintptr_t physical_address = 0) noexcept;
 NNCASE_API result<runtime_tensor>
@@ -99,7 +99,7 @@ create(datatype_t datatype, dims_t shape, strides_t strides,
        memory_pool_t pool = pool_shared_first,
        uintptr_t physical_address = 0) noexcept;
 NNCASE_API result<runtime_tensor>
-create(typecode_t datatype, dims_t shape, strides_t strides,
+create(datatype_t datatype, dims_t shape, strides_t strides,
        std::span<std::byte> data, data_deleter_t data_deleter,
        memory_pool_t pool = pool_shared_first,
        uintptr_t physical_address = 0) noexcept;

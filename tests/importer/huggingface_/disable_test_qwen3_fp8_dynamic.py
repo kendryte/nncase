@@ -30,9 +30,8 @@ def test_qwen3_fp8_dynamic(request):
     shape_bucket_fix_var_map = { "batch_size"=1 }
     
     [huggingface_options]
-    output_attentions = false
+    output_logits = true
     output_hidden_states = false
-    use_cache = false
 
     [generator]
     [generator.inputs]

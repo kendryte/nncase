@@ -1,10 +1,18 @@
-import nncase
 import numpy as np
-from nncase_base_func import *
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 import torch
 import os
-print("pid: ", os.getpid())
+
+from sklearn.metrics.pairwise import cosine_similarity
+
+import nncase
+
+
+def get_cosine(vec1, vec2):
+    """
+    result compare
+    """
+    return cosine_similarity(vec1.reshape(1, -1), vec2.reshape(1, -1))
 
 
 def to_np_type(t: str):
@@ -18,23 +26,74 @@ def to_np_type(t: str):
     else:
         return None
 
+def from_text(path):
+        if not os.path.isabs(path):
+            path = os.path.join(os.path.dirname(__file__), "..", path)
+        data = []
+        with open(path, "r") as f:
+            for i in f.readlines():
+                data.append(i.strip("\n").strip("\""))
+        return data
 
-def compile_kmodel(model_path, dump_path, calib_data, config):
+def run_eval(interpreter, input_data):
+    for idx, i in enumerate(input_data):
+        if isinstance(i, nncase._nncase.IValue):
+            value = i
+        else:
+            value = nncase._nncase.RTValue.from_runtime_tensor(nncase.RuntimeTensor.from_numpy(i))
+        interpreter.set_input_tensor(idx, value)
+
+    interpreter.run()
+    results = []
+    for i in range(interpreter.outputs_size):
+        result = interpreter.get_output_tensor(i).to_numpy()
+        # print(result.shape)
+        result.tofile(os.path.join(dump_path, "nncase_result_{}.bin".format(i)))
+        np.save(os.path.join(dump_path, "nncase_result_{}.npy".format(i)), result)
+        results.append(result)
+
+    return results
+
+def run_kmodel(kmodel_path, input_data):
+    print("\n---------start run kmodel---------")
+    print("Load kmodel...")
+    model_sim = nncase.Simulator()
+    with open(kmodel_path, 'rb') as f:
+        model_sim.load_model(f.read())
+
+    print("Set input data...")
+    for i, data in enumerate(input_data):
+        if isinstance(data, nncase._nncase.IValue):
+            value = data
+        else:
+            value = nncase._nncase.RTValue.from_runtime_tensor(nncase.RuntimeTensor.from_numpy(data))
+        model_sim.set_input_tensor(i, value)
+
+    print("Run...")
+    model_sim.run()
+
+    print("Get output result...")
+    all_result = []
+    for i in range(model_sim.outputs_size):
+        result = model_sim.get_output_tensor(i).to_numpy()
+        all_result.append(result)
+    print("----------------end-----------------")
+    return all_result
+
+def compile_kmodel(model_path, dump_path, config, is_eval: bool):
     """
     Set compile options and ptq options.
     Compile kmodel.
     Dump the compile-time result to 'compile_options.dump_dir'
     """
     print("\n----------   compile    ----------")
-    print("Simplify...")
-    model_file = model_simplify(model_path)
     # model_file = model_path
 
     print("Set options...")
     # import_options
     import_options = nncase.ImportOptions()
-    import_options.huggingface_options.use_cache = True
-    import_options.huggingface_options.output_attentions = True
+
+    import_options.huggingface_options.output_logits = True
     import_options.huggingface_options.output_hidden_states = False
     import_options.huggingface_options.config = config
 
@@ -62,53 +121,62 @@ def compile_kmodel(model_path, dump_path, calib_data, config):
     compile_options.shape_bucket_range_info = {"sequence_length": [1, 512]}
     compile_options.shape_bucket_fix_var_map = {"batch_size": 1}  # {"seq_len": 9, "history_len": 0}
 
-    # quant
-    # ptq_options = nncase.PTQTensorOptions()
-
-    # ptq_options.quant_type = "uint8"  # datatype : "float32", "int8", "int16"
-    # ptq_options.w_quant_type = "uint8"  # datatype : "float32", "int8", "int16"
-    # ptq_options.calibrate_method = "NoClip"  # "Kld"
-    # ptq_options.finetune_weights_method = "NoFineTuneWeights"
-    # ptq_options.dump_quant_error = False
-    # ptq_options.dump_quant_error_symmetric_for_signed = False
-
-    # # detail in docs/MixQuant.md
-    # ptq_options.quant_scheme = ""# "qwen_24_apply_all/try.json"
-    # ptq_options.export_quant_scheme = False
-    # ptq_options.export_weight_range_by_channel = False
-
-    # ptq_options.samples_count = len(calib_data[0])
-    # ptq_options.set_tensor_data(calib_data)
 
     print("Compiling...")
     compiler = nncase.Compiler(compile_options)
-    # import
-    # model_content = read_model_file(model_file)
-    compiler.import_huggingface(model_file, import_options)
-    evaluator = compiler.create_evaluator(3)
 
-    return evaluator
-    # compiler.use_ptq(ptq_options)
+    compiler.import_huggingface(model_path, import_options)
+
+    if is_eval:
+        evaluator = compiler.create_evaluator(3)
+        return evaluator
 
     # # compile
-    # compiler.compile()
-    # kmodel = compiler.gencode_tobytes()
-    # print("Write kmodel...")
-    # kmodel_path = os.path.join(dump_path, "test.kmodel")
-    # with open(kmodel_path, 'wb') as f:
-    #     f.write(kmodel)
-    # print("----------------end-----------------")
+    compiler.compile()
+    kmodel = compiler.gencode_tobytes()
+    print("Write kmodel...")
+    kmodel_path = os.path.join(dump_path, "test.kmodel")
+    with open(kmodel_path, 'wb') as f:
+        f.write(kmodel)
+    print("----------------end-----------------")
     return kmodel_path
 
+def prepare_tokens(tokenizer, input_file):
+    data = from_text(input_file)
 
-def main(model_path, dump_path, input_file):
+    # messages = [
+    #     {"role": "system", "content": "You are a assistant!"},
+    #     {"role": "user", "content": data[0]}
+    # ]
+    text = tokenizer.apply_chat_template(
+        data[0],
+        tokenize=False,
+        add_generation_prompt=True
+    )
+    data = tokenizer([text], return_tensors="np").input_ids[0]
 
-    # calib_file = "/media/curio/500_disk/model/issue_model/DF/calib.jpg"
-    input_data = [nncase.RuntimeTensor.from_numpy(
-        np.fromfile(input_file, dtype=np.int64).reshape(1, 256))]
+    return data
 
-    calib_data = [input_data]
+    evaluator = compile_kmodel(model_path, dump_path, calib_data, kv_cache_config)
 
+    # seq_length = np.array(256).astype(kv_type)
+    scheduler = nncase._nncase.RefPagedAttentionScheduler(
+        kv_cache_config, num_blocks, max_model_len, [1])
+    kv_cache_obj = scheduler.schedule([0], [256])
+    input_data.append(kv_cache_obj.as_ivalue())
+
+def main(model_path, dump_path, input_file, is_eval):
+    tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+    
+    '''
+    convert txt to tokens
+    '''
+    tokens = prepare_tokens(tokenizer, input_file)
+    input_data = []
+
+    '''
+    set paged attention config.
+    '''
     config = AutoConfig.from_pretrained(model_path + "/config.json")
     num_kv_heads = config.num_key_value_heads
     num_layers = config.num_hidden_layers
@@ -137,34 +205,38 @@ def main(model_path, dump_path, input_file):
         [[0]],  # [[1], [2, 3]]
     )
 
-    evaluator = compile_kmodel(model_path, dump_path, calib_data, kv_cache_config)
 
-    # seq_length = np.array(256).astype(kv_type)
-    scheduler = nncase._nncase.RefPagedAttentionScheduler(
-        kv_cache_config, num_blocks, max_model_len, [1])
-    kv_cache_obj = scheduler.schedule([0], [256])
-    input_data.append(kv_cache_obj.as_ivalue())
 
-    for idx, i in enumerate(input_data):
-        if isinstance(i, nncase.RuntimeTensor):
-            value = nncase._nncase.RTValue.from_runtime_tensor(i)
-        elif isinstance(i, nncase._nncase.IValue):
-            value = i
-        evaluator.set_input_tensor(idx, value)
-        # print(i.shape)
-        # i.tofile(os.path.join(dump_path, "input_{}_0.bin".format(idx)))
+    ''' TODO:
+    use cpp paged attention schedule instead of refpaged.
+    '''
 
-    evaluator.run()
 
-    for i in range(evaluator.outputs_size):
-        result = evaluator.get_output_tensor(i).to_numpy()
-        print(result.shape)
-        result.tofile(os.path.join(dump_path, "nncase_result_{}.bin".format(i)))
-        np.save(os.path.join(dump_path, "nncase_result_{}.npy".format(i)), result)
+    if is_eval:
+        interpreter = compile_kmodel(model_path, dump_path, kv_cache_config, is_eval)
+        while(1):
+            input_data.append(tokens)
+            scheduler = nncase._nncase.RefPagedAttentionScheduler(
+            kv_cache_config, num_blocks, max_model_len, [1])
+            kv_cache_obj = scheduler.schedule([0], [input_data[0].shape[0]])
+
+            input_data.append(kv_cache_obj.as_ivalue())
+            result = run_eval(interpreter, input_data)
+            # print(result[0].shape)
+            new_tokens_index = torch.argmax(torch.from_numpy(result[0]), dim=-1, keepdim=True)
+            new_tokens = tokenizer.batch_decode(new_tokens_index, skip_special_tokens=False)
+            print(*new_tokens, end=' ')
+            tokens = new_tokens_index.cpu().detach().numpy()[-1]
+            input_data = []
+            # input_data.append()
+    else:
+        kmodel_path = compile_kmodel(model_path, dump_path, kv_cache_config, False)
+        result = run_kmodel(kmodel_path, input_data)
 
 
 if __name__ == "__main__":
     model_path = "/Users/curio/Canaan/nncase/tests/llm/Qwen/Qwen2.5-0.5B-Instruct"
     dump_path = "/Users/curio/Canaan/nncase/tests_output/qwen/"
-    input_file = "/Users/curio/Canaan/nncase/tests_output/test_qwen2/input/input_0.bin"
-    main(model_path, dump_path, input_file)
+    prompt_file = "/Users/curio/Canaan/nncase/tests/importer/huggingface_/prompt.txt"
+    is_eval = True
+    main(model_path, dump_path, prompt_file, is_eval)

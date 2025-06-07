@@ -78,6 +78,14 @@ inline strides_t get_default_strides(std::span<const size_t> shape) {
     return strides;
 }
 
+template <typename T> inline T align_up(T value, T align) {
+    return (value + (align - T(1))) / align * align;
+}
+
+template <typename T> inline T ceil_div(T value, T div) {
+    return (value + (div - T(1))) / div;
+}
+
 inline size_t linear_offset(std::span<const size_t> index,
                             std::span<const size_t> strides) {
     size_t offset = 0;

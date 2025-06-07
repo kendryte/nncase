@@ -25,9 +25,9 @@ logging.getLogger("transformers").setLevel(logging.ERROR)
 def test_llama3_fp8_dynamic(request):
     cfg = """
     [huggingface_options]
-    output_attentions = false
+    output_logits = true
     output_hidden_states = true
-    use_cache = false
+
 
     [generator]
     [generator.inputs]
