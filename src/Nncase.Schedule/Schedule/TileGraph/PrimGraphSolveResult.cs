@@ -121,7 +121,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                                 var offset = LevelBufferOffsets[sl][new(value, bid)];
                                 var dtype = viewInfo.Buffer.CheckedDataType;
                                 var shape = bufferInfo.Shapes[i].Select(i => (Dimension)i).ToArray();
-                                subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetStrides(shape), distributedType);
+                                subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(Tensor.FromPointer(offset, dtype), bufferInfo.SizeVars[i], MemoryLocation.Data, 0), shape, TensorUtilities.GetDefaultStrides(shape), distributedType);
                             }
                         }
 

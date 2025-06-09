@@ -13,8 +13,12 @@
  * limitations under the License.
  */
 #pragma once
+#include "../bfloat16.h"
+#include "../float8.h"
+#include "../half.h"
+
 // #include "caching.h"
-// #include "distributed.h"
+#include "distributed.h"
 #include "kernels/binary.h"
 #include "kernels/cast.h"
 #include "kernels/clamp.h"
@@ -35,7 +39,6 @@
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
 #include "kernels/reshape.h"
-// #include "kernels/reshard.h"
 #include "kernels/resize_image.h"
 #include "kernels/scatter_nd.h"
 #include "kernels/shapeof.h"
@@ -48,9 +51,6 @@
 #include "kernels/where.h"
 #include "primitive_ops.h"
 #include "profiling.h"
-// #include "remote_tensor.h"
-// #include "sharded_tensor.h"
-// #include "sharding.h"
 #include "tensor.h"
 #include "tensor_ops.h"
 #include "ukernels.h"
@@ -77,10 +77,8 @@
 #ifdef NNCASE_XPU_MODULE
 #include "arch/xpu/distributed.h"
 #include "arch/xpu/runtime.h"
-#include "arch/xpu/topology.h"
 #else
 #include "arch/cpu/distributed.h"
 #include "arch/cpu/profiling.h"
 #include "arch/cpu/runtime.h"
-#include "arch/cpu/topology.h"
 #endif

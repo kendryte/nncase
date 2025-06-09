@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 #pragma once
+#include "../dimension.h"
 #include "../shape.h"
-#include "../utility.h"
-#include <vector>
+#include "../tensor_traits.h"
 
 namespace nncase::ntt {
-template <Scalar T, size_t... Lanes> class basic_vector;
-template <Scalar T, size_t... Lanes> struct vector_storage_traits;
+template <Scalar T, FixedShape Lanes> class basic_vector;
+template <Scalar T, FixedShape Lanes> struct vector_storage_traits;
 
 namespace detail {
 template <class TTraits, class TIndex> class vector_storage_element_proxy {
@@ -52,28 +52,30 @@ template <class TTraits, class TIndex> class vector_storage_element_proxy {
 };
 } // namespace detail
 
-template <class T, size_t Lane> struct vector_storage_traits<T, Lane> {
-    using buffer_type = std::array<T, Lane>;
+template <class T, FixedDimension Lane>
+struct vector_storage_traits<T, shape_t<Lane>> {
+    using buffer_type = std::array<T, Lane::value>;
     using element_type = T;
 
     template <Dimensions TIndex>
-    static constexpr T &element_at(std::array<T, Lane> &array,
+    static constexpr T &element_at(buffer_type &array,
                                    const TIndex &index) noexcept {
         static_assert(TIndex::rank() == 1, "Index rank must be 1");
         return array[index[0]];
     }
 
     template <Dimensions TIndex>
-    static constexpr const T &element_at(const std::array<T, Lane> &array,
+    static constexpr const T &element_at(const buffer_type &array,
                                          const TIndex &index) noexcept {
         static_assert(TIndex::rank() == 1, "Index rank must be 1");
         return array[index[0]];
     }
 };
 
-template <class T, size_t OuterLane, size_t... InnerLanes>
-struct vector_storage_traits<T, OuterLane, InnerLanes...> {
-    using buffer_type = std::array<basic_vector<T, InnerLanes...>, OuterLane>;
+template <class T, FixedDimension OuterLane, FixedDimension... InnerLanes>
+struct vector_storage_traits<T, shape_t<OuterLane, InnerLanes...>> {
+    using buffer_type =
+        std::array<basic_vector<T, shape_t<InnerLanes...>>, OuterLane::value>;
     using element_type = T;
 
     template <Dimensions TIndex>

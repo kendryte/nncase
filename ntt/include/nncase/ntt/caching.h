@@ -13,26 +13,28 @@
  * limitations under the License.
  */
 #pragma once
+#include "distributed/sharding.h"
 #include "kernels/copy.h"
-#include "nncase/ntt/sharding.h"
+#include "nncase/ntt/shape.h"
+#include "nncase/ntt/tensor.h"
 #include <cstddef>
-#include <nncase/ntt/distributed.h>
-#include <nncase/ntt/tensor_traits.h>
+#include <cstdint>
+#include <utility>
 
 namespace nncase::ntt::caching {
-enum class attention_cache_kind : int {
+enum class attention_cache_kind : size_t {
     key,
     value,
 };
 
-enum class attention_dim_kind : int {
+enum class attention_dim_kind : size_t {
     seq = 0,
     head,
     dim,
     count__,
 };
 
-enum class paged_kvcache_dim_kind : int {
+enum class paged_kvcache_dim_kind : size_t {
     num_blocks = 0,
     num_layers,
     kv,
@@ -45,32 +47,29 @@ enum class paged_kvcache_dim_kind : int {
 template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
           typename KVPrimType>
 struct attention_config {
-    static inline constexpr size_t num_layers = NumLayer;
-    static inline constexpr size_t num_kv_heads = NumKVHead;
-    static inline constexpr size_t head_dim = HeadDim;
-    static inline constexpr size_t kv = 2;
     using kv_prim_type = KVPrimType;
-    static inline constexpr size_t kv_prim_size = sizeof(kv_prim_type);
+
+    static inline constexpr auto num_layers = fixed_dim_v<NumLayer>;
+    static inline constexpr auto num_kv_heads = fixed_dim_v<NumKVHead>;
+    static inline constexpr auto head_dim = fixed_dim_v<HeadDim>;
+    static inline constexpr auto kv = fixed_dim_v<2>;
+    static inline constexpr auto kv_prim_size =
+        fixed_dim_v<sizeof(kv_prim_type)>;
 };
 
 template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
-          typename KVPrimType, size_t BlockSize, IsFixedDims CacheLayout,
-          IsFixedDims BlockLayout, IsFixedDims PackedAxes, IsFixedDims Lanes,
-          IsFixedDims ShardingAxes, class... AxisPolicies>
+          typename KVPrimType, size_t BlockSize, FixedDimensions CacheLayout,
+          FixedDimensions BlockLayout, FixedDimensions PackedAxes,
+          FixedDimensions Lanes, FixedDimensions ShardingAxes,
+          class... AxisPolicies>
 struct paged_attention_config
     : public attention_config<NumLayer, NumKVHead, HeadDim, KVPrimType> {
-    static inline constexpr size_t block_size = BlockSize;
-
+    static inline constexpr auto block_size = fixed_dim_v<BlockSize>;
     using cache_layout_t = CacheLayout;
-
     using block_layout_t = BlockLayout;
-
     using packed_axes_t = PackedAxes;
-
     using lanes_t = Lanes;
-
     using sharding_axes_t = ShardingAxes;
-
     using axis_policies_t = std::tuple<AxisPolicies...>;
 
     static inline constexpr auto cache_layout = cache_layout_t{};
@@ -82,81 +81,85 @@ struct paged_attention_config
 
 template <class TConfig> class attention_kv_cache {
   public:
-    attention_kv_cache(size_t num_seqs, size_t num_tokens,
-                       tensor_view<int64_t, ranked_shape<1>> context_lens,
-                       tensor_view<int64_t, ranked_shape<1>> seq_lens)
+    using context_lens_t = decltype(make_tensor_view<const int64_t>(
+        std::declval<const int64_t *>(), make_shape(std::declval<dim_t>())));
+    using seq_lens_t = decltype(make_tensor_view<const int64_t>(
+        std::declval<const int64_t *>(), make_shape(std::declval<dim_t>())));
+
+    static constexpr TConfig config() noexcept { return TConfig{}; }
+
+    constexpr attention_kv_cache(size_t num_seqs, size_t num_tokens,
+                                 context_lens_t context_lens,
+                                 seq_lens_t seq_lens) noexcept
         : num_seqs_(num_seqs),
           num_tokens_(num_tokens),
-          context_lens_(context_lens),
-          seq_lens_(seq_lens) {}
-
-    virtual ~attention_kv_cache() = default;
-
-    constexpr TConfig config() const noexcept { return TConfig{}; }
+          context_lens_(std::move(context_lens)),
+          seq_lens_(std::move(seq_lens)) {}
 
     size_t num_seqs() const noexcept { return num_seqs_; }
-
     size_t num_tokens() const noexcept { return num_tokens_; }
 
-    size_t context_len(size_t request_id) const noexcept {
-        return (size_t)context_lens_(request_id);
+    int64_t context_len(int64_t request_id) const noexcept {
+        return context_lens_(request_id);
     }
 
-    size_t seq_len(size_t seq_id) const noexcept {
-        return (size_t)seq_lens_(seq_id);
-    }
+    int64_t seq_len(int64_t seq_id) const noexcept { return seq_lens_(seq_id); }
 
   protected:
     size_t num_seqs_;
     size_t num_tokens_;
 
-    tensor_view<int64_t, ranked_shape<1>> context_lens_;
-    tensor_view<int64_t, ranked_shape<1>> seq_lens_;
+    context_lens_t context_lens_;
+    seq_lens_t seq_lens_;
 };
 
 namespace detail {
 template <class Mesh, size_t... Axes>
-constexpr auto calc_kv_dim(distributed::shard_policy::S<Axes...>) {
-    return (1 * ... * Mesh::shape_type::at(Axes));
+constexpr auto
+kv_dim(const distributed::shard_policy::split<Axes...> &split) noexcept {
+    return split.divider;
 }
 
 template <class Mesh, class... AxisPolicies>
-constexpr auto calc_kv_shape(std::tuple<AxisPolicies...>) {
-    return fixed_shape<calc_kv_dim<Mesh>(AxisPolicies{})...>{};
+constexpr auto kv_addr_shape(std::tuple<AxisPolicies...>) noexcept {
+    return fixed_shape_v<kv_dim<Mesh>(AxisPolicies{})...>;
 }
 
 template <typename T, size_t N>
 concept HasValidShape =
-    requires { std::is_same_v<typename T::shape_type, fixed_shape<N>>; };
+    requires { std::is_same_v<typename T::shape_type, shape_t<fixed_dim<N>>>; };
 
 template <size_t N, typename T>
-concept IsValidIdTensor = IsTensor<T> && HasValidShape<T, N>;
-
+concept ValidIdTensor = Tensor<T> && HasValidShape<T, N>;
 } // namespace detail
 
 template <class Mesh, class TConfig>
 class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
   public:
     using config_t = TConfig;
+    using typename attention_kv_cache<TConfig>::context_lens_t;
+    using typename attention_kv_cache<TConfig>::seq_lens_t;
 
-    using kv_storage_type_t = make_vector_t<typename TConfig::kv_prim_type,
-                                            typename TConfig::lanes_t>;
-    using kv_storage_shape_t =
-        ntt::ranked_shape<TConfig::cache_layout_t::rank()>;
+    using kv_storage_type_t =
+        basic_vector<typename TConfig::kv_prim_type, typename TConfig::lanes_t>;
+    using kv_storage_shape_t = dynamic_shape_t<TConfig::cache_layout_t::rank()>;
     using kv_storage_tensor_type_t =
-        tensor_view<kv_storage_type_t, kv_storage_shape_t>;
+        decltype(make_tensor_view<kv_storage_shape_t>(
+            std::declval<kv_storage_type_t *>(),
+            std::declval<kv_storage_shape_t>()));
+
+    static constexpr auto kv_addr_shape =
+        detail::kv_dim<Mesh>(typename TConfig::axis_policies_t{});
 
     using kv_type_t = intptr_t;
-    using kv_shape_t = decltype(detail::calc_kv_shape<Mesh>(
-        typename TConfig::axis_policies_t{}));
-    using kv_tensor_type_t = tensor<intptr_t, kv_shape_t>;
+    using kv_addr_tensor_type_t = decltype(make_tensor_view<intptr_t>(
+        std::declval<const intptr_t>(), kv_addr_shape));
 
-    constexpr static size_t id_length = TConfig::sharding_axes_t::rank() + 1;
-    using id_shape_t = ntt::fixed_shape<TConfig::sharding_axes_t::rank() + 1>;
+    static constexpr auto id_length = TConfig::sharding_axes_t::rank() + 1_dim;
+    using id_shape_t = dynamic_shape_t<id_length>;
 
     paged_attention_kv_cache(size_t num_seqs, size_t num_tokens,
-                             tensor_view<int64_t, ranked_shape<1>> context_lens,
-                             tensor_view<int64_t, ranked_shape<1>> seq_lens,
+                             context_lens_t context_lens, seq_lens_t seq_lens,
                              tensor_view<int64_t, ranked_shape<3>> block_table,
                              tensor_view<int64_t, ranked_shape<2>> slot_mapping,
                              size_t num_blocks, kv_tensor_type_t kv_caches)
@@ -169,7 +172,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
 
     constexpr TConfig config() const noexcept { return TConfig{}; }
 
-    auto get_block_id(int seq_id, int context_id) {
+    auto get_block_id(int seq_id, int context_id) const noexcept {
         return block_table_
             .view(ntt::make_ranked_shape(seq_id, context_id, 0),
                   ntt::make_ranked_shape(1, 1, block_table_.shape()[2]))

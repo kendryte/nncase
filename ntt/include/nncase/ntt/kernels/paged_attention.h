@@ -51,9 +51,9 @@ void create_paged_attention_kv_cache(T0 num_seqs, T1 num_tokens,
             for (size_t i = 0; i < kv_topo_t::rank(); i++) {
                 program_ids[kv_topo_t::at(i)] = kv_index[i];
             }
-            auto mesh_index = mesh_type::index_from_program_id(program_ids);
+            auto shard_index = mesh_type::index_from_program_id(program_ids);
             auto remote =
-                kv_caches.template remote<mesh_type::scope>(mesh_index);
+                kv_caches.template remote<mesh_type::scope>(shard_index);
             kv_tensor(kv_index) = (intptr_t)remote.elements().data();
         });
 
@@ -170,11 +170,11 @@ void update_paged_attention_kv_cache(TSlots slots_tensor,
 
         // slots : [seq, numHeads, headDim]
         auto program_ids = distributed::program_ids();
-        auto mesh_index = slots_mesh_type::index_from_program_id(program_ids);
+        auto shard_index = slots_mesh_type::index_from_program_id(program_ids);
         auto slots_global_shape = slots_tensor.shape();
         auto slots_local_shape = local_slots.shape();
         auto slots_global_offset =
-            slots_sharding_type::global_offset(slots_global_shape, mesh_index);
+            slots_sharding_type::global_offset(slots_global_shape, shard_index);
         constexpr size_t seq_index =
             TLayout::indexof((size_t)caching::attention_dim_kind::seq);
         constexpr size_t head_index =

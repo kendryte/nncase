@@ -16,6 +16,7 @@
 #include <cstddef>
 #include <cstring>
 #include <exception>
+#include <nncase/ntt/arch/cpu/distributed.h>
 #include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/ntt/distributed.h>
 #include <nncase/ntt/shape.h>
@@ -30,6 +31,22 @@
 #else
 #include <pthread.h>
 #endif
+
+using namespace nncase;
+using namespace nncase::ntt;
+using namespace nncase::ntt::runtime;
+
+decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+    nncase::ntt::distributed::topology_shape))
+    nncase::ntt::distributed::detail::global_local_data_ptr =
+        nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+            nncase::ntt::distributed::topology_shape);
+
+decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+    nncase::ntt::distributed::topology_shape))
+    nncase::ntt::distributed::detail::global_local_rdata_ptr =
+        nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+            nncase::ntt::distributed::topology_shape);
 
 namespace nncase::ntt::runtime {
 size_t tdim;
@@ -64,8 +81,6 @@ void thread_free(void *ptr) {
 #endif
 }
 } // namespace nncase::ntt::runtime
-
-using namespace nncase::ntt::runtime;
 
 cpu_thread_context_t &cpu_thread_context_t::current() noexcept {
 #ifndef __APPLE__
@@ -118,10 +133,30 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
             CPU_SET(cpu_id, &cpuset);
             pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #endif
-            auto local_rdata_offset = params.local_rdata_header[tid * 2];
-            auto local_rdata = params.local_rdata + local_rdata_offset;
-            auto program_ids = nncase::ntt::make_ranked_shape(params.cid, params.bid, tid);
-            thread_main(params.input_descs, params.output_descs, params.rdata, local_rdata, params.output, program_ids);
+            auto local_rdata_offset =
+                (size_t)params.local_rdata_header[tid * 2];
+            auto local_rdata_size =
+                (size_t)params.local_rdata_header[tid * 2 + 1];
+            auto local_rdata = params.local_rdata.subspan(local_rdata_offset,
+                                                          local_rdata_size);
+
+            // Set distributed pointers
+            const auto program_ids = make_shape(params.cid, params.bid, tid);
+            auto local_data = params.local_data;
+            ntt::distributed::detail::global_local_rdata_ptr(program_ids)(
+                0_dim) = (uintptr_t)local_rdata.data();
+            ntt::distributed::detail::global_local_rdata_ptr(program_ids)(
+                1_dim) =
+                (uintptr_t)(local_rdata.data() + local_rdata.size_bytes());
+            ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                0_dim) = (uintptr_t)local_data.data();
+            ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                1_dim) =
+                (uintptr_t)(local_data.data() + local_data.size_bytes());
+
+            thread_main(params.input_descs, params.output_descs,
+                        params.rdata.data(), local_rdata.data(),
+                        local_data.data(), params.output);
         });
     }
 

@@ -78,13 +78,13 @@ public static class CSourceExtensions
         _ => throw new NotImplementedException(),
     };
 
-    public static string ToC(this IRArray<IR.NN.PagedKVCacheDimKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+    public static string ToC(this IRArray<IR.NN.PagedKVCacheDimKind> arr) => $"fixed_shape_v<{string.Join(',', arr.Select(e => "(dim_t)" + e.ToC()))}>";
 
-    public static string ToC(this IRArray<IR.NN.AttentionCacheKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+    public static string ToC(this IRArray<IR.NN.AttentionCacheKind> arr) => $"fixed_shape_v<{string.Join(',', arr.Select(e => "(dim_t)" + e.ToC()))}>";
 
-    public static string ToC(this IRArray<IR.NN.AttentionDimKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+    public static string ToC(this IRArray<IR.NN.AttentionDimKind> arr) => $"fixed_shape_v<{string.Join(',', arr.Select(e => "(dim_t)" + e.ToC()))}>";
 
-    public static string ToC(this IRArray<int> arr) => $"fixed_shape<{string.Join(',', arr)}>";
+    public static string ToC(this IRArray<int> arr) => $"fixed_shape_v<{string.Join(',', arr)}>";
 
     public static string ToC(this IEnumerable<SBP> arr)
     {
@@ -141,7 +141,7 @@ public static class CSourceExtensions
 
     public static string[] ToSlicing(this IEnumerable<string> dims, string[] begins, IRArray<SBP> ndsbp, Placement placement)
     {
-        var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());
+        var hstrides = TensorUtilities.GetDefaultStrides(placement.Hierarchy.ToArray());
         var splitHierarchy = Enumerable.Range(0, begins.Length).Select(_ => new List<int>()).ToArray();
         var splits = Enumerable.Range(0, begins.Length).Select(_ => new List<int>()).ToArray();
         foreach (var (sbp, i) in ndsbp.Select((s, i) => (s, i)))
@@ -173,7 +173,7 @@ public static class CSourceExtensions
             }
         }
 
-        return [$"make_ranked_shape({string.Join(',', begins)})", $"fixed_shape<{string.Join(",", dims.Select(d => d.ToString()))}>{{}}"];
+        return [$"make_shape({string.Join(',', begins)})", $"fixed_shape_v<{string.Join(",", dims.Select(d => d.ToString()))}>{{}}"];
     }
 
     public static string[] ToSlicing(this IEnumerable<string> dims, IRArray<SBP> ndsbp, Placement placement) => ToSlicing(dims, Enumerable.Repeat("0", dims.Count()).ToArray(), ndsbp, placement);

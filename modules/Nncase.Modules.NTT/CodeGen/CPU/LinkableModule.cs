@@ -85,11 +85,11 @@ internal sealed class LinkableModule : ILinkableModule
                 }
             }
 
-            using (var fs = File.Open(Path.Join(dumpPath, "topology_def.h"), FileMode.Create))
+            using (var fs = File.Open(Path.Join(dumpPath, "module_topology_def.h"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))
                 {
-                    writer.Write(func.FunctionCSource.TopologyDef);
+                    writer.Write(func.FunctionCSource.ModuleTopologyDef);
                 }
             }
 

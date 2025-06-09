@@ -37,6 +37,12 @@ class cpu_runtime_function final : public runtime_function {
 
     cpu_runtime_module &module() const noexcept;
 
+    const std::span<std::byte> local_data(size_t linear_tid) const noexcept {
+        auto &local_data = local_datas_[linear_tid];
+        return std::span((std::byte *)local_data->physical_address().unwrap(),
+                         local_data->size_bytes());
+    }
+
   protected:
     result<void>
     initialize_core(runtime_function_init_context &context) noexcept override;
@@ -59,6 +65,7 @@ class cpu_runtime_function final : public runtime_function {
 #endif
 
     block_entry_t block_entry_;
+    std::vector<host_buffer_t> local_datas_;
     host_buffer_t output_buffer_;
     std::vector<ntt::runtime::thread_inout_desc> input_descs_;
     std::vector<ntt::runtime::thread_inout_desc> output_descs_;

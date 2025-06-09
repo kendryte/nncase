@@ -13,71 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#if defined(NNCASE_XPU_MODULE)
-#include "arch/xpu/topology.h"
-#else
-#include "arch/cpu/topology.h"
-#endif
-
-#include "shape.h"
-#include <cstddef>
-#include <cstdint>
-#include <string>
-
-#if defined(NNCASE_CPU_MODULE) || defined(NNCASE_XPU_MODULE)
-#include <topology_def.h>
-#elif !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
-namespace nncase::ntt::distributed {
-constexpr std::array<size_t, 1> topology_dims = {1};
-using topology_shape_t = ntt::shape_t<fixed_dim<1>, fixed_dim<1>, fixed_dim<1>>;
-} // namespace nncase::ntt::distributed
-#endif
-
-namespace nncase::ntt::distributed {
-inline constexpr size_t topology_levels =
-    static_cast<size_t>(topology::count__);
-
-template <topology Scope>
-using program_ids_t = dynamic_shape_t<static_cast<size_t>(Scope) + 1>;
-
-constexpr size_t program_dim(topology topo) noexcept {
-    int32_t index =
-        static_cast<int32_t>(topo) - (topology_levels - topology_dims.size());
-    return index < 0 ? 1 : topology_dims[index];
-}
-
-template <topology Scope = static_cast<topology>(topology_levels - 1)>
-constexpr size_t topology_size() noexcept {
-    return [] {
-        size_t size = 1;
-        for (size_t i = 0; i <= static_cast<size_t>(Scope); i++) {
-            size *= program_dim(static_cast<topology>(i));
-        }
-        return size;
-    }();
-}
-
-template <topology Topology> struct program_id_getter {
-    static size_t id() noexcept;
-};
-
-template <topology Topology> size_t program_id() noexcept {
-    return program_id_getter<Topology>::id();
-}
-
-bool get_profiler_option() noexcept;
-
-template <topology Scope = (topology)(topology_levels - 1)>
-auto program_ids() noexcept {
-    auto f = []<size_t... Is>(std::index_sequence<Is...>) {
-        return program_ids_t<Scope>{program_id<static_cast<topology>(Is)>()...};
-    };
-    return f(std::make_index_sequence<static_cast<size_t>(Scope) + 1>());
-}
-
-template <topology Scope> class topology_synchronizer;
-
-template <topology Scope = (topology)0> void topology_synchronize() noexcept {
-    topology_synchronizer<Scope>::synchronize();
-}
-} // namespace nncase::ntt::distributed
+#include "distributed/remote_tensor.h"
+#include "distributed/sharded_tensor.h"
+#include "distributed/sharding.h"
+#include "distributed/topology.h"

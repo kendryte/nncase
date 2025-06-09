@@ -15,6 +15,7 @@
 #pragma once
 #include "compiler_defs.h"
 #include "dimension.h"
+#include "loop.h"
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -137,74 +138,6 @@ constexpr auto replace_dim_impl(const TDims &dims, const TDim &dim) noexcept {
 template <dims_usage Usage, template <class... TDims> class Derived,
           Dimension... TDims>
 struct dims_base {
-    struct iterator {
-        using dims_type = dims_base<Usage, Derived, TDims...>;
-        using difference_type = std::ptrdiff_t;
-        using element_type = dim_t;
-
-        constexpr iterator(const dims_type &dims, size_t index = 0) noexcept
-            : dims_(dims), index_(index) {}
-
-        element_type operator*() const { return dims_.at(index_); }
-
-        iterator &operator++() {
-            index_++;
-            return *this;
-        }
-        iterator operator++(int) {
-            iterator tmp = *this;
-            ++(*this);
-            return tmp;
-        }
-        iterator &operator+=(int i) {
-            index_ += i;
-            return *this;
-        }
-        iterator operator+(const difference_type other) const {
-            return index_ + other;
-        }
-        friend iterator operator+(const difference_type value,
-                                  const iterator &other) {
-            return other + value;
-        }
-
-        iterator &operator--() {
-            index_--;
-            return *this;
-        }
-        iterator operator--(int) {
-            iterator tmp = *this;
-            --(*this);
-            return tmp;
-        }
-        iterator &operator-=(int i) {
-            index_ -= i;
-            return *this;
-        }
-        difference_type operator-(const iterator &other) const {
-            return index_ - other.index_;
-        }
-        iterator operator-(const difference_type other) const {
-            return index_ - other;
-        }
-        friend iterator operator-(const difference_type value,
-                                  const iterator &other) {
-            return other - value;
-        }
-
-        element_type operator[](difference_type idx) const {
-            return dims_.at(index_ + idx);
-        }
-
-        bool operator==(const iterator &other) const {
-            return index_ == other.index_;
-        }
-
-      private:
-        const dims_type &dims_;
-        size_t index_;
-    };
-
     constexpr dims_base(const TDims &...dims) noexcept
         : dims_(std::make_tuple(dims...)) {}
 
@@ -405,6 +338,10 @@ struct dims_base {
         return at_impl(std::make_index_sequence<rank()>());
     }
 
+    template <class UDims> constexpr void copy_to(UDims &other) const noexcept {
+        loop<rank()>([&](auto axis) { other[axis] = at(axis); });
+    }
+
   private:
     NTT_NO_UNIQUE_ADDRESS std::tuple<TDims...> dims_;
 };
@@ -421,7 +358,7 @@ struct shape_t : detail::dims_base<dims_usage::shape, shape_t, TDims...> {
     using base_t = detail::dims_base<dims_usage::shape, shape_t, TDims...>;
     using base_t::base_t;
 
-    constexpr size_t length() const noexcept {
+    constexpr auto length() const noexcept {
         auto length_impl = [this]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
             return (dim_one * ... * base_t::at(fixed_dim_v<I>));
@@ -468,6 +405,9 @@ using empty_dims_alike_t = typename empty_dims_alike_type<TDims>::type;
     template <size_t Rank>                                                     \
     using dynamic_##dims_type##_t =                                            \
         detail::dynamic_dims_t<dims_type##_t, Rank>;                           \
+                                                                               \
+    template <dim_t... Dims>                                                   \
+    using fixed_##dims_type##_t = dims_type##_t<fixed_dim<Dims>...>;           \
                                                                                \
     template <Dimension... TDims>                                              \
     struct empty_dims_alike_type<dims_type##_t<TDims...>> {                    \
@@ -593,40 +533,27 @@ constexpr auto linear_offset(const TIndex &index,
     }
 }
 
-namespace detail {
-template <size_t Axis, Strides TStrides> struct unravel_index_impl;
-
-template <size_t Axis, Dimension... TStrides>
-struct unravel_index_impl<Axis, strides_t<TStrides...>> {
-    static_assert(Axis < sizeof...(TStrides), "Axis out of bounds");
-
-    template <Dimension TOffset, Dimensions TIndex>
-    constexpr auto operator()(const TIndex &index, const TOffset &offset,
-                              const strides_t<TStrides...> &strides) noexcept {
-        const auto stride = strides[Axis];
-        auto cnt_index = offset / stride;
-        auto remain = offset % stride;
-        auto result = index.append(cnt_index);
-        if constexpr (Axis + 1 < sizeof...(TStrides)) {
-            return unravel_index_impl<Axis + 1, strides_t<TStrides...>>{}(
-                result, remain, strides);
-        } else {
-            return result;
-        }
-    }
-};
-} // namespace detail
+template <Dimensions TIndex, Shape TShape>
+constexpr auto linear_offset(const TIndex &index,
+                             const TShape &shape) noexcept {
+    static_assert(TIndex::rank() == TShape::rank(),
+                  "index and shape must have the same rank");
+    return linear_offset(index, default_strides(shape));
+}
 
 template <template <class... TDims> class TDimensions = dims_t,
-          Dimension TOffset, Strides TStrides>
+          Dimension TOffset, Shape TShape>
 constexpr auto unravel_index(const TOffset &offset,
-                             const TStrides &strides) noexcept {
-    if constexpr (TStrides::rank() == 0) {
-        return detail::make_dims_impl<TDimensions>(offset);
-    } else {
-        return detail::unravel_index_impl<0, TStrides>{}(TDimensions<>{},
-                                                         offset, strides);
-    }
+                             const TShape &shape) noexcept {
+    return shape.reverse().aggregate(
+        std::make_tuple(offset, TDimensions<>{}),
+        [&](auto acc, auto dim, [[maybe_unused]] auto axis) {
+            auto [remain, index] = acc;
+            auto cnt_index = remain % dim;
+            remain = remain / dim;
+            return std::make_tuple(remain, index.prepend(cnt_index));
+        },
+        [](auto acc) { return std::get<1>(acc); });
 }
 
 namespace detail {
@@ -757,7 +684,7 @@ template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
         static_assert(CntAxis < TSrcDims::rank(), "CntAxis out of bounds");
         auto new_result_dims =
             ntt::where(Axes{}.contains(fixed_dim_v<CntAxis>), result_dims,
-                        result_dims.append(src_dims[fixed_dim_v<CntAxis>]));
+                       result_dims.append(src_dims[fixed_dim_v<CntAxis>]));
         if constexpr (CntAxis + 1 < TSrcDims::rank()) {
             return squeeze_dims_impl<Axes, CntAxis + 1>()(src_dims,
                                                           new_result_dims);

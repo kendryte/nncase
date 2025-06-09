@@ -184,13 +184,13 @@ template <> class u_pack<true, float, vector<float, 8>> {
     constexpr void operator()(const float *input, const TM &M, const TN &N,
                               const TMStrides &m_strides,
                               vector<float, 8> *output) noexcept {
-
-        const bool speedup = M == 8 && N % 8 == 0 && m_strides != 1;
+        constexpr auto speedup_m = 8_dim;
+        const bool speedup = M == speedup_m && N % 8 == 0 && m_strides != 1;
 
         if (speedup) {
             auto src = reinterpret_cast<const float *>(input);
             auto dst = reinterpret_cast<float *>(output);
-            for (size_t j = 0; j < N / M; j++) {
+            for (size_t j = 0; j < N / speedup_m; j++) {
                 permute_8x8(src, dst, m_strides, 8);
                 src += 8;
                 dst += 64;

@@ -92,19 +92,19 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
     for (size_t k_offset = 0; k_offset < K; k_offset += lcm_K) {
         if (local_K_lhs >= local_K_rhs) {
             size_t lhs_k_mesh_idx = k_offset / local_K_lhs;
-            auto lhs_mesh_index = lhs_local_index;
-            lhs_mesh_index.at(mesh_rank - 1) = lhs_k_mesh_idx;
+            auto lhs_shard_index = lhs_local_index;
+            lhs_shard_index.at(mesh_rank - 1) = lhs_k_mesh_idx;
             auto A_remote =
-                lhs.template remote<lhs_mesh_type::scope>(lhs_mesh_index);
+                lhs.template remote<lhs_mesh_type::scope>(lhs_shard_index);
 
             for (size_t rhs_k_offset = 0; rhs_k_offset < lcm_K;
                  rhs_k_offset += local_K_rhs) {
                 size_t global_rhs_k = k_offset + rhs_k_offset;
                 size_t rhs_k_mesh_idx = global_rhs_k / local_K_rhs;
-                auto rhs_mesh_index = rhs_local_index;
-                rhs_mesh_index.at(mesh_rank - 2) = rhs_k_mesh_idx;
+                auto rhs_shard_index = rhs_local_index;
+                rhs_shard_index.at(mesh_rank - 2) = rhs_k_mesh_idx;
                 auto B_remote =
-                    rhs.template remote<rhs_mesh_type::scope>(rhs_mesh_index);
+                    rhs.template remote<rhs_mesh_type::scope>(rhs_shard_index);
 
                 const auto AShape = lhs_local_tensor.shape()
                                         .template slice<0, LhsRank - 1>()
@@ -133,19 +133,19 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
             }
         } else {
             size_t rhs_k_mesh_idx = k_offset / local_K_rhs;
-            auto rhs_mesh_index = rhs_local_index;
-            rhs_mesh_index.at(mesh_rank - 2) = rhs_k_mesh_idx;
+            auto rhs_shard_index = rhs_local_index;
+            rhs_shard_index.at(mesh_rank - 2) = rhs_k_mesh_idx;
             auto B_remote =
-                rhs.template remote<rhs_mesh_type::scope>(rhs_mesh_index);
+                rhs.template remote<rhs_mesh_type::scope>(rhs_shard_index);
 
             for (size_t lhs_k_offset = 0; lhs_k_offset < lcm_K;
                  lhs_k_offset += local_K_lhs) {
                 size_t global_lhs_k = k_offset + lhs_k_offset;
                 size_t lhs_k_mesh_idx = global_lhs_k / local_K_lhs;
-                auto lhs_mesh_index = lhs_local_index;
-                lhs_mesh_index.at(mesh_rank - 1) = lhs_k_mesh_idx;
+                auto lhs_shard_index = lhs_local_index;
+                lhs_shard_index.at(mesh_rank - 1) = lhs_k_mesh_idx;
                 auto A_remote =
-                    lhs.template remote<rhs_mesh_type::scope>(lhs_mesh_index);
+                    lhs.template remote<rhs_mesh_type::scope>(lhs_shard_index);
 
                 const auto BShape = rhs_local_tensor.shape()
                                         .template slice<0, RhsRank - 1>()

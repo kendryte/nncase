@@ -69,9 +69,9 @@ struct reshard_impl<SrcTensor, DestTensor> {
     //               "Cannot shard to a non-Broadcast sharding type.");
 
     constexpr void operator()(const SrcTensor &src, DestTensor &dest) noexcept {
-        auto local_mesh_index = mesh_type::local_index();
+        auto local_shard_index = mesh_type::local_index();
         auto global_offset =
-            sharding_type::global_offset(dest.shape(), local_mesh_index);
+            sharding_type::global_offset(dest.shape(), local_shard_index);
         auto local = dest.local();
         tensor_copy(src.view(global_offset, local.shape()), local);
     }
@@ -94,10 +94,10 @@ struct reshard_impl<SrcTensor, DestTensor> {
     static constexpr size_t rank = global_shape_type::rank();
 
     constexpr void operator()(const SrcTensor &src, DestTensor &dest) noexcept {
-        auto local_mesh_index = mesh_type::local_index();
+        auto local_shard_index = mesh_type::local_index();
         auto global_shape = src.shape();
         auto slice =
-            shard_to_slice_with_global_offset(global_shape, local_mesh_index);
+            shard_to_slice_with_global_offset(global_shape, local_shard_index);
         if (slice.shape.length() != 0) {
             // Not empty slice
             auto local = src.local().view(slice.local_offset, slice.shape);
@@ -167,10 +167,10 @@ struct reshard_impl<SrcTensor, DestTensor> {
 #endif
             }();
 
-            auto non_split_mesh_indexes =
-                get_non_split_mesh_indexes(shard_index);
+            auto non_split_shard_indexes =
+                get_non_split_shard_indexes(shard_index);
             auto non_split_mesh_linear_offset =
-                linear_offset(non_split_mesh_indexes, non_split_mesh_strides);
+                linear_offset(non_split_shard_indexes, non_split_mesh_strides);
 
             auto local_split_id = unravel_index(non_split_mesh_linear_offset,
                                                 split_count_strides);
@@ -207,15 +207,15 @@ struct reshard_impl<SrcTensor, DestTensor> {
         return non_split_mesh_dims;
     }
 
-    static constexpr auto get_non_split_mesh_indexes(
+    static constexpr auto get_non_split_shard_indexes(
         const typename mesh_type::index_type &shard_index) noexcept {
         constexpr auto non_split_mesh_axes = get_non_split_mesh_axes();
-        dynamic_shape_t<non_split_mesh_axes.rank()> non_split_mesh_indexes{};
+        dynamic_shape_t<non_split_mesh_axes.rank()> non_split_shard_indexes{};
         for (size_t i = 0; i < non_split_mesh_axes.rank(); i++) {
             auto axis = non_split_mesh_axes[i];
-            non_split_mesh_indexes[i] = shard_index[axis];
+            non_split_shard_indexes[i] = shard_index[axis];
         }
-        return non_split_mesh_indexes;
+        return non_split_shard_indexes;
     }
 
     template <class Shape>

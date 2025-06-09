@@ -47,7 +47,7 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                     .cpu_id_offset = tid_offset,
                     .input_descs = this->input_descs_.data(),
                     .output_descs = this->output_descs_.data(),
-                    .rdata = module().rdata().data(),
+                    .rdata = module().rdata(),
                     .output = output_data,
                     .enable_profiling = enable_profiling,
                     .timer_records = const_cast<timer_record *>(
@@ -55,7 +55,8 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                                        bid * module().tdim()]),
                     .local_rdata_header =
                         module().local_rdata_header(tid_offset),
-                    .local_rdata = module().local_rdata_content().data(),
+                    .local_rdata = module().local_rdata_content(),
+                    .local_data = local_data(tid_offset),
 #ifdef __APPLE__
                     .cpu_thread_context_key = module().cpu_thread_context_key(),
 #endif

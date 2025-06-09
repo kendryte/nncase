@@ -109,6 +109,11 @@ DEFINE_NTT_DIM_COMPARE_OP(>=)
 
 #undef DEFINE_NTT_DIM_COMPARE_OP
 
+template <FixedDimension TNum, FixedDimension TDenom>
+constexpr auto ceil_div(const TNum &, const TDenom &) noexcept {
+    return fixed_dim_v<(TNum::value + TDenom::value - 1) / TDenom::value>;
+}
+
 template <Dimension TDim, Dimension TLowerBound, Dimension TUpperBound>
 constexpr auto clamp(const TDim &dim, const TLowerBound &lower_bound,
                      const TUpperBound &upper_bound) noexcept {

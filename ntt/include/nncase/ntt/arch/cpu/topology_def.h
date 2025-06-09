@@ -13,5 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "remote_tensor.h"
-#include "topology.h"
+
+namespace nncase::ntt::distributed {
+enum class topology { chip, block, thread, count__ };
+} // namespace nncase::ntt::distributed

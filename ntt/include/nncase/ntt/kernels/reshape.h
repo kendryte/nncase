@@ -27,11 +27,9 @@ template <Tensor TIn, Tensor TOut> class reshape_impl {
   public:
     constexpr void operator()(const TIn &input, TOut &output) {
         const size_t size = input.size();
-        const auto in_shape_strides = default_strides(input.shape());
-        const auto out_shape_strides = default_strides(output.shape());
         for (size_t i = 0; i < size; i++) {
-            auto in_index = unravel_index(i, in_shape_strides);
-            auto out_index = unravel_index(i, out_shape_strides);
+            auto in_index = unravel_index(i, input.shape());
+            auto out_index = unravel_index(i, output.shape());
             output(out_index) = input(in_index);
         }
     }

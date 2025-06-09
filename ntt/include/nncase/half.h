@@ -14,8 +14,8 @@
  */
 #pragma once
 #include "ntt/compiler_defs.h"
+#include <bit>
 #include <cmath>
-#include <codecvt>
 #include <cstdint>
 #include <float.h>
 #include <functional>
@@ -35,12 +35,14 @@ struct half {
         float f32;
 
         uint16_t u16() const noexcept {
-            constexpr size_t index = std::little_endian ? 1 : 0;
+            constexpr size_t index =
+                std::endian::native == std::endian::little ? 1 : 0;
             return reinterpret_cast<const uint16_t *>(&u32)[index];
         }
 
         uint16_t &u16() noexcept {
-            constexpr size_t index = std::little_endian ? 1 : 0;
+            constexpr size_t index =
+                std::endian::native == std::endian::little ? 1 : 0;
             return reinterpret_cast<uint16_t *>(&u32)[index];
         }
     };
@@ -187,7 +189,7 @@ DEFINE_FP16_BINARY_BOOLRET(>=)
 DEFINE_FP16_BINARY_BOOLRET(>)
 
 #define DEFINE_FP16_BINARY_SELF_MOD(x, op)                                     \
-    inline half &operator x(half &a, half b) noexcept {                        \
+    inline half &operator x(half & a, half b) noexcept {                       \
         a = a op b;                                                            \
         return a;                                                              \
     }
@@ -303,6 +305,5 @@ inline half nearbyint(const half &a) {
 }
 inline long lrint(const half &a) { return lrintf(float(a)); }
 
-template <>
-struct is_floating_point<half> : public std::true_type {};
+template <> struct is_floating_point<half> : public std::true_type {};
 } // namespace std

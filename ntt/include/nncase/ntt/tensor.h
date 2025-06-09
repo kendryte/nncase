@@ -23,20 +23,38 @@
 #include <utility>
 
 namespace nncase::ntt {
-template <ScalarOrVector T, Shape TShape, Strides TStrides, bool IsView>
+template <class T, Shape TShape, Strides TStrides, bool IsView>
 class basic_tensor;
 
-template <ScalarOrVector T, Shape TShape, Strides TStrides, bool IsView,
-          class U>
+template <class T, Shape TShape, Strides TStrides, bool IsView, class U>
 struct replace_element_type<basic_tensor<T, TShape, TStrides, IsView>, U> {
     using type = basic_tensor<U, TShape, TStrides, IsView>;
 };
 
-template <ScalarOrVector T, Shape TShape, Strides TStrides>
+template <class T, Shape TShape, Strides TStrides>
 using tensor = basic_tensor<T, TShape, TStrides, false>;
 
-template <ScalarOrVector T, Shape TShape, Strides TStrides>
+template <class T, Shape TShape, Strides TStrides>
 using tensor_view = basic_tensor<T, TShape, TStrides, true>;
+
+namespace detail {
+template <class T, class TBuffer> struct tensor_element_type_from_buffer {
+    using type = T;
+};
+
+template <class TBuffer> struct tensor_element_type_from_buffer<void, TBuffer> {
+    using type = typename TBuffer::element_type;
+};
+
+template <class T, size_t N>
+struct tensor_element_type_from_buffer<void, T[N]> {
+    using type = T;
+};
+
+template <class T, class TBuffer>
+using tensor_element_type_from_buffer_t =
+    typename tensor_element_type_from_buffer<T, TBuffer>::type;
+} // namespace detail
 
 template <class T, Shape TShape, Strides TStrides>
 constexpr auto make_span(T *data, const TShape &shape,
@@ -49,56 +67,64 @@ constexpr auto make_span(T *data, const TShape &shape,
     }
 }
 
-template <ScalarOrVector T, Shape TShape, Strides TStrides>
+template <class T, Shape TShape, Strides TStrides>
 constexpr auto make_tensor(const TShape &shape, const TStrides &strides) {
     return tensor<T, TShape, TStrides>(shape, strides);
 }
 
-template <ScalarOrVector T, Shape TShape>
+template <class T, Shape TShape>
 constexpr auto make_tensor(const TShape &shape) {
     return make_tensor<T>(shape, default_strides(shape));
 }
 
-template <ScalarOrVector T, size_t... Lanes>
-constexpr auto make_fixed_tensor() {
+template <class T, size_t... Lanes> constexpr auto make_fixed_tensor() {
     return make_tensor<T>(make_shape(fixed_dim_v<Lanes>...));
 }
 
-template <ScalarOrVector T, Shape TShape, Strides TStrides>
+template <class T, Shape TShape, Strides TStrides>
 constexpr auto make_unique_tensor(const TShape &shape,
                                   const TStrides &strides) {
     return std::make_unique<tensor<T, TShape, TStrides>>(shape, strides);
 }
 
-template <ScalarOrVector T, Shape TShape>
+template <class T, Shape TShape>
 constexpr auto make_unique_tensor(const TShape &shape) {
     return make_unique_tensor<T>(shape, default_strides(shape));
 }
 
-template <ScalarOrVector T, size_t... Lanes>
-constexpr auto make_unique_fixed_tensor() {
+template <class T, size_t... Lanes> constexpr auto make_unique_fixed_tensor() {
     return make_unique_tensor<T>(make_shape(fixed_dim_v<Lanes>...));
 }
 
-template <ScalarOrVector T, class TBuffer, Shape TShape, Strides TStrides>
+template <class T = void, class TBuffer, Shape TShape, Strides TStrides>
 constexpr auto make_tensor_view(TBuffer &&buffer, const TShape &shape,
                                 const TStrides &strides) {
-    if constexpr (std::is_pointer_v<std::decay_t<TBuffer>>) {
-        return tensor_view<T, TShape, TStrides>(
-            make_span(buffer, shape, strides), shape, strides);
-    } else {
-        return tensor_view<T, TShape, TStrides>(std::forward<TBuffer>(buffer),
-                                                shape, strides);
-    }
+    using element_type = detail::tensor_element_type_from_buffer_t<
+        T, std::remove_reference_t<TBuffer>>;
+    return tensor_view<element_type, TShape, TStrides>(
+        std::forward<TBuffer>(buffer), shape, strides);
 }
 
-template <ScalarOrVector T, class TBuffer, Shape TShape>
+template <class T = void, class TBuffer, Shape TShape>
 constexpr auto make_tensor_view(TBuffer &&buffer, const TShape &shape) {
-    return make_tensor_view(std::forward<TBuffer>(buffer), shape,
-                            default_strides(shape));
+    return make_tensor_view<T>(std::forward<TBuffer>(buffer), shape,
+                               default_strides(shape));
 }
 
-template <ScalarOrVector T, Shape TShape, Strides TStrides, bool IsView>
+template <class T, Shape TShape, Strides TStrides>
+constexpr auto make_tensor_view_from_address(T *address, const TShape &shape,
+                                             const TStrides &strides) {
+    return make_tensor_view<T>(make_span(address, shape, strides), shape,
+                               strides);
+}
+
+template <class T, Shape TShape>
+constexpr auto make_tensor_view_from_address(T *address, const TShape &shape) {
+    return make_tensor_view_from_address<T>(address, shape,
+                                            default_strides(shape));
+}
+
+template <class T, Shape TShape, Strides TStrides, bool IsView>
 class basic_tensor
     : public detail::tensor_size_impl<TShape, TStrides>,
       public detail::tensor_storage<T, max_size_v<TShape, TStrides>, IsView> {
@@ -202,8 +228,8 @@ class basic_tensor
     constexpr auto view(const Index &index, const UShape &shape) noexcept {
         auto offset = linear_offset(index, strides());
         auto begin = elements().data() + offset;
-        return make_tensor_view<T>(begin, shape,
-                                   canonicalize_strides(shape, strides()));
+        return make_tensor_view_from_address<T>(
+            begin, shape, canonicalize_strides(shape, strides()));
     }
 
     template <Dimensions Index, Shape UShape>
@@ -211,7 +237,7 @@ class basic_tensor
                         const UShape &shape) const noexcept {
         auto offset = linear_offset(index, strides());
         auto begin = elements().data() + offset;
-        return make_tensor_view<const T>(
+        return make_tensor_view_from_address<const T>(
             begin, shape, canonicalize_strides(shape, strides()));
     }
 

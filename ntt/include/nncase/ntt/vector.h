@@ -19,32 +19,33 @@
 #include "tensor_traits.h"
 
 namespace nncase::ntt {
-template <Scalar T, size_t... Lanes>
+template <Scalar T, FixedShape Lanes>
 class basic_vector
-    : public detail::tensor_size_impl<shape_t<fixed_dim<Lanes>...>,
-                                      decltype(default_strides(
-                                          make_shape(fixed_dim_v<Lanes>...)))> {
+    : public detail::tensor_size_impl<Lanes,
+                                      decltype(default_strides(Lanes{}))> {
     using size_impl_type =
-        detail::tensor_size_impl<shape_t<fixed_dim<Lanes>...>,
-                                 decltype(default_strides(
-                                     make_shape(fixed_dim_v<Lanes>...)))>;
+        detail::tensor_size_impl<Lanes, decltype(default_strides(Lanes{}))>;
 
   public:
     static constexpr bool IsVector = true;
 
     using element_type = T;
-    using traits_type = vector_storage_traits<T, Lanes...>;
+    using traits_type = vector_storage_traits<T, Lanes>;
     using buffer_type = traits_type::buffer_type;
-    using shape_type = shape_t<fixed_dim<Lanes>...>;
-    using strides_type =
-        decltype(default_strides(make_shape(fixed_dim_v<Lanes>...)));
+    using shape_type = Lanes;
+    using strides_type = decltype(default_strides(Lanes{}));
 
     using size_impl_type::rank;
     using size_impl_type::shape;
     using size_impl_type::size;
     using size_impl_type::strides;
 
-    static basic_vector<T, Lanes...> from_scalar(T value) noexcept;
+    template <size_t Index> static constexpr auto lane() noexcept {
+        static_assert(Index < Lanes::rank(), "Dimension index out of bounds");
+        return Lanes{}.template at<Index>();
+    }
+
+    static basic_vector<T, Lanes> from_scalar(T value) noexcept;
 
     constexpr basic_vector() noexcept = default;
     constexpr basic_vector(const buffer_type &buffer) noexcept
@@ -88,18 +89,12 @@ class basic_vector
         }
     }
 
-    template <size_t Index> static constexpr size_t lane() noexcept {
-        static_assert(Index < sizeof...(Lanes),
-                      "Dimension index out of bounds");
-        return std::get<Index>(std::make_tuple(Lanes...));
-    }
-
   private:
     buffer_type buffer_;
-    static constexpr std::array<size_t, sizeof...(Lanes)> lanes = {Lanes...};
 };
 
-template <Scalar T, size_t... Lanes> using vector = basic_vector<T, Lanes...>;
+template <Scalar T, size_t... Lanes>
+using vector = basic_vector<T, shape_t<fixed_dim<Lanes>...>>;
 
 template <Scalar T, size_t... Lanes, class U>
 struct replace_element_type<vector<T, Lanes...>, U> {

@@ -19,6 +19,7 @@ using Nncase.IR;
 using Nncase.Runtime;
 using Nncase.Targets;
 using Nncase.TIR;
+using Nncase.Utilities;
 using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.NTT;
@@ -108,12 +109,12 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
     {
         var templateHeader = TensorParams.Length == 0 ? string.Empty : $"template<{string.Join(", ", Enumerable.Range(0, TensorParams.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine;
         var ctype = templateHeader +
-            $"void {VisitEntry.Name}({string.Concat(VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray().Concat(_exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata).Select(Visit).Select(s => $" {s.Type} {s.Name}, ").ToArray()))}std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
+            $"void {VisitEntry.Name}({string.Concat(VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *local_rdata, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
         return new(
             CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, LocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
             CSourceBuiltn.TopoAwareRuntimeDef(TargetOptions, DataAlign, _collective_pool_size),
-            CSourceBuiltn.TopologyDef(TargetOptions));
+            CSourceBuiltn.ModuleTopologyDef(TargetOptions));
     }
 
     /// <inheritdoc/>
@@ -198,16 +199,22 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         };
         var ptype = (PointerType)expr.CheckedDataType;
         var ptypeName = ptype.ElemType.ToC();
+        if (expr.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata)
+        {
+            // Rdata and ThreadLocalRdata are const
+            ptypeName = $"const {ptypeName}";
+        }
+
         string name;
         if (expr.Size is DimConst)
         {
             var spanSize = (ulong)expr.Size.FixedValue / (ulong)ptype.ElemType.SizeInBytes;
-            name = $"std::span<{ptypeName}, {spanSize}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}UL), {spanSize})";
+            name = $"std::span<{ptypeName}, {spanSize}>(reinterpret_cast<{ptypeName} *>({loc} + {start.Name}UL), {spanSize})";
         }
         else
         {
             var spanSize = $"{Visit(expr.Size).Name} / {ptype.ElemType.SizeInBytes}";
-            name = $"std::span<{ptypeName}> (reinterpret_cast<{ptypeName}*>({loc} + {start.Name}UL), {spanSize})";
+            name = $"std::span<{ptypeName}>(reinterpret_cast<{ptypeName} *>({loc} + {start.Name}UL), {spanSize})";
         }
 
         symbol = new(start.Type, name);
@@ -223,19 +230,16 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         }
 
         var dimensions = expr.DistributedType is null ? expr.Dimensions : ((RankedShape)expr.DistributedType.TensorType.Shape).Dimensions;
-        var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x.IsFixed);
-        var isFixedStrides = expr.Strides.AsValueEnumerable().All(x => x.IsFixed);
-        var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
-        var strideSymbols = expr.Strides.AsValueEnumerable().Select(Visit).ToArray();
-
+        var dimensionTypes = dimensions.AsValueEnumerable().Select(x => Visit(x).Type).ToArray();
+        var strideTypes = expr.Strides.AsValueEnumerable().Select(x => Visit(x).Type).ToArray();
         var dtypeStr = expr.ElemType.ToC();
-        var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, true);
-        var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, true);
+        var dimensionStr = $"shape_t<{StringUtility.Join(", ", dimensionTypes)}>";
+        var strideStr = $"strides_t<{StringUtility.Join(", ", strideTypes)}>";
 
         var type = expr.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata || expr.MemSpan.Start is TensorConst
             ? (expr.DistributedType == null
              ? $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> "
-             : $"sharded_tensor_view<{dtypeStr}, {dimensionStr}, {KernelUtility.DistributedToC(expr.DistributedType)}, {strideStr}> ")
+             : $"sharded_tensor_view<{dtypeStr}, {dimensionStr}, {KernelUtility.ShardingToC(expr.DistributedType)}, {strideStr}> ")
             : $"tensor<{dtypeStr}, {dimensionStr}, {strideStr}> ";
 
         symbol = new(type, expr.Name);
@@ -285,7 +289,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                         (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
                         _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
                         var indices = args[0].CheckedShape.Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)[0];
-                        WriteWithProfiler($"tac::tensor_boxing_load_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
+                        WriteWithProfiler($"tac::tensor_boxing_load_sync<fixed_shape_t<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
                     else
                     {
@@ -300,7 +304,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                         (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
                         _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
                         var indices = args[0].CheckedShape.Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)[0];
-                        WriteWithProfiler($"tac::tensor_boxing_store_sync<fixed_shape<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
+                        WriteWithProfiler($"tac::tensor_boxing_store_sync<fixed_shape_t<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
                     else
                     {
@@ -319,7 +323,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
                     break;
                 case TIR.NTT.Im2col im2col:
-                    WriteIndWithProfiler($"im2col({VisitBuffer(args[0], local: true).Name}, fixed_shape<{string.Join(",", im2col.Kernel)}>{{}}, fixed_shape<{string.Join(",", im2col.Stride)}>{{}}, fixed_shape<{string.Join(",", im2col.Padding)}>{{}}, fixed_shape<{string.Join(",", im2col.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", im2col.PadedNums)}>{{}}, {VisitBuffer(args[1], local: true).Name});\n");
+                    WriteIndWithProfiler($"im2col({VisitBuffer(args[0], local: true).Name}, fixed_shape_v<{string.Join(",", im2col.Kernel)}>{{}}, fixed_shape_v<{string.Join(",", im2col.Stride)}>{{}}, fixed_shape_v<{string.Join(",", im2col.Padding)}>{{}}, fixed_shape_v<{string.Join(",", im2col.PackedAxes)}>{{}}, fixed_shape_v<{string.Join(",", im2col.PadedNums)}>{{}}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Pack pack:
                     {
@@ -353,10 +357,10 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
                     break;
                 case TIR.NTT.InstanceNorm instanceNorm:
-                    WriteWithProfiler($"instance_norm({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
+                    WriteWithProfiler($"instance_norm({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape_v<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape_v<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
                     break;
                 case TIR.NTT.ResizeImage resize:
-                    WriteIndWithProfiler($"resize({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape<{string.Join(",", resize.PackedAxes)}>{{}}, fixed_shape<{string.Join(",", resize.PadedNums)}>{{}}, fixed_shape<{string.Join(",", resize.NewSize)}>{{}}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()});\n");
+                    WriteIndWithProfiler($"resize({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", resize.PackedAxes)}>{{}}, fixed_shape_v<{string.Join(",", resize.PadedNums)}>{{}}, fixed_shape_v<{string.Join(",", resize.NewSize)}>{{}}, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()});\n");
                     break;
                 case TIR.NTT.PackedSoftmax packedsoftmax:
                     {
@@ -379,7 +383,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
                     break;
                 case TIR.NTT.Conv2D conv:
-                    WriteIndWithProfiler($"conv2d({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, fixed_shape<{string.Join(",", conv.Stride)}>{{}}, fixed_shape<{string.Join(",", conv.Padding)}>{{}}, fixed_shape<{string.Join(",", conv.Dilation)}>{{}}, {conv.Groups});\n");
+                    WriteIndWithProfiler($"conv2d({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, fixed_shape_v<{string.Join(", ", conv.Stride)}>, fixed_paddings_v<{string.Join(", ", conv.Padding)}>, fixed_shape_v<{string.Join(",", conv.Dilation)}>, {conv.Groups}_dim);\n");
                     break;
                 case TIR.NTT.Matmul matmul:
                     IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.NTT.Matmul>(matmul)
@@ -391,7 +395,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.SUMMA summa:
                     var rdKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => i >= TargetOptions.HierarchyNames.Length - 2 ? "r" + TargetOptions.HierarchyNames[i] : string.Empty + TargetOptions.HierarchyNames[i]));
                     IndentScope.Writer.IndWrite($"{{tac::detail::tensor_reduce_sync_impl<reduce_op::sum, {rdKind}> impl; impl.reduce_group_sync();\n");
-                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape<{string.Join(",", summa.LhsPackedAxes)}>{{}}, fixed_shape<>{{}}, fixed_shape<{string.Join(",", summa.RhsPackedAxes)}>{{}}, fixed_shape<>{{}});\n");
+                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape_v<{string.Join(",", summa.LhsPackedAxes)}>, fixed_shape_v<>, fixed_shape_v<{string.Join(",", summa.RhsPackedAxes)}>, fixed_shape_v<>);\n");
                     IndentScope.Writer.IndWrite($"impl.reduce_group_sync();}}\n");
                     break;
                 case TIR.Memcopy copy:
@@ -421,16 +425,16 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"concat<{concat.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Transpose transpose:
-                    WriteWithProfiler($"transpose<fixed_shape<{string.Join(",", transpose.Perm)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    WriteWithProfiler($"transpose({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_dims_v<{string.Join(",", transpose.Perm)}>);\n");
                     break;
                 case TIR.NTT.Pad pad:
                     WriteWithProfiler($"pad({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitDimOrShape(args[1]).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }});\n");
                     break;
                 case TIR.NTT.Reduce reduce:
-                    WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axes)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<{string.Join(",", reduce.PadedNums)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", reduce.Axes)}>, fixed_shape_v<{string.Join(",", reduce.PackedAxes)}>, fixed_shape_v<{string.Join(",", reduce.PadedNums)}>);\n");
                     break;
                 case TIR.NTT.ReduceArg reduceArg:
-                    WriteWithProfiler($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape<>{{}}, fixed_shape<>{{}});\n");
+                    WriteWithProfiler($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Clamp clamp:
                     string min = clamp.Min is float.NegativeInfinity ? float.MinValue.ToString() : clamp.Min.ToString();
@@ -566,15 +570,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     str = CSourceUtilities.ConvertClamp(op, arguments);
                     break;
                 case IR.Shapes.AsTensor op:
-                    if (expr.CheckedType is TensorType { IsScalar: true })
-                    {
-                        str = $"ntt::tensor<int64_t, ntt::fixed_shape<>>{{ {arguments[0].Name} }}";
-                    }
-                    else
-                    {
-                        str = $"ntt::tensor<int64_t, ntt::fixed_shape<{expr.CheckedShape.Rank}>>{{ {arguments[0].Name} }}";
-                    }
-
+                    str = CSourceUtilities.ConvertAsTensor(op, arguments);
                     break;
                 default:
                     throw new NotSupportedException(expr.Target.GetType().Name);
@@ -717,8 +713,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             var rank = expr.Values[i].CheckedShape.Rank;
             IndentScope.Writer.IndWrite($"output_descs[{i}].data = (std::byte *){value.Name}.elements().data();\n");
             IndentScope.Writer.IndWrite($"output_descs[{i}].size = {value.Name}.size() * sizeof({expr.Values[i].CheckedDataType.ToC()});\n");
-            IndentScope.Writer.IndWrite($"std::copy_n({value.Name}.shape().begin(), {rank}, output_descs[{i}].shape);\n");
-            IndentScope.Writer.IndWrite($"std::copy_n({value.Name}.strides().begin(), {rank}, output_descs[{i}].strides);\n");
+            IndentScope.Writer.IndWrite($"{value.Name}.shape().copy_to(output_descs[{i}].shape);\n");
+            IndentScope.Writer.IndWrite($"{value.Name}.strides().copy_to(output_descs[{i}].strides);\n");
         }
 
         symbol = new(string.Empty, string.Empty);
@@ -746,31 +742,21 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
         var symbol = Visit(buffer);
 
-        if (buffer.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata)
-        {
-            return;
-        }
-
-        IndentScope.Writer.IndWrite($"{symbol.Type} {symbol.Name}");
+        IndentScope.Writer.IndWrite($"auto {symbol.Name}");
         if (buffer.MemSpan.Start is not None)
         {
             var dimensions = buffer.DistributedType is null ? buffer.Dimensions : ((RankedShape)buffer.DistributedType.TensorType.Shape).Dimensions;
-            var isFixedDimensions = dimensions.AsValueEnumerable().All(x => x.IsFixed);
-            var isFixedStrides = buffer.Strides.AsValueEnumerable().All(x => x.IsFixed);
             var spanStr = Visit(buffer.MemSpan).Name;
+            var dimensionValues = dimensions.AsValueEnumerable().Select(x => Visit(x).Name);
+            var strideValues = buffer.Strides.AsValueEnumerable().Select(x => Visit(x).Name);
 
-            if (isFixedDimensions && isFixedStrides)
+            if (buffer.DistributedType is DistributedType distributedType)
             {
-                IndentScope.Writer.IndWrite($"({spanStr})");
+                IndentScope.Writer.IndWrite($"= make_sharded_tensor_view({spanStr}, make_shape({StringUtility.Join(", ", dimensionValues)}), {KernelUtility.ShardingToC(distributedType)}, make_strides({StringUtility.Join(", ", strideValues)}))");
             }
             else
             {
-                var dimensionSymbols = dimensions.AsValueEnumerable().Select(Visit).ToArray();
-                var strideSymbols = buffer.Strides.AsValueEnumerable().Select(Visit).ToArray();
-
-                var dimensionStr = isFixedDimensions ? "{}" : KernelUtility.DimensionsToC(false, dimensionSymbols, false);
-                var strideStr = isFixedStrides ? "{}" : KernelUtility.StridesToC(false, strideSymbols, false);
-                IndentScope.Writer.IndWrite($"({spanStr}, {dimensionStr}, {strideStr})");
+                IndentScope.Writer.IndWrite($"= make_tensor_view({spanStr}, make_shape({StringUtility.Join(", ", dimensionValues)}), make_strides({StringUtility.Join(", ", strideValues)}))");
             }
         }
 

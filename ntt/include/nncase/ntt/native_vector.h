@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 #pragma once
-#include "vector.h"
+#include "detail/vector_storage.h"
 
 #define NTT_BEGIN_DEFINE_NATIVE_VECTOR(element_type_, native_type, ...)        \
     namespace nncase::ntt {                                                    \
-    template <> struct vector_storage_traits<element_type_, __VA_ARGS__> {     \
+    template <>                                                                \
+    struct vector_storage_traits<element_type_, fixed_shape_t<__VA_ARGS__>> {  \
         using buffer_type = native_type;                                       \
         using element_type = element_type_;
 

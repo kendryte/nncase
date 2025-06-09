@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "apply.h"
+#include "nncase/ntt/shape.h"
 #include "primitive_ops.h"
 #include "tensor_traits.h"
 #include "vector.h"
@@ -589,10 +590,9 @@ struct vmma {
 } // namespace nncase::ntt::vector_ops
 
 namespace nncase::ntt {
-template <Scalar T, size_t... Lanes>
-basic_vector<T, Lanes...>
-basic_vector<T, Lanes...>::from_scalar(T value) noexcept {
-    return vector_ops::vload_scalar<basic_vector<T, Lanes...>>()(value);
+template <Scalar T, FixedShape Lanes>
+basic_vector<T, Lanes> basic_vector<T, Lanes>::from_scalar(T value) noexcept {
+    return vector_ops::vload_scalar<basic_vector<T, Lanes>>()(value);
 }
 
 template <bool AccC, bool TransA, Vector T1, Vector T2, Vector TResult>

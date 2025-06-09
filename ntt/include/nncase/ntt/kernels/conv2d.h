@@ -24,10 +24,9 @@ namespace conv_detail {
 template <Tensor TInput, Tensor TWeights, Tensor TBias, Tensor TOutput,
           Dimensions TStride, Paddings TPadding, Dimensions TDilation,
           Dimension TGroups>
-void impl(const TInput &input, const TWeights &weights, const TBias &bias,
-          const TStride &stride, const TPadding &padding,
-          const TDilation &dilation, const TGroups &groups,
-          TOutput &output) noexcept {
+void impl(const TInput &input, TOutput &output, const TWeights &weights,
+          const TBias &bias, const TStride &stride, const TPadding &padding,
+          const TDilation &dilation, const TGroups &groups) noexcept {
     using TElem = typename TInput::element_type;
     const auto in_shape = input.shape();
     const auto out_channels = weights.shape.template at<0>();
@@ -112,11 +111,10 @@ void impl(const TInput &input, const TWeights &weights, const TBias &bias,
 template <Tensor TInput, Tensor TWeights, Tensor TBias, class TOutput,
           Dimensions TStride, Paddings TPadding, Dimensions TDilation,
           Dimension TGroups>
-void conv2d(const TInput &input, const TWeights &weights, const TBias &bias,
-            const TStride &stride, const TPadding &padding,
-            const TDilation &dilation, const TGroups &groups,
-            TOutput &&output) noexcept {
-    conv_detail::impl(input, weights, bias, stride, padding, dilation, groups,
-                      output);
+void conv2d(const TInput &input, TOutput &&output, const TWeights &weights,
+            const TBias &bias, const TStride &stride, const TPadding &padding,
+            const TDilation &dilation, const TGroups &groups) noexcept {
+    conv_detail::impl(input, output, weights, bias, stride, padding, dilation,
+                      groups);
 }
 } // namespace nncase::ntt

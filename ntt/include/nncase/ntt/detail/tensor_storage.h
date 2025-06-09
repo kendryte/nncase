@@ -18,10 +18,10 @@
 #include <vector>
 
 namespace nncase::ntt::detail {
-template <ScalarOrVector T, size_t MaxSize, bool IsView> class tensor_storage;
+template <class T, size_t MaxSize, bool IsView> class tensor_storage;
 
 // fixed tensor
-template <ScalarOrVector T, size_t MaxSize>
+template <class T, size_t MaxSize>
 class tensor_storage<T, MaxSize, false> {
   public:
     using buffer_type = std::array<T, MaxSize>;
@@ -46,7 +46,7 @@ class tensor_storage<T, MaxSize, false> {
 };
 
 // fixed view
-template <ScalarOrVector T, size_t MaxSize>
+template <class T, size_t MaxSize>
 class tensor_storage<T, MaxSize, true> {
   public:
     using buffer_type = std::span<T, MaxSize>;
@@ -66,7 +66,7 @@ class tensor_storage<T, MaxSize, true> {
 };
 
 // dynamic tensor
-template <ScalarOrVector T>
+template <class T>
 class tensor_storage<T, std::dynamic_extent, false> {
   public:
     using buffer_type = std::vector<T>;
@@ -89,7 +89,7 @@ class tensor_storage<T, std::dynamic_extent, false> {
 };
 
 // dynamic view
-template <ScalarOrVector T> class tensor_storage<T, std::dynamic_extent, true> {
+template <class T> class tensor_storage<T, std::dynamic_extent, true> {
   public:
     using const_buffer_type = std::span<const T>;
     using buffer_type = std::span<T>;

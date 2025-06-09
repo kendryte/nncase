@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ntt/arch/cpu/topology_def.h"
 #include "nncase/ntt/dimension.h"
+#include "nncase/ntt/distributed/mesh.h"
 #include "nncase/ntt/padding.h"
 #include "nncase/ntt/shape.h"
 #include "nncase/ntt/tensor.h"
@@ -85,6 +87,46 @@ void test_shape() {
         static_assert(replaced_shape.length() == 32);
         static_assert(
             linear_size(replaced_shape, default_strides(replaced_shape)) == 32);
+    }
+
+    {
+        float arr[] = {1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f};
+        auto buffer = std::span(arr);
+        auto tv = ntt::make_tensor_view(buffer, ntt::fixed_shape_v<2, 4>);
+        static_assert(tv.rank() == 2);
+    }
+
+    {
+        const float arr[] = {1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f};
+        auto buffer = std::span(arr);
+        auto tv = ntt::make_tensor_view(buffer, ntt::fixed_shape_v<2, 4>);
+        static_assert(tv.rank() == 2);
+    }
+
+    {
+        const float buffer[] = {1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f};
+        auto tv = ntt::make_tensor_view(buffer, ntt::fixed_shape_v<2, 4>);
+        static_assert(tv.rank() == 2);
+    }
+
+    {
+        using mesh_type =
+            ntt::distributed::mesh<ntt::distributed::topology::thread, 1>;
+        static_assert(ntt::distributed::program_dim<
+                          ntt::distributed::topology::thread>() == 1);
+        static_assert(
+            ntt::distributed::detail::get_submesh_end<mesh_type,
+                                                      topology::thread>() == 1);
+        static_assert(ntt::distributed::detail::get_submesh_rank<
+                          mesh_type, topology::thread>() == 1);
+        static_assert(
+            ntt::distributed::detail::get_submesh_rank<mesh_type,
+                                                       topology::chip>() == 0);
+        static_assert(ntt::distributed::detail::get_submesh_start<
+                          mesh_type, topology::thread>() == 0);
+        auto program_ids = ntt::distributed::program_ids<>();
+        auto local_index = mesh_type::index_from_program_ids(program_ids);
+        static_assert(local_index.rank() == 1);
     }
 }
 

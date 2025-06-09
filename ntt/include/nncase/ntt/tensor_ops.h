@@ -40,7 +40,7 @@ template <Tensor TTensor> struct tload_scalar {
 } // namespace nncase::ntt::tensor_ops
 
 namespace nncase::ntt {
-template <ScalarOrVector T, Shape TShape, Strides TStrides, bool IsView>
+template <class T, Shape TShape, Strides TStrides, bool IsView>
 basic_tensor<T, TShape, TStrides, IsView>
 basic_tensor<T, TShape, TStrides, IsView>::from_scalar(T value) noexcept {
     return tensor_ops::tload_scalar<basic_tensor<T, TShape, TStrides, false>>()(
