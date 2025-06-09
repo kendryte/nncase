@@ -110,13 +110,9 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen]));
             var tempMask = OrtKISharp.Tensor.MakeTensor(Enumerable.Repeat(1.0f, (int)(queryLen * seqLen)).ToArray(), [queryLen, seqLen]);
 
-            // TODO: history+prefill
-            if (queryLen > 1)
-            {
-                tempMask = OrtKI.Trilu(tempMask, OrtKISharp.Tensor.FromScalar<long>(0), 0);
-                attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen])));
-                attn = attn + OrtKI.Cast(attnBias, (long)attn.DataType);
-            }
+            tempMask = OrtKI.Trilu(tempMask, seqLen - queryLen, 0);
+            attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen])));
+            attn = attn + OrtKI.Cast(attnBias, (long)attn.DataType);
 
             attn = OrtKI.Softmax(attn, -1);
 
