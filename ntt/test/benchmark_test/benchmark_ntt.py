@@ -333,6 +333,10 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                           },
                               'where': {'pack': '2.5', },
                               'scatterND': {'unpack': '1.5', },
+                              'softmax': {'reduceAxis1_noPack': '0.0', 
+                                          'reduceAxis2_noPack': '0.0', 
+                                          'reduceAxis1_packAxis1': '0.0', 
+                                          'reduceAxis2_packAxis2': '0.0'},
                               }
 
     def run(self):
@@ -489,6 +493,10 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                           },
                               'where': {'pack': '16.6', },
                               'scatterND': {'unpack': '4.3'},
+                              'softmax': {'reduceAxis1_noPack': '0.0', 
+                                          'reduceAxis2_noPack': '0.0', 
+                                          'reduceAxis1_packAxis1': '0.0', 
+                                          'reduceAxis2_packAxis2': '0.0'},
                               }
 
     def run(self):
