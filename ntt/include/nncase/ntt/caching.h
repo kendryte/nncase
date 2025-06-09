@@ -190,7 +190,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     auto get_kv_storage_tensor(
         const ranked_shape<TConfig::sharding_axes_t::rank()> &indices) {
         auto storage_ptr = kv_caches_(indices);
-        auto storage_shape = get_kv_storage_shape();
+        auto storage_shape = get_kv_storage_shape(num_blocks());
         auto storage_strides = default_strides(storage_shape);
         auto storage_size = linear_size(storage_shape, storage_strides);
         return kv_storage_tensor_type_t(
@@ -200,12 +200,10 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
             storage_shape, storage_strides);
     }
 
-  private:
-    const kv_storage_shape_t get_default_kv_storage_shape() {
-        auto cfg = config();
-        auto shape = ntt::make_ranked_shape(num_blocks(), cfg.num_layers, 2,
-                                            cfg.block_size, cfg.num_kv_heads,
-                                            cfg.head_dim);
+    static const kv_storage_shape_t get_default_kv_storage_shape(size_t num_blocks) {
+        auto shape = ntt::make_ranked_shape(num_blocks, TConfig::num_layers, 2,
+                                            TConfig::block_size, TConfig::num_kv_heads,
+                                            TConfig::head_dim);
         // pack
         loop<TConfig::packed_axes_t::rank()>([&](auto i) {
             constexpr auto axis = TConfig::packed_axes_t::at(i);
@@ -222,15 +220,16 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         return shape;
     }
 
-    const kv_storage_shape_t get_kv_storage_shape() {
-        auto default_shape = get_default_kv_storage_shape();
+    static const kv_storage_shape_t get_kv_storage_shape(size_t num_blocks) {
+        auto default_shape = get_default_kv_storage_shape(num_blocks);
         auto shape = ntt::ranked_shape<6>();
         for (size_t i = 0; i < 6; i++) {
-            shape[i] = default_shape[config().cache_layout[i]];
+            shape[i] = default_shape[TConfig::cache_layout[i]];
         }
         return shape;
     }
 
+  private:
     template <class T>
     auto get_kv_storage(T block_id)
         requires detail::IsValidIdTensor<id_length, T>
@@ -250,7 +249,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         });
 
         auto storage_ptr = kv_caches_(indices);
-        auto storage_shape = get_kv_storage_shape();
+        auto storage_shape = get_kv_storage_shape(num_blocks());
         auto storage_strides = default_strides(storage_shape);
         auto storage_size = linear_size(storage_shape, storage_strides);
         return kv_storage_tensor_type_t(
@@ -270,7 +269,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         auto cache_layout = config().cache_layout;
         auto default_starts = ntt::make_ranked_shape(block_id_value, layer_id,
                                                      kind, 0, head_id, 0);
-        auto default_shape = get_default_kv_storage_shape();
+        auto default_shape = get_default_kv_storage_shape(num_blocks());
         default_shape[(size_t)paged_kvcache_dim_kind::num_blocks] = 1;
         default_shape[(size_t)paged_kvcache_dim_kind::num_layers] = 1;
         default_shape[(size_t)paged_kvcache_dim_kind::kv] = 1;
@@ -327,7 +326,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         auto block_layout = config().block_layout;
 
         // default_layout = [BlockSize, HeadDim];
-        auto default_storage_shape = get_default_kv_storage_shape();
+        auto default_storage_shape = get_default_kv_storage_shape(num_blocks());
         auto default_layout = ntt::make_ranked_shape(-1, -1, -1, 0, -1, 1);
         auto default_starts = ntt::make_ranked_shape(block_offset_value, 0);
         auto default_shape = ntt::make_ranked_shape(
