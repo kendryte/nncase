@@ -37,10 +37,12 @@ class cpu_runtime_function final : public runtime_function {
 
     cpu_runtime_module &module() const noexcept;
 
-    const std::span<std::byte> local_data(size_t linear_tid) const noexcept {
-        auto &local_data = local_datas_[linear_tid];
-        return std::span((std::byte *)local_data->physical_address().unwrap(),
-                         local_data->size_bytes());
+    const std::span<std::byte>
+    block_local_data(size_t block_id) const noexcept {
+        auto &local_data = local_datas_[block_id];
+        auto mapped_local_data =
+            local_data->map(map_read_write).expect("Failed to map local data");
+        return mapped_local_data.buffer();
     }
 
   protected:

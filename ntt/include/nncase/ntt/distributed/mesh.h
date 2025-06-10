@@ -28,7 +28,7 @@ template <topology Scope, size_t... Dims> struct mesh {
     static constexpr auto shape = fixed_shape_v<Dims...>;
     static constexpr auto rank() noexcept { return shape.rank(); }
 
-    static_assert(shape.length() == topology_size<Scope>(),
+    static_assert(shape.length() == topology_up_size<Scope>(),
                   "Invalid mesh shape.");
 
     template <Shape GlobalShape, ShardIndex<mesh<Scope, Dims...>> TShardIndex>

@@ -60,11 +60,11 @@ template <topology Topology> constexpr auto program_dim() noexcept {
  * @tparam Scope The topology scope for which to get the size.
  */
 template <topology Scope = static_cast<topology>(topology_levels - 1)>
-constexpr auto topology_size() noexcept {
+constexpr auto topology_up_size() noexcept {
     auto impl = []<size_t... Is>(std::index_sequence<Is...>) {
         return (... * program_dim<static_cast<topology>(Is)>());
     };
-    return impl(std::make_index_sequence<static_cast<size_t>(Scope)>());
+    return impl(std::make_index_sequence<static_cast<size_t>(Scope) + 1>());
 }
 
 template <topology Topology> struct program_id_getter {

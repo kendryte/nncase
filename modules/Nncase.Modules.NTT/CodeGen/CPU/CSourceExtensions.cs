@@ -15,7 +15,7 @@ public static class CSourceExtensions
 {
     private static readonly Dictionary<PrimType, string> _primTypeToC = new()
     {
-        { DataTypes.Boolean, "uint8_t" },
+        { DataTypes.Boolean, "bool" },
         { DataTypes.Int8, "int8_t" },
         { DataTypes.Int16, "int16_t" },
         { DataTypes.Int32, "int32_t" },

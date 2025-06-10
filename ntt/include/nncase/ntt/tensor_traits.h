@@ -13,10 +13,54 @@
  * limitations under the License.
  */
 #pragma once
-#include "shape.h"
 #include <cstring>
+#include <type_traits>
 
 namespace nncase::ntt {
+enum dims_usage {
+    normal,
+    shape,
+    strides,
+};
+
+template <class T> struct is_fixed_dim_t : std::false_type {};
+
+template <class T>
+inline constexpr bool is_fixed_dim_v =
+    is_fixed_dim_t<std::remove_cv_t<T>>::value;
+
+template <class T>
+concept DynamicDimension = std::is_integral_v<T>;
+
+template <class T>
+concept Dimension = is_fixed_dim_v<T> || DynamicDimension<T>;
+
+template <class T>
+concept FixedDimension = is_fixed_dim_v<T>;
+
+template <class T>
+concept Dimensions = requires {
+    T::rank();
+    T::fixed_rank();
+    T::dynamic_rank();
+    T::usage();
+};
+
+template <class T>
+concept FixedDimensions = Dimensions<T> && T::is_fixed();
+
+template <class T>
+concept Shape = Dimensions<T> && T::usage() == dims_usage::shape;
+
+template <class T>
+concept FixedShape = Shape<T> && T::is_fixed();
+
+template <class T>
+concept Strides = Dimensions<T> && T::usage() == dims_usage::strides;
+
+template <class T>
+concept FixedStrides = Strides<T> && T::is_fixed();
+
 template <typename T>
 concept Vector = std::decay_t<T>::IsVector;
 

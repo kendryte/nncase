@@ -53,7 +53,8 @@ struct tensor_element_type_from_buffer<void, T[N]> {
 
 template <class T, class TBuffer>
 using tensor_element_type_from_buffer_t =
-    typename tensor_element_type_from_buffer<T, TBuffer>::type;
+    typename tensor_element_type_from_buffer<
+        T, std::remove_reference_t<TBuffer>>::type;
 } // namespace detail
 
 template <class T, Shape TShape, Strides TStrides>
@@ -99,8 +100,7 @@ template <class T, size_t... Lanes> constexpr auto make_unique_fixed_tensor() {
 template <class T = void, class TBuffer, Shape TShape, Strides TStrides>
 constexpr auto make_tensor_view(TBuffer &&buffer, const TShape &shape,
                                 const TStrides &strides) {
-    using element_type = detail::tensor_element_type_from_buffer_t<
-        T, std::remove_reference_t<TBuffer>>;
+    using element_type = detail::tensor_element_type_from_buffer_t<T, TBuffer>;
     return tensor_view<element_type, TShape, TStrides>(
         std::forward<TBuffer>(buffer), shape, strides);
 }
@@ -132,6 +132,8 @@ class basic_tensor
 
   public:
     using element_type = T;
+    using value_type = std::remove_cv_t<T>;
+
     using storage_type =
         detail::tensor_storage<T, max_size_v<TShape, TStrides>, IsView>;
     using buffer_type = typename storage_type::buffer_type;

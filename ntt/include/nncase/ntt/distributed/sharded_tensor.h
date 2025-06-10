@@ -25,6 +25,9 @@ template <class T, Shape TShape, Sharding TSharding, Shape TLocalShape,
           Strides LocalStrides>
 class sharded_tensor_view : public ntt::detail::shape_storage<TShape> {
   public:
+    using element_type = T;
+    using value_type = std::remove_cv_t<T>;
+
     using sharding_type = TSharding;
     using mesh_type = typename TSharding::mesh_type;
     using shape_type = TShape;

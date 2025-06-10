@@ -202,6 +202,7 @@ template <> class u_pack<true, float, vector<float, 8>> {
     }
 };
 
+#if 0
 template <class TIn, class TOut>
 class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
   public:
@@ -215,7 +216,7 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
         constexpr auto lanes = TVec::shape();
         auto out_shape = output.shape();
 
-        apply(out_shape, [&](auto index) {
+        ntt::apply(out_shape, [&](auto index) {
             auto out_index = slice_index<out_rank>(index);
             auto in_index = slice_index<in_rank>(index);
             loop<2>([&](auto i) {
@@ -402,6 +403,7 @@ class u_unpack_2d_fixed<low_axis_stride, 8, high_axis_stride, 8, TIn, float,
         }
     }
 };
+#endif
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {

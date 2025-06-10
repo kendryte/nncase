@@ -15,10 +15,7 @@
 #pragma once
 #include "../half.h"
 #include "tensor_traits.h"
-#include "vector.h"
 #include <cmath>
-#include <cstddef>
-#include <cstdint>
 #include <type_traits>
 
 namespace nncase::ntt {

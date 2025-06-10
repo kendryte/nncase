@@ -15,7 +15,6 @@
  */
 #pragma once
 #include "dimension.h"
-#include <cstddef>
 #include <utility>
 
 namespace nncase::ntt {

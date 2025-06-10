@@ -142,7 +142,11 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
 
             // Set distributed pointers
             const auto program_ids = make_shape(params.cid, params.bid, tid);
-            auto local_data = params.local_data;
+            auto block_local_data = params.block_local_data;
+            const auto local_data_size =
+                block_local_data.size_bytes() / params.tdim;
+            auto local_data = block_local_data.subspan(local_data_size * tid,
+                                                       local_data_size);
             ntt::distributed::detail::global_local_rdata_ptr(program_ids)(
                 0_dim) = (uintptr_t)local_rdata.data();
             ntt::distributed::detail::global_local_rdata_ptr(program_ids)(

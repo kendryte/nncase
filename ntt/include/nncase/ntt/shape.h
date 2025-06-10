@@ -26,12 +26,6 @@
 #include <utility>
 
 namespace nncase::ntt {
-enum dims_usage {
-    normal,
-    shape,
-    strides,
-};
-
 namespace detail {
 template <class T> struct cannonical_dim_type {
     using type = std::conditional_t<FixedDimension<std::decay_t<T>>,
@@ -218,9 +212,6 @@ struct dims_base {
         }
     }
 
-    constexpr auto begin() const noexcept { return iterator(*this, 0); }
-    constexpr auto end() const noexcept { return iterator(*this, rank()); }
-
     constexpr auto last() const noexcept { return at<rank() - 1>(); }
     constexpr auto &last() noexcept { return at<rank() - 1>(); }
 
@@ -258,19 +249,16 @@ struct dims_base {
     }
 
     template <Dimension... UDims>
-    constexpr Derived<TDims..., UDims...>
-    append(const UDims &...values) const noexcept {
-        auto append_impl = [this]<size_t... I>(const UDims &...values,
-                                               std::index_sequence<I...>) {
+    constexpr auto append(const UDims &...values) const noexcept {
+        auto append_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
             return make_dims_impl<Derived>(at(fixed_dim_v<I>)..., values...);
         };
-        return append_impl(values..., std::make_index_sequence<rank()>());
+        return append_impl(std::make_index_sequence<rank()>());
     }
 
     template <Dimension... UDims>
-    constexpr Derived<TDims..., UDims...>
-    concat(const Derived<UDims...> &other) const noexcept {
+    constexpr auto concat(const Derived<UDims...> &other) const noexcept {
         auto concat_impl = [this, &other]<size_t... I, size_t... U>(
                                std::index_sequence<I...>,
                                std::index_sequence<U...>) {
@@ -283,14 +271,12 @@ struct dims_base {
     }
 
     template <Dimension... UDims>
-    constexpr Derived<UDims..., TDims...>
-    prepend(const UDims &...values) const noexcept {
-        auto prepend_impl = [this]<size_t... I>(const UDims &...values,
-                                                std::index_sequence<I...>) {
+    constexpr auto prepend(const UDims &...values) const noexcept {
+        auto prepend_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
             return make_dims_impl<Derived>(values..., at(fixed_dim_v<I>)...);
         };
-        return prepend_impl(values..., std::make_index_sequence<rank()>());
+        return prepend_impl(std::make_index_sequence<rank()>());
     }
 
     template <size_t Index> constexpr auto remove_at() const noexcept {
@@ -319,6 +305,15 @@ struct dims_base {
             return make_dims_impl<Derived>(at<rank() - 1 - I>()...);
         };
         return reverse_impl(std::make_index_sequence<rank()>());
+    }
+
+    template <FixedDimensions TIndicies>
+    constexpr auto select(const TIndicies &indicies) const noexcept {
+        auto select_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return make_dims_impl<Derived>(at(indicies.at(fixed_dim_v<I>))...);
+        };
+        return select_impl(std::make_index_sequence<TIndicies::rank()>());
     }
 
     template <size_t Start, size_t Rank = rank() - Start>
@@ -372,29 +367,6 @@ struct strides_t : detail::dims_base<dims_usage::strides, strides_t, TDims...> {
     using base_t = detail::dims_base<dims_usage::strides, strides_t, TDims...>;
     using base_t::base_t;
 };
-
-template <class T>
-concept Dimensions = requires {
-    T::rank();
-    T::fixed_rank();
-    T::dynamic_rank();
-    T::usage();
-};
-
-template <class T>
-concept FixedDimensions = Dimensions<T> && T::is_fixed();
-
-template <class T>
-concept Shape = Dimensions<T> && T::usage() == dims_usage::shape;
-
-template <class T>
-concept FixedShape = Shape<T> && T::is_fixed();
-
-template <class T>
-concept Strides = Dimensions<T> && T::usage() == dims_usage::strides;
-
-template <class T>
-concept FixedStrides = Strides<T> && T::is_fixed();
 
 template <Dimensions TDims> struct empty_dims_alike_type;
 
@@ -548,9 +520,9 @@ constexpr auto unravel_index(const TOffset &offset,
     return shape.reverse().aggregate(
         std::make_tuple(offset, TDimensions<>{}),
         [&](auto acc, auto dim, [[maybe_unused]] auto axis) {
-            auto [remain, index] = acc;
-            auto cnt_index = remain % dim;
-            remain = remain / dim;
+            auto [last_remain, index] = acc;
+            auto cnt_index = last_remain % dim;
+            auto remain = last_remain / dim;
             return std::make_tuple(remain, index.prepend(cnt_index));
         },
         [](auto acc) { return std::get<1>(acc); });

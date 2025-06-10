@@ -17,3 +17,4 @@
 #include "distributed/sharded_tensor.h"
 #include "distributed/sharding.h"
 #include "distributed/topology.h"
+#include "kernels/reshard.h"

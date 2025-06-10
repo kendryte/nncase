@@ -13,10 +13,11 @@
  * limitations under the License.
  */
 #pragma once
+#include "primitive_ops.h"
+#include "tensor_traits.h"
 #include <algorithm>
 #include <cstdint>
 #include <type_traits>
-#include <utility>
 
 namespace nncase::ntt {
 using dim_t = int64_t;
@@ -30,23 +31,8 @@ template <dim_t Value> inline constexpr fixed_dim<Value> fixed_dim_v{};
 inline constexpr fixed_dim<0> dim_zero{};
 inline constexpr fixed_dim<1> dim_one{};
 
-template <class T> struct is_fixed_dim_t : std::false_type {};
-
 template <dim_t Value>
 struct is_fixed_dim_t<fixed_dim<Value>> : std::true_type {};
-
-template <class T>
-inline constexpr bool is_fixed_dim_v =
-    is_fixed_dim_t<std::remove_cv_t<T>>::value;
-
-template <class T>
-concept DynamicDimension = std::is_integral_v<T>;
-
-template <class T>
-concept Dimension = is_fixed_dim_v<T> || DynamicDimension<T>;
-
-template <class T>
-concept FixedDimension = is_fixed_dim_v<T>;
 
 template <Dimension T> constexpr auto dim_value(const T &dim) noexcept {
     if constexpr (is_fixed_dim_v<std::decay_t<T>>) {
@@ -81,9 +67,15 @@ template <FixedDimension TDim> constexpr auto operator-(const TDim &) noexcept {
 }
 
 #define DEFINE_NTT_DIM_BINARY_OP(op)                                           \
-    template <FixedDimension TLhs, FixedDimension TRhs>                        \
-    constexpr auto operator op(const TLhs &, const TRhs &) noexcept {          \
-        return fixed_dim_v<TLhs::value op TRhs::value>;                        \
+    template <Dimension TLhs, Dimension TRhs>                                  \
+        requires(FixedDimension<TLhs> || FixedDimension<TRhs>)                 \
+    constexpr auto operator op([[maybe_unused]] const TLhs &lhs,               \
+                               [[maybe_unused]] const TRhs &rhs) noexcept {    \
+        if constexpr (FixedDimension<TLhs> && FixedDimension<TRhs>) {          \
+            return fixed_dim_v<TLhs::value op TRhs::value>;                    \
+        } else {                                                               \
+            return dim_value(lhs) op dim_value(rhs);                           \
+        }                                                                      \
     }
 
 DEFINE_NTT_DIM_BINARY_OP(+)
@@ -95,9 +87,16 @@ DEFINE_NTT_DIM_BINARY_OP(%)
 #undef DEFINE_NTT_DIM_BINARY_OP
 
 #define DEFINE_NTT_DIM_COMPARE_OP(op)                                          \
-    template <FixedDimension TLhs, FixedDimension TRhs>                        \
-    constexpr auto operator op(const TLhs &, const TRhs &) noexcept {          \
-        return std::integral_constant<bool, (TLhs::value op TRhs::value)>{};   \
+    template <Dimension TLhs, Dimension TRhs>                                  \
+        requires(FixedDimension<TLhs> || FixedDimension<TRhs>)                 \
+    constexpr auto operator op([[maybe_unused]] const TLhs &lhs,               \
+                               [[maybe_unused]] const TRhs &rhs) noexcept {    \
+        if constexpr (FixedDimension<TLhs> && FixedDimension<TRhs>) {          \
+            return std::integral_constant<bool,                                \
+                                          (TLhs::value op TRhs::value)>{};     \
+        } else {                                                               \
+            return dim_value(lhs) op dim_value(rhs);                           \
+        }                                                                      \
     }
 
 DEFINE_NTT_DIM_COMPARE_OP(==)
@@ -109,9 +108,15 @@ DEFINE_NTT_DIM_COMPARE_OP(>=)
 
 #undef DEFINE_NTT_DIM_COMPARE_OP
 
-template <FixedDimension TNum, FixedDimension TDenom>
-constexpr auto ceil_div(const TNum &, const TDenom &) noexcept {
-    return fixed_dim_v<(TNum::value + TDenom::value - 1) / TDenom::value>;
+template <Dimension TNum, Dimension TDenom>
+    requires(FixedDimension<TNum> || FixedDimension<TDenom>)
+constexpr auto ceil_div([[maybe_unused]] const TNum &num,
+                        [[maybe_unused]] const TDenom &denom) noexcept {
+    if constexpr (FixedDimension<TNum> && FixedDimension<TDenom>) {
+        return fixed_dim_v<(TNum::value + TDenom::value - 1) / TDenom::value>;
+    } else {
+        return (dim_value(num) + dim_value(denom) - 1) / dim_value(denom);
+    }
 }
 
 template <Dimension TDim, Dimension TLowerBound, Dimension TUpperBound>

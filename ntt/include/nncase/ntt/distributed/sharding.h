@@ -16,7 +16,6 @@
 #include "../dimension.h"
 #include "../shape.h"
 #include "mesh.h"
-#include "topology.h"
 #include <cstddef>
 #include <optional>
 #include <tuple>
@@ -58,7 +57,10 @@ inline constexpr broadcast B;
 // Split
 template <size_t... Axes> struct split {
     static constexpr auto axes = fixed_shape_v<Axes...>;
-    static constexpr auto divider = axes.length();
+
+    template <class Mesh> static constexpr auto divider() {
+        return Mesh::shape.select(axes).length();
+    }
 
     template <class Mesh, Dimension TDim, ShardIndex<Mesh> TShardIndex>
     static constexpr auto
@@ -69,37 +71,34 @@ template <size_t... Axes> struct split {
         auto subshard_index = make_shape(shard_index[fixed_dim_v<Axes>]...);
         auto submesh_linear_offset =
             ntt::linear_offset(subshard_index, submesh_shape);
-        auto max_offset = max_shard_dim(global_dim) * submesh_linear_offset;
+        auto max_offset =
+            max_shard_dim<Mesh>(global_dim) * submesh_linear_offset;
         return ntt::min(max_offset, global_dim);
     }
 
     template <class Mesh, Dimension TDim>
     static constexpr auto
     try_shard_dim_without_shard_index(const TDim &global_dim) noexcept {
-        if constexpr (global_dim % divider == 0) {
-            return std::make_optional(global_dim / divider);
-        } else {
-            return std::nullopt;
-        }
+        const auto remainder = global_dim % divider<Mesh>();
+        return ntt::where(remainder == dim_zero, global_dim / divider<Mesh>(),
+                          -1_dim);
     }
 
     template <class Mesh, Dimension TDim, ShardIndex<Mesh> TShardIndex>
-    static constexpr auto
-    shard_dim(const TDim &global_dim,
-              [[maybe_unused]] const TShardIndex &shard_index) noexcept {
-        constexpr auto shard_dim_v =
+    static constexpr auto shard_dim(const TDim &global_dim,
+                                    const TShardIndex &shard_index) noexcept {
+        const auto shard_dim_v =
             try_shard_dim_without_shard_index<Mesh>(global_dim);
-        if constexpr (shard_dim_v.has_value()) {
-            return shard_dim_v.value();
-        } else {
+        return ntt::where(shard_dim_v != -1_dim, shard_dim_v, [&] {
             auto offset = global_offset<Mesh>(global_dim, shard_index);
-            return ntt::min(global_dim - offset, max_shard_dim(global_dim));
-        }
+            return ntt::min(global_dim - offset,
+                            max_shard_dim<Mesh>(global_dim));
+        }());
     }
 
-    template <Dimension TDim>
+    template <class Mesh, Dimension TDim>
     static constexpr auto max_shard_dim(const TDim &global_dim) noexcept {
-        return ntt::ceil_div(global_dim, divider);
+        return ntt::ceil_div(global_dim, divider<Mesh>());
     }
 };
 
@@ -121,7 +120,9 @@ template <class Mesh, class... AxisPolicies> struct sharding {
     using axis_policies_type = std::tuple<AxisPolicies...>;
     using dynamic_offset_t = dynamic_shape_t<sizeof...(AxisPolicies)>;
 
-    static constexpr size_t axis_policies_size = sizeof...(AxisPolicies);
+    static constexpr auto rank() {
+        return fixed_dim_v<sizeof...(AxisPolicies)>;
+    }
 
     constexpr sharding(const AxisPolicies &...axis_policies) noexcept
         : axis_policies(axis_policies...) {}
@@ -138,7 +139,7 @@ template <class Mesh, class... AxisPolicies> struct sharding {
         auto get_all_dims = [&]<size_t... Is>(std::index_sequence<Is...>) {
             return make_shape(get_dim.template operator()<Is>()...);
         };
-        return get_all_dims(std::make_index_sequence<axis_policies_size>{});
+        return get_all_dims(std::make_index_sequence<rank()>{});
     }
 
     template <Shape GlobalShape, ShardIndex<Mesh> TShardIndex>
@@ -152,7 +153,7 @@ template <class Mesh, class... AxisPolicies> struct sharding {
         auto get_all_dims = [&]<size_t... Is>(std::index_sequence<Is...>) {
             return make_shape(get_dim.template operator()<Is>()...);
         };
-        return get_all_dims(std::make_index_sequence<axis_policies_size>{});
+        return get_all_dims(std::make_index_sequence<rank()>{});
     }
 
     std::tuple<AxisPolicies...> axis_policies;
@@ -167,8 +168,7 @@ namespace detail {
 template <size_t Axis, class Sharding, class GlobalShape>
 constexpr auto get_local_shard_dim(const Sharding &sharding,
                                    const GlobalShape &shape) noexcept {
-    static_assert(GlobalShape::rank() == Sharding::axis_policies_size,
-                  "Invalid sharding.");
+    static_assert(GlobalShape::rank() == Sharding::rank(), "Invalid sharding.");
 
     auto local_dim = shape.at(Axis);
     return std::get<Axis>(sharding.axis_policies)
@@ -191,6 +191,63 @@ constexpr auto local_shard_shape(const Sharding &sharding,
         return make_ranked_shape(get_local_shard_dim<Axes>(sharding, shape)...);
     };
     return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
+}
+
+template <Sharding TSharding>
+constexpr auto mesh_axes_mask_of_split_shard_policies() noexcept {
+    using mesh_type = typename TSharding::mesh_type;
+    return generate_shape<mesh_type::rank()>([](auto mesh_axis) {
+        return make_index_shape<TSharding::rank()>().aggregate(
+            dim_zero, [&](auto last_mask, auto axis, auto) {
+                using policy_t = std::tuple_element_t<
+                    axis, typename TSharding::axis_policies_type>;
+                if constexpr (distributed::SplitShardPolicy<policy_t>) {
+                    if constexpr (policy_t::axes.contains(mesh_axis)) {
+                        return dim_one;
+                    } else {
+                        return last_mask;
+                    }
+                } else {
+                    return last_mask;
+                }
+            });
+    });
+}
+
+template <Sharding TSharding>
+constexpr auto mesh_axes_of_non_split_shard_policies() noexcept {
+    using mesh_type = typename TSharding::mesh_type;
+    constexpr auto axes_mask =
+        mesh_axes_mask_of_split_shard_policies<TSharding>();
+    return axes_mask.aggregate(
+        fixed_shape_v<>, [&](auto last_axes, auto mask, auto mesh_axis) {
+            return ntt::where(mask == dim_zero, last_axes.append(mesh_axis),
+                              last_axes);
+        });
+}
+
+template <Sharding TSharding>
+constexpr auto tensor_axes_mask_of_split_shard_policies() noexcept {
+    using mesh_type = typename TSharding::mesh_type;
+    return generate_shape<TSharding::rank()>([](auto axis) {
+        using policy_t =
+            std::tuple_element_t<axis, typename TSharding::axis_policies_type>;
+        if constexpr (distributed::SplitShardPolicy<policy_t>) {
+            return dim_one;
+        } else {
+            return dim_zero;
+        }
+    });
+}
+
+template <Sharding TSharding>
+constexpr auto tensor_axes_of_non_split_shard_policies() noexcept {
+    constexpr auto axes_mask =
+        tensor_axes_mask_of_split_shard_policies<TSharding>();
+    return axes_mask.aggregate(fixed_shape_v<>, [&](auto last_axes, auto mask,
+                                                    auto axis) {
+        return ntt::where(mask == dim_zero, last_axes.append(axis), last_axes);
+    });
 }
 } // namespace detail
 } // namespace nncase::ntt::distributed

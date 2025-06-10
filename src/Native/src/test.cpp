@@ -15,6 +15,8 @@
 #include "nncase/ntt/arch/cpu/topology_def.h"
 #include "nncase/ntt/dimension.h"
 #include "nncase/ntt/distributed/mesh.h"
+#include "nncase/ntt/distributed/sharded_tensor.h"
+#include "nncase/ntt/distributed/sharding.h"
 #include "nncase/ntt/padding.h"
 #include "nncase/ntt/shape.h"
 #include "nncase/ntt/tensor.h"
@@ -108,10 +110,14 @@ void test_shape() {
         auto tv = ntt::make_tensor_view(buffer, ntt::fixed_shape_v<2, 4>);
         static_assert(tv.rank() == 2);
     }
+}
 
+void test_sharding() {
+    // local_index
     {
         using mesh_type =
             ntt::distributed::mesh<ntt::distributed::topology::thread, 1>;
+
         static_assert(ntt::distributed::program_dim<
                           ntt::distributed::topology::thread>() == 1);
         static_assert(
@@ -127,6 +133,42 @@ void test_shape() {
         auto program_ids = ntt::distributed::program_ids<>();
         auto local_index = mesh_type::index_from_program_ids(program_ids);
         static_assert(local_index.rank() == 1);
+
+        auto sharding = ntt::distributed::make_sharding<mesh_type>(
+            ntt::distributed::shard_policy::B,
+            ntt::distributed::shard_policy::B);
+
+        auto global_shape = ntt::fixed_shape_v<2, 4>;
+        constexpr auto local_shape =
+            sharding.shard_shape(global_shape, local_index);
+        static_assert(local_shape == ntt::fixed_shape_v<2, 4>);
+
+        const float buffer[] = {1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f};
+        auto s_tensor = ntt::distributed::make_sharded_tensor_view(
+            buffer, global_shape,
+            ntt::distributed::make_sharding<mesh_type>(
+                ntt::distributed::shard_policy::B,
+                ntt::distributed::shard_policy::B),
+            ntt::fixed_strides_v<4, 1>);
+        static_assert(s_tensor.local().shape() == ntt::fixed_shape_v<2, 4>);
+    }
+
+    // Sharding
+    {
+        using mesh_type =
+            ntt::distributed::mesh<ntt::distributed::topology::thread, 1, 1, 1>;
+
+        auto sharding = ntt::distributed::make_sharding<mesh_type>(
+            ntt::distributed::shard_policy::B,
+            ntt::distributed::shard_policy::S<2>(),
+            ntt::distributed::shard_policy::B);
+        using sharding_type = std::remove_cv_t<decltype(sharding)>;
+        static_assert(
+            ntt::distributed::detail::mesh_axes_mask_of_split_shard_policies<
+                sharding_type>() == ntt::fixed_shape_v<0, 0, 1>);
+        static_assert(
+            ntt::distributed::detail::mesh_axes_of_non_split_shard_policies<
+                sharding_type>() == ntt::fixed_shape_v<0, 1>);
     }
 }
 

@@ -72,14 +72,14 @@ result<void> cpu_runtime_function::initialize_core(
 
             // Allocate local datas
             options.alignment = header.local_data_align;
-            auto threads_count =
-                module().cdim() * module().bdim() * module().tdim();
-            local_datas_.resize(threads_count);
-            for (size_t i = 0; i < threads_count; i++) {
-                try_var(buffer, buffer_allocator::host().allocate(
-                                    header.local_data_pool_size, options));
-                try_set(local_datas_[i],
-                        output_buffer.template as<host_buffer_t>());
+            auto blocks_count = module().cdim() * module().bdim();
+            local_datas_.resize(blocks_count);
+            for (size_t i = 0; i < blocks_count; i++) {
+                try_var(buffer,
+                        buffer_allocator::host().allocate(
+                            header.local_data_pool_size * module().tdim(),
+                            options));
+                try_set(local_datas_[i], buffer.template as<host_buffer_t>());
             }
             return ok();
         }));
