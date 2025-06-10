@@ -200,7 +200,7 @@ void register_runtime_llm_ffi(py::module &m) {
         .def_property_readonly(
             "config",
             [](const llm::paged_attention_kv_cache_node &self) {
-                return self.config().detach();
+                return llm::paged_attention_config(self.config());
             })
         .def_property(
             "num_seqs",

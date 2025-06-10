@@ -138,7 +138,6 @@ def test_paged_attention_config():
 
 def test_huggface_options():
     opt = nncase.HuggingFaceOptions()
-    opt.use_cache = True
     opt.max_model_len = 1234
     cfg = nncase.PagedAttentionConfig(1, 2, 3, np.dtype(np.float32), 16)
     opt.config = cfg
@@ -366,6 +365,45 @@ def test_paged_attention_scheduler():
             nncase._nncase.AttentionDimKind.Dim],
         [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head, nncase._nncase.AttentionDimKind.Dim])
     assert len(test_func.parameters) == 1 + 1 + config.num_layers * 2
+
+
+class config_wrapper:
+    def __init__(self):
+        num_layers = 1
+        num_kv_heads = 8
+        head_dim = 64
+        block_size = 256
+        num_blocks = 256
+        max_sessions = 16
+        max_model_len = (block_size * num_blocks) // max_sessions
+        kv_type = np.dtype(np.float16)
+
+        config = nncase.PagedAttentionConfig(
+            num_layers,
+            num_kv_heads,
+            head_dim,
+            kv_type,
+            block_size,
+            [nncase.PagedKVCacheDimKind.NumBlocks,
+             nncase.PagedKVCacheDimKind.NumLayers,
+             nncase.PagedKVCacheDimKind.NumKVHeads,
+             nncase.PagedKVCacheDimKind.KV,
+             nncase.PagedKVCacheDimKind.BlockSize,
+             nncase.PagedKVCacheDimKind.HeadDim],
+            [nncase.PagedKVCacheDimKind.HeadDim],
+            [128 // 2],
+            [nncase.PagedKVCacheDimKind.NumKVHeads, nncase.PagedKVCacheDimKind.NumBlocks],
+            [[1], [2, 3]])
+        self.kv_cache = nncase.PagedAttentionKVCache(config)
+
+    def config(self):
+        return self.kv_cache.config
+
+
+def test_paged_attention_scheduler_construction():
+    wrapper = config_wrapper()
+    rt_scheduler = nncase.PagedAttentionScheduler(wrapper.config(), 256, 512, [1, 2, 8, 4, 4])
+    assert rt_scheduler is not None
 
 
 def test_paged_attention_scheduler_distributed():
