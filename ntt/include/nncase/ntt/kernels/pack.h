@@ -148,7 +148,7 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
             const auto N = rest_dims.length();
             ntt::u_pack(in_p, M, N, m_strides, out_p);
         } else if constexpr (Axis + 1 < TOut::rank()) {
-            for (size_t i = 0; i < TOut::shape()[axis_v]; i++) {
+            for (size_t i = 0; i < output.shape()[axis_v]; i++) {
                 apply_transpose<Axis + 1>(input, conti_dims, M, m_strides,
                                           output, in_p, out_p);
                 in_p += input.strides()[axis_v];

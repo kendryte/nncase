@@ -8,24 +8,40 @@
 4. pack轴: 不同维度
 """
 
+
+
 import itertools
 from typing import List, Tuple
+from collections import namedtuple
+
+
+# 定义Continuity复合数据结构
+# is_contiguous: bool - 是否连续
+# non_contiguous_dim: int or None - 在哪个维度上不连续
+# big_tensor_op: str or None - 如何构造大Tensor的维度 ('*2', '+5')
+Continuity = namedtuple('Continuity', ['is_contiguous', 'non_contiguous_dim', 'big_tensor_op'])
 
 class PackTestGenerator:
     def __init__(self):
         self.test_cases = []
         
-    def generate_test_name(self, shape_type, vector_dim, continuity, pack_axis, ndim):
+    def generate_test_name(self, shape_type, vector_dim, continuity: Continuity, pack_axis_str, ndim):
         """生成测试名称"""
         parts = []
         parts.append(shape_type)
         parts.append(f"{vector_dim}D_vector")
-        parts.append(continuity)
-        parts.append(f"pack_axis_{pack_axis}")
+        
+        if continuity.is_contiguous:
+            parts.append("contiguous")
+        else:
+            op_str = "mul2" if continuity.big_tensor_op == "*2" else "add5"
+            parts.append(f"non_contiguous_dim{continuity.non_contiguous_dim}_{op_str}")
+
+        parts.append(f"pack_axis_{pack_axis_str}")
         parts.append(f"{ndim}D")
         return "_".join(parts)
     
-    def generate_shape_init(self, shape_type, dims, var_name="shape"):
+    def generate_shape_init(self, shape_type, dims):
         """生成shape初始化代码"""
         if shape_type == "fixed":
             dim_strs = [f"{d}" for d in dims]
@@ -39,26 +55,28 @@ class PackTestGenerator:
         code = []
         shape_expr = self.generate_shape_init(shape_type, dims)
         
-        if continuity == "contiguous":
+        if continuity.is_contiguous:
             code.append(f"alignas(32) auto {var_name} = ntt::make_tensor<float>({shape_expr});")
             code.append(f"NttTest::init_tensor({var_name}, min_input, max_input);")
         else:  # non-contiguous
             # 创建一个更大的tensor，然后创建view
             big_dims = dims.copy()
-            # 在倒数第二维上扩大 - 需要处理字符串格式
-            if len(big_dims) >= 2:
-                big_dims[-2] = f"{big_dims[-2]} * 2"
+            dim_to_change = continuity.non_contiguous_dim
+            op = continuity.big_tensor_op
+            
+            if dim_to_change is not None and op is not None and dim_to_change < len(big_dims):
+                 big_dims[dim_to_change] = f"({big_dims[dim_to_change]}) {op}"
+
             big_shape_expr = self.generate_shape_init(shape_type, big_dims)
             
-            code.append(f"// 创建非连续tensor")
+            code.append(f"// Create non-contiguous tensor (on dimension {dim_to_change})")
             code.append(f"alignas(32) auto big_tensor = ntt::make_tensor<float>({big_shape_expr});")
             code.append(f"NttTest::init_tensor(big_tensor, min_input, max_input);")
             code.append(f"")
             code.append(f"auto {var_name} = ntt::make_tensor_view<float>(")
             code.append(f"    big_tensor.elements().data(),")
             code.append(f"    {shape_expr},")
-            code.append(f"    big_tensor.strides()");
-            code.append(f");")
+            code.append(f"    big_tensor.strides());")
         
         return code
     
@@ -236,6 +254,10 @@ class PackTestGenerator:
     
     def generate_all_tests(self):
         """生成所有测试组合"""
+        """未覆盖的测试范围:
+        1. 被pack的维度不是P的整数倍，需要被填充的情况
+        2. 在使用tensor_view时，只测试了dim[-2]被隔开的情况。
+        """
         shape_types = ["fixed", "dynamic"]
         vector_dims = [1, 2]
         continuities = ["contiguous", "non_contiguous"]
@@ -246,6 +268,21 @@ class PackTestGenerator:
             4: [[3], [2], [1], [0], [1, 2]],  # 4D
             5: [[4], [3], [2], [1], [0], [2, 3]]  # 5D
         }
+
+        # 完整的连续性测试组合，主要用于4D
+        full_continuities = [
+            Continuity(is_contiguous=True, non_contiguous_dim=None, big_tensor_op=None),
+            Continuity(is_contiguous=False, non_contiguous_dim=2, big_tensor_op="+7"),
+            Continuity(is_contiguous=False, non_contiguous_dim=2, big_tensor_op="*2"),
+            Continuity(is_contiguous=False, non_contiguous_dim=1, big_tensor_op="*2"),
+            Continuity(is_contiguous=False, non_contiguous_dim=1, big_tensor_op="+7"),
+        ]
+
+        # 简化的连续性测试组合，用于非4D
+        simple_continuities = [
+            Continuity(is_contiguous=True, non_contiguous_dim=None, big_tensor_op=None),
+            Continuity(is_contiguous=False, non_contiguous_dim=1, big_tensor_op="*2"), # 选择一个代表性的非连续情况
+        ]
         
         code = []
         
@@ -253,18 +290,24 @@ class PackTestGenerator:
         code.append(self.generate_header())
         
         # 生成测试用例
-        for ndim in [3, 4]:  # 先生成3D和4D的测试
-            for shape_type, vector_dim, continuity in itertools.product(shape_types, vector_dims, continuities):
+        for ndim in [3, 4, 5]:
+            # 根据ndim选择连续性测试策略
+            current_continuities = full_continuities if ndim == 4 else simple_continuities
+
+            for shape_type, vector_dim, continuity in itertools.product(shape_types, vector_dims, current_continuities):
                 for pack_axes in pack_axes_options[ndim]:
                     # 跳过某些不合理的组合
-                    if vector_dim == 2 and len(pack_axes) == 1:
-                        continue  # 2D vector需要pack至少2个轴
+                    if vector_dim == 2 and len(pack_axes) < 2:
+                        continue
                     if vector_dim == 1 and len(pack_axes) > 1:
-                        continue  # 1D vector只能pack 1个轴
+                        continue
                     
+                    # 非连续测试只在pack的维度之外进行
+                    if not continuity.is_contiguous and continuity.non_contiguous_dim in pack_axes:
+                        continue
+
                     test_code = self.generate_test_case(shape_type, vector_dim, continuity, pack_axes, ndim)
-                    code.append(test_code)
-        
+                    code.append(test_code)       
         # 生成main函数
         code.append(self.generate_footer())
         

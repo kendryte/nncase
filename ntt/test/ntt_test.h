@@ -286,6 +286,7 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
     return pass;
 }
 
+
 template <typename T, typename Shape, typename Stride, size_t N>
 bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
                     ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &rhs,
@@ -338,6 +339,38 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
     }
     return pass;
 }
+
+template <ntt::TensorOrVector TTensor>
+void print_tensor(TTensor &lhs, std::string name) {
+    std::cout << name << std::endl;
+
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        std::cout << lhs(index) << " ";
+    });
+
+    std::cout << std::endl;
+}
+
+template <typename T, typename Shape, typename Stride, size_t N>
+void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
+                    std::string name) {
+    std::cout << name << std::endl;
+
+
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        const ntt::vector<T, N> lvalue = lhs(index);
+
+        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
+            auto d1 = (double)(lvalue(idx));
+            std::cout << d1 << " ";
+        });
+
+    });
+
+    std::cout << std::endl;
+}
+
+
 
 template <typename T> T ulp(T x) {
     x = std::fabs(x);
