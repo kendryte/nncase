@@ -267,14 +267,13 @@ template <Tensor TIn, typename TOut, FixedDimensions TPackedAxes,
 void resize(const TIn &input, TOut &&output,
             [[maybe_unused]] const TPackedAxes &packedAxes,
             [[maybe_unused]] const TPadedNums &padedNums,
-            [[maybe_unused]] const TNewSize &new_size,
-            image_resize_mode_t resize_mode,
+            const TNewSize &new_size, image_resize_mode_t resize_mode,
             image_resize_transformation_mode_t transformation_mode,
             image_resize_nearest_mode_t nearest_mode) {
     if (resize_mode == image_resize_mode_t::bilinear) {
         resize_detail::resize_bilinear(
             input.elements().data(), output.elements().data(), input.shape(),
-            input.strides(), output.strides(), TNewSize::at(2), TNewSize::at(3),
+            input.strides(), output.strides(), new_size[2_dim], new_size[3_dim],
             transformation_mode ==
                 image_resize_transformation_mode_t::align_corners,
             transformation_mode ==
@@ -286,7 +285,7 @@ void resize(const TIn &input, TOut &&output,
             resize_detail::get_nearest_pixel_from_origin(nearest_mode);
         resize_detail::resize_neareast_neighbor(
             input.elements().data(), output.elements().data(), input.shape(),
-            input.strides(), output.strides(), TNewSize::at(2), TNewSize::at(3),
+            input.strides(), output.strides(), new_size[2_dim], new_size[3_dim],
             transformation_mode ==
                 image_resize_transformation_mode_t::align_corners,
             transformation_mode ==

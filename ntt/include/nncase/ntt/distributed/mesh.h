@@ -31,26 +31,11 @@ template <topology Scope, size_t... Dims> struct mesh {
     static_assert(shape.length() == topology_up_size<Scope>(),
                   "Invalid mesh shape.");
 
-    template <Shape GlobalShape, ShardIndex<mesh<Scope, Dims...>> TShardIndex>
-    static constexpr auto
-    shard_shape_by_index(const GlobalShape &global_shape,
-                         const TShardIndex &shard_index) noexcept;
-
-    template <ShardIndex<mesh<Scope, Dims...>> TShardIndex>
-    static constexpr auto
-    program_ids_from_index(const TShardIndex &shard_index) noexcept;
-
-    template <ScopedProgramIds<Scope> TProgramIds>
-    static constexpr auto
-    index_from_program_ids(const TProgramIds &program_ids) noexcept;
-
     static constexpr auto local_program_ids() noexcept {
         return program_ids<Scope>();
     }
 
-    static constexpr auto local_index() noexcept {
-        return index_from_program_ids(local_program_ids());
-    }
+    static constexpr dynamic_shard_index_type local_index() noexcept;
 };
 
 namespace detail {
@@ -149,19 +134,24 @@ shard_index_from_program_ids(const TProgramIds &program_ids,
 }
 } // namespace detail
 
-template <topology Scope, size_t... Dims>
-template <ShardIndex<mesh<Scope, Dims...>> TShardIndex>
-constexpr auto mesh<Scope, Dims...>::program_ids_from_index(
-    const TShardIndex &shard_index) noexcept {
-    return detail::program_ids_from_shard_index<mesh<Scope, Dims...>>(
+template <class Mesh, ShardIndex<Mesh> TShardIndex>
+constexpr auto
+program_ids_from_shard_index(const TShardIndex &shard_index) noexcept {
+    return detail::program_ids_from_shard_index<Mesh>(
         shard_index, std::make_index_sequence<topology_levels>{});
 }
 
-template <topology Scope, size_t... Dims>
-template <ScopedProgramIds<Scope> TProgramIds>
-constexpr auto mesh<Scope, Dims...>::index_from_program_ids(
-    const TProgramIds &program_ids) noexcept {
-    return detail::shard_index_from_program_ids<mesh<Scope, Dims...>>(
+template <class Mesh, ScopedProgramIds<Mesh::scope> TProgramIds>
+constexpr auto
+shard_index_from_program_ids(const TProgramIds &program_ids) noexcept {
+    return detail::shard_index_from_program_ids<Mesh>(
         program_ids, std::make_index_sequence<topology_levels>{});
+}
+
+template <topology Scope, size_t... Dims>
+constexpr auto mesh<Scope, Dims...>::local_index() noexcept
+    -> dynamic_shard_index_type {
+    return shard_index_from_program_ids<mesh<Scope, Dims...>>(
+        local_program_ids());
 }
 } // namespace nncase::ntt::distributed

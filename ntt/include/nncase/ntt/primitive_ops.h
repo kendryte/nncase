@@ -418,6 +418,11 @@ constexpr T1 clamp(const T1 &v, const T2 &min, const T2 &max) noexcept {
     return ops::clamp<T1, T2>()(v, min, max);
 }
 
+template <ScalarOrVector TCond, ScalarOrVector TX, ScalarOrVector TY>
+constexpr auto where(const TCond &cond, const TX &x, const TY &y) noexcept {
+    return ops::where<TCond, TX, TY>()(cond, x, y);
+}
+
 /**
  * @defgroup Builtin operators
  * @{

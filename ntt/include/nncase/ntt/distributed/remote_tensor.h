@@ -38,7 +38,7 @@ constexpr auto make_remote_tensor(T *data, const Sharding &sharding,
 
     const auto local_shard_index = mesh_type::local_shard_index();
     const auto local_program_ids =
-        mesh_type::program_ids_from_index(local_shard_index);
+        program_ids_from_shard_index<mesh_type>(local_shard_index);
     const auto no_cross_shard_index =
         local_shard_index.template slice<0, no_cross_topology_count>();
     const auto remote_shard_index = no_cross_shard_index.concat(shard_index);

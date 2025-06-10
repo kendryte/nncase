@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../primitive_ops.h"
 #include "detail/elementwise_impl.h"
 #include <type_traits>
 
@@ -28,7 +29,7 @@ class where_impl : public elementwise_impl<where_impl<TCond, TX, TY, TOut>,
     constexpr void apply(const TBroadcastedCond &cond, const TBroadcastedX &x,
                          const TBroadcastedY &y, TOut &output) {
         ntt::apply(output.shape(), [&](auto index) {
-            output(index) = cond(index) ? x(index) : y(index);
+            output(index) = ntt::where(cond(index), x(index), y(index));
         });
     }
 };
