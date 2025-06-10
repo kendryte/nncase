@@ -234,67 +234,67 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
         });
     }
 
-    template <FixedDimensions TAxes>
-    constexpr void operator()(const TIn &input, const TAxes &axes,
-                              TOut &output) noexcept {
-        using TVec = vector<float, 8, 8>;
-        constexpr auto in_rank = TIn::rank();
-        constexpr auto out_rank = TOut::rank();
-        constexpr auto lanes = TVec::shape();
-        const auto out_shape = output.shape();
+//     template <FixedDimensions TAxes>
+//     constexpr void operator()(const TIn &input, const TAxes &axes,
+//                               TOut &output) noexcept {
+//         using TVec = vector<float, 8, 8>;
+//         constexpr auto in_rank = TIn::rank();
+//         constexpr auto out_rank = TOut::rank();
+//         constexpr auto lanes = TVec::shape();
+//         const auto out_shape = output.shape();
 
-        const auto domain = out_shape;
-        dynamic_shape_t<in_rank> inner_index{};
-        dynamic_shape_t<in_rank> outer_index{};
+//         const auto domain = out_shape;
+//         dynamic_shape_t<in_rank> inner_index{};
+//         dynamic_shape_t<in_rank> outer_index{};
 
-        const auto outer_domain = domain.template slice<0, axes[0_dim]>();
-        const auto packed_domain =
-            domain.template slice<axes[0_dim], axes.rank()>();
-        const auto inner_domain = domain.template slice<axes[1_dim] + 1>();
-        const auto inner_size = inner_domain.length();
+//         const auto outer_domain = domain.template slice<0, axes[0_dim]>();
+//         const auto packed_domain =
+//             domain.template slice<axes[0_dim], axes.rank()>();
+//         const auto inner_domain = domain.template slice<axes[1_dim] + 1>();
+//         const auto inner_size = inner_domain.length();
 
-        if (inner_size % TVec::shape()[1_dim] != 0) {
-            ukernels::u_pack2d<false, TIn, TOut, float, TVec> impl;
-            impl(input, axes, output);
-        } else {
-            ntt::apply(outer_domain, [&](auto index) {
-                loop<axes[0_dim]>([&](auto i) {
-                    inner_index[i] = index[i];
-                    outer_index[i] = index[i];
-                });
-                for (size_t i = 0; i < packed_domain[0_dim]; i++) {
-                    outer_index[axes[0_dim]] = i;
-                    auto outer_ptr_keep =
-                        reinterpret_cast<float *>(&output(outer_index));
-                    for (size_t j = 0; j < lanes[0]; j++) {
-                        inner_index[axes[0_dim]] = i * lanes[0_dim] + j;
-                        auto outer_ptr = outer_ptr_keep + j * lanes[0];
+//         if (inner_size % TVec::shape()[1_dim] != 0) {
+//             ukernels::u_pack2d<false, TIn, TOut, float, TVec> impl;
+//             impl(input, axes, output);
+//         } else {
+//             ntt::apply(outer_domain, [&](auto index) {
+//                 loop<axes[0_dim]>([&](auto i) {
+//                     inner_index[i] = index[i];
+//                     outer_index[i] = index[i];
+//                 });
+//                 for (size_t i = 0; i < packed_domain[0_dim]; i++) {
+//                     outer_index[axes[0_dim]] = i;
+//                     auto outer_ptr_keep =
+//                         reinterpret_cast<float *>(&output(outer_index));
+//                     for (size_t j = 0; j < lanes[0]; j++) {
+//                         inner_index[axes[0_dim]] = i * lanes[0_dim] + j;
+//                         auto outer_ptr = outer_ptr_keep + j * lanes[0];
 
-                        for (size_t k = 0; k < packed_domain[1]; k++) {
-                            inner_index[axes[1_dim]] = k * lanes[1];
-                            auto input_ptr = reinterpret_cast<const float *>(
-                                &input(inner_index));
+//                         for (size_t k = 0; k < packed_domain[1]; k++) {
+//                             inner_index[axes[1_dim]] = k * lanes[1];
+//                             auto input_ptr = reinterpret_cast<const float *>(
+//                                 &input(inner_index));
 
-                            for (size_t l = 0; l < inner_size / lanes[1_dim];
-                                 l++) {
-                                auto st_base =
-                                    l * lanes[0_dim] * lanes.length();
-                                auto ld_base = l * lanes[1_dim];
+//                             for (size_t l = 0; l < inner_size / lanes[1_dim];
+//                                  l++) {
+//                                 auto st_base =
+//                                     l * lanes[0_dim] * lanes.length();
+//                                 auto ld_base = l * lanes[1_dim];
 
-                                auto src = input_ptr + ld_base;
-                                auto dst = outer_ptr + st_base;
-                                permute_8x8(src, dst, inner_size,
-                                            lanes.length());
-                            }
+//                                 auto src = input_ptr + ld_base;
+//                                 auto dst = outer_ptr + st_base;
+//                                 permute_8x8(src, dst, inner_size,
+//                                             lanes.length());
+//                             }
 
-                            outer_ptr += (inner_size * lanes.length());
-                        }
-                    }
-                }
-            });
-        }
-    }
-};
+//                             outer_ptr += (inner_size * lanes.length());
+//                         }
+//                     }
+//                 }
+//             });
+//         }
+//     }
+// };
 
 template <size_t axis_stride, class T1, size_t PackAxis>
 class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
