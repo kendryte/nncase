@@ -216,7 +216,7 @@ class PackTestGenerator:
         code.append("")
         
         # 生成ORT参考实现
-        if continuity == "non_contiguous":
+        if not continuity.is_contiguous:
             # 需要先复制到连续tensor
             code.append("    // 复制到连续tensor用于ORT参考")
             code.append(f"    alignas(32) auto continuous_input = ntt::make_tensor<float>({self.generate_shape_init(shape_type, input_dims_expr)});")
@@ -253,10 +253,16 @@ class PackTestGenerator:
         return "\n".join(code)
     
     def generate_all_tests(self):
-        """生成所有测试组合"""
+        """生成所有测试组合
+        1. rank为3, 4, 5
+        2. fixed/dynamic
+        3. 1D/2D vector
+        4. 连续/非连续
+        4.1 维度为3，5时分别测试了简单的非连续情况 (simple_continuities)
+        4.2 维度为4时，测试了较为复杂的非连续情况。(full_continuities)
+        """
         """未覆盖的测试范围:
         1. 被pack的维度不是P的整数倍，需要被填充的情况
-        2. 在使用tensor_view时，只测试了dim[-2]被隔开的情况。
         """
         shape_types = ["fixed", "dynamic"]
         vector_dims = [1, 2]
@@ -264,9 +270,9 @@ class PackTestGenerator:
         
         # 为不同维度定义pack轴选项
         pack_axes_options = {
-            3: [[2], [1], [0], [0, 1]],  # 3D: 最后维、倒数第二维、第一维、前两维
-            4: [[3], [2], [1], [0], [1, 2]],  # 4D
-            5: [[4], [3], [2], [1], [0], [2, 3]]  # 5D
+            3: [[2], [1], [0], [0, 1], [1, 2]],  # 3D: 最后维、倒数第二维、第一维、前两维
+            4: [[3], [2], [1], [0], [0, 1], [1, 2], [2, 3]],  # 4D
+            5: [[4], [3], [2], [1], [0], [0, 1], [1, 2], [2, 3], [3, 4]]  # 5D
         }
 
         # 完整的连续性测试组合，主要用于4D
