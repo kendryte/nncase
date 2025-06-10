@@ -215,6 +215,12 @@ void register_runtime_llm_ffi(py::module &m) {
             py::overload_cast<int32_t>(
                 &llm::paged_attention_kv_cache_node::num_tokens))
         .def_property(
+            "conversation_id",
+            py::overload_cast<>(&llm::paged_attention_kv_cache_node::conversation_id,
+                                py::const_),
+            py::overload_cast<size_t>(
+                &llm::paged_attention_kv_cache_node::conversation_id))
+        .def_property(
             "context_lens",
             [](const llm::paged_attention_kv_cache_node &self) {
                 return runtime_tensor(self.context_lens());
