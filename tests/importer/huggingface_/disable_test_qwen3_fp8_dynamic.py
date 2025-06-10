@@ -30,7 +30,7 @@ def test_qwen3_fp8_dynamic(request):
     shape_bucket_fix_var_map = { "batch_size"=1 }
     
     [huggingface_options]
-    output_logits = true
+    output_logits = false
     output_hidden_states = false
 
     [generator]
@@ -56,6 +56,10 @@ def test_qwen3_fp8_dynamic(request):
     infer = false
     [target.xpu]
     infer = true
+
+    [target.cpu.mode.noptq]
+    enabled = true
+    threshold = 0.98
 
     [target.xpu.target_options]
     CustomOpScheme = "/root/workspace/nncase/tmp/paged_attn_scheme.json"
