@@ -106,7 +106,6 @@ void test_shape() {
     {
         using v1_type = ntt::vector<float, 8>;
         using v2_type = ntt::replace_element_t<v1_type, int>;
-        using v3_type = ntt::replace_element_t<half, float>;
         static_assert(std::is_same_v<v2_type, ntt::vector<int, 8>>);
     }
 }

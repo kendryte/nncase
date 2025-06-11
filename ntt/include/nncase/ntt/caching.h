@@ -144,10 +144,15 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     static constexpr auto id_length = TConfig::sharding_axes_t::rank() + 1_dim;
     static constexpr auto id_shape = fixed_shape_v<id_length>;
 
-    // [seq_len, blocks, id_length]
+    // [seq_len, context_len / block_size, id_length]
     using block_table_shape_t = shape_t<dim_t, dim_t, fixed_dim<id_length>>;
     using block_table_t = decltype(make_tensor_view_from_address(
         std::declval<const int64_t *>(), std::declval<block_table_shape_t>()));
+
+    // [num_tokens, id_length]
+    using slot_mapping_shape_t = shape_t<dim_t, fixed_dim<id_length>>;
+    using slot_mapping_t = decltype(make_tensor_view_from_address(
+        std::declval<const int64_t *>(), std::declval<slot_mapping_shape_t>()));
 
     using kv_storage_type_t =
         basic_vector<typename TConfig::kv_prim_type, typename TConfig::lanes_t>;
@@ -157,56 +162,30 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
             std::declval<kv_storage_type_t *>(),
             std::declval<kv_storage_shape_t>()));
 
-    static constexpr auto kv_addr_shape =
+    static constexpr auto kv_addrs_shape =
         detail::kv_dim<Mesh>(typename TConfig::axis_policies_t{});
-
-    using kv_type_t = intptr_t;
-    using kv_addr_tensor_type_t = decltype(make_tensor_view<intptr_t>(
-        std::declval<const intptr_t>(), kv_addr_shape));
+    using kv_addrs_t = decltype(make_tensor_view_from_address(
+        std::declval<const intptr_t *>(), kv_addrs_shape));
 
     paged_attention_kv_cache(size_t num_seqs, size_t num_tokens,
                              context_lens_t context_lens, seq_lens_t seq_lens,
-                             tensor_view<int64_t, ranked_shape<3>> block_table,
-                             tensor_view<int64_t, ranked_shape<2>> slot_mapping,
-                             size_t num_blocks, kv_tensor_type_t kv_caches)
+                             block_table_t block_table,
+                             slot_mapping_t slot_mapping, kv_addrs_t kv_addrs)
         : attention_kv_cache<TConfig>(num_seqs, num_tokens, context_lens,
                                       seq_lens),
           block_table_(block_table),
           slot_mapping_(slot_mapping),
-          num_blocks_(num_blocks),
-          kv_caches_(kv_caches) {}
+          kv_addrs_(kv_addrs) {}
 
     constexpr TConfig config() const noexcept { return TConfig{}; }
 
-    auto get_block_id(int seq_id, int context_id) const noexcept {
-        return block_table_
-            .view(ntt::make_ranked_shape(seq_id, context_id, 0),
-                  ntt::make_ranked_shape(1, 1, block_table_.shape()[2]))
-            .squeeze(ntt::fixed_shape<0, 1>())
-            .view(ntt::fixed_shape<0>{}, id_shape_t{});
+    constexpr auto get_block_id(int64_t seq_id,
+                                int64_t context_id) const noexcept {
+        return block_table_.view(make_shape(seq_id, context_id));
     }
 
-    auto get_slot_id(int token_id) {
-        return slot_mapping_
-            .view(ntt::make_ranked_shape(token_id, 0),
-                  ntt::make_ranked_shape(1, slot_mapping_.shape()[1]))
-            .squeeze(ntt::fixed_shape<0>())
-            .view(ntt::fixed_shape<0>{}, id_shape_t{});
-    }
-
-    size_t num_blocks() const noexcept { return num_blocks_; }
-
-    auto get_kv_storage_tensor(
-        const ranked_shape<TConfig::sharding_axes_t::rank()> &indices) {
-        auto storage_ptr = kv_caches_(indices);
-        auto storage_shape = get_kv_storage_shape();
-        auto storage_strides = default_strides(storage_shape);
-        auto storage_size = linear_size(storage_shape, storage_strides);
-        return kv_storage_tensor_type_t(
-            std::span<kv_storage_type_t>(
-                reinterpret_cast<kv_storage_type_t *>(storage_ptr),
-                storage_size),
-            storage_shape, storage_strides);
+    constexpr auto get_slot_id(int64_t token_id) const noexcept {
+        return slot_mapping_.view(make_shape(token_id));
     }
 
   private:
@@ -258,6 +237,19 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                 index == -1 ? program_ids[program_id_index] : index;
         });
 
+        auto storage_ptr = kv_caches_(indices);
+        auto storage_shape = get_kv_storage_shape();
+        auto storage_strides = default_strides(storage_shape);
+        auto storage_size = linear_size(storage_shape, storage_strides);
+        return kv_storage_tensor_type_t(
+            std::span<kv_storage_type_t>(
+                reinterpret_cast<kv_storage_type_t *>(storage_ptr),
+                storage_size),
+            storage_shape, storage_strides);
+    }
+
+    auto get_kv_storage_tensor(
+        const ranked_shape<TConfig::sharding_axes_t::rank()> &indices) {
         auto storage_ptr = kv_caches_(indices);
         auto storage_shape = get_kv_storage_shape();
         auto storage_strides = default_strides(storage_shape);
@@ -407,14 +399,9 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         }
     }
 
-    auto block_table() const noexcept { return block_table_; }
-
-    auto &kv_caches() const noexcept { return kv_caches_; }
-
   private:
-    tensor_view<int64_t, ranked_shape<3>> block_table_;
-    tensor_view<int64_t, ranked_shape<2>> slot_mapping_;
-    size_t num_blocks_;
-    kv_tensor_type_t kv_caches_;
+    block_table_t block_table_;
+    slot_mapping_t slot_mapping_;
+    kv_addrs_t kv_addrs_;
 };
 } // namespace nncase::ntt::caching
