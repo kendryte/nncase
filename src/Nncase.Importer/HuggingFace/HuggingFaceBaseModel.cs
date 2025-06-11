@@ -55,7 +55,7 @@ public abstract class HuggingFaceModel
         if (!Context.FixVarMap.ContainsKey("sequence_length"))
         {
             Context.DynVarMap["sequence_length"] = new DimVar("sequence_length");
-            Context.DynVarMap["sequence_length"].Metadata.Range = new(1, Context.ImportOptions!.HuggingFaceOptions.MaxModelLen);
+            Context.DynVarMap["sequence_length"].Metadata.Range = new(bucketOptions.RangeInfo["sequence_length"].Min, bucketOptions.RangeInfo["sequence_length"].Max);
         }
 
         // if (!_fixVarMap.ContainsKey("history_len"))
