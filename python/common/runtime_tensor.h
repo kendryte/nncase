@@ -101,11 +101,12 @@ inline void register_runtime_tensor(py::module &m) {
                  auto src_map = std::move(
                      hrt::map(host, runtime::map_read).unwrap_or_throw());
                  auto src_buffer = src_map.buffer();
-                 return py::array(
-                     to_dtype(tensor.impl()->dtype()),
-                     to_py_shape(tensor.impl()->dtype(), tensor.impl()->shape()),
-                     to_py_strides(tensor.impl()->dtype(), tensor.impl()->strides()),
-                     src_buffer.data());
+                 return py::array(to_dtype(tensor.impl()->dtype()),
+                                  to_py_shape(tensor.impl()->dtype(),
+                                              tensor.impl()->shape()),
+                                  to_py_strides(tensor.impl()->dtype(),
+                                                tensor.impl()->strides()),
+                                  src_buffer.data());
              })
         .def_property_readonly("dtype",
                                [](runtime_tensor &tensor) {
@@ -118,7 +119,8 @@ inline void register_runtime_tensor(py::module &m) {
             if (tensor.empty()) {
                 return std::vector<pybind11::ssize_t>();
             }
-            auto py_shape = to_py_shape(tensor.impl()->dtype(), tensor.impl()->shape());
+            auto py_shape =
+                to_py_shape(tensor.impl()->dtype(), tensor.impl()->shape());
             if (tensor.impl()->dtype().is_a<vector_type_t>()) {
                 auto vtype =
                     tensor.impl()->dtype().as<vector_type_t>().unwrap();
