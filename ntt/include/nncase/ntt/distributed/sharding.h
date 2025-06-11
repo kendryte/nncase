@@ -216,7 +216,6 @@ constexpr auto mesh_axes_mask_of_split_shard_policies() noexcept {
 
 template <Sharding TSharding>
 constexpr auto mesh_axes_of_non_split_shard_policies() noexcept {
-    using mesh_type = typename TSharding::mesh_type;
     constexpr auto axes_mask =
         mesh_axes_mask_of_split_shard_policies<TSharding>();
     return axes_mask.aggregate(
@@ -228,7 +227,6 @@ constexpr auto mesh_axes_of_non_split_shard_policies() noexcept {
 
 template <Sharding TSharding>
 constexpr auto tensor_axes_mask_of_split_shard_policies() noexcept {
-    using mesh_type = typename TSharding::mesh_type;
     return generate_shape<TSharding::rank()>([](auto axis) {
         using policy_t =
             std::tuple_element_t<axis, typename TSharding::axis_policies_type>;

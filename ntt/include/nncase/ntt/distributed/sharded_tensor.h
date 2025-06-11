@@ -107,7 +107,7 @@ constexpr auto make_sharded_tensor_view_from_address(
     const auto local_index = mesh_type::local_index();
     const auto local_shape = sharding.shard_shape(shape, local_index);
     auto buffer = make_span(address, local_shape, local_strides);
-    return sharded_tensor_view<T, TShape, TSharding,
+    return sharded_tensor_view<element_type, TShape, TSharding,
                                std::remove_cv_t<decltype(local_shape)>,
                                TLocalStrides>(
         std::move(buffer), shape, sharding, local_shape, local_strides);
