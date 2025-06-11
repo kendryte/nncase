@@ -409,7 +409,10 @@ def test_paged_attention_kvcache_copy():
     wrapper.kv_cache.slot_mapping = rt_kvcache.slot_mapping
     for i in range(rt_kvcache.kv_topo[0]):
         for j in range(rt_kvcache.kv_topo[1]):
-            wrapper.kv_cache.kv_cache([i, j], rt_kvcache.kv_cache([i, j]))
+            dtype = rt_kvcache.kv_cache([i, j]).dtype
+            assert np.dtype(np.float16) == dtype
+            cache_array = rt_kvcache.kv_cache([i, j]).to_numpy()
+            wrapper.kv_cache.kv_cache([i, j], nncase.RuntimeTensor.from_numpy(cache_array))
 
 
 def test_paged_attention_scheduler_distributed():

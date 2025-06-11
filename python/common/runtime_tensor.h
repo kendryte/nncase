@@ -102,27 +102,31 @@ inline void register_runtime_tensor(py::module &m) {
                      hrt::map(host, runtime::map_read).unwrap_or_throw());
                  auto src_buffer = src_map.buffer();
                  return py::array(
-                     to_dtype(tensor.datatype()), tensor.shape(),
-                     to_py_strides(runtime::get_bytes(tensor.datatype()),
-                                   tensor.strides()),
+                     to_dtype(tensor.impl()->dtype()),
+                     to_py_shape(tensor.impl()->dtype(), tensor.impl()->shape()),
+                     to_py_strides(tensor.impl()->dtype(), tensor.impl()->strides()),
                      src_buffer.data());
              })
-        .def_property_readonly(
-            "dtype",
-            [](runtime_tensor &tensor) {
-                if (tensor.empty()) {
-                    return py::dtype("empty");
-                }
-                if (tensor.impl()->dtype().is_a<prim_type_t>()) {
-                    return to_dtype(tensor.datatype());
-                }
-                return py::dtype("other");
-            })
+        .def_property_readonly("dtype",
+                               [](runtime_tensor &tensor) {
+                                   if (tensor.empty()) {
+                                       return py::dtype("empty");
+                                   }
+                                   return to_dtype(tensor.impl()->dtype());
+                               })
         .def_property_readonly("shape", [](runtime_tensor &tensor) {
             if (tensor.empty()) {
                 return std::vector<pybind11::ssize_t>();
             }
-            return to_py_shape(tensor.shape());
+            auto py_shape = to_py_shape(tensor.impl()->dtype(), tensor.impl()->shape());
+            if (tensor.impl()->dtype().is_a<vector_type_t>()) {
+                auto vtype =
+                    tensor.impl()->dtype().as<vector_type_t>().unwrap();
+                for (auto lane : vtype->lanes()) {
+                    py_shape.push_back(lane);
+                }
+            }
+            return py_shape;
         });
 }
 } // namespace nncase
