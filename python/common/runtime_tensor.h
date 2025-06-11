@@ -30,7 +30,7 @@ using namespace nncase::runtime;
 namespace py = pybind11;
 
 namespace nncase {
-inline void register_runtime_tensor(py::module &m) {
+inline py::class_<runtime_tensor> register_runtime_tensor(py::module &m) {
     py::class_<tensor_desc>(m, "TensorDesc")
         .def_property(
             "dtype",
@@ -41,7 +41,7 @@ inline void register_runtime_tensor(py::module &m) {
         .def_readwrite("start", &tensor_desc::start)
         .def_readwrite("size", &tensor_desc::size);
 
-    py::class_<runtime_tensor>(m, "RuntimeTensor")
+    auto rt_class = py::class_<runtime_tensor>(m, "RuntimeTensor")
         .def_static(
             "from_object",
             [](const object &obj) {
@@ -130,5 +130,7 @@ inline void register_runtime_tensor(py::module &m) {
             }
             return py_shape;
         });
+
+    return rt_class;
 }
 } // namespace nncase
