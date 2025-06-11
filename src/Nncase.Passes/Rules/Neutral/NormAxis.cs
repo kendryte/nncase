@@ -101,7 +101,7 @@ public sealed partial class NormAxisReshape : RewriteRule<CallPattern>
 public sealed partial class NormAxisSlice : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsSlice("slice", "call", IsWildcard("input") with { TypePattern = HasFixedShape() }, IsFixedShape("begins"), IsFixedShape("ends"), IsFixedShape("axes"), IsFixedShape("strides")) with { TypePattern = HasFixedShape() };
+    public override CallPattern Pattern { get; } = IsSlice("slice", "call", IsWildcard("input"), IsFixedShape("begins"), IsFixedShape("ends"), IsFixedShape("axes"), IsFixedShape("strides"));
 
     private Expr? GetReplace(Call call, Expr input, Shape begins, long[] ends, long[] axes, Shape strides)
     {
