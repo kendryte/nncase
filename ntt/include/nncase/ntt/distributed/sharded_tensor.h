@@ -16,6 +16,7 @@
 #pragma once
 #include "../detail/shape_storage.h"
 #include "../tensor.h"
+#include "nncase/ntt/arch/cpu/topology_def.h"
 #include "remote_tensor.h"
 #include "sharding.h"
 #include <type_traits>
@@ -55,14 +56,14 @@ class sharded_tensor_view : public ntt::detail::shape_storage<TShape> {
     constexpr local_tensor_type &local() noexcept { return local_; }
     constexpr const local_tensor_type &local() const noexcept { return local_; }
 
-    template <topology RemoteScope, Shape ShardIndex>
+    template <topology RemoteScope = (topology)0, Shape ShardIndex>
     constexpr auto remote(const ShardIndex &shard_index) const noexcept {
         auto local_address = local().elements().data();
         return make_remote_tensor<RemoteScope>(
             local_address, sharding_, shape(), local().strides(), shard_index);
     }
 
-    template <topology RemoteScope, Dimension... ShardIndices>
+    template <topology RemoteScope = (topology)0, Dimension... ShardIndices>
     constexpr auto remote(const ShardIndices &...shard_index) const noexcept {
         return remote<RemoteScope>(make_shape(shard_index...));
     }

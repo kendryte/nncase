@@ -63,7 +63,8 @@ class distributed_gather_impl {
         const auto local_mesh_index = mesh_type::local_index();
         const auto global_offset =
             input.sharding().global_offset(input.shape(), local_mesh_index);
-        const auto local_shape = input.local().shape();
+        const auto local_input = input.local();
+        const auto local_shape = local_input.shape();
 
         const auto axis_global_start = global_offset[axis];
         const auto axis_global_end = axis_global_start + local_shape[axis];
@@ -84,9 +85,10 @@ class distributed_gather_impl {
                         .append((dim_t)global_idx - axis_global_start)
                         .concat(out_index.template slice<axis + indices_rank,
                                                          rank - (axis + 1)>());
+                output(out_index) = local_input(in_index);
             } else {
                 // Index is outside the local shard's range, fill with zeros
-                output(out_index) = element_or_scalar_t<element_type>{0};
+                output(out_index) = element_type{};
             }
         });
     }

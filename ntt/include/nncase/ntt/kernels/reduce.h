@@ -176,8 +176,8 @@ class reduce_impl {
         if constexpr (ReduceIndex < TReduceAxes::rank() - 1) {
             for (size_t i = 0; i < input.shape()[axis]; i++) {
                 index[axis] = i;
-                apply_non_contiguous_reduce<ReduceIndex + 1>(input, index,
-                                                             reduced_in);
+                apply_non_contiguous_reduce<ReduceIndex + 1>(
+                    input, index, reduced_in, reduce_axes);
             }
         } else {
             const TInElem *in_p = &input(index);

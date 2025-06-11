@@ -268,7 +268,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                                      int head_id, T block_id)
         requires detail::IsValidIdTensor<id_length, T>
     {
-        auto block_id_value = block_id(block_id.shape().last() - 1);
+        auto block_id_value = block_id(block_id.shape().back() - 1);
 
         auto cache_layout = config().cache_layout;
         auto default_starts = ntt::make_ranked_shape(block_id_value, layer_id,
@@ -314,7 +314,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
                                     int head_id, T slot_id)
         requires detail::IsValidIdTensor<id_length, T>
     {
-        auto slot_id_value = slot_id(slot_id.shape().last() - 1);
+        auto slot_id_value = slot_id(slot_id.shape().back() - 1);
         // printf("[nncase_log] try get slot: [%ld, %ld, %ld]\n",
         // slot_id(0),
         //        slot_id(1), slot_id(2));
@@ -323,7 +323,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         auto block_id = tensor<int64_t, id_shape_t>();
         std::copy(slot_id.elements().begin(), slot_id.elements().end(),
                   block_id.elements().begin());
-        block_id(block_id.shape().last() - 1) = block_id_value;
+        block_id(block_id.shape().back() - 1) = block_id_value;
         auto block_view = get_block_view_from_storage(kind, layer_id, head_id,
                                                       block_id.view());
 

@@ -491,7 +491,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
                     break;
                 case TIR.NTT.GetItem getItem:
-                    IndentScope.Writer.Write($"get_item({VisitBuffer(args[0], local: true).Name}, {VisitDimOrShape(args[1]).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                    IndentScope.Writer.Write($"get_item({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitDimOrShape(args[1]).Name});\n");
                     break;
                 case TIR.NTT.Stack stack:
                     IndentScope.Writer.Write($"stack<{stack.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");

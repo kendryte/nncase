@@ -26,7 +26,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
     using TVec = typename TIn::element_type;
 
     template <FixedDimensions TAxes>
-    constexpr void operator()(const TIn &input, TOut &&output,
+    constexpr void operator()(const TIn &input, TOut &output,
                               const TAxes &axes) {
         constexpr auto rank = TIn::rank();
         constexpr auto elem_rank = TVec::rank();
@@ -47,7 +47,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
         });
     }
 };
-
+#if 0
 // Pack 1D
 template <Tensor TIn, Tensor TOut> class unpack_impl<TIn, TOut, 1> {
   public:
@@ -139,6 +139,7 @@ template <Tensor TIn, Tensor TOut> class unpack_impl<TIn, TOut, 2> {
         }
     }
 };
+#endif
 } // namespace detail
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>

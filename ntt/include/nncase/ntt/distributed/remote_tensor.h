@@ -14,10 +14,11 @@
  */
 #pragma once
 #include "../tensor_traits.h"
-#include "topology.h"
+#include "mesh.h"
 
 namespace nncase::ntt::distributed {
-template <topology RemoteScope> struct remote_tensor_constructor;
+template <topology RemoteScope, topology TensorScope>
+struct remote_tensor_constructor;
 
 template <topology RemoteScope, ScalarOrVector T, class Sharding,
           Shape GlobalShape, Shape ShardIndex, Strides TStrides>
@@ -29,25 +30,24 @@ constexpr auto make_remote_tensor(T *data, const Sharding &sharding,
     constexpr auto tensor_scope = mesh_type::scope;
     static_assert(RemoteScope <= tensor_scope,
                   "Remote scope must be higher than or equal to tensor scope.");
-    constexpr auto cross_topology_count = static_cast<size_t>(tensor_scope) -
-                                          static_cast<size_t>(RemoteScope) + 1;
-    constexpr auto no_cross_topology_count = static_cast<size_t>(RemoteScope);
-    static_assert(
-        shard_index.rank() == cross_topology_count,
-        "Shard index must have the same rank as cross topology count.");
+    constexpr auto no_cross_mesh_rank =
+        fixed_dim_v<detail::get_submesh_start<mesh_type, RemoteScope>()>;
+    constexpr auto cross_mesh_rank = mesh_type::rank() - no_cross_mesh_rank;
+    static_assert(shard_index.rank() == cross_mesh_rank,
+                  "Shard index must have the same rank as cross mesh rank.");
 
-    const auto local_shard_index = mesh_type::local_shard_index();
+    const auto local_shard_index = mesh_type::local_index();
     const auto local_program_ids =
-        program_ids_from_shard_index<mesh_type>(local_shard_index);
+        mesh_type::program_ids_from_index(local_shard_index);
     const auto no_cross_shard_index =
-        local_shard_index.template slice<0, no_cross_topology_count>();
+        local_shard_index.template slice<0, no_cross_mesh_rank>();
     const auto remote_shard_index = no_cross_shard_index.concat(shard_index);
     const auto remote_program_ids =
-        program_ids_from_shard_index<mesh_type>(remote_shard_index);
+        mesh_type::program_ids_from_index(remote_shard_index);
     const auto remote_shard_shape =
         sharding.shard_shape(global_shape, remote_shard_index);
-    return remote_tensor_constructor<RemoteScope>()(data, remote_shard_shape,
-                                                    strides, local_program_ids,
-                                                    remote_program_ids);
+    return remote_tensor_constructor<RemoteScope, tensor_scope>()(
+        data, remote_shard_shape, strides, local_program_ids,
+        remote_program_ids);
 }
 } // namespace nncase::ntt::distributed

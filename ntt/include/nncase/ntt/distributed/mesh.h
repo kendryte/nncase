@@ -14,29 +14,12 @@
  */
 #pragma once
 #include "../shape.h"
+#include "nncase/ntt/dimension.h"
 #include "topology.h"
 
 namespace nncase::ntt::distributed {
 template <class T, class Mesh>
 concept ShardIndex = Shape<T> && bool(T::rank() == Mesh::rank());
-
-template <topology Scope, size_t... Dims> struct mesh {
-    using dynamic_shard_index_type = dynamic_shape_t<sizeof...(Dims)>;
-    using scoped_dynamic_program_ids_type = dynamic_program_ids_t<Scope>;
-
-    static constexpr topology scope = Scope;
-    static constexpr auto shape = fixed_shape_v<Dims...>;
-    static constexpr auto rank() noexcept { return shape.rank(); }
-
-    static_assert(shape.length() == topology_up_size<Scope>(),
-                  "Invalid mesh shape.");
-
-    static constexpr auto local_program_ids() noexcept {
-        return program_ids<Scope>();
-    }
-
-    static constexpr dynamic_shard_index_type local_index() noexcept;
-};
 
 namespace detail {
 template <class Mesh, topology Scope>
@@ -82,14 +65,13 @@ program_id_from_shard_index(const TShardIndex &shard_index) noexcept {
     if constexpr (submesh_rank) {
         constexpr auto axis = fixed_dim_v<get_submesh_start<Mesh, Topology>()>;
         dim_t id = shard_index[axis];
-        for (size_t i = 0; i < submesh_rank - 1; i++) {
-            auto next_dim = Mesh::shape[axis + 1_dim];
-            id = id * next_dim + shard_index[axis + 1_dim];
-            axis++;
-        }
+        loop<submesh_rank - 1>([&](auto i) {
+            auto next_dim = Mesh::shape[axis + i + 1_dim];
+            id = id * next_dim + shard_index[axis + i + 1_dim];
+        });
         return id;
     } else {
-        return dim_zero;
+        return 0;
     }
 }
 
@@ -134,24 +116,37 @@ shard_index_from_program_ids(const TProgramIds &program_ids,
 }
 } // namespace detail
 
-template <class Mesh, ShardIndex<Mesh> TShardIndex>
-constexpr auto
-program_ids_from_shard_index(const TShardIndex &shard_index) noexcept {
-    return detail::program_ids_from_shard_index<Mesh>(
-        shard_index, std::make_index_sequence<topology_levels>{});
-}
+template <topology Scope, size_t... Dims> struct mesh {
+    using dynamic_shard_index_type = dynamic_shape_t<sizeof...(Dims)>;
+    using scoped_dynamic_program_ids_type = dynamic_program_ids_t<Scope>;
 
-template <class Mesh, ScopedProgramIds<Mesh::scope> TProgramIds>
-constexpr auto
-shard_index_from_program_ids(const TProgramIds &program_ids) noexcept {
-    return detail::shard_index_from_program_ids<Mesh>(
-        program_ids, std::make_index_sequence<topology_levels>{});
-}
+    static constexpr topology scope = Scope;
+    static constexpr auto shape = fixed_shape_v<Dims...>;
+    static constexpr auto rank() noexcept { return shape.rank(); }
 
-template <topology Scope, size_t... Dims>
-constexpr auto mesh<Scope, Dims...>::local_index() noexcept
-    -> dynamic_shard_index_type {
-    return shard_index_from_program_ids<mesh<Scope, Dims...>>(
-        local_program_ids());
-}
+    static_assert(shape.length() == topology_up_size<Scope>(),
+                  "Invalid mesh shape.");
+
+    static constexpr auto local_program_ids() noexcept {
+        return program_ids<Scope>();
+    }
+
+    template <ShardIndex<mesh<Scope, Dims...>> TShardIndex>
+    static constexpr auto
+    program_ids_from_index(const TShardIndex &shard_index) noexcept {
+        return detail::program_ids_from_shard_index<mesh<Scope, Dims...>>(
+            shard_index, std::make_index_sequence<topology_levels>{});
+    }
+
+    template <ScopedProgramIds<scope> TProgramIds>
+    static constexpr auto
+    index_from_program_ids(const TProgramIds &program_ids) noexcept {
+        return detail::shard_index_from_program_ids<mesh<Scope, Dims...>>(
+            program_ids, std::make_index_sequence<topology_levels>{});
+    }
+
+    static constexpr auto local_index() noexcept {
+        return index_from_program_ids(local_program_ids());
+    }
+};
 } // namespace nncase::ntt::distributed

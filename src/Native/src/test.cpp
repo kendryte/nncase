@@ -20,6 +20,7 @@
 #include "nncase/ntt/padding.h"
 #include "nncase/ntt/shape.h"
 #include "nncase/ntt/tensor.h"
+#include "nncase/ntt/vector.h"
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -109,6 +110,13 @@ void test_shape() {
         const float buffer[] = {1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f};
         auto tv = ntt::make_tensor_view(buffer, ntt::fixed_shape_v<2, 4>);
         static_assert(tv.rank() == 2);
+    }
+
+    {
+        using v1_type = ntt::vector<float, 8>;
+        using v2_type = ntt::replace_element_t<v1_type, int>;
+        using v3_type = ntt::replace_element_t<half, float>;
+        static_assert(std::is_same_v<v2_type, ntt::vector<int, 8>>);
     }
 }
 

@@ -212,8 +212,11 @@ struct dims_base {
         }
     }
 
-    constexpr auto last() const noexcept { return at<rank() - 1>(); }
-    constexpr auto &last() noexcept { return at<rank() - 1>(); }
+    constexpr auto front() const noexcept { return at<0>(); }
+    constexpr decltype(auto) front() noexcept { return at<0>(); }
+
+    constexpr auto back() const noexcept { return at<rank() - 1>(); }
+    constexpr decltype(auto) back() noexcept { return at<rank() - 1>(); }
 
     template <Dimension TDim>
     constexpr auto contains([[maybe_unused]] const TDim &value) const noexcept {
@@ -539,32 +542,12 @@ template <size_t Axis, Shape TShape, Strides TStrides> struct linear_size_impl {
                               const TStrides &strides) noexcept {
         const auto cnt_dim = shape.at(fixed_dim_v<Axis>);
         const auto cnt_stride = strides.at(fixed_dim_v<Axis>);
-        auto [new_max_stride, new_max_shape] = [cnt_dim, cnt_stride, max_stride,
-                                                max_shape]() {
-            (void)cnt_stride;
-            (void)max_shape;
-            if constexpr (FixedDimension<std::decay_t<decltype(cnt_dim)>> &&
-                          FixedDimension<std::decay_t<decltype(cnt_stride)>>) {
-                if constexpr (cnt_dim == 1) {
-                    return std::make_pair(max_stride, max_shape);
-                } else if constexpr (cnt_stride >= max_stride) {
-                    return std::make_pair(cnt_stride, cnt_dim);
-                } else {
-                    return std::make_pair(max_stride, max_shape);
-                }
-            } else {
-                if (cnt_dim == 1) {
-                    return std::make_pair(dim_value(max_stride),
-                                          dim_value(max_shape));
-                } else if (cnt_stride >= max_stride) {
-                    return std::make_pair(dim_value(cnt_stride),
-                                          dim_value(cnt_dim));
-                } else {
-                    return std::make_pair(dim_value(max_stride),
-                                          dim_value(max_shape));
-                }
-            }
-        }();
+        const auto new_max_stride = ntt::where(
+            cnt_dim == dim_one, max_stride,
+            ntt::where(cnt_stride >= max_stride, cnt_stride, max_stride));
+        const auto new_max_shape = ntt::where(
+            cnt_dim == dim_one, max_shape,
+            ntt::where(cnt_stride >= max_stride, cnt_dim, max_shape));
         if constexpr (Axis + 1 < TStrides::rank()) {
             return linear_size_impl<Axis + 1, TShape, TStrides>{}(
                 new_max_stride, new_max_shape, shape, strides);

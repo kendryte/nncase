@@ -15,8 +15,8 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/vector_storage.h"
-#include "nncase/ntt/shape.h"
 #include "tensor_traits.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 template <Scalar T, FixedShape Lanes>
@@ -96,10 +96,20 @@ class basic_vector
 template <Scalar T, size_t... Lanes>
 using vector = basic_vector<T, shape_t<fixed_dim<Lanes>...>>;
 
-template <Scalar T, size_t... Lanes, class U>
-struct replace_element_type<vector<T, Lanes...>, U> {
-    using type = vector<U, Lanes...>;
+template <class T, Scalar U> struct replace_element_type;
+
+template <Scalar T, Scalar U> struct replace_element_type<T, U> {
+    using type = U;
 };
+
+template <Scalar T, FixedShape Lanes, Scalar U>
+struct replace_element_type<basic_vector<T, Lanes>, U> {
+    using type = basic_vector<U, Lanes>;
+};
+
+template <class T, Scalar U>
+using replace_element_t =
+    typename replace_element_type<std::decay_t<T>, U>::type;
 
 template <Vector T, size_t... Lanes> struct replace_lanes_type {
     using type = vector<typename T::element_type, Lanes...>;

@@ -15,9 +15,8 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/tensor_storage.h"
-#include "nncase/ntt/dimension.h"
-#include "nncase/ntt/shape.h"
 #include "tensor_traits.h"
+#include "vector.h"
 #include <memory>
 #include <type_traits>
 #include <utility>
@@ -164,7 +163,7 @@ class basic_tensor
             : tensor_(tensor), index_(index) {}
 
         const_iterator &operator++(int) noexcept {
-            index_.last() += 1;
+            index_.back() += 1;
             for (size_t i = index_.rank() - 1; i > 0; i--) {
                 if (index_[i] >= tensor_.shape()[i]) {
                     index_[i - 1]++;
@@ -245,19 +244,23 @@ class basic_tensor
 
     template <Dimensions Index>
     constexpr auto view(const Index &index) noexcept {
+        auto new_index =
+            index.concat(make_zeros_shape<rank() - Index::rank()>());
         auto left_shape = make_ones_shape<Index::rank()>();
         auto right_shape = shape().template slice<Index::rank()>();
         auto new_shape = left_shape.concat(right_shape);
-        auto t_view = view(index, new_shape);
+        auto t_view = view(new_index, new_shape);
         return t_view.squeeze(make_index_shape<Index::rank()>());
     }
 
     template <Dimensions Index>
     constexpr auto view(const Index &index) const noexcept {
+        auto new_index =
+            index.concat(make_zeros_shape<rank() - Index::rank()>());
         auto left_shape = make_ones_shape<Index::rank()>();
         auto right_shape = shape().template slice<Index::rank()>();
         auto new_shape = left_shape.concat(right_shape);
-        auto t_view = view(index, new_shape);
+        auto t_view = view(new_index, new_shape);
         return t_view.squeeze(make_index_shape<Index::rank()>());
     }
 

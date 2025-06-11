@@ -21,9 +21,12 @@
 namespace nncase::ntt {
 template <Tensor TIn, class TIndices, class TOut>
     requires(Dimensions<TIndices> || Dimension<TIndices>)
-void get_item(const TIn &input, const TIndices &indices, TOut &&output) {
+void get_item(const TIn &input, TOut &&output, const TIndices &indices) {
     if constexpr (Dimensions<TIndices>) {
-        const auto positive_indices = positive_index(indices, input.shape());
+        const auto positive_indices =
+            generate_shape<TIndices::rank()>([&](auto axis) {
+                return positive_index(indices[axis], input.shape()[axis]);
+            });
         tensor_copy(input.view(positive_indices), output);
     } else {
         auto new_indices = make_dims(indices);

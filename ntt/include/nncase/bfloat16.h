@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "ntt/compiler_defs.h"
+#include <bit>
 #include <cmath>
 #include <cstdint>
 #include <float.h>

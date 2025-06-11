@@ -17,6 +17,7 @@
 #include "tensor_traits.h"
 #include <algorithm>
 #include <cstdint>
+#include <numeric>
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -131,6 +132,17 @@ constexpr auto clamp(const TDim &dim, const TLowerBound &lower_bound,
     } else {
         return std::clamp(dim_value(dim), dim_value(lower_bound),
                           dim_value(upper_bound));
+    }
+}
+
+template <Dimension TM, Dimension TN>
+    requires(FixedDimension<TM> || FixedDimension<TN>)
+constexpr auto lcm([[maybe_unused]] const TM &m,
+                   [[maybe_unused]] const TN &n) noexcept {
+    if constexpr (FixedDimension<TM> && FixedDimension<TN>) {
+        return fixed_dim_v<std::lcm(TM::value, TN::value)>;
+    } else {
+        return std::lcm(dim_value(m), dim_value(n));
     }
 }
 
