@@ -15,7 +15,9 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS test_ntt_binary_add.cpp
     test_ntt_binary_mul.cpp
     test_ntt_binary_sub.cpp
     test_ntt_cast.cpp
-    test_ntt_clamp.cpp)
+    test_ntt_clamp.cpp
+    test_ntt_pack_generated.cpp
+)
 foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
     add_test_exec(${tname})

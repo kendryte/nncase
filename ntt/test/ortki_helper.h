@@ -129,8 +129,7 @@ void ort2ntt(ortki::OrtKITensor *ort_tensor,
              ntt::tensor<ntt::vector<T, N>, Shape, Stride> &ntt_tensor) {
     size_t size = 0;
     void *ort_ptr = tensor_buffer(ort_tensor, &size);
-    assert(tensor_length(ort_tensor) ==
-           ntt_tensor.size() * ntt_tensor(0).size());
+    assert(tensor_length(ort_tensor) == ntt_tensor.size() * N);
     memcpy(ntt_tensor.elements().data(), ort_ptr, size);
 }
 } // namespace NttTest

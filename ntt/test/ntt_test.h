@@ -233,10 +233,13 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     return pass;
 }
 
-template <typename T, typename Shape, typename Stride, size_t N>
-bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
-                    ntt::tensor<ntt::vector<T, N>, Shape, Stride> &rhs,
-                    double threshold = 0.999f) {
+template <ntt::TensorOfVector TTensor>
+    requires(TTensor::element_type::rank() == 1)
+bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
+    using vector_type = typename TTensor::element_type;
+    using T = typename vector_type::element_type;
+    constexpr size_t N = vector_type::template lane<0>();
+
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
     }
@@ -251,93 +254,130 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
     v2.reserve(rhs.shape().length() * N);
 
     bool pass = true;
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        const auto lvalue = lhs(index);
+        const auto rvalue = rhs(index);
+
+        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
+            auto d1 = (double)(lvalue(idx));
+            auto d2 = (double)(rvalue(idx));
+            v1.push_back(d1);
+            v2.push_back(d2);
+            if (d1 != d2) {
+                std::cout << "index = (";
+                for (size_t i = 0; i < index.rank(); i++)
+                    std::cout << index[i] << " ";
+                std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
+                pass = false;
+            }
+        });
+    });
+
+    if (!pass) {
+        double dotProduct =
+            std::inner_product(v1.begin(), v1.end(), v2.begin(), (double)0.0);
+        double norm1 = std::sqrt(
+            std::inner_product(v1.begin(), v1.end(), v1.begin(), (double)0.0));
+        double norm2 = std::sqrt(
+            std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
+        double cosine_similarity = dotProduct / (norm1 * norm2);
+        pass = cosine_similarity > threshold;
+        if (!pass)
+            std::cerr << "cosine_similarity = " << cosine_similarity
+                      << std::endl;
+    }
+    return pass;
+}
+
+// 2D vector
+template <ntt::TensorOfVector TTensor>
+    requires(TTensor::element_type::rank() == 2)
+bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
+    using vector_type = typename TTensor::element_type;
+    using T = typename vector_type::element_type;
+    constexpr size_t N0 = vector_type::template lane<0>();
+    constexpr size_t N1 = vector_type::template lane<1>();
+
+    if (lhs.shape().rank() != rhs.shape().rank()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < lhs.shape().rank(); i++)
+        if (lhs.shape()[i] != rhs.shape()[i])
+            return false;
+
+    std::vector<double> v1;
+    std::vector<double> v2;
+    v1.reserve(lhs.shape().length() * N0 * N1);
+    v2.reserve(rhs.shape().length() * N0 * N1);
+
+    bool pass = true;
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        const auto lvalue = lhs(index);
+        const auto rvalue = rhs(index);
+
+        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
+            auto d1 = (double)(lvalue(idx));
+            auto d2 = (double)(rvalue(idx));
+            v1.push_back(d1);
+            v2.push_back(d2);
+            if (d1 != d2) {
+                std::cout << "index = (";
+                for (size_t i = 0; i < index.rank(); i++)
+                    std::cout << index[i] << " ";
+                std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
+                pass = false;
+            }
+        });
+    });
+
+    if (!pass) {
+        double dotProduct =
+            std::inner_product(v1.begin(), v1.end(), v2.begin(), (double)0.0);
+        double norm1 = std::sqrt(
+            std::inner_product(v1.begin(), v1.end(), v1.begin(), (double)0.0));
+        double norm2 = std::sqrt(
+            std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
+        double cosine_similarity = dotProduct / (norm1 * norm2);
+        pass = cosine_similarity > threshold;
+        if (!pass)
+            std::cerr << "cosine_similarity = " << cosine_similarity
+                      << std::endl;
+    }
+    return pass;
+}
+
+template <ntt::TensorOrVector TTensor>
+void print_tensor(TTensor &lhs, std::string name) {
+    std::cout << name << std::endl;
+
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        std::cout << lhs(index) << " ";
+    });
+
+    std::cout << std::endl;
+}
+
+template <typename T, typename Shape, typename Stride, size_t N>
+void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
+                    std::string name) {
+    std::cout << name << std::endl;
+
+
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
         const ntt::vector<T, N> lvalue = lhs(index);
-        const ntt::vector<T, N> rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
             auto d1 = (double)(lvalue(idx));
-            auto d2 = (double)(rvalue(idx));
-            v1.push_back(d1);
-            v2.push_back(d2);
-            if (d1 != d2) {
-                std::cout << "index = (";
-                for (size_t i = 0; i < index.rank(); i++)
-                    std::cout << index[i] << " ";
-                std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
-                pass = false;
-            }
+            std::cout << d1 << " ";
         });
+
     });
 
-    if (!pass) {
-        double dotProduct =
-            std::inner_product(v1.begin(), v1.end(), v2.begin(), (double)0.0);
-        double norm1 = std::sqrt(
-            std::inner_product(v1.begin(), v1.end(), v1.begin(), (double)0.0));
-        double norm2 = std::sqrt(
-            std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
-        double cosine_similarity = dotProduct / (norm1 * norm2);
-        pass = cosine_similarity > threshold;
-        if (!pass)
-            std::cerr << "cosine_similarity = " << cosine_similarity
-                      << std::endl;
-    }
-    return pass;
+    std::cout << std::endl;
 }
 
-template <typename T, typename Shape, typename Stride, size_t N>
-bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
-                    ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &rhs,
-                    double threshold = 0.999f) {
-    if (lhs.shape().rank() != rhs.shape().rank()) {
-        return false;
-    }
 
-    for (size_t i = 0; i < lhs.shape().rank(); i++)
-        if (lhs.shape()[i] != rhs.shape()[i])
-            return false;
-
-    std::vector<double> v1;
-    std::vector<double> v2;
-    v1.reserve(lhs.shape().length() * N);
-    v2.reserve(rhs.shape().length() * N);
-
-    bool pass = true;
-    nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        const ntt::vector<T, N, N> lvalue = lhs(index);
-        const ntt::vector<T, N, N> rvalue = rhs(index);
-
-        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
-            auto d1 = (double)(lvalue(idx));
-            auto d2 = (double)(rvalue(idx));
-            v1.push_back(d1);
-            v2.push_back(d2);
-            if (d1 != d2) {
-                std::cout << "index = (";
-                for (size_t i = 0; i < index.rank(); i++)
-                    std::cout << index[i] << " ";
-                std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
-                pass = false;
-            }
-        });
-    });
-
-    if (!pass) {
-        double dotProduct =
-            std::inner_product(v1.begin(), v1.end(), v2.begin(), (double)0.0);
-        double norm1 = std::sqrt(
-            std::inner_product(v1.begin(), v1.end(), v1.begin(), (double)0.0));
-        double norm2 = std::sqrt(
-            std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
-        double cosine_similarity = dotProduct / (norm1 * norm2);
-        pass = cosine_similarity > threshold;
-        if (!pass)
-            std::cerr << "cosine_similarity = " << cosine_similarity
-                      << std::endl;
-    }
-    return pass;
-}
 
 template <typename T> T ulp(T x) {
     x = std::fabs(x);
