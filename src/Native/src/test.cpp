@@ -12,15 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "nncase/ntt/arch/cpu/topology_def.h"
-#include "nncase/ntt/dimension.h"
-#include "nncase/ntt/distributed/mesh.h"
-#include "nncase/ntt/distributed/sharded_tensor.h"
-#include "nncase/ntt/distributed/sharding.h"
-#include "nncase/ntt/padding.h"
-#include "nncase/ntt/shape.h"
-#include "nncase/ntt/tensor.h"
-#include "nncase/ntt/vector.h"
 #include <chrono>
 #include <cmath>
 #include <cstdint>

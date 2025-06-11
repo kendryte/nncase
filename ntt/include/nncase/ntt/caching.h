@@ -15,8 +15,9 @@
 #pragma once
 #include "distributed/sharding.h"
 #include "kernels/copy.h"
+#include "nncase/ntt/dimension.h"
 #include "nncase/ntt/shape.h"
-#include "nncase/ntt/tensor.h"
+#include "tensor.h"
 #include <cstddef>
 #include <cstdint>
 #include <utility>
@@ -81,10 +82,10 @@ struct paged_attention_config
 
 template <class TConfig> class attention_kv_cache {
   public:
-    using context_lens_t = decltype(make_tensor_view<const int64_t>(
-        std::declval<const int64_t *>(), make_shape(std::declval<dim_t>())));
-    using seq_lens_t = decltype(make_tensor_view<const int64_t>(
-        std::declval<const int64_t *>(), make_shape(std::declval<dim_t>())));
+    using context_lens_t = decltype(make_tensor_view_from_address(
+        std::declval<const int64_t *>(), std::declval<dynamic_shape_t<1>>()));
+    using seq_lens_t = decltype(make_tensor_view_from_address(
+        std::declval<const int64_t *>(), std::declval<dynamic_shape_t<1>>()));
 
     static constexpr TConfig config() noexcept { return TConfig{}; }
 
@@ -140,6 +141,14 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     using typename attention_kv_cache<TConfig>::context_lens_t;
     using typename attention_kv_cache<TConfig>::seq_lens_t;
 
+    static constexpr auto id_length = TConfig::sharding_axes_t::rank() + 1_dim;
+    static constexpr auto id_shape = fixed_shape_v<id_length>;
+
+    // [seq_len, blocks, id_length]
+    using block_table_shape_t = shape_t<dim_t, dim_t, fixed_dim<id_length>>;
+    using block_table_t = decltype(make_tensor_view_from_address(
+        std::declval<const int64_t *>(), std::declval<block_table_shape_t>()));
+
     using kv_storage_type_t =
         basic_vector<typename TConfig::kv_prim_type, typename TConfig::lanes_t>;
     using kv_storage_shape_t = dynamic_shape_t<TConfig::cache_layout_t::rank()>;
@@ -154,9 +163,6 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     using kv_type_t = intptr_t;
     using kv_addr_tensor_type_t = decltype(make_tensor_view<intptr_t>(
         std::declval<const intptr_t>(), kv_addr_shape));
-
-    static constexpr auto id_length = TConfig::sharding_axes_t::rank() + 1_dim;
-    using id_shape_t = dynamic_shape_t<id_length>;
 
     paged_attention_kv_cache(size_t num_seqs, size_t num_tokens,
                              context_lens_t context_lens, seq_lens_t seq_lens,

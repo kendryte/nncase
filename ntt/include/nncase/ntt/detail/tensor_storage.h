@@ -21,16 +21,15 @@ namespace nncase::ntt::detail {
 template <class T, size_t MaxSize, bool IsView> class tensor_storage;
 
 // fixed tensor
-template <class T, size_t MaxSize>
-class tensor_storage<T, MaxSize, false> {
+template <class T, size_t MaxSize> class tensor_storage<T, MaxSize, false> {
   public:
     using buffer_type = std::array<T, MaxSize>;
 
-    tensor_storage() = default;
+    constexpr tensor_storage() = default;
 
     // ignore size
-    explicit tensor_storage(size_t) noexcept {}
-    tensor_storage(std::in_place_t, buffer_type value) noexcept
+    constexpr explicit tensor_storage(size_t) noexcept {}
+    constexpr tensor_storage(std::in_place_t, buffer_type value) noexcept
         : buffer_(value) {}
 
     constexpr const buffer_type &buffer() const noexcept { return buffer_; }
@@ -46,12 +45,12 @@ class tensor_storage<T, MaxSize, false> {
 };
 
 // fixed view
-template <class T, size_t MaxSize>
-class tensor_storage<T, MaxSize, true> {
+template <class T, size_t MaxSize> class tensor_storage<T, MaxSize, true> {
   public:
     using buffer_type = std::span<T, MaxSize>;
 
-    tensor_storage(std::in_place_t, buffer_type value) : buffer_(value) {}
+    constexpr tensor_storage(std::in_place_t, buffer_type value)
+        : buffer_(value) {}
 
     constexpr const buffer_type &buffer() const noexcept { return buffer_; }
     constexpr buffer_type &buffer() noexcept { return buffer_; }
@@ -66,13 +65,13 @@ class tensor_storage<T, MaxSize, true> {
 };
 
 // dynamic tensor
-template <class T>
-class tensor_storage<T, std::dynamic_extent, false> {
+template <class T> class tensor_storage<T, std::dynamic_extent, false> {
   public:
     using buffer_type = std::vector<T>;
 
-    explicit tensor_storage(size_t size) : buffer_(size) {}
-    tensor_storage(std::in_place_t, buffer_type value) : buffer_(value) {}
+    constexpr explicit tensor_storage(size_t size) : buffer_(size) {}
+    constexpr tensor_storage(std::in_place_t, buffer_type value)
+        : buffer_(value) {}
 
     constexpr const buffer_type &buffer() const noexcept { return buffer_; }
     constexpr buffer_type &buffer() noexcept { return buffer_; }
@@ -94,7 +93,8 @@ template <class T> class tensor_storage<T, std::dynamic_extent, true> {
     using const_buffer_type = std::span<const T>;
     using buffer_type = std::span<T>;
 
-    tensor_storage(std::in_place_t, buffer_type value) : buffer_(value) {}
+    constexpr tensor_storage(std::in_place_t, buffer_type value)
+        : buffer_(value) {}
 
     constexpr const_buffer_type buffer() const noexcept { return buffer_; }
     constexpr buffer_type buffer() noexcept { return buffer_; }
