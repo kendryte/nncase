@@ -102,7 +102,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
 
         // TODO: may support non-divisible input and pass it to output even if it's divisible.
         var shape = CompilerServices.GetMaxShape(input.TensorType.Shape);
-        foreach (var (s, r) in input.AxisPolices.Select((s, r) => (s, r)))
+        foreach (var (s, r) in input.AxisPolicies.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
@@ -114,6 +114,6 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
             }
         }
 
-        return new DistributedType(tensorType, input.AxisPolices, input.Placement);
+        return new DistributedType(tensorType, input.AxisPolicies, input.Placement);
     }
 }

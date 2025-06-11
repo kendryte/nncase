@@ -81,7 +81,7 @@ public static class DistributedUtility
 
     public static IReadOnlyList<IRArray<SBP>> GetPartialCandidateNDSBPs(DistributedType distributedType)
     {
-        IRArray<SBP> ndsbp = distributedType.AxisPolices;
+        IRArray<SBP> ndsbp = distributedType.AxisPolicies;
         TensorType tensorType = distributedType.TensorType;
         var maxShape = CompilerServices.GetMaxShape(tensorType.Shape);
         Placement placement = distributedType.Placement;
@@ -163,9 +163,9 @@ public static class DistributedUtility
     {
         var rank = distributedType.TensorType.Shape.Rank;
         var divisors = Enumerable.Repeat(0, rank).ToArray();
-        for (int i = 0; i < distributedType.AxisPolices.Count; i++)
+        for (int i = 0; i < distributedType.AxisPolicies.Count; i++)
         {
-            if (distributedType.AxisPolices[i] is SBPSplit split)
+            if (distributedType.AxisPolicies[i] is SBPSplit split)
             {
                 foreach (var a in split.Axes)
                 {
@@ -203,7 +203,7 @@ public static class DistributedUtility
             {
                 foreach (var ax in split.Axes)
                 {
-                    ndsbp[ax] = SBP.S(new[] { i });
+                    ndsbp[ax] = SBP.S([i]);
                 }
             }
         }
@@ -236,9 +236,9 @@ public static class DistributedUtility
         var hierarchies = Enumerable.Range(0, maxShape.Length).Select(i => new List<int>()).ToArray();
         var ids = distributedType.Placement.Name.Select(c => new Var(c + "id", TensorType.Scalar(DataTypes.Int32))).ToArray();
         var hierarchyStrides = TensorUtilities.GetStrides(distributedType.Placement.Hierarchy.ToArray());
-        for (int i = 0; i < distributedType.AxisPolices.Count; i++)
+        for (int i = 0; i < distributedType.AxisPolicies.Count; i++)
         {
-            if (distributedType.AxisPolices[i] is SBPSplit split)
+            if (distributedType.AxisPolicies[i] is SBPSplit split)
             {
                 hierarchies[i].AddRange(split.Axes);
             }
@@ -275,9 +275,9 @@ public static class DistributedUtility
     {
         var maxShape = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
         var hierarchies = Enumerable.Range(0, maxShape.Length).Select(i => new List<int>()).ToArray();
-        for (int i = 0; i < distributedType.AxisPolices.Count; i++)
+        for (int i = 0; i < distributedType.AxisPolicies.Count; i++)
         {
-            if (distributedType.AxisPolices[i] is SBPSplit split)
+            if (distributedType.AxisPolicies[i] is SBPSplit split)
             {
                 hierarchies[i].AddRange(split.Axes);
             }
@@ -381,7 +381,7 @@ public static class DistributedUtility
         var shape = new long[distributedType.TensorType.Shape.Rank];
         for (int axis = 0; axis < offset.Length; axis++)
         {
-            var splits = distributedType.AxisPolices[axis] is SBPSplit s
+            var splits = distributedType.AxisPolicies[axis] is SBPSplit s
             ? s.Axes.Select(td => (Placement: td, DeviceIndex: shardIndex[td], DeviceDim: distributedType.Placement.Hierarchy[td])).ToArray()
             : Array.Empty<(int Placement, int DeviceIndex, int DeviceDim)>();
             if (splits.Any())
@@ -411,7 +411,7 @@ public static class DistributedUtility
         var tiles = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
         for (var d = 0; d < shape.Length; d++)
         {
-            if (distributedType.AxisPolices.Count > d && distributedType.AxisPolices[d] is SBPSplit split)
+            if (distributedType.AxisPolicies.Count > d && distributedType.AxisPolicies[d] is SBPSplit split)
             {
                 var divisor = split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
                 tiles[d] = (tiles[d] + divisor - 1) / divisor;

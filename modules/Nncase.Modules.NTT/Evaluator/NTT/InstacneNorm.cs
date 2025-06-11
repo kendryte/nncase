@@ -151,13 +151,13 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
             return invalid;
         }
 
-        var ndsbp = new SBP[input.AxisPolices.Count];
+        var ndsbp = new SBP[input.AxisPolicies.Count];
         var rAxis = 1;
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var scalePolicy = i - rAxis == 0 ? scale.AxisPolices[i - rAxis] : null;
-            var biasPolicy = i - rAxis == 0 ? bias.AxisPolices[i - rAxis] : null;
-            switch (input.AxisPolices[i], scalePolicy, biasPolicy)
+            var scalePolicy = i - rAxis == 0 ? scale.AxisPolicies[i - rAxis] : null;
+            var biasPolicy = i - rAxis == 0 ? bias.AxisPolicies[i - rAxis] : null;
+            switch (input.AxisPolicies[i], scalePolicy, biasPolicy)
             {
                 case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i == rAxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
                     ndsbp[i] = si;

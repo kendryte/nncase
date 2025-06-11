@@ -121,13 +121,13 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
             return invalid;
         }
 
-        var ndsbp = new SBP[input.AxisPolices.Count];
+        var ndsbp = new SBP[input.AxisPolicies.Count];
 
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var scalePolicy = i - raxis >= 0 ? scale.AxisPolices[i - raxis] : null;
-            var biasPolicy = i - raxis >= 0 ? bias.AxisPolices[i - raxis] : null;
-            switch (input.AxisPolices[i], scalePolicy, biasPolicy)
+            var scalePolicy = i - raxis >= 0 ? scale.AxisPolicies[i - raxis] : null;
+            var biasPolicy = i - raxis >= 0 ? bias.AxisPolicies[i - raxis] : null;
+            switch (input.AxisPolicies[i], scalePolicy, biasPolicy)
             {
                 case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i >= raxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
                     ndsbp[i] = si;

@@ -62,9 +62,9 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
         {
             (TensorType, TensorType, TensorType) => input,
             (DistributedType dt0, DistributedType dt1, DistributedType dt2) =>
-            (dt0.AxisPolices.All(sbp => sbp is SBPBroadCast) &&
-            dt1.AxisPolices.All(sbp => sbp is SBPBroadCast) &&
-            dt2.AxisPolices.All(sbp => sbp is SBPBroadCast)) ? input : new InvalidType("input type is not supported"),
+            (dt0.AxisPolicies.All(sbp => sbp is SBPBroadCast) &&
+            dt1.AxisPolicies.All(sbp => sbp is SBPBroadCast) &&
+            dt2.AxisPolicies.All(sbp => sbp is SBPBroadCast)) ? input : new InvalidType("input type is not supported"),
             _ => throw new NotSupportedException("input type is not supported"),
         };
     }
