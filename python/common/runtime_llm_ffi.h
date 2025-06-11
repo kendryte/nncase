@@ -181,7 +181,7 @@ void register_runtime_llm_ffi(py::module &m) {
         .def("set_axis_policy", [](llm::paged_attention_config_node &self,
                                    int32_t i,
                                    const std::vector<size_t> &axis_policy) {
-            if (i < 0 || i >= self.axis_policies().size() ||
+            if (i < 0 || i >= (int32_t)self.axis_policies().size() ||
                 axis_policy.size() > 8) {
                 throw std::out_of_range("Index out of range");
             }
