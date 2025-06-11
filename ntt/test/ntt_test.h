@@ -233,10 +233,13 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     return pass;
 }
 
-template <typename T, typename Shape, typename Stride, size_t N>
-bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
-                    ntt::tensor<ntt::vector<T, N>, Shape, Stride> &rhs,
-                    double threshold = 0.999f) {
+template <ntt::TensorOfVector TTensor>
+    requires(TTensor::element_type::rank() == 1)
+bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
+    using vector_type = typename TTensor::element_type;
+    using T = typename vector_type::element_type;
+    constexpr size_t N = vector_type::template lane<0>();
+
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
     }
@@ -252,8 +255,8 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
 
     bool pass = true;
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        const ntt::vector<T, N> lvalue = lhs(index);
-        const ntt::vector<T, N> rvalue = rhs(index);
+        const auto lvalue = lhs(index);
+        const auto rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
             auto d1 = (double)(lvalue(idx));
@@ -286,11 +289,15 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
     return pass;
 }
 
+// 2D vector
+template <ntt::TensorOfVector TTensor>
+    requires(TTensor::element_type::rank() == 2)
+bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
+    using vector_type = typename TTensor::element_type;
+    using T = typename vector_type::element_type;
+    constexpr size_t N0 = vector_type::template lane<0>();
+    constexpr size_t N1 = vector_type::template lane<1>();
 
-template <typename T, typename Shape, typename Stride, size_t N>
-bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
-                    ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &rhs,
-                    double threshold = 0.999f) {
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
     }
@@ -301,13 +308,13 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
 
     std::vector<double> v1;
     std::vector<double> v2;
-    v1.reserve(lhs.shape().length() * N);
-    v2.reserve(rhs.shape().length() * N);
+    v1.reserve(lhs.shape().length() * N0 * N1);
+    v2.reserve(rhs.shape().length() * N0 * N1);
 
     bool pass = true;
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        const ntt::vector<T, N, N> lvalue = lhs(index);
-        const ntt::vector<T, N, N> rvalue = rhs(index);
+        const auto lvalue = lhs(index);
+        const auto rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
             auto d1 = (double)(lvalue(idx));

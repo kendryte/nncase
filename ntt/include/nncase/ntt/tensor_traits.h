@@ -92,6 +92,9 @@ concept TensorOrScalar = Tensor<T> || Scalar<T>;
 template <typename T>
 concept TensorOrVector = Tensor<T> || Vector<T>;
 
+template <typename T>
+concept TensorOfVector = TensorOrVector<T> && Vector<typename T::element_type>;
+
 template <class T> struct element_or_scalar_type {
     using type = T;
 };
