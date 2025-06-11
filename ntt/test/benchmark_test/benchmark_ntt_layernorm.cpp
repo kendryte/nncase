@@ -551,8 +551,6 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis1() {
 
     using tensor_type3 =
         ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    using tensor_type4 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<1>>;
     auto shape3 = ntt::make_ranked_shape(D0, D1 / P, D2);
 
     tensor_type1 buffer_0(shape1);
