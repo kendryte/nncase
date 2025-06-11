@@ -92,11 +92,13 @@ PYBIND11_MODULE(_nncaseruntime, m) {
         .def("get_output_desc", &interpreter::output_desc)
         .def("get_input_shape",
              [](interpreter &interp, size_t index) {
-                 return to_py_shape(interp.input_shape(index));
+                 auto shape = interp.input_shape(index);
+                 return std::vector<py::ssize_t>(shape.begin(), shape.end());
              })
         .def("get_output_shape",
              [](interpreter &interp, size_t index) {
-                 return to_py_shape(interp.output_shape(index));
+                 auto shape = interp.output_shape(index);
+                 return std::vector<py::ssize_t>(shape.begin(), shape.end());
              })
         .def("get_input_tensor",
              [](interpreter &interp, size_t index) {
