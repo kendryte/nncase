@@ -67,25 +67,26 @@ class NNCASE_API paged_attention_kv_cache_node
 
     void kv_cache(dims_t indices, tensor kv_storage) noexcept {
         auto index = runtime::linear_offset(indices, kv_strides_);
-        kv_storages_[index] = kv_storage;
+        kv_storages_.at(index) = kv_storage;
     }
 
     tensor kv_cache(dims_t indices) const noexcept {
         auto index = runtime::linear_offset(indices, kv_strides_);
-        return kv_storages_[index];
+        return kv_storages_.at(index);
     }
 
     void kv_cache(int index, tensor kv_storage) noexcept {
-        kv_storages_[index] = kv_storage;
+        kv_storages_.at(index) = kv_storage;
     }
 
-    tensor kv_cache(int index) const noexcept { return kv_storages_[index]; }
+    tensor kv_cache(int index) const noexcept { return kv_storages_.at(index); }
 
     const dims_t &kv_shape() const noexcept { return kv_shape_; }
     void kv_shape(const dims_t &kv_shape) noexcept {
         kv_shape_ = kv_shape;
-        kv_storages_.clear();
         kv_strides_ = runtime::get_default_strides(kv_shape_);
+        kv_storages_.clear();
+        kv_storages_.resize(runtime::compute_size(kv_shape_));
     }
 
     const auto &kv_storages() const noexcept { return kv_storages_; }

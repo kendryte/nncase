@@ -400,10 +400,16 @@ class config_wrapper:
         return self.kv_cache.config
 
 
-def test_paged_attention_scheduler_construction():
+def test_paged_attention_kvcache_copy():
     wrapper = config_wrapper()
     rt_scheduler = nncase.PagedAttentionScheduler(wrapper.config(), 256, 512, [1, 2, 8, 4, 4])
     assert rt_scheduler is not None
+    rt_kvcache = rt_scheduler.schedule([0], [8])
+    wrapper.kv_cache.kv_topo = rt_kvcache.kv_topo
+    wrapper.kv_cache.slot_mapping = rt_kvcache.slot_mapping
+    for i in range(rt_kvcache.kv_topo[0]):
+        for j in range(rt_kvcache.kv_topo[1]):
+            wrapper.kv_cache.kv_cache([i, j], rt_kvcache.kv_cache([i, j]))
 
 
 def test_paged_attention_scheduler_distributed():

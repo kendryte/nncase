@@ -110,12 +110,18 @@ inline void register_runtime_tensor(py::module &m) {
         .def_property_readonly(
             "dtype",
             [](runtime_tensor &tensor) {
+                if (tensor.empty()) {
+                    return py::dtype("empty");
+                }
                 if (tensor.impl()->dtype().is_a<prim_type_t>()) {
                     return to_dtype(tensor.datatype());
                 }
                 return py::dtype("other");
             })
         .def_property_readonly("shape", [](runtime_tensor &tensor) {
+            if (tensor.empty()) {
+                return std::vector<pybind11::ssize_t>();
+            }
             return to_py_shape(tensor.shape());
         });
 }
