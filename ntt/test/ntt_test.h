@@ -97,17 +97,24 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<float_e5m2_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, int8_t>) {
+    } else if constexpr (ntt::Vector<TTensor> && std::is_same_v<typename TTensor::element_type, float>) {
+        std::uniform_real_distribution<float> dis(start, stop);
+        ntt::apply(tensor.shape(), [&](auto &index) {
+            ntt::apply(tensor(index).shape, [&](auto &index_of_vector) {
+                tensor(index)(index_of_vector) = static_cast<float>(dis(gen));
+            });  //apply for vector
+        }); //apply for tensor
+    } else if constexpr (std::is_same_v<T, int8_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int8_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, int16_t>) {
+    } else if constexpr (std::is_same_v<T, int16_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int16_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, int32_t>) {
+    } else if constexpr (std::is_same_v<T, int32_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int32_t>(dis(gen));
@@ -116,32 +123,32 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if (std::is_same_v<T, int64_t>) {
+    } else if constexpr (std::is_same_v<T, int64_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int64_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint8_t>) {
+    } else if constexpr (std::is_same_v<T, uint8_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint8_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint16_t>) {
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint16_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint32_t>) {
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint32_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint64_t>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint64_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, float>) {
+    } else if constexpr (std::is_same_v<T, float>) {
         std::uniform_real_distribution<float> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<float>(dis(gen));
@@ -150,22 +157,22 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if (std::is_same_v<T, half>) {
+    } else if constexpr (std::is_same_v<T, half>) {
         std::uniform_real_distribution<float> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<half>(dis(gen));
         });
-    } else if (std::is_same_v<T, double>) {
+    } else if constexpr (std::is_same_v<T, double>) {
         std::uniform_real_distribution<double> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<double>(dis(gen));
         });
-    } else if (std::is_same_v<T, bool>) {
-        std::uniform_real_distribution<double> dis(start, stop);
+    } else if constexpr (std::is_same_v<T, bool>) {
+        std::uniform_real_distribution<double> dis(0.0, 1.0);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<double>(dis(gen)) >= 0.5;
         });
-    } else {
+    } else{
         std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
         std::abort();
     }

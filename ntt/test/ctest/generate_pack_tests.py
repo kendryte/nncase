@@ -150,7 +150,7 @@ class PackTestGenerator:
         # Calculate the dimension to be packed.
         vector_dims = []
         for axis in pack_axes:
-                dims[axis] *= 8
+                dims[axis] *= 8   #  8 is element number of vector
                 vector_dims.append(8)
         
         test_name = self.generate_test_name(shape_type, vector_dim, continuity, 
