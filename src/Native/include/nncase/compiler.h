@@ -144,12 +144,10 @@ typedef struct {
     void (*import_options_set_huggingface_options)(
         clr_object_handle_t import_options,
         clr_object_handle_t huggingface_options);
-    void (*huggingface_options_output_attentions)(
-        clr_object_handle_t huggingface_options, bool output_attentions);
+    void (*huggingface_options_output_logits)(
+        clr_object_handle_t huggingface_options, bool output_logits);
     void (*huggingface_options_output_hidden_states)(
         clr_object_handle_t huggingface_options, bool output_hidden_states);
-    void (*huggingface_options_use_cache)(
-        clr_object_handle_t huggingface_options, bool use_cache);
     uint8_t (*huggingface_options_get_attention_backend)(
         clr_object_handle_t huggingface_options);
     void (*huggingface_options_set_attention_backend)(
@@ -591,21 +589,15 @@ class huggingface_options : public clr_object_base {
         obj_ = nncase_clr_api()->huggingface_options_create();
     }
 
-    bool output_attentions() { return false; }
-    void output_attentions(bool value) {
-        nncase_clr_api()->huggingface_options_output_attentions(obj_.get(),
-                                                                value);
+    bool output_logits() { return true; }
+    void output_logits(bool value) {
+        nncase_clr_api()->huggingface_options_output_logits(obj_.get(), value);
     }
 
     bool output_hidden_states() { return false; }
     void output_hidden_states(bool value) {
         nncase_clr_api()->huggingface_options_output_hidden_states(obj_.get(),
                                                                    value);
-    }
-
-    bool use_cache() { return false; }
-    void use_cache(bool value) {
-        nncase_clr_api()->huggingface_options_use_cache(obj_.get(), value);
     }
 
     huggingface_attenion_backend attention_backend() {

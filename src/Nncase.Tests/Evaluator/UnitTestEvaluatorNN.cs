@@ -25,6 +25,7 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
     [
         ("prefill", [4L], [4L]),
         ("prefill*2", [12L, 15L], [12L, 15L]),
+        ("decode", [1L], [5L]),
         ("extend", [4L], [8L]),
         ("prefill+extend", [4L, 4L], [4L, 8L]),
         ("prefill+decode", [4L, 1L], [4L, 9L]),

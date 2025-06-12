@@ -24,9 +24,9 @@ logging.getLogger("transformers").setLevel(logging.ERROR)
 def test_qwen2_fp8_static(request):
     cfg = """
     [huggingface_options]
-    output_attentions = false
+    output_logits = true
     output_hidden_states = true
-    use_cache = false
+
 
     [generator]
     [generator.inputs]

@@ -108,7 +108,7 @@ endif()
 # Python binding
 if(BUILD_PYTHON_BINDING)
     if(BUILDING_RUNTIME)
-        #add_subdirectory(python/nncaseruntime/native)
+        add_subdirectory(python/nncaseruntime/native)
     else()
         add_subdirectory(python/nncase/native)
     endif()

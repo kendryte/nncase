@@ -55,6 +55,7 @@ struct thread_paged_attention_kv_cache_desc {
     // KV storage related
     std::array<intptr_t, 128> kv_storages; // Raw pointers to KV storage data
     std::array<int32_t, 8> kv_shape;
+    size_t conversation_id;
 };
 
 void *thread_alloc(size_t bytes, size_t alignment);

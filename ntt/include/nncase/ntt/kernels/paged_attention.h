@@ -364,7 +364,7 @@ void paged_attention(
         // scale s : [head_q, query_len, seq_len]
         ntt::binary<ntt::ops::mul>(s, scale, s);
         // add tril mask.
-        constexpr size_t diagonal = 0;
+        size_t diagonal = seq_len - query_len;
         for (size_t q_head_id = 0; q_head_id < s.shape()[0]; q_head_id++) {
             for (size_t q_id = 0; q_id < s.shape()[1]; q_id++) {
                 for (size_t context_id = q_id + diagonal + 1;

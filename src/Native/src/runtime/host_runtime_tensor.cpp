@@ -142,7 +142,7 @@ result<runtime_tensor> hrt::create(typecode_t typecode, dims_t shape,
     return create(datatype, shape, strides, data, copy, pool, physical_address);
 }
 
-result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
+result<runtime_tensor> hrt::create(datatype_t datatype, dims_t shape,
                                    strides_t strides, std::span<std::byte> data,
                                    data_deleter_t data_deleter,
                                    memory_pool_t pool,
@@ -182,7 +182,7 @@ result<runtime_tensor> hrt::create(datatype_t datatype, dims_t shape,
                   physical_address);
 }
 
-result<runtime_tensor> hrt::create(typecode_t datatype, dims_t shape,
+result<runtime_tensor> hrt::create(datatype_t datatype, dims_t shape,
                                    std::span<std::byte> data,
                                    data_deleter_t data_deleter,
                                    memory_pool_t pool,

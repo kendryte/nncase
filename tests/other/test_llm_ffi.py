@@ -20,6 +20,8 @@ import pytest
 import torch
 import numpy as np
 import nncase
+import os
+print(os.getpid())
 
 
 def test_attention_config():
@@ -136,7 +138,6 @@ def test_paged_attention_config():
 
 def test_huggface_options():
     opt = nncase.HuggingFaceOptions()
-    opt.use_cache = True
     opt.max_model_len = 1234
     cfg = nncase.PagedAttentionConfig(1, 2, 3, np.dtype(np.float32), 16)
     opt.config = cfg
@@ -268,29 +269,55 @@ def test_paged_attention_scheduler():
     session_ids = [1, 2, 3]  # Three different sessions
     query_lens = [10, 15, 20]  # Different query lengths for each session
 
-    scheduler = nncase._nncase.RefPagedAttentionScheduler(
+    ref_scheduler = nncase._nncase.RefPagedAttentionScheduler(
         config,
         num_blocks,
         max_model_len,
         hierarchy
     )
 
-    kv_cache = scheduler.schedule(session_ids, query_lens)
+    rt_scheduler = nncase.PagedAttentionScheduler(
+        config,
+        num_blocks,
+        max_model_len,
+        hierarchy
+    )
 
-    ctx_lens = kv_cache.context_lens.to_runtime_tensor().to_numpy()
+    ref_kv_cache = ref_scheduler.schedule(session_ids, query_lens)
+
+    ctx_lens = ref_kv_cache.context_lens.to_runtime_tensor().to_numpy()
     assert np.allclose(ctx_lens, np.array([0, 0, 0], np.int64))
-    seq_lens = kv_cache.seq_lens.to_runtime_tensor().to_numpy()
+    seq_lens = ref_kv_cache.seq_lens.to_runtime_tensor().to_numpy()
     assert np.allclose(seq_lens, np.array([10, 15, 20], np.int64))
-    block_table = kv_cache.block_table.to_runtime_tensor().to_numpy()
+    block_table = ref_kv_cache.block_table.to_runtime_tensor().to_numpy()
     assert len(block_table.shape) == 3
     assert block_table.shape[1] == 2
-    block_table[0, 0, 0] == 0 + session_ids[0] * (max_model_len // config.block_size)
-    block_table[1, 0, 0] == 0 + session_ids[1] * (max_model_len // config.block_size)
-    block_table[2, 0, 0] == 0 + session_ids[2] * (max_model_len // config.block_size)
-    block_table[2, 1, 0] == 1 + session_ids[2] * (max_model_len // config.block_size)
+    assert block_table[0, 0, 0] == 0 + session_ids[0] * (max_model_len // config.block_size)
+    assert block_table[1, 0, 0] == 0 + session_ids[1] * (max_model_len // config.block_size)
+    assert block_table[2, 0, 0] == 0 + session_ids[2] * (max_model_len // config.block_size)
+    assert block_table[2, 1, 0] == 1 + session_ids[2] * (max_model_len // config.block_size)
 
-    ivalue = kv_cache.as_ivalue()
+    # ref kv cache to ivalue
+    ivalue = ref_kv_cache.as_ivalue()
     assert ivalue is not None
+
+    rt_kv_cache = rt_scheduler.schedule(session_ids, query_lens)
+    assert rt_kv_cache.num_blocks == num_blocks
+    ctx_lens = rt_kv_cache.context_lens.to_numpy()
+    assert np.allclose(ctx_lens, np.array([0, 0, 0], np.int64))
+    seq_lens = rt_kv_cache.seq_lens.to_numpy()
+    assert np.allclose(seq_lens, np.array([10, 15, 20], np.int64))
+    block_table = rt_kv_cache.block_table.to_numpy()
+    assert len(block_table.shape) == 3
+    assert block_table.shape[1] == 2
+    assert block_table[0, 0, 0] == 0 + session_ids[0] * (max_model_len // config.block_size)
+    assert block_table[1, 0, 0] == 0 + session_ids[1] * (max_model_len // config.block_size)
+    assert block_table[2, 0, 0] == 0 + session_ids[2] * (max_model_len // config.block_size)
+    assert block_table[2, 1, 0] == 1 + session_ids[2] * (max_model_len // config.block_size)
+
+    # rt kv cache to runtime tensor
+    rt_tensor = nncase.RuntimeTensor.from_object(rt_kv_cache)
+    assert rt_tensor is not None
 
     # Test with different parameters - empty session
     empty_session_ids = []
@@ -298,7 +325,14 @@ def test_paged_attention_scheduler():
 
     try:
         # This might raise an exception depending on implementation
-        empty_kv_cache = scheduler.schedule(empty_session_ids, empty_query_lens)
+        empty_kv_cache = ref_scheduler.schedule(empty_session_ids, empty_query_lens)
+        assert empty_kv_cache is not None
+    except Exception as e:
+        # If empty inputs aren't allowed, that's fine
+        print(f"Note: Empty session test failed as expected: {str(e)}")
+
+    try:
+        empty_kv_cache = rt_scheduler.schedule(empty_session_ids, empty_query_lens)
         assert empty_kv_cache is not None
     except Exception as e:
         # If empty inputs aren't allowed, that's fine
@@ -310,20 +344,75 @@ def test_paged_attention_scheduler():
 
     try:
         # This should raise an exception
-        scheduler.schedule(mismatched_session_ids, mismatched_query_lens)
-        # If we get here, it didn't throw as expected
+        ref_scheduler.schedule(mismatched_session_ids, mismatched_query_lens)
+        assert False, "Scheduler should have rejected mismatched session_ids and query_lens"
+    except Exception:
+        # Expected behavior
+        pass
+
+    try:
+        # This should raise an exception
+        rt_scheduler.schedule(mismatched_session_ids, mismatched_query_lens)
         assert False, "Scheduler should have rejected mismatched session_ids and query_lens"
     except Exception:
         # Expected behavior
         pass
 
     # get the test function.
-    test_func = scheduler.create_test_function(
+    test_func = ref_scheduler.create_test_function(
         8,
         [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head,
             nncase._nncase.AttentionDimKind.Dim],
         [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head, nncase._nncase.AttentionDimKind.Dim])
     assert len(test_func.parameters) == 1 + 1 + config.num_layers * 2
+
+
+class config_wrapper:
+    def __init__(self):
+        num_layers = 1
+        num_kv_heads = 8
+        head_dim = 64
+        block_size = 256
+        num_blocks = 256
+        max_sessions = 16
+        max_model_len = (block_size * num_blocks) // max_sessions
+        kv_type = np.dtype(np.float16)
+
+        config = nncase.PagedAttentionConfig(
+            num_layers,
+            num_kv_heads,
+            head_dim,
+            kv_type,
+            block_size,
+            [nncase.PagedKVCacheDimKind.NumBlocks,
+             nncase.PagedKVCacheDimKind.NumLayers,
+             nncase.PagedKVCacheDimKind.NumKVHeads,
+             nncase.PagedKVCacheDimKind.KV,
+             nncase.PagedKVCacheDimKind.BlockSize,
+             nncase.PagedKVCacheDimKind.HeadDim],
+            [nncase.PagedKVCacheDimKind.HeadDim],
+            [128 // 2],
+            [nncase.PagedKVCacheDimKind.NumKVHeads, nncase.PagedKVCacheDimKind.NumBlocks],
+            [[1], [2, 3]])
+        self.kv_cache = nncase.PagedAttentionKVCache(config)
+
+    def config(self):
+        return self.kv_cache.config
+
+
+def test_paged_attention_kvcache_copy():
+    wrapper = config_wrapper()
+    rt_scheduler = nncase.PagedAttentionScheduler(wrapper.config(), 256, 512, [1, 2, 8, 4, 4])
+    assert rt_scheduler is not None
+    rt_kvcache = rt_scheduler.schedule([0], [8])
+    wrapper.kv_cache.kv_topo = rt_kvcache.kv_topo
+    wrapper.kv_cache.slot_mapping = rt_kvcache.slot_mapping
+    for i in range(rt_kvcache.kv_topo[0]):
+        for j in range(rt_kvcache.kv_topo[1]):
+            dtype = rt_kvcache.kv_cache([i, j]).dtype
+            assert np.dtype(np.float16) == dtype
+            cache_array = rt_kvcache.kv_cache([i, j]).to_numpy()
+            wrapper.kv_cache.kv_cache([i, j], nncase.RuntimeTensor.from_numpy(cache_array))
 
 
 def test_paged_attention_scheduler_distributed():
@@ -361,34 +450,42 @@ def test_paged_attention_scheduler_distributed():
     assert config.axis_policies[1] == [2, 3]
 
     hierarchy = [1, 2, 8, 4, 4]
-    scheduler = nncase._nncase.RefPagedAttentionScheduler(
+    ref_scheduler = nncase._nncase.RefPagedAttentionScheduler(
+        config, num_blocks, max_model_len, hierarchy)
+    rt_scheduler = nncase.PagedAttentionScheduler(
         config, num_blocks, max_model_len, hierarchy)
 
     session_ids = [0]
     query_lens = [512]
-    kvcache = scheduler.schedule(session_ids, query_lens)
-    block_table = kvcache.block_table.to_runtime_tensor().to_numpy()
+    ref_kvcache = ref_scheduler.schedule(session_ids, query_lens)
+    block_table = ref_kvcache.block_table.to_runtime_tensor().to_numpy()
     assert block_table.shape == (1, 2, 3)
     assert np.allclose(block_table, np.array([[[-1, 0, 0], [-1, 0, 1]]], np.int64))
-    slot_mapping = kvcache.slot_mapping.to_runtime_tensor().to_numpy()
+    slot_mapping = ref_kvcache.slot_mapping.to_runtime_tensor().to_numpy()
     slot_mapping_ref = np.zeros_like(slot_mapping)
     slot_mapping_ref[:, 0] = -1
     slot_mapping_ref[:, 1] = 0
     slot_mapping_ref[:, 2] = np.arange(0, 512)
     assert np.allclose(slot_mapping, slot_mapping_ref)
+    rt_kvcache = rt_scheduler.schedule(session_ids, query_lens)
+    assert np.allclose(rt_kvcache.block_table.to_numpy(), block_table)
+    assert np.allclose(rt_kvcache.slot_mapping.to_numpy(), slot_mapping)
 
-    kvcache = scheduler.schedule([0], [1])
-    block_table = kvcache.block_table.to_runtime_tensor().to_numpy()
+    ref_kvcache = ref_scheduler.schedule([0], [1])
+    block_table = ref_kvcache.block_table.to_runtime_tensor().to_numpy()
     assert block_table.shape == (1, 3, 3)
     assert np.allclose(block_table, np.array([[[-1, 0, 0], [-1, 0, 1], [-1, 0, 2]]], np.int64))
-    slot_mapping = kvcache.slot_mapping.to_runtime_tensor().to_numpy()
+    slot_mapping = ref_kvcache.slot_mapping.to_runtime_tensor().to_numpy()
     slot_mapping_ref = np.zeros_like(slot_mapping)
     slot_mapping_ref[0, :] = [-1, 0, 512]
     assert np.allclose(slot_mapping, slot_mapping_ref)
+    rt_kvcache = rt_scheduler.schedule([0], [1])
+    assert np.allclose(rt_kvcache.block_table.to_numpy(), block_table)
+    assert np.allclose(rt_kvcache.slot_mapping.to_numpy(), slot_mapping)
 
     # get the test function.
     num_q_heads = 8
-    test_func = scheduler.create_test_function(
+    test_func = ref_scheduler.create_test_function(
         num_q_heads,
         [nncase._nncase.AttentionDimKind.Seq, nncase._nncase.AttentionDimKind.Head,
             nncase._nncase.AttentionDimKind.Dim],
@@ -412,7 +509,7 @@ def test_paged_attention_scheduler_distributed():
         nncase.RuntimeTensor.from_numpy(ref_k)))
     inputs.append(nncase._nncase.RTValue.from_runtime_tensor(
         nncase.RuntimeTensor.from_numpy(ref_v)))
-    inputs.append(kvcache.as_ivalue())
+    inputs.append(ref_kvcache.as_ivalue())
     inputs.append(nncase._nncase.RTValue.from_runtime_tensor(
         nncase.RuntimeTensor.from_numpy(np.array(np.sum(query_lens), np.int64))))
     result = body.evaluate(parameters, inputs)
