@@ -191,8 +191,13 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             switch (input.AxisPolicies[i], scalePolicy, biasPolicy)
             {
                 case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i >= raxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
+                // FIXME: not support on axes for now
+#if true
+                    return invalid;
+#else
                     ndsbp[i] = si;
                     break;
+#endif
                 case (SBPSplit si, _, _) when i < raxis:
                     ndsbp[i] = si;
                     break;

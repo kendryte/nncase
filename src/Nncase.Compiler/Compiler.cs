@@ -116,6 +116,8 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.NormAxisReshape>();
             p.Add<Passes.Rules.Neutral.NormAxisReduceArg>();
             p.Add<Passes.Rules.Neutral.NormAxisSlice>();
+            p.Add<Passes.Rules.Neutral.NormAxisLayernorm>();
+            p.Add<Passes.Rules.Neutral.NormAxisSoftmax>();
             p.Add<Passes.Rules.Neutral.SqueezeTransposeShape>();
             p.Add<Passes.Rules.Neutral.Squeeze5DTranspose>();
             p.Add<Passes.Rules.Neutral.SqueezeBinaryShape>();
@@ -172,8 +174,6 @@ public class Compiler : ICompiler
         passManager.AddWithName<DataflowPass>("DecomposeComplexOps").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
-            p.Add<Passes.Rules.Neutral.DecomposeSoftmax>();
-            p.Add<Passes.Rules.Neutral.DecomposeLayerNorm>();
             p.Add<Passes.Rules.Neutral.DecomposeInstanceNorm>();
             p.Add<Passes.Rules.Neutral.DecomposeGelu>();
             p.Add<Passes.Rules.Neutral.DecomposeSwish>();

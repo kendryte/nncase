@@ -153,6 +153,14 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return call;
             case IR.NN.GetPositionIds getPositionIds:
                 return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output);
+            case IR.NN.LayerNorm ln:
+                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean,  Array.Empty<int>(),  Array.Empty<int>());
+            case IR.NTT.PackedLayerNorm ln:
+                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, ln.PackedAxes, ln.PadedNums);
+            case IR.NN.Softmax softmax:
+                return TIR.F.NTT.PackedSoftmax((Expr)arguments[0], output, (int)((DimConst)call[IR.NN.Softmax.Axis]).FixedValue, Array.Empty<int>());
+            case IR.NTT.PackedSoftmax softmax:
+                return TIR.F.NTT.PackedSoftmax((Expr)arguments[0], output, softmax.Axis, softmax.PackedAxes);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

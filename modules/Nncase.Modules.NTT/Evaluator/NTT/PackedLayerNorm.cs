@@ -72,19 +72,19 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
-#if false
-            case (DistributedType inputDistributedType, DistributedType):
+
+            case (DistributedType, DistributedType):
                 var scaleType = context.GetArgumentType<DistributedType>(target, PackedLayerNorm.Scale);
                 var biasType = context.GetArgumentType<DistributedType>(target, PackedLayerNorm.Bias);
-                var ring = GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + GetRingReduceCommunicate(biasType, new[] { 0, 1 });
-                var reCompute = inputDistributedType.NdSBP.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
+
+                // var ring = GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + GetRingReduceCommunicate(biasType, new[] { 0, 1 });
+                // var reCompute = inputDistributedType.NdSBP.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
                 return new()
                 {
-                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + ring,
-                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1) * (UInt128)reCompute,
-                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType) + ring,
+                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(scaleType) + CostUtility.GetMemoryAccess(biasType),
+                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1),
+                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
-#endif
             default:
                 throw new NotSupportedException();
         }
@@ -130,8 +130,13 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
             switch (input.AxisPolicies[i], scalePolicy, biasPolicy)
             {
                 case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i >= raxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
+                    // FIXME: not support on axes for now
+#if true
+                    return invalid;
+#else
                     ndsbp[i] = si;
                     break;
+#endif
                 case (SBPSplit si, _, _) when i < raxis:
                     ndsbp[i] = si;
                     break;
