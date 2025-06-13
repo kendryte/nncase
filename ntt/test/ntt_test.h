@@ -82,7 +82,7 @@ __inline__ uint64_t get_cpu_cycle(void) {
     return cycles;
 }
 
-template <typename T, class TTensor>
+template <typename T, TensorOrVector TTensor>
 void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
                  T stop = static_cast<T>(1)) {
     std::random_device rd;
@@ -171,16 +171,9 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
     }
 }
 
-template <typename T, typename Shape, typename Stride, size_t N>
-void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,
-                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
-    ntt::apply(tensor.shape(),
-               [&](auto &index) { init_tensor(tensor(index), start, stop); });
-}
-
-template <typename T, typename Shape, typename Stride, size_t N>
-void init_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor,
-                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
+template <typename T, TensorOfVector TTensor>
+void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
+                 T stop = static_cast<T>(1)) {
     ntt::apply(tensor.shape(),
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
 }
@@ -351,18 +344,16 @@ template <ntt::TensorOrVector TTensor>
 void print_tensor(TTensor &lhs, std::string name) {
     std::cout << name << std::endl;
 
-    nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        std::cout << lhs(index) << " ";
-    });
+    nncase::ntt::apply(lhs.shape(),
+                       [&](auto index) { std::cout << lhs(index) << " "; });
 
     std::cout << std::endl;
 }
 
 template <typename T, typename Shape, typename Stride, size_t N>
 void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
-                    std::string name) {
+                  std::string name) {
     std::cout << name << std::endl;
-
 
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
         const ntt::vector<T, N> lvalue = lhs(index);
@@ -371,13 +362,10 @@ void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
             auto d1 = (double)(lvalue(idx));
             std::cout << d1 << " ";
         });
-
     });
 
     std::cout << std::endl;
 }
-
-
 
 template <typename T> T ulp(T x) {
     x = std::fabs(x);

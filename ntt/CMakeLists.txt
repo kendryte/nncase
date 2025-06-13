@@ -7,5 +7,5 @@ if(BUILD_TESTING)
 endif()
 
 if(BUILD_BENCHMARK)
-    #add_subdirectory(test/benchmark_test)
+    add_subdirectory(test/benchmark_test)
 endif()
