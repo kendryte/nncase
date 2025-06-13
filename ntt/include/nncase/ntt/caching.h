@@ -132,6 +132,33 @@ concept HasValidShape =
 
 template <size_t N, typename T>
 concept ValidIdTensor = Tensor<T> && HasValidShape<T, N>;
+
+template <class Mesh, class TConfig>
+static constexpr auto get_default_kv_block_shape() noexcept {
+    constexpr auto unpacked_shape =
+        fixed_shape_v<1 /* dummy num blocks */, TConfig::num_layers, 2,
+                      TConfig::block_size, TConfig::num_kv_heads,
+                      TConfig::head_dim>;
+
+    auto packed_shape = TConfig::packed_axes.aggregate(
+        unpacked_shape, [&](auto last_shape, auto packed_axis, auto i) {
+            last_shape.template replace_at<packed_axis>(
+                last_shape[packed_axis] / TConfig::lanes[i]);
+        });
+
+    auto shard_shape = TConfig::sharding_axes.aggregate(
+        packed_shape, [&](auto last_shape, auto sharding_axis, auto i) {
+            using axis_policy_t =
+                std::tuple_element_t<i, typename TConfig::axis_policies_t>;
+            auto dim =
+                axis_policy_t::template try_shard_dim_without_shard_index<Mesh>(
+                    last_shape[sharding_axis]);
+            static_assert(dim != -1_dim,
+                          "Only uniform shard dim is supported.");
+            return last_shape.template replace_at<sharding_axis>(dim);
+        });
+    return shard_shape.template slice<1>(); // remove num_blocks
+}
 } // namespace detail
 
 template <class Mesh, class TConfig>
@@ -156,7 +183,10 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
 
     using kv_storage_type_t =
         basic_vector<typename TConfig::kv_prim_type, typename TConfig::lanes_t>;
-    using kv_storage_shape_t = dynamic_shape_t<TConfig::cache_layout_t::rank()>;
+
+    static constexpr auto default_block_kv_shape =
+        detail::get_default_kv_block_shape<Mesh, TConfig>();
+
     using kv_storage_tensor_type_t =
         decltype(make_tensor_view<kv_storage_shape_t>(
             std::declval<kv_storage_type_t *>(),
@@ -188,28 +218,43 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         return slot_mapping_.view(make_shape(token_id));
     }
 
-  private:
-    const kv_storage_shape_t get_default_kv_storage_shape() {
-        auto cfg = config();
-        auto shape = ntt::make_ranked_shape(num_blocks(), cfg.num_layers, 2,
-                                            cfg.block_size, cfg.num_kv_heads,
-                                            cfg.head_dim);
-        // pack
-        loop<TConfig::packed_axes_t::rank()>([&](auto i) {
-            constexpr auto axis = TConfig::packed_axes_t::at(i);
-            shape[axis] /= TConfig::lanes_t::at(i);
-        });
-
-        loop<TConfig::sharding_axes_t::rank()>([&](auto i) {
-            constexpr auto axis = TConfig::sharding_axes_t::at(i);
-            shape[axis] =
-                std::tuple_element_t<i, typename TConfig::axis_policies_t>::
-                    template local_dim<Mesh>(shape[axis]);
-        });
-
-        return shape;
+    template <attention_cache_kind Kind, class T>
+    constexpr auto get_block(dim_t layer_id, dim_t head_id, T block_id) noexcept
+        requires detail::ValidIdTensor<id_length, T>
+    {
+        return get_block_view_from_storage<Kind>(layer_id, head_id, block_id);
     }
 
+    template <attention_cache_kind Kind, typename T>
+    constexpr auto get_slot(int layer_id, int head_id, T slot_id) noexcept
+        requires detail::ValidIdTensor<id_length, T>
+    {
+        return get_slot_view_from_storage<Kind>(layer_id, head_id, slot_id);
+    }
+
+    template <attention_cache_kind Kind, typename T, typename TId>
+    constexpr void update_slot(int layer_id, int head_id, TId slot_id,
+                               T slot) noexcept
+        requires detail::ValidIdTensor<id_length, TId>
+    {
+        auto destView =
+            get_slot_view_from_storage<Kind>(layer_id, head_id, slot_id);
+        ntt::tensor_copy(slot, destView);
+    }
+
+    template <attention_cache_kind Kind, typename T>
+    constexpr void update_slots(dim_t layer_id, dim_t head_id,
+                                T slots) noexcept {
+        // slots : [num_tokens, numHeads, headDim]
+        auto slots_shape = slots.shape();
+        for (dim_t i = 0; i < this->num_tokens(); i++) {
+            auto slot_id = get_slot_id(i);
+            auto slot = slots.view(ntt::make_shape(i, head_id));
+            update_slot<Kind>(layer_id, head_id, slot_id, slot);
+        }
+    }
+
+  private:
     const kv_storage_shape_t get_kv_storage_shape() {
         auto default_shape = get_default_kv_storage_shape();
         auto shape = ntt::ranked_shape<6>();
@@ -344,59 +389,6 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         return block_view.view(starts, shape)
             .squeeze(ntt::make_ranked_shape(block_layout.indexof(
                 (size_t)paged_kvcache_dim_kind::block_size)));
-    }
-
-  public:
-    template <class T>
-    auto get_block(attention_cache_kind kind, int layer_id, int head_id,
-                   T block_id)
-        requires detail::IsValidIdTensor<id_length, T>
-    {
-        return get_block_view_from_storage(kind, layer_id, head_id, block_id);
-    }
-
-    template <typename T>
-    void
-    update_block(attention_cache_kind kind, int layer_id, int head_id,
-                 T block_id,
-                 tensor_view<kv_storage_type_t, ntt::ranked_shape<2>> block)
-        requires detail::IsValidIdTensor<id_length, T>
-    {
-        ntt::tensor_copy(block, get_block_view_from_storage(kind, layer_id,
-                                                            head_id, block_id));
-    }
-
-    template <typename T>
-    auto get_slot(attention_cache_kind kind, int layer_id, int head_id,
-                  T slot_id)
-        requires detail::IsValidIdTensor<id_length, T>
-    {
-        return get_slot_view_from_storage(kind, layer_id, head_id, slot_id);
-    }
-
-    template <typename T, typename TId>
-    void update_slot(attention_cache_kind kind, int layer_id, int head_id,
-                     TId slot_id, T slot)
-        requires detail::IsValidIdTensor<id_length, TId>
-    {
-        auto destView =
-            get_slot_view_from_storage(kind, layer_id, head_id, slot_id);
-        ntt::tensor_copy(slot, destView);
-    }
-
-    template <typename T>
-    void update_slots(attention_cache_kind kind, int layer_id, int head_id,
-                      T slots) {
-        // slots : [num_tokens, numHeads, headDim]
-        auto slots_shape = slots.shape();
-        for (int i = 0; i < this->num_tokens(); i++) {
-            auto slot_id = get_slot_id(i);
-            auto slot = slots
-                            .view(ntt::make_ranked_shape(i, head_id, 0),
-                                  ntt::make_ranked_shape(1, 1, slots_shape[2]))
-                            .squeeze(ntt::fixed_shape<0, 1>{});
-            update_slot(kind, layer_id, head_id, slot_id, slot);
-        }
     }
 
   private:
