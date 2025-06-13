@@ -82,7 +82,7 @@ class PackTestGenerator:
         else:
             return f"ntt::fixed_shape_v<{', '.join(map(str, axes))}>"
     
-    def generate_ort_reference(self, input_dims, input_dim_names, pack_axes, vector_dims):
+    def generate_ort_reference(self, input_dims, input_dim_names, pack_axes):
         code = []
         ndim = len(input_dims)
         
@@ -132,55 +132,23 @@ class PackTestGenerator:
         
         return code
     
-    def generate_test_case(self, shape_type, vector_dim, continuity, pack_axes, ndim):
-        # Set dimension sizes
-        P = "NTT_VLEN / (sizeof(float) * 8)"
+    def generate_test_prologue(self, test_name, P, dim_names, dims, pack_axes):
+        """generate test function header, constant P and dimension constants"""
+        code = [f"TEST(PackTestFloat, {test_name}) {{", f"    constexpr size_t P = {P};"]
         
-        # Generate input dimensions based on ndim
-        if ndim == 3:
-            dims = [1, 77, 3]  # C, H, W
-            dim_names = ['C', 'H', 'W']
-        elif ndim == 4:
-            dims = [2, 8, 4, 4]  # N, C, H, W  
-            dim_names = ['N', 'C', 'H', 'W']
-        else:
-            dims = [2, 8, 4, 4, 2]  # N, C, H, W, D
-            dim_names = ['N', 'C', 'H', 'W', 'D']
-        
-        # Calculate the dimension to be packed.
-        vector_dims = []
-        for axis in pack_axes:
-                dims[axis] *= 8   #  8 is element number of vector
-                vector_dims.append(8)
-        
-        test_name = self.generate_test_name(shape_type, vector_dim, continuity, 
-                                           "_".join(map(str, pack_axes)), ndim)
-        
-        code = []
-        code.append(f"TEST(PackTestFloat, {test_name}) {{")
-        code.append(f"    constexpr size_t P = {P};")
-        
-        # Define dimension constants
+        # define dimension constants
         for i, (name, size) in enumerate(zip(dim_names, dims)):
             if i in pack_axes:
                 axis_idx = pack_axes.index(i)
-                coefficient = size // vector_dims[axis_idx]
-                code.append(f"    constexpr size_t {name}_coefficient = {coefficient};")
+                code.append(f"    constexpr size_t {name}_coefficient = {size};")
                 code.append(f"    constexpr size_t {name} = {name}_coefficient * P;")
             else:
                 code.append(f"    constexpr size_t {name} = {size};")
         
-        code.append("    float min_input = -10.0f;")
-        code.append("    float max_input = 10.0f;")
-        code.append("")
-        
-        # Generate input tensor
-        input_dims_expr = [f"{name}" for name in dim_names]
-        tensor_init = self.generate_tensor_init(shape_type, input_dims_expr, continuity, "ntt_input")
-        code.extend([f"    {line}" for line in tensor_init])
-        code.append("")
-        
-        # Generate output tensor
+        code.extend(["    float min_input = -10.0f;", "    float max_input = 10.0f;", ""])
+        return code
+
+    def generate_output_tensor_code(self, shape_type, dim_names, pack_axes, vector_dim):
         output_dims = []
         for i, name in enumerate(dim_names):
             if i in pack_axes:
@@ -192,25 +160,34 @@ class PackTestGenerator:
             vector_type = f"ntt::vector<float, P>"
         else:
             vector_type = f"ntt::vector<float, {', '.join(['P'] * len(pack_axes))}>"
-        
+            
         output_shape_expr = self.generate_shape_init(shape_type, output_dims)
-        code.append(f"    // Create output tensor")
-        code.append(f"    alignas(32) auto ntt_output1 = ntt::make_tensor<{vector_type}>({output_shape_expr});")
-        code.append("")
         
-        # Execute pack operation
+        code = [
+            f"// Create output tensor",
+            f"alignas(32) auto ntt_output1 = ntt::make_tensor<{vector_type}>({output_shape_expr});",
+            ""
+        ]
+        return code, vector_type, output_shape_expr
+
+    def generate_pack_call_code(self, pack_axes):
         pack_axes_str = self.generate_pack_axes_str(pack_axes)
-        code.append(f"    // Execute pack operation")
-        code.append(f"    ntt::pack(ntt_input, ntt_output1, {pack_axes_str});")
-        code.append("")
-        
-        # Generate ORT reference implementation
+        return [
+            "// Execute pack operation",
+            f"ntt::pack(ntt_input, ntt_output1, {pack_axes_str});",
+            ""
+        ]
+
+    def generate_reference_and_comparison_code(self, continuity, dims, dim_names, pack_axes, shape_type, vector_type, output_shape_expr):
+        code = []
+        input_dims_expr = [f"{name}" for name in dim_names]
+
+        # For non-contiguous tensor, need to copy to contiguous tensor first
         if not continuity.is_contiguous:
-            # For tensor view, need to copy to contiguous tensor first
             code.append("    // Copy to contiguous tensor for ORT reference")
             code.append(f"    alignas(32) auto continuous_input = ntt::make_tensor<float>({self.generate_shape_init(shape_type, input_dims_expr)});")
             
-            # Generate nested loops to copy data
+            # generate nested loops to copy data
             code.append("    ")
             for i, name in enumerate(dim_names):
                 code.append(f"    {'    ' * i}for (size_t {name.lower()} = 0; {name.lower()} < {name}; {name.lower()}++) {{")
@@ -222,16 +199,16 @@ class PackTestGenerator:
                 code.append(f"    {'    ' * i}}}")
             code.append("")
             
-            # Modify ORT to use continuous_input
-            ort_ref = self.generate_ort_reference(dims, dim_names, pack_axes, vector_dims)
+            # let ORT use the copied contiguous tensor
+            ort_ref = self.generate_ort_reference(dims, dim_names, pack_axes)
             ort_ref[1] = "    auto ort_input = NttTest::ntt2ort(continuous_input);"
         else:
-            ort_ref = self.generate_ort_reference(dims, dim_names, pack_axes, vector_dims)
+            ort_ref = self.generate_ort_reference(dims, dim_names, pack_axes)
         
         code.extend([f"    {line}" for line in ort_ref])
         code.append("")
         
-        # Compare results
+        # compare results
         code.append("    // Compare results")
         code.append(f"    alignas(32) auto ntt_output2 = ntt::make_tensor<{vector_type}>({output_shape_expr});")
         code.append("    NttTest::ort2ntt(ort_output, ntt_output2);")
@@ -239,8 +216,52 @@ class PackTestGenerator:
         code.append("}")
         code.append("")
         
+        return code
+
+# shape_type: fixed/dynamic
+# vector_dim: 1/2
+# continuity: is_contiguous, non_contiguous_dim, big_tensor_op
+# pack_axes: list of axes to pack
+# ndim: dimension of the tensor
+    def generate_test_case(self, shape_type, vector_dim, continuity, pack_axes, ndim):
+        # 1. initialize dimension and other basic variables
+        P = "NTT_VLEN / (sizeof(float) * 8)"
+        if ndim == 3:
+            dims, dim_names = [1, 77, 3], ['C', 'H', 'W']
+        elif ndim == 4:
+            dims, dim_names = [2, 8, 4, 4], ['N', 'C', 'H', 'W']
+        else:
+            dims, dim_names = [2, 8, 4, 4, 2], ['N', 'C', 'H', 'W', 'D']
+        
+        test_name = self.generate_test_name(shape_type, vector_dim, continuity, "_".join(map(str, pack_axes)), ndim)
+        
+        # 2. call helper functions to generate code
+        code = []
+        
+        # 2.1 generate test function header and constants
+        code.extend(self.generate_test_prologue(test_name, P, dim_names, dims, pack_axes))
+        
+        # 2.2 generate input tensor initialization code
+        input_dims_expr = [f"{name}" for name in dim_names]
+        tensor_init_code = self.generate_tensor_init(shape_type, input_dims_expr, continuity, "ntt_input")
+        code.extend([f"    {line}" for line in tensor_init_code])
+        code.append("")
+        
+        # 2.3 generate output tensor initialization code
+        output_tensor_code, vector_type, output_shape_expr = self.generate_output_tensor_code(shape_type, dim_names, pack_axes, vector_dim)
+        code.extend([f"    {line}" for line in output_tensor_code])
+
+        # 2.4 generate pack operation call code
+        pack_call_code = self.generate_pack_call_code(pack_axes)
+        code.extend([f"    {line}" for line in pack_call_code])
+        
+        # 2.5 generate reference implementation and result comparison code
+        ref_and_comp_code = self.generate_reference_and_comparison_code(continuity, dims, dim_names, pack_axes, shape_type, vector_type, output_shape_expr)
+
+        code.extend(ref_and_comp_code)
+
         return "\n".join(code)
-    
+
     def generate_all_tests(self):
         """Generate all test combinations
         1. rank 3, 4, 5
