@@ -83,11 +83,10 @@ result<intptr_t> runtime::deserialize_paged_attention_kv_cache(
 
     auto num_seqs = json["NumSeqs"].get<int>();
     auto num_tokens = json["NumTokens"].get<int>();
-    auto num_blocks = json["NumBlocks"].get<int>();
 
     try_var(context_lens, deserialize_tensor(json["ContextLens"]));
     try_var(seq_lens, deserialize_tensor(json["SeqLens"]));
-    try_var(block_table, deserialize_tensor(json["BlockTable"]));
+    try_var(block_tables, deserialize_tensor(json["BlockTables"]));
     try_var(slot_mapping, deserialize_tensor(json["SlotMapping"]));
     try_var(kv_caches, deserialize_tensor(json["KVCaches"]));
 
@@ -99,13 +98,19 @@ result<intptr_t> runtime::deserialize_paged_attention_kv_cache(
     strides_t kv_strides(kv_shape.size());
     compute_strides(kv_shape, kv_strides);
 
-    // Create cache object
-    auto cache = llm::paged_attention_kv_cache(
-        std::in_place, config, num_seqs, num_tokens, context_lens, seq_lens,
-        block_table, slot_mapping, num_blocks, kv_shape);
-
     // assgin kv_storages
     auto num_kv_storages = compute_size(kv_shape);
+    auto kv_cache_addrs =
+        runtime::hrt::create(datatype_t::int64, {num_kv_storages})
+            .unwrap_or_throw()
+            .impl();
+    auto mapped_kv_cache_addrs = kv_cache_addrs->buffer()
+                                     .as_host()
+                                     .unwrap_or_throw()
+                                     .map(runtime::map_write)
+                                     .unwrap_or_throw();
+    auto kv_cache_addrs_data =
+        reinterpret_cast<int64_t *>(mapped_kv_cache_addrs.buffer().data());
     {
         try_var(kv_caches_buffer, kv_caches->buffer().as_host());
         try_var(kv_caches_map_buffer,
@@ -126,10 +131,23 @@ result<intptr_t> runtime::deserialize_paged_attention_kv_cache(
             try_var(kv_storage,
                     hrt::create(kv_caches->dtype(), kv_storage_shape,
                                 kv_storage_strides, kv_storage_span, true));
-            cache->kv_cache(i, kv_storage.impl());
+            kv_cache_addrs_data[i] = (int64_t)kv_storage.impl()
+                                         ->buffer()
+                                         .as_host()
+                                         .unwrap_or_throw()
+                                         .map(nncase::runtime::map_read)
+                                         .unwrap_or_throw()
+                                         .buffer()
+                                         .data();
+            // FIXME: Memory leaks here
+            kv_storage.impl().detach();
         }
     }
 
+    // Create cache object
+    auto cache = llm::paged_attention_kv_cache(
+        std::in_place, num_seqs, num_tokens, context_lens, seq_lens,
+        block_tables, slot_mapping, std::vector{kv_cache_addrs});
     return ok(reinterpret_cast<intptr_t>(cache.detach()));
 }
 

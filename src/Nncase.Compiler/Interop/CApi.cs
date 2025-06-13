@@ -1223,16 +1223,6 @@ public static unsafe class CApi
         var sharedCount = rtconfig.ShardingAxes.Count;
         var logicalKVShape = kvCache.KVCaches.Dimensions.ToArray();
         var sharedShape = logicalKVShape[..sharedCount];
-        var rtkvObj = RTPagedAttentionKVCache.Create(
-                    rtconfig,
-                    kvCache.NumSeqs,
-                    kvCache.NumTokens,
-                    RTTensor.FromTensor(kvCache.ContextLens),
-                    RTTensor.FromTensor(kvCache.SeqLens),
-                    RTTensor.FromTensor(kvCache.BlockTable),
-                    RTTensor.FromTensor(kvCache.SlotMapping),
-                    kvCache.NumBlocks,
-                    sharedShape.ToArray().Select(i => (int)i).ToArray());
         {
             foreach (var topoIndices in sharedShape.Select(i => Enumerable.Range(0, (int)i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
             {
@@ -1243,6 +1233,13 @@ public static unsafe class CApi
             }
         }
 
+        var rtkvObj = RTPagedAttentionKVCache.Create(
+                    kvCache.NumSeqs,
+                    kvCache.NumTokens,
+                    RTTensor.FromTensor(kvCache.ContextLens),
+                    RTTensor.FromTensor(kvCache.SeqLens),
+                    RTTensor.FromTensor(kvCache.BlockTable),
+                    RTTensor.FromTensor(kvCache.SlotMapping));
         var value = RTTensor.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj)));
         return GCHandle.ToIntPtr(GCHandle.Alloc(value));
     }
