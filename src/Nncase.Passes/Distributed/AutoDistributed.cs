@@ -155,7 +155,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     public AutoDistributedRewriter(CompileOptions compileOptions, INTTTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
     {
-        Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
+        Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames, targetOptions.HierarchyKind)).ToArray();
         Bidirectional = bidirectional;
         CompileOptions = compileOptions;
         TargetOptions = targetOptions;
@@ -212,9 +212,14 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         return true;
     }
 
-    public static IReadOnlyList<DistributedType> GetLeafCandidateDistTypes(TensorType tensorType, IEnumerable<Placement> placements)
+    public static IReadOnlyList<DistributedType> GetLeafCandidateDistTypes(TensorType tensorType, IEnumerable<Placement> placements, string moduleKind, INTTTargetOptions targetOptions)
     {
-        return placements.Select(placement => DistributedUtility.GetLeafCandidatePolicies(tensorType, placement).Select(ndsbp => new DistributedType(tensorType, ndsbp, placement))).SelectMany(e => e).ToArray();
+        return placements.Select(
+            placement =>
+            DistributedUtility.GetLeafCandidatePolicies(tensorType, placement)
+            .Where(p => SingleNodeMemoryCheck(new(tensorType, p, placement), moduleKind, targetOptions))
+            .Select(ndsbp => new DistributedType(tensorType, ndsbp, placement)))
+            .SelectMany(e => e).ToArray();
     }
 
     public void SingleNodeMemoryExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars)
@@ -401,7 +406,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         // 4. add not infered type in search space.
         var addedBuckets = bucketMemo.Values.ToArray();
-        foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements))
+        foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
         {
             if (!bucketMemo.TryGetValue(nType, out var bucket))
             {
@@ -445,7 +450,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         if (target is IR.Tensors.Reshape && tempArgs[0].CheckedType is DistributedType distType && tempArgs[1] is Shape { IsFixed: true } constNewShape)
         {
             var newTensorType = new TensorType(distType.TensorType.DType, constNewShape);
-            calls = calls.Concat(DistributedUtility.GetLeafCandidatePolicies(newTensorType, distType.Placement).Select(ndsbp => (new Call(new Boxing(new DistributedType(newTensorType, ndsbp, distType.Placement)), tempArgs[0]), new[] { true, false })));
+            calls = calls.Concat(DistributedUtility.GetLeafCandidatePolicies(newTensorType, distType.Placement)
+                .Where(p => SingleNodeMemoryCheck(new(newTensorType, p, distType.Placement), _moduleKind, TargetOptions))
+                .Select(ndsbp => (new Call(new Boxing(new DistributedType(newTensorType, ndsbp, distType.Placement)), tempArgs[0]), new[] { true, false })));
         }
 
         return calls;
@@ -456,6 +463,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         return placements.Select(
             placement =>
                 DistributedUtility.GetLeafCandidatePolicies(distributedType.TensorType, placement).
+                Where(p => SingleNodeMemoryCheck(new(distributedType.TensorType, p, placement), _moduleKind, TargetOptions)).
                 Where(ndsbp => ndsbp != distributedType.AxisPolicies)).
             SelectMany(e => e).ToArray();
     }
@@ -537,7 +545,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         else if (expr is TensorConst tc && tc.ValueType is TensorType tensorType)
         {
             var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
-            foreach (var dType in GetLeafCandidateDistTypes(tensorType, Placements))
+            foreach (var dType in GetLeafCandidateDistTypes(tensorType, Placements, _moduleKind, TargetOptions))
             {
                 var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                 var dnode = new SearchableNode(new TensorConst(tc.Value, dType.AxisPolicies, dType.Placement), dType);
@@ -560,7 +568,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             {
                 var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
                 var inferCluster = _inferedMemo[expr];
-                foreach (var dType in GetLeafCandidateDistTypes((TensorType)inferCluster.Vertices.First().IRType, Placements))
+                foreach (var dType in GetLeafCandidateDistTypes((TensorType)inferCluster.Vertices.First().IRType, Placements, _moduleKind, TargetOptions))
                 {
                     var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                     var dnode = new SearchableNode(new Boxing(dType), dType);
