@@ -16,13 +16,14 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
 
     # test_ntt_binary_mul.cpp
     # test_ntt_binary_sub.cpp
+    test_ntt_cast.cpp
+    test_ntt_clamp.cpp
     test_ntt_compare_equal.cpp
     test_ntt_compare_greater_or_equal.cpp
     test_ntt_compare_greater.cpp
     test_ntt_compare_less_or_equal.cpp
     test_ntt_compare_less.cpp
-    test_ntt_cast.cpp
-    test_ntt_clamp.cpp
+    test_ntt_expand.cpp
     test_ntt_pack_generated.cpp
 )
 foreach(test_name ${TEST_NAMES})
