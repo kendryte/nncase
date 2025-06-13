@@ -26,22 +26,24 @@ TEST(BinaryTestAddFloat, fixed_fixed_fixed_broadcast_lhs_vector) {
     auto ntt_tensor_lhs =  make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<1>);
     NttTest::init_tensor(ntt_tensor_lhs, -10.f, 10.f);
 
-    auto ntt_tensor_rhs =  make_tensor<float>(ntt::fixed_shape_v<1, 3, 16, 16>);
+    auto ntt_tensor_rhs =  make_tensor<float>(ntt::fixed_shape_v<1, 3, 1, 16>);
     NttTest::init_tensor(ntt_tensor_rhs, -10.f, 10.f);
 
     // ntt
-    auto ntt_output1 = make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<1, 3, 16, 16>);
+    auto ntt_output1 = make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<1, 3, 1, 16>);
     ntt::binary<ntt::ops::add>(ntt_tensor_lhs, ntt_tensor_rhs, ntt_output1);
 
-    // // ort
-    // auto ort_lhs = NttTest::ntt2ort(ntt_tensor_lhs);
-    // auto ort_rhs = NttTest::ntt2ort(ntt_tensor_rhs);
-    // auto ort_output = ortki_Add(ort_lhs, ort_rhs);
+    // // if mxn tensor-of-vector<v> op mxn tensor-of-scalar, 
+    // //broadcast the ntt mxn tensor-of-scalar to ort mxnxv tensor-of-scalar
 
+    // // ort
+    auto [ort_lhs, ort_rhs] = NttTest::convert_and_align_to_ort(ntt_tensor_lhs, ntt_tensor_rhs);
+    auto ort_output = ortki_Add(ort_lhs, ort_rhs);
+    // ortki_Add(ort_lhs, ort_rhs);
     // // compare
-    // auto ntt_output2 = make_unique_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<1, 3, 16, 16>);
-    // NttTest::ort2ntt(ort_output, ntt_output2);
-    // EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    auto ntt_output2 = make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<1, 3, 1, 16>);
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 
 }
 

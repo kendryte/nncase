@@ -97,13 +97,6 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<float_e5m2_t>(dis(gen));
         });
-    } else if constexpr (ntt::Vector<TTensor> && std::is_same_v<typename TTensor::element_type, float>) {
-        std::uniform_real_distribution<float> dis(start, stop);
-        ntt::apply(tensor.shape(), [&](auto &index) {
-            ntt::apply(tensor(index).shape, [&](auto &index_of_vector) {
-                tensor(index)(index_of_vector) = static_cast<float>(dis(gen));
-            });  //apply for vector
-        }); //apply for tensor
     } else if constexpr (std::is_same_v<T, int8_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
@@ -365,8 +358,8 @@ void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
         const ntt::vector<T, N> lvalue = lhs(index);
 
-        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
-            auto d1 = (double)(lvalue(idx));
+        nncase::ntt::apply(vec.shape(), [&](auto idx) {
+            auto d1 = (double)(vec(idx));
             std::cout << d1 << " ";
         });
     });

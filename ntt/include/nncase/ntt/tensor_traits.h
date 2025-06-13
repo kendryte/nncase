@@ -61,8 +61,10 @@ concept Strides = Dimensions<T> && T::usage() == dims_usage::strides;
 template <class T>
 concept FixedStrides = Strides<T> && T::is_fixed();
 
+// Only check whether T has IsVector member, doesn't check whether IsVector is true.
 template <typename T>
-concept Vector = std::decay_t<T>::IsVector;
+concept Vector = requires {std::decay_t<T>::IsVector;}; 
+
 
 template <typename T>
 concept ShardedTensor = requires {
