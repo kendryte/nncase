@@ -172,6 +172,29 @@ public sealed record RefPagedAttentionKVCache(
         blockTableTensor[indices] = physicalBlockId;
     }
 
+    public static (int HeadId, Tensor<long> SlotId) PhysicalizeSlotMappingId(Tensor<long> slotId, int headId, int numBlocks, Placement placement, IPagedAttentionConfig config)
+    {
+        var headIdCopy = headId;
+        var slotIdCopy = slotId.AsContiguous(true);
+        var cacheDimensions = config.GetLogicalShardTensorType(numBlocks, placement).Shape.ToValueArray();
+        for (int shardId = 0; shardId < config.ShardingAxes.Count; shardId++)
+        {
+            switch (config.ShardingAxes[shardId])
+            {
+                case PagedKVCacheDimKind.NumKVHeads when slotIdCopy[shardId] is -1L:
+                    var headTile = config.NumKVHeads / (int)cacheDimensions[shardId];
+                    slotIdCopy[shardId] = System.Math.DivRem(headIdCopy, headTile, out headIdCopy);
+                    break;
+                case PagedKVCacheDimKind.NumBlocks when slotIdCopy[shardId] is not -1L:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(slotId));
+            }
+        }
+
+        return (headIdCopy, slotIdCopy);
+    }
+
     /// <summary>
     /// all vars are [seq,head,dim] layout.
     /// </summary>

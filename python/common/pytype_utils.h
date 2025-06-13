@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/runtime/runtime_op_utility.h"
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/debug.h>
 #include <pybind11/numpy.h>
@@ -74,11 +75,16 @@ pybind11::dtype to_dtype(typecode_t type) {
 }
 
 pybind11::dtype to_dtype(const datatype_t type) {
-    auto primtype = type.as<prim_type_t>();
-    if (primtype.is_err()) {
-        throw std::runtime_error("Only support primtype.");
+    if (type.is_a<vector_type_t>()) {
+        auto vectype = type.as<vector_type_t>().unwrap();
+        return to_dtype(vectype->elemtype());
+    } else if (type.is_a<prim_type_t>()) {
+        auto primtype = type.as<prim_type_t>().unwrap();
+        return to_dtype(primtype->typecode());
+    } else {
+        throw std::runtime_error("Unsupported datatype " +
+                                 to_string(type->typecode()));
     }
-    return to_dtype(primtype.unwrap()->typecode());
 }
 
 typecode_t from_dtype(pybind11::dtype dtype) {
@@ -160,22 +166,47 @@ strides_t to_rt_strides(size_t elemsize,
     return strides;
 }
 
-std::vector<pybind11::ssize_t> to_py_shape(std::span<const size_t> value) {
+std::vector<pybind11::ssize_t> to_py_shape(const datatype_t &dtype,
+                                           std::span<const size_t> value) {
     namespace py = pybind11;
 
     std::vector<py::ssize_t> shape(value.size());
-    for (size_t i = 0; i < shape.size(); i++)
+    for (size_t i = 0; i < shape.size(); i++) {
         shape[i] = (py::ssize_t)value[i];
+    }
+
+    if (dtype.is_a<vector_type_t>()) {
+        auto vectype = dtype.as<vector_type_t>().unwrap();
+        for (auto lane : vectype->lanes()) {
+            shape.push_back((py::ssize_t)lane);
+        }
+    } else if (dtype.is_a<prim_type_t>()) {
+    } else {
+        throw std::runtime_error("Unsupported datatype");
+    }
     return shape;
 }
 
-std::vector<pybind11::ssize_t> to_py_strides(size_t elemsize,
+std::vector<pybind11::ssize_t> to_py_strides(const datatype_t &dtype,
                                              std::span<const size_t> value) {
     namespace py = pybind11;
+    size_t elemsize = dtype->size_bytes();
 
     std::vector<py::ssize_t> strides(value.size());
     for (size_t i = 0; i < strides.size(); i++)
         strides[i] = (py::ssize_t)value[i] * elemsize;
+
+    if (dtype.is_a<vector_type_t>()) {
+        auto vectype = dtype.as<vector_type_t>().unwrap();
+        auto inner_elemsize = vectype->elemtype()->size_bytes();
+        auto inner_strides = runtime::get_default_strides(vectype->lanes());
+        for (size_t i = 0; i < inner_strides.size(); i++) {
+            strides.push_back((py::ssize_t)(inner_strides[i] * inner_elemsize));
+        }
+    } else if (dtype.is_a<prim_type_t>()) {
+    } else {
+        throw std::runtime_error("Unsupported datatype");
+    }
     return strides;
 }
 } // namespace nncase

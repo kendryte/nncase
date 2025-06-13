@@ -153,17 +153,13 @@ internal sealed class CompileCommand : Command
             name: "--benchmark-only",
             description: "whether to generate benchmark only model",
             getDefaultValue: () => false);
-        HFOutputAttentions = new(
-            name: "--hf-output-attentions",
-            description: "whether to output attentions, only support for huggface format",
-            getDefaultValue: () => false);
+        HFOutputLogits = new(
+            name: "--hf-output-logits",
+            description: "whether to output logits, only support for huggface format",
+            getDefaultValue: () => true);
         HFOutputHiddenStates = new(
             name: "--hf-output-hidden-states",
             description: "whether to output hidden states, only support for huggface format",
-            getDefaultValue: () => false);
-        HFUseCache = new(
-            name: "--hf-use-cache",
-            description: "whether to use cache, only support for huggface format",
             getDefaultValue: () => false);
         HFAttenionBackend = new(
             name: "--hf-attention-backend",
@@ -195,9 +191,8 @@ internal sealed class CompileCommand : Command
         AddGlobalOption(Std);
         AddGlobalOption(ModelLayout);
         AddGlobalOption(BenchmarkOnly);
-        AddGlobalOption(HFOutputAttentions);
+        AddGlobalOption(HFOutputLogits);
         AddGlobalOption(HFOutputHiddenStates);
-        AddGlobalOption(HFUseCache);
         AddGlobalOption(HFAttenionBackend);
     }
 
@@ -251,11 +246,9 @@ internal sealed class CompileCommand : Command
 
     public Option<bool> BenchmarkOnly { get; }
 
-    public Option<bool> HFOutputAttentions { get; }
+    public Option<bool> HFOutputLogits { get; }
 
     public Option<bool> HFOutputHiddenStates { get; }
-
-    public Option<bool> HFUseCache { get; }
 
     public Option<HuggingFaceAttentionBackendKind> HFAttenionBackend { get; }
 }

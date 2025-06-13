@@ -130,9 +130,8 @@ internal partial class Program
             },
             HuggingFaceOptions = new()
             {
-                OutputAttentions = context.ParseResult.GetValueForOption(compilecmd.HFOutputAttentions),
+                OutputLogits = context.ParseResult.GetValueForOption(compilecmd.HFOutputLogits),
                 OutputHiddenStates = context.ParseResult.GetValueForOption(compilecmd.HFOutputHiddenStates),
-                UseCache = context.ParseResult.GetValueForOption(compilecmd.HFUseCache),
                 AttenionBackend = context.ParseResult.GetValueForOption(compilecmd.HFAttenionBackend),
             },
         };
