@@ -154,7 +154,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.NN.GetPositionIds getPositionIds:
                 return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output);
             case IR.NN.LayerNorm ln:
-                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean,  Array.Empty<int>(),  Array.Empty<int>());
+                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<int>());
             case IR.NTT.PackedLayerNorm ln:
                 return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, ln.PackedAxes, ln.PadedNums);
             case IR.NN.Softmax softmax:
