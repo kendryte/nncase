@@ -58,7 +58,8 @@ template <typename T> ortki::DataType primitive_type2ort_type() {
     return ort_type;
 }
 
-template <ntt::TensorOrVector TTensor> ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
+template <ntt::TensorOrVector TTensor>
+ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
     using T = typename std::decay_t<TTensor>::element_type;
     void *buffer;
     if constexpr (ntt::Vector<TTensor>) {
@@ -76,28 +77,16 @@ template <ntt::TensorOrVector TTensor> ortki::OrtKITensor *ntt2ort(TTensor &tens
     return make_tensor(buffer, ort_type, shape, rank);
 }
 
-template <typename T, typename Shape, typename Stride, size_t N>
-ortki::OrtKITensor *
-ntt2ort(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor) {
+template <ntt::TensorOfVector TTensor>
+ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
+    using T = typename std::decay_t<TTensor>::element_type;
+    auto N = T::size();
+    auto RankDim = T::rank();
+    using ElemType = ntt::element_or_scalar_t<T>;
     void *buffer = reinterpret_cast<void *>(tensor.elements().data());
-    auto ort_type = primitive_type2ort_type<T>();
+    auto ort_type = primitive_type2ort_type<ElemType>();
     auto r1 = tensor.shape().rank();
-    auto r2 = r1 + 1;
-    std::vector<size_t> v(r2, N);
-    for (size_t i = 0; i < r1; i++)
-        v[i] = tensor.shape()[i];
-
-    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
-    return make_tensor(buffer, ort_type, shape, r2);
-}
-
-template <typename T, typename Shape, typename Stride, size_t N>
-ortki::OrtKITensor *
-ntt2ort(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor) {
-    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
-    auto ort_type = primitive_type2ort_type<T>();
-    auto r1 = tensor.shape().rank();
-    auto r2 = r1 + 2;
+    auto r2 = r1 + RankDim;
     std::vector<size_t> v(r2, N);
     for (size_t i = 0; i < r1; i++)
         v[i] = tensor.shape()[i];

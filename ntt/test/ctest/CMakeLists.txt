@@ -24,6 +24,7 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     test_ntt_compare_less_or_equal.cpp
     test_ntt_compare_less.cpp
     test_ntt_expand.cpp
+    test_ntt_gather.cpp
     test_ntt_pack_generated.cpp
 )
 foreach(test_name ${TEST_NAMES})
