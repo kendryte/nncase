@@ -126,6 +126,7 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern3>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern4>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormPattern5>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormPattern6>();
             p.Add<Passes.Rules.Neutral.ConvertLayerNormChannelFirstToLast>();
             p.Add<Passes.Rules.Neutral.FoldGeluWithScale>();
             p.Add<Passes.Rules.Neutral.FoldGeneralGelu>();
