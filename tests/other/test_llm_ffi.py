@@ -144,43 +144,18 @@ def test_huggface_options():
 
 
 def test_paged_attention_kvcache():
-    num_layers = 32
-    num_kv_heads = 8
-    head_dim = 64
-    block_size = 128
-
-    # Simple creation
-    config = nncase.PagedAttentionConfig(
-        num_layers,
-        num_kv_heads,
-        head_dim,
-        np.dtype(np.float16),
-        block_size
-    )
-
     # Create kvcache with the config
-    kvcache = nncase.PagedAttentionKVCache(config)
+    kvcache = nncase.PagedAttentionKVCache()
 
-    # Test config property
-    assert num_layers == kvcache.config.num_layers
-    assert num_kv_heads == kvcache.config.num_kv_heads
-    assert head_dim == kvcache.config.head_dim
-    assert block_size == kvcache.config.block_size
-
-    # Test modifying num_blocks property
-    num_blocks = 16
-    kvcache.num_blocks = num_blocks
-    assert kvcache.num_blocks == num_blocks
-
-    # Test block_table property
+    # Test block_tables property
     # Create a simple block table tensor
-    block_table_data = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
-    block_table_tensor = nncase.RuntimeTensor.from_numpy(block_table_data)
-    kvcache.block_table = block_table_tensor
+    block_tables_data = np.arange(24, dtype=np.int32).reshape(2, 3, 4)
+    block_tables_tensor = nncase.RuntimeTensor.from_numpy(block_tables_data)
+    kvcache.block_tables = block_tables_tensor
 
-    # Verify the block_table property
-    retrieved_table = kvcache.block_table.to_numpy()
-    assert np.array_equal(retrieved_table, block_table_data)
+    # Verify the block_tables property
+    retrieved_table = kvcache.block_tables.to_numpy()
+    assert np.array_equal(retrieved_table, block_tables_data)
 
     # Test slot_mapping property
     # Create a simple slot mapping tensor
@@ -191,48 +166,6 @@ def test_paged_attention_kvcache():
     # Verify the slot_mapping property
     retrieved_mapping = kvcache.slot_mapping.to_numpy()
     assert np.array_equal(retrieved_mapping, slot_mapping_data)
-
-    # Test kv_topo property
-    kv_topo = [32]  #
-    kvcache.kv_topo = kv_topo
-
-    # Verify the kv_shape property
-    retrieved_shape = kvcache.kv_topo
-    assert len(retrieved_shape) == len(kv_topo)
-
-    # Test kv_cache method (set and get)
-    # Create a simple kv storage tensor
-    kv_storage_data = np.random.rand(num_blocks, num_layers, 2,
-                                     num_kv_heads, head_dim).astype(np.float16)
-    kv_storage_tensor = nncase.RuntimeTensor.from_numpy(kv_storage_data)
-
-    # Set KV cache at specific indices
-    indices = [0]  # First device
-    kvcache.kv_cache(indices, kv_storage_tensor)
-
-    # Get KV cache at those indices
-    retrieved_kv = kvcache.kv_cache(indices)
-
-    # We can't directly compare tensors, so let's verify the KV cache was set
-    # by checking that we get back a valid tensor
-    assert retrieved_kv is not None
-
-    # Test setting different indices
-    indices = [1]  # Second device
-    kvcache.kv_cache(indices, kv_storage_tensor)
-    retrieved_kv = kvcache.kv_cache(indices)
-    assert retrieved_kv is not None
-
-    # Test multi-dimensional indices
-    try:
-        indices = [0, 1]  # Multi-dimensional index
-        kvcache.kv_cache(indices, kv_storage_tensor)
-        retrieved_kv = kvcache.kv_cache(indices)
-        assert retrieved_kv is not None
-    except Exception:
-        # Depending on implementation, this might throw an exception
-        # if multi-dimensional indices aren't supported
-        pass
 
 
 def test_paged_attention_scheduler():
@@ -289,31 +222,30 @@ def test_paged_attention_scheduler():
     assert np.allclose(ctx_lens, np.array([0, 0, 0], np.int64))
     seq_lens = ref_kv_cache.seq_lens.to_runtime_tensor().to_numpy()
     assert np.allclose(seq_lens, np.array([10, 15, 20], np.int64))
-    block_table = ref_kv_cache.block_table.to_runtime_tensor().to_numpy()
-    assert len(block_table.shape) == 3
-    assert block_table.shape[1] == 2
-    assert block_table[0, 0, 0] == 0 + session_ids[0] * (max_model_len // config.block_size)
-    assert block_table[1, 0, 0] == 0 + session_ids[1] * (max_model_len // config.block_size)
-    assert block_table[2, 0, 0] == 0 + session_ids[2] * (max_model_len // config.block_size)
-    assert block_table[2, 1, 0] == 1 + session_ids[2] * (max_model_len // config.block_size)
+    block_tables = ref_kv_cache.block_tables.to_runtime_tensor().to_numpy()
+    assert len(block_tables.shape) == 3
+    assert block_tables.shape[1] == 2
+    assert block_tables[0, 0, 0] == 0 + session_ids[0] * (max_model_len // config.block_size)
+    assert block_tables[1, 0, 0] == 0 + session_ids[1] * (max_model_len // config.block_size)
+    assert block_tables[2, 0, 0] == 0 + session_ids[2] * (max_model_len // config.block_size)
+    assert block_tables[2, 1, 0] == 1 + session_ids[2] * (max_model_len // config.block_size)
 
     # ref kv cache to ivalue
     ivalue = ref_kv_cache.as_ivalue()
     assert ivalue is not None
 
     rt_kv_cache = rt_scheduler.schedule(session_ids, query_lens)
-    assert rt_kv_cache.num_blocks == num_blocks
     ctx_lens = rt_kv_cache.context_lens.to_numpy()
     assert np.allclose(ctx_lens, np.array([0, 0, 0], np.int64))
     seq_lens = rt_kv_cache.seq_lens.to_numpy()
     assert np.allclose(seq_lens, np.array([10, 15, 20], np.int64))
-    block_table = rt_kv_cache.block_table.to_numpy()
-    assert len(block_table.shape) == 3
-    assert block_table.shape[1] == 2
-    assert block_table[0, 0, 0] == 0 + session_ids[0] * (max_model_len // config.block_size)
-    assert block_table[1, 0, 0] == 0 + session_ids[1] * (max_model_len // config.block_size)
-    assert block_table[2, 0, 0] == 0 + session_ids[2] * (max_model_len // config.block_size)
-    assert block_table[2, 1, 0] == 1 + session_ids[2] * (max_model_len // config.block_size)
+    block_tables = rt_kv_cache.block_tables.to_numpy()
+    assert len(block_tables.shape) == 3
+    assert block_tables.shape[1] == 2
+    assert block_tables[0, 0, 0] == 0 + session_ids[0] * (max_model_len // config.block_size)
+    assert block_tables[1, 0, 0] == 0 + session_ids[1] * (max_model_len // config.block_size)
+    assert block_tables[2, 0, 0] == 0 + session_ids[2] * (max_model_len // config.block_size)
+    assert block_tables[2, 1, 0] == 1 + session_ids[2] * (max_model_len // config.block_size)
 
     # rt kv cache to runtime tensor
     rt_tensor = nncase.RuntimeTensor.from_object(rt_kv_cache)
@@ -394,10 +326,11 @@ class config_wrapper:
             [128 // 2],
             [nncase.PagedKVCacheDimKind.NumKVHeads, nncase.PagedKVCacheDimKind.NumBlocks],
             [[1], [2, 3]])
-        self.kv_cache = nncase.PagedAttentionKVCache(config)
+        self.config_v = config
+        self.kv_cache = nncase.PagedAttentionKVCache()
 
     def config(self):
-        return self.kv_cache.config
+        return self.config_v
 
 
 def test_paged_attention_kvcache_copy():
@@ -405,14 +338,7 @@ def test_paged_attention_kvcache_copy():
     rt_scheduler = nncase.PagedAttentionScheduler(wrapper.config(), 256, 512, [1, 2, 8, 4, 4])
     assert rt_scheduler is not None
     rt_kvcache = rt_scheduler.schedule([0], [8])
-    wrapper.kv_cache.kv_topo = rt_kvcache.kv_topo
     wrapper.kv_cache.slot_mapping = rt_kvcache.slot_mapping
-    for i in range(rt_kvcache.kv_topo[0]):
-        for j in range(rt_kvcache.kv_topo[1]):
-            dtype = rt_kvcache.kv_cache([i, j]).dtype
-            assert np.dtype(np.float16) == dtype
-            cache_array = rt_kvcache.kv_cache([i, j]).to_numpy()
-            wrapper.kv_cache.kv_cache([i, j], nncase.RuntimeTensor.from_numpy(cache_array))
 
 
 def test_paged_attention_scheduler_distributed():
@@ -458,9 +384,9 @@ def test_paged_attention_scheduler_distributed():
     session_ids = [0]
     query_lens = [512]
     ref_kvcache = ref_scheduler.schedule(session_ids, query_lens)
-    block_table = ref_kvcache.block_table.to_runtime_tensor().to_numpy()
-    assert block_table.shape == (1, 2, 3)
-    assert np.allclose(block_table, np.array([[[-1, 0, 0], [-1, 0, 1]]], np.int64))
+    block_tables = ref_kvcache.block_tables.to_runtime_tensor().to_numpy()
+    assert block_tables.shape == (1, 2, 3)
+    assert np.allclose(block_tables, np.array([[[-1, 0, 0], [-1, 0, 1]]], np.int64))
     slot_mapping = ref_kvcache.slot_mapping.to_runtime_tensor().to_numpy()
     slot_mapping_ref = np.zeros_like(slot_mapping)
     slot_mapping_ref[:, 0] = -1
@@ -468,19 +394,19 @@ def test_paged_attention_scheduler_distributed():
     slot_mapping_ref[:, 2] = np.arange(0, 512)
     assert np.allclose(slot_mapping, slot_mapping_ref)
     rt_kvcache = rt_scheduler.schedule(session_ids, query_lens)
-    assert np.allclose(rt_kvcache.block_table.to_numpy(), block_table)
+    assert np.allclose(rt_kvcache.block_tables.to_numpy(), block_tables)
     assert np.allclose(rt_kvcache.slot_mapping.to_numpy(), slot_mapping)
 
     ref_kvcache = ref_scheduler.schedule([0], [1])
-    block_table = ref_kvcache.block_table.to_runtime_tensor().to_numpy()
-    assert block_table.shape == (1, 3, 3)
-    assert np.allclose(block_table, np.array([[[-1, 0, 0], [-1, 0, 1], [-1, 0, 2]]], np.int64))
+    block_tables = ref_kvcache.block_tables.to_runtime_tensor().to_numpy()
+    assert block_tables.shape == (1, 3, 3)
+    assert np.allclose(block_tables, np.array([[[-1, 0, 0], [-1, 0, 1], [-1, 0, 2]]], np.int64))
     slot_mapping = ref_kvcache.slot_mapping.to_runtime_tensor().to_numpy()
     slot_mapping_ref = np.zeros_like(slot_mapping)
     slot_mapping_ref[0, :] = [-1, 0, 512]
     assert np.allclose(slot_mapping, slot_mapping_ref)
     rt_kvcache = rt_scheduler.schedule([0], [1])
-    assert np.allclose(rt_kvcache.block_table.to_numpy(), block_table)
+    assert np.allclose(rt_kvcache.block_tables.to_numpy(), block_tables)
     assert np.allclose(rt_kvcache.slot_mapping.to_numpy(), slot_mapping)
 
     # get the test function.

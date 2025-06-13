@@ -37,8 +37,8 @@ inline void register_ref_llm_ffi(py::module &m) {
                                &clr::ref_paged_attention_kv_cache::context_lens)
         .def_property_readonly("seq_lens",
                                &clr::ref_paged_attention_kv_cache::seq_lens)
-        .def_property_readonly("block_table",
-                               &clr::ref_paged_attention_kv_cache::block_table)
+        .def_property_readonly("block_tables",
+                               &clr::ref_paged_attention_kv_cache::block_tables)
         .def_property_readonly("slot_mapping",
                                &clr::ref_paged_attention_kv_cache::slot_mapping)
         .def_property_readonly("kv_caches",

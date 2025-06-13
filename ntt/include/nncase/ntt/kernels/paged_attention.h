@@ -470,6 +470,7 @@ void gather_paged_attention_kv_cache([[maybe_unused]] T0 value,
     using mesh_type = T0::mesh_type;
     constexpr size_t shardingRank = config_t::sharding_axes_t::rank();
     using axis_policies_t = typename config_t::axis_policies_t;
+    using element_type = typename std::decay_t<T2>::element_type;
 
     auto program_ids = distributed::program_ids();
     auto program_indices =
@@ -480,7 +481,26 @@ void gather_paged_attention_kv_cache([[maybe_unused]] T0 value,
         kv_indices[shard_id] = program_ids[program_indices[shard_id]];
     });
 
-    auto storage_tensor = kv_cache.get_kv_storage_tensor(kv_indices);
-    ntt::tensor_copy(storage_tensor, output_tensor);
+    auto storage_ptr = kv_cache.get_kv_storage_pointer(kv_indices);
+    if constexpr (IsFixedTensor<std::decay_t<T2>>) {
+        constexpr auto storage_size =
+            linear_size(typename std::decay_t<T2>::shape_type{},
+                        typename std::decay_t<T2>::strides_type{});
+        auto storage_tensor =
+            tensor_view<element_type, typename std::decay_t<T2>::shape_type,
+                        typename std::decay_t<T2>::strides_type>(
+                std::span<element_type, storage_size>(storage_ptr,
+                                                      storage_size));
+        ntt::tensor_copy(storage_tensor, output_tensor);
+    } else {
+        auto storage_size =
+            linear_size(output_tensor.shape(), output_tensor.strides());
+        auto storage_tensor =
+            tensor_view<element_type, typename std::decay_t<T2>::shape_type,
+                        typename std::decay_t<T2>::strides_type>(
+                std::span<element_type>(storage_ptr, storage_size),
+                output_tensor.shape(), output_tensor.strides());
+        ntt::tensor_copy(storage_tensor, output_tensor);
+    }
 }
 } // namespace nncase::ntt
