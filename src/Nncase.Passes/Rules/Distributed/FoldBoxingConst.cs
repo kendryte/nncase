@@ -29,7 +29,7 @@ public partial class FoldBoxingConst : RewriteRule<Pattern>
     private Expr? GetReplace(Boxing boxing, Tensor input)
     {
         var type = (DistributedType)boxing.NewType;
-        return new TensorConst(input, type.AxisPolices, type.Placement);
+        return new TensorConst(input, type.AxisPolicies, type.Placement);
     }
 }
 

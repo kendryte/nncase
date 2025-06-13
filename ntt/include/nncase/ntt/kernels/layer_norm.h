@@ -25,7 +25,7 @@ namespace nncase::ntt {
 
 namespace packed_layer_norm_detail {
 
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TScale,
+template <size_t Axis, bool use_mean, IsFixedTensor TIn, IsFixedTensor TScale,
           IsFixedTensor TBias, IsFixedTensor TOut, typename TEp,
           IsFixedDims PackedAxes, IsFixedDims PadedNums>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
@@ -68,7 +68,6 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         finner_size = finner_size * (TElem)TElem::shape_type::length();
     }
 
-    constexpr bool use_mean = true; // This can be a parameter if needed
     apply(domain, [&](auto index) {
         const auto input_p =
             input.elements().data() + linear_offset(index, strides);
@@ -114,7 +113,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     });
 }
 
-template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
+template <size_t Axis, bool use_mean, class TIn, class TScale, class TBias, class TOut,
           typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
@@ -153,7 +152,6 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         finner_size = finner_size * (TElem)TElem::shape_type::length();
     }
 
-    constexpr bool use_mean = true; // This can be a parameter if needed
     apply(domain, [&](auto index) {
         const auto input_p =
             input.elements().data() + linear_offset(index, strides);
@@ -204,7 +202,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 
 } // namespace packed_layer_norm_detail
 
-template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
+template <size_t Axis, bool use_mean = true, class TIn, class TScale, class TBias, class TOut,
           typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
 void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        TOut &&output, const TEp &epsilon, PackedAxes packedAxes,
@@ -214,7 +212,7 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
         static_assert(PadedNums::rank() == 0 ||
                           (PadedNums::rank() == 1 && PadedNums::at(0) == 0),
                       "not support padding");
-        packed_layer_norm_detail::within_axis_pack_impl<Axis>(
+        packed_layer_norm_detail::within_axis_pack_impl<Axis, use_mean>(
             input, scale, bias, output, epsilon, packedAxes, padedNums);
     }
 }

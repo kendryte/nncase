@@ -161,7 +161,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     private IRType Visit(ITypeInferenceContext context, GetItem target, DistributedType input, IRType index)
     {
         var outputType = (TensorType)Visit(context, target, input.TensorType, index);
-        var ndsbp = input.AxisPolices.Skip(input.TensorType.Shape.Rank - outputType.Shape.Rank).ToArray();
+        var ndsbp = input.AxisPolicies.Skip(input.TensorType.Shape.Rank - outputType.Shape.Rank).ToArray();
         for (var i = 0; i < ndsbp.Length; i++)
         {
             if (ndsbp[i] is SBPSplit)

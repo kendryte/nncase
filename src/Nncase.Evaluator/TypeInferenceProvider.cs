@@ -42,9 +42,9 @@ internal class TypeInferenceProvider : ITypeInferenceProvider
     }
 
     /// <inheritdoc/>
-    public bool InferenceType(BaseExpr expr)
+    public bool InferenceType(BaseExpr expr, Dictionary<Type, ITypeInferencer> inferencer_cache)
     {
-        var visitor = new TypeInferenceVisitor();
+        var visitor = new TypeInferenceVisitor(inferencer_cache);
         visitor.Visit(expr);
         return visitor.IsFullyInferenced;
     }

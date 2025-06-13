@@ -139,7 +139,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     {
         var shape = CompilerServices.GetMaxShape(type.TensorType.Shape);
         bool[] usedCeil = new bool[shape.Length];
-        foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
+        foreach (var (s, r) in type.AxisPolicies.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
@@ -150,7 +150,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         }
 
         var sshape = shape.Select((s, idx) => usedCeil[idx] ? $"⌈{s}⌉" : s.ToString()).ToArray();
-        foreach (var (s, r) in type.AxisPolices.Select((s, r) => (s, r)))
+        foreach (var (s, r) in type.AxisPolicies.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
@@ -158,7 +158,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             }
         }
 
-        return $"Dist({VisitType(type.TensorType)}, ({string.Join(',', type.AxisPolices)}), [{string.Join(',', sshape)}])";
+        return $"Dist({VisitType(type.TensorType)}, ({string.Join(',', type.AxisPolicies)}), [{string.Join(',', sshape)}])";
     }
 
     /// <inheritdoc/>

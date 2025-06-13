@@ -98,12 +98,12 @@ public sealed partial class ExpandEvaluator : IEvaluator<Expand>, ITypeInference
                 }
                 else
                 {
-                    if (input.AxisPolices[i - dimExtends] is SBPSplit && newShape[i] != input.TensorType.Shape[i - dimExtends])
+                    if (input.AxisPolicies[i - dimExtends] is SBPSplit && newShape[i] != input.TensorType.Shape[i - dimExtends])
                     {
                         return invalid;
                     }
 
-                    ndsbp[i] = input.AxisPolices[i - dimExtends];
+                    ndsbp[i] = input.AxisPolicies[i - dimExtends];
                 }
             }
 
