@@ -66,6 +66,7 @@ else()
     
     add_library(nncaseruntime SHARED dummy.cpp)
     target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase simulator compiler simulator_cpu cpu_loaders fmt::fmt)
+    target_compile_definitions(nncaseruntime PUBLIC -DNNCASE_SHARED_LIBS)
     if (NOT (WIN32 OR APPLE))
       target_link_libraries(nncaseruntime PRIVATE dl pthread)
     endif()
