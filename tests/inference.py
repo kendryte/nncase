@@ -26,7 +26,7 @@ from test_utils import *
 import time
 from html import escape
 
-from tests.npy2json import convert_npy_to_json
+from npy2json import convert_npy_to_json
 
 
 def data_shape_list_string(data):
