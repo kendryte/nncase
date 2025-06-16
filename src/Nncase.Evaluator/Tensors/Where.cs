@@ -115,6 +115,12 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             return new TensorType(DataTypes.Int64, Shape.Unknown(cond.Shape.Rank));
         }
 
+        // FIXME: remove this when ntt::where is ready
+        if (cond.DType is VectorType)
+        {
+            return new InvalidType("cond can't be vector type");
+        }
+
         return TypeInference.BroadcastType(x.DType, cond, x, y);
     }
 
