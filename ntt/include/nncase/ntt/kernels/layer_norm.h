@@ -171,18 +171,16 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         }
 
         // std::array<TElem, inner_size> sub;
-        std::vector<TElem> sub(inner_size);
         for (auto i = 0; i < inner_size; i++)
-            sub[i] = input_p[i] - mean1;
+            output_p[i] = input_p[i] - mean1;
 
         // std::array<TElem, inner_size> pow;
-        std::vector<TElem> pow(inner_size);
         for (auto i = 0; i < inner_size; i++)
-            pow[i] = sub[i] * sub[i];
+            output_p[i] = output_p[i] * output_p[i];
 
         TElem mean2 = (TElem)0;
         for (auto i = 0; i < inner_size; i++)
-            mean2 = mean2 + (pow[i] / finner_size);
+            mean2 = mean2 + (output_p[i] / finner_size);
         if constexpr (UseVectorReduce) {
             mean2 = (TElem)reduce_sum(mean2);
         }
@@ -191,12 +189,11 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         TElem sqrt = ntt::sqrt(add);
 
         // std::array<TElem, inner_size> norm;
-        std::vector<TElem> norm(inner_size);
         for (auto i = 0; i < inner_size; i++)
-            norm[i] = sub[i] / sqrt;
+            output_p[i] = (input_p[i] - mean1) / sqrt;
 
         for (auto i = 0; i < inner_size; i++)
-            output_p[i] = (norm[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
+            output_p[i] = (output_p[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
     });
 }
 
