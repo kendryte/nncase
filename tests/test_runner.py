@@ -483,17 +483,17 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     data = generator.from_numpy(file_list[idx])
                 elif method == 'text':
                     data = generator.from_text(file_list[0])
-                    assert (len(data) >= idx, "prompt not enough for calib")
+                    assert len(data) >= batch_idx, "prompt not enough for calib"
                     messages = [
                         {"role": "system", "content": "You are a assistant!"},
-                        {"role": "user", "content": data[idx]}
+                        {"role": "user", "content": data[batch_idx]}
                     ]
                     text = self.tokenizer.apply_chat_template(
                         messages,
                         tokenize=False,
                         add_generation_prompt=True
                     )
-                    data = self.tokenizer([text], return_tensors="np").input_ids[0]
+                    data = self.tokenizer([text], return_tensors="np").input_ids[0].astype(np.int64)
                     if dtype == 'PagedAttentionKVCache':
                         data = input['scheduler'].schedule([0], [data.shape[0]])
                 if not test_utils.in_ci():

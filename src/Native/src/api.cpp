@@ -785,25 +785,14 @@ int nncase_paged_attention_config_set_axis_policy(
 }
 
 int nncase_attention_kv_cache_create(
-    nncase::llm::attention_config_node *config, int32_t num_seqs,
-    int32_t num_tokens, nncase::tensor_node *context_lens,
+    int32_t num_seqs, int32_t num_tokens, nncase::tensor_node *context_lens,
     nncase::tensor_node *seq_lens,
     nncase::llm::attention_kv_cache_node **cache) {
-    if (config && context_lens && seq_lens && cache) {
+    if (context_lens && seq_lens && cache) {
         *cache =
-            nncase::llm::attention_kv_cache(std::in_place, config, num_seqs,
-                                            num_tokens, context_lens, seq_lens)
+            nncase::llm::attention_kv_cache(std::in_place, num_seqs, num_tokens,
+                                            context_lens, seq_lens)
                 .detach();
-        return 0;
-    }
-    return -EINVAL;
-}
-
-int nncase_attention_kv_cache_get_config(
-    nncase::llm::attention_kv_cache_node *cache,
-    nncase::llm::attention_config_node **config) {
-    if (cache && config) {
-        *config = llm::attention_config(cache->config()).detach();
         return 0;
     }
     return -EINVAL;
@@ -846,48 +835,37 @@ int nncase_attention_kv_cache_set_num_tokens(
 }
 
 int nncase_paged_attention_kv_cache_create(
-    nncase::llm::paged_attention_config_node *config, int32_t num_seqs,
-    int32_t num_tokens, nncase::tensor_node *context_lens,
+    int32_t num_seqs, int32_t num_tokens, nncase::tensor_node *context_lens,
     nncase::tensor_node *seq_lens, nncase::tensor_node *block_table,
-    nncase::tensor_node *slot_mapping, int32_t num_blocks,
-    const int32_t *kv_shape, int32_t kv_shape_len,
+    nncase::tensor_node *slot_mapping, nncase::tensor_node *kv_caches,
     nncase::llm::paged_attention_kv_cache_node **cache) {
-    if (config && context_lens && seq_lens && block_table && slot_mapping &&
-        kv_shape && cache) {
+    if (context_lens && seq_lens && block_table && slot_mapping && kv_caches &&
+        cache) {
         *cache = nncase::llm::paged_attention_kv_cache(
-                     std::in_place, config, num_seqs, num_tokens, context_lens,
-                     seq_lens, block_table, slot_mapping, num_blocks,
-                     dims_t{kv_shape, kv_shape + kv_shape_len})
+                     std::in_place, num_seqs, num_tokens, context_lens,
+                     seq_lens, block_table, slot_mapping,
+                     std::vector{(nncase::tensor)kv_caches})
                      .detach();
         return 0;
     }
     return -EINVAL;
 }
 
-int nncase_paged_attention_kv_cache_get_num_blocks(
-    nncase::llm::paged_attention_kv_cache_node *cache, int32_t *num_blocks) {
-    if (cache && num_blocks) {
-        *num_blocks = cache->num_blocks();
-        return 0;
-    }
-    return -EINVAL;
-}
-
-int nncase_paged_attention_kv_cache_get_block_table(
+int nncase_paged_attention_kv_cache_get_block_tables(
     nncase::llm::paged_attention_kv_cache_node *cache,
     nncase::tensor_node **block_table) {
     if (cache && block_table) {
-        *block_table = tensor(cache->block_table()).detach();
+        *block_table = tensor(cache->block_tables()).detach();
         return 0;
     }
     return -EINVAL;
 }
 
-int nncase_paged_attention_kv_cache_set_block_table(
+int nncase_paged_attention_kv_cache_set_block_tables(
     nncase::llm::paged_attention_kv_cache_node *cache,
-    nncase::tensor_node *block_table) {
-    if (cache && block_table) {
-        cache->block_table(block_table);
+    nncase::tensor_node *block_tables) {
+    if (cache && block_tables) {
+        cache->block_tables(block_tables);
         return 0;
     }
     return -EINVAL;
@@ -914,22 +892,24 @@ int nncase_paged_attention_kv_cache_set_slot_mapping(
 }
 
 int nncase_paged_attention_kv_cache_get_kv_cache(
-    nncase::llm::paged_attention_kv_cache_node *cache, const int32_t *indices,
-    int32_t indices_len, nncase::tensor_node **kv_cache) {
-    if (cache && indices && kv_cache) {
-        dims_t idx(indices, indices + indices_len);
-        *kv_cache = tensor(cache->kv_cache(idx)).detach();
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node **kv_cache) {
+    if (cache && kv_cache) {
+        if (cache->kv_caches().empty()) {
+            *kv_cache = nullptr;
+        } else {
+            *kv_cache = tensor(cache->kv_caches().at(0)).detach();
+        }
         return 0;
     }
     return -EINVAL;
 }
 
-int nncase_paged_attention_kv_cache_set_kv_cache(
-    nncase::llm::paged_attention_kv_cache_node *cache, const int32_t *indices,
-    int32_t indices_len, nncase::tensor_node *kv_cache) {
-    if (cache && indices && kv_cache) {
-        dims_t idx(indices, indices + indices_len);
-        cache->kv_cache(idx, kv_cache);
+int nncase_paged_attention_kv_cache_set_kv_caches(
+    nncase::llm::paged_attention_kv_cache_node *cache,
+    nncase::tensor_node *kv_cache) {
+    if (cache && kv_cache) {
+        cache->kv_caches({kv_cache});
         return 0;
     }
     return -EINVAL;

@@ -47,6 +47,11 @@ struct scalar {
         as<int32_t>() = value;
     }
 
+    scalar(int64_t value) noexcept {
+        type = dt_int64;
+        as<int64_t>() = value;
+    }
+
     scalar(uint8_t value) noexcept {
         type = dt_uint8;
         as<uint8_t>() = value;
@@ -60,6 +65,11 @@ struct scalar {
     scalar(uint32_t value) noexcept {
         type = dt_uint32;
         as<uint32_t>() = value;
+    }
+
+    scalar(uint64_t value) noexcept {
+        type = dt_uint64;
+        as<uint64_t>() = value;
     }
 
     scalar(bfloat16 value) noexcept {

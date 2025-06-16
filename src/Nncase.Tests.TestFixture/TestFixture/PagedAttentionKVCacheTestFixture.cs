@@ -237,7 +237,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         var logicalKVCacheTensor = Tensor.Zeros(logicalKVTensorType.DType, logicalKVTensorType.Shape.ToValueArray());
 
         // 2. create temporary slotmapping for update hist key and value tensors.
-        var blockTableTensorType = config.GetBlockTableTensorType(queryLens.Length, (int)seqLens.Max());
+        var blockTableTensorType = config.GetBlockTablesTensorType(queryLens.Length, (int)seqLens.Max());
         var blockTableTensor = Tensor.Zeros(blockTableTensorType.DType, blockTableTensorType.Shape.ToValueArray()).Cast<long>();
         var alignedSeqLens = seqLens.Select(seqLen => MathUtility.AlignUp(seqLen, config.BlockSize)).ToArray();
         var alignedSeqStartLocs = alignedSeqLens.CumSum().ToArray();

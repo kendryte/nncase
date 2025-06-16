@@ -25,17 +25,13 @@ class NNCASE_API attention_kv_cache_node : public object_node {
     DEFINE_OBJECT_KIND(object_node, object_attention_kv_cache);
 
   public:
-    attention_kv_cache_node(attention_config config, int32_t num_seqs,
-                            int32_t num_tokens, tensor context_lens,
-                            tensor seq_lens) noexcept
-        : config_(std::move(config)),
-          num_seqs_(num_seqs),
+    attention_kv_cache_node() noexcept = default;
+    attention_kv_cache_node(int32_t num_seqs, int32_t num_tokens,
+                            tensor context_lens, tensor seq_lens) noexcept
+        : num_seqs_(num_seqs),
           num_tokens_(num_tokens),
           context_lens_(std::move(context_lens)),
           seq_lens_(std::move(seq_lens)) {}
-
-    /**@brief Gets attention config. */
-    attention_config config() const noexcept { return config_; }
 
     int32_t num_seqs() const noexcept { return num_seqs_; }
 
@@ -56,7 +52,6 @@ class NNCASE_API attention_kv_cache_node : public object_node {
     tensor seq_lens() const noexcept { return seq_lens_; }
 
   private:
-    attention_config config_;
     int32_t num_seqs_;
     int32_t num_tokens_;
     tensor context_lens_;

@@ -35,7 +35,7 @@ public sealed record RefPagedAttentionKVCache(
     int NumTokens,
     Tensor<long> ContextLens,
     Tensor<long> SeqLens,
-    Tensor<long> BlockTable,
+    Tensor<long> BlockTables,
     Tensor<long> SlotMapping,
     int NumBlocks,
     Tensor KVCaches)
@@ -52,8 +52,8 @@ public sealed record RefPagedAttentionKVCache(
 
     public Tensor GetBlockId(int seqId, int contextId)
     {
-        Debug.Assert(BlockTable.Rank == 3, "BlockTable must be 3D.");
-        return BlockTable.View([seqId, contextId, 0], [1, 1, BlockTable.Dimensions[2]]).Squeeze(0, 1).AsContiguous();
+        Debug.Assert(BlockTables.Rank == 3, "BlockTable must be 3D.");
+        return BlockTables.View([seqId, contextId, 0], [1, 1, BlockTables.Dimensions[2]]).Squeeze(0, 1).AsContiguous();
     }
 
     public Tensor GetSlotId(int tokenId)
@@ -396,7 +396,7 @@ internal sealed class PagedAttentionKVCacheJsonConverter : JsonConverter<IPagedA
             options)!;
 
         var blockTable = JsonSerializer.Deserialize<Tensor<long>>(
-            root.GetProperty(nameof(RefPagedAttentionKVCache.BlockTable)).GetRawText(),
+            root.GetProperty(nameof(RefPagedAttentionKVCache.BlockTables)).GetRawText(),
             options)!;
 
         var slotMapping = JsonSerializer.Deserialize<Tensor<long>>(
@@ -437,8 +437,8 @@ internal sealed class PagedAttentionKVCacheJsonConverter : JsonConverter<IPagedA
         writer.WritePropertyName(nameof(RefPagedAttentionKVCache.SeqLens));
         JsonSerializer.Serialize(writer, cache.SeqLens, options);
 
-        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.BlockTable));
-        JsonSerializer.Serialize(writer, cache.BlockTable, options);
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.BlockTables));
+        JsonSerializer.Serialize(writer, cache.BlockTables, options);
 
         writer.WritePropertyName(nameof(RefPagedAttentionKVCache.SlotMapping));
         JsonSerializer.Serialize(writer, cache.SlotMapping, options);

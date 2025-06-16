@@ -58,7 +58,7 @@ public interface IPagedAttentionConfig : IAttentionConfig
         return new TensorType(KVPrimType, shape);
     }
 
-    TensorType GetBlockTableTensorType(int numSeqs, int maxSeqLen)
+    TensorType GetBlockTablesTensorType(int numSeqs, int maxSeqLen)
     {
         return new TensorType(DataTypes.Int64, new[] { numSeqs, Utilities.MathUtility.CeilDiv(maxSeqLen, BlockSize), ShardingAxes.Count + 1 });
     }

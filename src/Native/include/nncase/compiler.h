@@ -328,7 +328,7 @@ typedef struct {
         clr_object_handle_t kv_cache);
     clr_object_handle_t (*ref_paged_attention_kv_cache_get_seq_lens)(
         clr_object_handle_t kv_cache);
-    clr_object_handle_t (*ref_paged_attention_kv_cache_get_block_table)(
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_block_tables)(
         clr_object_handle_t kv_cache);
     clr_object_handle_t (*ref_paged_attention_kv_cache_get_slot_mapping)(
         clr_object_handle_t kv_cache);
@@ -1053,9 +1053,9 @@ class ref_paged_attention_kv_cache : public clr_object_base {
                     obj_.get())};
     }
 
-    rtvalue block_table() const {
+    rtvalue block_tables() const {
         return {std::in_place,
-                nncase_clr_api()->ref_paged_attention_kv_cache_get_block_table(
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_block_tables(
                     obj_.get())};
     }
 

@@ -462,7 +462,7 @@ void test_caching() {
         kv_tensor(0, 0) = (intptr_t)kv_storage.elements().data();
         auto kv_cache = paged_attention_kv_cache_t(
             1, 8, context_lens.view(), seq_lens.view(), block_table.view(),
-            slot_mapping.view(), num_blocks, kv_tensor);
+            slot_mapping.view(), kv_tensor);
 
         // start fill, key :[seq, head, dim]
         ntt::tensor<kv_storage_type_t,

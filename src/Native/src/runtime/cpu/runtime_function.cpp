@@ -14,6 +14,7 @@
  */
 #include "runtime_function.h"
 #include "nncase/runtime/buffer.h"
+#include "nncase/runtime/simple_types.h"
 #include "nncase/tensor.h"
 #include "nncase/value.h"
 #include <cstdint>
@@ -126,20 +127,19 @@ result<value_t> cpu_runtime_function::invoke_core(
                     auto &node = refspan[i];
                     auto &desc = descs[i];
                     {
-                        auto cfg = node->config();
                         desc.num_seqs = node->num_seqs();
                         desc.num_tokens = node->num_tokens();
                         {
                             try_var(hbf,
                                     node->context_lens()->buffer().as_host());
-                            try_var(mbf, hbf.map(map_read_write));
+                            try_var(mbf, hbf.map(map_read));
                             desc.context_lens = (int64_t *)mbf.buffer().data();
                             desc.context_lens_size =
                                 mbf.buffer().size_bytes() / sizeof(int64_t);
                         }
                         {
                             try_var(hbf, node->seq_lens()->buffer().as_host());
-                            try_var(mbf, hbf.map(map_read_write));
+                            try_var(mbf, hbf.map(map_read));
                             desc.seq_lens = (int64_t *)mbf.buffer().data();
                             desc.seq_lens_size =
                                 mbf.buffer().size_bytes() / sizeof(int64_t);
@@ -148,43 +148,39 @@ result<value_t> cpu_runtime_function::invoke_core(
                         // Paged attention specific parameters
                         {
                             try_var(hbf,
-                                    node->block_table()->buffer().as_host());
-                            try_var(mbf, hbf.map(map_read_write));
+                                    node->block_tables()->buffer().as_host());
+                            try_var(mbf, hbf.map(map_read));
                             desc.block_table = (int64_t *)mbf.buffer().data();
                             desc.block_table_shape[0] =
-                                node->block_table()->shape()[0];
+                                node->block_tables()->shape()[0];
                             desc.block_table_shape[1] =
-                                node->block_table()->shape()[1];
+                                node->block_tables()->shape()[1];
                             desc.block_table_shape[2] =
-                                node->block_table()->shape()[2];
+                                node->block_tables()->shape()[2];
                         }
                         {
                             try_var(hbf,
                                     node->slot_mapping()->buffer().as_host());
-                            try_var(mbf, hbf.map(map_read_write));
+                            try_var(mbf, hbf.map(map_read));
                             desc.slot_mapping = (int64_t *)mbf.buffer().data();
                             desc.slot_mapping_shape[0] =
                                 node->slot_mapping()->shape()[0];
                             desc.slot_mapping_shape[1] =
                                 node->slot_mapping()->shape()[1];
                         }
-                        desc.num_blocks = node->num_blocks();
 
                         {
-                            auto kv_storages = node->kv_storages();
-                            for (size_t i = 0; i < kv_storages.size(); i++) {
-                                try_var(hbf,
-                                        kv_storages[i]->buffer().as_host());
-                                try_var(mbf, hbf.map(map_read_write));
-                                desc.kv_storages[i] =
-                                    (intptr_t)mbf.buffer().data();
-                            }
-                            for (size_t i = 0; i < desc.kv_shape.size(); i++) {
-                                desc.kv_shape[i] =
-                                    i < node->kv_shape().size()
-                                        ? (int32_t)node->kv_shape()[i]
-                                        : -1;
-                            }
+                            // FIXME: TP is not supported yet
+                            CHECK_WITH_ERR(node->kv_caches().size() == 1,
+                                           std::errc::not_supported);
+                            auto &kv_cache = node->kv_caches()[0];
+                            try_var(hbf, kv_cache->buffer().as_host());
+                            try_var(mbf, hbf.map(map_read));
+                            auto kv_cache_addrs_span =
+                                runtime::as_span<const intptr_t>(mbf.buffer());
+                            std::copy(kv_cache_addrs_span.begin(),
+                                      kv_cache_addrs_span.end(),
+                                      desc.kv_cache_addrs.begin());
                         }
                     }
                 }

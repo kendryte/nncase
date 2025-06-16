@@ -190,7 +190,7 @@ public class CSourceCompiler
         "-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl" : string.Empty;
 
 #if DEBUG
-        var config = "DEBUG";
+        var config = "Release";
 #else
         var config = "Release";
 #endif
