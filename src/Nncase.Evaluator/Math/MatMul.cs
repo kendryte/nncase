@@ -49,7 +49,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         if (!a.TensorType.Shape.IsFixed || !b.TensorType.Shape.IsFixed || transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
         {
             var ndsbp = new SBP[oRank];
-            for (int i = 0; i < ndsbp.Length; i++)
+            for (int i = 0; i < ndsbp.Length - 2; i++)
             {
                 var policyA = i < aPad ? null : a.AxisPolicies[i - aPad];
                 var policyB = i < bPad ? null : b.AxisPolicies[i - bPad];
@@ -63,11 +63,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                         ndsbp[i] = policyA!;
                         break;
                     case (SBPSplit sa, SBPSplit sb):
-                        if (i == lk + aPad || i == rk + bPad)
-                        {
-                            return invalid;
-                        }
-
                         if (sa.Axes != sb.Axes)
                         {
                             return invalid;
@@ -76,11 +71,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                         ndsbp[i] = sa;
                         break;
                     case (SBPSplit sa, SBPBroadCast):
-                        if (i == lk + aPad)
-                        {
-                            return invalid;
-                        }
-
                         // invalid (S, B) if B is not broacast
                         if (i < lm + aPad && bMaxShape[i - bPad] != 1)
                         {
@@ -90,11 +80,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                         ndsbp[i] = sa;
                         break;
                     case (SBPBroadCast, SBPSplit sb):
-                        if (i == rk + bPad)
-                        {
-                            return invalid;
-                        }
-
                         // invalid (B, S) if A is not broacast
                         if (i < rk + bPad && aMaxShape[i - aPad] != 1)
                         {
@@ -110,6 +95,14 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                         return invalid;
                 }
             }
+
+            if (a.AxisPolicies[lk] is SBPSplit || b.AxisPolicies[rk] is SBPSplit)
+            {
+                return new InvalidType("not support split on k");
+            }
+
+            ndsbp[oRank - 2] = a.AxisPolicies[lm];
+            ndsbp[oRank - 1] = b.AxisPolicies[rn];
 
             if (!DistributedUtility.IsDistributable(outType, ndsbp, a.Placement))
             {
