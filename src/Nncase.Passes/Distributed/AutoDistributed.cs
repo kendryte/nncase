@@ -339,7 +339,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
-        var callCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(isSupported ? SearchGraphKind.DistributedCluster : SearchGraphKind.StandaloneCluster);
+        bool isStandalone = expr.Target is IR.NN.UpdatePagedAttentionKVCache;
+        var callCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(!isSupported || isStandalone ? SearchGraphKind.StandaloneCluster : SearchGraphKind.DistributedCluster);
 
         // 1. inference
         var bucketMemo = new Dictionary<IRType, DistributedSearchGraph>();
@@ -382,7 +383,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         _inferedMemo.Add(expr, callCluster);
 
-        if (!isSupported)
+        if (!isSupported || isStandalone)
         {
             return default;
         }
