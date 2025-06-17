@@ -34,13 +34,14 @@ concept ValidMatmulTensor = Tensor<T> && HasValidRank<T>;
 template <class TLhs, class TRhs, typename LhsPackedAxes,
           typename RhsPackedAxes, bool TransposedA = false,
           bool TransposedB = false>
-constexpr ukernels::mamtul_pack_kind
-get_matmul_pack_kind(const LhsPackedAxes &lhs_packed_axes,
-                     const RhsPackedAxes &rhs_packed_axes) noexcept {
+constexpr ukernels::mamtul_pack_kind get_matmul_pack_kind() noexcept {
     constexpr size_t lm = TransposedA ? (TLhs::rank() - 1) : (TLhs::rank() - 2),
                      lk = TransposedA ? (TLhs::rank() - 2) : (TLhs::rank() - 1);
     constexpr size_t rk = TransposedB ? (TRhs::rank() - 1) : (TRhs::rank() - 2),
                      rn = TransposedB ? (TRhs::rank() - 2) : (TRhs::rank() - 1);
+
+    constexpr LhsPackedAxes lhs_packed_axes;
+    constexpr RhsPackedAxes rhs_packed_axes;
     if constexpr (LhsPackedAxes::rank() == 0 && RhsPackedAxes::rank() == 0) {
         return ukernels::mamtul_pack_kind::no_pack;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
@@ -107,7 +108,7 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
 
     static constexpr auto pack_kind =
         get_matmul_pack_kind<TLhs, TRhs, LhsPackedAxes, RhsPackedAxes, false,
-                             TransposedB>(LhsPackedAxes{}, RhsPackedAxes{});
+                             TransposedB>();
     using policy_t =
         ntt::ukernels::u_matmul_policy<pack_kind, typename TLhs::element_type,
                                        typename TRhs::element_type, TOutElem,
@@ -233,20 +234,24 @@ template <bool AccumulateC = false, bool TransposedA = false,
           FixedDimensions RhsPackedAxes = shape_t<>,
           FixedDimensions RhsPadedNums = shape_t<>>
 void matmul(
-    const TLhs &lhs, const TRhs &rhs, TOut &&output,
+    [[maybe_unused]] const TLhs &lhs, [[maybe_unused]] const TRhs &rhs,
+    [[maybe_unused]] TOut &&output,
     [[maybe_unused]] const LhsPackedAxes &lhsPackedAxes = fixed_shape_v<>,
     [[maybe_unused]] const LhsPadedNums &lhsPadedNums = fixed_shape_v<>,
     [[maybe_unused]] const RhsPackedAxes &rhsPackedAxes = fixed_shape_v<>,
     [[maybe_unused]] const RhsPadedNums &rhsPadedNums = fixed_shape_v<>) {
+
+    constexpr LhsPadedNums lhsPadedNumsType;
+    constexpr RhsPadedNums rhsPadedNumsType;
     static_assert(LhsPackedAxes::rank() == 0 || LhsPackedAxes::rank() == 1 ||
                       LhsPackedAxes::rank() == 2,
                   "currently only support 0~2d pack!");
     static_assert(RhsPackedAxes::rank() == 0 || RhsPackedAxes::rank() == 1 ||
                       RhsPackedAxes::rank() == 2,
                   "currently only support 0~2d pack!");
-    static_assert(LhsPadedNums::rank() == 0 || lhsPadedNums.length() == 0,
+    static_assert(LhsPadedNums::rank() == 0 || lhsPadedNumsType.length() == 0,
                   "currently only support no pad!");
-    static_assert(RhsPadedNums::rank() == 0 || rhsPadedNums.length() == 0,
+    static_assert(RhsPadedNums::rank() == 0 || rhsPadedNumsType.length() == 0,
                   "currently only support no pad!");
 
     detail::matmul_impl<AccumulateC, TransposedA, TransposedB, TLhs, TRhs,

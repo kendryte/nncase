@@ -688,7 +688,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
                     using TLhsElemGrouped = TLhsElemExpanded;
 
                     using TRhsElemExpanded =
-                        replace_element_t<TSubRhsElem, float>;
+                        replace_element_t<decltype(b0_tmp[0]), float>;
                     using TRhsElemGrouped =
                         replace_lanes_t<TRhsElemExpanded, n0_scale,
                                         (TRhsElemExpanded::shape()[0] /
