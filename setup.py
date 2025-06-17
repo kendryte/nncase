@@ -297,7 +297,7 @@ def find_version():
             tagged_commit = subprocess.check_output(
                 ['git', 'rev-list', '-n', '1', repo.tags[-1].name]).decode('utf-8').strip()
             if latest_commit == tagged_commit:
-                return version_prefix[0]
+                return repo.tags[-1].name[1:]
 
         version_suffix = time.strftime("%Y%m%d", time.localtime())
         return version_prefix[0] + "." + version_suffix
