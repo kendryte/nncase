@@ -13,6 +13,7 @@ Covering the following cases:
 import itertools
 from typing import List, Tuple
 from collections import namedtuple
+import os
 
 
 # is_contiguous: bool 
@@ -35,7 +36,7 @@ ALL_DATATYPES = [
     DataType('half', 'Float16', '-65504.0', '65504.0'), # 假设 'half' 可以用 float 字面量初始化
     DataType('float', 'Float32', '-3.4e38', '3.4e38'),
     DataType('double', 'Float64', '-1.7e308', '1.7e308'),
-    DataType('bfloat16', 'Bfloat16', '-3.3e38f', '3.3e38f'),
+    DataType('bfloat16', 'Bfloat16', '-3.3e38_bf16', '3.3e38_bf16'),
     DataType('float_e4m3_t', 'Float8e4m3', 'float_e4m3_t(-448.0f)', 'float_e4m3_t(448.0f)'),
     DataType('float_e5m2_t', 'Float8e5m2', 'float_e5m2_t(-57344.0f)', 'float_e5m2_t(57344.0f)'),
 ]
@@ -412,14 +413,33 @@ using namespace ortki;
     return RUN_ALL_TESTS();
 }
 '''
+def generate_cmake_list(directory, filenames):
+    """generate a .cmake file that contains the list of generated test files"""
+    cmake_list_path = os.path.join(directory, "generated_tests.cmake")
+    with open(cmake_list_path, "w") as f:
+        f.write("# This file is generated automatically. DO NOT EDIT.\n")
+        f.write("set(GENERATED_TEST_SOURCES\n")
+        for name in filenames:
+            f.write(f"    ${{CMAKE_CURRENT_LIST_DIR}}/{name}\n") # use relative path to current CMakeLists.txt
+        f.write(")\n")
+    print(f"Generated CMake list: {cmake_list_path}")
+
 
 if __name__ == "__main__":
     generator = PackTestGenerator()
+    script_directory = os.path.dirname(os.path.abspath(__file__))
+    
+    generated_filenames = [] # collect all generated file names
+
     for datatype in ALL_DATATYPES:
         test_code = generator.generate_all_tests_for_type(datatype)
         filename = f"test_ntt_pack_generated_{datatype.name_suffix}.cpp"
-        # Write to file
-        with open(filename, "w") as f:
+        output_filepath = os.path.join(script_directory, filename)
+
+        with open(output_filepath, "w") as f:
             f.write(test_code)
         
-        print(f"Test file generated: {filename}")
+        print(f"Test file generated: {output_filepath}")
+        generated_filenames.append(filename) 
+    
+    generate_cmake_list(script_directory, generated_filenames)

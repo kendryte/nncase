@@ -361,7 +361,7 @@ void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
     std::cout << name << std::endl;
 
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        const ntt::vector<T, N> lvalue = lhs(index);
+        const ntt::vector<T, N> vec = lhs(index);
 
         nncase::ntt::apply(vec.shape(), [&](auto idx) {
             auto d1 = (double)(vec(idx));
