@@ -119,11 +119,9 @@ void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
 template <ntt::TensorOfVector TTensor>
     requires(TTensor::element_type::rank() == 1)
 void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
-    using T = typename std::decay_t<TTensor>::element_type;
-    auto N = TTensor::element_type::template lane<0>();
     size_t size = 0;
     void *ort_ptr = tensor_buffer(ort_tensor, &size);
-    assert(tensor_length(ort_tensor) == ntt_tensor.size() * N);
+    assert(tensor_length(ort_tensor) == ntt_tensor.size() * TTensor::element_type::template lane<0>());
     memcpy(ntt_tensor.elements().data(), ort_ptr, size);
 }
 

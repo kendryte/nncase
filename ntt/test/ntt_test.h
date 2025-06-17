@@ -235,7 +235,6 @@ template <ntt::TensorOfVector TTensor>
     requires(TTensor::element_type::rank() == 1)
 bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     using vector_type = typename TTensor::element_type;
-    using T = typename vector_type::element_type;
     constexpr size_t N = vector_type::template lane<0>();
 
     if (lhs.shape().rank() != rhs.shape().rank()) {
@@ -292,7 +291,6 @@ template <ntt::TensorOfVector TTensor>
     requires(TTensor::element_type::rank() == 2)
 bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     using vector_type = typename TTensor::element_type;
-    using T = typename vector_type::element_type;
     constexpr size_t N0 = vector_type::template lane<0>();
     constexpr size_t N1 = vector_type::template lane<1>();
 
