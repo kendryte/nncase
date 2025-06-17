@@ -13,6 +13,7 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     benchmark_ntt_compare.cpp
     benchmark_ntt_expand.cpp
     benchmark_ntt_gather.cpp
+    benchmark_ntt_matmul.cpp
 )
 foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
