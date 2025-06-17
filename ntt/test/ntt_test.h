@@ -165,6 +165,11 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<double>(dis(gen)) >= 0.5;
         });
+    } else if constexpr (std::is_same_v<T, bfloat16>) {
+        std::uniform_real_distribution<float> dis(start, stop);
+        ntt::apply(tensor.shape(), [&](auto &index) {
+            tensor(index) = static_cast<bfloat16>(dis(gen));
+        });
     } else{
         std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
         std::abort();

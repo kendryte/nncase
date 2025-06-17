@@ -87,6 +87,29 @@ template <class T> class tensor_storage<T, std::dynamic_extent, false> {
     buffer_type buffer_;
 };
 
+// dynamic tensor specialization for bool
+template <>
+class tensor_storage<bool, std::dynamic_extent, false> {
+  public:
+    using buffer_type = std::vector<char>;
+
+    explicit tensor_storage(size_t size) : buffer_(size) {}
+    tensor_storage(std::in_place_t, buffer_type value) : buffer_(value) {}
+
+    constexpr const buffer_type &buffer() const noexcept { return buffer_; }
+    constexpr buffer_type &buffer() noexcept { return buffer_; }
+
+    constexpr std::span<const bool> elements() const noexcept {
+        return {std::bit_cast<const bool *>(buffer_.data()), buffer_.size()};
+    }
+    constexpr std::span<bool> elements() noexcept {
+        return {std::bit_cast<bool *>(buffer_.data()), buffer_.size()};
+    }
+
+  private:
+    buffer_type buffer_;
+};
+
 // dynamic view
 template <class T> class tensor_storage<T, std::dynamic_extent, true> {
   public:

@@ -51,6 +51,8 @@ template <typename T> ortki::DataType primitive_type2ort_type() {
         ort_type = ortki::DataType_DOUBLE;
     else if (std::is_same_v<T, bool>)
         ort_type = ortki::DataType_BOOL;
+    else if (std::is_same_v<T, bfloat16>)
+        ort_type = ortki::DataType_BFLOAT16;
     else {
         std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
         std::abort();

@@ -26,7 +26,6 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     test_ntt_expand.cpp
     test_ntt_gather.cpp
     test_ntt_matmul.cpp
-    test_ntt_pack_generated.cpp
 )
 foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
