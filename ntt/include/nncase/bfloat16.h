@@ -322,6 +322,6 @@ inline long lrint(const bfloat16 &a) { return lrintf(float(a)); }
 } // namespace std
 
 
-nncase::bfloat16 operator"" _bf16(long double x) {
+inline nncase::bfloat16 operator"" _bf16(long double x) {
     return nncase::bfloat16(float(x));
 }
