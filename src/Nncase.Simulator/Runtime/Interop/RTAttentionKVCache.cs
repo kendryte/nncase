@@ -317,14 +317,7 @@ public abstract class RTAttentionKVCache : RTObject, IAttentionKVCache
         }
     }
 
-    public IAttentionConfig Config
-    {
-        get
-        {
-            Native.AttentionKVCacheGetConfig(this, out var config).ThrowIfFailed();
-            return config;
-        }
-    }
+    public IAttentionConfig Config => throw new NotSupportedException($"{nameof(RTAttentionKVCache)} does not support Config property.");
 
     public int NumSeqs
     {
@@ -384,23 +377,9 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
         }
     }
 
-    public int NumBlocks
-    {
-        get
-        {
-            Native.PagedAttentionKVCacheGetNumBlocks(this, out var numBlocks).ThrowIfFailed();
-            return numBlocks;
-        }
-    }
+    public int NumBlocks => throw new NotSupportedException($"{nameof(RTPagedAttentionKVCache)} does not support NumBlocks property.");
 
-    IPagedAttentionConfig IPagedAttentionKVCache.Config
-    {
-        get
-        {
-            Native.AttentionKVCacheGetConfig(this, out var config).ThrowIfFailed();
-            return RTPagedAttentionConfig.FromHandle(config.DangerousGetHandle(), true);
-        }
-    }
+    IPagedAttentionConfig IPagedAttentionKVCache.Config => throw new NotSupportedException($"{nameof(RTPagedAttentionKVCache)} does not support Config property.");
 
     public static RTPagedAttentionKVCache FromHandle(IntPtr handle, bool addRef = false)
     {
@@ -416,24 +395,16 @@ public class RTPagedAttentionKVCache : RTAttentionKVCache, IPagedAttentionKVCach
     }
 
     public static RTPagedAttentionKVCache Create(
-        RTPagedAttentionConfig config,
         int num_seqs,
         int num_tokens,
         RTTensor context_lens,
         RTTensor seq_lens,
         RTTensor block_table,
         RTTensor slot_mapping,
-        int num_blocks,
-        int[] kv_shape)
+        RTTensor kv_caches)
     {
-        Native.PagedAttentionKVCacheCreate(config, num_seqs, num_tokens, context_lens, seq_lens, block_table, slot_mapping, num_blocks, kv_shape, kv_shape.Length, out var handle).ThrowIfFailed();
+        Native.PagedAttentionKVCacheCreate(num_seqs, num_tokens, context_lens, seq_lens, block_table, slot_mapping, kv_caches, out var handle).ThrowIfFailed();
         return handle;
-    }
-
-    public void SetKVCache(int[] indices, Tensor kv_cache)
-    {
-        var rt_kv_cache = RTTensor.FromTensor(kv_cache);
-        Native.PagedAttentionKVCacheSetKVCache(this, indices, indices.Length, rt_kv_cache).ThrowIfFailed();
     }
 
     public Tensor GetBlock(AttentionCacheKind kind, int layerId, int headId, Tensor blockId)

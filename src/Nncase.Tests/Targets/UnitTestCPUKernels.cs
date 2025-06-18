@@ -310,16 +310,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
             feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
 
-            var rtkvObj = RTPagedAttentionKVCache.Create(
-                    RTPagedAttentionConfig.FromConfig(fixture.Config),
-                    kvinputs.KVCacheObj.NumSeqs,
-                    kvinputs.KVCacheObj.NumTokens,
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTable),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
-                    kvinputs.KVCacheObj.NumBlocks,
-                    kvinputs.KVCacheObj.KVCaches.Dimensions[..fixture.Config.ShardingAxes.Count].ToArray().Select(i => (int)i).ToArray());
+            var kvCacheAddrs = new List<long>();
             {
                 var logicalKVShape = kvinputs.KVCacheObj.KVCaches.Dimensions.ToArray();
                 foreach (var topoIndices in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
@@ -327,10 +318,23 @@ public sealed class UnitTestCPUKernels : TestClassBase
                     var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - hierarchy.Length)).ToArray();
                     var shape = Enumerable.Repeat(1L, hierarchy.Length).Concat(logicalKVShape[hierarchy.Length..]).ToArray();
                     var kvStorage = kvinputs.KVCacheObj.KVCaches.View(indices, shape);
-                    rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+
+                    // FIXME: Memory leak here
+                    unsafe
+                    {
+                        kvCacheAddrs.Add((long)kvStorage.PinBuffer().Pointer);
+                    }
                 }
             }
 
+            var rtkvObj = RTPagedAttentionKVCache.Create(
+                    kvinputs.KVCacheObj.NumSeqs,
+                    kvinputs.KVCacheObj.NumTokens,
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTables),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
+                    RTTensor.FromTensor(kvCacheAddrs.ToArray()));
             rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 
@@ -372,17 +376,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             }
 
             feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
-
-            var rtkvObj = RTPagedAttentionKVCache.Create(
-                    RTPagedAttentionConfig.FromConfig(fixture.Config),
-                    kvinputs.KVCacheObj.NumSeqs,
-                    kvinputs.KVCacheObj.NumTokens,
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTable),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
-                    kvinputs.KVCacheObj.NumBlocks,
-                    kvinputs.KVCacheObj.KVCaches.Dimensions[..fixture.Config.ShardingAxes.Count].ToArray().Select(i => (int)i).ToArray());
+            var kvCacheAddrs = new List<long>();
             {
                 var logicalKVShape = kvinputs.KVCacheObj.KVCaches.Dimensions.ToArray();
                 foreach (var topoIndices in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
@@ -390,10 +384,23 @@ public sealed class UnitTestCPUKernels : TestClassBase
                     var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - hierarchy.Length)).ToArray();
                     var shape = Enumerable.Repeat(1L, hierarchy.Length).Concat(logicalKVShape[hierarchy.Length..]).ToArray();
                     var kvStorage = kvinputs.KVCacheObj.KVCaches.View(indices, shape);
-                    rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+
+                    // FIXME: Memory leak here
+                    unsafe
+                    {
+                        kvCacheAddrs.Add((long)kvStorage.PinBuffer().Pointer);
+                    }
                 }
             }
 
+            var rtkvObj = RTPagedAttentionKVCache.Create(
+                    kvinputs.KVCacheObj.NumSeqs,
+                    kvinputs.KVCacheObj.NumTokens,
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTables),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
+                    RTTensor.FromTensor(kvCacheAddrs.ToArray()));
             rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 

@@ -146,7 +146,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, int> RefPagedAttentionKVCacheGetNumTokensPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetContextLensPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetSeqLensPtr;
-    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetBlockTablePtr;
+    public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetBlockTablesPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetSlotMappingPtr;
     public delegate* unmanaged<IntPtr, int> RefPagedAttentionKVCacheGetNumBlocksPtr;
     public delegate* unmanaged<IntPtr, IntPtr> RefPagedAttentionKVCacheGetKVCachesPtr;
@@ -275,7 +275,7 @@ public static unsafe class CApi
         mt->RefPagedAttentionKVCacheGetNumTokensPtr = &RefPagedAttentionKVCacheGetNumTokens;
         mt->RefPagedAttentionKVCacheGetContextLensPtr = &RefPagedAttentionKVCacheGetContextLens;
         mt->RefPagedAttentionKVCacheGetSeqLensPtr = &RefPagedAttentionKVCacheGetSeqLens;
-        mt->RefPagedAttentionKVCacheGetBlockTablePtr = &RefPagedAttentionKVCacheGetBlockTable;
+        mt->RefPagedAttentionKVCacheGetBlockTablesPtr = &RefPagedAttentionKVCacheGetBlockTables;
         mt->RefPagedAttentionKVCacheGetSlotMappingPtr = &RefPagedAttentionKVCacheGetSlotMapping;
         mt->RefPagedAttentionKVCacheGetNumBlocksPtr = &RefPagedAttentionKVCacheGetNumBlocks;
         mt->RefPagedAttentionKVCacheGetKVCachesPtr = &RefPagedAttentionKVCacheGetKVCaches;
@@ -1161,10 +1161,10 @@ public static unsafe class CApi
     }
 
     [UnmanagedCallersOnly]
-    private static IntPtr RefPagedAttentionKVCacheGetBlockTable(IntPtr handle)
+    private static IntPtr RefPagedAttentionKVCacheGetBlockTables(IntPtr handle)
     {
         var kvCache = Get<Evaluator.NN.RefPagedAttentionKVCache>(handle);
-        var rtTensor = RTTensor.FromTensor(kvCache.BlockTable);
+        var rtTensor = RTTensor.FromTensor(kvCache.BlockTables);
         return GCHandle.ToIntPtr(GCHandle.Alloc(rtTensor));
     }
 
@@ -1223,26 +1223,27 @@ public static unsafe class CApi
         var sharedCount = rtconfig.ShardingAxes.Count;
         var logicalKVShape = kvCache.KVCaches.Dimensions.ToArray();
         var sharedShape = logicalKVShape[..sharedCount];
-        var rtkvObj = RTPagedAttentionKVCache.Create(
-                    rtconfig,
-                    kvCache.NumSeqs,
-                    kvCache.NumTokens,
-                    RTTensor.FromTensor(kvCache.ContextLens),
-                    RTTensor.FromTensor(kvCache.SeqLens),
-                    RTTensor.FromTensor(kvCache.BlockTable),
-                    RTTensor.FromTensor(kvCache.SlotMapping),
-                    kvCache.NumBlocks,
-                    sharedShape.ToArray().Select(i => (int)i).ToArray());
+        var kvCacheAddrs = new List<long>();
         {
             foreach (var topoIndices in sharedShape.Select(i => Enumerable.Range(0, (int)i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
             {
                 var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - sharedCount)).ToArray();
                 var shape = Enumerable.Repeat(1L, sharedCount).Concat(logicalKVShape[sharedCount..]).ToArray();
                 var kvStorage = kvCache.KVCaches.View(indices, shape).Squeeze(Utilities.LinqUtility.Range(0L, sharedCount).ToArray());
-                rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+
+                // FIXME: Memory leak here
+                kvCacheAddrs.Add((long)kvStorage.PinBuffer().Pointer);
             }
         }
 
+        var rtkvObj = RTPagedAttentionKVCache.Create(
+                    kvCache.NumSeqs,
+                    kvCache.NumTokens,
+                    RTTensor.FromTensor(kvCache.ContextLens),
+                    RTTensor.FromTensor(kvCache.SeqLens),
+                    RTTensor.FromTensor(kvCache.BlockTables),
+                    RTTensor.FromTensor(kvCache.SlotMapping),
+                    RTTensor.FromTensor(kvCacheAddrs.ToArray()));
         var value = RTTensor.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj)));
         return GCHandle.ToIntPtr(GCHandle.Alloc(value));
     }

@@ -17,12 +17,16 @@
 #include "nncase/runtime/simple_types.h"
 #include "paged_attention_config.h"
 #include "paged_attention_kv_cache.h"
+#include <cstdint>
 #include <nncase/object.h>
 #include <nncase/runtime/buffer.h>
 #include <nncase/runtime/datatypes.h>
+#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/tensor.h>
 #include <numeric>
+#include <utility>
+#include <vector>
 
 namespace nncase::llm {
 
@@ -133,8 +137,7 @@ class paged_attention_scheduler_node : public object_node {
         : config_(std::move(config)),
           num_blocks_(num_blocks),
           max_model_len_(max_model_len),
-          hierarchy_(hierarchy.begin(), hierarchy.end()),
-          conversation_id_(0) {
+          hierarchy_(hierarchy.begin(), hierarchy.end()) {
         // Validate max_model_len is multiple of block_size
         if (max_model_len_ % config_->block_size() != 0) {
             throw std::invalid_argument(
@@ -147,17 +150,30 @@ class paged_attention_scheduler_node : public object_node {
                                 kv_shard_shape.begin() +
                                     config_->sharding_axes().size()};
 
-        kv_cache_ = llm::paged_attention_kv_cache(
-            std::in_place, config_, 0, 0, tensor(), tensor(), tensor(),
-            tensor(), num_blocks_, kv_topo_shape);
+        kv_cache_addrs_ = runtime::hrt::create(datatype_t::int64, kv_topo_shape)
+                              .unwrap_or_throw()
+                              .impl();
+        auto mapped_kv_cache_addrs = kv_cache_addrs_->buffer()
+                                         .as_host()
+                                         .unwrap_or_throw()
+                                         .map(runtime::map_write)
+                                         .unwrap_or_throw();
+        auto kv_cache_addrs_data =
+            reinterpret_cast<int64_t *>(mapped_kv_cache_addrs.buffer().data());
         for (size_t i = 0; i < runtime::compute_size(kv_topo_shape); i++) {
             auto storage =
                 runtime::hrt::create(
                     config_->kv_type(),
                     {kv_shard_shape.begin() + config_->sharding_axes().size(),
                      kv_shard_shape.end()})
-                    .unwrap();
-            kv_cache_->kv_cache(i, storage.impl());
+                    .unwrap_or_throw();
+            auto buffer = storage.impl()->buffer();
+            auto address = buffer.as_host()
+                               .unwrap_or_throw()
+                               .map(runtime::map_read)
+                               .unwrap_or_throw();
+            kv_cache_storages_.push_back(buffer);
+            kv_cache_addrs_data[i] = (int64_t)address.buffer().data();
         }
     }
 
@@ -280,14 +296,11 @@ class paged_attention_scheduler_node : public object_node {
                 runtime::hrt::memory_pool_t::pool_shared)
                 .unwrap();
 
-        kv_cache_->num_seqs(num_seqs);
-        kv_cache_->num_tokens(num_tokens);
-        kv_cache_->seq_lens(seq_lens_tensor.impl());
-        kv_cache_->context_lens(context_lens_tensor.impl());
-        kv_cache_->block_table(block_tables_tensor.impl());
-        kv_cache_->slot_mapping(slot_mapping_tensor.impl());
-        kv_cache_->conversation_id(conversation_id_++);
-        return kv_cache_;
+        auto kv_cache = paged_attention_kv_cache(
+            std::in_place, num_seqs, num_tokens, context_lens_tensor.impl(),
+            seq_lens_tensor.impl(), block_tables_tensor.impl(),
+            slot_mapping_tensor.impl(), std::vector{kv_cache_addrs_});
+        return kv_cache;
     }
 
   private:
@@ -295,9 +308,9 @@ class paged_attention_scheduler_node : public object_node {
     size_t num_blocks_;
     size_t max_model_len_;
     dims_t hierarchy_;
-    paged_attention_kv_cache kv_cache_;
+    tensor kv_cache_addrs_;
     std::unordered_map<int64_t, detail::session_info> session_infos_;
-    size_t conversation_id_;
+    std::vector<runtime::buffer_slice> kv_cache_storages_;
 };
 
 using paged_attention_scheduler = object_t<paged_attention_scheduler_node>;

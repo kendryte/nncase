@@ -101,7 +101,7 @@ public sealed class RefPagedAttentionScheduler
         // int NumTokens,
         var seqLensTensor = new Tensor<long>(seqLens, [numSeqs]);
         var contextLensTensor = new Tensor<long>(contextLens, [numSeqs]);
-        var blockTableTensorType = _config.GetBlockTableTensorType(numSeqs, (int)maxSeqLen);
+        var blockTableTensorType = _config.GetBlockTablesTensorType(numSeqs, (int)maxSeqLen);
         var blockTableTensor = Tensor.Zeros(blockTableTensorType.DType, blockTableTensorType.Shape.ToValueArray()).Cast<long>();
         for (int seqId = 0; seqId < numSeqs; seqId++)
         {

@@ -277,41 +277,18 @@ public class UnitTestInterop
     [Fact]
     public void TestRTAttentionKVCache()
     {
-        var pagedConfig = new IR.NN.PagedAttentionConfig(
-            NumLayers: 2,
-            NumKVHeads: 4,
-            HeadDim: 32,
-            KVType: DataTypes.Float32,
-            BlockSize: 16,
-            CacheLayout: new[]
-            {
-                IR.NN.PagedKVCacheDimKind.NumBlocks,
-                IR.NN.PagedKVCacheDimKind.NumLayers,
-                IR.NN.PagedKVCacheDimKind.KV,
-                IR.NN.PagedKVCacheDimKind.BlockSize,
-                IR.NN.PagedKVCacheDimKind.NumKVHeads,
-                IR.NN.PagedKVCacheDimKind.HeadDim,
-            },
-            PackedAxes: new[] { IR.NN.PagedKVCacheDimKind.HeadDim },
-            Lanes: new[] { 32 },
-            new[] { IR.NN.PagedKVCacheDimKind.NumBlocks },
-            new[] { SBP.S(0) });
-
         var contextLens = Tensor.From(new[] { 64L });
         var seqLens = Tensor.From(new[] { 128L });
         var blockTable = Tensor.From(new long[] { 0, -1, -1, -1 }); // Example block table
         var slotMapping = Tensor.From(new long[] { 5, 4, 3, 2, 1 }); // Example slot mapping
-
-        var rtPagedConfig = RTPagedAttentionConfig.FromConfig(pagedConfig);
+        var kvCacheAddrs = new long[] { 0 }; // Example addresses
 
         var rtContextLens = RTTensor.FromTensor(contextLens);
         var rtSeqLens = RTTensor.FromTensor(seqLens);
         var rtBlockTable = RTTensor.FromTensor(blockTable);
         var rtSlotMapping = RTTensor.FromTensor(slotMapping);
-        var rtpagedAttn = RTPagedAttentionKVCache.Create(
-            rtPagedConfig, 1, 64, rtContextLens, rtSeqLens, rtBlockTable, rtSlotMapping, 15, [1]);
-
-        Assert.Equal(15, rtpagedAttn.NumBlocks);
+        var rtKVCacheAddrs = RTTensor.FromTensor(Tensor.From(kvCacheAddrs));
+        var rtpagedAttn = RTPagedAttentionKVCache.Create(1, 64, rtContextLens, rtSeqLens, rtBlockTable, rtSlotMapping, rtKVCacheAddrs);
 
         var totensor = Tensor.FromScalar(new Reference<IR.NN.IPagedAttentionKVCache>(rtpagedAttn));
         RTTensor.FromTensor(totensor);

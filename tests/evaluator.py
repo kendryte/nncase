@@ -20,7 +20,7 @@ import numpy as np
 import test_utils
 import preprocess_utils
 from test_utils import *
-from tests.npy2json import convert_npy_to_json
+from npy2json import convert_npy_to_json
 
 
 class Evaluator:
