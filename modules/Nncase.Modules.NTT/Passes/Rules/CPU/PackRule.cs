@@ -405,8 +405,8 @@ public sealed class PackMatMul : PackRule
         var matmul = IR.F.NTT.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, rhsPackedAxes, transA, transB, false, outputDataType);
 
         var outRank = System.Math.Max(lhsShape.Length, rhsShape.Length);
-        var lhsAlign = outRank - lhsShape.Length;
-        var rhsAlign = outRank - rhsShape.Length;
+        _ = outRank - lhsShape.Length;
+        _ = outRank - rhsShape.Length;
 
         var unpackAxes = new List<int>();
         var unpadNums = new List<Dimension>();
