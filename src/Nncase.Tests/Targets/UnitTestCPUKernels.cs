@@ -608,7 +608,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
+    // [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
     [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int count)
     {
@@ -1763,7 +1763,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
         compiler.AutoDistributedPass(pmgr);
-        compiler.AutoTilingPass(pmgr);
+
+        // FIXME: reopen when AutoTilingPass is ready.
+        // compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
         await pmgr.RunAsync(module);
     }

@@ -844,8 +844,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                                     throw new NotSupportedException("graph doesn't contain the vertex.");
                                 }
 
-                                var tempArgs = edges.OrderBy(e => e.InputIndex).Select<CrossEdge, Expr>(e => e.Target switch
+                                var tempArgs = edges.OrderBy(e => e.InputIndex).Select<CrossEdge, BaseExpr>(e => e.Target switch
                                 {
+                                    SearchableNode { Expr: Dimension attr } => attr,
+                                    SearchableNode { Expr: Shape attr } => attr,
+                                    SearchableNode { Expr: Padding attr } => attr,
+                                    SearchableNode { Expr: Paddings attr } => attr,
                                     SearchableNode { Expr: Const attr } => attr,
                                     SearchableNode n => new Var(n.IRType),
                                 }).ToArray();
@@ -884,20 +888,22 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
-        // 3. no cycle
-        // foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
-        // {
-        //     foreach (var sourceBucket in cluster.Clusters.OfType<DistributedSearchGraph>())
-        //     {
-        //         foreach (var destBucket in cluster.Clusters.OfType<DistributedSearchGraph>().Where(b => !ReferenceEquals(b, sourceBucket)))
-        //         {
-        //             foreach (var (src, dest) in sourceBucket.Vertices.Where(v => v.IsBidirect).Zip(destBucket.Vertices.Where(v => v.IsBidirect)))
-        //             {
-        //                 cpmodel.AddBoolAnd([varMemo[src].Not(), varMemo[dest].Not()]);
-        //             }
-        //         }
-        //     }
-        // }
+#if false
+        3. no cycle
+        foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
+        {
+            foreach (var sourceBucket in cluster.Clusters.OfType<DistributedSearchGraph>())
+            {
+                foreach (var destBucket in cluster.Clusters.OfType<DistributedSearchGraph>().Where(b => !ReferenceEquals(b, sourceBucket)))
+                {
+                    foreach (var (src, dest) in sourceBucket.Vertices.Where(v => v.IsBidirect).Zip(destBucket.Vertices.Where(v => v.IsBidirect)))
+                    {
+                        cpmodel.AddBoolAnd([varMemo[src].Not(), varMemo[dest].Not()]);
+                    }
+                }
+            }
+        }
+#endif
 
         // 3. add pick weights for all enode.
         cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costMemo[n].Score))));
@@ -1054,7 +1060,7 @@ internal sealed class ExprBuildVisitor
 
 internal sealed class DistributedCostEvaluateContext : Evaluator.ICostEvaluateContext
 {
-    public DistributedCostEvaluateContext(Op op, IRType returnType, Expr[] args, CompileOptions compileOptions)
+    public DistributedCostEvaluateContext(Op op, IRType returnType, BaseExpr[] args, CompileOptions compileOptions)
     {
         Op = op;
         ReturnType = returnType;
@@ -1066,7 +1072,7 @@ internal sealed class DistributedCostEvaluateContext : Evaluator.ICostEvaluateCo
 
     public IRType ReturnType { get; }
 
-    public Expr[] Args { get; }
+    public BaseExpr[] Args { get; }
 
     public CompileOptions CompileOptions { get; }
 
