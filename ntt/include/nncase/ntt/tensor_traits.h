@@ -15,6 +15,9 @@
 #pragma once
 #include <cstring>
 #include <type_traits>
+#include "../bfloat16.h"
+#include "../float8.h"
+#include "../half.h"
 
 namespace nncase::ntt {
 enum dims_usage {
