@@ -21,6 +21,7 @@
 #include <ortki/c_api.h>
 #include <string>
 #include <ortki/operators.h>
+#include <cinttypes>
 
 namespace nncase {
 namespace NttTest {
@@ -131,7 +132,7 @@ void print_ort_shape(ortki::OrtKITensor *ort_tensor) {
     tensor_shape(ort_tensor, shape);
     for(size_t i=0; i < rank; ++i)
     {
-        printf("%ld ", shape[i]);
+        printf(PRIi64, shape[i]);
     }
 }
 
