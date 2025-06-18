@@ -132,7 +132,7 @@ void print_ort_shape(ortki::OrtKITensor *ort_tensor) {
     tensor_shape(ort_tensor, shape);
     for(size_t i=0; i < rank; ++i)
     {
-        printf(PRIi64, shape[i]);
+        printf("%" PRIi64 " ", shape[i]);
     }
 }
 

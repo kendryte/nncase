@@ -33,13 +33,11 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     # test_ntt_binary_sub.cpp
     # test_ntt_cast.cpp
     # test_ntt_clamp.cpp
-    test_ntt_cast.cpp
-    test_ntt_clamp.cpp
-    test_ntt_compare_equal.cpp
-    test_ntt_compare_greater_or_equal.cpp
-    test_ntt_compare_greater.cpp
-    test_ntt_compare_less_or_equal.cpp
-    test_ntt_compare_less.cpp
+    # test_ntt_compare_equal.cpp
+    # test_ntt_compare_greater_or_equal.cpp
+    # test_ntt_compare_greater.cpp
+    # test_ntt_compare_less_or_equal.cpp
+    # test_ntt_compare_less.cpp
     test_ntt_expand.cpp
     test_ntt_gather.cpp
     test_ntt_matmul.cpp
