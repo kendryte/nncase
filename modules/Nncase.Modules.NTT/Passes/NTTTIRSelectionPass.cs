@@ -107,7 +107,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.NN.Pad pad when pad.PadMode == PadMode.Constant:
                 return TIR.F.NTT.Pad((Expr)arguments[0], output, ((Paddings)call[IR.NN.Pad.Pads]).Select(p => new[] { p.Before, p.After }).SelectMany(p => p).ToArray(), ((TensorConst)call[IR.NN.Pad.Value]).Value.ToArray<float>()[0]);
             case IR.Math.Reduce reduce:
-                return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, Array.Empty<int>(), Array.Empty<int>(), ((RankedShape)call[IR.Math.Reduce.Axes]).ToValueArray().Select(x => Util.PositiveIndex(x, arguments[0].CheckedTensorType)).OrderBy(a => a).ToArray().ToInts(), ((TensorConst)call[IR.Math.Reduce.KeepDims]).Value.ToArray<bool>()[0], reduce.ReduceOp);
+                return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, Array.Empty<int>(), Array.Empty<Dimension>(), ((RankedShape)call[IR.Math.Reduce.Axes]).ToValueArray().Select(x => Util.PositiveIndex(x, arguments[0].CheckedTensorType)).OrderBy(a => a).ToArray().ToInts(), ((TensorConst)call[IR.Math.Reduce.KeepDims]).Value.ToArray<bool>()[0], reduce.ReduceOp);
             case IR.Math.ReduceArg reduceArg:
                 return TIR.F.NTT.ReduceArg((Expr)arguments[0], output, (int)((DimConst)call[IR.Math.ReduceArg.Axis]).FixedValue, ((TensorConst)call[IR.Math.ReduceArg.KeepDims]).Value.ToArray<bool>()[0], ((TensorConst)call[IR.Math.ReduceArg.SelectLastIndex]).Value.ToArray<bool>()[0], reduceArg.ReduceArgOp, reduceArg.DestType);
             case IR.Tensors.Cast cast:
@@ -119,7 +119,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.NN.Erf erf:
                 return TIR.F.NTT.Erf((Expr)arguments[0], output);
             case IR.NTT.PackedReduce pr:
-                return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, pr.PackedAxes.ToArray(), pr.PadedNums.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp);
+                return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, pr.PackedAxes.ToArray(), ((RankedShape)call[IR.NTT.PackedReduce.PadedNums]).Dimensions.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp);
             case IR.Math.Compare compare:
                 return TIR.F.NTT.Compare(compare.CompareOp, (Expr)arguments[0], (Expr)arguments[1], output);
             case IR.Tensors.GetItem getItem:

@@ -47,7 +47,7 @@ public partial class NTTAffineSelectionPass
             .Domain(rank, out var domainVar)
             .Read(input, AffineMap.Identity(rank), out var intile)
             .Write(output, affinemap, out var outTile)
-            .Body(TIR.F.NTT.Reduce(intile, outTile, GetLoadPreviousExpr(reduce.Axes, domainVar), reduce.PackedAxes.ToArray(), reduce.PadedNums.ToArray(), reduce.Axes, reduce.KeepDims, reduce.ReduceOp))
+            .Body(TIR.F.NTT.Reduce(intile, outTile, GetLoadPreviousExpr(reduce.Axes, domainVar), reduce.PackedAxes.ToArray(), ((RankedShape)call[IR.NTT.PackedReduce.PadedNums]).Dimensions.ToArray(), reduce.Axes, reduce.KeepDims, reduce.ReduceOp))
             .Build();
     }
 

@@ -19,9 +19,10 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
     public IValue Visit(IEvaluateContext context, PackedReduce target)
     {
         var input = context.GetOrtArgumentValue(target, PackedReduce.Input);
+        var padedNums = context.GetArgumentValueAsArray<int>(target, PackedReduce.PadedNums);
         var inshape = input.Shape.SkipLast(target.PackedAxes.Count).Select(i => i).ToArray();
         var inlanes = input.Shape.TakeLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
-        var unpackedInput = NTTEvaluatorUtility.UnpackTensor(input, target.PackedAxes, target.PadedNums, out _);
+        var unpackedInput = NTTEvaluatorUtility.UnpackTensor(input, target.PackedAxes, padedNums, out _);
         var axes = target.Axes.Select(i => (long)i).ToArray();
         long keepdims = target.KeepDims ? 1 : 0;
         foreach (var axis in target.PackedAxes.Reverse())
@@ -42,7 +43,7 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
                 throw new NotSupportedException(target.ReduceOp.ToString());
         }
 
-        var (outPackAxes, outPadNums, outLanes, outShape) = PackedReduce.ComputeOutputInfo(target, inshape, inlanes);
+        var (outPackAxes, outPadNums, outLanes, outShape) = PackedReduce.ComputeOutputInfo(target, padedNums.Select(p => (Dimension)p).ToArray(), inshape, inlanes);
         output = NTTEvaluatorUtility.RepackTensor(output, outLanes.ToArray(), outPackAxes, outPadNums.Select(x => (int)x.FixedValue).ToArray());
 
         return Value.FromTensor(Tensor.FromBytes(outLanes.Length == 0 ? DataTypes.Float32 : new VectorType(DataTypes.Float32, outLanes.ToArray()), output.BytesBuffer.ToArray(), outShape));
@@ -95,7 +96,8 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
         var inshape = (RankedShape)t.Shape;
         var inDtype = (VectorType)t.DType;
         var inlanes = inDtype.Lanes.ToArray();
-        var (_, _, outLanes, outShape) = PackedReduce.ComputeOutputInfo(target, inshape, inlanes);
+        var paddedNums = ((RankedShape)context.GetArgument(target, PackedReduce.PadedNums)).Dimensions.ToArray();
+        var (_, _, outLanes, outShape) = PackedReduce.ComputeOutputInfo(target, paddedNums, inshape, inlanes);
         var outDType = outLanes.Length == 0 ? inDtype.ElemType : new VectorType(inDtype.ElemType, outLanes);
         return new TensorType(outDType, outShape);
     }

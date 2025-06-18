@@ -33,9 +33,9 @@ public partial class NTT
         return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes), input, scale, bias, padedNums);
     }
 
-    public static Call PackedReduce(Expr input, ReduceOp reduceOp, IRArray<int> axes, float initValue, bool keepDims, IRArray<int> packedAxes, IRArray<int> padedNums)
+    public static Call PackedReduce(Expr input, ReduceOp reduceOp, IRArray<int> axes, float initValue, bool keepDims, IRArray<int> packedAxes, BaseExpr padedNums)
     {
-        return new Call(new PackedReduce(reduceOp, axes, initValue, keepDims, packedAxes, padedNums), input);
+        return new Call(new PackedReduce(reduceOp, axes, initValue, keepDims, packedAxes), input, padedNums);
     }
 
     public static Expr InstacneNorm(Expr input, Expr scale, Expr bias, float epsilon, IRArray<int> packedAxes, BaseExpr padedNums)

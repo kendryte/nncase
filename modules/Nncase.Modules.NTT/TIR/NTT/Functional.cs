@@ -172,7 +172,7 @@ public partial class NTT
         return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
     }
 
-    public static Expr Reduce(Expr input, Expr ret, Expr loadPrevious, int[] packedAxes, int[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
+    public static Expr Reduce(Expr input, Expr ret, Expr loadPrevious, int[] packedAxes, Dimension[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
     {
         return new Call(new TIR.NTT.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret, loadPrevious);
     }

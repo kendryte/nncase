@@ -154,15 +154,9 @@ public sealed class PackReduce : PackRule
         axes = axes.Select(x => (int)Util.PositiveIndex(x, inShape.Rank)).ToArray();
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
-        // todo support padings.
-        if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
-        {
-            return rets;
-        }
+        Call reduce = IR.F.NTT.PackedReduce(packedInput, op.ReduceOp, axes, initValue, keepDims, packedAxes, new RankedShape(padsInput));
 
-        Call reduce = IR.F.NTT.PackedReduce(packedInput, op.ReduceOp, axes, initValue, keepDims, packedAxes, padsInput!.Select(x => (int)x.FixedValue).ToArray());
-
-        var (outPackAxes, outPadNums, outLanes, outShape) = IR.NTT.PackedReduce.ComputeOutputInfo((IR.NTT.PackedReduce)reduce.Target, inShape, lanes);
+        var (outPackAxes, outPadNums, outLanes, outShape) = IR.NTT.PackedReduce.ComputeOutputInfo((IR.NTT.PackedReduce)reduce.Target, padsInput, inShape, lanes);
         var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(reduce, outLanes, outPackAxes), outShape, outPadNums);
 
         if (post.CheckedType is not InvalidType)
