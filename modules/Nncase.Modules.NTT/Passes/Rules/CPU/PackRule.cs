@@ -97,12 +97,7 @@ public sealed class PackResizeImage : PackRule
 
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
-        if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
-        {
-            return rets;
-        }
-
-        var resized = IR.F.NTT.ResizeImage(packedInput, packedAxes, padsInput!.Select(x => (int)x.FixedValue).ToArray(), newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
+        var resized = IR.F.NTT.ResizeImage(packedInput, new RankedShape(padsInput), packedAxes, newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
 
         var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(resized, lanes, packedAxes), inShape, padsInput!);
         if (post.CheckedType is not InvalidType)
@@ -239,12 +234,6 @@ public sealed class PackInstanceNorm : PackRule
         {
             var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
-            // todo support padings.
-            if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
-            {
-                return;
-            }
-
             var pAxes = packedAxes.Where(i => i == 1).Select(i => 0).ToArray();
             var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
             if (pAxes.Length > 0)
@@ -258,7 +247,7 @@ public sealed class PackInstanceNorm : PackRule
                 packedBias = IR.F.Tensors.Pack(packedBias, Enumerable.Repeat(laneSize, pAxes.Length).ToArray(), pAxes);
             }
 
-            var instanceNorm = IR.F.NTT.InstacneNorm(packedInput, packedScale, packedBias, eps, packedAxes, padsInput.Select(x => (int)x.FixedValue).ToArray());
+            var instanceNorm = IR.F.NTT.InstacneNorm(packedInput, packedScale, packedBias, eps, packedAxes, new RankedShape(padsInput));
 
             if (instanceNorm.CheckedType is not InvalidType)
             {
@@ -412,12 +401,6 @@ public sealed class PackMatMul : PackRule
 
         var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
         var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
-
-        // TODO: support padding
-        if (lhsPadNums.Any(x => !x.IsFixed || x.FixedValue > 0) || rhsPadNums.Any(x => !x.IsFixed || x.FixedValue > 0))
-        {
-            return;
-        }
 
         var matmul = IR.F.NTT.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, rhsPackedAxes, transA, transB, false, outputDataType);
 
@@ -609,12 +592,6 @@ public sealed class PackSwish : PackRule
         {
             var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
 
-            // todo support padings.
-            if (pads.Any(x => !x.IsFixed))
-            {
-                return;
-            }
-
             var swish = IR.F.NN.Swish(packed, beta);
             var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(swish, lanes, packedAxes), inShape, pads);
             if (post.CheckedType is not InvalidType)
@@ -656,12 +633,6 @@ public sealed class PackTranspose : PackRule
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
         var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
-
-        // todo support padings.
-        if (pads.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
 
         var tarns = IR.F.Tensors.Transpose(packed, perm);
         if (tarns.CheckedType is not InvalidType)
@@ -727,12 +698,6 @@ public sealed class PackUnsqueeze : PackRule
         }
 
         var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
-
-        // todo support padings.
-        if (pads.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
 
         var unseq = IR.F.Tensors.Unsqueeze(packed, axes);
         var unpackAxes = packedAxes.Select(axis => axis + axes.Count(i => i <= axis)).ToArray();
@@ -932,12 +897,6 @@ public sealed class PackReshape : PackRule
 
         var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
 
-        // todo support padings.
-        if (pads.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
-
         var packedNewShape = newShape.ToArray();
         foreach (var (lane, axis) in lanes.Zip(unpackAxes))
         {
@@ -1035,12 +994,6 @@ public sealed class PackSlice : PackRule
 
         var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packAxes, lanes, 0f, out var pads), lanes, packAxes);
 
-        // todo support padings.
-        if (pads != null && pads.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
-
         var slice = IR.F.Tensors.Slice(packed, packedBegins, packedEnds, axes, strides);
         var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(slice, lanes, packAxes), candidate.CheckedShape, pads!);
         if (post.CheckedType is not InvalidType)
@@ -1131,12 +1084,6 @@ public sealed class PackConcat : PackRule
         {
             var inShape = inputs[i].CheckedShape;
             packedInputs[i] = IR.F.Tensors.Pack(PackUtility.PadForPack((Expr)inputs[i], inShape, packAxes, lanes, 0f, out pads), lanes, packAxes);
-
-            // todo support padings.
-            if (pads != null && pads.Any(x => !x.IsFixed))
-            {
-                return rets;
-            }
         }
 
         var concat = IR.F.Tensors.Concat(new IR.Tuple(packedInputs), axis);
@@ -1211,13 +1158,6 @@ public sealed class PackCompare : PackRule
         var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
         var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
-        // todo support padings.
-        if (lhsPadNums.Any(x => !x.IsFixed)
-            || rhsPadNums.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
-
         var compare = IR.F.Math.Compare(op.CompareOp, packedLhs, packedRhs);
         var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(compare, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? alignedLhsPackedAxes : alignedRhsPackedAxes), candidate.CheckedShape, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums! : rhsPadNums!);
         if (post.CheckedType is not InvalidType)
@@ -1278,12 +1218,6 @@ public sealed class PackCast : PackRule
         }
 
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
-
-        // todo support padings.
-        if (padsInput != null && padsInput.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
 
         var scale = 1f * call.CheckedDataType.SizeInBytes / input.CheckedDataType.SizeInBytes;
         var outLanes = lanes.Select(l => (int)(l / scale)).ToArray();
@@ -1352,12 +1286,6 @@ public sealed class PackExpand : PackRule
         }
 
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
-
-        // todo support padings.
-        if (padsInput != null && padsInput.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
 
         // only support shape >= input.shape
         var packedNewShape = shape.ToArray();
@@ -1453,14 +1381,6 @@ public sealed class PackWhere : PackRule
         var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
         var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
-        // todo support padings.
-        if (conditionPadNums.Any(x => !x.IsFixed)
-            || lhsPadNums.Any(x => !x.IsFixed)
-            || rhsPadNums.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
-
         var compare = IR.F.Tensors.Where(packedCondition, packedLhs, packedRhs);
         var allLanes = new[] { conditionLanes, lhsLanes, rhsLanes };
         var maxIndex = Enumerable.Range(0, allLanes.Length).OrderByDescending(i => allLanes[i].Length).First();
@@ -1534,12 +1454,6 @@ public sealed class PackGather : PackRule
 
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
-        // todo support padings.
-        if (padsInput != null && padsInput.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
-
         var gather = IR.F.Tensors.Gather(packedInput, axis, index);
         var unpackAxes = packedAxes.Select(a => a < axis ? a : a + index.CheckedShape.Rank - 1).ToArray();
         var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(gather, lanes, unpackAxes), call.CheckedShape, padsInput!);
@@ -1597,12 +1511,6 @@ public sealed class PackScatterND : PackRule
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
         var updatesPackedAxes = packedAxes.Select(a => a - (inShape.Rank - updates.CheckedShape.Rank)).ToArray();
         var packedUpdates = IR.F.Tensors.Pack(PackUtility.PadForPack(updates, updates.CheckedShape, updatesPackedAxes, lanes, 0f, out var padsUpdates), lanes, updatesPackedAxes);
-
-        // todo support padings.
-        if (padsInput != null && padsInput.Any(x => !x.IsFixed))
-        {
-            return rets;
-        }
 
         var scatter_nd = IR.F.Tensors.ScatterND(packedInput, indices, packedUpdates);
         var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(scatter_nd, lanes, packedAxes), inShape, padsInput!);
@@ -1704,12 +1612,6 @@ public sealed class PackLayerNorm : PackRule
         var pshape = scale.CheckedShape;
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
-        // todo support padings.
-        if (padsInput.Any(x => !x.IsFixed || x.FixedValue != 0))
-        {
-            return rets;
-        }
-
         var pAxes = packedAxes.Where(i => i >= op.Axis).Select(i => i - op.Axis).ToArray();
         var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
         if (pAxes.Length > 0)
@@ -1723,7 +1625,7 @@ public sealed class PackLayerNorm : PackRule
             packedBias = IR.F.Tensors.Pack(packedBias, Enumerable.Repeat(lanes[0], pAxes.Length).ToArray(), pAxes);
         }
 
-        var layernorm = IR.F.NTT.PackedLayerNorm(packedInput, packedScale, packedBias, op.Axis, op.Epsilon, op.UseMean, packedAxes, padsInput.Select(x => (int)x.FixedValue).ToArray());
+        var layernorm = IR.F.NTT.PackedLayerNorm(packedInput, packedScale, packedBias, op.Axis, op.Epsilon, op.UseMean, packedAxes, new RankedShape(padsInput));
 
         if (layernorm.CheckedType is not InvalidType)
         {

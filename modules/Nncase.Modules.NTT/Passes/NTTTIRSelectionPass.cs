@@ -91,9 +91,9 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                     throw new NotSupportedException("not support tf resize");
                 }
 
-                return TIR.F.NTT.ResizeImage((Expr)arguments[0], output, Array.Empty<int>(), Array.Empty<int>(), ((RankedShape)call[IR.Imaging.ResizeImage.NewSize]).ToValueArray().ToInts(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode);
+                return TIR.F.NTT.ResizeImage((Expr)arguments[0], output, Array.Empty<int>(), Array.Empty<Dimension>(), ((RankedShape)call[IR.Imaging.ResizeImage.NewSize]).ToValueArray().ToInts(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode);
             case IR.NTT.ResizeImage resize:
-                return TIR.F.NTT.ResizeImage((Expr)arguments[0], output, resize.PackedAxes.ToArray(), resize.PadedNums.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode);
+                return TIR.F.NTT.ResizeImage((Expr)arguments[0], output, resize.PackedAxes.ToArray(), ((RankedShape)call[IR.NTT.ResizeImage.PadedNums]).Dimensions.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode);
             case IR.Tensors.Slice slice:
                 return TIR.F.NTT.Slice((Expr)arguments[0], (RankedShape)arguments[1], (RankedShape)arguments[2], output, ((RankedShape)call[IR.Tensors.Slice.Axes]).ToValueArray().ToInts(), ((RankedShape)call[IR.Tensors.Slice.Strides]).ToValueArray().ToInts());
             case IR.Tensors.Concat concat:
@@ -154,9 +154,9 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.NN.GetPositionIds getPositionIds:
                 return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output);
             case IR.NN.LayerNorm ln:
-                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<int>());
+                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<Dimension>());
             case IR.NTT.PackedLayerNorm ln:
-                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, ln.PackedAxes, ln.PadedNums);
+                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, ln.PackedAxes, ((RankedShape)call[IR.NTT.PackedLayerNorm.PadedNums]).Dimensions.ToArray());
             case IR.NN.Softmax softmax:
                 return TIR.F.NTT.PackedSoftmax((Expr)arguments[0], output, (int)((DimConst)call[IR.NN.Softmax.Axis]).FixedValue, Array.Empty<int>());
             case IR.NTT.PackedSoftmax softmax:
