@@ -86,7 +86,11 @@ concept FixedTensor = Tensor<T> && FixedDimensions<typename T::shape_type> &&
                       FixedDimensions<typename T::strides_type>;
 
 template <typename T>
-concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
+concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T> 
+                    || std::is_same_v<T, std::remove_cv_t<bfloat16>> 
+                    || std::is_same_v<T, std::remove_cv_t<half>> 
+                    || std::is_same_v<T, std::remove_cv_t<float_e4m3_t>> 
+                    || std::is_same_v<T, std::remove_cv_t<float_e5m2_t>>;
 
 template <typename T>
 concept ScalarOrVector = Scalar<T> || Vector<T>;
