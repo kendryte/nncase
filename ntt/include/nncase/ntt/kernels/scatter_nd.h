@@ -26,14 +26,14 @@ template <Tensor TIn, Tensor TIndex, Tensor TUpdates, Tensor TOut>
 void scatter_nd_impl(const TIn &input, const TIndex &indices,
                      const TUpdates &updates, TOut &output) noexcept {
     using TIElem = typename TIn::element_type;
-    const auto in_shape = input.shape();
+    [[maybe_unused]] const auto in_shape = input.shape();
     const auto indices_shape = indices.shape();
     const auto updates_shape = updates.shape();
-    const auto out_shape = output.shape();
+    [[maybe_unused]] const auto out_shape = output.shape();
     const auto in_strides = input.strides();
     const auto indices_strides = indices.strides();
     const auto updates_strides = updates.strides();
-    const auto out_strides = output.strides();
+    [[maybe_unused]] const auto out_strides = output.strides();
 
     ntt::tensor_copy(input, output);
     constexpr auto k = indices_shape.rank() - dim_one;
