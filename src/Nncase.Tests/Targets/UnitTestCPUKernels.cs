@@ -615,6 +615,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
+
     // [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
     [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int count)
