@@ -39,6 +39,7 @@ constexpr void reshard(const SrcTensor &src, DestTensor &&dest) noexcept;
 
 namespace detail {
 namespace cx {
+template <typename T> constexpr T abs(T x) { return x < T{0} ? -x : x; }
 // test whether values are within machine epsilon, used for algorithm
 // termination
 template <typename T> constexpr bool feq(T x, T y) {
