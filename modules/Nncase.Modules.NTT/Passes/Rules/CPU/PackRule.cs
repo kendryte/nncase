@@ -1141,6 +1141,11 @@ public sealed class PackCompare : PackRule
             return rets;
         }
 
+        if (lhsPackedAxes.Length > 0 && rhsPackedAxes.Length > 0 && !alignedLhsPackedAxes.Intersect(alignedRhsPackedAxes).Any())
+        {
+            return rets;
+        }
+
         var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
         var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
         if (alignedLhsPackedAxes.Any(a => alignedRhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedRhsPackedAxes.Contains(a))
