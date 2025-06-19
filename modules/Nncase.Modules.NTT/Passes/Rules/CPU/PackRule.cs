@@ -47,16 +47,10 @@ public abstract class PackRule : RewriteRule<Pattern>
             yield return Array.Empty<int>();
             for (int i = 0; i < shape.Rank; i++)
             {
-                if (shape[i].IsFixed)
+                yield return new[] { i };
+                for (int j = i + 1; j < shape.Rank; j++)
                 {
-                    yield return new[] { i };
-                    for (int j = i + 1; j < shape.Rank; j++)
-                    {
-                        if (shape[j].IsFixed)
-                        {
-                            yield return new[] { i, j };
-                        }
-                    }
+                    yield return new[] { i, j };
                 }
             }
         }
@@ -515,6 +509,17 @@ public sealed class PackBinary : PackRule
 
         var alignedLhsPackedAxes = lhsPackedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
         var alignedRhsPackedAxes = rhsPackedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
+        if (lhsPackedAxes.Any(a => lhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
+            || rhsPackedAxes.Any(a => rhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
+        {
+            return rets;
+        }
+
+        if (lhsPackedAxes.Length > 0 && rhsPackedAxes.Length > 0 && !alignedLhsPackedAxes.Intersect(alignedRhsPackedAxes).Any())
+        {
+            return rets;
+        }
+
         var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
         var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
         if (alignedLhsPackedAxes.Any(a => alignedRhsShape[a] is { IsFixed: true, FixedValue: var d } && d != 1 && !alignedRhsPackedAxes.Contains(a))
