@@ -236,7 +236,7 @@ template <ntt::TensorOfVector TTensor>
 bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     using vector_type = typename TTensor::element_type;
     constexpr size_t N = vector_type::template lane<0>();
-
+    printf("N = %zu\n", N);
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
     }
@@ -256,8 +256,8 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
         const auto rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
-            auto d1 = (double)(lvalue(idx));
-            auto d2 = (double)(rvalue(idx));
+            auto d1 = static_cast<double>(static_cast<typename decltype(lvalue)::element_type>(lvalue(idx)));
+            auto d2 = static_cast<double>(static_cast<typename decltype(rvalue)::element_type>(rvalue(idx)));
             v1.push_back(d1);
             v2.push_back(d2);
             if (d1 != d2) {
