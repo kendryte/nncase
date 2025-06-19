@@ -344,31 +344,46 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
 }
 
 template <ntt::TensorOrVector TTensor>
-void print_tensor(TTensor &lhs, std::string name) {
+void print_tensor(TTensor &tensor, std::string name) {
     std::cout << name << std::endl;
-
-    nncase::ntt::apply(lhs.shape(),
-                       [&](auto index) { std::cout << lhs(index) << " "; });
+    using element_type = typename TTensor::element_type;
+    if constexpr (ntt::Vector<element_type>) {
+        nncase::ntt::apply(tensor.shape(),
+                       [&](auto index) { 
+                        const auto vec = tensor(index);
+                        using vec_element_type = decltype(vec)::element_type;
+                        nncase::ntt::apply(vec.shape(), [&](auto idx) {
+                            auto d1 = int32_t(vec(idx));
+                            std::cout << d1 << " ";
+                        });
+                       });
+    } else {
+        nncase::ntt::apply(tensor.shape(),
+                       [&](auto index) { std::cout << int32_t(tensor(index)) << " "; });
+    }
 
     std::cout << std::endl;
 }
 
-template <typename T, typename Shape, typename Stride, size_t N>
-void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
-                  std::string name) {
-    std::cout << name << std::endl;
+//1D vecvtor
 
-    nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        const ntt::vector<T, N> vec = lhs(index);
 
-        nncase::ntt::apply(vec.shape(), [&](auto idx) {
-            auto d1 = (double)(vec(idx));
-            std::cout << d1 << " ";
-        });
-    });
+// template <typename T, typename Shape, typename Stride, size_t N>
+// void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
+//                   std::string name) {
+//     std::cout << name << std::endl;
 
-    std::cout << std::endl;
-}
+//     nncase::ntt::apply(lhs.shape(), [&](auto index) {
+//         const ntt::vector<T, N> vec = lhs(index);
+
+//         nncase::ntt::apply(vec.shape(), [&](auto idx) {
+//             auto d1 = (double)(vec(idx));
+//             std::cout << d1 << " ";
+//         });
+//     });
+
+//     std::cout << std::endl;
+// }
 
 template <typename T> T ulp(T x) {
     x = std::fabs(x);
