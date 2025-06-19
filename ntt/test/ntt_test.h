@@ -372,6 +372,27 @@ void print_tensor(TTensor &tensor, std::string name) {
     std::cout << std::endl;
 }
 
+template <ntt::TensorOrVector TTensor_src, ntt::TensorOrVector TTensor_dst>
+void reinterpret_cast_fp8_to_uint8(const TTensor_src &tensor_src, TTensor_dst &tensor_dst) {
+    using element_type = typename TTensor_src::element_type;
+    if constexpr (ntt::Vector<element_type>) {
+        nncase::ntt::apply(tensor_src.shape(),
+                       [&](auto index) { 
+                        auto vec_src = tensor_src(index);
+                        auto &vec_dst = tensor_dst(index);
+                        nncase::ntt::apply(vec_src.shape(), [&](auto idx) {
+                            vec_dst(idx) = std::bit_cast<uint8_t>(vec_src(idx).raw());
+                        });
+                       });
+    } else {
+        nncase::ntt::apply(tensor_src.shape(),
+                       [&](auto index) { 
+                        auto vec_src = tensor_src(index);
+                        auto &vec_dst = tensor_dst(index);
+                        vec_dst = std::bit_cast<uint8_t>(vec_src.raw());
+                       });
+    }
+}
 //1D vecvtor
 
 

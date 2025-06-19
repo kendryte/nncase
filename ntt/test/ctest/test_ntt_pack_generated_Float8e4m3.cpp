@@ -39,16 +39,16 @@ TEST(PackTest_Float8e4m3, Float8e4m3_fixed_1D_vector_contiguous_pack_axis_2_3D) 
     alignas(32) auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<C, H, W>);
     NttTest::init_tensor(ntt_input, min_input, max_input);
     auto ntt_input_uint8 = ntt::make_tensor<uint8_t>(ntt::fixed_shape_v<C, H, W>);
-    ntt::cast(ntt_input, ntt_input_uint8);
+    NttTest::reinterpret_cast_fp8_to_uint8(ntt_input, ntt_input_uint8);
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float_e4m3_t, P>>(ntt::fixed_shape_v<C, H, W / P>);
     
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-    
+    NttTest::print_tensor(ntt_output1, "ntt_output1_fp8");
     auto ntt_output1_uint8 = ntt::make_tensor<ntt::vector<uint8_t, P>>(ntt::fixed_shape_v<C, H, W / P>);
-    ntt::cast(ntt_output1, ntt_output1_uint8);
+    NttTest::reinterpret_cast_fp8_to_uint8(ntt_output1, ntt_output1_uint8);
     NttTest::print_tensor(ntt_output1_uint8, "ntt_output1_uint8");
     // ORT reference implementation
         auto ort_input = NttTest::ntt2ort(ntt_input_uint8);
