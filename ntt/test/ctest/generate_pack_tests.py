@@ -288,7 +288,7 @@ class PackTestGenerator:
         if is_fp8:
             input_shape_expr = self.generate_shape_init(shape_type, input_dims_expr)
             code.append(f"    auto ntt_input_uint8 = ntt::make_tensor<uint8_t>({input_shape_expr});")
-            code.append(f"    ntt::cast(ntt_input, ntt_input_uint8);")
+            code.append(f"    NttTest::reinterpret_cast_fp8_to_uint8(ntt_input, ntt_input_uint8);")
 
         code.append("")
         
@@ -303,7 +303,7 @@ class PackTestGenerator:
         if is_fp8:
             vector_type_uint8 = vector_type.replace(datatype.cpp_type, 'uint8_t')
             code.append(f"    auto ntt_output1_uint8 = ntt::make_tensor<{vector_type_uint8}>({output_shape_expr});")
-            code.append(f"    ntt::cast(ntt_output1, ntt_output1_uint8);")
+            code.append(f"    NttTest::reinterpret_cast_fp8_to_uint8(ntt_output1, ntt_output1_uint8);")
             code.append("")
 
         # 2.5 generate reference implementation and result comparison code
