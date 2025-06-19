@@ -130,7 +130,7 @@ public sealed class PackReduce : PackRule
 
     public override Pattern Pattern { get; } = IsReduce(
       "target",
-      r => r.ReduceOp is ReduceOp.Mean or ReduceOp.Sum,
+      _ => true,
       IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() & HasRankedShape() },
       IsFixedShape("axes"),
       IsTensorConst("initValue") with { TypePattern = IsFloat() },
@@ -145,13 +145,27 @@ public sealed class PackReduce : PackRule
             return rets;
         }
 
+        var packReduceAxes = axes.Intersect(packedAxes) == packedAxes;
+        if (packReduceAxes && op.ReduceOp == ReduceOp.Mean)
+        {
+            return rets;
+        }
+
         axes = axes.Select(x => (int)Util.PositiveIndex(x, inShape.Rank)).ToArray();
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var padValue = packReduceAxes ? op.ReduceOp switch
+        {
+            ReduceOp.Mean => 0f,
+            ReduceOp.Min => float.MaxValue,
+            ReduceOp.Max => float.MinValue,
+            ReduceOp.Sum => 0f,
+            _ => throw new NotImplementedException(),
+        } : 0f;
+        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, Tensor.FromScalar(DataTypes.Float32, padValue).CastTo(input.CheckedDataType), out var padsInput), lanes, packedAxes);
 
         Call reduce = IR.F.NTT.PackedReduce(packedInput, op.ReduceOp, axes, initValue, keepDims, packedAxes, new RankedShape(padsInput));
 
         var (outPackAxes, outPadNums, outLanes, outShape) = IR.NTT.PackedReduce.ComputeOutputInfo((IR.NTT.PackedReduce)reduce.Target, padsInput, inShape, lanes);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(reduce, outLanes, outPackAxes), outShape, outPadNums);
+        var post = packReduceAxes ? reduce : PackUtility.SliceForPack(IR.F.Tensors.Unpack(reduce, outLanes, outPackAxes), outShape, outPadNums);
 
         if (post.CheckedType is not InvalidType)
         {
