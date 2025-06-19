@@ -21,24 +21,50 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <class InShape, class OutShape, class InStrides, class OutStrides>
+template <typename PackAxes, class InShape, class OutShape, class InStrides,
+          class OutStrides>
 class cast_impl;
 
-template <size_t... InDims, size_t... OutDims, size_t... InStrides,
-          size_t... OutStrides>
-class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
+template <typename PackAxes, size_t... InDims, size_t... OutDims,
+          size_t... InStrides, size_t... OutStrides>
+class cast_impl<PackAxes, fixed_shape<InDims...>, fixed_shape<OutDims...>,
                 fixed_strides<InStrides...>, fixed_strides<OutStrides...>> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &output) {
+        using InElemType = element_or_scalar_t<TIn>;
+        using OutElemType = element_or_scalar_t<TOut>;
+        static_assert(IsVector<InElemType> && IsVector<OutElemType> || IsScalar<InElemType> && IsScalar<OutElemType>, "input & output must have the same type.");
+        constexpr auto in_ele_size = sizeof(std::conditional_t<IsVector<InElemType>, element_or_scalar_t<InElemType>, size_t>); 
+        constexpr auto out_ele_size = sizeof(std::conditional_t<IsVector<OutElemType>, element_or_scalar_t<OutElemType>, size_t>); 
+        constexpr float scale = (float)in_ele_size / out_ele_size;
 
+        constexpr auto in_offset_scale =
+            scale > 1.0f ? (size_t)scale : 1U;
+        constexpr auto out_offset_scale =
+            scale > 1.0f ? 1U : (size_t)(1.0f / scale);
+
+        if constexpr (scale >= 1.f) {
+            apply(output.shape(), [&](auto index) {
+                auto in_index = index;
+                if constexpr (PackAxes::rank() == 1)
+                    in_index[PackAxes::at(0)] *= in_offset_scale;
+                ntt::u_cast<in_offset_scale, out_offset_scale>(
+                    &input(in_index), 1, &output(index), 1, 1);
+            });
+        } else {
+            apply(input.shape(), [&](auto index) {
+                auto out_index = index;
+                if constexpr (PackAxes::rank() == 1)
+                    out_index[PackAxes::at(0)] *= out_offset_scale;
+                ntt::u_cast<in_offset_scale, out_offset_scale>(
+                    &input(index), 1, &output(out_index), 1, 1);
+            });
+        }
+
+#if 0        
         constexpr float scale =
             (float)TIn::shape().length() / TOut::shape().length();
-
-        if constexpr (scale != 1.0f) {
-            static_assert(TIn::rank() == 1,
-                          "Only support 1D tensor repack for now!");
-        }
 
         constexpr auto in_offset_scale =
             scale > 1.0f ? (size_t)scale : (size_t)1;
@@ -50,7 +76,7 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
         constexpr auto conti_dims =
             std::min(contiguous_dims(fixed_shape<InDims...>{},
                                      fixed_strides<InStrides...>{}),
-                     contiguous_dims(fixed_shape<InDims...>{},
+                     contiguous_dims(fixed_shape<OutDims...>{},
                                      fixed_strides<OutStrides...>{}));
 
         if constexpr (scale >= 1.0f) {
@@ -60,9 +86,11 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
             apply<in_offset_scale, out_offset_scale, TIn, TOut, 0, rank,
                   conti_dims, InDims...>(index, input, output);
         }
+#endif
     }
 
   private:
+  #if 0
     template <size_t in_offset_scale, size_t out_offset_scale, class TIn,
               class TOut, size_t Axis, size_t Rank, size_t ContiguousDims,
               size_t... RestDims>
@@ -84,7 +112,8 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
                        ContiguousDims, RestDims...>(index, input, output);
         }
     }
-
+#endif
+    
     template <size_t in_offset_scale, size_t out_offset_scale, class TIn,
               class TOut, size_t Axis, size_t Rank, size_t ContiguousDims,
               size_t Dim, size_t... RestDims>
@@ -99,26 +128,53 @@ class cast_impl<fixed_shape<InDims...>, fixed_shape<OutDims...>,
     template <size_t in_offset_scale, size_t out_offset_scale, size_t Extent,
               class T1, class T2>
     constexpr void cast_contiguous(const T1 *input, T2 *output) {
-        ntt::u_cast<T1, T2, in_offset_scale, out_offset_scale>(input, 1, output,
-                                                               1, Extent);
+        ntt::u_cast<in_offset_scale, out_offset_scale>(input, 1, output, 1,
+                                                       Extent);
     }
 };
 
-template <size_t InRank, size_t OutRank, class InStrides, class OutStrides>
-class cast_impl<ranked_shape<InRank>, ranked_shape<OutRank>, InStrides,
-                OutStrides> {
+template <typename PackAxes, size_t InRank, size_t OutRank, class InStrides,
+          class OutStrides>
+class cast_impl<PackAxes, ranked_shape<InRank>, ranked_shape<OutRank>,
+                InStrides, OutStrides> {
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &output) {
-        ranked_shape<InRank> index{};
-        auto conti_dims =
-            std::min(contiguous_dims(input.shape(), input.strides()),
-                     contiguous_dims(input.shape(), output.strides()));
-        apply<TIn, TOut, 0>(index, conti_dims, input, output);
+        using InElemType = element_or_scalar_t<TIn>;
+        using OutElemType = element_or_scalar_t<TOut>;
+        static_assert(IsVector<InElemType> && IsVector<OutElemType> || IsScalar<InElemType> && IsScalar<OutElemType>, "input & output must have the same type.");
+        constexpr auto in_ele_size = sizeof(std::conditional_t<IsVector<InElemType>, element_or_scalar_t<InElemType>, size_t>); 
+        constexpr auto out_ele_size = sizeof(std::conditional_t<IsVector<OutElemType>, element_or_scalar_t<OutElemType>, size_t>); 
+        constexpr float scale = (float)in_ele_size / out_ele_size;
+
+        constexpr auto in_offset_scale =
+            scale > 1.0f ? (size_t)scale : 1U;
+        constexpr auto out_offset_scale =
+            scale > 1.0f ? 1U : (size_t)(1.0f / scale);
+
+        if constexpr (scale >= 1.f) {
+            apply(output.shape(), [&](auto index) {
+                auto in_index = index;
+                if constexpr (PackAxes::rank() == 1)
+                    in_index[PackAxes::at(0)] *= in_offset_scale;
+                ntt::u_cast<in_offset_scale, out_offset_scale>(
+                    &input(in_index), 1, &output(index), 1, 1);
+            });
+        } else {
+            apply(input.shape(), [&](auto index) {
+                auto out_index = index;
+                if constexpr (PackAxes::rank() == 1)
+                    out_index[PackAxes::at(0)] *= out_offset_scale;
+                ntt::u_cast<in_offset_scale, out_offset_scale>(
+                    &input(index), 1, &output(out_index), 1, 1);
+            });
+        }
     }
 
   private:
-    template <class TIn, class TOut, size_t Axis>
+#if 0
+    template <size_t in_offset_scale, size_t out_offset_scale, class TIn,
+              class TOut, size_t Axis>
     constexpr void apply(ranked_shape<InRank> &index, size_t conti_dims,
                          const TIn &input, TOut &output) {
         const auto outer_dims = InRank - conti_dims;
@@ -130,7 +186,8 @@ class cast_impl<ranked_shape<InRank>, ranked_shape<OutRank>, InStrides,
                 input.buffer().data() + linear_offset(index, input.strides());
             auto output_p =
                 output.buffer().data() + linear_offset(index, output.strides());
-            cast_contiguous(input_p, output_p, inner_size);
+            cast_contiguous<in_offset_scale, out_offset_scale>(
+                input_p, output_p, inner_size);
         } else if constexpr (Axis < InRank - 1) {
             const auto dim = input.shape()[Axis];
             for (index[Axis] = 0; index[Axis] < dim; index[Axis]++) {
@@ -138,19 +195,26 @@ class cast_impl<ranked_shape<InRank>, ranked_shape<OutRank>, InStrides,
             }
         }
     }
+#endif
 
-    template <class T1, class T2>
+    template <size_t in_offset_scale, size_t out_offset_scale, class T1,
+              class T2>
     constexpr void cast_contiguous(const T1 *input, T2 *output, size_t extent) {
-        ntt::u_cast<T1, T2, 1, 1>(input, 1, output, 1, extent);
+        ntt::u_cast<in_offset_scale, out_offset_scale>(input, 1, output, 1,
+                                                       extent);
     }
 };
 } // namespace detail
 
-template <typename TIn, typename TOut>
+template <typename PackAxes = fixed_shape<>, typename TIn, typename TOut>
 void cast(const TIn &input, TOut &&output) noexcept {
-    detail::cast_impl<
-        typename TIn::shape_type, typename std::decay_t<TOut>::shape_type,
-        typename TIn::strides_type, typename std::decay_t<TOut>::strides_type>
+    static_assert(PackAxes::rank() == 0 || PackAxes::rank() == 1,
+                  "support 1d pack at most.");
+
+    detail::cast_impl<PackAxes, typename TIn::shape_type,
+                      typename std::decay_t<TOut>::shape_type,
+                      typename TIn::strides_type,
+                      typename std::decay_t<TOut>::strides_type>
         impl;
     impl(input, output);
 }

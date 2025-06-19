@@ -1223,7 +1223,7 @@ public sealed class PackCast : PackRule
       "target",
       "call",
       _ => true,
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() });
 
     public static List<Expr> AddCandidate(Call call, Expr input, int[] packedAxes, int[] lanes)
     {
@@ -1236,6 +1236,17 @@ public sealed class PackCast : PackRule
         }
 
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+
+        if (inShape.Any(s => !s.IsFixed))
+        {
+            return rets;
+        }
+
+        // FIXME: supoort other axis
+        if (packedAxes[0] != inShape.Rank - 1)
+        {
+            return rets;
+        }
 
         var scale = 1f * call.CheckedDataType.SizeInBytes / input.CheckedDataType.SizeInBytes;
         var outLanes = lanes.Select(l => (int)(l / scale)).ToArray();

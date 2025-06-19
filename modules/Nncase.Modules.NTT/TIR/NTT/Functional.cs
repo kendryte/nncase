@@ -192,9 +192,9 @@ public partial class NTT
         return new Call(new TIR.NTT.Clamp(min, max), input, output);
     }
 
-    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode)
+    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode, IRArray<int> packAxes = default)
     {
-        return new Call(new TIR.NTT.Cast(newType, castMode), input, output);
+        return new Call(new TIR.NTT.Cast(newType, castMode, packAxes.IsDefaultOrEmpty ? Array.Empty<int>() : packAxes), input, output);
     }
 
     public static Call Where(Expr cond, Expr x, Expr y, Expr output)
