@@ -117,14 +117,14 @@ void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
     }
 }
 
-template <ntt::TensorOfVector TTensor>
-    requires(TTensor::element_type::rank() == 1)
-void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
-    size_t size = 0;
-    void *ort_ptr = tensor_buffer(ort_tensor, &size);
-    assert(tensor_length(ort_tensor) == ntt_tensor.size() * TTensor::element_type::template lane<0>());
-    memcpy(ntt_tensor.elements().data(), ort_ptr, size);
-}
+// template <ntt::TensorOfVector TTensor>
+//     requires(TTensor::element_type::rank() == 1)
+// void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
+//     size_t size = 0;
+//     void *ort_ptr = tensor_buffer(ort_tensor, &size);
+//     assert(tensor_length(ort_tensor) == ntt_tensor.size() * TTensor::element_type::template lane<0>());
+//     memcpy(ntt_tensor.elements().data(), ort_ptr, size);
+// }
 
 void print_ort_shape(ortki::OrtKITensor *ort_tensor) {
     auto rank = tensor_rank(ort_tensor);
