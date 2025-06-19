@@ -256,8 +256,10 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
         const auto rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
-            auto d1 = static_cast<double>(static_cast<typename decltype(lvalue)::element_type>(lvalue(idx)));
-            auto d2 = static_cast<double>(static_cast<typename decltype(rvalue)::element_type>(rvalue(idx)));
+            // auto d1 = static_cast<double>(static_cast<typename decltype(lvalue)::element_type>(lvalue(idx)));
+            // auto d2 = static_cast<double>(static_cast<typename decltype(rvalue)::element_type>(rvalue(idx)));
+            auto d1 = int32_t(lvalue(idx));
+            auto d2 = int32_t(rvalue(idx));
             v1.push_back(d1);
             v2.push_back(d2);
             if (d1 != d2) {
