@@ -29,6 +29,7 @@ using namespace ortki;
 
 TEST(PackTest_Float8e4m3, Float8e4m3_fixed_1D_vector_contiguous_pack_axis_2_3D) {
     constexpr size_t P = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+    printf("P = %u\n", P);
     constexpr size_t C = 1;
     constexpr size_t H = 77;
     constexpr size_t W_coefficient = 3;
