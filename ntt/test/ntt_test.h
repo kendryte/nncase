@@ -82,6 +82,9 @@ __inline__ uint64_t get_cpu_cycle(void) {
     return cycles;
 }
 
+template <ntt::TensorOrVector TTensor>
+void print_tensor(TTensor &tensor, std::string name);
+
 template <typename T, TensorOrVector TTensor>
 void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
                  T stop = static_cast<T>(1)) {
@@ -234,6 +237,8 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
 template <ntt::TensorOfVector TTensor>
     requires(TTensor::element_type::rank() == 1)
 bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
+    NttTest::print_tensor(lhs, "lhs");
+    NttTest::print_tensor(rhs, "rhs");
     using vector_type = typename TTensor::element_type;
     constexpr size_t N = vector_type::template lane<0>();
     printf("N = %zu\n", N);
