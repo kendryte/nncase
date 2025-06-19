@@ -84,7 +84,7 @@ ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
 template <ntt::TensorOfVector TTensor>
 ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
     using T = typename std::decay_t<TTensor>::element_type;
-    auto N = T::size();
+    size_t N = T::shape()[0];
     auto RankDim = T::rank();
     using ElemType = ntt::element_or_scalar_t<T>;
     void *buffer = reinterpret_cast<void *>(tensor.elements().data());
