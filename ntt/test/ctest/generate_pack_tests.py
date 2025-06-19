@@ -33,7 +33,7 @@ ALL_DATATYPES = [
     DataType('int16_t', 'Int16', '-32767', '32767'),
     DataType('int32_t', 'Int32', '-100000', '100000'),
     DataType('int64_t', 'Int64', '-1000000', '1000000'),
-    DataType('half', 'Float16', '-65504.0', '65504.0'), # 假设 'half' 可以用 float 字面量初始化
+    DataType('half', 'Float16', '-65504.0', '65504.0'), 
     DataType('float', 'Float32', '-3.4e38', '3.4e38'),
     DataType('double', 'Float64', '-1.7e308', '1.7e308'),
     DataType('bfloat16', 'Bfloat16', '-3.3e38_bf16', '3.3e38_bf16'),
