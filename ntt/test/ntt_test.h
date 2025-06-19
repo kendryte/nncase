@@ -358,7 +358,6 @@ void print_tensor(TTensor &tensor, std::string name) {
         nncase::ntt::apply(tensor.shape(),
                        [&](auto index) { 
                         const auto vec = tensor(index);
-                        using vec_element_type = decltype(vec)::element_type;
                         nncase::ntt::apply(vec.shape(), [&](auto idx) {
                             auto d1 = int32_t(vec(idx));
                             std::cout << d1 << " ";
