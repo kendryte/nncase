@@ -64,7 +64,7 @@ class OnnxTestRunner(TestRunner):
             for tensor in external_data_helper._get_all_tensors(onnx.load(model_file, load_external_data=False)):
                 if external_data_helper.uses_external_data(tensor):
                     info = external_data_helper.ExternalDataInfo(tensor)
-                    file_location = external_data_helper._sanitize_path(info.location)
+                    file_location = info.location
                     external_data_src_path = os.path.join(
                         os.path.dirname(model_file), file_location)
                     external_data_dst_path = os.path.join(

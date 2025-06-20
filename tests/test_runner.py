@@ -425,10 +425,47 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
             if input_shape != [] and input_shape[0] != generator_cfg['batch']:
                 input_shape[0] *= generator_cfg['batch']
 
+            print("batch number", batch_number)
             for batch_idx in range(batch_number):
                 idx = batch_idx * len(inputs) + input_idx
                 if method == 'random':
                     data = generator.from_random(input_shape, dtype, args)
+                    # if input_idx == 0:
+                    #     file_path = f"/compiler/deepseek/calib0/input_ids.bin"
+                    #     data = np.fromfile(file_path, dtype=np.float32)
+                    # if input_idx == 1:
+                    #     file_path = f"/compiler/deepseek/calib0/attention_mask.bin"
+                    #     data = np.fromfile(file_path, dtype=np.float32)
+                    # if input_idx == 2:
+                    #     file_path = f"/compiler/deepseek/calib0/position_ids.bin"
+                    #     data = np.fromfile(file_path, dtype=np.int32)
+                    # if input_idx == 3:
+                    #     file_path = f"/compiler/deepseek/calib0/past_key_values.bin"
+                    #     data = np.fromfile(file_path, dtype=np.float32)
+                    if name == 'calib':
+                        if (input_idx == 0):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/input_ids{batch_idx:01d}.txt')
+                        if (input_idx == 1):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/attention_mask{batch_idx:01d}.txt')
+                        if (input_idx == 2):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/position_ids{batch_idx:01d}.txt')
+                        if (input_idx == 3):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/past_key_values{batch_idx:01d}.txt')
+                        if (input_idx == 4):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/logits_index{batch_idx:01d}.txt')
+                    else:
+                        inputs_idx = 0
+                        if (input_idx == 0):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/input_ids{inputs_idx:01d}.txt')
+                        if (input_idx == 1):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/attention_mask{inputs_idx:01d}.txt')
+                        if (input_idx == 2):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/position_ids{inputs_idx:01d}.txt')
+                        if (input_idx == 3):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/past_key_values{inputs_idx:01d}.txt')
+                        if (input_idx == 4):
+                            data = np.loadtxt(f'/data/models/qwen/Qwen3-0.6B/inputs_3count_new/logits_index{inputs_idx:01d}.txt')
+                    data = data.reshape(input_shape).astype(dtype=dtype)
                 elif method == 'bin':
                     assert(idx < len(file_list))
                     data = generator.from_bin(input_shape, dtype, file_list[idx])

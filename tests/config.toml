@@ -10,28 +10,34 @@ swapRB = false
 input_type = 'uint8'
 input_shape = [1, 224, 224, 3]
 input_range = [0, 255]
-input_file = ""
+# input_file = ""
+# input_file = "/compiler/something/onnx/llm.onnx.data"
+# input_file = "/compiler/something/onnx_smooth/llm.onnx.data"
+# input_file = "/compiler/something/onnx_layer_1/llm.onnx.data"
+# input_file = "/data/models/deepseek/DeepSeek-R1-Distill-Qwen-1.5B/onnx/llm.onnx.data"
+input_file = "/data/models/qwen/Qwen3-0.6B/onnx/llm.onnx.data"
 mean = [0, 0, 0]
 std = [1, 1, 1]
 input_layout = 'NHWC'
 output_layout = 'NHWC'
 model_layout = 'NHWC'
 letterbox_value = 0
-dump_asm = true
+dump_asm = false
 dump_ir = false
-shape_bucket_enable = false
-shape_bucket_range_info = { }
-shape_bucket_segments_count = 4
-shape_bucket_fix_var_map = { }
+shape_bucket_enable = true
+shape_bucket_range_info = { "seq_len" = [1, 512], "history_len" = [0, 512] }
+shape_bucket_segments_count = 8
+# shape_bucket_fix_var_map = {}
+# shape_bucket_fix_var_map = { "seq_len" = 12, "history_len" = 0 }
 
 [ptq_opt]
 use_mix_quant = false
 use_mse_quant_w = true
-export_quant_scheme = false
+export_quant_scheme = true
 export_weight_range_by_channel = true
 dump_quant_error = false
 dump_quant_error_symmetric_for_signed = true
-quant_type = "uint8"
+quant_type = "int16"
 w_quant_type = "uint8"
 # ['NoClip', 'Kld']
 calibrate_method = 'NoClip'
@@ -39,6 +45,7 @@ calibrate_method = 'NoClip'
 finetune_weights_method = 'NoFineTuneWeights'
 input_mean = 0.5
 input_std = 0.5
+# quant_scheme = "/root/compiler3.0/nncase/planA_snac_import_json/QuantScheme.json"
 quant_scheme = ""
 quant_scheme_strict_mode = false
 
@@ -73,7 +80,7 @@ args = []
 
 [generator.calibs]
 method = 'random'
-number = 1
+number = 2
 batch = 1
 
 [generator.calibs.random]
@@ -95,7 +102,7 @@ args = []
 
 [target.cpu]
 eval = true
-infer = true
+infer = false
 similarity_name = 'cosine'
 
 [target.cpu.mode.noptq]
@@ -106,21 +113,8 @@ threshold = 0.999
 enabled = true
 threshold = 0.98
 
-[target.k510]
-eval = true
-infer = true
-similarity_name = 'cosine'
-
-[target.k510.mode.noptq]
-enabled = false
-threshold = 0.99
-
-[target.k510.mode.ptq]
-enabled = true
-threshold = 0.98
-
 [target.k230]
-eval = true
+eval = false
 infer = true
 similarity_name = 'cosine'
 
@@ -131,16 +125,3 @@ threshold = 0.999
 [target.k230.mode.ptq]
 enabled = true
 threshold = 0.96
-
-[target.xpu]
-eval = false
-infer = true
-similarity_name = 'cosine'
-
-[target.xpu.mode.noptq]
-enabled = true
-threshold = 0.999
-
-[target.xpu.mode.ptq]
-enabled = false
-threshold = 0.9
