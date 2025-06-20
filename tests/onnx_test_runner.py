@@ -71,6 +71,7 @@ class OnnxTestRunner(TestRunner):
                         self.case_dir, file_location)
                     if not os.path.exists(external_data_dst_path):
                         os.symlink(external_data_src_path, external_data_dst_path)
+                        self.cfg['compile_opt']['input_file']=external_data_src_path
             model_file = new_file
 
         if not self.inputs:

@@ -19,7 +19,7 @@ from tflite_test_runner import TfliteTestRunner
 from onnx_test_runner import OnnxTestRunner
 import os
 
-def test_debug(request):
+def test_qwen3(request):
     model_path = request.config.getoption("--model_path")
     assert model_path is not None, "Please specify the model path using --model_path"
 
@@ -29,4 +29,4 @@ def test_debug(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_debug.py'])
+    pytest.main(['-vv', 'test_qwen3.py'])
