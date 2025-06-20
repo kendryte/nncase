@@ -38,75 +38,6 @@ template <class SrcTensor, class DestTensor>
 constexpr void reshard(const SrcTensor &src, DestTensor &&dest) noexcept;
 
 namespace detail {
-namespace cx {
-template <typename T> constexpr T abs(T x) { return x < T{0} ? -x : x; }
-// test whether values are within machine epsilon, used for algorithm
-// termination
-template <typename T> constexpr bool feq(T x, T y) {
-    return abs(x - y) <= std::numeric_limits<T>::epsilon();
-}
-
-template <typename T> constexpr T exp(T x, T sum, T n, int i, T t) {
-    return feq(sum, sum + t / n) ? sum
-                                 : exp(x, sum + t / n, n * i, i + 1, t * x);
-}
-
-template <typename FloatingPoint>
-constexpr FloatingPoint
-exp(FloatingPoint x,
-    typename std::enable_if<std::is_floating_point<FloatingPoint>::value>::type
-        * = nullptr) {
-    if (std::is_constant_evaluated()) {
-        return exp(x, FloatingPoint{1}, FloatingPoint{1}, 2, x);
-    } else {
-        // Use std::exp for runtime evaluation
-        return std::exp(x);
-    }
-}
-
-//----------------------------------------------------------------------------
-// natural logarithm using
-// https://en.wikipedia.org/wiki/Natural_logarithm#High_precision
-// domain error occurs if x <= 0
-template <typename T> constexpr T log_iter(T x, T y) {
-    return y + T{2} * (x - cx::exp(y)) / (x + cx::exp(y));
-}
-template <typename T> constexpr T log(T x, T y) {
-    return feq(y, log_iter(x, y)) ? y : log(x, log_iter(x, y));
-}
-constexpr long double e() { return 2.71828182845904523536l; }
-
-// For numerical stability, constrain the domain to be x > 0.25 && x < 1024
-// - multiply/divide as necessary. To achieve the desired recursion depth
-// constraint, we need to account for the max double. So we'll divide by
-// e^5. If you want to compute a compile-time log of huge or tiny long
-// doubles, YMMV.
-
-// if x <= 1, we will multiply by e^5 repeatedly until x > 1
-template <typename T> constexpr T logGT(T x) {
-    return x > T{0.25} ? log(x, T{0})
-                       : logGT<T>(x * e() * e() * e() * e() * e()) - T{5};
-}
-// if x >= 2e10, we will divide by e^5 repeatedly until x < 2e10
-template <typename T> constexpr T logLT(T x) {
-    return x < T{1024} ? log(x, T{0})
-                       : logLT<T>(x / (e() * e() * e() * e() * e())) + T{5};
-}
-
-template <typename FloatingPoint>
-constexpr FloatingPoint
-log(FloatingPoint x,
-    typename std::enable_if<std::is_floating_point<FloatingPoint>::value>::type
-        * = nullptr) {
-    if (std::is_constant_evaluated()) {
-        return x >= FloatingPoint{1024} ? logLT(x) : logGT(x);
-    } else {
-        // Use std::log for runtime evaluation
-        return std::log(x);
-    }
-}
-} // namespace cx
-
 template <class SrcTensor, class DestTensor> struct reshard_impl;
 
 // shard
@@ -247,17 +178,22 @@ struct reshard_impl<SrcTensor, DestTensor> {
     template <Shape TShape>
     static constexpr auto get_non_split_tensor_axes_split_counts(
         [[maybe_unused]] const TShape &shape) noexcept {
+#if defined(__GNUC__) && !defined(__clang__)
+        // clang doesn't support constexpr math functions
         if constexpr (FixedShape<TShape>) {
             constexpr auto split_counts =
                 get_non_split_tensor_axes_split_counts_impl(TShape{});
             return generate_shape<split_counts.size()>(
                 [&](auto axis) { return fixed_dim_v<split_counts.at(axis)>; });
         } else {
+#endif
             const auto split_counts =
                 get_non_split_tensor_axes_split_counts_impl(shape);
             return generate_shape<split_counts.size()>(
                 [&](auto axis) { return split_counts.at(axis); });
+#if defined(__GNUC__) && !defined(__clang__)
         }
+#endif
     }
 
     template <Shape TShape>
@@ -279,7 +215,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
             std::array<float, non_split_tensor_axes.rank()> log_dims;
             for (size_t i = 0; i < non_split_tensor_axes.rank(); i++) {
                 auto dim = (float)shape.at(non_split_tensor_axes[i]);
-                log_dims[i] = detail::cx::log(dim);
+                log_dims[i] = std::log(dim);
             }
 
             auto total_log_dim =
@@ -289,12 +225,11 @@ struct reshard_impl<SrcTensor, DestTensor> {
                     total_log_dim == 0.f
                         ? 0.f
                         : (log_dims[i] / total_log_dim *
-                           detail::cx::log((float)expected_split_count));
+                           std::log((float)expected_split_count));
                 auto dim = shape.at(non_split_tensor_axes[i]);
-                split_counts[i] =
-                    std::max(dim_t(1),
-                             std::min(dim, static_cast<dim_t>(
-                                               detail::cx::exp(split_factor))));
+                split_counts[i] = std::max(
+                    dim_t(1),
+                    std::min(dim, static_cast<dim_t>(std::exp(split_factor))));
             }
         }
 
