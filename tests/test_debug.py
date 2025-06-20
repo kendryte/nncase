@@ -19,14 +19,13 @@ from tflite_test_runner import TfliteTestRunner
 from onnx_test_runner import OnnxTestRunner
 import os
 
-
 def test_debug(request):
+    model_path = request.config.getoption("--model_path")
+    assert model_path is not None, "Please specify the model path using --model_path"
 
     runner = OnnxTestRunner(request.node.name)
-
-    model_file = '/data/models/qwen/Qwen3-0.6B/onnx/llm.onnx'
     runner.set_shape_var({"seq_len": 14, "history_len": 0})
-    runner.run(model_file)
+    runner.run(model_path)
 
 
 if __name__ == "__main__":
