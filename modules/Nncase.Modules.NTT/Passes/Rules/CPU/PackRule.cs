@@ -536,8 +536,8 @@ public sealed class PackBinary : PackRule
 
         var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
         var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
-        if (alignedLhsPackedAxes.Any(a => alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a))
-        || alignedRhsPackedAxes.Any(a => alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)))
+        if (alignedLhsPackedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
+        || alignedRhsPackedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
         {
             return rets;
         }
@@ -1167,8 +1167,8 @@ public sealed class PackCompare : PackRule
 
         var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
         var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
-        if (alignedLhsPackedAxes.Any(a => alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a))
-        || alignedRhsPackedAxes.Any(a => alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)))
+        if (alignedLhsPackedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
+        || alignedRhsPackedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
         {
             return rets;
         }
@@ -1396,12 +1396,12 @@ public sealed class PackWhere : PackRule
         var alignedCondShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - conditionShape.Rank).Concat(conditionShape).ToArray();
         var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
         var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
-        if (alignedConditionPackedAxes.Any(a => alignedLhsShape[a] == alignedCondShape[a] && !alignedLhsPackedAxes.Contains(a))
-        || alignedConditionPackedAxes.Any(a => alignedRhsShape[a] == alignedCondShape[a] && !alignedRhsPackedAxes.Contains(a))
-        || alignedLhsPackedAxes.Any(a => alignedCondShape[a] == alignedLhsShape[a] && !alignedConditionPackedAxes.Contains(a))
-        || alignedLhsPackedAxes.Any(a => alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a))
-        || alignedRhsPackedAxes.Any(a => alignedCondShape[a] == alignedRhsShape[a] && !alignedConditionPackedAxes.Contains(a))
-        || alignedRhsPackedAxes.Any(a => alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)))
+        if (alignedConditionPackedAxes.Any(a => (alignedLhsShape[a] == alignedCondShape[a] && !alignedLhsPackedAxes.Contains(a)) || (alignedLhsShape[a] != alignedCondShape[a] && alignedLhsShape[a] != new DimConst(1)))
+        || alignedConditionPackedAxes.Any(a => (alignedRhsShape[a] == alignedCondShape[a] && !alignedRhsPackedAxes.Contains(a)) || (alignedRhsShape[a] != alignedCondShape[a] && alignedRhsShape[a] != new DimConst(1)))
+        || alignedLhsPackedAxes.Any(a => (alignedCondShape[a] == alignedLhsShape[a] && !alignedConditionPackedAxes.Contains(a)) || (alignedCondShape[a] != alignedLhsShape[a] && alignedCondShape[a] != new DimConst(1)))
+        || alignedLhsPackedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
+        || alignedRhsPackedAxes.Any(a => (alignedCondShape[a] == alignedRhsShape[a] && !alignedConditionPackedAxes.Contains(a)) || (alignedCondShape[a] != alignedRhsShape[a] && alignedCondShape[a] != new DimConst(1)))
+        || alignedRhsPackedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
         {
             return rets;
         }
