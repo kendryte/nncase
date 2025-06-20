@@ -28,7 +28,7 @@ template <class T, size_t MaxSize> class tensor_storage<T, MaxSize, false> {
     constexpr tensor_storage() = default;
 
     // ignore size
-    constexpr explicit tensor_storage(size_t) noexcept {}
+    constexpr explicit tensor_storage(size_t) noexcept : buffer_{} {}
     constexpr tensor_storage(std::in_place_t, buffer_type value) noexcept
         : buffer_(value) {}
 
@@ -88,8 +88,7 @@ template <class T> class tensor_storage<T, std::dynamic_extent, false> {
 };
 
 // dynamic tensor specialization for bool
-template <>
-class tensor_storage<bool, std::dynamic_extent, false> {
+template <> class tensor_storage<bool, std::dynamic_extent, false> {
   public:
     using buffer_type = std::vector<char>;
 
