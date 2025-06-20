@@ -23,14 +23,13 @@ def test_qwen2(request):
     cfg = """
     [compile_opt]
     shape_bucket_enable = true
-    shape_bucket_range_info = { }
+    shape_bucket_range_info = { "sequence_length"=[1,512] }
     shape_bucket_segments_count = 2
-    shape_bucket_fix_var_map = { "batch_size"=1, "sequence_length"=256 }
+    shape_bucket_fix_var_map = { }
     
     [huggingface_options]
-    output_attentions = true
-    output_hidden_states = true
-    use_cache = true
+    output_logits = true
+    output_hidden_states = false
 
     [generator]
     [generator.inputs]

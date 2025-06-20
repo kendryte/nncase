@@ -59,7 +59,6 @@ public sealed class RefPagedAttentionScheduler
 
         var seqLens = new long[numSeqs];
         var contextLens = new long[numSeqs];
-        var seqLogicalSlotIds = new long[numSeqs][];
         long maxSeqLen = 0;
 
         // Process each session
@@ -91,16 +90,10 @@ public sealed class RefPagedAttentionScheduler
 
             if (seqLens[seqId] > _maxModelLen)
             {
-                throw new InvalidOperationException("The sequence length is larger than max model length!");
+                throw new InvalidOperationException($"The sequence length {seqLens[seqId]} is larger than max model length {_maxModelLen}!");
             }
 
             maxSeqLen = System.Math.Max(maxSeqLen, seqLens[seqId]);
-
-            seqLogicalSlotIds[seqId] = new long[queryLen];
-            for (int j = 0; j < queryLen; j++)
-            {
-                seqLogicalSlotIds[seqId][j] = info.SlotStart + contextLens[seqId] + j;
-            }
         }
 
         // start create tensors.
@@ -108,11 +101,10 @@ public sealed class RefPagedAttentionScheduler
         // int NumTokens,
         var seqLensTensor = new Tensor<long>(seqLens, [numSeqs]);
         var contextLensTensor = new Tensor<long>(contextLens, [numSeqs]);
-        var blockTableTensorType = _config.GetBlockTableTensorType(numSeqs, (int)maxSeqLen);
+        var blockTableTensorType = _config.GetBlockTablesTensorType(numSeqs, (int)maxSeqLen);
         var blockTableTensor = Tensor.Zeros(blockTableTensorType.DType, blockTableTensorType.Shape.ToValueArray()).Cast<long>();
         for (int seqId = 0; seqId < numSeqs; seqId++)
         {
-            var logicalSlotIds = seqLogicalSlotIds[seqId];
             var info = _sessionInfos[sessionIds[seqId]];
             for (long itemId = 0, logicalSlotId = info.SlotStart; logicalSlotId < Utilities.MathUtility.AlignUp(info.SlotStart + seqLens[seqId], _config.BlockSize); logicalSlotId += _config.BlockSize, itemId++)
             {
@@ -139,7 +131,7 @@ public sealed class RefPagedAttentionScheduler
 
     public IR.Function CreateTestFunction(int numQHeads, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout)
     {
-        var (root, queryVar, kVVars, kVCacheObjVar) = RefPagedAttentionKVCache.BuildPagedAttentionKernel([], [_maxModelLen], numQHeads, _numBlocks, qLayout, kvLayout, _config);
+        var (root, queryVar, kVVars, kVCacheObjVar) = RefPagedAttentionKVCache.BuildPagedAttentionKernel([], [_maxModelLen], numQHeads, _numBlocks, qLayout, kvLayout, _config, new(false, true, _maxModelLen));
         return new IR.Function(root, new Var[] { queryVar }.Concat(kVVars.SelectMany(i => i).ToArray()).Concat(new Var[] { kVCacheObjVar }).ToArray());
     }
 

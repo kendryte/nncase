@@ -3,7 +3,7 @@
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 
 if(NOT DEFINED NNCASE_VERSION)
-    set(NNCASE_VERSION "3.4.0")
+    set(NNCASE_VERSION "3.6.0")
 endif()
 
 if(DEFINED ENV{NNCASE_VERSION_SUFFIX})
@@ -108,7 +108,7 @@ endif()
 # Python binding
 if(BUILD_PYTHON_BINDING)
     if(BUILDING_RUNTIME)
-        #add_subdirectory(python/nncaseruntime/native)
+        add_subdirectory(python/nncaseruntime/native)
     else()
         add_subdirectory(python/nncase/native)
     endif()

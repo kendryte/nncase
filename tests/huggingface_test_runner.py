@@ -11,6 +11,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
 import torch
 from huggingface_hub import snapshot_download
 from safetensors.torch import load_file, save_file
+import nncase
 from npy2json import convert_npy_to_json
 
 
@@ -32,7 +33,7 @@ def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=Fa
             # if the model can't access in huggingface hub, you can download it from other source and put it in the cache dir ($HF_HOME/hub)
             # e.g.: modelscope download --model LLM-Research/Llama-3.2-1B-Instruct --local_dir $HF_HOME/hub/LLM-Research/Llama-3.2-1B-Instruct
             cache_model_dir = os.path.join(hf_home_env, "hub", model_name)
-            if(os.path.exists(cache_model_dir)):
+            if (os.path.exists(cache_model_dir)):
                 model_path = cache_model_dir
             else:
                 model_path = snapshot_download(repo_id=model_name)
@@ -110,6 +111,25 @@ def restore_weights(model_dir):
             print(f"Restored: {restored_path}")
 
 
+def to_np_type(t: str):
+    '''
+    string to np.type
+    '''
+    if t == "float32":
+        return np.float32
+    elif t == "float16":
+        return np.float16
+    else:
+        return None
+
+
+def dump_data_to_file(dir_path, file_path, data):
+    dump_bin_file(os.path.join(dir_path, f'{file_path}.bin'), data)
+    dump_txt_file(os.path.join(dir_path, f'{file_path}.txt'), data)
+    dump_npy_file(os.path.join(dir_path, f'{file_path}.npy'), data)
+    convert_npy_to_json(os.path.join(dir_path, f'{file_path}.npy'), dir_path)
+
+
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)
@@ -124,6 +144,8 @@ class HuggingfaceTestRunner(TestRunner):
     def cpu_infer(self, model_file: List[str]):
         outputs = []
         for idx, input in enumerate(self.inputs):
+            if idx != 0:
+                continue
             '''
             {
                 'input_ids': tensor([[151644, 8948, ... 198, 151644, 77091, 198]]),
@@ -140,19 +162,20 @@ class HuggingfaceTestRunner(TestRunner):
             #     add_generation_prompt=True
             # )
             # model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
-            if not test_utils.in_ci():
-                dump_bin_file(os.path.join(self.case_dir, "input",
-                                           f'input_{idx}.bin'), input['data'][idx])
-                dump_txt_file(os.path.join(self.case_dir, "input",
-                                           f'input_{idx}.txt'), input['data'][idx])
+            # if not test_utils.in_ci():
+            #     dump_bin_file(os.path.join(self.case_dir, "input",
+            #                                f'input_{idx}.bin'), input['data'][0])
+            #     dump_txt_file(os.path.join(self.case_dir, "input",
+            #                                f'input_{idx}.txt'), input['data'][0])
 
             # TODO: add attention_mask in inputs
             result = self.model.forward(
-                torch.from_numpy(input['data'][0]),
+                torch.from_numpy(np.expand_dims(input['data'][0], 0)),
                 return_dict=True,
-                use_cache=self.cfg['huggingface_options']['use_cache'],
-                output_attentions=self.cfg['huggingface_options']['output_attentions'],
-                output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
+                use_cache=False,
+                output_attentions=False,
+                output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
+                                      else False) if self.cfg['huggingface_options']['output_logits'] else True
             )
 
             ''' will be used in future[pipeline run]
@@ -164,58 +187,24 @@ class HuggingfaceTestRunner(TestRunner):
             # output = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
             '''
             count = 0
-            if not test_utils.in_ci():
-                logits = result.logits.detach().numpy()
-                # data = np.argmax(logits, 2).flatten()
-                # print(data)
-                # print(self.tokenizer.decode(data, skip_special_tokens=False))
-                dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), logits)
-                dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), logits)
-                dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), logits)
-                convert_npy_to_json(os.path.join(
-                    self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
-                outputs.append(logits)
-                count += 1
-            if (self.cfg['huggingface_options']['use_cache']):
+            if (self.cfg['huggingface_options']['output_logits']):
                 if not test_utils.in_ci():
-                    from transformers import DynamicCache
-                    if (isinstance(result.past_key_values, DynamicCache)):
-                        k = recursive_stack(result.past_key_values.key_cache)
-                        v = recursive_stack(result.past_key_values.value_cache)
-                        past_kv = torch.stack([k, v], 1).detach().numpy()
-                    else:
-                        past_kv = recursive_stack(result.past_key_values).detach().numpy()
-                    dump_bin_file(os.path.join(self.case_dir, f'cpu_result_{count}.bin'), past_kv)
-                    dump_txt_file(os.path.join(self.case_dir, f'cpu_result_{count}.txt'), past_kv)
-                    dump_npy_file(os.path.join(self.case_dir, f'cpu_result_{count}.npy'), past_kv)
-                    convert_npy_to_json(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
-                    outputs.append(past_kv)
+                    logits = result.logits.detach().numpy()[0]
+                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', logits)
+                    outputs.append(logits)
                     count += 1
-            if (self.cfg['huggingface_options']['output_attentions']):
+            else:
                 if not test_utils.in_ci():
-                    attentions = recursive_stack(result.attentions).detach().numpy()
-                    dump_bin_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.bin'), attentions)
-                    dump_txt_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.txt'), attentions)
-                    dump_npy_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), attentions)
-                    convert_npy_to_json(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
-                    outputs.append(attentions)
+                    hidden_states = recursive_stack(result.hidden_states).detach().numpy()[-1][0]
+                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
+                    outputs.append(hidden_states)
                     count += 1
+
             if (self.cfg['huggingface_options']['output_hidden_states']):
                 if not test_utils.in_ci():
                     hidden_states = recursive_stack(result.hidden_states).detach().numpy()
-                    dump_bin_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.bin'), hidden_states)
-                    dump_txt_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.txt'), hidden_states)
-                    dump_npy_file(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), hidden_states)
-                    convert_npy_to_json(os.path.join(
-                        self.case_dir, f'cpu_result_{count}.npy'), self.case_dir)
+                    hidden_states = np.squeeze(hidden_states, 1)
+                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
                     outputs.append(hidden_states)
                     count += 1
 
@@ -223,11 +212,50 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
+
+        self.num_kv_heads = config.num_key_value_heads
+        self.num_layers = config.num_hidden_layers
+        self.head_dim = config.head_dim if hasattr(
+            config, "head_dim") else config.hidden_size // config.num_attention_heads
+
+        paged_attention_config = self.cfg['paged_attention_config']
+
+        self.block_size = paged_attention_config['block_size']
+        self.num_blocks = paged_attention_config['num_blocks']
+        self.max_sessions = paged_attention_config['max_sessions']
+        self.max_model_len = (self.block_size * self.num_blocks) // self.max_sessions
+        self.kv_type = np.dtype(to_np_type(paged_attention_config['kv_type']))
+        self.cache_layout = [getattr(nncase.PagedKVCacheDimKind, item)
+                             for item in paged_attention_config['cache_layout']]
+        # [ nncase.PagedKVCacheDimKind.it for it in paged_attention_config['cache_layout'] ]
+        self.packed_axes = [getattr(nncase.PagedKVCacheDimKind, item)
+                            for item in paged_attention_config['packed_axes']]
+        self.lanes = paged_attention_config['lanes']
+        self.sharding_axes = [getattr(nncase.PagedKVCacheDimKind, item)
+                              for item in paged_attention_config['sharding_axes']]
+        self.axis_policies = paged_attention_config['axis_policies']
+        self.hierarchy = paged_attention_config['hierarchy']
+
+        self.kv_cache_config = nncase.PagedAttentionConfig(
+            self.num_layers,
+            self.num_kv_heads,
+            self.head_dim,
+            self.kv_type,
+            self.block_size,
+            self.cache_layout,
+            self.packed_axes,
+            self.lanes,
+            self.sharding_axes,
+            self.axis_policies
+        )
+
+        self.cfg['huggingface_options']['config'] = self.kv_cache_config
+
         if hasattr(config, "quantization_config"):
             dequantize_weights(model_path)
             delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, config=config, torch_dtype="auto" if not torch.backends.mps.is_available() else 'cpu', device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
+            model_path, config=config, torch_dtype="auto", device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
         restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
@@ -235,12 +263,12 @@ class HuggingfaceTestRunner(TestRunner):
         self.generation_config.max_new_tokens = 64
         self.generation_config.do_sample = False
         self.generation_config.temperature = 0.0  # for Stable result
-        if (self.cfg['huggingface_options']['output_attentions']):
-            self.generation_config.output_attentions = True
+        if (self.cfg['huggingface_options']['output_logits']):
+            pass
+        else:
+            self.generation_config.output_hidden_states = True
         if (self.cfg['huggingface_options']['output_hidden_states']):
             self.generation_config.output_hidden_states = True
-        if (self.cfg['huggingface_options']['use_cache']):
-            self.generation_config.use_cache = True
 
         input_dict = {}
         for input_ in self.model.dummy_inputs:
@@ -251,6 +279,16 @@ class HuggingfaceTestRunner(TestRunner):
             input_dict['model_shape'] = [1, "sequence_length"]
         self.inputs.append(input_dict)
         self.calibs.append(copy.deepcopy(input_dict))
+
+        input_scheduler = nncase._nncase.RefPagedAttentionScheduler(
+            self.kv_cache_config, self.num_blocks, self.max_model_len, self.hierarchy)
+        calibs_scheduler = nncase._nncase.RefPagedAttentionScheduler(
+            self.kv_cache_config, self.num_blocks, self.max_model_len, self.hierarchy)
+
+        self.inputs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
+                                shape=[], model_shape=[], scheduler=input_scheduler))
+        self.calibs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
+                                shape=[], model_shape=[], scheduler=calibs_scheduler))
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_huggingface(model_content, import_options)

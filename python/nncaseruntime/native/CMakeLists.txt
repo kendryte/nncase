@@ -11,3 +11,11 @@ target_include_directories(nncaseruntime_python PRIVATE ${CMAKE_CURRENT_SOURCE_D
 set_target_properties(nncaseruntime_python PROPERTIES
                                  OUTPUT_NAME _nncaseruntime)
 install(TARGETS nncaseruntime_python DESTINATION lib)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../common/
+        DESTINATION include/nncase/python/common
+        COMPONENT nncase-headers
+        FILES_MATCHING
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+        PATTERN "CMakeFiles" EXCLUDE)

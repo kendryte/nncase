@@ -259,5 +259,32 @@ void matmul(
                         RhsPackedAxes, RhsPadedNums>
         impl;
     impl(lhs, rhs, output);
+
+#if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
+    // TODO: remove this when tiling is ready
+    using TLhsElem = typename TLhs::element_type;
+    using TRhsElem = typename TRhs::element_type;
+    using TOutElem = typename std::decay_t<TOut>::element_type;
+    if constexpr (IsVector<TLhsElem> && IsVector<TRhsElem>) {
+        if constexpr (TLhsElem::shape_type::rank() == 2 &&
+                      TRhsElem::shape_type::rank() == 2 &&
+                      TOutElem::shape_type::at(0) == 64 &&
+                      TOutElem::shape_type::at(1) == 64) {
+
+            ntt::apply(output.shape(), [&](auto index) {
+                auto data = (float *)output(index).buffer().data();
+                float tmp[64 * 64];
+                for (int i = 0; i < 64; i++) {
+                    std::memcpy(tmp + i * 2 * 32, data + i * 32,
+                                32 * sizeof(float));
+                    std::memcpy(tmp + (i * 2 + 1) * 32, data + (i + 64) * 32,
+                                32 * sizeof(float));
+                }
+
+                std::memcpy(data, tmp, 64 * 64 * sizeof(float));
+            });
+        }
+    }
+#endif
 }
 } // namespace nncase::ntt

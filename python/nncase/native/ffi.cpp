@@ -101,21 +101,25 @@ PYBIND11_MODULE(_nncase, m) {
     py::class_<huggingface_options>(m, "HuggingFaceOptions")
         .def(py::init())
         .def_property(
-            "output_attentions",
-            py::overload_cast<>(&huggingface_options::output_attentions),
-            py::overload_cast<bool>(&huggingface_options::output_attentions))
+            "output_logits",
+            py::overload_cast<>(&huggingface_options::output_logits),
+            py::overload_cast<bool>(&huggingface_options::output_logits))
         .def_property(
             "output_hidden_states",
             py::overload_cast<>(&huggingface_options::output_hidden_states),
             py::overload_cast<bool>(&huggingface_options::output_hidden_states))
-        .def_property("use_cache",
-                      py::overload_cast<>(&huggingface_options::use_cache),
-                      py::overload_cast<bool>(&huggingface_options::use_cache))
         .def_property(
             "attention_backend",
             py::overload_cast<>(&huggingface_options::attention_backend),
             py::overload_cast<huggingface_attenion_backend>(
-                &huggingface_options::attention_backend));
+                &huggingface_options::attention_backend))
+        .def_property("config", nullptr,
+                      py::overload_cast<const llm::paged_attention_config &>(
+                          &huggingface_options::config))
+        .def_property(
+            "max_model_len",
+            py::overload_cast<>(&huggingface_options::max_model_len),
+            py::overload_cast<int32_t>(&huggingface_options::max_model_len));
 
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
@@ -459,11 +463,13 @@ PYBIND11_MODULE(_nncase, m) {
         .def("get_output_desc", &interpreter::output_desc)
         .def("get_input_shape",
              [](interpreter &interp, size_t index) {
-                 return to_py_shape(interp.input_shape(index));
+                 auto shape = interp.input_shape(index);
+                 return std::vector<py::ssize_t>(shape.begin(), shape.end());
              })
         .def("get_output_shape",
              [](interpreter &interp, size_t index) {
-                 return to_py_shape(interp.output_shape(index));
+                 auto shape = interp.output_shape(index);
+                 return std::vector<py::ssize_t>(shape.begin(), shape.end());
              })
         .def("get_input_tensor",
              [](interpreter &interp, size_t index) {
@@ -489,6 +495,7 @@ PYBIND11_MODULE(_nncase, m) {
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
 
     register_runtime_tensor(m);
-    register_llm(m);
+    register_runtime_llm_ffi(m);
+    register_ref_llm_ffi(m);
     // register_llm_interpreter(m);
 }

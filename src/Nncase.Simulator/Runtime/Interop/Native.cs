@@ -219,17 +219,11 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_create")]
     public static extern ErrorCode AttentionKVCacheCreate(
-        RTAttentionConfig config,
         int num_seqs,
         int num_tokens,
         RTTensor context_lens,
         RTTensor seq_lens,
         out RTAttentionKVCache cache);
-
-    [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_config")]
-    public static extern ErrorCode AttentionKVCacheGetConfig(
-        RTAttentionKVCache cache,
-        out RTAttentionConfig config);
 
     [DllImport(LibraryName, EntryPoint = "nncase_attention_kv_cache_get_num_seqs")]
     public static extern ErrorCode AttentionKVCacheGetNumSeqs(
@@ -253,29 +247,18 @@ internal static class Native
 
     [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_create")]
     public static extern ErrorCode PagedAttentionKVCacheCreate(
-        RTPagedAttentionConfig config,
         int num_seqs,
         int num_tokens,
         RTTensor context_lens,
         RTTensor seq_lens,
-        RTTensor block_table,
+        RTTensor block_tables,
         RTTensor slot_mapping,
-        int num_blocks,
-        [In] int[] kv_shape,
-        int kv_shape_len,
+        RTTensor kv_caches,
         out RTPagedAttentionKVCache cache);
 
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_get_num_blocks")]
-    public static extern ErrorCode PagedAttentionKVCacheGetNumBlocks(
-        RTPagedAttentionKVCache cache,
-        out int num_blocks);
-
-    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_set_kv_cache")]
-    public static extern ErrorCode PagedAttentionKVCacheSetKVCache(
-        RTPagedAttentionKVCache cache,
-        int[] indices,
-        int indices_len,
-        RTTensor kv_cache);
+    [DllImport(LibraryName, EntryPoint = "nncase_paged_attention_kv_cache_set_kv_caches")]
+    public static extern ErrorCode PagedAttentionKVCacheSetKVCaches(
+        RTPagedAttentionKVCache cache, RTTensor kv_cache);
 
     [DllImport(LibraryName, EntryPoint = "nncase_wait_for_debugger")]
     public static extern int NncaseWaitForDebugger(byte enable);

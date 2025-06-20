@@ -132,6 +132,11 @@ constexpr void update_paged_attention_kv_cache(const TSlots &slots_tensor,
             // slot mapping is broadcast, but slot maybe is sharding.
             auto global_token_id =
                 slots_global_offset[seq_index] + local_token_id;
+
+            // support plugin kernel style padding.
+            if (global_token_id >= kv_cache.num_tokens()) {
+                continue;
+            }
             auto slot_id = kv_cache.get_slot_id(global_token_id);
             local_slots_starts[seq_index] = local_token_id;
 
@@ -170,15 +175,15 @@ constexpr void update_paged_attention_kv_cache(const TSlots &slots_tensor,
     }
 }
 
-template <FixedDimensions QLayout, Tensor TQ, Tensor TKVCache, class T3,
-          Tensor TExtra>
-    requires(Tensor<std::decay_t<T3>>)
+template <FixedDimensions QLayout, Tensor TQ, Tensor TKVCache, Tensor TScale,
+          class TOutput, Tensor TExtra>
+    requires(Tensor<std::decay_t<TOutput>>)
 void paged_attention(
     const TQ &q_tensor, TKVCache &kv_cache_tensor,
-    TExtra &extra_tensor /* [head_q, max_query_len, max_seq_len] + [head_q,
+    TExtra &extra_tensor, /* [head_q, max_query_len, max_seq_len] + [head_q,
                             max_query_len, 1] */
-    ,
-    size_t layer_id, T3 &&output_tensor, const QLayout &q_layout) noexcept {
+    const TScale &scale, size_t layer_id, TOutput &&output_tensor,
+    const QLayout &q_layout) noexcept {
     auto &kv_cache = kv_cache_tensor(fixed_shape_v<>);
     using kv_cache_t = typename std::decay_t<decltype(kv_cache)>;
     using config_t = typename kv_cache_t::config_t;
@@ -229,7 +234,7 @@ void paged_attention(
         // s = q * k^T : [head_q, query_len, seq_len]
         for (size_t q_head_id = 0; q_head_id < q_shape[head_index];
              q_head_id++) {
-            auto k_head_id = q_head_id / num_kv_heads;
+            auto k_head_id = q_head_id / (q_shape[head_index] / num_kv_heads);
             q_slice_start[head_index] = q_head_id;
 
             for (size_t q_id = 0, q_id_batch = query_start_loc;
@@ -288,9 +293,10 @@ void paged_attention(
             }
         }
 
-        // todo scale_factor
+        // scale s : [head_q, query_len, seq_len]
+        ntt::binary<ntt::ops::mul>(s, scale, s);
         // add tril mask.
-        constexpr size_t diagonal = 0;
+        size_t diagonal = seq_len - query_len;
         for (size_t q_head_id = 0; q_head_id < s.shape()[0]; q_head_id++) {
             for (size_t q_id = 0; q_id < s.shape()[1]; q_id++) {
                 for (size_t context_id = q_id + diagonal + 1;
@@ -319,7 +325,7 @@ void paged_attention(
         dynamic_shape_t<3> s_slice_start;
         for (size_t q_head_id = 0; q_head_id < q_shape[head_index];
              q_head_id++) {
-            auto v_head_id = q_head_id / num_kv_heads;
+            auto v_head_id = q_head_id / (q_shape[head_index] / num_kv_heads);
             s_slice_start[0_dim] = q_head_id;
             q_slice_start[head_index] = q_head_id;
             for (size_t q_id = 0, q_id_batch = query_start_loc;

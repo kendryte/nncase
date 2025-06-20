@@ -27,7 +27,11 @@ public sealed partial class PagedAttention : Op
 
     public static readonly ParameterInfo Extra = new(typeof(PagedAttention), 2, "extra", ParameterKind.Input);
 
+    public static readonly ParameterInfo Scale = new(typeof(PagedAttention), 3, "scale", ParameterKind.Attribute);
+
     public int LayerId { get; }
 
     public IRArray<AttentionDimKind> Layout { get; }
+
+    public override string DisplayProperty() => $"LayerId: {LayerId}, Layout [{string.Join(',', Layout)}]";
 }

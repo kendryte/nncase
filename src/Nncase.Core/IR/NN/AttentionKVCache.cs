@@ -73,7 +73,7 @@ public interface IAttentionKVCache
 public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVPrimType) : IAttentionConfig;
 
 /// <summary>
-/// Prim type of <see cref="QuantParam"/>.
+/// Prim type of <see cref="AttentionKVCacheType"/>.
 /// </summary>
 public record AttentionKVCacheType : ValueType
 {

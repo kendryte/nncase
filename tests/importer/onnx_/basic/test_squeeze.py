@@ -75,4 +75,4 @@ def test_squeeze(in_shape, out_channel, kernel_size, axis, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_squeeze.py'])
+    pytest.main(['-vv', __file__])

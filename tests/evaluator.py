@@ -20,6 +20,7 @@ import numpy as np
 import test_utils
 import preprocess_utils
 from test_utils import *
+from npy2json import convert_npy_to_json
 
 
 class Evaluator:
@@ -31,8 +32,13 @@ class Evaluator:
 
     def set_inputs(self, evaluator):
         for idx, i in enumerate(self.inputs):
-            input_tensor: nncase.RuntimeTensor = nncase.RuntimeTensor.from_numpy(
-                self.transform_input((i['data']), self.cfg['compile_opt']['input_type'], "infer")[0])
+            input_tensor = None
+            data = i['data']
+            if i['dtype'] == 'PagedAttentionKVCache':
+                input_tensor = data[0].as_ivalue()
+            else:
+                input_tensor = nncase.RuntimeTensor.from_numpy(
+                    self.transform_input(data, self.cfg['compile_opt']['input_type'], "infer")[0])
             evaluator.set_input_tensor(idx, input_tensor)
 
     def dump_outputs(self, evaluator, eval_dir):
@@ -54,6 +60,8 @@ class Evaluator:
                 dump_bin_file(os.path.join(eval_dir, f'nncase_result_{i}.bin'), result)
                 dump_txt_file(os.path.join(eval_dir, f'nncase_result_{i}.txt'), result)
                 dump_npy_file(os.path.join(eval_dir, f'nncase_result_{i}.npy'), result)
+                convert_npy_to_json(os.path.join(eval_dir, f'nncase_result_{i}.npy'),
+                                    eval_dir)
 
             results.append(result)
         return results

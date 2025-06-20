@@ -15,7 +15,6 @@
 #include "pytype_utils.h"
 #include "type_casters.h"
 #include <iostream>
-#include <nncase/runtime/forward_batch_info.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/version.h>
@@ -24,6 +23,7 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
+#include <runtime_llm_ffi.h>
 #include <sstream>
 
 namespace py = pybind11;
@@ -76,8 +76,6 @@ PYBIND11_MODULE(_nncaseruntime, m) {
 
     // LaunchDebugger();
 
-#include "runtime_tensor.inl"
-
     py::class_<interpreter>(m, "Interpreter")
         .def(py::init())
         .def("load_model",
@@ -92,6 +90,16 @@ PYBIND11_MODULE(_nncaseruntime, m) {
         .def_property_readonly("outputs_size", &interpreter::outputs_size)
         .def("get_input_desc", &interpreter::input_desc)
         .def("get_output_desc", &interpreter::output_desc)
+        .def("get_input_shape",
+             [](interpreter &interp, size_t index) {
+                 auto shape = interp.input_shape(index);
+                 return std::vector<py::ssize_t>(shape.begin(), shape.end());
+             })
+        .def("get_output_shape",
+             [](interpreter &interp, size_t index) {
+                 auto shape = interp.output_shape(index);
+                 return std::vector<py::ssize_t>(shape.begin(), shape.end());
+             })
         .def("get_input_tensor",
              [](interpreter &interp, size_t index) {
                  return interp.input_tensor(index).unwrap_or_throw();
@@ -114,4 +122,6 @@ PYBIND11_MODULE(_nncaseruntime, m) {
              })
         .def("run",
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
+
+    register_runtime_llm_ffi(m);
 }

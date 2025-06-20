@@ -144,16 +144,21 @@ typedef struct {
     void (*import_options_set_huggingface_options)(
         clr_object_handle_t import_options,
         clr_object_handle_t huggingface_options);
-    void (*huggingface_options_output_attentions)(
-        clr_object_handle_t huggingface_options, bool output_attentions);
+    void (*huggingface_options_output_logits)(
+        clr_object_handle_t huggingface_options, bool output_logits);
     void (*huggingface_options_output_hidden_states)(
         clr_object_handle_t huggingface_options, bool output_hidden_states);
-    void (*huggingface_options_use_cache)(
-        clr_object_handle_t huggingface_options, bool use_cache);
     uint8_t (*huggingface_options_get_attention_backend)(
         clr_object_handle_t huggingface_options);
     void (*huggingface_options_set_attention_backend)(
         clr_object_handle_t huggingface_options, uint8_t value);
+    void (*huggingface_options_set_config)(
+        clr_object_handle_t huggingface_options,
+        clr_object_handle_t config_handle);
+    int32_t (*huggingface_options_get_max_model_len)(
+        clr_object_handle_t huggingface_options);
+    void (*huggingface_options_set_max_model_len)(
+        clr_object_handle_t huggingface_options, int32_t value);
     clr_object_handle_t (*compile_options_create)();
     void (*compile_options_set_input_file)(clr_object_handle_t compile_options,
                                            const char *input_file,
@@ -323,7 +328,7 @@ typedef struct {
         clr_object_handle_t kv_cache);
     clr_object_handle_t (*ref_paged_attention_kv_cache_get_seq_lens)(
         clr_object_handle_t kv_cache);
-    clr_object_handle_t (*ref_paged_attention_kv_cache_get_block_table)(
+    clr_object_handle_t (*ref_paged_attention_kv_cache_get_block_tables)(
         clr_object_handle_t kv_cache);
     clr_object_handle_t (*ref_paged_attention_kv_cache_get_slot_mapping)(
         clr_object_handle_t kv_cache);
@@ -333,6 +338,10 @@ typedef struct {
         clr_object_handle_t kv_cache);
     clr_object_handle_t (*ref_paged_attention_kv_cache_as_ivalue)(
         clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_as_rtvalue)(
+        clr_object_handle_t kv_cache);
+    clr_object_handle_t (*ref_paged_attention_kv_cache_dump_json)(
+        clr_object_handle_t kv_cache, const char *bytes, size_t length);
 
     // var functions
     clr_object_handle_t (*var_get_dimensions)(clr_object_handle_t var);
@@ -580,21 +589,15 @@ class huggingface_options : public clr_object_base {
         obj_ = nncase_clr_api()->huggingface_options_create();
     }
 
-    bool output_attentions() { return false; }
-    void output_attentions(bool value) {
-        nncase_clr_api()->huggingface_options_output_attentions(obj_.get(),
-                                                                value);
+    bool output_logits() { return true; }
+    void output_logits(bool value) {
+        nncase_clr_api()->huggingface_options_output_logits(obj_.get(), value);
     }
 
     bool output_hidden_states() { return false; }
     void output_hidden_states(bool value) {
         nncase_clr_api()->huggingface_options_output_hidden_states(obj_.get(),
                                                                    value);
-    }
-
-    bool use_cache() { return false; }
-    void use_cache(bool value) {
-        nncase_clr_api()->huggingface_options_use_cache(obj_.get(), value);
     }
 
     huggingface_attenion_backend attention_backend() {
@@ -605,6 +608,22 @@ class huggingface_options : public clr_object_base {
     void attention_backend(huggingface_attenion_backend value) {
         nncase_clr_api()->huggingface_options_set_attention_backend(obj_.get(),
                                                                     value);
+    }
+
+    void config(const llm::paged_attention_config &config) {
+        auto clone_config = llm::paged_attention_config(config);
+        nncase_clr_api()->huggingface_options_set_config(obj_.get(),
+                                                         clone_config.detach());
+    }
+
+    int32_t max_model_len() {
+        return nncase_clr_api()->huggingface_options_get_max_model_len(
+            obj_.get());
+    }
+
+    void max_model_len(int32_t value) {
+        nncase_clr_api()->huggingface_options_set_max_model_len(obj_.get(),
+                                                                value);
     }
 };
 
@@ -1034,9 +1053,9 @@ class ref_paged_attention_kv_cache : public clr_object_base {
                     obj_.get())};
     }
 
-    rtvalue block_table() const {
+    rtvalue block_tables() const {
         return {std::in_place,
-                nncase_clr_api()->ref_paged_attention_kv_cache_get_block_table(
+                nncase_clr_api()->ref_paged_attention_kv_cache_get_block_tables(
                     obj_.get())};
     }
 
@@ -1056,6 +1075,17 @@ class ref_paged_attention_kv_cache : public clr_object_base {
         return {std::in_place,
                 nncase_clr_api()->ref_paged_attention_kv_cache_as_ivalue(
                     obj_.get())};
+    }
+
+    rtvalue as_rtvalue() const {
+        return {std::in_place,
+                nncase_clr_api()->ref_paged_attention_kv_cache_as_rtvalue(
+                    obj_.get())};
+    }
+
+    void dump_json(const std::string &file_path) {
+        nncase_clr_api()->ref_paged_attention_kv_cache_dump_json(
+            obj_.get(), file_path.data(), file_path.length());
     }
 };
 

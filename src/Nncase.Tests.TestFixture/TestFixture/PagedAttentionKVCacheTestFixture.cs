@@ -83,7 +83,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         if (isCausal)
         {
             var tempMask = OrtKISharp.Tensor.MakeTensor(Enumerable.Repeat(1.0f, (int)(curLen * histLen)).ToArray(), [curLen, histLen]);
-            tempMask = OrtKI.Trilu(tempMask, OrtKISharp.Tensor.FromScalar<long>(0), 0);
+            tempMask = OrtKI.Trilu(tempMask, histLen - curLen, 0);
             attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([curLen, histLen])));
         }
 
@@ -237,7 +237,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         var logicalKVCacheTensor = Tensor.Zeros(logicalKVTensorType.DType, logicalKVTensorType.Shape.ToValueArray());
 
         // 2. create temporary slotmapping for update hist key and value tensors.
-        var blockTableTensorType = config.GetBlockTableTensorType(queryLens.Length, (int)seqLens.Max());
+        var blockTableTensorType = config.GetBlockTablesTensorType(queryLens.Length, (int)seqLens.Max());
         var blockTableTensor = Tensor.Zeros(blockTableTensorType.DType, blockTableTensorType.Shape.ToValueArray()).Cast<long>();
         var alignedSeqLens = seqLens.Select(seqLen => MathUtility.AlignUp(seqLen, config.BlockSize)).ToArray();
         var alignedSeqStartLocs = alignedSeqLens.CumSum().ToArray();
@@ -321,7 +321,9 @@ public sealed class PagedAttentionKVCacheTestFixture
                     for (int headId = 0; headId < config.NumKVHeads; headId++)
                     {
                         var slot = histTensor.View([headId, tokenId, 0], [1, 1, histTensor.Dimensions[^1]]).Squeeze(0, 1); // [heads, seq_len, head_dim]
-                        tmpKVCacheObj.UpdateSlot(kind, layerId, headId, slotId, slot);
+
+                        var (physicalHeadId, physicalSlotId) = RefPagedAttentionKVCache.PhysicalizeSlotMappingId(slotId.Cast<long>(), headId, numBlocks, placement, config);
+                        tmpKVCacheObj.UpdateSlot(kind, layerId, physicalHeadId, physicalSlotId, slot);
                     }
                 }
             }
@@ -384,7 +386,10 @@ public sealed class PagedAttentionKVCacheTestFixture
 
             if (options.IncreaseBy.Contains(AttentionDimKind.Head))
             {
-                startValue += options.Step;
+                if (!options.IncreaseBy.Contains(AttentionDimKind.Seq))
+                {
+                    startValue += options.Step;
+                }
             }
         }
 

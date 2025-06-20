@@ -35,7 +35,7 @@ public sealed record RefPagedAttentionKVCache(
     int NumTokens,
     Tensor<long> ContextLens,
     Tensor<long> SeqLens,
-    Tensor<long> BlockTable,
+    Tensor<long> BlockTables,
     Tensor<long> SlotMapping,
     int NumBlocks,
     Tensor KVCaches)
@@ -52,8 +52,8 @@ public sealed record RefPagedAttentionKVCache(
 
     public Tensor GetBlockId(int seqId, int contextId)
     {
-        Debug.Assert(BlockTable.Rank == 3, "BlockTable must be 3D.");
-        return BlockTable.View([seqId, contextId, 0], [1, 1, BlockTable.Dimensions[2]]).Squeeze(0, 1).AsContiguous();
+        Debug.Assert(BlockTables.Rank == 3, "BlockTable must be 3D.");
+        return BlockTables.View([seqId, contextId, 0], [1, 1, BlockTables.Dimensions[2]]).Squeeze(0, 1).AsContiguous();
     }
 
     public Tensor GetSlotId(int tokenId)
@@ -172,21 +172,44 @@ public sealed record RefPagedAttentionKVCache(
         blockTableTensor[indices] = physicalBlockId;
     }
 
+    public static (int HeadId, Tensor<long> SlotId) PhysicalizeSlotMappingId(Tensor<long> slotId, int headId, int numBlocks, Placement placement, IPagedAttentionConfig config)
+    {
+        var headIdCopy = headId;
+        var slotIdCopy = slotId.AsContiguous(true);
+        var cacheDimensions = config.GetLogicalShardTensorType(numBlocks, placement).Shape.ToValueArray();
+        for (int shardId = 0; shardId < config.ShardingAxes.Count; shardId++)
+        {
+            switch (config.ShardingAxes[shardId])
+            {
+                case PagedKVCacheDimKind.NumKVHeads when slotIdCopy[shardId] is -1L:
+                    var headTile = config.NumKVHeads / (int)cacheDimensions[shardId];
+                    slotIdCopy[shardId] = System.Math.DivRem(headIdCopy, headTile, out headIdCopy);
+                    break;
+                case PagedKVCacheDimKind.NumBlocks when slotIdCopy[shardId] is not -1L:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(slotId));
+            }
+        }
+
+        return (headIdCopy, slotIdCopy);
+    }
+
     /// <summary>
     /// all vars are [seq,head,dim] layout.
     /// </summary>
-    public static (Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar) BuildPagedAttentionKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, bool testUpdateKVCache = false)
+    public static (Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar) BuildPagedAttentionKernel(long[] queryLens, long[] seqLens, int numQHeads, int numBlocks, AttentionDimKind[] qLayout, AttentionDimKind[] kvLayout, IPagedAttentionConfig config, BuildKernelOptions options)
     {
         var numTokens = queryLens.Sum();
-        var numTokensVar = new IR.DimVar("num_tokens");
-        Shape defaultQDimenions = numTokens == 0 ? new RankedShape(numTokensVar, numQHeads, config.HeadDim) : new long[] { numTokens, numQHeads, config.HeadDim };
+        var numTokensVar = new IR.DimVar("num_tokens") { Metadata = { Range = new(1.0f, options.DynamicMaxTokens) } };
+        Shape defaultQDimenions = options.DynamicShape ? new RankedShape(numTokensVar, numQHeads, config.HeadDim) : new long[] { numTokens, numQHeads, config.HeadDim };
         var queryVar = new Var("query", new TensorType(config.KVPrimType, defaultQDimenions));
         var kvVars = new List<Var[]>();
         var kvCacheObjVar = new Var("kvCache", TensorType.Scalar(
             new ReferenceType(new PagedAttentionKVCacheType { Config = config })));
 
         // Create vars for each layer
-        Shape defaultKDimenions = numTokens == 0 ? new RankedShape(numTokensVar, config.NumKVHeads, config.HeadDim) : new long[] { numTokens, config.NumKVHeads, config.HeadDim };
+        Shape defaultKDimenions = options.DynamicShape ? new RankedShape(numTokensVar, config.NumKVHeads, config.HeadDim) : new long[] { numTokens, config.NumKVHeads, config.HeadDim };
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
             var keyVar = new Var($"key_{layerId}", new TensorType(config.KVPrimType, defaultKDimenions));
@@ -197,14 +220,16 @@ public sealed record RefPagedAttentionKVCache(
         // Build computation graph
         var (q_lanes, q_packed_axes) = GetQKVPackParams(config, qLayout);
         var (kv_lanes, kv_packed_axes) = GetQKVPackParams(config, kvLayout);
-        var transedQuery = IR.F.Tensors.Transpose(queryVar, qLayout.Select(x => (int)x).ToArray());
+        var padedQuery = options.DynamicShape ? IR.F.NN.Pad(queryVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)queryVar;
+        var transedQuery = IR.F.Tensors.Transpose(padedQuery, qLayout.Select(x => (int)x).ToArray());
         var packedQuery = q_lanes.Length > 0 ? IR.F.Tensors.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
         Expr updatedKVCache = None.Default;
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
             var (keyVar, valueVar) = (kvVars[layerId][0], kvVars[layerId][1]);
 
-            var transedKey = IR.F.Tensors.Transpose(keyVar, kvLayout.Select(x => (int)x).ToArray());
+            var padedKey = options.DynamicShape ? IR.F.NN.Pad(keyVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)keyVar;
+            var transedKey = IR.F.Tensors.Transpose(padedKey, kvLayout.Select(x => (int)x).ToArray());
             var packedKey = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedKey,
@@ -213,7 +238,8 @@ public sealed record RefPagedAttentionKVCache(
                 layerId,
                 kvLayout);
 
-            var transValue = IR.F.Tensors.Transpose(valueVar, kvLayout.Select(x => (int)x).ToArray());
+            var padedValue = options.DynamicShape ? IR.F.NN.Pad(valueVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)valueVar;
+            var transValue = IR.F.Tensors.Transpose(padedValue, kvLayout.Select(x => (int)x).ToArray());
             var packedValue = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transValue, kv_lanes, kv_packed_axes) : transValue;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 packedValue,
@@ -223,22 +249,26 @@ public sealed record RefPagedAttentionKVCache(
                 kvLayout);
 
             // Apply attention for current layer
-            var extraShape = numTokens == 0 ?
-                new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1) : // [head_q, num_tokens, max_seq_len + 1]
-                new long[] { numQHeads, queryLens.Max(), seqLens.Max() + 1 };
+            // var extraShape = numTokens == 0 ?
+            //     new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1) : // [head_q, num_tokens, max_seq_len + 1]
+            //     new long[] { numQHeads, queryLens.Max(), seqLens.Max() + 1 };
+            Shape extraShape = [10 * 1024 * 1024];
             packedQuery = IR.F.NN.PagedAttention(
                 packedQuery,
                 updatedKVCache,
                 IR.F.Buffer.Uninitialized(config.KVPrimType, Nncase.TIR.MemoryLocation.Data, extraShape), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
+                Tensor.FromScalar(1.0f).CastTo(config.KVPrimType, CastMode.KDefault),
                 layerId,
                 qLayout);
         }
 
         // unpack query.
         var unpacked = q_lanes.Length > 0 ? IR.F.Tensors.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
-        Expr root = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
+        var untransed = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
+        var unpaded = options.DynamicShape ? IR.F.Tensors.Slice(untransed, new[] { 0 }, new Dimension[] { numTokensVar }, new[] { 0 }, new[] { 1 }) : untransed;
+        Expr root = unpaded;
 
-        if (testUpdateKVCache)
+        if (options.TestUpdateKVCache)
         {
             root = IR.F.NN.GatherPagedAttentionKVCache(new[] { 0L }, updatedKVCache, numBlocks);
         }
@@ -322,6 +352,10 @@ public sealed record RefPagedAttentionKVCache(
         var final_squeeze = topo_squeeze.Concat(squeeze_axes).ToArray();
         return KVCaches.View(final_starts, final_shape).Squeeze(final_squeeze);
     }
+
+    public record class BuildKernelOptions(bool TestUpdateKVCache = false, bool DynamicShape = false, long DynamicMaxTokens = 128)
+    {
+    }
 }
 
 public sealed class PagedAttentionKVCacheJsonConverterFactory : JsonConverterFactory
@@ -366,7 +400,7 @@ internal sealed class PagedAttentionKVCacheJsonConverter : JsonConverter<IPagedA
             options)!;
 
         var blockTable = JsonSerializer.Deserialize<Tensor<long>>(
-            root.GetProperty(nameof(RefPagedAttentionKVCache.BlockTable)).GetRawText(),
+            root.GetProperty(nameof(RefPagedAttentionKVCache.BlockTables)).GetRawText(),
             options)!;
 
         var slotMapping = JsonSerializer.Deserialize<Tensor<long>>(
@@ -407,8 +441,8 @@ internal sealed class PagedAttentionKVCacheJsonConverter : JsonConverter<IPagedA
         writer.WritePropertyName(nameof(RefPagedAttentionKVCache.SeqLens));
         JsonSerializer.Serialize(writer, cache.SeqLens, options);
 
-        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.BlockTable));
-        JsonSerializer.Serialize(writer, cache.BlockTable, options);
+        writer.WritePropertyName(nameof(RefPagedAttentionKVCache.BlockTables));
+        JsonSerializer.Serialize(writer, cache.BlockTables, options);
 
         writer.WritePropertyName(nameof(RefPagedAttentionKVCache.SlotMapping));
         JsonSerializer.Serialize(writer, cache.SlotMapping, options);

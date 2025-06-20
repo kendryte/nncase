@@ -28,9 +28,8 @@ def test_qwen3(request):
     shape_bucket_fix_var_map = {  }
     
     [huggingface_options]
-    output_attentions = true
+    output_logits = true
     output_hidden_states = true
-    use_cache = true
 
     [generator]
     [generator.inputs]

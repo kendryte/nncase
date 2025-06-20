@@ -19,10 +19,13 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     {
         var q = context.CheckArgumentType<IRType>(target, PagedAttention.Q);
         var extra = context.CheckArgumentType<IRType>(target, PagedAttention.Extra);
+        var scale = context.CheckArgumentType<TensorType>(target, PagedAttention.Scale);
+        var kvcaches = context.CheckArgumentType<TensorType>(target, PagedAttention.KVCaches);
+
         return (q, extra) switch
         {
-            (DistributedType dq, DistributedType dextra) => Visit(context, target, dq, dextra),
-            (TensorType tq, TensorType textra) => Visit(context, target, tq, textra),
+            (DistributedType dq, DistributedType dextra) => Visit(context, target, dq, dextra, scale, kvcaches),
+            (TensorType tq, TensorType textra) => Visit(context, target, tq, textra, scale, kvcaches, out _),
             _ => new InvalidType("not support type"),
         };
     }
@@ -47,10 +50,11 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
     {
         var q = context.GetOrtArgumentValue(target, PagedAttention.Q);
         var kvCaches = context.GetArgumentValueAsTensor<Reference<IPagedAttentionKVCache>>(target, PagedAttention.KVCaches);
-        return RefPagedAttn(q, kvCaches, 1.0f, target.LayerId, target.Layout).ToValue();
+        var scale = context.GetOrtArgumentValue(target, PagedAttention.Scale); // must match to prim kv type.
+        return RefPagedAttn(q, kvCaches, scale, target.LayerId, target.Layout).ToValue();
     }
 
-    private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, float scale, int layerId, IRArray<AttentionDimKind> qlayout)
+    private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, OrtKISharp.Tensor scale, int layerId, IRArray<AttentionDimKind> qlayout)
     {
         // TODO: Support DP
         if (kvCaches.Length != 1)
@@ -84,9 +88,9 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         {
             var seqLen = cache.SeqLen(seqId);
             var queryLen = seqLen - cache.ContextLen(seqId);
-            var q = OrtKI.Slice(query, new long[] { queryStart }, new long[] { queryStart + queryLen }, new long[] { 0L }, new long[] { 1L });
 
-            q = q * OrtKI.Cast(scale, (long)q.DataType); // [query_len, num_heads, head_dim] [L,Hq,E]
+            // [query_len, num_heads, head_dim] [L,Hq,E]
+            var q = OrtKI.Slice(query, new long[] { queryStart }, new long[] { queryStart + queryLen }, new long[] { 0L }, new long[] { 1L });
 
             var k = GatherKV(AttentionCacheKind.Key, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
             if (k.Shape[0] != q.Shape[1])
@@ -100,15 +104,16 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 k = OrtKI.Gather(k, indices, 0);
             }
 
-            var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS"); // [num_heads, query_len, seq_len] [H,L,S]
+            var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS") * scale; // [num_heads, query_len, seq_len] [H,L,S]
 
             // compute causal mask
             var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen]));
             var tempMask = OrtKISharp.Tensor.MakeTensor(Enumerable.Repeat(1.0f, (int)(queryLen * seqLen)).ToArray(), [queryLen, seqLen]);
-            tempMask = OrtKI.Trilu(tempMask, OrtKISharp.Tensor.FromScalar<long>(0), 0);
-            attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen])));
 
+            tempMask = OrtKI.Trilu(tempMask, seqLen - queryLen, 0);
+            attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen])));
             attn = attn + OrtKI.Cast(attnBias, (long)attn.DataType);
+
             attn = OrtKI.Softmax(attn, -1);
 
             var v = GatherKV(AttentionCacheKind.Value, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
@@ -240,13 +245,37 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         return concatCache; // [num_heads, seq_len, head_dim]
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, TensorType q, IRType extra, TensorType scale, TensorType kvCaches, out PagedAttentionKVCacheType pagedAttentionKVCacheType)
     {
+        pagedAttentionKVCacheType = null!;
+        if (kvCaches.DType is not ReferenceType { ElemType: PagedAttentionKVCacheType kVCacheType })
+        {
+            return new InvalidType("kv cache type not support!");
+        }
+
+        pagedAttentionKVCacheType = kVCacheType;
+
+        if (!scale.IsScalar || scale.DType is not PrimType primType)
+        {
+            return new InvalidType($"scale {scale} should be scalar");
+        }
+
+        if ((q.DType is PrimType qPrimType && qPrimType != primType) ||
+            (q.DType is VectorType v && v.ElemType is PrimType vPrimType && vPrimType != primType))
+        {
+            return new InvalidType($"q {q.DType} and scale {scale.DType} should have same dtype");
+        }
+
         return q;
     }
 
-    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra)
+    private IRType Visit(ITypeInferenceContext context, PagedAttention target, DistributedType q, DistributedType extra, TensorType scale, TensorType kvCaches)
     {
+        if (Visit(context, target, q.TensorType, extra, scale, kvCaches, out var kVCacheType) is InvalidType invalidType)
+        {
+            return invalidType;
+        }
+
         // for xpu.
         if (q.Placement.Name == "cdxyt")
         {
@@ -258,6 +287,36 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             if (!target.Layout.SequenceEqual([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]))
             {
                 return new InvalidType("layout should be [head, dim, seq]");
+            }
+
+            if (kVCacheType.Config is not IPagedAttentionConfig config)
+            {
+                return new InvalidType("kv cache has not config!");
+            }
+
+            if (!config.CacheLayout.SequenceEqual([PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize]))
+            {
+                return new InvalidType("kv cache block layout not support!");
+            }
+
+            if (!config.PackedAxes.SequenceEqual([PagedKVCacheDimKind.HeadDim]))
+            {
+                return new InvalidType("kv cache pack axes not support!");
+            }
+
+            if ((config.Lanes[0] * config.KVPrimType.SizeInBytes) != 128)
+            {
+                return new InvalidType("kv cache packed lanes not support!");
+            }
+
+            if (!config.ShardingAxes.SequenceEqual([PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.NumBlocks]))
+            {
+                return new InvalidType("kv cache sharding axes not support!");
+            }
+
+            if (!config.AxisPolicies[0].Axes.SequenceEqual([1]) || !config.AxisPolicies[1].Axes.SequenceEqual([2, 3]))
+            {
+                return new InvalidType("kv cache axis policies not support!");
             }
 
             // seq split at x, head split at die and y, please check head size > 2*4.

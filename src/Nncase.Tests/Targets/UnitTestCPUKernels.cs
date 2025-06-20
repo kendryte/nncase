@@ -132,6 +132,8 @@ public sealed class TestUpdatePagedAttentionCase : TheoryData<TestFixture.PagedA
                 }
             }
         }
+
+        Add(new TestFixture.PagedAttentionKVCacheTestFixture([256], [256], 14, 2, 64, 256, 16, Runtime.TypeCode.Float32, 1, [PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize], [PagedKVCacheDimKind.HeadDim], [PagedKVCacheDimKind.NumBlocks], [SBP.S(0)], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]), [1], count++);
     }
 }
 
@@ -218,6 +220,8 @@ public sealed class TestPagedAttentionCase : TheoryData<TestFixture.PagedAttenti
                 }
             }
         }
+
+        Add(new TestFixture.PagedAttentionKVCacheTestFixture([4], [4], 14, 2, 64, 256, 16, Runtime.TypeCode.Float32, 1, [PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize], [PagedKVCacheDimKind.HeadDim], [PagedKVCacheDimKind.NumBlocks], [SBP.S(0)], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]), [1], count++);
     }
 }
 
@@ -286,7 +290,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, true);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, new(true));
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -306,16 +310,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
             feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
 
-            var rtkvObj = RTPagedAttentionKVCache.Create(
-                    RTPagedAttentionConfig.FromConfig(fixture.Config),
-                    kvinputs.KVCacheObj.NumSeqs,
-                    kvinputs.KVCacheObj.NumTokens,
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTable),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
-                    kvinputs.KVCacheObj.NumBlocks,
-                    kvinputs.KVCacheObj.KVCaches.Dimensions[..fixture.Config.ShardingAxes.Count].ToArray().Select(i => (int)i).ToArray());
+            var kvCacheAddrs = new List<long>();
             {
                 var logicalKVShape = kvinputs.KVCacheObj.KVCaches.Dimensions.ToArray();
                 foreach (var topoIndices in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
@@ -323,10 +318,23 @@ public sealed class UnitTestCPUKernels : TestClassBase
                     var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - hierarchy.Length)).ToArray();
                     var shape = Enumerable.Repeat(1L, hierarchy.Length).Concat(logicalKVShape[hierarchy.Length..]).ToArray();
                     var kvStorage = kvinputs.KVCacheObj.KVCaches.View(indices, shape);
-                    rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+
+                    // FIXME: Memory leak here
+                    unsafe
+                    {
+                        kvCacheAddrs.Add((long)kvStorage.PinBuffer().Pointer);
+                    }
                 }
             }
 
+            var rtkvObj = RTPagedAttentionKVCache.Create(
+                    kvinputs.KVCacheObj.NumSeqs,
+                    kvinputs.KVCacheObj.NumTokens,
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTables),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
+                    RTTensor.FromTensor(kvCacheAddrs.ToArray()));
             rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 
@@ -346,10 +354,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.Packing = false;
 
         var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
-        var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: false, IncreaseBy: [AttentionDimKind.Head, AttentionDimKind.Seq], ResetForKV: true);
+        var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head, AttentionDimKind.Seq], ResetForKV: true);
         var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, new());
 
         var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
 
@@ -368,17 +376,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             }
 
             feedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))));
-
-            var rtkvObj = RTPagedAttentionKVCache.Create(
-                    RTPagedAttentionConfig.FromConfig(fixture.Config),
-                    kvinputs.KVCacheObj.NumSeqs,
-                    kvinputs.KVCacheObj.NumTokens,
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTable),
-                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
-                    kvinputs.KVCacheObj.NumBlocks,
-                    kvinputs.KVCacheObj.KVCaches.Dimensions[..fixture.Config.ShardingAxes.Count].ToArray().Select(i => (int)i).ToArray());
+            var kvCacheAddrs = new List<long>();
             {
                 var logicalKVShape = kvinputs.KVCacheObj.KVCaches.Dimensions.ToArray();
                 foreach (var topoIndices in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
@@ -386,10 +384,23 @@ public sealed class UnitTestCPUKernels : TestClassBase
                     var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - hierarchy.Length)).ToArray();
                     var shape = Enumerable.Repeat(1L, hierarchy.Length).Concat(logicalKVShape[hierarchy.Length..]).ToArray();
                     var kvStorage = kvinputs.KVCacheObj.KVCaches.View(indices, shape);
-                    rtkvObj.SetKVCache(topoIndices.ToInts(), kvStorage);
+
+                    // FIXME: Memory leak here
+                    unsafe
+                    {
+                        kvCacheAddrs.Add((long)kvStorage.PinBuffer().Pointer);
+                    }
                 }
             }
 
+            var rtkvObj = RTPagedAttentionKVCache.Create(
+                    kvinputs.KVCacheObj.NumSeqs,
+                    kvinputs.KVCacheObj.NumTokens,
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTables),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
+                    RTTensor.FromTensor(kvCacheAddrs.ToArray()));
             rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
         }
 

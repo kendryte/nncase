@@ -62,5 +62,6 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<CreatePagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<IdentityPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GatherPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<GetPositionIdsEvaluator>(reuse: Reuse.Singleton);
     }
 }

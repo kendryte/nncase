@@ -46,11 +46,9 @@ struct thread_paged_attention_kv_cache_desc {
     size_t block_table_shape[3];  // [dim0, dim1, dim2]
     int64_t *slot_mapping;        // [num_tokens][slot_mapping_size]
     size_t slot_mapping_shape[2]; // [dim0, dim1]
-    size_t num_blocks;
 
     // KV storage related
-    std::array<intptr_t, 128> kv_storages; // Raw pointers to KV storage data
-    std::array<int32_t, 8> kv_shape;
+    std::array<intptr_t, 128> kv_cache_addrs; // Raw pointers to KV storage data
 };
 
 void *thread_alloc(size_t bytes, size_t alignment);

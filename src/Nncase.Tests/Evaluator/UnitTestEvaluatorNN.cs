@@ -11,6 +11,8 @@ using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.NN;
+using Nncase.Passes;
+using Nncase.Passes.Transforms;
 using Nncase.Utilities;
 using OrtKISharp;
 using Xunit;
@@ -23,6 +25,7 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
     [
         ("prefill", [4L], [4L]),
         ("prefill*2", [12L, 15L], [12L, 15L]),
+        ("decode", [1L], [5L]),
         ("extend", [4L], [8L]),
         ("prefill+extend", [4L, 4L], [4L, 8L]),
         ("prefill+decode", [4L, 1L], [4L, 9L]),
@@ -955,7 +958,7 @@ public class UnitTestEvaluatorNN : TestClassBase
         var dataGeneratorOptions = new TestFixture.PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
         var referenceResults = TestFixture.PagedAttentionKVCacheTestFixture.PrepareReferenceResults(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.Config.NumKVHeads, testFixture.Config.HeadDim, testFixture.Config.NumLayers, testFixture.Config.KVPrimType, dataGeneratorOptions);
 
-        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config);
+        var (root, queryVar, kVVars, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(testFixture.QueryLens, testFixture.SeqLens, testFixture.NumQHeads, testFixture.NumBlocks, testFixture.QLayout, testFixture.KLayout, testFixture.Config, new());
 
         var kvinputs = TestFixture.PagedAttentionKVCacheTestFixture.PrepareKVInputs(testFixture.QueryLens, testFixture.SeqLens, testFixture.ContextLens, testFixture.NumBlocks, placement, referenceResults, testFixture.Config);
 
