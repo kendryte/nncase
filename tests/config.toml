@@ -10,11 +10,6 @@ swapRB = false
 input_type = 'uint8'
 input_shape = [1, 224, 224, 3]
 input_range = [0, 255]
-# input_file = ""
-# input_file = "/compiler/something/onnx/llm.onnx.data"
-# input_file = "/compiler/something/onnx_smooth/llm.onnx.data"
-# input_file = "/compiler/something/onnx_layer_1/llm.onnx.data"
-# input_file = "/data/models/deepseek/DeepSeek-R1-Distill-Qwen-1.5B/onnx/llm.onnx.data"
 input_file = "/data/models/qwen/Qwen3-0.6B/onnx/llm.onnx.data"
 mean = [0, 0, 0]
 std = [1, 1, 1]
@@ -27,8 +22,7 @@ dump_ir = false
 shape_bucket_enable = true
 shape_bucket_range_info = { "seq_len" = [1, 512], "history_len" = [0, 512] }
 shape_bucket_segments_count = 8
-# shape_bucket_fix_var_map = {}
-# shape_bucket_fix_var_map = { "seq_len" = 12, "history_len" = 0 }
+
 
 [ptq_opt]
 use_mix_quant = false
@@ -45,7 +39,6 @@ calibrate_method = 'NoClip'
 finetune_weights_method = 'NoFineTuneWeights'
 input_mean = 0.5
 input_std = 0.5
-# quant_scheme = "/root/compiler3.0/nncase/planA_snac_import_json/QuantScheme.json"
 quant_scheme = ""
 quant_scheme_strict_mode = false
 
