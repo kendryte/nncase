@@ -154,11 +154,11 @@ constexpr auto kv_addr_shape(std::tuple<AxisPolicies...>) noexcept {
     return fixed_shape_v<kv_dim<Mesh>(AxisPolicies{})...>;
 }
 
-template <typename T, size_t N>
+template <typename T, dim_t N>
 concept HasValidShape =
     requires { std::is_same_v<typename T::shape_type, shape_t<fixed_dim<N>>>; };
 
-template <size_t N, typename T>
+template <dim_t N, typename T>
 concept ValidIdTensor = Tensor<T> && HasValidShape<T, N>;
 
 template <class Mesh, class TConfig>
