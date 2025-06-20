@@ -34,7 +34,7 @@ class cast_impl<PackAxes, fixed_shape<InDims...>, fixed_shape<OutDims...>,
     constexpr void operator()(const TIn &input, TOut &output) {
         using InElemType = element_or_scalar_t<TIn>;
         using OutElemType = element_or_scalar_t<TOut>;
-        static_assert(IsVector<InElemType> && IsVector<OutElemType> || IsScalar<InElemType> && IsScalar<OutElemType>, "input & output must have the same type.");
+        static_assert((IsVector<InElemType> && IsVector<OutElemType>) || (IsScalar<InElemType> && IsScalar<OutElemType>), "input & output must have the same type.");
         constexpr auto in_ele_size = sizeof(std::conditional_t<IsVector<InElemType>, element_or_scalar_t<InElemType>, size_t>); 
         constexpr auto out_ele_size = sizeof(std::conditional_t<IsVector<OutElemType>, element_or_scalar_t<OutElemType>, size_t>); 
         constexpr float scale = (float)in_ele_size / out_ele_size;
@@ -142,7 +142,7 @@ class cast_impl<PackAxes, ranked_shape<InRank>, ranked_shape<OutRank>,
     constexpr void operator()(const TIn &input, TOut &output) {
         using InElemType = element_or_scalar_t<TIn>;
         using OutElemType = element_or_scalar_t<TOut>;
-        static_assert(IsVector<InElemType> && IsVector<OutElemType> || IsScalar<InElemType> && IsScalar<OutElemType>, "input & output must have the same type.");
+        static_assert((IsVector<InElemType> && IsVector<OutElemType>) || (IsScalar<InElemType> && IsScalar<OutElemType>), "input & output must have the same type.");
         constexpr auto in_ele_size = sizeof(std::conditional_t<IsVector<InElemType>, element_or_scalar_t<InElemType>, size_t>); 
         constexpr auto out_ele_size = sizeof(std::conditional_t<IsVector<OutElemType>, element_or_scalar_t<OutElemType>, size_t>); 
         constexpr float scale = (float)in_ele_size / out_ele_size;
