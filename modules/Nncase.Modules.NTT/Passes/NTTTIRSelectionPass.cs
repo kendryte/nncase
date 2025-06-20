@@ -148,6 +148,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.ConstantOfShape((Shape)arguments[0], (Expr)arguments[1], output);
             case IR.Tensors.Range range:
                 return TIR.F.NTT.Range((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output);
+            case IR.Buffers.Uninitialized uninitialized:
+                return T.Nop();
             case IR.Shapes.AsTensor asTensor:
                 output = call;
                 return call;

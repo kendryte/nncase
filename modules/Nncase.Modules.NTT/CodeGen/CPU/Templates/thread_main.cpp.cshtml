@@ -54,14 +54,16 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input
 
   @:std::span<runtime::thread_paged_attention_kv_cache_desc> p@(name)_descs((runtime::thread_paged_attention_kv_cache_desc*)input_descs[@i].data, input_descs[@i].size / sizeof(runtime::thread_paged_attention_kv_cache_desc));
   @:using paged_attention_kv_cache_mesh_t = @Html.Raw(KernelUtility.PlacementToC(placement));
-  @:using paged_attention_kv_cache_config_t = @Html.Raw(kvcacheType.Config.ToC());
+  @:const auto paged_attention_kv_cache_config = @Html.Raw(kvcacheType.Config.ToC());
+  @:using paged_attention_kv_cache_config_t = std::decay_t<decltype(paged_attention_kv_cache_config)>;
   @:using paged_attention_kv_cache_t = caching::paged_attention_kv_cache<paged_attention_kv_cache_mesh_t, paged_attention_kv_cache_config_t>;
+  @:using kv_storage_type_t = typename paged_attention_kv_cache_t::kv_storage_type_t;
   @:alignas(paged_attention_kv_cache_t) std::byte p@(name)[sizeof(paged_attention_kv_cache_t) * @size];
   @:for (size_t i = 0; i < @size; ++i) {
-    var init_list = string.Join(',', Enumerable.Range(0, kv_tensor_size).Select(j => $"desc.kv_storages[{j}]"));
     @:auto desc = p@(name)_descs[i];
+    @:auto kv_addrs = make_tensor_view_from_address((kv_storage_type_t **)desc.kv_storages.data(), paged_attention_kv_cache_t::kv_addrs_shape);
     @:auto ptr = (paged_attention_kv_cache_t*)p@(name) + i;
-    @:new (ptr) paged_attention_kv_cache_t(desc.num_seqs, desc.num_tokens, tensor_view<int64_t, ranked_shape<1>> (std::span(desc.context_lens, desc.context_lens_size), ntt::make_ranked_shape(desc.context_lens_size)), tensor_view<int64_t, ranked_shape<1>> (std::span(desc.seq_lens, desc.seq_lens_size), ntt::make_ranked_shape(desc.seq_lens_size)), tensor_view<int64_t, ranked_shape<3>> (std::span(desc.block_table, desc.block_table_shape[0]*desc.block_table_shape[1]*desc.block_table_shape[2]), make_ranked_shape(desc.block_table_shape[0],desc.block_table_shape[1],desc.block_table_shape[2])), tensor_view<int64_t, ranked_shape<2>> (std::span(desc.slot_mapping, desc.slot_mapping[0]*desc.slot_mapping[1]), make_ranked_shape(desc.slot_mapping_shape[0],desc.slot_mapping_shape[1])), desc.num_blocks, ntt::tensor<intptr_t, ntt::fixed_shape<@(string.Join(',', kv_tensor_shape))>> (std::array<intptr_t, @(kv_tensor_size)> {@Html.Raw(init_list)}));
+    @:new (ptr) paged_attention_kv_cache_t(desc.num_seqs, desc.num_tokens, make_tensor_view_from_address(desc.context_lens, make_shape(desc.context_lens_size)), make_tensor_view_from_address(desc.seq_lens, make_shape(desc.seq_lens_size)), make_tensor_view_from_address(desc.block_table, make_shape(desc.block_table_shape[0], desc.block_table_shape[1], paged_attention_kv_cache_t::id_length)), make_tensor_view_from_address(desc.slot_mapping, make_shape(desc.slot_mapping_shape[0], paged_attention_kv_cache_t::id_length)), kv_addrs);
   @:}
   @:auto @(name) = make_tensor_view_from_address((paged_attention_kv_cache_t *)p@(name), @Html.Raw(dimStr), @Html.Raw(strideStr));
         }

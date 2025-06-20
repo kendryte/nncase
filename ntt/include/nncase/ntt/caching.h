@@ -17,6 +17,7 @@
 #include "kernels/copy.h"
 #include "nncase/ntt/dimension.h"
 #include "nncase/ntt/shape.h"
+#include "nncase/ntt/tensor_traits.h"
 #include "tensor.h"
 #include <cstddef>
 #include <cstdint>
@@ -78,7 +79,34 @@ struct paged_attention_config
     static inline constexpr auto packed_axes = packed_axes_t{};
     static inline constexpr auto lanes = lanes_t{};
     static inline constexpr auto sharding_axes = sharding_axes_t{};
+    static inline constexpr auto axis_policies = axis_policies_t{};
+
+    template <paged_kvcache_dim_kind DimKind>
+    static constexpr auto axis_policy() noexcept {
+        constexpr auto index =
+            sharding_axes.index_of(fixed_dim_v<(dim_t)DimKind>);
+        if constexpr (index == -1_dim) {
+            return distributed::shard_policy::B;
+        } else {
+            return std::get<index>(axis_policies);
+        }
+    }
 };
+
+template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
+          typename KVPrimType, size_t BlockSize, FixedDimensions CacheLayout,
+          FixedDimensions BlockLayout, FixedDimensions PackedAxes,
+          FixedDimensions Lanes, FixedDimensions ShardingAxes,
+          class... AxisPolicies>
+constexpr auto make_paged_attention_config(const CacheLayout &,
+                                           const BlockLayout &,
+                                           const PackedAxes &, const Lanes &,
+                                           const ShardingAxes &,
+                                           const AxisPolicies &...) noexcept {
+    return paged_attention_config<
+        NumLayer, NumKVHead, HeadDim, KVPrimType, BlockSize, CacheLayout,
+        BlockLayout, PackedAxes, Lanes, ShardingAxes, AxisPolicies...>{};
+}
 
 template <class TConfig> class attention_kv_cache {
   public:
@@ -118,7 +146,7 @@ namespace detail {
 template <class Mesh, size_t... Axes>
 constexpr auto
 kv_dim(const distributed::shard_policy::split<Axes...> &split) noexcept {
-    return split.divider;
+    return split.template divider<Mesh>();
 }
 
 template <class Mesh, class... AxisPolicies>
@@ -134,15 +162,15 @@ template <size_t N, typename T>
 concept ValidIdTensor = Tensor<T> && HasValidShape<T, N>;
 
 template <class Mesh, class TConfig>
-static constexpr auto get_default_kv_block_shape() noexcept {
+constexpr auto origin_kv_cache_one_block_shape() noexcept {
     constexpr auto unpacked_shape =
-        fixed_shape_v<1 /* dummy num blocks */, TConfig::num_layers, 2,
+        fixed_shape_v<1 /* one block */, TConfig::num_layers, 2,
                       TConfig::block_size, TConfig::num_kv_heads,
                       TConfig::head_dim>;
 
     auto packed_shape = TConfig::packed_axes.aggregate(
         unpacked_shape, [&](auto last_shape, auto packed_axis, auto i) {
-            last_shape.template replace_at<packed_axis>(
+            return last_shape.template replace_at<packed_axis>(
                 last_shape[packed_axis] / TConfig::lanes[i]);
         });
 
@@ -157,7 +185,21 @@ static constexpr auto get_default_kv_block_shape() noexcept {
                           "Only uniform shard dim is supported.");
             return last_shape.template replace_at<sharding_axis>(dim);
         });
-    return shard_shape.template slice<1>(); // remove num_blocks
+    return shard_shape;
+}
+
+template <class TConfig, Dimensions TDims>
+constexpr auto transform_kv_cache_dims(const TDims &dims) noexcept {
+    constexpr auto cache_layout = TConfig::cache_layout;
+    return dims.select(cache_layout);
+}
+
+template <class TConfig, Dimensions TDims>
+constexpr auto transform_block_dims(const TDims &dims) noexcept {
+    constexpr auto default_layout = fixed_shape_v<-1, -1, -1, 0, -1, 1>;
+    constexpr auto block_layout = TConfig::block_layout;
+    return generate_shape<TDims::rank()>(
+        [&](auto axis) { return dims[default_layout[block_layout[axis]]]; });
 }
 } // namespace detail
 
@@ -184,18 +226,18 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     using kv_storage_type_t =
         basic_vector<typename TConfig::kv_prim_type, typename TConfig::lanes_t>;
 
-    static constexpr auto default_block_kv_shape =
-        detail::get_default_kv_block_shape<Mesh, TConfig>();
-
-    using kv_storage_tensor_type_t =
-        decltype(make_tensor_view<kv_storage_shape_t>(
-            std::declval<kv_storage_type_t *>(),
-            std::declval<kv_storage_shape_t>()));
+    static constexpr auto origin_kv_cache_one_block_shape =
+        detail::origin_kv_cache_one_block_shape<Mesh, TConfig>();
+    static constexpr auto kv_cache_one_block_shape =
+        detail::transform_kv_cache_dims<TConfig>(
+            origin_kv_cache_one_block_shape);
+    static constexpr auto kv_cache_block_length =
+        kv_cache_one_block_shape.length();
 
     static constexpr auto kv_addrs_shape =
-        detail::kv_dim<Mesh>(typename TConfig::axis_policies_t{});
+        detail::kv_addr_shape<Mesh>(TConfig::axis_policies);
     using kv_addrs_t = decltype(make_tensor_view_from_address(
-        std::declval<const intptr_t *>(), kv_addrs_shape));
+        std::declval<kv_storage_type_t **>(), kv_addrs_shape));
 
     paged_attention_kv_cache(size_t num_seqs, size_t num_tokens,
                              context_lens_t context_lens, seq_lens_t seq_lens,
@@ -209,6 +251,13 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
 
     constexpr TConfig config() const noexcept { return TConfig{}; }
 
+    template <class TId>
+    constexpr auto kv_cache_address(const TId &shard_index) noexcept
+        requires(TId::rank() == id_length - 1)
+    {
+        return kv_addrs_(shard_index);
+    }
+
     constexpr auto get_block_id(int64_t seq_id,
                                 int64_t context_id) const noexcept {
         return block_table_.view(make_shape(seq_id, context_id));
@@ -219,26 +268,26 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     }
 
     template <attention_cache_kind Kind, class T>
-    constexpr auto get_block(dim_t layer_id, dim_t head_id, T block_id) noexcept
+    constexpr auto get_block(dim_t layer_id, dim_t head_id,
+                             const T &block_id) noexcept
         requires detail::ValidIdTensor<id_length, T>
     {
-        return get_block_view_from_storage<Kind>(layer_id, head_id, block_id);
+        return get_block_view<Kind>(layer_id, head_id, block_id);
     }
 
     template <attention_cache_kind Kind, typename T>
     constexpr auto get_slot(int layer_id, int head_id, T slot_id) noexcept
         requires detail::ValidIdTensor<id_length, T>
     {
-        return get_slot_view_from_storage<Kind>(layer_id, head_id, slot_id);
+        return get_slot_view<Kind>(layer_id, head_id, slot_id);
     }
 
     template <attention_cache_kind Kind, typename T, typename TId>
     constexpr void update_slot(int layer_id, int head_id, TId slot_id,
-                               T slot) noexcept
+                               const T &slot) noexcept
         requires detail::ValidIdTensor<id_length, TId>
     {
-        auto destView =
-            get_slot_view_from_storage<Kind>(layer_id, head_id, slot_id);
+        auto destView = get_slot_view<Kind>(layer_id, head_id, slot_id);
         ntt::tensor_copy(slot, destView);
     }
 
@@ -255,140 +304,101 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     }
 
   private:
-    const kv_storage_shape_t get_kv_storage_shape() {
-        auto default_shape = get_default_kv_storage_shape();
-        auto shape = ntt::ranked_shape<6>();
-        for (size_t i = 0; i < 6; i++) {
-            shape[i] = default_shape[config().cache_layout[i]];
-        }
-        return shape;
-    }
-
     template <class T>
-    auto get_kv_storage(T block_id)
-        requires detail::IsValidIdTensor<id_length, T>
+    constexpr auto get_kv_cache_one_block_view(const T &block_id) noexcept
+        requires detail::ValidIdTensor<id_length, T>
     {
-        constexpr auto sharding_axes = TConfig::sharding_axes;
-        constexpr size_t sharding_rank = sharding_axes.rank();
-
-        auto program_ids = distributed::program_ids();
-        auto indices = ntt::ranked_shape<sharding_rank>();
-        loop<sharding_rank>([&](auto shard_id) {
-            auto index = block_id(shard_id);
-            // todo need process partial sharding.
-            constexpr auto program_id_index = std::tuple_element_t<
-                shard_id, typename TConfig::axis_policies_t>::axes_type::at(0);
-            indices[shard_id] =
-                index == -1 ? program_ids[program_id_index] : index;
-        });
-
-        auto storage_ptr = kv_caches_(indices);
-        auto storage_shape = get_kv_storage_shape();
-        auto storage_strides = default_strides(storage_shape);
-        auto storage_size = linear_size(storage_shape, storage_strides);
-        return kv_storage_tensor_type_t(
-            std::span<kv_storage_type_t>(
-                reinterpret_cast<kv_storage_type_t *>(storage_ptr),
-                storage_size),
-            storage_shape, storage_strides);
+        const auto block_shard_index =
+            block_id.view(fixed_shape_v<0>, fixed_shape_v<id_length - 1_dim>);
+        const auto block_offset = block_id(-1_dim);
+        const auto local_index = Mesh::local_index();
+        const auto kv_cache_index =
+            generate_shape<block_shard_index.size()>([&](auto axis) {
+                const auto index = block_shard_index(axis);
+                const auto mesh_axis =
+                    std::get<axis>(TConfig::axis_policies).axes.front();
+                return ntt::where(index == -1_dim, local_index[mesh_axis],
+                                  index);
+            });
+        auto address = kv_cache_address(kv_cache_index) +
+                       block_offset * kv_cache_block_length;
+        return make_tensor_view_from_address(address, kv_cache_one_block_shape);
     }
 
-    auto get_kv_storage_tensor(
-        const ranked_shape<TConfig::sharding_axes_t::rank()> &indices) {
-        auto storage_ptr = kv_caches_(indices);
-        auto storage_shape = get_kv_storage_shape();
-        auto storage_strides = default_strides(storage_shape);
-        auto storage_size = linear_size(storage_shape, storage_strides);
-        return kv_storage_tensor_type_t(
-            std::span<kv_storage_type_t>(
-                reinterpret_cast<kv_storage_type_t *>(storage_ptr),
-                storage_size),
-            storage_shape, storage_strides);
-    }
-
-    template <class T>
-    auto get_block_view_from_storage(attention_cache_kind kind, int layer_id,
-                                     int head_id, T block_id)
-        requires detail::IsValidIdTensor<id_length, T>
+    template <attention_cache_kind Kind, class T>
+    constexpr auto get_block_view(dim_t layer_id, dim_t head_id,
+                                  const T &block_id) noexcept
+        requires detail::ValidIdTensor<id_length, T>
     {
-        auto block_id_value = block_id(block_id.shape().back() - 1);
-
         auto cache_layout = config().cache_layout;
-        auto default_starts = ntt::make_ranked_shape(block_id_value, layer_id,
-                                                     kind, 0, head_id, 0);
-        auto default_shape = get_default_kv_storage_shape();
-        default_shape[(size_t)paged_kvcache_dim_kind::num_blocks] = 1;
-        default_shape[(size_t)paged_kvcache_dim_kind::num_layers] = 1;
-        default_shape[(size_t)paged_kvcache_dim_kind::kv] = 1;
-        default_shape[(size_t)paged_kvcache_dim_kind::num_kv_heads] = 1;
+        const auto origin_starts =
+            ntt::make_shape(dim_zero, layer_id, fixed_dim_v<(dim_t)Kind>,
+                            dim_zero, head_id, dim_zero);
+        const auto origin_shape =
+            origin_kv_cache_one_block_shape
+                .template replace_at<(
+                    size_t)paged_kvcache_dim_kind::num_layers>(1_dim)
+                .template replace_at<(size_t)paged_kvcache_dim_kind::kv>(1_dim)
+                .template replace_at<(
+                    size_t)paged_kvcache_dim_kind::num_kv_heads>(1_dim);
 
-        auto starts = ntt::ranked_shape<default_starts.rank()>();
-        auto shape = ntt::ranked_shape<default_shape.rank()>();
-        auto squeeze_axes = ntt::ranked_shape<4>();
-        for (size_t i = 0, j = 0; i < default_starts.rank(); i++) {
-            starts[i] = default_starts[(size_t)cache_layout[i]];
-            shape[i] = default_shape[(size_t)cache_layout[i]];
-            // printf("[nncase_log] block_start[%ld] = %ld\n", i, starts[i]);
-            // printf("[nncase_log] block_shape[%ld] = %ld\n", i, shape[i]);
-            if ((cache_layout[i] !=
-                 (size_t)paged_kvcache_dim_kind::block_size) &&
-                (cache_layout[i] != (size_t)paged_kvcache_dim_kind::head_dim)) {
-                squeeze_axes[j] = i;
-                // printf("[nncase_log] block_squeeze[%ld] = %ld\n", j,
-                //        squeeze_axes[j]);
-                j++;
-            }
-        }
-        auto kv_storage = get_kv_storage(block_id);
-        // printf("[nncase_log] default_shape [%ld, %ld, %ld, %ld, %ld, %ld]\n",
+        const auto starts =
+            detail::transform_kv_cache_dims<TConfig>(origin_starts);
+        const auto shape =
+            detail::transform_kv_cache_dims<TConfig>(origin_shape);
+        const auto squeeze_axes = cache_layout.aggregate(
+            fixed_shape_v<>, [&](auto last_axes, auto kv_cache_dim, auto i) {
+                if constexpr (kv_cache_dim !=
+                                  (size_t)paged_kvcache_dim_kind::block_size &&
+                              kv_cache_dim !=
+                                  (size_t)paged_kvcache_dim_kind::head_dim) {
+                    return last_axes.append(i);
+                } else {
+                    return last_axes;
+                }
+            });
+        auto block_view = get_kv_cache_one_block_view(block_id);
+        // printf("[nncase_log] default_shape [%ld, %ld, %ld, %ld, %ld,
+        // %ld]\n",
         //        default_shape[0], default_shape[1], default_shape[2],
         //        default_shape[3], default_shape[4], default_shape[5]);
-        // printf("[nncase_log] try get block kv_storage view starts: [%ld, %ld,
+        // printf("[nncase_log] try get block kv_storage view starts: [%ld,
+        // %ld,
         // "
-        //        "%ld, %ld, %ld, %ld], shape [%ld, %ld, %ld, %ld, %ld, %ld]\n",
-        //        starts[0], starts[1], starts[2], starts[3], starts[4],
-        //        starts[5], shape[0], shape[1], shape[2], shape[3], shape[4],
-        //        shape[5]);
-        return kv_storage.view(starts, shape).squeeze(squeeze_axes);
+        //        "%ld, %ld, %ld, %ld], shape [%ld, %ld, %ld, %ld, %ld,
+        //        %ld]\n", starts[0], starts[1], starts[2], starts[3],
+        //        starts[4], starts[5], shape[0], shape[1], shape[2],
+        //        shape[3], shape[4], shape[5]);
+        return block_view.view(starts, shape).squeeze(squeeze_axes);
     }
 
-    template <class T>
-    auto get_slot_view_from_storage(attention_cache_kind kind, int layer_id,
-                                    int head_id, T slot_id)
-        requires detail::IsValidIdTensor<id_length, T>
+    template <attention_cache_kind Kind, class T>
+    constexpr auto get_slot_view(dim_t layer_id, dim_t head_id,
+                                 const T &slot_id) noexcept
+        requires detail::ValidIdTensor<id_length, T>
     {
-        auto slot_id_value = slot_id(slot_id.shape().back() - 1);
+        const auto global_slot_offset = slot_id(-1_dim);
+        const auto block_offset = global_slot_offset / TConfig::block_size;
+        const auto local_slot_offset = global_slot_offset % TConfig::block_size;
+        auto block_id = make_tensor<int64_t>(id_shape);
+        tensor_copy(slot_id, block_id);
+        block_id(-1_dim) = block_offset;
         // printf("[nncase_log] try get slot: [%ld, %ld, %ld]\n",
         // slot_id(0),
         //        slot_id(1), slot_id(2));
-        auto block_id_value = slot_id_value / config().block_size;
-        auto block_offset_value = slot_id_value % config().block_size;
-        auto block_id = tensor<int64_t, id_shape_t>();
-        std::copy(slot_id.elements().begin(), slot_id.elements().end(),
-                  block_id.elements().begin());
-        block_id(block_id.shape().back() - 1) = block_id_value;
-        auto block_view = get_block_view_from_storage(kind, layer_id, head_id,
-                                                      block_id.view());
 
-        auto block_layout = config().block_layout;
-
-        // default_layout = [BlockSize, HeadDim];
-        auto default_storage_shape = get_default_kv_storage_shape();
-        auto default_layout = ntt::make_ranked_shape(-1, -1, -1, 0, -1, 1);
-        auto default_starts = ntt::make_ranked_shape(block_offset_value, 0);
-        auto default_shape = ntt::make_ranked_shape(
-            1, default_storage_shape[(size_t)paged_kvcache_dim_kind::head_dim]);
-
-        auto starts = ntt::ranked_shape<2>();
-        auto shape = ntt::ranked_shape<2>();
-        for (size_t i = 0; i < 2; i++) {
-            starts[i] = default_starts[default_layout[(size_t)block_layout[i]]];
-            shape[i] = default_shape[default_layout[(size_t)block_layout[i]]];
-        }
-
-        return block_view.view(starts, shape)
-            .squeeze(ntt::make_ranked_shape(block_layout.indexof(
-                (size_t)paged_kvcache_dim_kind::block_size)));
+        // block_view = [BlockSize, HeadDim];
+        auto block_view = get_block_view<Kind>(layer_id, head_id, block_id);
+        const auto origin_starts = make_shape(local_slot_offset, dim_zero);
+        const auto origin_shape =
+            make_shape(dim_one, origin_kv_cache_one_block_shape[fixed_dim_v<(
+                                    dim_t)paged_kvcache_dim_kind::head_dim>]);
+        const auto starts =
+            detail::transform_block_dims<TConfig>(origin_starts);
+        const auto shape = detail::transform_block_dims<TConfig>(origin_shape);
+        const auto squeeze_axes = fixed_shape_v<TConfig::block_layout.index_of(
+            fixed_dim_v<(dim_t)paged_kvcache_dim_kind::block_size>)>;
+        return block_view.view(starts, shape).squeeze(squeeze_axes);
     }
 
   private:

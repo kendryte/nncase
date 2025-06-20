@@ -90,7 +90,7 @@ public static class CSourceExtensions
     {
         var toc = (SBP sbp) => sbp switch
         {
-            SBPSplit s => $"shard_policy::S<{string.Join(", ", s.Axes)}>",
+            SBPSplit s => $"shard_policy::S<{string.Join(", ", s.Axes)}>()",
             SBPPartial p => $"shard_policy::P<reduce_op::{p.Op.ToC()}>",
             SBPBroadCast b => $"shard_policy::B",
             _ => throw new ArgumentOutOfRangeException(nameof(arr)),
@@ -100,7 +100,7 @@ public static class CSourceExtensions
 
     public static string ToC(this IPagedAttentionConfig config)
     {
-        return $"caching::paged_attention_config<{config.NumLayers}, {config.NumKVHeads}, {config.HeadDim}, {config.KVPrimType.ToC()}, {config.BlockSize}, {config.CacheLayout.ToC()}, {config.BlockLayout.ToC()}, {config.PackedAxes.ToC()}, {config.Lanes.ToC()}, {config.ShardingAxes.ToC()}, {config.AxisPolicies.OfType<SBP>().ToC()}>";
+        return $"caching::make_paged_attention_config<{config.NumLayers}, {config.NumKVHeads}, {config.HeadDim}, {config.KVPrimType.ToC()}, {config.BlockSize}>({config.CacheLayout.ToC()}, {config.BlockLayout.ToC()}, {config.PackedAxes.ToC()}, {config.Lanes.ToC()}, {config.ShardingAxes.ToC()}, {config.AxisPolicies.OfType<SBP>().ToC()})";
     }
 
     public static string ToC(this DataType dataType) => dataType switch

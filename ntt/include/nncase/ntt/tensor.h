@@ -15,6 +15,7 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/tensor_storage.h"
+#include "nncase/ntt/dimension.h"
 #include "tensor_traits.h"
 #include "vector.h"
 #include <memory>
@@ -156,6 +157,18 @@ class basic_tensor
         : size_impl_type(std::move(shape), std::move(strides)),
           storage_type(std::in_place, std::move(buffer)) {}
 
+    constexpr basic_tensor(const basic_tensor<T, TShape, TStrides, IsView>
+                               &other) noexcept = default;
+
+    constexpr basic_tensor(
+        basic_tensor<T, TShape, TStrides, IsView> &&other) noexcept = default;
+
+    template <class U = T, class = std::enable_if_t<std::is_const_v<U>>>
+    constexpr basic_tensor(basic_tensor<std::remove_const_t<U>, TShape,
+                                        TStrides, IsView> &&other) noexcept
+        : size_impl_type(std::move(other.shape()), std::move(other.strides())),
+          storage_type(std::in_place, std::move(other.buffer())) {}
+
     class const_iterator {
       public:
         const_iterator(const basic_tensor &tensor,
@@ -227,7 +240,8 @@ class basic_tensor
 
     template <Dimensions Index, Shape UShape>
     constexpr auto view(const Index &index, const UShape &shape) noexcept {
-        auto offset = linear_offset(index, strides());
+        auto pos_index = positive_index(index, this->shape());
+        auto offset = linear_offset(pos_index, strides());
         auto begin = elements().data() + offset;
         return make_tensor_view_from_address<T>(
             begin, shape, canonicalize_strides(shape, strides()));
@@ -236,7 +250,8 @@ class basic_tensor
     template <Dimensions Index, Shape UShape>
     constexpr auto view(const Index &index,
                         const UShape &shape) const noexcept {
-        auto offset = linear_offset(index, strides());
+        auto pos_index = positive_index(index, this->shape());
+        auto offset = linear_offset(pos_index, strides());
         auto begin = elements().data() + offset;
         return make_tensor_view_from_address<const T>(
             begin, shape, canonicalize_strides(shape, strides()));
@@ -264,6 +279,16 @@ class basic_tensor
         return t_view.squeeze(make_index_shape<Index::rank()>());
     }
 
+    template <Dimension Index>
+    constexpr auto view(const Index &index) noexcept {
+        return view(make_shape(index));
+    }
+
+    template <Dimension Index>
+    constexpr auto view(const Index &index) const noexcept {
+        return view(make_shape(index));
+    }
+
     constexpr tensor_view<T, TShape, TStrides> view() noexcept {
         return view(make_zeros_shape<TShape::rank()>(), shape());
     }
@@ -272,20 +297,29 @@ class basic_tensor
         return make_tensor_view<T>(buffer(), shape, default_strides(shape));
     }
 
-    template <FixedShape TAxes> constexpr auto squeeze(const TAxes &axes) {
+    template <FixedDimensions TAxes> constexpr auto squeeze(const TAxes &axes) {
         auto new_shape = squeeze_dims(shape(), axes);
         auto new_strides = squeeze_dims(strides(), axes);
         return make_tensor_view<T>(buffer(), new_shape, new_strides);
     }
 
+    template <FixedDimensions TAxes>
+    constexpr auto unsqueeze(const TAxes &axes) {
+        auto new_shape = unsqueeze_dims(shape(), axes, dim_one);
+        auto new_strides = unsqueeze_dims(strides(), axes, dim_zero);
+        return make_tensor_view<T>(buffer(), new_shape, new_strides);
+    }
+
     template <Dimensions TIndex>
     constexpr const T &operator()(const TIndex &index) const noexcept {
-        return elements()[linear_offset(index, strides())];
+        auto pos_index = positive_index(index, this->shape());
+        return elements()[linear_offset(pos_index, strides())];
     }
 
     template <Dimensions TIndex>
     constexpr T &operator()(const TIndex &index) noexcept {
-        return elements()[linear_offset(index, strides())];
+        auto pos_index = positive_index(index, this->shape());
+        return elements()[linear_offset(pos_index, strides())];
     }
 
     template <Dimension... Indices>

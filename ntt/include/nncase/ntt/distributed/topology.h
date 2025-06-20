@@ -22,12 +22,14 @@
 #include "../shape.h"
 #include <cstddef>
 
-#if defined(NNCASE_CPU_MODULE) || defined(NNCASE_XPU_MODULE)
+#if !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
+#if __has_include(<module_topology_def.h>)
 #include <module_topology_def.h>
-#elif !defined(NNCASE_NTT_TOPOLOGY_DEFINED)
+#else
 namespace nncase::ntt::distributed {
 constexpr auto topology_shape = ntt::fixed_shape_v<1, 1, 1>;
 } // namespace nncase::ntt::distributed
+#endif
 #endif
 
 namespace nncase::ntt::distributed {

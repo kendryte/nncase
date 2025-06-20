@@ -223,10 +223,13 @@ public sealed record RefPagedAttentionKVCache(
                 kvLayout);
 
             // Apply attention for current layer
+            var extraShape = numTokens == 0 ?
+                new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1) : // [head_q, num_tokens, max_seq_len + 1]
+                new long[] { numQHeads, queryLens.Max(), seqLens.Max() + 1 };
             packedQuery = IR.F.NN.PagedAttention(
                 packedQuery,
                 updatedKVCache,
-                numTokens == 0 ? IR.F.Buffer.Uninitialized(config.KVPrimType, Nncase.TIR.MemoryLocation.Data, new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1)) : Tensor.Zeros(config.KVPrimType, [numQHeads, queryLens.Max(), seqLens.Max() + 1]), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
+                IR.F.Buffer.Uninitialized(config.KVPrimType, Nncase.TIR.MemoryLocation.Data, extraShape), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
                 layerId,
                 qLayout);
         }

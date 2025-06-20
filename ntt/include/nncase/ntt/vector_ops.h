@@ -274,7 +274,7 @@ template <Vector TVector> struct inner_product<TVector, TVector> {
     ops::inner_product<element_type, element_type> op_;
 };
 
-template <FixedTensor TVector1, FixedTensor TVector2>
+template <Vector TVector1, Vector TVector2>
 struct outer_product<TVector1, TVector2> {
     using element_type = typename TVector1::element_type;
     static_assert(std::is_same_v<element_type, typename TVector2::element_type>,

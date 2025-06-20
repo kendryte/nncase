@@ -16,6 +16,7 @@
 #include "compiler_defs.h"
 #include "dimension.h"
 #include "loop.h"
+#include "nncase/ntt/tensor_traits.h"
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -273,6 +274,14 @@ struct dims_base {
                            std::make_index_sequence<sizeof...(UDims)>());
     }
 
+    template <Dimension TDim>
+    constexpr auto index_of(const TDim &dim) const noexcept {
+        return aggregate(-1_dim, [&](auto acc, auto value, auto index) {
+            return ntt::where(acc == -1_dim,
+                              ntt::where(value == dim, index, -1_dim), acc);
+        });
+    }
+
     template <Dimension... UDims>
     constexpr auto prepend(const UDims &...values) const noexcept {
         auto prepend_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
@@ -376,6 +385,12 @@ template <Dimensions TDims> struct empty_dims_alike_type;
 template <Dimensions TDims>
 using empty_dims_alike_t = typename empty_dims_alike_type<TDims>::type;
 
+template <Dimensions TDims, size_t Rank> struct zeros_dims_alike_type;
+
+template <Dimensions TDims, size_t Rank>
+inline constexpr auto zeros_dims_alike_v =
+    zeros_dims_alike_type<TDims, Rank>::value;
+
 #define DEFINE_NTT_MAKE_DIMS(dims_type)                                        \
     template <size_t Rank>                                                     \
     using dynamic_##dims_type##_t =                                            \
@@ -419,7 +434,12 @@ using empty_dims_alike_t = typename empty_dims_alike_type<TDims>::type;
     template <size_t Rank, class TGenerator>                                   \
     constexpr auto generate_##dims_type(TGenerator &&generator) noexcept {     \
         return detail::generate_dims_impl<dims_type##_t, Rank>(generator);     \
-    }
+    }                                                                          \
+                                                                               \
+    template <Dimension... TDims, size_t Rank>                                 \
+    struct zeros_dims_alike_type<dims_type##_t<TDims...>, Rank> {              \
+        static constexpr auto value = make_zeros_##dims_type<Rank>();          \
+    };
 
 DEFINE_NTT_MAKE_DIMS(dims)
 DEFINE_NTT_MAKE_DIMS(shape)
@@ -650,10 +670,35 @@ template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
 };
 } // namespace detail
 
-template <Dimensions TDims, FixedShape TAxes>
-constexpr auto squeeze_dims(const TDims &dims, const TAxes &) {
-    return detail::squeeze_dims_impl<TAxes, 0>{}(dims,
-                                                 empty_dims_alike_t<TDims>{});
+template <Dimensions TDims, FixedDimensions TAxes>
+constexpr auto squeeze_dims(const TDims &dims, const TAxes &) noexcept {
+    constexpr auto positive_axes_v = positive_axes(TAxes{}, TDims::rank());
+    return dims.aggregate(empty_dims_alike_t<TDims>{},
+                          [&](auto result, auto dim, auto axis) {
+                              if constexpr (positive_axes_v.contains(axis)) {
+                                  return result;
+                              } else {
+                                  return result.append(dim);
+                              }
+                          });
+}
+
+template <Dimensions TDims, FixedDimensions TAxes, Dimension TDim>
+constexpr auto unsqueeze_dims(const TDims &dims, const TAxes &,
+                              const TDim &insert_dim) noexcept {
+    constexpr auto positive_axes_v = positive_axes(TAxes{}, TDims::rank());
+    return make_zeros_shape<TDims::rank() + TAxes::rank()>().aggregate(
+        std::make_tuple(empty_dims_alike_t<TDims>{}, dim_zero),
+        [&](auto acc, auto, auto axis) {
+            auto [last_result, offset] = acc;
+            if constexpr (positive_axes_v.contains(axis)) {
+                return std::make_tuple(last_result.append(insert_dim), offset);
+            } else {
+                return std::make_tuple(last_result.append(dims[offset]),
+                                       offset + dim_one);
+            }
+        },
+        [](auto acc) { return std::get<0>(acc); });
 }
 
 template <Dimensions TDimsA, Dimensions TDimsB>

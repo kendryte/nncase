@@ -96,18 +96,15 @@ make_sharded_tensor_view(TBuffer &&buffer, const TShape &shape,
                                               local_strides);
 }
 
-template <class T = void, class TBuffer, Shape TShape, Sharding TSharding,
-          Strides TLocalStrides>
+template <class T, Shape TShape, Sharding TSharding, Strides TLocalStrides>
 constexpr auto make_sharded_tensor_view_from_address(
     T *address, const TShape &shape, const TSharding &sharding,
     const TLocalStrides &local_strides) noexcept {
-    using element_type =
-        ntt::detail::tensor_element_type_from_buffer_t<T, TBuffer>;
     using mesh_type = typename TSharding::mesh_type;
     const auto local_index = mesh_type::local_index();
     const auto local_shape = sharding.shard_shape(shape, local_index);
     auto buffer = make_span(address, local_shape, local_strides);
-    return sharded_tensor_view<element_type, TShape, TSharding,
+    return sharded_tensor_view<T, TShape, TSharding,
                                std::remove_cv_t<decltype(local_shape)>,
                                TLocalStrides>(
         std::move(buffer), shape, sharding, local_shape, local_strides);

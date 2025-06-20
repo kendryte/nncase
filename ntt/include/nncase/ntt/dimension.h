@@ -39,7 +39,7 @@ template <Dimension T> constexpr auto dim_value(const T &dim) noexcept {
     if constexpr (is_fixed_dim_v<std::decay_t<T>>) {
         return T::value;
     } else {
-        return dim;
+        return static_cast<dim_t>(dim);
     }
 }
 
