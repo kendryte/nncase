@@ -32,6 +32,7 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     test_ntt_slice.cpp
     test_ntt_transpose.cpp
     test_ntt_unpack.cpp
+    test_ntt_where.cpp
 )
 foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
