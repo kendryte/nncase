@@ -32,12 +32,8 @@ class cast_impl<PackAxes, fixed_shape<InDims...>, fixed_shape<OutDims...>,
   public:
     template <class TIn, class TOut>
     constexpr void operator()(const TIn &input, TOut &output) {
-        using InElemType = element_or_scalar_t<TIn>;
-        using OutElemType = element_or_scalar_t<TOut>;
-        static_assert((IsVector<InElemType> && IsVector<OutElemType>) || (IsScalar<InElemType> && IsScalar<OutElemType>), "input & output must have the same type.");
-        constexpr auto in_ele_size = sizeof(std::conditional_t<IsVector<InElemType>, element_or_scalar_t<InElemType>, size_t>); 
-        constexpr auto out_ele_size = sizeof(std::conditional_t<IsVector<OutElemType>, element_or_scalar_t<OutElemType>, size_t>); 
-        constexpr float scale = (float)in_ele_size / out_ele_size;
+        constexpr float scale =
+            (float)TIn::shape().length() / TOut::shape().length();
 
         constexpr auto in_offset_scale =
             scale > 1.0f ? (size_t)scale : 1U;
