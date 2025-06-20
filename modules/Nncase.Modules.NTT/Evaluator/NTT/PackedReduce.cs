@@ -39,6 +39,12 @@ public sealed class PackedReduceEvaluator : IEvaluator<PackedReduce>, ITypeInfer
             case ReduceOp.Mean:
                 output = OrtKI.ReduceMean(unpackedInput, axes, keepdims);
                 break;
+            case ReduceOp.Max:
+                output = OrtKI.ReduceMax(unpackedInput, axes, keepdims);
+                break;
+            case ReduceOp.Min:
+                output = OrtKI.ReduceMin(unpackedInput, axes, keepdims);
+                break;
             default:
                 throw new NotSupportedException(target.ReduceOp.ToString());
         }
