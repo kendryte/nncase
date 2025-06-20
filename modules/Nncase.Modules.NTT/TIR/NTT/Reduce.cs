@@ -22,7 +22,7 @@ public sealed partial class Reduce : NTTKernelOp
 
     public IRArray<int> PackedAxes { get; }
 
-    public IRArray<int> PadedNums { get; }
+    public IRArray<Dimension> PadedNums { get; }
 
     public IRArray<int> Axes { get; }
 

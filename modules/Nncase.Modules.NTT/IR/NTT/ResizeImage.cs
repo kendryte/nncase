@@ -23,9 +23,9 @@ public sealed partial class ResizeImage : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(ResizeImage), 0, "input", HasRank(r => r >= 2, "RanK >= 2"), ParameterKind.Input);
 
-    public IRArray<int> PackedAxes { get; }
+    public static readonly ParameterInfo PadedNums = new(typeof(ResizeImage), 1, "padedNums", IsShapeType());
 
-    public IRArray<int> PadedNums { get; }
+    public IRArray<int> PackedAxes { get; }
 
     public IRArray<int> NewSize { get; }
 

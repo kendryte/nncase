@@ -222,12 +222,12 @@ public class SliceEvaluator : IEvaluator<Slice>, ITypeInferencer<Slice>, ICostEv
         var ends = (Shape)context.GetArgument(target, Slice.Ends);
         var strides = (Shape)context.GetArgument(target, Slice.Strides);
         var efficientAxes = axes.Where(a => !(begins[axes.IndexOf(a)] is { IsFixed: true, FixedValue: 0 } && strides[axes.IndexOf(a)] is { IsFixed: true, FixedValue: 1 } && input.TensorType.Shape[a] == ends[axes.IndexOf(a)])).ToArray();
-        if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && efficientAxes.Contains(i)))
+        if (Enumerable.Range(0, input.AxisPolicies.Count).Any(i => input.AxisPolicies[i] is SBPSplit && efficientAxes.Contains(i)))
         {
             return new InvalidType("not support input tensor type infer");
         }
 
-        return new DistributedType((TensorType)outType, input.AxisPolices, input.Placement);
+        return new DistributedType((TensorType)outType, input.AxisPolicies, input.Placement);
     }
 
     private bool TryGetTempDataType(DataType dataType, out DataType tempType)

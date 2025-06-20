@@ -399,7 +399,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     break;
                 case TIR.NTT.Gather gather:
                     WriteWithProfiler($"gather<{gather.Axis}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
-                    if (args[0] is TIR.Buffer b && b.DistributedType?.AxisPolices[gather.Axis] is SBPSplit s)
+                    if (args[0] is TIR.Buffer b && b.DistributedType?.AxisPolicies[gather.Axis] is SBPSplit s)
                     {
                         var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
                         WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
@@ -427,7 +427,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"pad({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }}, make_ranked_shape({string.Join(",", pad.Paddings)}));\n");
                     break;
                 case TIR.NTT.Reduce reduce:
-                    WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axes)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<{string.Join(",", reduce.PadedNums)}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}<fixed_shape<{string.Join(",", reduce.Axes)}>, fixed_shape<{string.Join(",", reduce.PackedAxes)}>, fixed_shape<>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.ReduceArg reduceArg:
                     WriteWithProfiler($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape<>{{}}, fixed_shape<>{{}});\n");
@@ -438,7 +438,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"clamp({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, (float){min}, (float){max});\n");
                     break;
                 case TIR.NTT.Cast cast:
-                    WriteWithProfiler($"cast({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    WriteWithProfiler($"cast<fixed_shape<{string.Join(",", cast.PackAxes.ToArray())}>>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Where where:
                     WriteWithProfiler($"where({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
@@ -469,11 +469,11 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     break;
                 case TIR.NTT.GatherReduceScatter grs:
                     {
-                        if (grs.InType.AxisPolices.Any(s => s is SBPPartial))
+                        if (grs.InType.AxisPolicies.Any(s => s is SBPPartial))
                         {
                             // deprecated
-                            var sbpPartial = (SBPPartial)grs.InType.AxisPolices.Where(s => s is SBPPartial).Distinct().First();
-                            var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.AxisPolices.Select((s, i) => (s is SBPPartial ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            var sbpPartial = (SBPPartial)grs.InType.AxisPolicies.Where(s => s is SBPPartial).Distinct().First();
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", grs.InType.AxisPolicies.Select((s, i) => (s is SBPPartial ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
                             WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{sbpPartial.Op.ToC()}, {reduceKind}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                         }
                         else

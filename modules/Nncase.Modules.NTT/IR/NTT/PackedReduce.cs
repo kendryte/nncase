@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NTT;
 
@@ -13,6 +14,8 @@ public sealed partial class PackedReduce : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(PackedReduce), 0, "input", ParameterKind.Input);
 
+    public static readonly ParameterInfo PadedNums = new(typeof(PackedReduce), 1, "padedNums", IsShapeType());
+
     public ReduceOp ReduceOp { get; }
 
     public IRArray<int> Axes { get; }
@@ -23,12 +26,10 @@ public sealed partial class PackedReduce : Op
 
     public IRArray<int> PackedAxes { get; }
 
-    public IRArray<int> PadedNums { get; }
-
-    public static (int[] OutPackAxes, Dimension[] OutPadNums, int[] OutLanes, RankedShape OutShape) ComputeOutputInfo(PackedReduce target, RankedShape inShape, int[] inLanes)
+    public static (int[] OutPackAxes, Dimension[] OutPadNums, int[] OutLanes, RankedShape OutShape) ComputeOutputInfo(PackedReduce target, Dimension[] inPadedNums, RankedShape inShape, int[] inLanes)
     {
         var packedAxes = target.PackedAxes.ToList();
-        var padedNums = target.PadedNums.Select(x => (Dimension)x).ToList();
+        var padedNums = inPadedNums.ToList();
         var lanes = inLanes.ToList();
         var shape = inShape.ToList(); // note the inshape is packed.
         var offset = 0;

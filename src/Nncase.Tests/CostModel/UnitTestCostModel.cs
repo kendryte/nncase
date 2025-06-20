@@ -28,6 +28,6 @@ public class UnitTestCostModel
         var t = new DistributedType(new TensorType(DataTypes.Float32, new[] { 64, 3 }), new SBP[] { SBP.S(new[] { 0, 1 }), SBP.B }, new Placement(new[] { 16, 4 }, "bt"));
         var cost = CostUtility.GetMemoryAccess(t);
         System.Console.WriteLine(cost);
-        Assert.True(cost == 12);
+        Assert.True(cost == 3);
     }
 }

@@ -22,12 +22,13 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
         var input = context.GetOrtArgumentValue(target, PackedLayerNorm.Input);
         var scale = context.GetOrtArgumentValue(target, PackedLayerNorm.Scale);
         var bias = context.GetOrtArgumentValue(target, PackedLayerNorm.Bias);
+        var padedNums = context.GetArgumentValueAsArray<int>(target, PackedLayerNorm.PadedNums);
         var lanes = input.Shape.TakeLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
-        var unpackedInput = NTTEvaluatorUtility.UnpackTensor(input, target.PackedAxes, target.PadedNums, out _);
+        var unpackedInput = NTTEvaluatorUtility.UnpackTensor(input, target.PackedAxes, padedNums, out _);
         var packAxes = target.PackedAxes.Where(axis => axis >= target.Axis).Select(axis => axis - target.Axis).ToArray();
-        var padedNums = target.PadedNums.Skip(target.PackedAxes.Count - packAxes.Length).ToArray();
-        var unpackedScale = NTTEvaluatorUtility.UnpackTensor(scale, packAxes, padedNums, out _);
-        var unpackedBias = NTTEvaluatorUtility.UnpackTensor(bias, packAxes, padedNums, out _);
+        var pPadedNums = padedNums.Skip(target.PackedAxes.Count - packAxes.Length).ToArray();
+        var unpackedScale = NTTEvaluatorUtility.UnpackTensor(scale, packAxes, pPadedNums, out _);
+        var unpackedBias = NTTEvaluatorUtility.UnpackTensor(bias, packAxes, pPadedNums, out _);
 
         var shape = unpackedInput.Shape;
         var inputBuffer = unpackedInput.BytesBuffer.ToArray();
@@ -39,7 +40,7 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
 
         var output = NN.LayerNormEvaluator.LayerNormImpl(shape, inputSpan, scaleSpan, biasSpan, target.Axis, target.Epsilon, target.UseMean);
         var outputTensor = OrtKISharp.Tensor.MakeTensor(new Memory<float>(output), OrtDataType.Float, unpackedInput.Shape);
-        outputTensor = NTTEvaluatorUtility.RepackTensor(outputTensor, lanes, target.PackedAxes, target.PadedNums);
+        outputTensor = NTTEvaluatorUtility.RepackTensor(outputTensor, lanes, target.PackedAxes, padedNums);
 
         return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, lanes), outputTensor.BytesBuffer.ToArray(), outputTensor.Shape.SkipLast(target.PackedAxes.Count).Select(i => i).ToArray()));
     }
@@ -72,19 +73,19 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
-#if false
-            case (DistributedType inputDistributedType, DistributedType):
+
+            case (DistributedType, DistributedType):
                 var scaleType = context.GetArgumentType<DistributedType>(target, PackedLayerNorm.Scale);
                 var biasType = context.GetArgumentType<DistributedType>(target, PackedLayerNorm.Bias);
-                var ring = GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + GetRingReduceCommunicate(biasType, new[] { 0, 1 });
-                var reCompute = inputDistributedType.NdSBP.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
+
+                // var ring = GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + GetRingReduceCommunicate(biasType, new[] { 0, 1 });
+                // var reCompute = inputDistributedType.NdSBP.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
                 return new()
                 {
-                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + ring,
-                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1) * (UInt128)reCompute,
-                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType) + ring,
+                    [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(scaleType) + CostUtility.GetMemoryAccess(biasType),
+                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1),
+                    [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
-#endif
             default:
                 throw new NotSupportedException();
         }
@@ -121,17 +122,22 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
             return invalid;
         }
 
-        var ndsbp = new SBP[input.AxisPolices.Count];
+        var ndsbp = new SBP[input.AxisPolicies.Count];
 
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var scalePolicy = i - raxis >= 0 ? scale.AxisPolices[i - raxis] : null;
-            var biasPolicy = i - raxis >= 0 ? bias.AxisPolices[i - raxis] : null;
-            switch (input.AxisPolices[i], scalePolicy, biasPolicy)
+            var scalePolicy = i - raxis >= 0 ? scale.AxisPolicies[i - raxis] : null;
+            var biasPolicy = i - raxis >= 0 ? bias.AxisPolicies[i - raxis] : null;
+            switch (input.AxisPolicies[i], scalePolicy, biasPolicy)
             {
                 case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i >= raxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
+                    // FIXME: not support on axes for now
+#if true
+                    return invalid;
+#else
                     ndsbp[i] = si;
                     break;
+#endif
                 case (SBPSplit si, _, _) when i < raxis:
                     ndsbp[i] = si;
                     break;

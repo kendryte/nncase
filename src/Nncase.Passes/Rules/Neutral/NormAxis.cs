@@ -4,6 +4,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.NN;
 using Nncase.PatternMatch;
 using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.F.Math;
@@ -50,16 +51,17 @@ public sealed partial class NormAxisConcat : RewriteRule<CallPattern>
 public sealed partial class NormAxisReduce : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsReduce("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRankedShape() }, IsTensorConst("axes"), IsWildcard("initValue"), IsWildcard("keepDims"));
+    public override CallPattern Pattern { get; } = IsReduce("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRankedShape() }, IsRankedShape("axes"), IsWildcard("initValue"), IsWildcard("keepDims"));
 
-    private Expr? GetReplace(IR.Math.Reduce reduce, Call call, Expr input, int[] axes, Expr initValue, Expr keepDims)
+    private Expr? GetReplace(IR.Math.Reduce reduce, Call call, Expr input, Shape axes, Expr initValue, Expr keepDims)
     {
-        if (axes.Any(axis => axis < 0))
+        var newAxes = axes.Select(axis => axis.IsFixed && axis.FixedValue < 0 ? axis + input.CheckedShape.Rank : axis).ToArray();
+        if (newAxes.SequenceEqual(axes))
         {
-            return IR.F.Tensors.Reduce(reduce.ReduceOp, input, axes.Select(axis => axis < 0 ? axis + input.CheckedShape.Rank : axis).ToArray(), initValue, keepDims);
+            return null;
         }
 
-        return call;
+        return IR.F.Tensors.Reduce(reduce.ReduceOp, input, newAxes, initValue, keepDims);
     }
 }
 
@@ -67,7 +69,7 @@ public sealed partial class NormAxisReduce : RewriteRule<CallPattern>
 public sealed partial class NormAxisReduceArg : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsReduceArg("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRankedShape() }, IsTensorConst("axis"), IsWildcard("keepDims"), IsWildcard("selectLastIndex"));
+    public override CallPattern Pattern { get; } = IsReduceArg("reduce", "call", _ => true, IsWildcard("input") with { TypePattern = HasRankedShape() }, IsFixedDimension("axis"), IsWildcard("keepDims"), IsWildcard("selectLastIndex"));
 
     private Expr? GetReplace(IR.Math.ReduceArg reduce, Call call, Expr input, int axis, Expr keepDims, Expr selectLastIndex)
     {
@@ -101,7 +103,7 @@ public sealed partial class NormAxisReshape : RewriteRule<CallPattern>
 public sealed partial class NormAxisSlice : RewriteRule<CallPattern>
 {
     /// <inheritdoc/>
-    public override CallPattern Pattern { get; } = IsSlice("slice", "call", IsWildcard("input") with { TypePattern = HasFixedShape() }, IsFixedShape("begins"), IsFixedShape("ends"), IsFixedShape("axes"), IsFixedShape("strides")) with { TypePattern = HasFixedShape() };
+    public override CallPattern Pattern { get; } = IsSlice("slice", "call", IsWildcard("input"), IsFixedShape("begins"), IsFixedShape("ends"), IsFixedShape("axes"), IsFixedShape("strides"));
 
     private Expr? GetReplace(Call call, Expr input, Shape begins, long[] ends, long[] axes, Shape strides)
     {
@@ -114,6 +116,53 @@ public sealed partial class NormAxisSlice : RewriteRule<CallPattern>
             }
 
             return IR.F.Tensors.Slice(input, begins, ends, axes, strides);
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class NormAxisLayernorm : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } =
+        IsLayerNorm(
+        "ln",
+        "call",
+        _ => true,
+        IsWildcard("input") with { TypePattern = HasRankedShape() },
+        IsWildcard("scale") with { TypePattern = HasRankedShape() },
+        IsWildcard("bias") with { TypePattern = HasRankedShape() });
+
+    private Expr? GetReplace(Expr input, Call call, LayerNorm ln, TensorConst scale, TensorConst bias)
+    {
+        if (ln.Axis < 0)
+        {
+            return IR.F.NN.LayerNorm(ln.Axis + input.CheckedShape.Rank, ln.Epsilon, input, scale, bias, ln.UseMean, ln.ChannelFirst);
+        }
+
+        return null;
+    }
+}
+
+[RuleGenerator]
+public sealed partial class NormAxisSoftmax : RewriteRule<CallPattern>
+{
+    /// <inheritdoc/>
+    public override CallPattern Pattern { get; } =
+        IsSoftmax(
+            "softmax",
+            "softmaxCall",
+            _ => true,
+            IsWildcard("input"),
+            IsFixedDimension("axis"));
+
+    private Expr? GetReplace(Expr input, Call softmaxCall, int axis)
+    {
+        if (axis < 0)
+        {
+            return IR.F.NN.Softmax(input, axis + input.CheckedShape.Rank);
         }
 
         return null;

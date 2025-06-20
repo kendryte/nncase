@@ -28,8 +28,8 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         var ndsbp = new SBP[tensorType.Shape.Rank];
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var policyA = i < padA ? null : a.AxisPolices[i - padA];
-            var policyB = i < padB ? null : b.AxisPolices[i - padB];
+            var policyA = i < padA ? null : a.AxisPolicies[i - padA];
+            var policyB = i < padB ? null : b.AxisPolicies[i - padB];
             switch (policyA, policyB)
             {
                 case (null, _):

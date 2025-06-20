@@ -21,6 +21,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
         var input = context.GetOrtArgumentValue(target, InstacneNorm.Input);
         var scale = context.GetOrtArgumentValue(target, InstacneNorm.Scale);
         var bias = context.GetOrtArgumentValue(target, InstacneNorm.Bias);
+        var padedNums = context.GetArgumentValueAsArray<int>(target, InstacneNorm.PadedNums);
         if (target.PackedAxes.Count == 0)
         {
             return Value.FromTensor(OrtKI.InstanceNormalization(input, scale, bias, target.Epsilon).ToTensor());
@@ -34,7 +35,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
                 var axis = target.PackedAxes[i];
                 if (axis == 1)
                 {
-                    channelPadNums = target.PadedNums[i];
+                    channelPadNums = padedNums[i];
                 }
 
                 input = input.Unpack(axis);
@@ -47,7 +48,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
                 input = OrtKI.Slice(
                     input,
                     target.PackedAxes.Select(_ => 0L).ToArray(),
-                    Enumerable.Range(0, rk).Select(i => inshape[target.PackedAxes[i]] - target.PadedNums[i]).ToArray(),
+                    Enumerable.Range(0, rk).Select(i => inshape[target.PackedAxes[i]] - padedNums[i]).ToArray(),
                     target.PackedAxes.Select(axis => (long)axis).ToArray(),
                     target.PackedAxes.Select(_ => 1L).ToArray());
             }
@@ -71,7 +72,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
             }
 
             var norm = OrtKI.InstanceNormalization(input, scale, bias, target.Epsilon);
-            var output = NTTEvaluatorUtility.RepackTensor(norm, lanes, target.PackedAxes, target.PadedNums);
+            var output = NTTEvaluatorUtility.RepackTensor(norm, lanes, target.PackedAxes, padedNums);
             return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(norm.DataType.ToDataType(), lanes), output.Shape.SkipLast(target.PackedAxes.Count).Select(i => (int)i).ToArray()), output.BytesBuffer.ToArray()));
         }
     }
@@ -151,13 +152,13 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
             return invalid;
         }
 
-        var ndsbp = new SBP[input.AxisPolices.Count];
+        var ndsbp = new SBP[input.AxisPolicies.Count];
         var rAxis = 1;
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var scalePolicy = i - rAxis == 0 ? scale.AxisPolices[i - rAxis] : null;
-            var biasPolicy = i - rAxis == 0 ? bias.AxisPolices[i - rAxis] : null;
-            switch (input.AxisPolices[i], scalePolicy, biasPolicy)
+            var scalePolicy = i - rAxis == 0 ? scale.AxisPolicies[i - rAxis] : null;
+            var biasPolicy = i - rAxis == 0 ? bias.AxisPolicies[i - rAxis] : null;
+            switch (input.AxisPolicies[i], scalePolicy, biasPolicy)
             {
                 case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i == rAxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
                     ndsbp[i] = si;

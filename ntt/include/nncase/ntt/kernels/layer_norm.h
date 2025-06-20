@@ -25,7 +25,7 @@ namespace nncase::ntt {
 
 namespace packed_layer_norm_detail {
 
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TScale,
+template <size_t Axis, bool use_mean, IsFixedTensor TIn, IsFixedTensor TScale,
           IsFixedTensor TBias, IsFixedTensor TOut, typename TEp,
           IsFixedDims PackedAxes, IsFixedDims PadedNums>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
@@ -68,7 +68,6 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         finner_size = finner_size * (TElem)TElem::shape_type::length();
     }
 
-    constexpr bool use_mean = true; // This can be a parameter if needed
     apply(domain, [&](auto index) {
         const auto input_p =
             input.elements().data() + linear_offset(index, strides);
@@ -114,7 +113,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     });
 }
 
-template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
+template <size_t Axis, bool use_mean, class TIn, class TScale, class TBias, class TOut,
           typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
@@ -153,7 +152,6 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         finner_size = finner_size * (TElem)TElem::shape_type::length();
     }
 
-    constexpr bool use_mean = true; // This can be a parameter if needed
     apply(domain, [&](auto index) {
         const auto input_p =
             input.elements().data() + linear_offset(index, strides);
@@ -173,18 +171,16 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         }
 
         // std::array<TElem, inner_size> sub;
-        std::vector<TElem> sub(inner_size);
         for (auto i = 0; i < inner_size; i++)
-            sub[i] = input_p[i] - mean1;
+            output_p[i] = input_p[i] - mean1;
 
         // std::array<TElem, inner_size> pow;
-        std::vector<TElem> pow(inner_size);
         for (auto i = 0; i < inner_size; i++)
-            pow[i] = sub[i] * sub[i];
+            output_p[i] = output_p[i] * output_p[i];
 
         TElem mean2 = (TElem)0;
         for (auto i = 0; i < inner_size; i++)
-            mean2 = mean2 + (pow[i] / finner_size);
+            mean2 = mean2 + (output_p[i] / finner_size);
         if constexpr (UseVectorReduce) {
             mean2 = (TElem)reduce_sum(mean2);
         }
@@ -193,18 +189,17 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         TElem sqrt = ntt::sqrt(add);
 
         // std::array<TElem, inner_size> norm;
-        std::vector<TElem> norm(inner_size);
         for (auto i = 0; i < inner_size; i++)
-            norm[i] = sub[i] / sqrt;
+            output_p[i] = (input_p[i] - mean1) / sqrt;
 
         for (auto i = 0; i < inner_size; i++)
-            output_p[i] = (norm[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
+            output_p[i] = (output_p[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
     });
 }
 
 } // namespace packed_layer_norm_detail
 
-template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
+template <size_t Axis, bool use_mean = true, class TIn, class TScale, class TBias, class TOut,
           typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
 void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        TOut &&output, const TEp &epsilon, PackedAxes packedAxes,
@@ -214,7 +209,7 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
         static_assert(PadedNums::rank() == 0 ||
                           (PadedNums::rank() == 1 && PadedNums::at(0) == 0),
                       "not support padding");
-        packed_layer_norm_detail::within_axis_pack_impl<Axis>(
+        packed_layer_norm_detail::within_axis_pack_impl<Axis, use_mean>(
             input, scale, bias, output, epsilon, packedAxes, padedNums);
     }
 }

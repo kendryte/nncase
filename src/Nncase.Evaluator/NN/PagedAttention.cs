@@ -279,7 +279,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         // for xpu.
         if (q.Placement.Name == "cdxyt")
         {
-            if (!extra.AxisPolices.All(p => p is SBPBroadCast))
+            if (!extra.AxisPolicies.All(p => p is SBPBroadCast))
             {
                 return new InvalidType("extra should be broadcast!");
             }
@@ -323,14 +323,14 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             var seqAxis = target.Layout.IndexOf(AttentionDimKind.Seq);
             var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
             var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);
-            if (q.AxisPolices[seqAxis] is SBPSplit { Axes: [2] } &&
-                q.AxisPolices[headAxis] is SBPSplit { Axes: [1, 3] } &&
-                q.AxisPolices[dimAxis] is SBPBroadCast)
+            if (q.AxisPolicies[seqAxis] is SBPSplit { Axes: [2] } &&
+                q.AxisPolicies[headAxis] is SBPSplit { Axes: [1, 3] } &&
+                q.AxisPolicies[dimAxis] is SBPBroadCast)
             {
                 return q;
             }
         }
-        else if (q.Placement.Hierarchy.SequenceEqual([1]) && q.AxisPolices.All(x => x is SBPBroadCast))
+        else if (q.Placement.Hierarchy.SequenceEqual([1]) && q.AxisPolicies.All(x => x is SBPBroadCast))
         {
             return q;
         }
