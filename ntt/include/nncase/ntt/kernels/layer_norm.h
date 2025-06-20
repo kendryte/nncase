@@ -14,23 +14,19 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../shape_infer/reduce_axis.h"
-#include "../tensor_ops.h"
-#include "../utility.h"
-#include "binary.h"
-#include "unary.h"
-#include <algorithm>
+#include "../primitive_ops.h"
+#include "reduce.h"
 
 namespace nncase::ntt {
 
 namespace packed_layer_norm_detail {
 
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TScale,
-          IsFixedTensor TBias, IsFixedTensor TOut, typename TEp,
-          IsFixedDims PackedAxes, IsFixedDims PadedNums>
+template <size_t Axis, FixedTensor TIn, FixedTensor TScale, FixedTensor TBias,
+          FixedTensor TOut, typename TEp, FixedDimensions PackedAxes,
+          FixedDimensions PadedNums>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
-                           PackedAxes, PadedNums) {
+                           const PackedAxes &, const PadedNums &) {
     using TElem = typename TIn::element_type;
     constexpr auto input_shape = typename TIn::shape_type{};
     constexpr auto input_strides = typename TIn::strides_type{};
@@ -115,29 +111,19 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 }
 
 template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
-          typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
+          typename TEp, FixedDimensions PackedAxes, FixedDimensions PadedNums>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
-                           PackedAxes, PadedNums) {
+                           const PackedAxes &, const PadedNums &) {
     using TElem = typename TIn::element_type;
     constexpr auto in_rank = TIn::rank();
     auto input_shape = input.shape();
     auto input_strides = input.strides();
 
-    ranked_shape<Axis> domain{};
-    for (size_t i = 0; i < Axis; i++) {
-        domain[i] = input_shape[i];
-    }
+    const auto domain = input_shape.template slice<0, Axis>();
+    const auto strides = input_strides.template slice<0, Axis>();
 
-    ranked_shape<Axis> strides{};
-    for (size_t i = 0; i < Axis; i++) {
-        strides[i] = input_strides[i];
-    }
-
-    size_t inner_size = 1;
-    for (size_t i = Axis; i < in_rank; i++) {
-        inner_size *= input_shape[i];
-    }
+    size_t inner_size = input_shape.template slice<Axis, in_rank>().length();
 
     // auto domain = slice_dims<Axis>(input_shape);
     // auto strides = slice_dims<Axis>(input_strides);
@@ -205,10 +191,12 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 } // namespace packed_layer_norm_detail
 
 template <size_t Axis, class TIn, class TScale, class TBias, class TOut,
-          typename TEp, IsFixedDims PackedAxes, IsFixedDims PadedNums>
+          typename TEp, FixedDimensions PackedAxes = shape_t<>,
+          FixedDimensions PadedNums = shape_t<>>
 void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
-                       TOut &&output, const TEp &epsilon, PackedAxes packedAxes,
-                       PadedNums padedNums) {
+                       TOut &&output, const TEp &epsilon,
+                       const PackedAxes &packedAxes = {},
+                       const PadedNums &padedNums = {}) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
     if constexpr (PackedAxes::rank() <= 1) {
         static_assert(PadedNums::rank() == 0 ||

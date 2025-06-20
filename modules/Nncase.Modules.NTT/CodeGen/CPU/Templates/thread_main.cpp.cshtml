@@ -61,7 +61,7 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input
   @:alignas(paged_attention_kv_cache_t) std::byte p@(name)[sizeof(paged_attention_kv_cache_t) * @size];
   @:for (size_t i = 0; i < @size; ++i) {
     @:auto desc = p@(name)_descs[i];
-    @:auto kv_addrs = make_tensor_view_from_address((kv_storage_type_t **)desc.kv_storages.data(), paged_attention_kv_cache_t::kv_addrs_shape);
+    @:auto kv_addrs = make_tensor_view_from_address((kv_storage_type_t **)desc.kv_cache_addrs.data(), paged_attention_kv_cache_t::kv_addrs_shape);
     @:auto ptr = (paged_attention_kv_cache_t*)p@(name) + i;
     @:new (ptr) paged_attention_kv_cache_t(desc.num_seqs, desc.num_tokens, make_tensor_view_from_address(desc.context_lens, make_shape(desc.context_lens_size)), make_tensor_view_from_address(desc.seq_lens, make_shape(desc.seq_lens_size)), make_tensor_view_from_address(desc.block_table, make_shape(desc.block_table_shape[0], desc.block_table_shape[1], paged_attention_kv_cache_t::id_length)), make_tensor_view_from_address(desc.slot_mapping, make_shape(desc.slot_mapping_shape[0], paged_attention_kv_cache_t::id_length)), kv_addrs);
   @:}
