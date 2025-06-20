@@ -41,10 +41,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_2_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<C, H, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)C, (int64_t)H, (int64_t)(W / P), (int64_t)P};
@@ -77,10 +77,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_1_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<C, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)W};
@@ -113,10 +113,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_0_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W};
@@ -155,10 +155,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_2_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<C, H, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<C, H, W>);
     
@@ -208,10 +208,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_1_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<C, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<C, H, W>);
     
@@ -261,10 +261,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_0_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<C, H, W>);
     
@@ -309,10 +309,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_0_1_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<C / P, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(C / P), (int64_t)P, (int64_t)(H / P), (int64_t)P, (int64_t)W};
@@ -346,10 +346,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_1_2_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<C, H / P, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)(W / P), (int64_t)P};
@@ -389,10 +389,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_0_1_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<C / P, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<C, H, W>);
     
@@ -443,10 +443,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_1_2_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<C, H / P, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<C, H, W>);
     
@@ -490,10 +490,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_2_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(C, H, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)C, (int64_t)H, (int64_t)(W / P), (int64_t)P};
@@ -526,10 +526,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_1_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(C, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)W};
@@ -562,10 +562,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_0_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W};
@@ -604,10 +604,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_2_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(C, H, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(C, H, W));
     
@@ -657,10 +657,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_1_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(C, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(C, H, W));
     
@@ -710,10 +710,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_0_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(C, H, W));
     
@@ -758,10 +758,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_0_1_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(C / P, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(C / P), (int64_t)P, (int64_t)(H / P), (int64_t)P, (int64_t)W};
@@ -795,10 +795,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_1_2_3D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(C, H / P, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)(W / P), (int64_t)P};
@@ -838,10 +838,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_0_1_3D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(C / P, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(C, H, W));
     
@@ -892,10 +892,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_1_2_3D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(C, H / P, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(C, H, W));
     
@@ -940,10 +940,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)H, (int64_t)(W / P), (int64_t)P};
@@ -977,10 +977,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)W};
@@ -1014,10 +1014,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W};
@@ -1051,10 +1051,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P, C, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(N / P), (int64_t)P, (int64_t)C, (int64_t)H, (int64_t)W};
@@ -1094,10 +1094,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim2_add5_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1150,10 +1150,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim2_add5_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1206,10 +1206,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim2_add5_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1262,10 +1262,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim2_add5_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P, C, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1318,10 +1318,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim2_mul2_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1374,10 +1374,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim2_mul2_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1430,10 +1430,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim2_mul2_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1486,10 +1486,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim2_mul2_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P, C, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1542,10 +1542,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1598,10 +1598,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1654,10 +1654,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1710,10 +1710,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P, C, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1766,10 +1766,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_add5_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1822,10 +1822,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_add5_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1878,10 +1878,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_add5_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1934,10 +1934,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_add5_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P, C, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -1985,10 +1985,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_0_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N / P, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(N / P), (int64_t)P, (int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W};
@@ -2023,10 +2023,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_1_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C / P, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)(C / P), (int64_t)P, (int64_t)(H / P), (int64_t)P, (int64_t)W};
@@ -2061,10 +2061,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_2_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H / P, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)(W / P), (int64_t)P};
@@ -2105,10 +2105,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim2_add5_pack_axis_0_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N / P, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2162,10 +2162,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim2_add5_pack_axis_1_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C / P, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2219,10 +2219,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim2_add5_pack_axis_2_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H / P, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2276,10 +2276,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim2_mul2_pack_axis_0_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N / P, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2333,10 +2333,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim2_mul2_pack_axis_1_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C / P, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2390,10 +2390,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim2_mul2_pack_axis_2_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H / P, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2447,10 +2447,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_0_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N / P, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2504,10 +2504,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_1_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C / P, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2561,10 +2561,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_2_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H / P, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2618,10 +2618,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_add5_pack_axis_0_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N / P, C / P, H, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2675,10 +2675,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_add5_pack_axis_1_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C / P, H / P, W>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2732,10 +2732,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_add5_pack_axis_2_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H / P, W / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     
@@ -2782,10 +2782,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)H, (int64_t)(W / P), (int64_t)P};
@@ -2819,10 +2819,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)W};
@@ -2856,10 +2856,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W};
@@ -2893,10 +2893,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N / P, C, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(N / P), (int64_t)P, (int64_t)C, (int64_t)H, (int64_t)W};
@@ -2936,10 +2936,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim2_add5_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -2992,10 +2992,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim2_add5_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3048,10 +3048,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim2_add5_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3104,10 +3104,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim2_add5_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N / P, C, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3160,10 +3160,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim2_mul2_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3216,10 +3216,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim2_mul2_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3272,10 +3272,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim2_mul2_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3328,10 +3328,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim2_mul2_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N / P, C, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3384,10 +3384,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3440,10 +3440,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3496,10 +3496,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3552,10 +3552,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N / P, C, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3608,10 +3608,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_add5_pack_axis_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3664,10 +3664,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_add5_pack_axis_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3720,10 +3720,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_add5_pack_axis_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3776,10 +3776,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_add5_pack_axis_0_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N / P, C, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -3827,10 +3827,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_0_1_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N / P, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(N / P), (int64_t)P, (int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W};
@@ -3865,10 +3865,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_1_2_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C / P, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)(C / P), (int64_t)P, (int64_t)(H / P), (int64_t)P, (int64_t)W};
@@ -3903,10 +3903,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_2_3_4D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H / P, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)(W / P), (int64_t)P};
@@ -3947,10 +3947,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim2_add5_pack_axis_0_1_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N / P, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4004,10 +4004,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim2_add5_pack_axis_1_2_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C / P, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4061,10 +4061,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim2_add5_pack_axis_2_3_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H / P, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4118,10 +4118,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim2_mul2_pack_axis_0_1_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N / P, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4175,10 +4175,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim2_mul2_pack_axis_1_2_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C / P, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4232,10 +4232,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim2_mul2_pack_axis_2_3_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H / P, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4289,10 +4289,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_0_1_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N / P, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4346,10 +4346,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_1_2_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C / P, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4403,10 +4403,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_2_3_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H / P, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4460,10 +4460,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_add5_pack_axis_0_1_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N / P, C / P, H, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4517,10 +4517,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_add5_pack_axis_1_2_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C / P, H / P, W));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4574,10 +4574,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_add5_pack_axis_2_3_4D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H / P, W / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W));
     
@@ -4625,10 +4625,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_4_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W, D / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<4>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)H, (int64_t)W, (int64_t)(D / P), (int64_t)P};
@@ -4663,10 +4663,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_3_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W / P, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)H, (int64_t)(W / P), (int64_t)P, (int64_t)D};
@@ -4701,10 +4701,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_2_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H / P, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)W, (int64_t)D};
@@ -4739,10 +4739,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_1_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C / P, H, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W, (int64_t)D};
@@ -4777,10 +4777,10 @@ TEST(PackTestFloat, fixed_1D_vector_contiguous_pack_axis_0_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P, C, H, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(N / P), (int64_t)P, (int64_t)C, (int64_t)H, (int64_t)W, (int64_t)D};
@@ -4821,10 +4821,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_4_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W, D / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<4>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -4880,10 +4880,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_3_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H, W / P, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -4939,10 +4939,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_2_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C, H / P, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -4998,10 +4998,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_1_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N, C / P, H, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -5057,10 +5057,10 @@ TEST(PackTestFloat, fixed_1D_vector_non_contiguous_dim1_mul2_pack_axis_0_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P, C, H, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -5111,10 +5111,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_0_1_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N / P, C / P, H, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(N / P), (int64_t)P, (int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W, (int64_t)D};
@@ -5150,10 +5150,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_1_2_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C / P, H / P, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)(C / P), (int64_t)P, (int64_t)(H / P), (int64_t)P, (int64_t)W, (int64_t)D};
@@ -5189,10 +5189,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_2_3_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H / P, W / P, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)(W / P), (int64_t)P, (int64_t)D};
@@ -5228,10 +5228,10 @@ TEST(PackTestFloat, fixed_2D_vector_contiguous_pack_axis_3_4_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H, W / P, D / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3, 4>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)H, (int64_t)(W / P), (int64_t)P, (int64_t)(D / P), (int64_t)P};
@@ -5273,10 +5273,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_0_1_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N / P, C / P, H, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -5333,10 +5333,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_1_2_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C / P, H / P, W, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -5393,10 +5393,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_2_3_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H / P, W / P, D>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -5453,10 +5453,10 @@ TEST(PackTestFloat, fixed_2D_vector_non_contiguous_dim1_mul2_pack_axis_3_4_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::fixed_shape_v<N, C, H, W / P, D / P>);
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3, 4>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W, D>);
     
@@ -5506,10 +5506,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_4_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W, D / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<4>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)H, (int64_t)W, (int64_t)(D / P), (int64_t)P};
@@ -5544,10 +5544,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_3_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W / P, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)H, (int64_t)(W / P), (int64_t)P, (int64_t)D};
@@ -5582,10 +5582,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_2_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H / P, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)W, (int64_t)D};
@@ -5620,10 +5620,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_1_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C / P, H, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W, (int64_t)D};
@@ -5658,10 +5658,10 @@ TEST(PackTestFloat, dynamic_1D_vector_contiguous_pack_axis_0_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N / P, C, H, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(N / P), (int64_t)P, (int64_t)C, (int64_t)H, (int64_t)W, (int64_t)D};
@@ -5702,10 +5702,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_4_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W, D / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<4>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     
@@ -5761,10 +5761,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_3_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H, W / P, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     
@@ -5820,10 +5820,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_2_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C, H / P, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     
@@ -5879,10 +5879,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_1_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N, C / P, H, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     
@@ -5938,10 +5938,10 @@ TEST(PackTestFloat, dynamic_1D_vector_non_contiguous_dim1_mul2_pack_axis_0_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(N / P, C, H, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     
@@ -5992,10 +5992,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_0_1_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N / P, C / P, H, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)(N / P), (int64_t)P, (int64_t)(C / P), (int64_t)P, (int64_t)H, (int64_t)W, (int64_t)D};
@@ -6031,10 +6031,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_1_2_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C / P, H / P, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)(C / P), (int64_t)P, (int64_t)(H / P), (int64_t)P, (int64_t)W, (int64_t)D};
@@ -6070,10 +6070,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_2_3_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H / P, W / P, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)(H / P), (int64_t)P, (int64_t)(W / P), (int64_t)P, (int64_t)D};
@@ -6109,10 +6109,10 @@ TEST(PackTestFloat, dynamic_2D_vector_contiguous_pack_axis_3_4_5D) {
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H, W / P, D / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3, 4>);
-
+    
     // ORT reference implementation
     auto ort_input = NttTest::ntt2ort(ntt_input);
     int64_t reshape_data[] = {(int64_t)N, (int64_t)C, (int64_t)H, (int64_t)(W / P), (int64_t)P, (int64_t)(D / P), (int64_t)P};
@@ -6154,10 +6154,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_0_1_5D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N / P, C / P, H, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<0, 1>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     
@@ -6214,10 +6214,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_1_2_5D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C / P, H / P, W, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<1, 2>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     
@@ -6274,10 +6274,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_2_3_5D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H / P, W / P, D));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<2, 3>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     
@@ -6334,10 +6334,10 @@ TEST(PackTestFloat, dynamic_2D_vector_non_contiguous_dim1_mul2_pack_axis_3_4_5D)
 
     // Create output tensor
     alignas(32) auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P, P>>(ntt::make_shape(N, C, H, W / P, D / P));
-
+    
     // Execute pack operation
     ntt::pack(ntt_input, ntt_output1, ntt::fixed_shape_v<3, 4>);
-
+    
     // Copy to contiguous tensor for ORT reference
     alignas(32) auto continuous_input = ntt::make_tensor<float>(ntt::make_shape(N, C, H, W, D));
     

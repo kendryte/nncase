@@ -64,7 +64,7 @@ struct bfloat16 {
     explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) {}
 
-    bfloat16(int &&val) noexcept : bfloat16(static_cast<float>(val)) {}
+    // bfloat16(int &&val) noexcept : bfloat16(static_cast<float>(val)) {}
 
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
 
@@ -320,3 +320,8 @@ inline bfloat16 nearbyint(const bfloat16 &a) {
 }
 inline long lrint(const bfloat16 &a) { return lrintf(float(a)); }
 } // namespace std
+
+
+inline nncase::bfloat16 operator"" _bf16(long double x) {
+    return nncase::bfloat16(float(x));
+}

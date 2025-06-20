@@ -16,6 +16,7 @@
 #include "../../distributed/topology.h"
 #include "runtime.h"
 #include <barrier>
+#include <string>
 
 namespace nncase::ntt::distributed {
 template <> struct program_id_getter<topology::thread> {

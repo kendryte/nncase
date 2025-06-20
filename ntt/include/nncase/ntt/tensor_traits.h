@@ -15,6 +15,9 @@
 #pragma once
 #include <cstring>
 #include <type_traits>
+#include "../bfloat16.h"
+#include "../float8.h"
+#include "../half.h"
 
 namespace nncase::ntt {
 enum dims_usage {
@@ -61,8 +64,10 @@ concept Strides = Dimensions<T> && T::usage() == dims_usage::strides;
 template <class T>
 concept FixedStrides = Strides<T> && T::is_fixed();
 
+// Only check whether T has IsVector member, doesn't check whether IsVector is true.
 template <typename T>
-concept Vector = std::decay_t<T>::IsVector;
+concept Vector = requires {std::decay_t<T>::IsVector;}; 
+
 
 template <typename T>
 concept ShardedTensor = requires {
@@ -81,7 +86,11 @@ concept FixedTensor = Tensor<T> && FixedDimensions<typename T::shape_type> &&
                       FixedDimensions<typename T::strides_type>;
 
 template <typename T>
-concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
+concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T> 
+                    || std::is_same_v<std::remove_cv_t<T>, bfloat16> 
+                    || std::is_same_v<std::remove_cv_t<T>, half> 
+                    || std::is_same_v<std::remove_cv_t<T>, float_e4m3_t> 
+                    || std::is_same_v<std::remove_cv_t<T>, float_e5m2_t>;
 
 template <typename T>
 concept ScalarOrVector = Scalar<T> || Vector<T>;
