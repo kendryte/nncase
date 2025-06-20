@@ -595,7 +595,7 @@ basic_vector<T, Lanes> basic_vector<T, Lanes>::from_scalar(T value) noexcept {
     return vector_ops::vload_scalar<basic_vector<T, Lanes>>()(value);
 }
 
-template <bool AccC, bool TransA, Vector T1, Vector T2, Vector TResult>
+template <bool AccC, bool TransA = false, Vector T1, Vector T2, Vector TResult>
 constexpr TResult vmma(const T1 &v1, const T2 &v2, const TResult &v3) noexcept {
     return vector_ops::vmma<AccC, TransA, T1, T2, TResult>()(v1, v2, v3);
 }
