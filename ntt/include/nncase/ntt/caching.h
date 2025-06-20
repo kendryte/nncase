@@ -276,15 +276,16 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     }
 
     template <attention_cache_kind Kind, typename T>
-    constexpr auto get_slot(int layer_id, int head_id, T slot_id) noexcept
+    constexpr auto get_slot(int layer_id, int head_id,
+                            const T &slot_id) noexcept
         requires detail::ValidIdTensor<id_length, T>
     {
         return get_slot_view<Kind>(layer_id, head_id, slot_id);
     }
 
     template <attention_cache_kind Kind, typename T, typename TId>
-    constexpr void update_slot(int layer_id, int head_id, TId slot_id,
-                               const T &slot) noexcept
+    constexpr void update_slot(dim_t layer_id, dim_t head_id,
+                               const TId &slot_id, const T &slot) noexcept
         requires detail::ValidIdTensor<id_length, TId>
     {
         auto destView = get_slot_view<Kind>(layer_id, head_id, slot_id);
@@ -293,7 +294,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
 
     template <attention_cache_kind Kind, typename T>
     constexpr void update_slots(dim_t layer_id, dim_t head_id,
-                                T slots) noexcept {
+                                const T &slots) noexcept {
         // slots : [num_tokens, numHeads, headDim]
         auto slots_shape = slots.shape();
         for (dim_t i = 0; i < this->num_tokens(); i++) {
