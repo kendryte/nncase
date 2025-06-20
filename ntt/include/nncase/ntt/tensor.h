@@ -169,6 +169,13 @@ class basic_tensor
         : size_impl_type(std::move(other.shape()), std::move(other.strides())),
           storage_type(std::in_place, std::move(other.buffer())) {}
 
+    constexpr basic_tensor &
+    operator=(const basic_tensor<T, TShape, TStrides, IsView> &other) noexcept =
+        default;
+
+    constexpr basic_tensor &operator=(
+        basic_tensor<T, TShape, TStrides, IsView> &&other) noexcept = default;
+
     class const_iterator {
       public:
         const_iterator(const basic_tensor &tensor,
