@@ -33,7 +33,7 @@ constexpr auto make_remote_tensor(T *data, const Sharding &sharding,
     constexpr auto no_cross_mesh_rank =
         fixed_dim_v<detail::get_submesh_start<mesh_type, RemoteScope>()>;
     constexpr auto cross_mesh_rank = mesh_type::rank() - no_cross_mesh_rank;
-    static_assert(decltype(shard_index)::rank() == cross_mesh_rank,
+    static_assert(ShardIndex::rank() == cross_mesh_rank,
                   "Shard index must have the same rank as cross mesh rank.");
 
     const auto local_shard_index = mesh_type::local_index();

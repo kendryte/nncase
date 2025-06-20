@@ -115,7 +115,7 @@ template <Tensor TInput, Tensor TWeights, Tensor TBias, class TOutput,
 void conv2d(const TInput &input, const TWeights &weights, const TBias &bias,
             TOutput &&output, const TStride &stride, const TPadding &padding,
             const TDilation &dilation, const TGroups &groups) noexcept {
-    conv_detail::impl(input, output, weights, bias, stride, padding, dilation,
+    conv_detail::impl(input, weights, bias, output, stride, padding, dilation,
                       groups);
 }
 } // namespace nncase::ntt
