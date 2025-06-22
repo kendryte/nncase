@@ -41,10 +41,10 @@ struct reduce_source_begin_index_impl {
                               const TOutIndex &out_index) noexcept {
         auto [new_dim, new_shrinked_dims] = [&] {
             if constexpr (ReduceAxes{}.contains(fixed_dim_v<Axis>)) {
-                return std::make_tuple(dim_zero, fixed_dim_v<ShrinkedDims + 1>);
+                return std::make_tuple(0, fixed_dim_v<ShrinkedDims + 1>);
             } else {
                 return std::make_tuple(
-                    out_index.template at<Axis - ShrinkedDims>(),
+                    (dim_t)out_index.template at<Axis - ShrinkedDims>(),
                     fixed_dim_v<ShrinkedDims>);
             }
         }();
@@ -74,7 +74,8 @@ constexpr auto reduce_source_index_template(
     [[maybe_unused]] const TReduceAxes &reduce_axes) noexcept {
     // Keep dims
     if constexpr (InRank == TOutIndex::rank()) {
-        return out_index;
+        return generate_shape<InRank>(
+            [&](auto axis) { return (dim_t)out_index[axis]; });
     } else {
         return detail::reduce_source_begin_index_impl<InRank, TReduceAxes,
                                                       TOutIndex>{}
