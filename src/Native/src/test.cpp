@@ -600,7 +600,7 @@ void test_caching() {
 
         auto kv_storage = ntt::make_tensor<kv_storage_type_t>(kv_storage_shape);
         std::fill(kv_storage.elements().begin(), kv_storage.elements().end(),
-                  (kv_storage_type_t)0.f);
+                  (kv_storage_type_t)(nncase::half)0.f);
 
         constexpr auto kv_addrs_shape =
             paged_attention_kv_cache_t::kv_addrs_shape;
@@ -615,7 +615,7 @@ void test_caching() {
             ntt::fixed_shape_v<8, NumKVHead,
                                HeadDim / kv_storage_type_t::lane<0>()>);
         std::fill(key.elements().begin(), key.elements().end(),
-                  (kv_storage_type_t)1.f);
+                  (kv_storage_type_t)(nncase::half)1.f);
 
         {
             size_t token_id = 3;
@@ -646,7 +646,7 @@ void test_caching() {
                                           1_dim))
                     .squeeze(ntt::fixed_shape_v<0, 1, 2, 3, 5>);
             for (size_t i = 0; i < kv_storage_type_t::lane<0>(); i++) {
-                assert(dest_slot_view(0)(i) == ((kv_storage_type_t)0.f)(i));
+                assert(dest_slot_view(0)(i) == ((kv_storage_type_t)(nncase::half)0.f)(i));
             }
             kv_cache.update_slot<ntt::caching::attention_cache_kind::key>(
                 0, head_id, slot_id_3, src_slot_view);

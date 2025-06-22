@@ -167,8 +167,8 @@ class PackTestGenerator:
             else:
                 code.append(f"    constexpr size_t {name} = {size};")
         
-        code.extend([f"    {datatype.cpp_type} min_input = {datatype.min_val};", 
-                     f"    {datatype.cpp_type} max_input = {datatype.max_val};", ""])
+        code.extend([f"    {datatype.cpp_type} min_input = {datatype.cpp_type}({datatype.min_val});", 
+                     f"    {datatype.cpp_type} max_input = {datatype.cpp_type}({datatype.max_val});", ""])
         return code
 
     def generate_output_tensor_code(self, datatype, shape_type, dim_names, pack_axes, vector_dim):
