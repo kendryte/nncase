@@ -605,11 +605,11 @@ template <> class u_pack<true, float, vector<float, NTT_VLEN / 32>> {
         } else {
             using policy_t = u_pack_policy<float, vector<float, vl>, true>;
             constexpr auto unroll = policy_t::unroll;
-            constexpr auto in_strides1 = sizeof(float) * m_strides;
-            constexpr auto in_strides2 = sizeof(float);
+            const auto in_strides1 = sizeof(float) * m_strides;
+            const auto in_strides2 = sizeof(float);
             asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
-            auto count = N;
+            size_t count = N;
             while (count / unroll) {
                 asm volatile(
                     "vlse32.v v1, (%[input]), %[in_strides1]\n"
