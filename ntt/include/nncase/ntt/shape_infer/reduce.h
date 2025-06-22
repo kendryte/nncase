@@ -77,8 +77,8 @@ constexpr auto reduce_source_index_template(
         return out_index;
     } else {
         return detail::reduce_source_begin_index_impl<InRank, TReduceAxes,
-                                                      TOutIndex>{}(
-            fixed_shape_v<>, out_index);
+                                                      TOutIndex>{}
+            .template operator()<0, 0>(fixed_shape_v<>, out_index);
     }
 }
 
@@ -88,7 +88,7 @@ constexpr auto sub_reduce_source_shape(
     [[maybe_unused]] const TReduceAxes &reduce_axes) noexcept {
     return generate_shape<TInShape::rank()>([&](auto axis) {
         return ntt::where(TReduceAxes{}.contains(axis), in_shape[axis],
-                           dim_one);
+                          dim_one);
     });
 }
 } // namespace nncase::ntt::shape_infer

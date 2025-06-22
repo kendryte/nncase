@@ -711,18 +711,18 @@ class u_pack2d<true, TIn, TOut, float,
             auto out_strides = sizeof(vector<float, vl>);
             asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
-            auto count = output.shape().length();
+            size_t count = output.shape().length();
             if (PackAxis2 != rank - 1) {
                 while (count / high_stride) {
                     auto in_ptr = pin + out_offset + low_idx * low_extra +
                                   high_idx * high_extra;
-                    auto count1 = high_stride;
+                    size_t count1 = high_stride;
                     while (count1 / unroll1) {
                         auto input1 = in_ptr;
                         auto input2 = in_ptr + 1;
                         auto output1 = out_ptr;
                         auto output2 = out_ptr + 1;
-                        auto count2 = vl;
+                        size_t count2 = vl;
                         while (count2 / unroll2) {
                             // load input1 + input2
                             asm volatile(
@@ -864,13 +864,13 @@ class u_pack2d<true, TIn, TOut, float,
             } else {
                 while (count / high_dim) {
                     auto in_ptr = pin + out_offset + low_idx * low_extra;
-                    auto count1 = high_dim;
+                    size_t count1 = high_dim;
                     while (count1 / unroll1) {
                         auto input1 = in_ptr;
                         auto input2 = in_ptr + vl;
                         auto output1 = out_ptr;
                         auto output2 = out_ptr + 1;
-                        auto count2 = vl;
+                        size_t count2 = vl;
                         while (count2 / unroll2) {
                             // load input1 + input2
                             asm volatile(
@@ -1119,13 +1119,13 @@ class u_unpack_2d_fixed<low_stride, NTT_VLEN / 32, high_stride, NTT_VLEN / 32,
             while (count / high_stride) {
                 auto out_ptr = output + in_offset + low_idx * low_extra +
                                high_idx * high_extra;
-                auto count1 = high_stride;
+                size_t count1 = high_stride;
                 while (count1 / unroll1) {
                     auto input1 = in_ptr;
                     auto input2 = in_ptr + in_stride;
                     auto output1 = out_ptr;
                     auto output2 = out_ptr + 1;
-                    auto count2 = vl;
+                    size_t count2 = vl;
                     while (count2 / unroll2) {
                         // load input1 + input2
                         asm volatile("vl1re32.v v1, (%[input1])\n"
@@ -1275,13 +1275,13 @@ class u_unpack_2d_fixed<low_stride, NTT_VLEN / 32, high_stride, NTT_VLEN / 32,
         } else {
             while (count / high_dim) {
                 auto out_ptr = output + in_offset + low_idx * low_extra;
-                auto count1 = high_dim;
+                size_t count1 = high_dim;
                 while (count1 / unroll1) {
                     auto input1 = in_ptr;
                     auto input2 = in_ptr + in_stride;
                     auto output1 = out_ptr;
                     auto output2 = out_ptr + vl;
-                    auto count2 = vl;
+                    size_t count2 = vl;
                     while (count2 / unroll2) {
                         // load input1 + input2
                         asm volatile("vl1re32.v v1, (%[input1])\n"
@@ -1528,13 +1528,13 @@ class u_unpack_2d_ranked<NTT_VLEN / 32, NTT_VLEN / 32, T1, float, true,
             while (count / high_stride) {
                 auto out_ptr = output + in_offset + low_idx * low_extra +
                                high_idx * high_extra;
-                auto count1 = high_stride;
+                size_t count1 = high_stride;
                 while (count1 / unroll1) {
                     auto input1 = in_ptr;
                     auto input2 = in_ptr + in_stride;
                     auto output1 = out_ptr;
                     auto output2 = out_ptr + 1;
-                    auto count2 = vl;
+                    size_t count2 = vl;
                     while (count2 / unroll2) {
                         // load input1 + input2
                         asm volatile("vl1re32.v v1, (%[input1])\n"
@@ -1684,13 +1684,13 @@ class u_unpack_2d_ranked<NTT_VLEN / 32, NTT_VLEN / 32, T1, float, true,
         } else {
             while (count / high_dim) {
                 auto out_ptr = output + in_offset + low_idx * low_extra;
-                auto count1 = high_dim;
+                size_t count1 = high_dim;
                 while (count1 / unroll1) {
                     auto input1 = in_ptr;
                     auto input2 = in_ptr + in_stride;
                     auto output1 = out_ptr;
                     auto output2 = out_ptr + vl;
-                    auto count2 = vl;
+                    size_t count2 = vl;
                     while (count2 / unroll2) {
                         // load input1 + input2
                         asm volatile("vl1re32.v v1, (%[input1])\n"
