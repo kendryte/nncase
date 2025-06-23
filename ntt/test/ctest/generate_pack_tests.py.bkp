@@ -8,14 +8,42 @@ Covering the following cases:
 4. Pack axes: different dimensions
 """
 
+
+
 import itertools
 from typing import List, Tuple
-from test_generator_base import BaseTestGenerator, ALL_DATATYPES, Continuity, DataType, generate_cmake_list
+from collections import namedtuple
 import os
 
-class PackTestGenerator(BaseTestGenerator):
+
+# is_contiguous: bool 
+# non_contiguous_dim: int or None 
+# big_tensor_op: str or None -  How to build the big tensor at given non_contiguous_dim
+Continuity = namedtuple('Continuity', ['is_contiguous', 'non_contiguous_dim', 'big_tensor_op'])
+DataType = namedtuple('DataType', ['cpp_type', 'name_suffix', 'min_val', 'max_val'])
+
+
+ALL_DATATYPES = [
+    DataType('bool', 'Bool', 'false', 'true'),
+    DataType('uint8_t', 'Uint8', '0', '255'),
+    DataType('uint16_t', 'Uint16', '0', '65535'),
+    DataType('uint32_t', 'Uint32', '0', '100000'),
+    DataType('uint64_t', 'Uint64', '0', '1000000'),
+    DataType('int8_t', 'Int8', '-127', '127'),
+    DataType('int16_t', 'Int16', '-32767', '32767'),
+    DataType('int32_t', 'Int32', '-100000', '100000'),
+    DataType('int64_t', 'Int64', '-1000000', '1000000'),
+    DataType('half', 'Float16', '-65504.0', '65504.0'), 
+    DataType('float', 'Float32', '-3.4e38', '3.4e38'),
+    DataType('double', 'Float64', '-1.7e308', '1.7e308'),
+    DataType('bfloat16', 'Bfloat16', '-3.3e38_bf16', '3.3e38_bf16'),
+    DataType('float_e4m3_t', 'Float8e4m3', 'float_e4m3_t(-448.0f)', 'float_e4m3_t(448.0f)'),
+    DataType('float_e5m2_t', 'Float8e5m2', 'float_e5m2_t(-57344.0f)', 'float_e5m2_t(57344.0f)'),
+]
+
+class PackTestGenerator:
     def __init__(self):
-        super().__init__()
+        self.test_cases = []
         
     def generate_test_name(self, datatype, shape_type, vector_dim, continuity: Continuity, pack_axis_str, ndim):
         parts = []
@@ -33,6 +61,42 @@ class PackTestGenerator(BaseTestGenerator):
         parts.append(f"{ndim}D")
         return "_".join(parts)
     
+    def generate_shape_init(self, shape_type, dims):
+        if shape_type == "fixed":
+            dim_strs = [f"{d}" for d in dims]
+            return f"ntt::fixed_shape_v<{', '.join(dim_strs)}>"
+        else:  # dynamic
+            dim_strs = [str(d) for d in dims]
+            return f"ntt::make_shape({', '.join(dim_strs)})"
+    
+    def generate_tensor_init(self, datatype, shape_type, dims, continuity, var_name):
+        code = []
+        shape_expr = self.generate_shape_init(shape_type, dims)
+        
+        if continuity.is_contiguous:
+            code.append(f"alignas(32) auto {var_name} = ntt::make_tensor<{datatype.cpp_type}>({shape_expr});")
+            code.append(f"NttTest::init_tensor({var_name}, min_input, max_input);")
+        else:  # non-contiguous
+            # Create a bigger tensor, then create view
+            big_dims = dims.copy()
+            dim_to_change = continuity.non_contiguous_dim
+            op = continuity.big_tensor_op
+            
+            if dim_to_change is not None and op is not None and dim_to_change < len(big_dims):
+                 big_dims[dim_to_change] = f"({big_dims[dim_to_change]}) {op}"
+
+            big_shape_expr = self.generate_shape_init(shape_type, big_dims)
+            
+            code.append(f"// Create non-contiguous tensor (on dimension {dim_to_change})")
+            code.append(f"alignas(32) auto big_tensor = ntt::make_tensor<{datatype.cpp_type}>({big_shape_expr});")
+            code.append(f"NttTest::init_tensor(big_tensor, min_input, max_input);")
+            code.append(f"")
+            code.append(f"auto {var_name} = ntt::make_tensor_view_from_address<{datatype.cpp_type}>(")
+            code.append(f"    big_tensor.elements().data(),")
+            code.append(f"    {shape_expr},")
+            code.append(f"    big_tensor.strides());")
+        
+        return code
     
     def generate_pack_axes_str(self, axes):
         if len(axes) == 1:
@@ -103,8 +167,8 @@ class PackTestGenerator(BaseTestGenerator):
             else:
                 code.append(f"    constexpr size_t {name} = {size};")
         
-        code.extend([f"    {datatype.cpp_type} min_input = {datatype.cpp_type}({datatype.min_val});", 
-                     f"    {datatype.cpp_type} max_input = {datatype.cpp_type}({datatype.max_val});", ""])
+        code.extend([f"    {datatype.cpp_type} min_input = {datatype.min_val};", 
+                     f"    {datatype.cpp_type} max_input = {datatype.max_val};", ""])
         return code
 
     def generate_output_tensor_code(self, datatype, shape_type, dim_names, pack_axes, vector_dim):
