@@ -20,8 +20,8 @@ letterbox_value = 0
 dump_asm = false
 dump_ir = false
 shape_bucket_enable = true
-shape_bucket_range_info = { "seq_len" = [1, 512], "history_len" = [0, 512] }
-shape_bucket_segments_count = 8
+shape_bucket_range_info = { "seq_len" = [1, 448], "history_len" = [0, 448] }
+shape_bucket_segments_count = 7
 
 
 [ptq_opt]
