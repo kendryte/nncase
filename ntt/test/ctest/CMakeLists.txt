@@ -47,7 +47,7 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     test_ntt_slice.cpp
     test_ntt_transpose.cpp
     test_ntt_unpack.cpp
-    # test_ntt_where.cpp
+    test_ntt_where.cpp
 )
 
 list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} ${GENERATED_TEST_SOURCES})
