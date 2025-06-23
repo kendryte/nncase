@@ -46,6 +46,7 @@ class basic_vector
     }
 
     static basic_vector<T, Lanes> from_scalar(T value) noexcept;
+    static basic_vector<T, Lanes> unaligned_load_from(const T *ptr) noexcept;
 
     constexpr basic_vector() noexcept = default;
     constexpr basic_vector(const buffer_type &buffer) noexcept

@@ -258,7 +258,6 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mkn,
     static constexpr size_t m0_subtile = 4;
 };
 
-#if 0
 template <bool AccumulateC>
 struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
                 2, 8, vector<float, NTT_VLEN / 32>, float,
@@ -588,7 +587,6 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
 #undef NTT_MATMUL_TAIL
     }
 };
-#endif
 
 // pack
 template <class T1, class T2> struct u_pack_policy<T1, T2, true> {

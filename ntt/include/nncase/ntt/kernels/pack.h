@@ -14,13 +14,8 @@
  */
 #pragma once
 #include "../apply.h"
-#include "../loop.h"
-#include "../shape_infer/pack.h"
-#include "../tensor_ops.h"
 #include "../tensor_traits.h"
-#include "../ukernels.h"
-#include "nncase/ntt/dimension.h"
-#include "nncase/ntt/shape.h"
+#include "../ukernels/u_pack.h"
 
 namespace nncase::ntt {
 namespace detail {
@@ -90,10 +85,10 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
             contiguous_dims(output.shape(), output.strides());
         if ((in_conti_dims == rank) && (out_conti_dims == rank) &&
             (PackAxis == rank - 1) && (in_shape.length() % VecLen == 0)) {
-            // FIXME: Unaligned copy
-            u_unary(ntt::ops::copy<TVec>{},
-                    reinterpret_cast<const TVec *>(in_p), 1, out_p, 1,
-                    output.shape().length());
+            for (dim_t i = 0; i < output.shape().length(); i++) {
+                out_p[i] = TVec::unaligned_load_from(in_p);
+                in_p += VecLen;
+            }
         } else {
             apply<0, PackAxis>(input, output, in_p, out_p);
         }

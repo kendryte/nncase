@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "apply.h"
-#include "nncase/ntt/shape.h"
 #include "primitive_ops.h"
 #include "tensor_traits.h"
 #include "vector.h"
@@ -549,8 +548,18 @@ template <Vector TVector> struct vload_scalar {
     using T = typename TVector::element_type;
 
     constexpr TVector operator()(const T &value) const noexcept {
-        TVector vec;
-        std::fill_n(vec.buffer().data(), vec.size(), value);
+        TVector vec{};
+        ntt::apply(vec.shape(), [&](auto index) { vec(index) = value; });
+        return vec;
+    }
+};
+
+template <Vector TVector> struct vunaligned_load {
+    using T = typename TVector::element_type;
+
+    constexpr TVector operator()(const T *ptr) const noexcept {
+        TVector vec{};
+        ntt::apply(vec.shape(), [&](auto index) { vec(index) = *ptr++; });
         return vec;
     }
 };
@@ -593,6 +602,12 @@ namespace nncase::ntt {
 template <Scalar T, FixedShape Lanes>
 basic_vector<T, Lanes> basic_vector<T, Lanes>::from_scalar(T value) noexcept {
     return vector_ops::vload_scalar<basic_vector<T, Lanes>>()(value);
+}
+
+template <Scalar T, FixedShape Lanes>
+basic_vector<T, Lanes>
+basic_vector<T, Lanes>::unaligned_load_from(const T *ptr) noexcept {
+    return vector_ops::vunaligned_load<basic_vector<T, Lanes>>()(ptr);
 }
 
 template <bool AccC, bool TransA = false, Vector T1, Vector T2, Vector TResult>
