@@ -14,8 +14,8 @@
  */
 #pragma once
 #include "../../primitive_ops.h"
-#include "nncase/ntt/arch/riscv64/arch_types.h"
-#include "nncase/ntt/vector.h"
+#include "../../vector.h"
+#include "arch_types.h"
 #include "rvv_mathfun.h"
 
 #ifdef __riscv_vector
@@ -1283,39 +1283,30 @@ struct cast<ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)>,
 
 // cast bool to float
 template <>
-struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>,
+struct cast<ntt::vector<bool, NTT_VL(sizeof(float) * 8, *, 1)>,
             ntt::vector<float, NTT_VL(sizeof(float) * 8, *, 1)>> {
-    auto operator()(const ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)> &v)
+    auto operator()(const ntt::vector<bool, NTT_VL(sizeof(float) * 8, *, 1)> &v)
         const noexcept {
         constexpr auto vl = NTT_VL(sizeof(float) * 8, *, 1);
-        auto mask = __riscv_vreinterpret_v_u8m1_b8(v);
-        ntt::vector<float, 4, vl> output;
-        auto zero = __riscv_vfmv_v_f_f32m4(0.f, vl);
-        auto dst = __riscv_vfmerge_vfm_f32m4(zero, 1.f, mask, vl);
-        output(0) = __riscv_vget_v_f32m4_f32m1(dst, 0);
-        output(1) = __riscv_vget_v_f32m4_f32m1(dst, 1);
-        output(2) = __riscv_vget_v_f32m4_f32m1(dst, 2);
-        output(3) = __riscv_vget_v_f32m4_f32m1(dst, 3);
-        return output;
+        auto zero = __riscv_vfmv_v_f_f32m1(0.f, vl);
+        return __riscv_vfmerge_vfm_f32m1(zero, 1.f, v, vl);
     }
 };
 
 // where
 #define WHERE_FLOAT32(lmul1, lmul2, mlen)                                      \
     inline vfloat32m##lmul1##_t where_float32(                                 \
-        const vuint8m##lmul2##_t &condition, const float &x, const float &y,   \
+        const vbool##mlen##_t &condition, const float &x, const float &y,      \
         const size_t vl) {                                                     \
-        vbool##mlen##_t mask =                                                 \
-            __riscv_vmsne_vx_u8m##lmul2##_b##mlen(condition, 0.f, vl);         \
         auto x_broadcast = __riscv_vfmv_v_f_f32m##lmul1(x, vl);                \
         auto y_broadcast = __riscv_vfmv_v_f_f32m##lmul1(y, vl);                \
-        return __riscv_vmerge_vvm_f32m##lmul1(y_broadcast, x_broadcast, mask,  \
-                                              vl);                             \
+        return __riscv_vmerge_vvm_f32m##lmul1(y_broadcast, x_broadcast,        \
+                                              condition, vl);                  \
     }                                                                          \
                                                                                \
     inline vfloat32m##lmul1##_t where_float32(                                 \
-        const uint8_t &condition, const float &x,                              \
-        const vfloat32m##lmul1##_t &y, const size_t vl) {                      \
+        const bool &condition, const float &x, const vfloat32m##lmul1##_t &y,  \
+        const size_t vl) {                                                     \
         auto cond_brct = __riscv_vmv_v_x_u8m##lmul2(condition, vl);            \
         vbool##mlen##_t mask =                                                 \
             __riscv_vmsne_vx_u8m##lmul2##_b##mlen(cond_brct, 0.f, vl);         \
@@ -1324,8 +1315,8 @@ struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>,
     }                                                                          \
                                                                                \
     inline vfloat32m##lmul1##_t where_float32(                                 \
-        const uint8_t &condition, const vfloat32m##lmul1##_t &x,               \
-        const float &y, const size_t vl) {                                     \
+        const bool &condition, const vfloat32m##lmul1##_t &x, const float &y,  \
+        const size_t vl) {                                                     \
         auto cond_brct = __riscv_vmv_v_x_u8m##lmul2(condition, vl);            \
         vbool##mlen##_t mask =                                                 \
             __riscv_vmsne_vx_u8m##lmul2##_b##mlen(cond_brct, 0.f, vl);         \
@@ -1334,33 +1325,26 @@ struct cast<ntt::vector<bool, NTT_VL(sizeof(bool) * 8, *, 1)>,
     }                                                                          \
                                                                                \
     inline vfloat32m##lmul1##_t where_float32(                                 \
-        const vuint8m##lmul2##_t &condition, const vfloat32m##lmul1##_t &x,    \
+        const vbool##mlen##_t &condition, const vfloat32m##lmul1##_t &x,       \
         const vfloat32m##lmul1##_t &y, const size_t vl) {                      \
-        vbool##mlen##_t mask =                                                 \
-            __riscv_vmsne_vx_u8m##lmul2##_b##mlen(condition, 0.f, vl);         \
-        return __riscv_vmerge_vvm_f32m##lmul1(y, x, mask, vl);                 \
+        return __riscv_vmerge_vvm_f32m##lmul1(y, x, condition, vl);            \
     }                                                                          \
                                                                                \
     inline vfloat32m##lmul1##_t where_float32(                                 \
-        const vuint8m##lmul2##_t &condition, const float &x,                   \
+        const vbool##mlen##_t &condition, const float &x,                      \
         const vfloat32m##lmul1##_t &y, const size_t vl) {                      \
-        vbool##mlen##_t mask =                                                 \
-            __riscv_vmsne_vx_u8m##lmul2##_b##mlen(condition, 0.f, vl);         \
-        auto x_broadcast = __riscv_vfmv_v_f_f32m##lmul1(x, vl);                \
-        return __riscv_vmerge_vvm_f32m##lmul1(y, x_broadcast, mask, vl);       \
+        return __riscv_vfmerge_vfm_f32m##lmul1(y, x, condition, vl);           \
     }                                                                          \
                                                                                \
     inline vfloat32m##lmul1##_t where_float32(                                 \
-        const vuint8m##lmul2##_t &condition, const vfloat32m##lmul1##_t &x,    \
+        const vbool##mlen##_t &condition, const vfloat32m##lmul1##_t &x,       \
         const float &y, const size_t vl) {                                     \
-        vbool##mlen##_t mask =                                                 \
-            __riscv_vmsne_vx_u8m##lmul2##_b##mlen(condition, 0.f, vl);         \
         auto y_broadcast = __riscv_vfmv_v_f_f32m##lmul1(y, vl);                \
-        return __riscv_vmerge_vvm_f32m##lmul1(y_broadcast, x, mask, vl);       \
+        return __riscv_vmerge_vvm_f32m##lmul1(y_broadcast, x, condition, vl);  \
     }                                                                          \
                                                                                \
     inline vfloat32m##lmul1##_t where_float32(                                 \
-        const uint8_t &condition, const vfloat32m##lmul1##_t &x,               \
+        const bool &condition, const vfloat32m##lmul1##_t &x,                  \
         const vfloat32m##lmul1##_t &y, const size_t vl) {                      \
         auto cond_brct = __riscv_vmv_v_x_u8m##lmul2(condition, vl);            \
         vbool##mlen##_t mask =                                                 \
@@ -1473,156 +1457,120 @@ REGISTER_RVV_WHERE_OP(float, where_float32)
     RVV_COMPARE_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
 #define EQUAL_FLOAT32(lmul1, lmul2, mlen)                                      \
-    inline vuint8m##lmul2##_t equal_float32(const vfloat32m##lmul1##_t &v1,    \
-                                            const vfloat32m##lmul1##_t &v2,    \
-                                            const size_t vl) {                 \
-        auto mask = __riscv_vmfeq_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    inline vbool##mlen##_t equal_float32(const vfloat32m##lmul1##_t &v1,       \
+                                         const vfloat32m##lmul1##_t &v2,       \
+                                         const size_t vl) {                    \
+        return __riscv_vmfeq_vv_f32m##lmul1##_b##mlen(v1, v2, vl);             \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t equal_float32(const vfloat32m##lmul1##_t &v,     \
-                                            const float &s, const size_t vl) { \
-        auto mask = __riscv_vmfeq_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    inline vbool##mlen##_t equal_float32(const vfloat32m##lmul1##_t &v,        \
+                                         const float &s, const size_t vl) {    \
+        return __riscv_vmfeq_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t equal_float32(                                   \
+    inline vbool##mlen##_t equal_float32(                                      \
         const float &s, const vfloat32m##lmul1##_t &v, const size_t vl) {      \
-        auto mask = __riscv_vmfeq_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfeq_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }
 
 REGISTER_RVV_KERNEL_4_1(EQUAL_FLOAT32)
 REGISTER_RVV_COMPARE_OP(equal, float, equal_float32)
 
 #define NOT_EQUAL_FLOAT32(lmul1, lmul2, mlen)                                  \
-    inline vuint8m##lmul2##_t not_equal_float32(                               \
-        const vfloat32m##lmul1##_t &v1, const vfloat32m##lmul1##_t &v2,        \
-        const size_t vl) {                                                     \
-        auto mask = __riscv_vmfne_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    inline vbool##mlen##_t not_equal_float32(const vfloat32m##lmul1##_t &v1,   \
+                                             const vfloat32m##lmul1##_t &v2,   \
+                                             const size_t vl) {                \
+        return __riscv_vmfne_vv_f32m##lmul1##_b##mlen(v1, v2, vl);             \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t not_equal_float32(                               \
+    inline vbool##mlen##_t not_equal_float32(                                  \
         const vfloat32m##lmul1##_t &v, const float &s, const size_t vl) {      \
-        auto mask = __riscv_vmfne_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfne_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t not_equal_float32(                               \
+    inline vbool##mlen##_t not_equal_float32(                                  \
         const float &s, const vfloat32m##lmul1##_t &v, const size_t vl) {      \
-        auto mask = __riscv_vmfne_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfne_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }
 
 REGISTER_RVV_KERNEL_4_1(NOT_EQUAL_FLOAT32)
 REGISTER_RVV_COMPARE_OP(not_equal, float, not_equal_float32)
 
 #define LESS_FLOAT32(lmul1, lmul2, mlen)                                       \
-    inline vuint8m##lmul2##_t less_float32(const vfloat32m##lmul1##_t &v1,     \
-                                           const vfloat32m##lmul1##_t &v2,     \
-                                           const size_t vl) {                  \
-        auto mask = __riscv_vmflt_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    inline vbool##mlen##_t less_float32(const vfloat32m##lmul1##_t &v1,        \
+                                        const vfloat32m##lmul1##_t &v2,        \
+                                        const size_t vl) {                     \
+        return __riscv_vmflt_vv_f32m##lmul1##_b##mlen(v1, v2, vl);             \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t less_float32(const vfloat32m##lmul1##_t &v,      \
-                                           const float &s, const size_t vl) {  \
-        auto mask = __riscv_vmflt_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    inline vbool##mlen##_t less_float32(const vfloat32m##lmul1##_t &v,         \
+                                        const float &s, const size_t vl) {     \
+        return __riscv_vmflt_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t less_float32(                                    \
+    inline vbool##mlen##_t less_float32(                                       \
         const float &s, const vfloat32m##lmul1##_t &v, const size_t vl) {      \
-        auto mask = __riscv_vmflt_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmflt_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }
 
 REGISTER_RVV_KERNEL_4_1(LESS_FLOAT32)
 REGISTER_RVV_COMPARE_OP(less, float, less_float32)
 
 #define LESS_OR_EQUAL_FLOAT32(lmul1, lmul2, mlen)                              \
-    inline vuint8m##lmul2##_t less_or_equal_float32(                           \
+    inline vbool##mlen##_t less_or_equal_float32(                              \
         const vfloat32m##lmul1##_t &v1, const vfloat32m##lmul1##_t &v2,        \
         const size_t vl) {                                                     \
-        auto mask = __riscv_vmfle_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfle_vv_f32m##lmul1##_b##mlen(v1, v2, vl);             \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t less_or_equal_float32(                           \
+    inline vbool##mlen##_t less_or_equal_float32(                              \
         const vfloat32m##lmul1##_t &v, const float &s, const size_t vl) {      \
-        auto mask = __riscv_vmfle_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfle_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t less_or_equal_float32(                           \
+    inline vbool##mlen##_t less_or_equal_float32(                              \
         const float &s, const vfloat32m##lmul1##_t &v, const size_t vl) {      \
-        auto mask = __riscv_vmfle_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfle_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }
 
 REGISTER_RVV_KERNEL_4_1(LESS_OR_EQUAL_FLOAT32)
 REGISTER_RVV_COMPARE_OP(less_or_equal, float, less_or_equal_float32)
 
 #define GREATER_FLOAT32(lmul1, lmul2, mlen)                                    \
-    inline vuint8m##lmul2##_t greater_float32(const vfloat32m##lmul1##_t &v1,  \
-                                              const vfloat32m##lmul1##_t &v2,  \
-                                              const size_t vl) {               \
-        auto mask = __riscv_vmfgt_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    inline vbool##mlen##_t greater_float32(const vfloat32m##lmul1##_t &v1,     \
+                                           const vfloat32m##lmul1##_t &v2,     \
+                                           const size_t vl) {                  \
+        return __riscv_vmfgt_vv_f32m##lmul1##_b##mlen(v1, v2, vl);             \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t greater_float32(                                 \
-        const vfloat32m##lmul1##_t &v, const float &s, const size_t vl) {      \
-        auto mask = __riscv_vmfgt_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+    inline vbool##mlen##_t greater_float32(const vfloat32m##lmul1##_t &v,      \
+                                           const float &s, const size_t vl) {  \
+        return __riscv_vmfgt_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t greater_float32(                                 \
+    inline vbool##mlen##_t greater_float32(                                    \
         const float &s, const vfloat32m##lmul1##_t &v, const size_t vl) {      \
-        auto mask = __riscv_vmfgt_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfgt_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }
 
 REGISTER_RVV_KERNEL_4_1(GREATER_FLOAT32)
 REGISTER_RVV_COMPARE_OP(greater, float, greater_float32)
 
 #define GREATER_OR_EQUAL_FLOAT32(lmul1, lmul2, mlen)                           \
-    inline vuint8m##lmul2##_t greater_or_equal_float32(                        \
+    inline vbool##mlen##_t greater_or_equal_float32(                           \
         const vfloat32m##lmul1##_t &v1, const vfloat32m##lmul1##_t &v2,        \
         const size_t vl) {                                                     \
-        auto mask = __riscv_vmfge_vv_f32m##lmul1##_b##mlen(v1, v2, vl);        \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfge_vv_f32m##lmul1##_b##mlen(v1, v2, vl);             \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t greater_or_equal_float32(                        \
+    inline vbool##mlen##_t greater_or_equal_float32(                           \
         const vfloat32m##lmul1##_t &v, const float &s, const size_t vl) {      \
-        auto mask = __riscv_vmfge_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfge_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }                                                                          \
                                                                                \
-    inline vuint8m##lmul2##_t greater_or_equal_float32(                        \
+    inline vbool##mlen##_t greater_or_equal_float32(                           \
         const float &s, const vfloat32m##lmul1##_t &v, const size_t vl) {      \
-        auto mask = __riscv_vmfge_vf_f32m##lmul1##_b##mlen(v, s, vl);          \
-        auto zeros = __riscv_vmv_v_x_u8m##lmul2(0, vl);                        \
-        return __riscv_vmerge_vxm_u8m##lmul2(zeros, 0xFF, mask, vl);           \
+        return __riscv_vmfge_vf_f32m##lmul1##_b##mlen(v, s, vl);               \
     }
 
 REGISTER_RVV_KERNEL_4_1(GREATER_OR_EQUAL_FLOAT32)
