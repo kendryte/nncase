@@ -30,8 +30,10 @@ void benchmark_ntt_unary(std::string op_name, T low, T high) {
     constexpr size_t size1 = 2000;
     constexpr size_t size2 = 2000;
 #endif
-    using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>;
-    tensor_type ntt_input, ntt_output;
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<size2>);
+    auto ntt_output =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<size2>);
     NttTest::init_tensor(ntt_input, low, high);
 
     for (size_t i = 0; i < size1; i++) {
