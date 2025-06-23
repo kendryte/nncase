@@ -32,16 +32,16 @@ template <bool Arch, Scalar TIn, Vector TOut> class u_pack {
     constexpr void operator()(const TIn *input, const TM &M, const TN &N,
                               const TMStrides &m_strides,
                               TOut *output) noexcept {
-        for (size_t j = 0; j < N; j++) {
-            for (size_t i = 0; i < M; i++) {
+        for (dim_t j = 0; j < N; j++) {
+            for (dim_t i = 0; i < M; i++) {
                 output[j](i) = input[i * m_strides + j];
             }
         }
 
         const auto out_length = typename TOut::shape_type{}.length();
         if (M < out_length) {
-            for (size_t j = 0; j < N; j++) {
-                for (size_t i = M; i < out_length; i++) {
+            for (dim_t j = 0; j < N; j++) {
+                for (dim_t i = M; i < out_length; i++) {
                     output[j](i) = (TIn)0;
                 }
             }
