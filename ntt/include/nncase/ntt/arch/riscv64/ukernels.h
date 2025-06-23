@@ -47,7 +47,8 @@ template <>
 struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
                vector<float, NTT_VLEN / 32>, true> {
   public:
-    void operator()(const vector<float, NTT_VLEN / 32> *input, size_t in_stride,
+    void operator()(const ntt::ops::copy<vector<float, NTT_VLEN / 32>> &,
+                    const vector<float, NTT_VLEN / 32> *input, size_t in_stride,
                     vector<float, NTT_VLEN / 32> *output, size_t out_stride,
                     size_t count) noexcept {
         using policy_t =

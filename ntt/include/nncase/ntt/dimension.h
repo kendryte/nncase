@@ -53,9 +53,10 @@ template <> struct char_literal<> {
     static const dim_t to_int = 0;
 };
 template <char c, char... cv> struct char_literal<c, cv...> {
-    static const dim_t to_int = c == '-' ? -1 * char_literal<cv...>::to_int
-                                         : (c - '0') * pow(10, sizeof...(cv)) +
-                                               char_literal<cv...>::to_int;
+    static const dim_t to_int =
+        c == '-' ? -1 * char_literal<cv...>::to_int
+                 : (c - '0') * pow((dim_t)10, sizeof...(cv)) +
+                       char_literal<cv...>::to_int;
 };
 } // namespace detail
 
