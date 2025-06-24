@@ -43,10 +43,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         input_strides.template slice<(size_t)0, (size_t)axis_value>();
 
     const auto inner_size =
-        input_shape
-            .template slice<(size_t)axis_value,
-                            (size_t)(input.rank() - axis_value)>()
-            .length();
+        input_shape.template slice<(size_t)axis_value>().length();
 
     constexpr PackedAxes packed_axes_temp;
     constexpr bool UseVectorReduce =
