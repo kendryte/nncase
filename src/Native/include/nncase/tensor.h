@@ -51,6 +51,7 @@ class NNCASE_API tensor_node : public value_node {
     result<void> copy_from(tensor src) noexcept;
     result<void> copy_to(tensor dest) const noexcept;
     result<tensor> to_host() noexcept;
+    result<tensor> to_device() noexcept;
 
     result<void> copy_to(value_t dest) const noexcept override;
 

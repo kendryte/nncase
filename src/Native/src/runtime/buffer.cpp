@@ -16,6 +16,7 @@
 #include <nncase/runtime/buffer.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/host_buffer.h>
+#include <nncase/runtime/device_buffer.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -26,6 +27,10 @@ buffer_node::buffer_node(size_t size_bytes, buffer_allocator &allocator)
 result<host_buffer_slice> buffer_slice::as_host() const noexcept {
     checked_try_var(host_buffer, buffer_.as<host_buffer_t>());
     return ok(host_buffer_slice(host_buffer, start_, length_));
+}
+result<device_buffer_slice> buffer_slice::as_device() const noexcept {
+    checked_try_var(device_buffer, buffer_.as<device_buffer_t>());
+    return ok(device_buffer_slice(device_buffer, start_, length_));
 }
 
 result<void>
