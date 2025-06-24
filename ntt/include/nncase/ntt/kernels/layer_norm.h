@@ -37,11 +37,15 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 
     TAxis axis;
     constexpr auto axis_value = axis[0_dim];
-    const auto domain = input_shape.template slice<0, axis_value>();
-    const auto strides = input_strides.template slice<0, axis_value>();
+    const auto domain =
+        input_shape.template slice<(size_t)0, (size_t)axis_value>();
+    const auto strides =
+        input_strides.template slice<(size_t)0, (size_t)axis_value>();
 
     const auto inner_size =
-        input_shape.template slice<axis_value, input.rank() - axis_value>()
+        input_shape
+            .template slice<(size_t)axis_value,
+                            (size_t)(input.rank() - axis_value)>()
             .length();
 
     constexpr PackedAxes packed_axes_temp;
