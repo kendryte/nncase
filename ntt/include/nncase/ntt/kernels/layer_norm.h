@@ -15,6 +15,8 @@
 #pragma once
 #include "../apply.h"
 #include "../primitive_ops.h"
+#include "../ukernels.h"
+#include "../utility.h"
 #include "reduce.h"
 
 namespace nncase::ntt {
