@@ -42,8 +42,9 @@ using namespace nncase::ntt::runtime;
 
 typedef struct {
     uint32_t output_align;
-    uint32_t reserved0;
+    uint32_t local_data_align;
     uint64_t output_pool_size;
+    uint64_t local_data_pool_size;
 } kernel_desc_header;
 
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
@@ -61,7 +62,7 @@ result<void> cpu_runtime_function::initialize_core(
         ".desc", [this](auto reader, size_t) -> result<void> {
             auto header = reader.template read<kernel_desc_header>();
 
-            // Allocate buffer
+            // Allocate output buffer
             buffer_allocate_options options{};
             options.flags = HOST_BUFFER_ALLOCATE_CPU_ONLY;
             options.alignment = header.output_align;
@@ -69,6 +70,18 @@ result<void> cpu_runtime_function::initialize_core(
                                        header.output_pool_size, options));
             try_set(this->output_buffer_,
                     output_buffer.template as<host_buffer_t>());
+
+            // Allocate local datas
+            options.alignment = header.local_data_align;
+            auto blocks_count = module().cdim() * module().bdim();
+            local_datas_.resize(blocks_count);
+            for (size_t i = 0; i < blocks_count; i++) {
+                try_var(buffer,
+                        buffer_allocator::host().allocate(
+                            header.local_data_pool_size * module().tdim(),
+                            options));
+                try_set(local_datas_[i], buffer.template as<host_buffer_t>());
+            }
             return ok();
         }));
     auto text = module().text().subspan(context.header().entrypoint,

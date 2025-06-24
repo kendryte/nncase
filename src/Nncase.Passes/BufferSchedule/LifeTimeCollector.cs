@@ -74,7 +74,7 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
     public override Result VisitType(TensorType type)
     {
         var maxShape = CompilerServices.GetMaxShape(type.Shape);
-        var stride = TensorUtilities.GetStrides(maxShape);
+        var stride = TensorUtilities.GetDefaultStrides(maxShape);
         return new(TensorUtilities.GetSize(maxShape, stride, type.DType.SizeInBytes), type.Shape, stride);
     }
 
@@ -83,7 +83,7 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
         if (DistributedUtility.TryGetDividedTensorType(distributedType, out var tt))
         {
             var maxShape = CompilerServices.GetMaxShape(tt.Shape);
-            var stride = TensorUtilities.GetStrides(maxShape);
+            var stride = TensorUtilities.GetDefaultStrides(maxShape);
             var size = TensorUtilities.GetSize(maxShape, stride, tt.DType.SizeInBytes);
             return new(size, tt.Shape, stride);
         }

@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 #pragma once
-#include "vector.h"
+#include "detail/vector_storage.h"
 
 #define NTT_BEGIN_DEFINE_NATIVE_VECTOR(element_type_, native_type, ...)        \
     namespace nncase::ntt {                                                    \
-    template <> struct vector_storage_traits<element_type_, __VA_ARGS__> {     \
+    template <>                                                                \
+    struct vector_storage_traits<element_type_, fixed_shape_t<__VA_ARGS__>> {  \
         using buffer_type = native_type;                                       \
         using element_type = element_type_;
 
@@ -30,26 +31,34 @@
                                                ...)                            \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR(element_type_, native_type, __VA_ARGS__)    \
                                                                                \
+    template <Dimensions TIndex>                                               \
     static element_type_ get_element(const native_type &array,                 \
-                                     ranked_shape<1> index) noexcept {         \
-        return array[index[0]];                                                \
+                                     const TIndex &index) noexcept {           \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        return array[(size_t)index[dim_zero]];                                 \
     }                                                                          \
                                                                                \
-    static void set_element(native_type &array, ranked_shape<1> index,         \
+    template <Dimensions TIndex>                                               \
+    static void set_element(native_type &array, const TIndex &index,           \
                             element_type_ value) noexcept {                    \
-        array[index[0]] = value;                                               \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        array[(size_t)index[dim_zero]] = value;                                \
     }
 
 #define NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT_CAST(                           \
     element_type_, native_type, cast_type, ...)                                \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR(element_type_, native_type, __VA_ARGS__)    \
                                                                                \
+    template <Dimensions TIndex>                                               \
     static element_type_ get_element(const native_type &array,                 \
-                                     ranked_shape<1> index) noexcept {         \
-        return reinterpret_cast<const cast_type &>(array)[index[0]];           \
+                                     const TIndex &index) noexcept {           \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        return reinterpret_cast<const cast_type &>(array)[index[dim_zero]];    \
     }                                                                          \
                                                                                \
-    static void set_element(native_type &array, ranked_shape<1> index,         \
+    template <Dimensions TIndex>                                               \
+    static void set_element(native_type &array, const TIndex &index,           \
                             element_type_ value) noexcept {                    \
-        reinterpret_cast<cast_type &>(array)[index[0]] = value;                \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        reinterpret_cast<cast_type &>(array)[index[dim_zero]] = value;         \
     }

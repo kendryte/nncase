@@ -17,20 +17,18 @@
 
 namespace nncase::ntt {
 namespace ukernels {
-
 template <class Op, class T1, class T2, bool Arch> struct u_binary_policy {
     static constexpr size_t unroll = 1;
 };
 
 template <class Op, class T1, class T2, class TOut, bool Arch> struct u_binary {
   public:
-    constexpr void operator()(const T1 *input1, const T2 *input2,
+    constexpr void operator()(Op &op, const T1 *input1, const T2 *input2,
                               size_t input1_stride, size_t input2_stride,
                               TOut *output, size_t output_stride,
                               size_t count) noexcept {
         using policy_t = u_binary_policy<Op, T1, T2, Arch>;
         constexpr auto unroll = policy_t::unroll;
-        Op op;
 
         while (count / unroll) {
             for (size_t i = 0; i < unroll; i++) {
@@ -53,11 +51,11 @@ template <class Op, class T1, class T2, class TOut, bool Arch> struct u_binary {
 } // namespace ukernels
 
 template <class Op, class T1, class T2, class TOut>
-constexpr void u_binary(const T1 *input1, size_t input1_stride,
+constexpr void u_binary(Op &op, const T1 *input1, size_t input1_stride,
                         const T2 *input2, size_t input2_stride, TOut *output,
                         size_t output_stride, size_t count) noexcept {
     ukernels::u_binary<Op, T1, T2, TOut, true> impl;
-    impl(input1, input2, input1_stride, input2_stride, output, output_stride,
-         count);
+    impl(op, input1, input2, input1_stride, input2_stride, output,
+         output_stride, count);
 }
 } // namespace nncase::ntt

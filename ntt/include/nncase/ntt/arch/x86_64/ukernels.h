@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../../ukernels.h"
+#include "nncase/ntt/shape.h"
 #include "nncase/ntt/vector.h"
 
 namespace nncase::ntt::ukernels {
@@ -39,7 +40,8 @@ SPECIALIZE_U_UNARY(square, 2)
 template <>
 struct u_unary<ntt::ops::copy<vector<float, 8>>, vector<float, 8>, true> {
   public:
-    void operator()(const vector<float, 8> *input, size_t input_stride,
+    void operator()(const ntt::ops::copy<vector<float, 8>> &,
+                    const vector<float, 8> *input, size_t input_stride,
                     vector<float, 8> *output, size_t output_stride,
                     size_t count) noexcept {
         using policy_t = u_unary_policy<ntt::ops::copy<vector<float, 8>>,
@@ -176,47 +178,45 @@ inline void permute_8x8(const TElem *src, TElem *dst, size_t in_stride,
 }
 
 // pack
-template <size_t M, size_t N, size_t MStrides>
-class u_pack<M, N, MStrides, true, float, vector<float, 8>> {
+template <> class u_pack<true, float, vector<float, 8>> {
   public:
-    constexpr void operator()(const float *input,
+    template <Dimension TM, Dimension TN, Dimension TMStrides>
+    constexpr void operator()(const float *input, const TM &M, const TN &N,
+                              const TMStrides &m_strides,
                               vector<float, 8> *output) noexcept {
+        constexpr auto speedup_m = 8_dim;
+        const bool speedup = M == speedup_m && N % 8 == 0 && m_strides != 1;
 
-        constexpr bool speedup = M == 8 && N % 8 == 0 && MStrides != 1;
-
-        if constexpr (speedup) {
-
+        if (speedup) {
             auto src = reinterpret_cast<const float *>(input);
             auto dst = reinterpret_cast<float *>(output);
-            for (size_t j = 0; j < N / M; j++) {
-                permute_8x8(src, dst, MStrides, 8);
+            for (size_t j = 0; j < N / speedup_m; j++) {
+                permute_8x8(src, dst, m_strides, 8);
                 src += 8;
                 dst += 64;
             }
         } else {
-            ukernels::u_pack<M, N, MStrides, false, float, vector<float, 8>>
-                impl;
-            impl(input, output);
+            ukernels::u_pack<false, float, vector<float, 8>> impl;
+            impl(input, M, N, m_strides, output);
         }
     }
 };
 
-template <class TIn, class TOut, size_t... Axes>
-requires(sizeof...(Axes) > 0 &&
-         (std::get<sizeof...(Axes) - 1>(std::array<size_t, sizeof...(Axes)>{
-              Axes...}) ==
-          (TIn::rank() - 1))) class u_pack2d<true, TIn, TOut, float,
-                                             vector<float, 8, 8>, Axes...> {
+#if 0
+template <class TIn, class TOut>
+class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
   public:
-    constexpr void operator()(const TIn &input, TOut &output) noexcept {
+    template <FixedDimensions TAxes>
+        requires(TAxes::rank() > 0 && (TAxes{}[-1]) == (TIn::rank() - 1))
+    constexpr void operator()(const TIn &input, const TAxes &axes,
+                              TOut &output) noexcept {
         using TVec = vector<float, 8, 8>;
-        constexpr size_t axes[2] = {TIn::rank() - 2, TIn::rank() - 1};
         constexpr auto in_rank = TIn::rank();
         constexpr auto out_rank = TOut::rank();
         constexpr auto lanes = TVec::shape();
         auto out_shape = output.shape();
 
-        apply(out_shape, [&](auto index) {
+        ntt::apply(out_shape, [&](auto index) {
             auto out_index = slice_index<out_rank>(index);
             auto in_index = slice_index<in_rank>(index);
             loop<2>([&](auto i) {
@@ -233,57 +233,53 @@ requires(sizeof...(Axes) > 0 &&
             }
         });
     }
-};
 
-template <class TIn, class TOut, size_t... Axes>
-class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
-  public:
-    constexpr void operator()(const TIn &input, TOut &output) noexcept {
+    template <FixedDimensions TAxes>
+    constexpr void operator()(const TIn &input, const TAxes &axes,
+                              TOut &output) noexcept {
         using TVec = vector<float, 8, 8>;
-        constexpr auto axes = std::array<size_t, sizeof...(Axes)>{Axes...};
         constexpr auto in_rank = TIn::rank();
         constexpr auto out_rank = TOut::rank();
         constexpr auto lanes = TVec::shape();
-        auto out_shape = output.shape();
+        const auto out_shape = output.shape();
 
-        ranked_shape<out_rank> domain{};
-        for (size_t i = 0; i < out_rank; i++) {
-            domain[i] = out_shape[i];
-        }
-        ranked_shape<in_rank> inner_domain{};
-        ranked_shape<in_rank> outer_domain{};
+        const auto domain = out_shape;
+        dynamic_shape_t<in_rank> inner_index{};
+        dynamic_shape_t<in_rank> outer_index{};
 
-        auto outer_index = slice_index<axes[0]>(domain);
-        auto packed_index = slice_index<sizeof...(Axes)>(domain, axes[0]);
-        auto inner_index =
-            slice_index<out_rank - (axes[1] + 1)>(domain, axes[1] + 1);
-        auto inner_size = inner_index.length();
+        const auto outer_domain = domain.template slice<0, axes[0_dim]>();
+        const auto packed_domain =
+            domain.template slice<axes[0_dim], axes.rank()>();
+        const auto inner_domain = domain.template slice<axes[1_dim] + 1>();
+        const auto inner_size = inner_domain.length();
 
-        if (inner_size % TVec::shape()[1] != 0) {
-            ukernels::u_pack2d<false, TIn, TOut, float, TVec, Axes...> impl;
-            impl(input, output);
+        if (inner_size % TVec::shape()[1_dim] != 0) {
+            ukernels::u_pack2d<false, TIn, TOut, float, TVec> impl;
+            impl(input, axes, output);
         } else {
-            ntt::apply(outer_index, [&](auto index) {
-                for (size_t i = 0; i < axes[0]; i++) {
-                    inner_domain[i] = index[i];
-                    outer_domain[i] = index[i];
-                }
-                for (size_t i = 0; i < packed_index[0]; i++) {
-                    outer_domain[axes[0]] = i;
+            ntt::apply(outer_domain, [&](auto index) {
+                loop<axes[0_dim]>([&](auto i) {
+                    inner_index[i] = index[i];
+                    outer_index[i] = index[i];
+                });
+                for (size_t i = 0; i < packed_domain[0_dim]; i++) {
+                    outer_index[axes[0_dim]] = i;
                     auto outer_ptr_keep =
-                        reinterpret_cast<float *>(&output(outer_domain));
+                        reinterpret_cast<float *>(&output(outer_index));
                     for (size_t j = 0; j < lanes[0]; j++) {
-                        inner_domain[axes[0]] = i * lanes[0] + j;
+                        inner_index[axes[0_dim]] = i * lanes[0_dim] + j;
                         auto outer_ptr = outer_ptr_keep + j * lanes[0];
 
-                        for (size_t k = 0; k < packed_index[1]; k++) {
-                            inner_domain[axes[1]] = k * lanes[1];
+                        for (size_t k = 0; k < packed_domain[1]; k++) {
+                            inner_index[axes[1_dim]] = k * lanes[1];
                             auto input_ptr = reinterpret_cast<const float *>(
-                                &input(inner_domain));
+                                &input(inner_index));
 
-                            for (size_t l = 0; l < inner_size / lanes[1]; l++) {
-                                auto st_base = l * lanes[0] * lanes.length();
-                                auto ld_base = l * lanes[1];
+                            for (size_t l = 0; l < inner_size / lanes[1_dim];
+                                 l++) {
+                                auto st_base =
+                                    l * lanes[0_dim] * lanes.length();
+                                auto ld_base = l * lanes[1_dim];
 
                                 auto src = input_ptr + ld_base;
                                 auto dst = outer_ptr + st_base;
@@ -299,6 +295,7 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>, Axes...> {
         }
     }
 };
+
 template <size_t axis_stride, class T1, size_t PackAxis>
 class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
   public:
@@ -308,8 +305,8 @@ class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
         constexpr auto in_rank = T1::rank();
         auto in_shape = input.shape();
 
-        ranked_shape<in_rank> inner_domain{};
-        ranked_shape<in_rank> domain{};
+        dynamic_shape_t<in_rank> inner_domain{};
+        dynamic_shape_t<in_rank> domain{};
         for (size_t i = 0; i < in_rank; i++) {
             domain[i] = in_shape[i];
         }
@@ -357,18 +354,18 @@ class u_unpack_2d_fixed<low_axis_stride, 8, high_axis_stride, 8, TIn, float,
         constexpr auto in_rank = TIn::rank();
         auto in_shape = input.shape();
 
-        ranked_shape<in_rank> domain{};
+        dynamic_shape_t<in_rank> domain{};
         for (size_t i = 0; i < in_rank; i++) {
             domain[i] = in_shape[i];
         }
-        ranked_shape<in_rank> inner_domain{};
+        dynamic_shape_t<in_rank> inner_domain{};
 
         auto packed_index = slice_index<2>(domain, axes[0]);
         auto inner_index =
             slice_index<in_rank - (axes[1] + 1)>(domain, axes[1] + 1);
         auto inner_size = inner_index.length();
 
-        ranked_shape<Axis2> tile_domain{};
+        dynamic_shape_t<Axis2> tile_domain{};
         for (size_t i = 0; i < Axis2; i++) {
             tile_domain[i] = in_shape[i];
         }
@@ -406,6 +403,7 @@ class u_unpack_2d_fixed<low_axis_stride, 8, high_axis_stride, 8, TIn, float,
         }
     }
 };
+#endif
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {

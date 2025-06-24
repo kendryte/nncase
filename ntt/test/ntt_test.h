@@ -82,7 +82,10 @@ __inline__ uint64_t get_cpu_cycle(void) {
     return cycles;
 }
 
-template <typename T, class TTensor>
+template <ntt::TensorOrVector TTensor>
+void print_tensor(TTensor &tensor, std::string name);
+
+template <typename T, TensorOrVector TTensor>
 void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
                  T stop = static_cast<T>(1)) {
     std::random_device rd;
@@ -97,17 +100,17 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<float_e5m2_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, int8_t>) {
+    } else if constexpr (std::is_same_v<T, int8_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int8_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, int16_t>) {
+    } else if constexpr (std::is_same_v<T, int16_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int16_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, int32_t>) {
+    } else if constexpr (std::is_same_v<T, int32_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int32_t>(dis(gen));
@@ -116,32 +119,32 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if (std::is_same_v<T, int64_t>) {
+    } else if constexpr (std::is_same_v<T, int64_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<int64_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint8_t>) {
+    } else if constexpr (std::is_same_v<T, uint8_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint8_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint16_t>) {
+    } else if constexpr (std::is_same_v<T, uint16_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint16_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint32_t>) {
+    } else if constexpr (std::is_same_v<T, uint32_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint32_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, uint64_t>) {
+    } else if constexpr (std::is_same_v<T, uint64_t>) {
         std::uniform_int_distribution<> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<uint64_t>(dis(gen));
         });
-    } else if (std::is_same_v<T, float>) {
+    } else if constexpr (std::is_same_v<T, float>) {
         std::uniform_real_distribution<float> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<float>(dis(gen));
@@ -150,44 +153,40 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             //     std::cout << index[i] << " ";
             // std::cout << ") = " << tensor(index) << std::endl;
         });
-    } else if (std::is_same_v<T, half>) {
+    } else if constexpr (std::is_same_v<T, half>) {
         std::uniform_real_distribution<float> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<half>(dis(gen));
         });
-    } else if (std::is_same_v<T, double>) {
+    } else if constexpr (std::is_same_v<T, double>) {
         std::uniform_real_distribution<double> dis(start, stop);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<double>(dis(gen));
         });
-    } else if (std::is_same_v<T, bool>) {
-        std::uniform_real_distribution<double> dis(start, stop);
+    } else if constexpr (std::is_same_v<T, bool>) {
+        std::uniform_real_distribution<double> dis(0.0, 1.0);
         ntt::apply(tensor.shape(), [&](auto &index) {
             tensor(index) = static_cast<double>(dis(gen)) >= 0.5;
         });
-    } else {
+    } else if constexpr (std::is_same_v<T, bfloat16>) {
+        std::uniform_real_distribution<float> dis(start, stop);
+        ntt::apply(tensor.shape(), [&](auto &index) {
+            tensor(index) = static_cast<bfloat16>(dis(gen));
+        });
+    } else{
         std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
         std::abort();
     }
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>, size_t N>
-void init_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &tensor,
-                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
+template <typename T, TensorOfVector TTensor>
+void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
+                 T stop = static_cast<T>(1)) {
     ntt::apply(tensor.shape(),
                [&](auto &index) { init_tensor(tensor(index), start, stop); });
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>, size_t N>
-void init_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &tensor,
-                 T start = static_cast<T>(0), T stop = static_cast<T>(1)) {
-    ntt::apply(tensor.shape(),
-               [&](auto &index) { init_tensor(tensor(index), start, stop); });
-}
-
-template <ntt::IsTensor TTensor>
+template <ntt::TensorOrVector TTensor>
 bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
@@ -235,11 +234,12 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
     return pass;
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>, size_t N>
-bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
-                    ntt::tensor<ntt::vector<T, N>, Shape, Stride> &rhs,
-                    double threshold = 0.999f) {
+template <ntt::TensorOfVector TTensor>
+    requires(TTensor::element_type::rank() == 1)
+bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
+    using vector_type = typename TTensor::element_type;
+    constexpr size_t N = vector_type::template lane<0>();
+    printf("N = %zu\n", N);
     if (lhs.shape().rank() != rhs.shape().rank()) {
         return false;
     }
@@ -255,8 +255,67 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
 
     bool pass = true;
     nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        const ntt::vector<T, N> lvalue = lhs(index);
-        const ntt::vector<T, N> rvalue = rhs(index);
+        const auto lvalue = lhs(index);
+        const auto rvalue = rhs(index);
+
+        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
+            auto d1 = static_cast<double>(static_cast<typename decltype(lvalue)::element_type>(lvalue(idx)));
+            auto d2 = static_cast<double>(static_cast<typename decltype(rvalue)::element_type>(rvalue(idx)));
+            // auto d1 = int32_t(lvalue(idx));
+            // auto d2 = int32_t(rvalue(idx));
+            v1.push_back(d1);
+            v2.push_back(d2);
+            if (d1 != d2) {
+                std::cout << "index = (";
+                for (size_t i = 0; i < index.rank(); i++)
+                    std::cout << index[i] << " ";
+                std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
+                pass = false;
+            }
+        });
+    });
+
+    if (!pass) {
+        double dotProduct =
+            std::inner_product(v1.begin(), v1.end(), v2.begin(), (double)0.0);
+        double norm1 = std::sqrt(
+            std::inner_product(v1.begin(), v1.end(), v1.begin(), (double)0.0));
+        double norm2 = std::sqrt(
+            std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
+        double cosine_similarity = dotProduct / (norm1 * norm2);
+        pass = cosine_similarity > threshold;
+        if (!pass)
+            std::cerr << "cosine_similarity = " << cosine_similarity
+                      << std::endl;
+    }
+    return pass;
+}
+
+// 2D vector
+template <ntt::TensorOfVector TTensor>
+    requires(TTensor::element_type::rank() == 2)
+bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
+    using vector_type = typename TTensor::element_type;
+    constexpr size_t N0 = vector_type::template lane<0>();
+    constexpr size_t N1 = vector_type::template lane<1>();
+
+    if (lhs.shape().rank() != rhs.shape().rank()) {
+        return false;
+    }
+
+    for (size_t i = 0; i < lhs.shape().rank(); i++)
+        if (lhs.shape()[i] != rhs.shape()[i])
+            return false;
+
+    std::vector<double> v1;
+    std::vector<double> v2;
+    v1.reserve(lhs.shape().length() * N0 * N1);
+    v2.reserve(rhs.shape().length() * N0 * N1);
+
+    bool pass = true;
+    nncase::ntt::apply(lhs.shape(), [&](auto index) {
+        const auto lvalue = lhs(index);
+        const auto rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
             auto d1 = (double)(lvalue(idx));
@@ -289,59 +348,67 @@ bool compare_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
     return pass;
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>, size_t N>
-bool compare_tensor(ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &lhs,
-                    ntt::tensor<ntt::vector<T, N, N>, Shape, Stride> &rhs,
-                    double threshold = 0.999f) {
-    if (lhs.shape().rank() != rhs.shape().rank()) {
-        return false;
+template <ntt::TensorOrVector TTensor>
+void print_tensor(TTensor &tensor, std::string name) {
+    std::cout << name << std::endl;
+    using element_type = typename TTensor::element_type;
+    if constexpr (ntt::Vector<element_type>) {
+        nncase::ntt::apply(tensor.shape(),
+                       [&](auto index) { 
+                        const auto vec = tensor(index);
+                        nncase::ntt::apply(vec.shape(), [&](auto idx) {
+                            auto d1 = int32_t(vec(idx));
+                            std::cout << d1 << " ";
+                        });
+                       });
+    } else {
+        nncase::ntt::apply(tensor.shape(),
+                       [&](auto index) { std::cout << int32_t(tensor(index)) << " "; });
     }
 
-    for (size_t i = 0; i < lhs.shape().rank(); i++)
-        if (lhs.shape()[i] != rhs.shape()[i])
-            return false;
-
-    std::vector<double> v1;
-    std::vector<double> v2;
-    v1.reserve(lhs.shape().length() * N);
-    v2.reserve(rhs.shape().length() * N);
-
-    bool pass = true;
-    nncase::ntt::apply(lhs.shape(), [&](auto index) {
-        const ntt::vector<T, N, N> lvalue = lhs(index);
-        const ntt::vector<T, N, N> rvalue = rhs(index);
-
-        nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
-            auto d1 = (double)(lvalue(idx));
-            auto d2 = (double)(rvalue(idx));
-            v1.push_back(d1);
-            v2.push_back(d2);
-            if (d1 != d2) {
-                std::cout << "index = (";
-                for (size_t i = 0; i < index.rank(); i++)
-                    std::cout << index[i] << " ";
-                std::cout << "): lhs = " << d1 << ", rhs = " << d2 << std::endl;
-                pass = false;
-            }
-        });
-    });
-
-    if (!pass) {
-        double dotProduct =
-            std::inner_product(v1.begin(), v1.end(), v2.begin(), (double)0.0);
-        double norm1 = std::sqrt(
-            std::inner_product(v1.begin(), v1.end(), v1.begin(), (double)0.0));
-        double norm2 = std::sqrt(
-            std::inner_product(v2.begin(), v2.end(), v2.begin(), (double)0.0));
-        double cosine_similarity = dotProduct / (norm1 * norm2);
-        pass = cosine_similarity > threshold;
-        if (!pass)
-            std::cerr << "cosine_similarity = " << cosine_similarity
-                      << std::endl;
-    }
-    return pass;
+    std::cout << std::endl;
 }
+
+template <ntt::TensorOrVector TTensor_src, ntt::TensorOrVector TTensor_dst>
+void reinterpret_cast_fp8_to_uint8(const TTensor_src &tensor_src, TTensor_dst &tensor_dst) {
+    using element_type = typename TTensor_src::element_type;
+    if constexpr (ntt::Vector<element_type>) {
+        nncase::ntt::apply(tensor_src.shape(),
+                       [&](auto index) { 
+                        auto vec_src = tensor_src(index);
+                        auto &vec_dst = tensor_dst(index);
+                        nncase::ntt::apply(vec_src.shape(), [&](auto idx) {
+                            vec_dst(idx) = std::bit_cast<uint8_t>(vec_src(idx).raw());
+                        });
+                       });
+    } else {
+        nncase::ntt::apply(tensor_src.shape(),
+                       [&](auto index) { 
+                        auto vec_src = tensor_src(index);
+                        auto &vec_dst = tensor_dst(index);
+                        vec_dst = std::bit_cast<uint8_t>(vec_src.raw());
+                       });
+    }
+}
+//1D vecvtor
+
+
+// template <typename T, typename Shape, typename Stride, size_t N>
+// void print_tensor(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
+//                   std::string name) {
+//     std::cout << name << std::endl;
+
+//     nncase::ntt::apply(lhs.shape(), [&](auto index) {
+//         const ntt::vector<T, N> vec = lhs(index);
+
+//         nncase::ntt::apply(vec.shape(), [&](auto idx) {
+//             auto d1 = (double)(vec(idx));
+//             std::cout << d1 << " ";
+//         });
+//     });
+
+//     std::cout << std::endl;
+// }
 
 template <typename T> T ulp(T x) {
     x = std::fabs(x);
@@ -352,8 +419,7 @@ template <typename T> T ulp(T x) {
     return x;
 }
 
-template <typename T, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
+template <typename T, typename Shape, typename Stride>
 bool compare_ulp(ntt::tensor<T, Shape, Stride> &lhs,
                  ntt::tensor<T, Shape, Stride> &rhs, double threshold = 0.5f) {
     if (lhs.shape().rank() != rhs.shape().rank()) {
@@ -389,8 +455,7 @@ bool compare_ulp(ntt::tensor<T, Shape, Stride> &lhs,
     return pass;
 }
 
-template <typename T, size_t N, typename Shape,
-          typename Stride = ntt::default_strides_t<Shape>>
+template <typename T, size_t N, typename Shape, typename Stride>
 bool compare_ulp(ntt::tensor<ntt::vector<T, N>, Shape, Stride> &lhs,
                  ntt::tensor<ntt::vector<T, N>, Shape, Stride> &rhs,
                  double threshold = 0.5f) {

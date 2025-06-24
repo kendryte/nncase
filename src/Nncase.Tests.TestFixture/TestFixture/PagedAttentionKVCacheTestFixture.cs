@@ -370,7 +370,7 @@ public sealed class PagedAttentionKVCacheTestFixture
     {
         // head,seq,dim.
         var buffer = new float[dimensions.Product()];
-        var strides = TensorUtilities.GetStrides(dimensions);
+        var strides = TensorUtilities.GetDefaultStrides(dimensions);
         var span = buffer.AsSpan();
         for (int headId = 0; headId < dimensions[0]; headId++)
         {

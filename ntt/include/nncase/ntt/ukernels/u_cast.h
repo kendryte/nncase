@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../primitive_ops.h"
+#include "../vector.h"
 
 namespace nncase::ntt {
 namespace ukernels {
