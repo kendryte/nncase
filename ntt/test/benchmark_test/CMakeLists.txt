@@ -15,6 +15,7 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     benchmark_ntt_compare.cpp
     benchmark_ntt_expand.cpp
     benchmark_ntt_gather.cpp
+    benchmark_ntt_layernorm.cpp
     benchmark_ntt_matmul.cpp
     benchmark_ntt_reduce.cpp
     benchmark_ntt_scatter_nd.cpp
