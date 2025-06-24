@@ -277,7 +277,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         }
 
         // for xpu.
-        if (q.Placement.Name == "cdxyt")
+        if (q.Placement.Name == "cdyxt")
         {
             if (!extra.AxisPolices.All(p => p is SBPBroadCast))
             {

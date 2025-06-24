@@ -116,7 +116,7 @@ public sealed class CreatePagedAttentionKVCacheEvaluator : ITypeInferencer<Creat
             return iv5;
         }
 
-        if (kv_caches.Placement.Name == "cdxyt")
+        if (kv_caches.Placement.Name == "cdyxt")
         {
             if (kv_caches.AxisPolices[0] is SBPSplit { Axes: [1] } &&
                 kv_caches.AxisPolices[1] is SBPSplit { Axes: [2, 3] } &&

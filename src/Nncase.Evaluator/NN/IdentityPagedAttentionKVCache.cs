@@ -21,7 +21,7 @@ public sealed class IdentityPagedAttentionKVCacheEvaluator : ITypeInferencer<Ide
         switch (input)
         {
             case DistributedType distType:
-                if (distType.Placement.Name == "cdxyt")
+                if (distType.Placement.Name == "cdyxt")
                 {
                     // for kv cache.
                     if (distType.TensorType.Shape.Rank > 3 &&
@@ -37,7 +37,7 @@ public sealed class IdentityPagedAttentionKVCacheEvaluator : ITypeInferencer<Ide
                     }
                 }
 
-                return new InvalidType("IdentityPagedAttentionKVCache only support input with cdxyt placement and split policy");
+                return new InvalidType("IdentityPagedAttentionKVCache only support input with cdyxt placement and split policy");
             case TensorType inputTType:
                 return inputTType;
             default:
