@@ -33,14 +33,14 @@ void benchmark_ntt_rmsnorm_fixed_reduceAxis1_noPack() {
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
 
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 1_dim);
+        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 1_dim,
+                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 1_dim);
+        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 1_dim,
+                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -73,14 +73,14 @@ void benchmark_ntt_rmsnorm_fixed_reduceAxis2_noPack() {
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 2_dim);
+        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 2_dim,
+                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 2_dim);
+        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 2_dim,
+                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -125,14 +125,14 @@ void benchmark_ntt_rmsnorm_fixed_reduceAxis1_packAxis1() {
 
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06,
-                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 1_dim);
+        packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06,
-                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 1_dim);
+        packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(buffer_6));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -179,15 +179,15 @@ void benchmark_ntt_rmsnorm_fixed_reduceAxis2_packAxis2() {
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
         packed_rms_norm(input_packed, scale_packed, bias_packed, output_packed,
-                        1E-06, ntt::fixed_shape_v<2>, ntt::fixed_shape_v<>,
-                        2_dim);
+                        1E-06, 2_dim, ntt::fixed_shape_v<2>,
+                        ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         packed_rms_norm(input_packed, scale_packed, bias_packed, output_packed,
-                        1E-06, ntt::fixed_shape_v<2>, ntt::fixed_shape_v<>,
-                        2_dim);
+                        1E-06, 2_dim, ntt::fixed_shape_v<2>,
+                        ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(output_packed));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -227,14 +227,14 @@ void benchmark_ntt_rmsnorm_fixed_reduceAxis2_packAxis1() {
 
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06,
-                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 2_dim);
+        packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06,
-                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 2_dim);
+        packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(buffer_4));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -281,15 +281,15 @@ void benchmark_ntt_rmsnorm_fixed_reduceAxis1_packAxis2() {
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
         packed_rms_norm(packed_input, packed_scale, packed_bias, packed_output,
-                        1E-06, ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                        1_dim);
+                        1E-06, 1_dim, ntt::fixed_shape_v<1>,
+                        ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         packed_rms_norm(packed_input, packed_scale, packed_bias, packed_output,
-                        1E-06, ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                        1_dim);
+                        1E-06, 1_dim, ntt::fixed_shape_v<1>,
+                        ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(packed_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -324,14 +324,14 @@ void benchmark_ntt_rmsnorm_ranked_reduceAxis1_noPack() {
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
 
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 1_dim);
+        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 1_dim,
+                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 1_dim);
+        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 1_dim,
+                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -364,14 +364,14 @@ void benchmark_ntt_rmsnorm_ranked_reduceAxis2_noPack() {
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 2_dim);
+        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 2_dim,
+                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 2_dim);
+        packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 2_dim,
+                        ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -416,14 +416,14 @@ void benchmark_ntt_rmsnorm_ranked_reduceAxis1_packAxis1() {
 
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06,
-                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 1_dim);
+        packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06,
-                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 1_dim);
+        packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(buffer_6));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -471,15 +471,15 @@ void benchmark_ntt_rmsnorm_ranked_reduceAxis2_packAxis2() {
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
         packed_rms_norm(input_packed, scale_packed, bias_packed, output_packed,
-                        1E-06, ntt::fixed_shape_v<2>, ntt::fixed_shape_v<>,
-                        2_dim);
+                        1E-06, 2_dim, ntt::fixed_shape_v<2>,
+                        ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         packed_rms_norm(input_packed, scale_packed, bias_packed, output_packed,
-                        1E-06, ntt::fixed_shape_v<2>, ntt::fixed_shape_v<>,
-                        2_dim);
+                        1E-06, 2_dim, ntt::fixed_shape_v<2>,
+                        ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(output_packed));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -520,14 +520,14 @@ void benchmark_ntt_rmsnorm_ranked_reduceAxis2_packAxis1() {
 
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06,
-                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 2_dim);
+        packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06,
-                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 2_dim);
+        packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+                        ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(buffer_4));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -574,15 +574,15 @@ void benchmark_ntt_rmsnorm_ranked_reduceAxis1_packAxis2() {
     // no pack
     for (size_t i = 0; i < warmup_num; i++) {
         packed_rms_norm(packed_input, packed_scale, packed_bias, packed_output,
-                        1E-06, ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                        1_dim);
+                        1E-06, 1_dim, ntt::fixed_shape_v<1>,
+                        ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
         packed_rms_norm(packed_input, packed_scale, packed_bias, packed_output,
-                        1E-06, ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                        1_dim);
+                        1E-06, 1_dim, ntt::fixed_shape_v<1>,
+                        ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(packed_output));
     }
     auto t2 = NttTest::get_cpu_cycle();

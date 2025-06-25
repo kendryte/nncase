@@ -35,7 +35,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     auto input_shape = input.shape();
     auto input_strides = input.strides();
 
-    constexpr auto axis_value = TAxis::value;
+    constexpr auto axis_value = positive_index(TAxis::value, TIn::rank());
     const auto domain =
         input_shape.template slice<(size_t)0, (size_t)axis_value>();
     const auto strides =
@@ -99,12 +99,13 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 } // namespace packed_rms_norm_detail
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
-          FixedDimensions PackedAxes = shape_t<>,
-          FixedDimensions PadedNums = shape_t<>, FixedDimension TAxis>
+          FixedDimension TAxis, FixedDimensions PackedAxes = shape_t<>,
+          FixedDimensions PadedNums = shape_t<>>
 void packed_rms_norm(const TIn &input, const TScale &scale, const TBias &bias,
                      TOut &&output, const TEp &epsilon,
-                     const PackedAxes &packedAxes, const PadedNums &padedNums,
-                     const TAxis &axes) {
+                     const TAxis &axis = -1_dim,
+                     const PackedAxes &packedAxes = {},
+                     const PadedNums &padedNums = {}) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
     if constexpr (PackedAxes::rank() <= 1) {
         static_assert(PadedNums::rank() == 0, "not support padding");
@@ -112,6 +113,6 @@ void packed_rms_norm(const TIn &input, const TScale &scale, const TBias &bias,
 
     packed_rms_norm_detail::within_axis_pack_impl<TIn, TScale, TBias, TOut, TEp,
                                                   PackedAxes, PadedNums, TAxis>(
-        input, scale, bias, output, epsilon, packedAxes, padedNums, axes);
+        input, scale, bias, output, epsilon, packedAxes, padedNums, axis);
 }
 } // namespace nncase::ntt
