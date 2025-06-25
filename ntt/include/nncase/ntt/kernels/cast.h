@@ -25,9 +25,20 @@ namespace detail {
 template <Tensor TIn, Tensor TOut> class cast_impl {
     inline static constexpr size_t rank = TIn::rank();
 
-    inline static constexpr float scale =
-        (float)element_scalar_count_v<typename TOut::element_type> /
-        element_scalar_count_v<typename TIn::element_type>;
+    // FIXME: vector<bool> of x86 may fail.
+    using InElemType = element_or_scalar_t<TIn>;
+    using OutElemType = element_or_scalar_t<TOut>;
+    static_assert((Vector<InElemType> && Vector<OutElemType>) ||
+                      (Scalar<InElemType> && Scalar<OutElemType>),
+                  "input & output must have the same type.");
+    inline static constexpr auto in_ele_size =
+        sizeof(std::conditional_t<Vector<InElemType>,
+                                  element_or_scalar_t<InElemType>, size_t>);
+    inline static constexpr auto out_ele_size =
+        sizeof(std::conditional_t<Vector<OutElemType>,
+                                  element_or_scalar_t<OutElemType>, size_t>);
+    inline static constexpr float scale = (float)in_ele_size / out_ele_size;
+
     inline static constexpr auto in_offset_scale = scale > 1.0f ? (size_t)scale
                                                                 : (size_t)1;
     inline static constexpr auto
@@ -41,23 +52,23 @@ template <Tensor TIn, Tensor TOut> class cast_impl {
         }
 
         dynamic_shape_t<rank> index{};
-        const auto conti_dims =
-            std::min(contiguous_dims(input.shape(), input.strides()),
-                     contiguous_dims(output.shape(), output.strides()));
+        const auto conti_dims = std::min(
+            dim_value(contiguous_dims(input.shape(), input.strides())),
+            dim_value(contiguous_dims(output.shape(), output.strides())));
 
         if constexpr (scale >= 1.0f) {
-            apply<0>(conti_dims, output.shape(), index, input, output);
+            apply<0, conti_dims>(output.shape(), index, input, output);
         } else {
-            apply<0>(conti_dims, input.shape(), index, input, output);
+            apply<0, conti_dims>(input.shape(), index, input, output);
         }
     }
 
   private:
-    template <size_t Axis, Dimension TContiguousDims, Shape TRestDims>
-    constexpr void
-    apply(const TContiguousDims &conti_dims, const TRestDims &rest_dims,
-          dynamic_shape_t<rank> &index, const TIn &input, TOut &output) {
-        if (conti_dims == rest_dims.rank()) {
+    template <size_t Axis, size_t TContiguousDims, Shape TRestDims>
+    constexpr void apply(const TRestDims &rest_dims,
+                         dynamic_shape_t<rank> &index, const TIn &input,
+                         TOut &output) {
+        if (TContiguousDims == rest_dims.rank()) {
             const auto inner_size = rest_dims.length();
             auto in_offset =
                 linear_offset(index, input.strides()) * in_offset_scale;
@@ -70,8 +81,8 @@ template <Tensor TIn, Tensor TOut> class cast_impl {
             for (index[fixed_dim_v<Axis>] = 0;
                  index[fixed_dim_v<Axis>] < rest_dims[dim_zero];
                  index[fixed_dim_v<Axis>]++) {
-                apply<Axis + 1>(conti_dims, rest_dims.template slice<1>(),
-                                index, input, output);
+                apply<Axis + 1, TContiguousDims>(rest_dims.template slice<1>(),
+                                                 index, input, output);
             }
         }
     }
