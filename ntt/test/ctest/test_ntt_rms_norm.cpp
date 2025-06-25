@@ -23,17 +23,18 @@ using namespace nncase;
 using namespace ortki;
 
 TEST(FixedShapeRMSNorm, NoPack0) {
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_0;
-    ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_1;
-    ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_2;
+    auto buffer_0 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 2>);
+    auto buffer_2 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 2>);
     std::iota(buffer_0.elements().begin(), buffer_0.elements().end(), 0.f);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 0.f);
 
     // no pack
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> ntt_output;
-    packed_rms_norm<1>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                       ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
+    packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+                    ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000,  1.055427,  2.221709,  3.498847,  4.886838,  6.385685,
@@ -43,25 +44,25 @@ TEST(FixedShapeRMSNorm, NoPack0) {
         55.926186, 59.642124, 63.468922, 67.406570, 71.455078, 75.614441,
         79.884659, 84.265732};
 
-    auto ntt_golden =
-        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 16, 2>>,
-                           float>(array_golden);
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 2>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(FixedShapeRMSNorm, NoPack1) {
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 4>> buffer_0;
-    ntt::tensor<float, ntt::fixed_shape<4>> buffer_1;
-    ntt::tensor<float, ntt::fixed_shape<4>> buffer_2;
+    auto buffer_0 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<4>);
+    auto buffer_2 = ntt::make_tensor<float>(ntt::fixed_shape_v<4>);
     std::iota(buffer_0.elements().begin(), buffer_0.elements().end(), 0.f);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 1.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
     // no pack
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 4>> ntt_output;
-    packed_rms_norm<2>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                       ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
+    packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+                    ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         1.000000, 3.069045, 6.207134, 10.414268, 1.712697, 3.781742, 6.207135,
@@ -75,25 +76,25 @@ TEST(FixedShapeRMSNorm, NoPack1) {
         1.973729, 3.982234, 6.025515, 8.103573,  1.975449, 3.983412, 6.023890,
         8.096884};
 
-    auto ntt_golden =
-        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 16, 4>>,
-                           float>(array_golden);
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 4>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(FixedShapeRMSNorm, NoPack2) {
-    ntt::tensor<float, ntt::fixed_shape<1, 13, 2>> buffer_1;
-    ntt::tensor<float, ntt::fixed_shape<13, 2>> buffer_4;
-    ntt::tensor<float, ntt::fixed_shape<13, 2>> buffer_7;
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 13, 2>);
+    auto buffer_4 = ntt::make_tensor<float>(ntt::fixed_shape_v<13, 2>);
+    auto buffer_7 = ntt::make_tensor<float>(ntt::fixed_shape_v<13, 2>);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_4.elements().begin(), buffer_4.elements().end(), 0.f);
     std::iota(buffer_7.elements().begin(), buffer_7.elements().end(), 0.f);
 
     // no pack with pad
-    ntt::tensor<float, ntt::fixed_shape<1, 13, 2>> ntt_output;
-    packed_rms_norm<1>(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06,
-                       ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 13, 2>);
+    packed_rms_norm(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06,
+                    ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000,  1.068599,  2.274398,  3.617395,  5.097591,  6.714986,
@@ -102,37 +103,40 @@ TEST(FixedShapeRMSNorm, NoPack2) {
         40.226219, 43.764397, 47.439774, 51.252350, 55.202126, 59.289101,
         63.513275, 67.874649};
 
-    auto ntt_golden =
-        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 13, 2>>,
-                           float>(array_golden);
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 13, 2>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(FixedShapeRMSNorm, Pack0) {
-    // packed axis == layer norm axis
+    // packed axis == rms norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> buffer_0;
-    ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_1;
-    ntt::tensor<float, ntt::fixed_shape<16, 2>> buffer_2;
+    auto buffer_0 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 2>);
+    auto buffer_2 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 2>);
     std::iota(buffer_0.elements().begin(), buffer_0.elements().end(), 0.f);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 0.f);
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16 / P, 2>> buffer_3;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<16 / P, 2>> buffer_4;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<16 / P, 2>> buffer_5;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16 / P, 2>> buffer_6;
-    pack<1>(buffer_0, buffer_3);
-    pack<0>(buffer_1, buffer_4);
-    pack<0>(buffer_2, buffer_5);
-    packed_rms_norm<1>(buffer_3, buffer_4, buffer_5, buffer_6,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 16 / P, 2>);
+    auto buffer_4 =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P, 2>);
+    auto buffer_5 =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P, 2>);
+    auto buffer_6 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 16 / P, 2>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
+    pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
+    packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06,
+                    ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<1>);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 2>> ntt_output;
-    unpack<1>(buffer_6, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
+    unpack(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000,  1.055427,  2.221709,  3.498847,  4.886838,  6.385685,
@@ -142,40 +146,41 @@ TEST(FixedShapeRMSNorm, Pack0) {
         55.926186, 59.642124, 63.468922, 67.406570, 71.455078, 75.614441,
         79.884659, 84.265732};
 
-    auto ntt_golden =
-        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 16, 2>>,
-                           float>(array_golden);
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 2>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(FixedShapeRMSNorm, Pack1) {
 
-    // packed axis == layer norm axis
+    // packed axis == rms norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 2, 16>> input;
-    ntt::tensor<float, ntt::fixed_shape<16>> scale;
-    ntt::tensor<float, ntt::fixed_shape<16>> bias;
+    auto input = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 2, 16>);
+    auto scale = ntt::make_tensor<float>(ntt::fixed_shape_v<16>);
+    auto bias = ntt::make_tensor<float>(ntt::fixed_shape_v<16>);
     std::iota(input.elements().begin(), input.elements().end(), 0.f);
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().rbegin(), bias.elements().rend(), 0.f);
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 2, 16 / P>>
-        input_packed;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<16 / P>> scale_packed;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<16 / P>> bias_packed;
-    ntt::pack<2>(input, input_packed);
-    ntt::pack<0>(scale, scale_packed);
-    ntt::pack<0>(bias, bias_packed);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 2, 16 / P>>
-        output_packed;
-    packed_rms_norm<2>(input_packed, scale_packed, bias_packed, output_packed,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<2>{}, ntt::fixed_shape<0>{});
+    auto input_packed = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 2, 16 / P>);
+    auto scale_packed =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P>);
+    auto bias_packed =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P>);
+    ntt::pack(input, input_packed, ntt::fixed_shape_v<2>);
+    ntt::pack(scale, scale_packed, ntt::fixed_shape_v<0>);
+    ntt::pack(bias, bias_packed, ntt::fixed_shape_v<0>);
+    auto output_packed = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 2, 16 / P>);
+    packed_rms_norm(input_packed, scale_packed, bias_packed, output_packed,
+                    1E-06, ntt::fixed_shape_v<2>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<2>);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 2, 16>> ntt_output;
-    unpack<2>(output_packed, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 2, 16>);
+    unpack(output_packed, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         15.000000, 14.113592, 13.454370, 13.022331, 12.817478, 12.839809,
@@ -185,33 +190,34 @@ TEST(FixedShapeRMSNorm, Pack1) {
         15.017418, 15.395411, 15.856919, 16.401943, 17.030481, 17.742533,
         18.538101, 19.417183};
 
-    auto ntt_golden =
-        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 2, 16>>,
-                           float>(array_golden);
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 2, 16>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(FixedShapeRMSNorm, Pack2) {
-    // packed axis < layer norm axis
+    // packed axis < rms norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 4>> buffer_0;
-    ntt::tensor<float, ntt::fixed_shape<4>> buffer_1;
-    ntt::tensor<float, ntt::fixed_shape<4>> buffer_2;
+    auto buffer_0 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<4>);
+    auto buffer_2 = ntt::make_tensor<float>(ntt::fixed_shape_v<4>);
     std::iota(buffer_0.elements().begin(), buffer_0.elements().end(), 0.f);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 1.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16 / P, 4>> buffer_3;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16 / P, 4>> buffer_4;
-    pack<1>(buffer_0, buffer_3);
-    packed_rms_norm<2>(buffer_3, buffer_1, buffer_2, buffer_4,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 16 / P, 4>);
+    auto buffer_4 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 16 / P, 4>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06,
+                    ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<2>);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 4>> ntt_output;
-    unpack<1>(buffer_4, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
+    unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         1.000000, 3.069045, 6.207134, 10.414268, 1.712697, 3.781742, 6.207135,
@@ -225,34 +231,33 @@ TEST(FixedShapeRMSNorm, Pack2) {
         1.973729, 3.982234, 6.025515, 8.103573,  1.975449, 3.983412, 6.023890,
         8.096884};
 
-    auto ntt_golden =
-        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 16, 4>>,
-                           float>(array_golden);
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 4>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(FixedShapeRMSNorm, Pack3) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> input;
-    ntt::tensor<float, ntt::fixed_shape<8>> scale;
-    ntt::tensor<float, ntt::fixed_shape<8>> bias;
+    auto input = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
+    auto scale = ntt::make_tensor<float>(ntt::fixed_shape_v<8>);
+    auto bias = ntt::make_tensor<float>(ntt::fixed_shape_v<8>);
     std::iota(input.elements().begin(), input.elements().end(), 0.f);
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16 / P, 8>>
-        packed_input;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16 / P, 8>>
-        packed_output;
-    pack<1>(input, packed_input);
-    packed_rms_norm<2>(packed_input, scale, bias, packed_output,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    // packed axis < rms norm axis
+    auto packed_input = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 16 / P, 8>);
+    auto packed_output = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 16 / P, 8>);
+    pack(input, packed_input, ntt::fixed_shape_v<1>);
+    packed_rms_norm(packed_input, scale, bias, packed_output, 1E-06,
+                    ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<2>);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ntt_output;
-    unpack<1>(packed_output, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
+    unpack(packed_output, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000,  1.239046,  2.956183,  5.151411,  7.824731,  10.976143,
@@ -278,41 +283,41 @@ TEST(FixedShapeRMSNorm, Pack3) {
         0.000000,  1.979589,  3.975368,  5.987340,  8.015503,  10.059858,
         12.120404, 14.197142};
 
-    auto ntt_golden =
-        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 16, 8>>,
-                           float>(array_golden);
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 8>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(FixedShapeRMSNorm, Pack4) {
-    // packed axis > layer norm axis
+    // packed axis > rms norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> input;
-    ntt::tensor<float, ntt::fixed_shape<16, 8>> scale;
-    ntt::tensor<float, ntt::fixed_shape<16, 8>> bias;
+    auto input = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
+    auto scale = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 8>);
+    auto bias = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 8>);
     std::iota(input.elements().begin(), input.elements().end(), 0.f);
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16, 8 / P>>
-        packed_input;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<16, 8 / P>>
-        packed_scale;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<16, 8 / P>> packed_bias;
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<1, 16, 8 / P>>
-        packed_output;
-    pack<2>(input, packed_input);
-    pack<1>(scale, packed_scale);
-    pack<1>(bias, packed_bias);
-    packed_rms_norm<1>(packed_input, packed_scale, packed_bias, packed_output,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    // packed axis < rms norm axis
+    auto packed_input = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 16, 8 / P>);
+    auto packed_scale =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16, 8 / P>);
+    auto packed_bias =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16, 8 / P>);
+    auto packed_output = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<1, 16, 8 / P>);
+    pack(input, packed_input, ntt::fixed_shape_v<2>);
+    pack(scale, packed_scale, ntt::fixed_shape_v<1>);
+    pack(bias, packed_bias, ntt::fixed_shape_v<1>);
+    packed_rms_norm(packed_input, packed_scale, packed_bias, packed_output,
+                    1E-06, ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<1>);
 
-    ntt::tensor<float, ntt::fixed_shape<1, 16, 8>> ntt_output;
-    unpack<2>(packed_output, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
+    unpack(packed_output, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         0.000000,   1.013611,   2.054446,   3.122503,   4.217783,   5.340286,
@@ -338,33 +343,27 @@ TEST(FixedShapeRMSNorm, Pack4) {
         316.004547, 320.284912, 324.592468, 328.927277, 333.289307, 337.678558,
         342.095032, 346.538696};
 
-    auto ntt_golden =
-        nncase::ntt::tload<ntt::tensor<float, ntt::fixed_shape<1, 16, 8>>,
-                           float>(array_golden);
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 8>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(RankedShapeRMSNorm, NoPack0) {
 
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<2>>;
-    auto shape1 = ntt::make_ranked_shape(1, 16, 2);
-    auto shape2 = ntt::make_ranked_shape(16, 2);
-
-    tensor_type1 buffer_0(shape1);
-    tensor_type2 buffer_1(shape2);
-    tensor_type2 buffer_2(shape2);
+    auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(16, 2));
+    auto buffer_2 = ntt::make_tensor<float>(ntt::make_shape(16, 2));
     std::iota(buffer_0.elements().begin(), buffer_0.elements().end(), 0.f);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 0.f);
 
     // no pack
-    tensor_type1 ntt_output(shape1);
-    packed_rms_norm<1>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                       ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
+    packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+                    ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<1>);
 
-    tensor_type1 ntt_golden(shape1);
     float array_golden[] = {
         0.000000,  1.055427,  2.221709,  3.498847,  4.886838,  6.385685,
         7.995387,  9.715942,  11.547354, 13.489619, 15.542740, 17.706715,
@@ -372,32 +371,27 @@ TEST(RankedShapeRMSNorm, NoPack0) {
         35.958477, 39.009293, 42.170959, 45.443481, 48.826862, 52.321095,
         55.926186, 59.642124, 63.468922, 67.406570, 71.455078, 75.614441,
         79.884659, 84.265732};
-    size_t i = 0;
-    ntt::apply(ntt_golden.shape(),
-               [&](auto index) { ntt_golden(index) = array_golden[i++]; });
+
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 2>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(RankedShapeRMSNorm, NoPack1) {
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
-    auto shape1 = ntt::make_ranked_shape(1, 16, 4);
-    auto shape2 = ntt::make_ranked_shape(4);
-
-    tensor_type1 buffer_0(shape1);
-    tensor_type2 buffer_1(shape2);
-    tensor_type2 buffer_2(shape2);
+    auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(1, 16, 4));
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(4));
+    auto buffer_2 = ntt::make_tensor<float>(ntt::make_shape(4));
     std::iota(buffer_0.elements().begin(), buffer_0.elements().end(), 0.f);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 1.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
     // no pack
-    tensor_type1 ntt_output(shape1);
-    packed_rms_norm<2>(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                       ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
+    packed_rms_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+                    ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<2>);
 
-    tensor_type1 ntt_golden(shape1);
     const float array_golden[] = {
         1.000000, 3.069045, 6.207134, 10.414268, 1.712697, 3.781742, 6.207135,
         8.988876, 1.836333, 3.881750, 6.136250,  8.599833, 1.885856, 3.919355,
@@ -410,33 +404,27 @@ TEST(RankedShapeRMSNorm, NoPack1) {
         1.973729, 3.982234, 6.025515, 8.103573,  1.975449, 3.983412, 6.023890,
         8.096884};
 
-    size_t i = 0;
-    ntt::apply(ntt_golden.shape(),
-               [&](auto index) { ntt_golden(index) = array_golden[i++]; });
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 4>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(RankedShapeRMSNorm, NoPack2) {
 
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<2>>;
-    auto shape1 = ntt::make_ranked_shape(1, 13, 2);
-    auto shape2 = ntt::make_ranked_shape(13, 2);
-
-    tensor_type1 buffer_1(shape1);
-    tensor_type2 buffer_4(shape2);
-    tensor_type2 buffer_7(shape2);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(1, 13, 2));
+    auto buffer_4 = ntt::make_tensor<float>(ntt::make_shape(13, 2));
+    auto buffer_7 = ntt::make_tensor<float>(ntt::make_shape(13, 2));
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_4.elements().begin(), buffer_4.elements().end(), 0.f);
     std::iota(buffer_7.elements().begin(), buffer_7.elements().end(), 0.f);
 
     // no pack with pad
-    tensor_type1 ntt_output(shape1);
-    packed_rms_norm<1>(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06,
-                       ntt::fixed_shape<>{}, ntt::fixed_shape<>{});
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 13, 2));
+    packed_rms_norm(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06,
+                    ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<1>);
 
-    tensor_type1 ntt_golden(shape1);
     const float array_golden[] = {
         0.000000,  1.068599,  2.274398,  3.617395,  5.097591,  6.714986,
         8.469580,  10.361372, 12.390364, 14.556555, 16.859943, 19.300531,
@@ -444,50 +432,41 @@ TEST(RankedShapeRMSNorm, NoPack2) {
         40.226219, 43.764397, 47.439774, 51.252350, 55.202126, 59.289101,
         63.513275, 67.874649};
 
-    size_t i = 0;
-    ntt::apply(ntt_golden.shape(),
-               [&](auto index) { ntt_golden(index) = array_golden[i++]; });
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 13, 2>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(RankedShapeRMSNorm, Pack0) {
-    // packed axis == layer norm axis
+    // packed axis == rms norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<2>>;
-    auto shape1 = ntt::make_ranked_shape(1, 16, 2);
-    auto shape2 = ntt::make_ranked_shape(16, 2);
 
-    using tensor_type3 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    using tensor_type4 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<2>>;
-    auto shape3 = ntt::make_ranked_shape(1, 16 / P, 2);
-    auto shape4 = ntt::make_ranked_shape(16 / P, 2);
-
-    tensor_type1 buffer_0(shape1);
-    tensor_type2 buffer_1(shape2);
-    tensor_type2 buffer_2(shape2);
+    auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(16, 2));
+    auto buffer_2 = ntt::make_tensor<float>(ntt::make_shape(16, 2));
     std::iota(buffer_0.elements().begin(), buffer_0.elements().end(), 0.f);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 0.f);
 
-    tensor_type3 buffer_3(shape3);
-    tensor_type4 buffer_4(shape4);
-    tensor_type4 buffer_5(shape4);
-    tensor_type3 buffer_6(shape3);
-    pack<1>(buffer_0, buffer_3);
-    pack<0>(buffer_1, buffer_4);
-    pack<0>(buffer_2, buffer_5);
-    packed_rms_norm<1>(buffer_3, buffer_4, buffer_5, buffer_6,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    auto buffer_3 =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 2));
+    auto buffer_4 =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P, 2));
+    auto buffer_5 =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P, 2));
+    auto buffer_6 =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 2));
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
+    pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
+    packed_rms_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06,
+                    ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<1>);
 
-    tensor_type1 ntt_output(shape1);
-    unpack<1>(buffer_6, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
+    unpack(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
 
-    tensor_type1 ntt_golden(shape1);
     const float array_golden[] = {
         0.000000,  1.055427,  2.221709,  3.498847,  4.886838,  6.385685,
         7.995387,  9.715942,  11.547354, 13.489619, 15.542740, 17.706715,
@@ -496,51 +475,42 @@ TEST(RankedShapeRMSNorm, Pack0) {
         55.926186, 59.642124, 63.468922, 67.406570, 71.455078, 75.614441,
         79.884659, 84.265732};
 
-    size_t i = 0;
-    ntt::apply(ntt_golden.shape(),
-               [&](auto index) { ntt_golden(index) = array_golden[i++]; });
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 2>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(RankedShapeRMSNorm, Pack1) {
 
-    // packed axis == layer norm axis
+    // packed axis == rms norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
-    auto shape1 = ntt::make_ranked_shape(1, 2, 16);
-    auto shape2 = ntt::make_ranked_shape(16);
 
-    using tensor_type3 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    using tensor_type4 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<1>>;
-    auto shape3 = ntt::make_ranked_shape(1, 2, 16 / P);
-    auto shape4 = ntt::make_ranked_shape(16 / P);
-
-    tensor_type1 input(shape1);
-    tensor_type2 scale(shape2);
-    tensor_type2 bias(shape2);
+    auto input = ntt::make_tensor<float>(ntt::make_shape(1, 2, 16));
+    auto scale = ntt::make_tensor<float>(ntt::make_shape(16));
+    auto bias = ntt::make_tensor<float>(ntt::make_shape(16));
     std::iota(input.elements().begin(), input.elements().end(), 0.f);
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().rbegin(), bias.elements().rend(), 0.f);
 
-    tensor_type3 input_packed(shape3);
-    tensor_type4 scale_packed(shape4);
-    tensor_type4 bias_packed(shape4);
-    ntt::pack<2>(input, input_packed);
-    ntt::pack<0>(scale, scale_packed);
-    ntt::pack<0>(bias, bias_packed);
-    tensor_type3 output_packed(shape3);
-    packed_rms_norm<2>(input_packed, scale_packed, bias_packed, output_packed,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<2>{}, ntt::fixed_shape<0>{});
+    auto input_packed =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 2, 16 / P));
+    auto scale_packed =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P));
+    auto bias_packed =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P));
+    ntt::pack(input, input_packed, ntt::fixed_shape_v<2>);
+    ntt::pack(scale, scale_packed, ntt::fixed_shape_v<0>);
+    ntt::pack(bias, bias_packed, ntt::fixed_shape_v<0>);
+    auto output_packed =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 2, 16 / P));
+    packed_rms_norm(input_packed, scale_packed, bias_packed, output_packed,
+                    1E-06, ntt::fixed_shape_v<2>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<2>);
 
-    tensor_type1 ntt_output(shape1);
-    unpack<2>(output_packed, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 2, 16));
+    unpack(output_packed, ntt_output, ntt::fixed_shape_v<2>);
 
-    tensor_type1 ntt_golden(shape1);
     const float array_golden[] = {
         15.000000, 14.113592, 13.454370, 13.022331, 12.817478, 12.839809,
         13.089325, 13.566026, 14.269911, 15.200981, 16.359236, 17.744677,
@@ -549,45 +519,35 @@ TEST(RankedShapeRMSNorm, Pack1) {
         15.017418, 15.395411, 15.856919, 16.401943, 17.030481, 17.742533,
         18.538101, 19.417183};
 
-    size_t i = 0;
-    ntt::apply(ntt_golden.shape(),
-               [&](auto index) { ntt_golden(index) = array_golden[i++]; });
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 2, 16>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(RankedShapeRMSNorm, Pack2) {
-    // packed axis < layer norm axis
+    // packed axis < rms norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
-    auto shape1 = ntt::make_ranked_shape(1, 16, 4);
-    auto shape2 = ntt::make_ranked_shape(4);
 
-    using tensor_type3 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    using tensor_type4 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<1>>;
-    auto shape3 = ntt::make_ranked_shape(1, 16 / P, 4);
-
-    tensor_type1 buffer_0(shape1);
-    tensor_type2 buffer_1(shape2);
-    tensor_type2 buffer_2(shape2);
+    auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(1, 16, 4));
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(4));
+    auto buffer_2 = ntt::make_tensor<float>(ntt::make_shape(4));
     std::iota(buffer_0.elements().begin(), buffer_0.elements().end(), 0.f);
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 1.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
-    tensor_type3 buffer_3(shape3);
-    tensor_type3 buffer_4(shape3);
-    pack<1>(buffer_0, buffer_3);
-    packed_rms_norm<2>(buffer_3, buffer_1, buffer_2, buffer_4,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    auto buffer_3 =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 4));
+    auto buffer_4 =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 4));
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    packed_rms_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06,
+                    ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<2>);
 
-    tensor_type1 ntt_output(shape1);
-    unpack<1>(buffer_4, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 4));
+    unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
 
-    tensor_type1 ntt_golden(shape1);
     const float array_golden[] = {
         1.000000, 3.069045, 6.207134, 10.414268, 1.712697, 3.781742, 6.207135,
         8.988876, 1.836333, 3.881750, 6.136250,  8.599833, 1.885856, 3.919355,
@@ -600,9 +560,8 @@ TEST(RankedShapeRMSNorm, Pack2) {
         1.973729, 3.982234, 6.025515, 8.103573,  1.975449, 3.983412, 6.023890,
         8.096884};
 
-    size_t i = 0;
-    ntt::apply(ntt_golden.shape(),
-               [&](auto index) { ntt_golden(index) = array_golden[i++]; });
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 4>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
@@ -610,36 +569,26 @@ TEST(RankedShapeRMSNorm, Pack2) {
 TEST(RankedShapeRMSNorm, Pack3) {
 
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<1>>;
-    auto shape1 = ntt::make_ranked_shape(1, 16, 8);
-    auto shape2 = ntt::make_ranked_shape(8);
-
-    using tensor_type3 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    using tensor_type4 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<1>>;
-    auto shape3 = ntt::make_ranked_shape(1, 16 / P, 8);
-
-    tensor_type1 input(shape1);
-    tensor_type2 scale(shape2);
-    tensor_type2 bias(shape2);
+    auto input = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
+    auto scale = ntt::make_tensor<float>(ntt::make_shape(8));
+    auto bias = ntt::make_tensor<float>(ntt::make_shape(8));
     std::iota(input.elements().begin(), input.elements().end(), 0.f);
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    tensor_type3 packed_input(shape3);
-    tensor_type3 packed_output(shape3);
-    pack<1>(input, packed_input);
-    packed_rms_norm<2>(packed_input, scale, bias, packed_output,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    // packed axis < rms norm axis
+    auto packed_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 8));
+    auto packed_output =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 8));
+    pack(input, packed_input, ntt::fixed_shape_v<1>);
+    packed_rms_norm(packed_input, scale, bias, packed_output, 1E-06,
+                    ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<2>);
 
-    tensor_type1 ntt_output(shape1);
-    unpack<1>(packed_output, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
+    unpack(packed_output, ntt_output, ntt::fixed_shape_v<1>);
 
-    tensor_type1 ntt_golden(shape1);
     const float array_golden[] = {
         0.000000,  1.239046,  2.956183,  5.151411,  7.824731,  10.976143,
         14.605645, 18.713240, 0.000000,  1.767523,  3.705606,  5.814250,
@@ -664,51 +613,42 @@ TEST(RankedShapeRMSNorm, Pack3) {
         0.000000,  1.979589,  3.975368,  5.987340,  8.015503,  10.059858,
         12.120404, 14.197142};
 
-    size_t i = 0;
-    ntt::apply(ntt_golden.shape(),
-               [&](auto index) { ntt_golden(index) = array_golden[i++]; });
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 8>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 TEST(RankedShapeRMSNorm, Pack4) {
-    // packed axis > layer norm axis
+    // packed axis > rms norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<2>>;
-    auto shape1 = ntt::make_ranked_shape(1, 16, 8);
-    auto shape2 = ntt::make_ranked_shape(16, 8);
 
-    using tensor_type3 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    using tensor_type4 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<2>>;
-    auto shape3 = ntt::make_ranked_shape(1, 16, 8 / P);
-    auto shape4 = ntt::make_ranked_shape(16, 8 / P);
-
-    tensor_type1 input(shape1);
-    tensor_type2 scale(shape2);
-    tensor_type2 bias(shape2);
+    auto input = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
+    auto scale = ntt::make_tensor<float>(ntt::make_shape(16, 8));
+    auto bias = ntt::make_tensor<float>(ntt::make_shape(16, 8));
     std::iota(input.elements().begin(), input.elements().end(), 0.f);
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    tensor_type3 packed_input(shape3);
-    tensor_type4 packed_scale(shape4);
-    tensor_type4 packed_bias(shape4);
-    tensor_type3 packed_output(shape3);
-    pack<2>(input, packed_input);
-    pack<1>(scale, packed_scale);
-    pack<1>(bias, packed_bias);
-    packed_rms_norm<1>(packed_input, packed_scale, packed_bias, packed_output,
-                       ntt::vector<float, P>::from_scalar(1E-06),
-                       ntt::fixed_shape<1>{}, ntt::fixed_shape<0>{});
+    // packed axis < rms norm axis
+    auto packed_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16, 8 / P));
+    auto packed_scale =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16, 8 / P));
+    auto packed_bias =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16, 8 / P));
+    auto packed_output =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16, 8 / P));
+    pack(input, packed_input, ntt::fixed_shape_v<2>);
+    pack(scale, packed_scale, ntt::fixed_shape_v<1>);
+    pack(bias, packed_bias, ntt::fixed_shape_v<1>);
+    packed_rms_norm(packed_input, packed_scale, packed_bias, packed_output,
+                    1E-06, ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
+                    ntt::fixed_shape_v<1>);
 
-    tensor_type1 ntt_output(shape1);
-    unpack<2>(packed_output, ntt_output);
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
+    unpack(packed_output, ntt_output, ntt::fixed_shape_v<2>);
 
-    tensor_type1 ntt_golden(shape1);
     const float array_golden[] = {
         0.000000,   1.013611,   2.054446,   3.122503,   4.217783,   5.340286,
         6.490011,   7.666960,   8.871131,   10.102526,  11.361143,  12.646983,
@@ -733,9 +673,8 @@ TEST(RankedShapeRMSNorm, Pack4) {
         316.004547, 320.284912, 324.592468, 328.927277, 333.289307, 337.678558,
         342.095032, 346.538696};
 
-    size_t i = 0;
-    ntt::apply(ntt_golden.shape(),
-               [&](auto index) { ntt_golden(index) = array_golden[i++]; });
+    auto ntt_golden = make_tensor_view_from_address(
+        array_golden, ntt::fixed_shape_v<1, 16, 8>);
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }

@@ -44,6 +44,7 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     test_ntt_matmul.cpp
     # test_ntt_pack_generated_Float8e4m3.cpp
     test_ntt_reduce.cpp
+    test_ntt_rms_norm.cpp
     test_ntt_scatter_nd.cpp
     test_ntt_slice.cpp
     test_ntt_transpose.cpp
