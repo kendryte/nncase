@@ -20,6 +20,7 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     benchmark_ntt_reduce.cpp
     benchmark_ntt_scatter_nd.cpp
     benchmark_ntt_slice.cpp
+    benchmark_ntt_softmax.cpp
     benchmark_ntt_transpose.cpp
     benchmark_ntt_unary.cpp
     benchmark_ntt_unpack.cpp
