@@ -20,22 +20,23 @@
 
 namespace nncase::ntt {
 namespace softmax_detail {
-template <Tensor TIn, Tensor TOut, FixedDimension TAxis,
+template <Tensor TIn, class TOut, FixedDimension TAxis,
           FixedDimensions PackedAxes>
 void packed_softmax_impl(const TIn &input, TOut &&output, const TAxis &axis,
                          const PackedAxes &) {
     using TElem = typename TIn::element_type;
     auto input_shape = input.shape();
 
+    constexpr PackedAxes packed_axes;
     constexpr auto need_reduce =
-        PackedAxes::rank() != 0 && TAxis{} == PackedAxes::at(0);
-    auto domain = shape_infer::reduced_shape_by_axis<axis>(input_shape);
+        PackedAxes::rank() != 0 && TAxis::value == packed_axes[0];
+    auto domain = shape_infer::reduced_shape_by_axis<TAxis::value>(input_shape);
     apply(domain, [&](auto index) {
         // max
         TElem max_value = input(index);
         for (index[axis] = 0; index[axis] < input_shape.at(axis);
              index[axis]++) {
-            max_value = max(max_value, input(index));
+            max_value = ntt::max(max_value, input(index));
         }
 
         // reduce_max
