@@ -206,7 +206,7 @@ bool compare_tensor(TTensor1 &lhs, TTensor2 &rhs, double threshold = 0.999f) {
         auto d1 = static_cast<double>(
             static_cast<typename TTensor1::element_type>(lhs(index)));
         auto d2 = static_cast<double>(
-            static_cast<typename TTensor1::element_type>(rhs(index)));
+            static_cast<typename TTensor2::element_type>(rhs(index)));
         v1.push_back(d1);
         v2.push_back(d2);
         if (d1 != d2) {

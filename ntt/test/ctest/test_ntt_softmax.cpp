@@ -22,39 +22,29 @@
 using namespace nncase;
 using namespace ortki;
 
-TEST(FixedShapePackedSoftmax, NoPack0) {
-    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    NttTest::init_tensor(buffer_1, -10.f, 10.f);
+#define DEFINE_PACKED_SOFTMAX_TEST(TEST_NAME, AXIS)                            \
+    TEST(FixedShapePackedSoftmax, TEST_NAME) {                                 \
+        auto buffer_1 =                                                        \
+            ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);            \
+        NttTest::init_tensor(buffer_1, -10.f, 10.f);                           \
+                                                                               \
+        auto ntt_output =                                                      \
+            ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);            \
+        packed_softmax(buffer_1, ntt_output, AXIS##_dim,                       \
+                       ntt::fixed_shape_v<>);                                  \
+                                                                               \
+        auto ort_input = NttTest::ntt2ort(buffer_1);                           \
+        auto ort_output = ortki_Softmax(ort_input, AXIS);                      \
+                                                                               \
+        auto ntt_output2 =                                                     \
+            ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);            \
+        NttTest::ort2ntt(ort_output, ntt_output2);                             \
+        EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_output2));         \
+    }
 
-    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
+DEFINE_PACKED_SOFTMAX_TEST(NoPack0, 0);
 
-    // ort
-    auto ort_input = NttTest::ntt2ort(buffer_1);
-    auto ort_output = ortki_Softmax(ort_input, 1);
-
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_output2));
-}
-
-TEST(FixedShapePackedSoftmax, NoPack1) {
-    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    NttTest::init_tensor(buffer_1, -10.f, 10.f);
-
-    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(buffer_1);
-    auto ort_output = ortki_Softmax(ort_input, 2);
-
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_output2));
-}
+DEFINE_PACKED_SOFTMAX_TEST(NoPack1, 1);
 
 TEST(FixedShapePackedSoftmax, AxisIsPackedAxis0) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
