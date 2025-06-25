@@ -39,16 +39,17 @@ void benchmark_ntt_scatterND_unpack(T init_low, T init_high, int64_t idx0,
     //     constexpr size_t size2 = 2000;
     // #endif
 
-    auto ntt_output =
-        ntt::make_tensor<float>(ntt::fixed_shape_v<10, 64, 64, 32>);
+    auto shape1 = ntt::fixed_shape_v<10, 64, 64, 32>;
+    auto ntt_output = ntt::make_unique_tensor<T>(shape1);
 
-    // Initialize input with random values
-    auto input = ntt::make_tensor<float>(ntt::fixed_shape_v<10, 64, 64, 32>);
-    NttTest::init_tensor(input, init_low, init_high);
+    // Initialize *input with random values
+    auto input = ntt::make_unique_tensor<T>(shape1);
+    NttTest::init_tensor(*input, init_low, init_high);
 
-    // Initialize updates with random values
-    auto updates = ntt::make_tensor<float>(ntt::fixed_shape_v<5, 64, 64, 32>);
-    NttTest::init_tensor(updates, init_low, init_high);
+    // Initialize *updates with random values
+    auto shape2 = ntt::fixed_shape_v<5, 64, 64, 32>;
+    auto updates = ntt::make_unique_tensor<T>(shape2);
+    NttTest::init_tensor(*updates, init_low, init_high);
 
     // Initialize indices
     auto indices = ntt::make_tensor<int64_t>(ntt::fixed_shape_v<5, 1>);
@@ -61,7 +62,7 @@ void benchmark_ntt_scatterND_unpack(T init_low, T init_high, int64_t idx0,
     // warm up
     constexpr size_t warmup_size = 10;
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::scatter_nd(input, indices, updates, ntt_output);
+        ntt::scatter_nd(*input, indices, *updates, *ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
 
@@ -69,12 +70,12 @@ void benchmark_ntt_scatterND_unpack(T init_low, T init_high, int64_t idx0,
     constexpr size_t run_size = 2000;
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::scatter_nd(input, indices, updates, ntt_output);
+        ntt::scatter_nd(*input, indices, *updates, *ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = updates.size();
+    auto element_size = updates->size();
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size
               << " cycles" << std::endl;
