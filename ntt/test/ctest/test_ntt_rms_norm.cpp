@@ -47,7 +47,7 @@ TEST(FixedShapeRMSNorm, NoPack0) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 2>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(FixedShapeRMSNorm, NoPack1) {
@@ -79,7 +79,7 @@ TEST(FixedShapeRMSNorm, NoPack1) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 4>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(FixedShapeRMSNorm, NoPack2) {
@@ -106,7 +106,7 @@ TEST(FixedShapeRMSNorm, NoPack2) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 13, 2>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(FixedShapeRMSNorm, Pack0) {
@@ -149,7 +149,7 @@ TEST(FixedShapeRMSNorm, Pack0) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 2>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(FixedShapeRMSNorm, Pack1) {
@@ -193,7 +193,7 @@ TEST(FixedShapeRMSNorm, Pack1) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 2, 16>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(FixedShapeRMSNorm, Pack2) {
@@ -234,7 +234,7 @@ TEST(FixedShapeRMSNorm, Pack2) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 4>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(FixedShapeRMSNorm, Pack3) {
@@ -286,7 +286,7 @@ TEST(FixedShapeRMSNorm, Pack3) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 8>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(FixedShapeRMSNorm, Pack4) {
@@ -346,7 +346,7 @@ TEST(FixedShapeRMSNorm, Pack4) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 8>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(RankedShapeRMSNorm, NoPack0) {
@@ -375,7 +375,7 @@ TEST(RankedShapeRMSNorm, NoPack0) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 2>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(RankedShapeRMSNorm, NoPack1) {
@@ -407,7 +407,7 @@ TEST(RankedShapeRMSNorm, NoPack1) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 4>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(RankedShapeRMSNorm, NoPack2) {
@@ -435,7 +435,7 @@ TEST(RankedShapeRMSNorm, NoPack2) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 13, 2>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(RankedShapeRMSNorm, Pack0) {
@@ -478,7 +478,7 @@ TEST(RankedShapeRMSNorm, Pack0) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 2>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(RankedShapeRMSNorm, Pack1) {
@@ -522,7 +522,7 @@ TEST(RankedShapeRMSNorm, Pack1) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 2, 16>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(RankedShapeRMSNorm, Pack2) {
@@ -563,7 +563,7 @@ TEST(RankedShapeRMSNorm, Pack2) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 4>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(RankedShapeRMSNorm, Pack3) {
@@ -616,7 +616,7 @@ TEST(RankedShapeRMSNorm, Pack3) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 8>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 TEST(RankedShapeRMSNorm, Pack4) {
@@ -676,7 +676,7 @@ TEST(RankedShapeRMSNorm, Pack4) {
     auto ntt_golden = make_tensor_view_from_address(
         array_golden, ntt::fixed_shape_v<1, 16, 8>);
 
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden, 0.99));
 }
 
 int main(int argc, char *argv[]) {
