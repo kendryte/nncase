@@ -123,7 +123,7 @@ inline py::class_<runtime_tensor> register_runtime_tensor(py::module &m) {
                              host_runtime_tensor::create(tensor.impl()->dtype(),
                                                          tensor.impl()->shape())
                                  .unwrap_or_throw();
-                         tensor.copy_to(new_tensor);
+                         tensor.copy_to(new_tensor).unwrap_or_throw();
 
                          auto host = new_tensor.to_host().unwrap_or_throw();
                          auto src_map =
