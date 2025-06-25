@@ -15,8 +15,8 @@
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/buffer.h>
 #include <nncase/runtime/dbg.h>
-#include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/device_buffer.h>
+#include <nncase/runtime/host_buffer.h>
 
 using namespace nncase;
 using namespace nncase::runtime;

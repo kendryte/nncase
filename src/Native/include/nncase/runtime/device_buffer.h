@@ -25,7 +25,8 @@ using device_buffer_t = object_t<device_buffer_node>;
 class NNCASE_API device_mapped_buffer {
   public:
     device_mapped_buffer() noexcept;
-    device_mapped_buffer(device_buffer_t buffer, std::span<std::byte> span) noexcept;
+    device_mapped_buffer(device_buffer_t buffer,
+                         std::span<std::byte> span) noexcept;
     device_mapped_buffer(device_mapped_buffer &&other) noexcept;
     device_mapped_buffer(const device_mapped_buffer &) = delete;
     ~device_mapped_buffer();

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #include <nncase/runtime/dbg.h>
-#include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/device_buffer.h>
+#include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/tensor.h>
 #include <numeric>
