@@ -33,8 +33,7 @@ TEST(FixedShapeLayerNorm, NoPack0) {
     // no pack
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
     packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<1>);
+                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 1_dim);
 
     const float array_golden[] = {
         0.000000f,  -0.570438f, -0.924264f, -1.061478f, -0.982080f, -0.686069f,
@@ -61,8 +60,7 @@ TEST(FixedShapeLayerNorm, NoPack1) {
     // no pack
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
     packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<2>);
+                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 2_dim);
 
     const float array_golden[] = {
         -0.341640, 1.105573, 4.341640,  9.366562, -0.341640, 1.105573,
@@ -94,8 +92,7 @@ TEST(FixedShapeLayerNorm, NoPack2) {
     // no pack with pad
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 13, 2>);
     packed_layer_norm(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06,
-                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<1>);
+                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 1_dim);
 
     const float array_golden[] = {
         0.000000,  -0.533333, -0.800000, -0.800000, -0.533334, -0.000000,
@@ -133,8 +130,7 @@ TEST(FixedShapeLayerNorm, Pack0) {
     pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
     pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
     packed_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06,
-                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<1>);
+                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 1_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
     unpack(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
@@ -178,7 +174,7 @@ TEST(FixedShapeLayerNorm, Pack1) {
         ntt::fixed_shape_v<1, 2, 16 / P>);
     packed_layer_norm(input_packed, scale_packed, bias_packed, output_packed,
                       1E-06, ntt::fixed_shape_v<2>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<2>);
+                      2_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 2, 16>);
     unpack(output_packed, ntt_output, ntt::fixed_shape_v<2>);
@@ -214,8 +210,7 @@ TEST(FixedShapeLayerNorm, Pack2) {
         ntt::fixed_shape_v<1, 16 / P, 4>);
     pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
     packed_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06,
-                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<2>);
+                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 2_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
     unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
@@ -255,8 +250,7 @@ TEST(FixedShapeLayerNorm, Pack3) {
         ntt::fixed_shape_v<1, 16 / P, 8>);
     pack(input, packed_input, ntt::fixed_shape_v<1>);
     packed_layer_norm(packed_input, scale, bias, packed_output, 1E-06,
-                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<2>);
+                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 2_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
     unpack(packed_output, ntt_output, ntt::fixed_shape_v<1>);
@@ -316,7 +310,7 @@ TEST(FixedShapeLayerNorm, Pack4) {
     pack(bias, packed_bias, ntt::fixed_shape_v<1>);
     packed_layer_norm(packed_input, packed_scale, packed_bias, packed_output,
                       1E-06, ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<1>);
+                      1_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
     unpack(packed_output, ntt_output, ntt::fixed_shape_v<2>);
@@ -363,8 +357,7 @@ TEST(RankedShapeLayerNorm, NoPack0) {
     // no pack
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
     packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<1>);
+                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 1_dim);
 
     const float array_golden[] = {
         0.000000f,  -0.570438f, -0.924264f, -1.061478f, -0.982080f, -0.686069f,
@@ -391,8 +384,7 @@ TEST(RankedShapeLayerNorm, NoPack1) {
     // no pack
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
     packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
-                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<2>);
+                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 2_dim);
 
     const float array_golden[] = {
         -0.341640, 1.105573, 4.341640,  9.366562, -0.341640, 1.105573,
@@ -425,8 +417,7 @@ TEST(RankedShapeLayerNorm, NoPack2) {
     // no pack with pad
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 13, 2));
     packed_layer_norm(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06,
-                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<1>);
+                      ntt::fixed_shape_v<>, ntt::fixed_shape_v<>, 1_dim);
 
     const float array_golden[] = {
         0.000000,  -0.533333, -0.800000, -0.800000, -0.533334, -0.000000,
@@ -464,8 +455,7 @@ TEST(RankedShapeLayerNorm, Pack0) {
     pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
     pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
     packed_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06,
-                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<1>);
+                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 1_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
     unpack(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
@@ -509,7 +499,7 @@ TEST(RankedShapeLayerNorm, Pack1) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 2, 16 / P));
     packed_layer_norm(input_packed, scale_packed, bias_packed, output_packed,
                       1E-06, ntt::fixed_shape_v<2>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<2>);
+                      2_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 2, 16));
     unpack(output_packed, ntt_output, ntt::fixed_shape_v<2>);
@@ -545,8 +535,7 @@ TEST(RankedShapeLayerNorm, Pack2) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 4));
     pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
     packed_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06,
-                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<2>);
+                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 2_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 4));
     unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
@@ -587,8 +576,7 @@ TEST(RankedShapeLayerNorm, Pack3) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 8));
     pack(input, packed_input, ntt::fixed_shape_v<1>);
     packed_layer_norm(packed_input, scale, bias, packed_output, 1E-06,
-                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<2>);
+                      ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>, 2_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
     unpack(packed_output, ntt_output, ntt::fixed_shape_v<1>);
@@ -648,7 +636,7 @@ TEST(RankedShapeLayerNorm, Pack4) {
     pack(bias, packed_bias, ntt::fixed_shape_v<1>);
     packed_layer_norm(packed_input, packed_scale, packed_bias, packed_output,
                       1E-06, ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>,
-                      ntt::fixed_shape_v<1>);
+                      1_dim);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
     unpack(packed_output, ntt_output, ntt::fixed_shape_v<2>);

@@ -25,7 +25,7 @@ namespace packed_layer_norm_detail {
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
           FixedDimensions PackedAxes, FixedDimensions PadedNums,
-          FixedDimensions TAxis = shape_t<>>
+          FixedDimension TAxis>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
                            const PackedAxes &, const PadedNums &,
@@ -35,8 +35,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     auto input_shape = input.shape();
     auto input_strides = input.strides();
 
-    TAxis axis;
-    constexpr auto axis_value = axis[0_dim];
+    constexpr auto axis_value = TAxis::value;
     const auto domain =
         input_shape.template slice<(size_t)0, (size_t)axis_value>();
     const auto strides =
@@ -101,8 +100,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
           FixedDimensions PackedAxes = shape_t<>,
-          FixedDimensions PadedNums = shape_t<>,
-          FixedDimensions TAxis = shape_t<>>
+          FixedDimensions PadedNums = shape_t<>, FixedDimension TAxis>
 void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        TOut &&output, const TEp &epsilon,
                        const PackedAxes &packedAxes, const PadedNums &padedNums,

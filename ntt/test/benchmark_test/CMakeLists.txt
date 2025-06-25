@@ -18,6 +18,7 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     benchmark_ntt_layernorm.cpp
     benchmark_ntt_matmul.cpp
     benchmark_ntt_reduce.cpp
+    benchmark_ntt_rmsnorm.cpp
     benchmark_ntt_scatter_nd.cpp
     benchmark_ntt_slice.cpp
     benchmark_ntt_softmax.cpp
