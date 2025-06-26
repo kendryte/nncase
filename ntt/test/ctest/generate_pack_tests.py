@@ -24,7 +24,7 @@ DataType = namedtuple('DataType', ['cpp_type', 'name_suffix', 'min_val', 'max_va
 
 
 ALL_DATATYPES = [
-    # DataType('bool', 'Bool', 'false', 'true'),
+    DataType('bool', 'Bool', 'false', 'true'),
     DataType('uint8_t', 'Uint8', '0', '255'),
     DataType('uint16_t', 'Uint16', '0', '65535'),
     DataType('uint32_t', 'Uint32', '0', '100000'),

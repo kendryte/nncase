@@ -104,24 +104,29 @@ void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
     size_t size = 0;
     using element_type = ntt::element_or_scalar_t<TTensor>;
     auto ort_ptr = (const element_type *)tensor_buffer(ort_tensor, &size);
-    if constexpr (ntt::Vector<element_type>) {
-        assert(tensor_length(ort_tensor) ==
-               ntt_tensor.shape().length() * element_type::size());
-    } else {
-        assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
-    }
-    if constexpr (ntt::Vector<TTensor>) {
-        ntt::apply(ntt_tensor.shape(), [&](auto tindex) {
-            ntt::apply(ntt_tensor(tindex).shape(), [&](auto vindex) {
-                ntt_tensor(tindex)(vindex) = *ort_ptr++;
-            });
-        });
-    } else {
-        ntt::apply(ntt_tensor.shape(),
-                   [&](auto tindex) { ntt_tensor(tindex) = *ort_ptr++; });
-    }
+    assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    ntt::apply(ntt_tensor.shape(), [&](auto tindex) {
+        ntt_tensor(tindex) = *ort_ptr++;
+    });
 }
 
+template <ntt::TensorOfVector TTensor>
+void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
+    using vec_type = typename TTensor::element_type;
+    assert(tensor_length(ort_tensor) ==
+           ntt_tensor.shape().length() * vec_type::size());
+
+    using vec_elem_type = typename vec_type::element_type;
+    size_t size = 0;
+    const vec_elem_type *ort_ptr = static_cast<const vec_elem_type *>(tensor_buffer(ort_tensor, &size));
+
+    ntt::apply(ntt_tensor.shape(), [&](auto tindex) {
+        auto &vec_dst = ntt_tensor(tindex);
+        ntt::apply(ntt_tensor(tindex).shape(), [&](auto vindex) {
+            vec_dst(vindex) = *ort_ptr++;
+        });
+    });
+}
 // template <ntt::TensorOfVector TTensor>
 //     requires(TTensor::element_type::rank() == 1)
 // void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
