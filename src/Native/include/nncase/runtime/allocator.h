@@ -27,11 +27,6 @@ struct buffer_allocate_options {
 inline constexpr size_t HOST_BUFFER_ALLOCATE_CPU_ONLY = 1;
 inline constexpr size_t HOST_BUFFER_ALLOCATE_SHARED = 2;
 
-inline constexpr size_t DEVICE_BUFFER_ALLOCATE_UMA0 = 1;
-inline constexpr size_t DEVICE_BUFFER_ALLOCATE_UMA1 = 2;
-inline constexpr size_t DEVICE_BUFFER_ALLOCATE_UMA_ANY = 4;
-inline constexpr size_t DEVICE_BUFFER_ALLOCATE_NUMA = 8;
-
 struct buffer_attach_options {
     size_t flags;
     uint32_t alignment;
@@ -40,11 +35,6 @@ struct buffer_attach_options {
 };
 
 inline constexpr size_t HOST_BUFFER_ATTACH_SHARED = 1;
-
-inline constexpr size_t DEVICE_BUFFER_ATTACH_UMA0 = 1;
-inline constexpr size_t DEVICE_BUFFER_ATTACH_UMA1 = 2;
-inline constexpr size_t DEVICE_BUFFER_ATTACH_UMA_ANY = 4;
-inline constexpr size_t DEVICE_BUFFER_ATTACH_NUMA = 8;
 
 class NNCASE_API buffer_allocator {
   public:
