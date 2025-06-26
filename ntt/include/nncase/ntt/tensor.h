@@ -232,7 +232,8 @@ class basic_tensor
                       "the tensor shape");
         auto new_strides =
             broadcast_strides<UShape::rank() - rank()>(strides());
-        return make_tensor_view<T>(elements(), new_shape, new_strides);
+        return make_tensor_view_from_address(elements().data(), new_shape,
+                                             new_strides);
     }
 
     template <Shape UShape>
@@ -242,7 +243,8 @@ class basic_tensor
                       "the tensor shape");
         auto new_strides =
             broadcast_strides<UShape::rank() - rank()>(strides());
-        return make_tensor_view<const T>(elements(), new_shape, new_strides);
+        return make_tensor_view_from_address(elements().data(), new_shape,
+                                             new_strides);
     }
 
     template <Dimensions Index, Shape UShape>
