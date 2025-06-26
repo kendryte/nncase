@@ -83,17 +83,25 @@ ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
 
 template <ntt::TensorOfVector TTensor>
 ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
-    using T = typename std::decay_t<TTensor>::element_type;
-    size_t N = T::shape()[0];
-    auto RankDim = T::rank();
-    using ElemType = ntt::element_or_scalar_t<T>;
-    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
-    auto ort_type = primitive_type2ort_type<ElemType>();
+    using vec_type = typename std::decay_t<TTensor>::element_type;
+    size_t N = vec_type::shape()[0];
+    auto RankDim = vec_type::rank();
+    using vec_elem_type = ntt::element_or_scalar_t<vec_type>;
+    auto ort_type = primitive_type2ort_type<vec_elem_type>();
     auto r1 = tensor.shape().rank();
     auto r2 = r1 + RankDim;
     std::vector<size_t> v(r2, N);
     for (size_t i = 0; i < r1; i++)
         v[i] = tensor.shape()[i];
+
+    vec_elem_type *buffer = new vec_elem_type[tensor.shape().length() * vec_type::size()];
+    vec_elem_type *buffer_ptr = buffer;
+    ntt::apply(tensor.shape(), [&](auto tindex) {
+        const auto &vec_src = tensor(tindex);
+        ntt::apply(vec_src.shape(), [&](auto vindex) {
+            *buffer_ptr++ = vec_src(vindex);
+        });
+    });
 
     const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
     return make_tensor(buffer, ort_type, shape, r2);

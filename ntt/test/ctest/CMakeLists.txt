@@ -1,4 +1,11 @@
 enable_testing()
+# How to run a single test case:
+# 1. Build only the specific test executable (using test_ntt_pack_generated_Uint32 as an example):
+#    cmake --build build/<BuildType> --target test_ntt_pack_generated_Uint32
+#    where <BuildType> is typically Debug, Release, etc.
+# 2. Execute the corresponding test in the generated test directory (use the same <BuildType>):
+#    ctest -C <BuildType> --test-dir build/<BuildType>/ntt/test/ctest -R test_ntt_pack_generated_Uint32
+#    -C specifies the build configuration, and -R filters the test by regex.
 
 find_package(ortki)
 find_package(GTest REQUIRED)
