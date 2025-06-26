@@ -64,11 +64,11 @@ class NNCASE_API device_buffer_node : public buffer_node {
     virtual result<void> unmap() noexcept;
     virtual result<void> sync(sync_op_t op, bool force = false) noexcept;
 
-    virtual result<void> copy_to(buffer_t dest, size_t src_start,
-                                 size_t dest_start, datatype_t datatype,
-                                 std::span<const size_t> shape,
-                                 std::span<const size_t> src_strides,
-                                 std::span<const size_t> dest_strides) noexcept override;
+    virtual result<void>
+    copy_to(buffer_t dest, size_t src_start, size_t dest_start,
+            datatype_t datatype, std::span<const size_t> shape,
+            std::span<const size_t> src_strides,
+            std::span<const size_t> dest_strides) noexcept override;
 
     virtual result<int> device_type() noexcept;
     virtual result<int> device_id() noexcept;
