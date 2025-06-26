@@ -29,7 +29,7 @@ class NNCASE_API device_mapped_buffer {
                          std::span<std::byte> span) noexcept;
     device_mapped_buffer(device_mapped_buffer &&other) noexcept;
     device_mapped_buffer(const device_mapped_buffer &) = delete;
-    ~device_mapped_buffer();
+    virtual ~device_mapped_buffer() = default;
 
     device_mapped_buffer &operator=(device_mapped_buffer &&) noexcept;
     device_mapped_buffer &operator=(const device_mapped_buffer &) = delete;
@@ -95,7 +95,7 @@ class NNCASE_API device_buffer_slice : public buffer_slice {
     device_buffer_slice(device_buffer_t buffer, size_t start,
                         size_t length) noexcept
         : buffer_slice(std::move(buffer), start, length) {}
-
+    virtual ~device_buffer_slice() = default;
     virtual const device_buffer_t &buffer() const noexcept {
         return reinterpret_cast<const device_buffer_t &>(
             buffer_slice::buffer());

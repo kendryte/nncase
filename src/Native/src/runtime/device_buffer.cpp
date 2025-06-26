@@ -32,10 +32,6 @@ device_mapped_buffer::device_mapped_buffer(
     device_mapped_buffer &&other) noexcept
     : buffer_(std::move(other.buffer_)), span_(other.span_) {}
 
-device_mapped_buffer::~device_mapped_buffer() {
-    unmap().expect("unmap failed");
-}
-
 device_mapped_buffer &
 device_mapped_buffer::operator=(device_mapped_buffer &&other) noexcept {
     unmap().expect("unmap failed");
