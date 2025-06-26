@@ -52,23 +52,23 @@ template <Tensor TIn, Tensor TOut> class cast_impl {
         }
 
         dynamic_shape_t<rank> index{};
-        const auto conti_dims = std::min(
-            dim_value(contiguous_dims(input.shape(), input.strides())),
-            dim_value(contiguous_dims(output.shape(), output.strides())));
+        const auto conti_dims =
+            std::min(contiguous_dims(input.shape(), input.strides()),
+                     contiguous_dims(output.shape(), output.strides()));
 
         if constexpr (scale >= 1.0f) {
-            apply<0, conti_dims>(output.shape(), index, input, output);
+            apply<0>(conti_dims, output.shape(), index, input, output);
         } else {
-            apply<0, conti_dims>(input.shape(), index, input, output);
+            apply<0>(conti_dims, input.shape(), index, input, output);
         }
     }
 
   private:
-    template <size_t Axis, size_t TContiguousDims, Shape TRestDims>
-    constexpr void apply(const TRestDims &rest_dims,
-                         dynamic_shape_t<rank> &index, const TIn &input,
-                         TOut &output) {
-        if (TContiguousDims == rest_dims.rank()) {
+    template <size_t Axis, Dimension TContiguousDims, Shape TRestDims>
+    constexpr void
+    apply(const TContiguousDims &conti_dims, const TRestDims &rest_dims,
+          dynamic_shape_t<rank> &index, const TIn &input, TOut &output) {
+        if (conti_dims == rest_dims.rank()) {
             const auto inner_size = rest_dims.length();
             auto in_offset =
                 linear_offset(index, input.strides()) * in_offset_scale;
@@ -81,8 +81,8 @@ template <Tensor TIn, Tensor TOut> class cast_impl {
             for (index[fixed_dim_v<Axis>] = 0;
                  index[fixed_dim_v<Axis>] < rest_dims[dim_zero];
                  index[fixed_dim_v<Axis>]++) {
-                apply<Axis + 1, TContiguousDims>(rest_dims.template slice<1>(),
-                                                 index, input, output);
+                apply<Axis + 1>(conti_dims, rest_dims.template slice<1>(),
+                                index, input, output);
             }
         }
     }
