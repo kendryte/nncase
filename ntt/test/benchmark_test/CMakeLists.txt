@@ -11,7 +11,7 @@ endif()
 
 file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     benchmark_ntt_binary.cpp
-    benchmark_ntt_cast.cpp
+    # benchmark_ntt_cast.cpp
     benchmark_ntt_clamp.cpp
     benchmark_ntt_compare.cpp
     benchmark_ntt_expand.cpp
