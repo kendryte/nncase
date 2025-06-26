@@ -53,7 +53,7 @@ template <Tensor TIn, Tensor TOut> class cast_impl {
 
         dynamic_shape_t<rank> index{};
         const auto conti_dims =
-            std::min(contiguous_dims(input.shape(), input.strides()),
+            ntt::min(contiguous_dims(input.shape(), input.strides()),
                      contiguous_dims(output.shape(), output.strides()));
 
         if constexpr (scale >= 1.0f) {

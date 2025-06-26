@@ -853,7 +853,7 @@ public abstract class HuggingFaceModel
         var output = IR.F.NN.PagedAttention(
             packedQ,
             paskKeyValues,
-            Tensor.Zeros(DataTypes.UInt8, [extra_size]),
+            IR.F.Buffer.Uninitialized(DataTypes.UInt8, TIR.MemoryLocation.Data, [extra_size]),
             scaling.CastTo(pagedAttentionConfig.KVPrimType, CastMode.KDefault),
             count,
             qDestLayout);

@@ -34,12 +34,12 @@ class compare_impl : public binary_like_impl<compare_impl<TLhs, TRhs, TOut>,
 
 template <template <class T1, class T2> class Op, Tensor TLhs, Tensor TRhs,
           class TOut>
-void compare(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-             const Op<std::remove_cv_t<typename TLhs::element_type>,
-                      std::remove_cv_t<typename TRhs::element_type>> &op = {}) {
-    static_assert(std::is_same_v<typename TLhs::element_type,
-                                 typename TRhs::element_type>,
-                  "compare only support same element type now");
+void compare(
+    const TLhs &lhs, const TRhs &rhs, TOut &&output,
+    const Op<typename TLhs::value_type, typename TRhs::value_type> &op = {}) {
+    static_assert(
+        std::is_same_v<typename TLhs::value_type, typename TRhs::value_type>,
+        "compare only support same element type now");
     detail::compare_impl<TLhs, TRhs, std::decay_t<TOut>>()(lhs, rhs, output,
                                                            op);
 }
