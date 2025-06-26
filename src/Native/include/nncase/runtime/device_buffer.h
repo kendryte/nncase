@@ -68,7 +68,7 @@ class NNCASE_API device_buffer_node : public buffer_node {
                                  size_t dest_start, datatype_t datatype,
                                  std::span<const size_t> shape,
                                  std::span<const size_t> src_strides,
-                                 std::span<const size_t> dest_strides) noexcept;
+                                 std::span<const size_t> dest_strides) noexcept override;
 
     virtual result<int> device_type() noexcept;
     virtual result<int> device_id() noexcept;
