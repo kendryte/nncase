@@ -453,9 +453,10 @@ public sealed class PackUnary : PackRule
     {
     }
 
+    // FIXME: support exp when rvv exp handles big inputs
     public override Pattern Pattern { get; } = IsUnary(
       "target",
-      _ => true,
+      op => op.UnaryOp is not UnaryOp.Exp,
       IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
     public static List<Expr> AddCandidate(IR.Math.Unary op, Expr input, int[] packedAxes, int[] lanes)
