@@ -315,4 +315,7 @@ inline bfloat16 nearbyint(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(nearbyintf(float(a)));
 }
 inline long lrint(const bfloat16 &a) { return lrintf(float(a)); }
+
+template <>
+struct is_floating_point<bfloat16> : public std::true_type {};
 } // namespace std

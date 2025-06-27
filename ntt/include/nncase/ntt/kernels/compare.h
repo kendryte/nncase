@@ -122,9 +122,9 @@ class compare_impl<TLhs, TRhs, TOut> {
 template <template <class T1, class T2> class Op, class TLhs, class TRhs,
           class TOut>
 void compare(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
-    static_assert(std::is_same_v<typename TLhs::element_type,
-                                 typename TRhs::element_type>,
-                  "compare only support same element type now");
+    // static_assert(std::is_same_v<typename TLhs::element_type,
+    //                              typename TRhs::element_type>,
+    //               "compare only support same element type now");
     Op<typename TLhs::element_type, typename TRhs::element_type> op;
     detail::compare_impl<std::decay_t<TLhs>, std::decay_t<TRhs>,
                          std::decay_t<TOut>>()(op, lhs, rhs, output);

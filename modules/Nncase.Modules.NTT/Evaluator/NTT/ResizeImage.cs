@@ -29,9 +29,10 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
     public IValue OnnxResize(IEvaluateContext context, ResizeImage target)
     {
         var input = context.GetOrtArgumentValue(target, ResizeImage.Input);
+        var paddedNums = context.GetArgumentValueAsArray<int>(target, ResizeImage.PadedNums);
         var sizes = target.NewSize;
 
-        input = NTTEvaluatorUtility.UnpackTensor(input, target.PackedAxes, target.PadedNums, out var lanes);
+        input = NTTEvaluatorUtility.UnpackTensor(input, target.PackedAxes, paddedNums, out var lanes);
         OrtKISharp.Tensor resized = OrtKI.ResizeWithSizes(
            input,
            Array.Empty<float>(),
@@ -43,7 +44,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
            ResizeModeHelper.ToString(target.ResizeMode),
            ResizeModeHelper.ToString(target.NearestMode));
 
-        resized = NTTEvaluatorUtility.RepackTensor(resized, lanes, target.PackedAxes, target.PadedNums);
+        resized = NTTEvaluatorUtility.RepackTensor(resized, lanes, target.PackedAxes, paddedNums);
         if (lanes.Count > 0)
         {
             return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(DataTypes.Float32, lanes), resized.Shape.Take(4).Select(i => (int)i).ToArray()), resized.BytesBuffer.ToArray()));
@@ -83,7 +84,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         var invalid = new InvalidType($"{input}, not support");
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (input.AxisPolices[i])
+            switch (input.AxisPolicies[i])
             {
                 case SBPSplit split when i < 2:
                     ndsbp[i] = split;

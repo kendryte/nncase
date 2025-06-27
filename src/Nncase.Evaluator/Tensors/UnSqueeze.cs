@@ -122,16 +122,16 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
         if (dim.IsFixed)
         {
             var dimsValue = dim.ToValueArray().Select(d => d < 0 ? d + tensorType.Shape.Rank : d);
-            for (int i = 0; i < input.AxisPolices.Count; i++)
+            var offset = 0;
+            for (int i = 0; i < ndsbp.Length; i++)
             {
-                var outAxis = i + dimsValue.Select(d => d <= i).Count(b => b);
-                if (dimsValue.Contains(outAxis))
+                if (dimsValue.Contains(i))
                 {
-                    ndsbp[outAxis] = SBP.B;
+                    ndsbp[i] = SBP.B;
                 }
                 else
                 {
-                    ndsbp[outAxis] = input.AxisPolices[i];
+                    ndsbp[i] = input.AxisPolicies[offset++];
                 }
             }
         }
