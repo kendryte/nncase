@@ -38,7 +38,7 @@ public abstract class AffineSelectionPass : FunctionPass
 
     protected Expr SelectUnaryLike(Expr input, Op tirOp, Call call, Expr output)
     {
-        if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
+        if (output.CheckedShape is not { Rank: > 0 })
         {
             return call;
         }

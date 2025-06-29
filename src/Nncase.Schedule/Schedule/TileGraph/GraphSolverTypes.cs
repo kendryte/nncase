@@ -70,6 +70,7 @@ public sealed record TileNodeInfo<T>(T[] TripCounts, T[][] BackWardExtents, Dict
 /// <param name="TileVars">loop trip vars length = domainRank.</param>
 /// <param name="ForwardExtents">forward extents.</param>
 /// <param name="DimsMap"> key is current dim, value is partent dim. </param>
+/// NOTE dimsMap should be removed when using isl.
 public sealed record DomainInfo<T>(T[] TileVars, T[] ForwardExtents, Dictionary<int, int> DimsMap)
 {
 }

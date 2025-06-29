@@ -24,8 +24,21 @@ public interface ITileable
 
     /// <summary>
     /// Gets or sets the domain relation which from parent domain map to current node's domain.
+    /// todo using isl map as domain relation, so we can get the dynamic property directly.
     /// </summary>
     DomainRelation DomainRelation { get; set; }
+
+    /// <summary>
+    /// Gets the dynamic property of the domain.
+    /// note it's temporary solution.
+    /// </summary>
+    ImmutableArray<bool> DomainDynamic { get; }
+
+    /// <summary>
+    /// Gets the domain bounds.
+    /// todo using isl map to get when use it. and we actually need to 
+    /// </summary>
+    ImmutableArray<Dimension> DomainBoundExprs { get; }
 }
 
 public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
@@ -45,14 +58,16 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
 
 public sealed class TileGrid : ITileable
 {
-    public TileGrid(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<long> domainBounds, IEnumerable<IEnumerable<long>> bufferShapes)
+    public TileGrid(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<long> domainBounds, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic, IEnumerable<IEnumerable<long>> bufferShapes)
     {
         Level = 0;
         Grid = grid;
         Op = op;
         OpId = opId;
+        DomainDynamic = ImmutableArray.CreateRange(domainDynamic);
         DomainRelation = new(opId, opId, AffineMap.Identity(domainBounds.Count()));
         DomainBounds = ImmutableArray.CreateRange(domainBounds);
+        DomainBoundExprs = ImmutableArray.CreateRange(domainBoundsExpr);
         BufferShapes = ImmutableArray.CreateRange(bufferShapes.Select(x => ImmutableArray.CreateRange(x)));
     }
 
@@ -67,6 +82,10 @@ public sealed class TileGrid : ITileable
     public Op Op { get; }
 
     public ImmutableArray<long> DomainBounds { get; }
+
+    public ImmutableArray<Dimension> DomainBoundExprs { get; }
+
+    public ImmutableArray<bool> DomainDynamic { get; }
 
     public ImmutableArray<ImmutableArray<long>> BufferShapes { get; }
 
@@ -93,12 +112,14 @@ public sealed class TieredTileGraph : TieredAdjacencyGraph<TileGrid, EquatableTa
         DomainRelation = new(-1, -1, IR.Affine.AffineMap.Identity(0));
     }
 
-    public TieredTileGraph([NotNull] TieredTileGraph parentGraph, int level, int opid, DomainRelation relation)
+    public TieredTileGraph([NotNull] TieredTileGraph parentGraph, int level, int opid, DomainRelation relation, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic)
         : base(parentGraph)
     {
         OpId = opid;
         Level = level;
         DomainRelation = relation;
+        DomainDynamic = ImmutableArray.CreateRange(domainDynamic);
+        DomainBoundExprs = ImmutableArray.CreateRange(domainBoundsExpr);
     }
 
     public int Level { get; }
@@ -106,6 +127,10 @@ public sealed class TieredTileGraph : TieredAdjacencyGraph<TileGrid, EquatableTa
     public int OpId { get; }
 
     public DomainRelation DomainRelation { get; set; }
+
+    public ImmutableArray<bool> DomainDynamic { get; }
+
+    public ImmutableArray<Dimension> DomainBoundExprs { get; }
 
     public override string ToString() => $"Op{OpId}@{Level}";
 }

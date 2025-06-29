@@ -236,7 +236,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         {
             TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
-            TensorType => "auto",
+            TensorType or DistributedType => "auto",
             _ => throw new NotSupportedException(),
         };
 

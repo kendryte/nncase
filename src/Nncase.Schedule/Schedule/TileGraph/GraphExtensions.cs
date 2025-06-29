@@ -242,6 +242,7 @@ public static class GraphExtensions
 
     public static IR.Expr GetArgument(this IR.Affine.Grid grid, int index)
     {
+        // note why we use bufferof wrapper the reads?
         return index >= grid.Reads.Length ? grid.Buffers[^1] : grid.Reads[index];
     }
 

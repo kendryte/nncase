@@ -632,10 +632,15 @@ public class GraphTiler
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
-                result.Visit(primTree, new(bodyBuilder, Array.Empty<Dimension>()));
+                result.Visit(primTree, new(bodyBuilder, Array.Empty<Dimension>(), primTree.DomainBoundExprs.ToArray()));
                 var parameters = inputBids.Concat(outputBids).Select(k => (Var)result.PrimBufferMemo[k]).ToArray();
                 var funcBuilder = T.PrimFunc(funcName, moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
+                {
+                    var gridBufferToVarMap = inputBids.Concat(outputBids).Select(bid => (BaseExpr)bid.Node.Grid.GetArgument(bid.Index)).Zip(parameters).ToDictionary();
+                    new Passes.Mutators.Substitutor(ee => gridBufferToVarMap.TryGetValue(ee, out var var) ? var : null).Visit(primFunc, default);
+                }
+
                 memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);
                 SolveMemo.Add(primTree, memo);
             }

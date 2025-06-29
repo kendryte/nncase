@@ -615,9 +615,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
-    [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
-    public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int count)
+    [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, new int[] { 0 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, new int[] { 1 }, 1 })]
+    public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int[] dynamicAxes, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -631,12 +631,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
             v.Metadata.Range = new(1, shape[i] * 2);
             return v;
         }).ToArray();
-        var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(dimVars[0], dimVars[1], shape[2], dimVars[3])));
+        var input = new Var(new TensorType(DataTypes.Float32, new RankedShape(Enumerable.Range(0, shape.Length).Select(i => dynamicAxes.Contains(i) ? dimVars[i] : (Dimension)shape[i]).ToArray())));
         CompileOptions.ShapeBucketOptions.VarMap.Add(input, dimVars);
 
         var pre = IR.F.Math.Unary(UnaryOp.Neg, input);
         var feedDict = new Dictionary<IVar, IValue>() {
-            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+            { input, Value.FromTensor(Tensor.FromScalar<float>(1f, shape)) },
             { dimVars[0], Value.FromTensor(shape[0]) },
             { dimVars[1], Value.FromTensor(shape[1]) },
             { dimVars[2], Value.FromTensor(shape[2]) },
@@ -1751,9 +1751,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
 #if DEBUG
         for (int i = 0; i < actuals.Length; i++)
         {
-            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"actual_{i}.bin"))
+            using (var fs = Diagnostics.DumpScope.Current.OpenFile($"actual_{i}.json"))
             {
-                fs.Write(actuals[i].BytesBuffer);
+                JsonSerializer.Serialize(fs, actuals[i], JsonSerializerOptions.Default);
             }
         }
 #endif

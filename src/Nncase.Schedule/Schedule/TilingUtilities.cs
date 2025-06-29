@@ -5,6 +5,7 @@ using Google.OrTools.ConstraintSolver;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
 
@@ -18,6 +19,18 @@ public static class TilingUtilities
             DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt).Shape.ToValueArray(),
             _ => throw new NotSupportedException(),
         };
+    }
+
+    public static Isl.set InferDomainBounds(Isl.set[] bufferShapes, Isl.map[] accessMaps)
+    {
+        Isl.set? domain = null;
+        for (int i = 0; i < accessMaps.Length; i++)
+        {
+            var bufferMap = accessMaps[i].intersect_range(bufferShapes[i]);
+            domain = domain is null ? bufferMap.domain() : domain.intersect(bufferMap.domain());
+        }
+
+        return domain!;
     }
 
     public static long[] InferDomainBounds(long[][] bufferShapes, AffineMap[] accessMaps)
