@@ -109,7 +109,7 @@ class reduce_impl {
                 size_t inner_size =
                     slice_dims<Axes::rank(), Axes::at(0)>(input.shape())
                         .length();
-                if constexpr (IsVector<TOutElem>) {
+                if constexpr (IsVector<TInElem>) {
                     inner_size *= TInElem::shape_type::length();
                 }
 
