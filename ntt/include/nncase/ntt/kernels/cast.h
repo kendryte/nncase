@@ -45,7 +45,7 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
         out_offset_scale = scale > 1.0f ? (size_t)1 : (size_t)(1.0f / scale);
 
   public:
-    constexpr void operator()(const TIn &input, TOut &output, const PackedAxes &packedAxes) noexcept {
+    constexpr void operator()(const TIn &input, TOut &output, const PackedAxes packedAxes) noexcept {
 #if 0        
         if constexpr (scale != 1.0f) {
             static_assert(TIn::rank() == 1,
@@ -118,7 +118,7 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
 } // namespace detail
 
 template <Tensor TIn, class TOut, FixedDimensions PackedAxes>
-void cast(const TIn &input, TOut &&output, const PackedAxes &packedAxes) noexcept {
+void cast(const TIn &input, TOut &&output, const PackedAxes packedAxes) noexcept {
     detail::cast_impl<TIn, std::decay_t<TOut>, PackedAxes> impl;
     impl(input, output, packedAxes);
 }
