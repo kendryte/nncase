@@ -45,6 +45,7 @@ class NNCASE_API buffer_allocator {
                                     const buffer_attach_options &options) = 0;
 
     static buffer_allocator &host();
+    static buffer_allocator &device();
     virtual void shrink_memory_pool() = 0;
 };
 

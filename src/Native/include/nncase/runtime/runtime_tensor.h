@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "datatypes.h"
+#include "device_buffer.h"
 #include "host_buffer.h"
 #include "model.h"
 #include "result.h"
@@ -35,11 +36,13 @@ class NNCASE_API runtime_tensor {
     std::span<const size_t> strides() const noexcept;
     bool empty() const noexcept;
     bool is_host() const noexcept;
+    bool is_device() const noexcept;
     bool is_contiguous() const noexcept;
 
     bool can_copy_to_without_staging(const runtime_tensor &dest) const noexcept;
     result<void> copy_to(runtime_tensor &dest) noexcept;
     result<runtime_tensor> to_host() noexcept;
+    result<runtime_tensor> to_device() noexcept;
 
     void reset() noexcept;
 
@@ -114,10 +117,54 @@ NNCASE_API result<void> sync(runtime_tensor &tensor, sync_op_t op,
 
 namespace hrt = host_runtime_tensor;
 
+namespace device_runtime_tensor {
+
+typedef enum memory_pool_ {
+    pool_uma0,
+    pool_uma1,
+    pool_uma_any,
+    pool_numa
+} memory_pool_t;
+
+typedef std::function<void(std::byte *)> data_deleter_t;
+
+NNCASE_API result<runtime_tensor>
+create(datatype_t datatype, dims_t shape,
+       memory_pool_t pool = pool_uma_any) noexcept;
+
+NNCASE_API result<runtime_tensor>
+create(datatype_t datatype, dims_t shape, strides_t stride,
+       memory_pool_t pool = pool_uma_any) noexcept;
+
+NNCASE_API result<runtime_tensor>
+create(datatype_t datatype, dims_t shape, std::span<std::byte> data, bool copy,
+       memory_pool_t pool = pool_uma_any) noexcept;
+
+NNCASE_API result<runtime_tensor>
+create(datatype_t datatype, dims_t shape, strides_t stride,
+       std::span<std::byte> data, bool copy,
+       memory_pool_t pool = pool_uma_any) noexcept;
+
+NNCASE_API result<memory_pool_t>
+memory_pool(const runtime_tensor &tensor) noexcept;
+
+NNCASE_API result<device_mapped_buffer> map(runtime_tensor &tensor,
+                                            map_access_t access) noexcept;
+
+NNCASE_API result<void> sync(runtime_tensor &tensor, sync_op_t op,
+                             bool force = false) noexcept;
+} // namespace device_runtime_tensor
+
+namespace drt = device_runtime_tensor;
+
 namespace detail {
 NNCASE_API result<tensor>
 create(datatype_t datatype, dims_t shape,
        hrt::memory_pool_t pool = hrt::pool_shared_first) noexcept;
-}
+
+NNCASE_API result<tensor>
+create(datatype_t datatype, dims_t shape,
+       drt::memory_pool_t pool = drt::pool_uma_any) noexcept;
+} // namespace detail
 
 END_NS_NNCASE_RUNTIME
