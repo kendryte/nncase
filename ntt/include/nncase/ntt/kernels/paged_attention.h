@@ -227,8 +227,8 @@ void paged_attention(
             reinterpret_cast<kv_prim_type_t *>(extra_tensor.elements().data()),
             s_shape);
         auto reduce_s = make_tensor_view_from_address(
-            reinterpret_cast<kv_prim_type_t *>(extra_tensor.elements().data() +
-                                               s_shape.length()),
+            reinterpret_cast<kv_prim_type_t *>(extra_tensor.elements().data()) +
+                s_shape.length(),
             reduce_s_shape);
 
         // s = q * k^T : [head_q, query_len, seq_len]

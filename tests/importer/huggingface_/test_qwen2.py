@@ -47,11 +47,6 @@ def test_qwen2(request):
 
     [generator.calibs.text]
     args = 'tests/importer/huggingface_/prompt_qwen.txt'
-
-    #TODO: Need remove!
-    [target]
-    [target.cpu]
-    infer = false
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
