@@ -26,7 +26,7 @@ public sealed partial class ResizeImage : NTTKernelOp
 
     public IRArray<int> PackedAxes { get; }
 
-    public IRArray<Dimension> PadedNums { get; }
+    public IRArray<int> PadedNums { get; }
 
     public IRArray<int> NewSize { get; }
 

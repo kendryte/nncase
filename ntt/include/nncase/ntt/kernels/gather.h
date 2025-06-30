@@ -285,7 +285,7 @@ class gather_impl<ranked_shape<Rank>, InStrides, ranked_shape<IndicesRank>, Indi
                     output(out_index) = input.local()(in_index);
                 } else {
                     // Index is outside the local shard's range, fill with zeros
-                    output(out_index) = TA{0};
+                    output(out_index) = element_or_scalar_t<TA>{0};
                 }
             });
         } else {
@@ -352,7 +352,7 @@ public:
                     output(out_index) = input.local()(in_index);
                 } else {
                     // Index is outside the local shard's range, fill with zeros
-                    output(out_index) = element_type{0};
+                    output(out_index) = element_or_scalar_t<element_type>{0};
                 }
             });
         } else {
@@ -419,7 +419,7 @@ public:
                     output(out_index) = input.local()(in_index);
                 } else {
                     // Index is outside the local shard's range, fill with zeros
-                    output(out_index) = element_type{0};
+                    output(out_index) = element_or_scalar_t<element_type>{0};
                 }
             });
         } else {

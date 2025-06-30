@@ -80,7 +80,7 @@ public static class Value
     public static TensorValue FromTensorLike(Tensor tensor, IRType type)
         => type switch
         {
-            DistributedType dt => FromTensor(tensor, dt.AxisPolicies, dt.Placement),
+            DistributedType dt => FromTensor(tensor, dt.AxisPolices, dt.Placement),
             _ => FromTensor(tensor),
         };
 

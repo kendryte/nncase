@@ -82,22 +82,22 @@ public partial class NTT
         return new Call(new PackedSoftmax(axis, packedAxes), input, output);
     }
 
-    public static Expr PackedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> packedAxes, IRArray<Dimension> padedNums)
+    public static Expr PackedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> packedAxes, IRArray<int> padedNums)
     {
         return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes, padedNums, null!), input, scale, bias, output);
     }
 
-    public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> packedAxes, IRArray<Dimension> padedNums, DistributedType distributedType)
+    public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> packedAxes, IRArray<int> padedNums, DistributedType distributedType)
     {
         return new Call(new InstanceNorm(epsilon, packedAxes, padedNums, distributedType), input, scale, bias, output);
     }
 
-    public static Expr PackedBinary(Expr lhs, Expr rhs, Expr output, BinaryOp binaryOp, IRArray<int> lhsPackedAxes, IRArray<Dimension> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<Dimension> rhsPadedNums)
+    public static Expr PackedBinary(Expr lhs, Expr rhs, Expr output, BinaryOp binaryOp, IRArray<int> lhsPackedAxes, IRArray<int> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<int> rhsPadedNums)
     {
         return new Call(new PackedBinary(binaryOp, lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs, output);
     }
 
-    public static Call ResizeImage(Expr input, Expr output, int[] packedAxes, Dimension[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
+    public static Call ResizeImage(Expr input, Expr output, int[] packedAxes, int[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
     {
         return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input, output);
     }
@@ -172,7 +172,7 @@ public partial class NTT
         return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
     }
 
-    public static Expr Reduce(Expr input, Expr ret, Expr loadPrevious, int[] packedAxes, Dimension[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
+    public static Expr Reduce(Expr input, Expr ret, Expr loadPrevious, int[] packedAxes, int[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
     {
         return new Call(new TIR.NTT.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret, loadPrevious);
     }
@@ -192,9 +192,9 @@ public partial class NTT
         return new Call(new TIR.NTT.Clamp(min, max), input, output);
     }
 
-    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode, IRArray<int> packAxes = default)
+    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode)
     {
-        return new Call(new TIR.NTT.Cast(newType, castMode, packAxes.IsDefaultOrEmpty ? Array.Empty<int>() : packAxes), input, output);
+        return new Call(new TIR.NTT.Cast(newType, castMode), input, output);
     }
 
     public static Call Where(Expr cond, Expr x, Expr y, Expr output)

@@ -109,9 +109,9 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
         var outShape = tensorType.Shape.ToArray();
         var ndsbp = new SBP[tensorType.Shape.Rank];
 
-        for (int i = 0; i < dt.AxisPolicies.Count; i++)
+        for (int i = 0; i < dt.AxisPolices.Count; i++)
         {
-            var sbp = dt.AxisPolicies[i];
+            var sbp = dt.AxisPolices[i];
             if (i == 0)
             {
                 switch (sbp)

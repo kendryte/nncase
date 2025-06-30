@@ -115,12 +115,6 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             return new TensorType(DataTypes.Int64, Shape.Unknown(cond.Shape.Rank));
         }
 
-        // FIXME: remove this when ntt::where is ready
-        if (cond.DType is VectorType)
-        {
-            return new InvalidType("cond can't be vector type");
-        }
-
         return TypeInference.BroadcastType(x.DType, cond, x, y);
     }
 
@@ -150,9 +144,9 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var ndsbp = new SBP[targetType.Shape.Rank];
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var policyCond = i < padCond ? null : cond.AxisPolicies[i - padCond];
-            var policyX = i < padX ? null : x.AxisPolicies[i - padX];
-            var policyY = i < padY ? null : y.AxisPolicies[i - padY];
+            var policyCond = i < padCond ? null : cond.AxisPolices[i - padCond];
+            var policyX = i < padX ? null : x.AxisPolices[i - padX];
+            var policyY = i < padY ? null : y.AxisPolices[i - padY];
 
             SBP? policyOut;
             switch (policyCond, policyX, policyY)

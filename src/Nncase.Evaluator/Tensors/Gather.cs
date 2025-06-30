@@ -93,12 +93,12 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             return invalid;
         }
 
-        if (index.AxisPolicies.Any(sbp => sbp is SBPSplit))
+        if (index.AxisPolices.Any(sbp => sbp is SBPSplit))
         {
             return new InvalidType($"the index can't be split");
         }
 
-        var ndsbp = input.AxisPolicies[..axis].ToArray().Concat(index.AxisPolicies).Concat(input.AxisPolicies[(axis + 1)..].ToArray()).ToArray();
+        var ndsbp = input.AxisPolices[..axis].ToArray().Concat(index.AxisPolices).Concat(input.AxisPolices[(axis + 1)..].ToArray()).ToArray();
 
         // one topo axis can only be spilt on one dim axis
         if (!DistributedUtility.IsDistributable(ndsbp))

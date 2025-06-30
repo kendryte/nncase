@@ -138,7 +138,7 @@ public class ResizeImageEvaluator : IEvaluator<ResizeImage>, ITypeInferencer<Res
         var invalid = new InvalidType($"{input}, not support");
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (input.AxisPolicies[i])
+            switch (input.AxisPolices[i])
             {
                 case SBPSplit split when i < 2:
                     ndsbp[i] = split;

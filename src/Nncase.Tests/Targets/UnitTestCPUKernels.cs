@@ -615,8 +615,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-
-    // [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
+    [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
     [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int count)
     {
@@ -780,9 +779,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
-    [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
-    [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
+
+    // TODO: fix this when ntt::cast support rank>1
+    // [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
+    // [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
+    // [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
     [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
     [InlineData(new object[] { new long[] { 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
     [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
@@ -1769,9 +1770,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
         compiler.AutoDistributedPass(pmgr);
-
-        // FIXME: reopen when AutoTilingPass is ready.
-        // compiler.AutoTilingPass(pmgr);
+        compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
         await pmgr.RunAsync(module);
     }

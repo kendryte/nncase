@@ -157,7 +157,7 @@ public sealed record Placement(IRArray<int> Hierarchy, string Name, HierarchyKin
     public override string ToString() => $"[{string.Join(',', Hierarchy.Zip(Name).Select(t => t.Second.ToString() + ':' + t.First.ToString()))}]";
 }
 
-public sealed record DistributedType(TensorType TensorType, IRArray<SBP> AxisPolicies, Placement Placement) : IRType
+public sealed record DistributedType(TensorType TensorType, IRArray<SBP> AxisPolices, Placement Placement) : IRType
 {
-    public override string ToString() => $"{TensorType}, ({string.Join(',', AxisPolicies)}), {Placement}";
+    public override string ToString() => $"{TensorType}, ({string.Join(',', AxisPolices)}), {Placement}";
 }

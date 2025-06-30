@@ -17,8 +17,8 @@ public sealed class ForceBoxingEvaluator : ITypeInferencer<ForceBoxing>, ICostEv
     {
         IRType VisitD2D(DistributedType inv, DistributedType outv)
         {
-            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolicies, inv.Placement.Rank).ToArray();
-            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolicies, outv.Placement.Rank).ToArray();
+            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolices, inv.Placement.Rank).ToArray();
+            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolices, outv.Placement.Rank).ToArray();
 
             // TODO: add more invalid cases
             if (ndsbpsA.Distinct().Count() == 1 && ndsbpsB.Distinct().Count() == 1 && ndsbpsA[0] == ndsbpsB[0])
@@ -90,7 +90,7 @@ public sealed class ForceBoxingEvaluator : ITypeInferencer<ForceBoxing>, ICostEv
         var inTenor = context.GetArgumentValueAsTensor(target, ForceBoxing.Input);
         var input = inTenor.ToOrtTensor();
         var output = input - input;
-        var repeat = target.NewType.AxisPolicies.Select((x, i) => (x is SBPPartial) ? target.NewType.Placement.Hierarchy[i] : 1).Aggregate(1, (x, i) => x * i);
+        var repeat = target.NewType.AxisPolices.Select((x, i) => (x is SBPPartial) ? target.NewType.Placement.Hierarchy[i] : 1).Aggregate(1, (x, i) => x * i);
         for (int i = 0; i < repeat; i++)
         {
             output += input;

@@ -22,10 +22,10 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     private readonly TypeInferenceContext _context;
     private readonly Dictionary<Type, ITypeInferencer> _inferencer_cache;
 
-    public TypeInferenceVisitor(Dictionary<Type, ITypeInferencer> inferencer_cache)
+    public TypeInferenceVisitor()
     {
         _context = new TypeInferenceContext();
-        _inferencer_cache = inferencer_cache ?? new Dictionary<Type, ITypeInferencer>();
+        _inferencer_cache = new Dictionary<Type, ITypeInferencer>();
     }
 
     /// <summary>

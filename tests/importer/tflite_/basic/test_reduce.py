@@ -37,7 +37,7 @@ def _make_module(in_shape, axis, keep_dims):
 
 
 in_shape_axis = [
-    ([64], [0]),
+    ([3], [0]),
     ([64, 3], [0]),
     ([64, 3], [1]),
     ([64, 3], [0, 1]),
@@ -59,7 +59,7 @@ in_shape_axis = [
 
 keep_dims = [
     True,
-    # False
+    False
 ]
 
 

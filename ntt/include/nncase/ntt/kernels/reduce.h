@@ -186,6 +186,11 @@ template <reduce_op Op, IsFixedDims Axes, IsFixedDims PackedAxes,
           IsFixedDims PadedNums, bool LoadPrevious = false, class TIn,
           class TOut>
 void reduce(const TIn &input, TOut &&output) noexcept {
+    static_assert(PadedNums::rank() == 0 ||
+                      (PadedNums::rank() == 1 && PadedNums::at(0) == 0) ||
+                      (PadedNums::rank() == 2 && PadedNums::at(0) == 0 &&
+                       PadedNums::at(1) == 0),
+                  "not support padding");
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");
     detail::reduce_impl<Op, false, std::decay_t<TIn>, std::decay_t<TOut>, Axes,

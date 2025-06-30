@@ -155,13 +155,13 @@ public class ReduceEvaluator : IEvaluator<Reduce>, ITypeInferencer<Reduce>, ICos
 
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            switch (input.AxisPolicies[i])
+            switch (input.AxisPolices[i])
             {
                 case SBPSplit split when axes.Contains(i):
                     // ndsbp[i] = SBP.P(target.ReduceOp);
                     return new InvalidType("reduce not support split on axes for now.");
                 default:
-                    ndsbp[i] = input.AxisPolicies[i];
+                    ndsbp[i] = input.AxisPolices[i];
                     break;
             }
         }

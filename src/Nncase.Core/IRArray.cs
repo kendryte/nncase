@@ -121,13 +121,8 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
         return StructuralComparisons.StructuralEqualityComparer.Equals(_array, other._array);
     }
 
-    public ImmutableArray<T>.Enumerator GetEnumerator()
-    {
-        return _array.GetEnumerator();
-    }
-
     /// <inheritdoc/>
-    IEnumerator<T> IEnumerable<T>.GetEnumerator()
+    public IEnumerator<T> GetEnumerator()
     {
         return ((IEnumerable<T>)_array).GetEnumerator();
     }

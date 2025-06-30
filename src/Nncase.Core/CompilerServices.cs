@@ -35,9 +35,8 @@ public interface ICompilerServicesProvider
     /// Inference type of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
-    /// <param name="inferencer_cache">Inference cache.</param>
     /// <returns>Is fully inferenced.</returns>
-    bool InferenceType(BaseExpr expr, Dictionary<Type, ITypeInferencer> inferencer_cache);
+    bool InferenceType(BaseExpr expr);
 
     /// <summary>
     /// Inference operator.
@@ -266,11 +265,10 @@ public static class CompilerServices
     /// Inference type of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
-    /// <param name="inferencer_cache">Inference cache.</param>
     /// <returns>Is fully inferenced.</returns>
-    public static bool InferenceType(this BaseExpr expr, Dictionary<Type, ITypeInferencer> inferencer_cache = null!)
+    public static bool InferenceType(this BaseExpr expr)
     {
-        return Provider.InferenceType(expr, inferencer_cache);
+        return Provider.InferenceType(expr);
     }
 
     /// <summary>
@@ -648,9 +646,9 @@ internal class CompilerServicesProvider : ICompilerServicesProvider, ICompilerSe
     }
 
     /// <inheritdoc/>
-    public bool InferenceType(BaseExpr expr, Dictionary<Type, ITypeInferencer> inferencer_cache)
+    public bool InferenceType(BaseExpr expr)
     {
-        return _typeInferenceProvider.InferenceType(expr, inferencer_cache);
+        return _typeInferenceProvider.InferenceType(expr);
     }
 
     /// <inheritdoc/>

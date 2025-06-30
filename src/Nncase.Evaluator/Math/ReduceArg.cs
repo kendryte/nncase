@@ -119,7 +119,7 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
             var ndsbp = new SBP[inshape.Rank];
             for (int i = 0; i < ndsbp.Length; i++)
             {
-                switch (distributedType.AxisPolicies[i])
+                switch (distributedType.AxisPolices[i])
                 {
                     case SBPSplit split:
                         if (i == axis)
@@ -137,10 +137,10 @@ public class ReduceArgEvaluator : IEvaluator<ReduceArg>, ITypeInferencer<ReduceA
                 }
             }
 
-            return distributedType with { AxisPolicies = tensorType.Shape.Rank == ndsbp.Length ? ndsbp : ndsbp.Where((_, i) => i != axis).ToArray(), TensorType = tensorType };
+            return distributedType with { AxisPolices = tensorType.Shape.Rank == ndsbp.Length ? ndsbp : ndsbp.Where((_, i) => i != axis).ToArray(), TensorType = tensorType };
         }
 
-        if (!distributedType.AxisPolicies.All(sbp => sbp is SBPPartial))
+        if (!distributedType.AxisPolices.All(sbp => sbp is SBPPartial))
         {
             return new InvalidType(string.Empty);
         }

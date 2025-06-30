@@ -204,7 +204,7 @@ public static class CostUtility
     {
         return type switch
         {
-            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsMaxValue(),
+            TensorType t => (UInt128)t.Shape.ProdWithDynamicAsMaxValue() * (UInt128)t.DType.SizeInBytes,
             TupleType t => t.Fields.Sum(GetMemoryAccess),
             DistributedType t => GetMemoryAccess(Utilities.DistributedUtility.GetDividedTensorType(t)),
             _ => 0,

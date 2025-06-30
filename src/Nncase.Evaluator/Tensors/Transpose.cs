@@ -38,7 +38,7 @@ public class TransposeEvaluator : IEvaluator<Transpose>, ITypeInferencer<Transpo
 
             for (int i = 0; i < ndsbp.Length; i++)
             {
-                ndsbp[i] = input.AxisPolicies[(int)perm[i].FixedValue];
+                ndsbp[i] = input.AxisPolices[(int)perm[i].FixedValue];
             }
 
             return new DistributedType(tensorType, ndsbp, input.Placement);

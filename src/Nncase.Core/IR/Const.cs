@@ -147,7 +147,7 @@ public abstract class Const : Expr
         {
             case TensorValue tv:
                 return tv.Type is DistributedType distributedType
-                    ? new TensorConst(tv.AsTensor(), distributedType.AxisPolicies, distributedType.Placement)
+                    ? new TensorConst(tv.AsTensor(), distributedType.AxisPolices, distributedType.Placement)
                     : new TensorConst(tv.AsTensor());
             case TupleValue tpv:
                 return new TupleConst(tpv);

@@ -1,25 +1,15 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-#if true
-using System;
-using System.Collections.Generic;
+#if false
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
 using System.Reactive;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
-using System.Threading.Tasks;
-using DryIoc.ImTools;
 using Google.OrTools.Sat;
 using NetFabric.Hyperlinq;
-using Nncase.Evaluator;
 using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Distributed;
-using Nncase.IR.Shapes;
-using Nncase.IR.Tensors;
 using Nncase.Targets;
 using Nncase.Utilities;
 using QuikGraph;
@@ -71,26 +61,21 @@ public sealed partial class AutoDistributedPass : FunctionPass
             return Task.FromResult(input);
         }
 
-        if (_compileOptions.TargetOptions is INTTTargetOptions targetOptions)
-        {
-            var rewriter = new AutoDistributedRewriter(_compileOptions, targetOptions, _moduleKind, _bidirectional);
-            return Task.FromResult(rewriter.Rewrite(input));
-        }
-
-        return Task.FromResult(input);
+        var rewriter = new AutoDistributedRewriter(_compileOptions, _compileOptions.TargetOptions is NTTTargetOptions options ? options : new NTTTargetOptions(), _moduleKind, _bidirectional);
+        return Task.FromResult(rewriter.Rewirte(input));
     }
 }
 
 internal sealed class SearchableNode
 {
-    public SearchableNode(BaseExpr expr, IRType type, bool isBidirect = false)
+    public SearchableNode(Expr expr, IRType type, bool isBidirect = false)
     {
         Expr = expr;
         IRType = type;
         IsBidirect = isBidirect;
     }
 
-    public BaseExpr Expr { get; }
+    public Expr Expr { get; }
 
     public IRType IRType { get; }
 
@@ -139,9 +124,9 @@ internal sealed class DistributedSearchGraph : TieredAdjacencyGraph<SearchableNo
 
 internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 {
-    private readonly Dictionary<BaseExpr, DistributedSearchGraph> _reshardMemo;
+    private readonly Dictionary<Expr, DistributedSearchGraph> _reshardMemo;
 
-    private readonly Dictionary<BaseExpr, DistributedSearchGraph> _inferedMemo;
+    private readonly Dictionary<Expr, DistributedSearchGraph> _inferedMemo;
 
     private readonly AdjacencyGraph<SearchableNode, CrossEdge> _rootGraph;
 
@@ -151,11 +136,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     private readonly bool _bidirectional;
 
-    private readonly Dictionary<Type, ITypeInferencer> _inferencer_cache = new Dictionary<Type, ITypeInferencer>();
-
-    public AutoDistributedRewriter(CompileOptions compileOptions, INTTTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
+    public AutoDistributedRewriter(CompileOptions compileOptions, NTTTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
     {
-        Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames, targetOptions.HierarchyKind)).ToArray();
+        Placements = targetOptions.Hierarchies.Select(h => new Placement(h, targetOptions.HierarchyNames)).ToArray();
         Bidirectional = bidirectional;
         CompileOptions = compileOptions;
         TargetOptions = targetOptions;
@@ -183,9 +166,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     public CompileOptions CompileOptions { get; }
 
-    public INTTTargetOptions TargetOptions { get; }
+    public NTTTargetOptions TargetOptions { get; }
 
-    public IReadOnlyDictionary<string, (IRArray<SBP> Policies, Placement Placement)> Scheme { get; }
+    public IReadOnlyDictionary<string, (IRArray<SBP> NdSBP, Placement Placement)> Scheme { get; }
 
     public static void MemoryExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars)
     {
@@ -198,28 +181,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         })) < (2L * 512L * 1024L * 1024L));
     }
 
-    public static bool SingleNodeMemoryCheck(DistributedType distributedType, string moduleKind, INTTTargetOptions targetOptions)
+    public static IReadOnlyList<DistributedType> GetLeafCandidateDistTypes(TensorType tensorType, IEnumerable<Placement> placements)
     {
-        if (moduleKind == "xpu")
-        {
-            var type = DistributedUtility.GetDividedTensorType(distributedType);
-            var maxShape = CompilerServices.GetMaxShape(type.Shape);
-            var size = TensorUtilities.GetProduct(maxShape) * type.DType.SizeInBytes;
-
-            return size < targetOptions.HierarchySizes[^2] / targetOptions.Hierarchies[0][^1];
-        }
-
-        return true;
-    }
-
-    public static IReadOnlyList<DistributedType> GetLeafCandidateDistTypes(TensorType tensorType, IEnumerable<Placement> placements, string moduleKind, INTTTargetOptions targetOptions)
-    {
-        return placements.Select(
-            placement =>
-            DistributedUtility.GetLeafCandidatePolicies(tensorType, placement)
-            .Where(p => SingleNodeMemoryCheck(new(tensorType, p, placement), moduleKind, targetOptions))
-            .Select(ndsbp => new DistributedType(tensorType, ndsbp, placement)))
-            .SelectMany(e => e).ToArray();
+        return placements.Select(placement => DistributedUtility.GetLeafCandidateNDSBPs(tensorType, placement).Select(ndsbp => new DistributedType(tensorType, ndsbp, placement))).SelectMany(e => e).ToArray();
     }
 
     public void SingleNodeMemoryExtractConstrains(CpModel model, IReadOnlyDictionary<ENode, BoolVar> vars)
@@ -250,11 +214,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
     }
 
-    public void FilterByScheme(BaseExpr expr, DistributedSearchGraph cluster)
+    public void FilterByScheme(Expr expr, DistributedSearchGraph cluster)
     {
-        bool Matched(SearchableNode node, (IRArray<SBP> Policies, Placement Placement) tp)
+        bool Matched(SearchableNode node, (IRArray<SBP> NdSBP, Placement Placement) tp)
         {
-            return node.IRType is DistributedType dtype && dtype.AxisPolicies == tp.Policies && dtype.Placement == tp.Placement;
+            return node.IRType is DistributedType dtype && dtype.NdSBP == tp.NdSBP && dtype.Placement == tp.Placement;
         }
 
         foreach (var name in expr.Metadata.OutputNames ?? Array.Empty<string>())
@@ -292,19 +256,17 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
     }
 
-    public BaseFunction Rewrite(BaseFunction input)
+    public BaseFunction Rewirte(BaseFunction input)
     {
-        if (input is Function { Body: BaseExpr body } function)
+        if (input is Function { Body: Expr body } function)
         {
             Visit(body);
             var rootCluster = TryInstertTerminator(body);
 
-#if false
             using (var stream = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.PassIR) ? Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot") : Stream.Null)
             {
                 Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
             }
-#endif
 
             var post = SolveAndExtract(rootCluster);
             return function.With(body: post);
@@ -313,7 +275,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         return input;
     }
 
-    protected override Unit DefaultVisitLeaf(BaseExpr expr)
+    protected override Unit DefaultVisitLeaf(Expr expr)
     {
         return default;
     }
@@ -332,46 +294,40 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
         else
         {
-            isSupported = expr.Target is AsTensor or IR.Tensors.Range ? false : true;
+            isSupported = PassUtility.IsCpuSupported(op, expr, expr.Arguments.ToArray(), _moduleKind);
             foreach (var param in op.Parameters)
             {
                 argClusters[param.Index] = VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
             }
         }
 
-        bool isStandalone = expr.Target is IR.NN.UpdatePagedAttentionKVCache;
-        var callCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(!isSupported || isStandalone ? SearchGraphKind.StandaloneCluster : SearchGraphKind.DistributedCluster);
+        var callCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(isSupported ? SearchGraphKind.DistributedCluster : SearchGraphKind.StandaloneCluster);
 
         // 1. inference
         var bucketMemo = new Dictionary<IRType, DistributedSearchGraph>();
         foreach (var combBuckets in argClusters.Select(c => c.Clusters.OfType<DistributedSearchGraph>()).CartesianProduct())
         {
-            var tempArgs = combBuckets.Select<DistributedSearchGraph, BaseExpr>(bucket => bucket.Vertices.First() switch
+            var tempArgs = combBuckets.Select<DistributedSearchGraph, Expr>(bucket => bucket.Vertices.First() switch
             {
-                SearchableNode { Expr: Dimension attr } => attr,
-                SearchableNode { Expr: Shape attr } => attr,
-                SearchableNode { Expr: Padding attr } => attr,
-                SearchableNode { Expr: Paddings attr } => attr,
                 SearchableNode { Expr: Const attr } => attr,
-                SearchableNode { Expr: Call { Target: AsTensor } attr } => attr,
                 SearchableNode n => new Var(n.IRType),
             }).ToArray();
             var newCalls = BuildEquivalentCalls(expr.Target, tempArgs);
             foreach (var (newCall, used) in newCalls)
             {
-                if (!newCall.InferenceType(_inferencer_cache) || newCall.CheckedType is InvalidType)
+                var checkType = newCall.CheckedType;
+                if (checkType is InvalidType)
                 {
                     continue;
                 }
 
-                var checkType = newCall.CheckedType;
                 if (!bucketMemo.TryGetValue(checkType, out var dbucket))
                 {
                     dbucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                     bucketMemo.Add(checkType, dbucket);
                 }
 
-                var dnode = new SearchableNode(isSupported ? newCall.Target : newCall, checkType);
+                var dnode = new SearchableNode(newCall.Target, checkType);
                 dbucket.AddVertex(dnode);
 
                 foreach (var ((arg, _), i) in combBuckets.Zip(used).Where(p => p.Second is true).Select((arg, i) => (arg, i)))
@@ -383,7 +339,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         _inferedMemo.Add(expr, callCluster);
 
-        if (!isSupported || isStandalone)
+        if (!isSupported)
         {
             return default;
         }
@@ -395,7 +351,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             {
                 foreach (var (rType, rBucket) in bucketMemo.Where(kv => kv.Key is DistributedType distributedType && distributedType != lType))
                 {
-                    if (CheckBoxingType(lType, rType) is not InvalidType)
+                    if (Evaluator.IR.Distributed.BoxingEvaluator.VisitType(lType, rType) is not InvalidType)
                     {
                         var rnode = new SearchableNode(new Boxing(rType), rType, true);
                         rBucket.AddVertex(rnode);
@@ -407,7 +363,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         // 4. add not infered type in search space.
         var addedBuckets = bucketMemo.Values.ToArray();
-        foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
+        foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements))
         {
             if (!bucketMemo.TryGetValue(nType, out var bucket))
             {
@@ -418,7 +374,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 foreach (var addedBucket in addedBuckets)
                 {
                     var addedNode = addedBucket.Vertices.First();
-                    if (CheckBoxingType(addedNode.IRType, nType) is not InvalidType)
+                    if (Evaluator.IR.Distributed.BoxingEvaluator.VisitType(addedNode.IRType, nType) is not InvalidType)
                     {
                         callCluster.AddEdge(new(node, addedNode, 0, addedBucket));
                         linked |= true;
@@ -445,15 +401,14 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     /// <summary>
     /// some times we didn't use all args.
     /// </summary>
-    private IEnumerable<(Call Call, bool[] Used)> BuildEquivalentCalls(Expr target, BaseExpr[] tempArgs)
+    private IEnumerable<(Call Call, bool[] Used)> BuildEquivalentCalls(Expr target, Expr[] tempArgs)
     {
         IEnumerable<(Call Call, bool[] Used)> calls = [(new Call(target, tempArgs), Enumerable.Repeat(true, tempArgs.Length).ToArray())];
-        if (target is IR.Tensors.Reshape && tempArgs[0].CheckedType is DistributedType distType && tempArgs[1] is Shape { IsFixed: true } constNewShape)
+        if (target is IR.Tensors.Reshape reshape && tempArgs[0].CheckedType is DistributedType distType && tempArgs[1] is TensorConst tc)
         {
-            var newTensorType = new TensorType(distType.TensorType.DType, constNewShape);
-            calls = calls.Concat(DistributedUtility.GetLeafCandidatePolicies(newTensorType, distType.Placement)
-                .Where(p => SingleNodeMemoryCheck(new(newTensorType, p, distType.Placement), _moduleKind, TargetOptions))
-                .Select(ndsbp => (new Call(new Boxing(new DistributedType(newTensorType, ndsbp, distType.Placement)), tempArgs[0]), new[] { true, false })));
+            var newShape = tc.Value.ToArray<int>();
+            var newTensorType = new TensorType(distType.TensorType.DType, newShape);
+            calls = calls.Concat(DistributedUtility.GetLeafCandidateNDSBPs(newTensorType, distType.Placement).Select(ndsbp => (new Call(new Boxing(new DistributedType(newTensorType, ndsbp, distType.Placement)), tempArgs[0]), new[] { true, false })));
         }
 
         return calls;
@@ -463,18 +418,17 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     {
         return placements.Select(
             placement =>
-                DistributedUtility.GetLeafCandidatePolicies(distributedType.TensorType, placement).
-                Where(p => SingleNodeMemoryCheck(new(distributedType.TensorType, p, placement), _moduleKind, TargetOptions)).
-                Where(ndsbp => ndsbp != distributedType.AxisPolicies)).
+                DistributedUtility.GetLeafCandidateNDSBPs(distributedType.TensorType, placement).
+                Where(ndsbp => ndsbp != distributedType.NdSBP)).
             SelectMany(e => e).ToArray();
     }
 
-    private DistributedSearchGraph VisitLeafArgument(ParameterKind parameterKind, BaseExpr expr, bool isSupported)
+    private DistributedSearchGraph VisitLeafArgument(ParameterKind parameterKind, Expr expr, bool isSupported)
     {
         DistributedSearchGraph argCluster;
         switch (parameterKind, expr)
         {
-            case (ParameterKind.Input, BaseExpr e):
+            case (ParameterKind.Input, Expr e):
                 if (isSupported)
                 {
                     argCluster = TryAddOriginator(e);
@@ -485,23 +439,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 }
 
                 break;
-            case (ParameterKind.Attribute, BaseExpr e):
+            case (ParameterKind.Attribute, Expr e):
                 argCluster = TryInstertTerminator(e);
-                break;
-            case (_, Dimension e):
-                argCluster = TryInstertTerminator(e);
-                break;
-            case (_, Shape e):
-                argCluster = TryInstertTerminator(e);
-                break;
-            case (_, Padding e):
-                argCluster = TryInstertTerminator(e);
-                break;
-            case (_, Paddings e):
-                argCluster = TryInstertTerminator(e);
-                break;
-            case (_, None e):
-                argCluster = TryInstertTerminator(e.With());
                 break;
             default:
                 throw new InvalidOperationException();
@@ -518,27 +457,23 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         _ => false,
     };
 
-    private DistributedSearchGraph CreateOriginatorCluster(BaseExpr expr, bool init)
+    private DistributedSearchGraph CreateOriginatorCluster(Expr expr, bool init)
     {
         if (expr is IR.Tuple tp)
         {
             var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
-            var buckets = new List<DistributedSearchGraph>[tp.Fields.Length];
+            var buckets = new DistributedSearchGraph[tp.Fields.Length];
             foreach (var (f, fGraph, i) in tp.Fields.AsValueEnumerable().Select((f, i) => (f, Visit(f), i)))
             {
-                buckets[i] = TryAddOriginator(f).Clusters.OfType<DistributedSearchGraph>().ToList();
+                buckets[i] = TryAddOriginator(f).Clusters.OfType<DistributedSearchGraph>().First();
             }
 
-            var combBuckets = buckets.CartesianProduct();
-            foreach (var comb in combBuckets)
+            var tpnode = new SearchableNode(new IR.Tuple(), new TupleType(buckets.Select(g => g.Vertices.First().IRType).ToArray()));
+            var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+            bucket.AddVertex(tpnode);
+            for (int i = 0; i < tp.Fields.Length; i++)
             {
-                var tpnode = new SearchableNode(new IR.Tuple(), new TupleType(comb.Select(g => g.Vertices.First().IRType).ToArray()));
-                var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-                bucket.AddVertex(tpnode);
-                for (int i = 0; i < tp.Fields.Length; i++)
-                {
-                    _rootSearchGraph.AddEdge(new(tpnode, comb.ElementAt(i).Vertices.First(), i, comb.ElementAt(i)));
-                }
+                _rootSearchGraph.AddEdge(new(tpnode, buckets[i].Vertices.First(), i, buckets[i]));
             }
 
             return distCluster;
@@ -546,10 +481,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         else if (expr is TensorConst tc && tc.ValueType is TensorType tensorType)
         {
             var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
-            foreach (var dType in GetLeafCandidateDistTypes(tensorType, Placements, _moduleKind, TargetOptions))
+            foreach (var dType in GetLeafCandidateDistTypes(tensorType, Placements))
             {
                 var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-                var dnode = new SearchableNode(new TensorConst(tc.Value, dType.AxisPolicies, dType.Placement), dType);
+                var dnode = new SearchableNode(new TensorConst(tc.Value, dType.NdSBP, dType.Placement), dType);
                 bucket.AddVertex(dnode);
             }
 
@@ -569,7 +504,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             {
                 var distCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.DistributedCluster);
                 var inferCluster = _inferedMemo[expr];
-                foreach (var dType in GetLeafCandidateDistTypes((TensorType)inferCluster.Vertices.First().IRType, Placements, _moduleKind, TargetOptions))
+                foreach (var dType in GetLeafCandidateDistTypes((TensorType)inferCluster.Vertices.First().IRType, Placements))
                 {
                     var bucket = distCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                     var dnode = new SearchableNode(new Boxing(dType), dType);
@@ -582,7 +517,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
     }
 
-    private DistributedSearchGraph TryAddOriginator(BaseExpr expr)
+    private DistributedSearchGraph TryAddOriginator(Expr expr)
     {
         if (!_inferedMemo.TryGetValue(expr, out var inferCluster))
         {
@@ -610,7 +545,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         return distCluster;
     }
 
-    private DistributedSearchGraph CreateTerminatorCluster(BaseExpr expr, bool init)
+    private DistributedSearchGraph CreateTerminatorCluster(Expr expr, bool init)
     {
         var standCluster = _rootSearchGraph.CreateCluster<DistributedSearchGraph>(SearchGraphKind.StandaloneCluster);
 
@@ -636,12 +571,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             var node = new SearchableNode(expr, expr.CheckedType);
             bucket.AddVertex(node);
         }
-        else if (expr is Shape or Padding or Paddings or Dimension or None)
-        {
-            var bucket = standCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-            var node = new SearchableNode(expr, expr.CheckedType);
-            bucket.AddVertex(node);
-        }
         else
         {
             if (init)
@@ -659,7 +588,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 bucket.AddVertex(onode);
                 foreach (var inputBucket in inputBuckets)
                 {
-                    if (CheckBoxingType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
+                    if (Evaluator.IR.Distributed.BoxingEvaluator.VisitType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
                     {
                         _rootSearchGraph.AddEdge(new(onode, inputBucket.Vertices.First(), 0, inputBucket));
                     }
@@ -670,55 +599,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         return standCluster;
     }
 
-    private IRType CheckBoxingType(IRType inType, IRType outType, bool isReshape = false)
-    {
-        IRType VisitD2D(DistributedType inv, DistributedType outv)
-        {
-            if (inv == outv)
-            {
-                return new InvalidType("Same DistributedType");
-            }
-
-            if (inv.AxisPolicies.Any(s => s is SBPPartial) || outv.AxisPolicies.Any(s => s is SBPPartial))
-            {
-                return new InvalidType("Not supported input/output is Partial");
-            }
-
-            return outv;
-        }
-
-        IRType VisitD2T(DistributedType inv, TensorType outv)
-        {
-            if (inv.AxisPolicies.Any(s => s is SBPPartial))
-            {
-                return new InvalidType("Not supported input is Partial output is Unshard");
-            }
-
-            return outv;
-        }
-
-        IRType VisitT2D(TensorType inv, DistributedType outv)
-        {
-            if (outv.AxisPolicies.Any(s => s is SBPPartial))
-            {
-                return new InvalidType("Not supported input is Unshard output is Partial");
-            }
-
-            return outv;
-        }
-
-        return (inType, outType) switch
-        {
-            (InvalidType inv, _) => inv,
-            (_, InvalidType inv) => inv,
-            (DistributedType d, DistributedType d1) => VisitD2D(d, d1),
-            (TensorType t, DistributedType d) => VisitT2D(t, d),
-            (DistributedType d, TensorType t) => VisitD2T(d, t),
-            _ => new InvalidType($"not support boxing {inType} to {outType}"),
-        };
-    }
-
-    private DistributedSearchGraph TryInstertTerminator(BaseExpr expr)
+    private DistributedSearchGraph TryInstertTerminator(Expr expr)
     {
         if (!_inferedMemo.TryGetValue(expr, out var inferCluster))
         {
@@ -784,7 +665,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 }
                 else if (arg.Vertex.Expr is Op op)
                 {
-                    for (int i = 0; i < op.Parameters.Count; i++)
+                    for (int i = 0; i < op.Parameters.Count(); i++)
                     {
                         col1.Cells.Add(new() { Text = i.ToString(), Port = $"P{i}" });
                     }
@@ -819,7 +700,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }));
     }
 
-    private BaseExpr SolveAndExtract(DistributedSearchGraph rootCluster)
+    private Expr SolveAndExtract(DistributedSearchGraph rootCluster)
     {
         // 0. create bool var for all node.
         var cpmodel = new CpModel();
@@ -834,7 +715,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     CostModel.Cost cost;
                     switch (enode.Expr)
                     {
-                        case Const or Var or If or IR.Tuple or BaseFunction or Shape or Padding or Paddings or Dimension or None or Call:
+                        case Const or Var or If or IR.Tuple or BaseFunction:
                             cost = new CostModel.Cost() { [CostModel.CostFactorNames.CPUCycles] = 1 };
                             break;
                         case Op op:
@@ -844,12 +725,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                                     throw new NotSupportedException("graph doesn't contain the vertex.");
                                 }
 
-                                var tempArgs = edges.OrderBy(e => e.InputIndex).Select<CrossEdge, BaseExpr>(e => e.Target switch
+                                var tempArgs = edges.OrderBy(e => e.InputIndex).Select<CrossEdge, Expr>(e => e.Target switch
                                 {
-                                    SearchableNode { Expr: Dimension attr } => attr,
-                                    SearchableNode { Expr: Shape attr } => attr,
-                                    SearchableNode { Expr: Padding attr } => attr,
-                                    SearchableNode { Expr: Paddings attr } => attr,
                                     SearchableNode { Expr: Const attr } => attr,
                                     SearchableNode n => new Var(n.IRType),
                                 }).ToArray();
@@ -888,8 +765,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
-#if false
-        3. no cycle
+        // 3. no cycle
         foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
         {
             foreach (var sourceBucket in cluster.Clusters.OfType<DistributedSearchGraph>())
@@ -903,7 +779,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 }
             }
         }
-#endif
 
         // 3. add pick weights for all enode.
         cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costMemo[n].Score))));
@@ -958,12 +833,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-#if false
         using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             Dump(stream, picks, costMemo);
         }
-#endif
 
         return new ExprBuildVisitor(_rootSearchGraph, picks).Visit(rootCluster.Clusters.OfType<DistributedSearchGraph>());
     }
@@ -1008,7 +881,7 @@ internal sealed class ExprBuildVisitor
 {
     private readonly Dictionary<SearchableNode, bool> _picks;
     private readonly DistributedSearchGraph _rootSearchGraph;
-    private readonly Dictionary<SearchableNode, BaseExpr> _memo;
+    private readonly Dictionary<SearchableNode, Expr> _memo;
 
     public ExprBuildVisitor(DistributedSearchGraph rootSearchGraph, Dictionary<SearchableNode, bool> picks)
     {
@@ -1017,7 +890,7 @@ internal sealed class ExprBuildVisitor
         _memo = new();
     }
 
-    public BaseExpr Visit(IEnumerable<DistributedSearchGraph> rootBuckets)
+    public Expr Visit(IEnumerable<DistributedSearchGraph> rootBuckets)
     {
         var rootPicks = rootBuckets.SelectMany(b => b.Vertices).Where(v => _picks.TryGetValue(v, out var pick) && pick).ToArray();
         if (rootPicks.Length != 1)
@@ -1032,7 +905,7 @@ internal sealed class ExprBuildVisitor
             var children = edges.GroupBy(e => e.InputIndex).Select(g => Visit(g.Select(e => e.InputGraph))).ToArray();
             switch (root.Expr)
             {
-                case Var or TensorConst or TupleConst or None or Shape or Padding or Paddings or Dimension or Call:
+                case Var or TensorConst or TupleConst or None:
                     expr = root.Expr;
                     break;
                 case BaseFunction func:
@@ -1042,10 +915,10 @@ internal sealed class ExprBuildVisitor
                     expr = new Call(target: op, arguments: children);
                     break;
                 case IR.Tuple tp:
-                    expr = (BaseExpr)tp.With(fields: children);
+                    expr = tp.With(fields: children);
                     break;
                 case IR.If @if:
-                    expr = @if.With(condition: (Expr)children[^3], then: (BaseFunction)children[^2], @else: (BaseFunction)children[^1], arguments: children[..^3].ToArray());
+                    expr = @if.With(condition: children[^3], then: (BaseFunction)children[^2], @else: (BaseFunction)children[^1], arguments: children[..^3].ToArray());
                     break;
                 default:
                     throw new NotSupportedException(root.Expr.GetType().Name);
@@ -1060,7 +933,7 @@ internal sealed class ExprBuildVisitor
 
 internal sealed class DistributedCostEvaluateContext : Evaluator.ICostEvaluateContext
 {
-    public DistributedCostEvaluateContext(Op op, IRType returnType, BaseExpr[] args, CompileOptions compileOptions)
+    public DistributedCostEvaluateContext(Op op, IRType returnType, Expr[] args, CompileOptions compileOptions)
     {
         Op = op;
         ReturnType = returnType;
@@ -1072,7 +945,7 @@ internal sealed class DistributedCostEvaluateContext : Evaluator.ICostEvaluateCo
 
     public IRType ReturnType { get; }
 
-    public BaseExpr[] Args { get; }
+    public Expr[] Args { get; }
 
     public CompileOptions CompileOptions { get; }
 
@@ -1214,7 +1087,7 @@ public sealed partial class AutoDistributedPass : FunctionPass
                 targetOptions,
                 _moduleKind,
                 _bidirectional);
-            return Task.FromResult(rewriter.Rewrite(input));
+            return Task.FromResult(rewriter.Rewirte(input));
         }
 
         return Task.FromResult(input);
@@ -1228,8 +1101,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
     private readonly string _moduleKind;
 
     private readonly bool _bidirectional;
-
-    private readonly Dictionary<Type, ITypeInferencer> _inferencer_cache = new Dictionary<Type, ITypeInferencer>();
 
     public AutoDistributedRewriter(CompileOptions compileOptions, INTTTargetOptions targetOptions, string moduleKind = "cpu", bool bidirectional = false)
     {
@@ -1322,7 +1193,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             placement =>
                 Utilities.DistributedUtility.GetLeafCandidatePolicies(distributedType.TensorType, placement).
                 Where(p => SingleNodeMemoryCheck(new(distributedType.TensorType, p, placement), moduleKind, targetOptions)).
-                Where(ndsbp => ndsbp != distributedType.AxisPolicies)).
+                Where(ndsbp => ndsbp != distributedType.AxisPolices)).
             SelectMany(e => e).ToArray();
     }
 
@@ -1363,7 +1234,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
                 var keys = result.Keys.ToArray();
                 foreach (var key in keys)
                 {
-                    if (!(key is DistributedType dtype && dtype.AxisPolicies == tp.Polices && dtype.Placement == tp.Placement))
+                    if (!(key is DistributedType dtype && dtype.AxisPolices == tp.Polices && dtype.Placement == tp.Placement))
                     {
                         result.Remove(key);
                     }
@@ -1372,7 +1243,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         }
     }
 
-    public BaseFunction Rewrite(BaseFunction input)
+    public BaseFunction Rewirte(BaseFunction input)
     {
         if (input is Function || input is Fusion)
         {
@@ -1538,7 +1409,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             }
 
             var rewriter = new AutoDistributedRewriter(CompileOptions, TargetOptions);
-            var post = rewriter.Rewrite(fusion);
+            var post = rewriter.Rewirte(fusion);
             var ret = expr.Arguments.ToArray().
                     Select(Visit).
                     CartesianProduct().
@@ -1615,7 +1486,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             !CompilerServices.GetMaxShape(expr.CheckedShape).Contains(0) &&
             results.Count == 1 &&
             results.First().Key is DistributedType dt &&
-            dt.AxisPolicies.All(sbp => sbp is SBPBroadCast))
+            dt.AxisPolices.All(sbp => sbp is SBPBroadCast))
         {
             return expr.Arguments.ToArray().
                     Select(Visit).
@@ -1758,7 +1629,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
         var calls = new List<Call>();
         var call = new Call(target, args);
-        var valid = call.InferenceType(_inferencer_cache);
+        var valid = call.InferenceType();
         if (!valid)
         {
             if (target is Reshape && args[0].CheckedType is DistributedType inType && args[1] is Shape { IsFixed: true } constNewShape)
@@ -1790,13 +1661,13 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
             {
                 // boxing for partialsum
                 var partialBoxings = Utilities.DistributedUtility.GetPartialCandidateNDSBPs(distType).
-                    Select(ndsbp => (ndsbp, IR.F.Distributed.Boxing(call, distType with { AxisPolicies = ndsbp }))).Select(p =>
+                    Select(ndsbp => (ndsbp, IR.F.Distributed.Boxing(call, distType with { AxisPolices = ndsbp }))).Select(p =>
                     {
                         var lastSbp = p.ndsbp;
                         var reduced = p.Item2;
                         return Utilities.DistributedUtility.GetLeafCandidatePolicies(distType.TensorType, distType.Placement).
                         Where(p => SingleNodeMemoryCheck(new(distType.TensorType, p, distType.Placement), _moduleKind, TargetOptions)).
-                        Where(ndsbp => lastSbp != ndsbp).Select(ndsbp => IR.F.Distributed.Boxing(reduced, distType with { AxisPolicies = ndsbp })).ToArray();
+                        Where(ndsbp => lastSbp != ndsbp).Select(ndsbp => IR.F.Distributed.Boxing(reduced, distType with { AxisPolices = ndsbp })).ToArray();
                     }).SelectMany(i => i).ToArray();
                 calls.AddRange(partialBoxings);
 
@@ -1838,7 +1709,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
         var type = (DistributedType)expr.CheckedType;
         var tensorType = type.TensorType;
         var maxShape = CompilerServices.GetMaxShape(tensorType.Shape);
-        var candidateNdsbps = new List<SBP>[type.AxisPolicies.Count];
+        var candidateNdsbps = new List<SBP>[type.AxisPolices.Count];
         var splitsAxes = DistributedUtility.GetHierarchyCombinations(type.Placement.Rank);
         for (int i = 0; i < candidateNdsbps.Length; i++)
         {
@@ -1856,7 +1727,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
 
         var candidatesSBPs = candidateNdsbps.CartesianProduct().Select(policy => policy.ToArray()).Where(policy => DistributedUtility.IsDistributable(tensorType, policy, type.Placement)).Select(policy => new IRArray<SBP>(policy)).ToArray();
         return candidatesSBPs.Select(ndsbp => new IRArray<SBP>(ndsbp)).
-            Where(ndsbp => ndsbp != type.AxisPolicies).
+            Where(ndsbp => ndsbp != type.AxisPolices).
             Select(ndsbp => new DistributedType(tensorType, ndsbp, type.Placement)).
             Select(disttype => IR.F.Distributed.Boxing((Expr)expr, disttype)).ToArray();
     }
@@ -1865,9 +1736,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Dictionary<IRType, L
     {
         BaseExpr CreateFinalBoxing(Expr e, DistributedType type)
         {
-            if (type.AxisPolicies.Any(s => s is SBPPartial))
+            if (type.AxisPolices.Any(s => s is SBPPartial))
             {
-                var boxingP2B = IR.F.Distributed.Boxing(e, new DistributedType(type.TensorType, type.AxisPolicies.Select(s => s is SBPPartial ? SBP.B : s).ToArray(), type.Placement));
+                var boxingP2B = IR.F.Distributed.Boxing(e, new DistributedType(type.TensorType, type.AxisPolices.Select(s => s is SBPPartial ? SBP.B : s).ToArray(), type.Placement));
                 return IR.F.Distributed.Boxing(boxingP2B, type.TensorType);
             }
 

@@ -24,11 +24,11 @@ public sealed partial class PackedBinary : NTTKernelOp
 
     public IRArray<int> LhsPackedAxes { get; }
 
-    public IRArray<Dimension> LhsPadedNums { get; }
+    public IRArray<int> LhsPadedNums { get; }
 
     public IRArray<int> RhsPackedAxes { get; }
 
-    public IRArray<Dimension> RhsPadedNums { get; }
+    public IRArray<int> RhsPadedNums { get; }
 
     public override string DisplayProperty() => $"BinaryOp: {BinaryOp}, LhsPackedAxes: {LhsPackedAxes}, LhsPadedNums: {LhsPadedNums}, RhsPackedAxes: {RhsPackedAxes}, RhsPadedNums: {RhsPadedNums}";
 }

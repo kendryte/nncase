@@ -26,14 +26,14 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
             if (inv.TensorType != outv.TensorType)
             {
-                if (!inv.AxisPolicies.Any(sbp => sbp is SBPPartial))
+                if (!inv.AxisPolices.Any(sbp => sbp is SBPPartial))
                 {
                     return outv;
                 }
             }
 
-            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolicies, inv.Placement.Rank);
-            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolicies, outv.Placement.Rank);
+            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolices, inv.Placement.Rank);
+            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolices, outv.Placement.Rank);
             for (int i = 0; i < ndsbpsA.Count; i++)
             {
                 switch (ndsbpsA[i], ndsbpsB[i])
@@ -50,7 +50,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
         IRType VisitD2T(DistributedType inv, TensorType outv)
         {
-            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolicies, inv.Placement.Rank);
+            var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolices, inv.Placement.Rank);
             if (ndsbpsA.Any(s => s is SBPPartial))
             {
                 return new InvalidType("Not supported input is Partial output is Unshard");
@@ -61,7 +61,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
         IRType VisitT2D(TensorType inv, DistributedType outv)
         {
-            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolicies, outv.Placement.Rank);
+            var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolices, outv.Placement.Rank);
             if (ndsbpsB.Any(s => s is SBPPartial))
             {
                 return new InvalidType("Not supported input is Unshard output is Partial");
@@ -118,7 +118,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
                 break;
 
-            case (DistributedType a, DistributedType b) when a.Placement == b.Placement && a.AxisPolicies != b.AxisPolicies:
+            case (DistributedType a, DistributedType b) when a.Placement == b.Placement && a.AxisPolices != b.AxisPolices:
                 {
                     var fullLoadStore = new Cost()
                     {
@@ -132,8 +132,8 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                     float latency = 0;
 
                     // TODO: calculate cost using NTTD.
-                    var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(a.AxisPolicies, a.Placement.Rank);
-                    var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(b.AxisPolicies, b.Placement.Rank);
+                    var ndsbpsA = DistributedUtility.AxisPolicesToNDSBP(a.AxisPolices, a.Placement.Rank);
+                    var ndsbpsB = DistributedUtility.AxisPolicesToNDSBP(b.AxisPolices, b.Placement.Rank);
                     for (int i = 0; i < a.Placement.Rank; i++)
                     {
                         switch (ndsbpsA[i], ndsbpsB[i])
@@ -257,7 +257,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
         return target.NewType switch
         {
             TensorType t => Value.FromTensor(Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), (RankedShape)t.Shape)),
-            DistributedType d => Value.FromTensor(Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), (RankedShape)d.TensorType.Shape), d.AxisPolicies, d.Placement),
+            DistributedType d => Value.FromTensor(Tensor.FromBytes(input.ElementType, input.BytesBuffer.ToArray(), (RankedShape)d.TensorType.Shape), d.AxisPolices, d.Placement),
             _ => Value.FromTensor(input),
         };
     }

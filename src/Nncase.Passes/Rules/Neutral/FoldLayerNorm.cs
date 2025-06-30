@@ -378,65 +378,6 @@ public sealed partial class FoldLayerNormPattern5 : RewriteRule<CallPattern>
 }
 
 [RuleGenerator]
-public sealed partial class FoldLayerNormPattern6 : RewriteRule<CallPattern>
-{
-    /// <inheritdoc/>
-    public override CallPattern Pattern { get; } =
-        IsBinary(
-            "mulGamma",
-            "mulGammaCall",
-            BinaryOp.Mul,
-            IsBinary(
-                "mulX",
-                "mulXCall",
-                BinaryOp.Mul,
-                IsWildcard("input"),
-                IsBinary(
-                    "rsqrt",
-                    "rsqrtCall",
-                    BinaryOp.Div,
-                    IsTensorConst("one"),
-                    IsUnary(
-                        "sqrt",
-                        "sqrtCall",
-                        UnaryOp.Sqrt,
-                        IsBinary(
-                            "addEps",
-                            "addEpsCall",
-                            BinaryOp.Add,
-                            IsReduce(
-                                "rdVar",
-                                "rdVarCall",
-                                ReduceOp.Mean,
-                                IsUnary(
-                                        "pow2",
-                                        "pow2Call",
-                                        UnaryOp.Square,
-                                        IsWildcard())),
-                            IsTensorConst("eps"))))),
-            IsTensorConst("gamma"));
-
-    private Expr? GetReplace(Call pow2Call, Call rdVarCall, TensorConst eps, TensorConst gamma, Expr input, TensorConst one)
-    {
-        if (input == pow2Call[Unary.Input] && one.Value.Cast<float>().Single() == 1f)
-        {
-            var axis = pow2Call.CheckedShape.Rank - gamma.CheckedShape.Rank;
-            var beta = Tensor.FromScalar(0f, gamma.CheckedShape.ToValueArray());
-            bool cFirst = false;
-            var axes = rdVarCall[Reduce.Axes].Evaluate().AsTensor().ToArray<int>();
-            if (axes.Length == 1 && axes[0] != input.CheckedShape.Rank - 1 && axes[0] != -1)
-            {
-                cFirst = true;
-            }
-
-            return LayerNorm(axis, eps.Value.Cast<float>().Single(), input, gamma, beta, hasMean: false, channelFirst: cFirst);
-        }
-
-        return null;
-    }
-}
-
-[RuleGenerator]
 public sealed partial class ConvertLayerNormChannelFirstToLast : RewriteRule<CallPattern>
 {
     public override CallPattern Pattern { get; } =

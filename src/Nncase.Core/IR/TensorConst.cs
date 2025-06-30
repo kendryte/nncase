@@ -172,7 +172,7 @@ public sealed class TensorConst : Const, IEquatable<TensorConst?>
     {
         if (value is null && ValueType is DistributedType dt)
         {
-            return new TensorConst(Value, dt.AxisPolicies, dt.Placement);
+            return new TensorConst(Value, dt.AxisPolices, dt.Placement);
         }
 
         return new TensorConst(value ?? Value);

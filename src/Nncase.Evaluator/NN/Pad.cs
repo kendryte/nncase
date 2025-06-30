@@ -132,26 +132,26 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         if (paddings.IsFixed)
         {
             var padsPerDim = Enumerable.Range(0, paddings.Rank).Select(i => paddings[i].Sum().FixedValue).ToArray();
-            for (var i = 0; i < input.AxisPolicies.Count; i++)
+            for (var i = 0; i < input.AxisPolices.Count; i++)
             {
-                if (input.AxisPolicies[i] is SBPSplit split && padsPerDim[i] != 0)
+                if (input.AxisPolices[i] is SBPSplit split && padsPerDim[i] != 0)
                 {
                     return new InvalidType("pad not support split on axes for now.");
                 }
 
-                ndsbp[i] = input.AxisPolicies[i];
+                ndsbp[i] = input.AxisPolices[i];
             }
         }
         else
         {
-            for (var i = 0; i < input.AxisPolicies.Count; i++)
+            for (var i = 0; i < input.AxisPolices.Count; i++)
             {
-                if (input.AxisPolicies[i] is SBPSplit)
+                if (input.AxisPolices[i] is SBPSplit)
                 {
                     return new InvalidType("dynamic pad not support split on axes for now.");
                 }
 
-                ndsbp[i] = input.AxisPolicies[i];
+                ndsbp[i] = input.AxisPolices[i];
             }
         }
 

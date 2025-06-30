@@ -107,12 +107,12 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         var shape = CompilerServices.GetMaxShape(inType.TensorType.Shape);
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            if (inType.AxisPolicies[i] is SBPPartial)
+            if (inType.AxisPolices[i] is SBPPartial)
             {
                 return invalid;
             }
 
-            if (inType.AxisPolicies[i] is SBPSplit split && inType.TensorType.DType is VectorType vtIn && outType is TensorType ttOut && ttOut.DType is VectorType vtOut)
+            if (inType.AxisPolices[i] is SBPSplit split && inType.TensorType.DType is VectorType vtIn && outType is TensorType ttOut && ttOut.DType is VectorType vtOut)
             {
                 if (vtIn.ElemType != vtOut.ElemType)
                 {
@@ -124,7 +124,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
                 }
             }
 
-            ndsbp[i] = inType.AxisPolicies[i];
+            ndsbp[i] = inType.AxisPolices[i];
         }
 
         return new DistributedType((TensorType)outType, ndsbp, inType.Placement);
