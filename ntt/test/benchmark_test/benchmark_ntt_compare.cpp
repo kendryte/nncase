@@ -19,8 +19,8 @@
 using namespace nncase;
 
 template <template <typename T1, typename T2> class Op, typename T, size_t N>
-void benchmark_ntt_compare(std::string op_name, T lhs_low, T lhs_high, T rhs_low,
-                          T rhs_high) {
+void benchmark_ntt_compare(std::string op_name, T lhs_low, T lhs_high,
+                           T rhs_low, T rhs_high) {
 #if __riscv
     constexpr size_t size1 = 300;
     constexpr size_t size2 = 600;
@@ -32,13 +32,16 @@ void benchmark_ntt_compare(std::string op_name, T lhs_low, T lhs_high, T rhs_low
     constexpr size_t size2 = 2000;
 #endif
 
-    using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size2>>;
-    using tensor_type1 = ntt::tensor<ntt::vector<unsigned char, N>, ntt::fixed_shape<size2>>;
-                
-    tensor_type ntt_lhs, ntt_rhs;
+    auto ntt_lhs =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<size2>);
+
+    auto ntt_rhs =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<size2>);
+
     NttTest::init_tensor(ntt_lhs, lhs_low, lhs_high);
     NttTest::init_tensor(ntt_rhs, rhs_low, rhs_high);
-    tensor_type1 ntt_result;
+    auto ntt_result =
+        ntt::make_tensor<ntt::vector<bool, N>>(ntt::fixed_shape_v<size2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < size1; i++) {

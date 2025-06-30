@@ -48,14 +48,18 @@ NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float, float32x4_t, 4)
 NTT_END_DEFINE_NATIVE_VECTOR()
 
 NTT_BEGIN_DEFINE_NATIVE_VECTOR(float, float32x4x2_t, 8)
+template <Dimensions TIndex>
 static float get_element(const float32x4x2_t &array,
-                         ranked_shape<1> index) noexcept {
-    return array.val[index[0] / 4][index[0] % 4];
+                         const TIndex &index) noexcept {
+    static_assert(TIndex::rank() == 1, "index must be 1D");
+    return array.val[index[dim_zero] / 4][index[dim_zero] % 4];
 }
 
-static void set_element(float32x4x2_t &array, ranked_shape<1> index,
+template <Dimensions TIndex>
+static void set_element(float32x4x2_t &array, const TIndex &index,
                         float value) noexcept {
-    array.val[index[0] / 4][index[0] % 4] = value;
+    static_assert(TIndex::rank() == 1, "index must be 1D");
+    array.val[index[dim_zero] / 4][index[dim_zero] % 4] = value;
 }
 NTT_END_DEFINE_NATIVE_VECTOR()
 

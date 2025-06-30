@@ -41,9 +41,9 @@ public class ScatterNDEvaluator : IEvaluator<ScatterND>, ITypeInferencer<Scatter
         var outputSpanStride = output.Strides.ToArray().SkipLast(updatesRemain.Count()).Select(s => s * input.ElementType.SizeInBytes).ToArray();
         foreach (var idx in LinqExtensions.CartesianProduct(update_indices))
         {
-            var index = indicesSpan.Slice(checked((int)TensorUtilities.GetIndex(indicesSpanStride, idx.ToArray())), checked((int)indices.Shape.ToValueArray()[^1]));
-            var updatesSlice = updatesSpan.Slice(checked((int)TensorUtilities.GetIndex(updatesSliceStride, idx.ToArray())), checked((int)updateSize));
-            updatesSlice.CopyTo(outputSpan.Slice(checked((int)TensorUtilities.GetIndex(outputSpanStride, index.ToArray().ToLongs()))));
+            var index = indicesSpan.Slice(checked((int)TensorUtilities.GetLinearOffset(indicesSpanStride, idx.ToArray())), checked((int)indices.Shape.ToValueArray()[^1]));
+            var updatesSlice = updatesSpan.Slice(checked((int)TensorUtilities.GetLinearOffset(updatesSliceStride, idx.ToArray())), checked((int)updateSize));
+            updatesSlice.CopyTo(outputSpan.Slice(checked((int)TensorUtilities.GetLinearOffset(outputSpanStride, index.ToArray().ToLongs()))));
         }
 
         return Value.FromTensor(output);

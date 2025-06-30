@@ -14,16 +14,11 @@
  */
 
 #pragma once
-
-#include "distributed.h"
+#include "../../distributed/topology.h"
+#include "../../profiling.h"
+#include "runtime.h"
 #include <chrono>
-#include <cstddef>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
 #include <string_view>
-#include <unordered_map>
-#include <vector>
 
 using namespace nncase::ntt;
 using namespace nncase::ntt::distributed;

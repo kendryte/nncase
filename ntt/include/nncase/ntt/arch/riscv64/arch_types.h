@@ -44,12 +44,6 @@
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
     typedef vuint8mf8_t fixed_vuint8mf8_t                                      \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 8)));                  \
-    typedef vuint8mf2_t fixed_boolmf2_t                                        \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
-    typedef vuint8mf4_t fixed_boolmf4_t                                        \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
-    typedef vuint8mf8_t fixed_boolmf8_t                                        \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 8)));                  \
     typedef vint16mf2_t fixed_vint16mf2_t                                      \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
     typedef vint16mf4_t fixed_vint16mf4_t                                      \
@@ -69,8 +63,6 @@
     typedef vint8m##lmul##_t fixed_vint8m##lmul##_t                            \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vuint8m##lmul##_t fixed_vuint8m##lmul##_t                          \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
-    typedef vuint8m##lmul##_t fixed_boolm##lmul##_t                            \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vint16m##lmul##_t fixed_vint16m##lmul##_t                          \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
@@ -115,15 +107,6 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(uint8_t, fixed_vuint8mf8_t,         \
                                            NTT_VLEN / 8 / sizeof(uint8_t) / 8) \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(bool, fixed_boolmf2_t,              \
-                                           NTT_VLEN / 8 / sizeof(uint8_t) / 2) \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(bool, fixed_boolmf4_t,              \
-                                           NTT_VLEN / 8 / sizeof(uint8_t) / 4) \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(bool, fixed_boolmf8_t,              \
-                                           NTT_VLEN / 8 / sizeof(uint8_t) / 8) \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(int16_t, fixed_vint16mf2_t,         \
                                            NTT_VLEN / 8 / sizeof(int16_t) / 2) \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
@@ -153,9 +136,6 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(uint8_t, fixed_vuint8m##lmul##_t,   \
                                            NTT_VLEN / 8 / sizeof(uint8_t) *    \
                                                lmul)                           \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        bool, fixed_boolm##lmul##_t, NTT_VLEN / 8 / sizeof(uint8_t) * lmul)    \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(int16_t, fixed_vint16m##lmul##_t,   \
                                            NTT_VLEN / 8 / sizeof(int16_t) *    \
@@ -194,4 +174,46 @@ NTT_DEFINE_NATIVE_VECTOR_WITH_LMUL_GE1(1)
 NTT_DEFINE_NATIVE_VECTOR_WITH_LMUL_GE1(2)
 NTT_DEFINE_NATIVE_VECTOR_WITH_LMUL_GE1(4)
 NTT_DEFINE_NATIVE_VECTOR_WITH_LMUL_GE1(8)
+
+// mask vectors
+#define NTT_DEFINE_NATIVE_MASK_VECTOR(bits)                                    \
+    typedef vbool##bits##_t fixed_vbool##bits##_t                              \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / bits)));               \
+                                                                               \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR(bool, fixed_vbool##bits##_t,                \
+                                   NTT_VLEN / bits)                            \
+                                                                               \
+    template <Dimensions TIndex>                                               \
+    static bool get_element(const fixed_vbool##bits##_t &array,                \
+                            const TIndex &index) noexcept {                    \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        const fixed_vint8m1_t i8_value =                                       \
+            __riscv_vreinterpret_v_b##bits##_i8m1(array);                      \
+        const auto offset = (size_t)index[dim_zero];                           \
+        return (i8_value[offset / 8] & (1 << (offset % 8))) != 0;              \
+    }                                                                          \
+                                                                               \
+    template <Dimensions TIndex>                                               \
+    static void set_element(fixed_vbool##bits##_t &array, const TIndex &index, \
+                            bool value) noexcept {                             \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        fixed_vint8m1_t i8_value =                                             \
+            __riscv_vreinterpret_v_b##bits##_i8m1(array);                      \
+        const auto offset = (size_t)index[dim_zero];                           \
+        const auto mask = ~(1 << (offset % 8));                                \
+        i8_value[offset / 8] =                                                 \
+            (i8_value[offset / 8] & mask) | ((value ? 1 : 0) << (offset % 8)); \
+        array = __riscv_vreinterpret_v_i8m1_b##bits(i8_value);                 \
+    }                                                                          \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+NTT_DEFINE_NATIVE_MASK_VECTOR(1)
+NTT_DEFINE_NATIVE_MASK_VECTOR(2)
+NTT_DEFINE_NATIVE_MASK_VECTOR(4)
+NTT_DEFINE_NATIVE_MASK_VECTOR(8)
+NTT_DEFINE_NATIVE_MASK_VECTOR(16)
+NTT_DEFINE_NATIVE_MASK_VECTOR(32)
+NTT_DEFINE_NATIVE_MASK_VECTOR(64)
+
+#undef NTT_DEFINE_NATIVE_MASK_VECTOR
 #endif

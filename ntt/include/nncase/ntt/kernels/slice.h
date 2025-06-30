@@ -14,73 +14,47 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../primitive_ops.h"
+#include "../ukernels.h"
 #include "../utility.h"
-#include <cstdint>
+#include <tuple>
 
 namespace nncase::ntt {
 namespace slice_detail {
-template <IsFixedDims TStart, IsFixedDims TStop, IsFixedDims TStride,
-          IsFixedDims TAxes, IsFixedDims TShape, size_t... Ints>
-inline constexpr auto compute_inner_domain(std::index_sequence<Ints...>) {
-    return fixed_shape<(
-        ((std::min(TShape::at(TAxes::at(Ints)), TStop::at(Ints)) - 1 -
-          TStart::at(Ints)) /
-         TStride::at(Ints)) +
-        1)...>{};
+template <Dimension TX, Dimension TDim, Dimension TLowerBound,
+          Dimension TUpperBound>
+constexpr auto translate_begin_end(const TX &x, const TDim &dim,
+                                   const TLowerBound &lower_bound,
+                                   const TUpperBound &upper_bound) {
+    const auto new_x = positive_index(x, dim);
+    return ntt::clamp(new_x, lower_bound, dim + upper_bound);
 }
 
-template <class TInShape, class TBegins, class TEnds, class TStrides,
-          class TAxes>
-auto slice_fill(const TInShape &in_shape, const TBegins &begins_value,
-                const TEnds &ends_value, const TStrides &strides_value,
-                const TAxes &axes_value) {
-    constexpr auto ndim = TInShape::rank();
-    using dims_t = std::array<int64_t, ndim>;
-    dims_t begin_values{};
-    dims_t end_values{};
-    std::copy(in_shape.begin(), in_shape.end(), end_values.begin());
-    dims_t strides_values{};
-    strides_values.fill(1);
-    for (size_t i = 0; i < ndim; ++i) {
-        const auto it = std::find_if(axes_value.begin(), axes_value.end(),
-                                     [i, ndim](const auto axis) {
-                                         return positive_index(axis, ndim) == i;
-                                     });
-        if (it != axes_value.end()) {
-            auto idx = (size_t)std::distance(axes_value.begin(), it);
-            auto max = static_cast<int64_t>(in_shape[i]);
-            auto min = (-1) * max - 1;
-
-            // check starts
-            begin_values[i] = int64_t(begins_value[idx]) < min ? min
-                              : begins_value[idx] > max        ? max
-                                                        : begins_value[idx];
-
-            // check stops
-            end_values[i] = int64_t(ends_value[idx]) < min ? min
-                            : ends_value[idx] > max        ? max
-                                                           : ends_value[idx];
-
-            // check steps
-            if (strides_value.rank()) {
-                strides_values[i] = strides_value[idx];
-            }
-
-            // fixup begin_values
-            if ((strides_values[i] > 0 && end_values[i] > begin_values[i]) ||
-                (strides_values[i] < 0 && end_values[i] < begin_values[i])) {
-                begin_values[i] =
-                    begin_values[i] == min ? min + 1 : begin_values[i];
-                begin_values[i] =
-                    begin_values[i] == max ? max - 1 : begin_values[i];
-            }
-            if (begin_values[i] < 0)
-                begin_values[i] += max;
-            if (end_values[i] < 0)
-                end_values[i] += max;
-        }
-    }
-    return std::tuple(begin_values, end_values, strides_values);
+template <Shape TInShape, Dimensions TBegins, FixedDimensions TAxes,
+          FixedDimensions TSteps>
+constexpr auto translate_slice_params(const TInShape &in_shape,
+                                      const TBegins &begins, const TAxes &axes,
+                                      const TSteps &steps) {
+    constexpr auto rank = TInShape::rank();
+    const auto new_begins =
+        axes.aggregate(make_zeros_shape<rank>(), [&](const auto cnt_new_begins,
+                                                     auto axis, auto i) {
+            const auto in_dim = in_shape[axis];
+            return cnt_new_begins.template replace_at<axis>(ntt::where(
+                steps[i] < dim_zero,
+                // for negative step: begins[i] is clamped into the range
+                // [0, dims[axes[i]]-1].
+                translate_begin_end(begins[i], in_dim, 0_dim, -1_dim),
+                // for positive step: begins[i] is clamped into the range
+                // [0, dims[axes[i]]].
+                translate_begin_end(begins[i], in_dim, 0_dim, 0_dim)));
+        });
+    const auto new_steps =
+        axes.aggregate(make_ones_shape<rank>(), [&](const auto cnt_new_steps,
+                                                    auto axis, auto i) {
+            return cnt_new_steps.template replace_at<axis>(steps[i]);
+        });
+    return std::make_tuple(new_begins, new_steps);
 }
 } // namespace slice_detail
 
@@ -94,36 +68,40 @@ auto slice_fill(const TInShape &in_shape, const TBegins &begins_value,
  * @param input input tensor
  * @param output output tensor
  */
-template <typename TAxes, typename TStrides, typename TIn, typename TBegins,
-          typename TEnds, typename TOut>
-void slice(const TIn &input, const TBegins &begins, const TEnds &ends,
-           TOut &&output) {
-    auto [begin_values, end_values, strides_values] = slice_detail::slice_fill(
-        input.shape(), begins, ends, TStrides{}, TAxes{});
-    apply(input.shape(),
-          [&, begin_values = begin_values, end_values = end_values,
-           strides_values = strides_values](auto in_index) {
-              auto out_index = in_index;
-              for (size_t i = 0; i < TIn::rank(); i++) {
-                  const auto stride = strides_values[i];
-                  if (stride > 0) {
-                      if ((int64_t)in_index[i] < begin_values[i] ||
-                          in_index[i] >= static_cast<size_t>(end_values[i]))
-                          return;
-                  } else {
-                      if ((int64_t)in_index[i] <= end_values[i] ||
-                          (int64_t)in_index[i] > begin_values[i])
-                          return;
-                  }
+template <Tensor TIn, typename TOut, typename TBegins, typename TEnds,
+          FixedDimensions TAxes = decltype(make_index_shape<TBegins::rank()>()),
+          FixedDimensions TSteps = decltype(make_ones_shape<TBegins::rank()>())>
+void slice(const TIn &input, TOut &&output, const TBegins &begins,
+           [[maybe_unused]] const TEnds &ends, const TAxes &axes = {},
+           const TSteps &steps = {}) {
+    static_assert(TBegins::rank() == TEnds::rank() &&
+                      TBegins::rank() == TAxes::rank() &&
+                      TBegins::rank() == TSteps::rank(),
+                  "begins, ends, axes and steps must have the same "
+                  "rank");
+    auto [new_begins, new_steps] = slice_detail::translate_slice_params(
+        input.shape(), begins, axes, steps);
+    const auto out_shape = output.shape();
+    constexpr auto rank = out_shape.rank();
+    const auto count = out_shape[-1_dim];
+    const auto domain = out_shape.template slice<0, rank - 1>().append(1_dim);
 
-                  auto out_div =
-                      std::div((int64_t)in_index[i] - begin_values[i], stride);
-                  if (out_div.rem)
-                      return;
-                  out_index[i] = (size_t)out_div.quot;
-              }
-
-              output(out_index) = input(in_index);
-          });
+    auto in_strides = input.strides();
+    auto out_strides = output.strides();
+    using element_type = typename TIn::element_type;
+    apply(domain, [&, new_begins = new_begins,
+                   new_steps = new_steps](auto out_index) {
+        auto pout =
+            output.buffer().data() + linear_offset(out_index, output.strides());
+        const auto in_index = generate_shape<rank>(
+            [&, new_begins = new_begins, new_steps = new_steps](auto i) {
+                return new_begins[i] + out_index[i] * new_steps[i];
+            });
+        auto pin =
+            input.buffer().data() + linear_offset(in_index, input.strides());
+        ntt::u_unary(ntt::ops::copy<element_type>{}, pin,
+                     in_strides[-1_dim] * new_steps[-1_dim], pout,
+                     out_strides[-1_dim], count);
+    });
 }
 } // namespace nncase::ntt

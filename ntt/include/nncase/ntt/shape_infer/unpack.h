@@ -14,36 +14,4 @@
  */
 #include "../shape.h"
 
-namespace nncase::ntt::shape_infer {
-namespace detail {
-
-template <size_t Lanes, size_t Axis, size_t Rank>
-static constexpr size_t
-unpacked_index_by_shape_dim(const ranked_shape<Rank> &input_index,
-                            const size_t i) {
-    if (i == Axis) {
-        return input_index[i] * Lanes;
-    }
-
-    return input_index[i];
-}
-
-template <size_t Lanes, size_t Axis, size_t Rank, size_t... I>
-static constexpr auto
-unpacked_index_by_shape_impl(const ranked_shape<Rank> &input_index,
-                             std::index_sequence<I...>) {
-    {
-        return ranked_shape<Rank>{
-            unpacked_index_by_shape_dim<Lanes, Axis>(input_index, I)...};
-    }
-}
-
-} // namespace detail
-template <size_t Lanes, size_t Axis, size_t Rank>
-static constexpr auto
-unpacked_index_by_shape(const ranked_shape<Rank> &input_index) {
-    return detail::unpacked_index_by_shape_impl<Lanes, Axis>(
-        input_index, std::make_index_sequence<Rank>{});
-}
-
-} // namespace nncase::ntt::shape_infer
+namespace nncase::ntt::shape_infer {} // namespace nncase::ntt::shape_infer

@@ -49,29 +49,25 @@ void benchmark_ntt_transpose(const std::string &mode) {
     constexpr std::array<size_t, 4> new_dims = {
         org_dims[perm_n], org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]};
 
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<n, c, h, w>>;
-    using tensor_type2 = ntt::tensor<
-        ntt::vector<float, P>,
-        ntt::fixed_shape<new_dims[0], new_dims[1], new_dims[2], new_dims[3]>>;
-
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output;
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<n, c, h, w>);
+    auto ntt_output = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<new_dims[0], new_dims[1], new_dims[2], new_dims[3]>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // warm up
     constexpr size_t warmup_size = 10;
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-            ntt_input, ntt_output);
+        ntt::transpose(ntt_input, ntt_output,
+                       ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
         asm volatile("" ::"g"(ntt_output));
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-            ntt_input, ntt_output);
+        ntt::transpose(ntt_input, ntt_output,
+                       ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -79,13 +75,13 @@ void benchmark_ntt_transpose(const std::string &mode) {
     // run
     t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-            ntt_input, ntt_output);
+        ntt::transpose(ntt_input, ntt_output,
+                       ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
         asm volatile("" ::"g"(ntt_output));
     }
     t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = tensor_type2::size();
+    auto element_size = ntt_output.size();
     std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
               << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size
@@ -117,29 +113,25 @@ void benchmark_ntt_transpose_warmup([[maybe_unused]] const std::string &mode) {
     constexpr std::array<size_t, 4> new_dims = {
         org_dims[perm_n], org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]};
 
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<n, c, h, w>>;
-    using tensor_type2 = ntt::tensor<
-        ntt::vector<float, P>,
-        ntt::fixed_shape<new_dims[0], new_dims[1], new_dims[2], new_dims[3]>>;
-
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output;
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<n, c, h, w>);
+    auto ntt_output = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<new_dims[0], new_dims[1], new_dims[2], new_dims[3]>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // warm up
     constexpr size_t warmup_size = 10;
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-            ntt_input, ntt_output);
+        ntt::transpose(ntt_input, ntt_output,
+                       ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
         asm volatile("" ::"g"(ntt_output));
     }
 
     // run
     [[maybe_unused]] auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-            ntt_input, ntt_output);
+        ntt::transpose(ntt_input, ntt_output,
+                       ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
         asm volatile("" ::"g"(ntt_output));
     }
     [[maybe_unused]] auto t2 = NttTest::get_cpu_cycle();

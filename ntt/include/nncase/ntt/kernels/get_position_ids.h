@@ -13,20 +13,14 @@
  * limitations under the License.
  */
 #pragma once
-#include "nncase/ntt/kernels/binary.h"
-#include "nncase/ntt/kernels/matmul.h"
-#include "nncase/ntt/kernels/reduce.h"
-#include "nncase/ntt/kernels/unary.h"
-#include "nncase/ntt/tensor_traits.h"
 #include <nncase/ntt/caching.h>
 #include <nncase/ntt/shape.h>
-#include <nncase/ntt/sharding.h>
 #include <type_traits>
 
 namespace nncase::ntt {
 
 template <class TKVCache, class TOut>
-void get_position_ids(TKVCache kv_cache_tensor, TOut output) {
+void get_position_ids(TKVCache &&kv_cache_tensor, TOut output) {
     using TOutType = typename std::decay_t<TOut>;
     using TOutElem = typename TOutType::element_type;
 
