@@ -12,7 +12,7 @@ import io
 import re
 import time
 import subprocess
-from git.repo import Repo
+from git.repo import Repo, TagReference
 # See ref: https://stackoverflow.com/a/51575996
 
 
@@ -282,6 +282,29 @@ class BuildCMakeExt(build_ext):
         # different place. See comments above for additional information
 
 
+def get_latest_tag_by_date(repo):
+    # 获取所有标签及其创建时间
+    tags_with_dates = []
+    for tag in repo.tags:
+        try:
+            # 附注标签：使用标签对象的创建时间
+            tag_date = tag.tag.tagged_date
+        except (AttributeError, TypeError):
+            # 轻量标签：使用标签指向的提交时间
+            tag_date = tag.commit.committed_date
+
+        tags_with_dates.append((tag_date, tag.name))
+
+    # 如果没有标签，返回 None
+    if not tags_with_dates:
+        return None
+
+    # 按时间降序排序（最新的在前）
+    tags_with_dates.sort(key=lambda x: x[0], reverse=True)
+
+    # 返回最新标签的名称
+    return tags_with_dates[0][1]
+
 def find_version():
     with io.open("CMakeLists.txt", encoding="utf8") as f:
         version_file = f.read()
@@ -294,10 +317,11 @@ def find_version():
         if repo.tags:
             latest_commit = subprocess.check_output(
                 ['git', 'rev-parse', 'HEAD']).decode('utf-8').strip()
+            latest_tag = get_latest_tag_by_date(repo)
             tagged_commit = subprocess.check_output(
-                ['git', 'rev-list', '-n', '1', repo.tags[-1].name]).decode('utf-8').strip()
+                ['git', 'rev-list', '-n', '1', latest_tag]).decode('utf-8').strip()
             if latest_commit == tagged_commit:
-                return repo.tags[-1].name[1:]
+                return latest_tag[1:]
 
         version_suffix = time.strftime("%Y%m%d", time.localtime())
         return version_prefix[0] + "." + version_suffix
