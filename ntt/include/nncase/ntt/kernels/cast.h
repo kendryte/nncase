@@ -45,7 +45,7 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
         out_offset_scale = scale > 1.0f ? (size_t)1 : (size_t)(1.0f / scale);
 
   public:
-    constexpr void operator()(const TIn &input, TOut &output, ) {
+    constexpr void operator()(const TIn &input, TOut &output, const PackedAxes &packedAxes) noexcept {
 #if 0        
         if constexpr (scale != 1.0f) {
             static_assert(TIn::rank() == 1,
@@ -64,18 +64,18 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
         }
 #endif
         if constexpr (scale >= 1.f) {
-            apply(output.shape(), [&](auto index) {
+            ntt::apply(output.shape(), [&](auto index) {
                 auto in_index = index;
-                if constexpr (PackedAxes::rank() == 1)
-                    in_index[PackedAxes::at(0)] *= in_offset_scale;
+                if constexpr (packedAxes.rank() == 1)
+                    in_index[fixed_dim_v<packedAxes.at(0)>] *= in_offset_scale;
                 ntt::u_cast<in_offset_scale, out_offset_scale>(
                     &input(in_index), 1, &output(index), 1, 1);
             });
         } else {
-            apply(input.shape(), [&](auto index) {
+            ntt::apply(input.shape(), [&](auto index) {
                 auto out_index = index;
-                if constexpr (PackedAxes::rank() == 1)
-                    out_index[PackedAxes::at(0)] *= out_offset_scale;
+                if constexpr (packedAxes.rank() == 1)
+                    out_index[fixed_dim_v<packedAxes.at(0)>] *= out_offset_scale;
                 ntt::u_cast<in_offset_scale, out_offset_scale>(
                     &input(index), 1, &output(out_index), 1, 1);
             });
@@ -117,9 +117,9 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
 };
 } // namespace detail
 
-template <Tensor TIn, class TOut, FixedDimensions PackedAxes = shape_t<>>
-void cast(const TIn &input, TOut &&output, const PackedAxes &packed_axes) noexcept {
+template <Tensor TIn, class TOut, FixedDimensions PackedAxes>
+void cast(const TIn &input, TOut &&output, const PackedAxes &packedAxes) noexcept {
     detail::cast_impl<TIn, std::decay_t<TOut>, PackedAxes> impl;
-    impl(input, output, packed_axes);
+    impl(input, output, packedAxes);
 }
 } // namespace nncase::ntt

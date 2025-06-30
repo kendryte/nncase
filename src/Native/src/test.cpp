@@ -1384,7 +1384,7 @@ void test_cast() {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16>);
         auto tb = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<1, 16>);
         std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-        ntt::cast(ta, tb.view());
+        ntt::cast(ta, tb.view(), ntt::fixed_shape_v<>);
         assert(tb(0, 0) == 0);
         assert(tb(0, 2) == 2);
     }
@@ -1398,7 +1398,7 @@ void test_cast() {
         ntt::pack(ta, tb.view(), ntt::fixed_shape_v<1>);
         auto tc = ntt::make_tensor<ntt::vector<int32_t, 4>>(
             ntt::fixed_shape_v<1, 16, 32>);
-        ntt::cast(tb, tc);
+        ntt::cast(tb, tc, ntt::fixed_shape_v<1>);
         assert(tc(0, 0, 0)(0) == 0);
         assert(tc(0, 0, 0)(1) == 32);
         assert(tc(0, 0, 0)(2) == 64);
