@@ -12,7 +12,7 @@ import io
 import re
 import time
 import subprocess
-from git.repo import Repo, TagReference
+from git.repo import Repo
 # See ref: https://stackoverflow.com/a/51575996
 
 
