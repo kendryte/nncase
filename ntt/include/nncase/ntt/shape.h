@@ -13,458 +13,588 @@
  * limitations under the License.
  */
 #pragma once
-#include <algorithm>
+#include "compiler_defs.h"
+#include "dimension.h"
+#include "loop.h"
+#include "nncase/ntt/tensor_traits.h"
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <cstring>
-#include <iterator>
-#include <numeric>
-#include <optional>
 #include <span>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 
 namespace nncase::ntt {
 namespace detail {
-template <class T, T... Dims> struct fixed_dims_base {
-    struct iterator {
-        using dims_type = fixed_dims_base<T, Dims...>;
-        using difference_type = std::ptrdiff_t;
-        using element_type = T;
-
-        constexpr iterator() noexcept = default;
-        constexpr iterator(size_t index) noexcept : index_(index) {}
-
-        element_type operator*() const { return dims_type::at(index_); }
-
-        iterator &operator++() {
-            index_++;
-            return *this;
-        }
-        iterator operator++(int) {
-            iterator tmp = *this;
-            ++(*this);
-            return tmp;
-        }
-        iterator &operator+=(int i) {
-            index_ += i;
-            return *this;
-        }
-        iterator operator+(const difference_type other) const {
-            return index_ + other;
-        }
-        friend iterator operator+(const difference_type value,
-                                  const iterator &other) {
-            return other + value;
-        }
-
-        iterator &operator--() {
-            index_--;
-            return *this;
-        }
-        iterator operator--(int) {
-            iterator tmp = *this;
-            --(*this);
-            return tmp;
-        }
-        iterator &operator-=(int i) {
-            index_ -= i;
-            return *this;
-        }
-        difference_type operator-(const iterator &other) const {
-            return index_ - other.index_;
-        }
-        iterator operator-(const difference_type other) const {
-            return index_ - other;
-        }
-        friend iterator operator-(const difference_type value,
-                                  const iterator &other) {
-            return other - value;
-        }
-
-        element_type operator[](difference_type idx) const {
-            return dims_type::at(index_ + idx);
-        }
-
-        bool operator==(const iterator &other) const {
-            return index_ == other.index_;
-        }
-
-      private:
-        size_t index_;
-    };
-
-    static constexpr size_t rank() noexcept { return sizeof...(Dims); }
-
-    static constexpr T at(size_t index) noexcept {
-        return std::array<T, sizeof...(Dims)>{Dims...}[index];
-    }
-
-    static constexpr auto begin() noexcept { return iterator(); }
-    static constexpr auto end() noexcept { return iterator(rank()); }
-
-    static constexpr T last() noexcept { return at(rank() - 1); }
-
-    static constexpr bool contains([[maybe_unused]] T value) noexcept {
-        return (false || ... || (Dims == value));
-    }
-
-    static constexpr int64_t indexof(T value) noexcept {
-        int64_t it = -1;
-        for (size_t j = 0; j < sizeof...(Dims); j++) {
-            if (at(j) == value) {
-                it = j;
-                break;
-            }
-        }
-
-        return it;
-    }
-
-    constexpr T operator[](size_t index) const noexcept { return at(index); }
+template <class T> struct cannonical_dim_type {
+    using type = std::conditional_t<FixedDimension<std::decay_t<T>>,
+                                    std::decay_t<T>, dim_t>;
 };
 
-template <class T, size_t Rank> struct ranked_dims_base {
-    static constexpr size_t rank() noexcept { return Rank; }
+template <class T>
+using cannonical_dim_t = typename cannonical_dim_type<T>::type;
 
-    constexpr T operator[](size_t index) const noexcept { return at(index); }
-    constexpr T &operator[](size_t index) noexcept { return at(index); }
+template <template <class... TDims> class Derived, class I>
+struct dynamic_dims_type_impl;
 
-    constexpr T at(size_t index) const noexcept { return dims_[index]; }
-    constexpr T &at(size_t index) noexcept { return dims_[index]; }
+template <template <class... TDims> class Derived, size_t... I>
+struct dynamic_dims_type_impl<Derived, std::index_sequence<I...>> {
+    template <std::size_t> using elem_type = dim_t;
 
-    constexpr auto begin() const noexcept { return dims_.begin(); }
-    constexpr auto end() const noexcept { return dims_.end(); }
-    constexpr auto rbegin() const noexcept { return dims_.rbegin(); }
-    constexpr auto rend() const noexcept { return dims_.rend(); }
+    using type = Derived<elem_type<I>...>;
+};
 
-    constexpr auto begin() noexcept { return dims_.begin(); }
-    constexpr auto end() noexcept { return dims_.end(); }
+template <template <class... TDims> class Derived, size_t Rank>
+using dynamic_dims_t =
+    typename dynamic_dims_type_impl<Derived,
+                                    std::make_index_sequence<Rank>>::type;
 
-    constexpr T last() const noexcept { return at(rank() - 1); }
-    constexpr T &last() noexcept { return at(rank() - 1); }
+template <template <class... TDims> class Derived, Dimension... TDims>
+constexpr auto make_dims_impl(const TDims &...dims) noexcept {
+    return Derived<cannonical_dim_t<TDims>...>{
+        static_cast<cannonical_dim_t<TDims>>(dims)...};
+}
 
-    constexpr bool contains(T value) const noexcept {
-        return std::find(begin(), end(), value) != end();
+template <template <class... TDims> class Derived, dim_t... Dims>
+inline constexpr auto fixed_dims_impl_v =
+    make_dims_impl<Derived>(fixed_dim_v<Dims>...);
+
+template <template <class... TDims> class Derived, size_t Rank, Dimension TDim>
+constexpr auto make_repeat_dims_impl(const TDim &dim) noexcept {
+    auto repeat_impl = [dim]<size_t... I>(std::index_sequence<I...>) {
+        return make_dims_impl<Derived>(((void)I, dim)...);
+    };
+    return repeat_impl(std::make_index_sequence<Rank>());
+}
+
+template <template <class... TDims> class Derived, size_t Rank>
+constexpr auto make_zeros_dims_impl() noexcept {
+    return make_repeat_dims_impl<Derived, Rank>(dim_zero);
+}
+
+template <template <class... TDims> class Derived, size_t Rank>
+constexpr auto make_ones_dims_impl() noexcept {
+    return make_repeat_dims_impl<Derived, Rank>(dim_one);
+}
+
+template <template <class... TDims> class Derived, size_t Rank, dim_t Start = 0>
+constexpr auto make_index_dims_impl() noexcept {
+    auto index_impl = []<size_t... I>(std::index_sequence<I...>) {
+        return make_dims_impl<Derived>(fixed_dim_v<Start + I>...);
+    };
+    return index_impl(std::make_index_sequence<Rank>());
+}
+
+template <template <class... TDims> class Derived, size_t Rank,
+          class TGenerator>
+constexpr auto generate_dims_impl(TGenerator &&generator) noexcept {
+    auto generate_impl =
+        [&generator]<dim_t... I>(std::integer_sequence<dim_t, I...>) {
+            return make_dims_impl<Derived>(generator(fixed_dim_v<I>)...);
+        };
+    return generate_impl(std::make_integer_sequence<dim_t, Rank>());
+}
+
+struct default_aggregate_selector {
+    template <class T>
+    constexpr decltype(auto) operator()(T &&value) const noexcept {
+        return std::forward<T>(value);
+    }
+};
+
+template <dim_t Axis, class TDims, class TAccumulate, class TFunc,
+          class TSelector, dim_t... I>
+constexpr auto aggregate_impl(const TDims &dims, TAccumulate &&seed,
+                              TFunc &&func, TSelector &&selector,
+                              std::integer_sequence<dim_t, I...>) noexcept {
+    auto new_seed = func(std::forward<TAccumulate>(seed),
+                         dims[fixed_dim_v<Axis>], fixed_dim_v<Axis>);
+    if constexpr (Axis + 1 < TDims::rank()) {
+        return aggregate_impl<Axis + 1>(dims, std::move(new_seed),
+                                        std::forward<TFunc>(func),
+                                        std::forward<TSelector>(selector),
+                                        std::integer_sequence<dim_t, I...>{});
+    } else {
+        return selector(std::move(new_seed));
+    }
+}
+
+template <dim_t ReplaceAxis, dim_t CntIndex, class TDims, Dimension TDim>
+constexpr auto replace_dim_impl(const TDims &dims, const TDim &dim) noexcept {
+    if constexpr (ReplaceAxis == CntIndex) {
+        return dim;
+    } else {
+        return dims.template at<CntIndex>();
+    }
+}
+
+template <dims_usage Usage, template <class... TDims> class Derived,
+          Dimension... TDims>
+struct dims_base {
+    constexpr dims_base(const TDims &...dims) noexcept
+        : dims_(std::make_tuple(dims...)) {}
+
+    static constexpr dims_usage usage() noexcept { return Usage; }
+
+    static constexpr auto rank() noexcept {
+        return fixed_dim_v<sizeof...(TDims)>;
     }
 
-    constexpr int64_t indexof(T value) const noexcept {
-        auto it = std::find(begin(), end(), value);
-        return it != end() ? std::distance(begin(), it) : -1;
+    static constexpr auto fixed_rank() noexcept {
+        return fixed_dim_v<(0 + ... + (is_fixed_dim_v<TDims> ? 1 : 0))>;
     }
 
-    std::array<T, Rank> dims_;
+    static constexpr auto dynamic_rank() noexcept {
+        return rank() - fixed_rank();
+    }
+
+    static constexpr bool is_fixed() noexcept { return fixed_rank() == rank(); }
+
+    template <size_t Rank = rank(), class = std::enable_if_t<Rank != 0>>
+    constexpr dims_base() noexcept : dims_(std::make_tuple(TDims{}...)) {}
+
+    template <Dimension TIndex>
+    constexpr auto operator[](const TIndex &index) const noexcept {
+        return at(index);
+    }
+
+    template <FixedDimension TIndex>
+    constexpr decltype(auto) operator[](const TIndex &) noexcept {
+        return at<TIndex::value>();
+    }
+
+    template <class TAccumulate, class TFunc,
+              class TSelector = default_aggregate_selector>
+    constexpr decltype(auto) aggregate(
+        TAccumulate &&seed, [[maybe_unused]] TFunc &&func,
+        [[maybe_unused]] TSelector &&selector = TSelector{}) const noexcept {
+        if constexpr (rank() == 0) {
+            return selector(std::forward<TAccumulate>(seed));
+        } else {
+            return aggregate_impl<0>(
+                *this, std::forward<TAccumulate>(seed),
+                std::forward<TFunc>(func), std::forward<TSelector>(selector),
+                std::make_integer_sequence<dim_t, rank()>{});
+        }
+    }
+
+    template <Dimension TIndex>
+    constexpr auto at([[maybe_unused]] const TIndex &index) const noexcept {
+        if constexpr (FixedDimension<TIndex>) {
+            return at<TIndex::value>();
+        } else {
+            const auto pos_index = positive_index(index, rank());
+            return to_array()[pos_index];
+        }
+    }
+
+    template <FixedDimension TIndex>
+    constexpr decltype(auto) at(const TIndex &) noexcept {
+        return at<TIndex::value>();
+    }
+
+    template <dim_t Index> constexpr auto at() const noexcept {
+        constexpr auto PositiveIndex = positive_index(Index, rank());
+        if constexpr (is_fixed()) {
+            return std::tuple_element_t<PositiveIndex, decltype(dims_)>{};
+        } else {
+            return std::get<PositiveIndex>(dims_);
+        }
+    }
+
+    template <dim_t Index> constexpr decltype(auto) at() noexcept {
+        constexpr auto PositiveIndex = positive_index(Index, rank());
+        if constexpr (is_fixed()) {
+            return std::tuple_element_t<PositiveIndex, decltype(dims_)>{};
+        } else {
+            return std::get<PositiveIndex>(dims_);
+        }
+    }
+
+    constexpr auto front() const noexcept { return at<0>(); }
+    constexpr decltype(auto) front() noexcept { return at<0>(); }
+
+    constexpr auto back() const noexcept { return at<rank() - 1>(); }
+    constexpr decltype(auto) back() noexcept { return at<rank() - 1>(); }
+
+    template <Dimension TDim>
+    constexpr auto contains([[maybe_unused]] const TDim &value) const noexcept {
+        if constexpr (rank() == 0) {
+            return std::false_type{};
+        } else if constexpr (FixedDimension<TDim>) {
+            constexpr auto fixed_contains =
+                (false || ... ||
+                 std::conditional_t<
+                     FixedDimension<TDims>,
+                     std::integral_constant<bool, TDims{} == TDim::value>,
+                     std::false_type>{});
+            if constexpr (fixed_contains) {
+                return std::true_type{};
+            } else if constexpr (is_fixed()) {
+                return std::false_type{};
+            } else {
+                auto contains_impl =
+                    [this, value]<size_t... I>(std::index_sequence<I...>) {
+                        (void)this;
+                        return (false || ... || (at(fixed_dim_v<I>) == value));
+                    };
+                return contains_impl(std::make_index_sequence<rank()>());
+            }
+        } else {
+            auto contains_impl =
+                [this, value]<size_t... I>(std::index_sequence<I...>) {
+                    (void)this;
+                    return (false || ... || (at(fixed_dim_v<I>) == value));
+                };
+            return contains_impl(std::make_index_sequence<rank()>());
+        }
+    }
+
+    template <Dimension... UDims>
+    constexpr auto append(const UDims &...values) const noexcept {
+        auto append_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return make_dims_impl<Derived>(at(fixed_dim_v<I>)..., values...);
+        };
+        return append_impl(std::make_index_sequence<rank()>());
+    }
+
+    template <Dimension... UDims>
+    constexpr auto concat(const Derived<UDims...> &other) const noexcept {
+        auto concat_impl = [this, &other]<size_t... I, size_t... U>(
+                               std::index_sequence<I...>,
+                               std::index_sequence<U...>) {
+            (void)this;
+            return make_dims_impl<Derived>(at(fixed_dim_v<I>)...,
+                                           other.at(fixed_dim_v<U>)...);
+        };
+        return concat_impl(std::make_index_sequence<rank()>(),
+                           std::make_index_sequence<sizeof...(UDims)>());
+    }
+
+    template <Dimension TDim>
+    constexpr auto index_of(const TDim &dim) const noexcept {
+        return aggregate(-1_dim, [&](auto acc, auto value, auto index) {
+            return ntt::where(acc == -1_dim,
+                              ntt::where(value == dim, index, -1_dim), acc);
+        });
+    }
+
+    template <Dimension... UDims>
+    constexpr auto prepend(const UDims &...values) const noexcept {
+        auto prepend_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return make_dims_impl<Derived>(values..., at(fixed_dim_v<I>)...);
+        };
+        return prepend_impl(std::make_index_sequence<rank()>());
+    }
+
+    template <size_t Index> constexpr auto remove_at() const noexcept {
+        auto remove_impl = [this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return make_dims_impl<Derived>(at<(I < Index ? I : I + 1)>()...);
+        };
+        return remove_impl(std::make_index_sequence<rank() - 1>());
+    }
+
+    template <dim_t Index, Dimension TDim>
+    constexpr auto replace_at(const TDim &dim) const noexcept {
+        constexpr auto PositiveIndex = positive_index(Index, rank());
+        auto replace_impl = [&dim,
+                             this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return make_dims_impl<Derived>(
+                replace_dim_impl<PositiveIndex, I>(*this, dim)...);
+        };
+        return replace_impl(std::make_index_sequence<rank()>());
+    }
+
+    constexpr auto reverse() const noexcept {
+        auto reverse_impl = [this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return make_dims_impl<Derived>(at<rank() - 1 - I>()...);
+        };
+        return reverse_impl(std::make_index_sequence<rank()>());
+    }
+
+    template <FixedDimensions TIndicies>
+    constexpr auto select(const TIndicies &indicies) const noexcept {
+        auto select_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return make_dims_impl<Derived>(at(indicies.at(fixed_dim_v<I>))...);
+        };
+        return select_impl(std::make_index_sequence<TIndicies::rank()>());
+    }
+
+    template <size_t Start, size_t Rank = rank() - Start>
+    constexpr auto slice() const noexcept {
+        auto slice_impl = [this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return make_dims_impl<Derived>(at<I + Start>()...);
+        };
+        return slice_impl(std::make_index_sequence<Rank>());
+    }
+
+    constexpr std::array<dim_t, rank()> to_array() const noexcept {
+        auto at_impl = [this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return std::array<dim_t, rank()>{at(fixed_dim_v<I>)...};
+        };
+        return at_impl(std::make_index_sequence<rank()>());
+    }
+
+    template <class UDims> constexpr void copy_to(UDims &other) const noexcept {
+        loop<rank()>([&](auto axis) { other[axis] = at(axis); });
+    }
+
+  private:
+    NTT_NO_UNIQUE_ADDRESS std::tuple<TDims...> dims_;
 };
 } // namespace detail
 
-template <class T, T... Dims>
-struct fixed_dims : detail::fixed_dims_base<T, Dims...> {};
-
-template <size_t... Dims>
-struct fixed_shape : detail::fixed_dims_base<size_t, Dims...> {
-    template <size_t I> struct prepend {
-        using type = fixed_shape<I, Dims...>;
-    };
-
-    template <size_t I> struct append {
-        using type = fixed_shape<Dims..., I>;
-    };
-
-    static constexpr size_t length() noexcept { return (Dims * ... * 1); }
-    static constexpr size_t size() noexcept { return sizeof...(Dims); }
+template <Dimension... TDims>
+struct dims_t : detail::dims_base<dims_usage::normal, dims_t, TDims...> {
+    using base_t = detail::dims_base<dims_usage::normal, dims_t, TDims...>;
+    using base_t::base_t;
 };
 
-template <size_t Rank>
-struct ranked_shape : detail::ranked_dims_base<size_t, Rank> {
-    constexpr size_t length() const noexcept {
-        return std::accumulate(this->begin(), this->end(), 1,
-                               std::multiplies<>());
+template <Dimension... TDims>
+struct shape_t : detail::dims_base<dims_usage::shape, shape_t, TDims...> {
+    using base_t = detail::dims_base<dims_usage::shape, shape_t, TDims...>;
+    using base_t::base_t;
+
+    constexpr auto length() const noexcept {
+        auto length_impl = [this]<size_t... I>(std::index_sequence<I...>) {
+            (void)this;
+            return (dim_one * ... * base_t::at(fixed_dim_v<I>));
+        };
+        return length_impl(std::make_index_sequence<base_t::rank()>());
     }
 };
 
-template <size_t... Strides>
-struct fixed_strides : detail::fixed_dims_base<size_t, Strides...> {
-    template <size_t I> struct prepend {
-        using type = fixed_strides<I, Strides...>;
-    };
-
-    template <size_t I> struct append {
-        using type = fixed_strides<Strides..., I>;
-    };
+template <Dimension... TDims>
+struct strides_t : detail::dims_base<dims_usage::strides, strides_t, TDims...> {
+    using base_t = detail::dims_base<dims_usage::strides, strides_t, TDims...>;
+    using base_t::base_t;
 };
 
-template <size_t Rank>
-struct ranked_strides : detail::ranked_dims_base<size_t, Rank> {};
+template <Dimensions TDims> struct empty_dims_alike_type;
+
+template <Dimensions TDims>
+using empty_dims_alike_t = typename empty_dims_alike_type<TDims>::type;
+
+template <Dimensions TDims, size_t Rank> struct zeros_dims_alike_type;
+
+template <Dimensions TDims, size_t Rank>
+inline constexpr auto zeros_dims_alike_v =
+    zeros_dims_alike_type<TDims, Rank>::value;
+
+#define DEFINE_NTT_MAKE_DIMS(dims_type)                                        \
+    template <size_t Rank>                                                     \
+    using dynamic_##dims_type##_t =                                            \
+        detail::dynamic_dims_t<dims_type##_t, Rank>;                           \
+                                                                               \
+    template <dim_t... Dims>                                                   \
+    using fixed_##dims_type##_t = dims_type##_t<fixed_dim<Dims>...>;           \
+                                                                               \
+    template <Dimension... TDims>                                              \
+    struct empty_dims_alike_type<dims_type##_t<TDims...>> {                    \
+        using type = dims_type##_t<>;                                          \
+    };                                                                         \
+                                                                               \
+    template <Dimension... TDims>                                              \
+    constexpr auto make_##dims_type(const TDims &...dims) noexcept {           \
+        return detail::make_dims_impl<dims_type##_t>(dims...);                 \
+    }                                                                          \
+                                                                               \
+    template <dim_t... Dims>                                                   \
+    inline constexpr auto fixed_##dims_type##_v =                              \
+        detail::fixed_dims_impl_v<dims_type##_t, Dims...>;                     \
+                                                                               \
+    template <size_t Rank> constexpr auto make_zeros_##dims_type() noexcept {  \
+        return detail::make_zeros_dims_impl<dims_type##_t, Rank>();            \
+    }                                                                          \
+                                                                               \
+    template <size_t Rank> constexpr auto make_ones_##dims_type() noexcept {   \
+        return detail::make_ones_dims_impl<dims_type##_t, Rank>();             \
+    }                                                                          \
+                                                                               \
+    template <size_t Rank, dim_t Start = 0>                                    \
+    constexpr auto make_index_##dims_type() noexcept {                         \
+        return detail::make_index_dims_impl<dims_type##_t, Rank, Start>();     \
+    }                                                                          \
+                                                                               \
+    template <size_t Rank, Dimension TDim>                                     \
+    constexpr auto make_repeat_##dims_type(const TDim &dim) noexcept {         \
+        return detail::make_repeat_dims_impl<dims_type##_t, Rank>(dim);        \
+    }                                                                          \
+                                                                               \
+    template <size_t Rank, class TGenerator>                                   \
+    constexpr auto generate_##dims_type(TGenerator &&generator) noexcept {     \
+        return detail::generate_dims_impl<dims_type##_t, Rank>(generator);     \
+    }                                                                          \
+                                                                               \
+    template <Dimension... TDims, size_t Rank>                                 \
+    struct zeros_dims_alike_type<dims_type##_t<TDims...>, Rank> {              \
+        static constexpr auto value = make_zeros_##dims_type<Rank>();          \
+    };
+
+DEFINE_NTT_MAKE_DIMS(dims)
+DEFINE_NTT_MAKE_DIMS(shape)
+DEFINE_NTT_MAKE_DIMS(strides)
+
+#undef DEFINE_NTT_MAKE_DIMS
+
+template <Shape TShape, Strides TStrides>
+constexpr auto canonicalize_strides(const TShape &shape,
+                                    const TStrides &strides) noexcept {
+    static_assert(TShape::rank() == TStrides::rank(),
+                  "Shape and strides must have the same rank");
+    // Replace the stride with 0 if the shape is 1
+    return generate_strides<TShape::rank()>([&](auto axis) {
+        const auto dim = shape[axis];
+        if constexpr (FixedDimension<decltype(dim)>) {
+            return ntt::where(dim == dim_one, dim_zero, strides[axis]);
+        } else {
+            return dim == 1 ? 0 : dim_value(strides[axis]);
+        }
+    });
+}
 
 namespace detail {
-template <size_t I, size_t... Dims> struct default_strides_impl;
+template <size_t Axis, Shape TShape> struct default_strides_impl {
+    static_assert(Axis > 0 && Axis <= TShape::rank(), "Axis out of bounds");
 
-template <size_t I> struct default_strides_impl<I> {
-    inline static constexpr size_t value = 1;
-    using strides_t = fixed_strides<value>;
+    template <Strides TStrides>
+    constexpr auto
+    operator()([[maybe_unused]] const TShape &shape,
+               [[maybe_unused]] const TStrides &cnt_strides) noexcept {
+        auto new_stride = [&shape, &cnt_strides]() {
+            if constexpr (Axis == TShape::rank()) {
+                (void)shape;
+                (void)cnt_strides;
+                return dim_one;
+            } else {
+                auto dim = shape[fixed_dim_v<Axis>];
+                auto last_stride = cnt_strides[dim_zero];
+                return last_stride * dim;
+            }
+        }();
+        auto new_strides = cnt_strides.prepend(new_stride);
+        if constexpr (Axis == 1) {
+            return canonicalize_strides(shape, new_strides);
+        } else {
+            return default_strides_impl<Axis - 1, TShape>{}(shape, new_strides);
+        }
+    }
 };
-
-template <size_t I, size_t Dim, size_t... Dims>
-struct default_strides_impl<I, Dim, Dims...> {
-    using next_impl_t = default_strides_impl<I + 1, Dims...>;
-    inline static constexpr size_t value = Dim * next_impl_t::value;
-    using strides_t =
-        typename next_impl_t::strides_t::template prepend<value>::type;
-};
-
-template <size_t Value, class Dims> struct repeat_shape_impl;
-
-template <size_t Value, size_t... Dims>
-struct repeat_shape_impl<Value, std::index_sequence<Dims...>> {
-    using shape_t = fixed_shape<((void)Dims, Value)...>;
-};
-
-#define DEFINE_SQUEEZE_FIXED_DIMS_IMPL(name)                                   \
-    template <class TShape, class TAxes, size_t Index>                         \
-    struct squeeze_fixed_##name##_impl {                                       \
-        static constexpr auto get_##name() noexcept {                          \
-            if constexpr (Index >= TShape::rank()) {                           \
-                return fixed_##name<>{};                                       \
-            } else {                                                           \
-                using src_type =                                               \
-                    typename squeeze_fixed_##name##_impl<TShape, TAxes,        \
-                                                         Index + 1>::name##_t; \
-                if constexpr (TAxes::contains(Index)) {                        \
-                    return src_type{};                                         \
-                } else {                                                       \
-                    using type =                                               \
-                        src_type::template prepend<TShape::at(Index)>::type;   \
-                    return type{};                                             \
-                }                                                              \
-            }                                                                  \
-        }                                                                      \
-                                                                               \
-        using name##_t = decltype(get_##name());                               \
-    };
-
-DEFINE_SQUEEZE_FIXED_DIMS_IMPL(shape)
-DEFINE_SQUEEZE_FIXED_DIMS_IMPL(strides)
 } // namespace detail
 
-template <class Dims> struct is_fixed_dims : std::false_type {};
-
-template <class T, T... Dims>
-struct is_fixed_dims<fixed_dims<T, Dims...>> : std::true_type {};
-
-template <size_t... Dims>
-struct is_fixed_dims<fixed_shape<Dims...>> : std::true_type {};
-
-template <size_t... Dims>
-struct is_fixed_dims<fixed_strides<Dims...>> : std::true_type {};
-
-template <class Dims>
-inline constexpr bool is_fixed_dims_v = is_fixed_dims<Dims>::value;
-
-template <typename T> struct is_ranked_dims : std::false_type {};
-
-template <class T, size_t Rank>
-struct is_ranked_dims<detail::ranked_dims_base<T, Rank>> : std::true_type {};
-
-template <size_t Rank>
-struct is_ranked_dims<ranked_shape<Rank>> : std::true_type {};
-
-template <size_t Rank>
-struct is_ranked_dims<ranked_strides<Rank>> : std::true_type {};
-
-template <typename T>
-inline constexpr bool is_ranked_dims_v = is_ranked_dims<T>::value;
-
-#define DEFINE_COMMON_DIMS_TYPE(name)                                          \
-    template <class ShapeA, class ShapeB> struct common_##name##_type;         \
-                                                                               \
-    template <size_t... Dims>                                                  \
-    struct common_##name##                                                     \
-        _type<fixed_##name<Dims...>, fixed_##name<Dims...>> {                  \
-        using type = fixed_##name<Dims...>;                                    \
-    };                                                                         \
-                                                                               \
-    template <size_t Rank>                                                     \
-    struct common_##name##_type<ranked_##name<Rank>, ranked_##name<Rank>> {    \
-        using type = ranked_##name<Rank>;                                      \
-    };                                                                         \
-                                                                               \
-    template <size_t... Dims, size_t Rank>                                     \
-    struct common_##name##_type<fixed_##name<Dims...>, ranked_##name<Rank>> {  \
-        using type = ranked_##name<Rank>;                                      \
-    };                                                                         \
-                                                                               \
-    template <size_t... Dims, size_t Rank>                                     \
-    struct common_##name##_type<ranked_##name<Rank>, fixed_##name<Dims...>> {  \
-        using type = ranked_##name<Rank>;                                      \
-    };                                                                         \
-                                                                               \
-    template <class ShapeA, class ShapeB>                                      \
-    using common_##name##_t =                                                  \
-        typename common_##name##_type<ShapeA, ShapeB>::type;
-
-DEFINE_COMMON_DIMS_TYPE(shape)
-DEFINE_COMMON_DIMS_TYPE(strides)
-
-template <class Shape> struct default_strides_type;
-
-template <> struct default_strides_type<fixed_shape<>> {
-    using type = fixed_strides<>;
-};
-
-template <size_t Dim, size_t... Dims>
-struct default_strides_type<fixed_shape<Dim, Dims...>> {
-    using type = typename detail::default_strides_impl<0, Dims...>::strides_t;
-};
-
-template <size_t Rank> struct default_strides_type<ranked_shape<Rank>> {
-    using type = ranked_strides<Rank>;
-};
-
-template <class Shape>
-using default_strides_t = typename default_strides_type<Shape>::type;
-
-template <size_t Value, size_t Rank>
-using repeat_shape_t =
-    typename detail::repeat_shape_impl<Value,
-                                       std::make_index_sequence<Rank>>::shape_t;
-
-template <size_t Rank> using zero_shape_t = repeat_shape_t<0, Rank>;
-
-#define DEFINE_SQUEEZE_DIMS_TYPE(name)                                         \
-    template <class TShape, size_t... Axes> struct squeeze_##name##_type;      \
-                                                                               \
-    template <size_t Rank, size_t... Axes>                                     \
-    struct squeeze_##name##_type<ranked_##name<Rank>, Axes...> {               \
-        using type = ranked_##name<Rank - sizeof...(Axes)>;                    \
-    };                                                                         \
-                                                                               \
-    template <size_t... Dims, size_t... Axes>                                  \
-    struct squeeze_##name##_type<fixed_##name<Dims...>, Axes...> {             \
-        using type = detail::squeeze_fixed_##name##_impl<                      \
-            fixed_##name<Dims...>, fixed_##name<Axes...>, 0>::name##_t;        \
-    };                                                                         \
-                                                                               \
-    template <class TShape, size_t... Axes>                                    \
-    using squeeze_##name##_t =                                                 \
-        typename squeeze_##name##_type<TShape, Axes...>::type;
-
-DEFINE_SQUEEZE_DIMS_TYPE(shape)
-DEFINE_SQUEEZE_DIMS_TYPE(strides)
-
-template <class... Args> auto make_ranked_shape(Args &&...args) noexcept {
-    return ranked_shape<sizeof...(args)>{
-        static_cast<size_t>(std::forward<Args>(args))...};
+template <dim_t ExtendRank, Strides TStrides>
+constexpr auto broadcast_strides(const TStrides &strides) noexcept {
+    static_assert(ExtendRank >= 0,
+                  "Extend rank must be greater than or equal to 0");
+    return make_zeros_strides<ExtendRank>().concat(strides);
 }
 
-template <class... Args> auto make_ranked_strides(Args &&...args) noexcept {
-    return ranked_strides<sizeof...(args)>{
-        static_cast<size_t>(std::forward<Args>(args))...};
-}
-
-template <size_t Rank, size_t... Indices>
-constexpr auto to_fixed_shape(ranked_shape<Rank> shape,
-                              std::index_sequence<Indices...>) noexcept {
-    return fixed_shape<shape[Indices]...>{};
-}
-
-template <size_t Rank, size_t... Indices>
-constexpr auto to_fixed_strides(ranked_strides<Rank> strides,
-                                std::index_sequence<Indices...>) noexcept {
-    return fixed_strides<strides[Indices]...>{};
-}
-
-template <class TShape>
-constexpr auto to_ranked_shape(const TShape &shape) noexcept {
-    if constexpr (is_fixed_dims_v<TShape>) {
-        ranked_shape<TShape::rank()> new_shape{};
-        for (size_t i = 0; i < TShape::rank(); i++) {
-            new_shape[i] = shape[i];
-        }
-        return new_shape;
+template <Shape TShape>
+constexpr auto default_strides([[maybe_unused]] const TShape shape) noexcept {
+    constexpr auto rank = TShape::rank();
+    if constexpr (rank == 0) {
+        return strides_t<>();
     } else {
-        return shape;
+        return detail::default_strides_impl<rank, TShape>{}(shape,
+                                                            strides_t<>());
     }
 }
 
-template <class Shape>
-constexpr auto default_strides(const Shape &shape) noexcept {
-    if constexpr (is_fixed_dims_v<Shape>) {
-        return default_strides_t<Shape>{};
+template <Dimensions TIndex, Strides TStrides>
+constexpr auto linear_offset(const TIndex &index,
+                             const TStrides &strides) noexcept {
+    static_assert(TIndex::rank() == TStrides::rank(),
+                  "index and strides must have the same rank");
+
+    constexpr auto rank = TIndex::rank();
+    if constexpr (rank == 0) {
+        return dim_zero;
     } else {
-        ranked_strides<Shape::rank()> strides{};
-        if constexpr (strides.rank()) {
-            strides[strides.rank() - 1] = 1;
-            if constexpr (strides.rank() > 1) {
-                for (int i = strides.rank() - 2; i >= 0; i--) {
-                    strides[i] = shape[i + 1] * strides[i + 1];
-                }
-            }
-        }
-        return strides;
+        auto impl = [index, strides]<size_t... I>(std::index_sequence<I...>) {
+            return ((index.at(fixed_dim_v<I>) * strides.at(fixed_dim_v<I>)) +
+                    ...);
+        };
+        return impl(std::make_index_sequence<rank>());
     }
 }
 
-template <class Strides, class Shape>
-constexpr Strides default_strides_with_type(const Shape &shape) noexcept {
-    if constexpr (is_fixed_dims_v<Strides>) {
-        return {};
-    } else {
-        return default_strides(shape);
-    }
+template <Dimensions TIndex, Shape TShape>
+constexpr auto linear_offset(const TIndex &index,
+                             const TShape &shape) noexcept {
+    static_assert(TIndex::rank() == TShape::rank(),
+                  "index and shape must have the same rank");
+    return linear_offset(index, default_strides(shape));
 }
 
-template <class Index, class Strides>
-constexpr size_t linear_offset(const Index &index,
-                               const Strides &strides) noexcept {
-    size_t offset = 0;
-    if constexpr (Index::rank() == 0 || Strides::rank() == 0) {
-        return offset;
-    }
-
-    for (size_t i = 0; i < index.rank(); i++) {
-        offset += index[i] * strides[i];
-    }
-    return offset;
+template <template <class... TDims> class TDimensions = dims_t,
+          Dimension TOffset, Shape TShape>
+constexpr auto unravel_index(const TOffset &offset,
+                             const TShape &shape) noexcept {
+    return shape.reverse().aggregate(
+        std::make_tuple(offset, TDimensions<>{}),
+        [&](auto acc, auto dim, [[maybe_unused]] auto axis) {
+            auto [last_remain, index] = acc;
+            auto cnt_index = last_remain % dim;
+            auto remain = last_remain / dim;
+            return std::make_tuple(remain, index.prepend(cnt_index));
+        },
+        [](auto acc) { return std::get<1>(acc); });
 }
 
-template <class Strides>
-ranked_shape<Strides::rank()> unravel_index(const size_t offset,
-                                            const Strides &strides) noexcept {
-    size_t remain = offset;
-    ranked_shape<Strides::rank()> index;
-    for (size_t i = 0; i < Strides::rank(); i++) {
-        index[i] = remain / strides[i];
-        remain = remain % strides[i];
-    }
-    return index;
-}
+namespace detail {
+template <size_t Axis, Shape TShape, Strides TStrides> struct linear_size_impl {
+    static_assert(Axis < TShape::rank() && Axis < TStrides::rank(),
+                  "Axis out of bounds");
 
-template <class Shape, class Strides>
-constexpr size_t linear_size(const Shape &shape,
-                             const Strides &strides) noexcept {
-    size_t max_stride = 1, max_shape = 1;
-    for (size_t i = 0; i < shape.rank(); i++) {
-        if ((shape[i] == 1 ? 0 : strides[i]) >= max_stride) {
-            max_stride = strides[i];
-            max_shape = shape[i];
+    template <Dimension TMaxStride, Dimension TMaxShape>
+    constexpr auto operator()(TMaxStride max_stride, TMaxShape max_shape,
+                              const TShape &shape,
+                              const TStrides &strides) noexcept {
+        const auto cnt_dim = shape.at(fixed_dim_v<Axis>);
+        const auto cnt_stride = strides.at(fixed_dim_v<Axis>);
+        const auto new_max_stride = ntt::where(
+            cnt_dim == dim_one, max_stride,
+            ntt::where(cnt_stride >= max_stride, cnt_stride, max_stride));
+        const auto new_max_shape = ntt::where(
+            cnt_dim == dim_one, max_shape,
+            ntt::where(cnt_stride >= max_stride, cnt_dim, max_shape));
+        if constexpr (Axis + 1 < TStrides::rank()) {
+            return linear_size_impl<Axis + 1, TShape, TStrides>{}(
+                new_max_stride, new_max_shape, shape, strides);
+        } else {
+            return new_max_stride * new_max_shape;
         }
     }
+};
+} // namespace detail
 
-    size_t size = max_stride * max_shape;
-    return size;
+template <Shape TShape, Strides TStrides>
+constexpr auto linear_size(const TShape &shape,
+                           const TStrides &strides) noexcept {
+    static_assert(TShape::rank() == TStrides::rank(),
+                  "shape and strides must have the same rank");
+    if constexpr (TShape::rank() == 0) {
+        return dim_one;
+    } else {
+        return detail::linear_size_impl<0, TShape, TStrides>{}(dim_one, dim_one,
+                                                               shape, strides);
+    }
 }
 
-/**
- * @brief calculate the number of contigous dimensions.
- *
- * @param shape fixed/ranked
- * @param strides fixed/ranked
- * @return constexpr size_t contigous dimension numbers.
- */
-template <class Shape, class Strides>
-constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
+namespace detail {
+template <Shape TShape, Strides TStrides>
+constexpr dim_t contiguous_dims_impl(const TShape &shape,
+                                     const TStrides &strides) {
     auto def_strides = default_strides(shape);
     for (ptrdiff_t i = (ptrdiff_t)strides.rank() - 1; i >= 0; --i) {
         if (strides[i] != def_strides[i]) {
@@ -473,12 +603,38 @@ constexpr size_t contiguous_dims(const Shape &shape, const Strides &strides) {
     }
     return shape.rank();
 }
+} // namespace detail
 
-template <class Shape, class Strides>
-inline constexpr size_t max_size_v =
-    (is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>)
-        ? linear_size(Shape{}, Strides{})
-        : std::dynamic_extent;
+/**
+ * @brief calculate the number of contigous dimensions.
+ *
+ * @param shape fixed/ranked
+ * @param strides fixed/ranked
+ * @return constexpr size_t contigous dimension numbers.
+ */
+template <Shape TShape, Strides TStrides>
+constexpr auto contiguous_dims([[maybe_unused]] const TShape &shape,
+                               [[maybe_unused]] const TStrides &strides) {
+    if constexpr (TShape::is_fixed() && TStrides::is_fixed()) {
+        return fixed_dim_v<detail::contiguous_dims_impl(TShape{},
+                                                        TStrides{})>();
+    } else {
+        return detail::contiguous_dims_impl(shape, strides);
+    }
+}
+
+namespace detail {
+template <Shape TShape, Strides TStrides> constexpr size_t max_size_impl() {
+    if constexpr (TShape::is_fixed() && TStrides::is_fixed()) {
+        return linear_size(TShape{}, TStrides{});
+    } else {
+        return std::dynamic_extent;
+    }
+}
+} // namespace detail
+
+template <Shape TShape, Strides TStrides>
+inline constexpr size_t max_size_v = detail::max_size_impl<TShape, TStrides>();
 
 template <class Index, class Shape>
 constexpr bool in_bound(const Index &index, const Shape &shape) {
@@ -495,148 +651,101 @@ constexpr bool in_bound(const Index &index, const Shape &shape) {
     return false;
 }
 
-template <size_t Rank, class Index, class Shape, size_t DimsExt>
-constexpr ranked_shape<Rank> get_reduced_offset(Index in_offset,
-                                                Shape reduced_shape) {
-    ranked_shape<Rank> off;
-    for (size_t i = 0; i < reduced_shape.rank(); i++) {
-        off.at(i) = (in_offset.at(i + DimsExt) >= reduced_shape.at(i))
-                        ? 0
-                        : in_offset.at(i + DimsExt);
-    }
-    return off;
-}
-
-template <size_t Rank, class Index, class Shape>
-ranked_shape<Rank> get_reduced_offset(Index in_offset, Shape reduced_shape) {
-    ranked_shape<Rank> off;
-    const auto dims_ext = in_offset.rank() - reduced_shape.rank();
-    for (size_t i = 0; i < reduced_shape.rank(); i++) {
-        if (in_offset.at(i + dims_ext) >= reduced_shape.at(i))
-            off.at(i) = 0;
-        else
-            off.at(i) = in_offset.at(i + dims_ext);
-    }
-
-    return off;
-}
-
-template <size_t Axes, size_t Rank, class Index>
-ranked_shape<Rank> get_reduced_offset(Index in_offset) {
-    ranked_shape<Rank> off;
-    for (size_t i = 0; i < Axes; i++) {
-        off.at(i) = in_offset.at(i);
-    }
-
-    if constexpr (in_offset.rank() == Rank) {
-        off.at(Axes) = 0;
-        for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
-            off.at(i) = in_offset.at(i);
-        }
-    } else {
-        for (size_t i = Axes + 1; i < in_offset.rank(); i++) {
-            off.at(i - 1) = in_offset.at(i);
+namespace detail {
+template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
+    template <Dimensions TSrcDims, Dimensions TResultDims>
+    constexpr auto operator()(const TSrcDims &src_dims,
+                              const TResultDims &result_dims) {
+        static_assert(CntAxis < TSrcDims::rank(), "CntAxis out of bounds");
+        auto new_result_dims =
+            ntt::where(Axes{}.contains(fixed_dim_v<CntAxis>), result_dims,
+                       result_dims.append(src_dims[fixed_dim_v<CntAxis>]));
+        if constexpr (CntAxis + 1 < TSrcDims::rank()) {
+            return squeeze_dims_impl<Axes, CntAxis + 1>()(src_dims,
+                                                          new_result_dims);
+        } else {
+            return new_result_dims;
         }
     }
+};
+} // namespace detail
 
-    return off;
+template <Dimensions TDims, FixedDimensions TAxes>
+constexpr auto squeeze_dims(const TDims &dims, const TAxes &) noexcept {
+    constexpr auto positive_axes_v = positive_axes(TAxes{}, TDims::rank());
+    return dims.aggregate(empty_dims_alike_t<TDims>{},
+                          [&](auto result, auto dim, auto axis) {
+                              if constexpr (positive_axes_v.contains(axis)) {
+                                  return result;
+                              } else {
+                                  return result.append(dim);
+                              }
+                          });
 }
 
-template <size_t... Axes, class TShape>
-constexpr auto squeeze_shape(fixed_shape<Axes...> axes, TShape shape) noexcept {
-    if constexpr (is_fixed_dims_v<std::decay_t<TShape>>) {
-        return squeeze_shape_t<TShape, Axes...>{};
+template <Dimensions TDims, FixedDimensions TAxes, Dimension TDim>
+constexpr auto unsqueeze_dims(const TDims &dims, const TAxes &,
+                              const TDim &insert_dim) noexcept {
+    constexpr auto positive_axes_v = positive_axes(TAxes{}, TDims::rank());
+    return make_zeros_shape<TDims::rank() + TAxes::rank()>().aggregate(
+        std::make_tuple(empty_dims_alike_t<TDims>{}, dim_zero),
+        [&](auto acc, auto, auto axis) {
+            auto [last_result, offset] = acc;
+            if constexpr (positive_axes_v.contains(axis)) {
+                return std::make_tuple(last_result.append(insert_dim), offset);
+            } else {
+                return std::make_tuple(last_result.append(dims[offset]),
+                                       offset + dim_one);
+            }
+        },
+        [](auto acc) { return std::get<0>(acc); });
+}
+
+template <Dimensions TDimsA, Dimensions TDimsB>
+constexpr bool operator==([[maybe_unused]] const TDimsA &lhs,
+                          [[maybe_unused]] const TDimsB &rhs) noexcept {
+    if constexpr (TDimsA::rank() != TDimsB::rank()) {
+        return false;
     } else {
-        ranked_shape<shape.rank() - axes.rank()> new_shape;
-        size_t cnt = 0;
-        for (size_t axis = 0; axis < shape.rank(); axis++) {
-            if (!axes.contains(axis)) {
-                new_shape[cnt++] = shape[axis];
+        for (size_t i = 0; i < TDimsA::rank(); i++) {
+            if (lhs[i] != rhs[i]) {
+                return false;
             }
         }
-        return new_shape;
+        return true;
     }
 }
 
-template <size_t Rank, class TShape>
-constexpr auto squeeze_shape(ranked_shape<Rank> axes, TShape shape) noexcept {
-    ranked_shape<shape.rank() - axes.rank()> new_shape;
-    size_t cnt = 0;
-    for (size_t axis = 0; axis < shape.rank(); axis++) {
-        if (!axes.contains(axis)) {
-            new_shape[cnt++] = shape[axis];
-        }
-    }
-    return new_shape;
+template <Dimensions TIndex, Shape TShape>
+constexpr auto positive_index(const TIndex &index, const TShape &shape) {
+    static_assert(TIndex::rank() == TShape::rank(),
+                  "index and shape must have the same rank");
+    return generate_shape<TIndex::rank()>([&index, &shape](auto axis) {
+        return positive_index(index[axis], shape[axis]);
+    });
 }
 
-template <size_t... Axes, class TStrides>
-constexpr auto squeeze_strides(fixed_shape<Axes...> axes,
-                               TStrides strides) noexcept {
-    if constexpr (is_fixed_dims_v<std::decay_t<TStrides>>) {
-        return squeeze_strides_t<TStrides, Axes...>{};
-    } else {
-        ranked_strides<strides.rank() - axes.rank()> new_strides;
-        size_t cnt = 0;
-        for (size_t axis = 0; axis < strides.rank(); axis++) {
-            if (!axes.contains(axis)) {
-                new_strides[cnt++] = strides[axis];
-            }
-        }
-        return new_strides;
-    }
-}
-
-template <size_t Rank, class TShape>
-constexpr auto squeeze_strides(ranked_shape<Rank> axes,
-                               TShape strides) noexcept {
-    ranked_strides<strides.rank() - axes.rank()> new_strides;
-    size_t cnt = 0;
-    for (size_t axis = 0; axis < strides.rank(); axis++) {
-        if (!axes.contains(axis)) {
-            new_strides[cnt++] = strides[axis];
-        }
-    }
-    return new_strides;
-}
-
-template <size_t Rank, class TShape>
-constexpr auto unsqueeze_shape(ranked_shape<Rank> axes, TShape shape) noexcept {
-    ranked_shape<shape.rank() + axes.rank()> new_shape;
-    size_t cnt = 0;
-
-    for (size_t axis = 0; axis < new_shape.rank(); axis++) {
-        if (axes.contains(axis)) {
-            new_shape[axis] = 1;
-        } else {
-            new_shape[axis] = shape[cnt++];
-        }
-    }
-    return new_shape;
-}
-
-template <size_t Rank, class TShape>
-constexpr auto unsqueeze_strides(ranked_shape<Rank> axes,
-                                 TShape strides) noexcept {
-    ranked_strides<strides.rank() + axes.rank()> new_strides;
-    size_t cnt = 0;
-    for (size_t axis = 0; axis < new_strides.rank(); axis++) {
-        if (axes.contains(axis)) {
-            new_strides[axis] = strides[cnt];
-        } else {
-            new_strides[axis] = strides[cnt++];
-        }
-    }
-    return new_strides;
-}
-
-template <size_t RankA, size_t RankB>
-bool operator==(const ranked_shape<RankA> &lhs,
-                const ranked_shape<RankB> &rhs) noexcept {
-    return RankA == RankB && std::equal(lhs.begin(), lhs.end(), rhs.begin());
-}
-
-inline constexpr size_t positive_index(int64_t index, size_t dim) {
-    return size_t(index < 0 ? index + (int64_t)dim : index);
+template <Dimensions TAxes, Dimension TExtent>
+constexpr auto positive_axes(const TAxes &axes, const TExtent &dim) {
+    return generate_shape<TAxes::rank()>(
+        [&axes, &dim](auto axis) { return positive_index(axes[axis], dim); });
 }
 } // namespace nncase::ntt
+
+namespace std {
+// structured bindings support
+template <nncase::ntt::Dimensions TDims>
+struct tuple_size<TDims> : std::integral_constant<size_t, TDims::rank()> {};
+
+template <size_t I, template <class... TDims> class Derived,
+          nncase::ntt::Dimension... TDims>
+    requires(nncase::ntt::Dimensions<Derived<TDims...>>)
+struct tuple_element<I, Derived<TDims...>> {
+    using type = std::tuple_element_t<I, std::tuple<TDims...>>;
+};
+
+template <size_t I, nncase::ntt::Dimensions TDims>
+constexpr auto get(const TDims &dims) noexcept {
+    return dims.template at<I>();
+}
+} // namespace std

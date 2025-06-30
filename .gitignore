@@ -308,6 +308,7 @@ cmake-build-*
 *.ipynb_checkpoints*
 # Auto generated files
 # generated/
+/ntt/test/ctest/*generated*
 
 .mono/
 .history/

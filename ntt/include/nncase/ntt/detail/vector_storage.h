@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 #pragma once
+#include "../dimension.h"
 #include "../shape.h"
-#include "../utility.h"
-#include <vector>
+#include "../tensor_traits.h"
 
 namespace nncase::ntt {
-template <class T, size_t... Lanes> class basic_vector;
-template <class T, size_t... Lanes> struct vector_storage_traits;
+template <Scalar T, FixedShape Lanes> class basic_vector;
+template <Scalar T, FixedShape Lanes> struct vector_storage_traits;
 
 namespace detail {
 template <class TTraits, class TIndex> class vector_storage_element_proxy {
@@ -52,44 +52,50 @@ template <class TTraits, class TIndex> class vector_storage_element_proxy {
 };
 } // namespace detail
 
-template <class T, size_t Lane> struct vector_storage_traits<T, Lane> {
-    using buffer_type = std::array<T, Lane>;
+template <class T, FixedDimension Lane>
+struct vector_storage_traits<T, shape_t<Lane>> {
+    using buffer_type = std::array<T, Lane::value>;
     using element_type = T;
 
-    static constexpr T &element_at(std::array<T, Lane> &array,
-                                   ranked_shape<1> index) noexcept {
+    template <Dimensions TIndex>
+    static constexpr T &element_at(buffer_type &array,
+                                   const TIndex &index) noexcept {
+        static_assert(TIndex::rank() == 1, "Index rank must be 1");
         return array[index[0]];
     }
 
-    static constexpr const T &element_at(const std::array<T, Lane> &array,
-                                         ranked_shape<1> index) noexcept {
+    template <Dimensions TIndex>
+    static constexpr const T &element_at(const buffer_type &array,
+                                         const TIndex &index) noexcept {
+        static_assert(TIndex::rank() == 1, "Index rank must be 1");
         return array[index[0]];
     }
 };
 
-template <class T, size_t OuterLane, size_t... InnerLanes>
-struct vector_storage_traits<T, OuterLane, InnerLanes...> {
-    using buffer_type = std::array<basic_vector<T, InnerLanes...>, OuterLane>;
+template <class T, FixedDimension OuterLane, FixedDimension... InnerLanes>
+struct vector_storage_traits<T, shape_t<OuterLane, InnerLanes...>> {
+    using buffer_type =
+        std::array<basic_vector<T, shape_t<InnerLanes...>>, OuterLane::value>;
     using element_type = T;
 
-    template <size_t IndexRank>
-    static constexpr decltype(auto)
-    element_at(buffer_type &vec, ranked_shape<IndexRank> index) noexcept {
+    template <Dimensions TIndex>
+    static constexpr decltype(auto) element_at(buffer_type &vec,
+                                               const TIndex &index) noexcept {
         auto &inner_vector = vec[index[0]];
-        auto remaining_index = slice_index<IndexRank - 1>(index, 1);
-        if constexpr (IndexRank > 1) {
+        const auto remaining_index = index.template slice<1>();
+        if constexpr (TIndex::rank() > 1) {
             return inner_vector(remaining_index);
         } else {
             return inner_vector;
         }
     }
 
-    template <size_t IndexRank>
-    static constexpr decltype(auto)
-    element_at(const buffer_type &vec, ranked_shape<IndexRank> index) noexcept {
+    template <Dimensions TIndex>
+    static constexpr decltype(auto) element_at(const buffer_type &vec,
+                                               const TIndex &index) noexcept {
         auto &inner_vector = vec[index[0]];
-        auto remaining_index = slice_index<IndexRank - 1>(index, 1);
-        if constexpr (IndexRank > 1) {
+        const auto remaining_index = index.template slice<1>();
+        if constexpr (TIndex::rank() > 1) {
             return inner_vector(remaining_index);
         } else {
             return inner_vector;

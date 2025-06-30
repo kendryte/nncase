@@ -15,33 +15,26 @@
 #pragma once
 #include "../apply.h"
 #include "../loop.h"
+#include "../padding.h"
 #include "../utility.h"
 
 namespace nncase::ntt {
-
 namespace pad_detail {
-
-template <IsTensor TIn, IsTensor TOut, typename TElem, typename Paddings>
-void pad_impl(const TIn &input, TOut &&output, const TElem &padValue,
-              const Paddings &paddings) noexcept {
-    auto input_shape = input.shape();
-    constexpr auto rank = TIn::shape_type::rank();
-    static_assert(Paddings::rank() == rank * 2, "the paddings not support!");
-    auto output_shape = output.shape();
-    // constexpr auto input_strides = TIn::strides();
-    // constexpr auto output_strides = std::decay_t<TOut>::strides();
-    auto in_index = ranked_shape<rank>();
-    apply(output_shape, [&](auto out_index) {
+template <Tensor TIn, Tensor TOut, Paddings TPaddings, ScalarOrVector TElem>
+void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
+              const TElem &pad_alue) {
+    constexpr auto rank = TIn::shape().rank();
+    ntt::apply(output.shape(), [&](auto out_index) {
         bool dopad = false;
-        for (size_t i = 0; i < rank; i++) {
-            in_index[i] = out_index[i] - paddings.at(i * 2);
-            if (in_index[i] < 0 || in_index[i] >= input_shape.at(i)) {
+        const auto in_index = generate_shape<rank>([&](auto i) {
+            auto in_dim = out_index[i] - paddings[i].before;
+            if (in_dim < 0 || in_dim >= input.shape()[i]) {
                 dopad = true;
-                break;
             }
-        }
+            return in_dim;
+        });
         if (dopad) {
-            output(out_index) = padValue;
+            output(out_index) = pad_alue;
         } else {
             output(out_index) = input(in_index);
         }
@@ -52,13 +45,15 @@ void pad_impl(const TIn &input, TOut &&output, const TElem &padValue,
 /**
  * @brief pad
  *
- * @tparam Paddings   (dim 0 before, after, dim 1 before, after,...)
  * @param input input tensor.
  * @param output output tensor.
- * @param padValue pad value.
+ * @param pad_alue pad value.
  */
-template <typename Paddings, typename TIn, typename TOut, typename TElem>
-void pad(const TIn &input, TOut &&output, const TElem &padValue, const Paddings &paddings) noexcept {
-    pad_detail::pad_impl(input, output, padValue, paddings);
+template <Tensor TIn, class TOut, Paddings TPaddings,
+          ScalarOrVector TElem = typename TIn::element_type>
+    requires(bool(TIn::rank() == TPaddings::rank()))
+void pad(const TIn &input, TOut &&output, const TPaddings &paddings,
+         const TElem &pad_alue = {}) noexcept {
+    pad_detail::pad_impl(input, output, paddings, pad_alue);
 }
 } // namespace nncase::ntt

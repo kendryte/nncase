@@ -14,62 +14,82 @@
  */
 #pragma once
 #include "../shape.h"
-#include <cassert>
+#include "nncase/ntt/dimension.h"
+#include <type_traits>
 
 namespace nncase::ntt::shape_infer {
 namespace detail {
-template <class Index, class Shape>
-constexpr size_t reduced_index_by_shape_dim(const Index &src_index,
-                                            const Shape &shape, size_t axis) {
+template <size_t Axis, Shape TIndex, Shape TShape>
+constexpr auto reduced_index_by_shape_dim(const TIndex &src_index,
+                                          const TShape &shape) noexcept {
     const auto dims_ext = src_index.rank() - shape.rank();
-    return src_index[axis + dims_ext] >= shape[axis]
-               ? 0
-               : src_index[axis + dims_ext];
+    const auto axis_v = fixed_dim_v<Axis>;
+    const auto lhs = src_index[axis_v + dims_ext];
+    const auto rhs = shape[axis_v];
+    if constexpr (FixedDimension<std::decay_t<decltype(lhs)>> &&
+                  FixedDimension<std::decay_t<decltype(rhs)>>) {
+        return fixed_dim_v<(lhs >= rhs ? 0 : lhs)>;
+    } else {
+        return lhs >= rhs ? 0 : dim_value(lhs);
+    }
 }
 
-template <class Index, class Shape, class Axes>
-struct ranked_reduced_index_by_shape_impl;
+template <size_t InRank, FixedDimensions ReduceAxes, Shape TOutIndex>
+struct reduce_source_begin_index_impl {
+    template <size_t Axis, size_t ShrinkedDims, Shape TInIndex>
+    constexpr auto operator()(const TInIndex &in_index,
+                              const TOutIndex &out_index) noexcept {
+        auto [new_dim, new_shrinked_dims] = [&] {
+            if constexpr (ReduceAxes{}.contains(fixed_dim_v<Axis>)) {
+                return std::make_tuple(0, fixed_dim_v<ShrinkedDims + 1>);
+            } else {
+                return std::make_tuple(
+                    (dim_t)out_index.template at<Axis - ShrinkedDims>(),
+                    fixed_dim_v<ShrinkedDims>);
+            }
+        }();
 
-template <class Index, class Shape, size_t... Axes>
-struct ranked_reduced_index_by_shape_impl<Index, Shape,
-                                          std::index_sequence<Axes...>> {
-    using type = ranked_shape<Shape::rank()>;
-
-    static constexpr type value(const Index &src_index, const Shape &shape) {
-        return type{reduced_index_by_shape_dim(src_index, shape, Axes)...};
+        auto new_in_index = in_index.append(new_dim);
+        if constexpr (Axis + 1 < InRank) {
+            return operator()<Axis + 1, decltype(new_shrinked_dims)::value>(
+                new_in_index, out_index);
+        } else {
+            return new_in_index;
+        }
     }
 };
-
-template <class Index, class Shape, class Axes>
-struct fixed_reduced_index_by_shape_impl;
-
-template <class Index, class Shape, size_t... Axes>
-struct fixed_reduced_index_by_shape_impl<Index, Shape,
-                                         std::index_sequence<Axes...>> {
-    using type =
-        fixed_shape<reduced_index_by_shape_dim(Index{}, Shape{}, Axes)...>;
-
-    static constexpr type value(const Index &, const Shape &) { return type{}; }
-};
-
-template <class Index, class Shape>
-struct reduced_index_by_shape_impl
-    : ranked_reduced_index_by_shape_impl<
-          Index, Shape, std::make_index_sequence<Shape::rank()>> {};
-
-template <size_t... Indices, size_t... Dims>
-struct reduced_index_by_shape_impl<fixed_shape<Indices...>,
-                                   fixed_shape<Dims...>>
-    : fixed_reduced_index_by_shape_impl<
-          fixed_shape<Indices...>, fixed_shape<Dims...>,
-          std::make_index_sequence<sizeof...(Dims)>> {};
 } // namespace detail
 
 template <class Index, class Shape>
 constexpr auto reduced_index_by_shape(const Index &src_index,
-                                      const Shape &shape) {
-    return detail::reduced_index_by_shape_impl<Index, Shape>::value(src_index,
-                                                                    shape);
+                                      const Shape &shape) noexcept {
+    return generate_shape<Shape::rank()>([&](auto axis) {
+        return detail::reduced_index_by_shape_dim<axis>(src_index, shape);
+    });
 }
 
+template <size_t InRank, Shape TOutIndex, FixedDimensions TReduceAxes>
+constexpr auto reduce_source_index_template(
+    const TOutIndex &out_index,
+    [[maybe_unused]] const TReduceAxes &reduce_axes) noexcept {
+    // Keep dims
+    if constexpr (InRank == TOutIndex::rank()) {
+        return generate_shape<InRank>(
+            [&](auto axis) { return (dim_t)out_index[axis]; });
+    } else {
+        return detail::reduce_source_begin_index_impl<InRank, TReduceAxes,
+                                                      TOutIndex>{}
+            .template operator()<0, 0>(fixed_shape_v<>, out_index);
+    }
+}
+
+template <Shape TInShape, FixedDimensions TReduceAxes>
+constexpr auto sub_reduce_source_shape(
+    const TInShape &in_shape,
+    [[maybe_unused]] const TReduceAxes &reduce_axes) noexcept {
+    return generate_shape<TInShape::rank()>([&](auto axis) {
+        return ntt::where(TReduceAxes{}.contains(axis), in_shape[axis],
+                          dim_one);
+    });
+}
 } // namespace nncase::ntt::shape_infer

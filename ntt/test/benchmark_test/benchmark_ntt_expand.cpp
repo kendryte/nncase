@@ -31,13 +31,9 @@ void benchmark_ntt_expand(const std::string &mode) {
     constexpr size_t run_size = 2000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
-    using tensor_type2 =
-        ntt::tensor<float,
-                    ntt::fixed_shape<expand_n, expand_c, expand_h, expand_w>>;
-
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output;
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
+    auto ntt_output = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<expand_n, expand_c, expand_h, expand_w>);
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);
 
     // warm up
@@ -55,7 +51,7 @@ void benchmark_ntt_expand(const std::string &mode) {
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = tensor_type2::size() / P;
+    auto element_size = ntt_output.size() / P;
     std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
               << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size

@@ -13,10 +13,13 @@ internal unsafe struct KernelDescHeader
     public uint OutputAlign;
 
     [MarshalAs(UnmanagedType.U4)]
-    public uint Reserved0;
+    public uint LocalDataAlign;
 
     [MarshalAs(UnmanagedType.U8)]
     public ulong OutputPoolSize;
+
+    [MarshalAs(UnmanagedType.U8)]
+    public ulong LocalDataPoolSize;
 }
 
 internal sealed class LinkableKernelFunction : ILinkableFunction

@@ -56,7 +56,7 @@ public partial class Tensor<T>
             throw new ArgumentOutOfRangeException("starts", "the starts and shape must be equal to this tensor rank.");
         }
 
-        var start = (int)TensorUtilities.GetIndex(Strides, starts);
+        var start = (int)TensorUtilities.GetLinearOffset(Strides, starts);
         var size = (int)TensorUtilities.GetSize(shape, Strides, 1);
         size = Math.Min(size, Buffer.Length - start);
         var subBuffer = Buffer.Slice(start, size);
@@ -73,7 +73,7 @@ public partial class Tensor<T>
         var invPerms = perm.ToInts().Zip(Enumerable.Range(0, Rank)).OrderBy(p => p.First).Select(p => p.Second).ToArray();
         var permArr = perm.ToInts();
         var destDimensions = Enumerable.Range(0, Rank).Select(i => Dimensions[permArr[i]]).ToArray();
-        var destStrides = TensorUtilities.GetStrides(destDimensions);
+        var destStrides = TensorUtilities.GetDefaultStrides(destDimensions);
         void Apply(int axis, Span<int> index, int i, int j, Span<T> srcSpan, Span<T> destSpan)
         {
             if (axis < Rank - 1)
@@ -159,8 +159,8 @@ public partial class Tensor<T>
             {
                 var size = TensorUtilities.GetProduct(src.Dimensions, axis);
 
-                var srcSpan = src.Buffer.Slice((int)TensorUtilities.GetIndex(src.Strides, index), (int)size);
-                var destSpan = dest.Buffer.Slice((int)TensorUtilities.GetIndex(dest.Strides, index), (int)size);
+                var srcSpan = src.Buffer.Slice((int)TensorUtilities.GetLinearOffset(src.Strides, index), (int)size);
+                var destSpan = dest.Buffer.Slice((int)TensorUtilities.GetLinearOffset(dest.Strides, index), (int)size);
                 srcSpan.CopyTo(destSpan);
             }
             else

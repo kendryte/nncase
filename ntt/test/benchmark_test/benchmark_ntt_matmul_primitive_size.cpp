@@ -21,9 +21,9 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
     constexpr size_t run_num = 3000;
     // struct timespec start, end;
 
-    ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
-    ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
-    ntt::tensor<float, ntt::fixed_shape<M, N>> tc;
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, K>);
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<K, N>);
+    auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
 
@@ -38,7 +38,6 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     auto stop = std::chrono::high_resolution_clock::now();
-
 
     auto ops = M * N * K * 2;
     // auto t = get_time(&start, &end) / run_num;
@@ -59,29 +58,29 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K() {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     // struct timespec start, end;
 
-    ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
-    ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
-    ntt::tensor<float, ntt::fixed_shape<M, N>> tc;
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, K>);
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<K, N>);
+    auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, K / P>>
-        pa;
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<K / P, N>>
-        pb;
-    ntt::pack<1>(ta, pa);
-    ntt::pack<0>(tb, pb);
+    auto pa =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, K / P>);
+    auto pb =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<K / P, N>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape_v<1>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>,
+                           ntt::fixed_shape_v<>);
 
     // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape_v<1>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>,
+                           ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(tc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -106,27 +105,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M() {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     // struct timespec start, end;
 
-    ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
-    ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, K>);
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<K, N>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, K>>
-        pa;
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        pc;
-    ntt::pack<0>(ta, pa);
+    auto pa =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, K>);
+    auto pc =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape_v<0>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
+                           ntt::fixed_shape_v<>);
 
     // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape_v<0>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
+                           ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -151,27 +150,27 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_N() {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     // struct timespec start, end;
 
-    ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
-    ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, K>);
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<K, N>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<K, N / P>>
-        pb;
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        pc;
-    ntt::pack<1>(tb, pb);
+    auto pb =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<K, N / P>);
+    auto pc =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape<>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape_v<>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<1>,
+                           ntt::fixed_shape_v<>);
 
     // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape<>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape_v<>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<1>,
+                           ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -196,31 +195,30 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_N() {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     // struct timespec start, end;
 
-    ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
-    ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, K>);
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<K, N>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, K>>
-        pa;
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<K, N / P>>
-        pb;
-    alignas(32)
-        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<M / P, N / P>>
-            pc;
-    ntt::pack<0>(ta, pa);
-    ntt::pack<1>(tb, pb);
+    auto pa =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, K>);
+    auto pb =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<K, N / P>);
+    auto pc = ntt::make_tensor<ntt::vector<float, P, P>>(
+        ntt::fixed_shape_v<M / P, N / P>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<1>,
+                           ntt::fixed_shape_v<>);
 
     // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<1>,
+                           ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -245,31 +243,30 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K() {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     // struct timespec start, end;
 
-    ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
-    ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, K>);
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<K, N>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
-    alignas(32)
-        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<M / P, K / P>>
-            pa;
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<K / P, N>>
-        pb;
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        pc;
-    ntt::pack<0, 1>(ta, pa);
-    ntt::pack<0>(tb, pb);
+    auto pa = ntt::make_tensor<ntt::vector<float, P, P>>(
+        ntt::fixed_shape_v<M / P, K / P>);
+    auto pb =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<K / P, N>);
+    auto pc =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<0, 1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>,
+                           ntt::fixed_shape_v<>);
 
     // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>,
+                           ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -294,31 +291,30 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K_N() {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     // struct timespec start, end;
 
-    ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
-    ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, K>);
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<K, N>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, K / P>>
-        pa;
-    alignas(32)
-        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<K / P, N / P>>
-            pb;
-    alignas(32) ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        pc;
-    ntt::pack<1>(ta, pa);
-    ntt::pack<0, 1>(tb, pb);
+    auto pa =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, K / P>);
+    auto pb = ntt::make_tensor<ntt::vector<float, P, P>>(
+        ntt::fixed_shape_v<K / P, N / P>);
+    auto pc =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<0, 1>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<1>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<0, 1>,
+                           ntt::fixed_shape_v<>);
 
     // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<1>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<0, 1>,
+                           ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
@@ -343,33 +339,30 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     // struct timespec start, end;
 
-    ntt::tensor<float, ntt::fixed_shape<M, K>> ta;
-    ntt::tensor<float, ntt::fixed_shape<K, N>> tb;
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, K>);
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<K, N>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0.f);
-    alignas(32)
-        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<M / P, K / P>>
-            pa;
-    alignas(32)
-        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<K / P, N / P>>
-            pb;
-    alignas(32)
-        ntt::tensor<ntt::vector<float, P, P>, ntt::fixed_shape<M / P, N / P>>
-            pc;
-    ntt::pack<0, 1>(ta, pa);
-    ntt::pack<0, 1>(tb, pb);
+    auto pa = ntt::make_tensor<ntt::vector<float, P, P>>(
+        ntt::fixed_shape_v<M / P, K / P>);
+    auto pb = ntt::make_tensor<ntt::vector<float, P, P>>(
+        ntt::fixed_shape_v<K / P, N / P>);
+    auto pc = ntt::make_tensor<ntt::vector<float, P, P>>(
+        ntt::fixed_shape_v<M / P, N / P>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<0, 1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<0, 1>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<0, 1>,
+                           ntt::fixed_shape_v<>);
 
     // clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     auto start = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape<0, 1>{},
-                           ntt::fixed_shape<0>{}, ntt::fixed_shape<0, 1>{},
-                           ntt::fixed_shape<0>{});
+        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
+                           ntt::fixed_shape_v<>, ntt::fixed_shape_v<0, 1>,
+                           ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
     }
     // clock_gettime(CLOCK_MONOTONIC_RAW, &end);
