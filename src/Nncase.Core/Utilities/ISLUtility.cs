@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using IntegerSetLibrary;
+using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
@@ -13,78 +14,113 @@ namespace Nncase.Utilities;
 
 public static class ISLUtility
 {
-    public static Isl.set AsDomain(Shape shape)
+    public static Isl.set ToDomain(Shape shape, out HashSet<DimVar> dimVars)
     {
-        var param = new List<string>();
+        dimVars = new(IR.ExprCollector.Collect(shape).OfType<DimVar>().ToArray());
+        var constraints = dimVars.Select(d => $"{checked((int)d.Metadata.Range!.Value.Min)} <= {d.Name} <= {checked((int)d.Metadata.Range!.Value.Max)}").ToList();
+        var dims = shape.Select((d, i) => $"d{i}").ToArray();
+        for (int i = 0; i < dims.Length; i++)
+        {
+            constraints.Add($"0 <= {dims[i]} < {shape[i]}");
+        }
+
+        return new Isl.set(Isl.ctx.Current, $"[{string.Join(',', dimVars)}] -> {{ [{string.Join(',', dims)}] : {string.Join(" and ", constraints)} }}");
+    }
+
+    public static Isl.set ToParametricDomain(Shape shape, out Dictionary<DimVar, Dimension> paramMap)
+    {
+        paramMap = new Dictionary<DimVar, Dimension>();
         var dims = new List<string>();
+        var parameters = new List<string>();
         var constraints = new List<string>();
         for (int i = 0; i < shape.Rank; i++)
         {
-            var dim = shape[i];
-            switch (dim)
-            {
-                case DimConst c:
-                    constraints.Add($"0 <= d{i} < {c.Value}");
-                    break;
-                case DimVar v:
-                    var paramName = v.Name;
-                    param.Add(paramName);
-                    constraints.Add($"0 <= d{i} < {paramName}");
-                    var rg = dim.Metadata.Range!;
-                    constraints.Add($"{(int)rg.Value.Min} <= {paramName} <= {(int)rg.Value.Max}");
-                    break;
-            }
-
             dims.Add($"d{i}");
+            var dim = shape[i];
+            if (dim is DimConst dimConst)
+            {
+                constraints.Add($"0 <= d{i} < {dimConst.Value}");
+            }
+            else
+            {
+                var range = dim.Metadata!.Range!;
+                parameters.Add($"D{i}");
+                var dimVar = new DimVar($"D{i}")
+                {
+                    Metadata = new()
+                    {
+                        Range = range,
+                    },
+                };
+                paramMap.Add(dimVar, shape[i]);
+                constraints.Add($"{range.Value.Min} <= D{i} <= {range.Value.Max}");
+                constraints.Add($"0 <= d{i} < D{i}");
+            }
         }
 
-        return new Isl.set(Isl.ctx.Current, $"[{string.Join(", ", param)}] -> {{ [{string.Join(", ", dims)}] : {string.Join(" and ", constraints)} }}");
+        return new Isl.set(Isl.ctx.Current, $"[{string.Join(',', parameters)}] -> {{ [{string.Join(',', dims)}] : {string.Join(" and ", constraints)} }}");
     }
 
-    public static Dimension AsDimension(this Isl.pw_aff pa, IReadOnlyDictionary<string, Dimension> feedDict)
+    public static Dimension ToDimension(this Isl.pw_aff pa, IReadOnlyDictionary<string, Dimension> feedDict, string[]? dimNames = null)
     {
-        var build = Isl.ast_build.from_context(pa.domain_space().universe_set());
+        var build = Isl.ast_build.from_context(dimNames is not null ? new Isl.set(Isl.ctx.Current, $"{{ [{string.Join(',', dimNames)}] }}") : pa.domain_space().universe_set());
         var astExpr = build.expr_from(pa);
-        return AsDimension(astExpr, feedDict);
+        return ToDimension(astExpr, feedDict);
     }
 
-    public static Dimension AsDimension(this Isl.ast_expr astExpr, IReadOnlyDictionary<string, Dimension> feedDict)
+    public static Dimension ToDimension(this Isl.ast_expr astExpr, IReadOnlyDictionary<string, Dimension> feedDict)
     {
         return new AstExprToExprConverter(feedDict).Visit(astExpr);
     }
 
-    public static Isl.pw_multi_aff AsPwMultiAff(this Dimension dim, out HashSet<DimVar> dimVars)
+    public static Isl.set ToSet(this Dimension dim, out HashSet<DimVar> dimVars)
     {
         dimVars = new(IR.ExprCollector.Collect(dim).OfType<DimVar>().ToArray());
-        return new Isl.pw_multi_aff(Isl.ctx.Current, $"[{string.Join(',', dimVars)}] -> {{ [{dim}] }}");
+        var constraints = dimVars.Select(d =>
+        {
+            if (d.Metadata.Range is ValueRange<double> range)
+            {
+                if (range.IsFull)
+                {
+                    return "true";
+                }
+                else
+                {
+                    return $"{checked((int)range.Min)} <= {d.Name} <= {checked((int)range.Max)}";
+                }
+            }
+
+            return "true";
+        }).ToArray();
+        return new Isl.set(Isl.ctx.Current, $"[{string.Join(',', dimVars)}] -> {{ [{dim}] : {string.Join(" and ", constraints)} }}");
     }
 
-    public static Isl.pw_multi_aff AsPwMultiAff(this Shape shape, out HashSet<DimVar> dimVars)
+    public static Isl.set ToSet(this ReadOnlySpan<Dimension> dims, out HashSet<DimVar> dimVars)
     {
         dimVars = new HashSet<DimVar>();
-        var affs = shape.Select(d =>
+        var sets = dims.AsValueEnumerable().Select(d =>
         {
-            var aff = AsPwMultiAff(d, out var vars);
+            var aff = ToSet(d, out var vars);
             return (aff, vars);
         }).ToArray();
-        dimVars = new HashSet<DimVar>(affs.SelectMany(a => a.vars));
-        return affs.Aggregate(new Isl.pw_multi_aff(Isl.ctx.Current, "{ [] }"), (acc, value) => acc.flat_range_product(value.aff));
+        dimVars = new HashSet<DimVar>(sets.SelectMany(a => a.vars));
+        return sets.Aggregate(new Isl.set(Isl.ctx.Current, "{ [] }"), (acc, value) => acc.flat_product(value.aff));
     }
 
-    public static Shape Simplify(Shape shape)
+    public static Dimension[] RoundTrip(this ReadOnlySpan<Dimension> dims)
     {
-        var pma = shape.AsPwMultiAff(out var dimVars);
-        pma = pma.set_tuple_id(Isl.dim_type.in_, "dummy");
+        var pma = dims.ToSet(out var dimVars).as_pw_multi_aff();
         var feedDict = dimVars.ToDictionary(v => v.Name, v => (Dimension)v);
-        var build = Isl.ast_build.from_context(new Isl.set(ctx.Current, "{ dummy[] }"));
-        var access = build.access_from(pma);
-        var dimensions = new Dimension[shape.Rank];
-        for (int i = 0; i < shape.Rank; i++)
+        var build = Isl.ast_build.from_context(pma.domain_space().universe_set());
+
+        var dimensions = new Dimension[dims.Length];
+        for (int i = 0; i < dims.Length; i++)
         {
-            dimensions[i] = access.op_arg(1 + i).AsDimension(feedDict);
+            var astExpr = build.expr_from(pma.at(i));
+            dimensions[i] = astExpr.ToDimension(feedDict);
         }
 
-        return new RankedShape(dimensions);
+        return dimensions;
     }
 }
 

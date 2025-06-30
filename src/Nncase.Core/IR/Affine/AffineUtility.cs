@@ -85,7 +85,7 @@ public static class AffineUtility
     }
 #endif
 
-    public static Isl.map AsIslMap(AffineMap map)
+    public static Isl.map AsMap(AffineMap map)
     {
         var domains = string.Join(", ", Enumerable.Range(0, map.Domains.Length).Select(i => $"d{i}"));
         if (map.Symbols.Length > 0)

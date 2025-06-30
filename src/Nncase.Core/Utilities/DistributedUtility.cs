@@ -354,9 +354,9 @@ public static class DistributedUtility
         }).Average();
     }
 
-    public static TensorType GetDividedTensorType(DistributedType distributedType)
+    public static TensorType GetDividedTensorType(DistributedType distributedType, bool maxShape = false)
     {
-        var (tiles, _) = GetDividedTile(distributedType);
+        var (tiles, _) = GetDividedTile(distributedType, maxShape);
         return distributedType.TensorType with { Shape = tiles };
     }
 
@@ -405,11 +405,11 @@ public static class DistributedUtility
         return (offset, shape);
     }
 
-    private static (RankedShape Tile, RankedShape Shape) GetDividedTile(DistributedType distributedType)
+    private static (RankedShape Tile, RankedShape Shape) GetDividedTile(DistributedType distributedType, bool maxShape = false)
     {
-        var shape = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
-        var tiles = CompilerServices.GetMaxShape(distributedType.TensorType.Shape);
-        for (var d = 0; d < shape.Length; d++)
+        Dimension[] shape = maxShape ? CompilerServices.GetMaxShape(distributedType.TensorType.Shape).Select(i => (Dimension)i).ToArray() : distributedType.TensorType.Shape.ToArray();
+        Dimension[] tiles = maxShape ? CompilerServices.GetMaxShape(distributedType.TensorType.Shape).Select(i => (Dimension)i).ToArray() : distributedType.TensorType.Shape.ToArray();
+        for (var d = 0; d < shape.Rank; d++)
         {
             if (distributedType.AxisPolices.Count > d && distributedType.AxisPolices[d] is SBPSplit split)
             {
@@ -418,6 +418,6 @@ public static class DistributedUtility
             }
         }
 
-        return (tiles, shape);
+        return (new(tiles), new(shape));
     }
 }

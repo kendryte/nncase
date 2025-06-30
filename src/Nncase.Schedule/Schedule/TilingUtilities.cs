@@ -5,32 +5,78 @@ using Google.OrTools.ConstraintSolver;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.Utilities;
 using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule;
 
 public static class TilingUtilities
 {
-    public static long[] GetBufferShape(Expr buffer)
+    public static Shape GetBufferShape(Expr buffer, bool maxShape)
     {
         return buffer.CheckedType switch
         {
-            TensorType t => t.Shape.ToValueArray(),
-            DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt).Shape.ToValueArray(),
+            TensorType t => t.Shape,
+            DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt, maxShape).Shape,
             _ => throw new NotSupportedException(),
         };
     }
 
-    public static Isl.set InferDomainBounds(Isl.set[] bufferShapes, Isl.map[] accessMaps)
+    public static (Isl.set DomainSet, bool[] DomainDynamic, long[] DomainBoundValues, Dimension[] DomainBoundExprs) InferDomainBounds(Expr[] exprs, Isl.set[] shapeDomains, Isl.map[] accessMaps, HashSet<DimVar> dimVars)
     {
-        Isl.set? domain = null;
-        for (int i = 0; i < accessMaps.Length; i++)
+        var reversedAccessMaps = accessMaps.Zip(shapeDomains).Select(pair => pair.First.reverse().intersect_domain(pair.Second)).ToArray();
+        Isl.map domainMap = null!;
+        var shapeExprMap = new Dictionary<string, Dimension>();
+        for (int i = 0; i < shapeDomains.Length; i++)
         {
-            var bufferMap = accessMaps[i].intersect_range(bufferShapes[i]);
-            domain = domain is null ? bufferMap.domain() : domain.intersect(bufferMap.domain());
+            var reversedAccess = reversedAccessMaps[i];
+
+            // foreach (var ((k, v), paramIndex) in bufferDomainParamMaps[i].Select((p, i) => (p, i)))
+            // {
+            //     if (int.Parse(k.Name[1..]) is int j)
+            //     {
+            //         var newDimName = $"D{i}_{j}";
+            //         shapeExprMap.Add(newDimName, new IR.DimAt(new IR.Shapes.ShapeOf(exprs[i]), j));
+            //         reversedAccess = reversedAccess.set_dim_id(Isl.dim_type.param, (uint)paramIndex, newDimName);
+            //     }
+            // }
+
+            domainMap = domainMap is null ? reversedAccess : domainMap.flat_domain_product(reversedAccess!);
+
+            for (int j = 0; j < shapeDomains[i].n_dim(); j++)
+            {
+                domainMap = domainMap.set_dim_name(Isl.dim_type.in_, (uint)(i + j), $"d{i}_{j}");
+                shapeExprMap.Add($"d{i}_{j}", new IR.DimAt(new IR.Shapes.ShapeOf(exprs[i]), j));
+            }
         }
 
-        return domain!;
+        var domainSet = domainMap.range();
+        var domainBoundMpas = domainSet.max_multi_pw_aff();
+        var domainDynamic = new bool[domainSet.n_dim()];
+        var domainBoundValues = new long[domainSet.n_dim()];
+        var domainBoundExprs = new Dimension[domainSet.n_dim()];
+
+        for (int i = 0; i < domainSet.n_dim(); i++)
+        {
+            var boundMpa = domainBoundMpas.at(i);
+            domainDynamic[i] = !boundMpa.is_cst();
+            if (domainDynamic[i])
+            {
+                var dimExpr = ISLUtility.ToDimension(domainMap.max_multi_pw_aff().at(i), shapeExprMap, shapeExprMap.Keys.ToArray());
+                dimExpr.Metadata = new()
+                {
+                    Range = new(boundMpa.min_val().num_si() + 1, boundMpa.max_val().num_si() + 1),
+                };
+                domainBoundExprs[i] = dimExpr;
+                domainBoundValues[i] = boundMpa.max_val().num_si() + 1;
+            }
+            else
+            {
+                domainBoundExprs[i] = domainBoundValues[i] = boundMpa.max_val().num_si() + 1;
+            }
+        }
+
+        return (domainSet, domainDynamic, domainBoundValues, domainBoundExprs);
     }
 
     public static long[] InferDomainBounds(long[][] bufferShapes, AffineMap[] accessMaps)
