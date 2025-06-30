@@ -12,6 +12,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="ISLSharp" Version="1.0.1" />
     <PackageVersion Include="Avalonia" Version="11.0.2" />
     <PackageVersion Include="Avalonia.Desktop" Version="11.0.2" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="11.0.2" />
