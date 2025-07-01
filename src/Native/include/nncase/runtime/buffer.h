@@ -23,9 +23,9 @@ BEGIN_NS_NNCASE_RUNTIME
 class buffer_node;
 class buffer_allocator;
 class host_buffer_slice;
+class device_buffer_slice;
 
 using buffer_t = object_t<buffer_node>;
-
 class NNCASE_API buffer_node : public object_node {
     DEFINE_OBJECT_KIND(object_node, object_buffer);
 
@@ -67,6 +67,7 @@ class NNCASE_API buffer_slice {
     }
 
     result<host_buffer_slice> as_host() const noexcept;
+    result<device_buffer_slice> as_device() const noexcept;
     result<void> copy_to(const buffer_slice &dest, datatype_t datatype,
                          std::span<const size_t> shape,
                          std::span<const size_t> src_strides,
