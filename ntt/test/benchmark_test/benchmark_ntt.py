@@ -345,30 +345,30 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                           'ranked_reduceAxis2_packAxis2': '1190',
                                           'ranked_reduceAxis2_packAxis1': '1050',
                                           'ranked_reduceAxis1_packAxis2': '1070',},
-                              'layernorm': {'fixed_reduceAxis1_noPack': '5320',
-                                          'fixed_reduceAxis2_noPack': '3970',
-                                          'fixed_reduceAxis1_packAxis1': '780',
-                                          'fixed_reduceAxis2_packAxis2': '960',
-                                          'fixed_reduceAxis2_packAxis1': '510',
-                                          'fixed_reduceAxis1_packAxis2': '710',
-                                          'ranked_reduceAxis1_noPack': '3660',
-                                          'ranked_reduceAxis2_noPack': '5850',
-                                          'ranked_reduceAxis1_packAxis1': '1700',
-                                          'ranked_reduceAxis2_packAxis2': '5860',
-                                          'ranked_reduceAxis2_packAxis1': '1870',
-                                          'ranked_reduceAxis1_packAxis2': '1700',},
-                              'rmsnorm': {'fixed_reduceAxis1_noPack': '5390',
-                                          'fixed_reduceAxis2_noPack': '3960',
-                                          'fixed_reduceAxis1_packAxis1': '970',
-                                          'fixed_reduceAxis2_packAxis2': '940',
-                                          'fixed_reduceAxis2_packAxis1': '510',
-                                          'fixed_reduceAxis1_packAxis2': '710',
-                                          'ranked_reduceAxis1_noPack': '3680',
-                                          'ranked_reduceAxis2_noPack': '5970',
-                                          'ranked_reduceAxis1_packAxis1': '1690',
-                                          'ranked_reduceAxis2_packAxis2': '5780',
-                                          'ranked_reduceAxis2_packAxis1': '1870',
-                                          'ranked_reduceAxis1_packAxis2': '1690',},
+                              'layernorm': {'fixed_reduceAxis1_noPack':'5320',
+                                            'fixed_reduceAxis1_packAxis1':'720',
+                                            'fixed_reduceAxis1_packAxis2':'720',
+                                            'fixed_reduceAxis2_noPack':'3600',
+                                            'fixed_reduceAxis2_packAxis1':'520',
+                                            'fixed_reduceAxis2_packAxis2':'930',
+                                            'ranked_reduceAxis1_noPack':'2780',
+                                            'ranked_reduceAxis1_packAxis1':'720',
+                                            'ranked_reduceAxis1_packAxis2':'710',
+                                            'ranked_reduceAxis2_noPack':'1890',
+                                            'ranked_reduceAxis2_packAxis1':'510',
+                                            'ranked_reduceAxis2_packAxis2':'960',},
+                              'rmsnorm': {'fixed_reduceAxis1_noPack':'5370',
+                                          'fixed_reduceAxis1_packAxis1':'710',
+                                          'fixed_reduceAxis1_packAxis2':'700',
+                                          'fixed_reduceAxis2_noPack':'3920',
+                                          'fixed_reduceAxis2_packAxis1':'520',
+                                          'fixed_reduceAxis2_packAxis2':'930',
+                                          'ranked_reduceAxis1_noPack':'2760',
+                                          'ranked_reduceAxis1_packAxis1':'700',
+                                          'ranked_reduceAxis1_packAxis2':'710',
+                                          'ranked_reduceAxis2_noPack':'1880',
+                                          'ranked_reduceAxis2_packAxis1':'510',
+                                          'ranked_reduceAxis2_packAxis2':'940',},
                               }
 
     def run(self):
@@ -537,30 +537,30 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                           'ranked_reduceAxis2_packAxis2': '24470', 
                                           'ranked_reduceAxis2_packAxis1': '23760', 
                                           'ranked_reduceAxis1_packAxis2': '23760',},
-                              'layernorm': {'fixed_reduceAxis1_noPack': '16680', 
-                                          'fixed_reduceAxis2_noPack': '13240', 
-                                          'fixed_reduceAxis1_packAxis1': '22760', 
-                                          'fixed_reduceAxis2_packAxis2': '20570', 
-                                          'fixed_reduceAxis2_packAxis1': '17830', 
-                                          'fixed_reduceAxis1_packAxis2': '22740',
-                                          'ranked_reduceAxis1_noPack': '19240', 
-                                          'ranked_reduceAxis2_noPack': '39370', 
-                                          'ranked_reduceAxis1_packAxis1': '25430', 
-                                          'ranked_reduceAxis2_packAxis2': '46210', 
-                                          'ranked_reduceAxis2_packAxis1': '27540', 
-                                          'ranked_reduceAxis1_packAxis2': '25410',},
-                              'rmsnorm': {'fixed_reduceAxis1_noPack': '16680', 
-                                          'fixed_reduceAxis2_noPack': '13260', 
-                                          'fixed_reduceAxis1_packAxis1': '22750', 
-                                          'fixed_reduceAxis2_packAxis2': '20580', 
-                                          'fixed_reduceAxis2_packAxis1': '17840', 
-                                          'fixed_reduceAxis1_packAxis2': '22750',
-                                          'ranked_reduceAxis1_noPack': '19270', 
-                                          'ranked_reduceAxis2_noPack': '39350', 
-                                          'ranked_reduceAxis1_packAxis1': '25420', 
-                                          'ranked_reduceAxis2_packAxis2': '46230', 
-                                          'ranked_reduceAxis2_packAxis1': '27550', 
-                                          'ranked_reduceAxis1_packAxis2': '25410',},
+                              'layernorm': {'fixed_reduceAxis1_noPack':'16700',
+                                            'fixed_reduceAxis1_packAxis1':'22750',
+                                            'fixed_reduceAxis1_packAxis2':'22740',
+                                            'fixed_reduceAxis2_noPack':'13240',
+                                            'fixed_reduceAxis2_packAxis1':'17840',
+                                            'fixed_reduceAxis2_packAxis2':'20560',
+                                            'ranked_reduceAxis1_noPack':'17050',
+                                            'ranked_reduceAxis1_packAxis1':'23160',
+                                            'ranked_reduceAxis1_packAxis2':'23180',
+                                            'ranked_reduceAxis2_noPack':'13930',
+                                            'ranked_reduceAxis2_packAxis1':'22000',
+                                            'ranked_reduceAxis2_packAxis2':'23810',},
+                              'rmsnorm': {'fixed_reduceAxis1_noPack':'16680',
+                                          'fixed_reduceAxis1_packAxis1':'22750',
+                                          'fixed_reduceAxis1_packAxis2':'22740',
+                                          'fixed_reduceAxis2_noPack':'13240',
+                                          'fixed_reduceAxis2_packAxis1':'17840',
+                                          'fixed_reduceAxis2_packAxis2':'20560',
+                                          'ranked_reduceAxis1_noPack':'17050',
+                                          'ranked_reduceAxis1_packAxis1':'23180',
+                                          'ranked_reduceAxis1_packAxis2':'23160',
+                                          'ranked_reduceAxis2_noPack':'13950',
+                                          'ranked_reduceAxis2_packAxis1':'22000',
+                                          'ranked_reduceAxis2_packAxis2':'23800',},
                               }
 
     def run(self):
@@ -642,14 +642,10 @@ if __name__ == '__main__':
     ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path)
     ntt_x86_64.run()
 
-    # 1.2 riscv64
-    ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path)
-    ntt_riscv64.run()
-
     # 1.3 merge benchmark list
     benchmark_list = []
     for i in range(len(ntt_x86_64.benchmark_list)):
-        item = {**ntt_x86_64.benchmark_list[i], **ntt_riscv64.benchmark_list[i]}
+        item = {**ntt_x86_64.benchmark_list[i]}
         benchmark_list.append(item)
 
     # 1.4 generate md
@@ -666,11 +662,4 @@ if __name__ == '__main__':
     md_file = ntt_matmul_x86_64_report_file('benchmark_ntt_matmul_x86_64.md')
     generate_benchmark_ntt_md(benchmark_list, 'pack_mode', md_file)
 
-    # 2.2 riscv64
-    benchmark_list = []
-    ntt_matmul_riscv64 = BenchmarkNTTMatmul_riscv64(args.riscv64_target, args.riscv64_path)
-    ntt_matmul_riscv64.run()
-    benchmark_list = sorted(ntt_matmul_riscv64.benchmark_list, key=lambda d: (d['pack_mode']))
-    md_file = ntt_matmul_riscv64_report_file('benchmark_ntt_matmul_riscv64.md')
-    generate_benchmark_ntt_md(benchmark_list, 'pack_mode', md_file)
 
