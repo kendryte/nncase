@@ -70,7 +70,9 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.PackReshape>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackSlice>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackGather>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackCompare>(rank, lane);
+
+        // FIXME: reopen when vector<bool> is ready.
+        // pass.Add<Passes.Rules.NTT.PackCompare>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackConcat>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackExpand>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackWhere>(rank, lane);
