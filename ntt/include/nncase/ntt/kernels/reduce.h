@@ -59,7 +59,7 @@ class reduce_impl {
 
     static constexpr TInElem initial_value() noexcept {
         if constexpr (Op == reduce_op::mean || Op == reduce_op::sum) {
-            return (TInElem)0;
+            return TInElem{};
         } else if constexpr (Op == reduce_op::min) {
             return (TInElem)std::numeric_limits<TOutScalar>::max();
         } else if constexpr (Op == reduce_op::max) {
