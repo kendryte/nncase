@@ -642,10 +642,14 @@ if __name__ == '__main__':
     ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path)
     ntt_x86_64.run()
 
+    # 1.2 riscv64
+    ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path)
+    ntt_riscv64.run()
+
     # 1.3 merge benchmark list
     benchmark_list = []
     for i in range(len(ntt_x86_64.benchmark_list)):
-        item = {**ntt_x86_64.benchmark_list[i]}
+        item = {**ntt_x86_64.benchmark_list[i], **ntt_riscv64.benchmark_list[i]}
         benchmark_list.append(item)
 
     # 1.4 generate md
@@ -662,4 +666,11 @@ if __name__ == '__main__':
     md_file = ntt_matmul_x86_64_report_file('benchmark_ntt_matmul_x86_64.md')
     generate_benchmark_ntt_md(benchmark_list, 'pack_mode', md_file)
 
+    # 2.2 riscv64
+    benchmark_list = []
+    ntt_matmul_riscv64 = BenchmarkNTTMatmul_riscv64(args.riscv64_target, args.riscv64_path)
+    ntt_matmul_riscv64.run()
+    benchmark_list = sorted(ntt_matmul_riscv64.benchmark_list, key=lambda d: (d['pack_mode']))
+    md_file = ntt_matmul_riscv64_report_file('benchmark_ntt_matmul_riscv64.md')
+    generate_benchmark_ntt_md(benchmark_list, 'pack_mode', md_file)
 
