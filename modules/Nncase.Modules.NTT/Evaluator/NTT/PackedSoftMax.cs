@@ -80,6 +80,6 @@ public sealed class PackedSoftMaxEvaluator : ITypeInferencer<PackedSoftmax>, ICo
             throw new InvalidOperationException();
         }
 
-        return new DistributedType(tensorType, input.AxisPolices, input.Placement);
+        return new DistributedType(tensorType, input.AxisPolicies, input.Placement);
     }
 }

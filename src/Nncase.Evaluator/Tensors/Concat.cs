@@ -194,7 +194,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
 
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var sbps = inputs.OfType<DistributedType>().Select(d => d.AxisPolices[i]).ToArray();
+            var sbps = inputs.OfType<DistributedType>().Select(d => d.AxisPolicies[i]).ToArray();
             if (sbps.Any(sbp => sbp is SBPSplit split && i == axis))
             {
                 return new InvalidType("not support distribute on concat axis");
