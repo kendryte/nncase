@@ -36,7 +36,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class pack_impl {
         const auto conti_dims_output =
             contiguous_dims(output.shape(), output.strides());
 
-        if (axes.rank() == 2 && axes[0_dim] + 1 == axes[1_dim] &&
+        if (TAxes::rank() == 2 && axes[0_dim] + 1 == axes[1_dim] &&
             conti_dims_input == in_rank && conti_dims_output == out_rank) {
             ntt::u_pack2d(input, axes, output);
         } else {
