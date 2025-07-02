@@ -318,6 +318,34 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
     }
 };
 
+template <Tensor TIn, Tensor TOut, size_t AxesRank>
+class u_unpack_impl<TIn, TOut, AxesRank, true> {
+  public:
+    using TVec = typename TIn::element_type;
+
+    template <FixedDimensions TAxes>
+    constexpr void operator()(const TIn &input, TOut &output,
+                              const TAxes &axes) {
+        constexpr auto rank = TIn::rank();
+        constexpr auto elem_rank = TVec::rank();
+        constexpr auto elem_shape = TVec::shape();
+
+        const auto domain = input.shape().concat(elem_shape);
+        apply(domain, [&](auto index) {
+            const auto in_index = index.template slice<0, rank>();
+            const auto elem_index = index.template slice<rank, elem_rank>();
+            const auto out_index_template = index.template slice<0, rank>();
+            const auto out_index =
+                axes.aggregate(out_index_template, [&](const auto cnt_out_index,
+                                                       auto axis, auto i) {
+                    return cnt_out_index.template replace_at<axis>(
+                        cnt_out_index[axis] * elem_shape[i] + index[rank + i]);
+                });
+            output(out_index) = input(in_index)(elem_index);
+        });
+    }
+};
+
 #if 0
 template <size_t axis_stride, class T1, size_t PackAxis>
 class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
