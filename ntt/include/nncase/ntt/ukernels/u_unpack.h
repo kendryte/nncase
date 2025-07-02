@@ -19,6 +19,11 @@
 
 namespace nncase::ntt {
 namespace ukernels {
+
+template <class T1, class T2, bool Arch> struct u_unpack_policy {
+    static constexpr size_t unroll = 2;
+};
+
 template <Tensor TIn, Tensor TOut, size_t AxesRank, bool Arch>
 class u_unpack_impl {
   public:
