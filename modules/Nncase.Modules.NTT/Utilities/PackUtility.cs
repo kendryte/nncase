@@ -184,7 +184,6 @@ public static class PackUtility
 
     private static Dimension PadForAlign(Dimension dim, int align)
     {
-        var mod = dim % align;
-        return Dimension.Select(mod, 0, 0, align - mod);
+        return Dimension.AlignUp(dim, align) - dim;
     }
 }

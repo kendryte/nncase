@@ -57,11 +57,22 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     {
         var domainRank = parentDomain.dim(Isl.dim_type.set);
         var shapeRank = access.dim(Isl.dim_type.out_);
-        var partialTiledDomain = tiledDomain;
-        partialTiledDomain = partialTiledDomain.eliminate(Isl.dim_type.set, dim, (uint)(domainRank - dim));
-        partialTiledDomain = parentDomain.intersect(partialTiledDomain);
-        var bufferPartialTiledDomain = access.intersect_domain(partialTiledDomain).range();
-        var bufferShapeMpa = bufferPartialTiledDomain.max_multi_pw_aff().add_constant(1).sub(bufferPartialTiledDomain.min_multi_pw_aff());
+
+        var parentMaxMpa = parentDomain.max_multi_pw_aff();
+        var parentMinMpa = parentDomain.min_multi_pw_aff();
+        var tiledMaxMpa = tiledDomain.max_multi_pw_aff();
+        var tiledMinMpa = tiledDomain.min_multi_pw_aff();
+        var accessMpa = new Isl.multi_pw_aff(access.as_pw_multi_aff());
+
+        for (int i = (int)dim; i < domainRank; i++)
+        {
+            tiledMaxMpa = tiledMaxMpa.set_at(i, parentMaxMpa.at(i));
+            tiledMinMpa = tiledMinMpa.set_at(i, parentMinMpa.at(i));
+        }
+
+        var bufferMaxMpa = accessMpa.pullback(tiledMaxMpa.add_constant(1));
+        var bufferMinMpa = accessMpa.pullback(tiledMinMpa);
+        var bufferShapeMpa = bufferMaxMpa.sub(bufferMinMpa);
         var dimensions = new Dimension[shapeRank];
         for (int i = 0; i < bufferShapeMpa.size(); i++)
         {
@@ -465,7 +476,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         bool innerAllocated = false;
         if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))
         {
-            var subOffset = new Dimension[offset.Rank];
+            var subOffset = new Dimension[offset.Length];
             for (int j = 0; j < subOffset.Length; j++)
             {
                 var x = offset[j] - parentOffsets[j];

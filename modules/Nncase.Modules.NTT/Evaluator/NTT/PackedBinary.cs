@@ -47,6 +47,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
             BinaryOp.Sub => a - b,
             BinaryOp.Mul => a * b,
             BinaryOp.Div => a / b,
+            BinaryOp.Max => OrtKI.Max([a, b]),
             _ => throw new ArgumentOutOfRangeException(target.BinaryOp.ToString()),
         };
 

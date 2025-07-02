@@ -36,7 +36,7 @@ public interface ITileable
 
     /// <summary>
     /// Gets the domain bounds.
-    /// todo using isl map to get when use it. and we actually need to 
+    /// todo using isl map to get when use it. and we actually need to.
     /// </summary>
     ImmutableArray<Dimension> DomainBoundExprs { get; }
 }

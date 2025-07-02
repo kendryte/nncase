@@ -80,18 +80,20 @@ class unpack_impl<fixed_shape<InDims...>, fixed_shape<InElemDims...>, OutShape,
         constexpr auto rank = TIn::shape_type::rank();
         constexpr auto in_conti_dims = contiguous_dims(
             fixed_shape<InDims...>{}, fixed_strides<InStrides...>{});
-        if constexpr ((in_conti_dims == rank) && (Axis2 == Axis1 + 1)) {
-            auto pout = output.buffer().data();
-            auto count = input.shape().length();
-            constexpr auto in_strides =
-                std::array<size_t, sizeof...(InStrides)>{InStrides...};
-            constexpr auto v_shape =
-                std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
-            ntt::u_unpack_2d_fixed<in_strides[Axis1], v_shape[0],
-                                   in_strides[Axis2], v_shape[1], TIn,
-                                   typename TOut::element_type, Axis1, Axis2>(
-                input, 1, pout, count);
-        } else {
+        // fixme this optimization has bug.
+        // if constexpr ((in_conti_dims == rank) && (Axis2 == Axis1 + 1)) {
+        //     auto pout = output.buffer().data();
+        //     auto count = input.shape().length();
+        //     constexpr auto in_strides =
+        //         std::array<size_t, sizeof...(InStrides)>{InStrides...};
+        //     constexpr auto v_shape =
+        //         std::array<size_t, sizeof...(InElemDims)>{InElemDims...};
+        //     ntt::u_unpack_2d_fixed<in_strides[Axis1], v_shape[0],
+        //                            in_strides[Axis2], v_shape[1], TIn,
+        //                            typename TOut::element_type, Axis1, Axis2>(
+        //         input, 1, pout, count);
+        // } else 
+        {
             constexpr auto elem_rank = TVec::shape_type::rank();
             constexpr fixed_shape<InDims..., InElemDims...> domain{};
             constexpr auto axes = std::array<size_t, 2>{Axis1, Axis2};

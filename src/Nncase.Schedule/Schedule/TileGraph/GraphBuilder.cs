@@ -54,8 +54,9 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
         {
             var tps = bufferShapes.AsValueEnumerable().Select(shape => (ISLUtility.ToDomain(shape, out var paramMap), paramMap)).ToArray();
             bufferDomains = tps.Select(t => t.Item1).ToArray();
-            dimVars.UnionWith(tps.Select(t => t.Item2).SelectMany(i => i).ToArray());
+            dimVars.UnionWith(tps.Select(t => t.paramMap).SelectMany(i => i).ToArray());
         }
+
         var accessMaps = current.AccessMaps.AsValueEnumerable().Select(AffineUtility.AsMap).ToArray();
         var (domain, domainDynamic, domainBoundValues, domainBoundExprs) = TilingUtilities.InferDomainBounds(bufferExprs, bufferDomains, accessMaps, dimVars);
 

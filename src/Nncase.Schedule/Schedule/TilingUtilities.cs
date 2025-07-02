@@ -30,19 +30,7 @@ public static class TilingUtilities
         for (int i = 0; i < shapeDomains.Length; i++)
         {
             var reversedAccess = reversedAccessMaps[i];
-
-            // foreach (var ((k, v), paramIndex) in bufferDomainParamMaps[i].Select((p, i) => (p, i)))
-            // {
-            //     if (int.Parse(k.Name[1..]) is int j)
-            //     {
-            //         var newDimName = $"D{i}_{j}";
-            //         shapeExprMap.Add(newDimName, new IR.DimAt(new IR.Shapes.ShapeOf(exprs[i]), j));
-            //         reversedAccess = reversedAccess.set_dim_id(Isl.dim_type.param, (uint)paramIndex, newDimName);
-            //     }
-            // }
-
             domainMap = domainMap is null ? reversedAccess : domainMap.flat_domain_product(reversedAccess!);
-
             for (int j = 0; j < shapeDomains[i].n_dim(); j++)
             {
                 domainMap = domainMap.set_dim_name(Isl.dim_type.in_, (uint)(i + j), $"d{i}_{j}");
