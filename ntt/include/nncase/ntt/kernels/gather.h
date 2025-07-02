@@ -256,6 +256,9 @@ class gather_impl<ranked_shape<Rank>, InStrides, ranked_shape<IndicesRank>, Indi
 
         // Check if input is a sharded tensor
         if constexpr (IsShardedTensor<TA>) {
+            using TensorTypeA = typename TA::local_tensor_type;
+            using element_type = element_or_scalar_t<TensorTypeA>;
+
             using mesh_type = typename TA::mesh_type;
             using sharding_type = typename TA::sharding_type;
 
@@ -285,7 +288,7 @@ class gather_impl<ranked_shape<Rank>, InStrides, ranked_shape<IndicesRank>, Indi
                     output(out_index) = input.local()(in_index);
                 } else {
                     // Index is outside the local shard's range, fill with zeros
-                    output(out_index) = TA{0};
+                    output(out_index) = element_type{0};
                 }
             });
         } else {
