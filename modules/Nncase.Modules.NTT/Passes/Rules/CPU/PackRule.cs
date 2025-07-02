@@ -10,6 +10,7 @@ using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 
@@ -851,14 +852,20 @@ public sealed class PackReshape : PackRule
 
     public override Pattern Pattern { get; } = IsReshape(
       "target",
-      IsWildcard("input") with { TypePattern = !IsVector() & HasFixedShape() },
-      IsFixedShape("newShape"));
+      IsWildcard("input") with { TypePattern = !IsVector() },
+      IsRankedShape("newShape"));
 
-    public static List<Expr> AddCandidate(Expr input, long[] newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, Shape newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
         if (packedAxes.Length == 0)
+        {
+            return rets;
+        }
+
+        // not support pack on dynamic dims.
+        if (inShape.Any(s => s is { IsFixed: false } && packedAxes.Contains(inShape.ToArray().IndexOf(s))))
         {
             return rets;
         }
@@ -870,7 +877,7 @@ public sealed class PackReshape : PackRule
             var mapedOutAxes = forwardDict[axis];
             if (mapedOutAxes.Count > 1)
             {
-                if (mapedOutAxes.Count(i => newShape[i] != 1) > 1)
+                if (mapedOutAxes.Count(i => newShape[i].FixedValue != 1) > 1)
                 {
                     // we can pack on split axis and unpack on splited last axis.
                     unpackAxes.Add(mapedOutAxes[^1]);
@@ -878,7 +885,7 @@ public sealed class PackReshape : PackRule
                 else
                 {
                     // unsqueeze.
-                    var outAxis = mapedOutAxes.FirstOrDefault(i => newShape[i] != 1, mapedOutAxes.First());
+                    var outAxis = mapedOutAxes.FirstOrDefault(i => newShape[i].FixedValue != 1, mapedOutAxes.First());
                     if (backwardDict[outAxis].Count != 1)
                     {
                         continue;
@@ -914,7 +921,7 @@ public sealed class PackReshape : PackRule
         var packedNewShape = newShape.ToArray();
         foreach (var (lane, axis) in lanes.Zip(unpackAxes))
         {
-            packedNewShape[axis] = MathUtility.CeilDiv(packedNewShape[axis], lane);
+            packedNewShape[axis] = Dimension.CeilDiv(packedNewShape[axis], lane);
         }
 
         var nreshape = IR.F.Tensors.Reshape(packed, packedNewShape);
@@ -932,12 +939,12 @@ public sealed class PackReshape : PackRule
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var newShape = ((RankedShape)result["newShape"]).ToValueArray();
-        var inShape = input.CheckedShape.ToValueArray();
+        var newShape = (RankedShape)result["newShape"];
+        var inShape = input.CheckedShape;
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         // 1. find the mapping transforms
-        if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
+        if (!IRUtility.TryGetShapeMapMatrix(CompilerServices.GetMaxShape(inShape), CompilerServices.GetMaxShape(newShape), out var mat))
         {
             return new List<Expr> { };
         }
@@ -1287,9 +1294,9 @@ public sealed class PackExpand : PackRule
       "call",
       _ => true,
       IsWildcard("input") with { TypePattern = !IsVector() },
-      IsFixedShape("shape"));
+      IsRankedShape("shape"));
 
-    public static List<Expr> AddCandidate(Call call, Expr input, long[] shape, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, Shape shape, int[] packedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.Expand)call.Target;
@@ -1299,7 +1306,7 @@ public sealed class PackExpand : PackRule
             return rets;
         }
 
-        if (packedAxes.Any(a => inShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
+        if (packedAxes.Any(a => inShape[a] is { IsFixed: true, FixedValue: 1 }))
         {
             return rets;
         }
@@ -1310,7 +1317,7 @@ public sealed class PackExpand : PackRule
         var packedNewShape = shape.ToArray();
         foreach (var (lane, axis) in lanes.Zip(packedAxes))
         {
-            packedNewShape[axis] = MathUtility.CeilDiv(packedNewShape[axis], lane);
+            packedNewShape[axis] = Dimension.CeilDiv(packedNewShape[axis], lane);
         }
 
         var expand = IR.F.Tensors.Expand(packedInput, packedNewShape);
@@ -1328,7 +1335,7 @@ public sealed class PackExpand : PackRule
         var rets = new List<Expr>();
         var call = (Call)result["call"];
         var input = (Expr)result["input"];
-        var shape = ((RankedShape)result["shape"]).ToValueArray();
+        var shape = (RankedShape)result["shape"];
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         for (int i = 0; i < input.CheckedShape.Rank; i++)
