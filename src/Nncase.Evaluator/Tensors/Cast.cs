@@ -23,10 +23,15 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
         if (cast.NewType is VectorType vt && !cast.PackAxes.IsDefaultOrEmpty)
         {
-            var dimensions = input.Dimensions.ToArray();
-            var scale = 1f * vt.ElemType.SizeInBytes / ((VectorType)input.ElementType).ElemType.SizeInBytes;
-            cast.PackAxes.ToArray().ForEach(a => dimensions[a] = (int)(dimensions[a] * scale));
-            return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode, dimensions));
+            if (cast.PackAxes.Count > 1)
+            {
+                throw new NotSupportedException("Pack axes must be one");
+            }
+
+            input = IR.F.Tensors.Unpack(input, ((VectorType)input.ElementType).Lanes.ToArray(), cast.PackAxes.ToArray()).Evaluate().AsTensor();
+            input = input.CastTo(vt.ElemType);
+            input = IR.F.Tensors.Pack(input, vt.Lanes.ToArray(), cast.PackAxes.ToArray()).Evaluate().AsTensor();
+            return Value.FromTensor(input);
         }
 
         return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));

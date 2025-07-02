@@ -46,7 +46,7 @@ class cast_impl<PackAxes, fixed_shape<InDims...>, fixed_shape<OutDims...>,
                 if constexpr (PackAxes::rank() == 1)
                     in_index[PackAxes::at(0)] *= in_offset_scale;
                 ntt::u_cast<in_offset_scale, out_offset_scale>(
-                    &input(in_index), 1, &output(index), 1, 1);
+                    &input(in_index), PackAxes::rank() == 1 ? input.strides()[PackAxes::at(0)] : 1, &output(index), 1, 1);
             });
         } else {
             apply(input.shape(), [&](auto index) {
@@ -54,7 +54,7 @@ class cast_impl<PackAxes, fixed_shape<InDims...>, fixed_shape<OutDims...>,
                 if constexpr (PackAxes::rank() == 1)
                     out_index[PackAxes::at(0)] *= out_offset_scale;
                 ntt::u_cast<in_offset_scale, out_offset_scale>(
-                    &input(index), 1, &output(out_index), 1, 1);
+                    &input(index), 1, &output(out_index), PackAxes::rank() == 1 ? output.strides()[PackAxes::at(0)] : 1, 1);
             });
         }
 
