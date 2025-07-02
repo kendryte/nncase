@@ -322,6 +322,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank>
 class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
+    using TElem = typename std::decay_t<TOut>::element_type;
 
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, TOut &output,
@@ -329,10 +330,11 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
         constexpr auto const_axes = TAxes{};
         if constexpr (AxesRank == 1) {
             if constexpr (const_axes[0] == (TIn::rank() - 1)) {
-                ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
-                                        false>
-                    impl;
-                impl(input, output, axes);
+                auto size = output.size() * sizeof(TElem);
+                auto in_ptr =
+                    reinterpret_cast<const void *>(input.buffer().data());
+                auto out_ptr = output.buffer().data();
+                std::memcpy(out_ptr, in_ptr, size);
 
             } else {
                 ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
