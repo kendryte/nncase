@@ -326,23 +326,26 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, TOut &output,
                               const TAxes &axes) {
-        constexpr auto rank = TIn::rank();
-        constexpr auto elem_rank = TVec::rank();
-        constexpr auto elem_shape = TVec::shape();
+        constexpr auto const_axes = TAxes{};
+        if constexpr (AxesRank == 1) {
+            if constexpr (const_axes[0] == (TIn::rank() - 1)) {
+                ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+                                        false>
+                    impl;
+                impl(input, output, axes);
 
-        const auto domain = input.shape().concat(elem_shape);
-        apply(domain, [&](auto index) {
-            const auto in_index = index.template slice<0, rank>();
-            const auto elem_index = index.template slice<rank, elem_rank>();
-            const auto out_index_template = index.template slice<0, rank>();
-            const auto out_index =
-                axes.aggregate(out_index_template, [&](const auto cnt_out_index,
-                                                       auto axis, auto i) {
-                    return cnt_out_index.template replace_at<axis>(
-                        cnt_out_index[axis] * elem_shape[i] + index[rank + i]);
-                });
-            output(out_index) = input(in_index)(elem_index);
-        });
+            } else {
+                ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+                                        false>
+                    impl;
+                impl(input, output, axes);
+            }
+        } else {
+            ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+                                    false>
+                impl;
+            impl(input, output, axes);
+        }
     }
 };
 
