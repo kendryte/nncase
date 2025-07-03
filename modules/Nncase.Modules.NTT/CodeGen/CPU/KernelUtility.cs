@@ -34,7 +34,7 @@ public static class KernelUtility
     public static string ShardingToC(DistributedType distributedType)
     {
         var placement = distributedType.Placement;
-        var ndSBP = distributedType.AxisPolices;
+        var ndSBP = distributedType.AxisPolicies;
 
         var sb = new StringBuilder("make_sharding<mesh<topology::thread, ");
         for (int i = 0; i < placement.Rank; i++)

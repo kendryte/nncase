@@ -133,6 +133,7 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
         }
     }
 
+#if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
     // TODO: remove this when summa tiling is ready
     if constexpr (Vector<TLhsElem> && Vector<TRhsElem>) {
         if constexpr (TLhsElem::shape_type::rank() == 2 &&
@@ -156,5 +157,6 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
             });
         }
     }
+#endif
 }
 } // namespace nncase::ntt

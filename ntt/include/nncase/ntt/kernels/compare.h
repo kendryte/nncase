@@ -37,9 +37,9 @@ template <template <class T1, class T2> class Op, Tensor TLhs, Tensor TRhs,
 void compare(const TLhs &lhs, const TRhs &rhs, TOut &&output,
              const Op<std::remove_cv_t<typename TLhs::element_type>,
                       std::remove_cv_t<typename TRhs::element_type>> &op = {}) {
-    static_assert(std::is_same_v<typename TLhs::element_type,
-                                 typename TRhs::element_type>,
-                  "compare only support same element type now");
+    // static_assert(std::is_same_v<typename TLhs::element_type,
+    //                              typename TRhs::element_type>,
+    //               "compare only support same element type now");
     detail::compare_impl<TLhs, TRhs, std::decay_t<TOut>>()(lhs, rhs, output,
                                                            op);
 }

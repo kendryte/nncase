@@ -23,7 +23,7 @@ namespace pad_detail {
 template <Tensor TIn, Tensor TOut, Paddings TPaddings, ScalarOrVector TElem>
 void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
               const TElem &pad_alue) {
-    constexpr auto rank = TIn::shape().rank();
+    constexpr auto rank = TIn::rank();
     ntt::apply(output.shape(), [&](auto out_index) {
         bool dopad = false;
         const auto in_index = generate_shape<rank>([&](auto i) {
