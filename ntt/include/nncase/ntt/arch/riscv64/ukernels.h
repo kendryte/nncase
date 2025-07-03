@@ -1013,6 +1013,7 @@ class u_pack2d<true, TIn, TOut, float,
     }
 };
 
+#if 0
 // unpack
 template <class T1, class T2> struct u_unpack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
@@ -1837,4 +1838,6 @@ class u_unpack_2d_ranked<NTT_VLEN / 32, NTT_VLEN / 32, T1, float, true,
         }
     }
 };
+#endif
+
 } // namespace nncase::ntt::ukernels
