@@ -319,7 +319,8 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank>
-    requires std::same_as<typename std::decay_t<TOut>::element_type, float>
+    requires(std::same_as<typename std::decay_t<TOut>::element_type, float> &&
+             (AxesRank == 1 || AxesRank == 2))
 class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
@@ -379,10 +380,58 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                 }
             }
         } else {
-            ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
-                                    false>
-                impl;
-            impl(input, output, axes);
+            using TVec = vector<float, 8, 8>;
+            constexpr auto const_axes = TAxes{};
+            constexpr auto in_rank = TIn::rank();
+            auto in_shape = input.shape();
+
+            dynamic_shape_t<in_rank> domain;
+            ntt::loop<in_rank>([&](auto &i) { domain[i] = in_shape[i]; });
+
+            dynamic_shape_t<in_rank> inner_domain;
+
+            auto packed_index = domain.template slice<const_axes[0], 2>();
+            auto inner_index =
+                domain.template slice<const_axes[1] + 1,
+                                      in_rank - (const_axes[1] + 1)>();
+            auto inner_size = inner_index.length();
+
+            dynamic_shape_t<const_axes[1]> tile_domain;
+            ntt::loop<const_axes[1]>(
+                [&](auto &i) { tile_domain[i] = in_shape[i]; });
+
+            auto out_ptr = &output(inner_domain);
+            auto dst = out_ptr;
+            if (inner_size % TVec::shape()[1] != 0 ||
+                const_axes[1] != const_axes[0] + 1) {
+                ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+                                        false>
+                    impl;
+                impl(input, output, axes);
+            } else {
+                ntt::apply(tile_domain, [&](auto index) {
+                    ntt::loop<const_axes[1]>(
+                        [&](auto &i) { inner_domain[i] = index[i]; });
+                    auto src =
+                        reinterpret_cast<const float *>(&input(inner_domain));
+                    dst = out_ptr +
+                          linear_offset(inner_domain, input.strides()) * 64;
+                    for (size_t i = 0; i < 8; i++) {
+                        auto st_offset_i = i * packed_index[1] * 8 * inner_size;
+                        for (size_t j = 0; j < packed_index[1]; j++) {
+                            auto st_offset_j = j * inner_size * 8;
+                            auto ld_offset_j = src + j * inner_size * 64;
+                            auto st_offset = dst + st_offset_i + st_offset_j;
+                            for (size_t k = 0; k < inner_size / 8; k++) {
+                                auto st_ptr = st_offset + k * 8;
+                                auto ld_ptr = ld_offset_j + k * 512;
+                                permute_8x8(ld_ptr, st_ptr, 64, inner_size);
+                            }
+                        }
+                        src = src + 8;
+                    }
+                });
+            }
         }
     }
 };
