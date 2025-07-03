@@ -210,9 +210,9 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
                               TOut &output) noexcept {
 
         constexpr auto axes_temp = TAxes{};
-        [[maybe_unused]] constexpr auto conti_dims_input =
+        constexpr auto conti_dims_input =
             contiguous_dims(input.shape(), input.strides());
-        [[maybe_unused]] constexpr auto conti_dims_output =
+        constexpr auto conti_dims_output =
             contiguous_dims(output.shape(), output.strides());
 
         if constexpr (TAxes::rank() == 2 &&
@@ -319,6 +319,7 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank>
+    requires std::same_as<typename std::decay_t<TOut>::element_type, float>
 class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
@@ -337,10 +338,45 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                 std::memcpy(out_ptr, in_ptr, size);
 
             } else {
-                ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
-                                        false>
-                    impl;
-                impl(input, output, axes);
+                constexpr auto in_rank = TIn::rank();
+                constexpr auto axis = const_axes[0];
+                auto in_shape = input.shape();
+
+                dynamic_shape_t<in_rank> inner_domain;
+                dynamic_shape_t<in_rank> domain;
+                ntt::loop<in_rank>([&](auto &i) { domain[i] = in_shape[i]; });
+
+                auto outer_index = domain.template slice<0, axis + 1>();
+                auto inner_index =
+                    domain.template slice<axis + 1, in_rank - (axis + 1)>();
+                auto inner_size = inner_index.length();
+
+                if (inner_size % 8 != 0) {
+                    ukernels::u_unpack_impl<TIn, std::decay_t<TOut>,
+                                            TAxes::rank(), false>
+                        impl;
+                    impl(input, output, axes);
+                } else {
+                    auto out_ptr = &output(inner_domain);
+                    auto dst = out_ptr;
+
+                    ntt::apply(outer_index, [&](const auto &index) {
+                        ntt::loop<axis + 1>(
+                            [&](auto &i) { inner_domain[i] = index[i]; });
+                        auto src = reinterpret_cast<const float *>(
+                            &input(inner_domain));
+
+                        dst = out_ptr + dim_value(linear_offset(
+                                            inner_domain, input.strides())) *
+                                            8;
+
+                        for (size_t i = 0; i < inner_size / 8; i++) {
+                            permute_8x8(src, dst, 8, inner_size);
+                            dst += 8;
+                            src += 64;
+                        }
+                    });
+                }
             }
         } else {
             ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
@@ -352,51 +388,6 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
 };
 
 #if 0
-template <size_t axis_stride, class T1, size_t PackAxis>
-class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
-  public:
-    void operator()(const T1 &input, size_t input_stride, float *output,
-                    size_t count) noexcept {
-
-        constexpr auto in_rank = T1::rank();
-        auto in_shape = input.shape();
-
-        dynamic_shape_t<in_rank> inner_domain{};
-        dynamic_shape_t<in_rank> domain{};
-        for (size_t i = 0; i < in_rank; i++) {
-            domain[i] = in_shape[i];
-        }
-
-        auto outer_index = slice_index<PackAxis + 1>(domain);
-        auto inner_index =
-            slice_index<in_rank - (PackAxis + 1)>(domain, PackAxis + 1);
-        auto inner_size = inner_index.length();
-
-        auto dst = output;
-        if (inner_size % 8 != 0) {
-            ukernels::u_unpack_1d_fixed<axis_stride, 8, T1, float, false,
-                                        PackAxis>
-                impl;
-            impl(input, input_stride, output, count);
-        } else {
-            ntt::apply(outer_index, [&](const auto &index) {
-                for (size_t i = 0; i < PackAxis + 1; i++) {
-                    inner_domain[i] = index[i];
-                }
-                auto src =
-                    reinterpret_cast<const float *>(&input(inner_domain));
-
-                dst = output + linear_offset(inner_domain, input.strides()) * 8;
-
-                for (size_t i = 0; i < inner_size / 8; i++) {
-                    permute_8x8(src, dst, 8, inner_size);
-                    dst += 8;
-                    src += 64;
-                }
-            });
-        }
-    }
-};
 
 template <size_t low_axis_stride, size_t high_axis_stride, class TIn,
           size_t Axis1, size_t Axis2>
