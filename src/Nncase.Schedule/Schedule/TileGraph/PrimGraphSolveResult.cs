@@ -76,8 +76,15 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         var dimensions = new Dimension[shapeRank];
         for (int i = 0; i < bufferShapeMpa.size(); i++)
         {
-            var pa = bufferShapeMpa.at(i);
-            dimensions[i] = ISLUtility.ToDimension(pa, paramVarMap);
+            if (accessMpa.at(i).is_cst())
+            {
+                dimensions[i] = 1;
+            }
+            else
+            {
+                var pa = bufferShapeMpa.at(i);
+                dimensions[i] = ISLUtility.ToDimension(pa, paramVarMap);
+            }
         }
 
         return new RankedShape(dimensions);

@@ -246,7 +246,7 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
                 (DimSum lhsSum, DimSum rhsSum) => CreateWithSimplify(SpanUtility.Concat(lhsSum.Operands, rhsSum.Operands)),
                 (DimVar v, DimSum rhsSum) when rhsSum.Operands.Length == 1 && rhsSum.Operands[0] is DimProduct p && p.Operands.Length == 1 && ReferenceEquals(p.Operands[0], v) => CreateWithSimplify([DimProduct.TrySimplify(p.Scale + 1, [v]) ?? new DimProduct([v], p.Scale + 1)], rhsSum.Bias),
                 (DimSum lhsSum, DimVar v) when lhsSum.Operands.Length == 1 && lhsSum.Operands[0] is DimProduct p && p.Operands.Length == 1 && ReferenceEquals(p.Operands[0], v) => CreateWithSimplify([DimProduct.TrySimplify(p.Scale + 1, [v]) ?? new DimProduct([v], p.Scale + 1)], lhsSum.Bias),
-                (DimSum lhsSum, _) => CreateWithSimplify(SpanUtility.Concat(lhsSum.Operands, [rhs])),
+                (DimSum lhsSum, _) => CreateWithSimplify(SpanUtility.Concat(lhsSum.Operands, [rhs]), lhsSum.Bias),
                 (_, DimSum rhsSum) => CreateWithSimplify(SpanUtility.Concat([lhs], rhsSum.Operands), rhsSum.Bias),
                 (DimVar v, DimProduct p) when p.Operands.Length == 1 && ReferenceEquals(p.Operands[0], v) => DimProduct.TrySimplify(p.Scale + 1, [v]) ?? new DimProduct([v], p.Scale + 1),
                 (DimProduct p, DimVar v) when p.Operands.Length == 1 && ReferenceEquals(p.Operands[0], v) => DimProduct.TrySimplify(p.Scale + 1, [v]) ?? new DimProduct([v], p.Scale + 1),

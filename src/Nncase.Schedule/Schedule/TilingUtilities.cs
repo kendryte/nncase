@@ -22,7 +22,7 @@ public static class TilingUtilities
         };
     }
 
-    public static (Isl.set DomainSet, bool[] DomainDynamic, long[] DomainBoundValues, Dimension[] DomainBoundExprs) InferDomainBounds(Expr[] exprs, Isl.set[] shapeDomains, Isl.map[] accessMaps, HashSet<DimVar> dimVars)
+    public static (Isl.set DomainSet, bool[] DomainDynamic, long[] DomainBoundValues, Dimension[] DomainBoundExprs) InferDomainBounds(Expr[] bufferExprs, Isl.set[] shapeDomains, Isl.map[] accessMaps, HashSet<DimVar> dimVars)
     {
         var reversedAccessMaps = accessMaps.Zip(shapeDomains).Select(pair => pair.First.reverse().intersect_domain(pair.Second)).ToArray();
         Isl.map domainMap = null!;
@@ -34,7 +34,7 @@ public static class TilingUtilities
             for (int j = 0; j < shapeDomains[i].n_dim(); j++)
             {
                 domainMap = domainMap.set_dim_name(Isl.dim_type.in_, (uint)(i + j), $"d{i}_{j}");
-                shapeExprMap.Add($"d{i}_{j}", new IR.DimAt(new IR.Shapes.ShapeOf(exprs[i]), j));
+                shapeExprMap.Add($"d{i}_{j}", new IR.DimAt(new IR.Shapes.ShapeOf(bufferExprs[i]), j));
             }
         }
 

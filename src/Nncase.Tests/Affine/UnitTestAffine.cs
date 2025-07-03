@@ -113,6 +113,24 @@ public class UnitTestAffine
             Assert.True(domain2.dim_max(1).is_cst());
             Assert.Equal(1, domain2.dim_max_val(0).num_si());
         }
+
+        {
+            // divide case 2
+            var x = new DimVar("x")
+            {
+                Metadata = new()
+                {
+                    Range = new(1, 128),
+                },
+            };
+
+            var shape = new RankedShape((x + 8 - 1) / 8, 64);
+            using var ctx = Isl.ctx.Create();
+            var domain = ISLUtility.ToDomain(shape, out _);
+            Assert.False(domain.dim_max(0).is_cst());
+            Assert.True(domain.dim_max(1).is_cst());
+            Assert.Equal(15, domain.dim_max_val(0).num_si());
+        }
     }
 
     [Fact]

@@ -146,6 +146,8 @@ internal sealed class AstExprToExprConverter
                 Isl.ast_expr_op_type.mul => Visit(astExpr.op_arg(0)) * Visit(astExpr.op_arg(1)),
                 Isl.ast_expr_op_type.div => Visit(astExpr.op_arg(0)) / Visit(astExpr.op_arg(1)),
                 Isl.ast_expr_op_type.select => Dimension.Select(Visit(astExpr.op_arg(0)), 1, Visit(astExpr.op_arg(1)), Visit(astExpr.op_arg(2))),
+                Isl.ast_expr_op_type.ge => new AsDim(IR.F.Shapes.AsTensor(Visit(astExpr.op_arg(0))) > IR.F.Shapes.AsTensor(Visit(astExpr.op_arg(1)))),
+                Isl.ast_expr_op_type.le => new AsDim(IR.F.Shapes.AsTensor(Visit(astExpr.op_arg(0))) < IR.F.Shapes.AsTensor(Visit(astExpr.op_arg(1)))),
                 _ => throw new NotSupportedException($"Unsupported expr op type: {astExpr.op_type()}"),
             },
             _ => throw new NotSupportedException($"Unsupported expr type: {astExpr.type()}"),
