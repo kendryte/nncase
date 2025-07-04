@@ -29,6 +29,8 @@ public sealed partial class Compare : Op
 
     public CompareOp CompareOp { get; }
 
+    public MaskVectorStyle MaskVectorStyle { get; } = MaskVectorStyle.Unknown;
+
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"CompareOp.{CompareOp}";
+    public override string DisplayProperty() => $"CompareOp.{CompareOp}, MaskVectorStyle.{MaskVectorStyle}";
 }

@@ -247,6 +247,10 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
     public VectorType(DataType elemType, params int[] lanes)
         : this(elemType, new IR.IRArray<int>(lanes))
     {
+        if (elemType == DataTypes.Boolean)
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
     }
 
     public override Type CLRType => Lanes.ToArray() switch
@@ -272,4 +276,12 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
     };
 
     public override int SizeInBytes => ElemType.SizeInBytes * (int)TensorUtilities.GetProduct(TensorUtilities.ToLongs(Lanes.ToArray()));
+}
+
+/// <summary>
+/// Vector type.
+/// </summary>
+public sealed partial record MaskVectorType(MaskVectorStyle Style, int ElementBits, int Lanes) : DataType
+{
+    public override int SizeInBytes => Lanes * ElementBits / 8;
 }

@@ -49,6 +49,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return GenerateBinary(binary.BinaryOp, arguments, output);
             case IR.Tensors.Pack pack:
                 return TIR.F.NTT.Pack((Expr)arguments[0], output, pack.Lanes, pack.Axes);
+            case IR.Tensors.PackMask pack:
+                return TIR.F.NTT.Pack((Expr)arguments[0], output, new[] { pack.Lanes }, new[] { pack.Axis });
             case IR.Tensors.Unpack unpack:
                 return TIR.F.NTT.Unpack((Expr)arguments[0], output, unpack.Lanes, unpack.Axes);
             case IR.NTT.PackedBinary packedBinary:

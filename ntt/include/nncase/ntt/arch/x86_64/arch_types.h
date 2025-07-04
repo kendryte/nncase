@@ -67,11 +67,11 @@ NTT_END_DEFINE_NATIVE_VECTOR()
     static void set_element(__m256i &array, const TIndex &index,               \
                             bool value) noexcept {                             \
         using casted_element_type = std::decay_t<decltype(cast_type{}[0])>;    \
+        constexpr auto true_value = casted_element_type(-1);                   \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
         auto &casted_value = reinterpret_cast<cast_type &>(array);             \
         const auto offset = (size_t)index[dim_zero];                           \
-        casted_value[offset] =                                                 \
-            value ? (casted_element_type(1) << (bits - 1)) : 0;                \
+        casted_value[offset] = value ? true_value : 0;                         \
     }                                                                          \
     NTT_END_DEFINE_NATIVE_VECTOR()
 

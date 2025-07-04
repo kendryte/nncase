@@ -15,6 +15,7 @@
 #pragma once
 #include "../ukernels.h"
 #include "detail/binary_like_impl.h"
+#include <cstdio>
 
 namespace nncase::ntt {
 namespace detail {
@@ -26,6 +27,9 @@ class compare_impl : public binary_like_impl<compare_impl<TLhs, TRhs, TOut>,
     void invoke_ukernel(const TBroadcastedLhs &lhs, const TBroadcastedRhs &rhs,
                         TOut &output, const Op &op) {
         ntt::apply(output.shape(), [&](auto index) {
+            if (index == ntt::fixed_shape_v<0, 2, 0, 0>) {
+                printf("??\n");
+            }
             output(index) = op(lhs(index), rhs(index));
         });
     }
