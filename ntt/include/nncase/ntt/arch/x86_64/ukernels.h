@@ -406,23 +406,38 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
             auto out_ptr = &output(inner_domain);
             auto dst = out_ptr;
 
-            if (const_axes[1] == TIn::rank() - 1) {
-                constexpr auto elem_shape = TVec::shape();
-
-                const auto domain = input.shape().concat(elem_shape);
-                apply(domain, [&](auto index) {
-                    const auto in_index = index.template slice<0, in_rank>();
-                    const auto elem_index = index.template slice<in_rank, 2>();
-
-                    dynamic_shape_t<in_rank> out_index;
+            if ((const_axes[1] == TIn::rank() - 1) &&
+                const_axes[1] == const_axes[0] + 1) {
+                const auto domain_input = input.shape();
+                const auto out_stride = input.shape()[-1_dim] * 8;
+                apply(domain_input, [&](auto index) {
+                    dynamic_shape_t<in_rank> index_p1;
                     ntt::loop<in_rank>(
-                        [&](auto &i) { out_index[i] = index[i]; });
-                    ntt::loop<2>([&](auto &i) {
-                        out_index[const_axes[i]] =
-                            out_index[const_axes[i]] * elem_shape[i] +
-                            index[in_rank + i];
-                    });
-                    output(out_index) = input(in_index)(elem_index);
+                        [&](auto &i) { index_p1[i] = index[i]; });
+                    index_p1[-1_dim] = 0;
+                    auto offset_vec =
+                        linear_offset(index_p1, input.strides()) * 64;
+                    auto offset_elem = index[-1_dim] * 8;
+                    auto in_ptr =
+                        reinterpret_cast<const float *>(&input(index));
+                    dst = out_ptr + offset_vec + offset_elem;
+
+                    __m256 row0 = _mm256_loadu_ps(&in_ptr[0 * 8]);
+                    __m256 row1 = _mm256_loadu_ps(&in_ptr[1 * 8]);
+                    __m256 row2 = _mm256_loadu_ps(&in_ptr[2 * 8]);
+                    __m256 row3 = _mm256_loadu_ps(&in_ptr[3 * 8]);
+                    __m256 row4 = _mm256_loadu_ps(&in_ptr[4 * 8]);
+                    __m256 row5 = _mm256_loadu_ps(&in_ptr[5 * 8]);
+                    __m256 row6 = _mm256_loadu_ps(&in_ptr[6 * 8]);
+                    __m256 row7 = _mm256_loadu_ps(&in_ptr[7 * 8]);
+                    _mm256_storeu_ps(&dst[0 * out_stride], row0);
+                    _mm256_storeu_ps(&dst[1 * out_stride], row1);
+                    _mm256_storeu_ps(&dst[2 * out_stride], row2);
+                    _mm256_storeu_ps(&dst[3 * out_stride], row3);
+                    _mm256_storeu_ps(&dst[4 * out_stride], row4);
+                    _mm256_storeu_ps(&dst[5 * out_stride], row5);
+                    _mm256_storeu_ps(&dst[6 * out_stride], row6);
+                    _mm256_storeu_ps(&dst[7 * out_stride], row7);
                 });
             } else {
                 if (inner_size % TVec::shape()[1] != 0 ||
