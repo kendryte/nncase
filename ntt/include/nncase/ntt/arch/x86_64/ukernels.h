@@ -418,18 +418,16 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                     auto offset_vec =
                         linear_offset(index_p1, input.strides()) * 64;
                     auto offset_elem = index[-1_dim] * 8;
-                    auto in_ptr =
-                        reinterpret_cast<const float *>(&input(index));
                     dst = out_ptr + offset_vec + offset_elem;
 
-                    __m256 row0 = _mm256_loadu_ps(&in_ptr[0 * 8]);
-                    __m256 row1 = _mm256_loadu_ps(&in_ptr[1 * 8]);
-                    __m256 row2 = _mm256_loadu_ps(&in_ptr[2 * 8]);
-                    __m256 row3 = _mm256_loadu_ps(&in_ptr[3 * 8]);
-                    __m256 row4 = _mm256_loadu_ps(&in_ptr[4 * 8]);
-                    __m256 row5 = _mm256_loadu_ps(&in_ptr[5 * 8]);
-                    __m256 row6 = _mm256_loadu_ps(&in_ptr[6 * 8]);
-                    __m256 row7 = _mm256_loadu_ps(&in_ptr[7 * 8]);
+                    __m256 row0 = input(index)(0);
+                    __m256 row1 = input(index)(1);
+                    __m256 row2 = input(index)(2);
+                    __m256 row3 = input(index)(3);
+                    __m256 row4 = input(index)(4);
+                    __m256 row5 = input(index)(5);
+                    __m256 row6 = input(index)(6);
+                    __m256 row7 = input(index)(7);
                     _mm256_storeu_ps(&dst[0 * out_stride], row0);
                     _mm256_storeu_ps(&dst[1 * out_stride], row1);
                     _mm256_storeu_ps(&dst[2 * out_stride], row2);
@@ -476,71 +474,6 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
         }
     }
 };
-
-#if 0
-
-template <size_t low_axis_stride, size_t high_axis_stride, class TIn,
-          size_t Axis1, size_t Axis2>
-class u_unpack_2d_fixed<low_axis_stride, 8, high_axis_stride, 8, TIn, float,
-                        true, Axis1, Axis2> {
-  public:
-    void operator()(const TIn &input, size_t input_stride, float *output,
-                    size_t count) noexcept {
-        using TVec = vector<float, 8, 8>;
-        constexpr auto axes = std::array<size_t, 2>{Axis1, Axis2};
-        constexpr auto in_rank = TIn::rank();
-        auto in_shape = input.shape();
-
-        dynamic_shape_t<in_rank> domain{};
-        for (size_t i = 0; i < in_rank; i++) {
-            domain[i] = in_shape[i];
-        }
-        dynamic_shape_t<in_rank> inner_domain{};
-
-        auto packed_index = slice_index<2>(domain, axes[0]);
-        auto inner_index =
-            slice_index<in_rank - (axes[1] + 1)>(domain, axes[1] + 1);
-        auto inner_size = inner_index.length();
-
-        dynamic_shape_t<Axis2> tile_domain{};
-        for (size_t i = 0; i < Axis2; i++) {
-            tile_domain[i] = in_shape[i];
-        }
-
-        auto dst = output;
-        if (inner_size % TVec::shape()[1] != 0) {
-            ukernels::u_unpack_2d_fixed<low_axis_stride, 8, high_axis_stride, 8,
-                                        TIn, float, false, Axis1, Axis2>
-                impl;
-            impl(input, input_stride, output, count);
-        } else {
-            ntt::apply(tile_domain, [&](auto index) {
-                for (size_t i = 0; i < Axis2; i++) {
-                    inner_domain[i] = index[i];
-                }
-                auto src =
-                    reinterpret_cast<const float *>(&input(inner_domain));
-                dst =
-                    output + linear_offset(inner_domain, input.strides()) * 64;
-                for (size_t i = 0; i < 8; i++) {
-                    auto st_offset_i = i * packed_index[1] * 8 * inner_size;
-                    for (size_t j = 0; j < packed_index[1]; j++) {
-                        auto st_offset_j = j * inner_size * 8;
-                        auto ld_offset_j = src + j * inner_size * 64;
-                        auto st_offset = dst + st_offset_i + st_offset_j;
-                        for (size_t k = 0; k < inner_size / 8; k++) {
-                            auto st_ptr = st_offset + k * 8;
-                            auto ld_ptr = ld_offset_j + k * 512;
-                            permute_8x8(ld_ptr, st_ptr, 64, inner_size);
-                        }
-                    }
-                    src = src + 8;
-                }
-            });
-        }
-    }
-};
-#endif
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
