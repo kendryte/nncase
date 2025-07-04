@@ -42,6 +42,7 @@ internal sealed class DataTypeJsonConverterImpl : JsonConverter<DataType>
         var typeName = typeProperty.GetString();
         return typeName switch
         {
+            nameof(MaskVectorType) => ReadMaskVectorType(root, options),
             nameof(PrimType) => ReadPrimType(root),
             nameof(PointerType) => ReadPointerType(root, options),
             nameof(ReferenceType) => ReadReferenceType(root, options),
@@ -56,6 +57,7 @@ internal sealed class DataTypeJsonConverterImpl : JsonConverter<DataType>
         writer.WriteStartObject();
         var typeToken = value switch
         {
+            MaskVectorType => nameof(MaskVectorType),
             PrimType => nameof(PrimType),
             PointerType => nameof(PointerType),
             ReferenceType => nameof(ReferenceType),
@@ -67,6 +69,9 @@ internal sealed class DataTypeJsonConverterImpl : JsonConverter<DataType>
 
         switch (value)
         {
+            case MaskVectorType vectorType:
+                WriteMaskVectorType(writer, vectorType, options);
+                break;
             case PrimType primType:
                 WritePrimType(writer, primType);
                 break;
@@ -128,6 +133,20 @@ internal sealed class DataTypeJsonConverterImpl : JsonConverter<DataType>
         JsonSerializer.Serialize(writer, value.ElemType, options);
     }
 
+    private static MaskVectorType ReadMaskVectorType(JsonElement element, JsonSerializerOptions options)
+    {
+        var style = JsonSerializer.Deserialize<MaskVectorStyle>(
+            element.GetProperty(nameof(MaskVectorType.Style)).GetRawText(),
+            options);
+        var elementBits = JsonSerializer.Deserialize<int>(
+            element.GetProperty(nameof(MaskVectorType.ElementBits)).GetRawText(),
+            options);
+        var lanes = JsonSerializer.Deserialize<int>(
+            element.GetProperty(nameof(MaskVectorType.Lanes)).GetRawText(),
+            options);
+        return new MaskVectorType(style, elementBits, lanes);
+    }
+
     private static VectorType ReadVectorType(JsonElement element, JsonSerializerOptions options)
     {
         var elemType = JsonSerializer.Deserialize<DataType>(
@@ -137,6 +156,16 @@ internal sealed class DataTypeJsonConverterImpl : JsonConverter<DataType>
             element.GetProperty(nameof(VectorType.Lanes)).GetRawText(),
             options) ?? throw new JsonException("Failed to deserialize Lanes");
         return new VectorType(elemType, lanes);
+    }
+
+    private static void WriteMaskVectorType(Utf8JsonWriter writer, MaskVectorType value, JsonSerializerOptions options)
+    {
+        writer.WritePropertyName(nameof(MaskVectorType.Style));
+        JsonSerializer.Serialize(writer, value.Style, options);
+        writer.WritePropertyName(nameof(MaskVectorType.ElementBits));
+        JsonSerializer.Serialize(writer, value.ElementBits, options);
+        writer.WritePropertyName(nameof(MaskVectorType.Lanes));
+        JsonSerializer.Serialize(writer, value.Lanes, options);
     }
 
     private static void WriteVectorType(Utf8JsonWriter writer, VectorType value, JsonSerializerOptions options)
