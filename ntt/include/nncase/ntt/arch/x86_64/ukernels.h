@@ -319,8 +319,11 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank>
-    requires(std::same_as<typename std::decay_t<TOut>::element_type, float> &&
-             (AxesRank == 1 || AxesRank == 2))
+    requires(
+        (std::same_as<typename TIn::element_type, ntt::vector<float, 8, 8>> ||
+         std::same_as<typename TIn::element_type, ntt::vector<float, 8>>) &&
+        std::same_as<typename std::decay_t<TOut>::element_type, float> &&
+        (AxesRank == 1 || AxesRank == 2))
 class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
@@ -402,35 +405,58 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
 
             auto out_ptr = &output(inner_domain);
             auto dst = out_ptr;
-            if (inner_size % TVec::shape()[1] != 0 ||
-                const_axes[1] != const_axes[0] + 1) {
-                ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
-                                        false>
-                    impl;
-                impl(input, output, axes);
-            } else {
-                ntt::apply(tile_domain, [&](auto index) {
-                    ntt::loop<const_axes[1]>(
-                        [&](auto &i) { inner_domain[i] = index[i]; });
-                    auto src =
-                        reinterpret_cast<const float *>(&input(inner_domain));
-                    dst = out_ptr +
-                          linear_offset(inner_domain, input.strides()) * 64;
-                    for (size_t i = 0; i < 8; i++) {
-                        auto st_offset_i = i * packed_index[1] * 8 * inner_size;
-                        for (size_t j = 0; j < packed_index[1]; j++) {
-                            auto st_offset_j = j * inner_size * 8;
-                            auto ld_offset_j = src + j * inner_size * 64;
-                            auto st_offset = dst + st_offset_i + st_offset_j;
-                            for (size_t k = 0; k < inner_size / 8; k++) {
-                                auto st_ptr = st_offset + k * 8;
-                                auto ld_ptr = ld_offset_j + k * 512;
-                                permute_8x8(ld_ptr, st_ptr, 64, inner_size);
-                            }
-                        }
-                        src = src + 8;
-                    }
+
+            if (const_axes[1] == TIn::rank() - 1) {
+                constexpr auto elem_shape = TVec::shape();
+
+                const auto domain = input.shape().concat(elem_shape);
+                apply(domain, [&](auto index) {
+                    const auto in_index = index.template slice<0, in_rank>();
+                    const auto elem_index = index.template slice<in_rank, 2>();
+
+                    dynamic_shape_t<in_rank> out_index;
+                    ntt::loop<in_rank>(
+                        [&](auto &i) { out_index[i] = index[i]; });
+                    ntt::loop<2>([&](auto &i) {
+                        out_index[const_axes[i]] =
+                            out_index[const_axes[i]] * elem_shape[i] +
+                            index[in_rank + i];
+                    });
+                    output(out_index) = input(in_index)(elem_index);
                 });
+            } else {
+                if (inner_size % TVec::shape()[1] != 0 ||
+                    const_axes[1] != const_axes[0] + 1) {
+                    ukernels::u_unpack_impl<TIn, std::decay_t<TOut>,
+                                            TAxes::rank(), false>
+                        impl;
+                    impl(input, output, axes);
+                } else {
+                    ntt::apply(tile_domain, [&](auto index) {
+                        ntt::loop<const_axes[1]>(
+                            [&](auto &i) { inner_domain[i] = index[i]; });
+                        auto src = reinterpret_cast<const float *>(
+                            &input(inner_domain));
+                        dst = out_ptr +
+                              linear_offset(inner_domain, input.strides()) * 64;
+                        for (size_t i = 0; i < 8; i++) {
+                            auto st_offset_i =
+                                i * packed_index[1] * 8 * inner_size;
+                            for (size_t j = 0; j < packed_index[1]; j++) {
+                                auto st_offset_j = j * inner_size * 8;
+                                auto ld_offset_j = src + j * inner_size * 64;
+                                auto st_offset =
+                                    dst + st_offset_i + st_offset_j;
+                                for (size_t k = 0; k < inner_size / 8; k++) {
+                                    auto st_ptr = st_offset + k * 8;
+                                    auto ld_ptr = ld_offset_j + k * 512;
+                                    permute_8x8(ld_ptr, st_ptr, 64, inner_size);
+                                }
+                            }
+                            src = src + 8;
+                        }
+                    });
+                }
             }
         }
     }
