@@ -210,6 +210,10 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
 public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType, int BlockSize, IRArray<PagedKVCacheDimKind> CacheLayout, IRArray<PagedKVCacheDimKind> PackedAxes, IRArray<int> Lanes, IRArray<PagedKVCacheDimKind> ShardingAxes, IRArray<SBPSplit> AxisPolicies)
     : AttentionConfig(NumLayers, NumKVHeads, HeadDim, KVType), IPagedAttentionConfig
 {
+    public override string ToString()
+    {
+        return $"PagedAttentionConfig(NumLayers={NumLayers}, NumKVHeads={NumKVHeads}, HeadDim={HeadDim}, KVType={KVType}, BlockSize={BlockSize}, CacheLayout=[{string.Join(", ", CacheLayout)}], PackedAxes=[{string.Join(", ", PackedAxes)}], Lanes=[{string.Join(", ", Lanes)}], ShardingAxes=[{string.Join(", ", ShardingAxes)}], AxisPolicies=[{string.Join(", ", AxisPolicies)}])";
+    }
 }
 
 public sealed record PagedAttentionKVCacheType() : AttentionKVCacheType

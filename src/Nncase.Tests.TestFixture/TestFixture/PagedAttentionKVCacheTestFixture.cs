@@ -67,6 +67,11 @@ public sealed class PagedAttentionKVCacheTestFixture
 
     public PagedAttentionConfig Config { get; }
 
+    public override string ToString()
+    {
+        return $"PagedAttentionKVCacheTestFixture: QueryLens={string.Join(",", QueryLens)}, SeqLens={string.Join(",", SeqLens)}, NumQHeads={NumQHeads}, ContextLens={string.Join(",", ContextLens)}, NumBlocks={NumBlocks}, QLayout={string.Join(",", QLayout)}, KLayout={string.Join(",", KLayout)}, Config={Config}";
+    }
+
     /// <summary>
     /// query: [Hq,L,Ev], key: [Hk,L,Ev], value: [Hv,L,Ev].
     /// </summary>
