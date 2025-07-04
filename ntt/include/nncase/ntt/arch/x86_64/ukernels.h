@@ -177,6 +177,46 @@ inline void permute_8x8(const TElem *src, TElem *dst, size_t in_stride,
     _mm256_storeu_ps(&dst[7 * out_stride], row7);
 }
 
+inline void permute_8x8_pack(const float *src, vector<float, 8> *dst,
+                             size_t in_stride = 1,
+                             size_t out_stride = 1) noexcept {
+    __m256 row0 = _mm256_loadu_ps(&src[0 * in_stride]);
+    __m256 row1 = _mm256_loadu_ps(&src[1 * in_stride]);
+    __m256 row2 = _mm256_loadu_ps(&src[2 * in_stride]);
+    __m256 row3 = _mm256_loadu_ps(&src[3 * in_stride]);
+    __m256 row4 = _mm256_loadu_ps(&src[4 * in_stride]);
+    __m256 row5 = _mm256_loadu_ps(&src[5 * in_stride]);
+    __m256 row6 = _mm256_loadu_ps(&src[6 * in_stride]);
+    __m256 row7 = _mm256_loadu_ps(&src[7 * in_stride]);
+
+    __m256 t0 = _mm256_unpacklo_ps(row0, row1);
+    __m256 t1 = _mm256_unpackhi_ps(row0, row1);
+    __m256 t2 = _mm256_unpacklo_ps(row2, row3);
+    __m256 t3 = _mm256_unpackhi_ps(row2, row3);
+    __m256 t4 = _mm256_unpacklo_ps(row4, row5);
+    __m256 t5 = _mm256_unpackhi_ps(row4, row5);
+    __m256 t6 = _mm256_unpacklo_ps(row6, row7);
+    __m256 t7 = _mm256_unpackhi_ps(row6, row7);
+
+    __m256 u0 = _mm256_shuffle_ps(t0, t2, 0x44);
+    __m256 u1 = _mm256_shuffle_ps(t0, t2, 0xEE);
+    __m256 u2 = _mm256_shuffle_ps(t1, t3, 0x44);
+    __m256 u3 = _mm256_shuffle_ps(t1, t3, 0xEE);
+    __m256 u4 = _mm256_shuffle_ps(t4, t6, 0x44);
+    __m256 u5 = _mm256_shuffle_ps(t4, t6, 0xEE);
+    __m256 u6 = _mm256_shuffle_ps(t5, t7, 0x44);
+    __m256 u7 = _mm256_shuffle_ps(t5, t7, 0xEE);
+
+    dst[0 * out_stride] = _mm256_permute2f128_ps(u0, u4, 0x20);
+    dst[1 * out_stride] = _mm256_permute2f128_ps(u1, u5, 0x20);
+    dst[2 * out_stride] = _mm256_permute2f128_ps(u2, u6, 0x20);
+    dst[3 * out_stride] = _mm256_permute2f128_ps(u3, u7, 0x20);
+    dst[4 * out_stride] = _mm256_permute2f128_ps(u0, u4, 0x31);
+    dst[5 * out_stride] = _mm256_permute2f128_ps(u1, u5, 0x31);
+    dst[6 * out_stride] = _mm256_permute2f128_ps(u2, u6, 0x31);
+    dst[7 * out_stride] = _mm256_permute2f128_ps(u3, u7, 0x31);
+}
+
 // pack
 template <> class u_pack<true, float, vector<float, 8>> {
   public:
@@ -188,12 +228,12 @@ template <> class u_pack<true, float, vector<float, 8>> {
         const bool speedup = M == speedup_m && N % 8 == 0 && m_strides != 1;
 
         if (speedup) {
-            auto src = reinterpret_cast<const float *>(input);
-            auto dst = reinterpret_cast<float *>(output);
+            auto src = input;
+            auto dst = output;
             for (size_t j = 0; j < N / speedup_m; j++) {
-                permute_8x8(src, dst, m_strides, 8);
+                permute_8x8_pack(src, dst, m_strides, 1);
                 src += 8;
-                dst += 64;
+                dst += 8;
             }
         } else {
             ukernels::u_pack<false, float, vector<float, 8>> impl;
