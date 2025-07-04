@@ -117,9 +117,9 @@ public partial class NTT
         return new Call(new Reshape(), input, ret);
     }
 
-    public static Expr PagedAttention(Expr q, Expr kvcache, Expr extra, Expr scale, int layerId, Expr ret, IRArray<IR.NN.AttentionDimKind> layout)
+    public static Expr PagedAttention(Expr q, Expr kvcache, Expr extra, Expr scale, int layerId, Expr ret, IRArray<IR.NN.AttentionDimKind> layout, int hiddenSize)
     {
-        return new Call(new PagedAttention(layerId, layout), q, kvcache, extra, scale, ret);
+        return new Call(new PagedAttention(layerId, layout, hiddenSize), q, kvcache, extra, scale, ret);
     }
 
     public static Expr UpdatePagedAttentionKVCache(Expr value, Expr kvcache, IR.NN.AttentionCacheKind kind, int layerId, IRArray<IR.NN.AttentionDimKind> layout)
