@@ -668,7 +668,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         }
         else if (type.GetInterfaces().Where(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(IVector<>))).SingleOrDefault() is Type vectorType)
         {
-            var elemType = type.GenericTypeArguments[0];
+            var elemType = vectorType.GenericTypeArguments[0];
             var value = typeof(Tensor).GetMethod(nameof(GetOneOrZero), BindingFlags.Static | BindingFlags.NonPublic)?
                 .MakeGenericMethod(elemType)
                 .Invoke(null, new object[] { isOne })!;

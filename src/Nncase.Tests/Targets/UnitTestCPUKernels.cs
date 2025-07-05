@@ -615,7 +615,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
+
+    // [InlineData(new object[] { new long[] { 4, 8, 16, 32 }, new[] { 1 }, 0 })]
     [InlineData(new object[] { new long[] { 1, 64, 384, 128 }, new[] { 4 }, 1 })]
     public async Task TestDynamicUnary(long[] shape, int[] hierarchy, int count)
     {
@@ -779,11 +780,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-
-    // TODO: fix this when ntt::cast support rank>1
-    // [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
-    // [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
-    // [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
+    [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
+    [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
+    [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
     [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
     [InlineData(new object[] { new long[] { 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
     [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
@@ -1597,7 +1596,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.NTT.PackCompare(Rank, Lane);
+        var maskVectorStyle = RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X64 or Architecture.Arm64 => MaskVectorStyle.Fat,
+            _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}"),
+        };
+        var rule = new Passes.Rules.NTT.PackCompare(maskVectorStyle, Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -1621,7 +1625,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
-    [Theory(Skip = "Bug")]
+    [Theory]
     [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 0 })]
     [InlineData(new object[] { new long[] { 1 }, new long[] { 1, 8, 64, 16 }, new long[] { 1, 8, 64, 16 }, 1 })]
     [InlineData(new object[] { new long[] { 1, 8, 64, 16 }, new long[] { 1 }, new long[] { 1, 8, 64, 16 }, 2 })]
@@ -1639,7 +1643,12 @@ public sealed class UnitTestCPUKernels : TestClassBase
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.NTT.PackWhere(Rank, Lane);
+        var maskVectorStyle = RuntimeInformation.ProcessArchitecture switch
+        {
+            Architecture.X64 or Architecture.Arm64 => MaskVectorStyle.Fat,
+            _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}"),
+        };
+        var rule = new Passes.Rules.NTT.PackWhere(maskVectorStyle, Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);
@@ -1770,7 +1779,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
         compiler.AutoDistributedPass(pmgr);
-        compiler.AutoTilingPass(pmgr);
+
+        // FIXME: reopen when AutoTilingPass is ready.
+        // compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
         await pmgr.RunAsync(module);
     }

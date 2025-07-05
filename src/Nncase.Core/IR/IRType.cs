@@ -144,6 +144,7 @@ public sealed record TensorType(DataType DType, Shape Shape) : IRType
     /// <inheritdoc/>
     public override string ToString() => DType switch
     {
+        MaskVectorType vtype => $"bool<{vtype.Lanes}>" + (Shape.IsScalar ? string.Empty : Shape.ToString()),
         PrimType ptype => ptype.GetDisplayName() + (Shape.IsScalar ? string.Empty : Shape.ToString()),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
         ReferenceType { ElemType: DataType etype } => $"&{etype.GetDisplayName()}",

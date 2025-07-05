@@ -25,8 +25,8 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         var ndsbp = new SBP[tensorType.Shape.Rank];
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var policyA = i < padA ? null : a.AxisPolices[i - padA];
-            var policyB = i < padB ? null : b.AxisPolices[i - padB];
+            var policyA = i < padA ? null : a.AxisPolicies[i - padA];
+            var policyB = i < padB ? null : b.AxisPolicies[i - padB];
             switch (policyA, policyB)
             {
                 case (null, _):
@@ -142,8 +142,8 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         var operandTypes = TypeInference.BroadcastDistributeTypes(lhs, rhs);
         return (operandTypes[0], operandTypes[1]) switch
         {
-            (TensorType a, TensorType b) => Visit(a, b),
-            (DistributedType a, DistributedType b) => Visit(a, b),
+            (TensorType a, TensorType b) => Visit(a, b, target),
+            (DistributedType a, DistributedType b) => Visit(a, b, target),
             _ => new InvalidType($"{lhs} {rhs}"),
         };
     }
@@ -180,25 +180,42 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    private IRType Visit(TensorType lhs, TensorType rhs)
+    private IRType Visit(TensorType lhs, TensorType rhs, Compare target)
     {
         var broadcastType = TypeInference.BroadcastType(lhs, rhs);
         if (broadcastType is TensorType tensorType)
         {
-            return tensorType with { DType = lhs.DType is VectorType lvt ? lvt with { ElemType = DataTypes.Boolean } : rhs.DType is VectorType rvt ? rvt with { ElemType = DataTypes.Boolean } : DataTypes.Boolean };
+            if (tensorType.DType is VectorType vt)
+            {
+                if (vt.Lanes.Count != 1)
+                {
+                    return new InvalidType($"Vector compare only support single lane, but got {vt.Lanes.Count}");
+                }
+
+                if (target.MaskVectorStyle == MaskVectorStyle.Unknown)
+                {
+                    throw new InvalidOperationException("MaskVectorStyle is required for vector compare");
+                }
+
+                return tensorType with { DType = new MaskVectorType(target.MaskVectorStyle, vt.ElemType.SizeInBytes * 8, vt.Lanes[0]) };
+            }
+            else
+            {
+                return tensorType with { DType = DataTypes.Boolean };
+            }
         }
 
         return broadcastType;
     }
 
-    private IRType Visit(DistributedType a, DistributedType b)
+    private IRType Visit(DistributedType a, DistributedType b, Compare target)
     {
         if (a.Placement != b.Placement)
         {
             return new InvalidType("lhs rhs have different placement");
         }
 
-        var rType = Visit(a.TensorType, b.TensorType);
+        var rType = Visit(a.TensorType, b.TensorType, target);
         if (rType is not TensorType tensorType)
         {
             return rType;

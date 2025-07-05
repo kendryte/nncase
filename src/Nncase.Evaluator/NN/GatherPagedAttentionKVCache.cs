@@ -92,7 +92,7 @@ public sealed class GatherPagedAttentionKVCacheEvaluator : ITypeInferencer<Gathe
             return invalidType;
         }
 
-        if (!shardId.AxisPolices.All(sbp => sbp is SBPBroadCast))
+        if (!shardId.AxisPolicies.All(sbp => sbp is SBPBroadCast))
         {
             return new InvalidType("only support broadcast!");
         }

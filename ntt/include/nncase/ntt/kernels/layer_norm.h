@@ -29,7 +29,7 @@ template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
                            const PackedAxes &, const PadedNums &,
-                           const TAxis &) {
+                           const TAxis &, const bool use_mean = true) {
 
     using TElem = typename TIn::element_type;
     auto input_shape = input.shape();
@@ -53,7 +53,6 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         finner_size = finner_size * (TElem)TElem::size();
     }
 
-    constexpr bool use_mean = true; // This can be a parameter if needed
     apply(domain, [&](auto index) {
         const auto input_p =
             input.elements().data() + linear_offset(index, strides);
@@ -64,7 +63,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 
         // compute mean
         TElem mean1 = (TElem)0;
-        if constexpr (use_mean) {
+        if (use_mean) {
             for (size_t i = 0; i < inner_size; i++)
                 mean1 = mean1 + (input_p[i] / finner_size);
             if constexpr (UseVectorReduce) {
@@ -105,7 +104,8 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        TOut &&output, const TEp &epsilon,
                        const TAxis &axis = -1_dim,
                        const PackedAxes &packedAxes = {},
-                       const PadedNums &padedNums = {}) {
+                       const PadedNums &padedNums = {},
+                       const bool use_mean = true) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
     if constexpr (PackedAxes::rank() <= 1) {
         static_assert(PadedNums::rank() == 0, "not support padding");
@@ -113,6 +113,6 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
 
     packed_layer_norm_detail::within_axis_pack_impl<
         TIn, TScale, TBias, TOut, TEp, PackedAxes, PadedNums, TAxis>(
-        input, scale, bias, output, epsilon, packedAxes, padedNums, axis);
+        input, scale, bias, output, epsilon, packedAxes, padedNums, axis, use_mean);
 }
 } // namespace nncase::ntt

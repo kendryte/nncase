@@ -115,7 +115,7 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
         var args = context.GetArguments(target, Conv2D.Stride, Conv2D.Padding, Conv2D.Dilation, Conv2D.Groups);
 
         // Not support split on h/w/r/s
-        if (input.AxisPolices.Skip(2).Any(sbp => sbp is SBPSplit) || weights.AxisPolices.Skip(2).Any(sbp => sbp is SBPSplit))
+        if (input.AxisPolicies.Skip(2).Any(sbp => sbp is SBPSplit) || weights.AxisPolicies.Skip(2).Any(sbp => sbp is SBPSplit))
         {
             return new InvalidType(string.Empty);
         }
@@ -125,14 +125,14 @@ public class Conv2DEvaluator : IEvaluator<Conv2D>, ITypeInferencer<Conv2D>, ICos
             return new InvalidType("placement not equal");
         }
 
-        var ndsbpsIf = DistributedUtility.AxisPolicesToNDSBP(input.AxisPolices, input.Placement.Rank);
-        var ndsbpsW = DistributedUtility.AxisPolicesToNDSBP(weights.AxisPolices, weights.Placement.Rank);
-        var ndsbpBias = DistributedUtility.AxisPolicesToNDSBP(bias.AxisPolices, bias.Placement.Rank);
+        var ndsbpsIf = DistributedUtility.AxisPolicesToNDSBP(input.AxisPolicies, input.Placement.Rank);
+        var ndsbpsW = DistributedUtility.AxisPolicesToNDSBP(weights.AxisPolicies, weights.Placement.Rank);
+        var ndsbpBias = DistributedUtility.AxisPolicesToNDSBP(bias.AxisPolicies, bias.Placement.Rank);
         var ndsbp = new SBP[input.Placement.Rank];
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var invalid = new InvalidType($"({input.AxisPolices[i]}, {weights.AxisPolices[i]}) not support");
-            switch (input.AxisPolices[i], weights.AxisPolices[i])
+            var invalid = new InvalidType($"({input.AxisPolicies[i]}, {weights.AxisPolicies[i]}) not support");
+            switch (input.AxisPolicies[i], weights.AxisPolicies[i])
             {
                 case (SBPSplit sa, SBPSplit sb):
                     // split on ic

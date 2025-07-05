@@ -1,4 +1,4 @@
 @model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.PackedLayerNorm>
 @{
 }
-packed_layer_norm<@Model.Target.Axis>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), @Html.Raw(Model.Arguments[3].Symbol.Name), @Html.Raw(Model.Args[0].CheckedTensorType.DType.ToC()) { @Model.Target.Epsilon }, @Model.Target.UseMean.ToString().ToLower(), fixed_shape_v<@string.Join(",", Model.Target.PackedAxes)>, fixed_shape_v<@string.Join(",", Model.Target.PadedNums)>);
+packed_layer_norm(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), @Html.Raw(Model.Arguments[3].Symbol.Name), @Html.Raw(Model.Args[0].CheckedTensorType.DType.ToC()) { @Model.Target.Epsilon }, @Model.Target.Axis, fixed_shape_v<@string.Join(",", Model.Target.PackedAxes)>, fixed_shape_v<@string.Join(",", Model.Target.PadedNums)>, @Model.Target.UseMean.ToString().ToLower());

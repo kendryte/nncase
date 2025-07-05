@@ -83,17 +83,25 @@ ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
 
 template <ntt::TensorOfVector TTensor>
 ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
-    using T = typename std::decay_t<TTensor>::element_type;
-    size_t N = T::shape()[0];
-    auto RankDim = T::rank();
-    using ElemType = ntt::element_or_scalar_t<T>;
-    void *buffer = reinterpret_cast<void *>(tensor.elements().data());
-    auto ort_type = primitive_type2ort_type<ElemType>();
+    using vec_type = typename std::decay_t<TTensor>::element_type;
+    size_t N = vec_type::shape()[0];
+    auto RankDim = vec_type::rank();
+    using vec_elem_type = ntt::element_or_scalar_t<vec_type>;
+    auto ort_type = primitive_type2ort_type<vec_elem_type>();
     auto r1 = tensor.shape().rank();
     auto r2 = r1 + RankDim;
     std::vector<size_t> v(r2, N);
     for (size_t i = 0; i < r1; i++)
         v[i] = tensor.shape()[i];
+
+    vec_elem_type *buffer = new vec_elem_type[tensor.shape().length() * vec_type::size()];
+    vec_elem_type *buffer_ptr = buffer;
+    ntt::apply(tensor.shape(), [&](auto tindex) {
+        const auto &vec_src = tensor(tindex);
+        ntt::apply(vec_src.shape(), [&](auto vindex) {
+            *buffer_ptr++ = vec_src(vindex);
+        });
+    });
 
     const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
     return make_tensor(buffer, ort_type, shape, r2);
@@ -104,24 +112,29 @@ void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
     size_t size = 0;
     using element_type = ntt::element_or_scalar_t<TTensor>;
     auto ort_ptr = (const element_type *)tensor_buffer(ort_tensor, &size);
-    if constexpr (ntt::Vector<element_type>) {
-        assert(tensor_length(ort_tensor) ==
-               ntt_tensor.shape().length() * element_type::size());
-    } else {
-        assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
-    }
-    if constexpr (ntt::Vector<TTensor>) {
-        ntt::apply(ntt_tensor.shape(), [&](auto tindex) {
-            ntt::apply(ntt_tensor(tindex).shape(), [&](auto vindex) {
-                ntt_tensor(tindex)(vindex) = *ort_ptr++;
-            });
-        });
-    } else {
-        ntt::apply(ntt_tensor.shape(),
-                   [&](auto tindex) { ntt_tensor(tindex) = *ort_ptr++; });
-    }
+    assert(tensor_length(ort_tensor) == ntt_tensor.shape().length());
+    ntt::apply(ntt_tensor.shape(), [&](auto tindex) {
+        ntt_tensor(tindex) = *ort_ptr++;
+    });
 }
 
+template <ntt::TensorOfVector TTensor>
+void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {
+    using vec_type = typename TTensor::element_type;
+    assert(tensor_length(ort_tensor) ==
+           ntt_tensor.shape().length() * vec_type::size());
+
+    using vec_elem_type = typename vec_type::element_type;
+    size_t size = 0;
+    const vec_elem_type *ort_ptr = static_cast<const vec_elem_type *>(tensor_buffer(ort_tensor, &size));
+
+    ntt::apply(ntt_tensor.shape(), [&](auto tindex) {
+        auto &vec_dst = ntt_tensor(tindex);
+        ntt::apply(ntt_tensor(tindex).shape(), [&](auto vindex) {
+            vec_dst(vindex) = *ort_ptr++;
+        });
+    });
+}
 // template <ntt::TensorOfVector TTensor>
 //     requires(TTensor::element_type::rank() == 1)
 // void ort2ntt(ortki::OrtKITensor *ort_tensor, TTensor &ntt_tensor) {

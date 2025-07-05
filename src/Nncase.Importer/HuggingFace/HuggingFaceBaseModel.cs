@@ -315,8 +315,8 @@ public abstract class HuggingFaceModel
         else if (scaleIf is null && scaleW is not null)
         {
             long[] axes = new long[] { expr.CheckedShape.Rank - 1 };
-            var max = Nncase.IR.F.Tensors.ReduceMax(expr, axes, float.MinValue, 1);
-            var min = Nncase.IR.F.Tensors.ReduceMin(expr, axes, float.MaxValue, 1);
+            var max = Nncase.IR.F.Tensors.ReduceMax(expr, axes, float.MinValue, true);
+            var min = Nncase.IR.F.Tensors.ReduceMin(expr, axes, float.MaxValue, true);
             var limit = Nncase.IR.F.Math.Max(Nncase.IR.F.Math.Abs(max), Nncase.IR.F.Math.Abs(min));
             if (limit.CheckedDataType != DataTypes.Float32)
             {

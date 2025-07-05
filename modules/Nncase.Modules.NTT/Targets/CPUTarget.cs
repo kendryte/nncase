@@ -29,11 +29,16 @@ public class CPUTarget : Target
 {
     public const string Kind = "cpu";
 
+    private readonly NTTModuleCompiler _nttModuleCompiler = new();
+
+    public CPUTarget()
+    {
+        ModuleCompilers = [_nttModuleCompiler];
+    }
+
     public override string Name => Kind;
 
-    public override IReadOnlyList<IModuleCompiler> ModuleCompilers { get; } = [
-        new NTTModuleCompiler(),
-    ];
+    public override IReadOnlyList<IModuleCompiler> ModuleCompilers { get; }
 
     public override (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser()
     {
@@ -58,6 +63,8 @@ public class CPUTarget : Target
         // todo config it in the target options.
         var rank = 1;
         var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 32 : 16;
+        var maskVectorStyle = _nttModuleCompiler.MaskVectorStyle;
+
         pass.Add<Passes.Rules.NTT.PackReduce>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackSwish>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackResizeImage>(rank, lane);
@@ -70,10 +77,11 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.PackReshape>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackSlice>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackGather>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackCompare>(rank, lane);
+
+        pass.Add<Passes.Rules.NTT.PackCompare>(maskVectorStyle, rank, lane);
         pass.Add<Passes.Rules.NTT.PackConcat>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackExpand>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackWhere>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackWhere>(maskVectorStyle, rank, lane);
         pass.Add<Passes.Rules.NTT.PackScatterND>(rank, lane);
         pass.Add<Passes.Rules.Neutral.FoldConstCall>();
         pass.Add<Passes.Rules.NTT.FoldPackUnpack>();

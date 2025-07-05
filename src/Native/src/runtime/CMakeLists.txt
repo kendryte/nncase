@@ -4,6 +4,7 @@ set(SRCS buffer.cpp
      copy.cpp
 		 datatypes.cpp
 		 error.cpp
+     device_buffer.cpp
 		 host_buffer.cpp
 		 host_runtime_tensor.cpp
      interpreter.cpp

@@ -202,100 +202,123 @@ template <> class u_pack<true, float, vector<float, 8>> {
     }
 };
 
-#if 0
-template <class TIn, class TOut>
+template <FixedTensor TIn, FixedTensor TOut>
 class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
   public:
     template <FixedDimensions TAxes>
-        requires(TAxes::rank() > 0 && (TAxes{}[-1]) == (TIn::rank() - 1))
     constexpr void operator()(const TIn &input, const TAxes &axes,
                               TOut &output) noexcept {
-        using TVec = vector<float, 8, 8>;
-        constexpr auto in_rank = TIn::rank();
-        constexpr auto out_rank = TOut::rank();
-        constexpr auto lanes = TVec::shape();
-        auto out_shape = output.shape();
 
-        ntt::apply(out_shape, [&](auto index) {
-            auto out_index = slice_index<out_rank>(index);
-            auto in_index = slice_index<in_rank>(index);
-            loop<2>([&](auto i) {
-                in_index[axes[i]] = in_index[axes[i]] * lanes[i];
-            });
-            auto in_ptr = reinterpret_cast<const float *>(&input(in_index));
-            auto out_ptr = reinterpret_cast<float *>(&output(out_index));
-            for (size_t i = 0; i < lanes[0]; i++) {
-                // out_ptr[i] = in_ptr[i * out_shape[out_rank - 1]];
-                __m256 data = _mm256_loadu_ps(in_ptr);
-                _mm256_storeu_ps(out_ptr, data);
-                in_ptr += lanes[1] * out_shape[out_rank - 1];
-                out_ptr += lanes[1];
-            }
-        });
-    }
+        constexpr auto axes_temp = TAxes{};
+        [[maybe_unused]] constexpr auto conti_dims_input =
+            contiguous_dims(input.shape(), input.strides());
+        [[maybe_unused]] constexpr auto conti_dims_output =
+            contiguous_dims(output.shape(), output.strides());
 
-    template <FixedDimensions TAxes>
-    constexpr void operator()(const TIn &input, const TAxes &axes,
-                              TOut &output) noexcept {
-        using TVec = vector<float, 8, 8>;
-        constexpr auto in_rank = TIn::rank();
-        constexpr auto out_rank = TOut::rank();
-        constexpr auto lanes = TVec::shape();
-        const auto out_shape = output.shape();
+        if constexpr (TAxes::rank() == 2 &&
+                      axes_temp[0_dim] + 1 == axes_temp[1_dim] &&
+                      conti_dims_input == TIn::rank() &&
+                      conti_dims_output == TOut::rank()) {
 
-        const auto domain = out_shape;
-        dynamic_shape_t<in_rank> inner_index{};
-        dynamic_shape_t<in_rank> outer_index{};
+            if constexpr (TAxes::rank() > 0 &&
+                          (TAxes{}[-1]) == (TIn::rank() - 1)) {
+                using TVec = vector<float, 8, 8>;
+                constexpr auto in_rank = TIn::rank();
+                constexpr auto out_rank = TOut::rank();
+                constexpr auto lanes = TVec::shape();
+                constexpr auto out_shape = TOut::shape();
 
-        const auto outer_domain = domain.template slice<0, axes[0_dim]>();
-        const auto packed_domain =
-            domain.template slice<axes[0_dim], axes.rank()>();
-        const auto inner_domain = domain.template slice<axes[1_dim] + 1>();
-        const auto inner_size = inner_domain.length();
-
-        if (inner_size % TVec::shape()[1_dim] != 0) {
-            ukernels::u_pack2d<false, TIn, TOut, float, TVec> impl;
-            impl(input, axes, output);
-        } else {
-            ntt::apply(outer_domain, [&](auto index) {
-                loop<axes[0_dim]>([&](auto i) {
-                    inner_index[i] = index[i];
-                    outer_index[i] = index[i];
-                });
-                for (size_t i = 0; i < packed_domain[0_dim]; i++) {
-                    outer_index[axes[0_dim]] = i;
-                    auto outer_ptr_keep =
-                        reinterpret_cast<float *>(&output(outer_index));
-                    for (size_t j = 0; j < lanes[0]; j++) {
-                        inner_index[axes[0_dim]] = i * lanes[0_dim] + j;
-                        auto outer_ptr = outer_ptr_keep + j * lanes[0];
-
-                        for (size_t k = 0; k < packed_domain[1]; k++) {
-                            inner_index[axes[1_dim]] = k * lanes[1];
-                            auto input_ptr = reinterpret_cast<const float *>(
-                                &input(inner_index));
-
-                            for (size_t l = 0; l < inner_size / lanes[1_dim];
-                                 l++) {
-                                auto st_base =
-                                    l * lanes[0_dim] * lanes.length();
-                                auto ld_base = l * lanes[1_dim];
-
-                                auto src = input_ptr + ld_base;
-                                auto dst = outer_ptr + st_base;
-                                permute_8x8(src, dst, inner_size,
-                                            lanes.length());
-                            }
-
-                            outer_ptr += (inner_size * lanes.length());
-                        }
+                ntt::apply(out_shape, [&](auto index) {
+                    auto out_index = index;
+                    auto in_index = index;
+                    loop<2>([&](auto i) {
+                        in_index[axes[i]] = in_index[axes[i]] * lanes[i];
+                    });
+                    auto in_ptr =
+                        reinterpret_cast<const float *>(&input(in_index));
+                    auto out_ptr =
+                        reinterpret_cast<float *>(&output(out_index));
+                    for (size_t i = 0; i < lanes[0]; i++) {
+                        // out_ptr[i] = in_ptr[i * out_shape[out_rank - 1]];
+                        __m256 data = _mm256_loadu_ps(in_ptr);
+                        _mm256_storeu_ps(out_ptr, data);
+                        in_ptr += lanes[1] * out_shape[out_rank - 1];
+                        out_ptr += lanes[1];
                     }
+                });
+
+            } else {
+                using TVec = vector<float, 8, 8>;
+                constexpr auto in_rank = TIn::rank();
+                constexpr auto out_rank = TOut::rank();
+                constexpr auto lanes = TVec::shape();
+                const auto out_shape = output.shape();
+
+                const auto domain = out_shape;
+                dynamic_shape_t<in_rank> inner_index{};
+                dynamic_shape_t<in_rank> outer_index{};
+
+                const auto outer_domain =
+                    domain.template slice<0, axes_temp[0_dim]>();
+                const auto packed_domain =
+                    domain.template slice<axes_temp[0_dim], 2>();
+                const auto inner_domain =
+                    domain.template slice<axes_temp[1_dim] + 1>();
+                const auto inner_size = inner_domain.length();
+
+                if (inner_size % TVec::shape()[1_dim] != 0) {
+                    ukernels::u_pack2d<false, TIn, TOut, float, TVec> impl;
+                    impl(input, axes, output);
+                } else {
+                    ntt::apply(outer_domain, [&](auto index) {
+                        loop<axes_temp[0_dim]>([&](auto i) {
+                            inner_index[i] = index[i];
+                            outer_index[i] = index[i];
+                        });
+                        for (size_t i = 0; i < packed_domain[0_dim]; i++) {
+                            outer_index[axes[0_dim]] = i;
+                            auto outer_ptr_keep =
+                                reinterpret_cast<float *>(&output(outer_index));
+                            for (size_t j = 0; j < lanes[0]; j++) {
+                                inner_index[axes[0_dim]] = i * lanes[0_dim] + j;
+                                auto outer_ptr = outer_ptr_keep + j * lanes[0];
+
+                                for (size_t k = 0; k < packed_domain[1_dim];
+                                     k++) {
+                                    inner_index[axes[1_dim]] = k * lanes[1];
+                                    auto input_ptr =
+                                        reinterpret_cast<const float *>(
+                                            &input(inner_index));
+
+                                    for (size_t l = 0;
+                                         l < inner_size / lanes[1_dim]; l++) {
+                                        auto st_base =
+                                            l * lanes[0_dim] * lanes.length();
+                                        auto ld_base = l * lanes[1_dim];
+
+                                        auto src = input_ptr + ld_base;
+                                        auto dst = outer_ptr + st_base;
+                                        permute_8x8(src, dst, inner_size,
+                                                    lanes.length());
+                                    }
+
+                                    outer_ptr += (inner_size * lanes.length());
+                                }
+                            }
+                        }
+                    });
                 }
-            });
+            }
+        } else {
+            using TElem = typename TIn::element_type;
+            using TVec = typename std::decay_t<TOut>::element_type;
+            ukernels::u_pack2d<false, TIn, TOut, TElem, TVec> impl;
+            impl(input, axes, output);
         }
     }
 };
 
+#if 0
 template <size_t axis_stride, class T1, size_t PackAxis>
 class u_unpack_1d_fixed<axis_stride, 8, T1, float, true, PackAxis> {
   public:

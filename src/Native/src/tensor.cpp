@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/runtime/dbg.h>
+#include <nncase/runtime/device_buffer.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/tensor.h>
@@ -48,6 +49,12 @@ result<void> tensor_node::copy_to(tensor dest) const noexcept {
 
 result<tensor> tensor_node::to_host() noexcept {
     if (buffer_.buffer().is_a<host_buffer_t>())
+        return ok(tensor(this));
+    return err(std::errc::not_supported);
+}
+
+result<tensor> tensor_node::to_device() noexcept {
+    if (buffer_.buffer().is_a<device_buffer_t>())
         return ok(tensor(this));
     return err(std::errc::not_supported);
 }

@@ -15,6 +15,7 @@
 #pragma once
 #include "../ukernels.h"
 #include "detail/binary_like_impl.h"
+#include <cstdio>
 
 namespace nncase::ntt {
 namespace detail {

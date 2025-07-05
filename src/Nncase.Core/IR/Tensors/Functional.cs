@@ -197,6 +197,11 @@ public static class Tensors
         return new Call(new Pack(lanes, axes), input);
     }
 
+    public static Expr PackMask(Expr input, MaskVectorStyle style, int elementBits, int lanes, int axis)
+    {
+        return new Call(new PackMask(style, elementBits, lanes, axis), input);
+    }
+
     public static Expr Unpack(Expr input, int[] lanes, int[] axes)
     {
         if (lanes.Length != axes.Length)

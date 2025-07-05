@@ -208,7 +208,16 @@ public static partial class TypePatternUtility
           DistributedType dtype => dtype.TensorType.DType is VectorType v && (rank == -1 ? true : v.Lanes.Count == rank),
           _ => false,
       },
-      "IsPacked");
+      "IsVector");
+
+    public static TypePattern IsMaskVector() => new TypePattern(
+      x => x switch
+      {
+          TensorType ttype => ttype.DType is MaskVectorType,
+          DistributedType dtype => dtype.TensorType.DType is MaskVectorType,
+          _ => false,
+      },
+      "IsMaskVector");
 
     /// <summary>
     /// check the data type is bool.
