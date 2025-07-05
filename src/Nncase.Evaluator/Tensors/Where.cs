@@ -64,7 +64,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var condOrt = cond.ToOrtTensor();
         var xOrt = x.ToOrtTensor();
         var yOrt = y.ToOrtTensor();
-        var condLaneNum = condType is VectorType vt1 ? vt1.Lanes.Count : 0;
+        var condLaneNum = condType is MaskVectorType vt1 ? 1 : 0;
         var xLaneNum = xType is VectorType vt2 ? vt2.Lanes.Count : 0;
         var yLaneNum = yType is VectorType vt3 ? vt3.Lanes.Count : 0;
         var maxLaneSize = System.Math.Max(System.Math.Max(condLaneNum, xLaneNum), yLaneNum);

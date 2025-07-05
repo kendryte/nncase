@@ -105,11 +105,12 @@ public static class CSourceExtensions
 
     public static string ToC(this DataType dataType) => dataType switch
     {
+        MaskVectorType vtype => $"vector<bool, {vtype.Lanes}>",
         PrimType ptype => ptype.ToC(),
         PagedAttentionKVCacheType => $"paged_attention_kv_cache_t",
         PointerType => "uint8_t *",
-        VectorType vtype => $"vector<{vtype.ElemType.ToC()},{string.Join(",", vtype.Lanes)}>",
         ReferenceType rtype => $"{rtype.ElemType.ToC()}",
+        VectorType vtype => $"vector<{vtype.ElemType.ToC()}, {string.Join(",", vtype.Lanes)}>",
         _ => throw new NotSupportedException(dataType.ToString()),
     };
 

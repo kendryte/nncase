@@ -1131,10 +1131,13 @@ public sealed class PackConcat : PackRule
 
 public sealed class PackCompare : PackRule
 {
-    public PackCompare(int rank, int lane)
+    public PackCompare(MaskVectorStyle maskVectorStyle, int rank, int lane)
         : base(rank, lane)
     {
+        MaskVectorStyle = maskVectorStyle;
     }
+
+    public MaskVectorStyle MaskVectorStyle { get; }
 
     public override Pattern Pattern { get; } = IsCompare(
       "target",
@@ -1142,7 +1145,7 @@ public sealed class PackCompare : PackRule
       IsWildcard("lhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("rhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(IR.Math.Compare op, Expr lhs, Expr rhs, Expr candidate, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes)
+    public static List<Expr> AddCandidate(IR.Math.Compare op, Expr lhs, Expr rhs, Expr candidate, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes, MaskVectorStyle maskVectorStyle)
     {
         var rets = new List<Expr>();
         var lhsShape = lhs.CheckedShape;
@@ -1177,7 +1180,7 @@ public sealed class PackCompare : PackRule
         var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
         var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
-        var compare = IR.F.Math.Compare(op.CompareOp, packedLhs, packedRhs);
+        var compare = IR.F.Math.Compare(op.CompareOp, packedLhs, packedRhs, maskVectorStyle);
         var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(compare, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? alignedLhsPackedAxes : alignedRhsPackedAxes), candidate.CheckedShape, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums! : rhsPadNums!);
         if (post.CheckedType is not InvalidType)
         {
@@ -1205,7 +1208,7 @@ public sealed class PackCompare : PackRule
             var rhsPackedAxes = arr.Skip(1).First();
             if (lhsPackedAxes.Length <= Rank && rhsPackedAxes.Length <= Rank)
             {
-                rets.AddRange(AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(lhsLaneSize, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsPackedAxes.Length).ToArray()));
+                rets.AddRange(AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(lhsLaneSize, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsPackedAxes.Length).ToArray(), MaskVectorStyle));
             }
         }
 
@@ -1353,20 +1356,23 @@ public sealed class PackExpand : PackRule
 
 public sealed class PackWhere : PackRule
 {
-    public PackWhere(int rank, int lane)
+    public PackWhere(MaskVectorStyle maskVectorStyle, int rank, int lane)
         : base(rank, lane)
     {
+        MaskVectorStyle = maskVectorStyle;
     }
+
+    public MaskVectorStyle MaskVectorStyle { get; }
 
     public override Pattern Pattern { get; } = IsWhere(
         "target",
         "call",
         _ => true,
-        IsWildcard("condition", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
+        IsWildcard("condition", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsMaskVector() },
         IsWildcard("lhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
         IsWildcard("rhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() });
 
-    public static List<Expr> AddCandidate(Expr condition, Expr lhs, Expr rhs, Expr candidate, int[] conditionPackedAxes, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] conditionLanes, int[] lhsLanes, int[] rhsLanes)
+    public static List<Expr> AddCandidate(Expr condition, Expr lhs, Expr rhs, Expr candidate, int[] conditionPackedAxes, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] conditionLanes, int[] lhsLanes, int[] rhsLanes, MaskVectorStyle maskVectorStyle)
     {
         var rets = new List<Expr>();
         var conditionShape = condition.CheckedShape;
@@ -1407,7 +1413,9 @@ public sealed class PackWhere : PackRule
             return rets;
         }
 
-        var packedCondition = IR.F.Tensors.Pack(PackUtility.PadForPack(condition, conditionShape, conditionPackedAxes, conditionLanes, 0f, out var conditionPadNums), conditionLanes, conditionPackedAxes);
+        var maskElementBits = lhs.CheckedDataType.SizeInBytes * 8;
+        var paddedCondition = PackUtility.PadForPack(condition, conditionShape, conditionPackedAxes, conditionLanes, 0f, out var conditionPadNums);
+        var packedCondition = conditionLanes.Length == 0 ? condition : IR.F.Tensors.PackMask(paddedCondition, maskVectorStyle, maskElementBits, conditionLanes.Single(), conditionPackedAxes.Single());
         var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
         var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
 
@@ -1447,9 +1455,10 @@ public sealed class PackWhere : PackRule
             var conditionPackedAxes = arr.First();
             var lhsPackedAxes = arr.Skip(1).First();
             var rhsPackedAxes = arr.Skip(2).First();
-            if (conditionPackedAxes.Length <= Rank && lhsPackedAxes.Length <= Rank && rhsPackedAxes.Length <= Rank)
+            if (conditionPackedAxes.Length <= Rank && lhsPackedAxes.Length <= Rank && rhsPackedAxes.Length <= Rank
+                && conditionPackedAxes.Length == 1 /* only support one axis for condition */)
             {
-                rets.AddRange(AddCandidate(condition, lhs, rhs, candidate, conditionPackedAxes, lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(conditionLaneSize, conditionPackedAxes.Length).ToArray(), Enumerable.Repeat(lhsLaneSize, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsPackedAxes.Length).ToArray()));
+                rets.AddRange(AddCandidate(condition, lhs, rhs, candidate, conditionPackedAxes, lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(conditionLaneSize, conditionPackedAxes.Length).ToArray(), Enumerable.Repeat(lhsLaneSize, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsPackedAxes.Length).ToArray(), MaskVectorStyle));
             }
         }
 

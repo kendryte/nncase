@@ -33,13 +33,15 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
     private readonly Dictionary<RuntimeTypeHandle, PrimType> _primTypes = new();
     private readonly Dictionary<Runtime.TypeCode, PrimType> _typeCodeToPrimTypes = new();
     private readonly Dictionary<RuntimeTypeHandle, ValueType> _valueTypes = new();
+    private readonly Dictionary<RuntimeTypeHandle, MaskVectorType> _maskVectorTypes = new();
     private readonly IResolver _resolver;
 
-    public DataTypeServiceProvider(PrimType[] primTypes, ValueType[] valueTypes, IResolver resolver)
+    public DataTypeServiceProvider(PrimType[] primTypes, ValueType[] valueTypes, MaskVectorType[] maskVectorTypes, IResolver resolver)
     {
         _primTypes = primTypes.ToDictionary(x => x.CLRType.TypeHandle);
         _typeCodeToPrimTypes = primTypes.Where(x => x.TypeCode < Runtime.TypeCode.ValueType).ToDictionary(x => x.TypeCode);
         _valueTypes = valueTypes.ToDictionary(x => x.CLRType.TypeHandle);
+        _maskVectorTypes = maskVectorTypes.ToDictionary(x => x.CLRType.TypeHandle);
         _resolver = resolver;
     }
 
@@ -75,6 +77,10 @@ internal class DataTypeServiceProvider : IDataTypeServiceProvider
         else if (_valueTypes.TryGetValue(type.TypeHandle, out var valueType))
         {
             return valueType;
+        }
+        else if (_maskVectorTypes.TryGetValue(type.TypeHandle, out var maskVectorType))
+        {
+            return maskVectorType;
         }
 
         throw new NotSupportedException($"Unsupported Type {type} in GetDataTypefromType");

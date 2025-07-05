@@ -742,6 +742,13 @@ public sealed class ConcatUnpackPropagation : RewriteRule<Pattern>
 [RuleGenerator]
 public sealed class PackComparePropagation : RewriteRule<Pattern>
 {
+    public PackComparePropagation(MaskVectorStyle maskVectorStyle)
+    {
+        MaskVectorStyle = maskVectorStyle;
+    }
+
+    public MaskVectorStyle MaskVectorStyle { get; }
+
     public override Pattern Pattern { get; } =
         PatternMatch.F.Tensors.IsPack(
             "pack",
@@ -772,7 +779,7 @@ public sealed class PackComparePropagation : RewriteRule<Pattern>
             var lhsLanes = lhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
             var rhsLanes = rhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
 
-            var ret = PackCompare.AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes.Select(a => a - lhsExt).ToArray(), rhsPackedAxes.Select(a => a - rhsExt).ToArray(), lhsLanes, rhsLanes).FirstOrDefault();
+            var ret = PackCompare.AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes.Select(a => a - lhsExt).ToArray(), rhsPackedAxes.Select(a => a - rhsExt).ToArray(), lhsLanes, rhsLanes, MaskVectorStyle).FirstOrDefault();
             if (ret is not null)
             {
                 return IR.F.Tensors.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
@@ -786,6 +793,13 @@ public sealed class PackComparePropagation : RewriteRule<Pattern>
 [RuleGenerator]
 public sealed class CompareUnpackPropagation : RewriteRule<Pattern>
 {
+    public CompareUnpackPropagation(MaskVectorStyle maskVectorStyle)
+    {
+        MaskVectorStyle = maskVectorStyle;
+    }
+
+    public MaskVectorStyle MaskVectorStyle { get; }
+
     public override Pattern Pattern { get; } =
     IsCompare(
             "compare",
@@ -813,7 +827,7 @@ public sealed class CompareUnpackPropagation : RewriteRule<Pattern>
             var lhsLanes = lhsPackedAxes.Count > 0 ? lhsUnpack!.Lanes : Array.Empty<int>();
             var rhsLanes = rhsPackedAxes.Count > 0 ? rhsUnpack!.Lanes : Array.Empty<int>();
 
-            var ret = PackCompare.AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes.ToArray(), rhsPackedAxes.ToArray(), lhsLanes.ToArray(), rhsLanes.ToArray()).FirstOrDefault();
+            var ret = PackCompare.AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes.ToArray(), rhsPackedAxes.ToArray(), lhsLanes.ToArray(), rhsLanes.ToArray(), MaskVectorStyle).FirstOrDefault();
             if (ret is not null)
             {
                 return ret;
@@ -827,6 +841,13 @@ public sealed class CompareUnpackPropagation : RewriteRule<Pattern>
 [RuleGenerator]
 public sealed class PackWherePropagation : RewriteRule<Pattern>
 {
+    public PackWherePropagation(MaskVectorStyle maskVectorStyle)
+    {
+        MaskVectorStyle = maskVectorStyle;
+    }
+
+    public MaskVectorStyle MaskVectorStyle { get; }
+
     public override Pattern Pattern { get; } =
         PatternMatch.F.Tensors.IsPack(
             "pack",
@@ -836,7 +857,7 @@ public sealed class PackWherePropagation : RewriteRule<Pattern>
                 "where",
                 "callee",
                 _ => true,
-                IsWildcard("cond", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
+                IsWildcard("cond", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsMaskVector() },
                 IsWildcard("lhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
                 IsWildcard("rhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() }));
 
@@ -862,7 +883,7 @@ public sealed class PackWherePropagation : RewriteRule<Pattern>
             var lhsLanes = lhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
             var rhsLanes = rhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
 
-            var ret = PackWhere.AddCandidate(cond, lhs, rhs, candidate, condPackedAxes.Select(a => a - condExt).ToArray(), lhsPackedAxes.Select(a => a - lhsExt).ToArray(), rhsPackedAxes.Select(a => a - rhsExt).ToArray(), condLanes, lhsLanes, rhsLanes).FirstOrDefault();
+            var ret = PackWhere.AddCandidate(cond, lhs, rhs, candidate, condPackedAxes.Select(a => a - condExt).ToArray(), lhsPackedAxes.Select(a => a - lhsExt).ToArray(), rhsPackedAxes.Select(a => a - rhsExt).ToArray(), condLanes, lhsLanes, rhsLanes, MaskVectorStyle).FirstOrDefault();
             if (ret is not null)
             {
                 return IR.F.Tensors.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
@@ -876,6 +897,13 @@ public sealed class PackWherePropagation : RewriteRule<Pattern>
 [RuleGenerator]
 public sealed class WhereUnpackPropagation : RewriteRule<Pattern>
 {
+    public WhereUnpackPropagation(MaskVectorStyle maskVectorStyle)
+    {
+        MaskVectorStyle = maskVectorStyle;
+    }
+
+    public MaskVectorStyle MaskVectorStyle { get; }
+
     public override Pattern Pattern { get; } =
     IsWhere(
             "where",
@@ -909,7 +937,7 @@ public sealed class WhereUnpackPropagation : RewriteRule<Pattern>
             var lhsLanes = lhsPackedAxes.Count > 0 ? lhsUnpack!.Lanes : Array.Empty<int>();
             var rhsLanes = rhsPackedAxes.Count > 0 ? rhsUnpack!.Lanes : Array.Empty<int>();
 
-            var ret = PackWhere.AddCandidate(cond, lhs, rhs, candidate, condPackedAxes.ToArray(), lhsPackedAxes.ToArray(), rhsPackedAxes.ToArray(), condLanes.ToArray(), lhsLanes.ToArray(), rhsLanes.ToArray()).FirstOrDefault();
+            var ret = PackWhere.AddCandidate(cond, lhs, rhs, candidate, condPackedAxes.ToArray(), lhsPackedAxes.ToArray(), rhsPackedAxes.ToArray(), condLanes.ToArray(), lhsLanes.ToArray(), rhsLanes.ToArray(), MaskVectorStyle).FirstOrDefault();
             if (ret is not null)
             {
                 return ret;
