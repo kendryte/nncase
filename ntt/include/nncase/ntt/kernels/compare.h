@@ -38,9 +38,6 @@ template <template <class T1, class T2> class Op, Tensor TLhs, Tensor TRhs,
 void compare(
     const TLhs &lhs, const TRhs &rhs, TOut &&output,
     const Op<typename TLhs::value_type, typename TRhs::value_type> &op = {}) {
-    static_assert(
-        std::is_same_v<typename TLhs::value_type, typename TRhs::value_type>,
-        "compare only support same element type now");
     detail::compare_impl<TLhs, TRhs, std::decay_t<TOut>>()(lhs, rhs, output,
                                                            op);
 }
