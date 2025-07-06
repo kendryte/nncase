@@ -47,7 +47,7 @@ public static class IRUtility
         mat = new int[newShape.Length, inShape.Length];
         int i = 0, j = 0;
         var paths = new List<(int, int)>();
-        while (i < newShape.Length && j < inShape.Length)
+        while (i >= 0 && i < newShape.Length && j >= 0 && j < inShape.Length)
         {
             if (paths.IndexOf((i, j)) != -1)
             {

@@ -338,7 +338,7 @@ public sealed class BinaryUnpackPropagation : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed class PackTransposePropagation : RewriteRule<Pattern>
+public sealed partial class PackTransposePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         PatternMatch.F.Tensors.IsPack(
@@ -349,27 +349,12 @@ public sealed class PackTransposePropagation : RewriteRule<Pattern>
                 "trans",
                 "callee",
                 IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-                IsTensorConst("perm") with { TypePattern = IsIntegral() }));
+                IsFixedShape("perm")));
 
-    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
+    private Expr? GetReplace(IR.Tensors.Pack pack, Expr input, int[] perm, RunPassContext context)
     {
-        var pack = (IR.Tensors.Pack)result["pack"];
-        if (pack.Axes.Count > 1)
-        {
-            var input = (Expr)result["input"];
-            var perm = ((TensorConst)result["perm"]).Value.ToArray<int>();
-            var permRevsere = Enumerable.Range(0, perm.Length).Select(i => perm.IndexOf(i)).ToArray();
-            var packAxes = pack.Axes.Select(a => permRevsere[a]).ToArray();
-            var packLanes = Enumerable.Range(0, pack.Lanes.Count).Select(i => pack.Lanes[pack.Axes.IndexOf(packAxes[i])]).ToArray();
-
-            var ret = PackTranspose.AddCandidate(input, perm, packAxes, packLanes).FirstOrDefault();
-            if (ret is not null)
-            {
-                return IR.F.Tensors.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
-            }
-        }
-
-        return null;
+        var packAxes = pack.Axes.Select(a => perm[a]).ToArray();
+        return IR.F.Tensors.Transpose(IR.F.Tensors.Pack(input, pack.Lanes.ToArray(), packAxes), perm);
     }
 }
 

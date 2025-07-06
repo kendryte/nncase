@@ -63,6 +63,11 @@ public static class OrtKIExtensions
 
     public static Tensor ToTensor(this OrtKISharp.Tensor tensor, TensorType tensorType)
     {
+        if (tensorType.DType is VectorType or MaskVectorType)
+        {
+            throw new NotSupportedException("VectorType is not supported in OrtKISharp.Tensor.ToTensor with TensorType.");
+        }
+
         var shape = tensorType.Shape.IsFixed ? (RankedShape)tensorType.Shape : tensor.Shape;
         return Tensor.From(tensorType.DType, new TensorInitializerWithOrt(tensor), shape);
     }

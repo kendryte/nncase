@@ -34,7 +34,7 @@ public abstract class PackRule : RewriteRule<Pattern>
 
     public int Rank { get; }
 
-    public override BaseExpr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
+    public override BaseExpr? GetReplace(IMatchResult result, RunPassContext options) => GetReplaceCandidates(result, options)[0];
 
     public IEnumerable<int[]> GeneratePackAxes(Shape shape)
     {
@@ -851,10 +851,10 @@ public sealed class PackReshape : PackRule
 
     public override Pattern Pattern { get; } = IsReshape(
       "target",
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() & HasFixedShape() },
-      IsFixedShape("newShape"));
+      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
+      IsRankedShape("newShape"));
 
-    public static List<Expr> AddCandidate(Expr input, long[] newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, RankedShape newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
@@ -914,7 +914,7 @@ public sealed class PackReshape : PackRule
         var packedNewShape = newShape.ToArray();
         foreach (var (lane, axis) in lanes.Zip(unpackAxes))
         {
-            packedNewShape[axis] = MathUtility.CeilDiv(packedNewShape[axis], lane);
+            packedNewShape[axis] = Dimension.CeilDiv(packedNewShape[axis], lane);
         }
 
         var nreshape = IR.F.Tensors.Reshape(packed, packedNewShape);
@@ -932,12 +932,12 @@ public sealed class PackReshape : PackRule
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var newShape = ((RankedShape)result["newShape"]).ToValueArray();
-        var inShape = input.CheckedShape.ToValueArray();
+        var newShape = (RankedShape)result["newShape"];
+        var inShape = input.CheckedShape;
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         // 1. find the mapping transforms
-        if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
+        if (!IRUtility.TryGetShapeMapMatrix(CompilerServices.GetMaxShape(inShape), CompilerServices.GetMaxShape(newShape), out var mat))
         {
             return new List<Expr> { };
         }
