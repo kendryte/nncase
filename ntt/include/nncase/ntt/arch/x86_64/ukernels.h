@@ -274,16 +274,11 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
                     loop<2>([&](auto i) {
                         in_index[axes[i]] = in_index[axes[i]] * lanes[i];
                     });
-                    auto in_ptr =
-                        reinterpret_cast<const float *>(&input(in_index));
-                    auto out_ptr =
-                        reinterpret_cast<float *>(&output(out_index));
+                    auto in_ptr = &input(in_index);
+                    auto out_ptr = &output(out_index);
                     for (size_t i = 0; i < lanes[0]; i++) {
-                        // out_ptr[i] = in_ptr[i * out_shape[out_rank - 1]];
-                        __m256 data = _mm256_loadu_ps(in_ptr);
-                        _mm256_storeu_ps(out_ptr, data);
+                        out_ptr[0](i) = _mm256_loadu_ps(in_ptr);
                         in_ptr += lanes[1] * out_shape[out_rank - 1];
-                        out_ptr += lanes[1];
                     }
                 });
 
