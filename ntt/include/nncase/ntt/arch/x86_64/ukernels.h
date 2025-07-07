@@ -49,9 +49,7 @@ struct u_unary<ntt::ops::copy<vector<float, 8>>, vector<float, 8>, true> {
         constexpr auto unroll = policy_t::unroll;
         while (count / unroll) {
             for (size_t i = 0; i < unroll; i++) {
-                __m256 data =
-                    _mm256_loadu_ps(reinterpret_cast<const float *>(input));
-                _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
+                *output = *input;
                 input += input_stride;
                 output += output_stride;
                 count--;
@@ -59,9 +57,7 @@ struct u_unary<ntt::ops::copy<vector<float, 8>>, vector<float, 8>, true> {
         }
 
         for (size_t i = 0; i < count; i++) {
-            __m256 data =
-                _mm256_loadu_ps(reinterpret_cast<const float *>(input));
-            _mm256_storeu_ps(reinterpret_cast<float *>(output), data);
+            *output = *input;
             input += input_stride;
             output += output_stride;
         }
