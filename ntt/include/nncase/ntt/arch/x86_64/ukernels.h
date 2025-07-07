@@ -128,17 +128,16 @@ SPECIALIZE_U_COMPARE(less_or_equal, 2)
 
 #undef SPECIALIZE_U_COMPARE
 
-template <typename TElem>
-inline void permute_8x8(const TElem *src, TElem *dst, size_t in_stride,
-                        size_t out_stride) noexcept {
-    __m256 row0 = _mm256_loadu_ps(&src[0 * in_stride]);
-    __m256 row1 = _mm256_loadu_ps(&src[1 * in_stride]);
-    __m256 row2 = _mm256_loadu_ps(&src[2 * in_stride]);
-    __m256 row3 = _mm256_loadu_ps(&src[3 * in_stride]);
-    __m256 row4 = _mm256_loadu_ps(&src[4 * in_stride]);
-    __m256 row5 = _mm256_loadu_ps(&src[5 * in_stride]);
-    __m256 row6 = _mm256_loadu_ps(&src[6 * in_stride]);
-    __m256 row7 = _mm256_loadu_ps(&src[7 * in_stride]);
+inline void permute_8x8_unpack1d(const vector<float, 8> *src, float *dst,
+                                 size_t in_stride, size_t out_stride) noexcept {
+    __m256 row0 = src[0 * in_stride];
+    __m256 row1 = src[1 * in_stride];
+    __m256 row2 = src[2 * in_stride];
+    __m256 row3 = src[3 * in_stride];
+    __m256 row4 = src[4 * in_stride];
+    __m256 row5 = src[5 * in_stride];
+    __m256 row6 = src[6 * in_stride];
+    __m256 row7 = src[7 * in_stride];
 
     __m256 t0 = _mm256_unpacklo_ps(row0, row1);
     __m256 t1 = _mm256_unpackhi_ps(row0, row1);
@@ -177,16 +176,16 @@ inline void permute_8x8(const TElem *src, TElem *dst, size_t in_stride,
     _mm256_storeu_ps(&dst[7 * out_stride], row7);
 }
 
-inline void permute_8x8_unpack1d(const vector<float, 8> *src, float *dst,
+inline void permute_8x8_unpack2d(const vector<float, 8, 8> *src, float *dst,
                                  size_t in_stride, size_t out_stride) noexcept {
-    __m256 row0 = src[0 * in_stride];
-    __m256 row1 = src[1 * in_stride];
-    __m256 row2 = src[2 * in_stride];
-    __m256 row3 = src[3 * in_stride];
-    __m256 row4 = src[4 * in_stride];
-    __m256 row5 = src[5 * in_stride];
-    __m256 row6 = src[6 * in_stride];
-    __m256 row7 = src[7 * in_stride];
+    __m256 row0 = src[0](in_stride);
+    __m256 row1 = src[1](in_stride);
+    __m256 row2 = src[2](in_stride);
+    __m256 row3 = src[3](in_stride);
+    __m256 row4 = src[4](in_stride);
+    __m256 row5 = src[5](in_stride);
+    __m256 row6 = src[6](in_stride);
+    __m256 row7 = src[7](in_stride);
 
     __m256 t0 = _mm256_unpacklo_ps(row0, row1);
     __m256 t1 = _mm256_unpackhi_ps(row0, row1);
@@ -565,8 +564,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                     ntt::apply(tile_domain, [&](auto index) {
                         ntt::loop<const_axes[1]>(
                             [&](auto &i) { inner_domain[i] = index[i]; });
-                        auto src = reinterpret_cast<const float *>(
-                            &input(inner_domain));
+                        auto src = &input(inner_domain);
                         dst = out_ptr +
                               linear_offset(inner_domain, input.strides()) * 64;
                         for (size_t i = 0; i < 8; i++) {
@@ -574,16 +572,16 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                                 i * packed_index[1] * 8 * inner_size;
                             for (size_t j = 0; j < packed_index[1]; j++) {
                                 auto st_offset_j = j * inner_size * 8;
-                                auto ld_offset_j = src + j * inner_size * 64;
+                                auto ld_offset_j = src + j * inner_size;
                                 auto st_offset =
                                     dst + st_offset_i + st_offset_j;
                                 for (size_t k = 0; k < inner_size / 8; k++) {
                                     auto st_ptr = st_offset + k * 8;
-                                    auto ld_ptr = ld_offset_j + k * 512;
-                                    permute_8x8(ld_ptr, st_ptr, 64, inner_size);
+                                    auto ld_ptr = ld_offset_j + k * 8;
+                                    permute_8x8_unpack2d(ld_ptr, st_ptr, i,
+                                                         inner_size);
                                 }
                             }
-                            src = src + 8;
                         }
                     });
                 }
