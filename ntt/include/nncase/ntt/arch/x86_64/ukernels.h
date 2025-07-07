@@ -407,8 +407,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
         if constexpr (AxesRank == 1) {
             if constexpr (const_axes[0] == (TIn::rank() - 1)) {
                 auto size = output.size() * sizeof(TElem);
-                auto in_ptr =
-                    reinterpret_cast<const std::byte *>(input.buffer().data());
+                auto in_ptr = input.buffer().data();
                 auto out_ptr = output.buffer().data();
                 std::memcpy(out_ptr, in_ptr, size);
 
