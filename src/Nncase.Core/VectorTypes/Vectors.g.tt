@@ -23,20 +23,16 @@ namespace Nncase;
 
 // NOTE fixed array not suppot generic
 
-public interface IVector<T>
-{
-    static int Count { get; }
-}
-
 <# 
 foreach (var (lanesA, lanesB) in new[] { 
   (0, 4), (0, 8), (0, 16), (0, 32), (0, 64), (0, 128),
   (4, 4), (8, 8), (16, 16), (32, 16), (32, 32), (32, 64), (32, 128), (64, 32), (64, 64), (64, 128), (128, 64) })
-{  
-var typeName = lanesA == 0 ? $"Vector{lanesB.ToString()}<T>" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}<T>";
+{
+var typePrefix = lanesA == 0 ? $"Vector{lanesB.ToString()}" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}";
+var typeName = typePrefix + "<T>";
 #>
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct <#=typeName#> : IVector<<#=typeName#>>, IEquatable<<#=typeName#>>
+public unsafe struct <#=typeName#> : IVector<T>, IEquatable<<#=typeName#>>
     where T : unmanaged, IEquatable<T>
 {
 <# if (lanesA == 0) {#>
@@ -49,6 +45,14 @@ public unsafe struct <#=typeName#> : IVector<<#=typeName#>>, IEquatable<<#=typeN
     private T _item_<#=i#>_<#=j#>;
 <#}}#>
 <#}#>
+
+    static <#=typePrefix#>()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
 
     public static <#=typeName#> Create(T[] array) 
     {

@@ -263,6 +263,8 @@ public static partial class Math
     /// <returns>Result expression.</returns>
     public static CallPattern FloorMod(Pattern lhs, Pattern rhs) => Sub(lhs, FloorDiv(lhs, rhs) * rhs);
 
+    public static CallPattern IsCompare(CompareOp compareOp, Pattern lhs, Pattern rhs) => IsCompare(x => x.CompareOp == compareOp, lhs, rhs);
+
     /// <summary>
     /// CallPattern equal.
     /// </summary>

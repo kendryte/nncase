@@ -41,28 +41,26 @@ void benchmark_ntt_where_pack(T init_low, T init_high) {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
 
-    using input_type =
-        ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<n, c, h, w / N>>;
-    using cond_type_unpacked = ntt::tensor<bool, ntt::fixed_shape<n, c, h, w>>;
-    using cond_type_packed =
-        ntt::tensor<ntt::vector<bool, N>, ntt::fixed_shape<n, c, h, w / N>>;
-
     // Initialize input with random values
-    std::unique_ptr<input_type> input1(new input_type);
-    NttTest::init_tensor(*input1, init_low, init_high);
-    std::unique_ptr<input_type> input2(new input_type);
-    NttTest::init_tensor(*input2, init_low, init_high);
-    std::unique_ptr<cond_type_unpacked> cond(new cond_type_unpacked);
-    NttTest::init_tensor(*cond, 0, 1);
-    std::unique_ptr<cond_type_packed> cond_packed(new cond_type_packed);
-    ntt::pack<3>(*cond, *cond_packed);
+    auto input1 =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<n, c, h, w / N>);
+    NttTest::init_tensor(input1, init_low, init_high);
+    auto input2 =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<n, c, h, w / N>);
+    NttTest::init_tensor(input2, init_low, init_high);
+    auto cond = ntt::make_tensor<bool>(ntt::fixed_shape_v<n, c, h, w>);
+    NttTest::init_tensor(cond, 0, 1);
+    auto cond_packed = ntt::make_tensor<ntt::vector<bool, N>>(
+        ntt::fixed_shape_v<n, c, h, w / N>);
+    ntt::pack(cond, cond_packed, ntt::fixed_shape_v<3>);
 
-    std::unique_ptr<input_type> ntt_output(new input_type);
+    auto ntt_output =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<n, c, h, w / N>);
 
     // warm up
     constexpr size_t warmup_size = 10;
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::where(*cond_packed, *input1, *input2, *ntt_output);
+        ntt::where(cond_packed, input1, input2, ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
 
@@ -70,12 +68,12 @@ void benchmark_ntt_where_pack(T init_low, T init_high) {
     constexpr size_t run_size = 2000;
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::where(*cond_packed, *input1, *input2, *ntt_output);
+        ntt::where(cond_packed, input1, input2, ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = input_type::size();
+    auto element_size = input1.size();
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size
               << " cycles" << std::endl;

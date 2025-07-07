@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../primitive_ops.h"
+#include "../vector.h"
 
 namespace nncase::ntt {
 namespace ukernels {
@@ -22,8 +23,8 @@ template <bool Arch> struct u_cast_policy {
     static constexpr size_t unroll = 2;
 };
 
-template <bool Arch, size_t in_offset_scale, size_t out_offset_scale, class T1,
-          class T2>
+template <bool Arch, size_t in_offset_scale,
+          size_t out_offset_scale, class T1, class T2>
 struct u_cast {
   public:
     constexpr void operator()(const T1 *input, size_t input_stride, T2 *output,

@@ -28,18 +28,15 @@ void transpose_2D_fixed_shape_unpacked() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t org_dims[] = {h, w};
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<h, w>>;
-    using tensor_type2 =
-        ntt::tensor<float,
-                    ntt::fixed_shape<org_dims[perm_h], org_dims[perm_w]>>;
 
     // init
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output1;
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<h, w>);
+    auto ntt_output1 = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<org_dims[perm_h], org_dims[perm_w]>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_h, perm_w>>(ntt_input, ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1, ntt::fixed_shape_v<perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -47,7 +44,8 @@ void transpose_2D_fixed_shape_unpacked() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2;
+    auto ntt_output2 = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<org_dims[perm_h], org_dims[perm_w]>);
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -65,19 +63,15 @@ void transpose_2D_ranked_shape_unpacked() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t org_dims[] = {h, w};
-    constexpr size_t ndims = std::size(org_dims);
-    auto shape1 = ntt::make_ranked_shape(h, w);
-    auto shape2 = ntt::make_ranked_shape(org_dims[perm_h], org_dims[perm_w]);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<ndims>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<ndims>>;
 
     // init
-    alignas(32) tensor_type1 ntt_input(shape1);
-    alignas(32) tensor_type2 ntt_output1(shape2);
+    auto ntt_input = ntt::make_tensor<float>(ntt::make_shape(h, w));
+    auto ntt_output1 = ntt::make_tensor<float>(
+        ntt::make_shape(org_dims[perm_h], org_dims[perm_w]));
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_h, perm_w>>(ntt_input, ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1, ntt::fixed_shape_v<perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -85,7 +79,8 @@ void transpose_2D_ranked_shape_unpacked() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2(shape2);
+    auto ntt_output2 = ntt::make_tensor<float>(
+        ntt::make_shape(org_dims[perm_h], org_dims[perm_w]));
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -103,19 +98,16 @@ template <size_t perm_h, size_t perm_w> void transpose_2D_fixed_shape_packed() {
     constexpr size_t w = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t org_dims[] = {h, w};
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<h, w>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>,
-                    ntt::fixed_shape<org_dims[perm_h], org_dims[perm_w]>>;
 
     // init
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output1;
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<h, w>);
+    auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<org_dims[perm_h], org_dims[perm_w]>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_h, perm_w>>(ntt_input, ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1, ntt::fixed_shape_v<perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -123,7 +115,8 @@ template <size_t perm_h, size_t perm_w> void transpose_2D_fixed_shape_packed() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2;
+    auto ntt_output2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<org_dims[perm_h], org_dims[perm_w]>);
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -142,29 +135,25 @@ void transpose_2D_ranked_shape_packed() {
     constexpr size_t w = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t org_dims[] = {h, w};
-    constexpr size_t ndims = std::size(org_dims);
-    auto shape1 = ntt::make_ranked_shape(h, w);
-    auto shape2 = ntt::make_ranked_shape(org_dims[perm_h], org_dims[perm_w]);
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<ndims>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<ndims>>;
 
     // init
-    alignas(32) tensor_type1 ntt_input(shape1);
-    alignas(32) tensor_type2 ntt_output1(shape2);
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(h, w));
+    auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(org_dims[perm_h], org_dims[perm_w]));
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_h, perm_w>>(ntt_input, ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1, ntt::fixed_shape_v<perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    int64_t perms[] = {perm_h, perm_w, ndims};
+    int64_t perms[] = {perm_h, perm_w, std::size(org_dims)};
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2(shape2);
+    auto ntt_output2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(org_dims[perm_h], org_dims[perm_w]));
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -183,19 +172,17 @@ void transpose_3D_fixed_shape_unpacked() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t org_dims[] = {c, h, w};
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<c, h, w>>;
-    using tensor_type2 =
-        ntt::tensor<float, ntt::fixed_shape<org_dims[perm_c], org_dims[perm_h],
-                                            org_dims[perm_w]>>;
 
     // ntt
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output1;
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<c, h, w>);
+    auto ntt_output1 = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<org_dims[perm_c], org_dims[perm_h],
+                           org_dims[perm_w]>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_c, perm_h, perm_w>>(ntt_input,
-                                                             ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1,
+                   ntt::fixed_shape_v<perm_c, perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -203,7 +190,9 @@ void transpose_3D_fixed_shape_unpacked() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2;
+    auto ntt_output2 = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<org_dims[perm_c], org_dims[perm_h],
+                           org_dims[perm_w]>);
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -238,21 +227,16 @@ void transpose_3D_ranked_shape_unpacked() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t org_dims[] = {c, h, w};
-    constexpr size_t ndims = std::size(org_dims);
-    auto shape1 = ntt::make_ranked_shape(c, h, w);
-    auto shape2 = ntt::make_ranked_shape(org_dims[perm_c], org_dims[perm_h],
-                                         org_dims[perm_w]);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<ndims>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<ndims>>;
 
-    // init
-    alignas(32) tensor_type1 ntt_input(shape1);
-    alignas(32) tensor_type2 ntt_output1(shape2);
+    // ntt
+    auto ntt_input = ntt::make_tensor<float>(ntt::make_shape(c, h, w));
+    auto ntt_output1 = ntt::make_tensor<float>(
+        ntt::make_shape(org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]));
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_c, perm_h, perm_w>>(ntt_input,
-                                                             ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1,
+                   ntt::fixed_shape_v<perm_c, perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -260,7 +244,8 @@ void transpose_3D_ranked_shape_unpacked() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2(shape2);
+    auto ntt_output2 = ntt::make_tensor<float>(
+        ntt::make_shape(org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]));
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -296,20 +281,18 @@ void transpose_3D_fixed_shape_packed() {
     constexpr size_t w = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t org_dims[] = {c, h, w};
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<c, h, w>>;
-    using tensor_type2 = ntt::tensor<
-        ntt::vector<float, P>,
-        ntt::fixed_shape<org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]>>;
 
     // ntt
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output1;
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<c, h, w>);
+    auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<org_dims[perm_c], org_dims[perm_h],
+                           org_dims[perm_w]>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_c, perm_h, perm_w>>(ntt_input,
-                                                             ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1,
+                   ntt::fixed_shape_v<perm_c, perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -317,7 +300,9 @@ void transpose_3D_fixed_shape_packed() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2;
+    auto ntt_output2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<org_dims[perm_c], org_dims[perm_h],
+                           org_dims[perm_w]>);
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -353,31 +338,26 @@ void transpose_3D_ranked_shape_packed() {
     constexpr size_t w = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t org_dims[] = {c, h, w};
-    constexpr size_t ndims = std::size(org_dims);
-    auto shape1 = ntt::make_ranked_shape(c, h, w);
-    auto shape2 = ntt::make_ranked_shape(org_dims[perm_c], org_dims[perm_h],
-                                         org_dims[perm_w]);
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<ndims>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<ndims>>;
 
-    // init
-    alignas(32) tensor_type1 ntt_input(shape1);
-    alignas(32) tensor_type2 ntt_output1(shape2);
+    // ntt
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(c, h, w));
+    auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]));
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_c, perm_h, perm_w>>(ntt_input,
-                                                             ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1,
+                   ntt::fixed_shape_v<perm_c, perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    int64_t perms[] = {perm_c, perm_h, perm_w, ndims};
+    int64_t perms[] = {perm_c, perm_h, perm_w, std::size(org_dims)};
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2(shape2);
+    auto ntt_output2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(org_dims[perm_c], org_dims[perm_h], org_dims[perm_w]));
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -413,20 +393,17 @@ void transpose_4D_fixed_shape_unpacked() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t org_dims[] = {n, c, h, w};
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<n, c, h, w>>;
-    using tensor_type2 =
-        ntt::tensor<float,
-                    ntt::fixed_shape<org_dims[perm_n], org_dims[perm_c],
-                                     org_dims[perm_h], org_dims[perm_w]>>;
 
     // ntt
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output1;
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
+    auto ntt_output1 = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<org_dims[perm_n], org_dims[perm_c], org_dims[perm_h],
+                           org_dims[perm_w]>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-        ntt_input, ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1,
+                   ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -434,7 +411,9 @@ void transpose_4D_fixed_shape_unpacked() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2;
+    auto ntt_output2 = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<org_dims[perm_n], org_dims[perm_c], org_dims[perm_h],
+                           org_dims[perm_w]>);
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -542,21 +521,17 @@ void transpose_4D_ranked_shape_unpacked() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t org_dims[] = {n, c, h, w};
-    constexpr size_t ndims = std::size(org_dims);
-    auto shape1 = ntt::make_ranked_shape(n, c, h, w);
-    auto shape2 = ntt::make_ranked_shape(org_dims[perm_n], org_dims[perm_c],
-                                         org_dims[perm_h], org_dims[perm_w]);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<ndims>>;
-    using tensor_type2 = ntt::tensor<float, ntt::ranked_shape<ndims>>;
 
-    // init
-    alignas(32) tensor_type1 ntt_input(shape1);
-    alignas(32) tensor_type2 ntt_output1(shape2);
+    // ntt
+    auto ntt_input = ntt::make_tensor<float>(ntt::make_shape(n, c, h, w));
+    auto ntt_output1 = ntt::make_tensor<float>(
+        ntt::make_shape(org_dims[perm_n], org_dims[perm_c], org_dims[perm_h],
+                        org_dims[perm_w]));
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-        ntt_input, ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1,
+                   ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -564,7 +539,9 @@ void transpose_4D_ranked_shape_unpacked() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2(shape2);
+    auto ntt_output2 = ntt::make_tensor<float>(
+        ntt::make_shape(org_dims[perm_n], org_dims[perm_c], org_dims[perm_h],
+                        org_dims[perm_w]));
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -673,21 +650,18 @@ void transpose_4D_fixed_shape_packed() {
     constexpr size_t w = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t org_dims[] = {n, c, h, w};
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<n, c, h, w>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>,
-                    ntt::fixed_shape<org_dims[perm_n], org_dims[perm_c],
-                                     org_dims[perm_h], org_dims[perm_w]>>;
 
     // ntt
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output1;
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<n, c, h, w>);
+    auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<org_dims[perm_n], org_dims[perm_c], org_dims[perm_h],
+                           org_dims[perm_w]>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-        ntt_input, ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1,
+                   ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -695,7 +669,9 @@ void transpose_4D_fixed_shape_packed() {
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2;
+    auto ntt_output2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<org_dims[perm_n], org_dims[perm_c], org_dims[perm_h],
+                           org_dims[perm_w]>);
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -804,31 +780,28 @@ void transpose_4D_ranked_shape_packed() {
     constexpr size_t w = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t org_dims[] = {n, c, h, w};
-    constexpr size_t ndims = std::size(org_dims);
-    auto shape1 = ntt::make_ranked_shape(n, c, h, w);
-    auto shape2 = ntt::make_ranked_shape(org_dims[perm_n], org_dims[perm_c],
-                                         org_dims[perm_h], org_dims[perm_w]);
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<ndims>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<ndims>>;
 
-    // init
-    alignas(32) tensor_type1 ntt_input(shape1);
-    alignas(32) tensor_type2 ntt_output1(shape2);
+    // ntt
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(n, c, h, w));
+    auto ntt_output1 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(org_dims[perm_n], org_dims[perm_c], org_dims[perm_h],
+                        org_dims[perm_w]));
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
     // ntt
-    ntt::transpose<ntt::fixed_shape<perm_n, perm_c, perm_h, perm_w>>(
-        ntt_input, ntt_output1);
+    ntt::transpose(ntt_input, ntt_output1,
+                   ntt::fixed_shape_v<perm_n, perm_c, perm_h, perm_w>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    int64_t perms[] = {perm_n, perm_c, perm_h, perm_w, ndims};
+    int64_t perms[] = {perm_n, perm_c, perm_h, perm_w, std::size(org_dims)};
     auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
 
     // compare
-    alignas(32) tensor_type2 ntt_output2(shape2);
+    auto ntt_output2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(org_dims[perm_n], org_dims[perm_c], org_dims[perm_h],
+                        org_dims[perm_w]));
     NttTest::ort2ntt(ort_output, ntt_output2);
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }

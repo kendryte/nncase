@@ -63,13 +63,13 @@ internal class FunctionBuilder
                 var size = range.Max - range.Min;
                 localRdataPoolSize = System.Math.Max(range.Max, localRdataPoolSize);
                 var dividedDims = DistributedUtility.GetDividedTensorType(distributedType).Shape.ToValueArray();
-                var localStrides = TensorUtilities.GetStrides(dividedDims);
+                var localStrides = TensorUtilities.GetDefaultStrides(dividedDims);
                 for (int i = 0; i < _localRdataWriters.Count; i++)
                 {
                     var localRdataWriter = _localRdataWriters[i];
                     var shardIndex = DistributedUtility.GetUnraveledIndex(i, TargetOptions.Hierarchies[0]);
                     (var localOffset, var localShape) = DistributedUtility.GetLocalOffsetAndShape(distributedType, shardIndex);
-                    var linearOffset = TensorUtilities.GetIndex(tensor.Strides, localOffset);
+                    var linearOffset = TensorUtilities.GetLinearOffset(tensor.Strides, localOffset);
 
                     if ((ulong)TensorUtilities.GetProduct(localShape) * (ulong)tensor.ElementType.SizeInBytes > size)
                     {
@@ -91,7 +91,9 @@ internal class FunctionBuilder
             {
                 var header = default(KernelDescHeader);
                 header.OutputAlign = (uint)function.SchedResult.OutputAlign;
+                header.LocalDataAlign = (uint)function.SchedResult.DataAlign;
                 header.OutputPoolSize = function.SchedResult.OutputUsage;
+                header.LocalDataPoolSize = function.SchedResult.DataUsage;
                 writer.Write(ref header);
             }
 

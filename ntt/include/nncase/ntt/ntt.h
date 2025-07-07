@@ -13,6 +13,10 @@
  * limitations under the License.
  */
 #pragma once
+#include "../bfloat16.h"
+#include "../float8.h"
+#include "../half.h"
+
 #include "caching.h"
 #include "distributed.h"
 #include "kernels/binary.h"
@@ -28,7 +32,6 @@
 #include "kernels/get_item.h"
 #include "kernels/get_position_ids.h"
 #include "kernels/im2col.h"
-#include "kernels/instance_norm.h"
 #include "kernels/layer_norm.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
@@ -38,7 +41,6 @@
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
 #include "kernels/reshape.h"
-#include "kernels/reshard.h"
 #include "kernels/resize_image.h"
 #include "kernels/rms_norm.h"
 #include "kernels/scatter_nd.h"
@@ -53,38 +55,34 @@
 #include "kernels/where.h"
 #include "primitive_ops.h"
 #include "profiling.h"
-#include "remote_tensor.h"
-#include "sharded_tensor.h"
-#include "sharding.h"
 #include "tensor.h"
 #include "tensor_ops.h"
 #include "ukernels.h"
 #include "utility.h"
 #include "vector.h"
+#include "vector_ops.h"
 
 #ifdef __AVX2__
 #include "arch/x86_64/arch_types.h"
 #include "arch/x86_64/primitive_ops.h"
-#include "arch/x86_64/tensor_ops.h"
 #include "arch/x86_64/ukernels.h"
+#include "arch/x86_64/vector_ops.h"
 #elif __aarch64__
 #include "arch/aarch64/arch_types.h"
 #include "arch/aarch64/primitive_ops.h"
-#include "arch/aarch64/tensor_ops.h"
+#include "arch/aarch64/vector_ops.h"
 #elif __riscv_vector
 #include "arch/riscv64/arch_types.h"
 #include "arch/riscv64/primitive_ops.h"
-#include "arch/riscv64/tensor_ops.h"
 #include "arch/riscv64/ukernels.h"
+#include "arch/riscv64/vector_ops.h"
 #endif
 
 #ifdef NNCASE_XPU_MODULE
 #include "arch/xpu/distributed.h"
 #include "arch/xpu/runtime.h"
-#include "arch/xpu/topology.h"
 #else
 #include "arch/cpu/distributed.h"
 #include "arch/cpu/profiling.h"
 #include "arch/cpu/runtime.h"
-#include "arch/cpu/topology.h"
 #endif

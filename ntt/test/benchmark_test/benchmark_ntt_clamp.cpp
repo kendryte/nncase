@@ -34,21 +34,22 @@ void benchmark_ntt_clamp(T init_low, T init_high, T clamp_low, T clamp_high) {
     constexpr size_t size = 2000;
 #endif
 
-    using tensor_type = ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<size>>;
-    std::unique_ptr<tensor_type> ntt_input(new tensor_type);
-    std::unique_ptr<tensor_type> ntt_output(new tensor_type);
-    NttTest::init_tensor(*ntt_input, init_low, init_high);
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<size>);
+    auto ntt_output =
+        ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<size>);
+    NttTest::init_tensor(ntt_input, init_low, init_high);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::clamp(*ntt_input, *ntt_output, clamp_low, clamp_high);
+        ntt::clamp(ntt_input, ntt_output, clamp_low, clamp_high);
         asm volatile("" ::"g"(ntt_output));
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::clamp(*ntt_input, *ntt_output, clamp_low, clamp_high);
+        ntt::clamp(ntt_input, ntt_output, clamp_low, clamp_high);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();

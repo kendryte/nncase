@@ -18,6 +18,7 @@
 #include "../tensor_ops.h"
 #include "../utility.h"
 #include "binary.h"
+#include "nncase/ntt/shape.h"
 #include "unary.h"
 #include <algorithm>
 
@@ -150,7 +151,7 @@ template <typename T> float get_rounding_offset() {
     return std::is_integral_v<T> ? .5f : .0f;
 }
 
-template <IsFixedTensor T> float get_rounding_offset() {
+template <FixedTensor T> float get_rounding_offset() {
     return std::is_integral_v<typename T::element_type> ? .5f : .0f;
 }
 
@@ -164,29 +165,29 @@ void resize_bilinear(const T *input, T *output, const TInShape in_shape,
         get_resize_scales(in_shape, out_h, out_w, align_corners);
 
     const T rounding_offset = (T)get_rounding_offset<T>();
-    ranked_shape<4> in_index, out_index;
+    dynamic_shape_t<4> in_index, out_index;
 
     auto get_input = [&](int32_t in_y, int32_t in_x) {
-        in_index[2] = in_y;
-        in_index[3] = in_x;
+        in_index[2_dim] = in_y;
+        in_index[3_dim] = in_x;
         return input[linear_offset(in_index, in_strides)];
     };
 
     for (size_t batch = 0; batch < in_shape[0]; batch++) {
-        in_index[0] = batch;
-        out_index[0] = batch;
+        in_index[0_dim] = batch;
+        out_index[0_dim] = batch;
         for (size_t oc = 0; oc < in_shape[1]; oc++) {
-            in_index[1] = oc;
-            out_index[1] = oc;
+            in_index[1_dim] = oc;
+            out_index[1_dim] = oc;
             for (size_t oy = 0; oy < (size_t)out_h; oy++) {
-                out_index[2] = oy;
+                out_index[2_dim] = oy;
                 float in_y;
                 int32_t in_y0, in_y1;
                 set_resize_bilinear(oy, height_scale, half_pixel_centers,
                                     in_shape[2], in_y, in_y0, in_y1);
 
                 for (size_t ox = 0; ox < (size_t)out_w; ox++) {
-                    out_index[3] = ox;
+                    out_index[3_dim] = ox;
                     float in_x;
                     int32_t in_x0, in_x1;
                     set_resize_bilinear(ox, width_scale, half_pixel_centers,
@@ -223,13 +224,13 @@ void resize_neareast_neighbor(
     auto [height_scale, width_scale] =
         get_resize_scales(in_shape, out_h, out_w, align_corners);
 
-    ranked_shape<4> in_index, out_index;
+    dynamic_shape_t<4> in_index, out_index;
     for (size_t batch = 0; batch < in_shape[0]; batch++) {
-        in_index[0] = batch;
-        out_index[0] = batch;
+        in_index[0_dim] = batch;
+        out_index[0_dim] = batch;
         for (size_t oc = 0; oc < in_shape[1]; oc++) {
-            in_index[1] = oc;
-            out_index[1] = oc;
+            in_index[1_dim] = oc;
+            out_index[1_dim] = oc;
             for (size_t oy = 0; oy < (size_t)out_h; oy++) {
                 auto iy = get_coordinate_func(oy, height_scale, out_h,
                                               in_shape[2], 0, 0);
@@ -238,8 +239,8 @@ void resize_neareast_neighbor(
                     in_y = 0;
                 if (in_y >= in_shape[2])
                     in_y = in_shape[2] - 1;
-                in_index[2] = in_y;
-                out_index[2] = oy;
+                in_index[2_dim] = in_y;
+                out_index[2_dim] = oy;
 
                 for (size_t ox = 0; ox < (size_t)out_w; ox++) {
                     auto ix = get_coordinate_func(ox, width_scale, out_w,
@@ -249,8 +250,8 @@ void resize_neareast_neighbor(
                         in_x = 0;
                     if (in_x >= in_shape[3])
                         in_x = in_shape[3] - 1;
-                    in_index[3] = in_x;
-                    out_index[3] = ox;
+                    in_index[3_dim] = in_x;
+                    out_index[3_dim] = ox;
                     output[linear_offset(out_index, out_strides)] =
                         input[linear_offset(in_index, in_strides)];
                 }
@@ -261,19 +262,18 @@ void resize_neareast_neighbor(
 
 } // namespace resize_detail
 
-template <typename TIn, typename TOut, IsFixedDims TPackedAxes,
-          IsFixedDims TPadedNums, IsFixedDims TNewSize>
+template <Tensor TIn, typename TOut, FixedDimensions TPackedAxes,
+          FixedDimensions TPadedNums, FixedDimensions TNewSize>
 void resize(const TIn &input, TOut &&output,
-            [[maybe_unused]] const TPackedAxes packedAxes,
-            [[maybe_unused]] const TPadedNums padedNums,
-            [[maybe_unused]] const TNewSize new_size,
-            image_resize_mode_t resize_mode,
+            [[maybe_unused]] const TPackedAxes &packedAxes,
+            [[maybe_unused]] const TPadedNums &padedNums,
+            const TNewSize &new_size, image_resize_mode_t resize_mode,
             image_resize_transformation_mode_t transformation_mode,
             image_resize_nearest_mode_t nearest_mode) {
     if (resize_mode == image_resize_mode_t::bilinear) {
         resize_detail::resize_bilinear(
             input.elements().data(), output.elements().data(), input.shape(),
-            input.strides(), output.strides(), TNewSize::at(2), TNewSize::at(3),
+            input.strides(), output.strides(), new_size[2_dim], new_size[3_dim],
             transformation_mode ==
                 image_resize_transformation_mode_t::align_corners,
             transformation_mode ==
@@ -285,7 +285,7 @@ void resize(const TIn &input, TOut &&output,
             resize_detail::get_nearest_pixel_from_origin(nearest_mode);
         resize_detail::resize_neareast_neighbor(
             input.elements().data(), output.elements().data(), input.shape(),
-            input.strides(), output.strides(), TNewSize::at(2), TNewSize::at(3),
+            input.strides(), output.strides(), new_size[2_dim], new_size[3_dim],
             transformation_mode ==
                 image_resize_transformation_mode_t::align_corners,
             transformation_mode ==

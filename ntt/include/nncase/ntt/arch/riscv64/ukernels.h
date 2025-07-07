@@ -16,6 +16,7 @@
 #include "../../ukernels.h"
 #include "nncase/ntt/arch/riscv64/arch_types.h"
 #include "nncase/ntt/compiler_defs.h"
+#include "nncase/ntt/dimension.h"
 #include "nncase/ntt/vector.h"
 #include <cstddef>
 #include <riscv_vector.h>
@@ -46,7 +47,8 @@ template <>
 struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
                vector<float, NTT_VLEN / 32>, true> {
   public:
-    void operator()(const vector<float, NTT_VLEN / 32> *input, size_t in_stride,
+    void operator()(const ntt::ops::copy<vector<float, NTT_VLEN / 32>> &,
+                    const vector<float, NTT_VLEN / 32> *input, size_t in_stride,
                     vector<float, NTT_VLEN / 32> *output, size_t out_stride,
                     size_t count) noexcept {
         using policy_t =
@@ -165,7 +167,9 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 #undef SPECIALIZE_U_BINARY
 
 // clamp
-template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
+template <> struct u_clamp_policy<true> {
+    static constexpr size_t unroll = 8;
+};
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
@@ -173,7 +177,9 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> { static constexpr size_t unroll = 4; };
+template <> struct u_cast_policy<true> {
+    static constexpr size_t unroll = 4;
+};
 
 // matmul
 template <>
@@ -259,102 +265,103 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
-        NTT_ASSUME(K > 0);
+        if constexpr (FixedTensor<TA> && FixedTensor<TB> && FixedTensor<TC>) {
+            NTT_ASSUME(K > 0);
 
-        register fixed_vfloat32m1_t c0_0_0 asm("v0") = {};
-        register fixed_vfloat32m1_t c0_0_1 asm("v1") = {};
-        register fixed_vfloat32m1_t c0_0_2 asm("v2") = {};
-        register fixed_vfloat32m1_t c0_0_3 asm("v3") = {};
-        register fixed_vfloat32m1_t c0_0_4 asm("v4") = {};
-        register fixed_vfloat32m1_t c0_0_5 asm("v5") = {};
-        register fixed_vfloat32m1_t c0_0_6 asm("v6") = {};
-        register fixed_vfloat32m1_t c0_0_7 asm("v7") = {};
-        register fixed_vfloat32m1_t c0_1_0 asm("v8") = {};
-        register fixed_vfloat32m1_t c0_1_1 asm("v9") = {};
-        register fixed_vfloat32m1_t c0_1_2 asm("v10") = {};
-        register fixed_vfloat32m1_t c0_1_3 asm("v11") = {};
-        register fixed_vfloat32m1_t c0_1_4 asm("v12") = {};
-        register fixed_vfloat32m1_t c0_1_5 asm("v13") = {};
-        register fixed_vfloat32m1_t c0_1_6 asm("v14") = {};
-        register fixed_vfloat32m1_t c0_1_7 asm("v15") = {};
+            register fixed_vfloat32m1_t c0_0_0 asm("v0") = {};
+            register fixed_vfloat32m1_t c0_0_1 asm("v1") = {};
+            register fixed_vfloat32m1_t c0_0_2 asm("v2") = {};
+            register fixed_vfloat32m1_t c0_0_3 asm("v3") = {};
+            register fixed_vfloat32m1_t c0_0_4 asm("v4") = {};
+            register fixed_vfloat32m1_t c0_0_5 asm("v5") = {};
+            register fixed_vfloat32m1_t c0_0_6 asm("v6") = {};
+            register fixed_vfloat32m1_t c0_0_7 asm("v7") = {};
+            register fixed_vfloat32m1_t c0_1_0 asm("v8") = {};
+            register fixed_vfloat32m1_t c0_1_1 asm("v9") = {};
+            register fixed_vfloat32m1_t c0_1_2 asm("v10") = {};
+            register fixed_vfloat32m1_t c0_1_3 asm("v11") = {};
+            register fixed_vfloat32m1_t c0_1_4 asm("v12") = {};
+            register fixed_vfloat32m1_t c0_1_5 asm("v13") = {};
+            register fixed_vfloat32m1_t c0_1_6 asm("v14") = {};
+            register fixed_vfloat32m1_t c0_1_7 asm("v15") = {};
 
-        if constexpr (AccumulateC) {
-            c0_0_0 = c0(0, 0);
-            c0_0_1 = c0(0, 1);
-            c0_0_2 = c0(0, 2);
-            c0_0_3 = c0(0, 3);
-            c0_0_4 = c0(0, 4);
-            c0_0_5 = c0(0, 5);
-            c0_0_6 = c0(0, 6);
-            c0_0_7 = c0(0, 7);
-            c0_1_0 = c0(1, 0);
-            c0_1_1 = c0(1, 1);
-            c0_1_2 = c0(1, 2);
-            c0_1_3 = c0(1, 3);
-            c0_1_4 = c0(1, 4);
-            c0_1_5 = c0(1, 5);
-            c0_1_6 = c0(1, 6);
-            c0_1_7 = c0(1, 7);
-        }
-
-        register fixed_vfloat32m1_t a0_0_0 asm("v16");
-        register fixed_vfloat32m1_t a0_1_0 asm("v17");
-        register fixed_vfloat32m1_t a0_0_1 asm("v18");
-        register fixed_vfloat32m1_t a0_1_1 asm("v19");
-
-        register float b0_0_0 asm("fa0");
-        register float b0_0_1 asm("fa1");
-        register float b0_0_2 asm("fa2");
-        register float b0_0_3 asm("fa3");
-        register float b0_0_4 asm("fa4");
-        register float b0_0_5 asm("fa5");
-        register float b0_0_6 asm("fa6");
-        register float b0_0_7 asm("fa7");
-        register float b0_1_0 asm("ft0");
-        register float b0_1_1 asm("ft1");
-        register float b0_1_2 asm("ft2");
-        register float b0_1_3 asm("ft3");
-        register float b0_1_4 asm("ft4");
-        register float b0_1_5 asm("ft5");
-        register float b0_1_6 asm("ft6");
-        register float b0_1_7 asm("ft7");
-
-        const auto a0_strides = a.strides();
-        const auto b0_strides = b.strides();
-        const auto c0_strides = c0.strides();
-
-        const auto ak_strides = a0_strides[1];
-        const auto bk_strides = b0_strides[0];
-        const auto bn_strides = b0_strides[1];
-        const auto cm_strides = c0_strides[0];
-        const auto cn_strides = c0_strides[1];
-
-        {
-            register auto a0_0_0_p asm("t0") = a.elements().data();
-            register auto a0_1_0_p asm("t1") = a0_0_0_p + a0_strides[0];
-            register auto a0_0_1_p asm("t2") = a0_0_0_p + ak_strides;
-            register auto a0_1_1_p asm("t3") = a0_0_1_p + a0_strides[0];
-
-            register auto b0_0_x_p asm("t4") = b.elements().data();
-            register auto b0_1_x_p asm("t5") = b0_0_x_p + bk_strides;
-
-            // 1. Pre load A/B
-            {
-                a0_0_0 = *a0_0_0_p;
-                a0_0_0_p += ak_strides * 2;
-                a0_1_0 = *a0_1_0_p;
-                a0_1_0_p += ak_strides * 2;
-
-                b0_0_0 = b0_0_x_p[bn_strides * 0];
-                b0_0_1 = b0_0_x_p[bn_strides * 1];
-                b0_0_2 = b0_0_x_p[bn_strides * 2];
-                b0_0_3 = b0_0_x_p[bn_strides * 3];
-                b0_0_4 = b0_0_x_p[bn_strides * 4];
-                b0_0_5 = b0_0_x_p[bn_strides * 5];
-                b0_0_6 = b0_0_x_p[bn_strides * 6];
-                b0_0_7 = b0_0_x_p[bn_strides * 7];
-                b0_0_x_p += bk_strides * 2;
+            if constexpr (AccumulateC) {
+                c0_0_0 = c0(0, 0);
+                c0_0_1 = c0(0, 1);
+                c0_0_2 = c0(0, 2);
+                c0_0_3 = c0(0, 3);
+                c0_0_4 = c0(0, 4);
+                c0_0_5 = c0(0, 5);
+                c0_0_6 = c0(0, 6);
+                c0_0_7 = c0(0, 7);
+                c0_1_0 = c0(1, 0);
+                c0_1_1 = c0(1, 1);
+                c0_1_2 = c0(1, 2);
+                c0_1_3 = c0(1, 3);
+                c0_1_4 = c0(1, 4);
+                c0_1_5 = c0(1, 5);
+                c0_1_6 = c0(1, 6);
+                c0_1_7 = c0(1, 7);
             }
+
+            register fixed_vfloat32m1_t a0_0_0 asm("v16");
+            register fixed_vfloat32m1_t a0_1_0 asm("v17");
+            register fixed_vfloat32m1_t a0_0_1 asm("v18");
+            register fixed_vfloat32m1_t a0_1_1 asm("v19");
+
+            register float b0_0_0 asm("fa0");
+            register float b0_0_1 asm("fa1");
+            register float b0_0_2 asm("fa2");
+            register float b0_0_3 asm("fa3");
+            register float b0_0_4 asm("fa4");
+            register float b0_0_5 asm("fa5");
+            register float b0_0_6 asm("fa6");
+            register float b0_0_7 asm("fa7");
+            register float b0_1_0 asm("ft0");
+            register float b0_1_1 asm("ft1");
+            register float b0_1_2 asm("ft2");
+            register float b0_1_3 asm("ft3");
+            register float b0_1_4 asm("ft4");
+            register float b0_1_5 asm("ft5");
+            register float b0_1_6 asm("ft6");
+            register float b0_1_7 asm("ft7");
+
+            const auto a0_strides = a.strides();
+            const auto b0_strides = b.strides();
+            const auto c0_strides = c0.strides();
+
+            const auto ak_strides = a0_strides[1];
+            const auto bk_strides = b0_strides[0];
+            const auto bn_strides = b0_strides[1];
+            const auto cm_strides = c0_strides[0];
+            const auto cn_strides = c0_strides[1];
+
+            {
+                register auto a0_0_0_p asm("t0") = a.elements().data();
+                register auto a0_1_0_p asm("t1") = a0_0_0_p + a0_strides[0];
+                register auto a0_0_1_p asm("t2") = a0_0_0_p + ak_strides;
+                register auto a0_1_1_p asm("t3") = a0_0_1_p + a0_strides[0];
+
+                register auto b0_0_x_p asm("t4") = b.elements().data();
+                register auto b0_1_x_p asm("t5") = b0_0_x_p + bk_strides;
+
+                // 1. Pre load A/B
+                {
+                    a0_0_0 = *a0_0_0_p;
+                    a0_0_0_p += ak_strides * 2;
+                    a0_1_0 = *a0_1_0_p;
+                    a0_1_0_p += ak_strides * 2;
+
+                    b0_0_0 = b0_0_x_p[bn_strides * 0];
+                    b0_0_1 = b0_0_x_p[bn_strides * 1];
+                    b0_0_2 = b0_0_x_p[bn_strides * 2];
+                    b0_0_3 = b0_0_x_p[bn_strides * 3];
+                    b0_0_4 = b0_0_x_p[bn_strides * 4];
+                    b0_0_5 = b0_0_x_p[bn_strides * 5];
+                    b0_0_6 = b0_0_x_p[bn_strides * 6];
+                    b0_0_7 = b0_0_x_p[bn_strides * 7];
+                    b0_0_x_p += bk_strides * 2;
+                }
 
 #define NTT_MATMUL_PP(ld, calc)                                                \
     asm volatile(                                                              \
@@ -436,30 +443,30 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
           [bk_strides] "i"(bk_strides * sizeof(b0_0_0)),                       \
           [bn_strides] "i"(bn_strides * sizeof(b0_0_0)));
 
-            // 2. Pipelined
-            const size_t pipeline_count = (K - 1) / 2;
-            for (size_t k1 = 0; k1 < pipeline_count; k1++) {
-                // Ping
-                NTT_MATMUL_PP(1, 0)
-                // Pong
-                NTT_MATMUL_PP(0, 1)
+                // 2. Pipelined
+                const size_t pipeline_count = (K - 1) / 2;
+                for (size_t k1 = 0; k1 < pipeline_count; k1++) {
+                    // Ping
+                    NTT_MATMUL_PP(1, 0)
+                    // Pong
+                    NTT_MATMUL_PP(0, 1)
+                }
+
+                if (K % 2 == 0) {
+                    NTT_MATMUL_PP(1, 0)
+                }
             }
 
-            if (K % 2 == 0) {
-                NTT_MATMUL_PP(1, 0)
-            }
-        }
-
-        // 3. Tail
-        {
-            register fixed_vfloat32m1_t *c0_x_0_p asm("t0");
-            register fixed_vfloat32m1_t *c0_x_1_p asm("t1");
-            register fixed_vfloat32m1_t *c0_x_2_p asm("t2");
-            register fixed_vfloat32m1_t *c0_x_3_p asm("t3");
-            register fixed_vfloat32m1_t *c0_x_4_p asm("t4");
-            register fixed_vfloat32m1_t *c0_x_5_p asm("t5");
-            register fixed_vfloat32m1_t *c0_x_6_p asm("t6");
-            register fixed_vfloat32m1_t *c0_x_7_p asm("a4");
+            // 3. Tail
+            {
+                register fixed_vfloat32m1_t *c0_x_0_p asm("t0");
+                register fixed_vfloat32m1_t *c0_x_1_p asm("t1");
+                register fixed_vfloat32m1_t *c0_x_2_p asm("t2");
+                register fixed_vfloat32m1_t *c0_x_3_p asm("t3");
+                register fixed_vfloat32m1_t *c0_x_4_p asm("t4");
+                register fixed_vfloat32m1_t *c0_x_5_p asm("t5");
+                register fixed_vfloat32m1_t *c0_x_6_p asm("t6");
+                register fixed_vfloat32m1_t *c0_x_7_p asm("a4");
 
 #define NTT_MATMUL_TAIL(calc)                                                  \
     asm volatile(                                                              \
@@ -570,15 +577,22 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
         [c0_x_4_p] "r"(c0_x_4_p), [c0_x_5_p] "r"(c0_x_5_p),                    \
         [c0_x_6_p] "r"(c0_x_6_p), [c0_x_7_p] "r"(c0_x_7_p));
 
-            if (K % 2 == 0) {
-                NTT_MATMUL_TAIL(1)
-            } else {
-                NTT_MATMUL_TAIL(0)
+                if (K % 2 == 0) {
+                    NTT_MATMUL_TAIL(1)
+                } else {
+                    NTT_MATMUL_TAIL(0)
+                }
             }
-        }
 
 #undef NTT_MATMUL_PING
 #undef NTT_MATMUL_TAIL
+        } else {
+            u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false,
+                     false, 2, 8, vector<float, NTT_VLEN / 32>, float,
+                     vector<float, NTT_VLEN / 32>, false>
+                impl;
+            impl(a, b, c0, K);
+        }
     }
 };
 
@@ -587,25 +601,24 @@ template <class T1, class T2> struct u_pack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
 };
 
-template <size_t N, size_t MStrides>
-class u_pack<NTT_VLEN / 32, N, MStrides, true, float,
-             vector<float, NTT_VLEN / 32>> {
+template <> class u_pack<true, float, vector<float, NTT_VLEN / 32>> {
   public:
-    constexpr void operator()(const float *input,
+    template <Dimension TM, Dimension TN, Dimension TMStrides>
+    constexpr void operator()(const float *input, const TM &M, const TN &N,
+                              const TMStrides &m_strides,
                               vector<float, NTT_VLEN / 32> *output) noexcept {
         constexpr size_t vl = NTT_VLEN / 32;
-        if constexpr (N % vl != 0) {
-            ukernels::u_pack<vl, N, MStrides, false, float, vector<float, vl>>
-                impl;
-            impl(input, output);
+        if (N % vl != 0) {
+            ukernels::u_pack<false, float, vector<float, vl>> impl;
+            impl(input, M, N, m_strides, output);
         } else {
             using policy_t = u_pack_policy<float, vector<float, vl>, true>;
             constexpr auto unroll = policy_t::unroll;
-            constexpr auto in_strides1 = sizeof(float) * MStrides;
-            constexpr auto in_strides2 = sizeof(float);
+            const auto in_strides1 = sizeof(float) * m_strides;
+            const auto in_strides2 = sizeof(float);
             asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
-            auto count = N;
+            size_t count = N;
             while (count / unroll) {
                 asm volatile(
                     "vlse32.v v1, (%[input]), %[in_strides1]\n"
@@ -672,12 +685,15 @@ class u_pack<NTT_VLEN / 32, N, MStrides, true, float,
     }
 };
 
-template <class TIn, class TOut, size_t PackAxis1, size_t PackAxis2>
+template <class TIn, class TOut>
 class u_pack2d<true, TIn, TOut, float,
-               vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, PackAxis1,
-               PackAxis2> {
+               vector<float, NTT_VLEN / 32, NTT_VLEN / 32>> {
   public:
-    constexpr void operator()(const TIn &input, TOut &output) noexcept {
+    template <FixedDimensions TAxes>
+    constexpr void operator()(const TIn &input, const TAxes &,
+                              TOut &output) noexcept {
+        constexpr auto PackAxis1 = TAxes{}[0_dim];
+        constexpr auto PackAxis2 = TAxes{}[1_dim];
         constexpr size_t vl = NTT_VLEN / 32;
         auto input_shape = input.shape();
         auto out_stride = output.strides();
@@ -704,18 +720,18 @@ class u_pack2d<true, TIn, TOut, float,
             auto out_strides = sizeof(vector<float, vl>);
             asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
-            auto count = output.shape().length();
+            size_t count = output.shape().length();
             if (PackAxis2 != rank - 1) {
                 while (count / high_stride) {
                     auto in_ptr = pin + out_offset + low_idx * low_extra +
                                   high_idx * high_extra;
-                    auto count1 = high_stride;
+                    size_t count1 = high_stride;
                     while (count1 / unroll1) {
                         auto input1 = in_ptr;
                         auto input2 = in_ptr + 1;
                         auto output1 = out_ptr;
                         auto output2 = out_ptr + 1;
-                        auto count2 = vl;
+                        size_t count2 = vl;
                         while (count2 / unroll2) {
                             // load input1 + input2
                             asm volatile(
@@ -857,13 +873,13 @@ class u_pack2d<true, TIn, TOut, float,
             } else {
                 while (count / high_dim) {
                     auto in_ptr = pin + out_offset + low_idx * low_extra;
-                    auto count1 = high_dim;
+                    size_t count1 = high_dim;
                     while (count1 / unroll1) {
                         auto input1 = in_ptr;
                         auto input2 = in_ptr + vl;
                         auto output1 = out_ptr;
                         auto output2 = out_ptr + 1;
-                        auto count2 = vl;
+                        size_t count2 = vl;
                         while (count2 / unroll2) {
                             // load input1 + input2
                             asm volatile(
@@ -990,10 +1006,9 @@ class u_pack2d<true, TIn, TOut, float,
                 }
             }
         } else {
-            ukernels::u_pack2d<false, TIn, TOut, float, vector<float, vl, vl>,
-                               PackAxis1, PackAxis2>
+            ukernels::u_pack2d<false, TIn, TOut, float, vector<float, vl, vl>>
                 impl;
-            impl(input, output);
+            impl(input, TAxes{}, output);
         }
     }
 };
@@ -1113,13 +1128,13 @@ class u_unpack_2d_fixed<low_stride, NTT_VLEN / 32, high_stride, NTT_VLEN / 32,
             while (count / high_stride) {
                 auto out_ptr = output + in_offset + low_idx * low_extra +
                                high_idx * high_extra;
-                auto count1 = high_stride;
+                size_t count1 = high_stride;
                 while (count1 / unroll1) {
                     auto input1 = in_ptr;
                     auto input2 = in_ptr + in_stride;
                     auto output1 = out_ptr;
                     auto output2 = out_ptr + 1;
-                    auto count2 = vl;
+                    size_t count2 = vl;
                     while (count2 / unroll2) {
                         // load input1 + input2
                         asm volatile("vl1re32.v v1, (%[input1])\n"
@@ -1269,13 +1284,13 @@ class u_unpack_2d_fixed<low_stride, NTT_VLEN / 32, high_stride, NTT_VLEN / 32,
         } else {
             while (count / high_dim) {
                 auto out_ptr = output + in_offset + low_idx * low_extra;
-                auto count1 = high_dim;
+                size_t count1 = high_dim;
                 while (count1 / unroll1) {
                     auto input1 = in_ptr;
                     auto input2 = in_ptr + in_stride;
                     auto output1 = out_ptr;
                     auto output2 = out_ptr + vl;
-                    auto count2 = vl;
+                    size_t count2 = vl;
                     while (count2 / unroll2) {
                         // load input1 + input2
                         asm volatile("vl1re32.v v1, (%[input1])\n"
@@ -1522,13 +1537,13 @@ class u_unpack_2d_ranked<NTT_VLEN / 32, NTT_VLEN / 32, T1, float, true,
             while (count / high_stride) {
                 auto out_ptr = output + in_offset + low_idx * low_extra +
                                high_idx * high_extra;
-                auto count1 = high_stride;
+                size_t count1 = high_stride;
                 while (count1 / unroll1) {
                     auto input1 = in_ptr;
                     auto input2 = in_ptr + in_stride;
                     auto output1 = out_ptr;
                     auto output2 = out_ptr + 1;
-                    auto count2 = vl;
+                    size_t count2 = vl;
                     while (count2 / unroll2) {
                         // load input1 + input2
                         asm volatile("vl1re32.v v1, (%[input1])\n"
@@ -1678,13 +1693,13 @@ class u_unpack_2d_ranked<NTT_VLEN / 32, NTT_VLEN / 32, T1, float, true,
         } else {
             while (count / high_dim) {
                 auto out_ptr = output + in_offset + low_idx * low_extra;
-                auto count1 = high_dim;
+                size_t count1 = high_dim;
                 while (count1 / unroll1) {
                     auto input1 = in_ptr;
                     auto input2 = in_ptr + in_stride;
                     auto output1 = out_ptr;
                     auto output2 = out_ptr + vl;
-                    auto count2 = vl;
+                    size_t count2 = vl;
                     while (count2 / unroll2) {
                         // load input1 + input2
                         asm volatile("vl1re32.v v1, (%[input1])\n"

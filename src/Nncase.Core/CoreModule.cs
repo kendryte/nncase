@@ -10,7 +10,7 @@ namespace Nncase;
 /// <summary>
 /// Core module.
 /// </summary>
-internal class CoreModule : IApplicationPart
+internal partial class CoreModule : IApplicationPart
 {
     public void ConfigureServices(IRegistrator registrator)
     {
@@ -40,5 +40,10 @@ internal class CoreModule : IApplicationPart
         registrator.Register<ValueType, QuantParamType>(reuse: Reuse.Singleton);
         registrator.Register<ValueType, AttentionKVCacheType>(reuse: Reuse.Singleton);
         registrator.Register<ValueType, PagedAttentionKVCacheType>(reuse: Reuse.Singleton);
+
+        // Mask types
+        RegisterMaskTypes(registrator);
     }
+
+    private static partial void RegisterMaskTypes(IRegistrator registrator);
 }
