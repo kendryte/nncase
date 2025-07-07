@@ -177,6 +177,54 @@ inline void permute_8x8(const TElem *src, TElem *dst, size_t in_stride,
     _mm256_storeu_ps(&dst[7 * out_stride], row7);
 }
 
+inline void permute_8x8_unpack1d(const vector<float, 8> *src, float *dst,
+                                 size_t in_stride, size_t out_stride) noexcept {
+    __m256 row0 = src[0 * in_stride];
+    __m256 row1 = src[1 * in_stride];
+    __m256 row2 = src[2 * in_stride];
+    __m256 row3 = src[3 * in_stride];
+    __m256 row4 = src[4 * in_stride];
+    __m256 row5 = src[5 * in_stride];
+    __m256 row6 = src[6 * in_stride];
+    __m256 row7 = src[7 * in_stride];
+
+    __m256 t0 = _mm256_unpacklo_ps(row0, row1);
+    __m256 t1 = _mm256_unpackhi_ps(row0, row1);
+    __m256 t2 = _mm256_unpacklo_ps(row2, row3);
+    __m256 t3 = _mm256_unpackhi_ps(row2, row3);
+    __m256 t4 = _mm256_unpacklo_ps(row4, row5);
+    __m256 t5 = _mm256_unpackhi_ps(row4, row5);
+    __m256 t6 = _mm256_unpacklo_ps(row6, row7);
+    __m256 t7 = _mm256_unpackhi_ps(row6, row7);
+
+    __m256 u0 = _mm256_shuffle_ps(t0, t2, 0x44); // 0x44 -> 01000100
+    __m256 u1 = _mm256_shuffle_ps(t0, t2, 0xEE); // 0xEE -> 11101110
+    __m256 u2 = _mm256_shuffle_ps(t1, t3, 0x44);
+    __m256 u3 = _mm256_shuffle_ps(t1, t3, 0xEE);
+    __m256 u4 = _mm256_shuffle_ps(t4, t6, 0x44);
+    __m256 u5 = _mm256_shuffle_ps(t4, t6, 0xEE);
+    __m256 u6 = _mm256_shuffle_ps(t5, t7, 0x44);
+    __m256 u7 = _mm256_shuffle_ps(t5, t7, 0xEE);
+
+    row0 = _mm256_permute2f128_ps(u0, u4, 0x20); // 0x20 -> 00100000
+    row1 = _mm256_permute2f128_ps(u1, u5, 0x20);
+    row2 = _mm256_permute2f128_ps(u2, u6, 0x20);
+    row3 = _mm256_permute2f128_ps(u3, u7, 0x20);
+    row4 = _mm256_permute2f128_ps(u0, u4, 0x31); // 0x31 -> 00110001
+    row5 = _mm256_permute2f128_ps(u1, u5, 0x31);
+    row6 = _mm256_permute2f128_ps(u2, u6, 0x31);
+    row7 = _mm256_permute2f128_ps(u3, u7, 0x31);
+
+    _mm256_storeu_ps(&dst[0 * out_stride], row0);
+    _mm256_storeu_ps(&dst[1 * out_stride], row1);
+    _mm256_storeu_ps(&dst[2 * out_stride], row2);
+    _mm256_storeu_ps(&dst[3 * out_stride], row3);
+    _mm256_storeu_ps(&dst[4 * out_stride], row4);
+    _mm256_storeu_ps(&dst[5 * out_stride], row5);
+    _mm256_storeu_ps(&dst[6 * out_stride], row6);
+    _mm256_storeu_ps(&dst[7 * out_stride], row7);
+}
+
 inline void permute_8x8_pack1d(const float *src, vector<float, 8> *dst,
                                size_t in_stride = 1,
                                size_t out_stride = 1) noexcept {
@@ -437,17 +485,16 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                     ntt::apply(outer_index, [&](const auto &index) {
                         ntt::loop<axis + 1>(
                             [&](auto &i) { inner_domain[i] = index[i]; });
-                        auto src = reinterpret_cast<const float *>(
-                            &input(inner_domain));
+                        auto src = &input(inner_domain);
 
                         dst = out_ptr + dim_value(linear_offset(
                                             inner_domain, input.strides())) *
                                             8;
 
                         for (size_t i = 0; i < inner_size / 8; i++) {
-                            permute_8x8(src, dst, 8, inner_size);
+                            permute_8x8_unpack1d(src, dst, 1, inner_size);
                             dst += 8;
-                            src += 64;
+                            src += 8;
                         }
                     });
                 }
