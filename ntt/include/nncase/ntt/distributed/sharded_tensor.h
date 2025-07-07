@@ -16,7 +16,6 @@
 #pragma once
 #include "../detail/shape_storage.h"
 #include "../tensor.h"
-#include "nncase/ntt/arch/cpu/topology_def.h"
 #include "remote_tensor.h"
 #include "sharding.h"
 #include <type_traits>

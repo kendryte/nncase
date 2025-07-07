@@ -536,7 +536,7 @@ constexpr auto linear_offset(const TIndex &index,
     return linear_offset(index, default_strides(shape));
 }
 
-template <template <class... TDims> class TDimensions = dims_t,
+template <template <class... TDims> class TDimensions = shape_t,
           Dimension TOffset, Shape TShape>
 constexpr auto unravel_index(const TOffset &offset,
                              const TShape &shape) noexcept {

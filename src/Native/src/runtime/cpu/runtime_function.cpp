@@ -183,17 +183,31 @@ result<value_t> cpu_runtime_function::invoke_core(
                         }
 
                         {
-                            // FIXME: TP is not supported yet
-                            CHECK_WITH_ERR(node->kv_caches().size() == 1,
-                                           std::errc::not_supported);
                             auto &kv_cache = node->kv_caches()[0];
-                            try_var(hbf, kv_cache->buffer().as_host());
-                            try_var(mbf, hbf.map(map_read));
-                            auto kv_cache_addrs_span =
-                                runtime::as_span<const intptr_t>(mbf.buffer());
-                            std::copy(kv_cache_addrs_span.begin(),
-                                      kv_cache_addrs_span.end(),
-                                      desc.kv_cache_addrs.begin());
+                            if (kv_cache->dtype().equals(datatype_t::int64)) {
+                                // FIXME: TP is not supported yet
+                                CHECK_WITH_ERR(node->kv_caches().size() == 1,
+                                               std::errc::not_supported);
+                                // 1. kv_cache is addresses of kv cache buffers
+                                try_var(hbf, kv_cache->buffer().as_host());
+                                try_var(mbf, hbf.map(map_read));
+                                auto kv_cache_addrs_span =
+                                    runtime::as_span<const intptr_t>(
+                                        mbf.buffer());
+                                std::copy(kv_cache_addrs_span.begin(),
+                                          kv_cache_addrs_span.end(),
+                                          desc.kv_cache_addrs.begin());
+                            } else {
+                                // 2. kv_cache is kv cache buffers
+                                size_t i = 0;
+                                for (auto kv_cache : node->kv_caches()) {
+                                    try_var(hbf, kv_cache->buffer().as_host());
+                                    try_var(mbf, hbf.map(map_read));
+                                    desc.kv_cache_addrs[i++] =
+                                        reinterpret_cast<intptr_t>(
+                                            mbf.buffer().data());
+                                }
+                            }
                         }
                     }
                 }

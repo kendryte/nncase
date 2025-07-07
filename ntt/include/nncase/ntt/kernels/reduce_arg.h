@@ -21,17 +21,13 @@
 
 // namespace nncase::ntt {
 // namespace reduce_arg_detail {
-// template <template <class T1, class T2> class Op, size_t ReduceAxis,
-//           bool SelectLastIdx, bool KeepDims, Tensor TIn,
-//           Tensor TOut, IsFixedDims PackedAxes, IsFixedDims PadedNums>
-// void reduce_arg_impl(const TIn &input, TOut &&output, PackedAxes, PadedNums) {
+// template <reduce_op Op, bool KeepDims, bool SelectLastIdx, Tensor TIn,
+//           Tensor TOut, FixedDimension TReduceAxis, FixedDimensions PackedAxes>
+// void reduce_arg_impl(const TIn &input, TOut &output,
+//                      const TReduceAxis &reduce_axis, const PackedAxes &) {
 //     using TIElem = typename TIn::element_type;
-//     using TOElem = typename std::decay_t<TOut>::element_type;
-//     constexpr auto input_shape = typename TIn::shape_type{};
-//     constexpr auto output_shape = typename std::decay_t<TOut>::shape_type{};
-//     constexpr auto output_strides = typename std::decay_t<TOut>::strides_type{};
-
-//     static_assert(IsScalar<TOElem> && IsScalar<TIElem>,
+//     using TOElem = typename TOut::element_type;
+//     static_assert(Scalar<TOElem> && Scalar<TIElem>,
 //                   "Only support scalar type for now");
 
 //     const float epsilon = 0.000001f;
@@ -126,15 +122,20 @@
 // }
 // } // namespace reduce_arg_detail
 
-// template <template <class T1, class T2> class Op, size_t Axes,
-//           bool SelectLastIdx, bool KeepDims, IsFixedTensor TIn,
-//           IsFixedTensor TOut, IsFixedDims PackedAxes, IsFixedDims PadedNums>
-// void reduce_arg(const TIn &input, TOut &&output, PackedAxes packedAxes,
-//                 PadedNums padedNums) noexcept {
+// template <reduce_op Op, bool KeepDims = true, bool SelectLastIdx = false,
+//           Tensor TIn, class TOut, FixedDimension TReduceAxis,
+//           FixedDimensions PackedAxes = shape_t<>,
+//           FixedDimensions PadedNums =
+//               decltype(make_zeros_shape<PackedAxes::rank()>())>
+// void reduce_arg(const TIn &input, TOut &&output,
+//                 [[maybe_unused]] const TReduceAxis &reduce_axis,
+//                 [[maybe_unused]] const PackedAxes &packed_axes = {},
+//                 [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
 //     static_assert(PackedAxes::rank() == 0, "currently not support packing.");
 //     static_assert(PadedNums::rank() == 0, "not support padding");
 
-//     reduce_arg_detail::reduce_arg_impl<Op, Axes, SelectLastIdx, KeepDims>(
-//         input, output, packedAxes, padedNums);
+//     reduce_arg_detail::reduce_arg_impl<Op, KeepDims, SelectLastIdx, TIn,
+//                                        std::decay_t<TOut>>
+//         impl(input, output, reduce_axis, packed_axes);
 // }
 // } // namespace nncase::ntt
