@@ -373,7 +373,7 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
                                                            j);
                                     }
 
-                                    outer_ptr += (inner_size * lanes.length());
+                                    outer_ptr += inner_size;
                                 }
                             }
                         }
