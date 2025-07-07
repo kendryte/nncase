@@ -331,6 +331,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
         const auto global_tensor =
             make_tensor_view_from_address(global_buffer_address, dest.shape());
         reshard(global_tensor, dest);
+        distributed::topology_synchronize();
     }
 };
 } // namespace detail
