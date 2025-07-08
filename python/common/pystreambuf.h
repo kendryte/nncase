@@ -359,8 +359,9 @@ class streambuf : public std::basic_streambuf<char> {
             farthest_pptr = std::max(farthest_pptr, pptr());
             upper_bound = reinterpret_cast<std::streamsize>(farthest_pptr) + 1;
         } else {
-            throw std::runtime_error("Control flow passes through branch that should "
-                               "be unreachable.");
+            throw std::runtime_error(
+                "Control flow passes through branch that should "
+                "be unreachable.");
         }
 
         // Sought position in "buffer coordinate"
@@ -372,8 +373,9 @@ class streambuf : public std::basic_streambuf<char> {
         } else if (way == std::ios_base::end) {
             return false;
         } else {
-            throw std::runtime_error("Control flow passes through branch that should "
-                               "be unreachable.");
+            throw std::runtime_error(
+                "Control flow passes through branch that should "
+                "be unreachable.");
         }
 
         // if the sought position is not in the buffer, give up
