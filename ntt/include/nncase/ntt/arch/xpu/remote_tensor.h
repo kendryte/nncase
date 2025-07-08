@@ -42,8 +42,8 @@ static auto get_remote_address(const TLocalProgramIds &local_program_ids,
     auto end = global_local_data_ptr(local_program_ids)(1_dim);
     auto remote_address = global_local_data_ptr(remote_program_ids)(0_dim);
     if ((uintptr_t)local_address < start || (uintptr_t)local_address >= end) {
-        start = global_local_rdata_ptr(local_program_ids)(0_dim);
-        remote_address = global_local_rdata_ptr(remote_program_ids)(0_dim);
+        start = global_local_rdata_ptr(local_program_ids);
+        remote_address = global_local_rdata_ptr(remote_program_ids);
     }
 
     return local_address - (T *)start + (T *)remote_address;
