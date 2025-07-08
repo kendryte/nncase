@@ -47,7 +47,7 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
 
         using slice_type = element_or_scalar_t<TB>;
 
-        constexpr size_t indices_len = indices.size();
+        constexpr size_t indices_len = TB::size();
 
         segment segments[indices_len];
         size_t count = find_continuous_segments(
