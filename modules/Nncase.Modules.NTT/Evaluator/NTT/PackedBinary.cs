@@ -95,6 +95,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
 
     private IRType Visit(PackedBinary target, TensorType a, TensorType b)
     {
+#if false
         var rank = System.Math.Max(a.Shape.Rank, b.Shape.Rank);
         var outShape = new Dimension[rank];
         var lhsOrginShape = a.Shape.ToArray();
@@ -210,6 +211,10 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         }
 
         return new TensorType(dataType, outShape);
+#endif
+
+        var broadcastType = TypeInference.BroadcastType(a, b);
+        return broadcastType;
     }
 
     private IRType Visit(PackedBinary target, DistributedType a, DistributedType b)

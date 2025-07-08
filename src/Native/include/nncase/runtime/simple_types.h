@@ -211,5 +211,6 @@ typedef enum map_access_ {
 DEFINE_ENUM_BITMASK_OPERATORS(map_access_t)
 
 enum class host_sync_status_t { valid, need_invalidate, need_write_back };
+enum class device_sync_status_t { valid, need_invalidate, need_write_back };
 } // namespace runtime
 } // namespace nncase

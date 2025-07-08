@@ -7,28 +7,20 @@
   var inputCount = Model.PrimFunction.Parameters.Length;
 }
 
-#include <nncase/ntt/runtime.h>
-#include <nncase/ntt/caching.h>
+#include <nncase/ntt/ntt.h>
 #include "topo_aware_runtime.h"
-#include <nncase/float8.h>
-#include <nncase/half.h>
-#include <nncase/bfloat16.h>
 @foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).SkipLast(1)){
 @:uint8_t L@(i+1)Data[@(s)];
 }
 #include "../device.h"
 #include "kernel.h"
 
-//alignas(@(Model.Alignment)) static thread_local uint8_t local_data[@(Model.DataSize)];
-nncase::ntt::tensor<uintptr_t[2], nncase::ntt::distributed::topology_shape_t> global_local_data_ptr;
-nncase::ntt::tensor<uintptr_t, nncase::ntt::distributed::topology_shape_t> global_local_rdata_ptr;
-
 extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
   nncase::ntt::runtime::thread_inout_desc *const output_descs,
   const std::byte *rdata,
   const std::byte *local_rdata,
-  std::byte *output,
-  nncase::ntt::ranked_shape<(size_t)nncase::ntt::distributed::topology::count__> program_ids) {
+  std::byte *local_data,
+  std::byte *output) {
   /* prepare inputs */
   @{
     var names = new List<string>();
@@ -48,10 +40,8 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input
       var rank = shape.Rank;
       var sizeStr = $"input_descs[{i}].size / {input.CheckedDataType.SizeInBytes}";
       var elemType = input.CheckedDataType.ToC();
-      var dimType = shape.IsFixed ? $"fixed_shape<{string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].FixedValue))}>" : $"ranked_shape<{rank}>";
-      var stridesType = $"ranked_strides<{rank}>";
-      var dimStr = shape.IsFixed ? ", {}" : $", make_ranked_shape({string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].IsFixed ? $"{shape[d].FixedValue}" : $"input_descs[{i}].shape[{d}]"))})";
-      var strideStr = $", make_ranked_strides({string.Join(", ", Enumerable.Range(0, rank).Select(d => $"input_descs[{i}].strides[{d}]"))})";
+      var dimStr = $"make_shape({string.Join(", ", Enumerable.Range(0, rank).Select(d => shape[d].IsFixed ? $"{shape[d].FixedValue}_dim" : $"input_descs[{i}].shape[{d}]"))})";
+      var strideStr = $"make_strides({string.Join(", ", Enumerable.Range(0, rank).Select(d => $"input_descs[{i}].strides[{d}]"))})";
       if (input.CheckedDataType is ReferenceType referenceType) {
         if (referenceType.ElemType is Nncase.IR.NN.PagedAttentionKVCacheType kvcacheType) {
           var size = TensorUtilities.GetProduct(shape.ToValueArray()); // todo: support dynamic shape
@@ -64,37 +54,22 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input
 
   @:std::span<runtime::thread_paged_attention_kv_cache_desc> p@(name)_descs((runtime::thread_paged_attention_kv_cache_desc*)input_descs[@i].data, input_descs[@i].size / sizeof(runtime::thread_paged_attention_kv_cache_desc));
   @:using paged_attention_kv_cache_mesh_t = @Html.Raw(KernelUtility.PlacementToC(placement));
-  @:using paged_attention_kv_cache_config_t = @Html.Raw(kvcacheType.Config.ToC());
+  @:const auto paged_attention_kv_cache_config = @Html.Raw(kvcacheType.Config.ToC());
+  @:using paged_attention_kv_cache_config_t = std::decay_t<decltype(paged_attention_kv_cache_config)>;
   @:using paged_attention_kv_cache_t = caching::paged_attention_kv_cache<paged_attention_kv_cache_mesh_t, paged_attention_kv_cache_config_t>;
+  @:using kv_storage_type_t = typename paged_attention_kv_cache_t::kv_storage_type_t;
   @:alignas(paged_attention_kv_cache_t) std::byte p@(name)[sizeof(paged_attention_kv_cache_t) * @size];
   @:for (size_t i = 0; i < @size; ++i) {
-    var init_list = string.Join(',', Enumerable.Range(0, kv_tensor_size).Select(j => $"desc.kv_cache_addrs[{j}]"));
     @:auto desc = p@(name)_descs[i];
+    @:auto kv_addrs = make_tensor_view_from_address((kv_storage_type_t **)desc.kv_cache_addrs.data(), paged_attention_kv_cache_t::kv_addrs_shape);
     @:auto ptr = (paged_attention_kv_cache_t*)p@(name) + i;
-    @:new (ptr) paged_attention_kv_cache_t(desc.num_seqs, desc.num_tokens, tensor_view<int64_t, ranked_shape<1>> (std::span(desc.context_lens, desc.context_lens_size), ntt::make_ranked_shape(desc.context_lens_size)), tensor_view<int64_t, ranked_shape<1>> (std::span(desc.seq_lens, desc.seq_lens_size), ntt::make_ranked_shape(desc.seq_lens_size)), tensor_view<int64_t, ranked_shape<3>> (std::span(desc.block_table, desc.block_table_shape[0]*desc.block_table_shape[1]*desc.block_table_shape[2]), make_ranked_shape(desc.block_table_shape[0],desc.block_table_shape[1],desc.block_table_shape[2])), tensor_view<int64_t, ranked_shape<2>> (std::span(desc.slot_mapping, desc.slot_mapping[0]*desc.slot_mapping[1]), make_ranked_shape(desc.slot_mapping_shape[0],desc.slot_mapping_shape[1])), ntt::tensor<intptr_t, ntt::fixed_shape<@(string.Join(',', kv_tensor_shape))>> (std::array<intptr_t, @(kv_tensor_size)> {@Html.Raw(init_list)}));
+    @:new (ptr) paged_attention_kv_cache_t(desc.num_seqs, desc.num_tokens, make_tensor_view_from_address(desc.context_lens, make_shape(desc.context_lens_size)), make_tensor_view_from_address(desc.seq_lens, make_shape(desc.seq_lens_size)), make_tensor_view_from_address(desc.block_table, make_shape(desc.block_table_shape[0], desc.block_table_shape[1], paged_attention_kv_cache_t::id_length)), make_tensor_view_from_address(desc.slot_mapping, make_shape(desc.slot_mapping_shape[0], paged_attention_kv_cache_t::id_length)), kv_addrs);
   @:}
-  @:tensor_view<paged_attention_kv_cache_t, @Html.Raw(dimType), @Html.Raw(stridesType)> @(name)(std::span<paged_attention_kv_cache_t, @size>((paged_attention_kv_cache_t *)p@(name), @size)@Html.Raw(dimStr)@Html.Raw(strideStr));
+  @:auto @(name) = make_tensor_view_from_address((paged_attention_kv_cache_t *)p@(name), @Html.Raw(dimStr), @Html.Raw(strideStr));
         }
       } else {
-  @:std::span<@Html.Raw(elemType)> p@(name)((@Html.Raw(elemType) *)input_descs[@i].data, @Html.Raw(sizeStr));
-  @:tensor_view<@Html.Raw(elemType), @Html.Raw(dimType), @Html.Raw(stridesType)> @(name)(p@(name)@Html.Raw(dimStr)@Html.Raw(strideStr));
+  @:auto @(name) = make_tensor_view_from_address((const @Html.Raw(elemType) *)input_descs[@i].data, @Html.Raw(dimStr), @Html.Raw(strideStr));
       }
-    }
-  @:
-  }
-  /* prepare rdatas */
-  @foreach(var (b,i) in Model.RDataBuffers.OfType<Nncase.TIR.Buffer>().Select((b,i)=>(Model.GetInfo(b),i)))
-  {
-    names.Add(b.Name);
-    if (b.Distributed == null)
-    {
-  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(rdata + @b.Offset), @b.Size);
-  @:tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.DimensionsStr), @Html.Raw(b.StridesStr)> @(b.Name)(p@(b.Name));
-    }
-    else
-    {
-  @:std::span<@Html.Raw(b.ElemType), @b.Size> p@(b.Name)((@Html.Raw(b.ElemType) *)(local_rdata + @b.Offset), @b.Size);
-  @:sharded_tensor_view<@Html.Raw(b.ElemType), @Html.Raw(b.DimensionsStr), @Html.Raw(b.Distributed), @Html.Raw(b.StridesStr)> @(b.Name)(p@(b.Name));
     }
   @:
   }
@@ -103,12 +78,7 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input
     throw new NotSupportedException($"not support multi form topology!");
   }
   
-  auto local_data = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.DataSize, @Model.Alignment);
-  global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[0] = (uintptr_t)local_data;
-  global_local_data_ptr(program_ids[0], program_ids[1], program_ids[2])[1] = (uintptr_t)local_data + @Model.DataSize;
-  global_local_rdata_ptr(program_ids[0], program_ids[1], program_ids[2]) = (uintptr_t)local_rdata;
-  @(Model.PrimFunction.Name)(@(string.Concat(names.Select(x => $"{x}, ")))local_data, output, output_descs);
-  nncase::ntt::runtime::thread_free(local_data);
+  @(Model.PrimFunction.Name)(@(string.Concat(names.Select(x => $"{x}, ")))rdata, local_rdata, local_data, output, output_descs);
 }
 
 #ifdef NNCASE_STANDALONE

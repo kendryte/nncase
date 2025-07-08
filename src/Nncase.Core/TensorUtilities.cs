@@ -113,7 +113,7 @@ public static class TensorUtilities
     /// <summary>
     /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
     /// </summary>
-    public static T[] GetStridesGeneric<T>(ReadOnlySpan<T> dimensions, bool reverseStride = false)
+    public static T[] GetDefaultStridesGeneric<T>(ReadOnlySpan<T> dimensions)
         where T : struct, ISignedNumber<T>
     {
         if (dimensions.IsEmpty)
@@ -124,20 +124,18 @@ public static class TensorUtilities
         var strides = new T[dimensions.Length];
 
         T stride = T.One;
-        if (reverseStride)
+        for (int i = strides.Length - 1; i >= 0; i--)
         {
-            for (int i = 0; i < strides.Length; i++)
-            {
-                strides[i] = stride;
-                stride *= dimensions[i];
-            }
+            strides[i] = stride;
+            stride *= dimensions[i];
         }
-        else
+
+        // Post process: replace the stride with 0 if the dimension is 1.
+        for (int i = 0; i < strides.Length; i++)
         {
-            for (int i = strides.Length - 1; i >= 0; i--)
+            if (dimensions[i] == T.One)
             {
-                strides[i] = stride;
-                stride *= dimensions[i];
+                strides[i] = T.Zero;
             }
         }
 
@@ -147,17 +145,17 @@ public static class TensorUtilities
     /// <summary>
     /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
     /// </summary>
-    public static int[] GetStrides(ReadOnlySpan<int> dimensions, bool reverseStride = false) => GetStridesGeneric(dimensions, reverseStride);
+    public static int[] GetDefaultStrides(ReadOnlySpan<int> dimensions) => GetDefaultStridesGeneric(dimensions);
 
     /// <summary>
     /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
     /// </summary>
-    public static long[] GetStrides(ReadOnlySpan<long> dimensions, bool reverseStride = false) => GetStridesGeneric(dimensions, reverseStride);
+    public static long[] GetDefaultStrides(ReadOnlySpan<long> dimensions) => GetDefaultStridesGeneric(dimensions);
 
     /// <summary>
     /// get strides.
     /// </summary>
-    public static Dimension[] GetStrides(ReadOnlySpan<Dimension> dimensions, bool reverseStride = false)
+    public static Dimension[] GetDefaultStrides(ReadOnlySpan<Dimension> dimensions)
     {
         if (dimensions.IsEmpty)
         {
@@ -167,21 +165,45 @@ public static class TensorUtilities
         var strides = new Dimension[dimensions.Length];
 
         Dimension stride = 1;
-        if (reverseStride)
+        for (int i = strides.Length - 1; i >= 0; i--)
         {
-            for (int i = 0; i < strides.Length; i++)
-            {
-                strides[i] = stride;
-                stride *= dimensions[i];
-            }
+            strides[i] = stride;
+            stride *= dimensions[i];
         }
-        else
+
+        // Post process: replace the stride with 0 if the dimension is 1.
+        for (int i = 0; i < strides.Length; i++)
         {
-            for (int i = strides.Length - 1; i >= 0; i--)
-            {
-                strides[i] = stride;
-                stride *= dimensions[i];
-            }
+            strides[i] = Dimension.Select(dimensions[i], Dimension.One, Dimension.Zero, strides[i]);
+        }
+
+        return strides;
+    }
+
+    /// <summary>
+    /// get strides with dynamic shape.
+    /// </summary>
+    public static Dimension[] GetDefaultStrides(Shape globalShape, ReadOnlySpan<long> maxShape)
+    {
+        if (globalShape.Rank == 0)
+        {
+            return Array.Empty<Dimension>();
+        }
+
+        var strides = new Dimension[globalShape.Rank];
+
+        Dimension stride = 1;
+        for (int i = strides.Length - 1; i >= 0; i--)
+        {
+            strides[i] = stride;
+            stride *= maxShape[i];
+        }
+
+        // Post process: replace the stride with 0 if the dimension is 1.
+        // Note: we use globalShape to determine if the dimension is 1, because we will not broadcast the splited dimension.
+        for (int i = 0; i < strides.Length; i++)
+        {
+            strides[i] = Dimension.Select(globalShape[i], Dimension.One, Dimension.Zero, strides[i]);
         }
 
         return strides;
@@ -214,7 +236,7 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the 1-d index for n-d indices in layout specified by strides.
     /// </summary>
-    public static T GetIndexGeneric<T>(ReadOnlySpan<T> strides, ReadOnlySpan<T> indices, int startFromDimension = 0)
+    public static T GetLinearOffsetGeneric<T>(ReadOnlySpan<T> strides, ReadOnlySpan<T> indices, int startFromDimension = 0)
         where T : struct, IBinaryNumber<T>, IComparisonOperators<T, T, bool>
     {
         // Scalar
@@ -245,17 +267,17 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the 1-d index for n-d indices in layout specified by strides.
     /// </summary>
-    public static int GetIndex(ReadOnlySpan<int> strides, ReadOnlySpan<int> indices, int startFromDimension = 0) => GetIndexGeneric(strides, indices, startFromDimension);
+    public static int GetLinearOffset(ReadOnlySpan<int> strides, ReadOnlySpan<int> indices, int startFromDimension = 0) => GetLinearOffsetGeneric(strides, indices, startFromDimension);
 
     /// <summary>
     /// Calculates the 1-d index for n-d indices in layout specified by strides.
     /// </summary>
-    public static long GetIndex(ReadOnlySpan<long> strides, ReadOnlySpan<long> indices, int startFromDimension = 0) => GetIndexGeneric(strides, indices, startFromDimension);
+    public static long GetLinearOffset(ReadOnlySpan<long> strides, ReadOnlySpan<long> indices, int startFromDimension = 0) => GetLinearOffsetGeneric(strides, indices, startFromDimension);
 
     /// <summary>
     /// get index.
     /// </summary>
-    public static IR.Expr GetIndex(ReadOnlySpan<IR.Expr> strides, ReadOnlySpan<IR.Expr> indices, int startFromDimension = 0)
+    public static Dimension GetLinearOffset(ReadOnlySpan<Dimension> strides, ReadOnlySpan<Dimension> indices, int startFromDimension = 0)
     {
         // Scalar
         if (strides.Length == 0)
@@ -273,7 +295,7 @@ public static class TensorUtilities
             throw new ArgumentOutOfRangeException(nameof(indices));
         }
 
-        IR.Expr index = 0L;
+        Dimension index = 0L;
         for (int i = startFromDimension; i < indices.Length; i++)
         {
             index += strides[i] * indices[i];
@@ -285,85 +307,33 @@ public static class TensorUtilities
     /// <summary>
     /// Calculates the n-d indices from the 1-d index in a layout specificed by strides.
     /// </summary>
-    public static void GetIndices(ReadOnlySpan<long> strides, bool reverseStride, long index, long[] indices, int startFromDimension = 0)
+    public static void UnravelIndex(long index, ReadOnlySpan<long> shape, Span<long> indices)
     {
-        Trace.Assert(reverseStride ? IsAscending(strides) : IsDescending(strides), "Index decomposition requires ordered strides");
-        if (strides.Length != indices.Length)
+        if (shape.Length != indices.Length)
         {
             throw new ArgumentOutOfRangeException(nameof(indices));
         }
 
-        long remainder = index;
-        for (int i = startFromDimension; i < strides.Length; i++)
+        long remain = index;
+        for (int i = indices.Length - 1; i >= 0; i--)
         {
-            // reverse the index for reverseStride so that we divide by largest stride first
-            var nIndex = reverseStride ? strides.Length - 1 - i : i;
-
-            var stride = strides[nIndex];
-            indices[nIndex] = remainder / stride;
-            remainder %= stride;
+            var hierarchy = shape[i];
+            indices[i] = remain % hierarchy;
+            remain = remain / hierarchy;
         }
     }
 
     /// <summary>
     /// Calculates the n-d indices from the 1-d index in a layout specificed by strides.
     /// </summary>
-    public static void GetIndices(ReadOnlySpan<long> strides, bool reverseStride, long index, Span<long> indices, int startFromDimension = 0)
-    {
-        Trace.Assert(reverseStride ? IsAscending(strides) : IsDescending(strides), "Index decomposition requires ordered strides");
-        if (strides.Length != indices.Length)
-        {
-            throw new ArgumentOutOfRangeException(nameof(indices));
-        }
-
-        long remainder = index;
-        for (int i = startFromDimension; i < strides.Length; i++)
-        {
-            // reverse the index for reverseStride so that we divide by largest stride first
-            var nIndex = reverseStride ? strides.Length - 1 - i : i;
-
-            var stride = strides[nIndex];
-            indices[nIndex] = remainder / stride;
-            remainder %= stride;
-        }
-    }
-
-    /// <summary>
-    /// Takes an 1-d index over n-d sourceStrides and recalculates it assuming same n-d coordinates over a different n-d strides.
-    /// </summary>
-    public static long TransformIndexByStrides(long index, long[] sourceStrides, bool sourceReverseStride, long[] transformStrides)
-    {
-        Trace.Assert(index >= 0);
-        Trace.Assert(sourceReverseStride ? IsAscending(sourceStrides) : IsDescending(sourceStrides), "Index decomposition requires ordered strides");
-        if (sourceStrides.Length != transformStrides.Length)
-        {
-            throw new ArgumentOutOfRangeException(nameof(transformStrides));
-        }
-
-        long transformIndex = 0;
-        long remainder = index;
-
-        for (int i = 0; i < sourceStrides.Length; i++)
-        {
-            // reverse the index for reverseStride so that we divide by largest stride first
-            var nIndex = sourceReverseStride ? sourceStrides.Length - 1 - i : i;
-
-            var sourceStride = sourceStrides[nIndex];
-            var transformStride = transformStrides[nIndex];
-
-            transformIndex += transformStride * (remainder / sourceStride);
-            remainder %= sourceStride;
-        }
-
-        return transformIndex;
-    }
+    public static void UnravelIndex(long index, ReadOnlySpan<long> shape, long[] indices) => UnravelIndex(index, shape, indices.AsSpan());
 
     /// <summary>
     /// check this dimension and strides is contiguous.
     /// </summary>
     public static bool IsContiguous(ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
     {
-        return System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(GetStrides(dimensions), strides.ToArray());
+        return System.Collections.StructuralComparisons.StructuralEqualityComparer.Equals(GetDefaultStrides(dimensions), strides.ToArray());
     }
 
     /// <summary>
@@ -371,7 +341,7 @@ public static class TensorUtilities
     /// </summary>
     public static int GetContiguousDims(ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
     {
-        var def_strides = GetStrides(dimensions);
+        var def_strides = GetDefaultStrides(dimensions);
         for (int i = strides.Length - 1; i >= 0; --i)
         {
             if (strides[i] != def_strides[i])
@@ -483,20 +453,20 @@ public static class TensorUtilities
         return size * elementSize;
     }
 
-    public static (long MaxSize, long[] Strides) GetTensorMaxSizeAndStrides(TensorType tensorType, DistributedType? distributedType)
+    public static (long MaxSize, Dimension[] Strides) GetTensorMaxSizeAndStrides(TensorType tensorType, DistributedType? distributedType)
     {
         long[] dims;
-        long[] strides;
+        Dimension[] strides;
         if (distributedType is null)
         {
             dims = CompilerServices.GetMaxShape(tensorType.Shape);
-            strides = GetStrides(dims);
+            strides = GetDefaultStrides(tensorType.Shape, dims);
         }
         else
         {
             var dividedType = DistributedUtility.GetDividedTensorType(distributedType);
             dims = CompilerServices.GetMaxShape(dividedType.Shape);
-            strides = GetStrides(dims);
+            strides = GetDefaultStrides(distributedType.TensorType.Shape, dims);
         }
 
         var maxSize = GetProduct(dims) * tensorType.DType.SizeInBytes;
@@ -506,7 +476,7 @@ public static class TensorUtilities
     public static (Dimension MaxSize, Dimension[] Strides) GetTensorMaxSizeAndStridesExpr(TensorType tensorType, DistributedType? distributedType)
     {
         var (maxSize, strides) = GetTensorMaxSizeAndStrides(tensorType, distributedType);
-        return (maxSize, strides.Select(x => (Dimension)x).ToArray());
+        return (maxSize, strides);
     }
 
     public static (Dimension Size, Dimension[] Strides) GetTensorSizeAndContiguousStrides(TensorType tensorType, DistributedType? distributedType)
@@ -516,20 +486,20 @@ public static class TensorUtilities
         if (distributedType is null)
         {
             dims = ((RankedShape)tensorType.Shape).Dimensions.ToArray();
-            strides = GetStrides(dims);
+            strides = GetDefaultStrides(dims);
         }
         else
         {
             var dividedType = DistributedUtility.GetDividedTensorType(distributedType);
             dims = ((RankedShape)dividedType.Shape).Dimensions.ToArray();
-            strides = GetStrides(dims);
+            strides = GetDefaultStrides(dims);
         }
 
-        var size = (Dimension)GetProduct(dims) * tensorType.DType.SizeInBytes;
+        var size = GetProduct(dims) * tensorType.DType.SizeInBytes;
         return (size, strides);
     }
 
-    public static (long MaxSize, long[] Strides) GetTensorMaxSizeAndStrides(IRType type)
+    public static (long MaxSize, Dimension[] Strides) GetTensorMaxSizeAndStrides(IRType type)
         => type switch
         {
             TensorType tensorType => GetTensorMaxSizeAndStrides(tensorType, null),

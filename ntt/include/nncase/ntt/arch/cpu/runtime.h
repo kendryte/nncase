@@ -13,18 +13,16 @@
  * limitations under the License.
  */
 #pragma once
-#include "../../distributed.h"
 #include "../../profiling.h"
 #include "../../runtime.h"
-#include "topology.h"
 #include <cstdarg>
 #include <cstdint>
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
+#include <string>
 
 #ifdef __APPLE__
 #include <pthread.h>
@@ -254,12 +252,13 @@ struct cpu_block_entry_params_t {
     size_t cpu_id_offset;
     const thread_inout_desc *input_descs;
     thread_inout_desc *const output_descs;
-    const std::byte *rdata;
+    std::span<const std::byte> rdata;
     std::byte *output;
     uint8_t enable_profiling;
     timer_record *timer_records;
     const uint64_t *local_rdata_header;
-    const std::byte *local_rdata;
+    std::span<const std::byte> local_rdata;
+    std::span<std::byte> block_local_data;
 #ifdef __APPLE__
     pthread_key_t cpu_thread_context_key;
 #endif

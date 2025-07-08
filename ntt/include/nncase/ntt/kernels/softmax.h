@@ -14,85 +14,29 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../primitive_ops.h"
 #include "../shape_infer/reduce_axis.h"
-#include "../tensor_ops.h"
-#include "../utility.h"
-#include "binary.h"
-#include "unary.h"
-#include <algorithm>
+#include "reduce.h"
 
 namespace nncase::ntt {
-
 namespace softmax_detail {
-template <size_t Axis, IsFixedTensor TIn, IsFixedTensor TOut,
-          typename PackedAxes>
-void packed_softmax_impl(const TIn &input, TOut &&output,
-                         [[maybe_unused]] PackedAxes packedAxes) {
-    using TElem = typename TIn::element_type;
-    constexpr auto input_shape = typename TIn::shape_type{};
-    constexpr auto output_shape = typename std::decay_t<TOut>::shape_type{};
-    static_assert(is_same_seq(input_shape, output_shape),
-                  "the input output shape not equal!");
-
-    constexpr auto need_reduce =
-        PackedAxes::rank() != 0 && Axis == PackedAxes::at(0);
-    constexpr auto domain =
-        shape_infer::reduced_shape_by_axis<Axis>(input_shape);
-    apply(domain, [&](auto index) {
-        // max
-        TElem max_value = input(index);
-        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
-             index[Axis]++) {
-            max_value = max(max_value, input(index));
-        }
-
-        // reduce_max
-        if constexpr (need_reduce) {
-            max_value = (TElem)reduce_max(max_value);
-        }
-
-        // (x - reduce_max) * beta
-        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
-             index[Axis]++) {
-            output(index) = input(index) - max_value;
-        }
-
-        // exp((x - reduce_max) * beta) and sum
-        TElem sum = (TElem)0;
-        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
-             index[Axis]++) {
-            output(index) = exp(output(index));
-            sum += output(index);
-        }
-
-        // reduce sum
-        if constexpr (need_reduce) {
-            sum = (TElem)reduce_sum(sum);
-        }
-
-        // div
-        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
-             index[Axis]++) {
-            output(index) = output(index) / sum;
-        }
-    });
-}
-
-template <size_t Axis, class TIn, class TOut, typename PackedAxes>
-void packed_softmax_impl(const TIn &input, TOut &&output,
-                         [[maybe_unused]] PackedAxes packedAxes) {
+template <Tensor TIn, class TOut, FixedDimension TAxis,
+          FixedDimensions PackedAxes>
+void packed_softmax_impl(const TIn &input, TOut &&output, const TAxis &axis,
+                         const PackedAxes &) {
     using TElem = typename TIn::element_type;
     auto input_shape = input.shape();
 
+    constexpr PackedAxes packed_axes;
     constexpr auto need_reduce =
-        PackedAxes::rank() != 0 && Axis == PackedAxes::at(0);
-    auto domain = shape_infer::reduced_shape_by_axis<Axis>(input_shape);
+        PackedAxes::rank() != 0 && TAxis::value == packed_axes[0];
+    auto domain = shape_infer::reduced_shape_by_axis<TAxis::value>(input_shape);
     apply(domain, [&](auto index) {
         // max
         TElem max_value = input(index);
-        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
-             index[Axis]++) {
-            max_value = max(max_value, input(index));
+        for (index[axis] = 0; index[axis] < input_shape.at(axis);
+             index[axis]++) {
+            max_value = ntt::max(max_value, input(index));
         }
 
         // reduce_max
@@ -101,15 +45,15 @@ void packed_softmax_impl(const TIn &input, TOut &&output,
         }
 
         // (x - reduce_max) * beta
-        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
-             index[Axis]++) {
+        for (index[axis] = 0; index[axis] < input_shape.at(axis);
+             index[axis]++) {
             output(index) = input(index) - max_value;
         }
 
         // exp((x - reduce_max) * beta) and sum
         TElem sum = (TElem)0;
-        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
-             index[Axis]++) {
+        for (index[axis] = 0; index[axis] < input_shape.at(axis);
+             index[axis]++) {
             output(index) = exp(output(index));
             sum += output(index);
         }
@@ -120,8 +64,8 @@ void packed_softmax_impl(const TIn &input, TOut &&output,
         }
 
         // div
-        for (index[Axis] = 0; index[Axis] < input_shape.at(Axis);
-             index[Axis]++) {
+        for (index[axis] = 0; index[axis] < input_shape.at(axis);
+             index[axis]++) {
             output(index) = output(index) / sum;
         }
     });
@@ -141,11 +85,11 @@ void packed_softmax_impl(const TIn &input, TOut &&output,
  * @param output output output.
  * @param packedAxes  packed axes
  */
-template <size_t Axis, class TIn, class TOut,
-          typename PackedAxes /* , typename PadedNums */>
-void packed_softmax(const TIn &input, TOut &&output,
-                    PackedAxes packedAxes) noexcept {
+template <Tensor TIn, class TOut, FixedDimension TAxis,
+          FixedDimensions PackedAxes = shape_t<>>
+void packed_softmax(const TIn &input, TOut &&output, const TAxis &axis,
+                    const PackedAxes &packedAxes = {}) noexcept {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d pack");
-    softmax_detail::packed_softmax_impl<Axis>(input, output, packedAxes);
+    softmax_detail::packed_softmax_impl(input, output, axis, packedAxes);
 }
 } // namespace nncase::ntt

@@ -35,34 +35,34 @@ void benchmark_ntt_slice(T init_low, T init_high, const std::string &mode) {
     constexpr size_t run_size = 300;
 #endif
 
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<in_dim0, in_dim1>>;
     constexpr size_t out_dim0 = (stop_dim0 - 1 - start_dim0) / step_dim0 + 1;
     constexpr size_t out_dim1 = (stop_dim1 - 1 - start_dim1) / step_dim1 + 1;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<T, N>, ntt::fixed_shape<out_dim0, out_dim1>>;
 
     // init
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, init_low, init_high);
-    std::unique_ptr<tensor_type2> ntt_output(new tensor_type2);
+    auto ntt_input = ntt::make_tensor<ntt::vector<T, N>>(
+        ntt::fixed_shape_v<in_dim0, in_dim1>);
+    NttTest::init_tensor(ntt_input, init_low, init_high);
+    auto ntt_output = ntt::make_tensor<ntt::vector<T, N>>(
+        ntt::fixed_shape_v<out_dim0, out_dim1>);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::slice<ntt::fixed_shape<axes[0], axes[1]>,
-                   ntt::fixed_shape<step_dim0, step_dim1>>(
-            *ntt_input, ntt::fixed_shape<start_dim0, start_dim1>{},
-            ntt::fixed_shape<stop_dim0, stop_dim1>{}, *ntt_output);
+        ntt::slice(ntt_input, ntt_output,
+                   ntt::fixed_shape_v<start_dim0, start_dim1>,
+                   ntt::fixed_shape_v<stop_dim0, stop_dim1>,
+                   ntt::fixed_shape_v<axes[0], axes[1]>,
+                   ntt::fixed_shape_v<step_dim0, step_dim1>);
         asm volatile("" ::"g"(ntt_output));
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::slice<ntt::fixed_shape<axes[0], axes[1]>,
-                   ntt::fixed_shape<step_dim0, step_dim1>>(
-            *ntt_input, ntt::fixed_shape<start_dim0, start_dim1>{},
-            ntt::fixed_shape<stop_dim0, stop_dim1>{}, *ntt_output);
+        ntt::slice(ntt_input, ntt_output,
+                   ntt::fixed_shape_v<start_dim0, start_dim1>,
+                   ntt::fixed_shape_v<stop_dim0, stop_dim1>,
+                   ntt::fixed_shape_v<axes[0], axes[1]>,
+                   ntt::fixed_shape_v<step_dim0, step_dim1>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();

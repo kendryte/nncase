@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NTT;
 
@@ -23,11 +24,11 @@ public sealed partial class InstacneNorm : Op
     /// </summary>
     public static readonly ParameterInfo Bias = new(typeof(InstacneNorm), 2, "bias", ParameterKind.Input);
 
+    public static readonly ParameterInfo PadedNums = new(typeof(InstacneNorm), 3, "padedNums", IsShapeType());
+
     public float Epsilon { get; }
 
     public IRArray<int> PackedAxes { get; }
-
-    public IRArray<int> PadedNums { get; }
 
     public override string DisplayProperty() => $"Epsilon: {Epsilon}, PackedAxes: {PackedAxes}, PadedNums: {PadedNums}";
 }

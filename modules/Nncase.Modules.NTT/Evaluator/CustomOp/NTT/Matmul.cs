@@ -71,12 +71,12 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         if (lhs is DistributedType a && rhs is DistributedType b)
         {
-            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => a.AxisPolices[i] != matmul.LhsSBPs[i]))
+            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => a.AxisPolicies[i] != matmul.LhsSBPs[i]))
             {
                 return false;
             }
 
-            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => b.AxisPolices[i] != matmul.RhsSBPs[i]))
+            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => b.AxisPolicies[i] != matmul.RhsSBPs[i]))
             {
                 return false;
             }

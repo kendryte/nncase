@@ -15,6 +15,11 @@ public interface IModuleCompiler
 {
     string ModuleKind { get; }
 
+    /// <summary>
+    /// Gets the mask vector style.
+    /// </summary>
+    MaskVectorStyle MaskVectorStyle { get; }
+
     bool IsSupportedCall(Call call, CompileOptions options);
 
     /// <summary>

@@ -514,7 +514,7 @@ public class ErfEvaluator : IEvaluator<Erf>, ITypeInferencer<Erf>, ICostEvaluato
 
     private IRType Visit(IRType input)
     {
-        if (input is DistributedType d && d.AxisPolices.Any(s => s is SBPPartial))
+        if (input is DistributedType d && d.AxisPolicies.Any(s => s is SBPPartial))
         {
             return new InvalidType("Erf with partial sum is not supported");
         }
@@ -570,7 +570,7 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
 
     private IRType Visit(IRType input)
     {
-        if (input is DistributedType d && d.AxisPolices.Any(s => s is SBPPartial))
+        if (input is DistributedType d && d.AxisPolicies.Any(s => s is SBPPartial))
         {
             return new InvalidType("swish with partial sum is not supported");
         }
@@ -625,7 +625,7 @@ public class GeluEvaluator : IEvaluator<Gelu>, ITypeInferencer<Gelu>, ICostEvalu
 
     private IRType Visit(IRType input)
     {
-        if (input is DistributedType d && d.AxisPolices.Any(s => s is SBPPartial))
+        if (input is DistributedType d && d.AxisPolicies.Any(s => s is SBPPartial))
         {
             return new InvalidType("gelu with partial sum is not supported");
         }

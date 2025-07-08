@@ -71,7 +71,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             indexTensor.Buffer.CopyTo(indices);
             var indicesValue = indices.Select((x, i) => x < 0 ? x + tensor.Shape[i].FixedValue : x).ToArray();
             var linearIndex =
-                TensorUtilities.GetIndex(tensor.Strides, indicesValue);
+                TensorUtilities.GetLinearOffset(tensor.Strides, indicesValue);
             var returnDims = tensor.Dimensions.AsValueEnumerable().Skip((int)indexTensor.Length).ToArray();
             var elementsCount = TensorUtilities.GetProduct(returnDims);
 
@@ -161,7 +161,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
     private IRType Visit(ITypeInferenceContext context, GetItem target, DistributedType input, IRType index)
     {
         var outputType = (TensorType)Visit(context, target, input.TensorType, index);
-        var ndsbp = input.AxisPolices.Skip(input.TensorType.Shape.Rank - outputType.Shape.Rank).ToArray();
+        var ndsbp = input.AxisPolicies.Skip(input.TensorType.Shape.Rank - outputType.Shape.Rank).ToArray();
         for (var i = 0; i < ndsbp.Length; i++)
         {
             if (ndsbp[i] is SBPSplit)

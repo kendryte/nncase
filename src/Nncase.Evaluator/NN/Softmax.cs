@@ -79,7 +79,7 @@ public class LogSoftmaxEvaluator : IEvaluator<LogSoftmax>, ITypeInferencer<LogSo
     private IRType Visit(DistributedType input, Dimension axis)
     {
         axis = Dimension.Positive(axis, input.TensorType.Shape.Rank);
-        if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && i == axis))
+        if (Enumerable.Range(0, input.AxisPolicies.Count).Any(i => input.AxisPolicies[i] is SBPSplit && i == axis))
         {
             return new InvalidType("Not support split on Axis for Softmax now.");
         }
@@ -156,7 +156,7 @@ public class SoftmaxEvaluator : IEvaluator<Softmax>, ITypeInferencer<Softmax>, I
     private IRType Visit(DistributedType input, Dimension axis)
     {
         axis = Dimension.Positive(axis, input.TensorType.Shape.Rank);
-        if (Enumerable.Range(0, input.AxisPolices.Count).Any(i => input.AxisPolices[i] is SBPSplit && i == axis))
+        if (Enumerable.Range(0, input.AxisPolicies.Count).Any(i => input.AxisPolicies[i] is SBPSplit && i == axis))
         {
             return new InvalidType("Not support split on Axis for Softmax now.");
         }

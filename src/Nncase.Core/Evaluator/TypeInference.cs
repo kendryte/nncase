@@ -71,7 +71,7 @@ public static class TypeInference
 
         return context.GetArgumentType(op, parameter) switch
         {
-            DistributedType d when d.AxisPolices.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
+            DistributedType d when d.AxisPolicies.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
             IRType t => CheckArgumentType<TensorType>(context, op, parameter, reason),
         };
     }
@@ -402,49 +402,36 @@ public static class TypeInference
     /// <summary>
     /// Pack Type Infer.
     /// </summary>
-    public static IRType PackType(TensorType input, IRArray<int> lanes, IRArray<int> axes)
+    public static IRType PackType(TensorType input, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
     {
-        var vType = new VectorType(input.DType, lanes);
-        if (input.Shape is RankedShape inShape)
+        if (input.DType is BooleanType)
         {
-            var dims = inShape.ToList();
-            foreach (var (lane, axis) in lanes.Zip(axes))
-            {
-                if (dims[axis].IsFixed)
-                {
-                    dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lane);
-                }
-                else
-                {
-                    dims[axis] = dims[axis] / lane;
-                }
-            }
-
-            return new TensorType(vType, new RankedShape(dims));
+            return new InvalidType("PackType does not support BooleanType input");
         }
 
-        return new TensorType(vType, Shape.Unranked);
+        var vType = new VectorType(input.DType, lanes.ToArray());
+        return PackType(input.Shape, vType, lanes, axes);
+    }
+
+    public static IRType PackMaskType(TensorType input, MaskVectorStyle style, int elementBits, int lanes, int axis)
+    {
+        if (input.DType is not BooleanType)
+        {
+            return new InvalidType("input.DType is not BooleanType");
+        }
+
+        var vType = new MaskVectorType(style, elementBits, lanes);
+        return PackType(input.Shape, vType, [lanes], [axis]);
     }
 
     public static IRType UnpackType(TensorType input, IRArray<int> axes)
     {
-        if (input.DType is not VectorType vtype)
+        return input.DType switch
         {
-            return new InvalidType("input.DType is not VectorType vtype");
-        }
-
-        if (input.Shape is RankedShape inShape)
-        {
-            var dims = inShape.ToList();
-            foreach (var (lanes, axis) in vtype.Lanes.Zip(axes))
-            {
-                dims[axis] *= lanes;
-            }
-
-            return new TensorType(vtype.ElemType, new RankedShape(dims));
-        }
-
-        return new TensorType(vtype.ElemType, Shape.Unranked);
+            MaskVectorType vt => UnpackType(input.Shape, DataTypes.Boolean, [vt.Lanes], axes),
+            VectorType vt => UnpackType(input.Shape, vt.ElemType, vt.Lanes, axes),
+            _ => new InvalidType($"UnpackType does not support {input.DType}"),
+        };
     }
 
     /// <summary>
@@ -649,5 +636,48 @@ public static class TypeInference
         }
 
         return outputShape;
+    }
+
+    private static IRType PackType(Shape inputShape, DataType vectorType, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    {
+        if (inputShape is RankedShape inShape)
+        {
+            var dims = inShape.ToList();
+            for (int i = 0; i < axes.Length; i++)
+            {
+                var axis = axes[i];
+                var lane = lanes[i];
+                if (dims[axis].IsFixed)
+                {
+                    dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lane);
+                }
+                else
+                {
+                    dims[axis] = dims[axis] / lane;
+                }
+            }
+
+            return new TensorType(vectorType, new RankedShape(dims));
+        }
+
+        return new TensorType(vectorType, Shape.Unranked);
+    }
+
+    private static IRType UnpackType(Shape inputShape, DataType elementType, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    {
+        if (inputShape is RankedShape inShape)
+        {
+            var dims = inShape.ToList();
+            for (int i = 0; i < axes.Length; i++)
+            {
+                var axis = axes[i];
+                var lane = lanes[i];
+                dims[axis] *= lane;
+            }
+
+            return new TensorType(elementType, new RankedShape(dims));
+        }
+
+        return new TensorType(elementType, Shape.Unranked);
     }
 }

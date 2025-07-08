@@ -16,7 +16,7 @@ public partial class NTTAffineSelectionPass
         var rhs = (Expr)call.Arguments[IR.Math.MatMul.Rhs.Index];
 
         // TODO: summa not support tiling for now.
-        if ((lhs.CheckedType is DistributedType ldt && ldt.AxisPolices.Last() is SBPSplit)
+        if ((lhs.CheckedType is DistributedType ldt && ldt.AxisPolicies.Last() is SBPSplit)
             || output.CheckedShape is not { Rank: > 0 })
         {
             return call;

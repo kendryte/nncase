@@ -46,10 +46,24 @@ result<runtime_tensor> runtime_tensor::to_host() noexcept {
     return ok(runtime_tensor(std::move(host_tensor)));
 }
 
+result<runtime_tensor> runtime_tensor::to_device() noexcept {
+    CHECK_WITH_ERR(!empty(), std::errc::not_supported);
+    if (is_device())
+        return ok(*this);
+    checked_try_var(device_tensor, impl_->to_device());
+    return ok(runtime_tensor(std::move(device_tensor)));
+}
+
 bool runtime_tensor::is_host() const noexcept {
     if (empty())
         return false;
-    return impl_.is_a<host_buffer_t>();
+    return impl_->buffer().buffer().is_a<host_buffer_t>();
+}
+
+bool runtime_tensor::is_device() const noexcept {
+    if (empty())
+        return false;
+    return impl_->buffer().buffer().is_a<device_buffer_t>();
 }
 
 bool runtime_tensor::is_contiguous() const noexcept {

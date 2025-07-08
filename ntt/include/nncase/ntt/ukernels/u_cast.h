@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "../primitive_ops.h"
+#include "../vector.h"
 
 namespace nncase::ntt {
 namespace ukernels {
@@ -22,8 +23,8 @@ template <bool Arch> struct u_cast_policy {
     static constexpr size_t unroll = 2;
 };
 
-template <class T1, class T2, bool Arch, size_t in_offset_scale,
-          size_t out_offset_scale>
+template <bool Arch, size_t in_offset_scale,
+          size_t out_offset_scale, class T1, class T2>
 struct u_cast {
   public:
     constexpr void operator()(const T1 *input, size_t input_stride, T2 *output,
@@ -110,10 +111,10 @@ struct u_cast {
 };
 } // namespace ukernels
 
-template <class T1, class T2, size_t in_offset_scale, size_t out_offset_scale>
+template <size_t in_offset_scale, size_t out_offset_scale, class T1, class T2>
 constexpr void u_cast(const T1 *input, size_t input_stride, T2 *output,
                       size_t output_stride, size_t count) noexcept {
-    ukernels::u_cast<T1, T2, true, in_offset_scale, out_offset_scale> impl;
+    ukernels::u_cast<true, in_offset_scale, out_offset_scale, T1, T2> impl;
     impl(input, input_stride, output, output_stride, count);
 }
 } // namespace nncase::ntt

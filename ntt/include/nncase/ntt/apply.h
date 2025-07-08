@@ -13,14 +13,17 @@
  * limitations under the License.
  */
 #pragma once
-#include "tensor.h"
+#include "nncase/ntt/shape.h"
 
 namespace nncase::ntt {
 namespace detail {
 template <size_t Axis, class Shape, class Callable> struct apply_impl {
-    void operator()(ranked_shape<Shape::rank()> &index, const Shape &shape,
+    void operator()(dynamic_shape_t<Shape::rank()> &index, const Shape &shape,
                     Callable &&callable) {
-        for (index[Axis] = 0; index[Axis] < shape[Axis]; index[Axis]++) {
+        constexpr auto fixed_dim_axis = fixed_dim_v<Axis>;
+        for (index[fixed_dim_axis] = 0;
+             index[fixed_dim_axis] < shape[fixed_dim_axis];
+             index[fixed_dim_axis]++) {
             if constexpr (Axis == Shape::rank() - 1) {
                 callable(index);
             } else {
@@ -34,7 +37,7 @@ template <size_t Axis, class Shape, class Callable> struct apply_impl {
 
 template <class Shape, class Callable>
 void apply(const Shape &shape, Callable &&callable) {
-    ranked_shape<Shape::rank()> index;
+    dynamic_shape_t<Shape::rank()> index;
     if constexpr (Shape::rank()) {
         detail::apply_impl<0, Shape, Callable>()(
             index, shape, std::forward<Callable>(callable));

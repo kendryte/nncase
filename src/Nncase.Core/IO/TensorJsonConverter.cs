@@ -153,7 +153,8 @@ internal sealed class TensorJsonConverter<T> : JsonConverter<Tensor<T>>
         var concreteType = typeof(Tensor<>).MakeGenericType(clrType);
         var buffer = root.GetProperty("Buffer");
 
-        if (clrType.GetInterfaces().Any(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(System.Numerics.INumberBase<>) || i.GetGenericTypeDefinition() == typeof(IVector<>))))
+        if (typeof(T) == typeof(bool) ||
+            clrType.GetInterfaces().Any(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(System.Numerics.INumberBase<>) || i.GetGenericTypeDefinition() == typeof(IVector<>))))
         {
             var method = typeof(TensorBaseJsonConverter).GetMethod(nameof(TensorBaseJsonConverter.CreateTensorByBytes))!
                 .MakeGenericMethod(clrType);
@@ -178,7 +179,8 @@ internal sealed class TensorJsonConverter<T> : JsonConverter<Tensor<T>>
         JsonSerializer.Serialize(writer, value.Strides.ToArray(), options);
         writer.WritePropertyName("Buffer");
 
-        if (typeof(T).GetInterfaces().Any(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(System.Numerics.INumberBase<>) || i.GetGenericTypeDefinition() == typeof(IVector<>))))
+        if (typeof(T) == typeof(bool) ||
+            typeof(T).GetInterfaces().Any(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(System.Numerics.INumberBase<>) || i.GetGenericTypeDefinition() == typeof(IVector<>))))
         {
             writer.WriteBase64StringValue(value.BytesBuffer);
         }

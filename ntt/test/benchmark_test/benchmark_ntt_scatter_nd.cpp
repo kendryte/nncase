@@ -26,8 +26,8 @@ using namespace nncase;
 
 template <typename T, size_t N>
 void benchmark_ntt_scatterND_unpack(T init_low, T init_high, int64_t idx0,
-                                  int64_t idx1, int64_t idx2, int64_t idx3,
-                                  int64_t idx4) {
+                                    int64_t idx1, int64_t idx2, int64_t idx3,
+                                    int64_t idx4) {
     // #if __riscv
     //     constexpr size_t size1 = 300;
     //     constexpr size_t size2 = 600;
@@ -38,23 +38,21 @@ void benchmark_ntt_scatterND_unpack(T init_low, T init_high, int64_t idx0,
     //     constexpr size_t size1 = 2000;
     //     constexpr size_t size2 = 2000;
     // #endif
-    using input_type = ntt::tensor<float, ntt::fixed_shape<10, 64, 64, 32>>;
-    using indices_type = ntt::tensor<int64_t, ntt::fixed_shape<5, 1>>;
-    using updates_type = ntt::tensor<float, ntt::fixed_shape<5, 64, 64, 32>>;
-    using output_type = ntt::tensor<float, ntt::fixed_shape<10, 64, 64, 32>>;
 
-    output_type ntt_output;
+    auto shape1 = ntt::fixed_shape_v<10, 64, 64, 32>;
+    auto ntt_output = ntt::make_unique_tensor<T>(shape1);
 
-    // Initialize input with random values
-    std::unique_ptr<input_type> input(new input_type);
+    // Initialize *input with random values
+    auto input = ntt::make_unique_tensor<T>(shape1);
     NttTest::init_tensor(*input, init_low, init_high);
 
-    // Initialize updates with random values
-    std::unique_ptr<updates_type> updates(new updates_type);
+    // Initialize *updates with random values
+    auto shape2 = ntt::fixed_shape_v<5, 64, 64, 32>;
+    auto updates = ntt::make_unique_tensor<T>(shape2);
     NttTest::init_tensor(*updates, init_low, init_high);
 
     // Initialize indices
-    indices_type indices;
+    auto indices = ntt::make_tensor<int64_t>(ntt::fixed_shape_v<5, 1>);
     indices(0, 0) = idx0;
     indices(1, 0) = idx1;
     indices(2, 0) = idx2;
@@ -64,7 +62,7 @@ void benchmark_ntt_scatterND_unpack(T init_low, T init_high, int64_t idx0,
     // warm up
     constexpr size_t warmup_size = 10;
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::scatter_nd(*input, indices, *updates, ntt_output);
+        ntt::scatter_nd(*input, indices, *updates, *ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
 
@@ -72,12 +70,12 @@ void benchmark_ntt_scatterND_unpack(T init_low, T init_high, int64_t idx0,
     constexpr size_t run_size = 2000;
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::scatter_nd(*input, indices, *updates, ntt_output);
+        ntt::scatter_nd(*input, indices, *updates, *ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = updates_type::size();
+    auto element_size = updates->size();
     std::cout << __FUNCTION__ << " took " << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size
               << " cycles" << std::endl;

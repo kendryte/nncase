@@ -31,12 +31,12 @@ public static class KernelUtility
         return $"mesh<topology::thread, {string.Join(',', placement.Hierarchy)}>";
     }
 
-    public static string DistributedToC(DistributedType distributedType)
+    public static string ShardingToC(DistributedType distributedType)
     {
         var placement = distributedType.Placement;
-        var ndSBP = distributedType.AxisPolices;
+        var ndSBP = distributedType.AxisPolicies;
 
-        var sb = new StringBuilder("sharding<mesh<topology::thread, ");
+        var sb = new StringBuilder("make_sharding<mesh<topology::thread, ");
         for (int i = 0; i < placement.Rank; i++)
         {
             var value = placement.Hierarchy[i];
@@ -47,23 +47,26 @@ public static class KernelUtility
             }
         }
 
-        var implicitPolicy = ndSBP.Any(x => x is SBPPartial) ? "P<reduce_op::sum>" : "B";
-        sb.Append($">, {implicitPolicy}");
-
+        sb.Append(">>(");
         for (int axis = 0; axis < distributedType.TensorType.Shape.Rank; axis++)
         {
             var value = ndSBP[axis];
             if (value is SBPSplit s)
             {
-                sb.Append($", S<{string.Join(", ", s.Axes)}>");
+                sb.Append($"S<{string.Join(", ", s.Axes)}>()");
             }
             else
             {
-                sb.Append($", I");
+                sb.Append('B');
+            }
+
+            if (axis != distributedType.TensorType.Shape.Rank - 1)
+            {
+                sb.Append(", ");
             }
         }
 
-        sb.Append('>');
+        sb.Append(')');
         return sb.ToString();
     }
 

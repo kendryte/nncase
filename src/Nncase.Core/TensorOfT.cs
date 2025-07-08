@@ -118,8 +118,8 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <returns>The value at the specified position in this Tensor.</returns>
     public new T this[ReadOnlySpan<long> indices]
     {
-        get => GetValue(TensorUtilities.GetIndex(Strides, indices));
-        set => SetValue(TensorUtilities.GetIndex(Strides, indices), value);
+        get => GetValue(TensorUtilities.GetLinearOffset(Strides, indices));
+        set => SetValue(TensorUtilities.GetLinearOffset(Strides, indices), value);
     }
 
     /// <summary>
@@ -239,7 +239,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             return false;
         }
 
-        TensorUtilities.GetIndices(Strides, false, index, indices);
+        TensorUtilities.UnravelIndex(index, Shape, indices);
         return true;
     }
 
@@ -380,8 +380,8 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             else
             {
                 var length = shape.LastOrDefault(1);
-                var src = Buffer.Span.Slice(checked((int)(offset + TensorUtilities.GetIndex(Strides, index))), checked((int)length));
-                var dest = slice.AsSpan(checked((int)TensorUtilities.GetIndex(strides, index)), checked((int)length));
+                var src = Buffer.Span.Slice(checked((int)(offset + TensorUtilities.GetLinearOffset(Strides, index))), checked((int)length));
+                var dest = slice.AsSpan(checked((int)TensorUtilities.GetLinearOffset(strides, index)), checked((int)length));
                 src.CopyTo(dest);
             }
         }
@@ -710,7 +710,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
         for (int i = 0; i < bufferA.Length; i++)
         {
-            TensorUtilities.GetIndices(Strides, false, i, indices);
+            TensorUtilities.UnravelIndex(i, Shape, indices);
             result = comparer.Compare(bufferA.Span[i], other.GetValue(indices));
             if (result != 0)
             {
@@ -768,7 +768,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
         for (int i = 0; i < bufferA.Length; i++)
         {
-            TensorUtilities.GetIndices(Strides, false, i, indices);
+            TensorUtilities.UnravelIndex(i, Shape, indices);
             if (!comparer.Equals(bufferA.Span[i], other.GetValue(indices)))
             {
                 return false;

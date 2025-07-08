@@ -22,35 +22,117 @@ constexpr size_t warmup_num = 10;
 constexpr size_t run_num = 3000;
 constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-// 0,Add_reduceN_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_add_reduceN_noPack() {
-    std::string reduce_mode = "Add";
-    std::string reduce_direction = "reduceN";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<1>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
+#define NTT_REDUCEN_PACKN(mode)                                                \
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);               \
+    NttTest::init_tensor(ta, -10.f, 10.f);                                     \
+    auto taP =                                                                 \
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
+    ntt::pack(ta, taP.view(), ntt::fixed_shape_v<1>);                          \
+                                                                               \
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);               \
+                                                                               \
+    for (size_t i = 0; i < warmup_num; i++) {                                  \
+        ntt::reduce_##mode(taP, tb, ntt::fixed_shape_v<1>,                     \
+                           ntt::fixed_shape_v<1>);                             \
+    }                                                                          \
+                                                                               \
+    auto t1 = NttTest::get_cpu_cycle();                                        \
+    for (size_t i = 0; i < run_num; i++) {                                     \
+        ntt::reduce_##mode(taP, tb, ntt::fixed_shape_v<1>,                     \
+                           ntt::fixed_shape_v<1>);                             \
+        asm volatile("" ::"g"(tb));                                            \
+    }                                                                          \
+    auto t2 = NttTest::get_cpu_cycle();                                        \
+                                                                               \
+    std::ostringstream oss;                                                    \
+    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"      \
+        << pack_mode << " took " << std::setprecision(0) << std::fixed         \
+        << static_cast<float>(t2 - t1) / run_num << " cycles";                 \
     return oss.str();
-}
+
+#define NTT_REDUCEM_PACKM(mode)                                                \
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);               \
+    NttTest::init_tensor(ta, -10.f, 10.f);                                     \
+    auto taP =                                                                 \
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
+    ntt::pack(ta, taP.view(), ntt::fixed_shape_v<0>);                          \
+                                                                               \
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);               \
+                                                                               \
+    for (size_t i = 0; i < warmup_num; i++) {                                  \
+        ntt::reduce_##mode(taP, tb, ntt::fixed_shape_v<0>,                     \
+                           ntt::fixed_shape_v<0>);                             \
+    }                                                                          \
+                                                                               \
+    auto t1 = NttTest::get_cpu_cycle();                                        \
+    for (size_t i = 0; i < run_num; i++) {                                     \
+        ntt::reduce_##mode(taP, tb, ntt::fixed_shape_v<0>,                     \
+                           ntt::fixed_shape_v<0>);                             \
+        asm volatile("" ::"g"(tb));                                            \
+    }                                                                          \
+    auto t2 = NttTest::get_cpu_cycle();                                        \
+                                                                               \
+    std::ostringstream oss;                                                    \
+    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"      \
+        << pack_mode << " took " << std::setprecision(0) << std::fixed         \
+        << static_cast<float>(t2 - t1) / run_num << " cycles";                 \
+    return oss.str();
+
+#define NTT_REDUCEMN_PACKN(mode)                                               \
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);               \
+    NttTest::init_tensor(ta, -10.f, 10.f);                                     \
+    auto taP =                                                                 \
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
+    ntt::pack(ta, taP.view(), ntt::fixed_shape_v<1>);                          \
+                                                                               \
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);               \
+                                                                               \
+    for (size_t i = 0; i < warmup_num; i++) {                                  \
+        ntt::reduce_##mode(taP, tb, ntt::fixed_shape_v<0, 1>,                  \
+                           ntt::fixed_shape_v<1>);                             \
+    }                                                                          \
+                                                                               \
+    auto t1 = NttTest::get_cpu_cycle();                                        \
+    for (size_t i = 0; i < run_num; i++) {                                     \
+        ntt::reduce_##mode(taP, tb, ntt::fixed_shape_v<0, 1>,                  \
+                           ntt::fixed_shape_v<1>);                             \
+        asm volatile("" ::"g"(tb));                                            \
+    }                                                                          \
+    auto t2 = NttTest::get_cpu_cycle();                                        \
+                                                                               \
+    std::ostringstream oss;                                                    \
+    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"      \
+        << pack_mode << " took " << std::setprecision(0) << std::fixed         \
+        << static_cast<float>(t2 - t1) / run_num << " cycles";                 \
+    return oss.str();
+
+#define NTT_REDUCEMN_PACKM(mode)                                               \
+    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);               \
+    NttTest::init_tensor(ta, -10.f, 10.f);                                     \
+    auto taP =                                                                 \
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
+    ntt::pack(ta, taP.view(), ntt::fixed_shape_v<0>);                          \
+                                                                               \
+    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);               \
+                                                                               \
+    for (size_t i = 0; i < warmup_num; i++) {                                  \
+        ntt::reduce_##mode(taP, tb, ntt::fixed_shape_v<0, 1>,                  \
+                           ntt::fixed_shape_v<0>);                             \
+    }                                                                          \
+                                                                               \
+    auto t1 = NttTest::get_cpu_cycle();                                        \
+    for (size_t i = 0; i < run_num; i++) {                                     \
+        ntt::reduce_##mode(taP, tb, ntt::fixed_shape_v<0, 1>,                  \
+                           ntt::fixed_shape_v<0>);                             \
+        asm volatile("" ::"g"(tb));                                            \
+    }                                                                          \
+    auto t2 = NttTest::get_cpu_cycle();                                        \
+                                                                               \
+    std::ostringstream oss;                                                    \
+    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"      \
+        << pack_mode << " took " << std::setprecision(0) << std::fixed         \
+        << static_cast<float>(t2 - t1) / run_num << " cycles";                 \
+    return oss.str();
 
 // 1,Add_reduceN_PackN
 template <size_t M, size_t N>
@@ -59,60 +141,7 @@ std::string benchmark_ntt_reduce_add_reduceN_packN() {
     std::string reduce_direction = "reduceN";
     std::string pack_mode = "PackN";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
-    ntt::pack<1>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(taP, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 2,Add_reduceM_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_add_reduceM_noPack() {
-    std::string reduce_mode = "Add";
-    std::string reduce_direction = "reduceM";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEN_PACKN(sum)
 }
 
 // 3,Add_reduceM_PackM
@@ -122,60 +151,7 @@ std::string benchmark_ntt_reduce_add_reduceM_packM() {
     std::string reduce_direction = "reduceM";
     std::string pack_mode = "PackM";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
-    ntt::pack<0>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(taP, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 4,Add_reduceMN_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_add_reduceMN_noPack() {
-    std::string reduce_mode = "Add";
-    std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0, 1>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEM_PACKM(sum)
 }
 
 // 5,Add_reduceMN_PackN
@@ -185,31 +161,7 @@ std::string benchmark_ntt_reduce_add_reduceMN_packN() {
     std::string reduce_direction = "reduceMN";
     std::string pack_mode = "PackN";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
-    ntt::pack<1>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(taP,
-                                                                     tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEMN_PACKN(sum)
 }
 
 // 6,Add_reduceMN_PackM
@@ -219,61 +171,7 @@ std::string benchmark_ntt_reduce_add_reduceMN_packM() {
     std::string reduce_direction = "reduceMN";
     std::string pack_mode = "PackM";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
-    ntt::pack<0>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(taP,
-                                                                     tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 7,Max_reduceN_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_max_reduceN_noPack() {
-    std::string reduce_mode = "Max";
-    std::string reduce_direction = "reduceN";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<1>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEMN_PACKM(sum)
 }
 
 // 8,Max_reduceN_PackN
@@ -283,60 +181,7 @@ std::string benchmark_ntt_reduce_max_reduceN_packN() {
     std::string reduce_direction = "reduceN";
     std::string pack_mode = "PackN";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
-    ntt::pack<1>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(taP, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 9,Max_reduceM_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_max_reduceM_noPack() {
-    std::string reduce_mode = "Max";
-    std::string reduce_direction = "reduceM";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEN_PACKN(max)
 }
 
 // 10,Max_reduceM_PackM
@@ -346,60 +191,7 @@ std::string benchmark_ntt_reduce_max_reduceM_packM() {
     std::string reduce_direction = "reduceM";
     std::string pack_mode = "PackM";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
-    ntt::pack<0>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(taP, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 11,Max_reduceMN_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_max_reduceMN_noPack() {
-    std::string reduce_mode = "Max";
-    std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0, 1>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEM_PACKM(max)
 }
 
 // 12,Max_reduceMN_PackN
@@ -409,31 +201,7 @@ std::string benchmark_ntt_reduce_max_reduceMN_packN() {
     std::string reduce_direction = "reduceMN";
     std::string pack_mode = "PackN";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
-    ntt::pack<1>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(taP,
-                                                                     tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEMN_PACKN(max)
 }
 
 // 13,Max_reduceMN_PackM
@@ -443,61 +211,7 @@ std::string benchmark_ntt_reduce_max_reduceMN_packM() {
     std::string reduce_direction = "reduceMN";
     std::string pack_mode = "PackM";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
-    ntt::pack<0>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(taP,
-                                                                     tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 14,Min_reduceN_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_min_reduceN_noPack() {
-    std::string reduce_mode = "Min";
-    std::string reduce_direction = "reduceN";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<1>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEMN_PACKM(max)
 }
 
 // 15,Min_reduceN_PackN
@@ -507,60 +221,7 @@ std::string benchmark_ntt_reduce_min_reduceN_packN() {
     std::string reduce_direction = "reduceN";
     std::string pack_mode = "PackN";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
-    ntt::pack<1>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(taP, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 16,Min_reduceM_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_min_reduceM_noPack() {
-    std::string reduce_mode = "Min";
-    std::string reduce_direction = "reduceM";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEN_PACKN(min)
 }
 
 // 17,Min_reduceM_PackM
@@ -570,61 +231,7 @@ std::string benchmark_ntt_reduce_min_reduceM_packM() {
     std::string reduce_direction = "reduceM";
     std::string pack_mode = "PackM";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
-    ntt::pack<0>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(taP, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 18,Min_reduceMN_NoPack
-
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_min_reduceMN_noPack() {
-    std::string reduce_mode = "Min";
-    std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0, 1>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEM_PACKM(min)
 }
 
 // 19,Min_reduceMN_PackN
@@ -634,31 +241,7 @@ std::string benchmark_ntt_reduce_min_reduceMN_packN() {
     std::string reduce_direction = "reduceMN";
     std::string pack_mode = "PackN";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
-    ntt::pack<1>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(taP,
-                                                                     tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEMN_PACKN(min)
 }
 
 // 20,Min_reduceMN_PackM
@@ -668,61 +251,7 @@ std::string benchmark_ntt_reduce_min_reduceMN_packM() {
     std::string reduce_direction = "reduceMN";
     std::string pack_mode = "PackM";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
-    ntt::pack<0>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(taP,
-                                                                     tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 21,Mean_reduceN_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_mean_reduceN_noPack() {
-    std::string reduce_mode = "Mean";
-    std::string reduce_direction = "reduceN";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<1>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<1>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEMN_PACKM(min)
 }
 
 // 22,Mean_reduceN_PackN
@@ -732,60 +261,7 @@ std::string benchmark_ntt_reduce_mean_reduceN_packN() {
     std::string reduce_direction = "reduceN";
     std::string pack_mode = "PackN";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
-    ntt::pack<1>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<M, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(taP, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 23,Mean_reduceM_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_mean_reduceM_noPack() {
-    std::string reduce_mode = "Mean";
-    std::string reduce_direction = "reduceM";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEN_PACKN(mean)
 }
 
 // 24,Mean_reduceM_PackM
@@ -795,60 +271,7 @@ std::string benchmark_ntt_reduce_mean_reduceM_packM() {
     std::string reduce_direction = "reduceM";
     std::string pack_mode = "PackM";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
-    ntt::pack<0>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, N>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(taP, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
-}
-
-// 25,Mean_reduceMN_NoPack
-template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_mean_reduceMN_noPack() {
-    std::string reduce_mode = "Mean";
-    std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "NoPack";
-
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0, 1>>(ta, tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0, 1>>(ta, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEM_PACKM(mean)
 }
 
 // 26,Mean_reduceMN_PackN
@@ -858,31 +281,7 @@ std::string benchmark_ntt_reduce_mean_reduceMN_packN() {
     std::string reduce_direction = "reduceMN";
     std::string pack_mode = "PackN";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>> taP;
-    ntt::pack<1>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(taP,
-                                                                      tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEMN_PACKN(mean)
 }
 
 // 27,Mean_reduceMN_PackM
@@ -892,31 +291,7 @@ std::string benchmark_ntt_reduce_mean_reduceMN_packM() {
     std::string reduce_direction = "reduceMN";
     std::string pack_mode = "PackM";
 
-    ntt::tensor<float, ntt::fixed_shape<M, N>> ta;
-    NttTest::init_tensor(ta, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>> taP;
-    ntt::pack<0>(ta, taP.view());
-
-    ntt::tensor<float, ntt::fixed_shape<1, 1>> tb[warmup_num + run_num];
-
-    for (size_t i = 0; i < warmup_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(taP,
-                                                                      tb[i]);
-    }
-
-    auto t1 = NttTest::get_cpu_cycle();
-    for (size_t i = 0; i < run_num; i++) {
-        ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
-            taP, tb[warmup_num + i]);
-        asm volatile("" ::"g"(tb));
-    }
-    auto t2 = NttTest::get_cpu_cycle();
-
-    std::ostringstream oss;
-    oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"
-        << pack_mode << " took " << std::setprecision(0) << std::fixed
-        << static_cast<float>(t2 - t1) / run_num << " cycles";
-    return oss.str();
+    NTT_REDUCEMN_PACKM(mean)
 }
 
 #define BENCHMARK_NTT_REDUCE(OP, REDUCE_AXIS, PACK_MODE, M, N)                 \

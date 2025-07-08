@@ -15,124 +15,130 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/tensor_storage.h"
-#include "nncase/ntt/shape.h"
-#include "nncase/ntt/utility.h"
+#include "nncase/ntt/dimension.h"
 #include "tensor_traits.h"
-#include "utility.h"
+#include "vector.h"
+#include <memory>
 #include <type_traits>
+#include <utility>
 
 namespace nncase::ntt {
-template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
+template <class T, Shape TShape, Strides TStrides, bool IsView>
 class basic_tensor;
 
-template <class T, class Shape, class Strides = default_strides_t<Shape>,
-          size_t MaxSize = max_size_v<Shape, Strides>>
-using tensor = basic_tensor<T, Shape, Strides, MaxSize, false>;
-
-template <class T, class Shape, class Strides = default_strides_t<Shape>,
-          size_t MaxSize = max_size_v<Shape, Strides>>
-using tensor_view = basic_tensor<T, Shape, Strides, MaxSize, true>;
-
-template <class T, size_t... Lanes>
-using fixed_tensor = tensor<T, fixed_shape<Lanes...>>;
-
-template <class T, class Shape, class Strides, size_t MaxSize, bool IsView,
-          size_t... Lanes>
-struct fixed_tensor_alike_type<basic_tensor<T, Shape, Strides, MaxSize, IsView>,
-                               Lanes...> {
-    using type = fixed_tensor<T, Lanes...>;
+template <class T, Shape TShape, Strides TStrides, bool IsView, class U>
+struct replace_element_type<basic_tensor<T, TShape, TStrides, IsView>, U> {
+    using type = basic_tensor<U, TShape, TStrides, IsView>;
 };
+
+template <class T, Shape TShape, Strides TStrides>
+using tensor = basic_tensor<T, TShape, TStrides, false>;
+
+template <class T, Shape TShape, Strides TStrides>
+using tensor_view = basic_tensor<T, TShape, TStrides, true>;
 
 namespace detail {
-template <class T, class Shape, class Strides, size_t MaxSize, bool IsView,
-          bool IsFixedShape =
-              is_fixed_dims_v<Shape> && is_fixed_dims_v<Strides>>
-class tensor_impl;
-
-// dynamic tensor
-template <class T, class Shape, class Strides, size_t MaxSize>
-class tensor_impl<T, Shape, Strides, MaxSize, false, false>
-    : public detail::tensor_storage<T, MaxSize, false>,
-      public detail::tensor_size_impl<Shape, Strides> {
-    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
-
-  public:
-    using element_type = T;
-    using storage_type = detail::tensor_storage<T, MaxSize, false>;
-
-    tensor_impl(Shape shape, Strides strides)
-        : storage_type(linear_size(shape, strides)),
-          size_impl_type(shape, strides) {}
-    tensor_impl(Shape shape) : tensor_impl(shape, default_strides(shape)) {}
+template <class T, class TBuffer> struct tensor_element_type_from_buffer {
+    using type = T;
 };
 
-// fixed tensor
-template <class T, class Shape, class Strides, size_t MaxSize>
-class tensor_impl<T, Shape, Strides, MaxSize, false, true>
-    : public detail::tensor_storage<T, MaxSize, false>,
-      public detail::tensor_size_impl<Shape, Strides> {
-    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
-
-  public:
-    using element_type = T;
-    using storage_type = detail::tensor_storage<T, MaxSize, false>;
-    using buffer_type = typename storage_type::buffer_type;
-
-    tensor_impl(Shape = {}, Strides = {}) noexcept {}
-    tensor_impl(buffer_type buffer) noexcept
-        : storage_type(std::in_place, std::move(buffer)) {}
-
-    explicit tensor_impl(T value) noexcept;
+template <class TBuffer> struct tensor_element_type_from_buffer<void, TBuffer> {
+    using type = typename TBuffer::element_type;
 };
 
-// dynamic view
-template <class T, class Shape, class Strides, size_t MaxSize>
-class tensor_impl<T, Shape, Strides, MaxSize, true, false>
-    : public detail::tensor_storage<T, MaxSize, true>,
-      public detail::tensor_size_impl<Shape, Strides> {
-    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
-
-  public:
-    using storage_type = detail::tensor_storage<T, MaxSize, true>;
-    using buffer_type = typename storage_type::buffer_type;
-
-    tensor_impl(buffer_type buffer, Shape shape, Strides strides)
-        : storage_type(std::in_place, std::move(buffer)),
-          size_impl_type(shape, strides) {}
-    tensor_impl(buffer_type buffer, Shape shape)
-        : tensor_impl(std::move(buffer), shape,
-                      default_strides_with_type<Strides>(shape)) {}
+template <class T, size_t N>
+struct tensor_element_type_from_buffer<void, T[N]> {
+    using type = T;
 };
 
-// fixed view
-template <class T, class Shape, class Strides, size_t MaxSize>
-class tensor_impl<T, Shape, Strides, MaxSize, true, true>
-    : public detail::tensor_storage<T, MaxSize, true>,
-      public detail::tensor_size_impl<Shape, Strides> {
-    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
-
-  public:
-    using element_type = T;
-    using storage_type = detail::tensor_storage<T, MaxSize, true>;
-    using buffer_type = typename storage_type::buffer_type;
-
-    tensor_impl(buffer_type buffer, Shape = {}, Strides = {}) noexcept
-        : storage_type(std::in_place, std::move(buffer)) {}
-};
+template <class T, class TBuffer>
+using tensor_element_type_from_buffer_t =
+    typename tensor_element_type_from_buffer<
+        T, std::remove_reference_t<TBuffer>>::type;
 } // namespace detail
 
-template <class T, class Shape, class Strides, size_t MaxSize, bool IsView>
+template <class T, Shape TShape, Strides TStrides>
+constexpr auto make_span(T *data, const TShape &shape,
+                         const TStrides &strides) noexcept {
+    if constexpr (FixedShape<TShape> && FixedStrides<TStrides>) {
+        constexpr size_t size = linear_size(TShape{}, TStrides{});
+        return std::span<T, size>(data, size);
+    } else {
+        return std::span<T>(data, linear_size(shape, strides));
+    }
+}
+
+template <class T, Shape TShape, Strides TStrides>
+constexpr auto make_tensor(const TShape &shape, const TStrides &strides) {
+    return tensor<T, TShape, TStrides>(shape, strides);
+}
+
+template <class T, Shape TShape>
+constexpr auto make_tensor(const TShape &shape) {
+    return make_tensor<T>(shape, default_strides(shape));
+}
+
+template <class T, size_t... Lanes> constexpr auto make_fixed_tensor() {
+    return make_tensor<T>(make_shape(fixed_dim_v<Lanes>...));
+}
+
+template <class T, Shape TShape, Strides TStrides>
+constexpr auto make_unique_tensor(const TShape &shape,
+                                  const TStrides &strides) {
+    return std::make_unique<tensor<T, TShape, TStrides>>(shape, strides);
+}
+
+template <class T, Shape TShape>
+constexpr auto make_unique_tensor(const TShape &shape) {
+    return make_unique_tensor<T>(shape, default_strides(shape));
+}
+
+template <class T, size_t... Lanes> constexpr auto make_unique_fixed_tensor() {
+    return make_unique_tensor<T>(make_shape(fixed_dim_v<Lanes>...));
+}
+
+template <class T = void, class TBuffer, Shape TShape, Strides TStrides>
+constexpr auto make_tensor_view(TBuffer &&buffer, const TShape &shape,
+                                const TStrides &strides) {
+    using element_type = detail::tensor_element_type_from_buffer_t<T, TBuffer>;
+    return tensor_view<element_type, TShape, TStrides>(
+        std::forward<TBuffer>(buffer), shape, strides);
+}
+
+template <class T = void, class TBuffer, Shape TShape>
+constexpr auto make_tensor_view(TBuffer &&buffer, const TShape &shape) {
+    return make_tensor_view<T>(std::forward<TBuffer>(buffer), shape,
+                               default_strides(shape));
+}
+
+template <class T, Shape TShape, Strides TStrides>
+constexpr auto make_tensor_view_from_address(T *address, const TShape &shape,
+                                             const TStrides &strides) {
+    return make_tensor_view<T>(make_span(address, shape, strides), shape,
+                               strides);
+}
+
+template <class T, Shape TShape>
+constexpr auto make_tensor_view_from_address(T *address, const TShape &shape) {
+    return make_tensor_view_from_address<T>(address, shape,
+                                            default_strides(shape));
+}
+
+template <class T, Shape TShape, Strides TStrides, bool IsView>
 class basic_tensor
-    : public detail::tensor_impl<T, Shape, Strides, MaxSize, IsView> {
-    using impl_type = detail::tensor_impl<T, Shape, Strides, MaxSize, IsView>;
-    using size_impl_type = detail::tensor_size_impl<Shape, Strides>;
+    : public detail::tensor_size_impl<TShape, TStrides>,
+      public detail::tensor_storage<T, max_size_v<TShape, TStrides>, IsView> {
+    using size_impl_type = detail::tensor_size_impl<TShape, TStrides>;
 
   public:
     using element_type = T;
-    using storage_type = detail::tensor_storage<T, MaxSize, IsView>;
+    using value_type = std::remove_cv_t<T>;
+
+    using storage_type =
+        detail::tensor_storage<T, max_size_v<TShape, TStrides>, IsView>;
     using buffer_type = typename storage_type::buffer_type;
-    using shape_type = Shape;
-    using strides_type = Strides;
+    using shape_type = TShape;
+    using strides_type = TStrides;
 
     using size_impl_type::rank;
     using size_impl_type::shape;
@@ -141,16 +147,43 @@ class basic_tensor
     using storage_type::buffer;
     using storage_type::elements;
 
-    using impl_type::impl_type;
+    template <bool IsViewV = IsView, class = std::enable_if_t<!IsViewV>>
+    constexpr basic_tensor(TShape shape, TStrides strides) noexcept
+        : size_impl_type(std::move(shape), std::move(strides)),
+          storage_type(shape.length()) {}
+
+    constexpr basic_tensor(buffer_type buffer, TShape shape,
+                           TStrides strides) noexcept
+        : size_impl_type(std::move(shape), std::move(strides)),
+          storage_type(std::in_place, std::move(buffer)) {}
+
+    constexpr basic_tensor(const basic_tensor<T, TShape, TStrides, IsView>
+                               &other) noexcept = default;
+
+    constexpr basic_tensor(
+        basic_tensor<T, TShape, TStrides, IsView> &&other) noexcept = default;
+
+    template <class U = T, class = std::enable_if_t<std::is_const_v<U>>>
+    constexpr basic_tensor(basic_tensor<std::remove_const_t<U>, TShape,
+                                        TStrides, IsView> &&other) noexcept
+        : size_impl_type(std::move(other.shape()), std::move(other.strides())),
+          storage_type(std::in_place, std::move(other.buffer())) {}
+
+    constexpr basic_tensor &
+    operator=(const basic_tensor<T, TShape, TStrides, IsView> &other) noexcept =
+        default;
+
+    constexpr basic_tensor &operator=(
+        basic_tensor<T, TShape, TStrides, IsView> &&other) noexcept = default;
 
     class const_iterator {
       public:
         const_iterator(const basic_tensor &tensor,
-                       ranked_shape<shape_type::rank()> index) noexcept
+                       dynamic_shape_t<shape_type::rank()> index) noexcept
             : tensor_(tensor), index_(index) {}
 
         const_iterator &operator++(int) noexcept {
-            index_.last() += 1;
+            index_.back() += 1;
             for (size_t i = index_.rank() - 1; i > 0; i--) {
                 if (index_[i] >= tensor_.shape()[i]) {
                     index_[i - 1]++;
@@ -174,143 +207,141 @@ class basic_tensor
 
       private:
         const basic_tensor &tensor_;
-        ranked_shape<shape_type::rank()> index_;
+        dynamic_shape_t<shape_type::rank()> index_;
     };
 
-    static basic_tensor<T, Shape, Strides, MaxSize, IsView>
+    static basic_tensor<T, TShape, TStrides, IsView>
     from_scalar(T value) noexcept;
 
     operator const buffer_type &() const noexcept { return buffer(); }
     operator buffer_type &() noexcept { return buffer(); }
 
     const_iterator begin() const noexcept {
-        return const_iterator(*this, ranked_shape<shape_type::rank()>{});
+        return const_iterator(*this, dynamic_shape_t<shape_type::rank()>{});
     }
 
     const_iterator end() const noexcept {
         return const_iterator(*this,
-                              ranked_shape<shape_type::rank()>{shape()[0]});
+                              dynamic_shape_t<shape_type::rank()>{shape()[0]});
     }
 
-    template <class Index, class UShape>
-    constexpr tensor_view<T, UShape, Strides> view(Index index,
-                                                   UShape shape) noexcept {
-        if constexpr (is_fixed_dims_v<Strides>) {
-            auto offset = linear_offset(index, strides());
-            auto begin = elements().data() + offset;
-            if constexpr (is_fixed_dims_v<UShape>) {
-                constexpr size_t size = linear_size(shape, strides());
-                return {std::span<T, size>(begin, size), shape, strides()};
-            } else {
-                size_t size = linear_size(shape, strides());
-                return {std::span(begin, size), shape, strides()};
-            }
-        } else {
-            return {elements().subspan(linear_offset(index, strides()),
-                                       linear_size(shape, strides())),
-                    shape, strides()};
-        }
+    template <Shape UShape>
+    constexpr auto broadcast_to(const UShape &new_shape) {
+        static_assert(UShape::rank() >= TShape::rank(),
+                      "Broadcast shape must have rank greater than or equal to "
+                      "the tensor shape");
+        auto new_strides =
+            broadcast_strides<UShape::rank() - rank()>(strides());
+        return make_tensor_view<T>(elements(), new_shape, new_strides);
     }
 
-    template <class Index, class UShape>
-    constexpr tensor_view<const T, UShape, Strides>
-    view(Index index, UShape shape) const noexcept {
-        if constexpr (is_fixed_dims_v<Strides>) {
-            auto offset = linear_offset(index, strides());
-            auto begin = elements().data() + offset;
-            if constexpr (is_fixed_dims_v<UShape>) {
-                constexpr size_t size = linear_size(shape, strides());
-                return {std::span<const T, size>(begin, size), shape,
-                        strides()};
-            } else {
-                size_t size = linear_size(shape, strides());
-                return {std::span(begin, size), shape, strides()};
-            }
-        } else {
-            return {elements().subspan(linear_offset(index, strides()),
-                                       linear_size(shape, strides())),
-                    shape, strides()};
-        }
+    template <Shape UShape>
+    constexpr auto broadcast_to(const UShape &new_shape) const {
+        static_assert(UShape::rank() >= TShape::rank(),
+                      "Broadcast shape must have rank greater than or equal to "
+                      "the tensor shape");
+        auto new_strides =
+            broadcast_strides<UShape::rank() - rank()>(strides());
+        return make_tensor_view<const T>(elements(), new_shape, new_strides);
     }
 
-    template <class Index> constexpr auto view(const Index &index) noexcept {
-        auto ones_shape = make_ones_shape_like<shape_type>();
-        auto left_shape = slice_dims<Index::rank()>(ones_shape);
-        auto right_shape =
-            slice_dims<rank() - Index::rank(), Index::rank()>(shape());
-        auto new_shape = concat_dims(left_shape, right_shape);
-        auto t_view = view(index, new_shape);
-        return t_view.squeeze(make_index_axes<Index::rank()>());
+    template <Dimensions Index, Shape UShape>
+    constexpr auto view(const Index &index, const UShape &shape) noexcept {
+        auto pos_index = positive_index(index, this->shape());
+        auto offset = linear_offset(pos_index, strides());
+        auto begin = elements().data() + offset;
+        return make_tensor_view_from_address<T>(
+            begin, shape, canonicalize_strides(shape, strides()));
     }
 
-    template <class Index>
+    template <Dimensions Index, Shape UShape>
+    constexpr auto view(const Index &index,
+                        const UShape &shape) const noexcept {
+        auto pos_index = positive_index(index, this->shape());
+        auto offset = linear_offset(pos_index, strides());
+        auto begin = elements().data() + offset;
+        return make_tensor_view_from_address<const T>(
+            begin, shape, canonicalize_strides(shape, strides()));
+    }
+
+    template <Dimensions Index>
+    constexpr auto view(const Index &index) noexcept {
+        auto new_index =
+            index.concat(make_zeros_shape<rank() - Index::rank()>());
+        auto left_shape = make_ones_shape<Index::rank()>();
+        auto right_shape = shape().template slice<Index::rank()>();
+        auto new_shape = left_shape.concat(right_shape);
+        auto t_view = view(new_index, new_shape);
+        return t_view.squeeze(make_index_shape<Index::rank()>());
+    }
+
+    template <Dimensions Index>
     constexpr auto view(const Index &index) const noexcept {
-        auto ones_shape = make_ones_shape_like<shape_type>();
-        auto left_shape = slice_dims<Index::rank()>(ones_shape);
-        auto right_shape =
-            slice_dims<rank() - Index::rank(), Index::rank()>(shape());
-        auto new_shape = concat_dims(left_shape, right_shape);
-        auto t_view = view(index, new_shape);
-        return t_view.squeeze(make_index_axes<Index::rank()>());
+        auto new_index =
+            index.concat(make_zeros_shape<rank() - Index::rank()>());
+        auto left_shape = make_ones_shape<Index::rank()>();
+        auto right_shape = shape().template slice<Index::rank()>();
+        auto new_shape = left_shape.concat(right_shape);
+        auto t_view = view(new_index, new_shape);
+        return t_view.squeeze(make_index_shape<Index::rank()>());
     }
 
-    template <typename TNewShape>
-    constexpr tensor_view<T, TNewShape, default_strides_t<TNewShape>>
-    reshape(TNewShape shape) noexcept {
-        return {buffer(), shape, default_strides(shape)};
+    template <Dimension Index>
+    constexpr auto view(const Index &index) noexcept {
+        return view(make_shape(index));
     }
 
-    template <size_t... Axes>
-    constexpr auto squeeze(fixed_shape<Axes...> axes) noexcept {
-        auto new_shape = squeeze_shape(axes, shape());
-        auto new_strides = squeeze_strides(axes, strides());
-        return tensor_view<T, std::decay_t<decltype(new_shape)>,
-                           std::decay_t<decltype(new_strides)>>(
-            buffer(), new_shape, new_strides);
+    template <Dimension Index>
+    constexpr auto view(const Index &index) const noexcept {
+        return view(make_shape(index));
     }
 
-    template <size_t Rank>
-    constexpr auto squeeze(ranked_shape<Rank> axes) noexcept {
-        auto new_shape = squeeze_shape(axes, shape());
-        auto new_strides = squeeze_strides(axes, strides());
-        return tensor_view<T, std::decay_t<decltype(new_shape)>,
-                           std::decay_t<decltype(new_strides)>>(
-            buffer(), new_shape, new_strides);
+    constexpr tensor_view<T, TShape, TStrides> view() noexcept {
+        return view(make_zeros_shape<TShape::rank()>(), shape());
     }
 
-    template <size_t Rank>
-    constexpr auto unsqueeze(ranked_shape<Rank> axes) noexcept {
-        auto new_shape = unsqueeze_shape(axes, shape());
-        auto new_strides = unsqueeze_strides(axes, strides());
-        return tensor_view<T, std::decay_t<decltype(new_shape)>,
-                           std::decay_t<decltype(new_strides)>>(
-            buffer(), new_shape, new_strides);
+    template <Shape TNewShape> constexpr auto reshape(const TNewShape &shape) {
+        return make_tensor_view<T>(buffer(), shape, default_strides(shape));
     }
 
-    constexpr tensor_view<T, Shape, Strides> view() noexcept {
-        return view(zero_shape_t<Shape::rank()>{}, shape());
+    template <FixedDimensions TAxes> constexpr auto squeeze(const TAxes &axes) {
+        auto new_shape = squeeze_dims(shape(), axes);
+        auto new_strides = squeeze_dims(strides(), axes);
+        return make_tensor_view<T>(buffer(), new_shape, new_strides);
     }
 
-    template <class... Indices>
-    constexpr const T &operator()(Indices &&...index) const noexcept {
-        if constexpr (sizeof...(index) == 1 &&
-                      (is_ranked_dims_v<std::decay_t<Indices>> && ...)) {
-            return elements()[linear_offset(index..., strides())];
-        } else {
-            return this->operator()(
-                ranked_shape<sizeof...(index)>{static_cast<size_t>(index)...});
-        }
+    template <FixedDimensions TAxes>
+    constexpr auto unsqueeze(const TAxes &axes) {
+        auto new_shape = unsqueeze_dims(shape(), axes, dim_one);
+        auto new_strides = unsqueeze_dims(strides(), axes, dim_zero);
+        return make_tensor_view<T>(buffer(), new_shape, new_strides);
     }
 
-    template <class... Indices>
-    constexpr T &operator()(Indices &&...index) noexcept {
-        if constexpr (sizeof...(index) == 1 &&
-                      (is_ranked_dims_v<std::decay_t<Indices>> && ...)) {
-            return elements()[linear_offset(index..., strides())];
-        } else {
-            return this->operator()(
-                ranked_shape<sizeof...(index)>{static_cast<size_t>(index)...});
-        }
+    template <Dimensions TIndex>
+    constexpr const T &operator()(const TIndex &index) const noexcept {
+        auto pos_index = positive_index(index, this->shape());
+        return elements()[linear_offset(pos_index, strides())];
+    }
+
+    template <Dimensions TIndex>
+    constexpr T &operator()(const TIndex &index) noexcept {
+        auto pos_index = positive_index(index, this->shape());
+        return elements()[linear_offset(pos_index, strides())];
+    }
+
+    template <Dimension... Indices>
+    constexpr const T &operator()(const Indices &...index) const noexcept {
+        return this->operator()(make_shape(index...));
+    }
+
+    template <Dimension... Indices>
+    constexpr T &operator()(const Indices &...index) noexcept {
+        return this->operator()(make_shape(index...));
     }
 };
+
+static_assert(sizeof(tensor_view<float, shape_t<fixed_dim<1>>,
+                                 strides_t<fixed_dim<1>>>) ==
+                  sizeof(std::span<float, 1>),
+              "fixed tensor_view size should be same as std::span");
 } // namespace nncase::ntt
