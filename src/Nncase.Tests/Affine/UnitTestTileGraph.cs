@@ -272,6 +272,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(BuildTileGraphDatas))]
     public void TestBuildTileGraph(Func<Function> functor, int count)
     {
+        using var ctx = IntegerSetLibrary.ctx.Create();
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 #if DEBUG
@@ -292,6 +293,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(MergeTileGraphDatas))]
     public void TestMergeTileGraph(Func<Function> functor, (IntMergePoint, bool)[] mergePoints, Action<TieredTileGraph> checker, int count)
     {
+        using var ctx = IntegerSetLibrary.ctx.Create();
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 #if DEBUG
@@ -324,6 +326,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(SolveTileGraphDatas))]
     public void TestSolveTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BaseExpr> action, int count)
     {
+        using var ctx = IntegerSetLibrary.ctx.Create();
         var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
@@ -352,6 +355,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(MCTSDatas))]
     public void TestMCTS(Func<Function> functor, int count)
     {
+        using var ctx = IntegerSetLibrary.ctx.Create();
         var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
@@ -375,6 +379,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [MemberData(nameof(BufferizeTileGraphDatas))]
     public void TestBufferizeTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BufferGraph> action, int count)
     {
+        using var ctx = IntegerSetLibrary.ctx.Create();
         var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
@@ -399,6 +404,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     [Fact]
     public void TestPrimTreeEqualityComparer()
     {
+        using var ctx = IntegerSetLibrary.ctx.Create();
         var func = FunctionSamples.Get3();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
         var grid = (IR.Affine.Grid)((Function)post).Body;

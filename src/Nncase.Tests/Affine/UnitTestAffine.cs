@@ -41,8 +41,8 @@ public class UnitTestAffine
             var dim = (x + tile - 1) / tile;
             using var ctx = Isl.ctx.Create();
             var set = dim.ToSet(out var dimVars);
-            Assert.Equal(0, set.dim_min_val(0).num_si());
-            Assert.Equal(1, set.dim_max_val(0).num_si());
+            Assert.Equal(1, set.dim_min_val(0).num_si());
+            Assert.Equal(2, set.dim_max_val(0).num_si());
         }
 
         {
@@ -65,8 +65,8 @@ public class UnitTestAffine
             var dims = new[] { (x + tile - 1) / tile, x + y - 4 };
             using var ctx = Isl.ctx.Create();
             var set = ISLUtility.ToSet(dims, out var dimVars);
-            Assert.Equal(0, set.dim_min_val(0).num_si());
-            Assert.Equal(1, set.dim_max_val(0).num_si());
+            Assert.Equal(1, set.dim_min_val(0).num_si());
+            Assert.Equal(2, set.dim_max_val(0).num_si());
             Assert.Equal(8, set.dim_min_val(1).num_si());
             Assert.Equal(20, set.dim_max_val(1).num_si());
         }

@@ -1892,9 +1892,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
         compiler.AutoDistributedPass(pmgr);
-
-        // FIXME: reopen when AutoTilingPass is ready.
-        // compiler.AutoTilingPass(pmgr);
+        compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
         await pmgr.RunAsync(module);
     }
