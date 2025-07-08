@@ -164,7 +164,7 @@
           "DryIoc.dll": "[5.4.3, )",
           "GiGraph.Dot": "[3.0.1, )",
           "Google.OrTools": "[9.12.4544, )",
-          "ISLSharp": "[1.0.1, )",
+          "ISLSharp": "[1.0.3, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[8.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.1, )",
           "Microsoft.Extensions.Options": "[8.0.2, )",
@@ -280,9 +280,9 @@
       },
       "ISLSharp": {
         "type": "CentralTransitive",
-        "requested": "[1.0.1, )",
-        "resolved": "1.0.1",
-        "contentHash": "2tddIPjPJnRtFluvdtZlfV+Y4Mu3KR5jQPwrj7/sWZJ2mSVO2DMoxNvGdI7Ek8Gg4GlENjbKb0toAeI+h3eflQ==",
+        "requested": "[1.0.3, )",
+        "resolved": "1.0.3",
+        "contentHash": "gZE5BvuloDMo4KF+MbL5/9t1LrGaqeFyyjHtSLhNyUZzWn1nO1tphILvJllScbnG9Ej235pz9BEp3YaNOfSEjA==",
         "dependencies": {
           "libisl.linux-x64": "0.0.3",
           "libisl.osx-arm64": "0.0.3",
