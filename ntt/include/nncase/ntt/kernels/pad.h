@@ -34,7 +34,7 @@ void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
             return in_dim;
         });
         if (dopad) {
-            output(out_index) = pad_alue;
+            output(out_index) = (typename TIn::element_type)pad_alue;
         } else {
             output(out_index) = input(in_index);
         }

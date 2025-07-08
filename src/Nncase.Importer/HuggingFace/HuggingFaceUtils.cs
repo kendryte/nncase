@@ -405,7 +405,7 @@ internal static class ModelUtils
     /// </summary>
     /// <param name="config">Get [rope_theta, head_dim, num_attention_heads, hidden_size].</param>
     /// <returns>repo parameters.</returns>
-    public static Tuple<List<double>, float> ComputeDefaultRopeParameters(
+    public static Tuple<float[], float> ComputeDefaultRopeParameters(
         Dictionary<string, object> config)
     {
         /*
@@ -446,9 +446,8 @@ internal static class ModelUtils
 
         // Compute inv_freq
         var inv_freq = arange
-            .Select(i => 1.0 / Math.Pow(baseRoPETheta, i / dim))
-            .ToArray()
-            .ToList();
+            .Select(i => 1f / MathF.Pow(baseRoPETheta, i / dim))
+            .ToArray();
         return Tuple.Create(inv_freq, attentionFactor);
     }
 
@@ -457,7 +456,7 @@ internal static class ModelUtils
     /// </summary>
     /// <param name="config">Get [rope_theta, head_dim, num_attention_heads, hidden_size].</param>
     /// <returns>repo parameters.</returns>
-    public static Tuple<List<double>, float> ComputeLlama3RopeParameters(
+    public static Tuple<float[], float> ComputeLlama3RopeParameters(
         Dictionary<string, object> config)
     {
         /*
@@ -476,26 +475,26 @@ internal static class ModelUtils
         var lowFreqWavelen = oldContextLen / lowFreqFactor;
         var highFreqWavelen = oldContextLen / highFreqFactor;
 
-        var waveLen = invFreq.Select(f => 2 * Math.PI / f).ToList();
+        var waveLen = invFreq.Select(f => 2 * MathF.PI / f).ToList();
 
-        var invFreqLlama = invFreq.Zip(waveLen, (f, w) => w > lowFreqWavelen ? f / factor : f).ToList();
+        var invFreqLlama = invFreq.Zip(waveLen, (f, w) => w > lowFreqWavelen ? f / factor : f).ToArray();
 
         var smoothFactor = waveLen.Select(w =>
         {
             var denominator = highFreqFactor - lowFreqFactor;
             return denominator != 0 ? ((oldContextLen / w) - lowFreqFactor) / denominator : 0;
-        }).ToList();
+        }).ToArray();
 
-        var smoothedInvFreq = smoothFactor.Zip(invFreqLlama, (s, f) => ((1 - s) * (f / factor)) + (s * f)).ToList();
+        var smoothedInvFreq = smoothFactor.Zip(invFreqLlama, (s, f) => ((1 - s) * (f / factor)) + (s * f)).ToArray();
 
-        var isMediumFreq = waveLen.Select((w, i) => !(w < highFreqWavelen) && !(w > lowFreqWavelen)).ToList();
+        var isMediumFreq = waveLen.Select((w, i) => !(w < highFreqWavelen) && !(w > lowFreqWavelen)).ToArray();
 
-        invFreqLlama = invFreqLlama.Zip(isMediumFreq, (f, isMed) => isMed ? smoothedInvFreq[invFreqLlama.IndexOf(f)] : f).ToList();
+        invFreqLlama = invFreqLlama.Zip(isMediumFreq, (f, isMed) => isMed ? smoothedInvFreq[invFreqLlama.IndexOf(f)] : f).ToArray();
 
         return Tuple.Create(invFreqLlama, attentionFactor);
     }
 
-    public static Tuple<List<double>, float> RoPEInit(Dictionary<string, object> config)
+    public static Tuple<float[], float> RoPEInit(Dictionary<string, object> config)
     {
         string type = "default";
         if (config.ContainsKey("rope_type"))

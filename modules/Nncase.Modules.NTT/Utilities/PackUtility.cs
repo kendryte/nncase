@@ -182,6 +182,30 @@ public static class PackUtility
         return (forward, backward);
     }
 
+    public static bool TryPropagateArgument(int outputRank, Shape argumentShape, int axis, int lanes, IList<int> argumentPackedAxes, IList<int> argumentLanes)
+    {
+        var argumentExt = outputRank - argumentShape.Rank;
+        var argumentAxis = axis - argumentExt;
+
+        if (argumentAxis >= 0)
+        {
+            if (argumentShape[argumentAxis] is DimConst { Value: var lhsDim })
+            {
+                if (lhsDim != 1)
+                {
+                    argumentPackedAxes.Add(argumentAxis);
+                    argumentLanes.Add(lanes);
+                }
+            }
+            else
+            {
+                return false; // Cannot pack dynamic dimension.
+            }
+        }
+
+        return true;
+    }
+
     private static Dimension PadForAlign(Dimension dim, int align)
     {
         var mod = dim % align;

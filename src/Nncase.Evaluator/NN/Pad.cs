@@ -28,24 +28,38 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
     public IValue Visit(IEvaluateContext context, Pad pad)
     {
         var input = context.GetArgumentValue(pad, Pad.Input);
-        var pads = context.GetInt64OrtTensorArgumentValue(pad, Pad.Pads);
+        var pads = context.GetArgumentValueAsArray<long>(pad, Pad.Pads);
         var constValue = context.GetArgumentValue(pad, Pad.Value);
 
-        DataType? inType = null;
+        var inType = input.AsTensor().ElementType;
         try
         {
-            inType = context.CurrentCall.Arguments[Pad.Input.Index].CheckedDataType;
-            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
+            if (inType.IsFloat() && inType != DataTypes.Float32)
             {
-                input = Cast(input.AsTensor(), DataTypes.Float32).Evaluate();
-                constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
+                if (inType is VectorType vt && vt.ElemType != DataTypes.Float32)
+                {
+                    input = Value.FromTensor(input.AsTensor().CastTo(vt with { ElemType = DataTypes.Float32 }));
+                    constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
+                }
+                else if (inType is not VectorType && inType != DataTypes.Float32)
+                {
+                    input = Cast(input.AsTensor(), DataTypes.Float32).Evaluate();
+                    constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
+                }
             }
         }
         catch
         {
         }
 
+        if (inType is VectorType)
+        {
+            // Extents pads when input is vector type.
+            pads = pads.Concat([0, 0]).ToArray();
+        }
+
         var inputOrt = input.AsTensor().ToOrtTensor();
+        var padsOrt = Tensor.From(pads, [inputOrt.Rank, 2]).ToOrtTensor();
         var constValueOrt = constValue.AsTensor().ToOrtTensor();
 
         var mode = pad.PadMode switch
@@ -86,23 +100,13 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
 
         if (pad.PadMode == PadMode.Symmetric)
         {
-            var ret = SymmetricPad(inputOrt, ToOnnxPadFormat(pads), constValueOrt).ToValue();
-            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
-            {
-                ret = Cast(ret.AsTensor(), inType).Evaluate().AsTensor();
-            }
-
-            return ret;
+            var ret = SymmetricPad(inputOrt, ToOnnxPadFormat(padsOrt), constValueOrt);
+            return ret.ToValue(inType);
         }
         else
         {
-            var ret = OrtKI.Pad(inputOrt, ToOnnxPadFormat(pads), constValueOrt, mode).ToValue();
-            if (inType != null && inType.IsFloat() && inType != DataTypes.Float32)
-            {
-                ret = Cast(ret.AsTensor(), inType).Evaluate().AsTensor();
-            }
-
-            return ret;
+            var ret = OrtKI.Pad(inputOrt, ToOnnxPadFormat(padsOrt), constValueOrt, mode);
+            return ret.ToValue(inType);
         }
     }
 

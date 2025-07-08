@@ -106,13 +106,14 @@ public static class TypeInference
         }
 
         var dataType = inputs[0].DType;
-        if (inputs.Any(x => ((x.DType is VectorType && dataType is VectorType) || (x.DType is not VectorType && dataType is not VectorType)) &&
-            x.DType != dataType))
+        dataType = dataType is VectorType vt ? vt.ElemType : dataType;
+        if (!inputs.All(x => x.DType == dataType || (x.DType is VectorType vt && vt.ElemType == dataType)))
         {
             return new InvalidType(
                 $"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
         }
 
+        dataType = inputs.Select(x => x.DType).OfType<VectorType>().FirstOrDefault() ?? dataType;
         return BroadcastType(dataType, inputs);
     }
 
@@ -296,7 +297,8 @@ public static class TypeInference
 
         if (padValue.CheckedType is TensorType padValueType)
         {
-            if (padValueType.DType != input.DType)
+            if (!(padValueType.DType == input.DType
+                || (input.DType is VectorType vt && padValueType.DType == vt.ElemType)))
             {
                 return new InvalidType($"Pad value and input must have same type, " +
                                        $"input:{input.DType}, padValue:{padValueType.DType}");

@@ -189,38 +189,6 @@ public sealed class ReduceUnpackPropagation : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed class PackUnaryPropagation : RewriteRule<Pattern>
-{
-    public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsPack(
-            "pack",
-            "caller",
-            _ => true,
-            IsUnary(
-                "unary",
-                "callee",
-                _ => true,
-                IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() }));
-
-    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
-    {
-        var pack = (IR.Tensors.Pack)result["pack"];
-        if (pack.Lanes.Count > 1)
-        {
-            var op = (IR.Math.Unary)result["unary"];
-            var input = (Expr)result["input"];
-            var ret = PackUnary.AddCandidate(op, input, pack.Axes.ToArray(), pack.Lanes.ToArray()).FirstOrDefault();
-            if (ret is not null)
-            {
-                return IR.F.Tensors.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
-            }
-        }
-
-        return null;
-    }
-}
-
-[RuleGenerator]
 public sealed class UnaryUnpackPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
@@ -245,50 +213,6 @@ public sealed class UnaryUnpackPropagation : RewriteRule<Pattern>
             if (ret is not null)
             {
                 return ret;
-            }
-        }
-
-        return null;
-    }
-}
-
-[RuleGenerator]
-public sealed class PackBinaryPropagation : RewriteRule<Pattern>
-{
-    public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsPack(
-            "pack",
-            "caller",
-            _ => true,
-            IsBinary(
-                "binary",
-                "callee",
-                _ => true,
-                IsWildcard("lhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-                IsWildcard("rhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() }));
-
-    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
-    {
-        var pack = (IR.Tensors.Pack)result["pack"];
-        if (pack.Lanes.Count > 1)
-        {
-            var op = (IR.Math.Binary)result["binary"];
-            var lhs = (Expr)result["lhs"];
-            var rhs = (Expr)result["rhs"];
-            var lhsShape = lhs.CheckedShape;
-            var rhsShape = rhs.CheckedShape;
-            var candidate = (Expr)result[Pattern];
-            var lhsExt = candidate.CheckedShape.Rank - lhsShape.Rank;
-            var rhsExt = candidate.CheckedShape.Rank - rhsShape.Rank;
-            var lhsPackedAxes = pack.Axes.Where(a => a - lhsExt >= 0 && lhsShape[a - lhsExt] is { IsFixed: true } fa && fa != 1).ToArray();
-            var rhsPackedAxes = pack.Axes.Where(a => a - rhsExt >= 0 && rhsShape[a - rhsExt] is { IsFixed: true } fa && fa != 1).ToArray();
-            var lhsLanes = lhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
-            var rhsLanes = rhsPackedAxes.Select(a => pack.Axes.IndexOf(a)).Select(i => pack.Lanes[i]).ToArray();
-
-            var ret = PackBinary.AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes.Select(a => a - lhsExt).ToArray(), rhsPackedAxes.Select(a => a - rhsExt).ToArray(), lhsLanes, rhsLanes).FirstOrDefault();
-            if (ret is not null)
-            {
-                return IR.F.Tensors.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
             }
         }
 
@@ -1073,68 +997,6 @@ public sealed class ExpandUnpackPropagation : RewriteRule<Pattern>
             if (ret is not null)
             {
                 return ret;
-            }
-        }
-
-        return null;
-    }
-}
-
-[RuleGenerator]
-public sealed class PackReshapePropagation : RewriteRule<Pattern>
-{
-    public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsPack(
-            "pack",
-            "caller",
-            _ => true,
-            IsReshape(
-                "reshape",
-                "callee",
-                _ => true,
-                IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
-                IsFixedShape("newShape")));
-
-    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
-    {
-        var pack = (IR.Tensors.Pack)result["pack"];
-        if (pack.Axes.Count > 1)
-        {
-            var input = (Expr)result["input"];
-            var shape = ((RankedShape)result["shape"]).ToValueArray();
-
-            if (!IRUtility.TryGetShapeMapMatrix(input.CheckedShape.ToValueArray(), shape, out var mat))
-            {
-                return null;
-            }
-
-            // TODO: more complex case
-            var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
-            var packAxes = new int[input.CheckedShape.Rank];
-            var packLanes = new int[input.CheckedShape.Rank];
-            for (int i = 0; i < pack.Axes.Count; i++)
-            {
-                var a = pack.Axes[i];
-                if (backwardDict[a].Count > 1)
-                {
-                    return null;
-                }
-                else
-                {
-                    packAxes[a] = backwardDict[a][0];
-                    packLanes[a] = pack.Lanes[i];
-                }
-            }
-
-            if (packAxes.Distinct().Count() != packAxes.Length)
-            {
-                return null;
-            }
-
-            var ret = PackReshape.AddCandidate(input, shape, forwardDict, backwardDict, packAxes, packLanes).FirstOrDefault();
-            if (ret is not null)
-            {
-                return IR.F.Tensors.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
             }
         }
 
