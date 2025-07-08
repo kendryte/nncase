@@ -59,8 +59,6 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
         auto addr_output_element = output.buffer().data();
 
         constexpr auto indices_rank = TB::rank();
-        dynamic_shape_t<rank> in_index;
-        dynamic_shape_t<indices_rank> indices_index;
         dynamic_shape_t<rank> src_index;
         ntt::loop<rank>([&](auto &i) { src_index[i] = 0; });
 
