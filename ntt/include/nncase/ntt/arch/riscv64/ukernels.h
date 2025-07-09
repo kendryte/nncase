@@ -1013,6 +1013,32 @@ class u_pack2d<true, TIn, TOut, float,
     }
 };
 
+template <Tensor TIn, Tensor TOut, size_t AxesRank>
+    requires(
+        (std::same_as<typename TIn::element_type, ntt::vector<float, 8, 8>> ||
+         std::same_as<typename TIn::element_type, ntt::vector<float, 8>>) &&
+        std::same_as<typename std::decay_t<TOut>::element_type, float> &&
+        (AxesRank == 1 || AxesRank == 2))
+class u_unpack_impl<TIn, TOut, AxesRank, true> {
+  public:
+    using TVec = typename TIn::element_type;
+    using TElem = typename std::decay_t<TOut>::element_type;
+
+    template <FixedDimensions TAxes>
+    constexpr void operator()(const TIn &input, TOut &output,
+                              const TAxes &axes) {
+        constexpr auto const_axes = TAxes{};
+        if constexpr (AxesRank == 1) {
+            if constexpr (const_axes[0] == (TIn::rank() - 1)) {
+                auto size = output.size() * sizeof(TElem);
+                auto in_ptr = input.buffer().data();
+                auto out_ptr = output.buffer().data();
+                std::memcpy(out_ptr, in_ptr, size);
+            }
+        }
+    }
+}
+
 #if 0
 // unpack
 template <class T1, class T2> struct u_unpack_policy<T1, T2, true> {
