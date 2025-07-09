@@ -13,11 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#ifdef NNCASE_CPU_MODULE
-#include "arch/cpu/topology.h"
-#elif defined(NNCASE_XPU_MODULE)
-#include "arch/xpu/topology.h"
-#endif
+#include "distributed/topology.h"
 #include "shape.h"
 #include <cstddef>
 #include <cstdint>
@@ -63,7 +59,4 @@ extern "C" void
 thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
             nncase::ntt::runtime::thread_inout_desc *const output_descs,
             const std::byte *rdata, const std::byte *local_rdata,
-            std::byte *output,
-            nncase::ntt::ranked_shape<
-                (size_t)nncase::ntt::distributed::topology::count__>
-                program_ids);
+            std::byte *local_data, std::byte *output);

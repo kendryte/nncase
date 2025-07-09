@@ -71,7 +71,7 @@ public partial class GetItemEvaluator : IEvaluator<GetItem>, ITypeInferencer<Get
             indexTensor.Buffer.CopyTo(indices);
             var indicesValue = indices.Select((x, i) => x < 0 ? x + tensor.Shape[i].FixedValue : x).ToArray();
             var linearIndex =
-                TensorUtilities.GetIndex(tensor.Strides, indicesValue);
+                TensorUtilities.GetLinearOffset(tensor.Strides, indicesValue);
             var returnDims = tensor.Dimensions.AsValueEnumerable().Skip((int)indexTensor.Length).ToArray();
             var elementsCount = TensorUtilities.GetProduct(returnDims);
 

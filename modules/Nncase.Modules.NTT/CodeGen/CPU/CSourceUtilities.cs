@@ -7,6 +7,7 @@ using DryIoc.ImTools;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 
 namespace Nncase.CodeGen.NTT;
 
@@ -90,5 +91,11 @@ internal static class CSourceUtilities
         var max = arguments[Clamp.Max.Index].Name;
         string str = $"std::clamp({input}, {min}, {max})";
         return str;
+    }
+
+    internal static string ConvertAsTensor(AsTensor op, CSymbol[] arguments)
+    {
+        var input = arguments[0].Name;
+        return $"ntt::as_tensor({input})";
     }
 }

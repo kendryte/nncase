@@ -14,8 +14,8 @@
  */
 #pragma once
 #include "ntt/compiler_defs.h"
+#include <bit>
 #include <cmath>
-#include <codecvt>
 #include <cstdint>
 #include <float.h>
 #include <functional>
@@ -35,12 +35,14 @@ struct bfloat16 {
         float f32;
 
         uint16_t u16() const noexcept {
-            constexpr size_t index = std::little_endian ? 1 : 0;
+            constexpr size_t index =
+                std::endian::native == std::endian::little ? 1 : 0;
             return reinterpret_cast<const uint16_t *>(&u32)[index];
         }
 
         uint16_t &u16() noexcept {
-            constexpr size_t index = std::little_endian ? 1 : 0;
+            constexpr size_t index =
+                std::endian::native == std::endian::little ? 1 : 0;
             return reinterpret_cast<uint16_t *>(&u32)[index];
         }
     };
@@ -62,7 +64,7 @@ struct bfloat16 {
     explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) {}
 
-    bfloat16(int &&val) noexcept : bfloat16(static_cast<float>(val)) {}
+    // bfloat16(int &&val) noexcept : bfloat16(static_cast<float>(val)) {}
 
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
 
@@ -184,7 +186,7 @@ DEFINE_BF16_BINARY_BOOLRET(>=)
 DEFINE_BF16_BINARY_BOOLRET(>)
 
 #define DEFINE_BF16_BINARY_SELF_MOD(x, op)                                     \
-    inline bfloat16 &operator x(bfloat16 &a, bfloat16 b) noexcept {            \
+    inline bfloat16 &operator x(bfloat16 & a, bfloat16 b) noexcept {           \
         a = a op b;                                                            \
         return a;                                                              \
     }
@@ -208,6 +210,8 @@ inline bool operator!=(const bfloat16 &lhs, const bfloat16 &rhs) noexcept {
 } // namespace nncase
 
 namespace std {
+template <> struct is_floating_point<nncase::bfloat16> : true_type {};
+
 template <> struct hash<nncase::bfloat16> {
     size_t operator()(const nncase::bfloat16 &v) const {
         return hash<float>()(static_cast<float>(v));
@@ -315,7 +319,9 @@ inline bfloat16 nearbyint(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(nearbyintf(float(a)));
 }
 inline long lrint(const bfloat16 &a) { return lrintf(float(a)); }
-
-template <>
-struct is_floating_point<bfloat16> : public std::true_type {};
 } // namespace std
+
+
+inline nncase::bfloat16 operator"" _bf16(long double x) {
+    return nncase::bfloat16(float(x));
+}

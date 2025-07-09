@@ -90,7 +90,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         Shape = new RankedShape(length);
         Length = length;
         _dimensions = new[] { length };
-        _strides = TensorUtilities.GetStrides(_dimensions);
+        _strides = TensorUtilities.GetDefaultStrides(_dimensions);
     }
 
     /// <summary>
@@ -104,7 +104,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         _dimensions = dimensions.ToArray();
         Shape = dimensions.IsEmpty ? IR.Shape.Scalar : new RankedShape(_dimensions);
         Length = TensorUtilities.GetProduct(dimensions);
-        _strides = TensorUtilities.GetStrides(dimensions);
+        _strides = TensorUtilities.GetDefaultStrides(dimensions);
     }
 
     internal Tensor(DataType elementType, ReadOnlySpan<long> dimensions, ReadOnlySpan<long> strides)
@@ -177,8 +177,8 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <returns>The value at the specified position in this Tensor.</returns>
     public object this[ReadOnlySpan<long> indices]
     {
-        get => GetValueCore(TensorUtilities.GetIndex(Strides, indices));
-        set => SetValueCore(TensorUtilities.GetIndex(Strides, indices), value);
+        get => GetValueCore(TensorUtilities.GetLinearOffset(Strides, indices));
+        set => SetValueCore(TensorUtilities.GetLinearOffset(Strides, indices), value);
     }
 
     /// <summary>
@@ -668,7 +668,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         }
         else if (type.GetInterfaces().Where(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(IVector<>))).SingleOrDefault() is Type vectorType)
         {
-            var elemType = type.GenericTypeArguments[0];
+            var elemType = vectorType.GenericTypeArguments[0];
             var value = typeof(Tensor).GetMethod(nameof(GetOneOrZero), BindingFlags.Static | BindingFlags.NonPublic)?
                 .MakeGenericMethod(elemType)
                 .Invoke(null, new object[] { isOne })!;

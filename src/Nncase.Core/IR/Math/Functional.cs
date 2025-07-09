@@ -359,8 +359,9 @@ public static class Math
     /// <param name="compareOp">Compare operator.</param>
     /// <param name="lhs">Left operand.</param>
     /// <param name="rhs">Right operand.</param>
+    /// <param name="maskVectorStyle">Mask vector style.</param>
     /// <returns>Result expression.</returns>
-    public static Call Compare(CompareOp compareOp, Expr lhs, Expr rhs) => new Call(new Compare(compareOp), lhs, rhs);
+    public static Call Compare(CompareOp compareOp, Expr lhs, Expr rhs, MaskVectorStyle maskVectorStyle = MaskVectorStyle.Unknown) => new Call(new Compare(compareOp, maskVectorStyle), lhs, rhs);
 
     /// <summary>
     /// Call equal.

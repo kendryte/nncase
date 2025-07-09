@@ -49,3 +49,35 @@ NTT_END_DEFINE_NATIVE_VECTOR()
 
 NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(double, __m256d, 4)
 NTT_END_DEFINE_NATIVE_VECTOR()
+
+// mask vectors
+#define NTT_DEFINE_NATIVE_MASK_VECTOR(bits, cast_type)                         \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR(bool, __m256i, NTT_VLEN / bits)             \
+                                                                               \
+    template <Dimensions TIndex>                                               \
+    static bool get_element(const __m256i &array,                              \
+                            const TIndex &index) noexcept {                    \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        const auto casted_value = (cast_type)array;                            \
+        const auto offset = (size_t)index[dim_zero];                           \
+        return casted_value[offset] != 0;                                      \
+    }                                                                          \
+                                                                               \
+    template <Dimensions TIndex>                                               \
+    static void set_element(__m256i &array, const TIndex &index,               \
+                            bool value) noexcept {                             \
+        using casted_element_type = std::decay_t<decltype(cast_type{}[0])>;    \
+        constexpr auto true_value = casted_element_type(-1);                   \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        auto &casted_value = reinterpret_cast<cast_type &>(array);             \
+        const auto offset = (size_t)index[dim_zero];                           \
+        casted_value[offset] = value ? true_value : 0;                         \
+    }                                                                          \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+NTT_DEFINE_NATIVE_MASK_VECTOR(8, __v32qi)
+NTT_DEFINE_NATIVE_MASK_VECTOR(16, __v16hi)
+NTT_DEFINE_NATIVE_MASK_VECTOR(32, __v8si)
+NTT_DEFINE_NATIVE_MASK_VECTOR(64, __v4di)
+
+#undef NTT_DEFINE_NATIVE_MASK_VECTOR

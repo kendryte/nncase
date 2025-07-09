@@ -67,11 +67,6 @@ public sealed class PagedAttentionKVCacheTestFixture
 
     public PagedAttentionConfig Config { get; }
 
-    public override string ToString()
-    {
-        return $"PagedAttentionKVCacheTestFixture: QueryLens={string.Join(",", QueryLens)}, SeqLens={string.Join(",", SeqLens)}, NumQHeads={NumQHeads}, ContextLens={string.Join(",", ContextLens)}, NumBlocks={NumBlocks}, QLayout={string.Join(",", QLayout)}, KLayout={string.Join(",", KLayout)}, Config={Config}";
-    }
-
     /// <summary>
     /// query: [Hq,L,Ev], key: [Hk,L,Ev], value: [Hv,L,Ev].
     /// </summary>
@@ -375,7 +370,7 @@ public sealed class PagedAttentionKVCacheTestFixture
     {
         // head,seq,dim.
         var buffer = new float[dimensions.Product()];
-        var strides = TensorUtilities.GetStrides(dimensions);
+        var strides = TensorUtilities.GetDefaultStrides(dimensions);
         var span = buffer.AsSpan();
         for (int headId = 0; headId < dimensions[0]; headId++)
         {
@@ -399,6 +394,11 @@ public sealed class PagedAttentionKVCacheTestFixture
         }
 
         return Tensor.From(buffer, dimensions);
+    }
+
+    public override string ToString()
+    {
+        return $"PagedAttentionKVCacheTestFixture: QueryLens={string.Join(",", QueryLens)}, SeqLens={string.Join(",", SeqLens)}, NumQHeads={NumQHeads}, ContextLens={string.Join(",", ContextLens)}, NumBlocks={NumBlocks}, QLayout={string.Join(",", QLayout)}, KLayout={string.Join(",", KLayout)}, Config={Config}";
     }
 
     public sealed record TestKernel(Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar);

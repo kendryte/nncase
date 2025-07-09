@@ -46,13 +46,10 @@ void benchmark_ntt_unpack(const std::string &mode, const size_t run_size) {
         std::any_of(axes, axes + axes_size, [](size_t i) { return i == 3; })
             ? P
             : 1;
-    using tensor_type1 =
-        ntt::tensor<ElementType,
-                    ntt::fixed_shape<N / P0, C / P1, H / P2, W / P3>>;
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<N, C, H, W>>;
 
-    alignas(32) tensor_type1 ntt_input;
-    alignas(32) tensor_type2 ntt_output;
+    auto ntt_input = ntt::make_tensor<ElementType>(
+        ntt::fixed_shape_v<N / P0, C / P1, H / P2, W / P3>);
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<N, C, H, W>);
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
 
 // warm up
@@ -62,19 +59,19 @@ void benchmark_ntt_unpack(const std::string &mode, const size_t run_size) {
     constexpr size_t warmup_size = 10;
 #endif
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::unpack<unpack_dims...>(ntt_input, ntt_output);
+        ntt::unpack(ntt_input, ntt_output, fixed_shape_v<unpack_dims...>);
         asm volatile("" ::"g"(ntt_output));
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::unpack<unpack_dims...>(ntt_input, ntt_output);
+        ntt::unpack(ntt_input, ntt_output, fixed_shape_v<unpack_dims...>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    auto element_size = tensor_type1::size() * ElementType::size() / P;
+    auto element_size = ntt_input.size() * ElementType::size() / P;
     std::cout << __FUNCTION__ << "_" << mode << " took " << std::setprecision(1)
               << std::fixed
               << static_cast<float>(t2 - t1) / run_size / element_size
