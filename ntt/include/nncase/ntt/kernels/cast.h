@@ -83,7 +83,6 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
                     &input(index), 1, &output(out_index), packedAxes.rank() == 1 ? output.strides()[packedAxes.at(0)] : 1, 1);
             });
         }
-#endif
     }
 
   private:
