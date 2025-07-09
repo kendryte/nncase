@@ -98,11 +98,11 @@ template <> class tensor_storage<bool, std::dynamic_extent, false> {
     constexpr const buffer_type &buffer() const noexcept { return buffer_; }
     constexpr buffer_type &buffer() noexcept { return buffer_; }
 
-    constexpr std::span<const bool> elements() const noexcept {
-        return {std::bit_cast<const bool *>(buffer_.data()), buffer_.size()};
+    std::span<const bool> elements() const noexcept {
+        return {reinterpret_cast<const bool *>(buffer_.data()), buffer_.size()};
     }
-    constexpr std::span<bool> elements() noexcept {
-        return {std::bit_cast<bool *>(buffer_.data()), buffer_.size()};
+    std::span<bool> elements() noexcept {
+        return {reinterpret_cast<bool *>(buffer_.data()), buffer_.size()};
     }
 
   private:

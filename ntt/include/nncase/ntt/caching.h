@@ -178,12 +178,19 @@ constexpr auto origin_kv_cache_one_block_shape() noexcept {
         packed_shape, [&](auto last_shape, auto sharding_axis, auto i) {
             using axis_policy_t =
                 std::tuple_element_t<i, typename TConfig::axis_policies_t>;
-            auto dim =
-                axis_policy_t::template try_shard_dim_without_shard_index<Mesh>(
-                    last_shape[sharding_axis]);
-            static_assert(dim != -1_dim,
-                          "Only uniform shard dim is supported.");
-            return last_shape.template replace_at<sharding_axis>(dim);
+            if constexpr (sharding_axis ==
+                          fixed_dim_v<(
+                              dim_t)paged_kvcache_dim_kind::num_blocks>) {
+                // num_blocks is not sharded, so we just return
+                return last_shape;
+            } else {
+                auto dim =
+                    axis_policy_t::template try_shard_dim_without_shard_index<
+                        Mesh>(last_shape[sharding_axis]);
+                static_assert(dim != -1_dim,
+                              "Only uniform shard dim is supported.");
+                return last_shape.template replace_at<sharding_axis>(dim);
+            }
         });
     return shard_shape;
 }
@@ -304,6 +311,8 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         }
     }
 
+    auto block_table() const noexcept { return block_table_; }
+
   private:
     template <class T>
     constexpr auto get_kv_cache_one_block_view(const T &block_id) noexcept
@@ -316,10 +325,12 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         const auto kv_cache_index =
             generate_shape<block_shard_index.size()>([&](auto axis) {
                 const auto index = block_shard_index(axis);
-                const auto mesh_axis =
-                    std::get<axis>(TConfig::axis_policies).axes.front();
-                return ntt::where(index == -1_dim, local_index[mesh_axis],
-                                  index);
+                const auto submesh_axes =
+                    std::get<axis>(TConfig::axis_policies).axes;
+                const auto submesh_shape = Mesh::shape.select(submesh_axes);
+                const auto local_program_id = linear_offset(
+                    local_index.select(submesh_axes), submesh_shape);
+                return ntt::where(index == -1_dim, local_program_id, index);
             });
         auto address = kv_cache_address(kv_cache_index) +
                        block_offset * kv_cache_block_length;
