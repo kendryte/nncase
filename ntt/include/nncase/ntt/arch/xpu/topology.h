@@ -56,10 +56,12 @@ inline size_t bid() noexcept { return program_id<topology::block>(); }
 inline size_t did() noexcept { return program_id<topology::die>(); }
 inline size_t cid() noexcept { return program_id<topology::chip>(); }
 
-inline constexpr auto tdim() noexcept { return program_dim(topology::thread); }
-inline constexpr auto bdim() noexcept { return program_dim(topology::block); }
-inline constexpr auto ddim() noexcept { return program_dim(topology::die); }
-inline constexpr auto cdim() noexcept { return program_dim(topology::chip); }
+inline constexpr auto tdim() noexcept {
+    return program_dim<topology::thread>();
+}
+inline constexpr auto bdim() noexcept { return program_dim<topology::block>(); }
+inline constexpr auto ddim() noexcept { return program_dim<topology::die>(); }
+inline constexpr auto cdim() noexcept { return program_dim<topology::chip>(); }
 
 namespace detail {
 struct thread_barrier {

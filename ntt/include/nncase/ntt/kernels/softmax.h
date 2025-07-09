@@ -31,7 +31,7 @@ void packed_softmax_impl(const TIn &input, TOut &&output, const TAxis &axis,
     constexpr auto need_reduce =
         PackedAxes::rank() != 0 && TAxis::value == packed_axes[0];
     auto domain = shape_infer::reduced_shape_by_axis<TAxis::value>(input_shape);
-    apply(domain, [&](auto index) {
+    ntt::apply(domain, [&](auto index) {
         // max
         TElem max_value = input(index);
         for (index[axis] = 0; index[axis] < input_shape.at(axis);
