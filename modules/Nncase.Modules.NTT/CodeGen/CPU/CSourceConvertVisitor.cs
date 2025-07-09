@@ -219,7 +219,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         var numerator = Visit(expr.Numerator).Name;
         var denominator = Visit(expr.Denominator).Name;
-        symbol = new("dim_t", expr.DivMode == DimDivideMode.FloorDiv ? $"({numerator} / {denominator})" : $"ntt::ceildiv({numerator}, {denominator})");
+        symbol = new("dim_t", expr.DivMode == DimDivideMode.FloorDiv ? $"({numerator} / {denominator})" : $"ntt::ceil_div({numerator}, {denominator})");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
