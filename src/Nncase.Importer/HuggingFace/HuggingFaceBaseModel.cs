@@ -857,7 +857,7 @@ public abstract class HuggingFaceModel
             scaling.CastTo(pagedAttentionConfig.KVPrimType, CastMode.KDefault),
             count,
             qDestLayout,
-            (int)Context!.Config!["hidden_size"]);
+            (int)(long)Context!.Config!["hidden_size"]);
 
         output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qPackedAxis) : output;
         output = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(output, DataTypes.Float32) : output;
