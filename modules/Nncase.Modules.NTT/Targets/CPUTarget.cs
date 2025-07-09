@@ -77,8 +77,10 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.PackReducePropagation>();
         pass.Add<Passes.Rules.NTT.PackReshapePropagation>();
         pass.Add<Passes.Rules.NTT.PackResizeImagePropagation>();
+
         // pass.Add<Passes.Rules.NTT.PackScatterND>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackSlicePropagation>();
+
         // pass.Add<Passes.Rules.NTT.PackSwish>(rank, lane);
         pass.Add<Passes.Rules.NTT.PackTransposePropagation>();
         pass.Add<Passes.Rules.NTT.PackUnaryPropagation>();

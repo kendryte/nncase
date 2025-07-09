@@ -756,7 +756,6 @@ public abstract class HuggingFaceModel
 
     public virtual Call Embeding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
     {
-        var embedingDim = embedingWeight.Shape[^1];
         var gatherResult = IR.F.Tensors.Gather(embedingWeight, 0, input);
         if (paddingIdx == null)
         {
@@ -764,10 +763,9 @@ public abstract class HuggingFaceModel
         }
         else
         {
-            var zeros = Tensor.Zeros(embedingWeight.ElementType, new long[] { embedingDim.FixedValue });
+            var zeros = Tensor.Zeros(embedingWeight.ElementType, [1]);
             var paddingMask = IR.F.Math.Equal(input, paddingIdx);
-            paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, new long[] { 1 });
-            paddingMask = IR.F.Tensors.Expand(paddingMask, gatherResult.CheckedShape);
+            paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, [1]);
             var results = IR.F.Tensors.Where(paddingMask, zeros, gatherResult);
             return results;
         }

@@ -107,7 +107,7 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        const PadedNums &padedNums = {},
                        const bool use_mean = true) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
-    if constexpr (PackedAxes::rank() == 1) {
+    if constexpr (PadedNums::rank() == 1) {
         static_assert(PadedNums{}[0_dim] == 0, "not support padding");
     }
 

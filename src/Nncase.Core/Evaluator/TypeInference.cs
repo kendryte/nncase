@@ -186,6 +186,47 @@ public static class TypeInference
     }
 
     /// <summary>
+    /// Broadcast input shapes.
+    /// </summary>
+    /// <param name="cond">Condition shape.</param>
+    /// <param name="inputs">Input shapes.</param>
+    /// <returns>Broadcasted shape.</returns>
+    public static IRType WhereType(TensorType cond, params TensorType[] inputs)
+    {
+        if (inputs.Length < 2)
+        {
+            throw new ArgumentException("Broadcast must have 2 inputs at least.");
+        }
+
+        var dataType = inputs[0].DType;
+        dataType = dataType is VectorType vt ? vt.ElemType : dataType;
+        if (!inputs.All(x => x.DType == dataType || (x.DType is VectorType vt && vt.ElemType == dataType)))
+        {
+            return new InvalidType(
+                $"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
+        }
+
+        dataType = inputs.Select(x => x.DType).OfType<VectorType>().FirstOrDefault() ?? dataType;
+        if (cond.DType is MaskVectorType maskVectorType)
+        {
+            if (dataType is VectorType vt2)
+            {
+                if (vt2.Lanes.Count != 1 || vt2.Lanes[0] != maskVectorType.Lanes)
+                {
+                    return new InvalidType(
+                            $"The cond mask vector lanes {maskVectorType.Lanes} is not compatible with input vector lanes {vt2.Lanes}");
+                }
+            }
+            else
+            {
+                dataType = new VectorType(dataType, maskVectorType.Lanes);
+            }
+        }
+
+        return BroadcastType(dataType, inputs);
+    }
+
+    /// <summary>
     /// Conv2D Type Infer.
     /// </summary>
     public static IRType Conv2DType(TensorType input, TensorType weights, Shape strides, Paddings paddings, Shape dilations, Dimension groups)
@@ -566,11 +607,11 @@ public static class TypeInference
         if (placement != null)
         {
             var newTypes = types.ToArray();
-            var ndsbp = new IRArray<SBP>(Enumerable.Repeat(SBP.B, placement.Rank));
             foreach (ref var newType in newTypes.AsSpan())
             {
-                if (newType is TensorType tensorType)
+                if (newType is TensorType tensorType && tensorType.Shape is RankedShape { Rank: var rank })
                 {
+                    var ndsbp = new IRArray<SBP>(Enumerable.Repeat(SBP.B, rank));
                     newType = new DistributedType(tensorType, ndsbp, placement);
                 }
             }

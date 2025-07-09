@@ -213,14 +213,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             return rType;
         }
 
-        try
-        {
-            return CheckSBP(target.BinaryOp, tensorType, a, b);
-        }
-        catch
-        {
-            throw new ArgumentException($"lhs: {a}, rhs: {b}, binaryOp: {target.BinaryOp} is not supported.");
-        }
+        return CheckSBP(target.BinaryOp, tensorType, a, b);
     }
 
     private int Compute(BinaryOp op, int a, int b) => op switch

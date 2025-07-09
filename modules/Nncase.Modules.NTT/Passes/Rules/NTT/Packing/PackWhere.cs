@@ -17,37 +17,46 @@ using Nncase.PatternMatch;
 using Nncase.Utilities;
 
 using static Nncase.IR.TypePatternUtility;
-using static Nncase.PatternMatch.F.Imaging;
 using static Nncase.PatternMatch.F.Math;
-using static Nncase.PatternMatch.F.NN;
 using static Nncase.PatternMatch.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackBinaryPropagation : RewriteRule<Pattern>
+public sealed partial class PackWherePropagation : RewriteRule<Pattern>
 {
+    public PackWherePropagation(MaskVectorStyle maskVectorStyle)
+    {
+        MaskVectorStyle = maskVectorStyle;
+    }
+
+    public MaskVectorStyle MaskVectorStyle { get; }
+
     public override Pattern Pattern { get; } =
         PatternMatch.F.Tensors.IsPack(
             "pack",
             "caller",
             _ => true,
-            IsBinary(
-                "binary",
+            IsWhere(
+                "where",
                 "callee",
                 _ => true,
+                IsWildcard("cond"),
                 IsWildcard("lhs"),
                 IsWildcard("rhs")));
 
-    private Expr? GetReplace(Pack pack, Call callee, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Pack pack, Call callee, Expr cond, Expr lhs, Expr rhs)
     {
+        var condShape = cond.CheckedShape;
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var outputRank = callee.CheckedShape.Rank;
 
+        var condPackedAxes = new List<int>();
         var lhsPackedAxes = new List<int>();
         var rhsPackedAxes = new List<int>();
+        var condLanes = new List<int>();
         var lhsLanes = new List<int>();
         var rhsLanes = new List<int>();
 
@@ -55,6 +64,11 @@ public sealed partial class PackBinaryPropagation : RewriteRule<Pattern>
         {
             var axis = pack.Axes[i];
             var lanes = pack.Lanes[i];
+
+            if (!PackUtility.TryPropagateArgument(outputRank, condShape, axis, lanes, condPackedAxes, condLanes))
+            {
+                return null; // Cannot pack cond.
+            }
 
             if (!PackUtility.TryPropagateArgument(outputRank, lhsShape, axis, lanes, lhsPackedAxes, lhsLanes))
             {
@@ -67,9 +81,16 @@ public sealed partial class PackBinaryPropagation : RewriteRule<Pattern>
             }
         }
 
+        if (condPackedAxes.Count > 1)
+        {
+            return null; // Mask can only be packed along one axis.
+        }
+
+        var maskElementBits = lhs.CheckedDataType.SizeInBytes * 8;
         return callee.WithArguments([
-            (Binary.Lhs, IR.F.Tensors.Pack(lhs, lhsLanes.ToArray(), lhsPackedAxes.ToArray())),
-            (Binary.Rhs, IR.F.Tensors.Pack(rhs, rhsLanes.ToArray(), rhsPackedAxes.ToArray())),
+            (Where.Cond, condPackedAxes.Count == 0 ? cond : IR.F.Tensors.PackMask(cond, MaskVectorStyle, maskElementBits, condLanes[0], condPackedAxes[0])),
+            (Where.X, IR.F.Tensors.Pack(lhs, lhsLanes.ToArray(), lhsPackedAxes.ToArray())),
+            (Where.Y, IR.F.Tensors.Pack(rhs, rhsLanes.ToArray(), rhsPackedAxes.ToArray())),
         ]);
     }
 }

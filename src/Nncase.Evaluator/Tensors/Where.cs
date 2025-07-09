@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NetFabric.Hyperlinq;
@@ -115,13 +116,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             return new TensorType(DataTypes.Int64, Shape.Unknown(cond.Shape.Rank));
         }
 
-        // FIXME: remove this when ntt::where is ready
-        if (cond.DType is VectorType)
-        {
-            return new InvalidType("cond can't be vector type");
-        }
-
-        return TypeInference.BroadcastType(x.DType, cond, x, y);
+        return TypeInference.WhereType(cond, x, y);
     }
 
     public IRType Visit(DistributedType cond, DistributedType x, DistributedType y, Where target)
@@ -137,7 +132,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             return invalid;
         }
 
-        var targetType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, cond.TensorType, x.TensorType, y.TensorType);
+        var targetType = (TensorType)TypeInference.WhereType(cond.TensorType, x.TensorType, y.TensorType);
 
         // if (cond.TensorType.Shape != targetType.Shape)
         // {
@@ -173,7 +168,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
                         return invalid;
                     }
 
-                    var xyType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, x.TensorType, y.TensorType);
+                    var xyType = (TensorType)TypeInference.BroadcastType(x.TensorType, y.TensorType);
                     var padXY = targetType.Shape.Rank - xyType.Shape.Rank;
                     policyOut = CheckSBP(policyCond, policyXY, cond.TensorType.Shape, xyType.Shape, padCond, padXY, i);
                     break;
@@ -196,12 +191,17 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var x = context.GetArgumentType<IRType>(target, Where.X);
         var y = context.GetArgumentType<IRType>(target, Where.Y);
         var ret = context.GetReturnType<IRType>();
-        return new()
+
+        var newCosts = new Cost
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(cond, x, y),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(cond, CostUtility.GetCPUCyclesOfCompare()),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, CostUtility.GetCPUCyclesOfCompare()),
         };
+
+        File.AppendAllLines("cost.txt", [$"{ret}: {newCosts.Score}"]);
+
+        return newCosts;
     }
 
     public Metric Visit(IMetricEvaluateContext context, Where target)

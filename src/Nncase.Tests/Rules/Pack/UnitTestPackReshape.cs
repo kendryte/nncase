@@ -32,4 +32,16 @@ public class UnitTestPackReshape : TransformTestBase
         var expr = Reshape(inputVar, [1, dimX, 24]);
         TestMatchedCore(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } }, new PackReshape(1, 32));
     }
+
+    [Fact]
+    public void TestPackReshapePropagationDynamic()
+    {
+        var dimX = new DimVar("x") { Metadata = { Range = (1, 256) } };
+        var input = Testing.Rand<float>(3, 24);
+        var inputVar = new Var(new TensorType(input.ElementType, [dimX, 24]));
+        Expr expr = Reshape(inputVar, [1, dimX, 24]);
+        expr = Pack(expr, [8], [2]);
+        expr = Unpack(expr, [8], [2]);
+        TestMatched<PackReshapePropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
 }

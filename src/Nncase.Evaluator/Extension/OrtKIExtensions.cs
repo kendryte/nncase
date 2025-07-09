@@ -79,6 +79,10 @@ public static class OrtKIExtensions
 
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor, DataType dataType) => dataType switch
     {
+        MaskVectorType maskVectorType => Tensor.From(
+            maskVectorType,
+            new TensorInitializerWithOrt(tensor),
+            tensor.Shape.Take(tensor.Shape.Length - 1).ToArray()),
         VectorType vectorType => Tensor.From(
             vectorType with { ElemType = tensor.DataType.ToDataType() },
             new TensorInitializerWithOrt(tensor),

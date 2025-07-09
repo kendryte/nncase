@@ -34,5 +34,5 @@ public sealed partial class PackedLayerNorm : Op
 
     public IRArray<int> PackedAxes { get; }
 
-    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, PackedAxes: {PackedAxes}, PadedNums: {PadedNums}";
+    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, PackedAxes: {PackedAxes}";
 }
