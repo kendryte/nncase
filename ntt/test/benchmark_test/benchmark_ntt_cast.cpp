@@ -74,25 +74,22 @@ void benchmark_ntt_cast(T1 init_low, T1 init_high) {
     constexpr auto ratio = sizeof(T1) / sizeof(T2);
     constexpr size_t times = ratio <= 1 ? 1 : ratio;
 
-    using tensor_type1 =
-        ntt::tensor<ntt::vector<T1, M>, ntt::fixed_shape<size / M>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<T2, N>, ntt::fixed_shape<size / N>>;
-
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    std::unique_ptr<tensor_type2> ntt_output(new tensor_type2);
-    NttTest::init_tensor(*ntt_input, init_low, init_high);
+    auto ntt_input =
+        ntt::make_tensor<ntt::vector<T1, M>>(ntt::fixed_shape_v<size / M>);
+    auto ntt_output =
+        ntt::make_tensor<ntt::vector<T2, N>>(ntt::fixed_shape_v<size / N>);
+    NttTest::init_tensor(ntt_input, init_low, init_high);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::cast(*ntt_input, *ntt_output);
+        ntt::cast(ntt_input, ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::cast(*ntt_input, *ntt_output);
+        ntt::cast(ntt_input, ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();

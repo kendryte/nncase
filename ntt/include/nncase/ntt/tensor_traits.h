@@ -13,55 +13,119 @@
  * limitations under the License.
  */
 #pragma once
-#include "shape.h"
-#include <cstddef>
 #include <cstring>
-#include <span>
-#include <utility>
+#include <type_traits>
+#include "../bfloat16.h"
+#include "../float8.h"
+#include "../half.h"
 
 namespace nncase::ntt {
+enum dims_usage {
+    normal,
+    shape,
+    strides,
+};
+
+template <class T> struct is_fixed_dim_t : std::false_type {};
+
+template <class T>
+inline constexpr bool is_fixed_dim_v =
+    is_fixed_dim_t<std::remove_cv_t<T>>::value;
+
+template <class T>
+concept DynamicDimension = std::is_integral_v<T>;
+
+template <class T>
+concept Dimension = is_fixed_dim_v<T> || DynamicDimension<T>;
+
+template <class T>
+concept FixedDimension = is_fixed_dim_v<T>;
+
+template <class T>
+concept Dimensions = requires {
+    T::rank();
+    T::fixed_rank();
+    T::dynamic_rank();
+    T::usage();
+};
+
+template <class T>
+concept FixedDimensions = Dimensions<T> && T::is_fixed();
+
+template <class T>
+concept Shape = Dimensions<T> && T::usage() == dims_usage::shape;
+
+template <class T>
+concept FixedShape = Shape<T> && T::is_fixed();
+
+template <class T>
+concept Strides = Dimensions<T> && T::usage() == dims_usage::strides;
+
+template <class T>
+concept FixedStrides = Strides<T> && T::is_fixed();
+
+// Only check whether T has IsVector member, doesn't check whether IsVector is true.
 template <typename T>
-concept IsFixedTensor = is_fixed_dims_v<typename std::decay_t<T>::shape_type> &&
-                        is_fixed_dims_v<typename std::decay_t<T>::strides_type>;
+concept Vector = requires {std::decay_t<T>::IsVector;}; 
+
 
 template <typename T>
-concept IsRankedTensor = is_ranked_dims_v<typename std::decay_t<T>::shape_type> ||
-                         is_ranked_dims_v<typename std::decay_t<T>::strides_type>;
-
-template <typename T>
-concept IsVector = std::decay_t<T>::IsVector;
-
-template <typename T>
-concept IsScalar = std::is_integral_v<T> || std::is_floating_point_v<T>;
-
-template <typename T>
-concept IsShardedTensor = requires {
+concept ShardedTensor = requires {
     typename T::sharding_type;
     typename T::mesh_type;
 };
 
 template <typename T>
-concept IsTensor = (IsFixedTensor<T> || IsRankedTensor<T>) && !IsShardedTensor<T>;
+concept Tensor = requires {
+    typename T::shape_type;
+    typename T::strides_type;
+} && !ShardedTensor<T> && !Vector<T>;
 
 template <typename T>
-concept IsTensorOrScalar = IsTensor<T> || IsScalar<T>;
+concept FixedTensor = Tensor<T> && FixedDimensions<typename T::shape_type> &&
+                      FixedDimensions<typename T::strides_type>;
 
 template <typename T>
-concept IsFixedDims = is_fixed_dims_v<T>;
+concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T> 
+                    || std::is_same_v<std::remove_cv_t<T>, bfloat16> 
+                    || std::is_same_v<std::remove_cv_t<T>, half> 
+                    || std::is_same_v<std::remove_cv_t<T>, float_e4m3_t> 
+                    || std::is_same_v<std::remove_cv_t<T>, float_e5m2_t>;
+
+template <typename T>
+concept ScalarOrVector = Scalar<T> || Vector<T>;
+
+template <typename T>
+concept TensorOrScalar = Tensor<T> || Scalar<T>;
+
+template <typename T>
+concept TensorOrVector = Tensor<T> || Vector<T>;
+
+template <typename T>
+concept TensorOfVector = TensorOrVector<T> && Vector<typename T::element_type>;
 
 template <class T> struct element_or_scalar_type {
     using type = T;
 };
 
-template <IsTensor T> struct element_or_scalar_type<T> {
+template <Tensor T> struct element_or_scalar_type<T> {
+    using type = typename T::element_type;
+};
+
+template <Vector T> struct element_or_scalar_type<T> {
     using type = typename T::element_type;
 };
 
 template <class T>
 using element_or_scalar_t = typename element_or_scalar_type<T>::type;
 
-template <class T, size_t... Lanes> struct fixed_tensor_alike_type;
-template <class T, size_t... Lanes>
-using fixed_tensor_alike_t =
-    typename fixed_tensor_alike_type<T, Lanes...>::type;
+template <class T>
+struct element_scalar_count : std::integral_constant<size_t, 1> {};
+
+template <Vector T>
+struct element_scalar_count<T>
+    : std::integral_constant<size_t, std::remove_cv_t<T>::size()> {};
+
+template <class T>
+inline constexpr size_t element_scalar_count_v = element_scalar_count<T>::value;
 } // namespace nncase::ntt

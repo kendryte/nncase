@@ -126,6 +126,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     /// <inheritdoc/>
     public override string VisitType(TensorType type) => type.DType switch
     {
+        MaskVectorType vtype => $"bool<{vtype.Lanes}>" + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
         ReferenceType { ElemType: DataType etype } => $"&{etype.GetDisplayName()}",

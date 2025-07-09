@@ -14,48 +14,24 @@
  */
 #pragma once
 #include "../shape.h"
-#include <cassert>
 
 namespace nncase::ntt::shape_infer {
 namespace detail {
-template <class Shape>
-constexpr size_t sub_matmul_shape_dim(const Shape &shape, size_t axis) {
-    return axis >= Shape::rank() - 2 ? shape[axis] : 1;
-}
-
-template <class Shape, class Axes> struct ranked_sub_matmul_shape_impl;
-
-template <class Shape, size_t... Axes>
-struct ranked_sub_matmul_shape_impl<Shape, std::index_sequence<Axes...>> {
-    using type = ranked_shape<Shape::rank()>;
-
-    static constexpr type value(const Shape &shape) {
-        return type{sub_matmul_shape_dim(shape, Axes)...};
+template <size_t Axis, Shape TShape>
+constexpr auto sub_matmul_shape_dim(const TShape &shape) noexcept {
+    if constexpr (Axis >= TShape::rank() - 2) {
+        return shape.template at<Axis>();
+    } else {
+        return dim_one;
     }
-};
-
-template <class Shape, class Axes> struct fixed_sub_matmul_shape_impl;
-
-template <class Shape, size_t... Axes>
-struct fixed_sub_matmul_shape_impl<Shape, std::index_sequence<Axes...>> {
-    using type = fixed_shape<sub_matmul_shape_dim(Shape{}, Axes)...>;
-
-    static constexpr type value(const Shape &) { return type{}; }
-};
-
-template <class Shape>
-struct sub_matmul_shape_impl
-    : ranked_sub_matmul_shape_impl<Shape,
-                                   std::make_index_sequence<Shape::rank()>> {};
-
-template <size_t... Dims>
-struct sub_matmul_shape_impl<fixed_shape<Dims...>>
-    : fixed_sub_matmul_shape_impl<fixed_shape<Dims...>,
-                                  std::make_index_sequence<sizeof...(Dims)>> {};
+}
 } // namespace detail
 
-template <class Shape> constexpr auto sub_matmul_shape(const Shape &shape) {
-    return detail::sub_matmul_shape_impl<Shape>::value(shape);
+template <Shape TShape> constexpr auto sub_matmul_shape(const TShape &shape) {
+    static_assert(TShape::rank() >= 2,
+                  "matmul shape must have at least 2 dimensions");
+    return generate_shape<TShape::rank()>([&shape](auto axis) {
+        return detail::sub_matmul_shape_dim<axis>(shape);
+    });
 }
-
 } // namespace nncase::ntt::shape_infer

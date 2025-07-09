@@ -263,7 +263,7 @@ public static class T
             name = name[4..];
         }
 
-        var strides = TensorUtilities.GetStrides(dimensions);
+        var strides = TensorUtilities.GetDefaultStrides(dimensions);
         var size = TensorUtilities.GetProduct(dimensions.ToArray()) * dataType.SizeInBytes;
         var memspan = new MemSpan(size, location);
         buffer = new Buffer(name, dataType, memspan, dimensions, strides, null);

@@ -30,7 +30,7 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
         var isFixedStrides = buffer.Strides.AsValueEnumerable().All(d => d.IsFixed);
         var dims = KernelUtility.DimensionsTypeToC(isFixedDims, buffer.Dimensions);
         var strides = KernelUtility.StridesTypeToC(isFixedStrides, buffer.Strides);
-        var distributed = buffer.DistributedType == null ? null : KernelUtility.DistributedToC(buffer.DistributedType);
+        var distributed = buffer.DistributedType == null ? null : KernelUtility.ShardingToC(buffer.DistributedType);
         return new(buffer.Name, elemType, buffer.ElemType.SizeInBytes, rank, offset, size, isFixedDims, isFixedStrides, buffer.Dimensions.ToArray(), dims, buffer.Strides.ToArray(), strides, distributed);
     }
 }
@@ -43,9 +43,6 @@ public static class CSourceBuiltn
 {
     public const string KernelHeader = @"#pragma once
 #include <nncase/ntt/ntt.h>
-#include <nncase/ntt/caching.h>
-#include <nncase/ntt/kernels/paged_attention.h>
-#include <nncase/ntt/runtime.h>
 #include ""topo_aware_runtime.h""
 using namespace nncase::ntt;
 using namespace nncase::ntt::distributed;
@@ -59,9 +56,9 @@ using namespace nncase::ntt::distributed::shard_policy;
         return content;
     }
 
-    public static string TopologyDef(NTTTargetOptions options)
+    public static string ModuleTopologyDef(NTTTargetOptions options)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topology_def.h.cshtml", options).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/module_topology_def.h.cshtml", options).Result;
         return content;
     }
 

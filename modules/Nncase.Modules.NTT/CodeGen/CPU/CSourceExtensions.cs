@@ -15,7 +15,7 @@ public static class CSourceExtensions
 {
     private static readonly Dictionary<PrimType, string> _primTypeToC = new()
     {
-        { DataTypes.Boolean, "uint8_t" },
+        { DataTypes.Boolean, "bool" },
         { DataTypes.Int8, "int8_t" },
         { DataTypes.Int16, "int16_t" },
         { DataTypes.Int32, "int32_t" },
@@ -78,19 +78,19 @@ public static class CSourceExtensions
         _ => throw new NotImplementedException(),
     };
 
-    public static string ToC(this IRArray<IR.NN.PagedKVCacheDimKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+    public static string ToC(this IRArray<IR.NN.PagedKVCacheDimKind> arr) => $"fixed_shape_v<{string.Join(',', arr.Select(e => "(dim_t)" + e.ToC()))}>";
 
-    public static string ToC(this IRArray<IR.NN.AttentionCacheKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+    public static string ToC(this IRArray<IR.NN.AttentionCacheKind> arr) => $"fixed_shape_v<{string.Join(',', arr.Select(e => "(dim_t)" + e.ToC()))}>";
 
-    public static string ToC(this IRArray<IR.NN.AttentionDimKind> arr) => $"fixed_shape<{string.Join(',', arr.Select(e => "(size_t)" + e.ToC()))}>";
+    public static string ToC(this IRArray<IR.NN.AttentionDimKind> arr) => $"fixed_shape_v<{string.Join(',', arr.Select(e => "(dim_t)" + e.ToC()))}>";
 
-    public static string ToC(this IRArray<int> arr) => $"fixed_shape<{string.Join(',', arr)}>";
+    public static string ToC(this IRArray<int> arr) => $"fixed_shape_v<{string.Join(',', arr)}>";
 
     public static string ToC(this IEnumerable<SBP> arr)
     {
         var toc = (SBP sbp) => sbp switch
         {
-            SBPSplit s => $"shard_policy::S<{string.Join(", ", s.Axes)}>",
+            SBPSplit s => $"shard_policy::S<{string.Join(", ", s.Axes)}>()",
             SBPPartial p => $"shard_policy::P<reduce_op::{p.Op.ToC()}>",
             SBPBroadCast b => $"shard_policy::B",
             _ => throw new ArgumentOutOfRangeException(nameof(arr)),
@@ -100,16 +100,17 @@ public static class CSourceExtensions
 
     public static string ToC(this IPagedAttentionConfig config)
     {
-        return $"caching::paged_attention_config<{config.NumLayers}, {config.NumKVHeads}, {config.HeadDim}, {config.KVPrimType.ToC()}, {config.BlockSize}, {config.CacheLayout.ToC()}, {config.BlockLayout.ToC()}, {config.PackedAxes.ToC()}, {config.Lanes.ToC()}, {config.ShardingAxes.ToC()}, {config.AxisPolicies.OfType<SBP>().ToC()}>";
+        return $"caching::make_paged_attention_config<{config.NumLayers}, {config.NumKVHeads}, {config.HeadDim}, {config.KVPrimType.ToC()}, {config.BlockSize}>({config.CacheLayout.ToC()}, {config.BlockLayout.ToC()}, {config.PackedAxes.ToC()}, {config.Lanes.ToC()}, {config.ShardingAxes.ToC()}, {config.AxisPolicies.OfType<SBP>().ToC()})";
     }
 
     public static string ToC(this DataType dataType) => dataType switch
     {
+        MaskVectorType vtype => $"vector<bool, {vtype.Lanes}>",
         PrimType ptype => ptype.ToC(),
         PagedAttentionKVCacheType => $"paged_attention_kv_cache_t",
         PointerType => "uint8_t *",
-        VectorType vtype => $"vector<{vtype.ElemType.ToC()},{string.Join(",", vtype.Lanes)}>",
         ReferenceType rtype => $"{rtype.ElemType.ToC()}",
+        VectorType vtype => $"vector<{vtype.ElemType.ToC()}, {string.Join(",", vtype.Lanes)}>",
         _ => throw new NotSupportedException(dataType.ToString()),
     };
 
@@ -141,7 +142,7 @@ public static class CSourceExtensions
 
     public static string[] ToSlicing(this IEnumerable<string> dims, string[] begins, IRArray<SBP> ndsbp, Placement placement)
     {
-        var hstrides = TensorUtilities.GetStrides(placement.Hierarchy.ToArray());
+        var hstrides = TensorUtilities.GetDefaultStrides(placement.Hierarchy.ToArray());
         var splitHierarchy = Enumerable.Range(0, begins.Length).Select(_ => new List<int>()).ToArray();
         var splits = Enumerable.Range(0, begins.Length).Select(_ => new List<int>()).ToArray();
         foreach (var (sbp, i) in ndsbp.Select((s, i) => (s, i)))
@@ -173,7 +174,7 @@ public static class CSourceExtensions
             }
         }
 
-        return [$"make_ranked_shape({string.Join(',', begins)})", $"fixed_shape<{string.Join(",", dims.Select(d => d.ToString()))}>{{}}"];
+        return [$"make_shape({string.Join(',', begins)})", $"fixed_shape_v<{string.Join(",", dims.Select(d => d.ToString()))}>{{}}"];
     }
 
     public static string[] ToSlicing(this IEnumerable<string> dims, IRArray<SBP> ndsbp, Placement placement) => ToSlicing(dims, Enumerable.Repeat("0", dims.Count()).ToArray(), ndsbp, placement);

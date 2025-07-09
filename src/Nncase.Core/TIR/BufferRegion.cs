@@ -17,28 +17,6 @@ namespace Nncase.TIR;
 /// </summary>
 public sealed class BufferRegion : Expr
 {
-#if false
-    /// <summary>
-    /// Create a BufferRegion which is full region of the given buffer.
-    /// NOTE because of the each backend has different addr calc logic.
-    /// </summary>
-    /// <param name="buffer">The buffer to generate full BufferRegion.</param>
-    /// <returns>The BufferRegion which covers all region of the given buffer.</returns>
-    public static BufferRegion All(PhysicalBuffer buffer) => new BufferRegion(buffer, new(buffer.Dimensions.Select(extent => new Range(0, extent, 1))));
-
-    /// <summary>
-    /// Get the RegionSize.
-    /// </summary>
-    public Expr[] RegionSize => Region.Select(r => r.Stop - r.Start).ToArray();
-
-    /// <summary>
-    /// Get padding at the dim.
-    /// </summary>
-    /// <param name="dim"></param>
-    /// <returns></returns>
-    public (Expr Before, Expr After) Padding(int dim) => (IR.F.Math.Max(-Region[dim].Start, 0), IR.F.Math.Max(Region[dim].Stop - Buffer.Dimensions[dim], 0));
-#endif
-
     public BufferRegion(Expr buffer, ReadOnlySpan<Range> region)
         : base(ArrayUtility.Concat(buffer, SpanUtility.UnsafeCast<Range, BaseExpr>(region)))
     {

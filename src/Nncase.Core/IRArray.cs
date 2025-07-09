@@ -69,6 +69,9 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     public static implicit operator IRArray<T>(T[] array) =>
         new IRArray<T>(ImmutableArray.Create(array));
 
+    public static implicit operator ReadOnlySpan<T>(IRArray<T> array) =>
+        array._array.AsSpan();
+
     public static bool operator ==(IRArray<T> left, IRArray<T> right)
     {
         return left.Equals(right);

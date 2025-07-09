@@ -14,38 +14,23 @@
  */
 #pragma once
 #include "../shape.h"
-#include <cassert>
 
 namespace nncase::ntt::shape_infer {
 namespace detail {
-template <size_t Axis, class Shape, size_t... Ints>
+template <size_t Axis, Shape TShape, size_t... Ints>
 inline constexpr auto
-fixed_reduced_shape_by_axis_impl(const std::index_sequence<Ints...>) {
-    return fixed_shape<(Ints == Axis ? 1 : Shape::at(Ints))...>{};
+reduced_shape_by_axis_impl([[maybe_unused]] const TShape &shape,
+                           std::index_sequence<Ints...>) {
+    return make_shape((Ints == Axis ? dim_one : shape[fixed_dim_v<Ints>])...);
 }
 
-template <size_t Axis, size_t Rank, size_t... Ints>
+template <Shape TShape, Shape TAxes, size_t... Ints>
 inline constexpr auto
-ranked_reduced_shape_by_axis_impl(const ranked_shape<Rank> shape,
-                                  const std::index_sequence<Ints...>) {
-    return ranked_shape<Rank>{(Ints == Axis ? 1 : shape.at(Ints))...};
-}
-
-template <size_t... Dims, size_t... Ints>
-inline constexpr auto reduced_shape_by_axes_impl(
-    const fixed_shape<Dims...> shape, [[maybe_unused]] const fixed_shape<>,
-    [[maybe_unused]] const std::index_sequence<Ints...>) {
-    return shape;
-}
-
-template <size_t AxesFirst, size_t... AxesRest, size_t... Dims, size_t... Ints>
-inline constexpr auto
-reduced_shape_by_axes_impl([[maybe_unused]] const fixed_shape<Dims...> shape,
-                           const fixed_shape<AxesFirst, AxesRest...>,
-                           const std::index_sequence<Ints...> ints) {
-    return reduced_shape_by_axes_impl(
-        fixed_reduced_shape_by_axis_impl<AxesFirst, fixed_shape<Dims...>>(ints),
-        fixed_shape<AxesRest...>{}, ints);
+reduced_shape_by_axes_impl([[maybe_unused]] const TShape &shape,
+                           const TAxes &axes, std::index_sequence<Ints...>) {
+    return make_shape((axes.contains(fixed_dim_v<Ints>)
+                           ? dim_one
+                           : shape[fixed_dim_v<Ints>])...);
 }
 
 } // namespace detail
@@ -57,15 +42,10 @@ reduced_shape_by_axes_impl([[maybe_unused]] const fixed_shape<Dims...> shape,
  * @param shape input shape.
  * @return changed shape.
  */
-template <size_t Axis, class Shape>
-inline constexpr auto reduced_shape_by_axis(const Shape &shape) {
-    if constexpr (is_fixed_dims_v<Shape>) {
-        return detail::fixed_reduced_shape_by_axis_impl<Axis, Shape>(
-            std::make_index_sequence<Shape::rank()>{});
-    } else {
-        return detail::ranked_reduced_shape_by_axis_impl<Axis>(
-            shape, std::make_index_sequence<Shape::rank()>());
-    }
+template <size_t Axis, Shape TShape>
+constexpr auto reduced_shape_by_axis(const TShape &shape) {
+    return detail::reduced_shape_by_axis_impl<Axis>(
+        shape, std::make_index_sequence<TShape::rank()>());
 }
 
 /**
@@ -77,10 +57,9 @@ inline constexpr auto reduced_shape_by_axis(const Shape &shape) {
  * @param axes
  * @return constexpr auto
  */
-template <size_t... Axes, size_t... Dims>
-inline constexpr auto reduced_shape_by_axes(const fixed_shape<Dims...> shape,
-                                            const fixed_shape<Axes...> axes) {
+template <Shape TShape, Shape TAxes>
+constexpr auto reduced_shape_by_axes(const TShape &shape, const TAxes &axes) {
     return detail::reduced_shape_by_axes_impl(
-        shape, axes, std::make_index_sequence<sizeof...(Dims)>{});
+        shape, axes, std::make_index_sequence<TShape::rank()>{});
 }
 } // namespace nncase::ntt::shape_infer

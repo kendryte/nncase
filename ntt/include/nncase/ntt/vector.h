@@ -16,31 +16,37 @@
 #include "detail/shape_storage.h"
 #include "detail/vector_storage.h"
 #include "tensor_traits.h"
+#include <type_traits>
 
 namespace nncase::ntt {
-template <class T, size_t... Lanes>
+template <Scalar T, FixedShape Lanes>
 class basic_vector
-    : public detail::tensor_size_impl<
-          fixed_shape<Lanes...>, default_strides_t<fixed_shape<Lanes...>>> {
+    : public detail::tensor_size_impl<Lanes,
+                                      decltype(default_strides(Lanes{}))> {
     using size_impl_type =
-        detail::tensor_size_impl<fixed_shape<Lanes...>,
-                                 default_strides_t<fixed_shape<Lanes...>>>;
+        detail::tensor_size_impl<Lanes, decltype(default_strides(Lanes{}))>;
 
   public:
     static constexpr bool IsVector = true;
 
     using element_type = T;
-    using traits_type = vector_storage_traits<T, Lanes...>;
+    using traits_type = vector_storage_traits<T, Lanes>;
     using buffer_type = traits_type::buffer_type;
-    using shape_type = fixed_shape<Lanes...>;
-    using strides_type = default_strides_t<shape_type>;
+    using shape_type = Lanes;
+    using strides_type = decltype(default_strides(Lanes{}));
 
     using size_impl_type::rank;
     using size_impl_type::shape;
     using size_impl_type::size;
     using size_impl_type::strides;
 
-    static basic_vector<T, Lanes...> from_scalar(T value) noexcept;
+    template <size_t Index> static constexpr auto lane() noexcept {
+        static_assert(Index < Lanes::rank(), "Dimension index out of bounds");
+        return Lanes{}.template at<Index>();
+    }
+
+    static basic_vector<T, Lanes> from_scalar(T value) noexcept;
+    static basic_vector<T, Lanes> unaligned_load_from(const T *ptr) noexcept;
 
     constexpr basic_vector() noexcept = default;
     constexpr basic_vector(const buffer_type &buffer) noexcept
@@ -54,32 +60,29 @@ class basic_vector
     constexpr const buffer_type &buffer() const noexcept { return buffer_; }
     constexpr buffer_type &buffer() noexcept { return buffer_; }
 
-    template <class... Indices>
-    constexpr decltype(auto) operator()(Indices &&...index) const noexcept {
-        return this->operator()(
-            ranked_shape<sizeof...(index)>{static_cast<size_t>(index)...});
-    }
-
-    template <class... Indices>
-    constexpr decltype(auto) operator()(Indices &&...index) noexcept {
-        return this->operator()(
-            ranked_shape<sizeof...(index)>{static_cast<size_t>(index)...});
-    }
-
-    template <size_t IndexRank>
+    template <Dimension... Indices>
     constexpr decltype(auto)
-    operator()(ranked_shape<IndexRank> index) noexcept {
+    operator()(const Indices &...index) const noexcept {
+        return this->operator()(make_shape(index...));
+    }
+
+    template <Dimension... Indices>
+    constexpr decltype(auto) operator()(const Indices &...index) noexcept {
+        return this->operator()(make_shape(index...));
+    }
+
+    template <Dimensions TIndex>
+    constexpr decltype(auto) operator()(const TIndex &index) noexcept {
         if constexpr (requires { traits_type::element_at(buffer_, index); }) {
             return traits_type::element_at(buffer_, index);
         } else {
-            return detail::vector_storage_element_proxy<
-                traits_type, ranked_shape<IndexRank>>(buffer_, index);
+            return detail::vector_storage_element_proxy<traits_type, TIndex>(
+                buffer_, index);
         }
     }
 
-    template <size_t IndexRank>
-    constexpr decltype(auto)
-    operator()(ranked_shape<IndexRank> index) const noexcept {
+    template <Dimensions TIndex>
+    constexpr decltype(auto) operator()(const TIndex &index) const noexcept {
         if constexpr (requires { traits_type::element_at(buffer_, index); }) {
             return traits_type::element_at(buffer_, index);
         } else {
@@ -87,47 +90,32 @@ class basic_vector
         }
     }
 
-    template <size_t Index> static constexpr size_t lane() noexcept {
-        static_assert(Index < sizeof...(Lanes),
-                      "Dimension index out of bounds");
-        return std::get<Index>(std::make_tuple(Lanes...));
-    }
-
   private:
     buffer_type buffer_;
-    static constexpr std::array<size_t, sizeof...(Lanes)> lanes = {Lanes...};
 };
 
-template <class T, size_t... Lanes> using vector = basic_vector<T, Lanes...>;
+template <Scalar T, size_t... Lanes>
+using vector = basic_vector<T, shape_t<fixed_dim<Lanes>...>>;
 
-template <class T, size_t... OldLanes, size_t... NewLanes>
-struct fixed_tensor_alike_type<basic_vector<T, OldLanes...>, NewLanes...> {
-    using type = vector<T, NewLanes...>;
+template <class T, Scalar U> struct replace_element_type;
+
+template <Scalar T, Scalar U> struct replace_element_type<T, U> {
+    using type = U;
 };
 
-template <class OriginalVector, class Tnew>
-struct cast_fixed_tensor_element_type;
-
-template <class OriginalVector, class Tnew>
-struct cast_fixed_tensor_element_type {
-    using type = Tnew;
+template <Scalar T, FixedShape Lanes, Scalar U>
+struct replace_element_type<basic_vector<T, Lanes>, U> {
+    using type = basic_vector<U, Lanes>;
 };
 
-template <class OldT, size_t... Lanes, class Tnew>
-struct cast_fixed_tensor_element_type<basic_vector<OldT, Lanes...>, Tnew> {
-    using type = vector<Tnew, Lanes...>;
+template <class T, Scalar U>
+using replace_element_t =
+    typename replace_element_type<std::decay_t<T>, U>::type;
+
+template <Vector T, size_t... Lanes> struct replace_lanes_type {
+    using type = vector<typename T::element_type, Lanes...>;
 };
-namespace detail {
-template <typename T, typename Lanes> struct MakeVectorType;
 
-// 特化 ExtractDims 以处理 fixed_shape
-template <typename T, size_t... Lanes>
-struct MakeVectorType<T, fixed_shape<Lanes...>> {
-    using vector_type = ntt::vector<T, Lanes...>;
-};
-}; // namespace detail
-
-template <typename T, IsFixedDims Lanes>
-using make_vector_t = typename detail::MakeVectorType<T, Lanes>::vector_type;
-
+template <Vector T, size_t... Lanes>
+using replace_lanes_t = typename replace_lanes_type<T, Lanes...>::type;
 } // namespace nncase::ntt
