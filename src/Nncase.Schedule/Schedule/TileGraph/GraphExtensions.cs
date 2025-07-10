@@ -268,7 +268,7 @@ public static class GraphExtensions
         {
             foreach (var sourceChild in sourceGraph.Clusters.OfType<TieredTileGraph>())
             {
-                var destChild = destGraph.CreateCluster<TieredTileGraph>(sourceChild.Level, sourceChild.OpId, sourceChild.DomainRelation);
+                var destChild = destGraph.CreateCluster<TieredTileGraph>(sourceChild.Level, sourceChild.OpId, sourceChild.DomainRelation, sourceChild.DomainBoundExprs.ToArray(), sourceChild.DomainDynamic.ToArray());
                 CloneInternal(sourceChild, destChild);
             }
         }

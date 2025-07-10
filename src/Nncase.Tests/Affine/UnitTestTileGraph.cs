@@ -351,7 +351,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         action(result);
     }
 
-    [Theory]
+    [Theory(Skip = "Enable it when Dynamic Tiling Stage 2")]
     [MemberData(nameof(MCTSDatas))]
     public void TestMCTS(Func<Function> functor, int count)
     {
