@@ -28,9 +28,9 @@ template <size_t perm_n, size_t perm_c, size_t perm_h, size_t perm_w>
 void benchmark_ntt_transpose(const std::string &mode) {
 #if __riscv
     constexpr size_t n = 4;
-    constexpr size_t c = 4;
-    constexpr size_t h = 4;
-    constexpr size_t w = 4;
+    constexpr size_t c = 5;
+    constexpr size_t h = 6;
+    constexpr size_t w = 8;
 #elif __x86_64__
     constexpr size_t n = 6;
     constexpr size_t c = 6;
