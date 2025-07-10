@@ -18,6 +18,7 @@
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
+#include <riscv_vector.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -27,139 +28,266 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
 #if __riscv_vector
-static void reduce_block(int dim, int block, const float *input, float *out,
-                         int gap) {
-    __asm volatile(
-        "vsetvli t0, %[block], e32, m8;"
-        "mv a1, %[input];"
-        "mv a3, %[gap];"
-        "mv a0, %[dim];"
-        "fcvt.s.w ft0, a0;"
-        "slli a3, a3, 2;"
-        "vmv.v.x v8, x0;"
-        "reduce_block%=:;"
-        "vle32.v v16, (a1);"
-        "vfadd.vv v8, v16, v8;"
-        "add a1,a1,a3;"
-        "addi a0, a0, -1;"
-        "bnez a0, reduce_block%=;"
-        "vfdiv.vf v8, v8, ft0;"
-        "vse32.v v8, ( %[out]);" ::[dim] "r"(dim),
-        [block] "r"(block), [input] "r"(input), [out] "r"(out), [gap] "r"(gap)
-        : "t0", "a0", "a1", "a3", "ft0", "v8", "v16");
-}
 
-static void reduce_mean(const float *input, float *out, int dim, int n) {
-    __asm volatile(
+result<void> reduce_max_impl(const float *in, float *out, size_t outter_size,
+                             size_t inner_size, size_t reduce_size) {
+    for (size_t i = 0; i < outter_size; ++i) {
+        size_t outer_offset = i * reduce_size * inner_size;
+        for (size_t j = 0; j < inner_size; ++j) {
+            size_t base_index = outer_offset + j;
+            float max_val = in[base_index];
+            size_t remaining = reduce_size;
 
-        "mv a1, %[input];"
-        "mv a2,  %[out]; "
-        "mv a3, %[n];"
-        "fcvt.s.w ft0, %[dim];"
-        "reduce_mean_n_cycle%=:;"
-        "mv a0, %[dim];"
-        "vsetvli t0, a0, e32, m8;"
-        "vmv.s.x v16, x0;"
-        "reduce_mean2%=:;"
-        "vsetvli t0, a0, e32, m8;"
-        "vle32.v v8, (a1);"
-        "slli t1,t0, 2;"
-        "sub a0,a0,t0;"
-        "add a1, a1, t1;"
-        "vfredusum.vs v16,v8,v16;"
-        "bnez a0, reduce_mean2%=;"
-        "vfmv.f.s ft1, v16;"
-        "fdiv.s ft1,ft1,ft0;"
-        "fsw ft1, (a2);"
-        "addi a2, a2, 4;"
-        "addi a3,a3, -1;"
-        "bnez a3, reduce_mean_n_cycle%=;" ::[dim] "r"(dim),
-        [n] "r"(n), [input] "r"(input), [out] "r"(out)
-        : "t0", "t1", "a0", "a1", "a2", "a3", "ft0", "ft1", "v8", "v16");
-}
+            // set vlen and convert scaler to vector
+            if (0) // m1
+            {
+                size_t vl = vsetvl_e32m1(remaining);
+                vfloat32m1_t v_max = vfmv_v_f_f32m1(max_val, vl);
 
-static void reduce_mean_s(int32_t c, int32_t dim, const float *input,
-                          float *out, int32_t gap) {
-#define BLOCK_N 32
-    while (c--) {
-        const float *tmp_input = input;
-        for (int j = 0; j < gap / BLOCK_N; ++j) {
-            reduce_block(dim, BLOCK_N, tmp_input, out, gap);
-            tmp_input += BLOCK_N;
-            out += BLOCK_N;
+                // process full registers data.
+                while (remaining / vl > 0) {
+                    vfloat32m1_t v_in = vle32_v_f32m1(&in[base_index], vl);
+                    v_max = vfmax_vv_f32m1(v_max, v_in, vl);
+
+                    remaining -= vl;
+                    base_index += vl;
+                }
+                vfloat32m1_t reduced_max_ =
+                    vfredmax_vs_f32m1_f32m1(v_max, v_max, v_max, vl);
+                max_val = vfmv_f_s_f32m1_f32(reduced_max_);
+
+                // process the remaining elements
+                if (remaining > 0) {
+                    vl = vsetvl_e32m1(remaining);
+                    v_max = vfmv_v_f_f32m1(max_val, vl);
+                    vfloat32m1_t v_in = vle32_v_f32m1(&in[base_index], vl);
+                    v_max = vfmax_vv_f32m1(v_max, v_in, vl);
+                    reduced_max_ =
+                        vfredmax_vs_f32m1_f32m1(v_max, v_max, v_max, vl);
+                    max_val = vfmv_f_s_f32m1_f32(reduced_max_);
+                }
+            } else // m4
+            {
+                // set vlen and convert scaler to vector
+                size_t vl = vsetvl_e32m4(remaining);
+                vfloat32m4_t v_max = vfmv_v_f_f32m4(max_val, vl);
+
+                // process full registers data.
+                while (remaining / vl > 0) {
+                    vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                    v_max = vfmax_vv_f32m4(v_max, v_in, vl);
+
+                    remaining -= vl;
+                    base_index += vl;
+                }
+                vfloat32m1_t reduced_max_ = vfredmax_vs_f32m4_f32m1(
+                    vundefined_f32m1(), v_max, vfmv_v_f_f32m1(max_val, vl), vl);
+                max_val = vfmv_f_s_f32m1_f32(reduced_max_);
+
+                // process the remaining elements
+                if (remaining > 0) {
+                    vl = vsetvl_e32m4(remaining);
+                    v_max = vfmv_v_f_f32m4(max_val, vl);
+                    vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                    v_max = vfmax_vv_f32m4(v_max, v_in, vl);
+                    reduced_max_ = vfredmax_vs_f32m4_f32m1(
+                        vundefined_f32m1(), v_max, vfmv_v_f_f32m1(max_val, vl),
+                        vl);
+                    max_val = vfmv_f_s_f32m1_f32(reduced_max_);
+                }
+            }
+            out[i * inner_size + j] = max_val;
         }
-        int left_number = gap & (BLOCK_N - 1);
-        if (left_number) {
-            reduce_block(dim, left_number, tmp_input, out, gap);
-            out += left_number;
+    }
+    return ok();
+}
+
+result<void> reduce_min_impl(const float *in, float *out, size_t outter_size,
+                             size_t inner_size, size_t reduce_size) {
+    for (size_t i = 0; i < outter_size; ++i) {
+        size_t outer_offset = i * reduce_size * inner_size;
+        for (size_t j = 0; j < inner_size; ++j) {
+            size_t base_index = outer_offset + j;
+            float min_val = in[base_index];
+            size_t remaining = reduce_size;
+
+            // set vlen and convert scaler to vector
+            size_t vl = vsetvl_e32m4(remaining);
+            vfloat32m4_t v_min = vfmv_v_f_f32m4(min_val, vl);
+
+            // process full registers data.
+            while (remaining / vl > 0) {
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_min = vfmin_vv_f32m4(v_min, v_in, vl);
+
+                remaining -= vl;
+                base_index += vl;
+            }
+            vfloat32m1_t reduced_min_ = vfredmin_vs_f32m4_f32m1(
+                vundefined_f32m1(), v_min, vfmv_v_f_f32m1(min_val, vl), vl);
+            min_val = vfmv_f_s_f32m1_f32(reduced_min_);
+
+            // process the remaining elements
+            if (remaining > 0) {
+                vl = vsetvl_e32m4(remaining);
+                v_min = vfmv_v_f_f32m4(min_val, vl);
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_min = vfmin_vv_f32m4(v_min, v_in, vl);
+                reduced_min_ = vfredmin_vs_f32m4_f32m1(
+                    vundefined_f32m1(), v_min, vfmv_v_f_f32m1(min_val, vl), vl);
+                min_val = vfmv_f_s_f32m1_f32(reduced_min_);
+            }
+
+            out[i * inner_size + j] = min_val;
         }
-        input += dim * gap;
     }
+    return ok();
 }
 
-static int compute_size_by_index(gsl::span<const size_t> input, int start_index,
-                                 int end_index) {
-    int init_value = 1;
-    for (int i = start_index; i < end_index; ++i) {
-        init_value *= input[i];
+result<void> reduce_sum_impl(const float *in, float *out, size_t outter_size,
+                             size_t inner_size, size_t reduce_size) {
+    for (size_t i = 0; i < outter_size; ++i) {
+        size_t outer_offset = i * reduce_size * inner_size;
+        for (size_t j = 0; j < inner_size; ++j) {
+            size_t base_index = outer_offset + j;
+            float sum = 0.0f;
+            size_t remaining = reduce_size;
+
+            // set vlen and convert scaler to vector
+            size_t vl = vsetvl_e32m4(remaining);
+            vfloat32m4_t v_sum = vfmv_v_f_f32m4(0.0f, vl);
+
+            // process full registers data.
+            while (remaining / vl > 0) {
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_sum = vfadd_vv_f32m4(v_sum, v_in, vl);
+
+                remaining -= vl;
+                base_index += vl;
+            }
+            vfloat32m1_t reduced_sum_ = vfredosum_vs_f32m4_f32m1(
+                vundefined_f32m1(), v_sum, vfmv_v_f_f32m1(0.0f, vl), vl);
+            sum += vfmv_f_s_f32m1_f32(reduced_sum_);
+
+            // process the remaining elements
+            if (remaining > 0) {
+                vl = vsetvl_e32m4(remaining);
+                v_sum = vfmv_v_f_f32m4(0.0f, vl);
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_sum = vfadd_vv_f32m4(v_sum, v_in, vl);
+                reduced_sum_ = vfredosum_vs_f32m4_f32m1(
+                    vundefined_f32m1(), v_sum, vfmv_v_f_f32m1(0.0f, vl), vl);
+                sum += vfmv_f_s_f32m1_f32(reduced_sum_);
+            }
+
+            out[i * inner_size + j] = sum;
+        }
     }
-    return init_value;
+    return ok();
 }
 
-static int get_parameter(gsl::span<const size_t> in_shape,
-                         gsl::span<const size_t> axis, gsl::span<int> out) {
-    int min_index = axis[0];
-    int max_index = axis[0];
-    for (int i = 1; i < (int)axis.size(); ++i) {
-        int value = axis[i];
-        if (value < min_index)
-            min_index = value;
-        else if (value > max_index)
-            max_index = value;
+result<void> reduce_prod_impl(const float *in, float *out, size_t outter_size,
+                              size_t inner_size, size_t reduce_size) {
+    for (size_t i = 0; i < outter_size; ++i) {
+        size_t outer_offset = i * reduce_size * inner_size;
+        for (size_t j = 0; j < inner_size; ++j) {
+            size_t base_index = outer_offset + j;
+            float acc = 1.0f;
+            size_t remaining = reduce_size;
+
+            // set vlen and convert scaler to vector
+            size_t vl = vsetvl_e32m4(remaining);
+            vfloat32m4_t v_acc = vfmv_v_f_f32m4(1.0f, vl);
+
+            // process full registers data.
+            while (remaining / vl > 0) {
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_acc = vfmul_vv_f32m4(v_acc, v_in, vl);
+
+                remaining -= vl;
+                base_index += vl;
+            }
+            for (size_t i = 0; i < vl; i++) {
+                acc *= vfmv_f_s_f32m4_f32(
+                    vslidedown_vx_f32m4(vundefined_f32m4(), v_acc, i, vl));
+            }
+
+            // process the remaining elements
+            if (remaining > 0) {
+                vl = vsetvl_e32m4(remaining);
+                v_acc = vfmv_v_f_f32m4(1.0f, vl);
+                vfloat32m4_t v_in = vle32_v_f32m4(&in[base_index], vl);
+                v_acc = vfmul_vv_f32m4(v_acc, v_in, vl);
+                for (size_t i = 0; i < vl; i++) {
+                    acc *= vfmv_f_s_f32m4_f32(
+                        vslidedown_vx_f32m4(vundefined_f32m4(), v_acc, i, vl));
+                }
+            }
+
+            out[i * inner_size + j] = acc;
+        }
     }
-    int _sum1 = (max_index + min_index) * (max_index - min_index + 1) >> 1;
-    int _sum2 = axis[0];
-    for (int i = 1; i < (int)axis.size(); ++i) {
-        _sum2 += axis[i];
-    }
-    if (_sum2 != _sum1) {
-        return 1;
-    }
-    out[0] = compute_size_by_index(in_shape, min_index, max_index + 1);
-    out[1] = compute_size_by_index(in_shape, 0, min_index);
-    out[2] = compute_size_by_index(in_shape, max_index + 1, in_shape.size());
-    return 0;
+    return ok();
 }
+
 #endif
 
 result<void> optimized::reduce(
-    typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
-    const gsl::byte *init_value, const gsl::byte *input, gsl::byte *output,
-    gsl::span<const size_t> in_shape, gsl::span<const size_t> axis,
-    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-    bool keep_dims, kernel_context &context) noexcept {
+    NNCASE_UNUSED typecode_t typecode, nncase::runtime::stackvm::reduce_op_t op,
+    NNCASE_UNUSED const gsl::byte *init_value, const gsl::byte *input,
+    gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> axis,
+    NNCASE_UNUSED gsl::span<const size_t> in_strides,
+    NNCASE_UNUSED gsl::span<const size_t> out_strides,
+    NNCASE_UNUSED bool keep_dims,
+    NNCASE_UNUSED kernel_context &context) noexcept {
 #if __riscv_vector
-    do {
-        if (op == reduce_op_t::mean && typecode == dt_float32) {
-            int parameters[3];
-            int ret = get_parameter(in_shape, axis, parameters);
-            if (ret) {
+    if (typecode == dt_float32) {
+        // The type of axis is 'size_t'. It is real axis.
+        // Get inner_size、outter_size.
+        size_t inner_size = 1, outter_size = 1;
+        size_t reduce_size = in_shape[axis[0]];
+
+        for (size_t i = 0; i < axis[0]; i++) {
+            outter_size *= in_shape[i];
+        }
+
+        for (size_t i = axis[0] + 1; i < in_shape.size(); i++) {
+            inner_size *= in_shape[i];
+        }
+
+        const float *in = reinterpret_cast<const float *>(input);
+        float *out = reinterpret_cast<float *>(output);
+        if (axis.size() == 1 && axis[0] == in_shape.size() - 1) {
+            switch (op) {
+            case reduce_op_t::max:
+                return reduce_max_impl(in, out, outter_size, inner_size,
+                                       reduce_size);
+            case reduce_op_t::min:
+                return reduce_min_impl(in, out, outter_size, inner_size,
+                                       reduce_size);
+            case reduce_op_t::sum:
+                return reduce_sum_impl(in, out, outter_size, inner_size,
+                                       reduce_size);
+            case reduce_op_t::mean:
+                reduce_sum_impl(in, out, outter_size, inner_size, reduce_size)
+                    .unwrap();
+                for (size_t i = 0; i < outter_size; i++) {
+                    out[i] *= 1.0f / reduce_size;
+                }
+                return ok();
+            case reduce_op_t::prod:
+                return reduce_prod_impl(in, out, outter_size, inner_size,
+                                        reduce_size);
+            default:
                 break;
             }
-            auto input_data = IN_CAST(float, input);
-            auto out_data = OUT_CAST(float, output);
-            int gap = parameters[2];
-            if (gap == 1) {
-                reduce_mean(input_data, out_data, parameters[0], parameters[1]);
-            } else {
-                reduce_mean_s(parameters[1], parameters[0], input_data,
-                              out_data, gap);
-            }
-            return ok();
         }
-    } while (0);
-#endif
+        // TODO: implement non-last axis reduce
+        // TODO: implement multi-axis reduce
+    }
 
+#endif
     return stackvm::reference::reduce(typecode, op, init_value, input, output,
                                       in_shape, axis, in_strides, out_strides,
                                       keep_dims, context);

@@ -13,14 +13,14 @@ jobs:
   code-format:
     permissions:
       contents: write  # for stefanzweifel/git-auto-commit-action to push code in repo
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v4
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: "7.0"
+        dotnet-version: "7.0.x"
 
     - name: Install Formatters
       run: |

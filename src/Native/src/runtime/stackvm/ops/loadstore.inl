@@ -266,7 +266,9 @@ NNCASE_STACKVM_DISPATCH_END()
     RETURN_RESULT_IMPL(dt_uint8, uint8_t);                                     \
     RETURN_RESULT_IMPL(dt_int32, int32_t);                                     \
     RETURN_RESULT_IMPL(dt_uint32, uint32_t);                                   \
-    RETURN_RESULT_IMPL(dt_float32, float);
+    RETURN_RESULT_IMPL(dt_float32, float);                                     \
+    RETURN_RESULT_IMPL(dt_bfloat16, bfloat16);                                 \
+    RETURN_RESULT_IMPL(dt_float16, half);
 
 NNCASE_STACKVM_DISPATCH_BEGIN(LDSCALAR)
 try_var(tensor, pop_tensor());

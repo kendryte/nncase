@@ -310,3 +310,6 @@ cmake-build-*
 
 .mono/
 .history/
+
+# set dotnet version
+global.json

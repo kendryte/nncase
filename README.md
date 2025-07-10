@@ -13,12 +13,6 @@ Technical Discussion QQ Group: 790699378 .   Answer: 人工智能
 
 ---
 
-## Tips
-
-- [2024/05/28] [BUG] nncase v2.8.3: ReduceSum(onnx) has a BUG that causes segmentfault. Please downgrade to v2.8.2, if your model has ReduceSum.
-
----
-
 ## K230
 
 - [Usage](./docs/USAGE_v2_EN.md)
@@ -80,9 +74,9 @@ All version of `nncase` and `nncase-kpu` in [Release](https://github.com/kendryt
 
 ### Demo
 
-|[eye gaze](https://developer.canaan-creative.com/modelDetail?id=142)  | [space_resize](https://developer.canaan-creative.com/modelDetail?id=141) | [face pose](https://developer.canaan-creative.com/modelDetail?id=125) ||
-|---|---|---|
-|<img src="https://github.com/kendryte/nncase_docs/blob/master/gif/eye_gaze_result.gif?raw=true"  alt="gif"> | <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/space_resize.gif?raw=true" alt="gif">| <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/face_pose_result.gif?raw=true">|
+|[eye gaze](https://developer.canaan-creative.com/modelDetail?id=142)  | [space_resize](https://developer.canaan-creative.com/modelDetail?id=141) | [face pose](https://developer.canaan-creative.com/modelDetail?id=125)|
+| --- | --- | --- |
+| <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/eye_gaze_result.gif?raw=true"  alt="gif"> | <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/space_resize.gif?raw=true" alt="gif">| <img src="https://github.com/kendryte/nncase_docs/blob/master/gif/face_pose_result.gif?raw=true"> |
 
 ---
 

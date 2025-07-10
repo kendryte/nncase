@@ -49,8 +49,10 @@ template <typename T> datatype_t from_dtype() {
         return dt_int32;
     else if (std::is_same_v<T, int64_t>)
         return dt_int64;
-    else if (std::is_same_v<T, std::bfloat16>)
-        throw std::runtime_error("Unsupported float16");
+    else if (std::is_same_v<T, bfloat16>)
+        return dt_bfloat16;
+    else if (std::is_same_v<T, half>)
+        return dt_float16;
     else if (std::is_same_v<T, float>)
         return dt_float32;
     else if (std::is_same_v<T, double>)
