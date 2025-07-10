@@ -36,21 +36,13 @@ constexpr auto segments_cnt(const TPerms &perms) noexcept {
 template <Tensor TIn, class TOut, FixedDimensions TPerms>
     requires(bool(TIn::rank() == std::decay_t<TOut>::rank()) &&
              bool(TIn::rank() == TPerms::rank()))
-void transpose(
-    const TIn &input, TOut &&output,
-    const TPerms &perms = make_index_shape<TIn::rank()>().reverse()) {
+void transpose(const TIn &input, TOut &&output,
+               [[maybe_unused]] const TPerms &perms =
+                   make_index_shape<TIn::rank()>().reverse()) {
     constexpr auto rank = TIn::rank();
-    const auto pos_perms = positive_axes(perms, rank);
-    // constexpr auto segs_cnt = transpose_detail::segments_cnt(perms);
-    // const auto cdims_input = contiguous_dims(input.shape(), input.strides());
-    // const auto cdims_output = contiguous_dims(output.shape(),
-    // output.strides());
+    constexpr TPerms perm_const;
+    const auto pos_perms = positive_axes(perm_const, rank);
 
-    // if constexpr (cdims_input == rank && cdims_output == rank &&
-    //               segs_cnt <= 4) {
-    //     ntt::u_transpose(input, output, perms,
-    //                      std::make_index_sequence<segs_cnt>{});
-    // } else {
     ntt::apply(input.shape(), [&](auto index) {
         auto out_index =
             generate_shape<rank>([&](auto i) { return index[pos_perms[i]]; });
