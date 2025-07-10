@@ -40,21 +40,12 @@ void transpose(const TIn &input, TOut &&output,
                [[maybe_unused]] const TPerms &perms =
                    make_index_shape<TIn::rank()>().reverse()) {
     constexpr auto rank = TIn::rank();
-    constexpr auto const_axes = TPerms{};
-    constexpr auto pos_perms = positive_axes(const_axes, rank);
+    constexpr TPerms perm_const;
+    constexpr auto pos_perms = positive_axes(perm_const, rank);
 
-    // ntt::apply(input.shape(), [&](auto index) {
-    //     auto out_index =
-    //         generate_shape<rank>([&](auto i) { return index[pos_perms[i]];
-    //         });
-    //     output(out_index) = input(index);
-    // });
-
-    auto domain = input.shape();
-    dynamic_shape_t<rank> out_index;
-    ntt::apply(domain, [&](auto index) {
-        loop<domain.rank()>(
-            [&](auto i) { out_index[i] = index[pos_perms[i]]; });
+    ntt::apply(input.shape(), [&](auto index) {
+        auto out_index =
+            generate_shape<rank>([&](auto i) { return index[pos_perms[i]]; });
         output(out_index) = input(index);
     });
     // }
