@@ -28,4 +28,6 @@ public sealed partial class PagedAttention : NTTKernelOp
     public int LayerId { get; }
 
     public IRArray<AttentionDimKind> Layout { get; }
+
+    public int HiddenSize { get; }
 }

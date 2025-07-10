@@ -10,6 +10,7 @@ using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
 
@@ -131,7 +132,7 @@ public sealed class PackReduce : PackRule
     public override Pattern Pattern { get; } = IsReduce(
       "target",
       _ => true,
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() & HasRankedShape() },
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() & HasRankedShape() },
       IsFixedShape("axes"),
       IsTensorConst("initValue") with { TypePattern = IsFloat() },
       IsTensorConst("keepDims") with { TypePattern = IsBool() });
@@ -279,8 +280,8 @@ public sealed class PackMatMul : PackRule
       "matmul",
       "target",
       (dytpe) => true,
-      IsWildcard("lhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-      IsWildcard("rhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("lhs") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() });
 
     /// <summary>
     /// Gets a value indicating whether trans b, note only for test.
@@ -457,7 +458,7 @@ public sealed class PackUnary : PackRule
     public override Pattern Pattern { get; } = IsUnary(
       "target",
       op => op.UnaryOp is not UnaryOp.Exp,
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() });
 
     public static List<Expr> AddCandidate(IR.Math.Unary op, Expr input, int[] packedAxes, int[] lanes)
     {
@@ -508,8 +509,8 @@ public sealed class PackBinary : PackRule
     public override Pattern Pattern { get; } = IsBinary(
       "target",
       _ => true,
-      IsWildcard("lhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-      IsWildcard("rhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("lhs") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() });
 
     public static List<Expr> AddCandidate(IR.Math.Binary op, Expr lhs, Expr rhs, Expr candidate, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes)
     {
@@ -591,7 +592,7 @@ public sealed class PackSwish : PackRule
 
     public override Pattern Pattern { get; } = IsSwish(
       "target",
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
       IsTensorConst("beta") with { TypePattern = IsFloatScalar() });
 
     public override List<Expr> GetReplaceCandidates(IMatchResult result, RunPassContext context)
@@ -639,7 +640,7 @@ public sealed class PackTranspose : PackRule
 
     public override Pattern Pattern { get; } = IsTranspose(
       "trans",
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
       IsFixedShape("perm"));
 
     public static List<Expr> AddCandidate(Expr input, int[] perm, int[] packedAxes, int[] lanes)
@@ -699,7 +700,7 @@ public sealed class PackUnsqueeze : PackRule
 
     public override Pattern Pattern { get; } = IsUnsqueeze(
       "unsq",
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
       IsFixedShape("axes"));
 
     public static List<Expr> AddCandidate(Expr input, int[] axes, int[] packedAxes, int[] lanes)
@@ -772,7 +773,7 @@ public sealed class PackConv2D : PackRule
     public override Pattern Pattern { get; } = IsConv2D(
         "conv",
         conv => conv.PadMode == PadMode.Constant,
-        IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
+        IsWildcard("input") with { TypePattern = !IsVector() },
         IsWildcard("weights"),
         IsWildcard("bias"),
         IsFixedShape("stride"),
@@ -851,14 +852,20 @@ public sealed class PackReshape : PackRule
 
     public override Pattern Pattern { get; } = IsReshape(
       "target",
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() & HasFixedShape() },
-      IsFixedShape("newShape"));
+      IsWildcard("input") with { TypePattern = !IsVector() },
+      IsRankedShape("newShape"));
 
-    public static List<Expr> AddCandidate(Expr input, long[] newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, Shape newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
         if (packedAxes.Length == 0)
+        {
+            return rets;
+        }
+
+        // not support pack on dynamic dims.
+        if (inShape.Any(s => s is { IsFixed: false } && packedAxes.Contains(inShape.ToArray().IndexOf(s))))
         {
             return rets;
         }
@@ -870,7 +877,7 @@ public sealed class PackReshape : PackRule
             var mapedOutAxes = forwardDict[axis];
             if (mapedOutAxes.Count > 1)
             {
-                if (mapedOutAxes.Count(i => newShape[i] != 1) > 1)
+                if (mapedOutAxes.Count(i => newShape[i].FixedValue != 1) > 1)
                 {
                     // we can pack on split axis and unpack on splited last axis.
                     unpackAxes.Add(mapedOutAxes[^1]);
@@ -878,7 +885,7 @@ public sealed class PackReshape : PackRule
                 else
                 {
                     // unsqueeze.
-                    var outAxis = mapedOutAxes.FirstOrDefault(i => newShape[i] != 1, mapedOutAxes.First());
+                    var outAxis = mapedOutAxes.FirstOrDefault(i => newShape[i].FixedValue != 1, mapedOutAxes.First());
                     if (backwardDict[outAxis].Count != 1)
                     {
                         continue;
@@ -914,7 +921,7 @@ public sealed class PackReshape : PackRule
         var packedNewShape = newShape.ToArray();
         foreach (var (lane, axis) in lanes.Zip(unpackAxes))
         {
-            packedNewShape[axis] = MathUtility.CeilDiv(packedNewShape[axis], lane);
+            packedNewShape[axis] = Dimension.CeilDiv(packedNewShape[axis], lane);
         }
 
         var nreshape = IR.F.Tensors.Reshape(packed, packedNewShape);
@@ -932,12 +939,12 @@ public sealed class PackReshape : PackRule
         var rets = new List<Expr>();
 
         var input = (Expr)result["input"];
-        var newShape = ((RankedShape)result["newShape"]).ToValueArray();
-        var inShape = input.CheckedShape.ToValueArray();
+        var newShape = (RankedShape)result["newShape"];
+        var inShape = input.CheckedShape;
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         // 1. find the mapping transforms
-        if (!IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat))
+        if (!IRUtility.TryGetShapeMapMatrix(CompilerServices.GetMaxShape(inShape), CompilerServices.GetMaxShape(newShape), out var mat))
         {
             return new List<Expr> { };
         }
@@ -969,7 +976,7 @@ public sealed class PackSlice : PackRule
 
     public override Pattern Pattern { get; } = IsSlice(
       "target",
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
       IsFixedShape("begins"),
       IsFixedShape("ends"),
       IsFixedShape("axes"),
@@ -1078,7 +1085,7 @@ public sealed class PackConcat : PackRule
             var patterns = new Pattern[exprs.Length];
             for (var i = 0; i < patterns.Length; i++)
             {
-                patterns[i] = IsWildcard($"input_{i}", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() };
+                patterns[i] = IsWildcard($"input_{i}") with { TypePattern = IsFloat() & !IsVector() };
             }
 
             return patterns;
@@ -1142,8 +1149,8 @@ public sealed class PackCompare : PackRule
     public override Pattern Pattern { get; } = IsCompare(
       "target",
       _ => true,
-      IsWildcard("lhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
-      IsWildcard("rhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("lhs") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() });
 
     public static List<Expr> AddCandidate(IR.Math.Compare op, Expr lhs, Expr rhs, Expr candidate, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes, MaskVectorStyle maskVectorStyle)
     {
@@ -1241,17 +1248,6 @@ public sealed class PackCast : PackRule
 
         var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
 
-        if (inShape.Any(s => !s.IsFixed))
-        {
-            return rets;
-        }
-
-        // FIXME: supoort other axis
-        if (packedAxes[0] != inShape.Rank - 1)
-        {
-            return rets;
-        }
-
         var scale = 1f * call.CheckedDataType.SizeInBytes / input.CheckedDataType.SizeInBytes;
         var outLanes = lanes.Select(l => (int)(l / scale)).ToArray();
         var newType = new VectorType(op.NewType, outLanes);
@@ -1300,10 +1296,10 @@ public sealed class PackExpand : PackRule
       "target",
       "call",
       _ => true,
-      IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
-      IsFixedShape("shape"));
+      IsWildcard("input") with { TypePattern = !IsVector() },
+      IsRankedShape("shape"));
 
-    public static List<Expr> AddCandidate(Call call, Expr input, long[] shape, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, Shape shape, int[] packedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.Expand)call.Target;
@@ -1313,7 +1309,7 @@ public sealed class PackExpand : PackRule
             return rets;
         }
 
-        if (packedAxes.Any(a => inShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
+        if (packedAxes.Any(a => inShape[a] is { IsFixed: true, FixedValue: 1 }))
         {
             return rets;
         }
@@ -1324,7 +1320,7 @@ public sealed class PackExpand : PackRule
         var packedNewShape = shape.ToArray();
         foreach (var (lane, axis) in lanes.Zip(packedAxes))
         {
-            packedNewShape[axis] = MathUtility.CeilDiv(packedNewShape[axis], lane);
+            packedNewShape[axis] = Dimension.CeilDiv(packedNewShape[axis], lane);
         }
 
         var expand = IR.F.Tensors.Expand(packedInput, packedNewShape);
@@ -1342,7 +1338,7 @@ public sealed class PackExpand : PackRule
         var rets = new List<Expr>();
         var call = (Call)result["call"];
         var input = (Expr)result["input"];
-        var shape = ((RankedShape)result["shape"]).ToValueArray();
+        var shape = (RankedShape)result["shape"];
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         for (int i = 0; i < input.CheckedShape.Rank; i++)
@@ -1368,9 +1364,9 @@ public sealed class PackWhere : PackRule
         "target",
         "call",
         _ => true,
-        IsWildcard("condition", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsMaskVector() },
-        IsWildcard("lhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
-        IsWildcard("rhs", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() });
+        IsWildcard("condition") with { TypePattern = !IsMaskVector() },
+        IsWildcard("lhs") with { TypePattern = !IsVector() },
+        IsWildcard("rhs") with { TypePattern = !IsVector() });
 
     public static List<Expr> AddCandidate(Expr condition, Expr lhs, Expr rhs, Expr candidate, int[] conditionPackedAxes, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] conditionLanes, int[] lhsLanes, int[] rhsLanes, MaskVectorStyle maskVectorStyle)
     {
@@ -1477,7 +1473,7 @@ public sealed class PackGather : PackRule
         "target",
         "call",
         _ => true,
-        IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
+        IsWildcard("input") with { TypePattern = !IsVector() },
         IsWildcard("index"));
 
     public static List<Expr> AddCandidate(Call call, Expr input, Expr index, int[] packedAxes, int[] lanes)
@@ -1532,9 +1528,9 @@ public sealed class PackScatterND : PackRule
         "target",
         "call",
         _ => true,
-        IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() },
+        IsWildcard("input") with { TypePattern = !IsVector() },
         IsTensorConst("indices"),
-        IsWildcard("updates", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = !IsVector() });
+        IsWildcard("updates") with { TypePattern = !IsVector() });
 
     public static List<Expr> AddCandidate(Call call, Expr input, TensorConst indices, Expr updates, int[] packedAxes, int[] lanes)
     {

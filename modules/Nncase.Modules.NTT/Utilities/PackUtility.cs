@@ -182,7 +182,7 @@ public static class PackUtility
         return (forward, backward);
     }
 
-    private static Dimension PadForAlign(Dimension dim, int align)
+    public static Dimension PadForAlign(Dimension dim, int align)
     {
         return Dimension.AlignUp(dim, align) - dim;
     }

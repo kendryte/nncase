@@ -146,7 +146,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         {
             for (var i = 0; i < input.AxisPolicies.Count; i++)
             {
-                if (input.AxisPolicies[i] is SBPSplit)
+                if (input.AxisPolicies[i] is SBPSplit && (!paddings[i].IsFixed || paddings[i].Sum().FixedValue != 0))
                 {
                     return new InvalidType("dynamic pad not support split on axes for now.");
                 }

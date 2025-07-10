@@ -853,10 +853,11 @@ public abstract class HuggingFaceModel
         var output = IR.F.NN.PagedAttention(
             packedQ,
             paskKeyValues,
-            Tensor.Zeros(DataTypes.UInt8, [extra_size]),
+            IR.F.Buffer.Uninitialized(DataTypes.UInt8, TIR.MemoryLocation.Data, [extra_size]),
             scaling.CastTo(pagedAttentionConfig.KVPrimType, CastMode.KDefault),
             count,
-            qDestLayout);
+            qDestLayout,
+            (int)(long)Context!.Config!["hidden_size"]);
 
         output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qPackedAxis) : output;
         output = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(output, DataTypes.Float32) : output;
