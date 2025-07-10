@@ -53,7 +53,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
     public string ModuleKind { get; }
 
-    public RankedShape PartialShapeFromDomain(Isl.set parentDomain, Isl.set tiledDomain, Isl.map access, uint dim, Dictionary<string, Dimension> paramVarMap)
+    public RankedShape PartialShapeFromDomain(Isl.set parentDomain, Isl.set tiledDomain, Isl.map access, uint dim, Dictionary<string, Dimension> paramDimMap)
     {
         var domainRank = parentDomain.dim(Isl.dim_type.set);
         var shapeRank = access.dim(Isl.dim_type.out_);
@@ -83,7 +83,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             else
             {
                 var pa = bufferShapeMpa.at(i);
-                dimensions[i] = ISLUtility.ToDimension(pa, paramVarMap);
+                dimensions[i] = ISLUtility.ToDimension(pa, paramDimMap);
             }
         }
 
@@ -118,14 +118,15 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 dims.Add($"d{i}");
                 outerDims.Add($"d{i}_out");
                 innerDims.Add($"d{i}_in");
-                constraints.Add($"d{i}_out = d{i} // {tilesize} and d{i}_in = d{i} - {tilesize} * d{i}_out");
+                constraints.Add($"d{i}_out = {tilesize} * (d{i} // {tilesize}) and d{i}_in = d{i} - d{i}_out");
             }
 
             tilemap = new Isl.map(Isl.ctx.Current, $"{{ [{string.Join(',', dims)}] -> [{string.Join(',', outerDims)},{string.Join(',', innerDims)}] : {string.Join(" and ", constraints)} }}");
         }
 
-        var tiledDomain = parentDomain.apply(tilemap).project_out(Isl.dim_type.out_, 0, (uint)domainRank);
-        var tileUpperBoundsMpa = tiledDomain.max_multi_pw_aff(); // using range set for get cst upper bounds aff.
+        var tiledParentDomain = tilemap.intersect_domain(parentDomain).range();
+        var tiledChildDomain = tiledParentDomain.move_dims(Isl.dim_type.param, 0, Isl.dim_type.set, 0, (uint)domainRank);
+        var childBoundsMpa = tiledChildDomain.max_multi_pw_aff().add_constant(1).sub(tiledChildDomain.min_multi_pw_aff());
 
         // from inner to outer
         var forwardExtents = new Dimension[domainRank];
@@ -136,21 +137,22 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             Dimension stride = nodeMemo.BackWardExtents[0][i] / TileableNodeMemo[value].TileVars[i];
             loopBuilders[i] = T.Serial(out var loopVar, (0L, stop, stride), $"d{i}_Op{value.OpId}_L{value.Level}");
             loopVars[i] = loopVar;
+            paramDimMap.Add($"d{i}_out", loopVar);
             {
                 Dimension forwardExtent;
-                var upperBoundPa = tileUpperBoundsMpa.at(i);
-                if (upperBoundPa.is_cst())
+                var boundPa = childBoundsMpa.at(i);
+                if (boundPa.is_cst())
                 {
-                    forwardExtent = upperBoundPa.max_val().num_si() + 1;
+                    forwardExtent = boundPa.max_val().num_si();
                 }
                 else
                 {
-                    var build = Isl.ast_build.from_context(upperBoundPa.domain_space().universe_set());
-                    var astExpr = build.expr_from(upperBoundPa.add_constant(1));  // +1 for exclusive upper bound
+                    var build = new Isl.ast_build(Isl.ctx.Current);
+                    var astExpr = build.expr_from(boundPa);
                     forwardExtent = ISLUtility.ToDimension(astExpr, paramDimMap);
                     forwardExtent.Metadata = new()
                     {
-                        Range = new(upperBoundPa.min_val().num_si() + 1, upperBoundPa.max_val().num_si() + 1),
+                        Range = new(boundPa.min_val().num_si(), boundPa.max_val().num_si()),
                     };
                 }
 
@@ -194,7 +196,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                         var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
 
                         // calculate the buffer shape.
-                        var partialShape = PartialShapeFromDomain(parentDomain, tiledDomain, accessMap, (uint)i, paramDimMap);
+                        var partialShape = PartialShapeFromDomain(parentDomain, tiledChildDomain, accessMap, (uint)i, paramDimMap);
                         var viewInfo = GetParentSubViewInfo(sl, value, bid, bufferInfo.Map, forwardOffsets[i], partialShape);
                         Expr subView;
                         if (viewInfo.InnerAllocated)

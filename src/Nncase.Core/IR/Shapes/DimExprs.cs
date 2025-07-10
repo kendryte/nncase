@@ -444,10 +444,11 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
 
 public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSelect?>
 {
-    public DimCompareAndSelect(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue)
+    public DimCompareAndSelect(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue, CompareOp compareOp)
         : base([value, expected, trueValue, falseValue])
     {
         Metadata.Range = InferRange();
+        CompareOp = compareOp;
     }
 
     public override DimensionKind Kind => DimensionKind.Dynamic;
@@ -472,11 +473,13 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
     /// </summary>
     public Dimension FalseValue => (Dimension)Operands[3];
 
+    public CompareOp CompareOp { get; }
+
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimCompareAndSelect(this, context);
 
-    public DimCompareAndSelect With(Dimension? value = null, Dimension? expected = null, Dimension? trueValue = null, Dimension? falseValue = null) =>
-        new DimCompareAndSelect(value ?? Value, expected ?? Expected, trueValue ?? TrueValue, falseValue ?? FalseValue);
+    public DimCompareAndSelect With(Dimension? value = null, Dimension? expected = null, Dimension? trueValue = null, Dimension? falseValue = null, CompareOp? compareOp = null) =>
+        new DimCompareAndSelect(value ?? Value, expected ?? Expected, trueValue ?? TrueValue, falseValue ?? FalseValue, compareOp ?? CompareOp);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimCompareAndSelect);
@@ -489,28 +492,52 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
             return true;
         }
 
-        return other is not null && Value.Equals(other.Value) && Expected.Equals(other.Expected) && TrueValue.Equals(other.TrueValue) && FalseValue.Equals(other.FalseValue);
+        return other is not null && Value.Equals(other.Value) && Expected.Equals(other.Expected) && TrueValue.Equals(other.TrueValue) && FalseValue.Equals(other.FalseValue) && CompareOp.Equals(other.CompareOp);
     }
 
     public override Dimension Simplify()
     {
-        if (Value == FalseValue && Expected == TrueValue)
-        {
-            if (Value.IsFixed)
-            {
-                return new DimConst(Value.FixedValue);
-            }
-
-            return Value;
-        }
-
+        // if (CompareOp == CompareOp.Equal)
+        // {
+        //     if (TrueValue == FalseValue)
+        //     {
+        //         return TrueValue;
+        //     }
+        //     else if (Value.IsFixed && Expected.IsFixed)
+        //     {
+        //         return Value.FixedValue == Expected.FixedValue ? TrueValue : FalseValue;
+        //     }
+        //     else if (Value.Metadata?.Range is { Min: var min, Max: var max }
+        //             && Expected.IsFixed
+        //             && (min > Expected.FixedValue || max < Expected.FixedValue))
+        //     {
+        //         return FalseValue;
+        //     }
+        //     else if (Value == FalseValue && Expected == TrueValue)
+        //     {
+        //         return Value;
+        //     }
+        // }
         return this;
     }
 
-    public override string ToString() => $"({Value} == {Expected} ? {TrueValue} : {FalseValue})";
+    public override string ToString()
+    {
+        var compare = CompareOp switch
+        {
+            CompareOp.Equal => "==",
+            CompareOp.NotEqual => "!=",
+            CompareOp.LowerThan => "<",
+            CompareOp.LowerOrEqual => "<=",
+            CompareOp.GreaterThan => ">",
+            CompareOp.GreaterOrEqual => ">=",
+            _ => throw new NotSupportedException($"Unsupported compare operation: {CompareOp}"),
+        };
+        return $"({Value} {compare} {Expected} ? {TrueValue} : {FalseValue})";
+    }
 
     /// <inheritdoc/>
-    protected override int GetHashCodeCore() => HashCode.Combine(Value, Expected, TrueValue, FalseValue);
+    protected override int GetHashCodeCore() => HashCode.Combine(Value, Expected, TrueValue, FalseValue, CompareOp);
 
     private ValueRange<double> InferRange()
     {

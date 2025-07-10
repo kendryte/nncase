@@ -242,18 +242,18 @@
       },
       "libisl.linux-x64": {
         "type": "Transitive",
-        "resolved": "0.0.3",
-        "contentHash": "UE0AzgGx65FLsQ5J/OKVBL5+sLW2hyzqawITuKi7FykvRqY2wN1zABLlY9XXqYHCwwNuyep/dEDQjpLy1oy9eA=="
+        "resolved": "0.0.4",
+        "contentHash": "MW+0UxLeAsVyJ6bn0yka2R5HQdCbtCg/zRZswFaWd8Qi9aVNtJmHVBIMJR1kkNk9vjYLTmGIPPUqwJTKXY7Oog=="
       },
       "libisl.osx-arm64": {
         "type": "Transitive",
-        "resolved": "0.0.3",
-        "contentHash": "J4X78I0m/TemzaPKXPtkQ0fFNA8N+yd3odNny1VDS44cTl08qShpWu8c0z4pIGLlY+fXGSrFwtw6an6upHHVhQ=="
+        "resolved": "0.0.4",
+        "contentHash": "/LNMumw054jnLUMqsnOG+00ya3OpHcBlXNXtspbpQNvRnfhCMAdMc5hDanjhhU8Plq+GuLwHWS4C7rYdm/yOsA=="
       },
       "libisl.osx-x64": {
         "type": "Transitive",
-        "resolved": "0.0.3",
-        "contentHash": "6Q0irKNz50s/AyxT4tuiCmIRFHm+IdYEu7/9yAhAQrEBisVkdQ8N92xiJ037p9DLtfWxSBDpuMnzgNjNK6BOjQ=="
+        "resolved": "0.0.4",
+        "contentHash": "hRMKX5KF8zePmfIbH+btnPRi57bTgEhhzG6kA9koIV4fLR8XpKVKRzHh9pQotFX6LSjr297e3vm/yyStLJR1EQ=="
       },
       "libortki": {
         "type": "Transitive",
@@ -955,7 +955,7 @@
           "DryIoc.dll": "[5.4.3, )",
           "GiGraph.Dot": "[3.0.1, )",
           "Google.OrTools": "[9.12.4544, )",
-          "ISLSharp": "[1.0.3, )",
+          "ISLSharp": "[1.0.4, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[8.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.1, )",
           "Microsoft.Extensions.Options": "[8.0.2, )",
@@ -1140,13 +1140,13 @@
       },
       "ISLSharp": {
         "type": "CentralTransitive",
-        "requested": "[1.0.3, )",
-        "resolved": "1.0.3",
-        "contentHash": "gZE5BvuloDMo4KF+MbL5/9t1LrGaqeFyyjHtSLhNyUZzWn1nO1tphILvJllScbnG9Ej235pz9BEp3YaNOfSEjA==",
+        "requested": "[1.0.4, )",
+        "resolved": "1.0.4",
+        "contentHash": "TZabyHb9+wLsBAc7OUxzHJw3BeJMGXMG4WAVoBpbFJTsBRd64rFepFY80K7iGRungi4GHipt6cj/2vgsHuCwlw==",
         "dependencies": {
-          "libisl.linux-x64": "0.0.3",
-          "libisl.osx-arm64": "0.0.3",
-          "libisl.osx-x64": "0.0.3"
+          "libisl.linux-x64": "0.0.4",
+          "libisl.osx-arm64": "0.0.4",
+          "libisl.osx-x64": "0.0.4"
         }
       },
       "LanguageExt.Core": {

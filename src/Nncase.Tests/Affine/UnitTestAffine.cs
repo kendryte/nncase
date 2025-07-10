@@ -137,16 +137,89 @@ public class UnitTestAffine
     public void TestToDimension()
     {
         using var ctx = Isl.ctx.Create();
-        var map = new Isl.map(ctx, "{ [a,b] -> [a+b] }");
-        var build = Isl.ast_build.from_context(new Isl.set(ctx, "{ [a,b]:}"));
-        var access = build.access_from(map.as_pw_multi_aff());
-        var expr = ISLUtility.ToDimension(access.op_arg(1), new Dictionary<string, Dimension>() {
-            { "a", new DimVar("a") },
-            { "b", new DimVar("b") },
-        });
-        var sum = Assert.IsType<DimSum>(expr);
-        Assert.IsType<DimVar>(sum.Operands[0]);
-        Assert.IsType<DimVar>(sum.Operands[1]);
+        {
+            var map = new Isl.map(ctx, "{ [a,b] -> [a+b] }");
+            var build = Isl.ast_build.from_context(new Isl.set(ctx, "{ [a,b]:}"));
+            var access = build.access_from(map.as_pw_multi_aff());
+            var expr = ISLUtility.ToDimension(access.op_arg(1), new Dictionary<string, Dimension>() {
+                { "a", new DimVar("a") },
+                { "b", new DimVar("b") },
+            });
+            var sum = Assert.IsType<DimSum>(expr);
+            Assert.IsType<DimVar>(sum.Operands[0]);
+            Assert.IsType<DimVar>(sum.Operands[1]);
+        }
+
+        {
+            var a = new Isl.pw_aff(ctx, "{ [n] -> [2] : n = 1 }");
+            var b = new Isl.pw_aff(ctx, "{ [n] -> [3] : n = 2 }");
+            var c = a.union_add(b);
+            var build = Isl.ast_build.from_context(new Isl.set(ctx, "{ [n]: }"));
+            var astExpr = build.expr_from(c);
+            var expr = ISLUtility.ToDimension(astExpr, new Dictionary<string, Dimension>() {
+                { "n", new DimVar("n") },
+            });
+            var select = Assert.IsType<DimCompareAndSelect>(expr);
+            Assert.Equal(CompareOp.Equal, select.CompareOp);
+            Assert.IsType<DimVar>(select.Value);
+            Assert.IsType<DimConst>(select.Expected);
+            Assert.IsType<DimConst>(select.TrueValue);
+            Assert.IsType<DimConst>(select.FalseValue);
+        }
+
+        {
+            var a = new Isl.pw_aff(ctx, "{ [n] -> [2] : n <= 2; [n] -> [n - 2] : n > 2 }");
+            var build = Isl.ast_build.from_context(new Isl.set(ctx, "{ [n]: }"));
+            var astExpr = build.expr_from(a);
+            var expr = ISLUtility.ToDimension(astExpr, new Dictionary<string, Dimension>() {
+                { "n", new DimVar("n") },
+            });
+            var select = Assert.IsType<DimCompareAndSelect>(expr);
+            Assert.Equal(CompareOp.LowerOrEqual, select.CompareOp);
+            Assert.IsType<DimVar>(select.Value);
+            Assert.Equal(2, select.Expected);
+            Assert.Equal(2, select.TrueValue);
+            Assert.IsType<DimSum>(select.FalseValue);
+        }
+
+        {
+            var a = new Isl.pw_aff(ctx, "{ [n] -> [2] : n >= 2; [n] -> [n - 2] : n < 2 }");
+            var build = Isl.ast_build.from_context(new Isl.set(ctx, "{ [n]: }"));
+            var astExpr = build.expr_from(a);
+            var expr = ISLUtility.ToDimension(astExpr, new Dictionary<string, Dimension>() {
+                { "n", new DimVar("n") },
+            });
+            var select = Assert.IsType<DimCompareAndSelect>(expr);
+            Assert.Equal(CompareOp.GreaterOrEqual, select.CompareOp);
+            Assert.IsType<DimVar>(select.Value);
+            Assert.Equal(2, select.Expected);
+            Assert.Equal(2, select.TrueValue);
+            Assert.IsType<DimSum>(select.FalseValue);
+        }
+
+        {
+            var a = new Isl.pw_aff(ctx, "[N, ao, bo, co] -> { [(32)] : N <= 128 and ao >= 0 and 32ao <= -32 + N and 0 <= bo <= 3 and 0 <= co <= 3; [(N - 32ao)] : N <= 128 and ao >= 0 and -31 + N <= 32ao < N and 0 <= bo <= 3 and 0 <= co <= 3 }");
+            var build = new Isl.ast_build(ctx);
+            var astExpr = build.expr_from(a);
+            var expr = ISLUtility.ToDimension(astExpr, new Dictionary<string, Dimension>() {
+                { "N", new DimVar("N") },
+                { "ao", new DimVar("ao") },
+            });
+            var select = Assert.IsType<DimCompareAndSelect>(expr);
+            Assert.Equal(CompareOp.GreaterOrEqual, select.CompareOp);
+        }
+
+        {
+            ctx.set_ast_build_detect_min_max(1);
+            var a = new Isl.pw_aff(ctx, "[N, ao, bo, co] -> { [(32)] : N <= 128 and ao >= 0 and 32ao <= -32 + N and 0 <= bo <= 3 and 0 <= co <= 3; [(N - 32ao)] : N <= 128 and ao >= 0 and -31 + N <= 32ao < N and 0 <= bo <= 3 and 0 <= co <= 3 }");
+            var build = new Isl.ast_build(ctx);
+            var astExpr = build.expr_from(a);
+            var expr = ISLUtility.ToDimension(astExpr, new Dictionary<string, Dimension>() {
+                { "N", new DimVar("N") },
+                { "ao", new DimVar("ao") },
+            });
+            Assert.IsType<DimMin>(expr);
+        }
     }
 
     [Fact]

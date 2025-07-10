@@ -35,6 +35,7 @@ public sealed class AutoTilePass : FunctionPass
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
         using var ctx = IntegerSetLibrary.ctx.Create();
+        ctx.set_ast_build_detect_min_max(1);
         var tiler = new GraphTiler();
         if (!(input is Function func && func.ModuleKind == ModuleKind))
         {

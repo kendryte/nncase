@@ -145,12 +145,31 @@ internal sealed class AstExprToExprConverter
                 Isl.ast_expr_op_type.sub => Visit(astExpr.op_arg(0)) - Visit(astExpr.op_arg(1)),
                 Isl.ast_expr_op_type.mul => Visit(astExpr.op_arg(0)) * Visit(astExpr.op_arg(1)),
                 Isl.ast_expr_op_type.div => Visit(astExpr.op_arg(0)) / Visit(astExpr.op_arg(1)),
-                Isl.ast_expr_op_type.select => Dimension.Select(Visit(astExpr.op_arg(0)), 1, Visit(astExpr.op_arg(1)), Visit(astExpr.op_arg(2))),
-                Isl.ast_expr_op_type.ge => new AsDim(IR.F.Shapes.AsTensor(Visit(astExpr.op_arg(0))) > IR.F.Shapes.AsTensor(Visit(astExpr.op_arg(1)))),
-                Isl.ast_expr_op_type.le => new AsDim(IR.F.Shapes.AsTensor(Visit(astExpr.op_arg(0))) < IR.F.Shapes.AsTensor(Visit(astExpr.op_arg(1)))),
+                Isl.ast_expr_op_type.select => VisitSelect(astExpr),
+                Isl.ast_expr_op_type.min => Dimension.Min(Visit(astExpr.op_arg(0)), Visit(astExpr.op_arg(1))),
+                Isl.ast_expr_op_type.minus => -Visit(astExpr.op_arg(0)),
                 _ => throw new NotSupportedException($"Unsupported expr op type: {astExpr.op_type()}"),
             },
             _ => throw new NotSupportedException($"Unsupported expr type: {astExpr.type()}"),
+        };
+    }
+
+    private Dimension VisitSelect(Isl.ast_expr select)
+    {
+        var cond = select.op_arg(0);
+        return cond.type() switch
+        {
+            Isl.ast_expr_type.int_ => Visit(cond),
+            Isl.ast_expr_type.op => cond.op_type() switch
+            {
+                Isl.ast_expr_op_type.eq => Dimension.Select(Visit(cond.op_arg(0)), Visit(cond.op_arg(1)), Visit(select.op_arg(1)), Visit(select.op_arg(2)), CompareOp.Equal),
+                Isl.ast_expr_op_type.le => Dimension.Select(Visit(cond.op_arg(0)), Visit(cond.op_arg(1)), Visit(select.op_arg(1)), Visit(select.op_arg(2)), CompareOp.LowerOrEqual),
+                Isl.ast_expr_op_type.lt => Dimension.Select(Visit(cond.op_arg(0)), Visit(cond.op_arg(1)), Visit(select.op_arg(1)), Visit(select.op_arg(2)), CompareOp.LowerThan),
+                Isl.ast_expr_op_type.ge => Dimension.Select(Visit(cond.op_arg(0)), Visit(cond.op_arg(1)), Visit(select.op_arg(1)), Visit(select.op_arg(2)), CompareOp.GreaterOrEqual),
+                Isl.ast_expr_op_type.gt => Dimension.Select(Visit(cond.op_arg(0)), Visit(cond.op_arg(1)), Visit(select.op_arg(1)), Visit(select.op_arg(2)), CompareOp.GreaterThan),
+                _ => throw new NotSupportedException($"Unsupported select condition op type: {cond.op_type()}"),
+            },
+            _ => throw new NotSupportedException($"Unsupported select condition type: {cond.type()}"),
         };
     }
 
