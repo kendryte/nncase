@@ -497,27 +497,28 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
 
     public override Dimension Simplify()
     {
-        // if (CompareOp == CompareOp.Equal)
-        // {
-        //     if (TrueValue == FalseValue)
-        //     {
-        //         return TrueValue;
-        //     }
-        //     else if (Value.IsFixed && Expected.IsFixed)
-        //     {
-        //         return Value.FixedValue == Expected.FixedValue ? TrueValue : FalseValue;
-        //     }
-        //     else if (Value.Metadata?.Range is { Min: var min, Max: var max }
-        //             && Expected.IsFixed
-        //             && (min > Expected.FixedValue || max < Expected.FixedValue))
-        //     {
-        //         return FalseValue;
-        //     }
-        //     else if (Value == FalseValue && Expected == TrueValue)
-        //     {
-        //         return Value;
-        //     }
-        // }
+        if (CompareOp == CompareOp.Equal)
+        {
+            if (TrueValue == FalseValue)
+            {
+                return TrueValue;
+            }
+            else if (Value.IsFixed && Expected.IsFixed)
+            {
+                return Value.FixedValue == Expected.FixedValue ? TrueValue : FalseValue;
+            }
+            else if (Value.Metadata?.Range is { Min: var min, Max: var max }
+                    && Expected.IsFixed
+                    && (min > Expected.FixedValue || max < Expected.FixedValue))
+            {
+                return FalseValue;
+            }
+            else if (Value == FalseValue && Expected == TrueValue)
+            {
+                return Value;
+            }
+        }
+
         return this;
     }
 
