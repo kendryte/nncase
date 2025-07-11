@@ -64,10 +64,12 @@ public class UnitTestInteropIntegrated : TestClassBase
 
         var input = RTTensor.FromTensor(new[] { 2.0f });
         var result = (RTTensor)entry!.Invoke(input);
-        var buffer = result.Buffer.Buffer.AsHost()!;
-        using (var mmOwner = buffer.Map(RTMapAccess.Read))
+        var outBuffer = result.Buffer;
+        var outHost = outBuffer.Buffer.AsHost()!;
+        using (var mmOwner = outHost.Map(RTMapAccess.Read))
         {
-            Assert.Equal(new[] { 3.0f }, MemoryMarshal.Cast<byte, float>(mmOwner.Memory.Span).ToArray());
+            var outHostSlice = mmOwner.Memory.Slice((int)outBuffer.Start, (int)outBuffer.SizeBytes);
+            Assert.Equal(new[] { 3.0f }, MemoryMarshal.Cast<byte, float>(outHostSlice.Span).ToArray());
         }
     }
 }
