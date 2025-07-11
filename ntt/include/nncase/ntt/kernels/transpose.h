@@ -20,30 +20,39 @@
 
 namespace nncase::ntt {
 namespace transpose_detail {
+template <FixedDimensions TPerms>
+constexpr auto segments_cnt(const TPerms &perms) noexcept {
+    return perms.template slice<1>.aggregate(
+        1_dim, [&](auto cnt_acc, auto perm, auto i) {
+            if constexpr (perm != perms[i - 1_dim] + 1) {
+                return cnt_acc + 1;
+            } else {
+                return cnt_acc;
+            }
+        });
+}
+} // namespace transpose_detail
 
-template <Tensor TIn, class TOut, FixedDimensions TPerms> class transpose_impl {
+template <Tensor TIn, class TOut, FixedDimensions TPerms>
+    requires(bool(TIn::rank() == std::decay_t<TOut>::rank()) &&
+             bool(TIn::rank() == TPerms::rank()))
+void transpose(const TIn &input, TOut &&output,
+               [[maybe_unused]] const TPerms &perms =
+                   make_index_shape<TIn::rank()>().reverse()) {
+    constexpr auto rank = TIn::rank();
 
-  public:
-    constexpr void operator()(const TIn &input, TOut &output, const TPerms &) {
-        constexpr auto rank = TIn::rank();
+    if constexpr (rank == 4) {
+        u_transpose(input, output, perms);
+    } else {
         constexpr TPerms perm_const;
         constexpr auto pos_perms = positive_axes(perm_const, rank);
+
         ntt::apply(input.shape(), [&](auto index) {
             auto out_index = generate_shape<rank>(
                 [&](auto i) { return index[pos_perms[i]]; });
             output(out_index) = input(index);
         });
     }
-};
-} // namespace transpose_detail
-
-template <Tensor TIn, class TOut, FixedDimensions TPerms>
-    requires(bool(TIn::rank() == std::decay_t<TOut>::rank()) &&
-             bool(TIn::rank() == TPerms::rank()))
-void transpose(
-    const TIn &input, TOut &&output,
-    const TPerms &perms = make_index_shape<TIn::rank()>().reverse()) {
-    transpose_detail::transpose_impl<TIn, std::decay_t<TOut>, TPerms> impl;
-    impl(input, output, perms);
+    // }
 }
 } // namespace nncase::ntt
