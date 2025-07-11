@@ -147,4 +147,21 @@ public sealed class UnitTestDimension
         var paded2 = padding.Sum() + dv;
         Assert.Equal(paded2, new DimConst(128));
     }
+
+    [Fact]
+    public void TestAlignUp()
+    {
+        var x = new DimVar("x")
+        {
+            Metadata = new()
+            {
+                Range = new(1, 128),
+            },
+        };
+        var alignUp = (x + 8 - 1) / 8;
+        var frac = Assert.IsType<DimFraction>(alignUp);
+        var product = Assert.IsType<DimProduct>(frac.Numerator);
+        var sum = Assert.IsType<DimSum>(product.Operands[0]);
+        Assert.Equal(7, sum.Bias);
+    }
 }

@@ -923,7 +923,8 @@ public class UnitTestEvaluatorNN : TestClassBase
                 3.0f,
                 3.0f,
                 3.0f,
-                3.0f,]));
+                3.0f,
+            ]));
         }
         else
         {

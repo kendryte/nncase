@@ -487,7 +487,7 @@ public abstract class HuggingFaceModel
         var keyStates = RepeatKV(key, numKVGroups);
         var valueStates = RepeatKV(value, numKVGroups);
         var scalingExpr = IR.F.Tensors.Cast(Tensor.FromScalar(scaling), query.CheckedDataType);
-        Expr attnWeights = IR.F.Math.MatMul(query, IR.F.Tensors.Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3])), query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward0" } }) * scalingExpr;
+        Expr attnWeights = IR.F.Math.MatMul(query, IR.F.Tensors.Transpose(keyStates, ShapeUtility.GetPermutation(keyStates, [2, 3])), query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward0" } }) * scalingExpr;
         if (attentionMask is not null)
         {
             var causalMask = IR.F.Tensors.Slice(
@@ -503,7 +503,7 @@ public abstract class HuggingFaceModel
         attnWeights = IR.F.Tensors.Cast(IR.F.NN.Softmax(IR.F.Tensors.Cast(attnWeights, DataTypes.Float32), 3L), valueStates.CheckedDataType);
 
         Expr attnOutput = IR.F.Math.MatMul(attnWeights, valueStates, query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward1" } });
-        attnOutput = IR.F.Tensors.Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
+        attnOutput = IR.F.Tensors.Transpose(attnOutput, ShapeUtility.GetPermutation(attnOutput, [1, 2]));
 
         // TODO: base on config to decide output attnWeights or not
         return System.Tuple.Create(attnOutput, attnWeights);
