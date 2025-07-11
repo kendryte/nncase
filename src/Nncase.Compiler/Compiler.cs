@@ -364,7 +364,7 @@ public class Compiler : ICompiler
 
         await RunPassAsync(AutoPackingPass, "AutoPackingPass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
-#if false
+#if true
         // TODO: Enable AutoTilingPass when it is ready.
         await RunPassAsync(AutoTilingPass, "AutoTilingPass");
 #endif
