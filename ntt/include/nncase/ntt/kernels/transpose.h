@@ -51,17 +51,15 @@ class transpose_impl<TIn, TOut, TPerms, true> {
         //     output(out_index) = input(index);
         // });
 
-        dynamic_shape_t<4> index;
-        for (auto i = 0; i < input.shape()[0]; i++) {
-            for (auto j = 0; j < input.shape()[1]; j++) {
-                for (auto k = 0; k < input.shape()[2]; k++) {
-                    for (auto l = 0; l < input.shape()[3]; l++) {
-                        index = {k, i, l, j};
-                        output(index) = input(i, j, k, l);
-                    }
-                }
-            }
-        }
+        auto domain = input.shape();
+        constexpr auto rank = TIn::rank();
+        // constexpr auto pos_perms = positive_axes(perm_const, rank);
+        constexpr std::array<long, 4> pos_perms = {2, 0, 3, 1};
+        dynamic_shape_t<rank> out_index;
+        ntt::apply(domain, [&](auto index) {
+            loop<4>([&](auto i) { out_index[i] = index[pos_perms[i]]; });
+            output(out_index) = input(index);
+        });
     }
 };
 
