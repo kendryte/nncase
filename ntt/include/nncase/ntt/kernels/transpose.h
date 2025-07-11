@@ -21,7 +21,8 @@
 namespace nncase::ntt {
 namespace transpose_detail {
 
-template <Tensor TIn, class TOut, FixedDimensions TPerms> class transpose_impl {
+template <Tensor TIn, class TOut, FixedDimensions TPerms, bool Arch>
+class transpose_impl {
 
   public:
     constexpr void operator()(const TIn &input, TOut &output, const TPerms &) {
@@ -35,6 +36,34 @@ template <Tensor TIn, class TOut, FixedDimensions TPerms> class transpose_impl {
         });
     }
 };
+
+template <Tensor TIn, class TOut, FixedDimensions TPerms>
+class transpose_impl<TIn, TOut, TPerms, true> {
+
+  public:
+    constexpr void operator()(const TIn &input, TOut &output, const TPerms &) {
+        // constexpr auto rank = TIn::rank();
+        // constexpr TPerms perm_const;
+        // constexpr auto pos_perms = positive_axes(perm_const, rank);
+        // ntt::apply(input.shape(), [&](auto index) {
+        //     auto out_index = generate_shape<rank>(
+        //         [&](auto i) { return index[pos_perms[i]]; });
+        //     output(out_index) = input(index);
+        // });
+
+        dynamic_shape_t<4> index;
+        for (auto i = 0; i < input.shape()[0]; i++) {
+            for (auto j = 0; j < input.shape()[1]; j++) {
+                for (auto k = 0; k < input.shape()[2]; k++) {
+                    for (auto l = 0; l < input.shape()[3]; l++) {
+                        output(k, i, l, j) = input(i, j, k, l);
+                    }
+                }
+            }
+        }
+    }
+};
+
 } // namespace transpose_detail
 
 template <Tensor TIn, class TOut, FixedDimensions TPerms>
@@ -43,7 +72,16 @@ template <Tensor TIn, class TOut, FixedDimensions TPerms>
 void transpose(
     const TIn &input, TOut &&output,
     const TPerms &perms = make_index_shape<TIn::rank()>().reverse()) {
-    transpose_detail::transpose_impl<TIn, std::decay_t<TOut>, TPerms> impl;
-    impl(input, output, perms);
+
+    constexpr TPerms perm_const;
+    if constexpr (perm_const == fixed_shape_v<2, 0, 3, 1>) {
+        transpose_detail::transpose_impl<TIn, std::decay_t<TOut>, TPerms, true>
+            impl;
+        impl(input, output, perms);
+    } else {
+        transpose_detail::transpose_impl<TIn, std::decay_t<TOut>, TPerms, false>
+            impl;
+        impl(input, output, perms);
+    }
 }
 } // namespace nncase::ntt
