@@ -43,7 +43,7 @@ class transpose_impl<TIn, TOut, TPerms, true> {
   public:
     constexpr void operator()(const TIn &input, TOut &output, const TPerms &) {
         // constexpr auto rank = TIn::rank();
-        // constexpr TPerms perm_const;
+        constexpr TPerms perm_const;
         // constexpr auto pos_perms = positive_axes(perm_const, rank);
         // ntt::apply(input.shape(), [&](auto index) {
         //     auto out_index = generate_shape<rank>(
@@ -56,7 +56,8 @@ class transpose_impl<TIn, TOut, TPerms, true> {
             for (auto j = 0; j < input.shape()[1]; j++) {
                 for (auto k = 0; k < input.shape()[2]; k++) {
                     for (auto l = 0; l < input.shape()[3]; l++) {
-                        output(k, i, l, j) = input(i, j, k, l);
+                        index = {k, i, l, j};
+                        output(index) = input(i, j, k, l);
                     }
                 }
             }
