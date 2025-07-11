@@ -246,7 +246,7 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
                 (DimSum lhsSum, DimSum rhsSum) => CreateWithSimplify(SpanUtility.Concat(lhsSum.Operands, rhsSum.Operands)),
                 (DimVar v, DimSum rhsSum) when rhsSum.Operands.Length == 1 && rhsSum.Operands[0] is DimProduct p && p.Operands.Length == 1 && ReferenceEquals(p.Operands[0], v) => CreateWithSimplify([DimProduct.TrySimplify(p.Scale + 1, [v]) ?? new DimProduct([v], p.Scale + 1)], rhsSum.Bias),
                 (DimSum lhsSum, DimVar v) when lhsSum.Operands.Length == 1 && lhsSum.Operands[0] is DimProduct p && p.Operands.Length == 1 && ReferenceEquals(p.Operands[0], v) => CreateWithSimplify([DimProduct.TrySimplify(p.Scale + 1, [v]) ?? new DimProduct([v], p.Scale + 1)], lhsSum.Bias),
-                (DimSum lhsSum, _) => CreateWithSimplify(SpanUtility.Concat(lhsSum.Operands, [rhs])),
+                (DimSum lhsSum, _) => CreateWithSimplify(SpanUtility.Concat(lhsSum.Operands, [rhs]), lhsSum.Bias),
                 (_, DimSum rhsSum) => CreateWithSimplify(SpanUtility.Concat([lhs], rhsSum.Operands), rhsSum.Bias),
                 (DimVar v, DimProduct p) when p.Operands.Length == 1 && ReferenceEquals(p.Operands[0], v) => DimProduct.TrySimplify(p.Scale + 1, [v]) ?? new DimProduct([v], p.Scale + 1),
                 (DimProduct p, DimVar v) when p.Operands.Length == 1 && ReferenceEquals(p.Operands[0], v) => DimProduct.TrySimplify(p.Scale + 1, [v]) ?? new DimProduct([v], p.Scale + 1),
@@ -444,10 +444,11 @@ public sealed class DimClamp : OpaqueDim, IEquatable<DimClamp?>
 
 public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSelect?>
 {
-    public DimCompareAndSelect(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue)
+    public DimCompareAndSelect(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue, CompareOp compareOp)
         : base([value, expected, trueValue, falseValue])
     {
         Metadata.Range = InferRange();
+        CompareOp = compareOp;
     }
 
     public override DimensionKind Kind => DimensionKind.Dynamic;
@@ -472,11 +473,13 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
     /// </summary>
     public Dimension FalseValue => (Dimension)Operands[3];
 
+    public CompareOp CompareOp { get; }
+
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimCompareAndSelect(this, context);
 
-    public DimCompareAndSelect With(Dimension? value = null, Dimension? expected = null, Dimension? trueValue = null, Dimension? falseValue = null) =>
-        new DimCompareAndSelect(value ?? Value, expected ?? Expected, trueValue ?? TrueValue, falseValue ?? FalseValue);
+    public DimCompareAndSelect With(Dimension? value = null, Dimension? expected = null, Dimension? trueValue = null, Dimension? falseValue = null, CompareOp? compareOp = null) =>
+        new DimCompareAndSelect(value ?? Value, expected ?? Expected, trueValue ?? TrueValue, falseValue ?? FalseValue, compareOp ?? CompareOp);
 
     /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as DimCompareAndSelect);
@@ -489,28 +492,53 @@ public sealed class DimCompareAndSelect : OpaqueDim, IEquatable<DimCompareAndSel
             return true;
         }
 
-        return other is not null && Value.Equals(other.Value) && Expected.Equals(other.Expected) && TrueValue.Equals(other.TrueValue) && FalseValue.Equals(other.FalseValue);
+        return other is not null && Value.Equals(other.Value) && Expected.Equals(other.Expected) && TrueValue.Equals(other.TrueValue) && FalseValue.Equals(other.FalseValue) && CompareOp.Equals(other.CompareOp);
     }
 
     public override Dimension Simplify()
     {
-        if (Value == FalseValue && Expected == TrueValue)
+        if (CompareOp == CompareOp.Equal)
         {
-            if (Value.IsFixed)
+            if (TrueValue == FalseValue)
             {
-                return new DimConst(Value.FixedValue);
+                return TrueValue;
             }
-
-            return Value;
+            else if (Value.IsFixed && Expected.IsFixed)
+            {
+                return Value.FixedValue == Expected.FixedValue ? TrueValue : FalseValue;
+            }
+            else if (Value.Metadata?.Range is { Min: var min, Max: var max }
+                    && Expected.IsFixed
+                    && (min > Expected.FixedValue || max < Expected.FixedValue))
+            {
+                return FalseValue;
+            }
+            else if (Value == FalseValue && Expected == TrueValue)
+            {
+                return Value;
+            }
         }
 
         return this;
     }
 
-    public override string ToString() => $"({Value} == {Expected} ? {TrueValue} : {FalseValue})";
+    public override string ToString()
+    {
+        var compare = CompareOp switch
+        {
+            CompareOp.Equal => "==",
+            CompareOp.NotEqual => "!=",
+            CompareOp.LowerThan => "<",
+            CompareOp.LowerOrEqual => "<=",
+            CompareOp.GreaterThan => ">",
+            CompareOp.GreaterOrEqual => ">=",
+            _ => throw new NotSupportedException($"Unsupported compare operation: {CompareOp}"),
+        };
+        return $"({Value} {compare} {Expected} ? {TrueValue} : {FalseValue})";
+    }
 
     /// <inheritdoc/>
-    protected override int GetHashCodeCore() => HashCode.Combine(Value, Expected, TrueValue, FalseValue);
+    protected override int GetHashCodeCore() => HashCode.Combine(Value, Expected, TrueValue, FalseValue, CompareOp);
 
     private ValueRange<double> InferRange()
     {

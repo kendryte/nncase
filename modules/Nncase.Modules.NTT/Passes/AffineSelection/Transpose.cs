@@ -14,7 +14,7 @@ public partial class NTTAffineSelectionPass
     {
         var input = (Expr)call[IR.Tensors.Transpose.Input];
         var perm = (Shape)call[IR.Tensors.Transpose.Perm];
-        if (output.CheckedShape is not { IsFixed: true, Rank: > 0 }
+        if (output.CheckedShape is not { Rank: > 0 }
             || !perm.IsFixed)
         {
             return call;

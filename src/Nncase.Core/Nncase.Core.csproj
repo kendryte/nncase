@@ -26,6 +26,7 @@
     <PackageReference Include="System.Reactive" />
     <PackageReference Include="GiGraph.Dot" />
     <PackageReference Include="Google.OrTools" />
+    <PackageReference Include="ISLSharp" />
   </ItemGroup>
 
   <ItemGroup>
