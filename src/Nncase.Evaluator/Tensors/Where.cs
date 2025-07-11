@@ -192,16 +192,12 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var y = context.GetArgumentType<IRType>(target, Where.Y);
         var ret = context.GetReturnType<IRType>();
 
-        var newCosts = new Cost
+        return new Cost
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(cond, x, y),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, CostUtility.GetCPUCyclesOfCompare()),
         };
-
-        File.AppendAllLines("cost.txt", [$"{ret}: {newCosts.Score}"]);
-
-        return newCosts;
     }
 
     public Metric Visit(IMetricEvaluateContext context, Where target)

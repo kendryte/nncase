@@ -34,7 +34,7 @@ public class UnitTestPackReshape : TransformTestBase
     }
 
     [Fact]
-    public void TestPackReshapePropagationDynamic()
+    public void TestPackReshapePropagationDynamicUnsqueeze()
     {
         var dimX = new DimVar("x") { Metadata = { Range = (1, 256) } };
         var input = Testing.Rand<float>(3, 24);
@@ -43,5 +43,35 @@ public class UnitTestPackReshape : TransformTestBase
         expr = Pack(expr, [8], [2]);
         expr = Unpack(expr, [8], [2]);
         TestMatched<PackReshapePropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+
+    [Fact]
+    public void TestReshapeUnpackPropagationDynamicUnsqueeze()
+    {
+        var dimX = new DimVar("x") { Metadata = { Range = (1, 256) } };
+        var input = Pack(Testing.Rand<float>(3, 24), [8], [1]).Evaluate().AsTensor();
+        var inputVar = new Var(new TensorType(input.ElementType, [dimX, 3]));
+        Expr expr = Reshape(Unpack(inputVar, [8], [1]), [1, dimX, 24]);
+        TestMatched<ReshapeUnpackPropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+
+    [Fact]
+    public void TestReshapeUnpackPropagationDynamicCombine()
+    {
+        var dimX = new DimVar("x") { Metadata = { Range = (1, 256) } };
+        var input = Pack(Testing.Rand<float>(3, 3, 24), [8], [2]).Evaluate().AsTensor();
+        var inputVar = new Var(new TensorType(input.ElementType, [dimX, 3, 3]));
+        Expr expr = Reshape(Unpack(inputVar, [8], [2]), [1, dimX, 72]);
+        TestMatched<ReshapeUnpackPropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+
+    [Fact]
+    public void TestReshapeUnpackPropagationDynamicSplit()
+    {
+        var dimX = new DimVar("x") { Metadata = { Range = (1, 256) } };
+        var input = Pack(Testing.Rand<float>(3, 72), [8], [1]).Evaluate().AsTensor();
+        var inputVar = new Var(new TensorType(input.ElementType, [dimX, 9]));
+        Expr expr = Reshape(Unpack(inputVar, [8], [1]), [1, dimX, 3, 24]);
+        TestMatched<ReshapeUnpackPropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 }

@@ -87,6 +87,16 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.PackUnsqueezePropagation>();
         pass.Add<Passes.Rules.NTT.PackWherePropagation>(maskVectorStyle);
 
+        pass.Add<Passes.Rules.NTT.ConcatUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.BinaryUnpackLhsPropagation>();
+        pass.Add<Passes.Rules.NTT.BinaryUnpackRhsPropagation>();
+        pass.Add<Passes.Rules.NTT.PackedMatMulUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.ReshapeUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.SliceUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.SwishUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.TransposeUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.UnaryUnpackPropagation>();
+
         pass.Add<Passes.Rules.Neutral.FoldConstCall>();
         pass.Add<Passes.Rules.NTT.FoldPackUnpack>();
         pass.Add<Passes.Rules.NTT.FoldPackConcatUnpack>();

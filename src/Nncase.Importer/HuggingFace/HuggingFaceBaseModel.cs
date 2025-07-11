@@ -754,7 +754,7 @@ public abstract class HuggingFaceModel
         return casualMask;
     }
 
-    public virtual Call Embeding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
+    public virtual Call Embedding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
     {
         var gatherResult = IR.F.Tensors.Gather(embedingWeight, 0, input);
         if (paddingIdx == null)
@@ -883,7 +883,7 @@ public abstract class HuggingFaceModel
                 padding_idx = (long)Context.Config["pad_token_id"];
             }
 
-            inputEmbeds = Embeding(inputIds, embedTokensWeight, padding_idx);
+            inputEmbeds = Embedding(inputIds, embedTokensWeight, padding_idx);
         }
 
         var hiddenStates = inputEmbeds;

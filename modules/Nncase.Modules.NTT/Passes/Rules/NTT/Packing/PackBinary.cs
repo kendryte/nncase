@@ -73,3 +73,68 @@ public sealed partial class PackBinaryPropagation : RewriteRule<Pattern>
         ]);
     }
 }
+
+[RuleGenerator]
+public sealed partial class BinaryUnpackLhsPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+    IsBinary(
+            "binary",
+            "caller",
+            _ => true,
+            PatternMatch.F.Tensors.IsUnpack("unpack", "callee", _ => true, IsWildcard("lhs")),
+            IsWildcard("rhs") with { TypePattern = !IsVector() });
+
+    public static Expr? GetReplaceOperand(Unpack unpack, Call caller, Call callee, ParameterInfo unpackedOperandParameter, ParameterInfo theOtherOperandParameter, Expr unpackedOperand, Expr theOtherOperand)
+    {
+        var theOtherOperandShape = theOtherOperand.CheckedShape;
+        var outputRank = callee.CheckedShape.Rank;
+
+        var theOtherOperandPackedAxes = new List<int>();
+        var theOtherOperandLanes = new List<int>();
+
+        for (int i = 0; i < unpack.Axes.Count; i++)
+        {
+            var axis = unpack.Axes[i];
+            var lanes = unpack.Lanes[i];
+
+            if (!PackUtility.TryPropagateArgument(outputRank, theOtherOperandShape, axis, lanes, theOtherOperandPackedAxes, theOtherOperandLanes))
+            {
+                return null; // Cannot pack theOtherOperand.
+            }
+        }
+
+        var unpackedOperandExtend = outputRank - unpackedOperand.CheckedShape.Rank;
+        var newUnpackAxes = unpack.Axes.Select(a => a + unpackedOperandExtend).ToArray();
+
+        return IR.F.Tensors.Unpack(
+            caller.WithArguments([
+                (unpackedOperandParameter, unpackedOperand),
+                (theOtherOperandParameter, IR.F.Tensors.Pack(theOtherOperand, theOtherOperandLanes.ToArray(), theOtherOperandPackedAxes.ToArray())),
+            ]),
+            unpack.Lanes.ToArray(),
+            newUnpackAxes);
+    }
+
+    private Expr? GetReplace(Unpack unpack, Call caller, Call callee, Expr lhs, Expr rhs)
+    {
+        return GetReplaceOperand(unpack, caller, callee, Binary.Lhs, Binary.Rhs, lhs, rhs);
+    }
+}
+
+[RuleGenerator]
+public sealed partial class BinaryUnpackRhsPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+    IsBinary(
+            "binary",
+            "caller",
+            _ => true,
+            IsWildcard("lhs") with { TypePattern = !IsVector() },
+            PatternMatch.F.Tensors.IsUnpack("unpack", "callee", _ => true, IsWildcard("rhs")));
+
+    private Expr? GetReplace(Unpack unpack, Call caller, Call callee, Expr lhs, Expr rhs)
+    {
+        return BinaryUnpackLhsPropagation.GetReplaceOperand(unpack, caller, callee, Binary.Rhs, Binary.Lhs, rhs, lhs);
+    }
+}

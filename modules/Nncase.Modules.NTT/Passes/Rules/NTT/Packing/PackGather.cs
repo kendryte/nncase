@@ -34,11 +34,11 @@ public sealed partial class PackGatherPropagation : RewriteRule<Pattern>
                 "callee",
                 _ => true,
                 IsWildcard("input"),
-                IsWildcard("index")));
+                IsWildcard("index") with { TypePattern = HasRankedShape() }));
 
-    private Expr? GetReplace(Pack pack, Gather gather, Call caller, Call callee, Expr input)
+    private Expr? GetReplace(Pack pack, Gather gather, Call caller, Call callee, Expr input, Expr index)
     {
-        if (!pack.Axes.Contains(gather.Axis))
+        if (index.CheckedShape.Rank == 1 && !pack.Axes.Contains(gather.Axis))
         {
             // If the pack does not contain the gather axis, we directly pack the gather input.
             return callee.WithArguments(

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -611,7 +612,7 @@ public static class TypeInference
             {
                 if (newType is TensorType tensorType && tensorType.Shape is RankedShape { Rank: var rank })
                 {
-                    var ndsbp = new IRArray<SBP>(Enumerable.Repeat(SBP.B, rank));
+                    var ndsbp = new IRArray<SBP>(Enumerable.Repeat(SBP.B, rank).ToImmutableArray<SBP>());
                     newType = new DistributedType(tensorType, ndsbp, placement);
                 }
             }

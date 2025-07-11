@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CommunityToolkit.HighPerformance;
 using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
@@ -48,7 +49,7 @@ public sealed partial class PackReshapePropagation : RewriteRule<Pattern>
         }
 
         // TODO: more complex case
-        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
+        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsCompleteDict(mat);
         var packAxes = new List<int>();
         var packLanes = new List<int>();
         var rewritedNewShape = newShape.ToArray();
@@ -120,9 +121,111 @@ public sealed partial class PackReshapePropagation : RewriteRule<Pattern>
             }
         }
 
-        return callee.WithArguments([
-            (Reshape.Input, IR.F.Tensors.Pack(input, packLanes.ToArray(), packAxes.ToArray())),
-            (Reshape.Shape, new RankedShape(rewritedNewShape)),
-        ]);
+        return IR.F.Tensors.Reshape(
+            IR.F.Tensors.Pack(input, packLanes.ToArray(), packAxes.ToArray()),
+            new RankedShape(rewritedNewShape));
+    }
+}
+
+[RuleGenerator]
+public sealed partial class ReshapeUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        IsReshape(
+            "reshape",
+            "caller",
+            _ => true,
+            PatternMatch.F.Tensors.IsUnpack(
+                "unpack",
+                "callee",
+                _ => true,
+                IsWildcard("input")),
+            IsRankedShape("newShape"));
+
+    private Expr? GetReplace(Unpack unpack, Call caller, Call callee, Expr input, RankedShape newShape)
+    {
+        var maxUnpackedShape = CompilerServices.GetMaxShape(callee.CheckedShape);
+        var maxNewShape = CompilerServices.GetMaxShape(newShape);
+        if (!IRUtility.TryGetShapeMapMatrix(maxUnpackedShape, maxNewShape, out var mat))
+        {
+            return null;
+        }
+
+        // TODO: more complex case
+        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsCompleteDict(mat);
+        var unpackAxes = new List<int>();
+        var unpackLanes = new List<int>();
+        var rewritedNewShape = newShape.ToArray();
+        for (int i = 0; i < unpack.Axes.Count; i++)
+        {
+            var axis = unpack.Axes[i];
+            var lanes = unpack.Lanes[i];
+
+            // 1. unpack(<8>[128], [0], [8]) -> [8, 128]: <8>[128] -> <8>[8, 16]
+            if (forwardDict.TryGetValue(axis, out var newAxes))
+            {
+                // Find appropriate new axis to pack
+                bool found = false;
+                foreach (var newAxis in Enumerable.Reverse(newAxes))
+                {
+                    if (newShape[newAxis] != 1)
+                    {
+                        if (Dimension.TryDivExactly(newShape[newAxis], lanes, out var newDim))
+                        {
+                            // found a valid axis
+                            unpackAxes.Add(newAxis);
+                            unpackLanes.Add(lanes);
+                            rewritedNewShape[newAxis] = newDim;
+                            found = true;
+                            break;
+                        }
+                        else
+                        {
+                            // Dimension cannot be divided exactly, we cannot pack this axis
+                            return null;
+                        }
+                    }
+                }
+
+                if (!found)
+                {
+                    // No valid axis found, we cannot pack this axis
+                    return null;
+                }
+            }
+
+            // 2. unpack(<8>[8, 16], [1], [8]) -> [1024]: <8>[8, 16] -> <8>[128]
+            foreach ((var newAxis, var inAxes) in backwardDict)
+            {
+                if (unpackAxes.Contains(newAxis))
+                {
+                    // Already packed this axis
+                    continue;
+                }
+
+                var packAxisIndex = inAxes.IndexOf(axis);
+                if (packAxisIndex >= 0)
+                {
+                    if (packAxisIndex == inAxes.Count - 1
+                        || inAxes.Skip(packAxisIndex + 1).All(x => x == 1))
+                    {
+                        // last axis, just use the pack axis
+                        unpackAxes.Add(newAxis);
+                        unpackLanes.Add(lanes);
+                        rewritedNewShape[newAxis] /= lanes;
+                    }
+                    else
+                    {
+                        // We doesn't support pack axis in the middle of new shape
+                        return null;
+                    }
+                }
+            }
+        }
+
+        return IR.F.Tensors.Unpack(
+            IR.F.Tensors.Reshape(input, new RankedShape(rewritedNewShape)),
+            unpackLanes.ToArray(),
+            unpackAxes.ToArray());
     }
 }

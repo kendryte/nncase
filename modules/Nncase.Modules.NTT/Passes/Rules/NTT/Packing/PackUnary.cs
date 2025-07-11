@@ -46,3 +46,47 @@ public sealed partial class PackUnaryPropagation : RewriteRule<Pattern>
         ]);
     }
 }
+
+[RuleGenerator]
+public sealed partial class UnaryUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        IsUnary(
+            "unary",
+            "caller",
+            _ => true,
+            PatternMatch.F.Tensors.IsUnpack(
+                "unpack",
+                "callee",
+                _ => true,
+                IsWildcard("input")));
+
+    private Expr? GetReplace(Call caller, Call callee, Expr input)
+    {
+        return callee.WithArguments([
+            (Unpack.Input, caller.WithArguments([(Unary.Input, input)])),
+        ]);
+    }
+}
+
+[RuleGenerator]
+public sealed partial class SwishUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        IsSwish(
+            "swish",
+            "caller",
+            _ => true,
+            PatternMatch.F.Tensors.IsUnpack(
+                "unpack",
+                "callee",
+                _ => true,
+                IsWildcard("input")));
+
+    private Expr? GetReplace(Call caller, Call callee, Expr input)
+    {
+        return callee.WithArguments([
+            (Unpack.Input, caller.WithArguments([(Swish.Input, input)])),
+        ]);
+    }
+}

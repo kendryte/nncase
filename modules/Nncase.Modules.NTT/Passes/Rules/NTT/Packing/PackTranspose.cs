@@ -38,9 +38,37 @@ public sealed partial class PackTransposePropagation : RewriteRule<Pattern>
                 IsWildcard("input"),
                 IsFixedShape("perm")));
 
-    private Expr? GetReplace(IR.Tensors.Pack pack, Expr input, int[] perm, RunPassContext context)
+    private Expr? GetReplace(IR.Tensors.Pack pack, Call caller, Call callee, Expr input, int[] perm)
     {
         var packAxes = pack.Axes.Select(a => perm[a]).ToArray();
-        return IR.F.Tensors.Transpose(IR.F.Tensors.Pack(input, pack.Lanes.ToArray(), packAxes), perm);
+        return callee.WithArguments([
+            (Transpose.Input, IR.F.Tensors.Pack(input, pack.Lanes.ToArray(), packAxes)),
+        ]);
+    }
+}
+
+[RuleGenerator]
+public sealed partial class TransposeUnpackPropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        IsTranspose(
+            "trans",
+            "caller",
+            PatternMatch.F.Tensors.IsUnpack(
+                "unpack",
+                "callee",
+                _ => true,
+                IsWildcard("input")),
+            IsFixedShape("perm"));
+
+    private Expr? GetReplace(IR.Tensors.Unpack unpack, Call caller, Call callee, Expr input, int[] perm)
+    {
+        var unpackAxes = unpack.Axes.Select(a => perm.IndexOf(a)).ToArray();
+        return IR.F.Tensors.Unpack(
+            caller.WithArguments([
+                (Transpose.Input, input),
+            ]),
+            unpack.Lanes.ToArray(),
+            unpackAxes);
     }
 }
