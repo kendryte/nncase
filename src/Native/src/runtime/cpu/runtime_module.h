@@ -68,9 +68,9 @@ class cpu_runtime_module : public runtime_module {
     std::span<const std::byte> text_;
     std::span<const std::byte> rdata_;
     std::span<const std::byte> local_rdata_;
-    host_buffer_t text_storage_;
-    host_buffer_t rdata_storage_;
-    host_buffer_t local_rdata_storage_;
+    buffer_t text_storage_;
+    buffer_t rdata_storage_;
+    buffer_t local_rdata_storage_;
 
 #ifdef __APPLE__
     pthread_key_t cpu_thread_context_key_ = {};
