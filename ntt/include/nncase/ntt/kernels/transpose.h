@@ -37,7 +37,7 @@ class transpose_impl {
     }
 };
 
-template <Tensor TIn, class TOut, FixedDimensions TPerms>
+template <FixedTensor TIn, FixedTensor TOut, FixedDimensions TPerms>
 class transpose_impl<TIn, TOut, TPerms, true> {
 
   public:
@@ -51,12 +51,12 @@ class transpose_impl<TIn, TOut, TPerms, true> {
         //     output(out_index) = input(index);
         // });
 
-        auto domain = input.shape();
+        // auto domain = input.shape();
         constexpr auto rank = TIn::rank();
         // constexpr auto pos_perms = positive_axes(perm_const, rank);
         constexpr std::array<long, 4> pos_perms = {2, 0, 3, 1};
         dynamic_shape_t<rank> out_index;
-        ntt::apply(domain, [&](auto index) {
+        ntt::apply(TIn::shape(), [&](auto index) {
             loop<4>([&](auto i) { out_index[i] = index[pos_perms[i]]; });
             output(out_index) = input(index);
         });
