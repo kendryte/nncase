@@ -1,12 +1,14 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Reactive;
 using Google.OrTools.ConstraintSolver;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.IR.Shapes;
 using Nncase.Schedule.TileGraph;
 using Nncase.TIR;
 using QuikGraph;
@@ -632,10 +634,16 @@ public class GraphTiler
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
-                result.Visit(primTree, new(bodyBuilder, Array.Empty<Dimension>()));
+                result.Visit(primTree, new(bodyBuilder, Array.Empty<Dimension>(), primTree.DomainBoundExprs.ToArray()));
                 var parameters = inputBids.Concat(outputBids).Select(k => (Var)result.PrimBufferMemo[k]).ToArray();
                 var funcBuilder = T.PrimFunc(funcName, moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
+                {
+                    var gridBufferToVarMap = inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index)).Zip(parameters).ToDictionary(p => p.First, p => (Expr)p.Second);
+                    var mutator = new ShapeOfRewriter(gridBufferToVarMap);
+                    mutator.Visit(primFunc, default);
+                }
+
                 memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);
                 SolveMemo.Add(primTree, memo);
             }
@@ -731,5 +739,37 @@ public class GraphTiler
 
     public sealed record TiledFunc(PrimFunctionWrapper Func, long ObjectValue)
     {
+    }
+
+    private sealed class ShapeOfRewriter : ExprRewriter
+    {
+        private readonly Dictionary<Expr, Expr> _exprMap;
+
+        public ShapeOfRewriter(Dictionary<Expr, Expr> exprMap)
+            : base(false)
+        {
+            _exprMap = exprMap;
+        }
+
+        protected override BaseExpr VisitShapeOf(ShapeOf expr, Unit context)
+        {
+            // VisitOperands(expr, context);
+            if (CanVisitAttributes(expr))
+            {
+                VisitAttributes(expr, context);
+            }
+
+            return VisitLeafShapeOf(expr, context);
+        }
+
+        protected override BaseExpr RewriteLeafShapeOf(ShapeOf expr)
+        {
+            if (_exprMap.TryGetValue(expr.Value, out var newValue))
+            {
+                return new ShapeOf(newValue);
+            }
+
+            return expr;
+        }
     }
 }

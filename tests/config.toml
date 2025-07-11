@@ -175,7 +175,7 @@ threshold = 0.9
 
 [target.xpu.target_options]
 Hierarchies = [[1, 2, 8, 4, 4]]
-HierarchyNames = "cdxyt"
+HierarchyNames = "cdyxt"
 HierarchySizes = [603979776, 1048576]
 MemoryCapacities = [262144, 150994944]
 MemoryBandWidths = [64, 32]

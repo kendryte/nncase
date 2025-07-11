@@ -55,7 +55,11 @@ public sealed class OpNode : ITreeNode
 
     public Op Op => _wrapped.Op;
 
+    public ImmutableArray<bool> DomainDynamic => _wrapped.DomainDynamic;
+
     public ImmutableArray<long> DomainBounds => _wrapped.DomainBounds;
+
+    public ImmutableArray<Dimension> DomainBoundExprs => _wrapped.DomainBoundExprs;
 
     public ImmutableArray<ImmutableArray<long>> BufferShapes => _wrapped.BufferShapes;
 
@@ -102,6 +106,10 @@ public sealed class TileNode : ITreeNode
     public int OpId => _wrapped.OpId;
 
     public DomainRelation DomainRelation { get => _wrapped.DomainRelation; set => throw new NotSupportedException(); }
+
+    public ImmutableArray<bool> DomainDynamic => _wrapped.DomainDynamic;
+
+    public ImmutableArray<Dimension> DomainBoundExprs => _wrapped.DomainBoundExprs;
 
     public static TileNode FromTileGraph(TieredTileGraph rootGraph, out Dictionary<TieredTileGraph, TileNode> memo)
     {

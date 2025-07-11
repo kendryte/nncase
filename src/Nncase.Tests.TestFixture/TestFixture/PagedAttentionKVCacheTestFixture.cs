@@ -396,6 +396,11 @@ public sealed class PagedAttentionKVCacheTestFixture
         return Tensor.From(buffer, dimensions);
     }
 
+    public override string ToString()
+    {
+        return $"PagedAttentionKVCacheTestFixture: QueryLens={string.Join(",", QueryLens)}, SeqLens={string.Join(",", SeqLens)}, NumQHeads={NumQHeads}, ContextLens={string.Join(",", ContextLens)}, NumBlocks={NumBlocks}, QLayout={string.Join(",", QLayout)}, KLayout={string.Join(",", KLayout)}, Config={Config}";
+    }
+
     public sealed record TestKernel(Expr Root, Var QueryVar, List<Var[]> KVVars, Var KVCacheObjVar);
 
     public sealed record KVInputs(List<OrtKISharp.Tensor[]> KVTensors, RefPagedAttentionKVCache KVCacheObj)

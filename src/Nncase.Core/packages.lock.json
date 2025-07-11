@@ -34,6 +34,17 @@
           "Google.Protobuf": "3.29.3"
         }
       },
+      "ISLSharp": {
+        "type": "Direct",
+        "requested": "[1.0.4, )",
+        "resolved": "1.0.4",
+        "contentHash": "TZabyHb9+wLsBAc7OUxzHJw3BeJMGXMG4WAVoBpbFJTsBRd64rFepFY80K7iGRungi4GHipt6cj/2vgsHuCwlw==",
+        "dependencies": {
+          "libisl.linux-x64": "0.0.4",
+          "libisl.osx-arm64": "0.0.4",
+          "libisl.osx-x64": "0.0.4"
+        }
+      },
       "Microsoft.Extensions.Hosting.Abstractions": {
         "type": "Direct",
         "requested": "[8.0.0, )",
@@ -122,6 +133,21 @@
         "type": "Transitive",
         "resolved": "9.12.4544",
         "contentHash": "WeYUfkWVuMurRf7ZJQjLwovNs9b77nYqBRzonan0JIOFFau5WJLtkzgjCimUJ2i1yXTFvBFr5o1XWkMt7nwEPw=="
+      },
+      "libisl.linux-x64": {
+        "type": "Transitive",
+        "resolved": "0.0.4",
+        "contentHash": "MW+0UxLeAsVyJ6bn0yka2R5HQdCbtCg/zRZswFaWd8Qi9aVNtJmHVBIMJR1kkNk9vjYLTmGIPPUqwJTKXY7Oog=="
+      },
+      "libisl.osx-arm64": {
+        "type": "Transitive",
+        "resolved": "0.0.4",
+        "contentHash": "/LNMumw054jnLUMqsnOG+00ya3OpHcBlXNXtspbpQNvRnfhCMAdMc5hDanjhhU8Plq+GuLwHWS4C7rYdm/yOsA=="
+      },
+      "libisl.osx-x64": {
+        "type": "Transitive",
+        "resolved": "0.0.4",
+        "contentHash": "hRMKX5KF8zePmfIbH+btnPRi57bTgEhhzG6kA9koIV4fLR8XpKVKRzHh9pQotFX6LSjr297e3vm/yyStLJR1EQ=="
       },
       "Microsoft.Extensions.Configuration.Abstractions": {
         "type": "Transitive",

@@ -265,11 +265,11 @@ void matmul(
     using TLhsElem = typename TLhs::element_type;
     using TRhsElem = typename TRhs::element_type;
     using TOutElem = typename std::decay_t<TOut>::element_type;
-    if constexpr (IsVector<TLhsElem> && IsVector<TRhsElem>) {
+    if constexpr (Vector<TLhsElem> && Vector<TRhsElem>) {
         if constexpr (TLhsElem::shape_type::rank() == 2 &&
                       TRhsElem::shape_type::rank() == 2 &&
-                      TOutElem::shape_type::at(0) == 64 &&
-                      TOutElem::shape_type::at(1) == 64) {
+                      std::is_same_v<typename TOutElem::shape_type,
+                                     fixed_shape_t<64, 64>>) {
 
             ntt::apply(output.shape(), [&](auto index) {
                 auto data = (float *)output(index).buffer().data();

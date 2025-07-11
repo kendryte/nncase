@@ -14,13 +14,13 @@ public partial class NTTAffineSelectionPass
     private Expr SelectPack(Pack pack, Call call, Expr output)
     {
         var input = (Expr)call[Pack.Input];
-        if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
+        if (output.CheckedShape is not { Rank: > 0 })
         {
             return call;
         }
 
-        var inputShape = input.CheckedShape.ToValueArray();
-        var rank = inputShape.Length;
+        var inputShape = input.CheckedShape;
+        var rank = inputShape.Rank;
         var domains = IR.F.Affine.Domains(rank);
         var results = new AffineRange[rank];
 

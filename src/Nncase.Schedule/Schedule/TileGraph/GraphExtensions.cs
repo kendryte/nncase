@@ -242,6 +242,7 @@ public static class GraphExtensions
 
     public static IR.Expr GetArgument(this IR.Affine.Grid grid, int index)
     {
+        // note why we use bufferof wrapper the reads?
         return index >= grid.Reads.Length ? grid.Buffers[^1] : grid.Reads[index];
     }
 
@@ -267,7 +268,7 @@ public static class GraphExtensions
         {
             foreach (var sourceChild in sourceGraph.Clusters.OfType<TieredTileGraph>())
             {
-                var destChild = destGraph.CreateCluster<TieredTileGraph>(sourceChild.Level, sourceChild.OpId, sourceChild.DomainRelation);
+                var destChild = destGraph.CreateCluster<TieredTileGraph>(sourceChild.Level, sourceChild.OpId, sourceChild.DomainRelation, sourceChild.DomainBoundExprs.ToArray(), sourceChild.DomainDynamic.ToArray());
                 CloneInternal(sourceChild, destChild);
             }
         }

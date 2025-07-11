@@ -134,6 +134,13 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
                 var dimVarName = Visit(dimVar).Name;
                 var tensorVarName = Visit(tensorVar).Name;
                 IndentScope.Writer.IndWrite($"auto {dimVarName} = {tensorVarName}.shape()[{dimIndex}_dim];\n");
+                if (dimVar.Metadata.Range is ValueRange<double> range)
+                {
+                    IndentScope.Writer.IndWrite($"if (!({range.Min} <= {dimVarName} && {dimVarName} <= {range.Max})) {{\n");
+                    IndentScope.Writer.IndWrite($"  printf(\"{dimVarName} is out of range [{range.Min}, {range.Max}]\");\n");
+                    IndentScope.Writer.IndWrite($"  return;\n");
+                    IndentScope.Writer.IndWrite($"}}\n");
+                }
             }
         }
     }
@@ -219,7 +226,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 
         var numerator = Visit(expr.Numerator).Name;
         var denominator = Visit(expr.Denominator).Name;
-        symbol = new("dim_t", expr.DivMode == DimDivideMode.FloorDiv ? $"({numerator} / {denominator})" : $"ntt::ceildiv({numerator}, {denominator})");
+        symbol = new("dim_t", expr.DivMode == DimDivideMode.FloorDiv ? $"({numerator} / {denominator})" : $"ntt::ceil_div({numerator}, {denominator})");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

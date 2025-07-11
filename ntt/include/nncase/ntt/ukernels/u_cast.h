@@ -74,21 +74,26 @@ struct u_cast {
         } else if constexpr (in_offset_scale == 1 && out_offset_scale > 1) {
             using value_type = typename T2::element_type;
             constexpr auto lanes = T2::shape();
-            using TOut = ntt::vector<value_type, out_offset_scale, lanes[0]>;
 
             while (count / unroll) {
                 for (size_t i = 0; i < unroll; i++) {
-                    *((TOut *)output) = ntt::ops::cast<T1, T2>()(*input);
+                    auto tmp_output = ntt::ops::cast<T1, T2>()(*input);
+                    for (auto s = 0; s < out_offset_scale; s++) {
+                        *output = *((T2 *)(&tmp_output(s)));
+                        output += output_stride;
+                    }
                     input += input_stride * in_offset_scale;
-                    output += output_stride * out_offset_scale;
                     count--;
                 }
             }
 
             for (size_t i = 0; i < count; i++) {
-                *((TOut *)output) = ntt::ops::cast<T1, T2>()(*input);
+                auto tmp_output = ntt::ops::cast<T1, T2>()(*input);
+                for (auto s = 0; s < out_offset_scale; s++) {
+                    *output = *((T2 *)(&tmp_output(s)));
+                    output += output_stride;
+                }
                 input += input_stride * in_offset_scale;
-                output += output_stride * out_offset_scale;
             }
 
         } else {

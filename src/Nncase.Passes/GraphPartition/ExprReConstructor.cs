@@ -126,6 +126,8 @@ public class ExprClusterCloner : ExprCloner<Unit>
 
     protected override Expr VisitLeafVar(Var expr, Unit context) => expr;
 
+    protected override BaseExpr VisitLeafDimVar(DimVar expr, Unit context) => expr;
+
     protected override Expr VisitLeafConst(Const expr, Unit context) => expr;
 
     protected override Expr VisitLeafNone(None expr, Unit context) => expr;

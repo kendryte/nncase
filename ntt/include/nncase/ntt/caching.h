@@ -311,6 +311,8 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         }
     }
 
+    auto block_table() const noexcept { return block_table_; }
+
   private:
     template <class T>
     constexpr auto get_kv_cache_one_block_view(const T &block_id) noexcept

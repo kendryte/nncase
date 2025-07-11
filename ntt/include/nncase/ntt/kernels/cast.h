@@ -71,7 +71,7 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
                 if constexpr (packedAxes.rank() == 1)
                     in_index[fixed_dim_v<packedAxes.at(0)>] *= in_offset_scale;
                 ntt::u_cast<in_offset_scale, out_offset_scale>(
-                    &input(in_index), 1, &output(index), 1, 1);
+                    &input(in_index), packedAxes.rank() == 1 ? input.strides()[packedAxes.at(0)] : 1, &output(index), 1, 1);
             });
         } else {
             ntt::apply(input.shape(), [&](auto index) {
@@ -80,7 +80,7 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
                     out_index[fixed_dim_v<packedAxes.at(0)>] *=
                         out_offset_scale;
                 ntt::u_cast<in_offset_scale, out_offset_scale>(
-                    &input(index), 1, &output(out_index), 1, 1);
+                    &input(index), 1, &output(out_index), packedAxes.rank() == 1 ? output.strides()[packedAxes.at(0)] : 1, 1);
             });
         }
     }
