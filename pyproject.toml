@@ -1,7 +1,7 @@
 [project]
 name = "nncase"
 dynamic = ["version"]
-requires-python = ">=3.9"
+requires-python = ">=3.8"
 authors = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
 maintainers = [{ name = "sunnycase" }, { email = "sunnycase@live.cn" }]
 readme = "README.md"
@@ -10,6 +10,7 @@ license = { file = "LICENSE" }
 classifiers = [
     "Programming Language :: C++",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -29,7 +30,7 @@ requires = ["setuptools>=42", "wheel", "conan==2.6.0", "gitpython"]
 build-backend = "setuptools.build_meta"
 
 [tool.cibuildwheel]
-build = ["cp39*", "cp310*", "cp311*", "cp312*", "cp313*"]
+build = ["cp38*", "cp39*", "cp310*", "cp311*", "cp312*", "cp313*"]
 skip = "*musllinux*"
 manylinux-x86_64-image = "sunnycase/manylinux_2_28_x86_64:1.1"
 test-requires = "pytest"
