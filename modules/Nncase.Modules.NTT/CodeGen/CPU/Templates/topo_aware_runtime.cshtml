@@ -183,6 +183,7 @@ class tensor_reduce_sync_impl {
 
         // according to the group size split the tensor.
         // todo should using better split strategy.
+        constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
         // FIXME: support axis calculation.
         constexpr auto axis = ntt::fixed_dim_v<0>;
         // constexpr auto axis = ntt::fixed_dim_v<[&] {
