@@ -37,9 +37,13 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
         for (size_t bid = 0; bid < module().bdim(); bid++) {
             auto linear_bid = cid * module().bdim() + bid;
             auto tid_offset = linear_bid * module().tdim();
+            auto block_local_rdata_offset = module().block_local_rdata_header(linear_bid)[0];
+            auto block_local_rdata_size = module().block_local_rdata_header(linear_bid)[1];
+            auto block_local_rdata = module().block_local_rdata_content().subspan(
+                block_local_rdata_offset, block_local_rdata_size);
             blocks.emplace_back([cid, bid, linear_bid, tid_offset,
                                  enable_profiling, timer_records, output_data,
-                                 this] {
+                                 block_local_rdata, this] {
                 cpu_block_entry_params_t block_entry_params{
                     .tdim = module().tdim(),
                     .bdim = module().bdim(),
@@ -58,7 +62,7 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                     .thread_local_rdata_header =
                         module().thread_local_rdata_header(tid_offset),
                     .thread_local_rdata = module().thread_local_rdata_content(),
-                    .block_local_rdata = module().block_local_rdata_content(),
+                    .block_local_rdata = block_local_rdata,
                     .block_local_data = block_local_data(linear_bid),
 #ifdef __APPLE__
                     .cpu_thread_context_key = module().cpu_thread_context_key(),

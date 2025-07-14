@@ -54,6 +54,11 @@ class cpu_runtime_module : public runtime_module {
         return block_local_rdata_;
     }
 
+    const uint64_t *block_local_rdata_header(size_t offset) const noexcept {
+        return reinterpret_cast<const uint64_t *>(block_local_rdata_.data()) +
+               offset * 2;
+    }
+    
     const std::span<const std::byte> block_local_rdata_content()
         const noexcept {
         return block_local_rdata_.subspan(cdim_ * bdim_ * 2 *
