@@ -28,8 +28,8 @@ template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
           FixedDimension TAxis>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
                            const TBias &bias, TOut &&output, const TEp &epsilon,
-                           const PackedAxes &, const PadedNums &,
-                           const TAxis &, const bool use_mean = true) {
+                           const PackedAxes &, const PadedNums &, const TAxis &,
+                           const bool use_mean = true) {
 
     using TElem = typename TIn::element_type;
     auto input_shape = input.shape();
@@ -108,11 +108,13 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        const bool use_mean = true) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
     if constexpr (PackedAxes::rank() <= 1) {
-        static_assert(PadedNums::rank() == 0, "not support padding");
+        static_assert(PadedNums::rank() == 0 || padedNums[0] == 0,
+                      "not support padding");
     }
 
     packed_layer_norm_detail::within_axis_pack_impl<
         TIn, TScale, TBias, TOut, TEp, PackedAxes, PadedNums, TAxis>(
-        input, scale, bias, output, epsilon, packedAxes, padedNums, axis, use_mean);
+        input, scale, bias, output, epsilon, packedAxes, padedNums, axis,
+        use_mean);
 }
 } // namespace nncase::ntt
