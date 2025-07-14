@@ -19,7 +19,6 @@
 
 namespace nncase::ntt {
 namespace u_transpose_detail {
-
 template <Tensor TIn, class TOut, FixedDimensions TPerms>
 class u_transpose_impl {
 
