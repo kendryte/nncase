@@ -10,6 +10,7 @@ using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
@@ -824,7 +825,7 @@ public sealed class PackConv2D : PackRule
         var weights = (Expr)result["weights"];
         var bias = (Expr)result["bias"];
         var strides = ((RankedShape)result["stride"]).ToValueArray().ToInts();
-        var padding = ((RankedShape)result["padding"]).ToValueArray().ToInts();
+        var padding = Tensor.From(((Paddings)result["padding"]).ToValueArray()).ToArray<int>();
         var dilation = ((RankedShape)result["dilation"]).ToValueArray().ToInts();
         var groups = (int)((DimConst)result["groups"]).Value;
         var fusedClamp = ((TensorConst)result["fusedClamp"]).Value.ToArray<float>();
