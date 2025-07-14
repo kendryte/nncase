@@ -325,6 +325,7 @@ template <> class u_pack<true, float, vector<float, 8>> {
     }
 };
 
+// pack2d
 template <FixedTensor TIn, FixedTensor TOut>
 class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
   public:
