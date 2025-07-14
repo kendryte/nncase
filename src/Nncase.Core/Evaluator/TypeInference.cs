@@ -224,7 +224,7 @@ public static class TypeInference
             }
         }
 
-        return BroadcastType(dataType, inputs);
+        return BroadcastType(dataType, [cond, .. inputs]);
     }
 
     /// <summary>
