@@ -12,15 +12,11 @@ namespace Nncase.Importer
         {
             var hidden_shape = new RankedShape(seqLen, -1L, headDim);
 
-            var qProjW = Context!.ConstTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
-            Tensor? qProjB = null;
-            if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.q_proj.bias"))
-            {
-                qProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.q_proj.bias"];
-            }
+            var qProjW = GetWeight($"model.layers.{count}.self_attn.q_proj.weight");
+            var qProjB = GetWeight($"model.layers.{count}.self_attn.q_proj.bias");
 
-            Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.input_scale", out var ifScaleQ);
-            Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.weight_scale", out var wScaleQ);
+            var ifScaleQ = GetWeight($"model.layers.{count}.self_attn.q_proj.input_scale");
+            var wScaleQ = GetWeight($"model.layers.{count}.self_attn.q_proj.weight_scale");
             var queryStates = Linear(hiddenStates, qProjW, qProjB, ifScaleQ, wScaleQ, $"model.layers.{count}.self_attn.q_proj");
             queryStates = IR.F.Tensors.Reshape(queryStates, hidden_shape);
             queryStates = LLMLayerNorm(queryStates, $"model.layers.{count}.self_attn.q_norm.weight");
@@ -28,29 +24,21 @@ namespace Nncase.Importer
             // batch_size, num_heads, seq_len, head_dim
             queryStates = IR.F.Tensors.Transpose(queryStates, new long[] { 1, 0, 2 });
 
-            var kProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.weight"];
-            Tensor? kProjB = null;
-            if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.k_proj.bias"))
-            {
-                kProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.bias"];
-            }
+            var kProjW = GetWeight($"model.layers.{count}.self_attn.k_proj.weight");
+            var kProjB = GetWeight($"model.layers.{count}.self_attn.k_proj.bias");
 
-            Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.input_scale", out var ifScaleK);
-            Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.weight_scale", out var wScaleK);
+            var ifScaleK = GetWeight($"model.layers.{count}.self_attn.k_proj.input_scale");
+            var wScaleK = GetWeight($"model.layers.{count}.self_attn.k_proj.weight_scale");
             var keyStates = Linear(hiddenStates, kProjW, kProjB, ifScaleK, wScaleK, $"model.layers.{count}.self_attn.k_proj");
             keyStates = IR.F.Tensors.Reshape(keyStates, hidden_shape);
             keyStates = LLMLayerNorm(keyStates, $"model.layers.{count}.self_attn.k_norm.weight");
             keyStates = IR.F.Tensors.Transpose(keyStates, new long[] { 1, 0, 2 });
 
-            var vProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.weight"];
-            Tensor? vProjB = null;
-            if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.v_proj.bias"))
-            {
-                vProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.bias"];
-            }
+            var vProjW = GetWeight($"model.layers.{count}.self_attn.v_proj.weight");
+            var vProjB = GetWeight($"model.layers.{count}.self_attn.v_proj.bias");
 
-            Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.input_scale", out var ifScaleV);
-            Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.weight_scale", out var wScaleV);
+            var ifScaleV = GetWeight($"model.layers.{count}.self_attn.v_proj.input_scale");
+            var wScaleV = GetWeight($"model.layers.{count}.self_attn.v_proj.weight_scale");
             var valueStates = Linear(hiddenStates, vProjW, vProjB, ifScaleV, wScaleV, $"model.layers.{count}.self_attn.v_proj");
             valueStates = IR.F.Tensors.Reshape(valueStates, hidden_shape);
             valueStates = IR.F.Tensors.Transpose(valueStates, new long[] { 1, 0, 2 });

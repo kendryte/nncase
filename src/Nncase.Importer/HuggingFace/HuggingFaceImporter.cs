@@ -78,8 +78,14 @@ public class ModelInitContext
 
 public partial class HuggingFaceImporter : BaseImporter
 {
+    private Dictionary<string, string> _weightFileMap;
+    private Dictionary<string, Tensor> _weightCache;
+
+
     private readonly HuggingFaceModel _model;
     private readonly ModelInitContext _modelContext = new();
+
+
 
     public HuggingFaceImporter(string huggingFaceDir, ImportOptions importOptions, CompileSession compileSession)
         : base(compileSession)
@@ -91,30 +97,34 @@ public partial class HuggingFaceImporter : BaseImporter
             config[pair.Key] = pair.Value;
         }
 
-        var constTensors = new Dictionary<string, Tensor>();
-        if (File.Exists(Path.Combine(huggingFaceDir, "model.safetensors.index.json")))
-        {
-            string[] files = Directory.GetFiles(huggingFaceDir, "*.safetensors");
-            foreach (string file in files)
-            {
-                string fileName = Path.GetFileName(file);
-                if (IsModelFile(fileName))
-                {
-                    var tmpConst = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, fileName));
-                    foreach (var item in tmpConst)
-                    {
-                        constTensors[item.Key] = item.Value;
-                    }
-                }
-            }
-        }
-        else
-        {
-            constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
-        }
-
+        // var constTensors = new Dictionary<string, Tensor>();
+        // _weightFileMap = new Dictionary<string, string>();
+        // if (File.Exists(Path.Combine(huggingFaceDir, "model.safetensors.index.json")))
+        // {
+        //     string[] files = Directory.GetFiles(huggingFaceDir, "*.safetensors");
+        //     foreach (string file in files)
+        //     {
+        //         string fileName = Path.GetFileName(file);
+        //         if (IsModelFile(fileName))
+        //         {
+        //             var tmpConst = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, fileName));
+        //             foreach (var item in tmpConst)
+        //             {
+        //                 constTensors[item.Key] = item.Value;
+        //                 _weightFileMap[item.Key] = Path.Combine(huggingFaceDir, fileName);
+        //             }
+        //         }
+        //     }
+        // }
+        // else
+        // {
+        //     // constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
+        //     foreach (var item in constTensors)
+        //     {
+        //         _weightFileMap[item.Key] = Path.Combine(huggingFaceDir, "model.safetensors");
+        //     }
+        // }
         _modelContext!.Config = config;
-        _modelContext!.ConstTensors = constTensors;
         _modelContext!.ImportOptions = importOptions;
         _modelContext!.CompileSession = compileSession;
         switch (config.GetNestedValue<string>("architectures", 0))

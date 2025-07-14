@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.IO;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -22,10 +23,42 @@ namespace Nncase.Importer;
 public abstract class HuggingFaceModel
 {
     protected ModelInitContext? Context { get; private set; }
+    public string _weightsDir;
+    public Dictionary<string, string> _weightToFileMap;
+    public Dictionary<string, Tensor> _loadedWeights;
+    public HashSet<string> _loadedFiles;
 
-    public virtual void Initialize(ModelInitContext context, string dir)
+    public void Initialize(ModelInitContext context, string dir)
     {
         Context = context;
+        _weightsDir = dir;
+        _weightToFileMap = HuggingFaceUtils.LoadWeightToFileMap(Path.Combine(dir, "model.safetensors.index.json"));
+        _loadedWeights = new Dictionary<string, Tensor>();
+        _loadedFiles = new HashSet<string>();
+    }
+
+    public Tensor GetWeight(string weightName)
+    {
+        if (_loadedWeights.TryGetValue(weightName, out var tensor))
+            return tensor;
+
+        if (!_weightToFileMap.TryGetValue(weightName, out var fileName))
+            throw new Exception($"Weight {weightName} not found in index!");
+
+        if (!_loadedFiles.Contains(fileName))
+        {
+            var filePath = Path.Combine(_weightsDir, fileName);
+            var tensors = HuggingFaceUtils.LoadAllTensorsFromFile(filePath);
+            foreach (var kv in tensors)
+                _loadedWeights[kv.Key] = kv.Value;
+            _loadedFiles.Add(fileName);
+        }
+
+        if (_loadedWeights.TryGetValue(weightName, out tensor))
+            return tensor;
+
+        Console.WriteLine($"Weight {weightName} not found after loading {fileName}!");
+        return null!;
     }
 
     public virtual (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
@@ -414,15 +447,15 @@ public abstract class HuggingFaceModel
 
     public virtual Call LLMMlp(int count, Expr hiddenStates)
     {
-        var gateProjW = Context!.ConstTensors![$"model.layers.{count}.mlp.gate_proj.weight"];
-        var upProjW = Context.ConstTensors![$"model.layers.{count}.mlp.up_proj.weight"];
-        var downProjW = Context.ConstTensors![$"model.layers.{count}.mlp.down_proj.weight"];
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.gate_proj.input_scale", out var ifScaleGate);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.gate_proj.weight_scale", out var wScaleGate);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.up_proj.input_scale", out var ifScaleUp);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.up_proj.weight_scale", out var wScaleUp);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.down_proj.input_scale", out var ifScaleDown);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.down_proj.weight_scale", out var wScaleDown);
+        var gateProjW = GetWeight($"model.layers.{count}.mlp.gate_proj.weight");
+        var upProjW = GetWeight($"model.layers.{count}.mlp.up_proj.weight");
+        var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight");
+        var ifScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.input_scale");
+        var wScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.weight_scale");
+        var ifScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.input_scale");
+        var wScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.weight_scale");
+        var ifScaleDown = GetWeight($"model.layers.{count}.mlp.down_proj.input_scale");
+        var wScaleDown = GetWeight($"model.layers.{count}.mlp.down_proj.weight_scale");
 
         var tmp = Linear(hiddenStates, gateProjW, null, ifScaleGate, wScaleGate, $"model.layers.{count}.mlp.gate_proj");
         if (Context!.Config!.ContainsKey("hidden_act"))
@@ -438,43 +471,31 @@ public abstract class HuggingFaceModel
     {
         var hidden_shape = new RankedShape(seqLen, -1L, headDim);
 
-        var qProjW = Context!.ConstTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
-        Tensor? qProjB = null;
-        if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.q_proj.bias"))
-        {
-            qProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.q_proj.bias"];
-        }
+        var qProjW = GetWeight($"model.layers.{count}.self_attn.q_proj.weight");
+        var qProjB = GetWeight($"model.layers.{count}.self_attn.q_proj.bias");
 
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.input_scale", out var ifScaleQ);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.weight_scale", out var wScaleQ);
+        var ifScaleQ = GetWeight($"model.layers.{count}.self_attn.q_proj.input_scale");
+        var wScaleQ = GetWeight($"model.layers.{count}.self_attn.q_proj.weight_scale");
         var queryStates = Linear(hiddenStates, qProjW, qProjB, ifScaleQ, wScaleQ, $"model.layers.{count}.self_attn.q_proj");
         queryStates = IR.F.Tensors.Reshape(queryStates, hidden_shape);
 
         // batch_size, num_heads, seq_len, head_dim
         queryStates = IR.F.Tensors.Transpose(queryStates, new long[] { 1, 0, 2 });
 
-        var kProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.weight"];
-        Tensor? kProjB = null;
-        if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.k_proj.bias"))
-        {
-            kProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.bias"];
-        }
+        var kProjW = GetWeight($"model.layers.{count}.self_attn.k_proj.weight");
+        var kProjB = GetWeight($"model.layers.{count}.self_attn.k_proj.bias");
 
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.input_scale", out var ifScaleK);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.weight_scale", out var wScaleK);
+        var ifScaleK = GetWeight($"model.layers.{count}.self_attn.k_proj.input_scale");
+        var wScaleK = GetWeight($"model.layers.{count}.self_attn.k_proj.weight_scale");
         var keyStates = Linear(hiddenStates, kProjW, kProjB, ifScaleK, wScaleK, $"model.layers.{count}.self_attn.k_proj");
         keyStates = IR.F.Tensors.Reshape(keyStates, hidden_shape);
         keyStates = IR.F.Tensors.Transpose(keyStates, new long[] { 1, 0, 2 });
 
-        var vProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.weight"];
-        Tensor? vProjB = null;
-        if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.v_proj.bias"))
-        {
-            vProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.bias"];
-        }
+        var vProjW = GetWeight($"model.layers.{count}.self_attn.v_proj.weight");
+        var vProjB = GetWeight($"model.layers.{count}.self_attn.v_proj.bias");
 
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.input_scale", out var ifScaleV);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.weight_scale", out var wScaleV);
+        var ifScaleV = GetWeight($"model.layers.{count}.self_attn.v_proj.input_scale");
+        var wScaleV = GetWeight($"model.layers.{count}.self_attn.v_proj.weight_scale");
         var valueStates = Linear(hiddenStates, vProjW, vProjB, ifScaleV, wScaleV, $"model.layers.{count}.self_attn.v_proj");
         valueStates = IR.F.Tensors.Reshape(valueStates, hidden_shape);
         valueStates = IR.F.Tensors.Transpose(valueStates, new long[] { 1, 0, 2 });
@@ -866,10 +887,10 @@ public abstract class HuggingFaceModel
         output = IR.F.Tensors.Transpose(output, new[] { 1, 0, 2 });
 
         output = IR.F.Tensors.Reshape(output, new RankedShape(seq_len, -1L));
-        var oProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
+        var oProjW = GetWeight($"model.layers.{count}.self_attn.o_proj.weight");
 
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.input_scale", out var ifScaleO);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.weight_scale", out var wScaleO);
+        var ifScaleO = GetWeight($"model.layers.{count}.self_attn.o_proj.input_scale");
+        var wScaleO = GetWeight($"model.layers.{count}.self_attn.o_proj.weight_scale");
 
         output = Linear(output, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
         return System.Tuple.Create(output, paskKeyValues);
@@ -885,7 +906,7 @@ public abstract class HuggingFaceModel
          * self.vocab_size = config.vocab_size
          * self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
          */
-        var embedTokensWeight = Context!.ConstTensors!["model.embed_tokens.weight"];
+        var embedTokensWeight = GetWeight("model.embed_tokens.weight");
 
         Expr? inputEmbeds;
         if (inputIds.CheckedShape.Rank > 2 && inputIds.CheckedDataType.IsFloat())
@@ -1077,10 +1098,14 @@ public abstract class HuggingFaceModel
             input_ids,
             pastKeyValues!);
 
-        var lmHeadWeights = Context.ConstTensors["model.embed_tokens.weight"];
-        if (Context!.Config!.ContainsKey("tie_word_embeddings") && !Context!.Config!.GetNestedValue<bool>("tie_word_embeddings") && Context.ConstTensors.ContainsKey("lm_head.weight"))
+        var lmHeadWeights = GetWeight("model.embed_tokens.weight");
+        if (Context!.Config!.ContainsKey("tie_word_embeddings") && !Context!.Config!.GetNestedValue<bool>("tie_word_embeddings"))
         {
-            lmHeadWeights = Context.ConstTensors["lm_head.weight"];
+            var newLmHeadWeights = GetWeight("lm_head.weight");
+            if (newLmHeadWeights != null)
+            {
+                lmHeadWeights = newLmHeadWeights;
+            }
         }
 
         var lmHead = Linear(lastHiddenStates, lmHeadWeights, null, null, null, "lm_head");

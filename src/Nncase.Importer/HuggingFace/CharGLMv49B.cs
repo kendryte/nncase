@@ -12,11 +12,11 @@ namespace Nncase.Importer
     {
         private ModelInitContext? _context;
 
-        public override void Initialize(ModelInitContext context, string dir)
-        {
-            base.Initialize(context, dir);
-            _context = context;
-        }
+        // public override void Initialize(ModelInitContext context, string dir)
+        // {
+        //     base.Initialize(context, dir);
+        //     _context = context;
+        // }
 
         public override Call RotateHalf(Expr x)
         {
@@ -83,8 +83,8 @@ namespace Nncase.Importer
 
         public override Call LLMMlp(int count, Expr hiddenStates)
         {
-            var gateUpProjW = _context!.ConstTensors![$"model.layers.{count}.mlp.gate_up_proj.weight"];
-            var downProjW = _context.ConstTensors![$"model.layers.{count}.mlp.down_proj.weight"];
+            var gateUpProjW = GetWeight($"model.layers.{count}.mlp.gate_up_proj.weight");
+            var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight");
 
             var upStates = Linear(hiddenStates, gateUpProjW);
             var upStatesShape = new RankedShape(IR.F.Tensors.ShapeOf(upStates).AsShape()[-1]);

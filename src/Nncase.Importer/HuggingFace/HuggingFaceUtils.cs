@@ -13,6 +13,7 @@ using Newtonsoft.Json.Linq;
 using Nncase;
 using Nncase.IR;
 using Nncase.IR.NN;
+using System.Text.Json;
 
 using Tuple = System.Tuple;
 
@@ -146,7 +147,7 @@ internal static class HuggingFaceUtils
         return config;
     }
 
-    public static Dictionary<string, Tensor> GetAllWeights(string path)
+    public static Dictionary<string, Tensor> LoadAllTensorsFromFile(string path)
     {
         var constTensors = new Dictionary<string, Tensor>();
         var constTensor = HuggingFaceUtils.LoadStateDict(path);
@@ -159,6 +160,30 @@ internal static class HuggingFaceUtils
         }
 
         return constTensors;
+    }
+
+    public static Dictionary<string, string> LoadWeightToFileMap(string indexJsonPath)
+    {
+        if (!File.Exists(indexJsonPath))
+            throw new FileNotFoundException($"Index file not found: {indexJsonPath}");
+
+        string json = File.ReadAllText(indexJsonPath);
+        using var doc = JsonDocument.Parse(json);
+
+        var map = new Dictionary<string, string>();
+        if (doc.RootElement.TryGetProperty("weight_map", out var weightMap))
+        {
+            foreach (var prop in weightMap.EnumerateObject())
+            {
+                map[prop.Name] = prop.Value.GetString()!;
+            }
+        }
+        else
+        {
+            Console.WriteLine("weight_map not found in index.json");
+        }
+
+        return map;
     }
 
     public static byte[] ReadBytes(this Stream stream, int count)
