@@ -29,7 +29,8 @@ public sealed class BufferizePass : FunctionPass
         AssignOutputResult(func, scheduleResult);
         AssignDataResult(func, scheduleResult);
         AssignRdataResult(func, scheduleResult);
-        AssignLocalRdataResult(func, scheduleResult);
+        AssignThreadLocalRdataResult(func, scheduleResult);
+        AssignBlockLocalRdataResult(func, scheduleResult);
 
         var bufferReplaces = scheduleResult.SelectMany(x => x.Value.Buffers).ToDictionary(
             x => x.Buffer,
@@ -79,15 +80,28 @@ public sealed class BufferizePass : FunctionPass
         }
     }
 
-    private static void AssignLocalRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void AssignThreadLocalRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
-        if (scheduleResult.TryGetValue(MemoryLocation.ThreadLocalRdata, out var localRdataResult))
+        if (scheduleResult.TryGetValue(MemoryLocation.ThreadLocalRdata, out var threadLocalRdataResult))
         {
-            foreach (var lifetime in localRdataResult.Buffers)
+            foreach (var lifetime in threadLocalRdataResult.Buffers)
             {
                 var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
-                func.SchedResult.LocalRdatas.Add(constValue, range);
+                func.SchedResult.ThreadLocalRdatas.Add(constValue, range);
+            }
+        }
+    }
+
+    private static void AssignBlockLocalRdataResult(PrimFunction func, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    {
+        if (scheduleResult.TryGetValue(MemoryLocation.BlockLocalRdata, out var blockLocalRdataResult))
+        {
+            foreach (var lifetime in blockLocalRdataResult.Buffers)
+            {
+                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
+                var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
+                func.SchedResult.BlockLocalRdatas.Add(constValue, range);
             }
         }
     }

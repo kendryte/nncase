@@ -55,9 +55,10 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                     .timer_records = const_cast<timer_record *>(
                         &timer_records[cid * module().bdim() * module().tdim() +
                                        bid * module().tdim()]),
-                    .local_rdata_header =
-                        module().local_rdata_header(tid_offset),
-                    .local_rdata = module().local_rdata_content(),
+                    .thread_local_rdata_header =
+                        module().thread_local_rdata_header(tid_offset),
+                    .thread_local_rdata = module().thread_local_rdata_content(),
+                    .block_local_rdata = module().block_local_rdata_content(),
                     .block_local_data = block_local_data(linear_bid),
 #ifdef __APPLE__
                     .cpu_thread_context_key = module().cpu_thread_context_key(),

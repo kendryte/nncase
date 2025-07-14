@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.TIR;
 
 namespace Nncase.IR;
 
@@ -138,6 +139,16 @@ public sealed class TensorConst : Const, IEquatable<TensorConst?>
     public static bool operator ==(TensorConst? left, TensorConst? right) => EqualityComparer<TensorConst>.Default.Equals(left, right);
 
     public static bool operator !=(TensorConst? left, TensorConst? right) => !(left == right);
+
+    public MemoryLocation GetMemoryLocation()
+    {
+        return ValueType switch
+        {
+            DistributedType dt when dt.AxisPolicies[^1] is SBPSplit => MemoryLocation.ThreadLocalRdata,
+            DistributedType dt when dt.AxisPolicies[^1] is SBPBroadCast => MemoryLocation.BlockLocalRdata,
+            _ => MemoryLocation.Rdata,
+        };
+    }
 
     /// <inheritdoc/>
     public override string ToString()
