@@ -144,8 +144,8 @@ public sealed class TensorConst : Const, IEquatable<TensorConst?>
     {
         return ValueType switch
         {
-            DistributedType dt when dt.AxisPolicies[^1] is SBPSplit => MemoryLocation.ThreadLocalRdata,
-            DistributedType dt when dt.AxisPolicies[^1] is SBPBroadCast => MemoryLocation.BlockLocalRdata,
+            DistributedType dt when dt.AxisPolicies.Any(p => p is SBPSplit split && split.Axes.Contains(dt.Placement.Rank - 1)) => MemoryLocation.ThreadLocalRdata,
+            DistributedType => MemoryLocation.BlockLocalRdata,
             _ => MemoryLocation.Rdata,
         };
     }
