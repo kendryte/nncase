@@ -41,7 +41,7 @@ namespace tar {
   @:std::barrier(@(groupSize)), 
     }
 @:};
-@:auto @(groupName) = nncase::ntt::make_tensor_view<std::barrier<>>(@(groupRawName), nncase::ntt::fixed_shape_v<@(string.Join(",", shape))>);
+@:auto @(groupName) = nncase::ntt::make_tensor_view_from_address<std::barrier<>>(@(groupRawName), nncase::ntt::fixed_shape_v<@(string.Join(",", shape))>);
 @:
   }
 
@@ -96,9 +96,8 @@ template <tar::reduce_kind Kind> class group_heirarchy_getter;
 @foreach(var comb in combinations) {
 @:template <> class group_heirarchy_getter<tar::reduce_kind::@(GetName(comb, string.Empty))> {
   var shape = Enumerable.Range(0, hierarchy.Length).Select(i => comb.Contains(i) ?  hierarchy[i] : 1).ToArray();
-  var stride = TensorUtilities.GetDefaultStrides(shape);
 @:public:
-@:    static constexpr auto group_heirarchy = ntt::fixed_shape_v<@(string.Join(", ", stride))>;
+@:    static constexpr auto group_heirarchy = ntt::fixed_shape_v<@(string.Join(", ", shape))>;
 @:};
 }
 
@@ -140,7 +139,7 @@ class tensor_reduce_sync_impl {
         });
     }
 
-    constexpr auto get_group_size() const noexcept {
+    static constexpr auto get_group_size() {
         size_t group_size = 1;
         for (size_t i = 1; i <= tar::Hierarchy.size(); i++) {
             if (Kind & (1 << i)) {
@@ -184,19 +183,21 @@ class tensor_reduce_sync_impl {
 
         // according to the group size split the tensor.
         // todo should using better split strategy.
-        constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
-        constexpr auto axis = ntt::fixed_dim_v<[&] {
-            dim_t axis = -1;
-            loop<src.shape().rank()>([&](auto i) {
-                if (axis == -1 && src.shape()[i] >= group_size) {
-                    axis = i;
-                }
-            });
-            if (axis == -1) {
-                axis = 0;
-            }
-            return axis;
-        }()>;
+         constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
+        // FIXME: support axis calculation.
+        constexpr auto axis = ntt::fixed_dim_v<0>;
+        // constexpr auto axis = ntt::fixed_dim_v<[&] {
+        //     dim_t axis = -1;
+        //     loop<Rank>([&](auto i) {
+        //         if (axis == -1 && src.shape()[i] >= group_size) {
+        //             axis = i;
+        //         }
+        //     });
+        //     if (axis == -1) {
+        //         axis = 0;
+        //     }
+        //     return axis;
+        // }()>;
 
         auto remain = src.shape()[axis] % (group_size);
         auto frac = src.shape()[axis] / (group_size);
@@ -224,7 +225,7 @@ class tensor_reduce_sync_impl {
             auto viewed_dest_tensor = dest.view(starts, new_shape);
 
             if (i == 0) {
-                auto src2_tensor = ntt::make_tensor_view<TElem>(
+                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
                     (TElem *)tar::src_ptr_tensor(next_index),
                     src.shape(),
                     src.strides());
@@ -232,7 +233,7 @@ class tensor_reduce_sync_impl {
                 reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
                             viewed_dest_tensor);
             } else {
-                auto src2_tensor = ntt::make_tensor_view<TElem>(
+                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
                     (TElem *)tar::dest_ptr_tensor(next_index),
                     dest.shape(),
                     dest.strides());
@@ -248,7 +249,7 @@ class tensor_reduce_sync_impl {
         auto dest_index_g = ntt::unravel_index((node_number_g + group_size - 1) % group_size, group_heirarchy);
         auto dest_index = index_group2global(dest_index_g, ntt::make_shape(@(cur_index)));
 
-        auto dest_tensor = ntt::make_tensor_view<TElem>(
+        auto dest_tensor = ntt::make_tensor_view_from_address<TElem>(
             (TElem *)tar::dest_ptr_tensor(dest_index),
             dest.shape(),
             dest.strides());
@@ -272,7 +273,7 @@ class tensor_reduce_sync_impl {
         }
 
         if (Op == ntt::reduce_op::mean) {
-            ntt::binary<ntt::ops::div>(dest, ntt::make_tensor<TElem>((TElem)group_size, ntt::fixed_shape_v<>), dest);
+            ntt::binary<ntt::ops::div>(dest, ntt::make_tensor_view_from_address<TElem>((TElem*)&group_size, ntt::fixed_shape_v<>), dest);
         }
     }
 };
