@@ -96,7 +96,7 @@ internal class FunctionBuilder
                 for (int i = 0; i < _blockLocalRdataWriters.Count; i++)
                 {
                     var blockLocalRdataWriter = _blockLocalRdataWriters[i];
-                    var shardIndex = DistributedUtility.GetUnraveledIndex(i, TargetOptions.Hierarchies[0]);
+                    var shardIndex = DistributedUtility.GetUnraveledIndex(i, TargetOptions.Hierarchies[0][..^1]).Concat([0]).ToArray();
                     (var localOffset, var localShape) = DistributedUtility.GetLocalOffsetAndShape(distributedType, shardIndex);
                     var linearOffset = TensorUtilities.GetLinearOffset(tensor.Strides, localOffset);
 
