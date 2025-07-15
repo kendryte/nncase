@@ -114,4 +114,17 @@ public static class SpanUtility
 
         return -1;
     }
+
+    public static int FirstIndexOfNotEqual<T>(this ReadOnlySpan<T> span, T value)
+    {
+        for (var i = 0; i < span.Length; i++)
+        {
+            if (!EqualityComparer<T>.Default.Equals(span[i], value))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 }

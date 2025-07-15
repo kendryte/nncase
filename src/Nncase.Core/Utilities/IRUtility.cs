@@ -62,6 +62,15 @@ public static class IRUtility
             {
                 case 0:
                     i++; j++;
+                    if (i >= newShape.Length && j < inShape.Length)
+                    {
+                        i--;
+                    }
+                    else if (j >= inShape.Length && i < newShape.Length)
+                    {
+                        j--;
+                    }
+
                     break;
                 case < 0:
                     j++;

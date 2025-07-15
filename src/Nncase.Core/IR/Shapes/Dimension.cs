@@ -356,7 +356,7 @@ public abstract class Dimension : BaseExpr
         divided = remainder switch
         {
             DimConst dimConst => dimConst.Value == 0 ? numerator / denominator : null,
-            _ => numerator / denominator,
+            _ => null,
         };
         return divided != null;
     }

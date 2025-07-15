@@ -18,6 +18,7 @@ using Nncase.IR.Tensors;
 using Nncase.Passes;
 using Nncase.Passes.Distributed;
 using Nncase.Passes.Mutators;
+using Nncase.Passes.Rules;
 using Nncase.Passes.Rules.Lower;
 using Nncase.Passes.Rules.Neutral;
 using Nncase.Passes.Rules.ShapeBucket;
@@ -299,6 +300,13 @@ public class Compiler : ICompiler
             passManager.AddWithName<AutoDistributedPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
         }
 
+        passManager.AddWithName<EGraphRulesPass>("OptimizeAfterAutoDistributed").Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+
+            p.Add<FoldBoxingUninitialized>();
+        });
+
         passManager.Add<InferRangePass>();
         passManager.Add<OptimizeByRangePass>();
     }
@@ -364,7 +372,7 @@ public class Compiler : ICompiler
 
         await RunPassAsync(AutoPackingPass, "AutoPackingPass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
-#if false
+#if true
         // TODO: Enable AutoTilingPass when it is ready.
         await RunPassAsync(AutoTilingPass, "AutoTilingPass");
 #endif
