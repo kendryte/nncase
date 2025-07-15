@@ -10,14 +10,6 @@ namespace Nncase.Importer
 {
     public class Glm4V9B : HuggingFaceModel
     {
-        private ModelInitContext? _context;
-
-        // public override void Initialize(ModelInitContext context, string dir)
-        // {
-        //     base.Initialize(context, dir);
-        //     _context = context;
-        // }
-
         public override Call RotateHalf(Expr x)
         {
             var xShape = IR.F.Tensors.ShapeOf(x).AsShape();
@@ -86,7 +78,7 @@ namespace Nncase.Importer
             var gateUpProjW = GetWeight($"model.layers.{count}.mlp.gate_up_proj.weight");
             var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight");
 
-            var upStates = Linear(hiddenStates, gateUpProjW);
+            var upStates = Linear(hiddenStates, gateUpProjW, layerName: $"model.layers.{count}.mlp.gate_up_proj.weight");
             var upStatesShape = new RankedShape(IR.F.Tensors.ShapeOf(upStates).AsShape()[-1]);
 
             // gate, up_states = up_states.chunk(2, dim = -1)
@@ -94,15 +86,15 @@ namespace Nncase.Importer
             var gate = IR.F.Tensors.Slice(upStates, new[] { 0L }, upStatesShape / 2L, new[] { -1L }, new[] { 1L });
             upStates = IR.F.Tensors.Slice(upStates, upStatesShape / 2L, [IR.F.Tensors.ShapeOf(upStates).AsShape()[^1]], new[] { -1L }, new[] { 1L });
 
-            if (_context!.Config!.ContainsKey("hidden_act"))
+            if (Config.ContainsKey("hidden_act"))
             {
-                var actType = _context!.Config!.GetNestedValue<string>("hidden_act");
+                var actType = Config.GetNestedValue<string>("hidden_act");
                 gate = ModelUtils.ActFunc(gate, actType);
             }
 
             upStates = upStates * gate;
 
-            return Linear(upStates, downProjW);
+            return Linear(upStates, downProjW, layerName: $"model.layers.{count}.mlp.down_proj.weight");
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using NetFabric.Hyperlinq;
 using Newtonsoft.Json;
@@ -13,7 +14,6 @@ using Newtonsoft.Json.Linq;
 using Nncase;
 using Nncase.IR;
 using Nncase.IR.NN;
-using System.Text.Json;
 
 using Tuple = System.Tuple;
 
@@ -95,7 +95,8 @@ internal static class HuggingFaceUtils
             switch (current)
             {
                 case Dictionary<string, object> d:
-                    if (!d.TryGetValue(key.ToString()!, out current!))
+                    var keyString = key.ToString() ?? throw new ArgumentException("Key cannot be null");
+                    if (!d.TryGetValue(keyString, out current!))
                     {
                         Console.WriteLine($"Key not found: {key}");
                         Console.WriteLine($"Current key path: {string.Join(" -> ", keyPath)}");
@@ -162,28 +163,58 @@ internal static class HuggingFaceUtils
         return constTensors;
     }
 
-    public static Dictionary<string, string> LoadWeightToFileMap(string indexJsonPath)
+    public static Dictionary<string, string> LoadWeightToFileMap(string modelDir)
     {
-        if (!File.Exists(indexJsonPath))
-            throw new FileNotFoundException($"Index file not found: {indexJsonPath}");
+        var indexJsonPath = Path.Combine(modelDir, "model.safetensors.index.json");
+        var singleModelPath = Path.Combine(modelDir, "model.safetensors");
 
-        string json = File.ReadAllText(indexJsonPath);
-        using var doc = JsonDocument.Parse(json);
-
-        var map = new Dictionary<string, string>();
-        if (doc.RootElement.TryGetProperty("weight_map", out var weightMap))
+        // Case 1: Large model with index file
+        if (File.Exists(indexJsonPath))
         {
-            foreach (var prop in weightMap.EnumerateObject())
+            string json = File.ReadAllText(indexJsonPath);
+            using var doc = JsonDocument.Parse(json);
+
+            var map = new Dictionary<string, string>();
+            if (doc.RootElement.TryGetProperty("weight_map", out var weightMap))
             {
-                map[prop.Name] = prop.Value.GetString()!;
+                foreach (var prop in weightMap.EnumerateObject())
+                {
+                    var stringValue = prop.Value.GetString();
+                    if (stringValue != null)
+                    {
+                        map[prop.Name] = stringValue;
+                    }
+                }
             }
+            else
+            {
+                Console.WriteLine("weight_map not found in index.json");
+            }
+
+            return map;
+        }
+
+        // Case 2: Small model with single safetensors file
+        else if (File.Exists(singleModelPath))
+        {
+            // Load all tensor names from the single file and map them to the same file
+            var tensors = LoadStateDict(singleModelPath);
+            var map = new Dictionary<string, string>();
+
+            foreach (var tensorName in tensors.Keys)
+            {
+                if (tensorName != "__metadata__")
+                {
+                    map[tensorName] = "model.safetensors";
+                }
+            }
+
+            return map;
         }
         else
         {
-            Console.WriteLine("weight_map not found in index.json");
+            throw new FileNotFoundException($"Neither index file ({indexJsonPath}) nor single model file ({singleModelPath}) found in directory: {modelDir}");
         }
-
-        return map;
     }
 
     public static byte[] ReadBytes(this Stream stream, int count)
@@ -214,15 +245,17 @@ internal static class HuggingFaceUtils
         foreach (KeyValuePair<string, SafetensorsEntry> keyValuePair in dictionary1)
         {
             if (
-                !(keyValuePair.Key == "__metadata__")
+                keyValuePair.Key != "__metadata__"
                 && (keysToKeep == null || keysToKeep.Contains(keyValuePair.Key)))
             {
-                var datatype = ConvertToDataDType(keyValuePair.Value.DataType!);
+                var dataTypeString = keyValuePair.Value.DataType ?? throw new InvalidOperationException($"DataType is null for key {keyValuePair.Key}");
+                var datatype = ConvertToDataDType(dataTypeString);
 
-                var shape = new RankedShape(keyValuePair.Value.Shape!);
-                if (
-                    keyValuePair.Value.Offsets![1] - keyValuePair.Value.Offsets[0]
-                    != datatype.SizeInBytes * shape.Size)
+                var shapeArray = keyValuePair.Value.Shape ?? throw new InvalidOperationException($"Shape is null for key {keyValuePair.Key}");
+                var shape = new RankedShape(shapeArray);
+
+                var offsets = keyValuePair.Value.Offsets ?? throw new InvalidOperationException($"Offsets is null for key {keyValuePair.Key}");
+                if (offsets[1] - offsets[0] != datatype.SizeInBytes * shape.Size)
                 {
                     throw new NotImplementedException(
                         "Error when loading tensor "
@@ -522,25 +555,24 @@ internal static class ModelUtils
 
     public static Tuple<List<double>, float> RoPEInit(Dictionary<string, object> config)
     {
+        ArgumentNullException.ThrowIfNull(config);
+
         string type = "default";
         if (config.ContainsKey("rope_type"))
         {
-            type = config!.GetNestedValue<string>("rope_type");
+            type = config.GetNestedValue<string>("rope_type");
         }
         else if (config.TryGetValue("rope_scaling", out var ropeScaling) && ropeScaling is not null)
         {
-            type = config!.GetNestedValue<string>("rope_scaling", "rope_type");
+            type = config.GetNestedValue<string>("rope_scaling", "rope_type");
         }
 
-        switch (type)
+        return type switch
         {
-            case "default":
-                return ModelUtils.ComputeDefaultRopeParameters(config!);
-            case "llama3":
-                return ModelUtils.ComputeLlama3RopeParameters(config!);
-            default:
-                throw new NotImplementedException($"RoPE function {type} need to impl");
-        }
+            "default" => ModelUtils.ComputeDefaultRopeParameters(config),
+            "llama3" => ModelUtils.ComputeLlama3RopeParameters(config),
+            _ => throw new NotImplementedException($"RoPE function {type} need to impl"),
+        };
     }
 
     public static Call ActFunc(Call data, string actType)

@@ -428,18 +428,128 @@ public class Compiler : ICompiler
 
     private async Task RunPassAsync(Action<IPassManager> register, string name, IProgress<int>? progress = null, CancellationToken token = default)
     {
-        var newName = $"{_runPassCount++}_" + name;
+        var newName = $"{_runPassCount++:D2}_{name}";
         var pmgr = _compileSession.CreatePassManager(newName);
         register(pmgr);
-        _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
 
-        if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+        var logger = _compileSession.GetService<ILogger<Compiler>>();
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        using var animationCts = new CancellationTokenSource();
+        var animationTask = ShowPassProgressAnimation(newName, animationCts.Token);
+
+        try
         {
-            DumpScope.Current.DumpModule(_module, newName);
-            DumpScope.Current.DumpDotIR(_module.Entry!, newName);
-        }
+            _module = await pmgr.RunAsync(Module).ConfigureAwait(false);
 
-        progress?.Report(_runPassCount);
-        token.ThrowIfCancellationRequested();
+            animationCts.Cancel();
+            await animationTask.ConfigureAwait(false);
+
+            stopwatch.Stop();
+            var duration = stopwatch.Elapsed.TotalSeconds;
+
+            ClearCurrentLine();
+            var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+            var passNamePadded = newName.PadRight(35);
+            var timeFormatted = FormatDuration(duration);
+            Console.WriteLine($"[{timestamp}] {ColorText("✓", ConsoleColor.Green)} Completed pass: {passNamePadded} {ColorText(timeFormatted, ConsoleColor.Cyan)}");
+
+            if (DumpScope.Current.IsEnabled(DumpFlags.Compile))
+            {
+                DumpScope.Current.DumpModule(_module, newName);
+                DumpScope.Current.DumpDotIR(_module.Entry!, newName);
+            }
+
+            progress?.Report(_runPassCount);
+            token.ThrowIfCancellationRequested();
+        }
+        catch (Exception ex)
+        {
+            animationCts.Cancel();
+            await animationTask.ConfigureAwait(false);
+
+            stopwatch.Stop();
+            var duration = stopwatch.Elapsed.TotalSeconds;
+
+            ClearCurrentLine();
+            var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+            var passNamePadded = newName.PadRight(35);
+            var timeFormatted = FormatDuration(duration);
+            Console.WriteLine($"[{timestamp}] {ColorText("✗", ConsoleColor.Red)} Failed pass: {passNamePadded} {ColorText(timeFormatted, ConsoleColor.Cyan)} - {ColorText(ex.Message, ConsoleColor.Yellow)}");
+            throw;
+        }
+    }
+
+    private async Task ShowPassProgressAnimation(string passName, CancellationToken cancellationToken)
+    {
+        var spinnerChars = new[] { '⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏' };
+        var index = 0;
+        var startTime = DateTime.Now;
+
+        try
+        {
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                var elapsed = DateTime.Now - startTime;
+                var timestamp = DateTime.Now.ToString("HH:mm:ss.fff");
+                var spinner = spinnerChars[index % spinnerChars.Length];
+                var passNamePadded = passName.PadRight(35);
+                var timeFormatted = FormatDuration(elapsed.TotalSeconds);
+
+                Console.Write($"\r[{timestamp}] {ColorText(spinner.ToString(), ConsoleColor.Blue)} Running pass:   {passNamePadded} {ColorText(timeFormatted, ConsoleColor.Cyan)}");
+
+                index++;
+                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException)
+        { }
+    }
+
+    private string ColorText(string text, ConsoleColor color)
+    {
+        var colorCode = color switch
+        {
+            ConsoleColor.Red => "\x1b[31m",
+            ConsoleColor.Green => "\x1b[32m",
+            ConsoleColor.Yellow => "\x1b[33m",
+            ConsoleColor.Blue => "\x1b[34m",
+            ConsoleColor.Magenta => "\x1b[35m",
+            ConsoleColor.Cyan => "\x1b[36m",
+            ConsoleColor.White => "\x1b[37m",
+            ConsoleColor.Gray => "\x1b[90m",
+            ConsoleColor.DarkRed => "\x1b[91m",
+            ConsoleColor.DarkGreen => "\x1b[92m",
+            ConsoleColor.DarkYellow => "\x1b[93m",
+            ConsoleColor.DarkBlue => "\x1b[94m",
+            ConsoleColor.DarkMagenta => "\x1b[95m",
+            ConsoleColor.DarkCyan => "\x1b[96m",
+            _ => "\x1b[37m",
+        };
+
+        return $"{colorCode}{text}\x1b[0m";
+    }
+
+    private void ClearCurrentLine()
+    {
+        try
+        {
+            Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
+        }
+        catch
+        {
+            Console.Write("\r" + new string(' ', 120) + "\r");
+        }
+    }
+
+    private string FormatDuration(double seconds)
+    {
+        string timeStr;
+
+        var integerPart = ((int)seconds).ToString().PadLeft(8);
+        var decimalPart = $"{seconds % 1:F3}".Substring(1);
+        timeStr = $"{integerPart}{decimalPart}s";
+
+        return $"({timeStr})";
     }
 }

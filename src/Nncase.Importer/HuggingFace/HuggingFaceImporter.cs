@@ -78,14 +78,8 @@ public class ModelInitContext
 
 public partial class HuggingFaceImporter : BaseImporter
 {
-    private Dictionary<string, string> _weightFileMap;
-    private Dictionary<string, Tensor> _weightCache;
-
-
     private readonly HuggingFaceModel _model;
     private readonly ModelInitContext _modelContext = new();
-
-
 
     public HuggingFaceImporter(string huggingFaceDir, ImportOptions importOptions, CompileSession compileSession)
         : base(compileSession)
@@ -124,28 +118,21 @@ public partial class HuggingFaceImporter : BaseImporter
         //         _weightFileMap[item.Key] = Path.Combine(huggingFaceDir, "model.safetensors");
         //     }
         // }
-        _modelContext!.Config = config;
-        _modelContext!.ImportOptions = importOptions;
-        _modelContext!.CompileSession = compileSession;
-        switch (config.GetNestedValue<string>("architectures", 0))
-        {
-            case "Qwen2ForCausalLM":
-                _model = new Qwen2();
-                break;
-            case "Qwen3ForCausalLM":
-                _model = new Qwen3();
-                break;
-            case "LlamaForCausalLM":
-                _model = new Llama3_2();
-                break;
-            case "GlmForCausalLM":
-                _model = new Glm4V9B();
-                break;
-            default:
-                throw new NotImplementedException();
-        }
+        _modelContext.Config = config;
+        _modelContext.ImportOptions = importOptions;
+        _modelContext.CompileSession = compileSession;
 
-        _model!.Initialize(_modelContext, huggingFaceDir);
+        var architectures = config.GetNestedValue<string>("architectures", 0);
+        _model = architectures switch
+        {
+            "Qwen2ForCausalLM" => new Qwen2(),
+            "Qwen3ForCausalLM" => new Qwen3(),
+            "LlamaForCausalLM" => new Llama3_2(),
+            "GlmForCausalLM" => new Glm4V9B(),
+            _ => throw new NotImplementedException($"Architecture {architectures} is not supported"),
+        };
+
+        _model.Initialize(_modelContext, huggingFaceDir);
     }
 
     protected override (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
