@@ -24,7 +24,7 @@ public sealed class PackMaskEvaluator : ITypeInferencer<PackMask>, ICostEvaluato
     {
         var input = context.GetOrtArgumentValue(target, PackMask.Input);
         input = input.Pack(target.Lanes, target.Axis);
-        return Value.FromTensor(input.ToTensor(new TensorType(new MaskVectorType(target.Style, target.ElementBits, target.Lanes), new RankedShape(input.Shape.SkipLast(1)))));
+        return input.ToValue(new MaskVectorType(target.Style, target.ElementBits, target.Lanes));
     }
 
     /// <inheritdoc/>

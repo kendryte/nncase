@@ -1378,7 +1378,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var context = new Passes.RunPassContext();
         var packed = rule.GetReplaceCandidates(result!, context).Cast<Expr>();
         var posts = packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Unary(UnaryOp.Abs, ret), [new Nncase.Passes.Rules.NTT.UnaryUnpackPropagation()], context)).ToList();
-        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Binary(BinaryOp.Add, ret, 1f), [new Nncase.Passes.Rules.NTT.BinaryUnpackPropagation()], context)));
+        posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Math.Binary(BinaryOp.Add, ret, 1f), [new Nncase.Passes.Rules.NTT.BinaryUnpackLhsPropagation()], context)));
         posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Transpose(ret, new[] { 0, 2, 1 }), [new Nncase.Passes.Rules.NTT.TransposeUnpackPropagation()], context)));
         posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Unsqueeze(ret, new[] { 2 }), [new Nncase.Passes.Rules.NTT.UnsqueezeUnpackPropagation()], context)));
         posts.AddRange(packed.Select(ret => CompilerServices.Rewrite(IR.F.Tensors.Reduce(ReduceOp.Max, ret, new[] { 2 }, 0f, true), [new Nncase.Passes.Rules.NTT.ReduceUnpackPropagation()], context)));

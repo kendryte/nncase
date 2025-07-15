@@ -209,9 +209,6 @@ public abstract class HuggingFaceModel
 
     public virtual System.Tuple<Call, Call> ApplyRotaryPosEmb(Expr q, Expr k, Expr cos, Expr sin, long unSqueezeDim = 1)
     {
-        cos = IR.F.Tensors.Unsqueeze(cos, Tensor.From<long>(new long[] { 0 }));
-        sin = IR.F.Tensors.Unsqueeze(sin, Tensor.From<long>(new long[] { 0 }));
-
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
         var qEmbed = IR.F.Math.Binary(
@@ -509,27 +506,15 @@ public abstract class HuggingFaceModel
         return System.Tuple.Create(attnOutput, attnWeights);
     }
 
-    public virtual Tuple<Expr, Expr> RotaryEmbedding(Expr x, Expr kvObject, Expr invFreq, float attentionScaling)
+    public virtual Tuple<Expr, Expr> RotaryEmbedding(Expr x, Expr kvObject, float[] invFreq, float attentionScaling)
     {
         var positionIds = IR.F.NN.GetPositionIds(IR.F.Shapes.AsTensor(x.CheckedShape[0]), kvObject);
-
-        // var batch_size = x.CheckedShape[0];
-        var dim_div_2 = invFreq.CheckedShape[0];
-        var shape_tensor = new RankedShape(dim_div_2, 1L);
-
-        invFreq = IR.F.Tensors.Expand(invFreq, shape_tensor);
-
-        var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([0]));
-        positionIdsExpanded = IR.F.Tensors.Cast(positionIdsExpanded, DataTypes.Float32);
-
-        var freqs = IR.F.Math.MatMul(invFreq, positionIdsExpanded).With(metadata: new IRMetadata()
+        positionIds = IR.F.Tensors.Unsqueeze(IR.F.Tensors.Cast(positionIds, DataTypes.Float32), [1]);
+        var invFreqExpanded = invFreq.Concat(invFreq).ToArray();
+        var emb = IR.F.Math.Mul(invFreqExpanded, positionIds).With(metadata: new IRMetadata()
         {
-            OutputNames =
-            ["RotaryEmbedding"],
+            OutputNames = ["RotaryEmbedding"],
         });
-        freqs = IR.F.Tensors.Transpose(freqs, new long[] { 1, 0 });
-
-        var emb = IR.F.Tensors.Concat(new IR.Tuple(freqs, freqs), -1);
 
         // add attention scaling
         Expr cos = IR.F.Math.Unary(UnaryOp.Cos, emb) * attentionScaling;
@@ -769,9 +754,8 @@ public abstract class HuggingFaceModel
         return casualMask;
     }
 
-    public virtual Call Embeding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
+    public virtual Call Embedding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
     {
-        var embedingDim = embedingWeight.Shape[^1];
         var gatherResult = IR.F.Tensors.Gather(embedingWeight, 0, input);
         if (paddingIdx == null)
         {
@@ -779,10 +763,9 @@ public abstract class HuggingFaceModel
         }
         else
         {
-            var zeros = Tensor.Zeros(embedingWeight.ElementType, new long[] { embedingDim.FixedValue });
+            var zeros = Tensor.Zeros(embedingWeight.ElementType, [1]);
             var paddingMask = IR.F.Math.Equal(input, paddingIdx);
-            paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, new long[] { 1 });
-            paddingMask = IR.F.Tensors.Expand(paddingMask, gatherResult.CheckedShape);
+            paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, [1]);
             var results = IR.F.Tensors.Where(paddingMask, zeros, gatherResult);
             return results;
         }
@@ -901,7 +884,7 @@ public abstract class HuggingFaceModel
                 padding_idx = (long)Context.Config["pad_token_id"];
             }
 
-            inputEmbeds = Embeding(inputIds, embedTokensWeight, padding_idx);
+            inputEmbeds = Embedding(inputIds, embedTokensWeight, padding_idx);
         }
 
         var hiddenStates = inputEmbeds;
@@ -928,14 +911,8 @@ public abstract class HuggingFaceModel
         //     attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         // )
         // Call? casualMask = null;
-        var (invFreq_, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
-
-        var invFreq = Tensor.FromArray(invFreq_.ToArray());
-
-        var invFreq_float = IR.F.Tensors.Cast(invFreq, DataTypes.Float32);
-        var invFreqExpanded = IR.F.Tensors.Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 1 }));
-
-        var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreqExpanded.Evaluate().AsTensor(), attentionScaling);
+        var (invFreq, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
+        var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreq, attentionScaling);
 
         // var allHiddenStates = new List<Expr>();
         // var allSelfAttns = new List<Expr>();

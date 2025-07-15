@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using DryIoc;
 using NetFabric.Hyperlinq;
@@ -114,19 +115,18 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             }
             else
             {
-                return Ort_compute(binary, lhs, rhs);
+                return Ort_compute(binary, lhs, rhs, originDtype);
             }
         }
 
         // for float16/float8/bfloat16 infere
-        if (originDtype.IsFloat() && originDtype != DataTypes.Float32)
+        if (originDtype.IsFloat())
         {
-            lhs = lhs.Cast<float>();
-            rhs = rhs.Cast<float>();
+            lhs = lhs.CastElement<float>();
+            rhs = rhs.CastElement<float>();
         }
 
-        var res = Ort_compute(binary, lhs, rhs);
-        return (TensorValue)res.AsTensor().CastTo(originDtype);
+        return Ort_compute(binary, lhs, rhs, originDtype);
     }
 
     /// <inheritdoc/>
@@ -298,10 +298,20 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    private IValue Ort_compute(Binary binary, Tensor lhs, Tensor rhs)
+    private IValue Ort_compute(Binary binary, Tensor lhs, Tensor rhs, DataType dataType)
     {
         var a = lhs.ToOrtTensor();
         var b = rhs.ToOrtTensor();
+        if (lhs.ElementType is VectorType vt && rhs.ElementType is not VectorType)
+        {
+            b.Reshape(b.Shape.Concat(Enumerable.Repeat(1L, vt.Lanes.Count)).ToArray());
+        }
+
+        if (rhs.ElementType is VectorType vt2 && lhs.ElementType is not VectorType)
+        {
+            a.Reshape(a.Shape.Concat(Enumerable.Repeat(1L, vt2.Lanes.Count)).ToArray());
+        }
+
         static OrtKISharp.Tensor Mod(OrtKISharp.Tensor a, OrtKISharp.Tensor b)
         {
             var fmod = DataTypes.IsFloat(a.DataType.ToDataType()) && DataTypes.IsFloat(b.DataType.ToDataType()) ? 1L : 0L;
@@ -329,7 +339,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.LeftShift => OrtKI.LeftShift(a, b),
             BinaryOp.RightShift => OrtKI.RightShift(a, b),
             _ => throw new ArgumentOutOfRangeException(nameof(binary)),
-        }).ToValue();
+        }).ToValue(dataType);
     }
 
     private IRType Visit(Binary target, TensorType lhs, TensorType rhs)

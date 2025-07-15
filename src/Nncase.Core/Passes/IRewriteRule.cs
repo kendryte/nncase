@@ -17,6 +17,8 @@ public interface IRewriteRule
     /// </summary>
     IPattern Pattern { get; }
 
+    bool IsFoldConstRule() => false;
+
     /// <summary>
     /// Get replace expression.
     /// </summary>

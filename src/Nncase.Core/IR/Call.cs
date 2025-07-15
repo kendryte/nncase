@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.Utilities;
 
 namespace Nncase.IR;
@@ -92,21 +93,7 @@ public sealed class Call : BaseCall, IParameterList<BaseExpr>
     /// <summary>
     /// get param expr.
     /// </summary>
-    public override BaseExpr this[ParameterInfo parameter]
-    {
-        get
-        {
-            var type = Target.GetType();
-            if (type == parameter.OwnerType)
-            {
-                return Arguments[parameter.Index];
-            }
-            else
-            {
-                throw new ArgumentOutOfRangeException($"Target {Target} doesn't have parameter: {parameter.Name}.");
-            }
-        }
-    }
+    public override BaseExpr this[ParameterInfo parameter] => Arguments[ValidateParameterIndex(parameter, Target)];
 
     public override void ParametersForeach(Action<BaseExpr, ParameterInfo> f)
     {
@@ -129,5 +116,26 @@ public sealed class Call : BaseCall, IParameterList<BaseExpr>
         };
 
         return call;
+    }
+
+    public Call WithArguments((ParameterInfo Parameter, BaseExpr Argument)[]? replaceArguments = null, IRMetadata? metadata = null)
+    {
+        var newArguments = replaceArguments is null
+            ? Arguments.ToArray()
+            : Arguments.AsValueEnumerable().Select((arg, i) => replaceArguments.FirstOrDefault(a => ValidateParameterIndex(a.Parameter, Target) == i).Argument ?? arg).ToArray();
+        return With(arguments: newArguments, metadata: metadata);
+    }
+
+    private static int ValidateParameterIndex(ParameterInfo parameter, Expr target)
+    {
+        var type = target.GetType();
+        if (type == parameter.OwnerType)
+        {
+            return parameter.Index;
+        }
+        else
+        {
+            throw new ArgumentOutOfRangeException($"Target {target} doesn't have parameter: {parameter.OwnerType}.{parameter.Name}.");
+        }
     }
 }

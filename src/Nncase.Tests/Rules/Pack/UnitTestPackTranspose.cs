@@ -1,0 +1,27 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System.Collections.Generic;
+using Nncase.IR;
+using Nncase.Passes.Rules.Neutral;
+using Nncase.Passes.Rules.NTT;
+using Nncase.Tests.TestFixture;
+using Xunit;
+using static Nncase.IR.F.Tensors;
+
+namespace Nncase.Tests.Rules.NeutralTest;
+
+[AutoSetupTestMethod(InitSession = true)]
+public class UnitTestPackTranspose : TransformTestBase
+{
+    [Fact]
+    public void TestPackTransposePropagation()
+    {
+        var input = Testing.Rand<float>(3, 24);
+        var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
+        Expr expr = Transpose(inputVar, [1, 0]);
+        expr = Pack(expr, [8], [0]);
+        expr = Unpack(expr, [8], [0]);
+        TestMatched<PackTransposePropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
+    }
+}
