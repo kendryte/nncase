@@ -430,8 +430,7 @@ public class Compiler : ICompiler
         var newName = $"{_runPassCount++:D2}_{name}";
         var pmgr = _compileSession.CreatePassManager(newName);
         register(pmgr);
-
-        var logger = _compileSession.GetService<ILogger<Compiler>>();
+        _ = _compileSession.GetService<ILogger<Compiler>>();
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         using var animationCts = new CancellationTokenSource();
@@ -502,7 +501,8 @@ public class Compiler : ICompiler
             }
         }
         catch (OperationCanceledException)
-        { }
+        {
+        }
     }
 
     private string ColorText(string text, ConsoleColor color)
