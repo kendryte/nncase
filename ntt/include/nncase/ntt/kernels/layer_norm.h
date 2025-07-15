@@ -53,7 +53,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
         finner_size = finner_size * (TElem)TElem::size();
     }
 
-    apply(domain, [&](auto index) {
+    ntt::apply(domain, [&](auto index) {
         const auto input_p =
             input.elements().data() + linear_offset(index, strides);
         const auto scale_p = scale.elements().data();
@@ -107,9 +107,8 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        const PadedNums &padedNums = {},
                        const bool use_mean = true) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
-    if constexpr (PackedAxes::rank() <= 1) {
-        static_assert(PadedNums::rank() == 0 || padedNums[0] == 0,
-                      "not support padding");
+    if constexpr (PadedNums::rank() == 1) {
+        static_assert(PadedNums{}[0_dim] == 0, "not support padding");
     }
 
     packed_layer_norm_detail::within_axis_pack_impl<

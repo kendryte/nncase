@@ -6,10 +6,11 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using static Nncase.IR.F.Tensors;
+using Isl = IntegerSetLibrary;
 
 namespace Nncase.Utilities;
 
-public static class ShapeExprUtility
+public static class ShapeUtility
 {
     public static Expr If(Expr condition, Func<Expr> thenExpr, Func<Expr> elseExpr)
     {

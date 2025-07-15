@@ -16,58 +16,105 @@ public partial class NTTAffineSelectionPass
         var rhs = (Expr)call.Arguments[IR.Math.MatMul.Rhs.Index];
 
         // TODO: summa not support tiling for now.
-        if ((lhs.CheckedType is DistributedType ldt && ldt.AxisPolicies.Last() is SBPSplit)
-            || output.CheckedShape is not { IsFixed: true, Rank: > 0 })
+        if ((lhs.CheckedType is DistributedType ldt && ldt.AxisPolicies[^1] is SBPSplit)
+            || output.CheckedShape is not { Rank: > 0 })
         {
             return call;
         }
 
-        var lhsShape = lhs.CheckedShape.ToValueArray();
-        var rhsShape = rhs.CheckedShape.ToValueArray();
-        var rank = Math.Max(lhs.CheckedShape.Rank, rhs.CheckedShape.Rank) + 1;
+        var lhsShape = lhs.CheckedShape;
+        var rhsShape = rhs.CheckedShape;
+        var rank = Math.Max(lhsShape.Rank, rhsShape.Rank) + 1;
         var domains = IR.F.Affine.Domains(rank);
-        var lhsRes = new AffineRange[lhsShape.Length];
-        var rhsRes = new AffineRange[rhsShape.Length];
+        var lhsRes = new AffineRange[lhsShape.Rank];
+        var rhsRes = new AffineRange[rhsShape.Rank];
         for (int i = rank - 1 - 3; i >= 0; i--)
         {
-            var lhsi = i - (rank - (lhsShape.Length + 1));
-            var rhsi = i - (rank - (rhsShape.Length + 1));
+            var lhsi = i - (rank - (lhsShape.Rank + 1));
+            var rhsi = i - (rank - (rhsShape.Rank + 1));
+#pragma warning disable SA1008 // Opening parenthesis should be spaced correctly
             switch (lhsi, rhsi)
             {
-                case (>= 0, >= 0):
+                case ( >= 0, >= 0):
                     switch (lhsShape[lhsi], rhsShape[rhsi])
                     {
-                        case (long a, long b) when a == b:
-                            lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
-                            rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                        case (DimConst cDimA, DimConst cDimB):
+                            switch (cDimA.Value, cDimB.Value)
+                            {
+                                case (long a, long b) when a == b:
+                                    lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                                    rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                                    break;
+                                case (1, _):
+                                    lhsRes[lhsi] = new AffineRange(0, 1);
+                                    rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                                    break;
+                                case (_, 1):
+                                    lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                                    rhsRes[rhsi] = new AffineRange(0, 1);
+                                    break;
+                                default:
+                                    return call;
+                            }
+
                             break;
-                        case (1, _):
-                            lhsRes[lhsi] = new AffineRange(0, 1);
-                            rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+
+                        case (DimConst constA, Dimension dimB):
+                            switch (constA.Value, dimB.Metadata.Range)
+                            {
+                                case (1, { Min: >= 1 }):
+                                    lhsRes[lhsi] = new AffineRange(0, 1);
+                                    rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                                    break;
+                                default:
+                                    return false;
+                            }
+
                             break;
-                        case (_, 1):
-                            lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
-                            rhsRes[rhsi] = new AffineRange(0, 1);
+                        case (Dimension dimA, DimConst constB):
+                            switch (dimA.Metadata.Range, constB.Value)
+                            {
+                                case ({ Min: >= 1 }, 1):
+                                    lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                                    rhsRes[rhsi] = new AffineRange(0, 1);
+                                    break;
+                                default:
+                                    return false;
+                            }
+
+                            break;
+                        case (Dimension dimA, Dimension dimB):
+                            switch (dimA.Metadata.Range, dimB.Metadata.Range)
+                            {
+                                case (var rangeA, var rangeB) when rangeA == rangeB:
+                                    lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                                    rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
+                                    break;
+                                default:
+                                    return false;
+                            }
+
                             break;
                         default:
                             return call;
                     }
 
                     break;
-                case (< 0, >= 0):
+                case ( < 0, >= 0):
                     rhsRes[rhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
                     break;
-                case (>= 0, < 0):
+                case ( >= 0, < 0):
                     lhsRes[lhsi] = new AffineRange(domains[i].Offset, domains[i].Extent);
                     break;
-                case (< 0, < 0):
+                case ( < 0, < 0):
                     break;
             }
+#pragma warning restore SA1008 // Opening parenthesis should be spaced correctly
         }
 
         var (om, ok, on) = (rank - 3, rank - 2, rank - 1);
-        var (lm, lk) = (lhsShape.Length - 2, lhsShape.Length - 1);
-        var (rk, rn) = (rhsShape.Length - 2, rhsShape.Length - 1);
+        var (lm, lk) = (lhsShape.Rank - 2, lhsShape.Rank - 1);
+        var (rk, rn) = (rhsShape.Rank - 2, rhsShape.Rank - 1);
         if (op is IR.NTT.PackedMatMul pm)
         {
             if (pm.TransposeA)

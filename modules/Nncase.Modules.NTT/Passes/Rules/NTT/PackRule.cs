@@ -10,6 +10,7 @@ using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.NN;
+using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
@@ -35,7 +36,7 @@ public abstract class PackRule : RewriteRule<Pattern>
 
     public int Rank { get; }
 
-    public override BaseExpr? GetReplace(IMatchResult result, RunPassContext options) => throw new NotImplementedException();
+    public override BaseExpr? GetReplace(IMatchResult result, RunPassContext options) => GetReplaceCandidates(result, options)[0];
 
     public IEnumerable<int[]> GeneratePackAxes(Shape shape)
     {
@@ -824,7 +825,7 @@ public sealed class PackConv2D : PackRule
         var weights = (Expr)result["weights"];
         var bias = (Expr)result["bias"];
         var strides = ((RankedShape)result["stride"]).ToValueArray().ToInts();
-        var padding = ((RankedShape)result["padding"]).ToValueArray().ToInts();
+        var padding = Tensor.From(((Paddings)result["padding"]).ToValueArray()).ToArray<int>();
         var dilation = ((RankedShape)result["dilation"]).ToValueArray().ToInts();
         var groups = (int)((DimConst)result["groups"]).Value;
         var fusedClamp = ((TensorConst)result["fusedClamp"]).Value.ToArray<float>();
@@ -855,7 +856,7 @@ public sealed class PackReshape : PackRule
       IsWildcard("input") with { TypePattern = !IsVector() },
       IsRankedShape("newShape"));
 
-    public static List<Expr> AddCandidate(Expr input, Shape newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, RankedShape newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;

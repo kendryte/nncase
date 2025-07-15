@@ -327,28 +327,9 @@ public abstract class Dimension : BaseExpr
 
     public static Dimension Min(params Dimension[] dimensions) => DimMin.TrySimplify(dimensions) ?? new DimMin(dimensions);
 
-    public static Dimension Select(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue)
+    public static Dimension Select(Dimension value, Dimension expected, Dimension trueValue, Dimension falseValue, CompareOp compareOp = CompareOp.Equal)
     {
-        if (trueValue == falseValue)
-        {
-            return trueValue;
-        }
-        else if (value.IsFixed && expected.IsFixed)
-        {
-            return value.FixedValue == expected.FixedValue ? trueValue : falseValue;
-        }
-        else if (value.Metadata?.Range is { Min: var min, Max: var max }
-                && expected.IsFixed
-                && (min > expected.FixedValue || max < expected.FixedValue))
-        {
-            return falseValue;
-        }
-        else if (value.IsUnknown || expected.IsUnknown)
-        {
-            return Unknown;
-        }
-
-        return new DimCompareAndSelect(value, expected, trueValue, falseValue);
+        return new DimCompareAndSelect(value, expected, trueValue, falseValue, compareOp).Simplify();
     }
 
     public static Dimension Positive(Dimension value, Dimension extent)

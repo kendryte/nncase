@@ -22,7 +22,7 @@ namespace nncase::ntt {
 namespace pad_detail {
 template <Tensor TIn, Tensor TOut, Paddings TPaddings, ScalarOrVector TElem>
 void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
-              const TElem &pad_alue) {
+              const TElem &pad_value) {
     constexpr auto rank = TIn::rank();
     ntt::apply(output.shape(), [&](auto out_index) {
         bool dopad = false;
@@ -34,7 +34,7 @@ void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
             return in_dim;
         });
         if (dopad) {
-            output(out_index) = pad_alue;
+            output(out_index) = (typename TIn::element_type)pad_value;
         } else {
             output(out_index) = input(in_index);
         }
@@ -47,13 +47,13 @@ void pad_impl(const TIn &input, TOut &output, const TPaddings &paddings,
  *
  * @param input input tensor.
  * @param output output tensor.
- * @param pad_alue pad value.
+ * @param pad_value pad value.
  */
 template <Tensor TIn, class TOut, Paddings TPaddings,
           ScalarOrVector TElem = typename TIn::element_type>
     requires(bool(TIn::rank() == TPaddings::rank()))
 void pad(const TIn &input, TOut &&output, const TPaddings &paddings,
-         const TElem &pad_alue = {}) noexcept {
-    pad_detail::pad_impl(input, output, paddings, pad_alue);
+         const TElem &pad_value = {}) noexcept {
+    pad_detail::pad_impl(input, output, paddings, pad_value);
 }
 } // namespace nncase::ntt

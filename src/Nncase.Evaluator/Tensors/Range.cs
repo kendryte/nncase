@@ -7,7 +7,7 @@ using Nncase.IR;
 using Nncase.IR.Shapes;
 using Nncase.Utilities;
 using OrtKISharp;
-using static Nncase.Utilities.ShapeExprUtility;
+using static Nncase.Utilities.ShapeUtility;
 using Range = Nncase.IR.Tensors.Range;
 
 namespace Nncase.Evaluator.Tensors;

@@ -18,13 +18,12 @@ public sealed class UnitTestIRArray
         var a = new IR.IRArray<float>();
         Assert.True(a.IsDefaultOrEmpty);
         Assert.Empty(a);
-        Assert.True(a.IsReadOnly);
     }
 
     [Fact]
     public void TestSpan()
     {
-        var array = new IR.IRArray<int>(Enumerable.Range(1, 100));
+        var array = new IR.IRArray<int>(Enumerable.Range(1, 100).ToImmutableArray());
         Assert.Equal(1, array[0]);
         Assert.Equal(100, array[99]);
         Assert.Equal(2, array[new Range(1, 3)].ToArray().Length);
@@ -33,9 +32,9 @@ public sealed class UnitTestIRArray
     [Fact]
     public void Testcompare()
     {
-        var a = new IR.IRArray<int>(Enumerable.Range(1, 100));
-        var b = new IR.IRArray<int>(Enumerable.Range(1, 100));
-        var c = new IR.IRArray<int>(Enumerable.Range(2, 101));
+        var a = new IR.IRArray<int>(Enumerable.Range(1, 100).ToImmutableArray());
+        var b = new IR.IRArray<int>(Enumerable.Range(1, 100).ToImmutableArray());
+        var c = new IR.IRArray<int>(Enumerable.Range(2, 101).ToImmutableArray());
 
         Assert.True(a == b);
         Assert.True(a != c);
@@ -66,7 +65,7 @@ public sealed class UnitTestIRArray
     [Fact]
     public void TestContains()
     {
-        var a = new IR.IRArray<int>(Enumerable.Range(1, 100));
+        var a = new IR.IRArray<int>(Enumerable.Range(1, 100).ToImmutableArray());
         Assert.Contains(1, a);
         Assert.DoesNotContain(1000, a);
     }
@@ -74,18 +73,7 @@ public sealed class UnitTestIRArray
     [Fact]
     public void TestIndexOf()
     {
-        var a = new IR.IRArray<int>(Enumerable.Range(1, 100));
+        var a = new IR.IRArray<int>(Enumerable.Range(1, 100).ToImmutableArray());
         Assert.Equal(0, a.IndexOf(1));
-    }
-
-    [Fact]
-    public void TestException()
-    {
-        var a = new IR.IRArray<int>(Enumerable.Range(1, 100));
-        Assert.Throws<InvalidOperationException>(() => a.Add(101));
-        Assert.Throws<InvalidOperationException>(() => a.Clear());
-        Assert.Throws<InvalidOperationException>(() => a.Insert(0, 101));
-        Assert.Throws<InvalidOperationException>(() => a.Remove(1));
-        Assert.Throws<InvalidOperationException>(() => a.RemoveAt(0));
     }
 }
