@@ -110,8 +110,8 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
         get_matmul_pack_kind<TLhs, TRhs, LhsPackedAxes, RhsPackedAxes, false,
                              TransposedB>();
     using policy_t =
-        ntt::ukernels::u_matmul_policy<pack_kind, typename TLhs::element_type,
-                                       typename TRhs::element_type, TOutElem,
+        ntt::ukernels::u_matmul_policy<pack_kind, typename TLhs::value_type,
+                                       typename TRhs::value_type, TOutElem,
                                        true>;
     static constexpr auto m0_subtile = policy_t::m0_subtile;
 

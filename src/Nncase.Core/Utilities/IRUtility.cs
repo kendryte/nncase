@@ -47,7 +47,7 @@ public static class IRUtility
         mat = new int[newShape.Length, inShape.Length];
         int i = 0, j = 0;
         var paths = new List<(int, int)>();
-        while (i < newShape.Length && j < inShape.Length)
+        while (i >= 0 && i < newShape.Length && j >= 0 && j < inShape.Length)
         {
             if (paths.IndexOf((i, j)) != -1)
             {
@@ -122,6 +122,58 @@ public static class IRUtility
                 else
                 {
                     l2.Add(j);
+                }
+            }
+        }
+
+        return (forward, backward);
+    }
+
+    /// <summary>
+    /// convert the mapping matrix as a complete dictionary.
+    /// the key is in dim, value is not dim.
+    /// </summary>
+    /// <param name="mat">mat.</param>
+    /// <returns>dict.</returns>
+    public static (Dictionary<int, List<int>> Forward, Dictionary<int, List<int>> Backward) ShapeMapMatrixAsCompleteDict(int[,] mat)
+    {
+        var forward = new Dictionary<int, List<int>>();
+        var backward = new Dictionary<int, List<int>>();
+        for (int i = 0; i < mat.GetLength(0); i++)
+        {
+            for (int j = 0; j < mat.GetLength(1); j++)
+            {
+                if (mat[i, j] == 0)
+                {
+                    continue;
+                }
+
+                if (Enumerable.Range(0, mat.GetLength(1)).All(otherJ => j == otherJ || mat[i, otherJ] == 0))
+                {
+                    // j is the only dim that maps to i
+                    if (!forward.TryGetValue(j, out var l1))
+                    {
+                        l1 = new() { i };
+                        forward.Add(j, l1);
+                    }
+                    else
+                    {
+                        l1.Add(i);
+                    }
+                }
+
+                if (Enumerable.Range(0, mat.GetLength(0)).All(otherI => i == otherI || mat[otherI, j] == 0))
+                {
+                    // i is the only dim that maps to j
+                    if (!backward.TryGetValue(i, out var l2))
+                    {
+                        l2 = new() { j };
+                        backward.Add(i, l2);
+                    }
+                    else
+                    {
+                        l2.Add(j);
+                    }
                 }
             }
         }

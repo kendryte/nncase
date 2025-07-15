@@ -177,7 +177,6 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.SwapBinaryArgs>();
             p.Add<Passes.Rules.Neutral.DecomposeInstanceNorm>();
             p.Add<Passes.Rules.Neutral.DecomposeGelu>();
-            p.Add<Passes.Rules.Neutral.DecomposeSwish>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
         });
 

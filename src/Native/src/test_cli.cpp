@@ -170,6 +170,7 @@ result<void> run_core(const std::string &kmodel_path,
     //     std::filesystem::path(arg_file_path).parent_path().string();
     // nncase_interp_set_dump_root(interp, dump_path.c_str());
     try_(interp.load_model(stream));
+    // interp.enable_profiling(1);
 
     try_var(entry, interp.entry_function());
 

@@ -52,7 +52,6 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(indexType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(retType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(retType),
         };
     }
 

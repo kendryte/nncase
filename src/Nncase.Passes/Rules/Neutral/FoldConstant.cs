@@ -23,7 +23,7 @@ namespace Nncase.Passes.Rules.Neutral;
 /// Fold call of constants.
 /// </summary>
 [RuleGenerator]
-public partial class FoldConstCall : RewriteRule<CallPattern>
+public partial class FoldConstCall : RewriteRule<CallPattern>, IRewriteRule
 {
     /// <inheritdoc/>
     public override CallPattern Pattern { get; } = IsCall(
@@ -33,6 +33,8 @@ public partial class FoldConstCall : RewriteRule<CallPattern>
     {
         TypePattern = IsType(x => !(x is InvalidType)),
     };
+
+    bool IRewriteRule.IsFoldConstRule() => true;
 
     private Const GetReplace(Call call, IReadOnlyList<BaseExpr> constArgs)
     {

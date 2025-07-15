@@ -289,14 +289,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             reshaped = OrtKI.Cast(OrtKI.Reshape(input, shape, allowzero), (int)dataType.ToOrtType());
         }
 
-        if (dataType.IsFloat() && dataType != DataTypes.Float32)
-        {
-            return Value.FromTensor(reshaped.ToTensor(tensorType).CastTo(dataType));
-        }
-        else
-        {
-            return Value.FromTensor(reshaped.ToTensor(tensorType));
-        }
+        return reshaped.ToValue(dataType);
     }
 
     /// <inheritdoc/>

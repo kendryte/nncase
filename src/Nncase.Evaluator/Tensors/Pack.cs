@@ -44,7 +44,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             }
 
             var dt = input.DataType.ToDataType();
-            return Value.FromTensor(input.ToTensor(new TensorType(new VectorType(input.DataType.ToDataType(), target.Lanes), new RankedShape(input.Shape.SkipLast(target.Lanes.Count).Select(i => (int)i)))));
+            return input.ToValue(new VectorType(input.DataType.ToDataType(), target.Lanes));
         }
     }
 

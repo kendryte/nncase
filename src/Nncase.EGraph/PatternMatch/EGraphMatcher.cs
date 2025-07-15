@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.IR.Shapes;
 using Nncase.Passes;
 using Nncase.Utilities;
 
@@ -79,6 +80,10 @@ public sealed class EGraphMatcher
             // Shape
             (RankedShapePattern shapePat, RankedShape shape) => Visit(matchScopes, shapePat, enode, shape),
             (ShapePattern shapePat, Shape shape) => VisitLeaf(matchScopes, shapePat, enode, shape),
+
+            // Padding
+            (PaddingPattern padPat, Padding pad) => Visit(matchScopes, padPat, enode, pad),
+            (PaddingsPattern paddingsPat, Paddings paddings) => Visit(matchScopes, paddingsPat, enode, paddings),
 
             // BaseExpr
             (ExprPattern exprPattern, BaseExpr expr) => VisitLeaf(matchScopes, exprPattern, enode, expr),
@@ -258,6 +263,48 @@ public sealed class EGraphMatcher
             && pattern.Dimensions.MatchLeaf(SpanUtility.UnsafeCast<Dimension, BaseExpr>(expr.Dimensions), out var argsPattern))
         {
             var newScopes = Visit(context.Candidates, pattern.Dimensions, argsPattern, enode.Children);
+            if (newScopes.Count > 0)
+            {
+                context.NewScopes.AddRange(newScopes);
+                context.MatchCandidates(pattern, expr);
+            }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, PaddingPattern pattern, ENode enode, Padding expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.Before.MatchLeaf(expr.Before)
+            && pattern.After.MatchLeaf(expr.After))
+        {
+            var newScopes = Visit(context.Candidates, pattern.Before, enode.Children[0]);
+            if (newScopes.Count > 0)
+            {
+                newScopes = Visit(newScopes, pattern.After, enode.Children[1]);
+                if (newScopes.Count > 0)
+                {
+                    context.NewScopes.AddRange(newScopes);
+                    context.MatchCandidates(pattern, expr);
+                }
+            }
+        }
+
+        return context.NewScopes;
+    }
+
+    private IReadOnlyList<MatchScope> Visit(IReadOnlyList<MatchScope> matchScopes, PaddingsPattern pattern, ENode enode, Paddings expr)
+    {
+        var context = new MatchContext(matchScopes, pattern, expr);
+
+        if (context.HasCandidates
+            && pattern.MatchLeaf(expr)
+            && pattern.Values.MatchLeaf(SpanUtility.UnsafeCast<Padding, BaseExpr>(expr.Values), out var argsPattern))
+        {
+            var newScopes = Visit(context.Candidates, pattern.Values, argsPattern, enode.Children);
             if (newScopes.Count > 0)
             {
                 context.NewScopes.AddRange(newScopes);
