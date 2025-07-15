@@ -16,15 +16,18 @@
 #include "../apply.h"
 #include "../ukernels.h"
 #include "nncase/ntt/shape.h"
+#include <iostream>
 #include <type_traits>
 
 namespace nncase::ntt {
 namespace transpose_detail {
 template <FixedDimensions TPerms>
-constexpr auto segments_cnt(const TPerms &perms) noexcept {
-    return perms.template slice<1>.aggregate(
-        1_dim, [&](auto cnt_acc, auto perm, auto i) {
-            if constexpr (perm != perms[i - 1_dim] + 1) {
+constexpr auto segments_cnt(const TPerms &) noexcept {
+    constexpr auto rank = TPerms::rank();
+    constexpr TPerms perm_const;
+    return perm_const.template slice<0, rank - 1>().aggregate(
+        1, [&](auto cnt_acc, auto perm, auto i) {
+            if constexpr (perm != perm_const[i + 1_dim] - 1) {
                 return cnt_acc + 1;
             } else {
                 return cnt_acc;
@@ -41,10 +44,13 @@ void transpose(const TIn &input, TOut &&output,
                    make_index_shape<TIn::rank()>().reverse()) {
     constexpr auto rank = TIn::rank();
 
-    if constexpr (rank == 4) {
-        u_transpose(input, output, perms);
+    constexpr TPerms perm_const;
+    constexpr auto segments = transpose_detail::segments_cnt(perm_const);
+
+    if constexpr (segments <= 4) {
+        u_transpose<TIn, std::decay_t<TOut>, TPerms, segments>(
+            input, output, perms, std::make_index_sequence<segments>{});
     } else {
-        constexpr TPerms perm_const;
         constexpr auto pos_perms = positive_axes(perm_const, rank);
 
         ntt::apply(input.shape(), [&](auto index) {
