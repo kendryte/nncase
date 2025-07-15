@@ -44,10 +44,10 @@ class cpu_runtime_module : public runtime_module {
                offset * 2;
     }
 
-    const std::span<const std::byte> thread_local_rdata_content()
-        const noexcept {
+    const std::span<const std::byte>
+    thread_local_rdata_content() const noexcept {
         return thread_local_rdata_.subspan(cdim_ * bdim_ * tdim_ * 2 *
-                                    sizeof(uint64_t));
+                                           sizeof(uint64_t));
     }
 
     const std::span<const std::byte> block_local_rdata() const noexcept {
@@ -58,11 +58,10 @@ class cpu_runtime_module : public runtime_module {
         return reinterpret_cast<const uint64_t *>(block_local_rdata_.data()) +
                offset * 2;
     }
-    
-    const std::span<const std::byte> block_local_rdata_content()
-        const noexcept {
-        return block_local_rdata_.subspan(cdim_ * bdim_ * 2 *
-                                          sizeof(uint64_t));
+
+    const std::span<const std::byte>
+    block_local_rdata_content() const noexcept {
+        return block_local_rdata_.subspan(cdim_ * bdim_ * 2 * sizeof(uint64_t));
     }
 
 #ifdef __APPLE__
