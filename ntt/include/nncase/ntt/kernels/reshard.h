@@ -20,11 +20,14 @@
 #include "../shape.h"
 #include "../tensor_traits.h"
 #include "copy.h"
-#include "nncase/ntt/dimension.h"
 #include <cstddef>
 #include <numeric>
 #include <type_traits>
+
+// #define ENABLE_RESHARD_DEBUG 1
+#if ENABLE_RESHARD_DEBUG
 #include <iostream>
+#endif
 
 namespace tar {
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
@@ -40,6 +43,8 @@ constexpr void reshard(const SrcTensor &src, DestTensor &&dest) noexcept;
 
 namespace detail {
 template <class SrcTensor, class DestTensor> struct reshard_impl;
+
+#if ENABLE_RESHARD_DEBUG
 template <typename Tshape>
 constexpr void dump_shape(const std::string &info, Tshape shape) {
     std::cout << info << ": ";
@@ -48,14 +53,12 @@ constexpr void dump_shape(const std::string &info, Tshape shape) {
     std::cout << std::endl;
 }
 
-template <typename T>
-void dump_tensor(const std::string &info, const T &t) {
+template <typename T> void dump_tensor(const std::string &info, const T &t) {
     std::cout << info << ":";
-    apply(t.shape(), [&](auto index) {
-        std::cout << t(index) << " ";
-    });
+    apply(t.shape(), [&](auto index) { std::cout << t(index) << " "; });
     std::cout << std::endl;
 }
+#endif
 
 // shard
 template <Tensor SrcTensor, ShardedTensor DestTensor>
@@ -327,73 +330,46 @@ struct reshard_impl<SrcTensor, DestTensor> {
                   "Cannot reshard between different mesh types.");
 
     constexpr void operator()(const SrcTensor &src, DestTensor &dest) noexcept {
-        if (std::is_same_v<typename SrcTensor::shape_type, typename DestTensor::shape_type>) {
-            // std::cout << "same shape of src and dst" << std::endl;
-#if 0
-            copy_to_global(src);
-            copy_from_global(dest);
-#else
+        if (std::is_same_v<typename SrcTensor::shape_type,
+                           typename DestTensor::shape_type>) {
             // 1. get dest global offset
             auto local_mesh_index = mesh_type::local_index();
-            // dump_shape("local_mesh_idx", local_mesh_index);
             constexpr auto dest_global_shape = dest.shape();
             auto dest_local_shape = dest.local().shape();
-            // auto dest_start_offset = dest_sharding_type::global_offset(dest_global_shape, local_mesh_index);
-            auto dest_start_offset = dest.sharding().global_offset(dest_global_shape, local_mesh_index);
+            auto dest_start_offset = dest.sharding().global_offset(
+                dest_global_shape, local_mesh_index);
             constexpr auto tensor_rank = SrcTensor::shape_type::rank();
 
             // 2. get src candidates mesh index
-#if 0
-            auto hasher = std::hash<typename SrcTensor::mesh_type::index_type>();
-            auto key_equal = std::equal_to<typename SrcTensor::mesh_type::index_type>();
-            std::unordered_set<typename SrcTensor::mesh_type::index_type> candidates;
-            std::unordered_set<typename SrcTensor::mesh_type::index_type, decltype(hasher), decltype(key_equal)> candidates(256, hasher, key_equal);
-#else
-            // TODO: maybe repeat
-            std::vector<typename SrcTensor::mesh_type::dynamic_shard_index_type> candidates;
-            // candidates.reserve(mesh_shape::length());
-            // candidates.push_back(local_mesh_index);
-#endif
-
+            std::array<bool, mesh_type::shape.length()> candidates{};
+            bool found_candidates = false;
             auto get_dim = [&]<size_t axis> {
-                // const auto policy = std::get<axis>(src.sharding().axis_policies);
-                // if constexpr (distributed::SplitShardPolicy<std::decay_t<decltype(policy)>>) {
-                using policy_t = std::tuple_element_t<axis, typename src_sharding_type::axis_policies_type>;
-                if constexpr (distributed::SplitShardPolicy<policy_t>) {
-                    auto total_blocks = 1;
-                    constexpr auto policy_rank = policy_t::axes.rank();
+                const auto policy =
+                    std::get<axis>(src.sharding().axis_policies);
+                if constexpr (distributed::SplitShardPolicy<
+                                  std::decay_t<decltype(policy)>>) {
+                    size_t total_blocks = 1;
+                    constexpr auto policy_rank = policy.axes.rank();
                     for (size_t i = 0; i < policy_rank; i++) {
-                        total_blocks *= mesh_type::shape.at(policy_t::axes.at(i));
+                        total_blocks *= mesh_type::shape.at(policy.axes.at(i));
                     }
                     size_t block_size = src.shape()[axis] / total_blocks;
                     size_t start_block = dest_start_offset[axis] / block_size;
-                    size_t end_block = (dest_start_offset[axis] + dest_local_shape[axis] - 1) / block_size;
+                    size_t end_block =
+                        (dest_start_offset[axis] + dest_local_shape[axis] - 1) /
+                        block_size;
 
-                    // 生成所有可能的块索引组合
-                    for (size_t block = start_block; block <= end_block; ++block) {
-                        // auto coord = local_mesh_index;
+                    // Generate all possible block index combinations
+                    for (size_t block = start_block; block <= end_block;
+                         ++block) {
                         dynamic_shape_t<mesh_type::rank()> coord{};
-                        // apply(coord, [&](auto idx) {
-                        //     coord[idx] = local_mesh_index[idx];
-                        // });
                         loop<mesh_type::rank()>([&](auto idx) {
                             coord[idx] = local_mesh_index[idx];
                         });
 
+                        // Convert block index to mesh coordinates
                         size_t remainder = block;
-                        // 将块索引转换为mesh坐标
-#if 0
-                        // for (int i = policy_t::axes.rank() - 1; i >= 0; --i) {
-                        loop<policy_rank>([&](auto idx) {
-                            auto i = policy_rank - 1 - idx;
-                            auto ax = policy_t::axes.at(i);
-                            size_t dim_size = mesh_type::shape.at(ax);
-                            size_t c = remainder % dim_size;
-                            remainder /= dim_size;
-                            coord[ax] = c;
-                        });
-#else
-                        auto axes_reverse = policy_t::axes.reverse();
+                        auto axes_reverse = policy.axes.reverse();
                         loop<policy_rank>([&](auto idx) {
                             // auto i = policy_rank - 1 - idx;
                             auto ax = axes_reverse[idx];
@@ -402,9 +378,11 @@ struct reshard_impl<SrcTensor, DestTensor> {
                             remainder /= dim_size;
                             coord[ax] = c;
                         });
-#endif
-                        if (remainder == 0)
-                            candidates.push_back(coord);
+                        if (remainder == 0) {
+                            candidates[linear_offset(coord, mesh_type::shape)] =
+                                true;
+                            found_candidates = true;
+                        }
                     }
                 }
             };
@@ -414,53 +392,41 @@ struct reshard_impl<SrcTensor, DestTensor> {
             };
 
             get_all_dims(std::make_index_sequence<tensor_rank>{});
-            if (candidates.empty())
-                candidates.push_back(local_mesh_index);
+            if (!found_candidates) {
+                candidates[linear_offset(local_mesh_index, mesh_type::shape)] =
+                    true;
+            }
 
             // 3. traverse src index
             auto src_global_shape = src.shape();
             auto src_local_shape = src.local().shape();
-            // std::cout << "candidates size = " << candidates.size() << std::endl;
-            for (auto mesh_index : candidates) {
+#if ENABLE_RESHARD_DEBUG
+            std::cout << "candidates size = " << candidates.size() << std::endl;
+#endif
+            for (size_t linear_shard_id = 0;
+                 linear_shard_id < candidates.size(); ++linear_shard_id) {
+                if (!candidates[linear_shard_id])
+                    continue;
+
+                const auto shard_index =
+                    unravel_index(linear_shard_id, mesh_type::shape);
                 slice_with_global_offset<tensor_rank> src_slice{};
                 slice_with_global_offset<tensor_rank> dest_slice{};
 
                 // get src slice range
                 bool overlap = true;
-                auto src_start_offset = src.sharding().global_offset(src_global_shape, mesh_index);
-#if 0
-                for (size_t i = 0; i < tensor_rank; i++) {
-                    // check overlap between src and dest slices
-                    size_t start = std::max(src_start_offset[i], dest_start_offset[i]);
-                    size_t stop = std::min(src_start_offset[i] + src_local_shape[i], dest_start_offset[i] + dest_local_shape[i]);
-                    if (start >= stop) {
-                        overlap = false;
-                        break;
-                    }
-
-                    // src_slice.global_offset[i] = start;
-                    src_slice.local_offset[i] = start - src_start_offset[i];
-                    src_slice.shape[i] = stop - start;
-                    dest_slice.local_offset[i] = start - dest_start_offset[i];
-                }
-
-                // copy overlap
-                if (overlap) {
-                    // dump_shape("mesh_idx", mesh_index);
-                    auto src_new = src.template remote<mesh_type::scope>(mesh_index).tensor();
-                    auto src_block = src_new.view(src_slice.local_offset, src_slice.shape);
-                    auto dest_block = dest.local().view(dest_slice.local_offset, src_slice.shape);
-                    tensor_copy(src_block, dest_block);
-                }
-#else
+                auto src_start_offset =
+                    src.sharding().global_offset(src_global_shape, shard_index);
                 loop<tensor_rank>([&](auto idx) {
                     // check overlap between src and dest slices
                     auto i = dim_value(idx);
-                    size_t start = std::max(src_start_offset[i], dest_start_offset[i]);
-                    size_t stop = std::min(src_start_offset[i] + src_local_shape[i], dest_start_offset[i] + dest_local_shape[i]);
+                    size_t start =
+                        std::max(src_start_offset[i], dest_start_offset[i]);
+                    size_t stop =
+                        std::min(src_start_offset[i] + src_local_shape[i],
+                                 dest_start_offset[i] + dest_local_shape[i]);
                     if (start >= stop) {
                         overlap = false;
-                        // break;
                     }
 
                     // src_slice.global_offset[i] = start;
@@ -471,18 +437,15 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
                 // copy overlap
                 if (overlap) {
-                    // dump_shape("mesh_idx", mesh_index);
-                    // auto src_new = src.template remote<ntt::distributed::topology::chip>(mesh_index).tensor();
-                    auto src_new = src.template remote(mesh_index);
-                    auto src_block = src_new.view(src_slice.local_offset, src_slice.shape);
-                    auto dest_block = dest.local().view(dest_slice.local_offset, src_slice.shape);
+                    auto src_new = src.remote(shard_index);
+                    auto src_block =
+                        src_new.view(src_slice.local_offset, src_slice.shape);
+                    auto dest_block = dest.local().view(dest_slice.local_offset,
+                                                        src_slice.shape);
                     tensor_copy(src_block, dest_block);
                 }
-#endif
             }
-#endif
         } else {
-            // std::cout << "reshape src and dst" << std::endl;
             copy_to_global(src);
             copy_from_global(dest);
         }

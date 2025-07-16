@@ -27,7 +27,7 @@
 #include <module_topology_def.h>
 #else
 namespace nncase::ntt::distributed {
-constexpr auto topology_shape = ntt::fixed_shape_v<2, 8, 4>;
+constexpr auto topology_shape = ntt::fixed_shape_v<1, 1, 1>;
 } // namespace nncase::ntt::distributed
 #endif
 #endif
