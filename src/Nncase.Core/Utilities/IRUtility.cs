@@ -81,9 +81,13 @@ public static class IRUtility
                     if (inDim % newShape[i] == 0)
                     {
                         i++;
-                        for (int k = jStart; k < j; k++)
+                        if (jStart != -1)
                         {
-                            mat[i, k] = 1;
+                            // fill the path
+                            for (int k = jStart; k < j; k++)
+                            {
+                                mat[i, k] = 1;
+                            }
                         }
                     }
                     else

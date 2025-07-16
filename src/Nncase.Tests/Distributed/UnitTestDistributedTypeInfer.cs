@@ -86,6 +86,12 @@ public sealed class UnitTestDistributedTypeInfer : TestClassBase
             new InvalidType("not support")
         },
         {
+            // split and merge axis.
+            new DistributedType(new(DataTypes.Float32, new long[] { 16, 48, 1024 }), new SBP[] { SBP.S(new[] { 0 }), SBP.B, SBP.B }, new(new[] { 8 }, "t")),
+            new long[] { 8, 2, 64, 768 },
+            new DistributedType(new(DataTypes.Float32, new long[] { 8, 2, 64, 768 }), new SBP[] { SBP.S(new[] { 0 }), SBP.B, SBP.B, SBP.B }, new(new[] { 8 }, "t"))
+        },
+        {
             // unmapable reshape
             new DistributedType(new(DataTypes.Float32, new long[] { 2, 30 }), new SBP[] { SBP.S(new[] { 0 }), SBP.B }, new(new[] { 6 }, "t")),
             new long[] { 3, 20 },
