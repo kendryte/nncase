@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Google.OrTools.ConstraintSolver;
 using Nncase.IR;
 using Nncase.Passes;
@@ -262,12 +263,12 @@ public sealed class UnitTestModeling : TestClassBase
     }
 
     [Fact]
-    public void TestAutoFusion()
+    public async Task TestAutoFusion()
     {
         var func = FunctionSamples.Get1WithTarget(Callable.CPUModuleKind);
         var module = new IR.IRModule(func);
         CompileSession.Compiler.ImportIRModule(module);
-        CompileSession.Compiler.CompileAsync();
+        await CompileSession.Compiler.CompileAsync();
         using (var stream = Diagnostics.DumpScope.Current.OpenFile("test.kmodel"))
         {
             CompileSession.Compiler.Gencode(stream);
