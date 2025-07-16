@@ -23,10 +23,15 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
         if (cast.NewType is VectorType vt && !cast.PackAxes.IsDefaultOrEmpty)
         {
-            var dimensions = input.Dimensions.ToArray();
-            var scale = 1f * vt.ElemType.SizeInBytes / ((VectorType)input.ElementType).ElemType.SizeInBytes;
-            cast.PackAxes.ToArray().ForEach(a => dimensions[a] = (int)(dimensions[a] * scale));
-            return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode, dimensions));
+            if (cast.PackAxes.Count > 1)
+            {
+                throw new NotSupportedException("Pack axes must be one");
+            }
+
+            input = IR.F.Tensors.Unpack(input, ((VectorType)input.ElementType).Lanes.ToArray(), cast.PackAxes.ToArray()).Evaluate().AsTensor();
+            input = input.CastTo(vt.ElemType);
+            input = IR.F.Tensors.Pack(input, vt.Lanes.ToArray(), cast.PackAxes.ToArray()).Evaluate().AsTensor();
+            return Value.FromTensor(input);
         }
 
         return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
@@ -107,12 +112,12 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
         var shape = CompilerServices.GetMaxShape(inType.TensorType.Shape);
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            if (inType.AxisPolices[i] is SBPPartial)
+            if (inType.AxisPolicies[i] is SBPPartial)
             {
                 return invalid;
             }
 
-            if (inType.AxisPolices[i] is SBPSplit split && inType.TensorType.DType is VectorType vtIn && outType is TensorType ttOut && ttOut.DType is VectorType vtOut)
+            if (inType.AxisPolicies[i] is SBPSplit split && inType.TensorType.DType is VectorType vtIn && outType is TensorType ttOut && ttOut.DType is VectorType vtOut)
             {
                 if (vtIn.ElemType != vtOut.ElemType)
                 {
@@ -124,7 +129,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
                 }
             }
 
-            ndsbp[i] = inType.AxisPolices[i];
+            ndsbp[i] = inType.AxisPolicies[i];
         }
 
         return new DistributedType((TensorType)outType, ndsbp, inType.Placement);

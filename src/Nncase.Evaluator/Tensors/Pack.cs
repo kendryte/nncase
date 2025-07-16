@@ -44,7 +44,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             }
 
             var dt = input.DataType.ToDataType();
-            return Value.FromTensor(input.ToTensor(new TensorType(new VectorType(input.DataType.ToDataType(), target.Lanes), new RankedShape(input.Shape.SkipLast(target.Lanes.Count).Select(i => (int)i)))));
+            return input.ToValue(new VectorType(input.DataType.ToDataType(), target.Lanes));
         }
     }
 
@@ -99,7 +99,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         var divisor = Enumerable.Repeat(1, input.TensorType.Shape.Rank).ToList();
         for (int i = 0; i < divisor.Count; i++)
         {
-            if (input.AxisPolices[i] is SBPSplit split)
+            if (input.AxisPolicies[i] is SBPSplit split)
             {
                 divisor[i] *= split.Axes.Select(s => input.Placement.Hierarchy[s]).Aggregate(1, (a, b) => a * b);
             }
@@ -108,12 +108,12 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         var ndsbp = new SBP[input.TensorType.Shape.Rank];
         for (int i = 0; i < input.TensorType.Shape.Rank; i++)
         {
-            if (input.AxisPolices[i] is SBPSplit && target.Axes.Contains(i))
+            if (input.AxisPolicies[i] is SBPSplit && target.Axes.Contains(i))
             {
                 var lane = target.Lanes[target.Axes.IndexOf(i)];
                 if (input.TensorType.Shape[i] is { IsFixed: true, FixedValue: long s } && s / lane % divisor[i] == 0)
                 {
-                    ndsbp[i] = input.AxisPolices[i];
+                    ndsbp[i] = input.AxisPolicies[i];
                 }
                 else
                 {
@@ -122,7 +122,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             }
             else
             {
-                ndsbp[i] = input.AxisPolices[i];
+                ndsbp[i] = input.AxisPolicies[i];
             }
         }
 

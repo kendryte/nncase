@@ -29,7 +29,7 @@ public sealed partial class InstanceNorm : NTTKernelOp
 
     public IRArray<int> PackedAxes { get; }
 
-    public IRArray<int> PadedNums { get; }
+    public IRArray<Dimension> PadedNums { get; }
 
     public DistributedType DistType { get; }
 

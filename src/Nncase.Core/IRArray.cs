@@ -12,7 +12,8 @@ namespace Nncase.IR;
 /// <summary>
 /// the ir array.
 /// </summary>
-public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOnlyList<T>, IEnumerable<T>, IList<T>
+[CollectionBuilder(typeof(IRArrayBuilder), "Create")]
+public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOnlyList<T>, IEnumerable<T>
 {
     private readonly int _hashcode;
     private readonly ImmutableArray<T> _array;
@@ -31,7 +32,7 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     /// Initializes a new instance of the <see cref="IRArray{T}"/> struct.
     /// ctor from ienumerable.
     /// </summary>
-    public IRArray(IEnumerable<T> enumerable)
+    public IRArray(ReadOnlySpan<T> enumerable)
         : this(enumerable.ToImmutableArray())
     {
     }
@@ -54,20 +55,18 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     public int Count => _array.Length;
 
     /// <inheritdoc/>
-    public bool IsReadOnly => ((ICollection<T>)_array).IsReadOnly;
-
-    /// <inheritdoc/>
     public T this[int index] => _array[index];
 
     public ReadOnlySpan<T> this[Range range] => _array.AsSpan()[range];
-
-    T IList<T>.this[int index] { get => ((IList<T>)_array)[index]; set => throw new InvalidOperationException("IRArray Can't be modified!"); }
 
     public static implicit operator IRArray<T>(ImmutableArray<T> array) =>
         new IRArray<T>(array);
 
     public static implicit operator IRArray<T>(T[] array) =>
         new IRArray<T>(ImmutableArray.Create(array));
+
+    public static implicit operator ReadOnlySpan<T>(IRArray<T> array) =>
+        array._array.AsSpan();
 
     public static bool operator ==(IRArray<T> left, IRArray<T> right)
     {
@@ -79,28 +78,9 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
         return !(left == right);
     }
 
-    /// <inheritdoc/>
-    public void Add(T item)
-    {
-        throw new InvalidOperationException("IRArray Can't Add Item!");
-    }
-
-    /// <inheritdoc/>
-    public void Clear()
-    {
-        throw new InvalidOperationException("IRArray Can't Clear Item!");
-    }
-
-    /// <inheritdoc/>
     public bool Contains(T item)
     {
         return ((ICollection<T>)_array).Contains(item);
-    }
-
-    /// <inheritdoc/>
-    public void CopyTo(T[] array, int arrayIndex)
-    {
-        ((ICollection<T>)_array).CopyTo(array, arrayIndex);
     }
 
     /// <inheritdoc/>
@@ -121,8 +101,13 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
         return StructuralComparisons.StructuralEqualityComparer.Equals(_array, other._array);
     }
 
+    public ImmutableArray<T>.Enumerator GetEnumerator()
+    {
+        return _array.GetEnumerator();
+    }
+
     /// <inheritdoc/>
-    public IEnumerator<T> GetEnumerator()
+    IEnumerator<T> IEnumerable<T>.GetEnumerator()
     {
         return ((IEnumerable<T>)_array).GetEnumerator();
     }
@@ -139,28 +124,9 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
         return _hashcode;
     }
 
-    /// <inheritdoc/>
     public int IndexOf(T item)
     {
         return ((IList<T>)_array).IndexOf(item);
-    }
-
-    /// <inheritdoc/>
-    public void Insert(int index, T item)
-    {
-        throw new InvalidOperationException("IRArray Can't Insert Item!");
-    }
-
-    /// <inheritdoc/>
-    public bool Remove(T item)
-    {
-        throw new InvalidOperationException("IRArray Can't Remove Item!");
-    }
-
-    /// <inheritdoc/>
-    public void RemoveAt(int index)
-    {
-        throw new InvalidOperationException("IRArray Can't Remove Item!");
     }
 
     IEnumerator IEnumerable.GetEnumerator()
@@ -169,4 +135,14 @@ public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOn
     }
 
     public override string ToString() => "{" + string.Join(", ", _array) + "}";
+}
+
+public static class IRArrayBuilder
+{
+    /// <summary>
+    /// Create a new IRArray from a span.
+    /// </summary>
+    /// <param name="span">The span to create the IRArray from.</param>
+    /// <returns>A new IRArray instance.</returns>
+    public static IRArray<T> Create<T>(ReadOnlySpan<T> span) => new(span);
 }

@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NTT;
 
@@ -23,6 +24,8 @@ public sealed partial class PackedLayerNorm : Op
     /// </summary>
     public static readonly ParameterInfo Bias = new(typeof(PackedLayerNorm), 2, "bias", ParameterKind.Input);
 
+    public static readonly ParameterInfo PadedNums = new(typeof(PackedLayerNorm), 3, "padedNums", IsShapeType());
+
     public int Axis { get; }
 
     public float Epsilon { get; }
@@ -31,7 +34,5 @@ public sealed partial class PackedLayerNorm : Op
 
     public IRArray<int> PackedAxes { get; }
 
-    public IRArray<int> PadedNums { get; }
-
-    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, PackedAxes: {PackedAxes}, PadedNums: {PadedNums}";
+    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, PackedAxes: {PackedAxes}";
 }

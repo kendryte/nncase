@@ -23,17 +23,18 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
         var elementType = dt is VectorType vt ? vt.ElemType : dt;
         if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
         {
-            var newType = new VectorType(DataTypes.Float32, target.Lanes.Select(l => l / 4).ToArray());
-            var input = IR.F.Tensors.Cast(context.GetArgumentValue(target, Unpack.Input).AsTensor(), newType, CastMode.KDefault, target.Axes);
-            var inputOrt = input.Evaluate().AsTensor().ToOrtTensor();
+            var newType = new VectorType(DataTypes.UInt8, target.Lanes.ToArray());
+            var input = context.GetArgumentValue(target, Unpack.Input).AsTensor();
+            input = Tensor.FromBytes(newType, input.BytesBuffer.ToArray(), input.Shape);
+            var inputOrt = input.ToOrtTensor();
 
             foreach (var axis in target.Axes.Reverse())
             {
                 inputOrt = inputOrt.Unpack(axis);
             }
 
-            var output = IR.F.Tensors.Cast(inputOrt.ToTensor(), elementType).Evaluate().AsTensor();
-            return Value.FromTensor(output);
+            var output = inputOrt.ToTensor();
+            return Value.FromTensor(Tensor.FromBytes(elementType, output.BytesBuffer.ToArray(), output.Shape));
         }
         else
         {
@@ -102,7 +103,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
 
         // TODO: may support non-divisible input and pass it to output even if it's divisible.
         var shape = CompilerServices.GetMaxShape(input.TensorType.Shape);
-        foreach (var (s, r) in input.AxisPolices.Select((s, r) => (s, r)))
+        foreach (var (s, r) in input.AxisPolicies.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split)
             {
@@ -114,6 +115,6 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
             }
         }
 
-        return new DistributedType(tensorType, input.AxisPolices, input.Placement);
+        return new DistributedType(tensorType, input.AxisPolicies, input.Placement);
     }
 }

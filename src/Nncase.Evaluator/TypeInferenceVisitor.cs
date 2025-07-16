@@ -22,10 +22,10 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     private readonly TypeInferenceContext _context;
     private readonly Dictionary<Type, ITypeInferencer> _inferencer_cache;
 
-    public TypeInferenceVisitor()
+    public TypeInferenceVisitor(Dictionary<Type, ITypeInferencer> inferencer_cache)
     {
         _context = new TypeInferenceContext();
-        _inferencer_cache = new Dictionary<Type, ITypeInferencer>();
+        _inferencer_cache = inferencer_cache ?? new Dictionary<Type, ITypeInferencer>();
     }
 
     /// <summary>
@@ -235,7 +235,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     /// <inheritdoc/>
     protected override IRType VisitLeafPrimFunctionWrapper(PrimFunctionWrapper expr)
     {
-        var type = new CallableType(expr.ReturnType, new(expr.ParameterTypes));
+        var type = new CallableType(expr.ReturnType, new(expr.ParameterTypes.ToImmutableArray()));
         return type;
     }
 
@@ -243,7 +243,7 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     protected override IRType VisitLeafFunctionWrapper(FunctionWrapper expr)
     {
         var returnType = ((CallableType)expr.Target.CheckedType).ReturnType;
-        var type = new CallableType(TupleType.Void, new(expr.ParameterTypes.Append(returnType)));
+        var type = new CallableType(TupleType.Void, new(expr.ParameterTypes.Append(returnType).ToImmutableArray()));
         return type;
     }
 

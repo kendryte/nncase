@@ -16,19 +16,22 @@ namespace Nncase;
 
 // NOTE fixed array not suppot generic
 
-public interface IVector<T>
-{
-    static int Count { get; }
-}
-
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector4<T> : IVector<Vector4<T>>, IEquatable<Vector4<T>>
+public unsafe struct Vector4<T> : IVector<T>, IEquatable<Vector4<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
     private T _item_0_1;
     private T _item_0_2;
     private T _item_0_3;
+
+    static Vector4()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
 
     public static Vector4<T> Create(T[] array) 
     {
@@ -61,7 +64,7 @@ public unsafe struct Vector4<T> : IVector<Vector4<T>>, IEquatable<Vector4<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector8<T> : IVector<Vector8<T>>, IEquatable<Vector8<T>>
+public unsafe struct Vector8<T> : IVector<T>, IEquatable<Vector8<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -72,6 +75,14 @@ public unsafe struct Vector8<T> : IVector<Vector8<T>>, IEquatable<Vector8<T>>
     private T _item_0_5;
     private T _item_0_6;
     private T _item_0_7;
+
+    static Vector8()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
 
     public static Vector8<T> Create(T[] array) 
     {
@@ -104,7 +115,7 @@ public unsafe struct Vector8<T> : IVector<Vector8<T>>, IEquatable<Vector8<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector16<T> : IVector<Vector16<T>>, IEquatable<Vector16<T>>
+public unsafe struct Vector16<T> : IVector<T>, IEquatable<Vector16<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -123,6 +134,14 @@ public unsafe struct Vector16<T> : IVector<Vector16<T>>, IEquatable<Vector16<T>>
     private T _item_0_13;
     private T _item_0_14;
     private T _item_0_15;
+
+    static Vector16()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
 
     public static Vector16<T> Create(T[] array) 
     {
@@ -155,7 +174,7 @@ public unsafe struct Vector16<T> : IVector<Vector16<T>>, IEquatable<Vector16<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32<T> : IVector<Vector32<T>>, IEquatable<Vector32<T>>
+public unsafe struct Vector32<T> : IVector<T>, IEquatable<Vector32<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -191,6 +210,14 @@ public unsafe struct Vector32<T> : IVector<Vector32<T>>, IEquatable<Vector32<T>>
     private T _item_0_30;
     private T _item_0_31;
 
+    static Vector32()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector32<T> Create(T[] array) 
     {
         Vector32<T> vec = default;
@@ -222,7 +249,7 @@ public unsafe struct Vector32<T> : IVector<Vector32<T>>, IEquatable<Vector32<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64<T> : IVector<Vector64<T>>, IEquatable<Vector64<T>>
+public unsafe struct Vector64<T> : IVector<T>, IEquatable<Vector64<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -290,6 +317,14 @@ public unsafe struct Vector64<T> : IVector<Vector64<T>>, IEquatable<Vector64<T>>
     private T _item_0_62;
     private T _item_0_63;
 
+    static Vector64()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector64<T> Create(T[] array) 
     {
         Vector64<T> vec = default;
@@ -321,7 +356,7 @@ public unsafe struct Vector64<T> : IVector<Vector64<T>>, IEquatable<Vector64<T>>
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector128<T> : IVector<Vector128<T>>, IEquatable<Vector128<T>>
+public unsafe struct Vector128<T> : IVector<T>, IEquatable<Vector128<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -453,6 +488,14 @@ public unsafe struct Vector128<T> : IVector<Vector128<T>>, IEquatable<Vector128<
     private T _item_0_126;
     private T _item_0_127;
 
+    static Vector128()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector128<T> Create(T[] array) 
     {
         Vector128<T> vec = default;
@@ -484,7 +527,7 @@ public unsafe struct Vector128<T> : IVector<Vector128<T>>, IEquatable<Vector128<
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector4x4<T> : IVector<Vector4x4<T>>, IEquatable<Vector4x4<T>>
+public unsafe struct Vector4x4<T> : IVector<T>, IEquatable<Vector4x4<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -503,6 +546,14 @@ public unsafe struct Vector4x4<T> : IVector<Vector4x4<T>>, IEquatable<Vector4x4<
     private T _item_3_1;
     private T _item_3_2;
     private T _item_3_3;
+
+    static Vector4x4()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
 
     public static Vector4x4<T> Create(T[] array) 
     {
@@ -564,7 +615,7 @@ public unsafe struct Vector4x4<T> : IVector<Vector4x4<T>>, IEquatable<Vector4x4<
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector8x8<T> : IVector<Vector8x8<T>>, IEquatable<Vector8x8<T>>
+public unsafe struct Vector8x8<T> : IVector<T>, IEquatable<Vector8x8<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -632,6 +683,14 @@ public unsafe struct Vector8x8<T> : IVector<Vector8x8<T>>, IEquatable<Vector8x8<
     private T _item_7_6;
     private T _item_7_7;
 
+    static Vector8x8()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector8x8<T> Create(T[] array) 
     {
         Vector8x8<T> vec = default;
@@ -692,7 +751,7 @@ public unsafe struct Vector8x8<T> : IVector<Vector8x8<T>>, IEquatable<Vector8x8<
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector16x16<T> : IVector<Vector16x16<T>>, IEquatable<Vector16x16<T>>
+public unsafe struct Vector16x16<T> : IVector<T>, IEquatable<Vector16x16<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -952,6 +1011,14 @@ public unsafe struct Vector16x16<T> : IVector<Vector16x16<T>>, IEquatable<Vector
     private T _item_15_14;
     private T _item_15_15;
 
+    static Vector16x16()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector16x16<T> Create(T[] array) 
     {
         Vector16x16<T> vec = default;
@@ -1012,7 +1079,7 @@ public unsafe struct Vector16x16<T> : IVector<Vector16x16<T>>, IEquatable<Vector
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x16<T> : IVector<Vector32x16<T>>, IEquatable<Vector32x16<T>>
+public unsafe struct Vector32x16<T> : IVector<T>, IEquatable<Vector32x16<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -1528,6 +1595,14 @@ public unsafe struct Vector32x16<T> : IVector<Vector32x16<T>>, IEquatable<Vector
     private T _item_31_14;
     private T _item_31_15;
 
+    static Vector32x16()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector32x16<T> Create(T[] array) 
     {
         Vector32x16<T> vec = default;
@@ -1588,7 +1663,7 @@ public unsafe struct Vector32x16<T> : IVector<Vector32x16<T>>, IEquatable<Vector
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x32<T> : IVector<Vector32x32<T>>, IEquatable<Vector32x32<T>>
+public unsafe struct Vector32x32<T> : IVector<T>, IEquatable<Vector32x32<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -2616,6 +2691,14 @@ public unsafe struct Vector32x32<T> : IVector<Vector32x32<T>>, IEquatable<Vector
     private T _item_31_30;
     private T _item_31_31;
 
+    static Vector32x32()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector32x32<T> Create(T[] array) 
     {
         Vector32x32<T> vec = default;
@@ -2676,7 +2759,7 @@ public unsafe struct Vector32x32<T> : IVector<Vector32x32<T>>, IEquatable<Vector
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x64<T> : IVector<Vector32x64<T>>, IEquatable<Vector32x64<T>>
+public unsafe struct Vector32x64<T> : IVector<T>, IEquatable<Vector32x64<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -4728,6 +4811,14 @@ public unsafe struct Vector32x64<T> : IVector<Vector32x64<T>>, IEquatable<Vector
     private T _item_31_62;
     private T _item_31_63;
 
+    static Vector32x64()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector32x64<T> Create(T[] array) 
     {
         Vector32x64<T> vec = default;
@@ -4788,7 +4879,7 @@ public unsafe struct Vector32x64<T> : IVector<Vector32x64<T>>, IEquatable<Vector
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector32x128<T> : IVector<Vector32x128<T>>, IEquatable<Vector32x128<T>>
+public unsafe struct Vector32x128<T> : IVector<T>, IEquatable<Vector32x128<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -8888,6 +8979,14 @@ public unsafe struct Vector32x128<T> : IVector<Vector32x128<T>>, IEquatable<Vect
     private T _item_31_126;
     private T _item_31_127;
 
+    static Vector32x128()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector32x128<T> Create(T[] array) 
     {
         Vector32x128<T> vec = default;
@@ -8948,7 +9047,7 @@ public unsafe struct Vector32x128<T> : IVector<Vector32x128<T>>, IEquatable<Vect
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x32<T> : IVector<Vector64x32<T>>, IEquatable<Vector64x32<T>>
+public unsafe struct Vector64x32<T> : IVector<T>, IEquatable<Vector64x32<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -11000,6 +11099,14 @@ public unsafe struct Vector64x32<T> : IVector<Vector64x32<T>>, IEquatable<Vector
     private T _item_63_30;
     private T _item_63_31;
 
+    static Vector64x32()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector64x32<T> Create(T[] array) 
     {
         Vector64x32<T> vec = default;
@@ -11060,7 +11167,7 @@ public unsafe struct Vector64x32<T> : IVector<Vector64x32<T>>, IEquatable<Vector
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x64<T> : IVector<Vector64x64<T>>, IEquatable<Vector64x64<T>>
+public unsafe struct Vector64x64<T> : IVector<T>, IEquatable<Vector64x64<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -15160,6 +15267,14 @@ public unsafe struct Vector64x64<T> : IVector<Vector64x64<T>>, IEquatable<Vector
     private T _item_63_62;
     private T _item_63_63;
 
+    static Vector64x64()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector64x64<T> Create(T[] array) 
     {
         Vector64x64<T> vec = default;
@@ -15220,7 +15335,7 @@ public unsafe struct Vector64x64<T> : IVector<Vector64x64<T>>, IEquatable<Vector
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector64x128<T> : IVector<Vector64x128<T>>, IEquatable<Vector64x128<T>>
+public unsafe struct Vector64x128<T> : IVector<T>, IEquatable<Vector64x128<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -23416,6 +23531,14 @@ public unsafe struct Vector64x128<T> : IVector<Vector64x128<T>>, IEquatable<Vect
     private T _item_63_126;
     private T _item_63_127;
 
+    static Vector64x128()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
     public static Vector64x128<T> Create(T[] array) 
     {
         Vector64x128<T> vec = default;
@@ -23476,7 +23599,7 @@ public unsafe struct Vector64x128<T> : IVector<Vector64x128<T>>, IEquatable<Vect
 }
 
 [StructLayout(LayoutKind.Sequential)]
-public unsafe struct Vector128x64<T> : IVector<Vector128x64<T>>, IEquatable<Vector128x64<T>>
+public unsafe struct Vector128x64<T> : IVector<T>, IEquatable<Vector128x64<T>>
     where T : unmanaged, IEquatable<T>
 {
     private T _item_0_0;
@@ -31671,6 +31794,14 @@ public unsafe struct Vector128x64<T> : IVector<Vector128x64<T>>, IEquatable<Vect
     private T _item_127_61;
     private T _item_127_62;
     private T _item_127_63;
+
+    static Vector128x64()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
 
     public static Vector128x64<T> Create(T[] array) 
     {

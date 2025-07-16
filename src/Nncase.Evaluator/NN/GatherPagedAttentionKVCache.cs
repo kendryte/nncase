@@ -66,7 +66,7 @@ public sealed class GatherPagedAttentionKVCacheEvaluator : ITypeInferencer<Gathe
         var logicalShape = logicalTensorType.Shape.ToValueArray();
         var shape = logicalShape.Concat(lanesShape).ToArray();
         var reshaped = OrtKI.Reshape(transKVCacheTensor, shape, 0);
-        var tensor = reshaped.ToTensor(logicalTensorType);
+        var tensor = reshaped.ToValue(logicalTensorType.DType).AsTensor();
         return tensor;
     }
 
@@ -92,7 +92,7 @@ public sealed class GatherPagedAttentionKVCacheEvaluator : ITypeInferencer<Gathe
             return invalidType;
         }
 
-        if (!shardId.AxisPolices.All(sbp => sbp is SBPBroadCast))
+        if (!shardId.AxisPolicies.All(sbp => sbp is SBPBroadCast))
         {
             return new InvalidType("only support broadcast!");
         }

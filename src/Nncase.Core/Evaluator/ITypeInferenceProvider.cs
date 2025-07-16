@@ -19,8 +19,9 @@ public interface ITypeInferenceProvider
     /// Inference type of the expression tree.
     /// </summary>
     /// <param name="expr">Expression.</param>
+    /// <param name="inferencer_cache">Inferencer cache.</param>
     /// <returns>Is fully inferenced.</returns>
-    bool InferenceType(BaseExpr expr);
+    bool InferenceType(BaseExpr expr, Dictionary<Type, ITypeInferencer> inferencer_cache);
 
     /// <summary>
     /// Inference operator.

@@ -53,7 +53,7 @@ public sealed class BufferizePass : FunctionPass
         if (scheduleResult.TryGetValue(MemoryLocation.Output, out var dataResult))
         {
             func.SchedResult.OutputAlign = Math.Max(8, (ulong)dataResult.Alignment);
-            func.SchedResult.OutputUsage = (ulong)dataResult.MemoryPoolSize;
+            func.SchedResult.OutputUsage = MathUtility.AlignUp((ulong)dataResult.MemoryPoolSize, func.SchedResult.OutputAlign);
         }
     }
 
@@ -62,7 +62,7 @@ public sealed class BufferizePass : FunctionPass
         if (scheduleResult.TryGetValue(MemoryLocation.Data, out var dataResult))
         {
             func.SchedResult.DataAlign = Math.Max(8, (ulong)dataResult.Alignment);
-            func.SchedResult.DataUsage = (ulong)dataResult.MemoryPoolSize;
+            func.SchedResult.DataUsage = MathUtility.AlignUp((ulong)dataResult.MemoryPoolSize, func.SchedResult.DataAlign);
         }
     }
 

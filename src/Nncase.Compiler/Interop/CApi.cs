@@ -1232,7 +1232,14 @@ public static unsafe class CApi
                 var kvStorage = kvCache.KVCaches.View(indices, shape).Squeeze(Utilities.LinqUtility.Range(0L, sharedCount).ToArray());
 
                 // FIXME: Memory leak here
-                kvCacheAddrs.Add((long)kvStorage.PinBuffer().Pointer);
+                var rtKVStorage = RTTensor.FromTensor(kvStorage);
+                var rtKVStorageBuffer = rtKVStorage.Buffer;
+                var rtKVStorageHost = rtKVStorageBuffer.Buffer.AsHost()!;
+                using (var mmOwner = rtKVStorageHost.Map(RTMapAccess.Read))
+                {
+                    var outHostSlice = mmOwner.Memory.Slice((int)rtKVStorageBuffer.Start, (int)rtKVStorageBuffer.SizeBytes);
+                    kvCacheAddrs.Add((long)outHostSlice.Pin().Pointer);
+                }
             }
         }
 

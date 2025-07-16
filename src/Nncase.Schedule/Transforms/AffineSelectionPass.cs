@@ -38,7 +38,7 @@ public abstract class AffineSelectionPass : FunctionPass
 
     protected Expr SelectUnaryLike(Expr input, Op tirOp, Call call, Expr output)
     {
-        if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
+        if (output.CheckedShape is not { Rank: > 0 })
         {
             return call;
         }
@@ -71,7 +71,7 @@ public abstract class AffineSelectionPass : FunctionPass
             var outBuffer = expr.CheckedType switch
             {
                 TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape),
-                DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape, dt.AxisPolices, dt.Placement),
+                DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape, dt.AxisPolicies, dt.Placement),
                 _ => throw new ArgumentOutOfRangeException(nameof(expr), $"Unsupported type {expr.CheckedType}"),
             };
             return _selectionPass.SelectCall(expr, outBuffer);

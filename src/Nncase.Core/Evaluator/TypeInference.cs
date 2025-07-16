@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
@@ -71,7 +72,7 @@ public static class TypeInference
 
         return context.GetArgumentType(op, parameter) switch
         {
-            DistributedType d when d.AxisPolices.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
+            DistributedType d when d.AxisPolicies.All(x => x is SBPBroadCast) => WrapperException(d.TensorType),
             IRType t => CheckArgumentType<TensorType>(context, op, parameter, reason),
         };
     }
@@ -106,13 +107,14 @@ public static class TypeInference
         }
 
         var dataType = inputs[0].DType;
-        if (inputs.Any(x => ((x.DType is VectorType && dataType is VectorType) || (x.DType is not VectorType && dataType is not VectorType)) &&
-            x.DType != dataType))
+        dataType = dataType is VectorType vt ? vt.ElemType : dataType;
+        if (!inputs.All(x => x.DType == dataType || (x.DType is VectorType vt && vt.ElemType == dataType)))
         {
             return new InvalidType(
                 $"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
         }
 
+        dataType = inputs.Select(x => x.DType).OfType<VectorType>().FirstOrDefault() ?? dataType;
         return BroadcastType(dataType, inputs);
     }
 
@@ -182,6 +184,47 @@ public static class TypeInference
         }
 
         return new TensorType(dataType, new RankedShape(outputShape));
+    }
+
+    /// <summary>
+    /// Broadcast input shapes.
+    /// </summary>
+    /// <param name="cond">Condition shape.</param>
+    /// <param name="inputs">Input shapes.</param>
+    /// <returns>Broadcasted shape.</returns>
+    public static IRType WhereType(TensorType cond, params TensorType[] inputs)
+    {
+        if (inputs.Length < 2)
+        {
+            throw new ArgumentException("Broadcast must have 2 inputs at least.");
+        }
+
+        var dataType = inputs[0].DType;
+        dataType = dataType is VectorType vt ? vt.ElemType : dataType;
+        if (!inputs.All(x => x.DType == dataType || (x.DType is VectorType vt && vt.ElemType == dataType)))
+        {
+            return new InvalidType(
+                $"Inputs of broadcast must have same datatype: {string.Join(",", inputs.Select(x => x.DType.GetDisplayName()))}");
+        }
+
+        dataType = inputs.Select(x => x.DType).OfType<VectorType>().FirstOrDefault() ?? dataType;
+        if (cond.DType is MaskVectorType maskVectorType)
+        {
+            if (dataType is VectorType vt2)
+            {
+                if (vt2.Lanes.Count != 1 || vt2.Lanes[0] != maskVectorType.Lanes)
+                {
+                    return new InvalidType(
+                            $"The cond mask vector lanes {maskVectorType.Lanes} is not compatible with input vector lanes {vt2.Lanes}");
+                }
+            }
+            else
+            {
+                dataType = new VectorType(dataType, maskVectorType.Lanes);
+            }
+        }
+
+        return BroadcastType(dataType, [cond, .. inputs]);
     }
 
     /// <summary>
@@ -296,7 +339,8 @@ public static class TypeInference
 
         if (padValue.CheckedType is TensorType padValueType)
         {
-            if (padValueType.DType != input.DType)
+            if (!(padValueType.DType == input.DType
+                || (input.DType is VectorType vt && padValueType.DType == vt.ElemType)))
             {
                 return new InvalidType($"Pad value and input must have same type, " +
                                        $"input:{input.DType}, padValue:{padValueType.DType}");
@@ -402,49 +446,36 @@ public static class TypeInference
     /// <summary>
     /// Pack Type Infer.
     /// </summary>
-    public static IRType PackType(TensorType input, IRArray<int> lanes, IRArray<int> axes)
+    public static IRType PackType(TensorType input, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
     {
-        var vType = new VectorType(input.DType, lanes);
-        if (input.Shape is RankedShape inShape)
+        if (input.DType is BooleanType)
         {
-            var dims = inShape.ToList();
-            foreach (var (lane, axis) in lanes.Zip(axes))
-            {
-                if (dims[axis].IsFixed)
-                {
-                    dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lane);
-                }
-                else
-                {
-                    dims[axis] = dims[axis] / lane;
-                }
-            }
-
-            return new TensorType(vType, new RankedShape(dims));
+            return new InvalidType("PackType does not support BooleanType input");
         }
 
-        return new TensorType(vType, Shape.Unranked);
+        var vType = new VectorType(input.DType, lanes.ToArray());
+        return PackType(input.Shape, vType, lanes, axes);
+    }
+
+    public static IRType PackMaskType(TensorType input, MaskVectorStyle style, int elementBits, int lanes, int axis)
+    {
+        if (input.DType is not BooleanType)
+        {
+            return new InvalidType("input.DType is not BooleanType");
+        }
+
+        var vType = new MaskVectorType(style, elementBits, lanes);
+        return PackType(input.Shape, vType, [lanes], [axis]);
     }
 
     public static IRType UnpackType(TensorType input, IRArray<int> axes)
     {
-        if (input.DType is not VectorType vtype)
+        return input.DType switch
         {
-            return new InvalidType("input.DType is not VectorType vtype");
-        }
-
-        if (input.Shape is RankedShape inShape)
-        {
-            var dims = inShape.ToList();
-            foreach (var (lanes, axis) in vtype.Lanes.Zip(axes))
-            {
-                dims[axis] *= lanes;
-            }
-
-            return new TensorType(vtype.ElemType, new RankedShape(dims));
-        }
-
-        return new TensorType(vtype.ElemType, Shape.Unranked);
+            MaskVectorType vt => UnpackType(input.Shape, DataTypes.Boolean, [vt.Lanes], axes),
+            VectorType vt => UnpackType(input.Shape, vt.ElemType, vt.Lanes, axes),
+            _ => new InvalidType($"UnpackType does not support {input.DType}"),
+        };
     }
 
     /// <summary>
@@ -577,11 +608,11 @@ public static class TypeInference
         if (placement != null)
         {
             var newTypes = types.ToArray();
-            var ndsbp = new IRArray<SBP>(Enumerable.Repeat(SBP.B, placement.Rank));
             foreach (ref var newType in newTypes.AsSpan())
             {
-                if (newType is TensorType tensorType)
+                if (newType is TensorType tensorType && tensorType.Shape is RankedShape { Rank: var rank })
                 {
+                    var ndsbp = new IRArray<SBP>(Enumerable.Repeat(SBP.B, rank).ToImmutableArray<SBP>());
                     newType = new DistributedType(tensorType, ndsbp, placement);
                 }
             }
@@ -649,5 +680,48 @@ public static class TypeInference
         }
 
         return outputShape;
+    }
+
+    private static IRType PackType(Shape inputShape, DataType vectorType, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    {
+        if (inputShape is RankedShape inShape)
+        {
+            var dims = inShape.ToList();
+            for (int i = 0; i < axes.Length; i++)
+            {
+                var axis = axes[i];
+                var lane = lanes[i];
+                if (dims[axis].IsFixed)
+                {
+                    dims[axis] = MathUtility.CeilDiv(dims[axis].FixedValue, lane);
+                }
+                else
+                {
+                    dims[axis] = dims[axis] / lane;
+                }
+            }
+
+            return new TensorType(vectorType, new RankedShape(dims));
+        }
+
+        return new TensorType(vectorType, Shape.Unranked);
+    }
+
+    private static IRType UnpackType(Shape inputShape, DataType elementType, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    {
+        if (inputShape is RankedShape inShape)
+        {
+            var dims = inShape.ToList();
+            for (int i = 0; i < axes.Length; i++)
+            {
+                var axis = axes[i];
+                var lane = lanes[i];
+                dims[axis] *= lane;
+            }
+
+            return new TensorType(elementType, new RankedShape(dims));
+        }
+
+        return new TensorType(elementType, Shape.Unranked);
     }
 }

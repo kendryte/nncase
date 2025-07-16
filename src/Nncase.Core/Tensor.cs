@@ -501,6 +501,23 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         where T : unmanaged, IEquatable<T>;
 
     /// <summary>
+    /// Cast to typed tensor.
+    /// </summary>
+    /// <typeparam name="T">Element type. When element type of source tensor is a vector type, the result tensor will also be a vector type.</typeparam>
+    /// <param name="castMode">Cast mode.</param>
+    /// <returns>Typed tensor.</returns>
+    public Tensor CastElement<T>(CastMode castMode = CastMode.KDefault)
+        where T : struct, IEquatable<T>
+    {
+        if (ElementType is VectorType vt)
+        {
+            return CastTo(vt with { ElemType = DataType.FromType<T>() }, castMode);
+        }
+
+        return CastTo(DataType.FromType<T>(), castMode);
+    }
+
+    /// <summary>
     /// <see cref="Cast{T}(CastMode)"/>.
     /// </summary>
     public Tensor CastTo(DataType type, CastMode castMode = CastMode.KDefault)
@@ -668,7 +685,7 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
         }
         else if (type.GetInterfaces().Where(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(IVector<>))).SingleOrDefault() is Type vectorType)
         {
-            var elemType = type.GenericTypeArguments[0];
+            var elemType = vectorType.GenericTypeArguments[0];
             var value = typeof(Tensor).GetMethod(nameof(GetOneOrZero), BindingFlags.Static | BindingFlags.NonPublic)?
                 .MakeGenericMethod(elemType)
                 .Invoke(null, new object[] { isOne })!;

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using Nncase.CodeGen;
 using Nncase.CodeGen.NTT;
 using Nncase.IR;
@@ -13,6 +14,12 @@ namespace Nncase.Targets;
 public class NTTModuleCompiler : IModuleCompiler
 {
     public string ModuleKind => CPUTarget.Kind;
+
+    public MaskVectorStyle MaskVectorStyle => RuntimeInformation.ProcessArchitecture switch
+    {
+        Architecture.X64 or Architecture.Arm64 => MaskVectorStyle.Fat,
+        _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}"),
+    };
 
     public IModuleBuilder CreateModuleBuilder(CompileOptions options) => new NTTModuleBuilder(options);
 

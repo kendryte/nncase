@@ -45,8 +45,10 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
 
         tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
+#if false // Disable device profiling for now.
         IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{tagName}\";\n");
         IndentScope.Writer.Write($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+#endif
         IndentScope.Writer.Write($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }
@@ -65,8 +67,10 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
 
         tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
+#if false // Disable device profiling for now.
         IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{tagName}\";\n");
         IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+#endif
         IndentScope.Writer.IndWrite($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }
@@ -236,7 +240,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         {
             TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
-            TensorType => "auto",
+            TensorType or DistributedType => "auto",
             _ => throw new NotSupportedException(),
         };
 

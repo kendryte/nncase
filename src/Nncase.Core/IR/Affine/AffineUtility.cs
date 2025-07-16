@@ -7,6 +7,8 @@ using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Utilities;
+using Isl = IntegerSetLibrary;
 
 namespace Nncase.IR.Affine;
 
@@ -82,4 +84,17 @@ public static class AffineUtility
         }
     }
 #endif
+
+    public static Isl.map AsMap(AffineMap map)
+    {
+        var domains = string.Join(", ", Enumerable.Range(0, map.Domains.Length).Select(i => $"d{i}"));
+        if (map.Symbols.Length > 0)
+        {
+            throw new NotSupportedException("Isl map does not support symbols yet.");
+        }
+
+        var results = StringUtility.Join(", ", map.Results.ToArray().Select(expr => $"{expr.Offset.GetDisplayString(map.Symbols)}"));
+
+        return new Isl.map(Isl.ctx.Current, $"{{ [{domains}] -> [{results}] }}");
+    }
 }

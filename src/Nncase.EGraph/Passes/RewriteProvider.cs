@@ -70,7 +70,8 @@ internal class EGraphRewriteProvider : IEGraphRewriteProvider
             {
                 var replacedExprs = (from result in results
                                      let oldExpr = ((ENode)result.Root).Expr
-                                     let candidates = rule.GetReplaceCandidates(result, context)
+                                     let skip = rule.IsFoldConstRule() && eGraph.Find((ENode)result.Root).Nodes.Any(x => x.Expr is Const)
+                                     let candidates = skip ? null : rule.GetReplaceCandidates(result, context)
                                      where candidates != null
                                      from newExpr in candidates
                                      where newExpr != null

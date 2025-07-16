@@ -29,11 +29,16 @@ public class CPUTarget : Target
 {
     public const string Kind = "cpu";
 
+    private readonly NTTModuleCompiler _nttModuleCompiler = new();
+
+    public CPUTarget()
+    {
+        ModuleCompilers = [_nttModuleCompiler];
+    }
+
     public override string Name => Kind;
 
-    public override IReadOnlyList<IModuleCompiler> ModuleCompilers { get; } = [
-        new NTTModuleCompiler(),
-    ];
+    public override IReadOnlyList<IModuleCompiler> ModuleCompilers { get; }
 
     public override (System.CommandLine.Command Command, Func<InvocationContext, System.CommandLine.Command, ITargetOptions> Parser) RegisterCommandAndParser()
     {
@@ -58,23 +63,40 @@ public class CPUTarget : Target
         // todo config it in the target options.
         var rank = 1;
         var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 32 : 16;
-        pass.Add<Passes.Rules.NTT.PackReduce>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackSwish>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackResizeImage>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackMatMul>(2, lane);
+        var maskVectorStyle = _nttModuleCompiler.MaskVectorStyle;
+
+        pass.Add<Passes.Rules.NTT.PackBinaryPropagation>();
+        pass.Add<Passes.Rules.NTT.PackComparePropagation>(maskVectorStyle);
+        pass.Add<Passes.Rules.NTT.PackConcatPropagation>();
         pass.Add<Passes.Rules.NTT.PackConv2D>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackUnary>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackBinary>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackTranspose>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackUnsqueeze>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackReshape>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackSlice>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackGather>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackCompare>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackConcat>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackExpand>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackWhere>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackScatterND>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackExpandPropagation>();
+        pass.Add<Passes.Rules.NTT.PackGatherPropagation>();
+        pass.Add<Passes.Rules.NTT.PackLayerNorm>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackMatMul>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackPadPropagation>();
+        pass.Add<Passes.Rules.NTT.PackReducePropagation>();
+        pass.Add<Passes.Rules.NTT.PackReshapePropagation>();
+        pass.Add<Passes.Rules.NTT.PackResizeImagePropagation>();
+
+        // pass.Add<Passes.Rules.NTT.PackScatterND>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackSlicePropagation>();
+
+        // pass.Add<Passes.Rules.NTT.PackSwish>(rank, lane);
+        pass.Add<Passes.Rules.NTT.PackTransposePropagation>();
+        pass.Add<Passes.Rules.NTT.PackUnaryPropagation>();
+        pass.Add<Passes.Rules.NTT.PackUnsqueezePropagation>();
+        pass.Add<Passes.Rules.NTT.PackWherePropagation>(maskVectorStyle);
+
+        pass.Add<Passes.Rules.NTT.ConcatUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.BinaryUnpackLhsPropagation>();
+        pass.Add<Passes.Rules.NTT.BinaryUnpackRhsPropagation>();
+        pass.Add<Passes.Rules.NTT.PackedMatMulUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.ReshapeUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.SliceUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.SwishUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.TransposeUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.UnaryUnpackPropagation>();
+
         pass.Add<Passes.Rules.Neutral.FoldConstCall>();
         pass.Add<Passes.Rules.NTT.FoldPackUnpack>();
         pass.Add<Passes.Rules.NTT.FoldPackConcatUnpack>();

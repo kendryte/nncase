@@ -33,7 +33,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             }
 
             var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
-            var ndsbpIn = DistributedUtility.AxisPolicesToNDSBP(inType.AxisPolices, inType.Placement.Rank);
+            var ndsbpIn = DistributedUtility.AxisPolicesToNDSBP(inType.AxisPolicies, inType.Placement.Rank);
             var ndsbp = new SBP[ndsbpIn.Count];
             for (int meshAxis = 0; meshAxis < ndsbp.Length; meshAxis++)
             {
@@ -125,7 +125,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                         }
                     }
 
-                    var ndsbpIn = DistributedUtility.AxisPolicesToNDSBP(inType.AxisPolices, inType.Placement.Rank);
+                    var ndsbpIn = DistributedUtility.AxisPolicesToNDSBP(inType.AxisPolicies, inType.Placement.Rank);
                     var ndsbp = new SBP[ndsbpIn.Count];
                     for (int i = 0; i < inType.Placement.Rank; i++)
                     {
@@ -136,7 +136,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                         };
                     }
 
-                    return inType with { TensorType = new TensorType(inType.TensorType.DType, newSymbolShape), AxisPolices = DistributedUtility.NDSBPToAxisPolices(ndsbp, newSymbolShape.Rank) };
+                    return inType with { TensorType = new TensorType(inType.TensorType.DType, newSymbolShape), AxisPolicies = DistributedUtility.NDSBPToAxisPolices(ndsbp, newSymbolShape.Rank) };
                 }
                 else if (inShape.Count > rankedNewSymbolShape.Count)
                 {
@@ -154,7 +154,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                         }
                     }
 
-                    var ndsbpIn = DistributedUtility.AxisPolicesToNDSBP(inType.AxisPolices, inType.Placement.Rank);
+                    var ndsbpIn = DistributedUtility.AxisPolicesToNDSBP(inType.AxisPolicies, inType.Placement.Rank);
                     var ndsbp = new SBP[ndsbpIn.Count];
                     for (int i = 0; i < inType.Placement.Rank; i++)
                     {
@@ -165,14 +165,14 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                         };
                     }
 
-                    return inType with { TensorType = new TensorType(inType.TensorType.DType, newSymbolShape), AxisPolices = DistributedUtility.NDSBPToAxisPolices(ndsbp, newSymbolShape.Rank) };
+                    return inType with { TensorType = new TensorType(inType.TensorType.DType, newSymbolShape), AxisPolicies = DistributedUtility.NDSBPToAxisPolices(ndsbp, newSymbolShape.Rank) };
                 }
             }
 
             // not the squeeze or unsqueeze
-            if (!inType.AxisPolices.Any(sbp => sbp is SBPSplit))
+            if (!inType.AxisPolicies.Any(sbp => sbp is SBPSplit))
             {
-                return inType with { TensorType = new TensorType(inType.TensorType.DType, newSymbolShape), AxisPolices = Enumerable.Repeat(SBP.B, newSymbolShape.Rank).ToArray() };
+                return inType with { TensorType = new TensorType(inType.TensorType.DType, newSymbolShape), AxisPolicies = Enumerable.Repeat(SBP.B, newSymbolShape.Rank).ToArray() };
             }
         }
 
@@ -289,14 +289,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             reshaped = OrtKI.Cast(OrtKI.Reshape(input, shape, allowzero), (int)dataType.ToOrtType());
         }
 
-        if (dataType.IsFloat() && dataType != DataTypes.Float32)
-        {
-            return Value.FromTensor(reshaped.ToTensor(tensorType).CastTo(dataType));
-        }
-        else
-        {
-            return Value.FromTensor(reshaped.ToTensor(tensorType));
-        }
+        return reshaped.ToValue(dataType);
     }
 
     /// <inheritdoc/>

@@ -70,7 +70,7 @@ public sealed class CreatePagedAttentionKVCacheEvaluator : ITypeInferencer<Creat
 
     private IRType CheckAllBroadCast(DistributedType distributedType, [System.Runtime.CompilerServices.CallerArgumentExpression("distributedType")] string? name = null)
     {
-        if (!distributedType.AxisPolices.All(x => x is SBPBroadCast))
+        if (!distributedType.AxisPolicies.All(x => x is SBPBroadCast))
         {
             return new InvalidType($"{name} is not all broadcast");
         }
@@ -116,11 +116,11 @@ public sealed class CreatePagedAttentionKVCacheEvaluator : ITypeInferencer<Creat
             return iv5;
         }
 
-        if (kv_caches.Placement.Name == "cdxyt")
+        if (kv_caches.Placement.Name == "cdyxt")
         {
-            if (kv_caches.AxisPolices[0] is SBPSplit { Axes: [1] } &&
-                kv_caches.AxisPolices[1] is SBPSplit { Axes: [2, 3] } &&
-                kv_caches.AxisPolices.Skip(2).All(x => x is SBPBroadCast))
+            if (kv_caches.AxisPolicies[0] is SBPSplit { Axes: [1] } &&
+                kv_caches.AxisPolicies[1] is SBPSplit { Axes: [2, 3] } &&
+                kv_caches.AxisPolicies.Skip(2).All(x => x is SBPBroadCast))
             {
                 return validType;
             }

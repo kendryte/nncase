@@ -26,7 +26,7 @@ public sealed partial class FoldNopBinary : IRewriteRule
         "call",
         x => x.BinaryOp is BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div or BinaryOp.Mod or BinaryOp.Pow,
         IsWildcard("lhs"),
-        IsTensorConst("rhs"));
+        IsTensorConst("rhs") with { TypePattern = !IsVector() });
 
     private Expr? GetReplace(Binary binary, Call call, Expr lhs, TensorConst rhs)
     {

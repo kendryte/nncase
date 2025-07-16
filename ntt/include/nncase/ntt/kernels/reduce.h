@@ -59,7 +59,7 @@ class reduce_impl {
 
     static constexpr TInElem initial_value() noexcept {
         if constexpr (Op == reduce_op::mean || Op == reduce_op::sum) {
-            return (TInElem)0;
+            return TInElem{};
         } else if constexpr (Op == reduce_op::min) {
             return (TInElem)std::numeric_limits<TOutScalar>::max();
         } else if constexpr (Op == reduce_op::max) {
@@ -196,8 +196,6 @@ void reduce(const TIn &input, TOut &&output,
             [[maybe_unused]] const TReduceAxes &reduce_axes,
             [[maybe_unused]] const PackedAxes &packed_axes = {},
             [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
-    static_assert(PadedNums{} == make_zeros_shape<PackedAxes::rank()>(),
-                  "not support padding");
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");
     detail::reduce_impl<Op, LoadPrevious, TIn, std::decay_t<TOut>, PadedNums>

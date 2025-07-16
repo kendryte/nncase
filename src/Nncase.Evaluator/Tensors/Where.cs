@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NetFabric.Hyperlinq;
@@ -64,7 +65,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var condOrt = cond.ToOrtTensor();
         var xOrt = x.ToOrtTensor();
         var yOrt = y.ToOrtTensor();
-        var condLaneNum = condType is VectorType vt1 ? vt1.Lanes.Count : 0;
+        var condLaneNum = condType is MaskVectorType vt1 ? 1 : 0;
         var xLaneNum = xType is VectorType vt2 ? vt2.Lanes.Count : 0;
         var yLaneNum = yType is VectorType vt3 ? vt3.Lanes.Count : 0;
         var maxLaneSize = System.Math.Max(System.Math.Max(condLaneNum, xLaneNum), yLaneNum);
@@ -115,7 +116,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             return new TensorType(DataTypes.Int64, Shape.Unknown(cond.Shape.Rank));
         }
 
-        return TypeInference.BroadcastType(x.DType, cond, x, y);
+        return TypeInference.WhereType(cond, x, y);
     }
 
     public IRType Visit(DistributedType cond, DistributedType x, DistributedType y, Where target)
@@ -131,7 +132,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             return invalid;
         }
 
-        var targetType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, cond.TensorType, x.TensorType, y.TensorType);
+        var targetType = (TensorType)TypeInference.WhereType(cond.TensorType, x.TensorType, y.TensorType);
 
         // if (cond.TensorType.Shape != targetType.Shape)
         // {
@@ -144,9 +145,9 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var ndsbp = new SBP[targetType.Shape.Rank];
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var policyCond = i < padCond ? null : cond.AxisPolices[i - padCond];
-            var policyX = i < padX ? null : x.AxisPolices[i - padX];
-            var policyY = i < padY ? null : y.AxisPolices[i - padY];
+            var policyCond = i < padCond ? null : cond.AxisPolicies[i - padCond];
+            var policyX = i < padX ? null : x.AxisPolicies[i - padX];
+            var policyY = i < padY ? null : y.AxisPolicies[i - padY];
 
             SBP? policyOut;
             switch (policyCond, policyX, policyY)
@@ -167,7 +168,7 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
                         return invalid;
                     }
 
-                    var xyType = (TensorType)TypeInference.BroadcastType(x.TensorType.DType, x.TensorType, y.TensorType);
+                    var xyType = (TensorType)TypeInference.BroadcastType(x.TensorType, y.TensorType);
                     var padXY = targetType.Shape.Rank - xyType.Shape.Rank;
                     policyOut = CheckSBP(policyCond, policyXY, cond.TensorType.Shape, xyType.Shape, padCond, padXY, i);
                     break;
@@ -190,11 +191,12 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
         var x = context.GetArgumentType<IRType>(target, Where.X);
         var y = context.GetArgumentType<IRType>(target, Where.Y);
         var ret = context.GetReturnType<IRType>();
-        return new()
+
+        return new Cost
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(cond, x, y),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(ret),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(cond, CostUtility.GetCPUCyclesOfCompare()),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(ret, CostUtility.GetCPUCyclesOfCompare()),
         };
     }
 

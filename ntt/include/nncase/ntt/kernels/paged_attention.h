@@ -227,8 +227,8 @@ void paged_attention(
             reinterpret_cast<kv_prim_type_t *>(extra_tensor.elements().data()),
             s_shape);
         auto reduce_s = make_tensor_view_from_address(
-            reinterpret_cast<kv_prim_type_t *>(extra_tensor.elements().data() +
-                                               s_shape.length()),
+            reinterpret_cast<kv_prim_type_t *>(extra_tensor.elements().data()) +
+                s_shape.length(),
             reduce_s_shape);
 
         // s = q * k^T : [head_q, query_len, seq_len]
@@ -401,15 +401,16 @@ void gather_paged_attention_kv_cache([[maybe_unused]] const T0 &value,
     using config_t = typename kv_cache_t::config_t;
     using mesh_type = T0::mesh_type;
 
-    const auto shard_index = mesh_type::local_index();
-    const auto block_shard_axes =
-        make_index_shape<config_t::sharding_axes_t::rank()>().aggregate(
-            fixed_shape_v<>, [&](auto last_axes, auto i, auto) {
-                constexpr auto axis_policy =
-                    std::get<i>(config_t::axis_policies);
-                return last_axes.concat(axis_policy.axes);
-            });
-    const auto kv_cache_index = shard_index.select(block_shard_axes);
+    const auto local_index = mesh_type::local_index();
+    const auto kv_cache_index =
+        generate_shape<config_t::sharding_axes_t::rank()>([&](auto axis) {
+            const auto submesh_axes =
+                std::get<axis>(config_t::axis_policies).axes;
+            const auto submesh_shape = mesh_type::shape.select(submesh_axes);
+            const auto local_program_id =
+                linear_offset(local_index.select(submesh_axes), submesh_shape);
+            return local_program_id;
+        });
     const auto kv_cache_address = kv_cache.kv_cache_address(kv_cache_index);
     const auto storage_tensor =
         make_tensor_view_from_address(kv_cache_address, output_tensor.shape());

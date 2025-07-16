@@ -131,6 +131,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
                 return new()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1),
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
 
@@ -138,7 +139,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
                 var scaleType = context.GetArgumentType<DistributedType>(target, LayerNorm.Scale);
                 var biasType = context.GetArgumentType<DistributedType>(target, LayerNorm.Bias);
                 var ring = GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + GetRingReduceCommunicate(biasType, new[] { 0, 1 });
-                var broadcastAxes = Enumerable.Range(0, inputDistributedType.Placement.Rank).Except(inputDistributedType.AxisPolices.OfType<SBPSplit>().Select(s => s.Axes).SelectMany(x => x)).ToArray();
+                var broadcastAxes = Enumerable.Range(0, inputDistributedType.Placement.Rank).Except(inputDistributedType.AxisPolicies.OfType<SBPSplit>().Select(s => s.Axes).SelectMany(x => x)).ToArray();
                 var reCompute = broadcastAxes.Select(a => inputDistributedType.Placement.Hierarchy[a]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
                 return new()
                 {
@@ -182,17 +183,22 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
             return invalid;
         }
 
-        var ndsbp = new SBP[input.AxisPolices.Count];
+        var ndsbp = new SBP[input.AxisPolicies.Count];
 
         for (int i = 0; i < ndsbp.Length; i++)
         {
-            var scalePolicy = i - raxis >= 0 ? scale.AxisPolices[i - raxis] : null;
-            var biasPolicy = i - raxis >= 0 ? bias.AxisPolices[i - raxis] : null;
-            switch (input.AxisPolices[i], scalePolicy, biasPolicy)
+            var scalePolicy = i - raxis >= 0 ? scale.AxisPolicies[i - raxis] : null;
+            var biasPolicy = i - raxis >= 0 ? bias.AxisPolicies[i - raxis] : null;
+            switch (input.AxisPolicies[i], scalePolicy, biasPolicy)
             {
                 case (SBPSplit si, SBPSplit ss, SBPSplit sb) when i >= raxis && si.Axes == ss.Axes && ss.Axes == sb.Axes:
+                    // FIXME: not support on axes for now
+#if true
+                    return invalid;
+#else
                     ndsbp[i] = si;
                     break;
+#endif
                 case (SBPSplit si, _, _) when i < raxis:
                     ndsbp[i] = si;
                     break;
@@ -210,7 +216,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
     private UInt128 GetRingReduceCommunicate(DistributedType distributedType, int[] axes)
     {
         var ttype = Utilities.DistributedUtility.GetDividedTensorType(distributedType);
-        var splits = axes.Where(i => i < distributedType.Placement.Rank && distributedType.AxisPolices.Any(s => s is SBPSplit split && split.Axes.Contains(i)));
+        var splits = axes.Where(i => i < distributedType.Placement.Rank && distributedType.AxisPolicies.Any(s => s is SBPSplit split && split.Axes.Contains(i)));
         if (!splits.Any())
         {
             return 0;
