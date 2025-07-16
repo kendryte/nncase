@@ -26,7 +26,7 @@ using namespace nncase;
 
 template <typename T, size_t N>
 void benchmark_ntt_where_pack(T init_low, T init_high) {
-#if __riscv
+#ifdef __riscv
     constexpr size_t n = 1;
     constexpr size_t c = 8;
     constexpr size_t h = 16;

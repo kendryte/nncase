@@ -16,7 +16,6 @@
 #include "../apply.h"
 #include "../ukernels.h"
 #include "nncase/ntt/shape.h"
-#include <iostream>
 #include <type_traits>
 
 namespace nncase::ntt {
