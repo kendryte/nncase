@@ -28,6 +28,16 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
         var maxNewShape = CompilerServices.GetMaxShape(newShape);
         if (!IRUtility.TryGetShapeMapMatrix(maxInShape, maxNewShape, out var mat))
         {
+            if (inType.AxisPolicies.All(x => x is SBPBroadCast))
+            {
+                // If all axes are broadcast, we can still reshape.
+                return inType with
+                {
+                    TensorType = inType.TensorType with { Shape = newShape },
+                    AxisPolicies = Enumerable.Repeat(SBP.B, newShape.Rank).ToArray(),
+                };
+            }
+
             return invalidType;
         }
 

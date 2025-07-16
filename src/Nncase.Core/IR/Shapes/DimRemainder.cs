@@ -84,7 +84,7 @@ public sealed class DimRemainder : Dimension, IEquatable<DimRemainder?>
         var (numScale, numPows) = DimHelpers.GetScaleAndPows(numerator);
         var (denScale, denPows) = DimHelpers.GetScaleAndPows(denominator);
 
-        if (numScale % denScale == 0)
+        if (denScale != 1 && numScale % denScale == 0)
         {
             // If the scale of the numerator is divisible by the scale of the denominator,
             // we can simplify the scale.

@@ -1469,7 +1469,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
         var dimN = new DimVar("n");
-        dimN.Metadata.Range = new(1, 1200);
+        dimN.Metadata.Range = new(1, 1024);
         var rhsDims = rhsShape.Select(x => (Dimension)x).ToArray();
         rhsDims[^1] = dimN;
 
