@@ -18,7 +18,8 @@
 extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
   nncase::ntt::runtime::thread_inout_desc *const output_descs,
   const std::byte *rdata,
-  const std::byte *local_rdata,
+  const std::byte *thread_local_rdata,
+  const std::byte *block_local_rdata,
   std::byte *local_data,
   std::byte *output) {
   /* prepare inputs */
@@ -78,7 +79,7 @@ extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input
     throw new NotSupportedException($"not support multi form topology!");
   }
   
-  @(Model.PrimFunction.Name)(@(string.Concat(names.Select(x => $"{x}, ")))rdata, local_rdata, local_data, output, output_descs);
+  @(Model.PrimFunction.Name)(@(string.Concat(names.Select(x => $"{x}, ")))rdata, thread_local_rdata, block_local_rdata, local_data, output, output_descs);
 }
 
 #ifdef NNCASE_STANDALONE
@@ -91,11 +92,12 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
   }
 
   std::byte* rdata = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.RDataSize, align);
-  std::byte* local_rdata = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.LocalRdataPoolSize, align);
-  uint64_t local_rdata_header[@Model.Options.Hierarchies[0][^1] * 2];
+  std::byte* thread_local_rdata = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.ThreadLocalRdataPoolSize, align);
+  uint64_t thread_local_rdata_header[@Model.Options.Hierarchies[0][^1] * 2];
   for (size_t tid = 0; tid < tdim(); tid++) {
-    local_rdata_header[tid * 2] = tid * ( @Model.LocalRdataPoolSize / tdim());
+    thread_local_rdata_header[tid * 2] = tid * ( @Model.ThreadLocalRdataPoolSize / tdim());
   }
+  std::byte* block_local_rdata = (std::byte *)nncase::ntt::runtime::thread_alloc(@Model.BlockLocalRdataPoolSize, align);
 
 #ifdef __APPLE__
   pthread_key_t cpu_thread_context_key_ = {};
@@ -105,7 +107,7 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
   std::vector<std::thread> blocks;
   for (size_t cid = 0; cid < cdim(); cid++) {
     for (size_t bid = 0; bid < bdim(); bid++) {
-      blocks.emplace_back([cid, bid, inputs, rdata, local_rdata_header, local_rdata
+      blocks.emplace_back([cid, bid, inputs, rdata, thread_local_rdata_header, thread_local_rdata, block_local_rdata
 #ifdef __APPLE__
       , &cpu_thread_context_key_
 #endif
@@ -120,8 +122,9 @@ int main([[maybe_unused]] int argc, [[maybe_unused]] char** argv) {
             .input_descs = nullptr,
             .output_descs = nullptr,
             .rdata = rdata,
-            .local_rdata_header = local_rdata_header,
-            .local_rdata = local_rdata,
+            .thread_local_rdata_header = thread_local_rdata_header,
+            .thread_local_rdata = thread_local_rdata,
+            .block_local_rdata = block_local_rdata,
 #ifdef __APPLE__
             .cpu_thread_context_key = cpu_thread_context_key_,
 #endif

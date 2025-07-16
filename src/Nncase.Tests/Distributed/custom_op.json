@@ -1,0 +1,73 @@
+{
+    "Version": "1",
+    "Model": "matmul",
+    "Outputs": [
+        {
+            "Name": "",
+            "Op": "Matmul",
+            "Shape": [
+                [
+                    1,
+                    256,
+                    13696
+                ],
+                [
+                    13696,
+                    4096
+                ]
+            ],
+            "SBP": [
+                [
+                    {
+                        "$type": "B"
+                    },
+                    {
+                        "$type": "S",
+                        "Axes": [
+                            2
+                        ]
+                    },
+                    {
+                        "$type": "S",
+                        "Axes": [
+                            1, 3
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "$type": "S",
+                        "Axes": [
+                            2
+                        ]
+                    },
+                    {
+                        "$type": "S",
+                        "Axes": [
+                            1, 3
+                        ]
+                    }
+                ],
+                [
+                    {
+                        "$type": "B"
+                    },
+                    {
+                        "$type": "S",
+                        "Axes": [
+                            2
+                        ]
+                    },
+                    {
+                        "$type": "S",
+                        "Axes": [
+                            1, 3
+                        ]
+                    }
+                ]
+            ],
+            "Cost": 1,
+            "CSourcePath": "ddd/txt"
+        }
+    ]
+}

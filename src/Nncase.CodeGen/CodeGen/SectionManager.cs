@@ -19,7 +19,9 @@ public static class WellknownSectionNames
 
     public static readonly string Rdata = ".rdata";
 
-    public static readonly string LocalRdata = ".local_rdata";
+    public static readonly string ThreadLocalRdata = ".thread_local_rdata";
+
+    public static readonly string BlockLocalRdata = ".block_local_rdata";
 }
 
 public class Symbol

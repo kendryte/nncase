@@ -84,7 +84,8 @@ public sealed class SchedFunctionResult
     public SchedFunctionResult()
     {
         Rdatas = new(ReferenceEqualityComparer.Instance);
-        LocalRdatas = new(ReferenceEqualityComparer.Instance);
+        ThreadLocalRdatas = new(ReferenceEqualityComparer.Instance);
+        BlockLocalRdatas = new(ReferenceEqualityComparer.Instance);
         DataUsage = 0;
         IsScheduled = false;
     }
@@ -97,7 +98,12 @@ public sealed class SchedFunctionResult
     /// <summary>
     /// Gets the buffer allocation.
     /// </summary>
-    public Dictionary<IR.Const, ValueRange<ulong>> LocalRdatas { get; }
+    public Dictionary<IR.Const, ValueRange<ulong>> ThreadLocalRdatas { get; }
+
+    /// <summary>
+    /// Gets the buffer allocation.
+    /// </summary>
+    public Dictionary<IR.Const, ValueRange<ulong>> BlockLocalRdatas { get; }
 
     /// <summary>
     /// Gets or sets the data section length.
@@ -142,8 +148,10 @@ public sealed class SchedFunctionResult
         }
 
         return EqualityComparer<Dictionary<IR.Const, ValueRange<ulong>>>.Default.Equals(Rdatas, result.Rdatas) &&
-               EqualityComparer<ulong>.Default.Equals(DataUsage, result.DataUsage) &&
-               EqualityComparer<ulong>.Default.Equals(DataAlign, result.DataAlign);
+                EqualityComparer<Dictionary<IR.Const, ValueRange<ulong>>>.Default.Equals(ThreadLocalRdatas, result.ThreadLocalRdatas) &&
+                EqualityComparer<Dictionary<IR.Const, ValueRange<ulong>>>.Default.Equals(BlockLocalRdatas, result.BlockLocalRdatas) &&
+                EqualityComparer<ulong>.Default.Equals(DataUsage, result.DataUsage) &&
+                EqualityComparer<ulong>.Default.Equals(DataAlign, result.DataAlign);
     }
 
     /// <inheritdoc/>
