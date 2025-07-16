@@ -38,12 +38,12 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
     private Var[]? _tensorParams;
     private ulong _collective_pool_size;
 
-    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong threaLocalRdataPoolSize, ulong blockLocalRdataPoolSize, NTTTargetOptions targetOptions)
+    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong threadLocalRdataPoolSize, ulong blockLocalRdataPoolSize, NTTTargetOptions targetOptions)
     {
         DataAlign = dataAlign;
         DataUsage = dataUsage;
         RdataPoolSize = rdataPoolSize;
-        ThreadLocalRdataPoolSize = threaLocalRdataPoolSize;
+        ThreadLocalRdataPoolSize = threadLocalRdataPoolSize;
         BlockLocalRdataPoolSize = blockLocalRdataPoolSize;
         _kernelBuilder = new StringBuilder();
         _sharedBuilder = new StringBuilder();
