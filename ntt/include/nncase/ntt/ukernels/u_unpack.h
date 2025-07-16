@@ -37,7 +37,7 @@ class u_unpack_impl {
         constexpr auto elem_shape = TVec::shape();
 
         const auto domain = input.shape().concat(elem_shape);
-        apply(domain, [&](auto index) {
+        ntt::apply(domain, [&](auto index) {
             const auto in_index = index.template slice<0, rank>();
             const auto elem_index = index.template slice<rank, elem_rank>();
             const auto out_index_template = index.template slice<0, rank>();
