@@ -387,12 +387,20 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteIndWithProfiler($"conv2d({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, fixed_shape_v<{string.Join(", ", conv.Stride)}>, fixed_paddings_v<{string.Join(", ", conv.Padding)}>, fixed_shape_v<{string.Join(",", conv.Dilation)}>, {conv.Groups}_dim);\n");
                     break;
                 case TIR.NTT.Matmul matmul:
-                    WriteWithProfiler(
-                        RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.NTT.Matmul>(matmul)
+                    {
+                        var dimInfo = IR.NTT.PackedMatMul.GetDimInfo(matmul.TransposeA, matmul.TransposeB, args[0].CheckedShape.Rank, args[1].CheckedShape.Rank);
+                        WriteWithProfiler(
+                            RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.NTT.Matmul>(matmul)
+                            {
+                                Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
+                            }).Result,
+                            "matmul");
+                        if (args[0] is TIR.Buffer a && a.DistributedType?.AxisPolicies[dimInfo.Lk] is SBPSplit s)
                         {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
-                        }).Result,
-                        "matmul");
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                        }
+                    }
 
                     break;
                 case TIR.NTT.SUMMA summa:
@@ -405,11 +413,13 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");
                     break;
                 case TIR.NTT.Gather gather:
-                    WriteWithProfiler($"gather({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {gather.Axis}_dim);\n");
-                    if (args[0] is TIR.Buffer b && b.DistributedType?.AxisPolicies[gather.Axis] is SBPSplit s)
                     {
-                        var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
-                        WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                        WriteWithProfiler($"gather({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {gather.Axis}_dim);\n");
+                        if (args[0] is TIR.Buffer b && b.DistributedType?.AxisPolicies[gather.Axis] is SBPSplit s)
+                        {
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                        }
                     }
 
                     break;

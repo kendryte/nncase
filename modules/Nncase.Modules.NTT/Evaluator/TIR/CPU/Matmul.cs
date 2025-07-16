@@ -20,7 +20,8 @@ public sealed class MatmulEvaluator : ITypeInferencer<Matmul>, IKernelInfoEvalua
         var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
 
         var (k, m, n) = (context.BufferShapes[0][^1], context.BufferShapes[2][^2], context.BufferShapes[2][^1]);
-        var (lpack, rpack) = PackedMatMul.GetPackKind(op.LhsPackedAxes, op.RhsPackedAxes);
+        var (lpack, rpack) = new PackedMatMul(DataTypes.Float32, op.LhsPackedAxes, op.RhsPackedAxes, op.TransposeA, op.TransposeB, op.FusedReduce)
+            .GetPackKind(context.BufferShapes[0].Length, context.BufferShapes[2].Length);
         switch (lpack, rpack)
         {
             case (PackedMatMul.PackKind.M | PackedMatMul.PackKind.K, PackedMatMul.PackKind.K | PackedMatMul.PackKind.N):

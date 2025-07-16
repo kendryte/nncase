@@ -11,6 +11,10 @@ using Nncase.PatternMatch;
 
 namespace Nncase.IR.Math;
 
+public record MatMulDimInfo(int Lm, int Lk, int Rk, int Rn)
+{
+}
+
 /// <summary>
 /// MatMul expression.
 /// </summary>
