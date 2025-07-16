@@ -43,11 +43,16 @@ void transpose(const TIn &input, TOut &&output,
                [[maybe_unused]] const TPerms &perms =
                    make_index_shape<TIn::rank()>().reverse()) {
     constexpr auto rank = TIn::rank();
+    const auto conti_dims_input =
+        contiguous_dims(input.shape(), input.strides());
+    const auto conti_dims_output =
+        contiguous_dims(output.shape(), output.strides());
 
     constexpr TPerms perm_const;
     constexpr auto segments = transpose_detail::segments_cnt(perm_const);
 
-    if constexpr (segments <= 4) {
+    if (segments <= 4 && conti_dims_input == rank &&
+        conti_dims_output == rank) {
         u_transpose<TIn, std::decay_t<TOut>, TPerms, segments>(
             input, output, perms, std::make_index_sequence<segments>{});
     } else {
