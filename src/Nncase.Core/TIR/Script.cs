@@ -309,7 +309,7 @@ public static class T
 
         var dimensions = @const.Value.Dimensions.AsValueEnumerable().Select(x => (Dimension)x).ToArray();
         (var maxSize, var strides) = TensorUtilities.GetTensorMaxSizeAndStrides(@const.CheckedTensorType, @const.ValueType as DistributedType);
-        var memspan = new MemSpan(IR.F.Buffer.AddressOf(@const), maxSize, @const.ValueType is DistributedType ? MemoryLocation.ThreadLocalRdata : MemoryLocation.Rdata);
+        var memspan = new MemSpan(IR.F.Buffer.AddressOf(@const), maxSize, @const.GetMemoryLocation());
         buffer = new Buffer(name, @const.CheckedDataType, memspan, dimensions, strides.Select(i => (Dimension)i).ToArray(), @const.ValueType as DistributedType);
         return buffer;
     }

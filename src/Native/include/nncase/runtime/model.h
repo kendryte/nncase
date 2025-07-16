@@ -18,7 +18,7 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-inline constexpr size_t MAX_SECTION_NAME_LENGTH = 16;
+inline constexpr size_t MAX_SECTION_NAME_LENGTH = 32;
 inline constexpr size_t MAX_MODULE_KIND_LENGTH = 16;
 inline constexpr uint32_t MODEL_HAS_NO_ENTRY = -1;
 
