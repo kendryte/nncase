@@ -101,7 +101,22 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
         if (newAxisPolicies.Any(a => a is null))
         {
-            return invalidType; // not all axes have policies
+            if (inType.AxisPolicies.Select((x, i) => (x, i)).Where(x => !forwardDict.ContainsKey(x.i)).All(x => x.x is SBPBroadCast))
+            {
+                // If all axes that are not in the forward mapping are broadcast, we can still reshape.
+                for (int i = 0; i < newAxisPolicies.Length; i++)
+                {
+                    if (newAxisPolicies[i] is null)
+                    {
+                        newAxisPolicies[i] = SBP.B;
+                    }
+                }
+            }
+            else
+            {
+                // If there are axes that are not in the forward mapping and they are not broadcast, we cannot reshape.
+                return invalidType;
+            }
         }
 
         return new DistributedType(inType.TensorType with { Shape = newShape }, newAxisPolicies, inType.Placement);

@@ -45,7 +45,7 @@ public static class IRUtility
         }
 
         mat = new int[newShape.Length, inShape.Length];
-        int i = 0, j = 0;
+        int i = 0, j = 0, jStart = -1;
         var paths = new List<(int, int)>();
         while (i >= 0 && i < newShape.Length && j >= 0 && j < inShape.Length)
         {
@@ -71,14 +71,20 @@ public static class IRUtility
                         j--;
                     }
 
+                    jStart = -1;
                     break;
                 case < 0:
+                    jStart = jStart == -1 ? j : jStart;
                     j++;
                     break;
                 case > 0:
                     if (inDim % newShape[i] == 0)
                     {
                         i++;
+                        for (int k = jStart; k < j; k++)
+                        {
+                            mat[i, k] = 1;
+                        }
                     }
                     else
                     {
@@ -87,6 +93,7 @@ public static class IRUtility
                         paths.RemoveAt(paths.Count - 1);
                     }
 
+                    jStart = -1;
                     break;
             }
         }
