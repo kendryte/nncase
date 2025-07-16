@@ -332,12 +332,12 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         }
         else
         {
-            // seq broadcast, head split.
+            // seq broadcast, head broadcast or split.
             var seqAxis = target.Layout.IndexOf(AttentionDimKind.Seq);
             var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
             var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);
             if (q.AxisPolicies[seqAxis] is SBPBroadCast &&
-                q.AxisPolicies[headAxis] is SBPSplit &&
+                q.AxisPolicies[headAxis] is SBPBroadCast or SBPSplit &&
                 q.AxisPolicies[dimAxis] is SBPBroadCast)
             {
                 return q;

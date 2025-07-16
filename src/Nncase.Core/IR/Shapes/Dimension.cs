@@ -57,6 +57,10 @@ public static class DimensionExtensions
         {
             return shapeExpr;
         }
+        else if (value is Call { Target: IR.Tensors.ShapeOf } shapeOf)
+        {
+            return shapeOf[IR.Tensors.ShapeOf.Input].CheckedShape;
+        }
         else if (value is Call { Target: Concat } concat)
         {
             if (concat[Concat.Input] is Tuple tuple)

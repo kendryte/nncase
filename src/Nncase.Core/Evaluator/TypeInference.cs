@@ -666,8 +666,12 @@ public static class TypeInference
             throw new TypeInferenceInterruptException(new InvalidType($"More than one -1 in the shape is not supported"));
         }
 
-        if (!Dimension.TryDivExactly(inRankedShape.Prod(), shapeDims.Prod(), out var minus1DimValue)
-            || (minus1DimValue is DimConst dc && dc.Value > 1))
+        var remainder = inRankedShape.Prod() % shapeDims.Prod();
+        var minus1DimValue = inRankedShape.Prod() / shapeDims.Prod();
+
+        // Notes: when the remainder is not fixed, we cannot make sure the reshape is invalid
+        if (remainder is DimConst { Value: not 0 }
+            || minus1DimValue is DimConst { Value: > 1 })
         {
             throw new TypeInferenceInterruptException(new InvalidType($"Cannot reshape {inShape} to {shapeDims}"));
         }
