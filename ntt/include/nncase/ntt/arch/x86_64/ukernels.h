@@ -495,7 +495,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                     });
                 }
             }
-        } else {
+        } else if constexpr (const_axes[0] + 1 == const_axes[1]) {
             using TVec = vector<float, 8, 8>;
             constexpr auto const_axes = TAxes{};
             constexpr auto in_rank = TIn::rank();
@@ -551,8 +551,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                     _mm256_storeu_ps(&dst[7 * out_stride], row7);
                 });
             } else {
-                if (inner_size % TVec::shape()[1] != 0 ||
-                    const_axes[1] != const_axes[0] + 1) {
+                if (inner_size % TVec::shape()[1] != 0) {
                     ukernels::u_unpack_impl<TIn, std::decay_t<TOut>,
                                             TAxes::rank(), false>
                         impl;
@@ -583,6 +582,11 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                     });
                 }
             }
+        } else {
+            ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+                                    false>
+                impl;
+            impl(input, output, axes);
         }
     }
 };
