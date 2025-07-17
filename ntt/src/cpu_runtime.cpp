@@ -44,7 +44,13 @@ decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
 
 decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
     nncase::ntt::distributed::topology_shape))
-    nncase::ntt::distributed::detail::global_local_rdata_ptr =
+    nncase::ntt::distributed::detail::global_thread_local_rdata_ptr =
+        nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+            nncase::ntt::distributed::topology_shape);
+
+decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+    nncase::ntt::distributed::topology_shape))
+    nncase::ntt::distributed::detail::global_block_local_rdata_ptr =
         nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
             nncase::ntt::distributed::topology_shape);
 
@@ -133,12 +139,12 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
             CPU_SET(cpu_id, &cpuset);
             pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
 #endif
-            auto local_rdata_offset =
-                (size_t)params.local_rdata_header[tid * 2];
-            auto local_rdata_size =
-                (size_t)params.local_rdata_header[tid * 2 + 1];
-            auto local_rdata = params.local_rdata.subspan(local_rdata_offset,
-                                                          local_rdata_size);
+            auto thread_local_rdata_offset =
+                (size_t)params.thread_local_rdata_header[tid * 2];
+            auto thread_local_rdata_size =
+                (size_t)params.thread_local_rdata_header[tid * 2 + 1];
+            auto thread_local_rdata = params.thread_local_rdata.subspan(
+                thread_local_rdata_offset, thread_local_rdata_size);
 
             // Set distributed pointers
             const auto program_ids = make_shape(params.cid, params.bid, tid);
@@ -147,20 +153,27 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
                 block_local_data.size_bytes() / params.tdim;
             auto local_data = block_local_data.subspan(local_data_size * tid,
                                                        local_data_size);
-            ntt::distributed::detail::global_local_rdata_ptr(program_ids)(
-                0_dim) = (uintptr_t)local_rdata.data();
-            ntt::distributed::detail::global_local_rdata_ptr(program_ids)(
-                1_dim) =
-                (uintptr_t)(local_rdata.data() + local_rdata.size_bytes());
+            ntt::distributed::detail::global_thread_local_rdata_ptr(
+                program_ids)(0_dim) = (uintptr_t)thread_local_rdata.data();
+            ntt::distributed::detail::global_thread_local_rdata_ptr(
+                program_ids)(1_dim) =
+                (uintptr_t)(thread_local_rdata.data() +
+                            thread_local_rdata.size_bytes());
             ntt::distributed::detail::global_local_data_ptr(program_ids)(
                 0_dim) = (uintptr_t)local_data.data();
             ntt::distributed::detail::global_local_data_ptr(program_ids)(
                 1_dim) =
                 (uintptr_t)(local_data.data() + local_data.size_bytes());
+            ntt::distributed::detail::global_block_local_rdata_ptr(program_ids)(
+                0_dim) = (uintptr_t)params.block_local_rdata.data();
+            ntt::distributed::detail::global_block_local_rdata_ptr(program_ids)(
+                1_dim) = (uintptr_t)(params.block_local_rdata.data() +
+                                     params.block_local_rdata.size_bytes());
 
             thread_main(params.input_descs, params.output_descs,
-                        params.rdata.data(), local_rdata.data(),
-                        local_data.data(), params.output);
+                        params.rdata.data(), thread_local_rdata.data(),
+                        params.block_local_rdata.data(), local_data.data(),
+                        params.output);
         });
     }
 
