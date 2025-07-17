@@ -1122,4 +1122,75 @@ public abstract class HuggingFaceModel
             Context.Outputs!["hiddenStates"] = IR.F.Tensors.Cast(allHiddenStates!, DataTypes.Float32);
         }
     }
+
+    /* MOE implementation. */
+
+    /// <summary>
+    /// DeepSeek R1 Moe.
+    /// </summary>
+    /// <param name="count"> Decode layer num. </param>
+    /// <param name="hiddenStates"> Q. </param>
+    /// <returns> Result of MoE. </returns>
+    public virtual Call LLMMoE(int count, Expr hiddenStates)
+    {
+        var gateProjW = GetWeight($"model.layers.{count}.mlp.gate_proj.weight")!;
+        var upProjW = GetWeight($"model.layers.{count}.mlp.up_proj.weight")!;
+        var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight")!;
+        var ifScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.input_scale");
+        var wScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.weight_scale");
+        var ifScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.input_scale");
+        var wScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.weight_scale");
+        var ifScaleDown = GetWeight($"model.layers.{count}.mlp.down_proj.input_scale");
+        var wScaleDown = GetWeight($"model.layers.{count}.mlp.down_proj.weight_scale");
+
+        var tmp = Linear(hiddenStates, gateProjW, null, ifScaleGate, wScaleGate, $"model.layers.{count}.mlp.gate_proj");
+
+        if (Config.ContainsKey("hidden_act"))
+        {
+            var actType = Config.GetNestedValue<string>("hidden_act");
+            tmp = ModelUtils.ActFunc(tmp, actType);
+        }
+
+        return Linear(tmp * Linear(hiddenStates, upProjW, null, ifScaleUp, wScaleUp, $"model.layers.{count}.mlp.up_proj"), downProjW, null, ifScaleDown, wScaleDown, $"model.layers.{count}.mlp.down_proj");
+    }
+
+    public virtual Call LLMMoEGate(int count, Expr hiddenStates)
+    {
+        var qShape = hiddenStates.CheckedShape;
+        var (seqLen, h) = (qShape[0], qShape[1]);
+
+        var moeGateWeights = GetWeight($"model.layers.{count}.mlp.gate_proj.weight")!;
+        var logits = Linear(hiddenStates, moeGateWeights, layerName: "MoEGate");
+
+        var scores = logits;
+        if (Config.GetNestedValue<string>("scoring_func") == "sigmoid")
+        {
+            scores = IR.F.NN.Sigmoid(logits);
+        }
+        else
+        {
+            throw new NotImplementedException("Only support sigmoid now!");
+        }
+
+        if (Config.GetNestedValue<string>("topk_method") == "noaux_tc")
+        {
+            // return logits;
+            var eScoreCorrectionBias = GetWeight($"model.layers.{count}.mlp.gate.e_score_correction_bias")!;
+            var nGroup = Config.GetNestedValue<int>("n_group");
+            // score: [seqLen, hiddenSize:7186],   eScoreCorrectionBias: n_routed_experts:256
+            // TODO: confirm python code.
+            var scoresForChoice = scores + eScoreCorrectionBias;
+            var scoresForChoiceNewShape = new RankedShape(seqLen, nGroup, -1);
+            var groupScores = IR.F.Reshape(scoresForChoice, scoresForChoiceNewShape);
+
+
+        }
+        else
+        {
+            throw new NotImplementedException("Only support 1 expert now!");
+        }
+
+
+        
+    }
 }
