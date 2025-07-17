@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.TIR;
 
 namespace Nncase.IR;
 
@@ -138,6 +139,16 @@ public sealed class TensorConst : Const, IEquatable<TensorConst?>
     public static bool operator ==(TensorConst? left, TensorConst? right) => EqualityComparer<TensorConst>.Default.Equals(left, right);
 
     public static bool operator !=(TensorConst? left, TensorConst? right) => !(left == right);
+
+    public MemoryLocation GetMemoryLocation()
+    {
+        return ValueType switch
+        {
+            DistributedType dt when dt.AxisPolicies.Any(p => p is SBPSplit split && split.Axes.Contains(dt.Placement.Rank - 1)) => MemoryLocation.ThreadLocalRdata,
+            DistributedType => MemoryLocation.BlockLocalRdata,
+            _ => MemoryLocation.Rdata,
+        };
+    }
 
     /// <inheritdoc/>
     public override string ToString()

@@ -20,15 +20,17 @@ internal class FunctionBuilder
     private readonly SectionManager _sectionManager;
     private readonly BinaryWriter _textWriter;
     private readonly BinaryWriter _rdataWriter;
-    private readonly IReadOnlyList<BinaryWriter> _localRdataWriters;
+    private readonly IReadOnlyList<BinaryWriter> _threadLocalRdataWriters;
+    private readonly IReadOnlyList<BinaryWriter> _blockLocalRdataWriters;
 
-    public FunctionBuilder(uint id, BinaryWriter rdataWriter, IReadOnlyList<BinaryWriter> localRdataWriters, Targets.NTTTargetOptions targetOptions)
+    public FunctionBuilder(uint id, BinaryWriter rdataWriter, IReadOnlyList<BinaryWriter> threadLocalRdataWriters, IReadOnlyList<BinaryWriter> blockLocalRdataWriters, Targets.NTTTargetOptions targetOptions)
     {
         _id = id;
         _sectionManager = new();
         _textWriter = _sectionManager.GetWriter(WellknownSectionNames.Text);
         _rdataWriter = rdataWriter;
-        _localRdataWriters = localRdataWriters;
+        _threadLocalRdataWriters = threadLocalRdataWriters;
+        _blockLocalRdataWriters = blockLocalRdataWriters;
         TargetOptions = targetOptions;
     }
 
@@ -54,19 +56,19 @@ internal class FunctionBuilder
                 tensor.Serialize(_rdataWriter.BaseStream);
             }
 
-            // 2. write the local rdata
-            ulong localRdataPoolSize = ulong.MinValue;
-            foreach (var (@const, range) in function.SchedResult.LocalRdatas)
+            // 2. write the thread local rdata
+            ulong threadLocalRdataPoolSize = ulong.MinValue;
+            foreach (var (@const, range) in function.SchedResult.ThreadLocalRdatas)
             {
                 var tensor = ((TensorConst)@const).Value;
                 var distributedType = (DistributedType)@const.CheckedType;
                 var size = range.Max - range.Min;
-                localRdataPoolSize = System.Math.Max(range.Max, localRdataPoolSize);
+                threadLocalRdataPoolSize = System.Math.Max(range.Max, threadLocalRdataPoolSize);
                 var dividedDims = DistributedUtility.GetDividedTensorType(distributedType).Shape.ToValueArray();
                 var localStrides = TensorUtilities.GetDefaultStrides(dividedDims);
-                for (int i = 0; i < _localRdataWriters.Count; i++)
+                for (int i = 0; i < _threadLocalRdataWriters.Count; i++)
                 {
-                    var localRdataWriter = _localRdataWriters[i];
+                    var threadLocalRdataWriter = _threadLocalRdataWriters[i];
                     var shardIndex = DistributedUtility.GetUnraveledIndex(i, TargetOptions.Hierarchies[0]);
                     (var localOffset, var localShape) = DistributedUtility.GetLocalOffsetAndShape(distributedType, shardIndex);
                     var linearOffset = TensorUtilities.GetLinearOffset(tensor.Strides, localOffset);
@@ -76,17 +78,44 @@ internal class FunctionBuilder
                         throw new InvalidDataException("The Buffer Size Not Equal!");
                     }
 
-                    localRdataWriter.Position(checked((long)range.Min));
-                    tensor.Serialize(localRdataWriter.BaseStream, linearOffset, localShape, localStrides);
+                    threadLocalRdataWriter.Position(checked((long)range.Min));
+                    tensor.Serialize(threadLocalRdataWriter.BaseStream, linearOffset, localShape, localStrides);
                 }
             }
 
-            // 3. build function.
-            var visitor = new KernelCSourceConvertVisitor(function.SchedResult.DataAlign, function.SchedResult.DataUsage, rdataPoolSize, localRdataPoolSize, TargetOptions);
+            // 2. write the block local rdata
+            ulong blockLocalRdataPoolSize = ulong.MinValue;
+            foreach (var (@const, range) in function.SchedResult.BlockLocalRdatas)
+            {
+                var tensor = ((TensorConst)@const).Value;
+                var distributedType = (DistributedType)@const.CheckedType;
+                var size = range.Max - range.Min;
+                blockLocalRdataPoolSize = System.Math.Max(range.Max, blockLocalRdataPoolSize);
+                var dividedDims = DistributedUtility.GetDividedTensorType(distributedType).Shape.ToValueArray();
+                var localStrides = TensorUtilities.GetDefaultStrides(dividedDims);
+                for (int i = 0; i < _blockLocalRdataWriters.Count; i++)
+                {
+                    var blockLocalRdataWriter = _blockLocalRdataWriters[i];
+                    var shardIndex = DistributedUtility.GetUnraveledIndex(i, TargetOptions.Hierarchies[0][..^1]).Concat([0]).ToArray();
+                    (var localOffset, var localShape) = DistributedUtility.GetLocalOffsetAndShape(distributedType, shardIndex);
+                    var linearOffset = TensorUtilities.GetLinearOffset(tensor.Strides, localOffset);
+
+                    if ((ulong)TensorUtilities.GetProduct(localShape) * (ulong)tensor.ElementType.SizeInBytes > size)
+                    {
+                        throw new InvalidDataException("The Buffer Size Not Equal!");
+                    }
+
+                    blockLocalRdataWriter.Position(checked((long)range.Min));
+                    tensor.Serialize(blockLocalRdataWriter.BaseStream, linearOffset, localShape, localStrides);
+                }
+            }
+
+            // 4. build function.
+            var visitor = new KernelCSourceConvertVisitor(function.SchedResult.DataAlign, function.SchedResult.DataUsage, rdataPoolSize, threadLocalRdataPoolSize, blockLocalRdataPoolSize, TargetOptions);
             visitor.Visit(function);
             var functionCSource = visitor.GetCSource();
 
-            // 4. write the kernel desc
+            // 5. write the kernel desc
             using (var writer = _sectionManager.GetWriter(LinkableKernelFunction.KernelHeaderSectionName))
             {
                 var header = default(KernelDescHeader);

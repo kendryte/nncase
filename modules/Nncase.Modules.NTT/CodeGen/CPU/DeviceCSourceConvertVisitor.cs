@@ -351,8 +351,8 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }
                 else
                 {
-                    IndentScope.Writer.IndWrite($"auto tb = make_tensor<float>({swish.Beta}, fixed_shape_v<>);\n");
-                    WriteIndWithProfiler($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
+                    IndentScope.Writer.IndWrite($"\n{{\nauto b= {swish.Beta}; auto tb = make_tensor_view_from_address<float>(&b, fixed_shape_v<>);\n");
+                    WriteIndWithProfiler($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n}}\n");
                 }
 
                 break;

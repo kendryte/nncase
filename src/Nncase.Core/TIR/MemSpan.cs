@@ -33,29 +33,34 @@ public enum MemoryLocation
     ThreadLocalRdata = 1 << 4,
 
     /// <summary>
+    /// block local constant data.
+    /// </summary>
+    BlockLocalRdata = 1 << 5,
+
+    /// <summary>
     /// compute temp data.
     /// </summary>
-    Data = 1 << 5,
+    Data = 1 << 6,
 
     /// <summary>
     /// shared data.
     /// </summary>
-    SharedData = 1 << 6,
+    SharedData = 1 << 7,
 
     /// <summary>
     /// l2 data.
     /// </summary>
-    L2Data = 1 << 7,
+    L2Data = 1 << 8,
 
     /// <summary>
     /// L1 data.
     /// </summary>
-    L1Data = 1 << 8,
+    L1Data = 1 << 9,
 
     /// <summary>
     /// base addr.
     /// </summary>
-    PrivateBase = 1 << 9,
+    PrivateBase = 1 << 10,
 }
 
 public sealed class MemSpan : BaseExpr
