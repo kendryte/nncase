@@ -118,7 +118,7 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
                 return kvCache;
             }
         }
-        else if (slots.Placement.Hierarchy.SequenceEqual([1]))
+        else
         {
             return kvCache;
         }

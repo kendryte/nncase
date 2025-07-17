@@ -71,19 +71,25 @@ public sealed class UnitTestDistributedTypeInfer : TestClassBase
             // mesh dim 0 split on first merged-by-reshape axis.
             new DistributedType(new(DataTypes.Float32, new long[] { 1, 48, 64, 16 }), new SBP[] { SBP.B, SBP.S(new[] { 0 }), SBP.S(new[] { 1 }), SBP.B }, new(new[] { 4, 8 }, "bt")),
             new long[] { 1, 48, 1024 },
-            new InvalidType("not support")
+            new DistributedType(new(DataTypes.Float32, new long[] { 1, 48, 1024 }), new SBP[] { SBP.B, SBP.S(new[] { 0 }), SBP.S(new[] { 1 }) }, new(new[] { 4, 8 }, "bt"))
         },
         {
             // mesh dim 1 split on first merged-by-reshape axis.
             new DistributedType(new(DataTypes.Float32, new long[] { 1, 48, 64, 16 }), new SBP[] { SBP.B, SBP.S(new[] { 1 }), SBP.S(new[] { 0 }), SBP.B }, new(new[] { 4, 8 }, "bt")),
             new long[] { 1, 48, 1024 },
-            new InvalidType("not support")
+            new DistributedType(new(DataTypes.Float32, new long[] { 1, 48, 1024 }), new SBP[] { SBP.B, SBP.S(new[] { 1 }), SBP.S(new[] { 0 }) }, new(new[] { 4, 8 }, "bt"))
         },
         {
             // split on second merged-by-reshape axis.
             new DistributedType(new(DataTypes.Float32, new long[] { 1, 48, 64, 16 }), new SBP[] { SBP.B, SBP.S(new[] { 0 }), SBP.B, SBP.S(new[] { 1 }) }, new(new[] { 4, 8 }, "bt")),
             new long[] { 1, 48, 1024 },
             new InvalidType("not support")
+        },
+        {
+            // split and merge axis.
+            new DistributedType(new(DataTypes.Float32, new long[] { 16, 48, 1024 }), new SBP[] { SBP.S(new[] { 0 }), SBP.B, SBP.B }, new(new[] { 8 }, "t")),
+            new long[] { 8, 2, 64, 768 },
+            new DistributedType(new(DataTypes.Float32, new long[] { 8, 2, 64, 768 }), new SBP[] { SBP.S(new[] { 0 }), SBP.B, SBP.B, SBP.B }, new(new[] { 8 }, "t"))
         },
         {
             // unmapable reshape

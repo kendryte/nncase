@@ -111,7 +111,9 @@ public static class NN
     /// </summary>
     public static Call Swish(Expr input, Expr beta) => new Call(new Swish(), input, beta);
 
-    public static Call GetPositionIds(Expr input, Expr kvCache) => new Call(new GetPositionIds(), input, kvCache);
+    public static Call GetPositionIds(Dimension sequenceLength, Expr kvCache) => new Call(new GetPositionIds(new IRArray<SBP>(), new Placement(new IRArray<int>(), string.Empty)), sequenceLength, kvCache);
+
+    public static Call GetPositionIds(Dimension sequenceLength, Expr kvCache, IRArray<SBP> ndsbp, Placement placement) => new Call(new GetPositionIds(ndsbp, placement), sequenceLength, kvCache);
 
     public static Expr UpdatePagedAttentionKVCache(Expr slots, Expr kvCaches, AttentionCacheKind cacheKind, int layerId, AttentionDimKind[] layout) => new Call(new UpdatePagedAttentionKVCache(cacheKind, layerId, layout), slots, kvCaches);
 

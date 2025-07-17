@@ -175,8 +175,8 @@ constexpr void update_paged_attention_kv_cache(const TSlots &slots_tensor,
     }
 }
 
-template <FixedDimensions QLayout, Tensor TQ, Tensor TKVCache, Tensor TScale,
-          class TOutput, Tensor TExtra>
+template <FixedDimensions QLayout, ShardedTensor TQ, Tensor TKVCache,
+          Tensor TScale, class TOutput, Tensor TExtra>
     requires(Tensor<std::decay_t<TOutput>>)
 void paged_attention(
     const TQ &q_tensor, TKVCache &kv_cache_tensor,
@@ -188,9 +188,14 @@ void paged_attention(
     using kv_cache_t = typename std::decay_t<decltype(kv_cache)>;
     using config_t = typename kv_cache_t::config_t;
     using kv_prim_type_t = typename config_t::kv_prim_type;
+    using q_mesh_type = typename TQ::mesh_type;
 
     constexpr auto num_kv_heads = config_t::num_kv_heads;
-    auto q_shape = q_tensor.shape();
+    const auto local_shard_index = q_mesh_type::local_index();
+    const auto global_q_offset =
+        q_tensor.sharding().global_offset(q_tensor.shape(), local_shard_index);
+    const auto local_q_tensor = q_tensor.local();
+    const auto local_q_shape = local_q_tensor.shape();
 
     // Get sequence and dimension information
     const auto seq_index =
@@ -200,11 +205,13 @@ void paged_attention(
     const auto dim_index =
         q_layout.index_of(fixed_dim_v<(dim_t)caching::attention_dim_kind::dim>);
 
+    const auto num_q_heads = q_tensor.shape()[head_index];
     auto q_slice_start = make_zeros_shape<3>()
                              .template replace_at<head_index>(0)
                              .template replace_at<seq_index>(0);
     const auto q_slice_shape =
-        make_ones_shape<3>().template replace_at<dim_index>(q_shape[dim_index]);
+        make_ones_shape<3>().template replace_at<dim_index>(
+            local_q_shape[dim_index]);
     const auto q_squeeze = fixed_shape_v<seq_index, head_index>;
 
     for (dim_t query_start_loc = 0, seq_id = 0,
@@ -213,9 +220,9 @@ void paged_attention(
                query_len = seq_len - context_len;
          seq_id < kv_cache.num_seqs(); seq_id++, query_start_loc += query_len) {
         const auto s_shape =
-            ntt::make_shape(q_shape[head_index], query_len, seq_len);
+            ntt::make_shape(local_q_shape[head_index], query_len, seq_len);
         const auto reduce_s_shape =
-            ntt::make_shape(q_shape[head_index], query_len, dim_one);
+            ntt::make_shape(local_q_shape[head_index], query_len, dim_one);
         if (extra_tensor.elements().size_bytes() <
             (s_shape.length() + reduce_s_shape.length()) *
                 (sizeof(kv_prim_type_t))) {
@@ -232,9 +239,11 @@ void paged_attention(
             reduce_s_shape);
 
         // s = q * k^T : [head_q, query_len, seq_len]
-        for (size_t q_head_id = 0; q_head_id < q_shape[head_index];
+        for (size_t q_head_id = 0; q_head_id < local_q_shape[head_index];
              q_head_id++) {
-            auto k_head_id = q_head_id / (q_shape[head_index] / num_kv_heads);
+            const auto global_q_head_id =
+                global_q_offset[head_index] + q_head_id;
+            auto k_head_id = global_q_head_id / (num_q_heads / num_kv_heads);
             q_slice_start[head_index] = q_head_id;
 
             for (size_t q_id = 0, q_id_batch = query_start_loc;
@@ -243,9 +252,10 @@ void paged_attention(
                 q_slice_start[seq_index] = q_id_batch;
 
                 // [1, dim']<dim>
-                const auto q_slice = q_tensor.view(q_slice_start, q_slice_shape)
-                                         .squeeze(q_squeeze)
-                                         .unsqueeze(fixed_shape_v<0>);
+                const auto q_slice =
+                    local_q_tensor.view(q_slice_start, q_slice_shape)
+                        .squeeze(q_squeeze)
+                        .unsqueeze(fixed_shape_v<0>);
 
                 //  block_slice
                 for (dim_t context_bid = 0;
@@ -323,9 +333,11 @@ void paged_attention(
 
         // d @ v : [head_q, query_len, dim], depend by qlayout.
         dynamic_shape_t<3> s_slice_start;
-        for (size_t q_head_id = 0; q_head_id < q_shape[head_index];
+        for (size_t q_head_id = 0; q_head_id < local_q_shape[head_index];
              q_head_id++) {
-            auto v_head_id = q_head_id / (q_shape[head_index] / num_kv_heads);
+            const auto global_q_head_id =
+                global_q_offset[head_index] + q_head_id;
+            auto v_head_id = global_q_head_id / (num_q_heads / num_kv_heads);
             s_slice_start[0_dim] = q_head_id;
             q_slice_start[head_index] = q_head_id;
             for (size_t q_id = 0, q_id_batch = query_start_loc;

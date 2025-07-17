@@ -123,91 +123,16 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         var lhs = context.CheckArgumentType<IRType>(target, PackedMatMul.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, PackedMatMul.Rhs);
 
-        bool CheckPackAxes(Shape lhs, Shape rhs, out int lm, out int lk, out int rk, out int rn, out string? message)
-        {
-            (lm, lk) = target.TransposeA ? (lhs.Rank - 1, lhs.Rank - 2) : (lhs.Rank - 2, lhs.Rank - 1);
-            (rk, rn) = target.TransposeB ? (rhs.Rank - 1, rhs.Rank - 2) : (rhs.Rank - 2, rhs.Rank - 1);
-            bool valid = true;
-            message = null;
-            switch (target.LhsPackedAxes.Count, target.RhsPackedAxes.Count)
-            {
-                case (0, 1):
-                    // pack rhs n.
-                    if (target.RhsPackedAxes[0] != rn)
-                    {
-                        valid = false;
-                        message = $"target.RhsPackedAxes[0] {target.RhsPackedAxes[0]} != rk {rn}";
-                    }
-
-                    break;
-                case (1, 0):
-                    // pack lhs m.
-                    if (target.LhsPackedAxes[0] != lm)
-                    {
-                        valid = false;
-                    }
-
-                    break;
-                case (1, 1):
-                    // pack m,n or pack lk,rk
-                    if (!((target.LhsPackedAxes[0] == lk && target.RhsPackedAxes[0] == rk) ||
-                        (target.LhsPackedAxes[0] == lm && target.RhsPackedAxes[0] == rn)))
-                    {
-                        valid = false;
-                    }
-
-                    break;
-                case (1, 2):
-                    // pack [lk, rk, rn]
-                    if (target.LhsPackedAxes[0] != lk || target.RhsPackedAxes[0] != rk || target.RhsPackedAxes[1] != rn)
-                    {
-                        valid = false;
-                    }
-
-                    break;
-                case (2, 1):
-                    // pack [lm, lk, rk]
-                    if (target.LhsPackedAxes[0] != lm || target.LhsPackedAxes[1] != lk || target.RhsPackedAxes[0] != rk)
-                    {
-                        valid = false;
-                    }
-
-                    break;
-                case (2, 2):
-                    // pack [lm, lk, rk, rn]
-                    if (target.LhsPackedAxes[0] != lm || target.LhsPackedAxes[1] != lk)
-                    {
-                        valid = false;
-                    }
-
-                    if ((target.RhsPackedAxes[0] != rk || target.RhsPackedAxes[1] != rn) && (target.RhsPackedAxes[0] != rn || target.RhsPackedAxes[1] != rk))
-                    {
-                        valid = false;
-                    }
-
-                    break;
-                default:
-                    valid = false;
-                    break;
-            }
-
-            return valid;
-        }
-
         IRType rType;
         string? errorMessage = null;
         switch (lhs, rhs)
         {
             case (DistributedType a, DistributedType b):
                 {
-                    if (!CheckPackAxes(a.TensorType.Shape, b.TensorType.Shape, out int lm, out int lk, out int rk, out int rn, out errorMessage))
-                    {
-                        goto ERROR;
-                    }
-
-                    bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
-                     target.LhsPackedAxes[0] == a.TensorType.Shape.Rank - 1 && target.RhsPackedAxes[0] == b.TensorType.Shape.Rank - 2;
-                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, packingK, new(lm, lk, rk, rn), target.TransposeB, target.OutputDataType);
+                    var dimInfo = target.GetDimInfo(a.TensorType.Shape.Rank, b.TensorType.Shape.Rank);
+                    (var lhsPackKind, var rhsPackKind) = target.GetPackKind(a.TensorType.Shape.Rank, b.TensorType.Shape.Rank);
+                    bool packingK = lhsPackKind == PackedMatMul.PackKind.K && rhsPackKind == PackedMatMul.PackKind.K;
+                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, packingK, dimInfo, target.TransposeB, target.OutputDataType);
                     if (target.FusedReduce)
                     {
                         rType = Math.MatMulEvaluator.ConvertPartialToBroadcast((DistributedType)rType);
@@ -217,19 +142,15 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                 break;
             case (TensorType a, TensorType b):
                 {
-                    if (!CheckPackAxes(a.Shape, b.Shape, out int lm, out int lk, out int rk, out int rn, out errorMessage))
-                    {
-                        goto ERROR;
-                    }
-
-                    bool packingK = target.LhsPackedAxes.Count == 1 && target.RhsPackedAxes.Count == 1 &&
-                     target.LhsPackedAxes[0] == lk && target.RhsPackedAxes[0] == rk;
-                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, packingK, new(lm, lk, rk, rn), target.OutputDataType);
+                    var dimInfo = target.GetDimInfo(a.Shape.Rank, b.Shape.Rank);
+                    (var lhsPackKind, var rhsPackKind) = target.GetPackKind(a.Shape.Rank, b.Shape.Rank);
+                    bool packingK = lhsPackKind == PackedMatMul.PackKind.K && rhsPackKind == PackedMatMul.PackKind.K;
+                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, packingK, dimInfo, target.OutputDataType);
                 }
 
                 break;
             default:
-            ERROR: rType = new InvalidType($"lhs: {lhs}, rhs: {rhs}, in {target.DisplayProperty()} not support: {errorMessage}");
+                rType = new InvalidType($"lhs: {lhs}, rhs: {rhs}, in {target.DisplayProperty()} not support: {errorMessage}");
                 break;
         }
 

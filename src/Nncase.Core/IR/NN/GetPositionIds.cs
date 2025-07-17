@@ -4,10 +4,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.PatternMatch;
+using static Nncase.IR.TypePatternUtility;
 
 namespace Nncase.IR.NN;
 
@@ -18,12 +20,18 @@ namespace Nncase.IR.NN;
 public sealed partial class GetPositionIds : Op
 {
     /// <summary>
-    /// Gets Q.
+    /// Gets sequence length.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(GetPositionIds), 0, "input", ParameterKind.Attribute);
+    public static readonly ParameterInfo SequenceLength = new(typeof(GetPositionIds), 0, "sequenceLength", IsDimensionType(), ParameterKind.Attribute);
 
     /// <summary>
     /// Gets kvCache.
     /// </summary>
     public static readonly ParameterInfo KVCache = new(typeof(GetPositionIds), 1, "kvCache", ParameterKind.Attribute);
+
+    [Browsable(false)]
+    public IRArray<SBP> NdSBP { get; }
+
+    [Browsable(false)]
+    public Placement Placement { get; }
 }

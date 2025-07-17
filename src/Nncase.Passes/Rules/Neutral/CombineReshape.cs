@@ -198,7 +198,7 @@ public sealed partial class CombineReshapePad : IRewriteRule
             && Enumerable.SequenceEqual(reshapeCall.CheckedShape.ToValueArray()[(reshapeRank - padRank)..], padCall.CheckedShape.ToValueArray()))
         {
             return Pad(
-            Reshape(input, Enumerable.Repeat(1L, reshapeRank - padRank).Concat(input.CheckedShape.ToValueArray()).ToArray()).InheritMetaData(reshapeCall),
+            Reshape(input, Enumerable.Repeat(Dimension.One, reshapeRank - padRank).Concat(input.CheckedShape).ToArray()).InheritMetaData(reshapeCall),
             Enumerable.Repeat(Padding.Zero, reshapeRank - padRank).Concat(pads).ToArray(),
             pad.PadMode,
             value).InheritMetaData(padCall);

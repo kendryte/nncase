@@ -301,4 +301,35 @@ public sealed class UnitTestShape
         s = a;
         Assert.Equal("[1,3,2,2]", s.ToString());
     }
+
+    [Fact]
+    public void TestDimVarEquality()
+    {
+        var dimVar1 = new DimVar("dim1");
+        var dimVar2 = new DimVar("dim2");
+
+        Assert.NotEqual(dimVar1, dimVar2);
+        Assert.NotEqual(dimVar1.GetHashCode(), dimVar2.GetHashCode());
+        Assert.NotEqual(dimVar1, (Dimension)16);
+    }
+
+    [Fact]
+    public void TestDimensionExactlyDiv1()
+    {
+        var dimVar = new DimVar("sequence_length");
+        var dim1 = dimVar * 2048;
+        var dim2 = dimVar * -1 * 128;
+
+        Assert.True(Dimension.TryDivExactly(dim1, dim2, out _));
+    }
+
+    [Fact]
+    public void TestDimensionExactlyDiv2()
+    {
+        var dimVar = new DimVar("sequence_length");
+        var dim1 = dimVar;
+        var dim2 = dimVar * 1;
+
+        Assert.True(Dimension.TryDivExactly(dim1, dim2, out _));
+    }
 }
