@@ -38,12 +38,13 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
     private Var[]? _tensorParams;
     private ulong _collective_pool_size;
 
-    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, NTTTargetOptions targetOptions)
+    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong threadLocalRdataPoolSize, ulong blockLocalRdataPoolSize, NTTTargetOptions targetOptions)
     {
         DataAlign = dataAlign;
         DataUsage = dataUsage;
         RdataPoolSize = rdataPoolSize;
-        LocalRdataPoolSize = localRdataPoolSize;
+        ThreadLocalRdataPoolSize = threadLocalRdataPoolSize;
+        BlockLocalRdataPoolSize = blockLocalRdataPoolSize;
         _kernelBuilder = new StringBuilder();
         _sharedBuilder = new StringBuilder();
         _sharedWriter = new StringWriter(_sharedBuilder);
@@ -62,7 +63,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
     public ulong RdataPoolSize { get; }
 
-    public ulong LocalRdataPoolSize { get; }
+    public ulong ThreadLocalRdataPoolSize { get; }
+
+    public ulong BlockLocalRdataPoolSize { get; }
 
     private Var[] TensorParams => _tensorParams ??= VisitEntry.Parameters.ToArray().OfType<Var>().ToArray();
 
@@ -110,9 +113,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
     {
         var templateHeader = TensorParams.Length == 0 ? string.Empty : $"template<{string.Join(", ", Enumerable.Range(0, TensorParams.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine;
         var ctype = templateHeader +
-            $"void {VisitEntry.Name}({string.Concat(VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *local_rdata, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
+            $"void {VisitEntry.Name}({string.Concat(VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *thread_local_rdata, const std::byte *block_local_rdata, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
         return new(
-            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, LocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata), TargetOptions),
+            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, ThreadLocalRdataPoolSize, BlockLocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
             CSourceBuiltn.TopoAwareRuntimeDef(TargetOptions, DataAlign, _collective_pool_size),
             CSourceBuiltn.ModuleTopologyDef(TargetOptions));
@@ -192,7 +195,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         string loc = (expr.Location, expr.Hierarchy) switch
         {
             (MemoryLocation.Rdata, 0) => "rdata",
-            (MemoryLocation.ThreadLocalRdata, 0) => "local_rdata",
+            (MemoryLocation.ThreadLocalRdata, 0) => "thread_local_rdata",
+            (MemoryLocation.BlockLocalRdata, 0) => "block_local_rdata",
             (MemoryLocation.Data, 0) => "data",
             (MemoryLocation.Data, 1) => "data",
             (MemoryLocation.Output, 0) => "output",
@@ -200,9 +204,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         };
         var ptype = (PointerType)expr.CheckedDataType;
         var ptypeName = ptype.ElemType.ToC();
-        if (expr.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata)
+        if (expr.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata)
         {
-            // Rdata and ThreadLocalRdata are const
+            // Rdata, ThreadLocalRdata and BlockLocalRdata are const
             ptypeName = $"const {ptypeName}";
         }
 
@@ -237,7 +241,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         var dimensionStr = $"shape_t<{StringUtility.Join(", ", dimensionTypes)}>";
         var strideStr = $"strides_t<{StringUtility.Join(", ", strideTypes)}>";
 
-        var type = expr.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata || expr.MemSpan.Start is TensorConst
+        var type = expr.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata || expr.MemSpan.Start is TensorConst
             ? (expr.DistributedType == null
              ? $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> "
              : $"sharded_tensor_view<{dtypeStr}, {dimensionStr}, {KernelUtility.ShardingToC(expr.DistributedType)}, {strideStr}> ")
@@ -426,10 +430,14 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.Swish swish:
                     if (swish.Beta != 1.0f)
                     {
-                        throw new NotSupportedException();
+                        IndentScope.Writer.IndWrite($"\n{{\nauto b= {swish.Beta}; auto tb = make_tensor_view_from_address<float>(&b, fixed_shape_v<>);\n");
+                        WriteIndWithProfiler($"binary<ops::swishb>({VisitBuffer(args[0], local: true).Name}, tb, {VisitBuffer(args[1], local: true).Name});\n}}\n");
+                    }
+                    else
+                    {
+                        WriteWithProfiler($"unary<ops::swish>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     }
 
-                    WriteWithProfiler($"unary<ops::swish>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Slice slice:
                     WriteWithProfiler($"slice({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {VisitDimOrShape(args[1]).Name}, {VisitDimOrShape(args[2]).Name}, fixed_dims_v<{string.Join(",", slice.Axes)}>, fixed_dims_v<{string.Join(",", slice.Strides)}>);\n");

@@ -57,7 +57,7 @@ public static class ModelInfo
     /// <summary>
     /// max section name length.
     /// </summary>
-    public const int MaxSectionNameLength = 16;
+    public const int MaxSectionNameLength = 32;
 
     /// <summary>
     /// max module type length.

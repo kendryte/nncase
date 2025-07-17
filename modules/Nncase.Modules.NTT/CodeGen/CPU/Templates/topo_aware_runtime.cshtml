@@ -91,13 +91,13 @@ void tensor_boxing_store_sync(const GlobalShape &global_shape, const Index &inde
 }
 
 namespace detail {
-template <tar::reduce_kind Kind> class group_heirarchy_getter;
+template <tar::reduce_kind Kind> class group_hierarchy_getter;
 
 @foreach(var comb in combinations) {
-@:template <> class group_heirarchy_getter<tar::reduce_kind::@(GetName(comb, string.Empty))> {
+@:template <> class group_hierarchy_getter<tar::reduce_kind::@(GetName(comb, string.Empty))> {
   var shape = Enumerable.Range(0, hierarchy.Length).Select(i => comb.Contains(i) ?  hierarchy[i] : 1).ToArray();
 @:public:
-@:    static constexpr auto group_heirarchy = ntt::fixed_shape_v<@(string.Join(", ", shape))>;
+@:    static constexpr auto group_hierarchy = ntt::fixed_shape_v<@(string.Join(", ", shape))>;
 @:};
 }
 
@@ -172,7 +172,7 @@ class tensor_reduce_sync_impl {
         using TElem = typename TIn::element_type;
         using TOutBase = std::decay_t<TOut>;
         constexpr size_t Rank = TIn::rank();
-        constexpr auto group_heirarchy = group_heirarchy_getter<Kind>::group_heirarchy;
+        constexpr auto group_hierarchy = group_hierarchy_getter<Kind>::group_hierarchy;
         auto cur_index = ntt::make_shape(@(cur_index));
         auto cur_index_g = index_global2group(cur_index);
         tar::src_ptr_tensor(cur_index) =
@@ -183,7 +183,7 @@ class tensor_reduce_sync_impl {
 
         // according to the group size split the tensor.
         // todo should using better split strategy.
-         constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
+        constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
         // FIXME: support axis calculation.
         constexpr auto axis = ntt::fixed_dim_v<0>;
         // constexpr auto axis = ntt::fixed_dim_v<[&] {
@@ -202,8 +202,8 @@ class tensor_reduce_sync_impl {
         auto remain = src.shape()[axis] % (group_size);
         auto frac = src.shape()[axis] / (group_size);
 
-        auto node_number_g = ntt::linear_offset(cur_index_g, group_heirarchy);
-        auto next_index_g = ntt::unravel_index((node_number_g + 1) % group_size, group_heirarchy);
+        auto node_number_g = ntt::linear_offset(cur_index_g, group_hierarchy);
+        auto next_index_g = ntt::unravel_index((node_number_g + 1) % group_size, group_hierarchy);
 
         // keep the non-reduce axis invariant.
         auto next_index = index_group2global(next_index_g, ntt::make_shape(@(cur_index)));
@@ -246,7 +246,7 @@ class tensor_reduce_sync_impl {
         }
 
         // all gather
-        auto dest_index_g = ntt::unravel_index((node_number_g + group_size - 1) % group_size, group_heirarchy);
+        auto dest_index_g = ntt::unravel_index((node_number_g + group_size - 1) % group_size, group_hierarchy);
         auto dest_index = index_group2global(dest_index_g, ntt::make_shape(@(cur_index)));
 
         auto dest_tensor = ntt::make_tensor_view_from_address<TElem>(

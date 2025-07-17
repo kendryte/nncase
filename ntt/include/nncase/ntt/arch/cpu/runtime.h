@@ -256,8 +256,9 @@ struct cpu_block_entry_params_t {
     std::byte *output;
     uint8_t enable_profiling;
     timer_record *timer_records;
-    const uint64_t *local_rdata_header;
-    std::span<const std::byte> local_rdata;
+    const uint64_t *thread_local_rdata_header;
+    std::span<const std::byte> thread_local_rdata;
+    std::span<const std::byte> block_local_rdata;
     std::span<std::byte> block_local_data;
 #ifdef __APPLE__
     pthread_key_t cpu_thread_context_key;
