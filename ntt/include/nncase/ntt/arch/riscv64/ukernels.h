@@ -1032,14 +1032,25 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, TOut &output,
                               [[maybe_unused]] const TAxes &axes) {
+
+        auto in_shape = input.shape();
         constexpr auto const_axes = TAxes{};
+        constexpr auto in_rank = TIn::rank();
+        constexpr auto axis = const_axes[0];
+        dynamic_shape_t<in_rank> domain;
+        ntt::loop<in_rank>([&](auto &i) { domain[i] = in_shape[i]; });
+        auto inner_index =
+            domain.template slice<axis + 1, in_rank - (axis + 1)>();
+        auto inner_size = inner_index.length();
+        constexpr auto vector_size = NTT_VLEN / 32;
+
         if constexpr (AxesRank == 1) {
             if constexpr (const_axes[0] == (TIn::rank() - 1)) {
                 auto size = output.size() * sizeof(TElem);
                 auto in_ptr = input.buffer().data();
                 auto out_ptr = output.buffer().data();
                 std::memcpy(out_ptr, in_ptr, size);
-            } else {
+            } else if (inner_size % vector_size == 0) {
 
                 auto in_stride = 1;
                 auto axis_stride = input.strides()[const_axes[0]];
@@ -1124,8 +1135,14 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                     }
                     axis_idx++;
                 }
+            } else {
+                ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+                                        false>
+                    impl;
+                impl(input, output, axes);
             }
-        } else if (AxesRank == 2 && const_axes[1] == const_axes[0] + 1) {
+        } else if (AxesRank == 2 && const_axes[1] == const_axes[0] + 1 &&
+                   (inner_size % vector_size == 0)) {
             auto in_stride = 1;
             auto low_stride = input.strides()[const_axes[0]];
             auto high_stride = input.strides()[const_axes[1]];
