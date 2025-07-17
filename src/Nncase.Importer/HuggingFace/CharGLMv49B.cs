@@ -75,10 +75,10 @@ namespace Nncase.Importer
 
         public override Call LLMMlp(int count, Expr hiddenStates)
         {
-            var gateUpProjW = GetWeight($"model.layers.{count}.mlp.gate_up_proj.weight");
-            var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight");
+            var gateUpProjW = GetWeight($"model.layers.{count}.mlp.gate_up_proj.weight")!;
+            var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight")!;
 
-            var upStates = Linear(hiddenStates, gateUpProjW, layerName: $"model.layers.{count}.mlp.gate_up_proj.weight");
+            var upStates = Linear(hiddenStates, gateUpProjW, layerName: $"model.layers.{count}.mlp.gate_up_proj.weight")!;
             var upStatesShape = new RankedShape(IR.F.Tensors.ShapeOf(upStates).AsShape()[-1]);
 
             // gate, up_states = up_states.chunk(2, dim = -1)

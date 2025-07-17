@@ -12,7 +12,7 @@ namespace Nncase.Importer
         {
             var hidden_shape = new RankedShape(seqLen, -1L, headDim);
 
-            var qProjW = GetWeight($"model.layers.{count}.self_attn.q_proj.weight");
+            var qProjW = GetWeight($"model.layers.{count}.self_attn.q_proj.weight")!;
             var qProjB = GetWeight($"model.layers.{count}.self_attn.q_proj.bias");
 
             var ifScaleQ = GetWeight($"model.layers.{count}.self_attn.q_proj.input_scale");
@@ -24,7 +24,7 @@ namespace Nncase.Importer
             // batch_size, num_heads, seq_len, head_dim
             queryStates = IR.F.Tensors.Transpose(queryStates, new long[] { 1, 0, 2 });
 
-            var kProjW = GetWeight($"model.layers.{count}.self_attn.k_proj.weight");
+            var kProjW = GetWeight($"model.layers.{count}.self_attn.k_proj.weight")!;
             var kProjB = GetWeight($"model.layers.{count}.self_attn.k_proj.bias");
 
             var ifScaleK = GetWeight($"model.layers.{count}.self_attn.k_proj.input_scale");
@@ -34,7 +34,7 @@ namespace Nncase.Importer
             keyStates = LLMLayerNorm(keyStates, $"model.layers.{count}.self_attn.k_norm.weight");
             keyStates = IR.F.Tensors.Transpose(keyStates, new long[] { 1, 0, 2 });
 
-            var vProjW = GetWeight($"model.layers.{count}.self_attn.v_proj.weight");
+            var vProjW = GetWeight($"model.layers.{count}.self_attn.v_proj.weight")!;
             var vProjB = GetWeight($"model.layers.{count}.self_attn.v_proj.bias");
 
             var ifScaleV = GetWeight($"model.layers.{count}.self_attn.v_proj.input_scale");

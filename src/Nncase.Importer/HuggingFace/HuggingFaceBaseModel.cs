@@ -46,7 +46,7 @@ public abstract class HuggingFaceModel
         LoadedFiles = new HashSet<string>();
     }
 
-    public Tensor GetWeight(string weightName)
+    public Tensor? GetWeight(string weightName)
     {
         if (LoadedWeights.TryGetValue(weightName, out var tensor))
         {
@@ -55,7 +55,7 @@ public abstract class HuggingFaceModel
 
         if (!WeightToFileMap.TryGetValue(weightName, out var fileName))
         {
-            return null!;
+            return null;
         }
 
         if (!LoadedFiles.Contains(fileName))
@@ -304,7 +304,7 @@ public abstract class HuggingFaceModel
         var originDtype = hiddenStates.CheckedDataType;
         hiddenStates = IR.F.Tensors.Cast(hiddenStates, DataTypes.Float32);
 
-        Expr weight = GetWeight($"{layerName}");
+        Expr weight = GetWeight($"{layerName}")!;
 
         weight = IR.F.Tensors.Cast(weight, DataTypes.Float32);
         var bias = Tensor.FromScalar(0f, (RankedShape)weight.CheckedShape);
@@ -462,9 +462,9 @@ public abstract class HuggingFaceModel
 
     public virtual Call LLMMlp(int count, Expr hiddenStates)
     {
-        var gateProjW = GetWeight($"model.layers.{count}.mlp.gate_proj.weight");
-        var upProjW = GetWeight($"model.layers.{count}.mlp.up_proj.weight");
-        var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight");
+        var gateProjW = GetWeight($"model.layers.{count}.mlp.gate_proj.weight")!;
+        var upProjW = GetWeight($"model.layers.{count}.mlp.up_proj.weight")!;
+        var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight")!;
         var ifScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.input_scale");
         var wScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.weight_scale");
         var ifScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.input_scale");
@@ -487,7 +487,7 @@ public abstract class HuggingFaceModel
     {
         var hidden_shape = new RankedShape(seqLen, -1L, headDim);
 
-        var qProjW = GetWeight($"model.layers.{count}.self_attn.q_proj.weight");
+        var qProjW = GetWeight($"model.layers.{count}.self_attn.q_proj.weight")!;
         var qProjB = GetWeight($"model.layers.{count}.self_attn.q_proj.bias");
 
         var ifScaleQ = GetWeight($"model.layers.{count}.self_attn.q_proj.input_scale");
@@ -498,7 +498,7 @@ public abstract class HuggingFaceModel
         // batch_size, num_heads, seq_len, head_dim
         queryStates = IR.F.Tensors.Transpose(queryStates, new long[] { 1, 0, 2 });
 
-        var kProjW = GetWeight($"model.layers.{count}.self_attn.k_proj.weight");
+        var kProjW = GetWeight($"model.layers.{count}.self_attn.k_proj.weight")!;
         var kProjB = GetWeight($"model.layers.{count}.self_attn.k_proj.bias");
 
         var ifScaleK = GetWeight($"model.layers.{count}.self_attn.k_proj.input_scale");
@@ -507,7 +507,7 @@ public abstract class HuggingFaceModel
         keyStates = IR.F.Tensors.Reshape(keyStates, hidden_shape);
         keyStates = IR.F.Tensors.Transpose(keyStates, new long[] { 1, 0, 2 });
 
-        var vProjW = GetWeight($"model.layers.{count}.self_attn.v_proj.weight");
+        var vProjW = GetWeight($"model.layers.{count}.self_attn.v_proj.weight")!;
         var vProjB = GetWeight($"model.layers.{count}.self_attn.v_proj.bias");
 
         var ifScaleV = GetWeight($"model.layers.{count}.self_attn.v_proj.input_scale");
@@ -889,7 +889,7 @@ public abstract class HuggingFaceModel
         output = IR.F.Tensors.Transpose(output, new[] { 1, 0, 2 });
 
         output = IR.F.Tensors.Reshape(output, new RankedShape(seq_len, -1L));
-        var oProjW = GetWeight($"model.layers.{count}.self_attn.o_proj.weight");
+        var oProjW = GetWeight($"model.layers.{count}.self_attn.o_proj.weight")!;
 
         var ifScaleO = GetWeight($"model.layers.{count}.self_attn.o_proj.input_scale");
         var wScaleO = GetWeight($"model.layers.{count}.self_attn.o_proj.weight_scale");
@@ -908,7 +908,7 @@ public abstract class HuggingFaceModel
          * self.vocab_size = config.vocab_size
          * self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
          */
-        var embedTokensWeight = GetWeight("model.embed_tokens.weight");
+        var embedTokensWeight = GetWeight("model.embed_tokens.weight")!;
 
         Expr? inputEmbeds;
         if (inputIds.CheckedShape.Rank > 2 && inputIds.CheckedDataType.IsFloat())
@@ -994,7 +994,7 @@ public abstract class HuggingFaceModel
         // the last one
         Expr lastHiddenStates = LLMLayerNorm(hiddenStates, "model.norm.weight");
 
-        if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)
+        if (ImportOptions.HuggingFaceOptions.OutputHiddenStates)
         {
             allHiddenStates = IR.F.Tensors.Concat(new IR.Tuple(allHiddenStates!, IR.F.Tensors.Unsqueeze(lastHiddenStates, new long[] { 0 })), 0);
         }
@@ -1094,7 +1094,7 @@ public abstract class HuggingFaceModel
             input_ids,
             pastKeyValues!);
 
-        var lmHeadWeights = GetWeight("model.embed_tokens.weight");
+        var lmHeadWeights = GetWeight("model.embed_tokens.weight")!;
         if (Context!.Config!.ContainsKey("tie_word_embeddings") && !Context!.Config!.GetNestedValue<bool>("tie_word_embeddings"))
         {
             var newLmHeadWeights = GetWeight("lm_head.weight");
