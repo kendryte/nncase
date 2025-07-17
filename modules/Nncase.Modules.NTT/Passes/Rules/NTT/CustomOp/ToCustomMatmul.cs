@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
@@ -52,8 +53,9 @@ public partial class ToCustomMatmul : RewriteRule<Pattern>
         }
 
         // Name pattern
-        var node = Scheme.Outputs.FirstOrDefault(op => call.Metadata.OutputNames?[0] is string outputName && outputName == op.Name);
+        var node = Scheme.Outputs.FirstOrDefault(op => call.Metadata.OutputNames?[0] is string outputName && Regex.IsMatch(outputName, op.Name ?? string.Empty));
 
+#if false
         if (node is null)
         {
             node = Scheme.Outputs.FirstOrDefault(op =>
@@ -61,11 +63,12 @@ public partial class ToCustomMatmul : RewriteRule<Pattern>
                 op.Shape[0].SequenceEqual(lhs.CheckedShape.ToValueArray()) &&
                 op.Shape[1].SequenceEqual(rhs.CheckedShape.ToValueArray()));
         }
+#endif
 
         if (node is not null)
         {
             return call.With(
-                target: new IR.CustomNTT.MatMul(null!, null!, false, false, node!.SBP[0], node!.SBP[1], node!.SBP[2], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath),
+                target: new IR.CustomNTT.MatMul(null!, null!, false, false, node!.SBP[0], node!.SBP[1], node!.SBP[2], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName),
                 arguments: new[] { lhs, rhs },
                 metadata: call.Metadata);
         }
