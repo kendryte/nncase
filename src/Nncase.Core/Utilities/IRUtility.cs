@@ -81,7 +81,7 @@ public static class IRUtility
                     if (inDim % newShape[i] == 0)
                     {
                         i++;
-                        if (jStart != -1)
+                        if (jStart != -1 && i < newShape.Length)
                         {
                             // fill the path
                             for (int k = jStart; k < j; k++)
