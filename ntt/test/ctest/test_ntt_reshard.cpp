@@ -49,20 +49,6 @@ using namespace nncase::ntt::distributed::shard_policy;
 using namespace nncase::ntt::runtime;
 using namespace ortki;
 
-// namespace nncase::ntt::distributed {
-// namespace detail {
-// decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
-//     nncase::ntt::distributed::topology_shape)) global_local_data_ptr;
-
-// decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
-//     nncase::ntt::distributed::topology_shape)) global_local_rdata_ptr;
-
-// auto global_local_data_ptr =
-// nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t,
-// 2>>(nncase::ntt::distributed::topology_shape); auto global_local_rdata_ptr =
-// nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t,
-// 2>>(nncase::ntt::distributed::topology_shape);
-
 decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
     nncase::ntt::distributed::topology_shape))
     nncase::ntt::distributed::detail::global_local_data_ptr =
@@ -71,12 +57,15 @@ decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
 
 decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
     nncase::ntt::distributed::topology_shape))
-    nncase::ntt::distributed::detail::global_local_rdata_ptr =
+    nncase::ntt::distributed::detail::global_thread_local_rdata_ptr =
         nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
             nncase::ntt::distributed::topology_shape);
 
-// }
-// }
+decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+    nncase::ntt::distributed::topology_shape))
+    nncase::ntt::distributed::detail::global_block_local_rdata_ptr =
+        nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+            nncase::ntt::distributed::topology_shape);
 
 namespace nncase::ntt::runtime {
 size_t tdim;
