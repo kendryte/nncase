@@ -18,6 +18,7 @@
 
 #ifdef SYS_MODE
 #define DEVICE_SEC __device__
+#include <sync.h>
 #else
 #define DEVICE_SEC
 #endif
@@ -105,8 +106,12 @@ template <> class topology_synchronizer<topology::thread> {
   private:
   public:
     static void synchronize() noexcept {
+#ifndef SYS_MODE
         detail::arrive_and_wait(thread_barriers[cid()][did()][bid()].barrier,
                                 tdim());
+#else
+        sync_c_d_y_x_rt();
+#endif
     }
 
   private:
@@ -119,8 +124,12 @@ template <> class topology_synchronizer<topology::block> {
   private:
   public:
     static void synchronize() noexcept {
+#ifndef SYS_MODE
         detail::arrive_and_wait(block_barriers[cid()][did()].barrier,
                                 bdim() * tdim());
+#else
+        sync_c_d_ry_rx_rt();
+#endif
     }
 
   private:
@@ -132,8 +141,12 @@ template <> class topology_synchronizer<topology::die> {
   private:
   public:
     static void synchronize() noexcept {
+#ifndef SYS_MODE
         detail::arrive_and_wait(die_barriers[cid()].barrier,
                                 ddim() * bdim() * tdim());
+#else
+        sync_c_rd_ry_rx_rt();
+#endif
     }
 
   private:
@@ -145,8 +158,12 @@ template <> class topology_synchronizer<topology::chip> {
   private:
   public:
     static void synchronize() noexcept {
+#ifndef SYS_MODE
         detail::arrive_and_wait(chip_barrier.barrier,
                                 cdim() * ddim() * bdim() * tdim());
+#else
+        sync_c_rd_ry_rx_rt();
+#endif
     }
 
   private:

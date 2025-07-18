@@ -382,6 +382,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
+        if (callCluster.VertexCount == 0)
+        {
+            throw new InvalidOperationException("Please Check expr's TypeInfer.");
+        }
+
         _inferedMemo.Add(expr, callCluster);
 
         if (!isSupported || isStandalone)
