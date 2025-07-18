@@ -174,6 +174,18 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
+    protected internal override TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafPhysicalBuffer(expr, context);
+    }
+
+    /// <inheritdoc />
     protected internal override TExprResult VisitMemSpan(TIR.MemSpan expr, TContext context)
     {
         VisitOperands(expr, context);
@@ -860,6 +872,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected virtual TExprResult VisitLeafTupleConst(TupleConst expr, TContext context) => VisitLeafConst(expr, context);
 
     /// <summary>
+    /// Visit leaf <see cref="TIR.PhysicalBuffer"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
     /// Visit leaf <see cref="TIR.MemSpan"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafMemSpan(TIR.MemSpan expr, TContext context) => DefaultVisitLeaf(expr, context);
@@ -1222,6 +1239,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitTupleConst(TupleConst expr, Unit context) => VisitTupleConst(expr);
+    /// <summary>
+    /// Visit <see cref="TIR.PhysicalBuffer"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr) => base.VisitPhysicalBuffer(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr, Unit context) => VisitPhysicalBuffer(expr);
     /// <summary>
     /// Visit <see cref="TIR.MemSpan"/>.
     /// </summary>
@@ -1690,6 +1714,14 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafTupleConst(TupleConst expr, Unit context) => VisitLeafTupleConst(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="TIR.PhysicalBuffer"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr) => base.VisitLeafPhysicalBuffer(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr, Unit context) => VisitLeafPhysicalBuffer(expr);
 
     /// <summary>
     /// Visit leaf <see cref="TIR.MemSpan"/>.

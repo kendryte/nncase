@@ -328,7 +328,7 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
-    protected override BaseExpr VisitLeafMemSpan(TIR.MemSpan expr, TContext context)
+    protected override BaseExpr VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context)
     {
         bool IsOperandsMutated()
         {
@@ -350,6 +350,29 @@ public partial class ExprCloner<TContext>
             return expr.With(
                 start: Clone(expr.Start, context),
                 size: Clone(expr.Size, context)
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
+    protected override BaseExpr VisitLeafMemSpan(TIR.MemSpan expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(expr.Buffer, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+                buffer: Clone(expr.Buffer, context)
             );
         }
 

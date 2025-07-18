@@ -98,6 +98,12 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context)
+    {
+        return RewriteLeafPhysicalBuffer(expr, context);
+    }
+
+    /// <inheritdoc/>
     protected sealed override BaseExpr VisitLeafMemSpan(TIR.MemSpan expr, TContext context)
     {
         return RewriteLeafMemSpan(expr, context);
@@ -498,6 +504,11 @@ public partial class ExprRewriter<TContext>
     protected virtual BaseExpr RewriteLeafTupleConst(TupleConst expr, TContext context) => RewriteLeafConst(expr, context);
 
     /// <summary>
+    /// Rewrite leaf <see cref="TIR.PhysicalBuffer"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
     /// Rewrite leaf <see cref="TIR.MemSpan"/>.
     /// </summary>
     protected virtual BaseExpr RewriteLeafMemSpan(TIR.MemSpan expr, TContext context) => DefaultRewriteLeaf(expr, context);
@@ -887,6 +898,14 @@ public partial class ExprRewriter
 
     /// <inheritdoc />
     protected sealed override BaseExpr RewriteLeafTupleConst(TupleConst expr, Unit context) => RewriteLeafTupleConst(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="TIR.PhysicalBuffer"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafPhysicalBuffer(TIR.PhysicalBuffer expr) => DefaultRewriteLeaf(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafPhysicalBuffer(TIR.PhysicalBuffer expr, Unit context) => RewriteLeafPhysicalBuffer(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="TIR.MemSpan"/>.

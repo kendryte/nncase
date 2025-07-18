@@ -38,7 +38,7 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var input = OrtKI.Random(oldShape);
         var expect = OrtKI.Reshape(input, newShape, 0);
 
-        var expr = IR.F.Tensors.Bitcast(DataTypes.Float32, input.ToTensor(), DataTypes.Float32, newShape);
+        var expr = IR.F.Tensors.Bitcast(input.ToTensor(), DataTypes.Float32);
         CompilerServices.InferenceType(expr);
         Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
     }

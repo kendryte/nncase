@@ -115,7 +115,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         var ctype = templateHeader +
             $"void {VisitEntry.Name}({string.Concat(VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *thread_local_rdata, const std::byte *block_local_rdata, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
         return new(
-            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, ThreadLocalRdataPoolSize, BlockLocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata), TargetOptions),
+            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, ThreadLocalRdataPoolSize, BlockLocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Buffer.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
             CSourceBuiltn.TopoAwareRuntimeDef(TargetOptions, DataAlign, _collective_pool_size),
             CSourceBuiltn.ModuleTopologyDef(TargetOptions));
@@ -183,7 +183,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
     }
 
     /// <inheritdoc/>
-    protected override CSymbol VisitMemSpan(MemSpan expr)
+    protected override CSymbol VisitPhysicalBuffer(PhysicalBuffer expr)
     {
         if (_exprMemo.TryGetValue(expr, out var symbol))
         {
@@ -191,7 +191,6 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         }
 
         var start = Visit(expr.Start);
-        _ = Visit(expr.Size);
         string loc = (expr.Location, expr.Hierarchy) switch
         {
             (MemoryLocation.Rdata, 0) => "rdata",
@@ -202,8 +201,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             (MemoryLocation.Output, 0) => "output",
             _ => throw new NotSupportedException($"{expr.Location}, {expr.Hierarchy}"),
         };
-        var ptype = (PointerType)expr.CheckedDataType;
-        var ptypeName = ptype.ElemType.ToC();
+
+        var ptypeName = "std::byte";
         if (expr.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata)
         {
             // Rdata, ThreadLocalRdata and BlockLocalRdata are const
@@ -213,13 +212,41 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         string name;
         if (expr.Size is DimConst)
         {
-            var spanSize = (ulong)expr.Size.FixedValue / (ulong)ptype.ElemType.SizeInBytes;
-            name = $"std::span<{ptypeName}, {spanSize}>(reinterpret_cast<{ptypeName} *>({loc} + {start.Name}UL), {spanSize})";
+            var spanSize = (ulong)expr.Size.FixedValue;
+            name = $"std::span<{ptypeName}, {spanSize}>({loc} + {start.Name}UL, {spanSize})";
         }
         else
         {
-            var spanSize = $"{Visit(expr.Size).Name} / {ptype.ElemType.SizeInBytes}";
-            name = $"std::span<{ptypeName}>(reinterpret_cast<{ptypeName} *>({loc} + {start.Name}UL), {spanSize})";
+            var spanSize = Visit(expr.Size).Name;
+            name = $"std::span<{ptypeName}>({loc} + {start.Name}UL, {spanSize})";
+        }
+
+        symbol = new(start.Type, name);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    /// <inheritdoc/>
+    protected override CSymbol VisitMemSpan(MemSpan expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var buffer = Visit(expr.Buffer);
+        var start = Visit(expr.Start);
+
+        string name;
+        if (expr.Start is DimConst && expr.Size is DimConst)
+        {
+            var spanSize = (ulong)expr.Size.FixedValue;
+            name = $"{buffer.Name}.subspan<{start.Name}, {spanSize}>()";
+        }
+        else
+        {
+            var spanSize = Visit(expr.Size).Name;
+            name = $"{buffer.Name}.subspan({start.Name}, {spanSize})";
         }
 
         symbol = new(start.Type, name);
@@ -241,7 +268,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         var dimensionStr = $"shape_t<{StringUtility.Join(", ", dimensionTypes)}>";
         var strideStr = $"strides_t<{StringUtility.Join(", ", strideTypes)}>";
 
-        var type = expr.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata || expr.MemSpan.Start is TensorConst
+        var type = expr.MemSpan.Buffer.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata || expr.MemSpan.Buffer.Start is TensorConst
             ? (expr.DistributedType == null
              ? $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> "
              : $"sharded_tensor_view<{dtypeStr}, {dimensionStr}, {KernelUtility.ShardingToC(expr.DistributedType)}, {strideStr}> ")
@@ -764,10 +791,12 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             var symbol = Visit(buffer);
 
             IndentScope.Writer.IndWrite($"auto {symbol.Name}");
-            if (buffer.MemSpan.Start is not None)
+            if (buffer.MemSpan.Buffer.Start is not None)
             {
+                // If the buffer has a start, we create a tensor view
+                var dtypeStr = buffer.ElemType.ToC();
                 var dimensions = buffer.DistributedType is null ? buffer.Dimensions : ((RankedShape)buffer.DistributedType.TensorType.Shape).Dimensions;
-                var spanStr = Visit(buffer.MemSpan).Name;
+                var spanStr = $"span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name})";
                 var dimensionValues = dimensions.AsValueEnumerable().Select(x => Visit(x).Name);
                 var strideValues = buffer.Strides.AsValueEnumerable().Select(x => Visit(x).Name);
 

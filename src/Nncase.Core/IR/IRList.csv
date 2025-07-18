@@ -12,7 +12,8 @@ FunctionWrapper,true,true,BaseFunction,,Target
 TensorConst,true,false,Const,,
 Tuple,true,false,Default,IR.,@Fields
 TupleConst,true,false,Const,,
-MemSpan,true,false,Default,TIR.,Start;Size;
+PhysicalBuffer,true,false,Default,TIR.,Start;Size;
+MemSpan,true,false,Default,TIR.,Buffer,Start;Size;
 Var,true,false,Default,,
 Block,true,false,Default,TIR.,Body;InitBody;@IterVars;@Reads;@Writes;@AllocBuffers;Predicate
 Buffer,true,false,Default,TIR.,MemSpan;@Dimensions;@Strides;!DistributedType

@@ -6,115 +6,37 @@ using Nncase.IR;
 
 namespace Nncase.TIR;
 
-/// <summary>
-/// the memory type.
-/// </summary>
-[Flags]
-public enum MemoryLocation
-{
-    /// <summary>
-    /// input.
-    /// </summary>
-    Input = 1 << 1,
-
-    /// <summary>
-    /// output.
-    /// </summary>
-    Output = 1 << 2,
-
-    /// <summary>
-    /// constant data.
-    /// </summary>
-    Rdata = 1 << 3,
-
-    /// <summary>
-    /// thread local constant data.
-    /// </summary>
-    ThreadLocalRdata = 1 << 4,
-
-    /// <summary>
-    /// block local constant data.
-    /// </summary>
-    BlockLocalRdata = 1 << 5,
-
-    /// <summary>
-    /// compute temp data.
-    /// </summary>
-    Data = 1 << 6,
-
-    /// <summary>
-    /// shared data.
-    /// </summary>
-    SharedData = 1 << 7,
-
-    /// <summary>
-    /// l2 data.
-    /// </summary>
-    L2Data = 1 << 8,
-
-    /// <summary>
-    /// L1 data.
-    /// </summary>
-    L1Data = 1 << 9,
-
-    /// <summary>
-    /// base addr.
-    /// </summary>
-    PrivateBase = 1 << 10,
-}
-
 public sealed class MemSpan : BaseExpr
 {
-    public MemSpan(Dimension size, MemoryLocation location, int hierarchy = 0)
-        : base([None.Default, size])
+    public MemSpan(PhysicalBuffer buffer, Dimension start, Dimension size)
+        : base([buffer, start, size])
     {
-        Location = location;
-        Hierarchy = hierarchy;
     }
 
-    public MemSpan(Expr start, Dimension size, MemoryLocation location, int hierarchy = 0)
-        : base([start, size])
+    public MemSpan(PhysicalBuffer buffer)
+        : this(buffer, 0, buffer.Size)
     {
-        Location = location;
-        Hierarchy = hierarchy;
     }
+
+    /// <summary>
+    /// Gets the buffer.
+    /// </summary>
+    public PhysicalBuffer Buffer => (PhysicalBuffer)Operands[0];
 
     /// <summary>
     /// Gets the start.
     /// </summary>
-    public Expr Start => (Expr)Operands[0];
+    public Dimension Start => (Dimension)Operands[1];
 
     /// <summary>
     /// Gets the size of bytes.
     /// </summary>
-    public Dimension Size => (Dimension)Operands[1];
-
-    /// <summary>
-    /// Gets the memory location.
-    /// </summary>
-    public MemoryLocation Location { get; }
-
-    /// <summary>
-    /// Gets the memory hierarchy.
-    /// </summary>
-    public int Hierarchy { get; }
+    public Dimension Size => (Dimension)Operands[2];
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context)
         => functor.VisitMemSpan(this, context);
 
-    public MemSpan With(Expr? start = null, Dimension? size = null, MemoryLocation? location = null, int? hierarchy = null) => new(start ?? Start, size ?? Size, location ?? Location, hierarchy ?? Hierarchy);
-
-    /// <inheritdoc/>
-    public override bool Equals(object? obj)
-    {
-        if (ReferenceEquals(this, obj))
-        {
-            return true;
-        }
-
-        return obj is MemSpan other && GetHashCode() == other.GetHashCode() && Location == other.Location && Operands.SequenceEqual(other.Operands);
-    }
-
-    protected override int GetHashCodeCore() => HashCode.Combine(Location, base.GetHashCodeCore());
+    public MemSpan With(PhysicalBuffer? buffer = null, Dimension? start = null, Dimension? size = null) =>
+        new(buffer ?? Buffer, start ?? Start, size ?? Size);
 }

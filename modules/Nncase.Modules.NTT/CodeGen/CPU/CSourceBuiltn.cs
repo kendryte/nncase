@@ -17,11 +17,7 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
 {
     public BufferRenderInfo GetInfo(TIR.Buffer buffer)
     {
-        ulong offset = 0;
-        if (buffer.MemSpan.Start is IR.TensorConst tc)
-        {
-            offset = tc.Value.ToScalar<ulong>();
-        }
+        ulong offset = ((TensorConst)buffer.MemSpan.Buffer.Start).Value.ToScalar<ulong>() + (ulong)buffer.MemSpan.Start.FixedValue;
 
         var elemType = buffer.ElemType.ToC();
         var rank = buffer.Dimensions.Length;

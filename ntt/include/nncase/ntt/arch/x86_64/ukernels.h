@@ -14,8 +14,8 @@
  */
 #pragma once
 #include "../../ukernels.h"
-#include "nncase/ntt/shape.h"
-#include "nncase/ntt/vector.h"
+#include "../../vector.h"
+#include <immintrin.h>
 
 namespace nncase::ntt::ukernels {
 
@@ -631,6 +631,78 @@ struct u_matmul_policy<mamtul_pack_kind::pack_n, float, vector<float, 8>,
     static constexpr size_t m0_subtile = 0;
 };
 
+template <>
+struct u_matmul_m1_policy<mamtul_pack_kind::pack_n, float, vector<float, 8>,
+                          vector<float, 8>, true> {
+    static constexpr size_t n0_tile = 7;
+};
+
+template <bool AccumulateC>
+struct u_matmul<ukernels::mamtul_pack_kind::pack_n, AccumulateC, false, false,
+                1, 7, float, vector<float, 8>, vector<float, 8>, true> {
+    template <class TA, class TB, class TC>
+    constexpr void operator()(const TA &a, const TB &b, TC &c0,
+                              size_t K) noexcept {
+        NTT_ASSUME(K > 0);
+
+        register __m256 c0_0 asm("ymm0") = {};
+        register __m256 c0_1 asm("ymm1") = {};
+        register __m256 c0_2 asm("ymm2") = {};
+        register __m256 c0_3 asm("ymm3") = {};
+        register __m256 c0_4 asm("ymm4") = {};
+        register __m256 c0_5 asm("ymm5") = {};
+        register __m256 c0_6 asm("ymm6") = {};
+
+        if constexpr (AccumulateC) {
+            c0_0 = c0(0, 0);
+            c0_1 = c0(0, 1);
+            c0_2 = c0(0, 2);
+            c0_3 = c0(0, 3);
+            c0_4 = c0(0, 4);
+            c0_5 = c0(0, 5);
+            c0_6 = c0(0, 6);
+        }
+
+        register __m256 a0_0 asm("ymm7");
+
+        register __m256 b0_0 asm("ymm8");
+        register __m256 b0_1 asm("ymm9");
+        register __m256 b0_2 asm("ymm10");
+        register __m256 b0_3 asm("ymm11");
+        register __m256 b0_4 asm("ymm12");
+        register __m256 b0_5 asm("ymm13");
+        register __m256 b0_6 asm("ymm14");
+
+        for (size_t k = 0; k < K; k++) {
+            a0_0 = _mm256_broadcast_ss(&a(0, k));
+
+            b0_0 = b(k, 0);
+            b0_1 = b(k, 1);
+            b0_2 = b(k, 2);
+            b0_3 = b(k, 3);
+            b0_4 = b(k, 4);
+            b0_5 = b(k, 5);
+            b0_6 = b(k, 6);
+
+            c0_0 = _mm256_fmadd_ps(a0_0, b0_0, c0_0);
+            c0_1 = _mm256_fmadd_ps(a0_0, b0_1, c0_1);
+            c0_2 = _mm256_fmadd_ps(a0_0, b0_2, c0_2);
+            c0_3 = _mm256_fmadd_ps(a0_0, b0_3, c0_3);
+            c0_4 = _mm256_fmadd_ps(a0_0, b0_4, c0_4);
+            c0_5 = _mm256_fmadd_ps(a0_0, b0_5, c0_5);
+            c0_6 = _mm256_fmadd_ps(a0_0, b0_6, c0_6);
+        }
+
+        _mm256_store_ps((float *)&c0(0, 0), c0_0);
+        _mm256_store_ps((float *)&c0(0, 1), c0_1);
+        _mm256_store_ps((float *)&c0(0, 2), c0_2);
+        _mm256_store_ps((float *)&c0(0, 3), c0_3);
+        _mm256_store_ps((float *)&c0(0, 4), c0_4);
+        _mm256_store_ps((float *)&c0(0, 5), c0_5);
+        _mm256_store_ps((float *)&c0(0, 6), c0_6);
+    }
+};
+
 // Pack MN
 template <>
 struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, 8>,
@@ -656,6 +728,53 @@ struct u_matmul_policy<mamtul_pack_kind::pack_kn, vector<float, 8>,
     static constexpr size_t m0_tile = 4;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 0;
+};
+
+template <>
+struct u_matmul_m1_policy<mamtul_pack_kind::pack_kn, vector<float, 8>,
+                          vector<float, 8, 8>, vector<float, 8>, true> {
+    static constexpr size_t n0_tile = 4;
+};
+
+template <bool AccumulateC>
+struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, false, false,
+                1, 4, vector<float, 8>, vector<float, 8, 8>, vector<float, 8>,
+                true> {
+    template <class TA, class TB, class TC>
+    constexpr void operator()(const TA &a, const TB &b, TC &c0,
+                              size_t K) noexcept {
+        NTT_ASSUME(K > 0);
+
+        register __m256 c0_0 asm("ymm0") = {};
+        register __m256 c0_1 asm("ymm1") = {};
+        register __m256 c0_2 asm("ymm2") = {};
+        register __m256 c0_3 asm("ymm3") = {};
+
+        if constexpr (AccumulateC) {
+            c0_0 = c0(0, 0);
+            c0_1 = c0(0, 1);
+            c0_2 = c0(0, 2);
+            c0_3 = c0(0, 3);
+        }
+
+        register __m256 a0_0 asm("ymm7");
+
+        for (size_t k = 0; k < K; k++) {
+            for (size_t sk = 0; sk < 8; sk++) {
+                a0_0 = _mm256_broadcast_ss((const float *)&a(0, k) + sk);
+
+                c0_0 = _mm256_fmadd_ps(a0_0, b(k, 0)(sk), c0_0);
+                c0_1 = _mm256_fmadd_ps(a0_0, b(k, 1)(sk), c0_1);
+                c0_2 = _mm256_fmadd_ps(a0_0, b(k, 2)(sk), c0_2);
+                c0_3 = _mm256_fmadd_ps(a0_0, b(k, 3)(sk), c0_3);
+            }
+        }
+
+        _mm256_store_ps((float *)&c0(0, 0), c0_0);
+        _mm256_store_ps((float *)&c0(0, 1), c0_1);
+        _mm256_store_ps((float *)&c0(0, 2), c0_2);
+        _mm256_store_ps((float *)&c0(0, 3), c0_3);
+    }
 };
 
 // Pack MKN

@@ -115,6 +115,11 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                                        true>;
     static constexpr auto m0_subtile = policy_t::m0_subtile;
 
+    using m1_policy_t =
+        ntt::ukernels::u_matmul_m1_policy<pack_kind, typename TLhs::value_type,
+                                          typename TRhs::value_type, TOutElem,
+                                          true>;
+
   public:
     void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
         const auto domain =
@@ -173,12 +178,15 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
 
         if (scaled_M % m0_tile) {
             for (; m1 < scaled_M; m1++) {
+                constexpr auto m1_n0_tile = m1_policy_t::n0_tile;
+
                 size_t n1 = 0;
-                for (; n1 < scaled_N / n0_tile * n0_tile; n1 += n0_tile) {
-                    matmul_2d_l0<1, n0_tile>(a, b, c, K, m1, n1);
+                for (; n1 < scaled_N / m1_n0_tile * m1_n0_tile;
+                     n1 += m1_n0_tile) {
+                    matmul_2d_l0<1, m1_n0_tile>(a, b, c, K, m1, n1);
                 }
 
-                if (scaled_N % n0_tile) {
+                if (scaled_N % m1_n0_tile) {
                     for (; n1 < scaled_N; n1++) {
                         matmul_2d_l0<1, 1>(a, b, c, K, m1, n1);
                     }

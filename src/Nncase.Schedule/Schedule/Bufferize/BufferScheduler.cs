@@ -54,7 +54,7 @@ public abstract class BufferScheduler
     public static IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> Schedule(IEnumerable<BufferLifetime> lifetimes)
     {
         var result = new Dictionary<MemoryLocation, BufferScheduleResult>();
-        foreach (var group in lifetimes.GroupBy(x => x.Buffer.MemSpan.Location))
+        foreach (var group in lifetimes.GroupBy(x => x.Buffer.Location))
         {
             if (group.Key is MemoryLocation.Output or MemoryLocation.Data or MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata)
             {
@@ -71,12 +71,12 @@ public abstract class BufferScheduler
         int maxAlignment = 8;
         foreach (var lifetime in lifetimes)
         {
-            if (lifetime.Buffer.MemSpan.Location != MemoryLocation)
+            if (lifetime.Buffer.Location != MemoryLocation)
             {
                 throw new ArgumentException($"Memory location to schedule of {lifetime.Buffer} is not expected.");
             }
 
-            var alignment = Math.Max(8, lifetime.Buffer.ElemType.SizeInBytes);
+            var alignment = Math.Max(8, lifetime.Buffer.Alignment);
             maxMemoryPoolSize = MathUtility.AlignUp(maxMemoryPoolSize, alignment) + lifetime.Memory.Size;
             maxAlignment = Math.Max(maxAlignment, alignment);
         }

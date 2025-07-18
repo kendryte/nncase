@@ -64,8 +64,8 @@ public static class Tensors
 
     public static Call Broadcast(Expr input, Shape shape) => new Call(new Broadcast(), input, shape);
 
-    public static Call Bitcast(PrimType type, Expr input, PrimType newType, Expr shape) =>
-        new Call(new Bitcast(type, newType), input, shape);
+    public static Call Bitcast(Expr input, DataType newType) =>
+        new Call(new Bitcast(newType), input);
 
     public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault, IRArray<int> packAxes = default) =>
         new Call(new Cast(newType, castMode, packAxes), input);

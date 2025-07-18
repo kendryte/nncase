@@ -24,15 +24,8 @@ public sealed partial class Bitcast : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Bitcast), 0, "input");
 
-    /// <summary>
-    /// Gets input.
-    /// </summary>
-    public static readonly ParameterInfo NewShape = new(typeof(Bitcast), 1, "new_shape", HasRank(1) & HasDataType(DataTypes.Int64));
-
-    public DataType Type { get; }
-
     public DataType NewType { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{Type.GetCSharpName()}, {NewType.GetCSharpName()}";
+    public override string DisplayProperty() => $"{NewType.GetCSharpName()}";
 }

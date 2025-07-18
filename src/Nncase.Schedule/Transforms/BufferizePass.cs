@@ -34,7 +34,7 @@ public sealed class BufferizePass : FunctionPass
 
         var bufferReplaces = scheduleResult.SelectMany(x => x.Value.Buffers).ToDictionary(
             x => x.Buffer,
-            (IEqualityComparer<TIR.Buffer>)ReferenceEqualityComparer.Instance);
+            (IEqualityComparer<TIR.PhysicalBuffer>)ReferenceEqualityComparer.Instance);
         new BufferReplacer(bufferReplaces).Rewrite(func.Body);
         func.SchedResult.IsScheduled = true;
     }
@@ -73,7 +73,7 @@ public sealed class BufferizePass : FunctionPass
         {
             foreach (var lifetime in rdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
+                var constValue = (Const)((Call)lifetime.Buffer.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.Rdatas.Add(constValue, range);
             }
@@ -86,7 +86,7 @@ public sealed class BufferizePass : FunctionPass
         {
             foreach (var lifetime in threadLocalRdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
+                var constValue = (Const)((Call)lifetime.Buffer.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.ThreadLocalRdatas.Add(constValue, range);
             }
@@ -99,7 +99,7 @@ public sealed class BufferizePass : FunctionPass
         {
             foreach (var lifetime in blockLocalRdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.MemSpan.Start)[IR.Buffers.AddressOf.Input];
+                var constValue = (Const)((Call)lifetime.Buffer.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.BlockLocalRdatas.Add(constValue, range);
             }
@@ -132,13 +132,10 @@ class ConstraintsMode(Enum):
 
 @dataclass
 class ScheduledBuffer():
-  name: str
   number: int
   time_interval: Interval
   mem_interval: Interval
   constraints: ConstraintsMode
-  shape: List[str]
-  stride: List[int]
   inplace: bool
 
 colors = itertools.cycle(palette)
@@ -148,16 +145,13 @@ buffers = [
             int bufferId = 0;
             foreach (var lifetime in locationResult.Value.Buffers)
             {
-                var dims = new RankedShape(lifetime.Buffer.Dimensions).Select(x => $"'{x}'");
-                var strides = new RankedShape(lifetime.Buffer.Strides).Select(x => $"'{x}'");
-                wr.WriteLine($"ScheduledBuffer('{lifetime.Buffer.Name}', {bufferId}, {lifetime.Time}, {lifetime.Memory}, ConstraintsMode.No, [{string.Join(",", dims)}], [{string.Join(",", strides)}], {false}),");
+                wr.WriteLine($"ScheduledBuffer({bufferId}, {lifetime.Time}, {lifetime.Memory}, ConstraintsMode.No, {false}),");
                 bufferId++;
             }
 
             wr.WriteLine(@"]
 
 source = {
-    'name': [],
     'x': [],
     'y': [],
     'width': [],
@@ -166,8 +160,6 @@ source = {
     'color': [],
     'mem_interval': [],
     'time_interval': [],
-    'shape': [],
-    'stride': [],
 }
 
 y_range_max = 0
@@ -193,12 +185,9 @@ for buffer in buffers:
   source['alpha'].append(0.2 if buffer.inplace else 1.0)
   source['time_interval'].append(str(buffer.time_interval))
   source['mem_interval'].append(str(buffer.mem_interval))
-  source['shape'].append(','.join([str(s) for s in buffer.shape]))
-  source['stride'].append(','.join([str(s) for s in buffer.stride]))
 
 source = ColumnDataSource(source)
-hover = HoverTool(tooltips=[('name', '@name'), ('time_interval', '@time_interval'), ('mem_interval', '@mem_interval'),
-                            ('shape', '@shape'), ('stride', '@stride')])
+hover = HoverTool(tooltips=[('name', '@name'), ('time_interval', '@time_interval'), ('mem_interval', '@mem_interval')])
 
 p = figure(tools=[hover, WheelPanTool(), SaveTool(), WheelZoomTool(), ResetTool()], width=1280, height=720,
            y_range=(0, y_range_max * 1.2), x_range=(-1, x_range_max + 1),
@@ -215,25 +204,19 @@ show(p)");
 
     private sealed class BufferReplacer : ExprRewriter
     {
-        private readonly IReadOnlyDictionary<TIR.Buffer, BufferLifetime> _buffers;
+        private readonly IReadOnlyDictionary<TIR.PhysicalBuffer, BufferLifetime> _buffers;
 
-        public BufferReplacer(IReadOnlyDictionary<TIR.Buffer, BufferLifetime> buffers)
+        public BufferReplacer(IReadOnlyDictionary<TIR.PhysicalBuffer, BufferLifetime> buffers)
         {
             _buffers = buffers;
         }
 
-        protected override Expr RewriteLeafBuffer(TIR.Buffer expr)
+        protected override BaseExpr RewriteLeafPhysicalBuffer(TIR.PhysicalBuffer expr)
         {
             if (_buffers.TryGetValue(expr, out var lifetime))
             {
-                var start = Tensor.FromPointer((ulong)lifetime.Memory.Start, expr.ElemType);
-                if (start.ElementType is PointerType { ElemType: ReferenceType { ElemType: IR.NN.PagedAttentionKVCacheType ntype } } && expr.ElemType is ReferenceType { ElemType: IR.NN.PagedAttentionKVCacheType oldType })
-                {
-                    ntype.Config = oldType.Config;
-                }
-
-                var memSpan = expr.MemSpan.With(start: start);
-                return expr.With(memSpan: memSpan);
+                var start = Tensor.FromScalar((ulong)lifetime.Memory.Start);
+                return expr.With(start: start);
             }
 
             return expr;

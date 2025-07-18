@@ -40,6 +40,12 @@ struct u_matmul_policy {
     static constexpr dim_t m0_subtile = 0;
 };
 
+template <mamtul_pack_kind PackKind, class TLhsElem, class TRhsElem,
+          class TOutElem, bool Arch>
+struct u_matmul_m1_policy {
+    static constexpr dim_t n0_tile = 1;
+};
+
 template <mamtul_pack_kind PackKind, class TA, class TB, class TC>
 struct u_type_scale {
     using TLhsElem = std::decay_t<typename TA::element_type>;

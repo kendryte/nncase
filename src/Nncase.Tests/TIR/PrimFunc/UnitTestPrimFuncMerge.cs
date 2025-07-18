@@ -211,6 +211,6 @@ internal sealed class PrimFuncEvaluateVisitor
     private Span<byte> GetBufferSpan(BaseExpr expr)
     {
         var buffer = Assert.IsType<TIR.Buffer>(expr);
-        return _poolMap[buffer.MemSpan.Location].AsSpan<byte>(buffer.MemSpan.Start.Evaluate().AsTensor().ToScalar<int>(), buffer.MemSpan.Size.Evaluate().AsTensor().ToScalar<int>());
+        return _poolMap[buffer.MemSpan.Buffer.Location].AsSpan<byte>(buffer.MemSpan.Buffer.Start.Evaluate().AsTensor().ToScalar<int>(), buffer.MemSpan.Buffer.Size.Evaluate().AsTensor().ToScalar<int>());
     }
 }

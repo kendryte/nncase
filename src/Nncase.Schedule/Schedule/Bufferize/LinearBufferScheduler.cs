@@ -22,7 +22,7 @@ public sealed class LinearBufferScheduler : BufferScheduler
         memoryPoolSize = 0;
         foreach (var lifetime in lifetimes)
         {
-            var alignment = lifetime.Buffer.ElemType.SizeInBytes;
+            var alignment = lifetime.Buffer.Alignment;
             var start = MathUtility.AlignUp(memoryPoolSize, alignment);
             var size = lifetime.Memory.Size;
             lifetime.Memory.Start = start;

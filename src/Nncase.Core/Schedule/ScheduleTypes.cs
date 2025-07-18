@@ -64,12 +64,12 @@ public record class BufferLifetime
 
     public Interval Memory;
 
-    public BufferLifetime(TIR.Buffer buffer)
+    public BufferLifetime(TIR.PhysicalBuffer buffer)
     {
         Buffer = buffer;
     }
 
-    public TIR.Buffer Buffer { get; }
+    public TIR.PhysicalBuffer Buffer { get; }
 }
 
 /// <summary>
