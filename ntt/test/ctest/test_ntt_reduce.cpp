@@ -79,25 +79,23 @@ TEST(ReduceMeanTestFloat, ReduceM_NoPack) {
 
 #define NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, ntt_reduce_mode)          \
     /* init */                                                                 \
-    alignas(32) auto ntt_input =                                               \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);                     \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    alignas(32) auto ntt_input_pack =                                          \
+    auto ntt_input_pack =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
     ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<0>);               \
                                                                                \
     /* ntt */                                                                  \
-    alignas(32) auto ntt_output1 =                                             \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);                     \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);      \
     ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
                                   ntt::fixed_shape_v<0>,                       \
                                   ntt::fixed_shape_v<0>);                      \
                                                                                \
-    alignas(32) auto ntt_output1_view = ntt::make_tensor_view(                 \
-        ntt_output1.elements(), ntt::fixed_shape_v<1, N>);                     \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, N>);   \
                                                                                \
-    alignas(32) auto ntt_output2 = ntt::make_tensor_view(                      \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
         std::span<float, N>(golden_array, N), ntt::fixed_shape_v<1, N>);       \
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
@@ -106,9 +104,8 @@ TEST(ReduceSumTestFloat, ReduceM_PackM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    alignas(32) float golden_array[] = {1920, 1936, 1952, 1968, 1984, 2000,
-                                        2016, 2032, 2048, 2064, 2080, 2096,
-                                        2112, 2128, 2144, 2160};
+    float golden_array[] = {1920, 1936, 1952, 1968, 1984, 2000, 2016, 2032,
+                            2048, 2064, 2080, 2096, 2112, 2128, 2144, 2160};
 
     NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, sum)
 }
@@ -118,8 +115,8 @@ TEST(ReduceMaxTestFloat, ReduceM_PackM) {
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    alignas(32) float golden_array[] = {240, 241, 242, 243, 244, 245, 246, 247,
-                                        248, 249, 250, 251, 252, 253, 254, 255};
+    float golden_array[] = {240, 241, 242, 243, 244, 245, 246, 247,
+                            248, 249, 250, 251, 252, 253, 254, 255};
 
     NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, max)
 }
@@ -203,25 +200,23 @@ TEST(ReduceMeanTestFloat, ReduceN_NoPack) {
 
 #define NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, ntt_reduce_mode)          \
     /* init */                                                                 \
-    alignas(32) auto ntt_input =                                               \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);                     \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    alignas(32) auto ntt_input_pack =                                          \
+    auto ntt_input_pack =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
     ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<1>);               \
                                                                                \
     /* ntt */                                                                  \
-    alignas(32) auto ntt_output1 =                                             \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);                     \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);      \
     ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
                                   ntt::fixed_shape_v<1>,                       \
                                   ntt::fixed_shape_v<1>);                      \
                                                                                \
-    alignas(32) auto ntt_output1_view = ntt::make_tensor_view(                 \
-        ntt_output1.elements(), ntt::fixed_shape_v<M, 1>);                     \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<M, 1>);   \
                                                                                \
-    alignas(32) auto ntt_output2 = ntt::make_tensor_view(                      \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
         std::span<float, N>(golden_array, N), ntt::fixed_shape_v<M, 1>);       \
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
@@ -269,20 +264,18 @@ TEST(ReduceMeanTestFloat, ReduceN_PackN) {
 
 #define NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, ntt_reduce_mode)        \
     /* init */                                                                 \
-    alignas(32) auto ntt_input =                                               \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);                     \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
     /* ntt */                                                                  \
-    alignas(32) auto ntt_output1 =                                             \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);                     \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
     ntt::reduce_##ntt_reduce_mode(ntt_input, ntt_output1,                      \
                                   ntt::fixed_shape_v<0, 1>);                   \
                                                                                \
-    alignas(32) auto ntt_output1_view = ntt::make_tensor_view(                 \
-        ntt_output1.elements(), ntt::fixed_shape_v<1, 1>);                     \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, 1>);   \
                                                                                \
-    alignas(32) auto ntt_output2 = ntt::make_tensor_view(                      \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
         std::span<float, 1>(golden_array, 1), ntt::fixed_shape_v<1, 1>);       \
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
@@ -324,25 +317,23 @@ TEST(ReduceMeanTestFloat, ReduceMN_NoPack) {
 
 #define NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, ntt_reduce_mode)         \
     /* init */                                                                 \
-    alignas(32) auto ntt_input =                                               \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);                     \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    alignas(32) auto ntt_input_pack =                                          \
+    auto ntt_input_pack =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
     ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<0>);               \
                                                                                \
     /* ntt */                                                                  \
-    alignas(32) auto ntt_output1 =                                             \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);                     \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
     ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
                                   ntt::fixed_shape_v<0, 1>,                    \
                                   ntt::fixed_shape_v<0>);                      \
                                                                                \
-    alignas(32) auto ntt_output1_view = ntt::make_tensor_view(                 \
-        ntt_output1.elements(), ntt::fixed_shape_v<1, 1>);                     \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, 1>);   \
                                                                                \
-    alignas(32) auto ntt_output2 = ntt::make_tensor_view(                      \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
         std::span<float, 1>(golden_array, 1), ntt::fixed_shape_v<1, 1>);       \
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
@@ -389,25 +380,23 @@ TEST(ReduceMeanTestFloat, ReduceMN_PackM) {
 
 #define NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, ntt_reduce_mode)         \
     /* init */                                                                 \
-    alignas(32) auto ntt_input =                                               \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);                     \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    alignas(32) auto ntt_input_pack =                                          \
+    auto ntt_input_pack =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
     ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<1>);               \
                                                                                \
     /* ntt */                                                                  \
-    alignas(32) auto ntt_output1 =                                             \
-        ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);                     \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
     ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
                                   ntt::fixed_shape_v<0, 1>,                    \
                                   ntt::fixed_shape_v<1>);                      \
                                                                                \
-    alignas(32) auto ntt_output1_view = ntt::make_tensor_view(                 \
-        ntt_output1.elements(), ntt::fixed_shape_v<1, 1>);                     \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, 1>);   \
                                                                                \
-    alignas(32) auto ntt_output2 = ntt::make_tensor_view(                      \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
         std::span<float, 1>(golden_array, 1), ntt::fixed_shape_v<1, 1>);       \
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
