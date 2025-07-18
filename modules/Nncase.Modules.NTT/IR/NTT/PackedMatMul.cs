@@ -77,7 +77,7 @@ public sealed partial class PackedMatMul : Op
                 return (PackKind.K, PackKind.K | PackKind.N);
             case (2, 1) when LhsPackedAxes == [dimInfo.Lm, dimInfo.Lk] && RhsPackedAxes[0] == dimInfo.Rk:
                 return (PackKind.M | PackKind.K, PackKind.K);
-            case (2, 2) when LhsPackedAxes == [dimInfo.Lm, dimInfo.Lk] && RhsPackedAxes == [dimInfo.Rk, dimInfo.Rn]:
+            case (2, 2) when LhsPackedAxes == [dimInfo.Lm, dimInfo.Lk] && (RhsPackedAxes == [dimInfo.Rk, dimInfo.Rn] || RhsPackedAxes == [dimInfo.Rn, dimInfo.Rk]):
                 return (PackKind.M | PackKind.K, PackKind.K | PackKind.N);
             default:
                 throw new NotSupportedException($"{LhsPackedAxes.Count}, {RhsPackedAxes.Count}");
