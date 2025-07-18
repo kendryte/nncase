@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using IntegerSetLibrary;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
@@ -1133,28 +1134,26 @@ public abstract class HuggingFaceModel
     /// <returns> Result of MoE. </returns>
     public virtual Call LLMMoE(int count, Expr hiddenStates)
     {
-        var gateProjW = GetWeight($"model.layers.{count}.mlp.gate_proj.weight")!;
-        var upProjW = GetWeight($"model.layers.{count}.mlp.up_proj.weight")!;
-        var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight")!;
-        var ifScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.input_scale");
-        var wScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.weight_scale");
-        var ifScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.input_scale");
-        var wScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.weight_scale");
-        var ifScaleDown = GetWeight($"model.layers.{count}.mlp.down_proj.input_scale");
-        var wScaleDown = GetWeight($"model.layers.{count}.mlp.down_proj.weight_scale");
+        var identity = hiddenStates;
+        var origShape = hiddenStates.CheckedShape;
+        var (topkIdx, topkWeight) = LLMMoEGate(count, hiddenStates);
 
-        var tmp = Linear(hiddenStates, gateProjW, null, ifScaleGate, wScaleGate, $"model.layers.{count}.mlp.gate_proj");
+        hiddenStates = Tensors.Reshape(hiddenStates, new RankedShape(-1, origShape[^1]));
+        var flatTopKIdx = Tensors.Reshape(topkIdx, new RankedShape(-1));
 
-        if (Config.ContainsKey("hidden_act"))
+        var y = MoEInfer(hiddenStates, topkIdx, topkWeight);
+
+        y = Tensors.Reshape(y, origShape);
+
+        if (Config.GetNestedValue<string>("n_shared_exports") != "none")
         {
-            var actType = Config.GetNestedValue<string>("hidden_act");
-            tmp = ModelUtils.ActFunc(tmp, actType);
+            y = y + LLMMlp(count, identity);
         }
 
-        return Linear(tmp * Linear(hiddenStates, upProjW, null, ifScaleUp, wScaleUp, $"model.layers.{count}.mlp.up_proj"), downProjW, null, ifScaleDown, wScaleDown, $"model.layers.{count}.mlp.down_proj");
+        return y;
     }
 
-    public virtual Call LLMMoEGate(int count, Expr hiddenStates)
+    public virtual Tuple<Expr, Expr> LLMMoEGate(int count, Expr hiddenStates)
     {
         var qShape = hiddenStates.CheckedShape;
         var (seqLen, h) = (qShape[0], qShape[1]);
@@ -1162,7 +1161,7 @@ public abstract class HuggingFaceModel
         var moeGateWeights = GetWeight($"model.layers.{count}.mlp.gate_proj.weight")!;
         var logits = Linear(hiddenStates, moeGateWeights, layerName: "MoEGate");
 
-        var scores = logits;
+        Expr scores;
         if (Config.GetNestedValue<string>("scoring_func") == "sigmoid")
         {
             scores = IR.F.NN.Sigmoid(logits);
@@ -1171,7 +1170,9 @@ public abstract class HuggingFaceModel
         {
             throw new NotImplementedException("Only support sigmoid now!");
         }
-
+        Expr topkWeight;
+        Expr topkIdx;
+        int topKValue;
         if (Config.GetNestedValue<string>("topk_method") == "noaux_tc")
         {
             // return logits;
@@ -1180,17 +1181,59 @@ public abstract class HuggingFaceModel
             // score: [seqLen, hiddenSize:7186],   eScoreCorrectionBias: n_routed_experts:256
             // TODO: confirm python code.
             var scoresForChoice = scores + eScoreCorrectionBias;
-            var scoresForChoiceNewShape = new RankedShape(seqLen, nGroup, -1);
-            var groupScores = IR.F.Reshape(scoresForChoice, scoresForChoiceNewShape);
+            var groupScoresTmp = Tensors.Reshape(scoresForChoice, new RankedShape(seqLen, nGroup, -1));
 
+            var topk = Tensors.TopK(groupScoresTmp, 2, -1, true, false)[0];
+            // var topkIndices = topk[1];
+            var groupScores = Tensors.ReduceSum(topk, new[] { -1 }, 0, false);
 
+            // group_idx = torch.topk(
+            //     group_scores, k=self.topk_group, dim=-1, sorted=False
+            // )[
+            //     1
+            // ]  # [n, top_k_group]
+            var topKGroup = Config.GetNestedValue<int>("topk_group");
+            var groupIdx = IR.F.Tensors.TopK(groupScores, topKGroup, -1, true, false)[1];
+
+            var zeros = Tensor.Zeros(groupIdx.CheckedDataType, groupScores.CheckedShape.ToValueArray());
+            var groupMask = Tensors.ScatterND(zeros, groupIdx, Tensor.FromScalar(1L));
+            var scoreMask = Tensors.Reshape(groupMask, new RankedShape(seqLen, nGroup, 1));
+            var nRoutedExperts = Config.GetNestedValue<int>("n_routed_experts");
+            scoreMask = Tensors.Broadcast(scoreMask, new RankedShape(seqLen, nGroup, nRoutedExperts / nGroup));
+            scoreMask = Tensors.Reshape(scoreMask, new RankedShape(seqLen, -1));
+
+            var tmpScores = Tensors.Where(scoreMask, scoresForChoice, Tensor.FromScalar(float.NegativeInfinity));
+            topKValue = Config.GetNestedValue<int>("top_k");
+            topkIdx = Tensors.TopK(tmpScores, topKValue, -1, true, false)[1];
+            topkWeight = Tensors.Gather(scores, 1, topkIdx);
         }
         else
         {
             throw new NotImplementedException("Only support 1 expert now!");
         }
 
+        if (topKValue > 1 && Config.GetNestedValue<bool>("norm_topk_prob"))
+        {
+            var denominator = Tensors.ReduceSum(topkWeight, new[] { -1 }, 0, true) + Tensor.FromScalar(1e-20f);
+            topkWeight = topkWeight / denominator;
+        }
 
-        
+        var routedScalingFactor = Config.GetNestedValue<float>("routed_scaling_factor");
+        topkWeight = topkWeight * routedScalingFactor;
+
+        return Tuple.Create(topkIdx, topkWeight);
+    }
+
+    public virtual Call MoEInfer(Expr hiddenStates, Expr topkIdx, Expr topkWeight)
+    {
+        var nRoutedExperts = Config.GetNestedValue<int>("n_routed_experts");
+        var cnts_zero = Tensor.Zeros(hiddenStates.CheckedDataType, new RankedShape(topkIdx.CheckedShape[0], nRoutedExperts));
+        var cnts = Tensors.ScatterND(cnts_zero, topkIdx, Tensor.FromScalar(1));
+        var tokensPerExpert = Tensors.ReduceSum(cnts, new[] { 0 }, 0, true);
+        //idxs = topk_ids.view(-1).argsort()
+        var flatTopkIds = Tensors.Reshape(topkIdx, new RankedShape(-1));
+        // var idxs = Tensors.TopK(flatTopkIds, new[] { flatTopkIds.CheckedShape[0] }, 0, true, true)[1];
+
+        return flatTopkIds;
     }
 }
