@@ -134,8 +134,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.CheckArgumentType<IRType>(target, Binary.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, Binary.Rhs);
-        var operandTypes = TypeInference.BroadcastDistributeTypes(lhs, rhs);
-        return (operandTypes[0], operandTypes[1]) switch
+        return (lhs, rhs) switch
         {
             (TensorType a, TensorType b) => Visit(target, a, b),
             (DistributedType a, DistributedType b) => Visit(target, a, b),

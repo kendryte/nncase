@@ -55,9 +55,9 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.Unpack((Expr)arguments[0], output, unpack.Lanes, unpack.Axes);
             case IR.NTT.PackedBinary packedBinary:
                 return TIR.F.NTT.Binary(packedBinary.BinaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
-            case IR.NTT.PackedMatMul packed_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^1] is SBPSplit:
+            case IR.NTT.PackedMatMul packed_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
                 return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packed_mat_mul_summa.LhsPackedAxes, packed_mat_mul_summa.RhsPackedAxes, packed_mat_mul_summa.TransposeA, packed_mat_mul_summa.TransposeB);
-            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^1] is SBPSplit:
+            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
                 return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
             case IR.NTT.PackedMatMul packedMatMul:
                 return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packedMatMul.LhsPackedAxes, packedMatMul.RhsPackedAxes, packedMatMul.TransposeA, packedMatMul.TransposeB, packedMatMul.FusedReduce);

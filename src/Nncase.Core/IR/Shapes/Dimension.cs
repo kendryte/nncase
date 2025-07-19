@@ -57,6 +57,10 @@ public static class DimensionExtensions
         {
             return shapeExpr;
         }
+        else if (value is Call { Target: IR.Tensors.ShapeOf } shapeOf)
+        {
+            return shapeOf[IR.Tensors.ShapeOf.Input].CheckedShape;
+        }
         else if (value is Call { Target: Concat } concat)
         {
             if (concat[Concat.Input] is Tuple tuple)
@@ -356,7 +360,7 @@ public abstract class Dimension : BaseExpr
         divided = remainder switch
         {
             DimConst dimConst => dimConst.Value == 0 ? numerator / denominator : null,
-            _ => numerator / denominator,
+            _ => null,
         };
         return divided != null;
     }

@@ -91,51 +91,21 @@ public partial class HuggingFaceImporter : BaseImporter
             config[pair.Key] = pair.Value;
         }
 
-        var constTensors = new Dictionary<string, Tensor>();
-        if (File.Exists(Path.Combine(huggingFaceDir, "model.safetensors.index.json")))
-        {
-            string[] files = Directory.GetFiles(huggingFaceDir, "*.safetensors");
-            foreach (string file in files)
-            {
-                string fileName = Path.GetFileName(file);
-                if (IsModelFile(fileName))
-                {
-                    var tmpConst = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, fileName));
-                    foreach (var item in tmpConst)
-                    {
-                        constTensors[item.Key] = item.Value;
-                    }
-                }
-            }
-        }
-        else
-        {
-            constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
-        }
+        _modelContext.Config = config;
+        _modelContext.ImportOptions = importOptions;
+        _modelContext.CompileSession = compileSession;
 
-        _modelContext!.Config = config;
-        _modelContext!.ConstTensors = constTensors;
-        _modelContext!.ImportOptions = importOptions;
-        _modelContext!.CompileSession = compileSession;
-        switch (config.GetNestedValue<string>("architectures", 0))
+        var architectures = config.GetNestedValue<string>("architectures", 0);
+        _model = architectures switch
         {
-            case "Qwen2ForCausalLM":
-                _model = new Qwen2();
-                break;
-            case "Qwen3ForCausalLM":
-                _model = new Qwen3();
-                break;
-            case "LlamaForCausalLM":
-                _model = new Llama3_2();
-                break;
-            case "GlmForCausalLM":
-                _model = new Glm4V9B();
-                break;
-            default:
-                throw new NotImplementedException();
-        }
+            "Qwen2ForCausalLM" => new Qwen2(),
+            "Qwen3ForCausalLM" => new Qwen3(),
+            "LlamaForCausalLM" => new Llama3_2(),
+            "GlmForCausalLM" => new Glm4V9B(),
+            _ => throw new NotImplementedException($"Architecture {architectures} is not supported"),
+        };
 
-        _model!.Initialize(_modelContext, huggingFaceDir);
+        _model.Initialize(_modelContext, huggingFaceDir);
     }
 
     protected override (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()

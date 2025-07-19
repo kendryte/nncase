@@ -18,6 +18,7 @@ using Nncase.Evaluator;
 using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Distributed;
+using Nncase.IR.NN;
 using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Targets;
@@ -299,7 +300,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             Visit(body);
             var rootCluster = TryInstertTerminator(body);
 
-#if false
+#if true
             using (var stream = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.PassIR) ? Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot") : Stream.Null)
             {
                 Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
@@ -381,6 +382,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
+        if (callCluster.VertexCount == 0)
+        {
+            throw new InvalidOperationException("Please Check expr's TypeInfer.");
+        }
+
         _inferedMemo.Add(expr, callCluster);
 
         if (!isSupported || isStandalone)
@@ -454,6 +460,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             calls = calls.Concat(DistributedUtility.GetLeafCandidatePolicies(newTensorType, distType.Placement)
                 .Where(p => SingleNodeMemoryCheck(new(newTensorType, p, distType.Placement), _moduleKind, TargetOptions))
                 .Select(ndsbp => (new Call(new Boxing(new DistributedType(newTensorType, ndsbp, distType.Placement)), tempArgs[0]), new[] { true, false })));
+        }
+        else if (target is GetPositionIds)
+        {
+            var tensorType = (TensorType)calls.First().Call.CheckedType;
+            calls = calls.Concat(GetLeafCandidateDistTypes(tensorType, Placements, _moduleKind, TargetOptions)
+                .Select(dt => (IR.F.NN.GetPositionIds((Dimension)tempArgs[0], (Expr)tempArgs[1], dt.AxisPolicies, dt.Placement), new[] { true, true })));
         }
 
         return calls;
@@ -958,7 +970,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-#if false
+#if true
         using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             Dump(stream, picks, costMemo);

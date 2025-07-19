@@ -41,7 +41,7 @@ namespace tar {
   @:std::barrier(@(groupSize)), 
     }
 @:};
-@:auto @(groupName) = nncase::ntt::make_tensor_view<std::barrier<>>(@(groupRawName), nncase::ntt::fixed_shape_v<@(string.Join(",", shape))>);
+@:auto @(groupName) = nncase::ntt::make_tensor_view_from_address<std::barrier<>>(@(groupRawName), nncase::ntt::fixed_shape_v<@(string.Join(",", shape))>);
 @:
   }
 
@@ -225,7 +225,7 @@ class tensor_reduce_sync_impl {
             auto viewed_dest_tensor = dest.view(starts, new_shape);
 
             if (i == 0) {
-                auto src2_tensor = ntt::make_tensor_view<TElem>(
+                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
                     (TElem *)tar::src_ptr_tensor(next_index),
                     src.shape(),
                     src.strides());
@@ -233,7 +233,7 @@ class tensor_reduce_sync_impl {
                 reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
                             viewed_dest_tensor);
             } else {
-                auto src2_tensor = ntt::make_tensor_view<TElem>(
+                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
                     (TElem *)tar::dest_ptr_tensor(next_index),
                     dest.shape(),
                     dest.strides());
@@ -249,7 +249,7 @@ class tensor_reduce_sync_impl {
         auto dest_index_g = ntt::unravel_index((node_number_g + group_size - 1) % group_size, group_hierarchy);
         auto dest_index = index_group2global(dest_index_g, ntt::make_shape(@(cur_index)));
 
-        auto dest_tensor = ntt::make_tensor_view<TElem>(
+        auto dest_tensor = ntt::make_tensor_view_from_address<TElem>(
             (TElem *)tar::dest_ptr_tensor(dest_index),
             dest.shape(),
             dest.strides());
@@ -273,7 +273,8 @@ class tensor_reduce_sync_impl {
         }
 
         if (Op == ntt::reduce_op::mean) {
-            ntt::binary<ntt::ops::div>(dest, ntt::make_tensor<TElem>((TElem)group_size, ntt::fixed_shape_v<>), dest);
+            auto numerator = (TElem)group_size;
+            ntt::binary<ntt::ops::div>(dest, ntt::make_tensor_view_from_address<TElem>(&numerator, ntt::fixed_shape_v<>), dest);
         }
     }
 };

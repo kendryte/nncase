@@ -102,11 +102,6 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
         // for xpu.
         if (slots.Placement.Name == "cdyxt")
         {
-            if (!target.Layout.SequenceEqual([AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]))
-            {
-                return new InvalidType("layout should be [head, dim, seq]");
-            }
-
             // seq split at x, head split at die and y
             var seqAxis = target.Layout.IndexOf(AttentionDimKind.Seq);
             var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
@@ -118,7 +113,7 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
                 return kvCache;
             }
         }
-        else if (slots.Placement.Hierarchy.SequenceEqual([1]))
+        else
         {
             return kvCache;
         }

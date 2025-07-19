@@ -44,7 +44,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             (TensorType a, TensorType b) => (a.Shape.Rank, b.Shape.Rank),
             _ => throw new ArgumentException($"Unsupported type: {lhs} {rhs}"),
         };
-        var dimInfo = new Math.MatMulEvaluator.DimInfo(target.TransposeA ? lhsRank - 1 : lhsRank - 2, target.TransposeA ? lhsRank - 2 : lhsRank - 1, target.TransposeB ? rhsRank - 1 : rhsRank - 2, target.TransposeB ? rhsRank - 2 : rhsRank - 1);
+        var dimInfo = new MatMulDimInfo(target.TransposeA ? lhsRank - 1 : lhsRank - 2, target.TransposeA ? lhsRank - 2 : lhsRank - 1, target.TransposeB ? rhsRank - 1 : rhsRank - 2, target.TransposeB ? rhsRank - 2 : rhsRank - 1);
 
         if (CheckCustomSBP(lhs, rhs, target))
         {
@@ -85,7 +85,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return true;
     }
 
-    private IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, Math.MatMulEvaluator.DimInfo? dimInfo = null)
+    private IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, MatMulDimInfo? dimInfo = null)
     {
         if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
         {

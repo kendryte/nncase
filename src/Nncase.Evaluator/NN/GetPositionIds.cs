@@ -36,33 +36,27 @@ public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferenc
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, GetPositionIds target)
     {
-        var input = context.GetArgument(target, GetPositionIds.Input);
-        return input switch
-        {
-            TensorConst sizeConst => new TensorType(DataTypes.Float32, new RankedShape(sizeConst.Value.ToScalar<long>())),
-            Call { Target: AsTensor } sizeCall => new TensorType(DataTypes.Float32, new RankedShape(sizeCall[AsTensor.Input].AsDim())),
-            _ => new InvalidType($"GetPositionIds input must be TensorConst or Call with AsTensor, but got {input}"),
-        };
+        var seqLen = (Dimension)context.GetArgument(target, GetPositionIds.SequenceLength);
+        var tensorType = new TensorType(DataTypes.Float32, [seqLen]);
+        return target.Placement.Rank == 0 ? tensorType : new DistributedType(tensorType, target.NdSBP, target.Placement);
     }
 
     public Cost Visit(ICostEvaluateContext context, GetPositionIds target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, GetPositionIds.Input);
-        var returnType = context.GetReturnType<TensorType>();
+        var returnType = context.GetReturnType<IRType>();
         return new()
         {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(returnType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
         };
     }
 
     public Metric Visit(IMetricEvaluateContext context, GetPositionIds target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, GetPositionIds.Input);
-        var returnType = context.GetReturnType<TensorType>();
+        var returnType = context.GetReturnType<IRType>();
         return new()
         {
-            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(returnType),
+            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(returnType) * 2,
         };
     }
 

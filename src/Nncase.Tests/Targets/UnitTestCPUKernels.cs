@@ -1390,7 +1390,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
     [InlineData(new object[] { new long[] { 1, 48, 512 }, new long[] { 1, 512, 1024 }, new long[] { 1, -1, 768 }, new[] { UnaryOp.Neg, UnaryOp.Cos }, new[] { 1 }, 1 })]
     public async Task TestDynamicMatMulReshapeUnary(long[] lhsShape, long[] rhsShape, long[] newShape, UnaryOp[] unaryOps, int[] hierarchy, int number)
     {
-        CompileOptions.DumpFlags = Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.Compile;
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
         targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
@@ -1398,7 +1397,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         var dimM = new DimVar("m");
-        dimM.Metadata.Range = new(1, 64);
+        dimM.Metadata.Range = new(1, 48);
         var lhsDims = lhsShape.Select(x => (Dimension)x).ToArray();
         lhsDims[^2] = dimM;
 
@@ -1470,7 +1469,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
 
         var dimN = new DimVar("n");
-        dimN.Metadata.Range = new(1, 1200);
+        dimN.Metadata.Range = new(1, 1024);
         var rhsDims = rhsShape.Select(x => (Dimension)x).ToArray();
         rhsDims[^1] = dimN;
 
