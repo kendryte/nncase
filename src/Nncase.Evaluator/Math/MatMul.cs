@@ -96,7 +96,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                 }
             }
 
-            if (a.AxisPolicies[lk].GetType() != b.AxisPolicies[rk].GetType())
+            if (a.AxisPolicies[lk] != b.AxisPolicies[rk])
             {
                 return new InvalidType($"not support different policy on k: {a.AxisPolicies[lk]} vs {b.AxisPolicies[rk]}");
             }
