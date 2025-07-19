@@ -876,6 +876,7 @@ public abstract class HuggingFaceModel
             extra_size = 10 * 1024 * 1024;
         }
 
+        var hidden_size = Context!.Config.ContainsKey("head_dim") ? (int)((long)Context!.Config!["num_attention_heads"] * (long)Context!.Config!["head_dim"]) : (int)(long)Context!.Config!["hidden_size"];
         var output = IR.F.NN.PagedAttention(
             packedQ,
             paskKeyValues,
@@ -883,7 +884,7 @@ public abstract class HuggingFaceModel
             scaling.CastTo(pagedAttentionConfig.KVPrimType, CastMode.KDefault),
             count,
             qDestLayout,
-            (int)((long)Context!.Config!["num_attention_heads"] * (long)Context!.Config!["head_dim"]));
+            hidden_size);
 
         output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qPackedAxis) : output;
         output = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(output, DataTypes.Float32) : output;
