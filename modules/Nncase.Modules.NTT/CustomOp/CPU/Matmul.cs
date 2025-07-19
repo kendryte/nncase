@@ -38,5 +38,7 @@ public sealed partial class MatMul : Op
 
     public string CSourcePath { get; }
 
+    public string FuncName { get; }
+
     public override string DisplayProperty() => $"LhsPackedAxes: {LhsPackedAxes}, RhsPackedAxes: {RhsPackedAxes}, TransposeA: {TransposeA}, TransposeB: {TransposeB}";
 }

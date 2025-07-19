@@ -22,6 +22,8 @@ public sealed partial class Unary : Op
 
     public string CSourcePath { get; }
 
+    public string FuncName { get; }
+
     /// <inheritdoc/>
     public override string DisplayProperty()
     {
