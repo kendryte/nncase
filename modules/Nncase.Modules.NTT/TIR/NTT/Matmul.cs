@@ -26,5 +26,7 @@ public sealed partial class Matmul : NTTKernelOp
 
     public string CSourcePath { get; }
 
+    public string FuncName { get; }
+
     public override string DisplayProperty() => $"LhsPackedAxes: {LhsPackedAxes}, RhsPackedAxes: {RhsPackedAxes}, TransposeA: {TransposeA}, TransposeB: {TransposeB}";
 }

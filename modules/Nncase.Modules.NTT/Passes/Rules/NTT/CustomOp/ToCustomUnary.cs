@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
@@ -52,17 +53,19 @@ public partial class ToCustomUnary : RewriteRule<Pattern>
         }
 
         // Name pattern
-        var node = Scheme.Outputs.FirstOrDefault(op => call.Metadata.OutputNames?[0] is string outputName && outputName == op.Name);
+        var node = Scheme.Outputs.FirstOrDefault(op => call.Metadata.OutputNames?[0] is string outputName && Regex.IsMatch(outputName, op.Name ?? string.Empty));
 
+#if false
         if (node is null)
         {
             node = Scheme.Outputs.FirstOrDefault(op => op.Op.ToLower(CultureInfo.CurrentCulture) == "unary" && op.Shape[0].SequenceEqual(call.CheckedShape.ToValueArray()));
         }
+#endif
 
         if (node is not null)
         {
             return call.With(
-                target: new IR.CustomNTT.Unary(unary.UnaryOp, node!.SBP[0], node!.SBP[1], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath),
+                target: new IR.CustomNTT.Unary(unary.UnaryOp, node!.SBP[0], node!.SBP[1], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName),
                 arguments: new[] { input },
                 metadata: call.Metadata);
         }
