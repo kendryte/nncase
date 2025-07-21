@@ -22,7 +22,7 @@ public sealed partial class Bitcast : Op
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Bitcast), 0, "input");
+    public static readonly ParameterInfo Input = new(typeof(Bitcast), 0, "input", ParameterKind.Input);
 
     public DataType NewType { get; }
 

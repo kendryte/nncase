@@ -19,11 +19,11 @@ public sealed class BufferizePass : FunctionPass
 {
     public static void Bufferize(PrimFunction func)
     {
-        var lifetimes = new LifetimeCollector().Collect(func);
+        (var buffers, var lifetimes) = new LifetimeCollector().Collect(func);
         var scheduleResult = BufferScheduler.Schedule(lifetimes);
         if (DumpScope.Current.IsEnabled(DumpFlags.Schedule))
         {
-            DumpSchedule(scheduleResult);
+            DumpSchedule(buffers, scheduleResult);
         }
 
         AssignOutputResult(func, scheduleResult);
@@ -32,9 +32,7 @@ public sealed class BufferizePass : FunctionPass
         AssignThreadLocalRdataResult(func, scheduleResult);
         AssignBlockLocalRdataResult(func, scheduleResult);
 
-        var bufferReplaces = scheduleResult.SelectMany(x => x.Value.Buffers).ToDictionary(
-            x => x.Buffer,
-            (IEqualityComparer<TIR.PhysicalBuffer>)ReferenceEqualityComparer.Instance);
+        var bufferReplaces = scheduleResult.SelectMany(x => x.Value.Buffers).ToDictionary(ReferenceEqualityComparer.Instance);
         new BufferReplacer(bufferReplaces).Rewrite(func.Body);
         func.SchedResult.IsScheduled = true;
     }
@@ -71,9 +69,9 @@ public sealed class BufferizePass : FunctionPass
     {
         if (scheduleResult.TryGetValue(MemoryLocation.Rdata, out var rdataResult))
         {
-            foreach (var lifetime in rdataResult.Buffers)
+            foreach ((var buffer, var lifetime) in rdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.Start)[IR.Buffers.AddressOf.Input];
+                var constValue = (Const)((Call)buffer.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.Rdatas.Add(constValue, range);
             }
@@ -84,9 +82,9 @@ public sealed class BufferizePass : FunctionPass
     {
         if (scheduleResult.TryGetValue(MemoryLocation.ThreadLocalRdata, out var threadLocalRdataResult))
         {
-            foreach (var lifetime in threadLocalRdataResult.Buffers)
+            foreach ((var buffer, var lifetime) in threadLocalRdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.Start)[IR.Buffers.AddressOf.Input];
+                var constValue = (Const)((Call)buffer.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.ThreadLocalRdatas.Add(constValue, range);
             }
@@ -97,20 +95,21 @@ public sealed class BufferizePass : FunctionPass
     {
         if (scheduleResult.TryGetValue(MemoryLocation.BlockLocalRdata, out var blockLocalRdataResult))
         {
-            foreach (var lifetime in blockLocalRdataResult.Buffers)
+            foreach ((var buffer, var lifetime) in blockLocalRdataResult.Buffers)
             {
-                var constValue = (Const)((Call)lifetime.Buffer.Start)[IR.Buffers.AddressOf.Input];
+                var constValue = (Const)((Call)buffer.Start)[IR.Buffers.AddressOf.Input];
                 var range = new ValueRange<ulong>((ulong)lifetime.Memory.Start, (ulong)lifetime.Memory.Stop);
                 func.SchedResult.BlockLocalRdatas.Add(constValue, range);
             }
         }
     }
 
-    private static void DumpSchedule(IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
+    private static void DumpSchedule(TIR.Buffer[] buffers, IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> scheduleResult)
     {
-        foreach (var locationResult in scheduleResult)
+        foreach (var group in buffers.GroupBy(x => x.MemSpan.Buffer.Location))
         {
-            using var wr = new StreamWriter(DumpScope.Current.OpenFile($"{locationResult.Key}.py"), Encoding.UTF8);
+            var schedule = scheduleResult[group.Key];
+            using var wr = new StreamWriter(DumpScope.Current.OpenFile($"{group.Key}.py"), Encoding.UTF8);
             wr.Write(@"from bokeh.models import ColumnDataSource, HoverTool, SingleIntervalTicker, SaveTool, WheelZoomTool, WheelPanTool, ResetTool
 from bokeh.palettes import Category20_20 as palette
 from bokeh.plotting import figure, show, save
@@ -132,10 +131,13 @@ class ConstraintsMode(Enum):
 
 @dataclass
 class ScheduledBuffer():
+  name: str
   number: int
   time_interval: Interval
   mem_interval: Interval
   constraints: ConstraintsMode
+  shape: List[str]
+  stride: List[int]
   inplace: bool
 
 colors = itertools.cycle(palette)
@@ -143,15 +145,19 @@ colors = itertools.cycle(palette)
 buffers = [
 ");
             int bufferId = 0;
-            foreach (var lifetime in locationResult.Value.Buffers)
+            foreach (var buffer in group)
             {
-                wr.WriteLine($"ScheduledBuffer({bufferId}, {lifetime.Time}, {lifetime.Memory}, ConstraintsMode.No, {false}),");
+                var lifetime = schedule.Buffers[buffer.MemSpan.Buffer];
+                var dims = new RankedShape(buffer.Dimensions).Select(x => $"'{x}'");
+                var strides = new RankedShape(buffer.Strides).Select(x => $"'{x}'");
+                wr.WriteLine($"ScheduledBuffer('{buffer.Name}', {bufferId}, {lifetime.Time}, {lifetime.Memory}, ConstraintsMode.No, [{string.Join(",", dims)}], [{string.Join(",", strides)}], {false}),");
                 bufferId++;
             }
 
             wr.WriteLine(@"]
 
 source = {
+    'name': [],
     'x': [],
     'y': [],
     'width': [],
@@ -160,6 +166,8 @@ source = {
     'color': [],
     'mem_interval': [],
     'time_interval': [],
+    'shape': [],
+    'stride': [],
 }
 
 y_range_max = 0
@@ -185,9 +193,12 @@ for buffer in buffers:
   source['alpha'].append(0.2 if buffer.inplace else 1.0)
   source['time_interval'].append(str(buffer.time_interval))
   source['mem_interval'].append(str(buffer.mem_interval))
+  source['shape'].append(','.join([str(s) for s in buffer.shape]))
+  source['stride'].append(','.join([str(s) for s in buffer.stride]))
 
 source = ColumnDataSource(source)
-hover = HoverTool(tooltips=[('name', '@name'), ('time_interval', '@time_interval'), ('mem_interval', '@mem_interval')])
+hover = HoverTool(tooltips=[('name', '@name'), ('time_interval', '@time_interval'), ('mem_interval', '@mem_interval'),
+                            ('shape', '@shape'), ('stride', '@stride')])
 
 p = figure(tools=[hover, WheelPanTool(), SaveTool(), WheelZoomTool(), ResetTool()], width=1280, height=720,
            y_range=(0, y_range_max * 1.2), x_range=(-1, x_range_max + 1),
@@ -197,7 +208,7 @@ p.xaxis.axis_label = 'Time (steps)'
 p.outline_line_color = None");
 
             wr.WriteLine($@"
-save(p, filename='{locationResult.Key.ToString()}.html')
+save(p, filename='{group.Key}.html')
 show(p)");
         }
     }
