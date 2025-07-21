@@ -38,19 +38,7 @@ public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferenc
     {
         var seqLen = (Dimension)context.GetArgument(target, GetPositionIds.SequenceLength);
         var tensorType = new TensorType(DataTypes.Float32, [seqLen]);
-        if (target.Placement.Rank == 0)
-        {
-            return tensorType;
-        }
-        else
-        {
-            if (target.NdSBP.Any(s => s is SBPSplit))
-            {
-                return new InvalidType("Not support split");
-            }
-
-            return new DistributedType(tensorType, target.NdSBP, target.Placement);
-        }
+        return target.Placement.Rank == 0 ? tensorType : new DistributedType(tensorType, target.NdSBP, target.Placement);
     }
 
     public Cost Visit(ICostEvaluateContext context, GetPositionIds target)
