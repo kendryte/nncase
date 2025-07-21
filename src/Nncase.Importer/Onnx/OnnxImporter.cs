@@ -61,7 +61,15 @@ public sealed partial class OnnxImporter : BaseImporter
             .Select(v => v.DimParam).ToHashSet().Select(v =>
             {
                 var var = new DimVar(v);
-                var.Metadata.Range = v == "seq_len" ? new(1, 512) : new(0, 512); // FIX ME: Shape bucket
+                if (bucketOptions.RangeInfo.TryGetValue(v, out var range))
+                {
+                    var.Metadata.Range = range;
+                }
+                else
+                {
+                    var.Metadata.Range = v == "seq_len" ? new(1, 512) : new(0, 512); // FIX ME: Shape bucket
+                }
+
                 return var;
             })
             .ToDictionary(v => v.Name, v => v);

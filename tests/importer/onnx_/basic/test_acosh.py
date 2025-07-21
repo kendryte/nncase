@@ -92,9 +92,20 @@ in_shapes = [
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_acosh(in_shape, request):
+    cfg = """
+    [compile_opt]
+    shape_bucket_range_info = { "n"=[1,12], "c"=[1,32], "h"=[1,16], "w"=[1,64] }
+    """
     model_def = _make_module(in_shape)
 
-    runner = OnnxTestRunner(request.node.name)
+    runner = OnnxTestRunner(request.node.name, overwrite_configs=cfg)
+    runner.shape_vars = {
+        'n': 3,
+        'c': 4,
+        'h': 14,
+        'w': 48
+    }
+
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
