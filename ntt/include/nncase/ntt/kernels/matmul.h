@@ -34,7 +34,7 @@ concept ValidMatmulTensor = Tensor<T> && HasValidRank<T>;
 template <class TLhs, class TRhs, typename LhsPackedAxes,
           typename RhsPackedAxes, bool TransposedA = false,
           bool TransposedB = false>
-constexpr ukernels::mamtul_pack_kind get_matmul_pack_kind() noexcept {
+constexpr ukernels::matmul_pack_kind get_matmul_pack_kind() noexcept {
     constexpr size_t lm = TransposedA ? (TLhs::rank() - 1) : (TLhs::rank() - 2),
                      lk = TransposedA ? (TLhs::rank() - 2) : (TLhs::rank() - 1);
     constexpr size_t rk = TransposedB ? (TRhs::rank() - 1) : (TRhs::rank() - 2),
@@ -43,37 +43,37 @@ constexpr ukernels::mamtul_pack_kind get_matmul_pack_kind() noexcept {
     constexpr LhsPackedAxes lhs_packed_axes;
     constexpr RhsPackedAxes rhs_packed_axes;
     if constexpr (LhsPackedAxes::rank() == 0 && RhsPackedAxes::rank() == 0) {
-        return ukernels::mamtul_pack_kind::no_pack;
+        return ukernels::matmul_pack_kind::no_pack;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
                          lhs_packed_axes.at(0) == lm &&
                          RhsPackedAxes::rank() == 0) {
-        return ukernels::mamtul_pack_kind::pack_m;
+        return ukernels::matmul_pack_kind::pack_m;
     } else if constexpr (LhsPackedAxes::rank() == 0 &&
                          RhsPackedAxes::rank() == 1 &&
                          rhs_packed_axes.at(0) == rn) {
-        return ukernels::mamtul_pack_kind::pack_n;
+        return ukernels::matmul_pack_kind::pack_n;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
                          lhs_packed_axes.at(0) == lk &&
                          RhsPackedAxes::rank() == 1 &&
                          rhs_packed_axes.at(0) == rk) {
-        return ukernels::mamtul_pack_kind::pack_k;
+        return ukernels::matmul_pack_kind::pack_k;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
                          lhs_packed_axes.at(0) == lm &&
                          RhsPackedAxes::rank() == 1 &&
                          rhs_packed_axes.at(0) == rn) {
-        return ukernels::mamtul_pack_kind::pack_mn;
+        return ukernels::matmul_pack_kind::pack_mn;
     } else if constexpr (LhsPackedAxes::rank() == 2 &&
                          lhs_packed_axes.at(0) == lm &&
                          lhs_packed_axes.at(1) == lk &&
                          RhsPackedAxes::rank() == 1 &&
                          rhs_packed_axes.at(0) == rk) {
-        return ukernels::mamtul_pack_kind::pack_mk;
+        return ukernels::matmul_pack_kind::pack_mk;
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
                          lhs_packed_axes.at(0) == lk &&
                          RhsPackedAxes::rank() == 2 &&
                          rhs_packed_axes.at(0) == rk &&
                          rhs_packed_axes.at(1) == rn) {
-        return ukernels::mamtul_pack_kind::pack_kn;
+        return ukernels::matmul_pack_kind::pack_kn;
     } else if constexpr (LhsPackedAxes::rank() == 2 &&
                          lhs_packed_axes.at(0) == lm &&
                          lhs_packed_axes.at(1) == lk &&
@@ -82,10 +82,10 @@ constexpr ukernels::mamtul_pack_kind get_matmul_pack_kind() noexcept {
                            rhs_packed_axes.at(1) == rn) ||
                           (rhs_packed_axes.at(0) == rn &&
                            rhs_packed_axes.at(1) == rk))) {
-        return ukernels::mamtul_pack_kind::pack_mkn;
+        return ukernels::matmul_pack_kind::pack_mkn;
     } else {
         static_assert(TLhs::rank() == 0, "not support pack kind!");
-        // return ukernels::mamtul_pack_kind::unknown;
+        // return ukernels::matmul_pack_kind::unknown;
     }
 }
 

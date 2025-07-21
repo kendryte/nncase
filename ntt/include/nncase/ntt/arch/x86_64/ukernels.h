@@ -598,7 +598,7 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 
 // matmul
 template <>
-struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
+struct u_matmul_policy<matmul_pack_kind::no_pack, float, float, float, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
@@ -606,7 +606,7 @@ struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
 
 // Pack M
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_m, vector<float, 8>, float,
+struct u_matmul_policy<matmul_pack_kind::pack_m, vector<float, 8>, float,
                        vector<float, 8>, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 4;
@@ -615,7 +615,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_m, vector<float, 8>, float,
 
 // Pack K
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_k, vector<float, 8>,
+struct u_matmul_policy<matmul_pack_kind::pack_k, vector<float, 8>,
                        vector<float, 8>, float, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 2;
@@ -624,7 +624,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_k, vector<float, 8>,
 
 // Pack N
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_n, float, vector<float, 8>,
+struct u_matmul_policy<matmul_pack_kind::pack_n, float, vector<float, 8>,
                        vector<float, 8>, true> {
     static constexpr size_t m0_tile = 4;
     static constexpr size_t n0_tile = 2;
@@ -632,13 +632,13 @@ struct u_matmul_policy<mamtul_pack_kind::pack_n, float, vector<float, 8>,
 };
 
 template <>
-struct u_matmul_m1_policy<mamtul_pack_kind::pack_n, float, vector<float, 8>,
+struct u_matmul_m1_policy<matmul_pack_kind::pack_n, float, vector<float, 8>,
                           vector<float, 8>, true> {
     static constexpr size_t n0_tile = 7;
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_n, AccumulateC, false, false,
+struct u_matmul<ukernels::matmul_pack_kind::pack_n, AccumulateC, false, false,
                 1, 7, float, vector<float, 8>, vector<float, 8>, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
@@ -705,7 +705,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_n, AccumulateC, false, false,
 
 // Pack MN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, 8>,
+struct u_matmul_policy<matmul_pack_kind::pack_mn, vector<float, 8>,
                        vector<float, 8>, vector<float, 8, 8>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;
@@ -714,7 +714,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, 8>,
 
 // Pack MK
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_mk, vector<float, 8, 8>,
+struct u_matmul_policy<matmul_pack_kind::pack_mk, vector<float, 8, 8>,
                        vector<float, 8>, vector<float, 8>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
@@ -723,7 +723,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mk, vector<float, 8, 8>,
 
 // Pack KN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_kn, vector<float, 8>,
+struct u_matmul_policy<matmul_pack_kind::pack_kn, vector<float, 8>,
                        vector<float, 8, 8>, vector<float, 8>, true> {
     static constexpr size_t m0_tile = 4;
     static constexpr size_t n0_tile = 2;
@@ -731,13 +731,13 @@ struct u_matmul_policy<mamtul_pack_kind::pack_kn, vector<float, 8>,
 };
 
 template <>
-struct u_matmul_m1_policy<mamtul_pack_kind::pack_kn, vector<float, 8>,
+struct u_matmul_m1_policy<matmul_pack_kind::pack_kn, vector<float, 8>,
                           vector<float, 8, 8>, vector<float, 8>, true> {
     static constexpr size_t n0_tile = 4;
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, false, false,
+struct u_matmul<ukernels::matmul_pack_kind::pack_kn, AccumulateC, false, false,
                 1, 4, vector<float, 8>, vector<float, 8, 8>, vector<float, 8>,
                 true> {
     template <class TA, class TB, class TC>
@@ -779,7 +779,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, false, false,
 
 // Pack MKN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_mkn, vector<float, 8, 8>,
+struct u_matmul_policy<matmul_pack_kind::pack_mkn, vector<float, 8, 8>,
                        vector<float, 8, 8>, vector<float, 8, 8>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;

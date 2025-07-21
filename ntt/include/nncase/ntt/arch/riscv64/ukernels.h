@@ -183,7 +183,7 @@ template <> struct u_cast_policy<true> {
 
 // matmul
 template <>
-struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
+struct u_matmul_policy<matmul_pack_kind::no_pack, float, float, float, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
@@ -191,7 +191,7 @@ struct u_matmul_policy<mamtul_pack_kind::no_pack, float, float, float, true> {
 
 // Pack M
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_m, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_pack_kind::pack_m, vector<float, NTT_VLEN / 32>,
                        float, vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 8;
@@ -200,7 +200,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_m, vector<float, NTT_VLEN / 32>,
 
 // Pack K
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_k, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_pack_kind::pack_k, vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>, float, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 2;
@@ -209,7 +209,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_k, vector<float, NTT_VLEN / 32>,
 
 // Pack N
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_n, float,
+struct u_matmul_policy<matmul_pack_kind::pack_n, float,
                        vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 8;
@@ -219,7 +219,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_n, float,
 
 // Pack MN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_pack_kind::pack_mn, vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
@@ -230,7 +230,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mn, vector<float, NTT_VLEN / 32>,
 // Pack MK
 template <>
 struct u_matmul_policy<
-    mamtul_pack_kind::pack_mk, vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+    matmul_pack_kind::pack_mk, vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
     vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
@@ -239,7 +239,7 @@ struct u_matmul_policy<
 
 // Pack KN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_kn, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_pack_kind::pack_kn, vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 8;
@@ -249,7 +249,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_kn, vector<float, NTT_VLEN / 32>,
 
 // Pack MKN
 template <>
-struct u_matmul_policy<mamtul_pack_kind::pack_mkn,
+struct u_matmul_policy<matmul_pack_kind::pack_mkn,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
@@ -259,7 +259,7 @@ struct u_matmul_policy<mamtul_pack_kind::pack_mkn,
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
+struct u_matmul<ukernels::matmul_pack_kind::pack_m, AccumulateC, false, false,
                 2, 8, vector<float, NTT_VLEN / 32>, float,
                 vector<float, NTT_VLEN / 32>, true> {
     template <class TA, class TB, class TC>
@@ -587,7 +587,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false, false,
 #undef NTT_MATMUL_PING
 #undef NTT_MATMUL_TAIL
         } else {
-            u_matmul<ukernels::mamtul_pack_kind::pack_m, AccumulateC, false,
+            u_matmul<ukernels::matmul_pack_kind::pack_m, AccumulateC, false,
                      false, 2, 8, vector<float, NTT_VLEN / 32>, float,
                      vector<float, NTT_VLEN / 32>, false>
                 impl;
