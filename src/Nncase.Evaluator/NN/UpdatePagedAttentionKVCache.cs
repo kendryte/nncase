@@ -115,7 +115,12 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
         }
         else
         {
-            return kvCache;
+            // split head dim is not supported.
+            var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);
+            if (slots.AxisPolicies[dimAxis] is SBPBroadCast)
+            {
+                return kvCache;
+            }
         }
 
         return new InvalidType("not support distributed type");

@@ -16,9 +16,9 @@ namespace Nncase.Tests.CoreTest;
 
 public static class TestExtensions
 {
-    public static ArrayExtensions.SpanWhereEnumerable<TIR.Buffer, FunctionWrapper<TIR.Buffer, bool>> InputOf(this ReadOnlySpan<TIR.Buffer> arr) => arr.AsValueEnumerable().Where(b => b.MemSpan.Location == MemoryLocation.Input);
+    public static ArrayExtensions.SpanWhereEnumerable<TIR.Buffer, FunctionWrapper<TIR.Buffer, bool>> InputOf(this ReadOnlySpan<TIR.Buffer> arr) => arr.AsValueEnumerable().Where(b => b.MemSpan.Buffer.Location == MemoryLocation.Input);
 
-    public static ArrayExtensions.SpanWhereEnumerable<TIR.Buffer, FunctionWrapper<TIR.Buffer, bool>> OutputOf(this ReadOnlySpan<TIR.Buffer> arr) => arr.AsValueEnumerable().Where(b => b.MemSpan.Location == MemoryLocation.Output);
+    public static ArrayExtensions.SpanWhereEnumerable<TIR.Buffer, FunctionWrapper<TIR.Buffer, bool>> OutputOf(this ReadOnlySpan<TIR.Buffer> arr) => arr.AsValueEnumerable().Where(b => b.MemSpan.Buffer.Location == MemoryLocation.Output);
 }
 
 public sealed class UnitTestStringUtility

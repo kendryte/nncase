@@ -84,6 +84,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitTupleConst(TupleConst expr, TContext context) => VisitConst(expr, context);
 
     /// <summary>
+    /// Visit <see cref="TIR.PhysicalBuffer"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr, TContext context) => DefaultVisit(expr, context);
+
+    /// <summary>
     /// Visit <see cref="TIR.MemSpan"/>.
     /// </summary>
     internal protected virtual TExprResult VisitMemSpan(TIR.MemSpan expr, TContext context) => DefaultVisit(expr, context);
@@ -460,6 +465,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitTupleConst(TupleConst expr, Unit context) => VisitTupleConst(expr);
+    /// <summary>
+    /// Visit <see cref="TIR.PhysicalBuffer"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr) => base.VisitPhysicalBuffer(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitPhysicalBuffer(TIR.PhysicalBuffer expr, Unit context) => VisitPhysicalBuffer(expr);
     /// <summary>
     /// Visit <see cref="TIR.MemSpan"/>.
     /// </summary>

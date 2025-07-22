@@ -176,7 +176,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
     }
 
     /// <inheritdoc/>
-    protected override CSymbol VisitMemSpan(MemSpan expr)
+    protected override CSymbol VisitPhysicalBuffer(PhysicalBuffer expr)
     {
         if (_exprMemo.TryGetValue(expr, out var symbol))
         {
@@ -193,14 +193,25 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };
 
-        var str = start.Type switch
-        {
-            "uint8_t *" => $"std::span<uint8_t, {size.Name}>({name}, {size.Name})",
-            "auto" => $"std::span({name})",
-            string s when s.StartsWith("array") => $"std::span({name})",
-            _ => throw new NotSupportedException(start.Type),
-        };
+        var str = $"std::span<std::byte, {size.Name}>({name} + {start.Name}, {size.Name})";
+        symbol = new(start.Type, str);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
 
+    /// <inheritdoc/>
+    protected override CSymbol VisitMemSpan(MemSpan expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var buffer = Visit(expr.Buffer);
+        var start = Visit(expr.Start);
+        var size = Visit(expr.Size);
+
+        var str = $"{buffer.Name}.subspan<{start.Name}, {size.Name}>()";
         symbol = new(start.Type, str);
         _exprMemo.Add(expr, symbol);
         return symbol;

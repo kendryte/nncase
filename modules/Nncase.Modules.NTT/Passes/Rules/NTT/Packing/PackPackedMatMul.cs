@@ -46,21 +46,9 @@ public sealed partial class PackedMatMulUnpackPropagation : RewriteRule<Pattern>
         (var lhsPackKind, var rhsPackKind) = matMul.GetPackKind(lhsShape.Rank, rhs.Rank);
         if (lhsPackKind == PackedMatMul.PackKind.None && rhsPackKind == PackedMatMul.PackKind.N && unpack.Axes == [dimInfo.Lk])
         {
-            // If the unpack is on K, we can pack the rhs with KN
-            var rhsLanes = ((VectorType)rhs.ElementType).Lanes.ToArray();
-            var unpackedRhs = IR.F.Tensors.Unpack(rhs, rhsLanes, [rhs.Rank - 1]);
-            rhsLanes = [.. unpack.Lanes, .. rhsLanes];
-            IRArray<int> rhsPackedAxes = [rhs.Rank - 2, rhs.Rank - 1];
-            var packedRhs = IR.F.Tensors.Pack(unpackedRhs, rhsLanes, rhsPackedAxes.ToArray());
-            return IR.F.NTT.PackedMatMul(
-                lhs,
-                packedRhs,
-                unpack.Axes,
-                rhsPackedAxes,
-                matMul.TransposeA,
-                matMul.TransposeB,
-                matMul.FusedReduce,
-                matMul.OutputDataType);
+            // If the unpack is on K, we can bitcast the lhs to element type.
+            var newDType = ((VectorType)lhs.CheckedTensorType.DType).ElemType;
+            return caller.WithArguments([(PackedMatMul.Lhs, IR.F.Tensors.Bitcast(lhs, newDType))]);
         }
 
         return null;

@@ -47,6 +47,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return T.Memcopy(output, (Expr)arguments[0]);
             case IR.Math.Binary binary:
                 return GenerateBinary(binary.BinaryOp, arguments, output);
+            case IR.Tensors.Bitcast bitcast:
+                return GenerateBitcast((Expr)arguments[0], ref output, bitcast.NewType);
             case IR.Tensors.Pack pack:
                 return TIR.F.NTT.Pack((Expr)arguments[0], output, pack.Lanes, pack.Axes);
             case IR.Tensors.PackMask pack:
@@ -168,6 +170,42 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }
+    }
+
+    private Expr GenerateBitcast(Expr input, ref Expr output, DataType newType)
+    {
+        if (input is not TIR.Buffer inBuffer)
+        {
+            throw new NotSupportedException("Bitcast only support buffer input");
+        }
+
+        var srcSize = inBuffer.ElemType.SizeInBytes;
+        var destSize = newType.SizeInBytes;
+        var newDimensions = inBuffer.Dimensions.ToArray();
+        var newStrides = inBuffer.Strides.ToArray();
+
+        if (srcSize != destSize)
+        {
+            if (newDimensions.Rank == 0)
+            {
+                newDimensions = [srcSize / destSize];
+                newStrides = [1];
+            }
+            else
+            {
+                newDimensions[^1] = newDimensions[^1] * srcSize / destSize;
+                if (newStrides.Length > 1)
+                {
+                    newStrides[^2] = newStrides[^2] * srcSize / destSize;
+                }
+            }
+        }
+
+        var distributedType = inBuffer.DistributedType is DistributedType dt
+            ? dt with { TensorType = new TensorType(newType, newDimensions) }
+            : null;
+        output = inBuffer.With(name: $"{inBuffer.Name}_as_{newType}", elemType: newType, dimensions: newDimensions, strides: newStrides, distributedType: distributedType);
+        return T.Nop();
     }
 
     private Expr GenerateUnary(UnaryOp unaryOp, IReadOnlyList<BaseExpr> arguments, Expr output)
