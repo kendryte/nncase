@@ -62,6 +62,7 @@
 #include "vector.h"
 #include "vector_ops.h"
 
+#ifndef NNCASE_XPU_MODULE
 #ifdef __AVX2__
 #include "arch/x86_64/arch_types.h"
 #include "arch/x86_64/primitive_ops.h"
@@ -71,7 +72,10 @@
 #include "arch/aarch64/arch_types.h"
 #include "arch/aarch64/primitive_ops.h"
 #include "arch/aarch64/vector_ops.h"
-#elif __riscv_vector
+#endif
+#endif
+
+#ifdef __riscv_vector
 #include "arch/riscv64/arch_types.h"
 #include "arch/riscv64/primitive_ops.h"
 #include "arch/riscv64/ukernels.h"
@@ -79,6 +83,7 @@
 #endif
 
 #ifdef NNCASE_XPU_MODULE
+#include "arch/xpu/arch_types.h"
 #include "arch/xpu/distributed.h"
 #include "arch/xpu/runtime.h"
 #else
