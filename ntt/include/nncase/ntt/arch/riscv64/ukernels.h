@@ -31,7 +31,7 @@ namespace nncase::ntt::ukernels {
         static constexpr size_t unroll = unroll_num;                           \
     };
 
-SPECIALIZE_U_UNARY(abs, 8)
+SPECIALIZE_U_UNARY(abs, 20)
 SPECIALIZE_U_UNARY(ceil, 8)
 SPECIALIZE_U_UNARY(copy, 8)
 SPECIALIZE_U_UNARY(floor, 8)
