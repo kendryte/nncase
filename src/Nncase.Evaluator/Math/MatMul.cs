@@ -24,7 +24,7 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, DimInfo? dimInfo = null, bool transB = false, DataType outputDataType = null!)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, MatMulDimInfo? dimInfo = null, bool transB = false, DataType outputDataType = null!)
     {
         if (VisitTensorType(a.TensorType, b.TensorType, packingK, dimInfo, outputDataType) is not TensorType outType)
         {
@@ -96,9 +96,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                 }
             }
 
-            if (a.AxisPolicies[lk] is SBPSplit || b.AxisPolicies[rk] is SBPSplit)
+            if (a.AxisPolicies[lk] != b.AxisPolicies[rk])
             {
-                return new InvalidType("not support split on k");
+                return new InvalidType($"not support different policy on k: {a.AxisPolicies[lk]} vs {b.AxisPolicies[rk]}");
             }
 
             ndsbp[oRank - 2] = a.AxisPolicies[lm];
@@ -214,7 +214,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new DistributedType(a.TensorType, ndsbp, a.Placement);
     }
 
-    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, DimInfo? dimInfo = null, DataType outputDataType = null!)
+    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, MatMulDimInfo? dimInfo = null, DataType outputDataType = null!)
     {
         if (lhs.Shape is not RankedShape lhsShape
             || rhs.Shape is not RankedShape rhsShape)
@@ -398,9 +398,5 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             [MetricFactorNames.FLOPs] = m * n * ((2 * k) - 1),
             [MetricFactorNames.Parallel] = 4,
         };
-    }
-
-    public record DimInfo(int Lm, int Lk, int Rk, int Rn)
-    {
     }
 }

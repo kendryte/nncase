@@ -115,7 +115,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         var ctype = templateHeader +
             $"void {VisitEntry.Name}({string.Concat(VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *thread_local_rdata, const std::byte *block_local_rdata, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
         return new(
-            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, ThreadLocalRdataPoolSize, BlockLocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata), TargetOptions),
+            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, ThreadLocalRdataPoolSize, BlockLocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Buffer.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata), TargetOptions),
             CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
             CSourceBuiltn.TopoAwareRuntimeDef(TargetOptions, DataAlign, _collective_pool_size),
             CSourceBuiltn.ModuleTopologyDef(TargetOptions));
@@ -183,7 +183,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
     }
 
     /// <inheritdoc/>
-    protected override CSymbol VisitMemSpan(MemSpan expr)
+    protected override CSymbol VisitPhysicalBuffer(PhysicalBuffer expr)
     {
         if (_exprMemo.TryGetValue(expr, out var symbol))
         {
@@ -191,7 +191,6 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         }
 
         var start = Visit(expr.Start);
-        _ = Visit(expr.Size);
         string loc = (expr.Location, expr.Hierarchy) switch
         {
             (MemoryLocation.Rdata, 0) => "rdata",
@@ -202,8 +201,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             (MemoryLocation.Output, 0) => "output",
             _ => throw new NotSupportedException($"{expr.Location}, {expr.Hierarchy}"),
         };
-        var ptype = (PointerType)expr.CheckedDataType;
-        var ptypeName = ptype.ElemType.ToC();
+
+        var ptypeName = "std::byte";
         if (expr.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata)
         {
             // Rdata, ThreadLocalRdata and BlockLocalRdata are const
@@ -213,13 +212,41 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         string name;
         if (expr.Size is DimConst)
         {
-            var spanSize = (ulong)expr.Size.FixedValue / (ulong)ptype.ElemType.SizeInBytes;
-            name = $"std::span<{ptypeName}, {spanSize}>(reinterpret_cast<{ptypeName} *>({loc} + {start.Name}UL), {spanSize})";
+            var spanSize = (ulong)expr.Size.FixedValue;
+            name = $"std::span<{ptypeName}, {spanSize}>({loc} + {start.Name}UL, {spanSize})";
         }
         else
         {
-            var spanSize = $"{Visit(expr.Size).Name} / {ptype.ElemType.SizeInBytes}";
-            name = $"std::span<{ptypeName}>(reinterpret_cast<{ptypeName} *>({loc} + {start.Name}UL), {spanSize})";
+            var spanSize = Visit(expr.Size).Name;
+            name = $"std::span<{ptypeName}>({loc} + {start.Name}UL, {spanSize})";
+        }
+
+        symbol = new(start.Type, name);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    /// <inheritdoc/>
+    protected override CSymbol VisitMemSpan(MemSpan expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var buffer = Visit(expr.Buffer);
+        var start = Visit(expr.Start);
+
+        string name;
+        if (expr.Start is DimConst && expr.Size is DimConst)
+        {
+            var spanSize = (ulong)expr.Size.FixedValue;
+            name = $"{buffer.Name}.subspan<{start.Name}, {spanSize}>()";
+        }
+        else
+        {
+            var spanSize = Visit(expr.Size).Name;
+            name = $"{buffer.Name}.subspan({start.Name}, {spanSize})";
         }
 
         symbol = new(start.Type, name);
@@ -241,7 +268,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         var dimensionStr = $"shape_t<{StringUtility.Join(", ", dimensionTypes)}>";
         var strideStr = $"strides_t<{StringUtility.Join(", ", strideTypes)}>";
 
-        var type = expr.MemSpan.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata || expr.MemSpan.Start is TensorConst
+        var type = expr.MemSpan.Buffer.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata || expr.MemSpan.Buffer.Start is TensorConst
             ? (expr.DistributedType == null
              ? $"tensor_view<{dtypeStr}, {dimensionStr}, {strideStr}> "
              : $"sharded_tensor_view<{dtypeStr}, {dimensionStr}, {KernelUtility.ShardingToC(expr.DistributedType)}, {strideStr}> ")
@@ -391,10 +418,20 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteIndWithProfiler($"conv2d({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, fixed_shape_v<{string.Join(", ", conv.Stride)}>, fixed_paddings_v<{string.Join(", ", conv.Padding)}>, fixed_shape_v<{string.Join(",", conv.Dilation)}>, {conv.Groups}_dim);\n");
                     break;
                 case TIR.NTT.Matmul matmul:
-                    IndentScope.Writer.IndWrite(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.NTT.Matmul>(matmul)
                     {
-                        Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
-                    }).Result);
+                        var dimInfo = IR.NTT.PackedMatMul.GetDimInfo(matmul.TransposeA, matmul.TransposeB, args[0].CheckedShape.Rank, args[1].CheckedShape.Rank);
+                        WriteWithProfiler(
+                            RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.NTT.Matmul>(matmul)
+                            {
+                                Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
+                            }).Result,
+                            "matmul");
+                        if (args[0] is TIR.Buffer a && a.DistributedType?.AxisPolicies[dimInfo.Lk] is SBPSplit s)
+                        {
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                        }
+                    }
 
                     break;
                 case TIR.NTT.SUMMA summa:
@@ -407,11 +444,13 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");
                     break;
                 case TIR.NTT.Gather gather:
-                    WriteWithProfiler($"gather({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {gather.Axis}_dim);\n");
-                    if (args[0] is TIR.Buffer b && b.DistributedType?.AxisPolicies[gather.Axis] is SBPSplit s)
                     {
-                        var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
-                        WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                        WriteWithProfiler($"gather({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {gather.Axis}_dim);\n");
+                        if (args[0] is TIR.Buffer b && b.DistributedType?.AxisPolicies[gather.Axis] is SBPSplit s)
+                        {
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                        }
                     }
 
                     break;
@@ -523,10 +562,10 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     IndentScope.Writer.IndWrite($"gather_paged_attention_kv_cache({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
                     break;
                 case TIR.NTT.PagedAttention pagedAttention:
-                    IndentScope.Writer.IndWrite($"paged_attention({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name}, {pagedAttention.Layout.ToC()});\n");
+                    IndentScope.Writer.IndWrite($"paged_attention({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name}, {pagedAttention.Layout.ToC()});\n");
                     break;
                 case TIR.NTT.GetPositionIds getPositionIds:
-                    IndentScope.Writer.IndWrite($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
+                    IndentScope.Writer.IndWrite($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: false).Name});\n");
                     break;
                 default:
                     throw new NotSupportedException(kop.ToString());
@@ -752,10 +791,12 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             var symbol = Visit(buffer);
 
             IndentScope.Writer.IndWrite($"auto {symbol.Name}");
-            if (buffer.MemSpan.Start is not None)
+            if (buffer.MemSpan.Buffer.Start is not None)
             {
+                // If the buffer has a start, we create a tensor view
+                var dtypeStr = buffer.ElemType.ToC();
                 var dimensions = buffer.DistributedType is null ? buffer.Dimensions : ((RankedShape)buffer.DistributedType.TensorType.Shape).Dimensions;
-                var spanStr = Visit(buffer.MemSpan).Name;
+                var spanStr = $"span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name})";
                 var dimensionValues = dimensions.AsValueEnumerable().Select(x => Visit(x).Name);
                 var strideValues = buffer.Strides.AsValueEnumerable().Select(x => Visit(x).Name);
 

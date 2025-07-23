@@ -16,6 +16,7 @@ public sealed class UnitTestIRUtilities
     [InlineData(new object[] { new long[] { 1, 3, 2, 3, 1, 1, 7 }, new long[] { 1, 1, 3, 6, 1, 7 }, true })]
     [InlineData(new object[] { new long[] { 2, 3, 4 }, new long[] { 4, 3, 2 }, false })]
     [InlineData(new object[] { new long[] { 4, 4096 }, new long[] { 1, 4, 64, 64 }, true })]
+    [InlineData(new object[] { new long[] { 48, 1024 }, new long[] { 64, 768 }, true })]
     public void TestComputeReshapeMapping(long[] inShape, long[] newShape, bool valid)
     {
         Assert.Equal(valid, IRUtility.TryGetShapeMapMatrix(inShape, newShape, out var mat));

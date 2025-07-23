@@ -18,7 +18,8 @@
 #include <cstring>
 #include <type_traits>
 
-namespace nncase::ntt::utility_detail {
+namespace nncase::ntt {
+namespace utility_detail {
 template <size_t Axis, Tensor TTensor, Shape TOutShape>
 constexpr auto get_safe_stride(const TTensor &tensor,
                                const TOutShape &out_shape) noexcept {
@@ -43,4 +44,17 @@ constexpr auto get_safe_stride(const TTensor &tensor,
         }
     }
 }
-} // namespace nncase::ntt::utility_detail
+} // namespace utility_detail
+
+template <class U, class T, size_t Extent>
+constexpr auto span_cast(std::span<T, Extent> src) noexcept {
+    using return_type = std::span<U, Extent == std::dynamic_extent
+                                         ? std::dynamic_extent
+                                         : Extent * sizeof(T) / sizeof(U)>;
+    if constexpr (std::is_const_v<U>) {
+        return return_type{(const U *)src.data(), src.size_bytes() / sizeof(U)};
+    } else {
+        return return_type{(U *)src.data(), src.size_bytes() / sizeof(U)};
+    }
+}
+} // namespace nncase::ntt

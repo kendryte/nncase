@@ -32,7 +32,7 @@ template <dim_t N0Tile> struct b0_tile_getter<false, N0Tile> {
 };
 } // namespace detail
 
-template <mamtul_pack_kind PackKind, class TLhsElem, class TRhsElem,
+template <matmul_pack_kind PackKind, class TLhsElem, class TRhsElem,
           class TOutElem, bool Arch>
 struct u_matmul_policy {
     static constexpr dim_t m0_tile = 1;
@@ -40,7 +40,13 @@ struct u_matmul_policy {
     static constexpr dim_t m0_subtile = 0;
 };
 
-template <mamtul_pack_kind PackKind, class TA, class TB, class TC>
+template <matmul_pack_kind PackKind, class TLhsElem, class TRhsElem,
+          class TOutElem, bool Arch>
+struct u_matmul_m1_policy {
+    static constexpr dim_t n0_tile = 1;
+};
+
+template <matmul_pack_kind PackKind, class TA, class TB, class TC>
 struct u_type_scale {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
@@ -52,7 +58,7 @@ struct u_type_scale {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::mamtul_pack_kind::no_pack, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_pack_kind::no_pack, TA, TB, TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -63,7 +69,7 @@ struct u_type_scale<ukernels::mamtul_pack_kind::no_pack, TA, TB, TC> {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::mamtul_pack_kind::pack_k, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_pack_kind::pack_k, TA, TB, TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>::element_type;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -74,7 +80,7 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_k, TA, TB, TC> {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::mamtul_pack_kind::pack_m, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_pack_kind::pack_m, TA, TB, TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -87,7 +93,7 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_m, TA, TB, TC> {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::mamtul_pack_kind::pack_n, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_pack_kind::pack_n, TA, TB, TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -100,7 +106,7 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_n, TA, TB, TC> {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::mamtul_pack_kind::pack_mk, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_pack_kind::pack_mk, TA, TB, TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -114,7 +120,7 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_mk, TA, TB, TC> {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_pack_kind::pack_kn, TA, TB, TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -128,7 +134,7 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB, TC> {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::mamtul_pack_kind::pack_mn, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_pack_kind::pack_mn, TA, TB, TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -143,7 +149,7 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_mn, TA, TB, TC> {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::mamtul_pack_kind::pack_mkn, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_pack_kind::pack_mkn, TA, TB, TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -157,7 +163,7 @@ struct u_type_scale<ukernels::mamtul_pack_kind::pack_mkn, TA, TB, TC> {
                        typename TOutElem::element_type>;
 };
 
-template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
+template <ukernels::matmul_pack_kind PackKind, bool AccumulateC,
           bool TransposedA, bool TransposedB, dim_t M0Tile, dim_t N0Tile,
           class TLhsElem, class TRhsElem, class TOutElem, bool Arch>
 struct u_matmul_generic {
@@ -221,7 +227,7 @@ struct u_matmul_generic {
                 b0_tmp[index[0]] = b0(b0_index);
             });
 
-            if constexpr ((ukernels::mamtul_pack_kind::pack_k == PackKind) &&
+            if constexpr ((ukernels::matmul_pack_kind::pack_k == PackKind) &&
                           (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped = TLhsElemExpanded;
@@ -257,7 +263,7 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::mamtul_pack_kind::pack_m ==
+            } else if constexpr ((ukernels::matmul_pack_kind::pack_m ==
                                   PackKind) &&
                                  (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
@@ -296,7 +302,7 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::mamtul_pack_kind::pack_n ==
+            } else if constexpr ((ukernels::matmul_pack_kind::pack_n ==
                                   PackKind) &&
                                  (!same_type)) {
                 using TRhsElemExpanded = replace_element_t<TRhsElem, float>;
@@ -335,7 +341,7 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::mamtul_pack_kind::pack_mk ==
+            } else if constexpr ((ukernels::matmul_pack_kind::pack_mk ==
                                   PackKind) &&
                                  (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
@@ -382,7 +388,7 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::mamtul_pack_kind::pack_mn ==
+            } else if constexpr ((ukernels::matmul_pack_kind::pack_mn ==
                                   PackKind) &&
                                  (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
@@ -433,7 +439,7 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::mamtul_pack_kind::pack_mkn ==
+            } else if constexpr ((ukernels::matmul_pack_kind::pack_mkn ==
                                   PackKind) &&
                                  (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
@@ -487,7 +493,7 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::mamtul_pack_kind::no_pack ==
+            } else if constexpr ((ukernels::matmul_pack_kind::no_pack ==
                                   PackKind) &&
                                  (!same_type)) {
                 float a0_grouped[M0Tile];
@@ -525,7 +531,7 @@ struct u_matmul_generic {
     }
 };
 
-template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
+template <ukernels::matmul_pack_kind PackKind, bool AccumulateC,
           bool TransposedA, bool TransposedB, dim_t M0Tile, dim_t N0Tile,
           class TLhsElem, class TRhsElem, class TOutElem, bool Arch>
 struct u_matmul
@@ -535,7 +541,7 @@ struct u_matmul
 template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
           dim_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
           bool Arch>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
+struct u_matmul<ukernels::matmul_pack_kind::pack_mn, AccumulateC, TransposedA,
                 TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
                 Arch> {
     inline static constexpr auto b0_tile =
@@ -547,7 +553,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
         using TSubOutElem = ntt::vector<typename TOutElem::element_type,
                                         TOutElem::shape().back()>;
         using policy_t =
-            ntt::ukernels::u_matmul_policy<mamtul_pack_kind::pack_mn, TLhsElem,
+            ntt::ukernels::u_matmul_policy<matmul_pack_kind::pack_mn, TLhsElem,
                                            TRhsElem, TOutElem, true>;
         constexpr auto m0_subtile = policy_t::m0_subtile;
 
@@ -601,7 +607,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
                 });
             }
         } else {
-            u_matmul_generic<mamtul_pack_kind::pack_mn, AccumulateC,
+            u_matmul_generic<matmul_pack_kind::pack_mn, AccumulateC,
                              TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem,
                              TRhsElem, TOutElem, Arch>
                 impl;
@@ -613,7 +619,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mn, AccumulateC, TransposedA,
 template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
           dim_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
           bool Arch>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
+struct u_matmul<ukernels::matmul_pack_kind::pack_kn, AccumulateC, TransposedA,
                 TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
                 Arch> {
     inline static constexpr auto b0_tile =
@@ -623,13 +629,13 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
         constexpr auto m0_scale =
-            ukernels::u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB,
+            ukernels::u_type_scale<ukernels::matmul_pack_kind::pack_kn, TA, TB,
                                    TC>::m0_scale;
         constexpr auto n0_scale =
-            ukernels::u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB,
+            ukernels::u_type_scale<ukernels::matmul_pack_kind::pack_kn, TA, TB,
                                    TC>::n0_scale;
         constexpr auto same_type =
-            ukernels::u_type_scale<ukernels::mamtul_pack_kind::pack_kn, TA, TB,
+            ukernels::u_type_scale<ukernels::matmul_pack_kind::pack_kn, TA, TB,
                                    TC>::same_type;
         constexpr auto m0_tile_scaled = m0_scale * M0Tile;
         constexpr auto n0_tile_scaled = n0_scale * N0Tile;
@@ -746,7 +752,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_kn, AccumulateC, TransposedA,
 template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
           dim_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
           bool Arch>
-struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
+struct u_matmul<ukernels::matmul_pack_kind::pack_mkn, AccumulateC, TransposedA,
                 TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
                 Arch> {
     inline static constexpr auto b0_tile =
@@ -758,7 +764,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
         using TSubOutElem = ntt::vector<typename TOutElem::element_type,
                                         TOutElem::shape().back()>;
         using policy_t =
-            ntt::ukernels::u_matmul_policy<mamtul_pack_kind::pack_mkn, TLhsElem,
+            ntt::ukernels::u_matmul_policy<matmul_pack_kind::pack_mkn, TLhsElem,
                                            TRhsElem, TOutElem, true>;
         constexpr auto m0_subtile = policy_t::m0_subtile;
 
@@ -822,7 +828,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
                 });
             }
         } else {
-            u_matmul_generic<mamtul_pack_kind::pack_mkn, AccumulateC,
+            u_matmul_generic<matmul_pack_kind::pack_mkn, AccumulateC,
                              TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem,
                              TRhsElem, TOutElem, Arch>
                 impl;
@@ -832,7 +838,7 @@ struct u_matmul<ukernels::mamtul_pack_kind::pack_mkn, AccumulateC, TransposedA,
 };
 } // namespace ukernels
 
-template <ukernels::mamtul_pack_kind PackKind, bool AccumulateC,
+template <ukernels::matmul_pack_kind PackKind, bool AccumulateC,
           bool TransposedA, bool TransposedB, dim_t M0Tile, dim_t N0Tile,
           class TA, class TB, class TC>
 constexpr void u_matmul(const TA &a, const TB &b, TC &c, dim_t K) noexcept {

@@ -414,16 +414,16 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
     benchmark_ntt_matmul_pack_##MODE<M_BASE * 16 * M_TILE, K_BASE * 16,        \
                                      N_BASE * 16 * N_TILE>();
 
-template <nncase::ntt::ukernels::mamtul_pack_kind PackKind>
+template <nncase::ntt::ukernels::matmul_pack_kind PackKind>
 void matmul_primitive_analysis() {
 
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     switch (PackKind) {
-    case ntt::ukernels::mamtul_pack_kind::no_pack:
+    case ntt::ukernels::matmul_pack_kind::no_pack:
         // std::cout << "No packing" << std::endl;
         break;
-    case ntt::ukernels::mamtul_pack_kind::pack_m:
+    case ntt::ukernels::matmul_pack_kind::pack_m:
 
         // std::cout << "Packing M" << std::endl;
         {
@@ -439,7 +439,7 @@ void matmul_primitive_analysis() {
         }
 
         break;
-    case ntt::ukernels::mamtul_pack_kind::pack_k:
+    case ntt::ukernels::matmul_pack_kind::pack_k:
         // std::cout << "Packing K" << std::endl;
 
         {
@@ -454,7 +454,7 @@ void matmul_primitive_analysis() {
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::mamtul_pack_kind::pack_n:
+    case ntt::ukernels::matmul_pack_kind::pack_n:
         // std::cout << "Packing N" << std::endl;
 
         {
@@ -469,7 +469,7 @@ void matmul_primitive_analysis() {
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::mamtul_pack_kind::pack_mn:
+    case ntt::ukernels::matmul_pack_kind::pack_mn:
         // std::cout << "Packing M and N" << std::endl;
 
         {
@@ -484,7 +484,7 @@ void matmul_primitive_analysis() {
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::mamtul_pack_kind::pack_mk:
+    case ntt::ukernels::matmul_pack_kind::pack_mk:
         // std::cout << "Packing M and K" << std::endl;
 
         {
@@ -499,7 +499,7 @@ void matmul_primitive_analysis() {
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::mamtul_pack_kind::pack_kn:
+    case ntt::ukernels::matmul_pack_kind::pack_kn:
         // std::cout << "Packing K and N" << std::endl;
 
         {
@@ -514,7 +514,7 @@ void matmul_primitive_analysis() {
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::mamtul_pack_kind::pack_mkn:
+    case ntt::ukernels::matmul_pack_kind::pack_mkn:
         // std::cout << "Packing M, K, and N" << std::endl;
 
         {
@@ -543,37 +543,37 @@ int main() {
 
 #if NTT_VLEN <= 256
     {
-        const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_m;
+        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_m;
         matmul_primitive_analysis<PackMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_k;
+        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_k;
         matmul_primitive_analysis<PackMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_n;
+        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_n;
         matmul_primitive_analysis<PackMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_mn;
+        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_mn;
         matmul_primitive_analysis<PackMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_mk;
+        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_mk;
         matmul_primitive_analysis<PackMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_kn;
+        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_kn;
         matmul_primitive_analysis<PackMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::mamtul_pack_kind::pack_mkn;
+        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_mkn;
         matmul_primitive_analysis<PackMode>();
     }
 #endif

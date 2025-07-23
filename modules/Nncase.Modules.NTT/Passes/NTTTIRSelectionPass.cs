@@ -47,6 +47,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return T.Memcopy(output, (Expr)arguments[0]);
             case IR.Math.Binary binary:
                 return GenerateBinary(binary.BinaryOp, arguments, output);
+            case IR.Tensors.Bitcast bitcast:
+                return GenerateBitcast((Expr)arguments[0], ref output, bitcast.NewType);
             case IR.Tensors.Pack pack:
                 return TIR.F.NTT.Pack((Expr)arguments[0], output, pack.Lanes, pack.Axes);
             case IR.Tensors.PackMask pack:
@@ -55,16 +57,16 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.Unpack((Expr)arguments[0], output, unpack.Lanes, unpack.Axes);
             case IR.NTT.PackedBinary packedBinary:
                 return TIR.F.NTT.Binary(packedBinary.BinaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
-            case IR.NTT.PackedMatMul packed_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^1] is SBPSplit:
+            case IR.NTT.PackedMatMul packed_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
                 return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packed_mat_mul_summa.LhsPackedAxes, packed_mat_mul_summa.RhsPackedAxes, packed_mat_mul_summa.TransposeA, packed_mat_mul_summa.TransposeB);
-            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^1] is SBPSplit:
+            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
                 return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
             case IR.NTT.PackedMatMul packedMatMul:
                 return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packedMatMul.LhsPackedAxes, packedMatMul.RhsPackedAxes, packedMatMul.TransposeA, packedMatMul.TransposeB, packedMatMul.FusedReduce);
             case IR.Math.MatMul matmul:
                 return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
             case IR.CustomNTT.MatMul matmul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.LhsPackedAxes, matmul.RhsPackedAxes, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath);
+                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.LhsPackedAxes, matmul.RhsPackedAxes, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath, matmul.FuncName);
             case IR.NN.Conv2D conv:
                 {
                     var input = call[IR.NN.Conv2D.Input];
@@ -168,6 +170,42 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }
+    }
+
+    private Expr GenerateBitcast(Expr input, ref Expr output, DataType newType)
+    {
+        if (input is not TIR.Buffer inBuffer)
+        {
+            throw new NotSupportedException("Bitcast only support buffer input");
+        }
+
+        var srcSize = inBuffer.ElemType.SizeInBytes;
+        var destSize = newType.SizeInBytes;
+        var newDimensions = inBuffer.Dimensions.ToArray();
+        var newStrides = inBuffer.Strides.ToArray();
+
+        if (srcSize != destSize)
+        {
+            if (newDimensions.Rank == 0)
+            {
+                newDimensions = [srcSize / destSize];
+                newStrides = [1];
+            }
+            else
+            {
+                newDimensions[^1] = newDimensions[^1] * srcSize / destSize;
+                if (newStrides.Length > 1)
+                {
+                    newStrides[^2] = newStrides[^2] * srcSize / destSize;
+                }
+            }
+        }
+
+        var distributedType = inBuffer.DistributedType is DistributedType dt
+            ? dt with { TensorType = new TensorType(newType, newDimensions) }
+            : null;
+        output = inBuffer.With(name: $"{inBuffer.Name}_as_{newType}", elemType: newType, dimensions: newDimensions, strides: newStrides, distributedType: distributedType);
+        return T.Nop();
     }
 
     private Expr GenerateUnary(UnaryOp unaryOp, IReadOnlyList<BaseExpr> arguments, Expr output)

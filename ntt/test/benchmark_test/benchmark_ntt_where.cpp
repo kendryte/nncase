@@ -26,20 +26,22 @@ using namespace nncase;
 
 template <typename T, size_t N>
 void benchmark_ntt_where_pack(T init_low, T init_high) {
-    // #if __riscv
-    //     constexpr size_t size1 = 300;
-    //     constexpr size_t size2 = 600;
-    // #elif __x86_64__
-    //     constexpr size_t size1 = 2000;
-    //     constexpr size_t size2 = 2000;
-    // #else
-    //     constexpr size_t size1 = 2000;
-    //     constexpr size_t size2 = 2000;
-    // #endif
+#ifdef __riscv
     constexpr size_t n = 1;
     constexpr size_t c = 8;
     constexpr size_t h = 16;
     constexpr size_t w = 32;
+#elif __x86_64__
+    constexpr size_t n = 1;
+    constexpr size_t c = 8;
+    constexpr size_t h = 16;
+    constexpr size_t w = 16;
+#else
+    constexpr size_t n = 1;
+    constexpr size_t c = 8;
+    constexpr size_t h = 16;
+    constexpr size_t w = 32;
+#endif
 
     // Initialize input with random values
     auto input1 =

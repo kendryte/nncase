@@ -36,11 +36,11 @@ public class UnitTestEvaluatorTensors : TestClassBase
         var oldShape = new long[] { 1, 3, 16, 16 };
         var newShape = new long[] { 1, 3, 32, 8 };
         var input = OrtKI.Random(oldShape);
-        var expect = OrtKI.Reshape(input, newShape, 0);
+        var expect = OrtKI.Reshape(input, newShape, 0).ToArray<float>();
 
-        var expr = IR.F.Tensors.Bitcast(DataTypes.Float32, input.ToTensor(), DataTypes.Float32, newShape);
+        var expr = IR.F.Tensors.Bitcast(input.ToTensor(), DataTypes.Float32);
         CompilerServices.InferenceType(expr);
-        Assert.Equal(expect, expr.Evaluate().AsTensor().ToOrtTensor());
+        Assert.Equal(expect, expr.Evaluate().AsTensor().ToArray<float>());
     }
 
     [Fact(Skip = "OnnxBug")]

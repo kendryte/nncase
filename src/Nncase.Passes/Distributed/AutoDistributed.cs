@@ -18,6 +18,7 @@ using Nncase.Evaluator;
 using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Distributed;
+using Nncase.IR.NN;
 using Nncase.IR.Shapes;
 using Nncase.IR.Tensors;
 using Nncase.Targets;
@@ -299,7 +300,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             Visit(body);
             var rootCluster = TryInstertTerminator(body);
 
-#if false
+#if true
             using (var stream = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.PassIR) ? Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot") : Stream.Null)
             {
                 Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
@@ -381,6 +382,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
+        if (callCluster.VertexCount == 0)
+        {
+            throw new InvalidOperationException("Please Check expr's TypeInfer.");
+        }
+
         _inferedMemo.Add(expr, callCluster);
 
         if (!isSupported || isStandalone)
@@ -454,6 +460,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             calls = calls.Concat(DistributedUtility.GetLeafCandidatePolicies(newTensorType, distType.Placement)
                 .Where(p => SingleNodeMemoryCheck(new(newTensorType, p, distType.Placement), _moduleKind, TargetOptions))
                 .Select(ndsbp => (new Call(new Boxing(new DistributedType(newTensorType, ndsbp, distType.Placement)), tempArgs[0]), new[] { true, false })));
+        }
+        else if (target is GetPositionIds)
+        {
+            var tensorType = (TensorType)calls.First().Call.CheckedType;
+            calls = calls.Concat(GetLeafCandidateDistTypes(tensorType, Placements, _moduleKind, TargetOptions)
+                .Select(dt => (IR.F.NN.GetPositionIds((Dimension)tempArgs[0], (Expr)tempArgs[1], dt.AxisPolicies, dt.Placement), new[] { true, true })));
         }
 
         return calls;
@@ -761,7 +773,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     arg.GraphFormat.LabelLocation = QuikGraph.Graphviz.Dot.GraphvizLabelLocation.T;
                     arg.GraphFormat.LabelJustification = QuikGraph.Graphviz.Dot.GraphvizLabelJustification.L;
                     arg.GraphFormat.Label = tg.Kind.ToString();
-                    if (tg.Kind is SearchGraphKind.Bucket)
+                    if (tg.Kind is SearchGraphKind.Bucket && tg.Vertices.Any())
                     {
                         arg.GraphFormat.Label += ": " + tg.Vertices.First().IRType.ToString();
                     }
@@ -824,9 +836,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         // 0. create bool var for all node.
         var cpmodel = new CpModel();
         var varMemo = new Dictionary<SearchableNode, BoolVar>();
+        var clusterVarMemo = new Dictionary<DistributedSearchGraph, List<BoolVar>>();
         var costMemo = new Dictionary<SearchableNode, CostModel.Cost>();
         foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
         {
+            clusterVarMemo.Add(cluster, new());
             foreach (var bucket in cluster.Clusters.OfType<DistributedSearchGraph>())
             {
                 foreach (var enode in bucket.Vertices)
@@ -867,14 +881,27 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
                     var boolVar = cpmodel.NewBoolVar(string.Empty);
                     varMemo.Add(enode, boolVar);
+                    if (enode.Expr is Op o && o is not Boxing)
+                    {
+                        clusterVarMemo[cluster].Add(boolVar);
+                    }
                 }
             }
         }
 
         // 1. must pick one in root enode.
-        cpmodel.AddBoolOr(rootCluster.Vertices.Select(n => varMemo[n]).ToArray());
+        cpmodel.AddExactlyOne(rootCluster.Vertices.Select(n => varMemo[n]).ToArray());
 
-        // 2. when pick node, must pick one child node.
+        // 2. pick only one in each cluster.
+        foreach (var (cluster, vars) in clusterVarMemo)
+        {
+            if (vars.Count > 0)
+            {
+                cpmodel.AddExactlyOne(vars.ToArray());
+            }
+        }
+
+        // 3. when pick node, must pick one child node.
         foreach (var n in _rootSearchGraph.Vertices)
         {
             var ns = new[] { varMemo[n].Not() };
@@ -883,13 +910,17 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             {
                 foreach (var argEdges in allEdges.GroupBy(g => g.InputIndex))
                 {
-                    cpmodel.AddBoolOr(ns.Concat(argEdges.SelectMany(e => e.InputGraph.Vertices).Select(cn => varMemo[cn])));
+                    var cns = argEdges.SelectMany(e => e.InputGraph.Vertices).Select(cn => varMemo[cn]).ToList();
+                    if (cns.Count > 0)
+                    {
+                        cpmodel.Add(LinearExpr.Sum(cns) == 1).OnlyEnforceIf(varMemo[n]);
+                    }
                 }
             }
         }
 
 #if false
-        3. no cycle
+        // 4. no cycle
         foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
         {
             foreach (var sourceBucket in cluster.Clusters.OfType<DistributedSearchGraph>())
@@ -905,7 +936,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 #endif
 
-        // 3. add pick weights for all enode.
+        // 5. add pick weights for all enode.
         cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costMemo[n].Score))));
 
         if (cpmodel.Validate().Any())
@@ -958,7 +989,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-#if false
+#if true
         using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             Dump(stream, picks, costMemo);
