@@ -322,7 +322,6 @@ struct reshard_impl<SrcTensor, DestTensor> {
         auto global_tensor =
             make_tensor_view_from_address(global_buffer_address, src.shape());
         reshard(src, global_tensor);
-        distributed::topology_synchronize();
     }
 
     void copy_from_global(DestTensor &dest) noexcept {
