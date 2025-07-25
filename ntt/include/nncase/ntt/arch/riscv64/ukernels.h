@@ -1013,6 +1013,151 @@ class u_pack2d<true, TIn, TOut, float,
     }
 };
 
+template <>
+struct u_unary<ntt::ops::abs<vector<float, NTT_VLEN / 32>>,
+               vector<float, NTT_VLEN / 32>, true> {
+  public:
+    void operator()(const ntt::ops::abs<vector<float, NTT_VLEN / 32>> &op,
+                    const vector<float, NTT_VLEN / 32> *input, size_t in_stride,
+                    vector<float, NTT_VLEN / 32> *output, size_t out_stride,
+                    size_t count) noexcept {
+        using policy_t =
+            u_unary_policy<ntt::ops::abs<vector<float, NTT_VLEN / 32>>,
+                           vector<float, NTT_VLEN / 32>, true>;
+        constexpr auto unroll = policy_t::unroll;
+        constexpr auto vl = NTT_VLEN / 32;
+        constexpr auto unit = sizeof(vector<float, vl>);
+        auto in_strides = in_stride * unit;
+        auto out_strides = out_stride * unit;
+
+        while (count / unroll) {
+
+            asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
+
+            asm volatile(
+                // === Load phase ===
+                "vl1re32.v v1,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v2,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v3,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v4,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v5,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v6,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v7,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v8,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v9,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v10, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v11, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v12, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v13, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v14, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v15, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v16, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v17, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v18, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v19, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vl1re32.v v20, (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+
+                // === Compute phase ===
+                "vfabs.v v1, v1\n"
+                "vfabs.v v2, v2\n"
+                "vfabs.v v3, v3\n"
+                "vfabs.v v4, v4\n"
+                "vfabs.v v5, v5\n"
+                "vfabs.v v6, v6\n"
+                "vfabs.v v7, v7\n"
+                "vfabs.v v8, v8\n"
+                "vfabs.v v9, v9\n"
+                "vfabs.v v10, v10\n"
+                "vfabs.v v11, v11\n"
+                "vfabs.v v12, v12\n"
+                "vfabs.v v13, v13\n"
+                "vfabs.v v14, v14\n"
+                "vfabs.v v15, v15\n"
+                "vfabs.v v16, v16\n"
+                "vfabs.v v17, v17\n"
+                "vfabs.v v18, v18\n"
+                "vfabs.v v19, v19\n"
+                "vfabs.v v20, v20\n"
+
+                // === Store phase ===
+                "vs1r.v v1,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v2,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v3,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v4,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v5,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v6,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v7,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v8,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v9,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v10, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v11, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v12, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v13, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v14, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v15, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v16, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v17, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v18, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v19, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vs1r.v v20, (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+
+                : [input] "+r"(input), [output] "+r"(output)
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
+                : "v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9", "v10",
+                  "v11", "v12", "v13", "v14", "v15", "v16", "v17", "v18", "v19",
+                  "v20", "memory");
+
+            count -= unroll;
+        }
+
+        for (size_t i = 0; i < count; i++) {
+            *output = op(*input);
+            input += in_stride;
+            output += out_stride;
+        }
+    }
+};
+
 template <class T1, class T2> struct u_unpack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
 };
