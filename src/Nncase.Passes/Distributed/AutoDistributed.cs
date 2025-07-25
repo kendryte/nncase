@@ -415,9 +415,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         var addedBuckets = bucketMemo.Values.ToArray();
         foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
         {
-            if (!bucketMemo.TryGetValue(nType, out var bucket))
+            var bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
             {
-                bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                 var node = new SearchableNode(new Boxing(nType), nType);
                 bucket.AddVertex(node);
                 var linked = false;
@@ -438,7 +437,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 }
                 else
                 {
-                    bucketMemo.Add(nType, bucket);
+                    bucketMemo.TryAdd(nType, bucket);
                 }
             }
         }
