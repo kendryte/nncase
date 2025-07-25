@@ -33,7 +33,7 @@ namespace nncase::ntt::ukernels {
 
 SPECIALIZE_U_UNARY(abs, 20)
 SPECIALIZE_U_UNARY(ceil, 20)
-SPECIALIZE_U_UNARY(copy, 20)
+SPECIALIZE_U_UNARY(copy, 8)
 SPECIALIZE_U_UNARY(floor, 20)
 SPECIALIZE_U_UNARY(neg, 20)
 SPECIALIZE_U_UNARY(round, 20)
