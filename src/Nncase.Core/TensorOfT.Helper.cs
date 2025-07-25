@@ -146,7 +146,7 @@ public partial class Tensor<T>
     {
         if (!src.Dimensions.SequenceEqual(dest.Dimensions))
         {
-            throw new ArgumentException("the dest tensor shape must be equal to this tensor shape.", "dest");
+            throw new ArgumentException($"the dest tensor shape [{string.Join(" ", dest.Dimensions.ToArray())}] must be equal to this tensor shape [{string.Join(" ", src.Dimensions.ToArray())}].", "dest");
         }
 
         var conti_dims = Math.Min(

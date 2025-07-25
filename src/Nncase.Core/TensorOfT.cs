@@ -63,7 +63,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     {
         if (Length != buffer.Length)
         {
-            throw new ArgumentException("Buffer length should be same as tensor length.");
+            throw new ArgumentException($"Buffer length [{buffer.Length}] should be same as tensor length [{Length}].");
         }
 
         Buffer = buffer;
