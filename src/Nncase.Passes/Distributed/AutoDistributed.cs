@@ -670,7 +670,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 bucket.AddVertex(onode);
                 foreach (var inputBucket in inputBuckets)
                 {
-                    if (CheckBoxingType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
+                    if (inputBucket.Vertices.Any() && CheckBoxingType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
                     {
                         _rootSearchGraph.AddEdge(new(onode, inputBucket.Vertices.First(), 0, inputBucket));
                     }
