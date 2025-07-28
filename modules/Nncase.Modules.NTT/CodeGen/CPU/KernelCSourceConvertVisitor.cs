@@ -476,7 +476,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"transpose({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_dims_v<{string.Join(",", transpose.Perm)}>);\n");
                     break;
                 case TIR.NTT.Pad pad:
-                    WriteWithProfiler($"pad({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitDimOrShape(args[1]).Name}, {args[0].CheckedDataType.ToC()} {{ {pad.PadValue} }});\n");
+                    var padValueType = args[0].CheckedTensorType.DType is VectorType vt ? vt.ElemType : args[0].CheckedTensorType.DType;
+                    WriteWithProfiler($"pad({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitDimOrShape(args[1]).Name}, {args[0].CheckedDataType.ToC()} {{ ({padValueType.ToC()}){pad.PadValue} }});\n");
                     break;
                 case TIR.NTT.Reduce reduce:
                     WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", reduce.Axes)}>, fixed_shape_v<{string.Join(",", reduce.PackedAxes)}>);\n");
