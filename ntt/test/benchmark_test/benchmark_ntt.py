@@ -190,7 +190,10 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
     def __init__(self, target: str, bin_path: str, data_type: str = "f32"):
         super().__init__('x86_64', target, bin_path)
         if data_type:
-            self.bin_list = [bin for bin in self.bin_list if data_type in str(bin)]
+            self.bin_list = [
+                bin for bin in self.bin_list
+                if data_type in bin.name and "benchmark_ntt_f32_matmul_primitive_size" not in bin.name
+            ]
             
         if data_type == "f32":
             self.roofline_dict = {'binary': {'add': '2.0',
@@ -388,7 +391,10 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
     def __init__(self, target: str, bin_path: str, data_type: str = "f32"):
         BenchmarkNTT.__init__(self, 'riscv64', target, bin_path)
         if data_type:
-            self.bin_list = [bin for bin in self.bin_list if data_type in str(bin)]
+            self.bin_list = [
+                bin for bin in self.bin_list
+                if data_type in bin.name and "benchmark_ntt_f32_matmul_primitive_size" not in bin.name
+            ]
             
         if data_type == "f32":
             self.roofline_dict = {'binary': {'add': '7.3',
