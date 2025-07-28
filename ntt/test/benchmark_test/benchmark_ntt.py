@@ -22,7 +22,7 @@ def nuc_port():
 
 
 def ntt_report_file(default: str):
-    return os.getenv('BENCHMARK_NTT_REPORT_FILE', default)
+    return os.getenv('BENCHMARK_NTT_F32_REPORT_FILE', default)
 
 
 def ntt_matmul_x86_64_report_file(default: str):
@@ -653,7 +653,7 @@ if __name__ == '__main__':
         benchmark_list.append(item)
 
     # 1.4 generate md
-    md_file = ntt_report_file('benchmark_ntt.md')
+    md_file = ntt_report_file('benchmark_ntt_f32.md')
     benchmark_list = sorted(benchmark_list, key=lambda d: (d['kind'], d['op']))
     generate_benchmark_ntt_md(benchmark_list, 'kind', md_file)
 
