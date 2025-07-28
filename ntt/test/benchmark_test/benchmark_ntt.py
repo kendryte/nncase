@@ -381,7 +381,6 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
         for bin in self.bin_list:
             cmd_status, cmd_result = subprocess.getstatusoutput(f'{bin}')
             assert (cmd_status == 0)
-            print(cmd_result)
             self.parse_result(cmd_result)
 
 
@@ -582,7 +581,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
 
         for bin in self.bin_list:
             cmd_status, cmd_result = self.run_evb(bin)
-            print(new_cmd_result)
+            print(cmd_result)
             assert (cmd_status == 0)
             lines = cmd_result.split('\r\n')
             new_lines = lines[1:-1]
