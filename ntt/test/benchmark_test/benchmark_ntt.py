@@ -585,6 +585,7 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
             lines = cmd_result.split('\r\n')
             new_lines = lines[1:-1]
             new_cmd_result = '\n'.join(new_lines)
+            print(new_cmd_result)
             self.parse_result(new_cmd_result)
 
 
