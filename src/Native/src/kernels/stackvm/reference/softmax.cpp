@@ -15,6 +15,7 @@
 #include "ref_ops.h"
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
@@ -49,6 +50,9 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
             for (size_t j = 0; j < reduced_size; j++) {
                 max_value = std::max(max_value, in_[j]);
             }
+            
+            // Debug: 输出 max 结果
+            std::cout << "[REF DEBUG] Batch " << i << " - Max: " << std::fixed << std::setprecision(6) << (float)max_value << std::endl;
 
             // (x - reduce_max) * beta
             for (size_t j = 0; j < reduced_size; j++) {
@@ -56,6 +60,13 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
                                           static_cast<float>(max_value)) *
                                          beta);
             }
+            
+            // Debug: 输出前几个 sub 结果
+            std::cout << "[REF DEBUG] Batch " << i << " - Sub results (first 8): ";
+            for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                std::cout << std::fixed << std::setprecision(6) << (float)out_[debug_idx] << " ";
+            }
+            std::cout << std::endl;
 
             // exp((x - reduce_max) * beta) and sum
             T sum = 0;
@@ -63,8 +74,23 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
                 out_[j] = static_cast<T>(expf(static_cast<float>(out_[j])));
                 sum += out_[j];
             }
+            
+            // Debug: 输出前几个 exp 结果
+            std::cout << "[REF DEBUG] Batch " << i << " - Exp results (first 8): ";
+            for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                std::cout << std::fixed << std::setprecision(6) << (float)out_[debug_idx] << " ";
+            }
+            std::cout << std::endl;
+            
+            // Debug: 输出 sum 结果
+            std::cout << "[REF DEBUG] Batch " << i << " - Sum: " << std::fixed << std::setprecision(6) << (float)sum << std::endl;
 
             // div
+            T inv_sum = static_cast<T>(1.0f / static_cast<float>(sum));
+            
+            // Debug: 输出 1/sum 结果
+            std::cout << "[REF DEBUG] Batch " << i << " - 1/Sum: " << std::fixed << std::setprecision(6) << (float)inv_sum << std::endl;
+            
             for (size_t j = 0; j < reduced_size; j++) {
                 out_[j] /= sum;
                 if (needLog) {
@@ -72,6 +98,21 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
                         static_cast<T>(std::log(static_cast<float>(out_[j])));
                 }
             }
+            
+            // Debug: 输出前几个最终结果
+            std::cout << "[REF DEBUG] Batch " << i << " - Final results (first 8): ";
+            for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                std::cout << std::fixed << std::setprecision(6) << (float)out_[debug_idx] << " ";
+            }
+            std::cout << std::endl;
+            
+            // Debug: 验证概率和
+            T prob_sum = 0;
+            for (size_t debug_idx = 0; debug_idx < reduced_size; debug_idx++) {
+                prob_sum += out_[debug_idx];
+            }
+            std::cout << "[REF DEBUG] Batch " << i << " - Probability sum: " << std::fixed << std::setprecision(6) << (float)prob_sum << std::endl;
+            std::cout << "REF ----------------------------------------" << std::endl;
         }
     } else {
         size_t axis_size = in_shape[positive_axis];
@@ -95,11 +136,29 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
                     max_value[j] = std::max(max_value[j], in_k[j]);
                 }
             }
+            
+            // Debug: 输出 max 结果 (只显示前几个元素)
+            std::cout << "[REF DEBUG] Batch " << i << " - Max (first 8): ";
+            for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                std::cout << std::fixed << std::setprecision(6) << (float)max_value[debug_idx] << " ";
+            }
+            std::cout << std::endl;
 
             // exp((x - reduce_max) * beta) and sum
             for (size_t k = 0; k < axis_size; k++) {
                 auto in_k = in_ + k * reduced_size;
                 auto out_k = out_ + k * reduced_size;
+                
+                // Debug: 输出第一个轴元素的 sub 结果
+                if (k == 0) {
+                    std::cout << "[REF DEBUG] Batch " << i << " - Sub results axis[0] (first 8): ";
+                    for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                        float sub_val = (static_cast<float>(in_k[debug_idx]) - static_cast<float>(max_value[debug_idx])) * beta;
+                        std::cout << std::fixed << std::setprecision(6) << sub_val << " ";
+                    }
+                    std::cout << std::endl;
+                }
+                
                 for (size_t j = 0; j < reduced_size; j++) {
                     out_k[j] =
                         static_cast<T>(expf((static_cast<float>(in_k[j]) -
@@ -107,18 +166,63 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
                                             beta));
                     axis_sum[j] += out_k[j];
                 }
+                
+                // Debug: 输出第一个轴元素的 exp 结果
+                if (k == 0) {
+                    std::cout << "[REF DEBUG] Batch " << i << " - Exp results axis[0] (first 8): ";
+                    for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                        std::cout << std::fixed << std::setprecision(6) << (float)out_k[debug_idx] << " ";
+                    }
+                    std::cout << std::endl;
+                }
             }
+            
+            // Debug: 输出 sum 结果
+            std::cout << "[REF DEBUG] Batch " << i << " - Sum (first 8): ";
+            for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                std::cout << std::fixed << std::setprecision(6) << (float)axis_sum[debug_idx] << " ";
+            }
+            std::cout << std::endl;
 
             // div
             for (size_t k = 0; k < axis_size; k++) {
                 auto out_k = out_ + k * reduced_size;
+                
+                // Debug: 输出第一个轴元素的 1/sum 结果
+                if (k == 0) {
+                    std::cout << "[REF DEBUG] Batch " << i << " - 1/Sum axis[0] (first 8): ";
+                    for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                        float inv_sum = 1.0f / static_cast<float>(axis_sum[debug_idx]);
+                        std::cout << std::fixed << std::setprecision(6) << inv_sum << " ";
+                    }
+                    std::cout << std::endl;
+                }
+                
                 for (size_t j = 0; j < reduced_size; j++) {
                     out_k[j] /= axis_sum[j];
                     if (needLog)
                         out_k[j] = static_cast<T>(
                             std::log(static_cast<float>((out_k[j]))));
                 }
+                
+                // Debug: 输出第一个轴元素的最终结果
+                if (k == 0) {
+                    std::cout << "[REF DEBUG] Batch " << i << " - Final results axis[0] (first 8): ";
+                    for (size_t debug_idx = 0; debug_idx < std::min(reduced_size, (size_t)8); debug_idx++) {
+                        std::cout << std::fixed << std::setprecision(6) << (float)out_k[debug_idx] << " ";
+                    }
+                    std::cout << std::endl;
+                }
             }
+            
+            // Debug: 验证第一个轴元素的概率和
+            T prob_sum = 0;
+            auto out_0 = out_;
+            for (size_t debug_idx = 0; debug_idx < reduced_size; debug_idx++) {
+                prob_sum += out_0[debug_idx];
+            }
+            std::cout << "[REF DEBUG] Batch " << i << " - Probability sum axis[0]: " << std::fixed << std::setprecision(6) << (float)prob_sum << std::endl;
+            std::cout << "REF ----------------------------------------" << std::endl;
         }
     }
 
