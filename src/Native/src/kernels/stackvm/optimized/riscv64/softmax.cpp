@@ -635,7 +635,7 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                     auto v_scaled = vfmul_vf_f16m4(
                         vfsub_vv_f16m4(v_in, v_max, vl), beta, vl);
 
-                    // Float16 exp 安全范围限制
+                    // Float16 exp safe range clamping
                     const __float16_t exp_clamp_min = (__float16_t)(-10.0f);
                     const __float16_t exp_clamp_max = (__float16_t)(10.0f);
                     v_scaled = vfmax_vf_f16m4(v_scaled, exp_clamp_min, vl);
