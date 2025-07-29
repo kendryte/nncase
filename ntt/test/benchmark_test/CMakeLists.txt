@@ -9,7 +9,11 @@ if(CLOCK_SOURCE_FREQUENCY_MHZ)
     add_definitions(-DCLOCK_SOURCE_FREQUENCY_MHZ=${CLOCK_SOURCE_FREQUENCY_MHZ})
 endif()
 
-file(GLOB TEST_NAMES CONFIGURE_DEPENDS
+# clear TEST_NAMES
+set(TEST_NAMES)
+
+# add f32 test files
+file(GLOB TEST_NAMES_F32 CONFIGURE_DEPENDS
     benchmark_ntt_f32_binary.cpp
     # benchmark_ntt_f32_cast.cpp
     benchmark_ntt_f32_clamp.cpp
@@ -30,6 +34,15 @@ file(GLOB TEST_NAMES CONFIGURE_DEPENDS
     benchmark_ntt_f32_unpack.cpp
     benchmark_ntt_f32_where.cpp
 )
+
+# add fp16 test files
+file(GLOB TEST_NAMES_FP16 CONFIGURE_DEPENDS
+    benchmark_ntt_fp16_binary.cpp
+)
+
+# merge F32 AND FP16 INTO TEST_NAMES
+list(APPEND TEST_NAMES ${TEST_NAMES_F32} ${TEST_NAMES_FP16})
+
 foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
     add_executable(${tname} ${tname}.cpp)

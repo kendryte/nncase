@@ -381,7 +381,16 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'ranked_reduceAxis2_packAxis2':'3050',},
                                 }
         else:
-            self.roofline_dict = {}
+            self.roofline_dict = {'binary': {'add': '2.0',
+                                            'sub': '2.0',
+                                            'mul': '2.0',
+                                            'div': '2.0',
+                                            'max': '2.0',
+                                            'min': '2.0',
+                                            'floor_mod': '5.5',
+                                            'mod': '2.0',
+                                            'pow': '42.17',
+                                            },}
 
     def run(self):
         for bin in self.bin_list:
@@ -582,7 +591,16 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                             'ranked_reduceAxis2_packAxis2':'16160',},
                                 }
         else:
-            self.roofline_dict = {}
+            self.roofline_dict = {'binary': {'add': '7.3',
+                                            'sub': '7.3',
+                                            'mul': '7.3',
+                                            'div': '30.3',
+                                            'max': '7.3',
+                                            'min': '7.3',
+                                            'floor_mod': '40.3',
+                                            'mod': '35.3',
+                                            'pow': '139'
+                                            },}
 
     def run(self):
         if self.target not in kpu_targets():
@@ -682,11 +700,11 @@ if __name__ == '__main__':
     
     # 2. benchmark ntt f16
     # 2.1 x86_64
-    ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path, 'f32')
+    ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path, 'fp16')
     ntt_x86_64.run()
 
     # 2.2 riscv64
-    ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path, 'f32')
+    ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path, 'fp16')
     ntt_riscv64.run()
 
     # 2.3 merge benchmark list
