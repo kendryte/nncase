@@ -487,35 +487,14 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                 }
             }
 
-            // Debug: 输出 max 结果
-            std::cout << "[DEBUG] Batch " << i << " - Max: " << std::fixed
-                      << std::setprecision(6) << (float)max << std::endl;
-
             // exp((x - max) * beta) and sum(exp)
             __float16_t sum = (__float16_t)0.f;
             ptr_input_vl = ptr_input;
             n = axis_dim;
-
-            // Debug: 输出前几个 sub 结果
-            std::cout << "[DEBUG] Batch " << i << " - Sub results (first 8): ";
-            for (size_t debug_idx = 0;
-                 debug_idx < std::min(axis_dim, (size_t)8); debug_idx++) {
-                __float16_t sub_val = ptr_input[debug_idx] - max;
-                std::cout << std::fixed << std::setprecision(6)
-                          << (float)sub_val << " ";
-            }
-            std::cout << std::endl;
-
             {
                 auto vl = vsetvl_e16m4(n);
                 auto v_sum = vfmv_v_f_f16m4((__float16_t)0.0f, vl);
 
-                // Debug: 输出前几个 exp 结果
-                std::cout << "[DEBUG] Batch " << i
-                          << " - Exp results (first 8): ";
-                size_t debug_count = 0;
-
-                // Float16 exp 安全范围限制
                 const __float16_t exp_clamp_min = (__float16_t)(-10.0f);
                 const __float16_t exp_clamp_max = (__float16_t)(10.0f);
 
@@ -524,25 +503,12 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                     auto v_sub = vfsub_vf_f16m4(v_in, max, vl);
                     auto v_scaled = vfmul_vf_f16m4(v_sub, beta, vl);
                     
-                    // 限制输入到 exp 函数的范围，避免数值溢出
                     v_scaled = vfmax_vf_f16m4(v_scaled, exp_clamp_min, vl);
                     v_scaled = vfmin_vf_f16m4(v_scaled, exp_clamp_max, vl);
                     
                     auto v_out = exp_ph(v_scaled, vl);
                     v_sum = vfadd_vv_f16m4(v_sum, v_out, vl);
                     vse16_v_f16m4(ptr_output_vl, v_out, vl);
-
-                    // Debug: 输出前几个 exp 值
-                    if (debug_count < 8) {
-                        __float16_t temp_exp[8];
-                        vse16_v_f16m4(temp_exp, v_out, std::min(vl, (size_t)8));
-                        for (size_t j = 0;
-                             j < std::min(vl, (size_t)(8 - debug_count)); j++) {
-                            std::cout << std::fixed << std::setprecision(6)
-                                      << (float)temp_exp[j] << " ";
-                        }
-                        debug_count += vl;
-                    }
 
                     ptr_input_vl += vl;
                     ptr_output_vl += vl;
@@ -558,8 +524,7 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                     auto v_in = vle16_v_f16m4(ptr_input_vl, vl);
                     auto v_sub = vfsub_vf_f16m4(v_in, max, vl);
                     auto v_scaled = vfmul_vf_f16m4(v_sub, beta, vl);
-                    
-                    // 限制输入到 exp 函数的范围，避免数值溢出
+
                     v_scaled = vfmax_vf_f16m4(v_scaled, exp_clamp_min, vl);
                     v_scaled = vfmin_vf_f16m4(v_scaled, exp_clamp_max, vl);
                     
@@ -570,29 +535,10 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
 
                     vse16_v_f16m4(ptr_output_vl, v_out, vl);
                     sum += vfmv_f_s_f16m1_f16(reduced_sum_);
-
-                    // Debug: 输出剩余的 exp 值
-                    if (debug_count < 8) {
-                        __float16_t temp_exp[8];
-                        vse16_v_f16m4(temp_exp, v_out, vl);
-                        for (size_t j = 0;
-                             j < std::min(vl, (size_t)(8 - debug_count)); j++) {
-                            std::cout << std::fixed << std::setprecision(6)
-                                      << (float)temp_exp[j] << " ";
-                        }
-                    }
                 }
-                std::cout << std::endl;
             }
 
-            // Debug: 输出 sum 结果
-            std::cout << "[DEBUG] Batch " << i << " - Sum: " << std::fixed
-                      << std::setprecision(6) << (float)sum << std::endl;
-
-            // 检查 sum 是否有效，避免除零或无穷大
             if (sum <= (__float16_t)0.0f || !std::isfinite((float)sum)) {
-                std::cout << "[DEBUG] Batch " << i << " - Invalid sum detected, using uniform distribution" << std::endl;
-                // 使用均匀分布作为后备
                 __float16_t uniform_prob = (__float16_t)(1.0f / axis_dim);
                 for (size_t j = 0; j < axis_dim; j++) {
                     ptr_output[j] = uniform_prob;
@@ -609,35 +555,12 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
             n = axis_dim;
             sum = (__float16_t)1.0f / sum;
 
-            // Debug: 输出 1/sum 结果
-            std::cout << "[DEBUG] Batch " << i << " - 1/Sum: " << std::fixed
-                      << std::setprecision(6) << (float)sum << std::endl;
-
             {
                 auto vl = vsetvl_e16m4(n);
-                size_t debug_count = 0;
-
-                // Debug: 输出前几个最终结果
-                std::cout << "[DEBUG] Batch " << i
-                          << " - Final results (first 8): ";
-
                 while (n / vl > 0) {
                     auto v_out = vle16_v_f16m4(ptr_output_vl, vl);
                     v_out = vfmul_vf_f16m4(v_out, sum, vl);
                     vse16_v_f16m4(ptr_output_vl, v_out, vl);
-
-                    // Debug: 输出前几个最终值
-                    if (debug_count < 8) {
-                        __float16_t temp_final[8];
-                        vse16_v_f16m4(temp_final, v_out,
-                                      std::min(vl, (size_t)8));
-                        for (size_t j = 0;
-                             j < std::min(vl, (size_t)(8 - debug_count)); j++) {
-                            std::cout << std::fixed << std::setprecision(6)
-                                      << (float)temp_final[j] << " ";
-                        }
-                        debug_count += vl;
-                    }
 
                     ptr_output_vl += vl;
                     n -= vl;
@@ -647,31 +570,8 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                     auto v_out = vle16_v_f16m4(ptr_output_vl, vl);
                     v_out = vfmul_vf_f16m4(v_out, sum, vl);
                     vse16_v_f16m4(ptr_output_vl, v_out, vl);
-
-                    // Debug: 输出剩余的最终值
-                    if (debug_count < 8) {
-                        __float16_t temp_final[8];
-                        vse16_v_f16m4(temp_final, v_out, vl);
-                        for (size_t j = 0;
-                             j < std::min(vl, (size_t)(8 - debug_count)); j++) {
-                            std::cout << std::fixed << std::setprecision(6)
-                                      << (float)temp_final[j] << " ";
-                        }
-                    }
                 }
-                std::cout << std::endl;
             }
-
-            // Debug: 验证概率和
-            __float16_t prob_sum = (__float16_t)0.0f;
-            for (size_t debug_idx = 0; debug_idx < axis_dim; debug_idx++) {
-                prob_sum += ptr_output[debug_idx];
-            }
-            std::cout << "[DEBUG] Batch " << i
-                      << " - Probability sum: " << std::fixed
-                      << std::setprecision(6) << (float)prob_sum << std::endl;
-            std::cout << "----------------------------------------"
-                      << std::endl;
 
             ptr_input += axis_dim;
             ptr_output += axis_dim;
