@@ -206,7 +206,7 @@ public static class CostUtility
         {
             TensorType t => (UInt128)t.Shape.ProdWithDynamicAsMaxValue(),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
-            DistributedType t => GetMemoryAccess(Utilities.DistributedUtility.GetDividedTensorType(t)),
+            DistributedType t => GetMemoryAccess(Utilities.DistributedUtility.GetDividedTensorType(t, false, true)),
             _ => 0,
         };
     }
