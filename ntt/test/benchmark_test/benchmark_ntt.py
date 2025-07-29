@@ -205,9 +205,9 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'div': '2.0',
                                             'max': '2.0',
                                             'min': '2.0',
-                                            'floor_mod': '3.5',
+                                            'floor_mod': '5.5',
                                             'mod': '2.0',
-                                            'pow': '35.24',
+                                            'pow': '42.17',
                                             },
                                 #   'cast': {'float-int32': '2.0',
                                 #            'int32-float': '1.5',
@@ -387,9 +387,9 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'div': '2.0',
                                             'max': '2.0',
                                             'min': '2.0',
-                                            'floor_mod': '5.5',
+                                            'floor_mod': '3.5',
                                             'mod': '2.0',
-                                            'pow': '42.17',
+                                            'pow': '35.24',
                                             },}
 
     def run(self):
