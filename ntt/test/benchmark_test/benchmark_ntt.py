@@ -205,9 +205,9 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'div': '2.0',
                                             'max': '2.0',
                                             'min': '2.0',
-                                            'floor_mod': '5.5',
+                                            'floor_mod': '3.5',
                                             'mod': '2.0',
-                                            'pow': '42.17',
+                                            'pow': '35.24',
                                             },
                                 #   'cast': {'float-int32': '2.0',
                                 #            'int32-float': '1.5',
@@ -591,14 +591,14 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                             'ranked_reduceAxis2_packAxis2':'16160',},
                                 }
         else:
-            self.roofline_dict = {'binary': {'add': '7.3',
-                                            'sub': '7.3',
-                                            'mul': '7.3',
-                                            'div': '30.3',
-                                            'max': '7.3',
-                                            'min': '7.3',
+            self.roofline_dict = {'binary': {'add': '7.48',
+                                            'sub': '7.51',
+                                            'mul': '7.68',
+                                            'div': '36.97',
+                                            'max': '7.68',
+                                            'min': '7.68',
                                             'floor_mod': '40.3',
-                                            'mod': '35.3',
+                                            'mod': '36.3901',
                                             'pow': '139'
                                             },}
 
