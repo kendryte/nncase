@@ -14,7 +14,6 @@
  */
 #include "../../reference/ref_ops.h"
 #include "../opt_ops.h"
-#include <iomanip>
 #include <iostream>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
