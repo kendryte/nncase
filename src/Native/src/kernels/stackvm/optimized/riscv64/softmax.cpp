@@ -502,10 +502,10 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                     auto v_in = vle16_v_f16m4(ptr_input_vl, vl);
                     auto v_sub = vfsub_vf_f16m4(v_in, max, vl);
                     auto v_scaled = vfmul_vf_f16m4(v_sub, beta, vl);
-                    
+
                     v_scaled = vfmax_vf_f16m4(v_scaled, exp_clamp_min, vl);
                     v_scaled = vfmin_vf_f16m4(v_scaled, exp_clamp_max, vl);
-                    
+
                     auto v_out = exp_ph(v_scaled, vl);
                     v_sum = vfadd_vv_f16m4(v_sum, v_out, vl);
                     vse16_v_f16m4(ptr_output_vl, v_out, vl);
@@ -527,7 +527,7 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
 
                     v_scaled = vfmax_vf_f16m4(v_scaled, exp_clamp_min, vl);
                     v_scaled = vfmin_vf_f16m4(v_scaled, exp_clamp_max, vl);
-                    
+
                     auto v_out = exp_ph(v_scaled, vl);
                     reduced_sum_ = vfredosum_vs_f16m4_f16m1(
                         vundefined_f16m1(), v_out,
@@ -543,7 +543,7 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                 for (size_t j = 0; j < axis_dim; j++) {
                     ptr_output[j] = uniform_prob;
                 }
-                
+
                 ptr_input += axis_dim;
                 ptr_output += axis_dim;
                 continue;
@@ -632,14 +632,15 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                     auto v_sum = vle16_v_f16m4(ptr_sum_vl, vl);
 
                     // 计算 (x - max) * beta 并限制范围
-                    auto v_scaled = vfmul_vf_f16m4(vfsub_vv_f16m4(v_in, v_max, vl), beta, vl);
-                    
+                    auto v_scaled = vfmul_vf_f16m4(
+                        vfsub_vv_f16m4(v_in, v_max, vl), beta, vl);
+
                     // Float16 exp 安全范围限制
                     const __float16_t exp_clamp_min = (__float16_t)(-10.0f);
                     const __float16_t exp_clamp_max = (__float16_t)(10.0f);
                     v_scaled = vfmax_vf_f16m4(v_scaled, exp_clamp_min, vl);
                     v_scaled = vfmin_vf_f16m4(v_scaled, exp_clamp_max, vl);
-                    
+
                     auto v_out = exp_ph(v_scaled, vl);
                     vse16_v_f16m4(ptr_output_vl, v_out, vl);
 
