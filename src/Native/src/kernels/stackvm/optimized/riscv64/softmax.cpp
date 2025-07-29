@@ -630,7 +630,7 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
                     auto v_max = vle16_v_f16m4(ptr_max_vl, vl);
                     auto v_sum = vle16_v_f16m4(ptr_sum_vl, vl);
 
-                    // 计算 (x - max) * beta 并限制范围
+                    // Calculate (x - max) * beta and clamp the range
                     auto v_scaled = vfmul_vf_f16m4(
                         vfsub_vv_f16m4(v_in, v_max, vl), beta, vl);
 
