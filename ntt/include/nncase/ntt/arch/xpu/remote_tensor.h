@@ -16,6 +16,7 @@
 #include "../../distributed/remote_tensor.h"
 #include "../../tensor.h"
 #include "../../vector.h"
+#include "topology.h"
 
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
 #define PREFIX __device__
@@ -43,23 +44,12 @@ template <class T, topology RemoteScope, topology TensorScope,
 static auto get_remote_address(const TLocalProgramIds &local_program_ids,
                                const TRemoteProgramIds &remote_program_ids,
                                T *local_address) {
-    auto start = global_local_data_ptr(local_program_ids)(0_dim);
-    auto end = global_local_data_ptr(local_program_ids)(1_dim);
-    auto remote_address = global_local_data_ptr(remote_program_ids)(0_dim);
-    if ((uintptr_t)local_address < start || (uintptr_t)local_address >= end) {
-        start = global_thread_local_rdata_ptr(local_program_ids)(0_dim);
-        end = global_thread_local_rdata_ptr(local_program_ids)(1_dim);
-        remote_address =
-            global_thread_local_rdata_ptr(remote_program_ids)(0_dim);
-        if ((uintptr_t)local_address < start ||
-            (uintptr_t)local_address >= end) {
-            start = global_block_local_rdata_ptr(local_program_ids)(0_dim);
-            remote_address =
-                global_block_local_rdata_ptr(remote_program_ids)(0_dim);
-        }
-    }
-
-    return local_address - (T *)start + (T *)remote_address;
+    return (T *)uniform_ptr_global_to_global(
+        (char *)local_address,
+        remote_program_ids[0_dim] * topology_shape[1_dim] *
+                topology_shape[2_dim] +
+            remote_program_ids[1_dim] * topology_shape[2_dim] +
+            remote_program_ids[2_dim]);
 }
 } // namespace detail
 

@@ -367,7 +367,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
         // 1. get dest global offset
         auto local_mesh_index = mesh_type::local_index();
-        constexpr auto dest_global_shape = dest.shape();
+        auto dest_global_shape = dest.shape();
         auto dest_local_shape = dest.local().shape();
         auto dest_start_offset =
             dest.sharding().global_offset(dest_global_shape, local_mesh_index);
