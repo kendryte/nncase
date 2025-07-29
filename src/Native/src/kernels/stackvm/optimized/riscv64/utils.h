@@ -177,8 +177,8 @@ _RVV_FLOAT32_EXP_OP(1, 32)
 _RVV_FLOAT32_EXP_OP(2, 16)
 _RVV_FLOAT32_EXP_OP(4, 8)
 _RVV_FLOAT32_EXP_OP(8, 4)
-#define c_exp_hi_half (__float16_t)11.089f
-#define c_exp_lo_half (__float16_t) - 11.089f
+#define c_exp_hi_half (__float16_t)10.0f
+#define c_exp_lo_half (__float16_t) - 10.0f
 
 #define c_cephes_LOG2EF_half (__float16_t)1.44269504088896341f
 #define c_cephes_exp_C1_half (__float16_t)0.693359375f

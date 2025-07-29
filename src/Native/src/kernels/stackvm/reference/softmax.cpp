@@ -65,8 +65,9 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
             }
 
             // div
+            T inv_sum = static_cast<T>(1.0f / static_cast<float>(sum));
             for (size_t j = 0; j < reduced_size; j++) {
-                out_[j] /= sum;
+                out_[j] *= inv_sum;
                 if (needLog) {
                     out_[j] =
                         static_cast<T>(std::log(static_cast<float>(out_[j])));
@@ -100,6 +101,7 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
             for (size_t k = 0; k < axis_size; k++) {
                 auto in_k = in_ + k * reduced_size;
                 auto out_k = out_ + k * reduced_size;
+
                 for (size_t j = 0; j < reduced_size; j++) {
                     out_k[j] =
                         static_cast<T>(expf((static_cast<float>(in_k[j]) -
@@ -112,6 +114,7 @@ softmax_impl(const T *input, T *output, gsl::span<const size_t> in_shape,
             // div
             for (size_t k = 0; k < axis_size; k++) {
                 auto out_k = out_ + k * reduced_size;
+
                 for (size_t j = 0; j < reduced_size; j++) {
                     out_k[j] /= axis_sum[j];
                     if (needLog)
