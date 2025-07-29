@@ -14,7 +14,6 @@
  */
 #include "ref_ops.h"
 #include <cmath>
-#include <iomanip>
 #include <iostream>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
