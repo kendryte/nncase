@@ -387,7 +387,7 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'div': '2.0',
                                             'max': '2.0',
                                             'min': '2.0',
-                                            'floor_mod': '3.5',
+                                            'floor_mod': '2.5',
                                             'mod': '2.0',
                                             'pow': '35.24',
                                             },}
