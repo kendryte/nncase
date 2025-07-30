@@ -179,14 +179,21 @@ internal sealed class TensorJsonConverter<T> : JsonConverter<Tensor<T>>
         JsonSerializer.Serialize(writer, value.Strides.ToArray(), options);
         writer.WritePropertyName("Buffer");
 
-        if (typeof(T) == typeof(bool) ||
+        try
+        {
+            if (typeof(T) == typeof(bool) ||
             typeof(T).GetInterfaces().Any(i => i.IsGenericType && (i.GetGenericTypeDefinition() == typeof(System.Numerics.INumberBase<>) || i.GetGenericTypeDefinition() == typeof(IVector<>))))
-        {
-            writer.WriteBase64StringValue(value.BytesBuffer);
+            {
+                writer.WriteBase64StringValue(value.BytesBuffer);
+            }
+            else
+            {
+                JsonSerializer.Serialize(writer, value.Buffer, options);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            JsonSerializer.Serialize(writer, value.Buffer, options);
+            Console.WriteLine(ex);
         }
 
         writer.WriteEndObject();

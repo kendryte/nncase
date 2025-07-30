@@ -300,7 +300,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             Visit(body);
             var rootCluster = TryInstertTerminator(body);
 
-#if true
+#if false
             using (var stream = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.PassIR) ? Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot") : Stream.Null)
             {
                 Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
@@ -415,9 +415,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         var addedBuckets = bucketMemo.Values.ToArray();
         foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
         {
-            if (!bucketMemo.TryGetValue(nType, out var bucket))
+            var bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
             {
-                bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                 var node = new SearchableNode(new Boxing(nType), nType);
                 bucket.AddVertex(node);
                 var linked = false;
@@ -438,7 +437,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 }
                 else
                 {
-                    bucketMemo.Add(nType, bucket);
+                    bucketMemo.TryAdd(nType, bucket);
                 }
             }
         }
@@ -671,7 +670,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 bucket.AddVertex(onode);
                 foreach (var inputBucket in inputBuckets)
                 {
-                    if (CheckBoxingType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
+                    if (inputBucket.Vertices.Any() && CheckBoxingType(inputBucket.Vertices.First().IRType, onode.IRType) is not InvalidType)
                     {
                         _rootSearchGraph.AddEdge(new(onode, inputBucket.Vertices.First(), 0, inputBucket));
                     }
@@ -989,7 +988,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-#if true
+#if false
         using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             Dump(stream, picks, costMemo);

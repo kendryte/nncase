@@ -300,10 +300,9 @@ public class Compiler : ICompiler
             passManager.AddWithName<AutoDistributedPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
         }
 
-        passManager.AddWithName<EGraphRulesPass>("OptimizeAfterAutoDistributed").Configure(p =>
+        passManager.AddWithName<DataflowPass>("OptimizeAfterAutoDistributed").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
-
             p.Add<FoldBoxingUninitialized>();
         });
 
