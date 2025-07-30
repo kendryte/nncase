@@ -109,8 +109,7 @@ PYBIND11_MODULE(_nncase, m) {
             py::overload_cast<>(&huggingface_options::output_hidden_states),
             py::overload_cast<bool>(&huggingface_options::output_hidden_states))
         .def_property(
-            "num_layers",
-            py::overload_cast<>(&huggingface_options::num_layers),
+            "num_layers", py::overload_cast<>(&huggingface_options::num_layers),
             py::overload_cast<int32_t>(&huggingface_options::num_layers))
         .def_property(
             "attention_backend",

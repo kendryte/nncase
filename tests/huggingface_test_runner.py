@@ -193,7 +193,7 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
-        
+
         if self.cfg['huggingface_options']['num_layers'] != -1:
             self.num_layers = self.cfg['huggingface_options']['num_layers']
         else:
