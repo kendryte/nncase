@@ -134,6 +134,7 @@ class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)
         self.model_type = "huggingface"
+        self.num_layers = -1
 
     def from_huggingface(self, model_path):
         pass
@@ -146,33 +147,13 @@ class HuggingfaceTestRunner(TestRunner):
         for idx, input in enumerate(self.inputs):
             if idx != 0:
                 continue
-            '''
-            {
-                'input_ids': tensor([[151644, 8948, ... 198, 151644, 77091, 198]]),
-                'attention_mask': tensor([[1, 1, 1, 1, ..., 1, 1]])
-            }
-            '''
-            # messages = [
-            #     {"role": "system", "content": "You are a assistant!"},
-            #     {"role": "user", "content": input}
-            # ]
-            # text = self.tokenizer.apply_chat_template(
-            #     messages,
-            #     tokenize=False,
-            #     add_generation_prompt=True
-            # )
-            # model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
-            # if not test_utils.in_ci():
-            #     dump_bin_file(os.path.join(self.case_dir, "input",
-            #                                f'input_{idx}.bin'), input['data'][0])
-            #     dump_txt_file(os.path.join(self.case_dir, "input",
-            #                                f'input_{idx}.txt'), input['data'][0])
 
             # TODO: add attention_mask in inputs
             result = self.model.forward(
                 torch.from_numpy(np.expand_dims(input['data'][0], 0)),
                 return_dict=True,
                 use_cache=False,
+                num_hidden_layers=self.num_layers,
                 output_attentions=False,
                 output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
                                       else False) if self.cfg['huggingface_options']['output_logits'] else True
@@ -212,9 +193,13 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
+        
+        if self.cfg['huggingface_options']['num_layers'] != -1:
+            self.num_layers = self.cfg['huggingface_options']['num_layers']
+        else:
+            self.num_layers = config.num_hidden_layers
 
         self.num_kv_heads = config.num_key_value_heads
-        self.num_layers = config.num_hidden_layers
         self.head_dim = config.head_dim if hasattr(
             config, "head_dim") else config.hidden_size // config.num_attention_heads
 

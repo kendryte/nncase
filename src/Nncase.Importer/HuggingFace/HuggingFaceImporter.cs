@@ -91,6 +91,19 @@ public partial class HuggingFaceImporter : BaseImporter
             config[pair.Key] = pair.Value;
         }
 
+        if (importOptions.HuggingFaceOptions.NumLayers != -1)
+        {
+            if (importOptions.HuggingFaceOptions.NumLayers < (long)config["num_hidden_layers"])
+            {
+                Console.WriteLine($"HuggingFaceOptions.NumLayers is set to [{importOptions.HuggingFaceOptions.NumLayers}], which is less than num_hidden_layers [{(long)config["num_hidden_layers"]}] in the huggingface model config.");
+                config["num_hidden_layers"] = (long)importOptions.HuggingFaceOptions.NumLayers;
+            }
+            else
+            {
+                throw new ArgumentException($"HuggingFaceOptions.NumLayers [{importOptions.HuggingFaceOptions.NumLayers}] must be set to a value less than or equal to num_hidden_layers [{(long)config["num_hidden_layers"]}] in the huggingface model config.");
+            }
+        }
+
         _modelContext.Config = config;
         _modelContext.ImportOptions = importOptions;
         _modelContext.CompileSession = compileSession;
