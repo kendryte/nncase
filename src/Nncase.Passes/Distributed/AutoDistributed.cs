@@ -300,7 +300,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             Visit(body);
             var rootCluster = TryInstertTerminator(body);
 
-#if false
+#if true
             using (var stream = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.PassIR) ? Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot") : Stream.Null)
             {
                 Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
@@ -988,7 +988,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-#if false
+#if true
         using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             Dump(stream, picks, costMemo);
