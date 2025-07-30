@@ -153,7 +153,6 @@ class HuggingfaceTestRunner(TestRunner):
                 torch.from_numpy(np.expand_dims(input['data'][0], 0)),
                 return_dict=True,
                 use_cache=False,
-                num_hidden_layers=self.num_layers,
                 output_attentions=False,
                 output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
                                       else False) if self.cfg['huggingface_options']['output_logits'] else True
@@ -196,6 +195,7 @@ class HuggingfaceTestRunner(TestRunner):
 
         if self.cfg['huggingface_options']['num_layers'] != -1:
             self.num_layers = self.cfg['huggingface_options']['num_layers']
+            config.num_hidden_layers = self.num_layers
         else:
             self.num_layers = config.num_hidden_layers
 

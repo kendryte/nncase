@@ -95,8 +95,11 @@ public partial class HuggingFaceImporter : BaseImporter
         {
             if (importOptions.HuggingFaceOptions.NumLayers < (long)config["num_hidden_layers"])
             {
-                Console.WriteLine($"HuggingFaceOptions.NumLayers is set to [{importOptions.HuggingFaceOptions.NumLayers}], which is less than num_hidden_layers [{(long)config["num_hidden_layers"]}] in the huggingface model config.");
+                Console.WriteLine($"\nHuggingFaceOptions.NumLayers is set to [{importOptions.HuggingFaceOptions.NumLayers}], which is less than num_hidden_layers [{(long)config["num_hidden_layers"]}] in the huggingface model config.\n");
                 config["num_hidden_layers"] = (long)importOptions.HuggingFaceOptions.NumLayers;
+            }
+            else if (importOptions.HuggingFaceOptions.NumLayers == (long)config["num_hidden_layers"])
+            {
             }
             else
             {
