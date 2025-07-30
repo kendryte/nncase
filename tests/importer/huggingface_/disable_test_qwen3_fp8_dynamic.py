@@ -32,6 +32,7 @@ def test_qwen3_fp8_dynamic(request):
     [huggingface_options]
     output_logits = false
     output_hidden_states = false
+    num_layers = -1
 
     [generator]
     [generator.inputs]

@@ -148,6 +148,8 @@ typedef struct {
         clr_object_handle_t huggingface_options, bool output_logits);
     void (*huggingface_options_output_hidden_states)(
         clr_object_handle_t huggingface_options, bool output_hidden_states);
+    void (*huggingface_options_num_layers)(
+        clr_object_handle_t huggingface_options, int32_t num_layers);
     uint8_t (*huggingface_options_get_attention_backend)(
         clr_object_handle_t huggingface_options);
     void (*huggingface_options_set_attention_backend)(
@@ -598,6 +600,11 @@ class huggingface_options : public clr_object_base {
     void output_hidden_states(bool value) {
         nncase_clr_api()->huggingface_options_output_hidden_states(obj_.get(),
                                                                    value);
+    }
+
+    int32_t num_layers() { return -1; }
+    void num_layers(int32_t value) {
+        nncase_clr_api()->huggingface_options_num_layers(obj_.get(), value);
     }
 
     huggingface_attenion_backend attention_backend() {

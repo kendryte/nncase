@@ -142,6 +142,7 @@ class HuggingFaceOptions:
     max_model_len: int
     output_logits: bool
     output_hidden_states: bool
+    num_layers: int
     def __init__(self) -> None: ...
 
 class Path:
