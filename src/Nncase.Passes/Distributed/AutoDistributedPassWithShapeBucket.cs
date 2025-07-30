@@ -50,36 +50,44 @@ public sealed partial class AutoDistributedWithShapeBucketPass : FunctionPass
         return Task.FromResult(input);
     }
 
-    private PrimFunction Distribute(Function function, INTTTargetOptions targetOptions)
+    private BaseFunction Distribute(Function function, INTTTargetOptions targetOptions)
     {
-        var rewriter = new AutoDistributedRewriter(_compileOptions, targetOptions, AutoDistributedPhase.SearchConstant, _moduleKind, _bidirectional);
-        rewriter.Rewrite(function);
-
-        var distributedConsts = rewriter.DistributedConsts;
-        var functionWithDistributedConsts = new DistributeConstCloner(distributedConsts).Clone(function, Unit.Default);
-
-        var dumpper = DumpScope.Current;
-        if (dumpper.IsEnabled(DumpFlags.PassIR))
-        {
-            dumpper.DumpIR(functionWithDistributedConsts, "FunctionWithDistributedConsts");
-        }
-
         var shapeBucketOptions = _compileOptions.ShapeBucketOptions;
-        var segmentFunctions = new List<(Function SegmentFunction, Dictionary<DimVar, DimVar> DimVars)>();
-        for (int segmentIndex = 0; segmentIndex < shapeBucketOptions.SegmentsCount; segmentIndex++)
+        if (shapeBucketOptions.SegmentsCount == 0)
         {
-            var newDimVars = (from dimVar in shapeBucketOptions.VarMap.Keys.OfType<DimVar>()
-                              let newRange = ShapeUtility.GetDimSegmentRange(dimVar.Metadata.Range!.Value, segmentIndex, shapeBucketOptions.SegmentsCount)
-                              select new KeyValuePair<DimVar, DimVar>(
-                                  dimVar,
-                                  dimVar.With(range: newRange))).ToDictionary(kvp => kvp.Key, kvp => kvp.Value, (IEqualityComparer<DimVar>)ReferenceEqualityComparer.Instance);
-            var segmentFunction = new SegmentFunctionCloner(newDimVars).Clone(functionWithDistributedConsts, Unit.Default)
-                .With(name: $"{function.Name}_segment_{segmentIndex}");
-            rewriter = new AutoDistributedRewriter(_compileOptions, targetOptions, AutoDistributedPhase.Final, _moduleKind, _bidirectional);
-            segmentFunctions.Add((rewriter.Rewrite(segmentFunction), newDimVars));
+            var rewriter = new AutoDistributedRewriter(_compileOptions, targetOptions, AutoDistributedPhase.Final, _moduleKind, _bidirectional);
+            return rewriter.Rewrite(function);
         }
+        else
+        {
+            var rewriter = new AutoDistributedRewriter(_compileOptions, targetOptions, AutoDistributedPhase.SearchConstant, _moduleKind, _bidirectional);
+            rewriter.Rewrite(function);
 
-        return BuildMainFunction(function, segmentFunctions);
+            var distributedConsts = rewriter.DistributedConsts;
+            var functionWithDistributedConsts = new DistributeConstCloner(distributedConsts).Clone(function, Unit.Default);
+
+            var dumpper = DumpScope.Current;
+            if (dumpper.IsEnabled(DumpFlags.PassIR))
+            {
+                dumpper.DumpIR(functionWithDistributedConsts, "FunctionWithDistributedConsts");
+            }
+
+            var segmentFunctions = new List<(Function SegmentFunction, Dictionary<DimVar, DimVar> DimVars)>();
+            for (int segmentIndex = 0; segmentIndex < shapeBucketOptions.SegmentsCount; segmentIndex++)
+            {
+                var newDimVars = (from dimVar in shapeBucketOptions.VarMap.Keys.OfType<DimVar>()
+                                  let newRange = ShapeUtility.GetDimSegmentRange(dimVar.Metadata.Range!.Value, segmentIndex, shapeBucketOptions.SegmentsCount)
+                                  select new KeyValuePair<DimVar, DimVar>(
+                                      dimVar,
+                                      dimVar.With(range: newRange))).ToDictionary(kvp => kvp.Key, kvp => kvp.Value, (IEqualityComparer<DimVar>)ReferenceEqualityComparer.Instance);
+                var segmentFunction = new SegmentFunctionCloner(newDimVars).Clone(functionWithDistributedConsts, Unit.Default)
+                    .With(name: $"{function.Name}_segment_{segmentIndex}");
+                rewriter = new AutoDistributedRewriter(_compileOptions, targetOptions, AutoDistributedPhase.Final, _moduleKind, _bidirectional);
+                segmentFunctions.Add((rewriter.Rewrite(segmentFunction), newDimVars));
+            }
+
+            return BuildMainFunction(function, segmentFunctions);
+        }
     }
 
     private PrimFunction BuildMainFunction(Function inputFunction, List<(Function SegmentFunction, Dictionary<DimVar, DimVar> DimVars)> segmentFunctions)

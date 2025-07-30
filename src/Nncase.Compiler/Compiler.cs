@@ -502,7 +502,7 @@ public class Compiler : ICompiler
                 Console.Write($"\r[{timestamp}] {ColorText(spinner.ToString(), ConsoleColor.Blue)} Running pass:   {passNamePadded} {ColorText(timeFormatted, ConsoleColor.Cyan)}");
 
                 index++;
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(100, default).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -538,7 +538,7 @@ public class Compiler : ICompiler
     {
         try
         {
-            Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
+            Console.Write("\r" + new string(' ', Math.Max(0, Console.WindowWidth - 1)) + "\r");
         }
         catch
         {
