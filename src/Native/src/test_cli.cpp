@@ -71,7 +71,7 @@ result<typecode_t> get_prim_typecode(datatype_t dtype) {
 template <typename T> float dot(const T *v1, const T *v2, size_t size) {
     float ret = 0.f;
     for (size_t i = 0; i < size; i++) {
-        ret += v1[i] * v2[i];
+        ret += (float)v1[i] * (float)v2[i];
     }
     return ret;
 }
