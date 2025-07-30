@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 #pragma once
+#include "bfloat16.h"
 #include "ntt/compiler_defs.h"
 #include <bit>
 #include <cmath>
+#include <codecvt>
 #include <cstdint>
 #include <float.h>
 #include <functional>
@@ -35,14 +37,12 @@ struct half {
         float f32;
 
         uint16_t u16() const noexcept {
-            constexpr size_t index =
-                std::endian::native == std::endian::little ? 1 : 0;
+            constexpr size_t index = std::little_endian ? 1 : 0;
             return reinterpret_cast<const uint16_t *>(&u32)[index];
         }
 
         uint16_t &u16() noexcept {
-            constexpr size_t index =
-                std::endian::native == std::endian::little ? 1 : 0;
+            constexpr size_t index = std::little_endian ? 1 : 0;
             return reinterpret_cast<uint16_t *>(&u32)[index];
         }
     };
@@ -55,6 +55,7 @@ struct half {
   public:
     half() noexcept = default;
 
+    half(_Float16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
     explicit half(float v) noexcept : value_(round_to_half(v).value_) {}
 
     template <class T,
@@ -64,7 +65,15 @@ struct half {
 
     constexpr half(fp16_from_raw_t, uint16_t value) noexcept : value_(value) {}
 
-    operator float() const noexcept {
+    operator _Float16() const noexcept {
+        return static_cast<_Float16>(float(*this));
+    }
+
+    explicit operator bfloat16() const noexcept {
+        return bfloat16::round_to_bfloat16(float(*this));
+    }
+
+    explicit operator float() const noexcept {
         const fp32 magic = {113 << 23};
         const unsigned int shifted_exp = 0x7c00
                                          << 13; // exponent mask after shift
@@ -177,6 +186,20 @@ struct half {
         return float(a) x float(b);                                            \
     }
 
+#define DEFINE_FP16_BINARY_FP32RET(x)                                          \
+    inline bool operator x(half a, float b) noexcept { return float(a) x b; }
+
+#define DEFINE_FP16_BINARY_INTRET(x)                                           \
+    inline half operator x(half a, int b) noexcept {                           \
+        return half::round_to_half(float(a) x b);                              \
+    }
+
+DEFINE_FP16_BINARY_FP32RET(<)
+DEFINE_FP16_BINARY_INTRET(-)
+DEFINE_FP16_BINARY_INTRET(+)
+DEFINE_FP16_BINARY_INTRET(*)
+DEFINE_FP16_BINARY_INTRET(/)
+
 DEFINE_FP16_BINARY_FP16RET(+)
 DEFINE_FP16_BINARY_FP16RET(-)
 DEFINE_FP16_BINARY_FP16RET(*)
@@ -207,6 +230,68 @@ inline bool operator==(const half &lhs, const half &rhs) noexcept {
 
 inline bool operator!=(const half &lhs, const half &rhs) noexcept {
     return lhs.raw() != rhs.raw();
+}
+
+inline std::ostream &operator<<(std::ostream &os, const half &a) {
+    os << std::to_string(float(a));
+    return os;
+}
+inline half nextafter(const half &from, const half &to) {
+    if (from.raw() == to.raw()) {
+        return to;
+    }
+
+    const uint16_t from_raw = from.raw();
+    const uint16_t to_raw = to.raw();
+
+    const bool is_to_larger =
+        (from_raw < to_raw) ^ ((from_raw ^ to_raw) & 0x8000);
+
+    if (from.zero()) {
+        return is_to_larger ? half::from_raw(0x0001)  // +0 -> +min_positive
+                            : half::from_raw(0x8001); // +0 -> -max_negative
+    }
+
+    uint16_t next_raw;
+
+    if (is_to_larger) {
+        if (from_raw == 0x7C00) {
+            return from;
+        } else if (from_raw == 0xFC00) {
+            return half::from_raw(0xFBFF);
+        } else if (from_raw == 0xFBFF) {
+            return half::from_raw(0xFC00);
+        } else if (from_raw == 0x7BFF) {
+            return half::from_raw(0x7C00);
+        }
+
+        next_raw = from_raw + 1;
+    } else {
+        if (from_raw == 0x0000) {
+            return half::from_raw(0x8001);
+        } else if (from_raw == 0x8000) {
+            return half::from_raw(0x8001);
+        } else if (from_raw == 0x7C00) {
+            return half::from_raw(0x7BFF);
+        } else if (from_raw == 0xFC00) {
+            return from;
+        }
+
+        next_raw = from_raw - 1;
+    }
+
+    const bool sign_changed = ((from_raw ^ next_raw) & 0x8000) != 0;
+    if (sign_changed) {
+        next_raw = is_to_larger ? 0x7C00 : 0xFC00;
+    }
+
+    return half::from_raw(next_raw);
+}
+inline half fmod(const half &a, const half &b) {
+    return half::round_to_half(std::fmod(float(a), float(b)));
+}
+inline half powh(const half &a, const half &b) {
+    return half::round_to_half(std::pow(float(a), float(b)));
 }
 } // namespace nncase
 
@@ -273,24 +358,21 @@ template <> struct numeric_limits<nncase::half> {
 };
 
 using nncase::half;
-inline bool isinf(const half &a) { return std::isinf(float(a)); }
+inline bool isinf(const half &a) { return std::isinf((float)(a)); }
 inline bool isnan(const half &a) { return std::isnan(float(a)); }
 inline bool isfinite(const half &a) { return std::isfinite(float(a)); }
 inline half abs(const half &a) { return half::round_to_half(fabsf(float(a))); }
+inline half fabs(const half &a) { return half::round_to_half(fabs(float(a))); }
 inline half exp(const half &a) { return half::round_to_half(expf(float(a))); }
 inline half log(const half &a) { return half::round_to_half(logf(float(a))); }
 inline half log10(const half &a) {
     return half::round_to_half(log10f(float(a)));
 }
 inline half sqrt(const half &a) { return half::round_to_half(sqrtf(float(a))); }
-inline half pow(const half &a, const half &b) {
-    return half::round_to_half(powf(float(a), float(b)));
-}
-
 inline half sin(const half &a) { return half::round_to_half(sinf(float(a))); }
 inline half cos(const half &a) { return half::round_to_half(cosf(float(a))); }
 inline half tan(const half &a) { return half::round_to_half(tanf(float(a))); }
-inline half tanh(const half &a) { return half::round_to_half(tanhf(float(a))); }
+inline half tanh(const half &a) { return half::round_to_half(tanh(float(a))); }
 inline half floor(const half &a) {
     return half::round_to_half(floorf(float(a)));
 }
@@ -301,7 +383,23 @@ inline half round(const half &a) {
 inline half nearbyint(const half &a) {
     return half::round_to_half(nearbyintf(float(a)));
 }
+inline half acos(const half &a) {
+    return half::round_to_half(std::acos(float(a)));
+}
+inline half asin(const half &a) {
+    return half::round_to_half(std::asin(float(a)));
+}
+inline half cosh(const half &a) {
+    return half::round_to_half(std::cosh(float(a)));
+}
+inline half sinh(const half &a) {
+    return half::round_to_half(std::sinh(float(a)));
+}
+inline half erf(const half &a) {
+    return half::round_to_half(std::erff(float(a)));
+}
 inline long lrint(const half &a) { return lrintf(float(a)); }
 
 template <> struct is_floating_point<half> : public std::true_type {};
+template <> struct is_arithmetic<half> : public true_type {};
 } // namespace std

@@ -81,8 +81,8 @@ template <typename T> float cosine(std::span<T> actual, std::span<T> expect) {
               << " expect data size: " << expect.size() << std::endl;
     std::cout << "Comparation of first 10 (actual, golden):" << std::endl;
     for (size_t i = 0; i < 10; i++) {
-        std::cout << "index[" << i << "]: " << actual[i] << " " << expect[i]
-                  << std::endl;
+        std::cout << "index[" << i << "]: " << (float)actual[i] << " "
+                  << (float)expect[i] << std::endl;
     }
     float d0 = dot(actual.data(), expect.data(), actual.size());
     float d1 = dot(actual.data(), actual.data(), actual.size());

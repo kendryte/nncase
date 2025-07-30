@@ -38,6 +38,7 @@ file(GLOB TEST_NAMES_F32 CONFIGURE_DEPENDS
 # add fp16 test files
 file(GLOB TEST_NAMES_FP16 CONFIGURE_DEPENDS
     benchmark_ntt_fp16_binary.cpp
+    benchmark_ntt_fp16_unary.cpp
 )
 
 # merge F32 AND FP16 INTO TEST_NAMES
