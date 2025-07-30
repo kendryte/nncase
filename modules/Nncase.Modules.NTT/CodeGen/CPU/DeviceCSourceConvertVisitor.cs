@@ -407,7 +407,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
             default:
-                throw new NotSupportedException();
+                throw new NotSupportedException($"Unsupported call target: {expr.Target}");
         }
 
         symbol = new(type, str);

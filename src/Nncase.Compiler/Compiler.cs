@@ -297,13 +297,13 @@ public class Compiler : ICompiler
     {
         foreach (var moduleCompiler in _compileSession.Target.ModuleCompilers)
         {
-            passManager.AddWithName<AutoDistributedPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
+            passManager.AddWithName<AutoDistributedWithShapeBucketPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
         }
 
+        passManager.Add<AddFunctionToModule>();
         passManager.AddWithName<EGraphRulesPass>("OptimizeAfterAutoDistributed").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
-
             p.Add<FoldBoxingUninitialized>();
         });
 

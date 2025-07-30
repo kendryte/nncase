@@ -142,6 +142,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         var operandTypes = TypeInference.BroadcastDistributeTypes(lhs, rhs);
         return (operandTypes[0], operandTypes[1]) switch
         {
+            (DimensionType, DimensionType) => TensorType.Scalar(DataTypes.Boolean),
             (TensorType a, TensorType b) => Visit(a, b, target),
             (DistributedType a, DistributedType b) => Visit(a, b, target),
             _ => new InvalidType($"{lhs} {rhs}"),

@@ -243,7 +243,9 @@ internal sealed partial class TypeInferenceVisitor : ExprVisitor<IRType, Unit>
     protected override IRType VisitLeafFunctionWrapper(FunctionWrapper expr)
     {
         var returnType = ((CallableType)expr.Target.CheckedType).ReturnType;
-        var type = new CallableType(TupleType.Void, new(expr.ParameterTypes.Append(returnType).ToImmutableArray()));
+        var type = expr.ReturnOutput
+            ? new CallableType(returnType, new(expr.ParameterTypes.ToImmutableArray()))
+            : new CallableType(TupleType.Void, new(expr.ParameterTypes.Append(returnType).ToImmutableArray()));
         return type;
     }
 
