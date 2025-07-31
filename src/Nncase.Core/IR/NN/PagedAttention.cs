@@ -33,5 +33,7 @@ public sealed partial class PagedAttention : Op
 
     public IRArray<AttentionDimKind> Layout { get; }
 
-    public override string DisplayProperty() => $"LayerId: {LayerId}, Layout [{string.Join(',', Layout)}]";
+    public int HiddenSize { get; }
+
+    public override string DisplayProperty() => $"LayerId: {LayerId}, Layout [{string.Join(',', Layout)}], HiddenSize {HiddenSize}";
 }

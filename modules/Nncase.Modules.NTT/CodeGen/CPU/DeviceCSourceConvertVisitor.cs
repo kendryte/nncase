@@ -45,8 +45,10 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
 
         tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
+#if false // Disable device profiling for now.
         IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{tagName}\";\n");
         IndentScope.Writer.Write($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+#endif
         IndentScope.Writer.Write($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }
@@ -65,8 +67,10 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
 
         tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
+#if false // Disable device profiling for now.
         IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{tagName}\";\n");
         IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+#endif
         IndentScope.Writer.IndWrite($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }
@@ -172,7 +176,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
     }
 
     /// <inheritdoc/>
-    protected override CSymbol VisitMemSpan(MemSpan expr)
+    protected override CSymbol VisitPhysicalBuffer(PhysicalBuffer expr)
     {
         if (_exprMemo.TryGetValue(expr, out var symbol))
         {
@@ -189,14 +193,25 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };
 
-        var str = start.Type switch
-        {
-            "uint8_t *" => $"std::span<uint8_t, {size.Name}>({name}, {size.Name})",
-            "auto" => $"std::span({name})",
-            string s when s.StartsWith("array") => $"std::span({name})",
-            _ => throw new NotSupportedException(start.Type),
-        };
+        var str = $"std::span<std::byte, {size.Name}>({name} + {start.Name}, {size.Name})";
+        symbol = new(start.Type, str);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
 
+    /// <inheritdoc/>
+    protected override CSymbol VisitMemSpan(MemSpan expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var buffer = Visit(expr.Buffer);
+        var start = Visit(expr.Start);
+        var size = Visit(expr.Size);
+
+        var str = $"{buffer.Name}.subspan<{start.Name}, {size.Name}>()";
         symbol = new(start.Type, str);
         _exprMemo.Add(expr, symbol);
         return symbol;
@@ -236,7 +251,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         {
             TupleType x when x == TupleType.Void => string.Empty,
             TensorType { IsScalar: true } x => x.DType.ToC(),
-            TensorType => "auto",
+            TensorType or DistributedType => "auto",
             _ => throw new NotSupportedException(),
         };
 
@@ -347,9 +362,8 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }
                 else
                 {
-                    IndentScope.Writer.IndWrite($"float beta[1] = {{{swish.Beta}}};\n");
-                    IndentScope.Writer.IndWrite($"tensor_view<float, fixed_shape<1>> tb(std::span<float, 1>(beta, beta + 1));\n");
-                    WriteIndWithProfiler($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n");
+                    IndentScope.Writer.IndWrite($"\n{{\nauto b= {swish.Beta}; auto tb = make_tensor_view_from_address<float>(&b, fixed_shape_v<>);\n");
+                    WriteIndWithProfiler($"binary<ops::swishb>({arguments[0].Name}, tb, {arguments[1].Name});\n}}\n");
                 }
 
                 break;
@@ -548,22 +562,15 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
             return symbol;
         }
 
+        // FIXME: Use extents instead of stop in BufferRegion.
+        throw new NotImplementedException();
+#if false
         var buffer = Visit(expr.Buffer);
-        if (expr.Region.AsValueEnumerable().All(r => r is { Start: DimConst, Stop: DimConst, Step: DimConst step } && step.Value == 1))
-        {
-            var begins = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Start).Name))}";
-            var extents = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Stop).Name))}";
-            symbol = new(string.Empty, $"{buffer.Name}.view(fixed_shape<{begins}>{{}}, fixed_shape<{extents}>{{}})");
-            _exprMemo.Add(expr, symbol);
-        }
-        else
-        {
-            var begins = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Start).Name))}";
-            var extents = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Stop - x.Start).Name))}";
-            symbol = new(string.Empty, $"{buffer.Name}.view(make_ranked_shape({begins}), make_ranked_shape({extents}))");
-            _exprMemo.Add(expr, symbol);
-        }
-
+        var begins = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Start).Name))}";
+        var extents = $"{StringUtility.Join(", ", expr.Region.AsValueEnumerable().Select(x => Visit(x.Stop).Name))}";
+        symbol = new(string.Empty, $"{buffer.Name}.view(make_shape({begins}), make_shape({extents}))");
+        _exprMemo.Add(expr, symbol);
         return symbol;
+#endif
     }
 }

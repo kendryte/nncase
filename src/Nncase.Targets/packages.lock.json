@@ -36,6 +36,21 @@
         "resolved": "9.12.4544",
         "contentHash": "WeYUfkWVuMurRf7ZJQjLwovNs9b77nYqBRzonan0JIOFFau5WJLtkzgjCimUJ2i1yXTFvBFr5o1XWkMt7nwEPw=="
       },
+      "libisl.linux-x64": {
+        "type": "Transitive",
+        "resolved": "0.0.4",
+        "contentHash": "MW+0UxLeAsVyJ6bn0yka2R5HQdCbtCg/zRZswFaWd8Qi9aVNtJmHVBIMJR1kkNk9vjYLTmGIPPUqwJTKXY7Oog=="
+      },
+      "libisl.osx-arm64": {
+        "type": "Transitive",
+        "resolved": "0.0.4",
+        "contentHash": "/LNMumw054jnLUMqsnOG+00ya3OpHcBlXNXtspbpQNvRnfhCMAdMc5hDanjhhU8Plq+GuLwHWS4C7rYdm/yOsA=="
+      },
+      "libisl.osx-x64": {
+        "type": "Transitive",
+        "resolved": "0.0.4",
+        "contentHash": "hRMKX5KF8zePmfIbH+btnPRi57bTgEhhzG6kA9koIV4fLR8XpKVKRzHh9pQotFX6LSjr297e3vm/yyStLJR1EQ=="
+      },
       "libortki": {
         "type": "Transitive",
         "resolved": "0.0.2",
@@ -143,6 +158,7 @@
           "DryIoc.dll": "[5.4.3, )",
           "GiGraph.Dot": "[3.0.1, )",
           "Google.OrTools": "[9.12.4544, )",
+          "ISLSharp": "[1.0.4, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[8.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.1, )",
           "Microsoft.Extensions.Options": "[8.0.2, )",
@@ -241,6 +257,17 @@
         "requested": "[3.27.3, )",
         "resolved": "3.29.3",
         "contentHash": "t7nZFFUFwigCwZ+nIXHDLweXvwIpsOXi+P7J7smPT/QjI3EKxnCzTQOhBqyEh6XEzc/pNH+bCFOOSjatrPt6Tw=="
+      },
+      "ISLSharp": {
+        "type": "CentralTransitive",
+        "requested": "[1.0.4, )",
+        "resolved": "1.0.4",
+        "contentHash": "TZabyHb9+wLsBAc7OUxzHJw3BeJMGXMG4WAVoBpbFJTsBRd64rFepFY80K7iGRungi4GHipt6cj/2vgsHuCwlw==",
+        "dependencies": {
+          "libisl.linux-x64": "0.0.4",
+          "libisl.osx-arm64": "0.0.4",
+          "libisl.osx-x64": "0.0.4"
+        }
       },
       "Microsoft.Extensions.Hosting.Abstractions": {
         "type": "CentralTransitive",

@@ -221,7 +221,7 @@ public class UnitTestCPUTarget : TestClassBase
         CompileOptions.DumpFlags = DumpFlags.CodeGen;
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
         var cast = Cast(condVar, DataTypes.Int32);
-        var i = ShapeExprUtility.If(condVar, (condVar, cast) => cast * ShapeExprUtility.If(condVar, cast => 3 + cast, cast => 2, cast), (condVar, cast) => 6, condVar, cast);
+        var i = ShapeUtility.If(condVar, (condVar, cast) => cast * ShapeUtility.If(condVar, cast => 3 + cast, cast => 2, cast), (condVar, cast) => 6, condVar, cast);
         var main = new Function("main", i, new[] { condVar });
         Dumpper.DumpIR(main, "main");
         var input = (Tensor)true;
@@ -233,7 +233,7 @@ public class UnitTestCPUTarget : TestClassBase
     public void TestNestIfWithElseBegin()
     {
         var condVar = new Var(new TensorType(DataTypes.Boolean, Shape.Scalar));
-        var i = ShapeExprUtility.If(condVar, condVar => 3, condVar => ShapeExprUtility.If(condVar, () => 1, () => 2), condVar);
+        var i = ShapeUtility.If(condVar, condVar => 3, condVar => ShapeUtility.If(condVar, () => 1, () => 2), condVar);
         var main = new Function("main", i, new[] { condVar });
         var input = (Tensor)false;
         var output = (Tensor)2;

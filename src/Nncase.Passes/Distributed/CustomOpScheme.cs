@@ -5,7 +5,7 @@ namespace Nncase.Passes.Distributed;
 
 public record class CustomOpScheme(string Version, string Model, CustomOpScheme.Node[] Outputs)
 {
-    public record class Node(string? Name, string Op, long[][] Shape, IR.SBP[][] SBP, ulong Cost, string CSourcePath)
+    public record class Node(string? Name, string Op, long[][] Shape, IR.SBP[][] SBP, ulong Cost, string CSourcePath, string FuncName)
     {
     }
 }

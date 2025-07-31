@@ -421,29 +421,7 @@ public sealed class UnitTestTensor
 
         {
             var path = Path.GetTempFileName();
-            var original = Tensor.From(new Vector4<bool>[] { Vector4<bool>.Create([true, false, true, false]), Vector4<bool>.Create([false, true, false, true]), Vector4<bool>.Create([false, false, false, false]), Vector4<bool>.Create([true, true, true, true]) }, [1, 4, 1]);
-            using (var stream = File.Create(path))
-            {
-                JsonSerializer.Serialize(stream, original, options);
-            }
-
-            using (var stream = File.OpenRead(path))
-            {
-                var deserialized = JsonSerializer.Deserialize<Tensor>(stream, options);
-                Assert.NotNull(deserialized);
-                Assert.Equal(original, deserialized);
-            }
-        }
-
-        {
-            var path = Path.GetTempFileName();
-            var x = new bool[4, 4] {
-                { true, false, true, false },
-                { true, false, true, false },
-                { false, true, false, true },
-                { false, true, false, true },
-            };
-            var original = Tensor.From(new Vector4x4<bool>[] { Vector4x4<bool>.Create(x), Vector4x4<bool>.Create(x), }, [2, 1]);
+            var original = Tensor.From(new MaskVector4B32Fat[] { MaskVector4B32Fat.Create([true, false, true, false]), MaskVector4B32Fat.Create([false, true, false, true]), MaskVector4B32Fat.Create([false, false, false, false]), MaskVector4B32Fat.Create([true, true, true, true]) }, [1, 4, 1]);
             using (var stream = File.Create(path))
             {
                 JsonSerializer.Serialize(stream, original, options);

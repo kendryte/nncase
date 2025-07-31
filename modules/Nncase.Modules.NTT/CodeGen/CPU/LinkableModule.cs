@@ -18,15 +18,17 @@ internal sealed class LinkableModule : ILinkableModule
 {
     private readonly Stream _desc;
     private readonly Stream _rdata;
-    private readonly IReadOnlyList<Stream> _localRdatas;
+    private readonly IReadOnlyList<Stream> _threadLocalRdatas;
+    private readonly IReadOnlyList<Stream> _blockLocalRdatas;
 
     private readonly IReadOnlyList<ILinkableFunction> _functions;
 
-    public LinkableModule(Stream desc, Stream rdata, IReadOnlyList<Stream> localRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
+    public LinkableModule(Stream desc, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> blockLocalRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
     {
         _desc = desc;
         _rdata = rdata;
-        _localRdatas = localRdatas;
+        _threadLocalRdatas = threadLocalRdatas;
+        _blockLocalRdatas = blockLocalRdatas;
         _functions = functions;
         PublicFunctions = _functions.OfType<LinkableKernelFunction>().ToArray();
     }
@@ -85,11 +87,11 @@ internal sealed class LinkableModule : ILinkableModule
                 }
             }
 
-            using (var fs = File.Open(Path.Join(dumpPath, "topology_def.h"), FileMode.Create))
+            using (var fs = File.Open(Path.Join(dumpPath, "module_topology_def.h"), FileMode.Create))
             {
                 using (var writer = new StreamWriter(fs))
                 {
-                    writer.Write(func.FunctionCSource.TopologyDef);
+                    writer.Write(func.FunctionCSource.ModuleTopologyDef);
                 }
             }
 
@@ -119,7 +121,7 @@ internal sealed class LinkableModule : ILinkableModule
             offset += func_text.Length;
         }
 
-        return new LinkedModule(linkedFunctions, _desc, manager.GetContent(WellknownSectionNames.Text)!, _rdata, _localRdatas, rdataAlign);
+        return new LinkedModule(linkedFunctions, _desc, manager.GetContent(WellknownSectionNames.Text)!, _rdata, _threadLocalRdatas, _blockLocalRdatas, rdataAlign);
     }
 
     private string CompileCSource(string sourcePath)

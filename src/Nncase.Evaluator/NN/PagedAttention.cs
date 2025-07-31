@@ -277,7 +277,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         }
 
         // for xpu.
-        if (q.Placement.Name == "cdxyt")
+        if (q.Placement.Name == "cdyxt")
         {
             if (!extra.AxisPolicies.All(p => p is SBPBroadCast))
             {
@@ -330,9 +330,18 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 return q;
             }
         }
-        else if (q.Placement.Hierarchy.SequenceEqual([1]) && q.AxisPolicies.All(x => x is SBPBroadCast))
+        else
         {
-            return q;
+            // seq broadcast, head broadcast or split.
+            var seqAxis = target.Layout.IndexOf(AttentionDimKind.Seq);
+            var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
+            var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);
+            if (q.AxisPolicies[seqAxis] is SBPBroadCast &&
+                q.AxisPolicies[headAxis] is SBPBroadCast or SBPSplit &&
+                q.AxisPolicies[dimAxis] is SBPBroadCast)
+            {
+                return q;
+            }
         }
 
         return new InvalidType("not support distributed type");

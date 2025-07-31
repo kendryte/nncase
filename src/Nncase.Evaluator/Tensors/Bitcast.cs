@@ -17,40 +17,81 @@ public class BitcastEvaluator : IEvaluator<Bitcast>, ITypeInferencer<Bitcast>, I
     public IValue Visit(IEvaluateContext context, Bitcast cast)
     {
         var input = context.GetArgumentValue(cast, Bitcast.Input).AsTensor();
-        var shape = context.GetArgumentValueAsArray<long>(cast, Bitcast.NewShape);
-        return OrtKI.Reshape(input.CastTo(cast.NewType).ToOrtTensor(), shape, 0).ToValue();
+        return Value.FromTensor(input.CastTo(cast.NewType, CastMode.Reinterpret));
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Bitcast target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, Bitcast.Input);
-        return Visit(target, input);
+        var input = context.CheckArgumentType<IRType>(target, Bitcast.Input);
+        return input switch
+        {
+            TensorType t => Visit(target, t),
+            DistributedType d => Visit(target, d),
+            _ => new InvalidType(input.GetType().ToString()),
+        };
     }
 
     /// <inheritdoc/>
     public Cost Visit(ICostEvaluateContext context, Bitcast target)
     {
-        var input = context.GetArgumentType<TensorType>(target, Bitcast.Input);
         return new()
         {
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input.DType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(target.NewType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(target.NewType, 1),
+            [CostFactorNames.CPUCycles] = 1,
         };
     }
 
     public Metric Visit(IMetricEvaluateContext context, Bitcast target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, Bitcast.Input);
-        return new()
-        {
-            [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) * 2,
-        };
+        return new();
     }
 
     private IRType Visit(Bitcast target, TensorType input)
     {
-        return new TensorType(target.NewType, input.Shape);
+        if (input.Shape is not RankedShape rankedInShape)
+        {
+            return new InvalidType(input.ToString());
+        }
+
+        var srcSize = input.DType.SizeInBytes;
+        var destSize = target.NewType.SizeInBytes;
+        var newDimensions = rankedInShape.Dimensions.ToArray();
+
+        if (srcSize != destSize)
+        {
+            if (newDimensions.Rank == 0)
+            {
+                newDimensions = [srcSize / destSize];
+            }
+            else
+            {
+                newDimensions[^1] = newDimensions[^1] * srcSize / destSize;
+            }
+        }
+
+        return new TensorType(target.NewType, newDimensions);
+    }
+
+    private IRType Visit(Bitcast target, DistributedType input)
+    {
+        var tensorType = Visit(target, input.TensorType);
+        if (tensorType is not TensorType outTensorType)
+        {
+            return tensorType;
+        }
+
+        var invalid = new InvalidType(input.ToString());
+        var ndsbp = new SBP[input.AxisPolicies.Count];
+        for (int i = 0; i < ndsbp.Length; i++)
+        {
+            if (input.AxisPolicies[i] is SBPPartial)
+            {
+                return invalid;
+            }
+
+            ndsbp[i] = input.AxisPolicies[i];
+        }
+
+        return new DistributedType(outTensorType, ndsbp, input.Placement);
     }
 }

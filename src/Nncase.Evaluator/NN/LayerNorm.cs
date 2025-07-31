@@ -131,6 +131,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
                 return new()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType),
+                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1),
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
 

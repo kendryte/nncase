@@ -46,6 +46,7 @@ quant_scheme_strict_mode = false
 [huggingface_options]
 output_logits = true
 output_hidden_states = false
+num_layers = -1
 
 [paged_attention_config]
 block_size = 256
@@ -175,7 +176,7 @@ threshold = 0.9
 
 [target.xpu.target_options]
 Hierarchies = [[1, 2, 8, 4, 4]]
-HierarchyNames = "cdxyt"
+HierarchyNames = "cdyxt"
 HierarchySizes = [603979776, 1048576]
 MemoryCapacities = [262144, 150994944]
 MemoryBandWidths = [64, 32]

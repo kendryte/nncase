@@ -13,15 +13,11 @@ public record BufferRenderInfo(string Name, string ElemType, int ElemSize, int R
 {
 }
 
-public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataBuffers, NTTTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize, ulong LocalRdataPoolSize)
+public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataBuffers, NTTTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize, ulong ThreadLocalRdataPoolSize, ulong BlockLocalRdataPoolSize)
 {
     public BufferRenderInfo GetInfo(TIR.Buffer buffer)
     {
-        ulong offset = 0;
-        if (buffer.MemSpan.Start is IR.TensorConst tc)
-        {
-            offset = tc.Value.ToScalar<ulong>();
-        }
+        ulong offset = ((TensorConst)buffer.MemSpan.Buffer.Start).Value.ToScalar<ulong>() + (ulong)buffer.MemSpan.Start.FixedValue;
 
         var elemType = buffer.ElemType.ToC();
         var rank = buffer.Dimensions.Length;
@@ -30,7 +26,7 @@ public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataB
         var isFixedStrides = buffer.Strides.AsValueEnumerable().All(d => d.IsFixed);
         var dims = KernelUtility.DimensionsTypeToC(isFixedDims, buffer.Dimensions);
         var strides = KernelUtility.StridesTypeToC(isFixedStrides, buffer.Strides);
-        var distributed = buffer.DistributedType == null ? null : KernelUtility.DistributedToC(buffer.DistributedType);
+        var distributed = buffer.DistributedType == null ? null : KernelUtility.ShardingToC(buffer.DistributedType);
         return new(buffer.Name, elemType, buffer.ElemType.SizeInBytes, rank, offset, size, isFixedDims, isFixedStrides, buffer.Dimensions.ToArray(), dims, buffer.Strides.ToArray(), strides, distributed);
     }
 }
@@ -43,9 +39,6 @@ public static class CSourceBuiltn
 {
     public const string KernelHeader = @"#pragma once
 #include <nncase/ntt/ntt.h>
-#include <nncase/ntt/caching.h>
-#include <nncase/ntt/kernels/paged_attention.h>
-#include <nncase/ntt/runtime.h>
 #include ""topo_aware_runtime.h""
 using namespace nncase::ntt;
 using namespace nncase::ntt::distributed;
@@ -59,9 +52,9 @@ using namespace nncase::ntt::distributed::shard_policy;
         return content;
     }
 
-    public static string TopologyDef(NTTTargetOptions options)
+    public static string ModuleTopologyDef(NTTTargetOptions options)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/topology_def.h.cshtml", options).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/module_topology_def.h.cshtml", options).Result;
         return content;
     }
 
@@ -72,9 +65,9 @@ using namespace nncase::ntt::distributed::shard_policy;
         return content;
     }
 
-    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong localRdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, NTTTargetOptions options)
+    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong threadLocalRdataPoolSize, ulong blockLocalRdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, NTTTargetOptions options)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize, localRdataPoolSize)).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize, threadLocalRdataPoolSize, blockLocalRdataPoolSize)).Result;
         return content;
     }
 

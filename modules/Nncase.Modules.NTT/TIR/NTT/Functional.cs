@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.Shapes;
 using Nncase.TIR;
 using Nncase.TIR.NTT;
 
@@ -45,14 +46,14 @@ public partial class NTT
         return new Call(new TIR.NTT.Binary(binaryOp), lhs, rhs, output);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "")
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
     {
-        return new Call(new Matmul(lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce, cSourcePath), lhs, rhs, output, loadC);
+        return new Call(new Matmul(lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC)
     {
-        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null), lhs, rhs, output, loadC);
+        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC);
     }
 
     public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false)
@@ -117,9 +118,9 @@ public partial class NTT
         return new Call(new Reshape(), input, ret);
     }
 
-    public static Expr PagedAttention(Expr q, Expr kvcache, Expr extra, Expr scale, int layerId, Expr ret, IRArray<IR.NN.AttentionDimKind> layout)
+    public static Expr PagedAttention(Expr q, Expr kvcache, Expr extra, Expr scale, int layerId, Expr ret, IRArray<IR.NN.AttentionDimKind> layout, int hiddenSize)
     {
-        return new Call(new PagedAttention(layerId, layout), q, kvcache, extra, scale, ret);
+        return new Call(new PagedAttention(layerId, layout, hiddenSize), q, kvcache, extra, scale, ret);
     }
 
     public static Expr UpdatePagedAttentionKVCache(Expr value, Expr kvcache, IR.NN.AttentionCacheKind kind, int layerId, IRArray<IR.NN.AttentionDimKind> layout)
@@ -162,9 +163,9 @@ public partial class NTT
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    public static Expr Pad(Expr input, Expr ret, Dimension[] pads, float padValue)
+    public static Expr Pad(Expr input, Expr ret, Paddings pads, float padValue)
     {
-        return new Call(new Pad(pads, padValue), input, ret);
+        return new Call(new Pad(padValue), input, pads, ret);
     }
 
     public static Expr Im2col(Expr input, Expr output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)

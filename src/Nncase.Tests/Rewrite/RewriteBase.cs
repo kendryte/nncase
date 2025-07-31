@@ -1548,7 +1548,7 @@ public sealed class BitcastCase : IRewriteCase
         get
         {
             var input = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 4, new[] { 1, 3, 16, 16 });
-            var expr = IR.F.Tensors.Bitcast(DataTypes.Float32, input, DataTypes.Float32, new[] { 1, 3, 32, 8 });
+            var expr = IR.F.Tensors.Bitcast(input, DataTypes.Float32);
             return new Function(expr, new Var[] { _input });
         }
     }

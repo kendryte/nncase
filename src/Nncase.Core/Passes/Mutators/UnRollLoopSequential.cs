@@ -147,7 +147,7 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
 
     protected override BaseExpr VisitLeafMemSpan(MemSpan expr, Unit context)
     {
-        return expr.With(Clone(expr.Start, context), Clone(expr.Size, context));
+        return expr.With(start: Clone(expr.Start, context), size: Clone(expr.Size, context));
     }
 
     protected override Expr VisitLeafVar(Var expr, Unit context)
@@ -206,7 +206,7 @@ internal sealed class LoopBodyCloner : ExprCloner<Unit>
     protected override Expr VisitLeafBuffer(TIR.Buffer expr, Unit context)
     {
         return expr.With(
-            memSpan: Clone<MemSpan>(expr.MemSpan, context),
+            memSpan: Clone(expr.MemSpan, context),
             dimensions: CloneArray(expr.Dimensions, context).Select(e => CSE(e)).ToArray(),
             strides: CloneArray(expr.Strides, context));
     }

@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #pragma once
-#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <unordered_map>
@@ -23,7 +22,7 @@ namespace nncase::ntt::runtime {
 
 enum class profiling_level { kernel, device };
 
-static std::string to_string(profiling_level level) {
+static std::string_view to_string(profiling_level level) {
     switch (level) {
     case profiling_level::kernel:
         return "kernel";

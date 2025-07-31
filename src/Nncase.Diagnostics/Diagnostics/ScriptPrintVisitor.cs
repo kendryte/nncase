@@ -126,6 +126,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
     /// <inheritdoc/>
     public override string VisitType(TensorType type) => type.DType switch
     {
+        MaskVectorType vtype => $"bool<{vtype.Lanes}>" + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
         PrimType ptype => ptype.GetDisplayName() + (type.Shape.IsScalar ? string.Empty : type.Shape.ToString()),
         PointerType { ElemType: PrimType etype } => $"*{etype.GetDisplayName()}",
         ReferenceType { ElemType: DataType etype } => $"&{etype.GetDisplayName()}",
@@ -243,7 +244,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         return doc;
     }
 
-    protected override IPrintSymbol VisitMemSpan(MemSpan expr)
+    protected override IPrintSymbol VisitPhysicalBuffer(PhysicalBuffer expr)
     {
         if (_exprMemo.TryGetValue(expr, out var doc))
         {
@@ -253,7 +254,24 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         var start = Visit(expr.Start);
         var size = Visit(expr.Size);
         _scope.Push();
-        _scope.Append($"MemSpan({start}, {size})@<{expr.Hierarchy}, {expr.Location}>");
+        _scope.Append($"PhysicalBuffer({start}, {size})@<{expr.Hierarchy}, {expr.Location}>");
+        doc = new(_scope.Pop().ToString());
+        _exprMemo.Add(expr, doc);
+        return doc;
+    }
+
+    protected override IPrintSymbol VisitMemSpan(MemSpan expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var doc))
+        {
+            return doc;
+        }
+
+        var buffer = Visit(expr.Buffer);
+        var start = Visit(expr.Start);
+        var size = Visit(expr.Size);
+        _scope.Push();
+        _scope.Append($"MemSpan({buffer}, {start}, {size})");
         doc = new(_scope.Pop().ToString());
         _exprMemo.Add(expr, doc);
         return doc;

@@ -41,7 +41,7 @@ namespace tar {
   @:std::barrier(@(groupSize)), 
     }
 @:};
-@:nncase::ntt::tensor_view<std::barrier<>, nncase::ntt::fixed_shape<@(string.Join(",", shape))>> @(groupName)(@(groupRawName));
+@:auto @(groupName) = nncase::ntt::make_tensor_view_from_address<std::barrier<>>(@(groupRawName), nncase::ntt::fixed_shape_v<@(string.Join(",", shape))>);
 @:
   }
 
@@ -58,8 +58,8 @@ enum reduce_kind {
 };
 
 constexpr std::array<size_t, @(hierarchy.Length)> Hierarchy = {@(string.Join(", ", hierarchy))};
-nncase::ntt::tensor<void *, nncase::ntt::fixed_shape<@(string.Join(", ", hierarchy))>> src_ptr_tensor;
-nncase::ntt::tensor<void *, nncase::ntt::fixed_shape<@(string.Join(", ", hierarchy))>> dest_ptr_tensor;
+auto src_ptr_tensor = nncase::ntt::make_tensor<void *>(nncase::ntt::fixed_shape_v<@(string.Join(",", hierarchy))>);
+auto dest_ptr_tensor = nncase::ntt::make_tensor<void *>(nncase::ntt::fixed_shape_v<@(string.Join(",", hierarchy))>);
 }
 
 /**
@@ -70,35 +70,34 @@ namespace tac {
 
 using namespace nncase;
 
-template <ntt::IsFixedDims GlobalDims, class Index, class TDst>
-void tensor_boxing_load_sync(Index index, TDst &dest)
+template <ntt::Shape GlobalShape, ntt::Shape Index, ntt::Tensor TDst>
+void tensor_boxing_load_sync(const GlobalShape &global_shape, const Index &index, TDst &dest)
 {
     using TOutBase = std::decay_t<TDst>;
     using TElem = typename TOutBase::element_type;
-    auto gtensor = ntt::tensor_view<TElem, GlobalDims>(std::span<TElem, GlobalDims::length()>((TElem *)tar::collective_pool_ptr, GlobalDims::length()));
-    ntt::tensor_copy(gtensor.view(index, typename TOutBase::shape_type{}), std::move(dest));
+    auto gtensor = ntt::make_tensor_view<TElem>((TElem *)tar::collective_pool_ptr, global_shape);
+    ntt::tensor_copy(gtensor.view(index, dest.shape()), dest);
     tar::@(GetName(Enumerable.Range(0, hierarchy.Length)))(@(string.Join(",", Enumerable.Repeat("0", hierarchy.Length)))).arrive_and_wait();
 }
 
-template <ntt::IsFixedDims GlobalDims, class Index, class TSrc>
-void tensor_boxing_store_sync(Index index, TSrc &src)
+template <ntt::Shape GlobalShape, ntt::Shape Index, ntt::Tensor TSrc>
+void tensor_boxing_store_sync(const GlobalShape &global_shape, const Index &index, TSrc &src)
 {
     using TSrcBase = std::decay_t<TSrc>;
     using TElem = typename TSrcBase::element_type;
-    auto gtensor = ntt::tensor_view<TElem, GlobalDims>(std::span<TElem, GlobalDims::length()>((TElem *)tar::collective_pool_ptr, GlobalDims::length()));
-    ntt::tensor_copy(std::move(src), gtensor.view(index, typename TSrcBase::shape_type{}));
+    auto gtensor = ntt::make_tensor_view<TElem>((TElem *)tar::collective_pool_ptr, global_shape);
+    ntt::tensor_copy(src, gtensor.view(index, src.shape()));
     tar::@(GetName(Enumerable.Range(0, hierarchy.Length)))(@(string.Join(",", Enumerable.Repeat("0", hierarchy.Length)))).arrive_and_wait();
 }
 
 namespace detail {
-template <tar::reduce_kind Kind> class group_heirarchy_getter;
+template <tar::reduce_kind Kind> class group_hierarchy_getter;
 
 @foreach(var comb in combinations) {
-@:template <> class group_heirarchy_getter<tar::reduce_kind::@(GetName(comb, string.Empty))> {
+@:template <> class group_hierarchy_getter<tar::reduce_kind::@(GetName(comb, string.Empty))> {
   var shape = Enumerable.Range(0, hierarchy.Length).Select(i => comb.Contains(i) ?  hierarchy[i] : 1).ToArray();
-  var stride = TensorUtilities.GetStrides(shape);
 @:public:
-@:    using GroupHeirarchy = ntt::fixed_shape<@(string.Join(", ", stride))>;
+@:    static constexpr auto group_hierarchy = ntt::fixed_shape_v<@(string.Join(", ", shape))>;
 @:};
 }
 
@@ -118,29 +117,29 @@ class tensor_reduce_sync_impl {
         }
     }
 
-    template <size_t Rank>
-    void index_group2global(const ntt::ranked_shape<Rank> &index_in_group,
-                            ntt::ranked_shape<Rank> &index_in_global) const noexcept {
-        for (size_t i = 1; i <= tar::Hierarchy.size(); i++) {
-            if (Kind & (1 << i)) {
-                index_in_global[tar::Hierarchy.size() - i] = index_in_group[tar::Hierarchy.size() - i];
-            }
-        }
-    }
-
-    template <size_t Rank>
-    void index_global2group(const ntt::ranked_shape<Rank> &index_in_global,
-                            ntt::ranked_shape<Rank> &index_in_group) const noexcept {
-        for (size_t i = 1; i <= tar::Hierarchy.size(); i++) {
-            if (Kind & (1 << i)) {
-                index_in_group[tar::Hierarchy.size() - i] = index_in_global[tar::Hierarchy.size() - i];
+    template <ntt::Shape TIndexInGroup, ntt::Shape TIndexInGlobal>
+    constexpr auto index_group2global(const TIndexInGroup &index_in_group, const TIndexInGlobal &index_in_global) const noexcept {
+        return ntt::generate_shape<TIndexInGlobal::rank()>([&](auto axis) {
+            if constexpr (Kind & (1 << (TIndexInGlobal::rank() - axis))) {
+                return index_in_group[axis];
             } else {
-                index_in_group[tar::Hierarchy.size() - i] = 0;
+                return index_in_global[axis];
             }
-        }
+        });
     }
 
-    size_t get_group_size() const noexcept {
+    template <ntt::Shape TIndexInGlobal>
+    constexpr auto index_global2group(const TIndexInGlobal &index_in_global) const noexcept {
+        return ntt::generate_shape<TIndexInGlobal::rank()>([&](auto axis) {
+            if constexpr (Kind & (1 << (TIndexInGlobal::rank() - axis))) {
+                return index_in_global[axis];
+            } else {
+                return dim_zero;
+            }
+        });
+    }
+
+    static constexpr auto get_group_size() {
         size_t group_size = 1;
         for (size_t i = 1; i <= tar::Hierarchy.size(); i++) {
             if (Kind & (1 << i)) {
@@ -173,10 +172,9 @@ class tensor_reduce_sync_impl {
         using TElem = typename TIn::element_type;
         using TOutBase = std::decay_t<TOut>;
         constexpr size_t Rank = TIn::rank();
-        constexpr auto group_heirarchy = typename group_heirarchy_getter<Kind>::GroupHeirarchy{};
-        auto cur_index = ntt::make_ranked_shape(@(cur_index));
-        auto cur_index_g = ntt::ranked_shape<tar::Hierarchy.size()>{};
-        index_global2group(cur_index, cur_index_g);
+        constexpr auto group_hierarchy = group_hierarchy_getter<Kind>::group_hierarchy;
+        auto cur_index = ntt::make_shape(@(cur_index));
+        auto cur_index_g = index_global2group(cur_index);
         tar::src_ptr_tensor(cur_index) =
             reinterpret_cast<void *>(src.elements().data());
         tar::dest_ptr_tensor(cur_index) =
@@ -185,152 +183,98 @@ class tensor_reduce_sync_impl {
 
         // according to the group size split the tensor.
         // todo should using better split strategy.
-        size_t group_size = get_group_size();
+        constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
+        // FIXME: support axis calculation.
+        constexpr auto axis = ntt::fixed_dim_v<0>;
+        // constexpr auto axis = ntt::fixed_dim_v<[&] {
+        //     dim_t axis = -1;
+        //     loop<Rank>([&](auto i) {
+        //         if (axis == -1 && src.shape()[i] >= group_size) {
+        //             axis = i;
+        //         }
+        //     });
+        //     if (axis == -1) {
+        //         axis = 0;
+        //     }
+        //     return axis;
+        // }()>;
 
-        auto new_shape = ntt::ranked_shape<Rank>();
-        ntt::apply(ntt::fixed_shape<Rank>{}, [&new_shape, &src](auto index) {
-            new_shape[index[0]] = src.shape().at(index[0]);
-        });
-        auto axis = -1;
-        for (int i = 0; i < new_shape.rank(); i++) {
-            if (new_shape[i] >= group_size) {
-                axis = i;
-                break;
-            }
-        }
-        if (axis == -1) {
-            axis = 0;
-        }
+        auto remain = src.shape()[axis] % (group_size);
+        auto frac = src.shape()[axis] / (group_size);
 
-        auto remain = new_shape[axis] % (group_size);
-        auto frac = new_shape[axis] / (group_size);
-
-        auto node_number_g = ntt::linear_offset(cur_index_g, group_heirarchy);
-        auto next_index_g = ntt::unravel_index((node_number_g + 1) % group_size, group_heirarchy);
+        auto node_number_g = ntt::linear_offset(cur_index_g, group_hierarchy);
+        auto next_index_g = ntt::unravel_index((node_number_g + 1) % group_size, group_hierarchy);
 
         // keep the non-reduce axis invariant.
-        auto next_index = ntt::make_ranked_shape(@(cur_index));
-        index_group2global(next_index_g, next_index);
+        auto next_index = index_group2global(next_index_g, ntt::make_shape(@(cur_index)));
 
         // reduce-scatter, communicate (group_size - 1) times
         for (auto i = 0; i < group_size - 1; i++) 
         {
             // check when the last time.
             auto offset = (node_number_g + i + 2) % group_size;
-            new_shape[axis] = (offset == group_size - 1) ? frac + remain : frac;
-            auto starts = ntt::ranked_shape<Rank>();
-            for (size_t j = 0; j < Rank; j++) {
-                if (j == axis) {
-                    starts[j] = offset * frac;
+            auto new_shape = src.shape().template replace_at<axis>(ntt::where(offset == group_size - 1, frac + remain, frac));
+            auto starts = ntt::generate_shape<Rank>([&](auto j) {
+                if constexpr (j == axis) {
+                    return offset * frac;
                 } else {
-                    starts[j] = 0;
+                    return dim_zero;
                 }
-            }
+            });
             auto viewed_src1_tensor = src.view(starts, new_shape);
             auto viewed_dest_tensor = dest.view(starts, new_shape);
 
             if (i == 0) {
-                if constexpr (ntt::IsFixedTensor<TIn>) {
-                    auto src2_tensor =
-                        ntt::tensor_view<TElem, typename TIn::shape_type,
-                                         typename TIn::strides_type>(
-                            std::span<TElem, TIn::shape().length()>(
-                                (TElem *)tar::src_ptr_tensor(next_index),
-                                src.shape().length()));
-                    auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
-                    reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
-                                viewed_dest_tensor);
-                } else {
-                    auto src2_tensor =
-                        ntt::tensor_view<TElem, typename TIn::shape_type,
-                                         typename TIn::strides_type>(
-                            std::span<TElem>(
-                                (TElem *)tar::src_ptr_tensor(next_index),
-                                src.shape().length()), src.shape());
-                    auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
-                    reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
-                                viewed_dest_tensor);
-                }
+                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
+                    (TElem *)tar::src_ptr_tensor(next_index),
+                    src.shape(),
+                    src.strides());
+                auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
+                reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
+                            viewed_dest_tensor);
             } else {
-                if constexpr (ntt::IsFixedTensor<TOutBase>) {
-                    auto src2_tensor =
-                        ntt::tensor_view<TElem, typename TOutBase::shape_type,
-                                         typename TOutBase::strides_type>(
-                            std::span<TElem, TOutBase::shape().length()>(
-                                (TElem *)tar::dest_ptr_tensor(next_index),
-                                dest.shape().length()));
-                    auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
-                    reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
-                                viewed_dest_tensor);
-                } else {
-                    auto src2_tensor =
-                        ntt::tensor_view<TElem, typename TOutBase::shape_type,
-                                         typename TOutBase::strides_type>(
-                            std::span<TElem>(
-                                (TElem *)tar::dest_ptr_tensor(next_index),
-                                dest.shape().length()), dest.shape());
-                    auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
-                    reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
-                                viewed_dest_tensor);
-                }
+                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
+                    (TElem *)tar::dest_ptr_tensor(next_index),
+                    dest.shape(),
+                    dest.strides());
+                auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
+                reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
+                            viewed_dest_tensor);
             }
 
             reduce_group_sync();
         }
 
         // all gather
-        auto dest_index_g = ntt::unravel_index((node_number_g + group_size - 1) % group_size, group_heirarchy);
-        auto dest_index = ntt::make_ranked_shape(@(cur_index));
-        index_group2global(dest_index_g, dest_index);
+        auto dest_index_g = ntt::unravel_index((node_number_g + group_size - 1) % group_size, group_hierarchy);
+        auto dest_index = index_group2global(dest_index_g, ntt::make_shape(@(cur_index)));
 
-        if constexpr (ntt::IsFixedTensor<TOutBase>) {
-            auto dest_tensor = ntt::tensor_view<TElem, typename TOutBase::shape_type, typename TOutBase::strides_type>(
-                                    std::span<TElem, TOutBase::shape().length()>((TElem *)tar::dest_ptr_tensor(dest_index), dest.shape().length()));
-            for (size_t i = 0; i < group_size - 1; i++) {
-                auto offset = (node_number_g + i) % (group_size);
-                auto starts = ntt::ranked_shape<Rank>();
-                for (size_t j = 0; j < Rank; j++) {
-                    if (j == axis) {
-                        starts[j] = offset * frac;
-                    } else {
-                        starts[j] = 0;
-                    }
+        auto dest_tensor = ntt::make_tensor_view_from_address<TElem>(
+            (TElem *)tar::dest_ptr_tensor(dest_index),
+            dest.shape(),
+            dest.strides());
+        for (size_t i = 0; i < group_size - 1; i++) {
+            auto offset = (node_number_g + i) % (group_size);
+            auto starts = ntt::generate_shape<Rank>([&](auto j) {
+                if constexpr (j == axis) {
+                    return offset * frac;
+                } else {
+                    return dim_zero;
                 }
+            });
 
-                new_shape[axis] = (offset == (group_size - 1)) ? frac + remain : frac;
-                auto viewed_src_tensor = dest.view(starts, new_shape);
-                auto viewed_dest_tensor = dest_tensor.view(starts, new_shape);
-                ntt::tensor_copy(std::move(viewed_src_tensor),
-                                 std::move(viewed_dest_tensor));
+            auto new_shape = src.shape().template replace_at<axis>(ntt::where(offset == group_size - 1, frac + remain, frac));
+            auto viewed_src_tensor = dest.view(starts, new_shape);
+            auto viewed_dest_tensor = dest_tensor.view(starts, new_shape);
+            ntt::tensor_copy(viewed_src_tensor,
+                             viewed_dest_tensor);
 
-                reduce_group_sync();
-            }
-        } else {
-            auto dest_tensor = ntt::tensor_view<TElem, typename TOutBase::shape_type, typename TOutBase::strides_type>(
-                                    std::span<TElem>((TElem *)tar::dest_ptr_tensor(dest_index), dest.shape().length()), dest.shape());
-            for (size_t i = 0; i < group_size - 1; i++) {
-                auto offset = (node_number_g + i) % (group_size);
-                auto starts = ntt::ranked_shape<Rank>();
-                for (size_t j = 0; j < Rank; j++) {
-                    if (j == axis) {
-                        starts[j] = offset * frac;
-                    } else {
-                        starts[j] = 0;
-                    }
-                }
-
-                new_shape[axis] = (offset == (group_size - 1)) ? frac + remain : frac;
-                auto viewed_src_tensor = dest.view(starts, new_shape);
-                auto viewed_dest_tensor = dest_tensor.view(starts, new_shape);
-                ntt::tensor_copy(std::move(viewed_src_tensor),
-                                 std::move(viewed_dest_tensor));
-
-                reduce_group_sync();
-            }
+            reduce_group_sync();
         }
 
         if (Op == ntt::reduce_op::mean) {
-          ntt::binary<ntt::ops::div>(dest, ntt::tensor<TElem, ntt::fixed_shape<1>>((TElem)group_size), dest);
+            auto numerator = (TElem)group_size;
+            ntt::binary<ntt::ops::div>(dest, ntt::make_tensor_view_from_address<TElem>(&numerator, ntt::fixed_shape_v<>), dest);
         }
     }
 };

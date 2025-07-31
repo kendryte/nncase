@@ -70,7 +70,12 @@ public sealed class DimFraction : Dimension, IEquatable<DimFraction?>
         return other is not null && Numerator.Equals(other.Numerator) && Denominator.Equals(other.Denominator);
     }
 
-    public override string ToString() => $"({Numerator} / {Denominator})";
+    public override string ToString() => DivMode switch
+    {
+        DimDivideMode.FloorDiv => $"floor({Numerator} / {Denominator})",
+        DimDivideMode.CeilDiv => $"ceil({Numerator} / {Denominator})",
+        _ => throw new NotSupportedException($"Unsupported division mode {DivMode}"),
+    };
 
     public override Dimension Simplify() => Simplify(DivMode, Numerator, Denominator);
 

@@ -121,6 +121,14 @@ public static class DataTypes
       srcType is PointerType;
 
     /// <summary>
+    /// check the data type is mask vector.
+    /// </summary>
+    /// <param name="srcType">Data type.</param>
+    /// <returns>Checked result.</returns>
+    public static bool IsMaskVector(this DataType srcType) =>
+      srcType is MaskVectorType;
+
+    /// <summary>
     /// display the datatype for il.
     /// </summary>
     /// <returns> datatype name.</returns>

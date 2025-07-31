@@ -51,6 +51,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, IntPtr, void> ImportOptionsSetHuggingFaceOptionsPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputLogitsPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputHiddenStatesPtr;
+    public delegate* unmanaged<IntPtr, nuint, void> HuggingFaceOptionsNumLayersPtr;
     public delegate* unmanaged<IntPtr, byte> HuggingFaceOptionsGetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsSetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> HuggingFaceOptionsSetConfigPtr;
@@ -180,6 +181,7 @@ public static unsafe class CApi
         mt->ImportOptionsSetHuggingFaceOptionsPtr = &ImportOptionsSetHuggingFaceOptions;
         mt->HuggingFaceOptionsOutputLogitsPtr = &HuggingFaceOptionsOutputLogits;
         mt->HuggingFaceOptionsOutputHiddenStatesPtr = &HuggingFaceOptionsOutputHiddenStates;
+        mt->HuggingFaceOptionsNumLayersPtr = &HuggingFaceOptionsNumLayers;
         mt->HuggingFaceOptionsGetAttentionBackendPtr = &HuggingFaceOptionsGetAttentionBackend;
         mt->HuggingFaceOptionsSetAttentionBackendPtr = &HuggingFaceOptionsSetAttentionBackend;
         mt->HuggingFaceOptionsSetConfigPtr = &HuggingFaceOptionsSetConfig;
@@ -390,6 +392,12 @@ public static unsafe class CApi
     {
         bool outputHiddenStatesBool = outputHiddenStates != 0;
         Get<HuggingFaceOptions>(huggingFaceOptionsHandle).OutputHiddenStates = outputHiddenStatesBool;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsNumLayers(IntPtr huggingFaceOptionsHandle, nuint numLayers)
+    {
+        Get<HuggingFaceOptions>(huggingFaceOptionsHandle).NumLayers = (int)numLayers;
     }
 
     [UnmanagedCallersOnly]
@@ -1232,7 +1240,14 @@ public static unsafe class CApi
                 var kvStorage = kvCache.KVCaches.View(indices, shape).Squeeze(Utilities.LinqUtility.Range(0L, sharedCount).ToArray());
 
                 // FIXME: Memory leak here
-                kvCacheAddrs.Add((long)kvStorage.PinBuffer().Pointer);
+                var rtKVStorage = RTTensor.FromTensor(kvStorage);
+                var rtKVStorageBuffer = rtKVStorage.Buffer;
+                var rtKVStorageHost = rtKVStorageBuffer.Buffer.AsHost()!;
+                using (var mmOwner = rtKVStorageHost.Map(RTMapAccess.Read))
+                {
+                    var outHostSlice = mmOwner.Memory.Slice((int)rtKVStorageBuffer.Start, (int)rtKVStorageBuffer.SizeBytes);
+                    kvCacheAddrs.Add((long)outHostSlice.Pin().Pointer);
+                }
             }
         }
 

@@ -101,4 +101,30 @@ public static class SpanUtility
 
         return false;
     }
+
+    public static int LastIndexOf<T>(this ReadOnlySpan<T> span, T value)
+    {
+        for (var i = span.Length - 1; i >= 0; i--)
+        {
+            if (EqualityComparer<T>.Default.Equals(span[i], value))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    public static int FirstIndexOfNotEqual<T>(this ReadOnlySpan<T> span, T value)
+    {
+        for (var i = 0; i < span.Length; i++)
+        {
+            if (!EqualityComparer<T>.Default.Equals(span[i], value))
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
 }

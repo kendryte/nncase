@@ -5,6 +5,7 @@ using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -18,6 +19,9 @@ namespace Nncase.Evaluator;
 /// </summary>
 public static class OrtKIExtensions
 {
+    private static readonly MethodInfo _initializeMaskOrtTensorFunc = typeof(OrtKIExtensions)
+        .GetMethod(nameof(InitializeMaskOrtTensor), BindingFlags.NonPublic | BindingFlags.Static)!;
+
     private static readonly Dictionary<DataType, OrtDataType> _dataTypesToOrtType = new()
     {
         { DataTypes.Boolean, OrtDataType.Bool },
@@ -59,6 +63,11 @@ public static class OrtKIExtensions
 
     public static Tensor ToTensor(this OrtKISharp.Tensor tensor, TensorType tensorType)
     {
+        if (tensorType.DType is VectorType or MaskVectorType)
+        {
+            throw new NotSupportedException("VectorType is not supported in OrtKISharp.Tensor.ToTensor with TensorType.");
+        }
+
         var shape = tensorType.Shape.IsFixed ? (RankedShape)tensorType.Shape : tensor.Shape;
         return Tensor.From(tensorType.DType, new TensorInitializerWithOrt(tensor), shape);
     }
@@ -70,6 +79,10 @@ public static class OrtKIExtensions
 
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor, DataType dataType) => dataType switch
     {
+        MaskVectorType maskVectorType => Tensor.From(
+            maskVectorType,
+            new TensorInitializerWithOrt(tensor),
+            tensor.Shape.Take(tensor.Shape.Length - 1).ToArray()),
         VectorType vectorType => Tensor.From(
             vectorType with { ElemType = tensor.DataType.ToDataType() },
             new TensorInitializerWithOrt(tensor),
@@ -80,6 +93,7 @@ public static class OrtKIExtensions
 
     public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor) => tensor.ElementType switch
     {
+        MaskVectorType vectorType => ToOrtTensor(tensor, OrtDataType.Bool, tensor.Dimensions.ToArray().Append(vectorType.Lanes).ToArray()),
         VectorType vectorType => ToOrtTensor(tensor, vectorType.ElemType.ToOrtType(), tensor.Dimensions.ToArray().Concat(vectorType.Lanes.Select(x => (long)x)).ToArray()),
         PrimType primType => ToOrtTensor(tensor, primType.ToOrtType(), tensor.Dimensions.ToArray()),
         _ => throw new NotSupportedException(),
@@ -143,13 +157,42 @@ public static class OrtKIExtensions
 
     private static OrtKISharp.Tensor ToOrtTensor(Tensor tensor, OrtDataType ortDataType, long[] shape)
     {
-        return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), ortDataType, shape);
+        if (tensor.ElementType is MaskVectorType)
+        {
+            var ortTensor = OrtKISharp.Tensor.Empty(shape, OrtDataType.Bool);
+            _initializeMaskOrtTensorFunc.MakeGenericMethod(tensor.ElementType.CLRType).Invoke(null, [tensor, ortTensor]);
+            return ortTensor;
+        }
+        else
+        {
+            return OrtKISharp.Tensor.MakeTensor(tensor.PinBuffer(), ortDataType, shape);
+        }
+    }
+
+    private static void InitializeMaskOrtTensor<T>(Tensor<T> tensor, OrtKISharp.Tensor ortTensor)
+        where T : unmanaged, IEquatable<T>, IMaskVector
+    {
+        var src = tensor.Buffer.Span;
+        var dest = ortTensor.GetBuffer<bool>();
+        if (src.Length * T.Count != dest.Length)
+        {
+            throw new InvalidOperationException($"Source length {src.Length * T.Count} does not match destination length {dest.Length}.");
+        }
+
+        for (int i = 0; i < src.Length; i++)
+        {
+            var span = dest.Slice(i * T.Count, T.Count);
+            src[i].CopyTo(span);
+        }
     }
 
     private sealed class TensorInitializerWithOrt : ITensorInitializer
     {
         private static readonly MethodInfo _initializeUnmanagedFunc = typeof(TensorInitializerWithOrt)
             .GetMethod(nameof(InitializeUnmanaged), BindingFlags.NonPublic | BindingFlags.Instance)!;
+
+        private static readonly MethodInfo _initializeMaskUnmanagedFunc = typeof(TensorInitializerWithOrt)
+            .GetMethod(nameof(InitializeMaskUnmanaged), BindingFlags.NonPublic | BindingFlags.Instance)!;
 
         private readonly OrtKISharp.Tensor _tensor;
 
@@ -166,13 +209,37 @@ public static class OrtKIExtensions
                 throw new NotSupportedException("Tensor<T> with reference type is not supported.");
             }
 
-            _initializeUnmanagedFunc.MakeGenericMethod(typeof(T)).Invoke(this, [tensor]);
+            if (typeof(T).GetInterfaces().Contains(typeof(IMaskVector)))
+            {
+                _initializeMaskUnmanagedFunc.MakeGenericMethod(typeof(T)).Invoke(this, [tensor]);
+            }
+            else
+            {
+                _initializeUnmanagedFunc.MakeGenericMethod(typeof(T)).Invoke(this, [tensor]);
+            }
         }
 
         private void InitializeUnmanaged<T>(Tensor<T> tensor)
             where T : unmanaged, IEquatable<T>
         {
             _tensor.GetBuffer<T>().CopyTo(tensor.Buffer.Span);
+        }
+
+        private void InitializeMaskUnmanaged<T>(Tensor<T> tensor)
+            where T : unmanaged, IEquatable<T>, IMaskVector
+        {
+            var src = _tensor.GetBuffer<bool>();
+            var dest = tensor.Buffer.Span;
+            if (src.Length != dest.Length * T.Count)
+            {
+                throw new InvalidOperationException($"Source length {src.Length} does not match destination length {dest.Length * T.Count}.");
+            }
+
+            for (int i = 0; i < dest.Length; i++)
+            {
+                var span = src.Slice(i * T.Count, T.Count);
+                dest[i].CopyFrom(span);
+            }
         }
     }
 }

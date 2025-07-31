@@ -34,7 +34,24 @@ public static class LinqExtensions
             for (int i = 0; i < source.Length; i++)
             {
                 T val = source[i];
-                if (object.Equals(val, value))
+                if (EqualityComparer<T>.Default.Equals(val, value))
+                {
+                    return i;
+                }
+            }
+        }
+
+        return -1;
+    }
+
+    public static int IndexOf<T>(this IReadOnlyList<T> source, T value)
+    {
+        if (source != null && source.Count != 0)
+        {
+            for (int i = 0; i < source.Count; i++)
+            {
+                T val = source[i];
+                if (EqualityComparer<T>.Default.Equals(val, value))
                 {
                     return i;
                 }

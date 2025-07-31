@@ -48,16 +48,50 @@ NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float, float32x4_t, 4)
 NTT_END_DEFINE_NATIVE_VECTOR()
 
 NTT_BEGIN_DEFINE_NATIVE_VECTOR(float, float32x4x2_t, 8)
+template <Dimensions TIndex>
 static float get_element(const float32x4x2_t &array,
-                         ranked_shape<1> index) noexcept {
-    return array.val[index[0] / 4][index[0] % 4];
+                         const TIndex &index) noexcept {
+    static_assert(TIndex::rank() == 1, "index must be 1D");
+    return array.val[index[dim_zero] / 4][index[dim_zero] % 4];
 }
 
-static void set_element(float32x4x2_t &array, ranked_shape<1> index,
+template <Dimensions TIndex>
+static void set_element(float32x4x2_t &array, const TIndex &index,
                         float value) noexcept {
-    array.val[index[0] / 4][index[0] % 4] = value;
+    static_assert(TIndex::rank() == 1, "index must be 1D");
+    array.val[index[dim_zero] / 4][index[dim_zero] % 4] = value;
 }
 NTT_END_DEFINE_NATIVE_VECTOR()
 
 NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(double, float64x2_t, 2)
 NTT_END_DEFINE_NATIVE_VECTOR()
+
+// mask vectors
+#define NTT_DEFINE_NATIVE_MASK_VECTOR(native_type, bits)                       \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR(bool, native_type, NTT_VLEN / bits)         \
+                                                                               \
+    template <Dimensions TIndex>                                               \
+    static bool get_element(const native_type &array,                          \
+                            const TIndex &index) noexcept {                    \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        const auto offset = (size_t)index[dim_zero];                           \
+        return array[offset] != 0;                                             \
+    }                                                                          \
+                                                                               \
+    template <Dimensions TIndex>                                               \
+    static void set_element(native_type &array, const TIndex &index,           \
+                            bool value) noexcept {                             \
+        using element_type = std::decay_t<decltype(native_type{}[0])>;         \
+        constexpr auto true_value = element_type(-1);                          \
+        static_assert(TIndex::rank() == 1, "index must be 1D");                \
+        const auto offset = (size_t)index[dim_zero];                           \
+        array[offset] = value ? true_value : 0;                                \
+    }                                                                          \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+NTT_DEFINE_NATIVE_MASK_VECTOR(uint8x16_t, 8)
+NTT_DEFINE_NATIVE_MASK_VECTOR(uint16x8_t, 16)
+NTT_DEFINE_NATIVE_MASK_VECTOR(uint32x4_t, 32)
+NTT_DEFINE_NATIVE_MASK_VECTOR(uint64x2_t, 64)
+
+#undef NTT_DEFINE_NATIVE_MASK_VECTOR

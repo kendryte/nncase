@@ -18,40 +18,34 @@
 #include "../tensor_ops.h"
 #include "../utility.h"
 #include "copy.h"
+#include "nncase/ntt/shape.h"
 
 namespace nncase::ntt {
-
 namespace scatter_nd_detail {
-
-template <IsFixedTensor TIn, IsFixedTensor TIndex, IsFixedTensor TUpdates,
-          IsFixedTensor TOut>
+template <Tensor TIn, Tensor TIndex, Tensor TUpdates, Tensor TOut>
 void scatter_nd_impl(const TIn &input, const TIndex &indices,
-                     const TUpdates &updates, TOut &&output) noexcept {
+                     const TUpdates &updates, TOut &output) noexcept {
     using TIElem = typename TIn::element_type;
-    [[maybe_unused]] constexpr auto in_shape = typename TIn::shape_type{};
-    constexpr auto indices_shape = typename TIndex::shape_type{};
-    constexpr auto updates_shape = typename TUpdates::shape_type{};
-    [[maybe_unused]] constexpr auto out_shape =
-        typename std::decay_t<TOut>::shape_type{};
-    constexpr auto in_strides = typename TIn::strides_type();
-    constexpr auto indices_strides = typename TIndex::strides_type();
-    constexpr auto updates_strides = typename TUpdates::strides_type();
-    [[maybe_unused]] constexpr auto out_strides =
-        typename std::decay_t<TOut>::strides_type{};
+    [[maybe_unused]] const auto in_shape = input.shape();
+    const auto indices_shape = indices.shape();
+    const auto updates_shape = updates.shape();
+    [[maybe_unused]] const auto out_shape = output.shape();
+    const auto in_strides = input.strides();
+    const auto indices_strides = indices.strides();
+    const auto updates_strides = updates.strides();
+    [[maybe_unused]] const auto out_strides = output.strides();
 
     ntt::tensor_copy(input, output);
-    constexpr auto k = indices_shape.rank() - 1;
-    auto update_indices = slice_dims<k>(indices_shape);
-    auto update_indices_strides = slice_dims<k>(indices_strides);
+    constexpr auto k = indices_shape.rank() - dim_one;
+    const auto update_indices = indices_shape.template slice<0, k>();
+    const auto update_indices_strides = indices_strides.template slice<0, k>();
 
-    auto in_strides_ = slice_dims<indices_shape.at(k)>(in_strides);
-
-    auto updates_strides_ =
-        slice_dims<update_indices.rank()>(updates_strides);
-    auto updates_size = sizeof(TIElem);
-    for (auto i = update_indices.rank(); i < updates_shape.rank(); ++i) {
-        updates_size *= updates_shape.at(i);
-    }
+    const auto in_strides_ = in_strides.template slice<0, indices_shape[k]>();
+    const auto updates_strides_ =
+        updates_strides.template slice<0, update_indices.rank()>();
+    const auto updates_size =
+        updates_shape.template slice<update_indices.rank()>().length() *
+        fixed_dim_v<sizeof(TIElem)>;
 
     apply(update_indices, [&](auto idx) {
         auto updates_begin =
@@ -59,10 +53,8 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
 
         auto data_indices_begin = indices.elements().data() +
                                   linear_offset(idx, update_indices_strides);
-        ranked_shape<indices_shape.at(k)> data_indices_dim;
-        for (auto i = 0; i < indices_shape.at(k); ++i) {
-            data_indices_dim.at(i) = *(data_indices_begin + i);
-        }
+        auto data_indices_dim = generate_shape<indices_shape[k]>(
+            [&](auto i) { return data_indices_begin[i]; });
 
         auto data_begin = output.elements().data() +
                           linear_offset(data_indices_dim, in_strides_);

@@ -21,13 +21,13 @@ public sealed class SATBufferScheduler : BufferScheduler
     {
         var model = new CpModel();
         var noOverlap = model.AddNoOverlap2D();
-        var boxs = new Dictionary<TIR.Buffer, Box>(ReferenceEqualityComparer.Instance);
+        var boxs = new Dictionary<TIR.PhysicalBuffer, Box>(ReferenceEqualityComparer.Instance);
         var yEnds = new List<LinearExpr>();
 
         int bufferId = 0;
         foreach (var lifetime in lifetimes)
         {
-            var xInterval = model.NewIntervalVar(model.NewConstant(lifetime.Time.Start), model.NewConstant(lifetime.Time.Size), model.NewConstant(lifetime.Time.Stop), lifetime.Buffer.Name + $"{bufferId}_x");
+            var xInterval = model.NewIntervalVar(model.NewConstant(lifetime.Time.Start), model.NewConstant(lifetime.Time.Size), model.NewConstant(lifetime.Time.Stop), $"{bufferId}_x");
             var memSize = lifetime.Memory.Size;
             var maxMemStart = maxMemoryPoolSize - memSize;
             if (maxMemStart < 0)
@@ -35,11 +35,11 @@ public sealed class SATBufferScheduler : BufferScheduler
                 throw new ArgumentException($"Invalid buffer size");
             }
 
-            var memStartVar = model.NewIntVar(0, maxMemStart, $"{lifetime.Buffer.Name}_{bufferId}_y_start");
-            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, memSize, $"{lifetime.Buffer.Name}_{bufferId}_y");
+            var memStartVar = model.NewIntVar(0, maxMemStart, $"{bufferId}_y_start");
+            var yInterval = model.NewFixedSizeIntervalVar(memStartVar, memSize, $"{bufferId}_y");
             yEnds.Add(yInterval.EndExpr());
 
-            var alignment = lifetime.Buffer.ElemType.SizeInBytes;
+            var alignment = lifetime.Buffer.Alignment;
             model.AddModuloEquality(0, memStartVar, alignment);
             noOverlap.AddRectangle(xInterval, yInterval);
             boxs.Add(lifetime.Buffer, new(xInterval, yInterval));

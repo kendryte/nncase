@@ -263,7 +263,7 @@ public class UnitTestExpression
     {
         var c = IR.F.Random.Normal(DataTypes.Float32, 1, 0, 0, new[] { 1, 16, 64, 400 }).Evaluate().AsTensor();
         var ddr_ld_input = new TIR.BufferRegion(TIR.T.AttachBuffer(Const.FromTensor(c), out _, "ddr_ld_input"), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(new PhysicalBuffer(8, 0, 0, MemoryLocation.Input)), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetDefaultStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.NotEqual(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
         Assert.NotEqual(ddr_ld_input, ddr_ld_output);
     }
@@ -271,8 +271,8 @@ public class UnitTestExpression
     [Fact]
     public void TestBufferEqual()
     {
-        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(new PhysicalBuffer(8, 0, 0, MemoryLocation.Input)), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetDefaultStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_output = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(new PhysicalBuffer(8, 0, 0, MemoryLocation.Input)), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetDefaultStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.Equal(ddr_ld_input.Buffer, ddr_ld_output.Buffer);
         Assert.Equal(ddr_ld_input, ddr_ld_output);
     }
@@ -280,8 +280,8 @@ public class UnitTestExpression
     [Fact]
     public void TestBufferNotEqual()
     {
-        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(0, 0, MemoryLocation.Input), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
-        var glb_ld_output = new TIR.BufferRegion(new TIR.Buffer("glb_ld_output", DataTypes.BFloat16, new MemSpan(0, 0, MemoryLocation.Data), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var ddr_ld_input = new TIR.BufferRegion(new TIR.Buffer("ddr_ld_input", DataTypes.Float32, new MemSpan(new PhysicalBuffer(8, 0, 0, MemoryLocation.Input)), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetDefaultStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
+        var glb_ld_output = new TIR.BufferRegion(new TIR.Buffer("glb_ld_output", DataTypes.BFloat16, new MemSpan(new PhysicalBuffer(8, 0, 0, MemoryLocation.Data)), new Dimension[] { 1, 16, 64, 400 }, TensorUtilities.GetDefaultStrides(new Dimension[] { 1, 16, 64, 400 }), null), new(new TIR.Range[] { 0..1, 0..16, 0..31, 0..400 }));
         Assert.False(ddr_ld_input.Buffer.Equals(glb_ld_output.Buffer));
         Assert.False(ddr_ld_input.Equals(glb_ld_output));
     }

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using Nncase.Diagnostics;
@@ -21,31 +22,81 @@ namespace Nncase.Importer;
 /// </summary>
 public abstract class HuggingFaceModel
 {
+    public string WeightsDir = string.Empty;
+    public Dictionary<string, string> WeightToFileMap = new();
+    public Dictionary<string, Tensor> LoadedWeights = new();
+    public HashSet<string> LoadedFiles = new();
+
     protected ModelInitContext? Context { get; private set; }
 
-    public virtual void Initialize(ModelInitContext context, string dir)
+    protected Dictionary<string, object> Config => Context?.Config ?? throw new InvalidOperationException("Model not initialized - Config is null");
+
+    protected Dictionary<string, Tensor> ConstTensors => Context?.ConstTensors ?? throw new InvalidOperationException("Model not initialized - ConstTensors is null");
+
+    protected ImportOptions ImportOptions => Context?.ImportOptions ?? throw new InvalidOperationException("Model not initialized - ImportOptions is null");
+
+    protected CompileSession CompileSession => Context?.CompileSession ?? throw new InvalidOperationException("Model not initialized - CompileSession is null");
+
+    public void Initialize(ModelInitContext context, string dir)
     {
-        Context = context;
+        Context = context ?? throw new ArgumentNullException(nameof(context));
+        WeightsDir = dir ?? throw new ArgumentNullException(nameof(dir));
+        WeightToFileMap = HuggingFaceUtils.LoadWeightToFileMap(dir);
+        LoadedWeights = new Dictionary<string, Tensor>();
+        LoadedFiles = new HashSet<string>();
+    }
+
+    public Tensor? GetWeight(string weightName)
+    {
+        if (LoadedWeights.TryGetValue(weightName, out var tensor))
+        {
+            return tensor;
+        }
+
+        if (!WeightToFileMap.TryGetValue(weightName, out var fileName))
+        {
+            return null;
+        }
+
+        if (!LoadedFiles.Contains(fileName))
+        {
+            var filePath = Path.Combine(WeightsDir, fileName);
+            var tensors = HuggingFaceUtils.LoadAllTensorsFromFile(filePath);
+            foreach (var kv in tensors)
+            {
+                LoadedWeights[kv.Key] = kv.Value;
+            }
+
+            LoadedFiles.Add(fileName);
+        }
+
+        if (LoadedWeights.TryGetValue(weightName, out tensor))
+        {
+            return tensor;
+        }
+
+        Console.WriteLine($"Weight {weightName} not found after loading {fileName}!");
+        throw new InvalidOperationException($"Weight {weightName} could not be loaded from {fileName}");
     }
 
     public virtual (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
     {
-        var hiddenSize = (long)Context!.Config!["hidden_size"];
-        _ = (long)Context.Config!["num_hidden_layers"];
-        var num_attention_heads = (long)Context.Config!["num_attention_heads"];
+        var hiddenSize = (long)Config["hidden_size"];
+        _ = (long)Config["num_hidden_layers"];
+        var num_attention_heads = (long)Config["num_attention_heads"];
         _ = hiddenSize / num_attention_heads;
-        if (Context.Config.ContainsKey("head_dim"))
+        if (Config.ContainsKey("head_dim"))
         {
-            _ = (long)Context.Config["head_dim"];
+            _ = (long)Config["head_dim"];
         }
 
-        _ = (long)Context.Config!["num_key_value_heads"];
+        _ = (long)Config["num_key_value_heads"];
 
-        Context.Inputs = [];
+        Context!.Inputs = [];
         Context.DynVarMap = new Dictionary<string, DimVar>();
         var varMap = new Dictionary<IVar, Dimension[]>();
 
-        var bucketOptions = Context.CompileSession!.CompileOptions.ShapeBucketOptions;
+        var bucketOptions = CompileSession.CompileOptions.ShapeBucketOptions;
         Context.FixVarMap = bucketOptions.FixVarMap;
 
         // local test set
@@ -119,7 +170,7 @@ public abstract class HuggingFaceModel
         //         0, // _dynVarMap["history_len"],
         //         headDim)));
         var pastKeyValue = new Var("kvCache", TensorType.Scalar(
-            new ReferenceType(new PagedAttentionKVCacheType { Config = (IPagedAttentionConfig)Context.ImportOptions!.HuggingFaceOptions.Config })));
+            new ReferenceType(new PagedAttentionKVCacheType { Config = (IPagedAttentionConfig)ImportOptions.HuggingFaceOptions.Config })));
 
         Context.Inputs.Add(inputIds);
         Context.Inputs.Add(null); // attentionMask
@@ -149,7 +200,7 @@ public abstract class HuggingFaceModel
             }
         }
 
-        Context.CompileSession.CompileOptions.ShapeBucketOptions.VarMap = varMap;
+        CompileSession.CompileOptions.ShapeBucketOptions.VarMap = varMap;
         return (inputs, varMap);
     }
 
@@ -161,24 +212,24 @@ public abstract class HuggingFaceModel
         Expr? lastHiddenStates = null;
         Expr? hiddenStates = null;
 
-        if (Context!.ImportOptions!.HuggingFaceOptions.OutputLogits)
+        if (ImportOptions.HuggingFaceOptions.OutputLogits)
         {
-            logits = Context.Outputs["logits"];
+            logits = Context!.Outputs["logits"];
         }
         else
         {
-            lastHiddenStates = Context.Outputs["lastHiddenStates"];
+            lastHiddenStates = Context!.Outputs["lastHiddenStates"];
         }
 
-        if (Context.ImportOptions.HuggingFaceOptions.OutputHiddenStates)
+        if (ImportOptions.HuggingFaceOptions.OutputHiddenStates)
         {
-            hiddenStates = Context.Outputs["hiddenStates"];
+            hiddenStates = Context!.Outputs["hiddenStates"];
         }
 
         var output = new List<Expr?> { logits, lastHiddenStates, hiddenStates };
         output.RemoveAll(item => item == null);
 
-        return new IR.Tuple([.. output!]);
+        return new IR.Tuple([.. output.Where(x => x != null).Cast<Expr>()]);
     }
 
     public virtual Expr RepeatKV(Expr hiddenStates, long nRep)
@@ -209,9 +260,6 @@ public abstract class HuggingFaceModel
 
     public virtual System.Tuple<Call, Call> ApplyRotaryPosEmb(Expr q, Expr k, Expr cos, Expr sin, long unSqueezeDim = 1)
     {
-        cos = IR.F.Tensors.Unsqueeze(cos, Tensor.From<long>(new long[] { 0 }));
-        sin = IR.F.Tensors.Unsqueeze(sin, Tensor.From<long>(new long[] { 0 }));
-
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
         var qEmbed = IR.F.Math.Binary(
@@ -256,16 +304,16 @@ public abstract class HuggingFaceModel
         var originDtype = hiddenStates.CheckedDataType;
         hiddenStates = IR.F.Tensors.Cast(hiddenStates, DataTypes.Float32);
 
-        Expr weight = Context!.ConstTensors![$"{layerName}"];
+        Expr weight = GetWeight($"{layerName}")!;
 
         weight = IR.F.Tensors.Cast(weight, DataTypes.Float32);
         var bias = Tensor.FromScalar(0f, (RankedShape)weight.CheckedShape);
         int axis = -1;
 
         float eps = 1e-6F;
-        if (Context!.Config!.ContainsKey("rms_norm_eps"))
+        if (Config.ContainsKey("rms_norm_eps"))
         {
-            eps = (float)Context!.Config!.GetNestedValue<double>("rms_norm_eps");
+            eps = (float)Config.GetNestedValue<double>("rms_norm_eps");
         }
 
         return IR.F.Tensors.Cast(IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false), originDtype);
@@ -414,20 +462,21 @@ public abstract class HuggingFaceModel
 
     public virtual Call LLMMlp(int count, Expr hiddenStates)
     {
-        var gateProjW = Context!.ConstTensors![$"model.layers.{count}.mlp.gate_proj.weight"];
-        var upProjW = Context.ConstTensors![$"model.layers.{count}.mlp.up_proj.weight"];
-        var downProjW = Context.ConstTensors![$"model.layers.{count}.mlp.down_proj.weight"];
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.gate_proj.input_scale", out var ifScaleGate);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.gate_proj.weight_scale", out var wScaleGate);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.up_proj.input_scale", out var ifScaleUp);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.up_proj.weight_scale", out var wScaleUp);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.down_proj.input_scale", out var ifScaleDown);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.mlp.down_proj.weight_scale", out var wScaleDown);
+        var gateProjW = GetWeight($"model.layers.{count}.mlp.gate_proj.weight")!;
+        var upProjW = GetWeight($"model.layers.{count}.mlp.up_proj.weight")!;
+        var downProjW = GetWeight($"model.layers.{count}.mlp.down_proj.weight")!;
+        var ifScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.input_scale");
+        var wScaleGate = GetWeight($"model.layers.{count}.mlp.gate_proj.weight_scale");
+        var ifScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.input_scale");
+        var wScaleUp = GetWeight($"model.layers.{count}.mlp.up_proj.weight_scale");
+        var ifScaleDown = GetWeight($"model.layers.{count}.mlp.down_proj.input_scale");
+        var wScaleDown = GetWeight($"model.layers.{count}.mlp.down_proj.weight_scale");
 
         var tmp = Linear(hiddenStates, gateProjW, null, ifScaleGate, wScaleGate, $"model.layers.{count}.mlp.gate_proj");
-        if (Context!.Config!.ContainsKey("hidden_act"))
+
+        if (Config.ContainsKey("hidden_act"))
         {
-            var actType = Context!.Config!.GetNestedValue<string>("hidden_act");
+            var actType = Config.GetNestedValue<string>("hidden_act");
             tmp = ModelUtils.ActFunc(tmp, actType);
         }
 
@@ -438,43 +487,31 @@ public abstract class HuggingFaceModel
     {
         var hidden_shape = new RankedShape(seqLen, -1L, headDim);
 
-        var qProjW = Context!.ConstTensors![$"model.layers.{count}.self_attn.q_proj.weight"];
-        Tensor? qProjB = null;
-        if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.q_proj.bias"))
-        {
-            qProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.q_proj.bias"];
-        }
+        var qProjW = GetWeight($"model.layers.{count}.self_attn.q_proj.weight")!;
+        var qProjB = GetWeight($"model.layers.{count}.self_attn.q_proj.bias");
 
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.input_scale", out var ifScaleQ);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.q_proj.weight_scale", out var wScaleQ);
+        var ifScaleQ = GetWeight($"model.layers.{count}.self_attn.q_proj.input_scale");
+        var wScaleQ = GetWeight($"model.layers.{count}.self_attn.q_proj.weight_scale");
         var queryStates = Linear(hiddenStates, qProjW, qProjB, ifScaleQ, wScaleQ, $"model.layers.{count}.self_attn.q_proj");
         queryStates = IR.F.Tensors.Reshape(queryStates, hidden_shape);
 
         // batch_size, num_heads, seq_len, head_dim
         queryStates = IR.F.Tensors.Transpose(queryStates, new long[] { 1, 0, 2 });
 
-        var kProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.weight"];
-        Tensor? kProjB = null;
-        if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.k_proj.bias"))
-        {
-            kProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.k_proj.bias"];
-        }
+        var kProjW = GetWeight($"model.layers.{count}.self_attn.k_proj.weight")!;
+        var kProjB = GetWeight($"model.layers.{count}.self_attn.k_proj.bias");
 
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.input_scale", out var ifScaleK);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.k_proj.weight_scale", out var wScaleK);
+        var ifScaleK = GetWeight($"model.layers.{count}.self_attn.k_proj.input_scale");
+        var wScaleK = GetWeight($"model.layers.{count}.self_attn.k_proj.weight_scale");
         var keyStates = Linear(hiddenStates, kProjW, kProjB, ifScaleK, wScaleK, $"model.layers.{count}.self_attn.k_proj");
         keyStates = IR.F.Tensors.Reshape(keyStates, hidden_shape);
         keyStates = IR.F.Tensors.Transpose(keyStates, new long[] { 1, 0, 2 });
 
-        var vProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.weight"];
-        Tensor? vProjB = null;
-        if (Context.ConstTensors!.ContainsKey($"model.layers.{count}.self_attn.v_proj.bias"))
-        {
-            vProjB = Context.ConstTensors![$"model.layers.{count}.self_attn.v_proj.bias"];
-        }
+        var vProjW = GetWeight($"model.layers.{count}.self_attn.v_proj.weight")!;
+        var vProjB = GetWeight($"model.layers.{count}.self_attn.v_proj.bias");
 
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.input_scale", out var ifScaleV);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.v_proj.weight_scale", out var wScaleV);
+        var ifScaleV = GetWeight($"model.layers.{count}.self_attn.v_proj.input_scale");
+        var wScaleV = GetWeight($"model.layers.{count}.self_attn.v_proj.weight_scale");
         var valueStates = Linear(hiddenStates, vProjW, vProjB, ifScaleV, wScaleV, $"model.layers.{count}.self_attn.v_proj");
         valueStates = IR.F.Tensors.Reshape(valueStates, hidden_shape);
         valueStates = IR.F.Tensors.Transpose(valueStates, new long[] { 1, 0, 2 });
@@ -483,11 +520,11 @@ public abstract class HuggingFaceModel
 
     public virtual Tuple<Expr, Expr> EagerAttentionForward(Expr query, Expr key, Expr value, Expr? attentionMask, float scaling)
     {
-        var numKVGroups = (long)Context!.Config!["num_attention_heads"] / (long)Context.Config!["num_key_value_heads"];
+        var numKVGroups = (long)Config["num_attention_heads"] / (long)Config["num_key_value_heads"];
         var keyStates = RepeatKV(key, numKVGroups);
         var valueStates = RepeatKV(value, numKVGroups);
         var scalingExpr = IR.F.Tensors.Cast(Tensor.FromScalar(scaling), query.CheckedDataType);
-        Expr attnWeights = IR.F.Math.MatMul(query, IR.F.Tensors.Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [2, 3])), query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward0" } }) * scalingExpr;
+        Expr attnWeights = IR.F.Math.MatMul(query, IR.F.Tensors.Transpose(keyStates, ShapeUtility.GetPermutation(keyStates, [2, 3])), query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward0" } }) * scalingExpr;
         if (attentionMask is not null)
         {
             var causalMask = IR.F.Tensors.Slice(
@@ -503,33 +540,21 @@ public abstract class HuggingFaceModel
         attnWeights = IR.F.Tensors.Cast(IR.F.NN.Softmax(IR.F.Tensors.Cast(attnWeights, DataTypes.Float32), 3L), valueStates.CheckedDataType);
 
         Expr attnOutput = IR.F.Math.MatMul(attnWeights, valueStates, query.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { "EagerAttentionForward1" } });
-        attnOutput = IR.F.Tensors.Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
+        attnOutput = IR.F.Tensors.Transpose(attnOutput, ShapeUtility.GetPermutation(attnOutput, [1, 2]));
 
         // TODO: base on config to decide output attnWeights or not
         return System.Tuple.Create(attnOutput, attnWeights);
     }
 
-    public virtual Tuple<Expr, Expr> RotaryEmbedding(Expr x, Expr kvObject, Expr invFreq, float attentionScaling)
+    public virtual Tuple<Expr, Expr> RotaryEmbedding(Expr x, Expr kvObject, float[] invFreq, float attentionScaling)
     {
-        var positionIds = IR.F.NN.GetPositionIds(IR.F.Shapes.AsTensor(x.CheckedShape[0]), kvObject);
-
-        // var batch_size = x.CheckedShape[0];
-        var dim_div_2 = invFreq.CheckedShape[0];
-        var shape_tensor = new RankedShape(dim_div_2, 1L);
-
-        invFreq = IR.F.Tensors.Expand(invFreq, shape_tensor);
-
-        var positionIdsExpanded = IR.F.Tensors.Unsqueeze(positionIds, Tensor.From<long>([0]));
-        positionIdsExpanded = IR.F.Tensors.Cast(positionIdsExpanded, DataTypes.Float32);
-
-        var freqs = IR.F.Math.MatMul(invFreq, positionIdsExpanded).With(metadata: new IRMetadata()
+        var positionIds = IR.F.NN.GetPositionIds(x.CheckedShape[0], kvObject);
+        positionIds = IR.F.Tensors.Unsqueeze(IR.F.Tensors.Cast(positionIds, DataTypes.Float32), [1]);
+        var invFreqExpanded = invFreq.Concat(invFreq).ToArray();
+        var emb = IR.F.Math.Mul(invFreqExpanded, positionIds).With(metadata: new IRMetadata()
         {
-            OutputNames =
-            ["RotaryEmbedding"],
+            OutputNames = ["RotaryEmbedding"],
         });
-        freqs = IR.F.Tensors.Transpose(freqs, new long[] { 1, 0 });
-
-        var emb = IR.F.Tensors.Concat(new IR.Tuple(freqs, freqs), -1);
 
         // add attention scaling
         Expr cos = IR.F.Math.Unary(UnaryOp.Cos, emb) * attentionScaling;
@@ -769,9 +794,8 @@ public abstract class HuggingFaceModel
         return casualMask;
     }
 
-    public virtual Call Embeding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
+    public virtual Call Embedding(Expr input, Tensor embedingWeight, long? paddingIdx = null)
     {
-        var embedingDim = embedingWeight.Shape[^1];
         var gatherResult = IR.F.Tensors.Gather(embedingWeight, 0, input);
         if (paddingIdx == null)
         {
@@ -779,10 +803,9 @@ public abstract class HuggingFaceModel
         }
         else
         {
-            var zeros = Tensor.Zeros(embedingWeight.ElementType, new long[] { embedingDim.FixedValue });
+            var zeros = Tensor.Zeros(embedingWeight.ElementType, [1]);
             var paddingMask = IR.F.Math.Equal(input, paddingIdx);
-            paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, new long[] { 1 });
-            paddingMask = IR.F.Tensors.Expand(paddingMask, gatherResult.CheckedShape);
+            paddingMask = IR.F.Tensors.Unsqueeze(paddingMask, [1]);
             var results = IR.F.Tensors.Where(paddingMask, zeros, gatherResult);
             return results;
         }
@@ -814,17 +837,15 @@ public abstract class HuggingFaceModel
         AttentionDimKind[] qSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         AttentionDimKind[] kvSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         {
-            AttentionDimKind[] kvDestLayout = { AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq };
-            var padedK = seq_len is DimVar ? IR.F.NN.Pad(keyStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(DataTypes.Float32)) : keyStates;
+            AttentionDimKind[] kvDestLayout = { AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim };
             var kvPerms = ModelUtils.GetLayoutPerm(kvSrcLayout, kvDestLayout);
             var (kvLanes, kvPackedAxis) = ModelUtils.GetQKVPackParams(pagedAttentionConfig, kvDestLayout);
-            var transK = IR.F.Tensors.Transpose(padedK, kvPerms);
+            var transK = IR.F.Tensors.Transpose(keyStates, kvPerms);
             var castK = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transK, pagedAttentionConfig.KVPrimType) : transK;
             var packedK = kvLanes.Length > 0 ? IR.F.Tensors.Pack(castK, kvLanes, kvPackedAxis) : castK;
             paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedK, paskKeyValues, AttentionCacheKind.Key, count, kvDestLayout);
 
-            var padedV = seq_len is DimVar ? IR.F.NN.Pad(valueStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(DataTypes.Float32)) : valueStates;
-            var transV = IR.F.Tensors.Transpose(padedV, kvPerms);
+            var transV = IR.F.Tensors.Transpose(valueStates, kvPerms);
             var castV = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transV, pagedAttentionConfig.KVPrimType) : transV;
             var packedV = kvLanes.Length > 0 ? IR.F.Tensors.Pack(castV, kvLanes, kvPackedAxis) : castV;
             paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedV, paskKeyValues, AttentionCacheKind.Value, count, kvDestLayout);
@@ -836,8 +857,13 @@ public abstract class HuggingFaceModel
         AttentionDimKind[] qDestLayout = { AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq };
         var qPerm = ModelUtils.GetLayoutPerm(qSrcLayout, qDestLayout);
         var (qLanes, qPackedAxis) = ModelUtils.GetQKVPackParams(pagedAttentionConfig, qDestLayout);
-        var padedQ = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(DataTypes.Float32)) : queryStates;
-        var transQ = IR.F.Tensors.Transpose(padedQ, qPerm);
+        bool isXpu = Context.CompileSession!.Target.Name == "xpu";
+        if (isXpu)
+        {
+            queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(DataTypes.Float32)) : queryStates;
+        }
+
+        var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
         var castQ = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transQ, pagedAttentionConfig.KVPrimType) : transQ;
         var packedQ = qLanes.Length > 0 ? IR.F.Tensors.Pack(castQ, qLanes, qPackedAxis) : castQ;
 
@@ -845,30 +871,36 @@ public abstract class HuggingFaceModel
         var extra_size = pagedAttentionConfig.KVPrimType.SizeInBytes * (long)Context.Config["num_attention_heads"] * Context.ImportOptions.HuggingFaceOptions.MaxModelLen * (Context.ImportOptions.HuggingFaceOptions.MaxModelLen + 1);
 
         // xpu : 10 mb.
-        if (Context.CompileSession!.Target.Name == "xpu")
+        if (isXpu)
         {
             extra_size = 10 * 1024 * 1024;
         }
 
+        var hidden_size = Context!.Config.ContainsKey("head_dim") ? (int)((long)Context!.Config!["num_attention_heads"] * (long)Context!.Config!["head_dim"]) : (int)(long)Context!.Config!["hidden_size"];
         var output = IR.F.NN.PagedAttention(
             packedQ,
             paskKeyValues,
-            Tensor.Zeros(DataTypes.UInt8, [extra_size]),
+            IR.F.Buffer.Uninitialized(DataTypes.UInt8, TIR.MemoryLocation.Data, [extra_size]),
             scaling.CastTo(pagedAttentionConfig.KVPrimType, CastMode.KDefault),
             count,
-            qDestLayout);
+            qDestLayout,
+            hidden_size);
 
         output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qPackedAxis) : output;
         output = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(output, DataTypes.Float32) : output;
         output = IR.F.Tensors.Transpose(output, ModelUtils.GetLayoutPerm(qDestLayout, qSrcLayout));
-        output = seq_len is DimVar ? IR.F.Tensors.Slice(output, new[] { 0 }, new Dimension[] { seq_len }, new[] { 1 }, new[] { 1 }) : output;
+        if (isXpu)
+        {
+            output = seq_len is DimVar ? IR.F.Tensors.Slice(output, new[] { 0 }, new Dimension[] { seq_len }, new[] { 1 }, new[] { 1 }) : output;
+        }
+
         output = IR.F.Tensors.Transpose(output, new[] { 1, 0, 2 });
 
         output = IR.F.Tensors.Reshape(output, new RankedShape(seq_len, -1L));
-        var oProjW = Context.ConstTensors![$"model.layers.{count}.self_attn.o_proj.weight"];
+        var oProjW = GetWeight($"model.layers.{count}.self_attn.o_proj.weight")!;
 
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.input_scale", out var ifScaleO);
-        Context.ConstTensors!.TryGetValue($"model.layers.{count}.self_attn.o_proj.weight_scale", out var wScaleO);
+        var ifScaleO = GetWeight($"model.layers.{count}.self_attn.o_proj.input_scale");
+        var wScaleO = GetWeight($"model.layers.{count}.self_attn.o_proj.weight_scale");
 
         output = Linear(output, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
         return System.Tuple.Create(output, paskKeyValues);
@@ -884,7 +916,7 @@ public abstract class HuggingFaceModel
          * self.vocab_size = config.vocab_size
          * self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
          */
-        var embedTokensWeight = Context!.ConstTensors!["model.embed_tokens.weight"];
+        var embedTokensWeight = GetWeight("model.embed_tokens.weight")!;
 
         Expr? inputEmbeds;
         if (inputIds.CheckedShape.Rank > 2 && inputIds.CheckedDataType.IsFloat())
@@ -895,12 +927,12 @@ public abstract class HuggingFaceModel
         else
         {
             long? padding_idx = null;
-            if (Context.Config!.Keys.Contains("pad_token_id"))
+            if (Config!.Keys.Contains("pad_token_id"))
             {
-                padding_idx = (long)Context.Config["pad_token_id"];
+                padding_idx = (long)Config["pad_token_id"];
             }
 
-            inputEmbeds = Embeding(inputIds, embedTokensWeight, padding_idx);
+            inputEmbeds = Embedding(inputIds, embedTokensWeight, padding_idx);
         }
 
         var hiddenStates = inputEmbeds;
@@ -927,14 +959,8 @@ public abstract class HuggingFaceModel
         //     attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
         // )
         // Call? casualMask = null;
-        var (invFreq_, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
-
-        var invFreq = Tensor.FromArray(invFreq_.ToArray());
-
-        var invFreq_float = IR.F.Tensors.Cast(invFreq, DataTypes.Float32);
-        var invFreqExpanded = IR.F.Tensors.Unsqueeze(invFreq_float, Tensor.From<long>(new long[] { 1 }));
-
-        var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreqExpanded.Evaluate().AsTensor(), attentionScaling);
+        var (invFreq, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
+        var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreq, attentionScaling);
 
         // var allHiddenStates = new List<Expr>();
         // var allSelfAttns = new List<Expr>();
@@ -976,7 +1002,7 @@ public abstract class HuggingFaceModel
         // the last one
         Expr lastHiddenStates = LLMLayerNorm(hiddenStates, "model.norm.weight");
 
-        if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)
+        if (ImportOptions.HuggingFaceOptions.OutputHiddenStates)
         {
             allHiddenStates = IR.F.Tensors.Concat(new IR.Tuple(allHiddenStates!, IR.F.Tensors.Unsqueeze(lastHiddenStates, new long[] { 0 })), 0);
         }
@@ -1076,13 +1102,17 @@ public abstract class HuggingFaceModel
             input_ids,
             pastKeyValues!);
 
-        var lmHeadWeights = Context.ConstTensors["model.embed_tokens.weight"];
-        if (Context!.Config!.ContainsKey("tie_word_embeddings") && !Context!.Config!.GetNestedValue<bool>("tie_word_embeddings") && Context.ConstTensors.ContainsKey("lm_head.weight"))
+        var lmHeadWeights = GetWeight("model.embed_tokens.weight")!;
+        if (Context!.Config!.ContainsKey("tie_word_embeddings") && !Context!.Config!.GetNestedValue<bool>("tie_word_embeddings"))
         {
-            lmHeadWeights = Context.ConstTensors["lm_head.weight"];
+            var newLmHeadWeights = GetWeight("lm_head.weight");
+            if (newLmHeadWeights != null)
+            {
+                lmHeadWeights = newLmHeadWeights;
+            }
         }
 
-        var lmHead = Linear(lastHiddenStates, lmHeadWeights, null, null, null, "lm_head");
+        var lmHead = Linear(lastHiddenStates, lmHeadWeights, layerName: "lm_head");
 
         // FIXIT: this is work around for bfloat16
         if (Context.ImportOptions!.HuggingFaceOptions.OutputLogits)

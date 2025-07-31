@@ -24,7 +24,7 @@ def test_llama32_1B(request):
     [huggingface_options]
     output_attentions = true
     output_hidden_states = true
-    use_cache = true
+    num_layers = -1
 
     [generator]
     [generator.inputs]

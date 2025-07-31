@@ -66,7 +66,7 @@ public sealed class GatherPagedAttentionKVCacheEvaluator : ITypeInferencer<Gathe
         var logicalShape = logicalTensorType.Shape.ToValueArray();
         var shape = logicalShape.Concat(lanesShape).ToArray();
         var reshaped = OrtKI.Reshape(transKVCacheTensor, shape, 0);
-        var tensor = reshaped.ToTensor(logicalTensorType);
+        var tensor = reshaped.ToValue(logicalTensorType.DType).AsTensor();
         return tensor;
     }
 

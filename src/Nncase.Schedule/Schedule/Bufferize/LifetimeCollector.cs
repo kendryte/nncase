@@ -13,33 +13,38 @@ using Nncase.TIR;
 
 namespace Nncase.Schedule.Bufferize;
 
+public sealed record LifetimeCollectionResult(TIR.Buffer[] Buffers, IReadOnlyDictionary<TIR.PhysicalBuffer, BufferLifetime> Lifetimes);
+
 public sealed class LifetimeCollector
 {
-    public BufferLifetime[] Collect(Expr expr)
+    public LifetimeCollectionResult Collect(Expr expr)
     {
-        var lifetimes = new Dictionary<TIR.Buffer, (BufferLifetime Lifetime, int RefCount)>(ReferenceEqualityComparer.Instance);
-        new BufferCollector(lifetimes).Visit(expr);
+        var buffers = new HashSet<TIR.Buffer>(ReferenceEqualityComparer.Instance);
+        var lifetimes = new Dictionary<TIR.PhysicalBuffer, (BufferLifetime Lifetime, int RefCount)>(ReferenceEqualityComparer.Instance);
+        new BufferCollector(buffers, lifetimes).Visit(expr);
         new LifetimeRecoder(lifetimes).Visit(expr);
         ValidateZeroRefCounts(lifetimes);
-        return lifetimes.Values.Select(x => x.Lifetime).ToArray();
+        return new(buffers.ToArray(), lifetimes.ToDictionary(x => x.Key, x => x.Value.Lifetime, (IEqualityComparer<TIR.PhysicalBuffer>)ReferenceEqualityComparer.Instance));
     }
 
-    private static bool TryGetBuffer(BaseExpr expr, [MaybeNullWhen(false)] out TIR.Buffer buffer)
+    private static bool TryGetPhysicalBuffer(BaseExpr expr, [MaybeNullWhen(false)] out TIR.Buffer buffer, [MaybeNullWhen(false)] out TIR.PhysicalBuffer physicalBuffer)
     {
         switch (expr)
         {
             case TIR.Buffer b:
                 buffer = b;
+                physicalBuffer = b.MemSpan.Buffer;
                 return true;
             default:
                 break;
         }
 
         buffer = null;
+        physicalBuffer = null;
         return false;
     }
 
-    private static void ValidateZeroRefCounts(Dictionary<TIR.Buffer, (BufferLifetime Lifetime, int RefCount)> lifetimes)
+    private static void ValidateZeroRefCounts(Dictionary<TIR.PhysicalBuffer, (BufferLifetime Lifetime, int RefCount)> lifetimes)
     {
         foreach (var (_, refCount) in lifetimes.Values)
         {
@@ -52,18 +57,20 @@ public sealed class LifetimeCollector
 
     private sealed class BufferCollector : ExprWalker
     {
-        private readonly Dictionary<TIR.Buffer, (BufferLifetime Lifetime, int RefCount)> _lifetimes;
+        private readonly HashSet<TIR.Buffer> _buffers;
+        private readonly Dictionary<TIR.PhysicalBuffer, (BufferLifetime Lifetime, int RefCount)> _lifetimes;
 
-        public BufferCollector(Dictionary<TIR.Buffer, (BufferLifetime Lifetime, int RefCount)> lifetimes)
+        public BufferCollector(HashSet<TIR.Buffer> buffers, Dictionary<TIR.PhysicalBuffer, (BufferLifetime Lifetime, int RefCount)> lifetimes)
         {
+            _buffers = buffers;
             _lifetimes = lifetimes;
         }
 
-        protected override Unit VisitLeafBuffer(TIR.Buffer expr)
+        protected override Unit VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr)
         {
-            if (expr.MemSpan.Start is None or Call { Target: IR.Buffers.AddressOf })
+            if (expr.Start is None or Call { Target: IR.Buffers.AddressOf })
             {
-                (var bufferSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(expr.CheckedTensorType, expr.DistributedType);
+                var bufferSize = CompilerServices.GetMaxShape([expr.Size])[0];
                 var lifetime = new BufferLifetime(expr) { Memory = new(0, bufferSize) };
                 _lifetimes.Add(expr, (lifetime, 0));
             }
@@ -90,11 +97,12 @@ public sealed class LifetimeCollector
                     AcquireBuffer(field);
                 }
             }
-            else if (TryGetBuffer(expr, out var buffer))
+            else if (TryGetPhysicalBuffer(expr, out var buffer, out var physicalBuffer))
             {
-                if (buffer.MemSpan.Start is None or Call { Target: IR.Buffers.AddressOf })
+                _buffers.Add(buffer);
+                if (physicalBuffer.Start is None or Call { Target: IR.Buffers.AddressOf })
                 {
-                    ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
+                    ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, physicalBuffer);
                     record.RefCount++;
                 }
             }
@@ -103,17 +111,17 @@ public sealed class LifetimeCollector
 
     private sealed class LifetimeRecoder : ExprWalker
     {
-        private readonly Dictionary<TIR.Buffer, (BufferLifetime Lifetime, int RefCount)> _lifetimes;
+        private readonly Dictionary<TIR.PhysicalBuffer, (BufferLifetime Lifetime, int RefCount)> _lifetimes;
         private int _currentAge;
 
-        public LifetimeRecoder(Dictionary<TIR.Buffer, (BufferLifetime Lifetime, int RefCount)> lifetimes)
+        public LifetimeRecoder(Dictionary<TIR.PhysicalBuffer, (BufferLifetime Lifetime, int RefCount)> lifetimes)
         {
             _lifetimes = lifetimes;
         }
 
-        protected override Unit VisitLeafBuffer(TIR.Buffer expr)
+        protected override Unit VisitLeafPhysicalBuffer(TIR.PhysicalBuffer expr)
         {
-            if (expr.MemSpan.Start is None or Call { Target: IR.Buffers.AddressOf })
+            if (expr.Start is None or Call { Target: IR.Buffers.AddressOf })
             {
                 ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, expr);
                 record.Lifetime.Time.Start = _currentAge;
@@ -142,11 +150,11 @@ public sealed class LifetimeCollector
                     ReleaseBuffer(field);
                 }
             }
-            else if (TryGetBuffer(expr, out var buffer))
+            else if (TryGetPhysicalBuffer(expr, out _, out var physicalBuffer))
             {
-                if (buffer.MemSpan.Start is None or Call { Target: IR.Buffers.AddressOf })
+                if (physicalBuffer.Start is None or Call { Target: IR.Buffers.AddressOf })
                 {
-                    ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, buffer);
+                    ref var record = ref CollectionsMarshal.GetValueRefOrNullRef(_lifetimes, physicalBuffer);
                     if (--record.RefCount == 0)
                     {
                         record.Lifetime.Time.Stop = _currentAge;

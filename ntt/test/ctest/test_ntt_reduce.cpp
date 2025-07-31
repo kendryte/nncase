@@ -23,883 +23,422 @@
 using namespace nncase;
 using namespace ortki;
 
+#define NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, ntt_reduce_mode)                \
+    /* init */                                                                 \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
+                                                                               \
+    /* ntt */                                                                  \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);      \
+    ntt::reduce_##ntt_reduce_mode(ntt_input, ntt_output1,                      \
+                                  ntt::fixed_shape_v<0>);                      \
+                                                                               \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, N>);   \
+                                                                               \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
+        std::span<float, N>(golden_array, N), ntt::fixed_shape_v<1, N>);       \
+                                                                               \
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
+
 TEST(ReduceSumTestFloat, ReduceM_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
+    float golden_array[] = {1920, 1936, 1952, 1968, 1984, 2000, 2016, 2032,
+                            2048, 2064, 2080, 2096, 2112, 2128, 2144, 2160};
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_sum<ntt::fixed_shape<0>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceSum(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, sum)
 }
 
 TEST(ReduceMaxTestFloat, ReduceM_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
+    float golden_array[] = {240, 241, 242, 243, 244, 245, 246, 247,
+                            248, 249, 250, 251, 252, 253, 254, 255};
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_max<ntt::fixed_shape<0>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMax(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, max)
 }
 
 TEST(ReduceMinTestFloat, ReduceM_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
+    float golden_array[] = {0, 1, 2,  3,  4,  5,  6,  7,
+                            8, 9, 10, 11, 12, 13, 14, 15};
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_min<ntt::fixed_shape<0>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMin(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, min)
 }
 
 TEST(ReduceMeanTestFloat, ReduceM_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
+    float golden_array[] = {120, 121, 122, 123, 124, 125, 126, 127,
+                            128, 129, 130, 131, 132, 133, 134, 135};
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_mean<ntt::fixed_shape<0>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMean(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, mean)
 }
 
+#define NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, ntt_reduce_mode)          \
+    /* init */                                                                 \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
+                                                                               \
+    auto ntt_input_pack =                                                      \
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
+    ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<0>);               \
+                                                                               \
+    /* ntt */                                                                  \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);      \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
+                                  ntt::fixed_shape_v<0>,                       \
+                                  ntt::fixed_shape_v<0>);                      \
+                                                                               \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, N>);   \
+                                                                               \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
+        std::span<float, N>(golden_array, N), ntt::fixed_shape_v<1, N>);       \
+                                                                               \
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
+
 TEST(ReduceSumTestFloat, ReduceM_PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    float golden_array[] = {1920, 1936, 1952, 1968, 1984, 2000, 2016, 2032,
+                            2048, 2064, 2080, 2096, 2112, 2128, 2144, 2160};
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        ntt_input_pack;
-    ntt::pack<0>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_sum<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(ntt_input_pack,
-                                                              *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceSum(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, sum)
 }
 
 TEST(ReduceMaxTestFloat, ReduceM_PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {240, 241, 242, 243, 244, 245, 246, 247,
+                            248, 249, 250, 251, 252, 253, 254, 255};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        ntt_input_pack;
-    ntt::pack<0>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_max<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(ntt_input_pack,
-                                                              *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMax(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, max)
 }
 
 TEST(ReduceMinTestFloat, ReduceM_PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {0, 1, 2,  3,  4,  5,  6,  7,
+                            8, 9, 10, 11, 12, 13, 14, 15};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        ntt_input_pack;
-    ntt::pack<0>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_min<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(ntt_input_pack,
-                                                              *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMin(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, min)
 }
 
 TEST(ReduceMeanTestFloat, ReduceM_PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {120, 121, 122, 123, 124, 125, 126, 127,
+                            128, 129, 130, 131, 132, 133, 134, 135};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        ntt_input_pack;
-    ntt::pack<0>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, N>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_mean<ntt::fixed_shape<0>, ntt::fixed_shape<0>>(ntt_input_pack,
-                                                               *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMean(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, mean)
 }
 
+#define NTT_REDUCE_VERIFY_REDUCEN_NOPACK(M, N, ntt_reduce_mode)                \
+    /* init */                                                                 \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
+                                                                               \
+    /* ntt */                                                                  \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);      \
+    ntt::reduce_##ntt_reduce_mode(ntt_input, ntt_output1,                      \
+                                  ntt::fixed_shape_v<1>);                      \
+                                                                               \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<M, 1>);   \
+                                                                               \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
+        std::span<float, M>(golden_array, N), ntt::fixed_shape_v<M, 1>);       \
+                                                                               \
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
+
 TEST(ReduceSumTestFloat, ReduceN_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_sum<ntt::fixed_shape<1>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceSum(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    float golden_array[] = {120,  376,  632,  888,  1144, 1400, 1656, 1912,
+                            2168, 2424, 2680, 2936, 3192, 3448, 3704, 3960};
+    NTT_REDUCE_VERIFY_REDUCEN_NOPACK(M, N, sum)
 }
 
 TEST(ReduceMaxTestFloat, ReduceN_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_max<ntt::fixed_shape<1>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMax(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    float golden_array[] = {15,  31,  47,  63,  79,  95,  111, 127,
+                            143, 159, 175, 191, 207, 223, 239, 255};
+    NTT_REDUCE_VERIFY_REDUCEN_NOPACK(M, N, max)
 }
 
 TEST(ReduceMinTestFloat, ReduceN_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_min<ntt::fixed_shape<1>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMin(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    float golden_array[] = {0,   16,  32,  48,  64,  80,  96,  112,
+                            128, 144, 160, 176, 192, 208, 224, 240};
+    NTT_REDUCE_VERIFY_REDUCEN_NOPACK(M, N, min)
 }
 
 TEST(ReduceMeanTestFloat, ReduceN_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_mean<ntt::fixed_shape<1>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMean(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    float golden_array[] = {7.5,   23.5,  39.5,  55.5,  71.5,  87.5,
+                            103.5, 119.5, 135.5, 151.5, 167.5, 183.5,
+                            199.5, 215.5, 231.5, 247.5};
+    NTT_REDUCE_VERIFY_REDUCEN_NOPACK(M, N, mean)
 }
 
+#define NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, ntt_reduce_mode)          \
+    /* init */                                                                 \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
+                                                                               \
+    auto ntt_input_pack =                                                      \
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
+    ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<1>);               \
+                                                                               \
+    /* ntt */                                                                  \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);      \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
+                                  ntt::fixed_shape_v<1>,                       \
+                                  ntt::fixed_shape_v<1>);                      \
+                                                                               \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<M, 1>);   \
+                                                                               \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
+        std::span<float, N>(golden_array, N), ntt::fixed_shape_v<M, 1>);       \
+                                                                               \
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
+
 TEST(ReduceSumTestFloat, ReduceN_PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        ntt_input_pack;
-    ntt::pack<1>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_sum<ntt::fixed_shape<1>>(ntt_input_pack, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceSum(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    float golden_array[] = {120,  376,  632,  888,  1144, 1400, 1656, 1912,
+                            2168, 2424, 2680, 2936, 3192, 3448, 3704, 3960};
+    NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, sum)
 }
 
 TEST(ReduceMaxTestFloat, ReduceN_PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        ntt_input_pack;
-    ntt::pack<1>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_max<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ntt_input_pack,
-                                                              *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMax(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    float golden_array[] = {15,  31,  47,  63,  79,  95,  111, 127,
+                            143, 159, 175, 191, 207, 223, 239, 255};
+    NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, max)
 }
 
 TEST(ReduceMinTestFloat, ReduceN_PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        ntt_input_pack;
-    ntt::pack<1>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_min<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ntt_input_pack,
-                                                              *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMin(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    float golden_array[] = {0,   16,  32,  48,  64,  80,  96,  112,
+                            128, 144, 160, 176, 192, 208, 224, 240};
+    NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, min)
 }
 
 TEST(ReduceMeanTestFloat, ReduceN_PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        ntt_input_pack;
-    ntt::pack<1>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<M, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_mean<ntt::fixed_shape<1>, ntt::fixed_shape<1>>(ntt_input_pack,
-                                                               *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMean(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    float golden_array[] = {7.5,   23.5,  39.5,  55.5,  71.5,  87.5,
+                            103.5, 119.5, 135.5, 151.5, 167.5, 183.5,
+                            199.5, 215.5, 231.5, 247.5};
+    NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, mean)
 }
 
+#define NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, ntt_reduce_mode)        \
+    /* init */                                                                 \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
+                                                                               \
+    /* ntt */                                                                  \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
+    ntt::reduce_##ntt_reduce_mode(ntt_input, ntt_output1,                      \
+                                  ntt::fixed_shape_v<0, 1>);                   \
+                                                                               \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, 1>);   \
+                                                                               \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
+        std::span<float, 1>(golden_array, 1), ntt::fixed_shape_v<1, 1>);       \
+                                                                               \
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
+
 TEST(ReduceSumTestFloat, ReduceMN_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
+    float golden_array[] = {32640};
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_sum<ntt::fixed_shape<0, 1>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceSum(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, sum)
 }
 
 TEST(ReduceMaxTestFloat, ReduceMN_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {255};
 
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_max<ntt::fixed_shape<0, 1>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMax(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, max)
 }
 
 TEST(ReduceMinTestFloat, ReduceMN_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {0};
 
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_min<ntt::fixed_shape<0, 1>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMin(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, min)
 }
 
 TEST(ReduceMeanTestFloat, ReduceMN_NoPack) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {127.5};
 
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_mean<ntt::fixed_shape<0, 1>>(*ntt_input, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMean(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, mean)
 }
 
+#define NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, ntt_reduce_mode)         \
+    /* init */                                                                 \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
+                                                                               \
+    auto ntt_input_pack =                                                      \
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
+    ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<0>);               \
+                                                                               \
+    /* ntt */                                                                  \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
+                                  ntt::fixed_shape_v<0, 1>,                    \
+                                  ntt::fixed_shape_v<0>);                      \
+                                                                               \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, 1>);   \
+                                                                               \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
+        std::span<float, 1>(golden_array, 1), ntt::fixed_shape_v<1, 1>);       \
+                                                                               \
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
+
 TEST(ReduceSumTestFloat, ReduceMN_PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {32640};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        ntt_input_pack;
-    ntt::pack<0>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(ntt_input_pack,
-                                                                 *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceSum(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, sum)
 }
 
 TEST(ReduceMaxTestFloat, ReduceMN_PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {255};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        ntt_input_pack;
-    ntt::pack<0>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(ntt_input_pack,
-                                                                 *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMax(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, max)
 }
 
 TEST(ReduceMinTestFloat, ReduceMN_PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {0};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        ntt_input_pack;
-    ntt::pack<0>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(ntt_input_pack,
-                                                                 *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMin(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, min)
 }
 
 TEST(ReduceMeanTestFloat, ReduceMN_PackM) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {127.5};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M / P, N>>
-        ntt_input_pack;
-    ntt::pack<0>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<0>>(
-        ntt_input_pack, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMean(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, mean)
 }
 
+#define NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, ntt_reduce_mode)         \
+    /* init */                                                                 \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
+                                                                               \
+    auto ntt_input_pack =                                                      \
+        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
+    ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<1>);               \
+                                                                               \
+    /* ntt */                                                                  \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
+                                  ntt::fixed_shape_v<0, 1>,                    \
+                                  ntt::fixed_shape_v<1>);                      \
+                                                                               \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<1, 1>);   \
+                                                                               \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
+        std::span<float, 1>(golden_array, 1), ntt::fixed_shape_v<1, 1>);       \
+                                                                               \
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
+
 TEST(ReduceSumTestFloat, ReduceMN_PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {32640};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        ntt_input_pack;
-    ntt::pack<1>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_sum<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(ntt_input_pack,
-                                                                 *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceSum(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, sum)
 }
 
 TEST(ReduceMaxTestFloat, ReduceMN_PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {255};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        ntt_input_pack;
-    ntt::pack<1>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_max<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(ntt_input_pack,
-                                                                 *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMax(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, max)
 }
 
 TEST(ReduceMinTestFloat, ReduceMN_PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {0};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        ntt_input_pack;
-    ntt::pack<1>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_min<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(ntt_input_pack,
-                                                                 *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMin(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, min)
 }
 
 TEST(ReduceMeanTestFloat, ReduceMN_PackN) {
-    constexpr size_t M = 1024;
-    constexpr size_t N = 1024;
+    constexpr size_t M = 16;
+    constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    // init
-    using tensor_type1 = ntt::tensor<float, ntt::fixed_shape<M, N>>;
-    std::unique_ptr<tensor_type1> ntt_input(new tensor_type1);
-    NttTest::init_tensor(*ntt_input, -10.f, 10.f);
+    float golden_array[] = {127.5};
 
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<M, N / P>>
-        ntt_input_pack;
-    ntt::pack<1>(*ntt_input, ntt_input_pack);
-
-    // ntt
-    using tensor_type2 = ntt::tensor<float, ntt::fixed_shape<1, 1>>;
-    std::unique_ptr<tensor_type2> ntt_output1(new tensor_type2);
-    ntt::reduce_mean<ntt::fixed_shape<0, 1>, ntt::fixed_shape<1>>(
-        ntt_input_pack, *ntt_output1);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(*ntt_input);
-    int64_t buf[] = {0, 1};
-    int64_t shape[] = {std::size(buf)};
-    auto axes =
-        make_tensor(reinterpret_cast<void *>(buf), DataType_INT64, shape, 1);
-    auto ort_output = ortki_ReduceMean(ort_input, axes, 1, 1);
-
-    // compare
-    std::unique_ptr<tensor_type2> ntt_output2(new tensor_type2);
-    NttTest::ort2ntt(ort_output, *ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(*ntt_output1, *ntt_output2));
+    NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, mean)
 }
 
 int main(int argc, char *argv[]) {

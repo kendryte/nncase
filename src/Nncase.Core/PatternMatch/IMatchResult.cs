@@ -35,7 +35,7 @@ public interface IMatchResult : IEnumerable<KeyValuePair<IPattern, object>>
     /// </summary>
     /// <param name="name">Pattern name.</param>
     /// <returns>match result.</returns>
-    object GetValueOrDefault(string name);
+    object? GetValueOrDefault(string name);
 
     /// <summary>
     /// Get match result by pattern.

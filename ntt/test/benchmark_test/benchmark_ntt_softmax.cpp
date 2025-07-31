@@ -21,17 +21,17 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_noPack() {
     constexpr size_t D1 = 16;
     constexpr size_t D2 = 16;
 #endif
-    ntt::tensor<float, ntt::fixed_shape<D0, D1, D2>> buffer_1;
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<D0, D1, D2>> ntt_output;
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<1>(buffer_1, ntt_output, ntt::fixed_shape<>{});
+        packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<1>(buffer_1, ntt_output, ntt::fixed_shape<>{});
+        packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -53,17 +53,17 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_noPack() {
     constexpr size_t D1 = 16;
     constexpr size_t D2 = 16;
 #endif
-    ntt::tensor<float, ntt::fixed_shape<D0, D1, D2>> buffer_1;
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
-    ntt::tensor<float, ntt::fixed_shape<D0, D1, D2>> ntt_output;
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<2>(buffer_1, ntt_output, ntt::fixed_shape<>{});
+        packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<2>(buffer_1, ntt_output, ntt::fixed_shape<>{});
+        packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -86,21 +86,21 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_packAxis1() {
     constexpr size_t D2 = 16;
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    ntt::tensor<float, ntt::fixed_shape<D0, D1, D2>> buffer_1;
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<D0, D1 / P, D2>>
-        buffer_2;
+    auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<D0, D1 / P, D2>);
 
-    pack<1>(buffer_1, buffer_2);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<D0, D1 / P, D2>>
-        buffer_3;
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<D0, D1 / P, D2>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
+        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
+        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -123,21 +123,21 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_packAxis2() {
     constexpr size_t D2 = 16;
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    ntt::tensor<float, ntt::fixed_shape<D0, D1, D2>> buffer_1;
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<D0, D1, D2 / P>>
-        buffer_2;
+    auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<D0, D1, D2 / P>);
 
-    pack<2>(buffer_1, buffer_2);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<D0, D1, D2 / P>>
-        buffer_3;
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<D0, D1, D2 / P>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
+        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
+        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -160,21 +160,21 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_packAxis1() {
     constexpr size_t D2 = 16;
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    ntt::tensor<float, ntt::fixed_shape<D0, D1, D2>> buffer_1;
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<D0, D1 / P, D2>>
-        buffer_2;
+    auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<D0, D1 / P, D2>);
 
-    pack<1>(buffer_1, buffer_2);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<D0, D1 / P, D2>>
-        buffer_3;
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<D0, D1 / P, D2>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<2>(buffer_2, buffer_3, ntt::fixed_shape<3>{});
+        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<2>(buffer_2, buffer_3, ntt::fixed_shape<3>{});
+        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -197,21 +197,21 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_packAxis2() {
     constexpr size_t D2 = 16;
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    ntt::tensor<float, ntt::fixed_shape<D0, D1, D2>> buffer_1;
+    auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<D0, D1, D2 / P>>
-        buffer_2;
+    auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<D0, D1, D2 / P>);
 
-    pack<2>(buffer_1, buffer_2);
-    ntt::tensor<ntt::vector<float, P>, ntt::fixed_shape<D0, D1, D2 / P>>
-        buffer_3;
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::fixed_shape_v<D0, D1, D2 / P>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<2>{});
+        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<2>{});
+        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -233,19 +233,17 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_noPack() {
     constexpr size_t D1 = 16;
     constexpr size_t D2 = 16;
 #endif
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    auto shape1 = ntt::make_ranked_shape(D0, D1, D2);
-
-    tensor_type1 buffer_1(shape1);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
-    tensor_type1 ntt_output(shape1);
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
+
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<1>(buffer_1, ntt_output, ntt::fixed_shape<>{});
+        packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<1>(buffer_1, ntt_output, ntt::fixed_shape<>{});
+        packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -267,19 +265,17 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_noPack() {
     constexpr size_t D1 = 16;
     constexpr size_t D2 = 16;
 #endif
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    auto shape1 = ntt::make_ranked_shape(D0, D1, D2);
-
-    tensor_type1 buffer_1(shape1);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
 
-    tensor_type1 ntt_output(shape1);
+    auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
+
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<2>(buffer_1, ntt_output, ntt::fixed_shape<>{});
+        packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<2>(buffer_1, ntt_output, ntt::fixed_shape<>{});
+        packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -302,25 +298,21 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_packAxis1() {
     constexpr size_t D2 = 16;
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    auto shape1 = ntt::make_ranked_shape(D0, D1, D2);
-    auto shape2 = ntt::make_ranked_shape(D0, D1 / P, D2);
-
-    tensor_type1 buffer_1(shape1);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
-    tensor_type2 buffer_2(shape2);
+    auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(D0, D1 / P, D2));
 
-    pack<1>(buffer_1, buffer_2);
-    tensor_type2 buffer_3(shape2);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(D0, D1 / P, D2));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
+        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
+        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -343,25 +335,21 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_packAxis2() {
     constexpr size_t D2 = 16;
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    auto shape1 = ntt::make_ranked_shape(D0, D1, D2);
-    auto shape2 = ntt::make_ranked_shape(D0, D1, D2 / P);
-
-    tensor_type1 buffer_1(shape1);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
-    tensor_type2 buffer_2(shape2);
+    auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(D0, D1, D2 / P));
 
-    pack<2>(buffer_1, buffer_2);
-    tensor_type2 buffer_3(shape2);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(D0, D1, D2 / P));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
+        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<1>{});
+        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -384,24 +372,21 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_packAxis1() {
     constexpr size_t D2 = 16;
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    auto shape1 = ntt::make_ranked_shape(D0, D1, D2);
-    auto shape2 = ntt::make_ranked_shape(D0, D1 / P, D2);
-
-    tensor_type1 buffer_1(shape1);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
-    tensor_type2 buffer_2(shape2);
+    auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(D0, D1 / P, D2));
 
-    pack<1>(buffer_1, buffer_2);
-    tensor_type2 buffer_3(shape2);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(D0, D1 / P, D2));
+
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<2>(buffer_2, buffer_3, ntt::fixed_shape<3>{});
+        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<2>(buffer_2, buffer_3, ntt::fixed_shape<3>{});
+        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -424,25 +409,21 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_packAxis2() {
     constexpr size_t D2 = 16;
 #endif
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    using tensor_type1 = ntt::tensor<float, ntt::ranked_shape<3>>;
-    using tensor_type2 =
-        ntt::tensor<ntt::vector<float, P>, ntt::ranked_shape<3>>;
-    auto shape1 = ntt::make_ranked_shape(D0, D1, D2);
-    auto shape2 = ntt::make_ranked_shape(D0, D1, D2 / P);
-
-    tensor_type1 buffer_1(shape1);
+    auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
     NttTest::init_tensor(buffer_1, -10.f, 10.f);
-    tensor_type2 buffer_2(shape2);
+    auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(D0, D1, D2 / P));
 
-    pack<2>(buffer_1, buffer_2);
-    tensor_type2 buffer_3(shape2);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
+        ntt::make_shape(D0, D1, D2 / P));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<2>{});
+        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax<1>(buffer_2, buffer_3, ntt::fixed_shape<2>{});
+        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();

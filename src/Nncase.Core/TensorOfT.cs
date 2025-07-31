@@ -118,8 +118,8 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// <returns>The value at the specified position in this Tensor.</returns>
     public new T this[ReadOnlySpan<long> indices]
     {
-        get => GetValue(TensorUtilities.GetIndex(Strides, indices));
-        set => SetValue(TensorUtilities.GetIndex(Strides, indices), value);
+        get => GetValue(TensorUtilities.GetLinearOffset(Strides, indices));
+        set => SetValue(TensorUtilities.GetLinearOffset(Strides, indices), value);
     }
 
     /// <summary>
@@ -239,7 +239,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             return false;
         }
 
-        TensorUtilities.GetIndices(Strides, false, index, indices);
+        TensorUtilities.UnravelIndex(index, Shape, indices);
         return true;
     }
 
@@ -380,8 +380,8 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             else
             {
                 var length = shape.LastOrDefault(1);
-                var src = Buffer.Span.Slice(checked((int)(offset + TensorUtilities.GetIndex(Strides, index))), checked((int)length));
-                var dest = slice.AsSpan(checked((int)TensorUtilities.GetIndex(strides, index)), checked((int)length));
+                var src = Buffer.Span.Slice(checked((int)(offset + TensorUtilities.GetLinearOffset(Strides, index))), checked((int)length));
+                var dest = slice.AsSpan(checked((int)TensorUtilities.GetLinearOffset(strides, index)), checked((int)length));
                 src.CopyTo(dest);
             }
         }
@@ -411,11 +411,17 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             {
                 throw new InvalidCastException();
             }
-
-            var converter = (ISpanConverter<T, TTo>)CompilerServices.DataTypeService.GetConverter(typeof(T), typeof(TTo));
-            var tensor = new Tensor<TTo>(dimensions);
-            converter.ConvertTo(Buffer.Span, tensor.Buffer.Span, castMode);
-            return tensor;
+            else if (castMode == CastMode.Reinterpret)
+            {
+                return new Tensor<TTo>(MemoryMarshal.Cast<T, TTo>(Buffer.Span).ToArray(), dimensions);
+            }
+            else
+            {
+                var converter = (ISpanConverter<T, TTo>)CompilerServices.DataTypeService.GetConverter(typeof(T), typeof(TTo));
+                var tensor = new Tensor<TTo>(dimensions);
+                converter.ConvertTo(Buffer.Span, tensor.Buffer.Span, castMode);
+                return tensor;
+            }
         }
     }
 
@@ -436,6 +442,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
             var fromType = typeof(T);
             var toType = typeof(TTo);
             var toDimensions = Dimensions.ToArray();
+            bool dimensionsChanged = false;
 
             if (fromType.IsGenericType && fromType.GetInterface(typeof(IVector<>).Name) is Type && !toType.IsGenericType)
             {
@@ -448,12 +455,39 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                 {
                     toDimensions[^1] *= count;
                 }
+
+                dimensionsChanged = true;
             }
 
-            var converter = (ISpanConverter<T, TTo>)CompilerServices.DataTypeService.GetConverter(typeof(T), typeof(TTo));
-            var tensor = new Tensor<TTo>(toDimensions);
-            converter.ConvertTo(Buffer.Span, tensor.Buffer.Span, castMode);
-            return tensor;
+            if (castMode == CastMode.Reinterpret)
+            {
+                if (!dimensionsChanged)
+                {
+                    var srcSize = DataType.FromType<T>().SizeInBytes;
+                    var destSize = DataType.FromType<TTo>().SizeInBytes;
+
+                    if (srcSize != destSize)
+                    {
+                        if (toDimensions.Rank == 0)
+                        {
+                            toDimensions = [srcSize / destSize];
+                        }
+                        else
+                        {
+                            toDimensions[^1] = toDimensions[^1] * srcSize / destSize;
+                        }
+                    }
+                }
+
+                return new Tensor<TTo>(MemoryMarshal.Cast<T, TTo>(Buffer.Span).ToArray(), toDimensions);
+            }
+            else
+            {
+                var converter = (ISpanConverter<T, TTo>)CompilerServices.DataTypeService.GetConverter(typeof(T), typeof(TTo));
+                var tensor = new Tensor<TTo>(toDimensions);
+                converter.ConvertTo(Buffer.Span, tensor.Buffer.Span, castMode);
+                return tensor;
+            }
         }
     }
 
@@ -710,7 +744,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
         for (int i = 0; i < bufferA.Length; i++)
         {
-            TensorUtilities.GetIndices(Strides, false, i, indices);
+            TensorUtilities.UnravelIndex(i, Shape, indices);
             result = comparer.Compare(bufferA.Span[i], other.GetValue(indices));
             if (result != 0)
             {
@@ -768,7 +802,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
 
         for (int i = 0; i < bufferA.Length; i++)
         {
-            TensorUtilities.GetIndices(Strides, false, i, indices);
+            TensorUtilities.UnravelIndex(i, Shape, indices);
             if (!comparer.Equals(bufferA.Span[i], other.GetValue(indices)))
             {
                 return false;

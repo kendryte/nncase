@@ -37,6 +37,14 @@ class cpu_runtime_function final : public runtime_function {
 
     cpu_runtime_module &module() const noexcept;
 
+    const std::span<std::byte>
+    block_local_data(size_t block_id) const noexcept {
+        auto &local_data = local_datas_[block_id];
+        auto mapped_local_data =
+            local_data->map(map_read_write).expect("Failed to map local data");
+        return mapped_local_data.buffer();
+    }
+
   protected:
     result<void>
     initialize_core(runtime_function_init_context &context) noexcept override;
@@ -59,6 +67,7 @@ class cpu_runtime_function final : public runtime_function {
 #endif
 
     block_entry_t block_entry_;
+    std::vector<host_buffer_t> local_datas_;
     host_buffer_t output_buffer_;
     std::vector<ntt::runtime::thread_inout_desc> input_descs_;
     std::vector<ntt::runtime::thread_inout_desc> output_descs_;

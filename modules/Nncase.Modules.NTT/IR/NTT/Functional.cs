@@ -43,14 +43,9 @@ public partial class NTT
         return new Call(new InstacneNorm(epsilon, packedAxes), input, scale, bias, padedNums);
     }
 
-    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false)
+    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, DataType? outDataType = null)
     {
-        return new Call(new PackedMatMul(DataTypes.Float32, lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce), lhs, rhs);
-    }
-
-    public static Expr PackedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, DataType outDataType = null!)
-    {
-        return new Call(new PackedMatMul(outDataType, lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce), lhs, rhs);
+        return new Call(new PackedMatMul(outDataType ?? DataTypes.Float32, lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce), lhs, rhs);
     }
 
     public static Expr PackedBinary(Expr lhs, Expr rhs, BinaryOp binaryOp, IRArray<int> lhsPackedAxes, IRArray<Dimension> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<Dimension> rhsPadedNums)

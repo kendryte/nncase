@@ -133,17 +133,18 @@ internal static class PrimFuncBuilder
         public TIR.Buffer Allocate(string name, TIR.MemoryLocation location)
         {
             var dims = Dimensions.Select(d => (Dimension)d).ToArray();
-            var strides = TensorUtilities.GetStrides(Dimensions).Select(s => (Dimension)s).ToArray();
-            var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetStrides(Dimensions), DataTypes.Float32.SizeInBytes);
+            var strides = TensorUtilities.GetDefaultStrides(Dimensions).Select(s => (Dimension)s).ToArray();
+            var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetDefaultStrides(Dimensions), DataTypes.Float32.SizeInBytes);
 
-            var buffer = new TIR.Buffer(name, DataTypes.Float32, new TIR.MemSpan(Tensor.FromPointer<float>(_usage[location]), size, location), dims, strides, null);
+            var physicalBuffer = new TIR.PhysicalBuffer(8, _usage[location], size, location);
+            var buffer = new TIR.Buffer(name, DataTypes.Float32, new TIR.MemSpan(physicalBuffer), dims, strides, null);
             _usage[location] += (ulong)size;
             return buffer;
         }
 
         public Var AllocateVar(string name, TIR.MemoryLocation location)
         {
-            var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetStrides(Dimensions), DataTypes.Float32.SizeInBytes);
+            var size = TensorUtilities.GetSize(Dimensions, TensorUtilities.GetDefaultStrides(Dimensions), DataTypes.Float32.SizeInBytes);
             var buffer = new Var(name, new TensorType(DataTypes.Float32, Dimensions));
             _usage[location] += (ulong)size;
             return buffer;

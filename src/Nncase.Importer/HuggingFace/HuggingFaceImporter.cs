@@ -91,51 +91,37 @@ public partial class HuggingFaceImporter : BaseImporter
             config[pair.Key] = pair.Value;
         }
 
-        var constTensors = new Dictionary<string, Tensor>();
-        if (File.Exists(Path.Combine(huggingFaceDir, "model.safetensors.index.json")))
+        if (importOptions.HuggingFaceOptions.NumLayers != -1)
         {
-            string[] files = Directory.GetFiles(huggingFaceDir, "*.safetensors");
-            foreach (string file in files)
+            if (importOptions.HuggingFaceOptions.NumLayers < (long)config["num_hidden_layers"])
             {
-                string fileName = Path.GetFileName(file);
-                if (IsModelFile(fileName))
-                {
-                    var tmpConst = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, fileName));
-                    foreach (var item in tmpConst)
-                    {
-                        constTensors[item.Key] = item.Value;
-                    }
-                }
+                Console.WriteLine($"\nHuggingFaceOptions.NumLayers is set to [{importOptions.HuggingFaceOptions.NumLayers}], which is less than num_hidden_layers [{(long)config["num_hidden_layers"]}] in the huggingface model config.\n");
+                config["num_hidden_layers"] = (long)importOptions.HuggingFaceOptions.NumLayers;
+            }
+            else if (importOptions.HuggingFaceOptions.NumLayers == (long)config["num_hidden_layers"])
+            {
+            }
+            else
+            {
+                throw new ArgumentException($"HuggingFaceOptions.NumLayers [{importOptions.HuggingFaceOptions.NumLayers}] must be set to a value less than or equal to num_hidden_layers [{(long)config["num_hidden_layers"]}] in the huggingface model config.");
             }
         }
-        else
-        {
-            constTensors = HuggingFaceUtils.GetAllWeights(Path.Combine(huggingFaceDir, "model.safetensors"));
-        }
 
-        _modelContext!.Config = config;
-        _modelContext!.ConstTensors = constTensors;
-        _modelContext!.ImportOptions = importOptions;
-        _modelContext!.CompileSession = compileSession;
-        switch (config.GetNestedValue<string>("architectures", 0))
-        {
-            case "Qwen2ForCausalLM":
-                _model = new Qwen2();
-                break;
-            case "Qwen3ForCausalLM":
-                _model = new Qwen3();
-                break;
-            case "LlamaForCausalLM":
-                _model = new Llama3_2();
-                break;
-            case "GlmForCausalLM":
-                _model = new Glm4V9B();
-                break;
-            default:
-                throw new NotImplementedException();
-        }
+        _modelContext.Config = config;
+        _modelContext.ImportOptions = importOptions;
+        _modelContext.CompileSession = compileSession;
 
-        _model!.Initialize(_modelContext, huggingFaceDir);
+        var architectures = config.GetNestedValue<string>("architectures", 0);
+        _model = architectures switch
+        {
+            "Qwen2ForCausalLM" => new Qwen2(),
+            "Qwen3ForCausalLM" => new Qwen3(),
+            "LlamaForCausalLM" => new Llama3_2(),
+            "GlmForCausalLM" => new Glm4V9B(),
+            _ => throw new NotImplementedException($"Architecture {architectures} is not supported"),
+        };
+
+        _model.Initialize(_modelContext, huggingFaceDir);
     }
 
     protected override (IEnumerable<IVar> Inputs, Dictionary<IVar, Dimension[]> VarMap) CreateInputs()
