@@ -13,6 +13,7 @@ from huggingface_hub import snapshot_download
 from safetensors.torch import load_file, save_file
 import nncase
 from npy2json import convert_npy_to_json
+from ml_dtypes import bfloat16
 
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
@@ -119,6 +120,8 @@ def to_np_type(t: str):
         return np.float32
     elif t == "float16":
         return np.float16
+    elif t == "bfloat16":
+        return bfloat16
     else:
         return None
 

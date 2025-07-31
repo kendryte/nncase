@@ -156,7 +156,7 @@ internal static class HuggingFaceUtils
         {
             if (item.Value is Tensor tensor)
             {
-                constTensors.Add(item.Key, tensor.CastTo(DataTypes.Float32));
+                constTensors.Add(item.Key, tensor);
             }
         }
 
