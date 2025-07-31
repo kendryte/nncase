@@ -88,6 +88,18 @@ void macho_loader::load(std::span<const std::byte> macho) {
 #endif
 }
 
+void macho_loader::load_from_file(std::string_view path) {
+    mod_ = dlopen(path.data(), RTLD_NOW);
+    if (!mod_) {
+        throw std::runtime_error("dlopen error:" + std::string(dlerror()));
+    }
+
+    sym_ = dlsym(mod_, "block_entry");
+    if (!sym_) {
+        throw std::runtime_error("dlsym error:" + std::string(dlerror()));
+    }
+}
+
 void *macho_loader::entry() const noexcept {
 #if 0
     return NSAddressOfSymbol(reinterpret_cast<NSSymbol>(sym_));

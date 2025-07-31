@@ -49,7 +49,7 @@ class NNCASE_API options_dict {
     }
 
   private:
-    std::unordered_map<std::string_view, std::variant<scalar, std::string_view>>
+    std::unordered_map<std::string_view, std::variant<scalar, std::string>>
         values_;
 };
 

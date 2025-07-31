@@ -20,14 +20,6 @@
 #include <nncase/tensor.h>
 #include <vector>
 
-#if WIN32
-#include "loaders/pe/pe_loader.h"
-#elif defined(__APPLE__)
-#include "loaders/macho/macho_loader.h"
-#else
-#include "loaders/elf/elf_loader.h"
-#endif
-
 BEGIN_NS_NNCASE_RT_MODULE(cpu)
 
 class cpu_runtime_function final : public runtime_function {
@@ -58,14 +50,6 @@ class cpu_runtime_function final : public runtime_function {
                                         std::byte *output_data) noexcept;
 
   private:
-#if WIN32
-    pe_loader loader_;
-#elif defined(__APPLE__)
-    macho_loader loader_;
-#else
-    elf_loader loader_;
-#endif
-
     block_entry_t block_entry_;
     std::vector<host_buffer_t> local_datas_;
     host_buffer_t output_buffer_;

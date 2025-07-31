@@ -84,10 +84,7 @@ result<void> cpu_runtime_function::initialize_core(
             }
             return ok();
         }));
-    auto text = module().text().subspan(context.header().entrypoint,
-                                        context.header().text_size);
-    loader_.load(text);
-    block_entry_ = (block_entry_t)loader_.entry();
+    try_set(block_entry_, module().block_entry());
 
     // Allocate input descs
     auto input_size = parameters_size();
