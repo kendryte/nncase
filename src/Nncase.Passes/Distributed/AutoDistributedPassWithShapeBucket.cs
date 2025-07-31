@@ -53,8 +53,10 @@ public sealed partial class AutoDistributedWithShapeBucketPass : FunctionPass
     private BaseFunction Distribute(Function function, INTTTargetOptions targetOptions)
     {
         var shapeBucketOptions = _compileOptions.ShapeBucketOptions;
-        if (shapeBucketOptions.SegmentsCount == 0)
+        var dimVars = IRHelpers.GetDynamicDimVars();
+        if (shapeBucketOptions.SegmentsCount == 0 || dimVars.Count == 0)
         {
+            // If no segments or no dynamic dim vars, we can skip the shape bucket pass
             var rewriter = new AutoDistributedRewriter(_compileOptions, targetOptions, AutoDistributedPhase.Final, _moduleKind, _bidirectional);
             return rewriter.Rewrite(function);
         }
@@ -75,7 +77,7 @@ public sealed partial class AutoDistributedWithShapeBucketPass : FunctionPass
             var segmentFunctions = new List<(Function SegmentFunction, Dictionary<DimVar, DimVar> DimVars)>();
             for (int segmentIndex = 0; segmentIndex < shapeBucketOptions.SegmentsCount; segmentIndex++)
             {
-                var newDimVars = (from dimVar in shapeBucketOptions.VarMap.Keys.OfType<DimVar>()
+                var newDimVars = (from dimVar in dimVars
                                   let newRange = ShapeUtility.GetDimSegmentRange(dimVar.Metadata.Range!.Value, segmentIndex, shapeBucketOptions.SegmentsCount)
                                   select new KeyValuePair<DimVar, DimVar>(
                                       dimVar,
