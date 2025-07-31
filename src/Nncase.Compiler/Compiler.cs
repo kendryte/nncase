@@ -301,7 +301,8 @@ public class Compiler : ICompiler
         }
 
         passManager.Add<AddFunctionToModule>();
-        passManager.AddWithName<EGraphRulesPass>("OptimizeAfterAutoDistributed").Configure(p =>
+        passManager.Add<RemoveUnusedFunctions>();
+        passManager.AddWithName<DataflowPass>("OptimizeAfterAutoDistributed").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
             p.Add<FoldBoxingUninitialized>();

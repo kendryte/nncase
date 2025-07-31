@@ -927,8 +927,8 @@ REGISTER_RVV_BINARY_OP(floor_mod, int32_t, floor_mod_int32)
             v, __riscv_vfadd_vf_f32m##lmul(tmp, 1.f, vl), vl);                 \
     }
 
-REGISTER_RVV_KERNEL(SWISH_FLOAT32)
-REGISTER_RVV_UNARY_OP(swish, float, swish_float32)
+// REGISTER_RVV_KERNEL(SWISH_FLOAT32)
+// REGISTER_RVV_UNARY_OP(swish, float, swish_float32)
 
 // register swishb kernel
 // swishb(v) = v / (exp(-v*beta) + 1)
@@ -941,7 +941,7 @@ REGISTER_RVV_UNARY_OP(swish, float, swish_float32)
         return __riscv_vfdiv_vv_f32m##lmul(v, tmp, vl);                        \
     }
 
-REGISTER_RVV_KERNEL(SWISHB_FLOAT32)
+// REGISTER_RVV_KERNEL(SWISHB_FLOAT32)
 
 // register swishb op
 #define RVV_SWISHB_OP(dtype, vl, kernel)                                       \
@@ -958,7 +958,7 @@ REGISTER_RVV_KERNEL(SWISHB_FLOAT32)
     RVV_SWISHB_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 4), kernel)              \
     RVV_SWISHB_OP(dtype, NTT_VL(sizeof(dtype) * 8, *, 8), kernel)
 
-REGISTER_RVV_SWISHB_OP(float, swishb_float32)
+// REGISTER_RVV_SWISHB_OP(float, swishb_float32)
 
 // rigister outer_product op
 #define RVV_OUTER_PRODUCT_OP(dtype, vl, lmul)                                  \
