@@ -112,12 +112,12 @@ class reduce_impl {
                     input.shape()
                         .template slice<reduce_axis, TReduceAxes::rank()>()
                         .length();
-                auto denom = (TOutScalar)inner_size;
+                auto denom = (TOutScalar)(float)inner_size;
                 if constexpr (Vector<TOutElem>) {
                     const auto inner_size_unpacked = inner_size *
                                                      TInElem::shape().length() /
                                                      TOutElem::shape().length();
-                    denom = (TOutScalar)inner_size_unpacked;
+                    denom = (TOutScalar)(float)inner_size_unpacked;
                 }
                 output(index) /= denom;
             }
