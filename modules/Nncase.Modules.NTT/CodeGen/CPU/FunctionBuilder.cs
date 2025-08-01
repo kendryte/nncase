@@ -111,7 +111,7 @@ internal class FunctionBuilder
             }
 
             // 4. build function.
-            var visitor = new KernelCSourceConvertVisitor(function.SchedResult.DataAlign, function.SchedResult.DataUsage, rdataPoolSize, threadLocalRdataPoolSize, blockLocalRdataPoolSize, TargetOptions);
+            var visitor = new KernelCSourceConvertVisitor(TargetOptions);
             visitor.Visit(function);
             var functionCSource = visitor.GetCSource();
 
@@ -126,8 +126,12 @@ internal class FunctionBuilder
                 writer.Write(ref header);
             }
 
+            var memoryPoolDesc = new KernelMemoryPoolDesc(
+                rdataPoolSize,
+                threadLocalRdataPoolSize,
+                blockLocalRdataPoolSize);
             var kernelDescSection = new LinkedSection(_sectionManager.GetContent(LinkableKernelFunction.KernelHeaderSectionName)!, ".desc", 0, 8, (uint)sizeof(KernelDescHeader));
-            return new LinkableKernelFunction(_id, function, functionCSource, _sectionManager.GetContent(WellknownSectionNames.Text)!, kernelDescSection);
+            return new LinkableKernelFunction(_id, function, functionCSource, memoryPoolDesc, _sectionManager.GetContent(WellknownSectionNames.Text)!, kernelDescSection);
         }
         else
         {

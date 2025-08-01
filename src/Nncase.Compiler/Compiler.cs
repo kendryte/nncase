@@ -297,9 +297,11 @@ public class Compiler : ICompiler
     {
         foreach (var moduleCompiler in _compileSession.Target.ModuleCompilers)
         {
-            passManager.AddWithName<AutoDistributedPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
+            passManager.AddWithName<AutoDistributedWithShapeBucketPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
         }
 
+        passManager.Add<AddFunctionToModule>();
+        passManager.Add<RemoveUnusedFunctions>();
         passManager.AddWithName<DataflowPass>("OptimizeAfterAutoDistributed").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -501,7 +503,7 @@ public class Compiler : ICompiler
                 Console.Write($"\r[{timestamp}] {ColorText(spinner.ToString(), ConsoleColor.Blue)} Running pass:   {passNamePadded} {ColorText(timeFormatted, ConsoleColor.Cyan)}");
 
                 index++;
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(100, default).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -537,7 +539,7 @@ public class Compiler : ICompiler
     {
         try
         {
-            Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
+            Console.Write("\r" + new string(' ', Math.Max(0, Console.WindowWidth - 1)) + "\r");
         }
         catch
         {

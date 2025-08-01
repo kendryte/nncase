@@ -29,8 +29,12 @@ internal static class CSourceUtilities
             case BinaryOp.Max:
                 str = $"std::max({lhs}, {rhs})";
                 break;
+            case BinaryOp.LogicalAnd:
+                str = $"({lhs} && {rhs})";
+                break;
             default:
-                throw new NotSupportedException();
+                throw new NotSupportedException(
+                    $"Unsupported binary operation: {binary.BinaryOp}");
         }
 
         return str;

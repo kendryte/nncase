@@ -13,7 +13,7 @@ public record BufferRenderInfo(string Name, string ElemType, int ElemSize, int R
 {
 }
 
-public record KernelMainModel(TIR.PrimFunction PrimFunction, TIR.Buffer[] RDataBuffers, NTTTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize, ulong ThreadLocalRdataPoolSize, ulong BlockLocalRdataPoolSize)
+public record KernelMainModel(TIR.PrimFunction PrimFunction, NTTTargetOptions Options, ulong Alignment, ulong DataSize, ulong RDataSize, ulong ThreadLocalRdataPoolSize, ulong BlockLocalRdataPoolSize)
 {
     public BufferRenderInfo GetInfo(TIR.Buffer buffer)
     {
@@ -37,9 +37,36 @@ public record NTTTargetOptionsModel(NTTTargetOptions Options, ulong Alignment, u
 
 public static class CSourceBuiltn
 {
-    public const string KernelHeader = @"#pragma once
+    public const string DeviceHeader = @"#pragma once
 #include <nncase/ntt/ntt.h>
 #include ""topo_aware_runtime.h""
+using namespace nncase::ntt;
+using namespace nncase::ntt::distributed;
+using namespace nncase::ntt::distributed::shard_policy;
+
+";
+
+    public const string KernelDeclareHeader = @"#pragma once
+#include <nncase/ntt/ntt.h>
+using namespace nncase::ntt;
+using namespace nncase::ntt::distributed;
+using namespace nncase::ntt::distributed::shard_policy;
+
+";
+
+    public const string KernelHeader = @"#pragma once
+#include <nncase/ntt/ntt.h>
+#include ""device_functions.h""
+#include ""kernel_functions.h""
+#include ""topo_aware_runtime.h""
+using namespace nncase::ntt;
+using namespace nncase::ntt::distributed;
+using namespace nncase::ntt::distributed::shard_policy;
+
+";
+
+    public const string ThreadMainHeader = @"#include <nncase/ntt/ntt.h>
+#include ""kernel_functions.h""
 using namespace nncase::ntt;
 using namespace nncase::ntt::distributed;
 using namespace nncase::ntt::distributed::shard_policy;
@@ -58,16 +85,16 @@ using namespace nncase::ntt::distributed::shard_policy;
         return content;
     }
 
-    public static string CMakeDef(string name)
+    public static string CMakeDef()
     {
         var cmakePath = CMakePath(Path.Combine(Path.GetDirectoryName(typeof(CSourceBuiltn).Assembly.Location)!, "Runtime", "cmake", "ntt_module.cmake"));
         var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/CMakeLists.txt.cshtml", new { CMakePath = cmakePath }).Result;
         return content;
     }
 
-    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong threadLocalRdataPoolSize, ulong blockLocalRdataPoolSize, IEnumerable<TIR.Buffer> rdataBuffers, NTTTargetOptions options)
+    public static string MakeMain(TIR.PrimFunction primFunction, ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong threadLocalRdataPoolSize, ulong blockLocalRdataPoolSize, NTTTargetOptions options)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, rdataBuffers.ToArray(), options, dataAlign, dataUsage, rdataPoolSize, threadLocalRdataPoolSize, blockLocalRdataPoolSize)).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/thread_main.cpp.cshtml", new KernelMainModel(primFunction, options, dataAlign, dataUsage, rdataPoolSize, threadLocalRdataPoolSize, blockLocalRdataPoolSize)).Result;
         return content;
     }
 

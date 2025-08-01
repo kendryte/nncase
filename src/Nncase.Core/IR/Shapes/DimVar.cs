@@ -49,11 +49,11 @@ public sealed class DimVar : OpaqueDim, IVar, IEquatable<DimVar?>
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) =>
         functor.VisitDimVar(this, context);
 
-    public DimVar With(string? name = null) => new DimVar(name ?? Name)
+    public DimVar With(string? name = null, ValueRange<double>? range = null) => new DimVar(name ?? Name)
     {
         Metadata =
         {
-            Range = Metadata.Range,
+            Range = range ?? Metadata.Range,
         },
     };
 
