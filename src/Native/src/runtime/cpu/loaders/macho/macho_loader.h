@@ -15,6 +15,7 @@
 #pragma once
 #include <nncase/compiler_defs.h>
 #include <span>
+#include <string_view>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -31,6 +32,7 @@ class macho_loader {
     ~macho_loader();
 
     void load(std::span<const std::byte> macho);
+    void load_from_file(std::string_view path);
     void *entry() const noexcept;
 
   private:
