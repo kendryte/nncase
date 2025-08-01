@@ -22,16 +22,19 @@ internal unsafe struct KernelDescHeader
     public ulong LocalDataPoolSize;
 }
 
+internal sealed record KernelMemoryPoolDesc(ulong RdataPoolSize, ulong ThreadLocalRdataPoolSize, ulong BlockLocalRdataPoolSize);
+
 internal sealed class LinkableKernelFunction : ILinkableFunction
 {
     public const string KernelHeaderSectionName = ".desc";
 
-    public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, KernelCSource funcCSource, Stream text, params ILinkedSection[] sections)
+    public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, KernelCSource funcCSource, KernelMemoryPoolDesc memoryPoolDesc, Stream text, params ILinkedSection[] sections)
     {
         Id = id;
         SourceFunction = sourceFunction;
         PrimFunction = sourceFunction;
         FunctionCSource = funcCSource;
+        MemoryPoolDesc = memoryPoolDesc;
         Text = text;
         Sections = sections;
     }
@@ -43,6 +46,8 @@ internal sealed class LinkableKernelFunction : ILinkableFunction
     public TIR.PrimFunction PrimFunction { get; }
 
     public KernelCSource FunctionCSource { get; }
+
+    public KernelMemoryPoolDesc MemoryPoolDesc { get; }
 
     public Stream Text { get; }
 

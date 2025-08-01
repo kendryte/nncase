@@ -26,13 +26,16 @@ public sealed class FunctionWrapper : BaseFunction
     /// <param name="name">Name.</param>
     /// <param name="moduleKind">Module kind.</param>
     /// <param name="target">Target.</param>
-    public FunctionWrapper(string name, string moduleKind, BaseFunction target)
+    /// <param name="returnOutput">Return output.</param>
+    public FunctionWrapper(string name, string moduleKind, BaseFunction target, bool returnOutput = false)
         : base(name, moduleKind, [target])
     {
         if (target is not Function or PrimFunctionWrapper)
         {
             throw new ArgumentException($"target must be {nameof(Function)} or {nameof(PrimFunctionWrapper)}");
         }
+
+        ReturnOutput = returnOutput;
     }
 
     /// <summary>
@@ -40,12 +43,15 @@ public sealed class FunctionWrapper : BaseFunction
     /// </summary>
     /// <param name="target">Target.</param>
     /// <param name="moduleKind">Module kind.</param>
-    public FunctionWrapper(string moduleKind, BaseFunction target)
-        : this($"functionwrapper_{_globalFuncIndex++}", moduleKind, target)
+    /// <param name="returnOutput">Return output.</param>
+    public FunctionWrapper(string moduleKind, BaseFunction target, bool returnOutput = false)
+        : this($"functionwrapper_{_globalFuncIndex++}", moduleKind, target, returnOutput)
     {
     }
 
     public BaseFunction Target => (BaseFunction)Operands[0];
+
+    public bool ReturnOutput { get; }
 
     /// <inheritdoc/>
     public override IEnumerable<IRType> ParameterTypes => Target.ParameterTypes;
@@ -59,6 +65,6 @@ public sealed class FunctionWrapper : BaseFunction
         return new FunctionWrapper(name ?? Name, moduleKind ?? ModuleKind, Target);
     }
 
-    public FunctionWrapper With(string? name = null, string? moduleKind = null, BaseFunction? target = null)
-        => new FunctionWrapper(name ?? Name, moduleKind ?? ModuleKind, target ?? Target);
+    public FunctionWrapper With(string? name = null, string? moduleKind = null, BaseFunction? target = null, bool? returnOutput = null)
+        => new FunctionWrapper(name ?? Name, moduleKind ?? ModuleKind, target ?? Target, returnOutput ?? ReturnOutput);
 }

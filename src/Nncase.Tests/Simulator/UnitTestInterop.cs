@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -11,6 +12,7 @@ using Nncase.IR;
 using Nncase.Passes.Transforms;
 using Nncase.Runtime.Interop;
 using Nncase.Schedule;
+using Nncase.Schedule.Bufferize;
 using Nncase.Targets;
 using Nncase.Tests.TestFixture;
 using Nncase.TIR;
@@ -34,8 +36,9 @@ public class UnitTestInteropIntegrated : TestClassBase
             TIR.F.NTT.Binary(BinaryOp.Add, x, constBuffer, T.CreateBuffer(type, MemoryLocation.Output, out var outBuffer)),
             T.Return(outBuffer)).Build();
         var main = new PrimFunction("main_prim", CPUTarget.Kind, body, new[] { x });
-        BufferizePass.Bufferize(main);
         var module = new IRModule(main);
+        var funcGroups = module.Functions.OfType<PrimFunction>().GroupBy(x => x.ModuleKind);
+        new BufferizeVisitor(funcGroups.First()).Bufferize();
         var target = CompilerServices.GetTarget(CPUTarget.Kind);
         var modelBuilder = new ModelBuilder(target, CompileOptions);
         var linkedModel = modelBuilder.Build(module);

@@ -19,7 +19,7 @@ public sealed class IRModule
 {
     private readonly List<BaseFunction> _functions;
     private readonly ExprUser _exprUser = new();
-    private int? _entryIndex;
+    private BaseFunction? _entry;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="IRModule"/> class.
@@ -28,8 +28,8 @@ public sealed class IRModule
     public IRModule(BaseFunction main)
     {
         _functions = new() { main };
-        _entryIndex = 0;
         main.AddUser(_exprUser);
+        Entry = main;
     }
 
     /// <summary>
@@ -51,8 +51,25 @@ public sealed class IRModule
     /// </summary>
     public BaseFunction? Entry
     {
-        get => _entryIndex.HasValue ? _functions[_entryIndex.Value] : null;
-        set => _entryIndex = value != null ? _functions.FindIndex(x => object.ReferenceEquals(x, value)) : null;
+        get => _entry;
+        set
+        {
+            if (Functions.IndexOf(value, ReferenceEqualityComparer.Instance) == -1)
+            {
+                throw new ArgumentException("Entry function must be in the module functions list.");
+            }
+
+            if (_entry is not null)
+            {
+                _entry.IsEntry = false;
+            }
+
+            _entry = value;
+            if (value is not null)
+            {
+                value.IsEntry = true;
+            }
+        }
     }
 
     /// <summary>
@@ -74,14 +91,18 @@ public sealed class IRModule
     public void Replace(int index, BaseFunction function)
     {
         CompilerServices.InferenceType(function);
-        ref var old = ref CollectionsMarshal.AsSpan(_functions)[index];
+        var old = _functions[index];
         if (old.IsAlive)
         {
             old.ReplaceAllUsesWith(function);
             GC.Collect();
         }
 
-        old = function;
+        _functions[index] = function;
+        if (object.ReferenceEquals(old, _entry))
+        {
+            Entry = function;
+        }
     }
 
     /// <summary>
@@ -94,6 +115,11 @@ public sealed class IRModule
         if (index == -1)
         {
             return;
+        }
+
+        if (object.ReferenceEquals(function, _entry))
+        {
+            Entry = null;
         }
 
         function.RemoveUser(_exprUser);

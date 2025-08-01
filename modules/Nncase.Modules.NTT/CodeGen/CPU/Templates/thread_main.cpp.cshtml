@@ -7,13 +7,9 @@
   var inputCount = Model.PrimFunction.Parameters.Length;
 }
 
-#include <nncase/ntt/ntt.h>
-#include "topo_aware_runtime.h"
 @foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).SkipLast(1)){
 @:uint8_t L@(i+1)Data[@(s)];
 }
-#include "../device.h"
-#include "kernel.h"
 
 extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
   nncase::ntt::runtime::thread_inout_desc *const output_descs,
