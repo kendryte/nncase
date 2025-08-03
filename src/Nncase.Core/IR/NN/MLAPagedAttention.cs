@@ -26,6 +26,8 @@ public sealed partial class MLAPagedAttention : Op
     public static readonly ParameterInfo KVALayerNormW = new(typeof(MLAPagedAttention), 9, "kvaLayerNormW", ParameterKind.Attribute);
     public static readonly ParameterInfo KVBProj = new(typeof(MLAPagedAttention), 10, "kvbProj", ParameterKind.Attribute);
     public static readonly ParameterInfo KVBProjScale = new(typeof(MLAPagedAttention), 11, "kvbProjScale", ParameterKind.Attribute);
+    public static readonly ParameterInfo Cos = new(typeof(MLAPagedAttention), 12, "cos", ParameterKind.Attribute);
+    public static readonly ParameterInfo Sin = new(typeof(MLAPagedAttention), 13, "sin", ParameterKind.Attribute);
 
     public int LayerId { get; }
 

@@ -52,10 +52,20 @@ public sealed class MLAPagedAttentionEvaluator : ITypeInferencer<MLAPagedAttenti
         var q = context.GetOrtArgumentValue(target, MLAPagedAttention.Q);
         var kvCaches = context.GetArgumentValueAsTensor<Reference<IPagedAttentionKVCache>>(target, MLAPagedAttention.KVCaches);
         var scale = context.GetOrtArgumentValue(target, MLAPagedAttention.Scale); // must match to prim kv type.
-        return RefPagedAttn(q, kvCaches, scale, target.LayerId, target.Layout).ToValue();
+        var qaProjW = context.GetOrtArgumentValue(target, MLAPagedAttention.QAProj);
+        var qaProjScale = context.GetOrtArgumentValue(target, MLAPagedAttention.QAProjScale);
+        var qaLayerNormW = context.GetOrtArgumentValue(target, MLAPagedAttention.QALayerNormW);
+        var qbProjW = context.GetOrtArgumentValue(target, MLAPagedAttention.QBProj);
+        var qbProjScale = context.GetOrtArgumentValue(target, MLAPagedAttention.QBProjScale);
+        var kvALayerNormW = context.GetOrtArgumentValue(target, MLAPagedAttention.KVALayerNormW);
+        var kvbProjW = context.GetOrtArgumentValue(target, MLAPagedAttention.KVBProj);
+        var kvbProjScale = context.GetOrtArgumentValue(target, MLAPagedAttention.KVBProjScale);
+        var cos = context.GetOrtArgumentValue(target, MLAPagedAttention.Cos);
+        var sin = context.GetOrtArgumentValue(target, MLAPagedAttention.Sin);
+        return RefPagedAttn(q, kvCaches, scale, qaProjW, qaProjScale, qaLayerNormW, qbProjW, qbProjScale, kvALayerNormW, kvbProjW, kvbProjScale, cos, sin, target.LayerId, target.Layout, target.HiddenSize, target.NumAttentionHeads, target.KVLoraRank, target.QKNopeHeadDim, target.QKRopeHeadDim, target.VHeadDim).ToValue();
     }
 
-    private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, OrtKISharp.Tensor scale, int layerId, IRArray<AttentionDimKind> qlayout)
+    private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, OrtKISharp.Tensor scale, OrtKISharp.Tensor qaProjW, OrtKISharp.Tensor qaProjScale, OrtKISharp.Tensor qaLayerNormW, OrtKISharp.Tensor qbProjW, OrtKISharp.Tensor qbProjScale, OrtKISharp.Tensor kvALayerNormW, OrtKISharp.Tensor kvbProjW, OrtKISharp.Tensor kvbProjScale, OrtKISharp.Tensor cos, OrtKISharp.Tensor sin, int layerId, IRArray<AttentionDimKind> qlayout, int hiddenSize, int numAttentionHeads, int kvLoraRank, int qkNopeHeadDim, int qkRopeHeadDim, int vHeadDim)
     {
         // TODO: Support DP
         if (kvCaches.Length != 1)
@@ -77,11 +87,11 @@ public sealed class MLAPagedAttentionEvaluator : ITypeInferencer<MLAPagedAttenti
         }
 
         // revert transpose
-        if (!qlayout.SequenceEqual([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]))
-        {
-            var invPerm = qlayout.Zip(Enumerable.Range(0, qlayout.Count)).OrderBy(p => p.First).Select(p => (long)p.Second).ToArray();
-            query = OrtKI.Transpose(query, invPerm);
-        }
+        // if (!qlayout.SequenceEqual([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]))
+        // {
+        //     var invPerm = qlayout.Zip(Enumerable.Range(0, qlayout.Count)).OrderBy(p => p.First).Select(p => (long)p.Second).ToArray();
+        //     query = OrtKI.Transpose(query, invPerm);
+        // }
 
         var outputs = new List<OrtKISharp.Tensor>();
         long queryStart = 0;
@@ -92,10 +102,45 @@ public sealed class MLAPagedAttentionEvaluator : ITypeInferencer<MLAPagedAttenti
 
             // [query_len, num_heads, head_dim] [L,Hq,E]
             var q = OrtKI.Slice(query, new long[] { queryStart }, new long[] { queryStart + queryLen }, new long[] { 0L }, new long[] { 1L });
+            q = OrtKI.Einsum([q, qaProjW], "LS,DS->LD");
+            var qL = OrtKI.LayerNormalization(q, qaLayerNormW, OrtKISharp.Tensor.FromScalar(0.0f), -1, 1e-6f, 1);
+            q = OrtKI.Einsum([qL[0], qbProjW], "LD,SD->LS");
+            q = OrtKI.Reshape(q, new long[] { queryLen, numAttentionHeads, qkNopeHeadDim + qkRopeHeadDim }, 0L); // Allow zero?
+            q = OrtKI.Transpose(q, [1, 0, 2]); // [num_heads, query_len, head_dim] 
+            var qSplit = OrtKI.Split(q, new long[] { qkNopeHeadDim, qkRopeHeadDim }, -1);
+            var qNope = qSplit[0];
+            var qPe = qSplit[1];
 
-            var k = GatherKV(AttentionCacheKind.Key, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
+            // [kv_lora_rank+qk_rope_head_dim, query_len]
+            var compressedKVAll = GatherKV(AttentionCacheKind.CompressedKV, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
+            compressedKVAll = OrtKI.Transpose(compressedKVAll, [1, 0]);
+            var compressedKVSplit = OrtKI.Split(compressedKVAll, new long[] { kvLoraRank, qkRopeHeadDim }, 1L); 
 
-            var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS") * scale; // [num_heads, query_len, seq_len] [H,L,S]
+            var compressedKV = compressedKVSplit[0];
+            var kPe = compressedKVSplit[1];
+            kPe = OrtKI.Reshape(kPe, new long[] { queryLen, 1, qkRopeHeadDim }, 0);
+            kPe = OrtKI.Transpose(kPe, new long[] { 1, 0, 2 });
+
+            var kvL = OrtKI.LayerNormalization(compressedKV, kvALayerNormW, OrtKISharp.Tensor.FromScalar(0.0f), -1, 1e-6f, 1);
+            var kv = OrtKI.Einsum([kvL[0], kvbProjW], "LD,SD->LS");
+            kv = OrtKI.Reshape(kv, new long[] { queryLen, numAttentionHeads, qkNopeHeadDim + vHeadDim }, 0L); // Allow zero?
+            kv = OrtKI.Transpose(kv, [1, 0, 2]); // [num_heads, seq_len, head_dim]
+            var kvSplit = OrtKI.Split(kv, new long[] { qkNopeHeadDim, vHeadDim }, -1);
+            var kNope = kvSplit[0];
+            var valueStates = kvSplit[1];
+
+            // apply rotary position embedding
+            (qPe, kPe) = ApplyRotaryPosEmb(qPe, kPe, cos, sin);
+
+
+            // query_states[:, :, :, : self.qk_nope_head_dim] = q_nope
+            // query_states[:, :, :, self.qk_nope_head_dim :] = q_pe
+            var queryStates = OrtKI.Concat(new[] { qNope, qPe }, -1); // [num_heads, query_len, qk_head_dim] [H,L,D]
+
+            var keyStates = OrtKI.Concat(new[] { kNope, kPe.BroadcastTo(new long[] { kNope.Shape[0], kNope.Shape[1], kPe.Shape[2] }) }, -1); // [num_heads, seq_len, qk_head_dim] [H,L,D]
+
+
+            var attn = OrtKI.Einsum([queryStates, keyStates], "HLD,HLS->HDS") * scale; // [num_heads, query_len, query_len] [H,L,S]
 
             // compute causal mask
             var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen]));
@@ -107,9 +152,7 @@ public sealed class MLAPagedAttentionEvaluator : ITypeInferencer<MLAPagedAttenti
 
             attn = OrtKI.Softmax(attn, -1);
 
-            var v = GatherKV(AttentionCacheKind.Value, cache, seqId, layerId, queryLen, seqLen, queryStart); // [num_heads, seq_len, head_dim] [H,S,E]
-
-            var output = OrtKI.Einsum([attn, v], "HLS,HSE->LHE"); // [query_len, num_heads, head_dim] [L,H,E]
+            var output = OrtKI.Einsum([attn, valueStates], "HLS,HSV->LHV"); // [query_len, num_heads, v_head_dim] [L,H,V]
 
             outputs.Add(output);
             queryStart += queryLen;
@@ -118,23 +161,69 @@ public sealed class MLAPagedAttentionEvaluator : ITypeInferencer<MLAPagedAttenti
         var concat_output = OrtKI.Concat(outputs.ToArray(), 0L); // concat at seqs
 
         // retranspose output
-        if (!qlayout.SequenceEqual([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]))
-        {
-            concat_output = OrtKI.Transpose(concat_output, qlayout.Select(i => (long)i).ToArray());
-        }
+        // if (!qlayout.SequenceEqual([AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim]))
+        // {
+        //     concat_output = OrtKI.Transpose(concat_output, qlayout.Select(i => (long)i).ToArray());
+        // }
 
-        // repack for output
-        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
-        {
-            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
-        }
+        // // repack for output
+        // if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
+        // {
+        //     concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
+        // }
 
-        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
-        {
-            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
-        }
+        // if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
+        // {
+        //     concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
+        // }
 
         return concat_output;
+    }
+
+    private static Tuple<OrtKISharp.Tensor, OrtKISharp.Tensor> ApplyRotaryPosEmb(OrtKISharp.Tensor qPe, OrtKISharp.Tensor kPe, OrtKISharp.Tensor cos, OrtKISharp.Tensor sin)
+    {
+        cos = OrtKI.Expand(cos, new long[] { 0 }); // [1, query_len, head_dim]
+        sin = OrtKI.Expand(sin, new long[] { 0 }); // [1, query_len, head_dim]
+        var qShape = qPe.Shape;
+        var kShape = kPe.Shape;
+        qPe = OrtKI.Reshape(qPe, new long[] { qPe.Shape[0], qPe.Shape[1], qPe.Shape[2] / 2L, 2L }, 0L); // [query_len, num_heads, head_dim/2, 2]
+        qPe = OrtKI.Transpose(qPe, [0, 1, 3, 2]); // [query_len, num_heads, 2, head_dim/2]
+        qPe = OrtKI.Reshape(qPe, qShape, 0L); // [query_len, num_heads * 2, head_dim/2]
+
+        kPe = OrtKI.Reshape(kPe, new long[] { kPe.Shape[0], kPe.Shape[1], kPe.Shape[2] / 2L, 2L }, 0L); // [query_len, num_heads, head_dim/2, 2L]
+        kPe = OrtKI.Transpose(kPe, [0, 1, 3, 2]); // [query_len, num_heads, 2, head_dim/2]
+        kPe = OrtKI.Reshape(kPe, kShape, 0L); // [query_len, num_heads * 2, head_dim/2]
+        var qPeCos = OrtKI.Mul(qPe, cos);
+        var qPeSin = OrtKI.Mul(RotateHalf(qPe), sin);
+        var kPeCos = OrtKI.Mul(kPe, cos);
+        var kPeSin = OrtKI.Mul(RotateHalf(kPe), sin);
+        var qEmbed = qPeCos + qPeSin;
+        var kEmbed = kPeCos + kPeSin;
+        return System.Tuple.Create(qEmbed, kEmbed);
+    }
+
+    private static OrtKISharp.Tensor RotateHalf(OrtKISharp.Tensor x)
+    {
+        /*
+        def rotate_half(x):
+            Rotates half the hidden dims of the input.
+            x1 = x[..., : x.shape[-1] // 2]
+            x2 = x[..., x.shape[-1] // 2 :]
+            return torch.cat((-x2, x1), dim=-1)
+        */
+        var x1 = OrtKI.Slice(
+            x,
+            new long[] { 0 },
+            new long[] { x.Shape[^1] / 2L },
+            new long[] { -1L },
+            new long[] { 1L });
+        var x2 = OrtKI.Slice(
+            x,
+            new long[] { x.Shape[^1] / 2L },
+            new long[] { x.Shape[^1] },
+            new long[] { -1L },
+            new long[] { 1L });
+        return OrtKI.Concat(new[] { OrtKI.Neg(x2), x1 }, -1);
     }
 
     private static void GatherKVCore(IPagedAttentionKVCache cache, int numBlocksForSeq, int seqId, AttentionCacheKind cacheKind, int layerId, int seqLen, int blockSizeAxis, List<OrtKISharp.Tensor> caches)

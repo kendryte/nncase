@@ -201,7 +201,8 @@ internal static class HuggingFaceUtils
             newTensor = Nncase.IR.F.Tensors.Transpose(newTensor, new long[] { 0, 2, 1, 3 });
             newTensor = Nncase.IR.F.Tensors.Reshape(newTensor, new RankedShape(tensorTmp.Shape[0] + pad0, tensorTmp.Shape[1] + pad1));
             newTensor = Nncase.IR.F.Tensors.Slice(newTensor, new RankedShape(0, 0), new RankedShape(tensorTmp.Shape[0], tensorTmp.Shape[1]), new RankedShape(0, 1), new[] { 1, 1 });
-            newTensor = Nncase.IR.F.Tensors.Cast(newTensor, DataType.Float16);
+            // FIXIT: 在这里不应该直接用cast，而是进行反量化，转换为fp8的weights和scale（float16）.
+            newTensor = Nncase.IR.F.Tensors.Cast(newTensor, Nncase.DataTypes.Float16);
             tensor = newTensor.Evaluate().AsTensor();
             Console.WriteLine($"eval Done!");
 

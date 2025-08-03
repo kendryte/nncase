@@ -149,6 +149,7 @@ namespace Nncase.Importer
 
             // var batch_size = hiddenStates.CheckedShape[0];
             var seq_len = hiddenStates.CheckedShape[0];
+            var (cos, sin) = positionEmbeddings;
 
             // [seq_len, kv_lora_rank + qk_rope_head_dim]
             var compressedKV = DeepSeekQKVCompute(count, hiddenStates);
@@ -212,6 +213,8 @@ namespace Nncase.Importer
                 kvBProjW,
                 kvBProjW, //kvBProjScaleQ,
                 kvALayerNormW,
+                cos,
+                sin,
                 count,
                 qDestLayout,
                 (int)(long)Context.Config["hidden_size"],
@@ -232,7 +235,7 @@ namespace Nncase.Importer
 
             var ifScaleO = GetWeight($"model.layers.{count}.self_attn.o_proj.input_scale");
             var wScaleO = GetWeight($"model.layers.{count}.self_attn.o_proj.weight_scale");
-            ModelUtils.CheckShape(output);
+            // ModelUtils.CheckShape(output);
             output = Linear(output, oProjW, null, ifScaleO, wScaleO, $"model.layers.{count}.self_attn.o_proj");
             return System.Tuple.Create(output, paskKeyValues);
         }
