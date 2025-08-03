@@ -2,6 +2,8 @@ from posixpath import join
 from typing import Sequence
 import shutil
 import os
+# from dotenv import load_dotenv
+# load_dotenv("/compiler/yanghaoqi/workspace/nncase/.env")
 import numpy as np
 from numpy.core.defchararray import array
 from numpy.lib.function_base import select
@@ -13,46 +15,49 @@ from huggingface_hub import snapshot_download
 from safetensors.torch import load_file, save_file
 import nncase
 from npy2json import convert_npy_to_json
+from pathlib import Path
+from loguru import logger
+import logging
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
+def _link_or_copy(src: Path, dst: Path):
+    """*.safetensors → 软链接；其余 → 拷贝"""
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    if src.suffix.lower() == ".safetensors":
+        if not dst.exists():                 # 已有则跳过
+            dst.symlink_to(src.resolve())
+    else:
+        if not dst.exists():                 # 已有则跳过
+            shutil.copy2(src, dst, follow_symlinks=False)
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
-    print(f" Downloading \033[32m\033[1m {model_name} \033[0m from huggingface ... ")
-    model_dir = os.path.join(os.path.dirname(__file__), "llm", model_name)
-    print(f" model_dir: {model_dir}")
-    if os.path.exists(model_dir):
-        print(f"\033[32m\033[1m {model_name} \033[0m exits in \033[34m\033[5m {model_dir} \033[0m")
-        return model_dir
-    else:
-        hf_home_env = os.getenv("HF_HOME")
-        if hf_home_env is None:
-            print(
-                f"Please set your huggingface cache dir in environment variable\033[31m 10.10.1.11 'export HF_HOME=/compiler/share/huggingface_cache' \033[0m")
-            # download the model from huggingface hub
-            model_path = snapshot_download(repo_id=model_name)
-        else:
-            # if the model can't access in huggingface hub, you can download it from other source and put it in the cache dir ($HF_HOME/hub)
-            # e.g.: modelscope download --model LLM-Research/Llama-3.2-1B-Instruct --local_dir $HF_HOME/hub/LLM-Research/Llama-3.2-1B-Instruct
-            cache_model_dir = os.path.join(hf_home_env, "hub", model_name)
-            if (os.path.exists(cache_model_dir)):
-                model_path = cache_model_dir
-            else:
-                model_path = snapshot_download(repo_id=model_name)
+    print(f" Prepare model \033[32m\033[1m {model_name} \033[0m ... ")
+    model_dir = Path(__file__).resolve().parent / "llm" / model_name
+
+    # 本地目录已存在
+    if model_dir.exists():
+        print(f"\033[32m\033[1m {model_name} \033[0m exists in \033[34m\033[5m {model_dir} \033[0m")
+        return str(model_dir)
+
+    # 获取缓存路径
+    hf_home = os.getenv("HF_HOME")
+    if hf_home is None:
+        raise EnvironmentError(
+            "Please set HF_HOME, e.g. export HF_HOME=/compiler/share/huggingface_cache"
+        )
+    cache_model_dir = Path(hf_home) / "hub" / model_name
+    if not cache_model_dir.exists():
+        cache_model_dir = Path(snapshot_download(repo_id=model_name, ignore_patterns="*.safetensors"))
 
     if need_save:
-        try:
-            model = model_api.from_pretrained(model_path, trust_remote_code=True)
-            tokenizer = tokenizer_api.from_pretrained(model_path, trust_remote_code=True)
-        except Exception as e:
-            raise os.error(
-                f"\033[31m Download {model_name} has error. Make sure it's a valid repository. Or check your network!\033[0m")
-
-        model.save_pretrained(model_dir)
-        tokenizer.save_pretrained(model_dir)
+        model_dir.mkdir(parents=True, exist_ok=True)
+        for p in cache_model_dir.iterdir():
+            _link_or_copy(p, model_dir / p.name)
     else:
-        model_dir = model_path
-    print(
-        f"\033[32m\033[1m {model_name} \033[0m has been downloaded into \033[34m\033[5m {model_dir} \033[0m")
-    return model_dir
+        model_dir = cache_model_dir  # 直接用缓存
+    
+    print(f"\033[32m\033[1m {model_name} \033[0m ready at \033[34m\033[5m {model_dir} \033[0m")
+    return str(model_dir)
 
 
 def recursive_stack(obj):
@@ -73,14 +78,20 @@ def recursive_stack(obj):
 
 
 def dequantize_weights(model_dir):
-    for filename in os.listdir(model_dir):
-        if filename.endswith(".safetensors") and not filename.endswith(".org.safetensors"):
+    all_file = [f for f in os.listdir(model_dir) if f.endswith(".safetensors") or f.endswith(".org.safetensors")]
+
+    for filename in all_file:
+        index_name = filename.split('.')[0]
+        if(index_name+".safetensors" in all_file and index_name+".org.safetensors" in all_file):
+            continue
+        # 
+        elif filename.endswith(".safetensors") and not filename.endswith(".org.safetensors"):
             filepath = os.path.join(model_dir, filename)
             org_filepath = filepath.replace(".safetensors", ".org.safetensors")
 
             if not os.path.exists(org_filepath):
                 os.rename(filepath, org_filepath)
-
+            logger.info(f"{org_filepath}")
             state_dict = load_file(org_filepath)
 
             for key in list(state_dict.keys()):
@@ -169,6 +180,7 @@ class HuggingfaceTestRunner(TestRunner):
             #                                f'input_{idx}.txt'), input['data'][0])
 
             # TODO: add attention_mask in inputs
+            logger.info("")
             result = self.model.forward(
                 torch.from_numpy(np.expand_dims(input['data'][0], 0)),
                 return_dict=True,
@@ -177,6 +189,7 @@ class HuggingfaceTestRunner(TestRunner):
                 output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
                                       else False) if self.cfg['huggingface_options']['output_logits'] else True
             )
+            logger.info("")
 
             ''' will be used in future[pipeline run]
             # logits = self.model.generate(
@@ -207,12 +220,14 @@ class HuggingfaceTestRunner(TestRunner):
                     dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
                     outputs.append(hidden_states)
                     count += 1
+            logger.info("")
 
         return outputs
 
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
-
+        logger.info(f"Loading HuggingFace model(num_hidden_layers={config.num_hidden_layers})...")
+        logger.info("")
         self.num_kv_heads = config.num_key_value_heads
         self.num_layers = config.num_hidden_layers
         self.head_dim = config.head_dim if hasattr(
@@ -254,10 +269,13 @@ class HuggingfaceTestRunner(TestRunner):
         if hasattr(config, "quantization_config"):
             dequantize_weights(model_path)
             delattr(config, "quantization_config")
+        logger.info("")
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path, config=config, torch_dtype="auto", device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
-        restore_weights(model_path)
+        # restore_weights(model_path)
+        logger.info("")
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        logger.info("")
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens
         self.generation_config.max_new_tokens = 64
@@ -289,6 +307,8 @@ class HuggingfaceTestRunner(TestRunner):
                                 shape=[], model_shape=[], scheduler=input_scheduler))
         self.calibs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
                                 shape=[], model_shape=[], scheduler=calibs_scheduler))
+        logger.info("")
+
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_huggingface(model_content, import_options)

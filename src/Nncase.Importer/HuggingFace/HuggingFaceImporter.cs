@@ -102,6 +102,7 @@ public partial class HuggingFaceImporter : BaseImporter
             "Qwen3ForCausalLM" => new Qwen3(),
             "LlamaForCausalLM" => new Llama3_2(),
             "GlmForCausalLM" => new Glm4V9B(),
+            "DeepseekV3ForCausalLM" => new DeepSeekV3(),
             _ => throw new NotImplementedException($"Architecture {architectures} is not supported"),
         };
 

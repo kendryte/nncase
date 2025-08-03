@@ -35,8 +35,8 @@ namespace Nncase.Importer
             cos = IR.F.Tensors.Unsqueeze(cos, Tensor.From<long>(new long[] { 0 }));
             sin = IR.F.Tensors.Unsqueeze(sin, Tensor.From<long>(new long[] { 0 }));
 
-            var cosShape = IR.F.Tensors.ShapeOf(cos).AsShape();
-            var sinShape = IR.F.Tensors.ShapeOf(sin).AsShape();
+            var cosShape = cos.CheckedShape;
+            var sinShape = sin.CheckedShape;
 
             var cosLastDim = new RankedShape(cosShape[^1]);
             var sinLastDim = new RankedShape(sinShape[^1]);
@@ -52,7 +52,7 @@ namespace Nncase.Importer
             sin = IR.F.Tensors.Concat(new IR.Tuple(sin, sin), -1);
             sin = IR.F.Tensors.Reshape(sin, sinShape);
 
-            var rotaryDim = new RankedShape(IR.F.Tensors.ShapeOf(cos).AsShape()[-1]);
+            var rotaryDim = new RankedShape(cos.CheckedShape[-1]);
 
             var qRot = IR.F.Tensors.Slice(q, new[] { 0L }, rotaryDim, new[] { -1L }, new[] { 1L });
             var qPass = IR.F.Tensors.Slice(q, rotaryDim, [IR.F.Tensors.ShapeOf(q).AsShape()[^1]], new[] { -1L }, new[] { 1L });

@@ -62,5 +62,8 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<IdentityPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GatherPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GetPositionIdsEvaluator>(reuse: Reuse.Singleton);
+
+        // MLAPagedAttention
+        registrator.RegisterManyInterface<MLAPagedAttentionEvaluator>(reuse: Reuse.Singleton);
     }
 }

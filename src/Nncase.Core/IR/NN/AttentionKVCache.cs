@@ -14,6 +14,7 @@ public enum AttentionCacheKind : int
 {
     Key,
     Value,
+    CompressedKV,
 }
 
 public interface IAttentionConfig
@@ -23,6 +24,14 @@ public interface IAttentionConfig
     int NumKVHeads { get; }
 
     int HeadDim { get; }
+
+    // int KVLoraRank { get; }
+
+    // int VHeadDim { get; }
+
+    // int QKNopeHeadDim { get; }
+
+    // int QKRopeHeadDim { get; }
 
     PrimType KVPrimType { get; }
 }
@@ -71,7 +80,7 @@ public interface IAttentionKVCache
 }
 
 public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVPrimType) : IAttentionConfig;
-
+// public record AttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, int KVLoraRank, int VHeadDim, int QKNopeHeadDim, int QKRopeHeadDim, PrimType KVPrimType) : IAttentionConfig;
 /// <summary>
 /// Prim type of <see cref="AttentionKVCacheType"/>.
 /// </summary>

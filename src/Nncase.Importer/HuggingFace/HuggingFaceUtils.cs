@@ -12,6 +12,7 @@ using NetFabric.Hyperlinq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nncase;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
 
@@ -150,17 +151,68 @@ internal static class HuggingFaceUtils
 
     public static Dictionary<string, Tensor> LoadAllTensorsFromFile(string path)
     {
+        Console.WriteLine($"LoadAllTensorsFromFile: {path}");
         var constTensors = new Dictionary<string, Tensor>();
         var constTensor = HuggingFaceUtils.LoadStateDict(path);
         foreach (var item in constTensor)
         {
             if (item.Value is Tensor tensor)
             {
-                constTensors.Add(item.Key, tensor.CastTo(DataTypes.Float32));
+                // Console.WriteLine($" \tweights: {item.Key}");
+                constTensors.Add(item.Key, tensor/* .CastTo(DataTypes.Float32) */);
             }
         }
 
         return constTensors;
+    }
+
+    public static Tensor? ProcessWeights(string weightName, Tensor tensor, Dictionary<string, Tensor> loadedWeights, Dictionary<string, object> config)
+    {
+        Console.WriteLine($"GetWeight: {weightName} from cache");
+        if (weightName.EndsWith(".weight"))
+        {
+            var blockSize0 = config.GetNestedValue<long>("quantization_config", "weight_block_size", 0);
+            var blockSize1 = config.GetNestedValue<long>("quantization_config", "weight_block_size", 1);
+            var tensorTmp = tensor.CastTo(DataTypes.Float32);
+            if (tensorTmp.Shape.Length() == 1)
+            {
+                return tensor;
+            }
+
+            Dimension pad0 = 0, pad1 = 0;
+            if (tensorTmp.Shape[0] % blockSize0 != 0 || tensorTmp.Shape[1] % blockSize1 != 0)
+            {
+                pad0 = tensorTmp.Shape[0] % blockSize0 == 0 ? 0 : blockSize0 - (tensorTmp.Shape[0] % blockSize0);
+                pad1 = tensorTmp.Shape[1] % blockSize1 == 0 ? 0 : blockSize1 - (tensorTmp.Shape[1] % blockSize1);
+            }
+
+            var newTensor = Nncase.IR.F.NN.Pad(tensorTmp, new(new(0, pad0), new(0, pad1)), PadMode.Constant, Tensor.Zero(DataTypes.Float32));
+
+            newTensor = Nncase.IR.F.Tensors.Reshape(newTensor, new RankedShape((tensorTmp.Shape[0] + pad0) / blockSize0, blockSize0, (tensorTmp.Shape[1] + pad1) / blockSize1, blockSize1));
+            newTensor = Nncase.IR.F.Tensors.Transpose(newTensor, new long[] { 0, 2, 1, 3 });
+
+            var tensorScaleName = weightName.Replace(".weight", ".weight_scale_inv", StringComparison.Ordinal);
+            if (loadedWeights.TryGetValue(tensorScaleName, out var tensorScale))
+            {
+                var tensorScaleTmp = Nncase.IR.F.Tensors.Reshape(tensorScale, new RankedShape(tensorScale.Shape[0], tensorScale.Shape[1], 1, 1));
+                newTensor = Nncase.IR.F.Math.Div(newTensor, tensorScaleTmp);
+            }
+
+            newTensor = Nncase.IR.F.Tensors.Transpose(newTensor, new long[] { 0, 2, 1, 3 });
+            newTensor = Nncase.IR.F.Tensors.Reshape(newTensor, new RankedShape(tensorTmp.Shape[0] + pad0, tensorTmp.Shape[1] + pad1));
+            newTensor = Nncase.IR.F.Tensors.Slice(newTensor, new RankedShape(0, 0), new RankedShape(tensorTmp.Shape[0], tensorTmp.Shape[1]), new RankedShape(0, 1), new[] { 1, 1 });
+            newTensor = Nncase.IR.F.Tensors.Cast(newTensor, DataType.Float16);
+            tensor = newTensor.Evaluate().AsTensor();
+            Console.WriteLine($"eval Done!");
+
+            // LoadedWeights.Remove(tensorScaleName);
+        }
+        else if (weightName.EndsWith(".weight_scale_inv"))
+        {
+            return null;
+        }
+
+        return tensor;
     }
 
     public static Dictionary<string, string> LoadWeightToFileMap(string modelDir)
@@ -397,63 +449,6 @@ internal static class HuggingFaceUtils
 
         throw new NotImplementedException("Unrecognized data type listed: " + dataType);
     }
-
-    // public class DynamicCache
-    // {
-    //     public int SeenTokens;
-    //     public List<object>? KeyCache;
-    //     public List<object>? ValueCache;
-    //     public long GetSeqLength(int layerCount = 0)
-    //     {
-    //         bool isEmptyLayer =
-    //             KeyCache?.Count == 0
-    //             || KeyCache?.Count <= layerCount
-    //             || (int)KeyCache?[layerCount] == 0;
-    //         var layer = (Call)KeyCache?[(Index)layerCount!];
-    //         return isEmptyLayer ? 0 : layer.CheckedShape[-2].FixedValue;
-    //     }
-    //     public Tuple<Call, Call> Update(
-    //         Call keyStates,
-    //         Call valueStates,
-    //         int layerCount,
-    //         Dictionary<string, object> cacheKwargs)
-    //     {
-    //         if (layerCount == 0)
-    //         {
-    //             SeenTokens += (int)keyStates.CheckedShape[-2].FixedValue;
-    //         }
-    //         if (keyStates != null)
-    //         {
-    //             if (KeyCache.Count <= layerCount)
-    //             {
-    //                 for (int i = KeyCache.Count; i <= layerCount; i++)
-    //                 {
-    //                     KeyCache.Add(0);
-    //                     ValueCache.Add(0);
-    //                 }
-    //                 // self.key_cache.append(key_states)
-    //                 // self.value_cache.append(value_states)
-    //                 KeyCache.Add(keyStates);
-    //                 ValueCache.Add(valueStates);
-    //             }
-    //             else if ((int)KeyCache[layerCount] == 0)
-    //             {
-    //                 KeyCache[layerCount] = keyStates;
-    //                 ValueCache[layerCount] = valueStates;
-    //             }
-    //             else
-    //             {
-    //                 KeyCache[layerCount] = Nncase.IR.F.Tensors.Concat(
-    //                     new Nncase.IR.Tuple((Call)KeyCache[layerCount], keyStates),
-    //                     -2);
-    //                 ValueCache[layerCount] = Nncase.IR.F.Tensors.Concat(
-    //                     new Nncase.IR.Tuple((Call)ValueCache[layerCount], valueStates),
-    //                     -2);
-    //             }
-    //         }
-    //         return Tuple.Create((Call)KeyCache[layerCount], (Call)ValueCache[layerCount]);
-    //     }
-    // }
 }
 
 internal static class ModelUtils
@@ -462,9 +457,10 @@ internal static class ModelUtils
     /// huggingface utils functions: compute rope args.
     /// </summary>
     /// <param name="config">Get [rope_theta, head_dim, num_attention_heads, hidden_size].</param>
+    /// <param name="defaultScale"> freq scale.</param>
     /// <returns>repo parameters.</returns>
     public static Tuple<float[], float> ComputeDefaultRopeParameters(
-        Dictionary<string, object> config)
+        Dictionary<string, object> config, long dimTmp = -1, double defaultScale = 1.0f)
     {
         /*
          * base = config.rope_theta
@@ -493,18 +489,23 @@ internal static class ModelUtils
         }
 
         var dim = (int)(headDim * partialRotaryFactor);
-        float attentionFactor = 1.0f;
+        var attentionFactor = (float)defaultScale;
+
+        if (dimTmp != -1)
+        {
+            dim = (int)dimTmp;
+        }
 
         // Compute the inverse frequencies
         var arange = Enumerable
-            .Range(0, dim)
-            .Where(i => i % 2 == 0)
-            .Select(i => (float)i)
-            .ToArray();
+        .Range(0, dim)
+        .Where(i => i % 2 == 0)
+        .Select(i => (float)i)
+        .ToArray();
 
         // Compute inv_freq
         var inv_freq = arange
-            .Select(i => 1f / MathF.Pow(baseRoPETheta, i / dim))
+            .Select(i => 1f / (attentionFactor * MathF.Pow(baseRoPETheta, i / dim)))
             .ToArray();
         return Tuple.Create(inv_freq, attentionFactor);
     }
@@ -552,24 +553,45 @@ internal static class ModelUtils
         return Tuple.Create(invFreqLlama, attentionFactor);
     }
 
-    public static Tuple<float[], float> RoPEInit(Dictionary<string, object> config)
+    public static Tuple<float[], float> ComputeYarnRopeParameters(
+        Dictionary<string, object> config)
+    {
+        var baseValue = config.GetNestedValue<long>("rope_theta");
+        var original_max_position_embeddings = config.GetNestedValue<long>("rope_scaling", "original_max_position_embeddings");
+        var dim = config.GetNestedValue<long>("qk_rope_head_dim");
+        var scalingFactor = (double)config.GetNestedValue<long>("rope_scaling", "factor");
+        var betaFast = config.GetNestedValue<long>("rope_scaling", "beta_fast");
+        var betaSlow = config.GetNestedValue<long>("rope_scaling", "beta_slow");
+
+        var (freqExtra, _) = ComputeDefaultRopeParameters(config, dimTmp: dim);
+        var (freqInter, _) = ComputeDefaultRopeParameters(config, dimTmp: dim, defaultScale: scalingFactor);
+
+        var (low, high) = YarnFindCorrectionRange(betaFast, betaSlow, dim, baseValue, original_max_position_embeddings);
+        var invFreqMask = YarnLinearRampMask(low, high, (int)(dim / 2)).Select(i => 1.0 - i).ToArray();
+
+        var invFreq = Enumerable.Range(0, (int)(dim / 2)).Select(i => (float)i).ToArray();
+        for (int i = 0; i < invFreqMask.Length(); i++)
+        {
+            invFreq[i] = (freqInter[i] * (1.0f - (float)invFreqMask[i])) + (float)(freqExtra[i] * invFreqMask[i]);
+        }
+
+        var mscalet = config.GetNestedValue<double>("rope_scaling", "mscale");
+        var mscaleAllDim = config.GetNestedValue<double>("rope_scaling", "mscale_all_dim");
+
+        var mscale = (float)(YarnGetMscale(scalingFactor, mscalet) / YarnGetMscale(scalingFactor, mscaleAllDim));
+
+        return Tuple.Create(invFreq, mscale);
+    }
+
+    public static Tuple<float[], float> RoPEInit(Dictionary<string, object> config, string type)
     {
         ArgumentNullException.ThrowIfNull(config);
-
-        string type = "default";
-        if (config.ContainsKey("rope_type"))
-        {
-            type = config.GetNestedValue<string>("rope_type");
-        }
-        else if (config.TryGetValue("rope_scaling", out var ropeScaling) && ropeScaling is not null)
-        {
-            type = config.GetNestedValue<string>("rope_scaling", "rope_type");
-        }
 
         return type switch
         {
             "default" => ModelUtils.ComputeDefaultRopeParameters(config),
             "llama3" => ModelUtils.ComputeLlama3RopeParameters(config),
+            "yarn" => ModelUtils.ComputeYarnRopeParameters(config),
             _ => throw new NotImplementedException($"RoPE function {type} need to impl"),
         };
     }
@@ -612,6 +634,61 @@ internal static class ModelUtils
     public static int[] GetLayoutPerm(AttentionDimKind[] inputLayout, AttentionDimKind[] targetLayout)
     {
         return targetLayout.Select(i => inputLayout.IndexOf(i)).ToArray();
+    }
+
+    private static Tuple<float, float> YarnFindCorrectionRange(long betaFase, long betaSlow, long dim, long baseValue, long originalMaxPositionEmbeddings)
+    {
+        var low = Math.Floor(YarnFindCorrectionDim(betaSlow, dim, baseValue, originalMaxPositionEmbeddings));
+        var high = Math.Ceiling(YarnFindCorrectionDim(betaFase, dim, baseValue, originalMaxPositionEmbeddings));
+
+        return Tuple.Create((float)Math.Max(low, 0.0), (float)Math.Min(high, dim - 1));
+    }
+
+    private static float YarnFindCorrectionDim(long numRotations, long dim, long baseValue, long maxPositionEmbedding)
+    {
+        return (float)(dim * Math.Log(maxPositionEmbedding / (numRotations * 2.0f * Math.PI)) / (2.0f * Math.Log(baseValue)));
+    }
+
+    private static float[] YarnLinearRampMask(float low, float high, int dim)
+    {
+        if (low == high)
+        {
+            high = high + 0.001f;
+        }
+
+        var arange = Enumerable
+            .Range(0, dim)
+            .Select(i => (float)i)
+            .ToArray();
+        var mask = arange.Select(i => (i - low) / (high - low)).ToArray();
+        mask = mask.Select(i => Math.Min(1, Math.Max(0, i))).ToArray();
+        return mask;
+    }
+
+    private static float YarnGetMscale(double scale, double mscale)
+    {
+        if (scale <= 1.0f)
+        {
+            return 1.0f;
+        }
+
+        return (float)((0.1f * mscale * Math.Log(scale)) + 0.1f);
+    }
+
+    public static Expr CheckShape(Expr shape)
+    {
+        if (shape.CheckedType == null)
+        {
+            shape.InferenceType();
+        }
+
+        DumpScope.Current.DumpIR(shape, "ShapeExprUtilityCheckShape");
+        if (shape.CheckedType is not TensorType || shape.CheckedShape.IsScalar)
+        {
+            throw new InvalidOperationException();
+        }
+
+        return shape;
     }
 }
 

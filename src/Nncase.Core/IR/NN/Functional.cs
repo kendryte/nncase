@@ -122,4 +122,6 @@ public static class NN
     public static Expr IdentityPagedAttentionKVCache(Expr input, Expr numSeqs, Expr numTokens, Expr contextLens, Expr seqLens, Expr blockTable, Expr slotMapping, Expr numBlocks, Expr kvCaches) => new Call(new IdentityPagedAttentionKVCache(), input, numSeqs, numTokens, contextLens, seqLens, blockTable, slotMapping, numBlocks, kvCaches);
 
     public static Expr PagedAttention(Expr q, Expr kvCaches, Expr extra, Expr scale, int layerId, AttentionDimKind[] qlayout, int hiddenSize) => new Call(new PagedAttention(layerId, new IRArray<AttentionDimKind>(qlayout), hiddenSize), q, kvCaches, extra, scale);
+
+    public static Expr MLAPagedAttention(Expr q, Expr kvCaches, Expr extra, Expr scale, Expr qAProjW, Expr wAScaleQ, Expr qALayerNormW, Expr qBProjW, Expr wBScaleQ, Expr kvBProjW, Expr wBScaleKV, Expr kvALayerNormW, int layerId, AttentionDimKind[] qlayout, int hiddenSize, int numAttentionHead, int kvLoraRank, int qkNopeHeadDim, int qkRopeHeadDim, int vHeadDim) => new Call(new MLAPagedAttention(layerId, new IRArray<AttentionDimKind>(qlayout), hiddenSize, numAttentionHead, kvLoraRank, qkNopeHeadDim, qkRopeHeadDim, vHeadDim), q, kvCaches, extra, scale, qAProjW, wAScaleQ, qALayerNormW, qBProjW, wBScaleQ, kvBProjW, wBScaleKV, kvALayerNormW);
 }
