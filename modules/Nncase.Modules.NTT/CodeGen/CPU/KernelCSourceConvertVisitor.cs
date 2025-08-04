@@ -374,7 +374,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     break;
                 case TIR.NTT.VectorizedSoftmax vectorizedsoftmax:
                     {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/VectorizedSoftMax.cshtml", new TypedKernelTemplateModel<TIR.NTT.VectorizedSoftmax>(vectorizedsoftmax)
+                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/VectorizedSoftmax.cshtml", new TypedKernelTemplateModel<TIR.NTT.VectorizedSoftmax>(vectorizedsoftmax)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Args = args.ToArray(),

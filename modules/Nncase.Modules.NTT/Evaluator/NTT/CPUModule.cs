@@ -16,7 +16,7 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<LoadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<StoreEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizedReduceEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<VectorizedSoftMaxEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<VectorizedSoftmaxEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizedLayerNormEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizedMatMulEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizedBinaryEvaluator>(reuse: Reuse.Singleton);

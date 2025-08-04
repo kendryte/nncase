@@ -14,7 +14,7 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.IR.NTT;
 
-public sealed class VectorizedSoftMaxEvaluator : ITypeInferencer<VectorizedSoftmax>, ICostEvaluator<VectorizedSoftmax>, IEvaluator<VectorizedSoftmax>
+public sealed class VectorizedSoftmaxEvaluator : ITypeInferencer<VectorizedSoftmax>, ICostEvaluator<VectorizedSoftmax>, IEvaluator<VectorizedSoftmax>
 {
     public IRType Visit(ITypeInferenceContext context, VectorizedSoftmax target)
     {
