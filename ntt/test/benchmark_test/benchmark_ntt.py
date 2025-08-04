@@ -414,7 +414,8 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'square': '1.5',
                                             'swish': '12.5',
                                             'tanh': '27.5',
-                                            },}
+                                            },
+                                  'clamp': {'Pack': '0.0'},}
 
     def run(self):
         for bin in self.bin_list:
@@ -648,7 +649,8 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                             'square': '6.3',
                                             'swish': '112',
                                             'tanh': '197',
-                                            },}
+                                            },
+                                  'clamp': {'Pack': '0.0'},}
 
     def run(self):
         if self.target not in kpu_targets():
