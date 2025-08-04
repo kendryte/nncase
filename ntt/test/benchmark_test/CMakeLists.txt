@@ -47,6 +47,9 @@ file(GLOB TEST_NAMES_FP16 CONFIGURE_DEPENDS
     benchmark_ntt_fp16_reduce.cpp
     benchmark_ntt_fp16_scatter_nd.cpp
     benchmark_ntt_fp16_slice.cpp
+    benchmark_ntt_fp16_transpose.cpp
+    benchmark_ntt_fp16_unpack.cpp
+    benchmark_ntt_fp16_where.cpp
 )
 
 # merge F32 AND FP16 INTO TEST_NAMES
