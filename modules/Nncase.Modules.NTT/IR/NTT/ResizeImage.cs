@@ -25,7 +25,7 @@ public sealed partial class ResizeImage : Op
 
     public static readonly ParameterInfo PadedNums = new(typeof(ResizeImage), 1, "padedNums", IsShapeType());
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
     public IRArray<int> NewSize { get; }
 

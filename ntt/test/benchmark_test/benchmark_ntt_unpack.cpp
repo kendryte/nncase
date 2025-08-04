@@ -25,10 +25,10 @@
 using namespace nncase;
 
 template <typename ElementType, size_t N, size_t C, size_t H, size_t W,
-          size_t... unpack_dims>
-void benchmark_ntt_unpack(const std::string &mode, const size_t run_size) {
-    constexpr size_t axes[] = {unpack_dims...};
-    constexpr size_t axes_size = sizeof...(unpack_dims);
+          size_t... devectorize_dims>
+void benchmark_ntt_devectorize(const std::string &mode, const size_t run_size) {
+    constexpr size_t axes[] = {devectorize_dims...};
+    constexpr size_t axes_size = sizeof...(devectorize_dims);
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P0 =
         std::any_of(axes, axes + axes_size, [](size_t i) { return i == 0; })
@@ -59,14 +59,14 @@ void benchmark_ntt_unpack(const std::string &mode, const size_t run_size) {
     constexpr size_t warmup_size = 10;
 #endif
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::unpack(ntt_input, ntt_output, fixed_shape_v<unpack_dims...>);
+        ntt::devectorize(ntt_input, ntt_output, fixed_shape_v<devectorize_dims...>);
         asm volatile("" ::"g"(ntt_output));
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::unpack(ntt_input, ntt_output, fixed_shape_v<unpack_dims...>);
+        ntt::devectorize(ntt_input, ntt_output, fixed_shape_v<devectorize_dims...>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -84,37 +84,37 @@ int main(int argc, char *argv[]) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
 #if __riscv
-    benchmark_ntt_unpack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 300);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 300);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
         "NC", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 2, 3 * P, 4 * P, 8, 1, 2>(
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 2, 3 * P, 4 * P, 8, 1, 2>(
         "CH", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
         "HW", 300);
 #elif __x86_64__
-    benchmark_ntt_unpack<ntt::vector<float, P>, P * 8, 2, 4, 4, 0>("N", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 2, 8 * P, 2, 4, 1>("C", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 2, 2, 8 * P, 8, 2>("H", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 2, 2, 4, 8 * P, 3>("W", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 8 * P, 2, 4, 0, 1>(
+    benchmark_ntt_devectorize<ntt::vector<float, P>, P * 8, 2, 4, 4, 0>("N", 2000);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 2, 8 * P, 2, 4, 1>("C", 2000);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 2, 2, 8 * P, 8, 2>("H", 2000);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 2, 2, 4, 8 * P, 3>("W", 2000);
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 4 * P, 8 * P, 2, 4, 0, 1>(
         "NC", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 2, 4 * P, 8 * P, 8, 1, 2>(
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 2, 4 * P, 8 * P, 8, 1, 2>(
         "CH", 2000);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 8 * P, 8 * P, 2, 3>(
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 4, 4, 8 * P, 8 * P, 2, 3>(
         "HW", 2000);
 #else
-    benchmark_ntt_unpack<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 16 * P, 3, 4, 4, 0>("N", 300);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 3, 16 * P, 4, 4, 1>("C", 300);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 3, 4, 16 * P, 4, 2>("H", 300);
+    benchmark_ntt_devectorize<ntt::vector<float, P>, 3, 4, 4, 16 * P, 3>("W", 300);
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 4 * P, 3 * P, 4, 4, 0, 1>(
         "NC", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 2, 3 * P, 4 * P, 8, 1, 2>(
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 2, 3 * P, 4 * P, 8, 1, 2>(
         "CH", 300);
-    benchmark_ntt_unpack<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
+    benchmark_ntt_devectorize<ntt::vector<float, P, P>, 4, 4, 3 * P, 4 * P, 2, 3>(
         "HW", 300);
 #endif
 }

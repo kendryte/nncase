@@ -444,20 +444,20 @@ public static class TypeInference
     }
 
     /// <summary>
-    /// Pack Type Infer.
+    /// Vectorize Type Infer.
     /// </summary>
-    public static IRType PackType(TensorType input, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    public static IRType VectorizeType(TensorType input, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
     {
         if (input.DType is BooleanType)
         {
-            return new InvalidType("PackType does not support BooleanType input");
+            return new InvalidType("VectorizeType does not support BooleanType input");
         }
 
         var vType = new VectorType(input.DType, lanes.ToArray());
-        return PackType(input.Shape, vType, lanes, axes);
+        return VectorizeType(input.Shape, vType, lanes, axes);
     }
 
-    public static IRType PackMaskType(TensorType input, MaskVectorStyle style, int elementBits, int lanes, int axis)
+    public static IRType VectorizeMaskType(TensorType input, MaskVectorStyle style, int elementBits, int lanes, int axis)
     {
         if (input.DType is not BooleanType)
         {
@@ -465,16 +465,16 @@ public static class TypeInference
         }
 
         var vType = new MaskVectorType(style, elementBits, lanes);
-        return PackType(input.Shape, vType, [lanes], [axis]);
+        return VectorizeType(input.Shape, vType, [lanes], [axis]);
     }
 
-    public static IRType UnpackType(TensorType input, IRArray<int> axes)
+    public static IRType DevectorizeType(TensorType input, IRArray<int> axes)
     {
         return input.DType switch
         {
-            MaskVectorType vt => UnpackType(input.Shape, DataTypes.Boolean, [vt.Lanes], axes),
-            VectorType vt => UnpackType(input.Shape, vt.ElemType, vt.Lanes, axes),
-            _ => new InvalidType($"UnpackType does not support {input.DType}"),
+            MaskVectorType vt => DevectorizeType(input.Shape, DataTypes.Boolean, [vt.Lanes], axes),
+            VectorType vt => DevectorizeType(input.Shape, vt.ElemType, vt.Lanes, axes),
+            _ => new InvalidType($"DevectorizeType does not support {input.DType}"),
         };
     }
 
@@ -686,7 +686,7 @@ public static class TypeInference
         return outputShape;
     }
 
-    private static IRType PackType(Shape inputShape, DataType vectorType, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    private static IRType VectorizeType(Shape inputShape, DataType vectorType, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
     {
         if (inputShape is RankedShape inShape)
         {
@@ -711,7 +711,7 @@ public static class TypeInference
         return new TensorType(vectorType, Shape.Unranked);
     }
 
-    private static IRType UnpackType(Shape inputShape, DataType elementType, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    private static IRType DevectorizeType(Shape inputShape, DataType elementType, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
     {
         if (inputShape is RankedShape inShape)
         {

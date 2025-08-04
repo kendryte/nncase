@@ -41,7 +41,7 @@ using namespace ortki;
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
 
-TEST(ReduceSumTestFloat, ReduceM_NoPack) {
+TEST(ReduceSumTestFloat, ReduceM_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     float golden_array[] = {1920, 1936, 1952, 1968, 1984, 2000, 2016, 2032,
@@ -50,7 +50,7 @@ TEST(ReduceSumTestFloat, ReduceM_NoPack) {
     NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, sum)
 }
 
-TEST(ReduceMaxTestFloat, ReduceM_NoPack) {
+TEST(ReduceMaxTestFloat, ReduceM_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     float golden_array[] = {240, 241, 242, 243, 244, 245, 246, 247,
@@ -59,7 +59,7 @@ TEST(ReduceMaxTestFloat, ReduceM_NoPack) {
     NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, max)
 }
 
-TEST(ReduceMinTestFloat, ReduceM_NoPack) {
+TEST(ReduceMinTestFloat, ReduceM_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     float golden_array[] = {0, 1, 2,  3,  4,  5,  6,  7,
@@ -68,7 +68,7 @@ TEST(ReduceMinTestFloat, ReduceM_NoPack) {
     NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, min)
 }
 
-TEST(ReduceMeanTestFloat, ReduceM_NoPack) {
+TEST(ReduceMeanTestFloat, ReduceM_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     float golden_array[] = {120, 121, 122, 123, 124, 125, 126, 127,
@@ -82,13 +82,13 @@ TEST(ReduceMeanTestFloat, ReduceM_NoPack) {
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    auto ntt_input_pack =                                                      \
+    auto ntt_input_vectorize =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
-    ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<0>);               \
+    ntt::vectorize(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);               \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);      \
-    ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,                 \
                                   ntt::fixed_shape_v<0>,                       \
                                   ntt::fixed_shape_v<0>);                      \
                                                                                \
@@ -100,7 +100,7 @@ TEST(ReduceMeanTestFloat, ReduceM_NoPack) {
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
 
-TEST(ReduceSumTestFloat, ReduceM_PackM) {
+TEST(ReduceSumTestFloat, ReduceM_VectorizeM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -110,7 +110,7 @@ TEST(ReduceSumTestFloat, ReduceM_PackM) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, sum)
 }
 
-TEST(ReduceMaxTestFloat, ReduceM_PackM) {
+TEST(ReduceMaxTestFloat, ReduceM_VectorizeM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -121,7 +121,7 @@ TEST(ReduceMaxTestFloat, ReduceM_PackM) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, max)
 }
 
-TEST(ReduceMinTestFloat, ReduceM_PackM) {
+TEST(ReduceMinTestFloat, ReduceM_VectorizeM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -132,7 +132,7 @@ TEST(ReduceMinTestFloat, ReduceM_PackM) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, min)
 }
 
-TEST(ReduceMeanTestFloat, ReduceM_PackM) {
+TEST(ReduceMeanTestFloat, ReduceM_VectorizeM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -161,7 +161,7 @@ TEST(ReduceMeanTestFloat, ReduceM_PackM) {
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
 
-TEST(ReduceSumTestFloat, ReduceN_NoPack) {
+TEST(ReduceSumTestFloat, ReduceN_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
 
@@ -170,7 +170,7 @@ TEST(ReduceSumTestFloat, ReduceN_NoPack) {
     NTT_REDUCE_VERIFY_REDUCEN_NOPACK(M, N, sum)
 }
 
-TEST(ReduceMaxTestFloat, ReduceN_NoPack) {
+TEST(ReduceMaxTestFloat, ReduceN_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
 
@@ -179,7 +179,7 @@ TEST(ReduceMaxTestFloat, ReduceN_NoPack) {
     NTT_REDUCE_VERIFY_REDUCEN_NOPACK(M, N, max)
 }
 
-TEST(ReduceMinTestFloat, ReduceN_NoPack) {
+TEST(ReduceMinTestFloat, ReduceN_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
 
@@ -188,7 +188,7 @@ TEST(ReduceMinTestFloat, ReduceN_NoPack) {
     NTT_REDUCE_VERIFY_REDUCEN_NOPACK(M, N, min)
 }
 
-TEST(ReduceMeanTestFloat, ReduceN_NoPack) {
+TEST(ReduceMeanTestFloat, ReduceN_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
 
@@ -203,13 +203,13 @@ TEST(ReduceMeanTestFloat, ReduceN_NoPack) {
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    auto ntt_input_pack =                                                      \
+    auto ntt_input_vectorize =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
-    ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<1>);               \
+    ntt::vectorize(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);               \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);      \
-    ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,                 \
                                   ntt::fixed_shape_v<1>,                       \
                                   ntt::fixed_shape_v<1>);                      \
                                                                                \
@@ -221,7 +221,7 @@ TEST(ReduceMeanTestFloat, ReduceN_NoPack) {
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
 
-TEST(ReduceSumTestFloat, ReduceN_PackN) {
+TEST(ReduceSumTestFloat, ReduceN_VectorizeN) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -231,7 +231,7 @@ TEST(ReduceSumTestFloat, ReduceN_PackN) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, sum)
 }
 
-TEST(ReduceMaxTestFloat, ReduceN_PackN) {
+TEST(ReduceMaxTestFloat, ReduceN_VectorizeN) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -241,7 +241,7 @@ TEST(ReduceMaxTestFloat, ReduceN_PackN) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, max)
 }
 
-TEST(ReduceMinTestFloat, ReduceN_PackN) {
+TEST(ReduceMinTestFloat, ReduceN_VectorizeN) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -251,7 +251,7 @@ TEST(ReduceMinTestFloat, ReduceN_PackN) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEN_PACKN(M, N, min)
 }
 
-TEST(ReduceMeanTestFloat, ReduceN_PackN) {
+TEST(ReduceMeanTestFloat, ReduceN_VectorizeN) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -280,7 +280,7 @@ TEST(ReduceMeanTestFloat, ReduceN_PackN) {
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
 
-TEST(ReduceSumTestFloat, ReduceMN_NoPack) {
+TEST(ReduceSumTestFloat, ReduceMN_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     float golden_array[] = {32640};
@@ -288,7 +288,7 @@ TEST(ReduceSumTestFloat, ReduceMN_NoPack) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, sum)
 }
 
-TEST(ReduceMaxTestFloat, ReduceMN_NoPack) {
+TEST(ReduceMaxTestFloat, ReduceMN_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
 
@@ -297,7 +297,7 @@ TEST(ReduceMaxTestFloat, ReduceMN_NoPack) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, max)
 }
 
-TEST(ReduceMinTestFloat, ReduceMN_NoPack) {
+TEST(ReduceMinTestFloat, ReduceMN_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
 
@@ -306,7 +306,7 @@ TEST(ReduceMinTestFloat, ReduceMN_NoPack) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_NOPACK(M, N, min)
 }
 
-TEST(ReduceMeanTestFloat, ReduceMN_NoPack) {
+TEST(ReduceMeanTestFloat, ReduceMN_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
 
@@ -320,13 +320,13 @@ TEST(ReduceMeanTestFloat, ReduceMN_NoPack) {
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    auto ntt_input_pack =                                                      \
+    auto ntt_input_vectorize =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
-    ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<0>);               \
+    ntt::vectorize(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);               \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
-    ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,                 \
                                   ntt::fixed_shape_v<0, 1>,                    \
                                   ntt::fixed_shape_v<0>);                      \
                                                                                \
@@ -338,7 +338,7 @@ TEST(ReduceMeanTestFloat, ReduceMN_NoPack) {
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
 
-TEST(ReduceSumTestFloat, ReduceMN_PackM) {
+TEST(ReduceSumTestFloat, ReduceMN_VectorizeM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -348,7 +348,7 @@ TEST(ReduceSumTestFloat, ReduceMN_PackM) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, sum)
 }
 
-TEST(ReduceMaxTestFloat, ReduceMN_PackM) {
+TEST(ReduceMaxTestFloat, ReduceMN_VectorizeM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -358,7 +358,7 @@ TEST(ReduceMaxTestFloat, ReduceMN_PackM) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, max)
 }
 
-TEST(ReduceMinTestFloat, ReduceMN_PackM) {
+TEST(ReduceMinTestFloat, ReduceMN_VectorizeM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -368,7 +368,7 @@ TEST(ReduceMinTestFloat, ReduceMN_PackM) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKM(M, N, min)
 }
 
-TEST(ReduceMeanTestFloat, ReduceMN_PackM) {
+TEST(ReduceMeanTestFloat, ReduceMN_VectorizeM) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -383,13 +383,13 @@ TEST(ReduceMeanTestFloat, ReduceMN_PackM) {
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    auto ntt_input_pack =                                                      \
+    auto ntt_input_vectorize =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
-    ntt::pack(ntt_input, ntt_input_pack, ntt::fixed_shape_v<1>);               \
+    ntt::vectorize(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);               \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
-    ntt::reduce_##ntt_reduce_mode(ntt_input_pack, ntt_output1,                 \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,                 \
                                   ntt::fixed_shape_v<0, 1>,                    \
                                   ntt::fixed_shape_v<1>);                      \
                                                                                \
@@ -401,7 +401,7 @@ TEST(ReduceMeanTestFloat, ReduceMN_PackM) {
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
 
-TEST(ReduceSumTestFloat, ReduceMN_PackN) {
+TEST(ReduceSumTestFloat, ReduceMN_VectorizeN) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -411,7 +411,7 @@ TEST(ReduceSumTestFloat, ReduceMN_PackN) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, sum)
 }
 
-TEST(ReduceMaxTestFloat, ReduceMN_PackN) {
+TEST(ReduceMaxTestFloat, ReduceMN_VectorizeN) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -421,7 +421,7 @@ TEST(ReduceMaxTestFloat, ReduceMN_PackN) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, max)
 }
 
-TEST(ReduceMinTestFloat, ReduceMN_PackN) {
+TEST(ReduceMinTestFloat, ReduceMN_VectorizeN) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -431,7 +431,7 @@ TEST(ReduceMinTestFloat, ReduceMN_PackN) {
     NTT_PACKED_REDUCE_VERIFY_REDUCEMN_PACKN(M, N, min)
 }
 
-TEST(ReduceMeanTestFloat, ReduceMN_PackN) {
+TEST(ReduceMeanTestFloat, ReduceMN_VectorizeN) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);

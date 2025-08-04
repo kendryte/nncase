@@ -25,7 +25,7 @@
 using namespace nncase;
 using namespace ortki;
 
-TEST(CastTestFloat32ToInt32, NoPack) {
+TEST(CastTestFloat32ToInt32, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     float min_input = -100.0f;
@@ -49,7 +49,7 @@ TEST(CastTestFloat32ToInt32, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToInt32_ranked, NoPack) {
+TEST(CastTestFloat32ToInt32_ranked, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     float min_input = -100.0f;
@@ -75,7 +75,7 @@ TEST(CastTestFloat32ToInt32_ranked, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToInt32, Pack) {
+TEST(CastTestFloat32ToInt32, Vectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -87,14 +87,14 @@ TEST(CastTestFloat32ToInt32, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<int32_t, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -106,7 +106,7 @@ TEST(CastTestFloat32ToInt32, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestInt32ToFloat32, NoPack) {
+TEST(CastTestInt32ToFloat32, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     int32_t min_input = -100;
@@ -130,7 +130,7 @@ TEST(CastTestInt32ToFloat32, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestInt32ToFloat32, Pack) {
+TEST(CastTestInt32ToFloat32, Vectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -142,14 +142,14 @@ TEST(CastTestInt32ToFloat32, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<int32_t, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -161,7 +161,7 @@ TEST(CastTestInt32ToFloat32, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToUint32, NoPack) {
+TEST(CastTestFloat32ToUint32, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     float min_input = 0.f;
@@ -185,7 +185,7 @@ TEST(CastTestFloat32ToUint32, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToUint32, Pack) {
+TEST(CastTestFloat32ToUint32, Vectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -197,14 +197,14 @@ TEST(CastTestFloat32ToUint32, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto pack_output = ntt::make_tensor<ntt::vector<unsigned int, P>>(
+    auto vectorize_output = ntt::make_tensor<ntt::vector<unsigned int, P>>(
         ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<unsigned int>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -216,7 +216,7 @@ TEST(CastTestFloat32ToUint32, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestUint32ToFloat32, NoPack) {
+TEST(CastTestUint32ToFloat32, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     unsigned int min_input = 0;
@@ -240,7 +240,7 @@ TEST(CastTestUint32ToFloat32, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestUint32ToFloat32, Pack) {
+TEST(CastTestUint32ToFloat32, Vectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -252,14 +252,14 @@ TEST(CastTestUint32ToFloat32, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input = ntt::make_tensor<ntt::vector<unsigned int, P>>(
+    auto vectorize_input = ntt::make_tensor<ntt::vector<unsigned int, P>>(
         ntt::fixed_shape_v<M / P, N>);
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -271,7 +271,7 @@ TEST(CastTestUint32ToFloat32, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToBool, NoPack) {
+TEST(CastTestFloat32ToBool, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     float min_input = -100.0f;
@@ -295,7 +295,7 @@ TEST(CastTestFloat32ToBool, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToBool_1D, Pack) {
+TEST(CastTestFloat32ToBool_1D, Vectorize) {
     constexpr size_t N = 128;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     float min_input = -100.0f;
@@ -306,14 +306,14 @@ TEST(CastTestFloat32ToBool_1D, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P>);
-    auto pack_output = ntt::make_tensor<ntt::vector<bool, P * 4>>(
+    auto vectorize_output = ntt::make_tensor<ntt::vector<bool, P * 4>>(
         ntt::fixed_shape_v<N / P / 4>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<bool>(ntt::fixed_shape_v<N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -325,7 +325,7 @@ TEST(CastTestFloat32ToBool_1D, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToBool_2D, Pack) {
+TEST(CastTestFloat32ToBool_2D, Vectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -337,14 +337,14 @@ TEST(CastTestFloat32ToBool_2D, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<bool>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -356,7 +356,7 @@ TEST(CastTestFloat32ToBool_2D, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestBoolToFloat32, NoPack) {
+TEST(CastTestBoolToFloat32, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     bool min_input = 0;
@@ -380,7 +380,7 @@ TEST(CastTestBoolToFloat32, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestBoolToFloat32_1D, Pack) {
+TEST(CastTestBoolToFloat32_1D, Vectorize) {
     constexpr size_t N = 128;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     bool min_input = 0;
@@ -391,14 +391,14 @@ TEST(CastTestBoolToFloat32_1D, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<N / P>);
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -410,7 +410,7 @@ TEST(CastTestBoolToFloat32_1D, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestBoolToFloat32_2D, Pack) {
+TEST(CastTestBoolToFloat32_2D, Vectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -422,14 +422,14 @@ TEST(CastTestBoolToFloat32_2D, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -441,7 +441,7 @@ TEST(CastTestBoolToFloat32_2D, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToFloat8E4M3, NoPack) {
+TEST(CastTestFloat32ToFloat8E4M3, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     float min_input = -500.0f;
@@ -465,7 +465,7 @@ TEST(CastTestFloat32ToFloat8E4M3, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat32ToFloat8E4M3, Pack) {
+TEST(CastTestFloat32ToFloat8E4M3, Vectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -477,14 +477,14 @@ TEST(CastTestFloat32ToFloat8E4M3, Pack) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto pack_output = ntt::make_tensor<ntt::vector<float_e4m3_t, P>>(
+    auto vectorize_output = ntt::make_tensor<ntt::vector<float_e4m3_t, P>>(
         ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // float8
     auto ntt_output2 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
@@ -496,7 +496,7 @@ TEST(CastTestFloat32ToFloat8E4M3, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat8E4M3ToFloat32, NoPack) {
+TEST(CastTestFloat8E4M3ToFloat32, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     float_e4m3_t min_input = (float_e4m3_t)-448.0f;
@@ -520,7 +520,7 @@ TEST(CastTestFloat8E4M3ToFloat32, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat8E4M3ToFloat32, Pack) {
+TEST(CastTestFloat8E4M3ToFloat32, Vectorize) {
     constexpr size_t M = 64;
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
@@ -531,16 +531,16 @@ TEST(CastTestFloat8E4M3ToFloat32, Pack) {
     auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M>);
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
-    auto pack_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
+    auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
         ntt::fixed_shape_v<M / P1>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
 
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P2>>(ntt::fixed_shape_v<M / P2>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
 
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M>);
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
@@ -551,7 +551,7 @@ TEST(CastTestFloat8E4M3ToFloat32, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat8E4M3ToBFloat16, NoPack) {
+TEST(CastTestFloat8E4M3ToBFloat16, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     float_e4m3_t min_input = (float_e4m3_t)-448.0f;
@@ -575,7 +575,7 @@ TEST(CastTestFloat8E4M3ToBFloat16, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat8E4M3ToBFloat16, Pack) {
+TEST(CastTestFloat8E4M3ToBFloat16, Vectorize) {
     constexpr size_t M = 64;
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(bfloat16) * 8);
@@ -586,16 +586,16 @@ TEST(CastTestFloat8E4M3ToBFloat16, Pack) {
     auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M>);
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
-    auto pack_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
+    auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
         ntt::fixed_shape_v<M / P1>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
 
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<bfloat16, P2>>(ntt::fixed_shape_v<M / P2>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
 
     auto ntt_output1 = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<M>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     auto ntt_output2 = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<M>);
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
@@ -606,7 +606,7 @@ TEST(CastTestFloat8E4M3ToBFloat16, Pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat8E4M3ToHalf, NoPack) {
+TEST(CastTestFloat8E4M3ToHalf, NoVectorize) {
     constexpr size_t M = 32;
     constexpr size_t N = 32;
     float_e4m3_t min_input = (float_e4m3_t)-448.0f;
@@ -630,7 +630,7 @@ TEST(CastTestFloat8E4M3ToHalf, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(CastTestFloat8E4M3ToHalf, Pack) {
+TEST(CastTestFloat8E4M3ToHalf, Vectorize) {
     constexpr size_t M = 64;
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(half) * 8);
@@ -641,16 +641,16 @@ TEST(CastTestFloat8E4M3ToHalf, Pack) {
     auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M>);
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
-    auto pack_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
+    auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
         ntt::fixed_shape_v<M / P1>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
+    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
 
-    auto pack_output =
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<half, P2>>(ntt::fixed_shape_v<M / P2>);
-    ntt::cast(pack_input, pack_output, ntt::fixed_shape_v<0>);
+    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
 
     auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<M>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<M>);
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {

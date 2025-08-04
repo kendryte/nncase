@@ -6,13 +6,13 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.NTT;
 
 [PatternFunctionalGenerator]
-public sealed partial class PackedSoftmax : Op
+public sealed partial class VectorizedSoftmax : Op
 {
-    public static readonly ParameterInfo Input = new(typeof(PackedSoftmax), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(VectorizedSoftmax), 0, "input", ParameterKind.Input);
 
     public int Axis { get; }
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
-    public override string DisplayProperty() => $"{Axis}, {PackedAxes}";
+    public override string DisplayProperty() => $"{Axis}, {VectorizedAxes}";
 }

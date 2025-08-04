@@ -7,24 +7,24 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.NTT;
 
 [PatternFunctionalGenerator]
-public sealed partial class PackedLayerNorm : Op
+public sealed partial class VectorizedLayerNorm : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(PackedLayerNorm), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(VectorizedLayerNorm), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets scale.
     /// </summary>
-    public static readonly ParameterInfo Scale = new(typeof(PackedLayerNorm), 1, "scale", ParameterKind.Input);
+    public static readonly ParameterInfo Scale = new(typeof(VectorizedLayerNorm), 1, "scale", ParameterKind.Input);
 
     /// <summary>
     /// Gets bias.
     /// </summary>
-    public static readonly ParameterInfo Bias = new(typeof(PackedLayerNorm), 2, "bias", ParameterKind.Input);
+    public static readonly ParameterInfo Bias = new(typeof(VectorizedLayerNorm), 2, "bias", ParameterKind.Input);
 
-    public static readonly ParameterInfo PadedNums = new(typeof(PackedLayerNorm), 3, "padedNums", IsShapeType());
+    public static readonly ParameterInfo PadedNums = new(typeof(VectorizedLayerNorm), 3, "padedNums", IsShapeType());
 
     public int Axis { get; }
 
@@ -32,7 +32,7 @@ public sealed partial class PackedLayerNorm : Op
 
     public bool UseMean { get; }
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
-    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, PackedAxes: {PackedAxes}";
+    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, VectorizedAxes: {VectorizedAxes}";
 }

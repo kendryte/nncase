@@ -20,12 +20,12 @@
 namespace nncase::ntt {
 namespace ukernels {
 
-template <class T1, class T2, bool Arch> struct u_unpack_policy {
+template <class T1, class T2, bool Arch> struct u_devectorize_policy {
     static constexpr size_t unroll = 2;
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank, bool Arch>
-class u_unpack_impl {
+class u_devectorize_impl {
   public:
     using TVec = typename TIn::element_type;
 
@@ -55,8 +55,8 @@ class u_unpack_impl {
 } // namespace ukernels
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
-void u_unpack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
-    ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(), true> impl;
+void u_devectorize(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+    ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank(), true> impl;
     impl(input, output, axes);
 }
 

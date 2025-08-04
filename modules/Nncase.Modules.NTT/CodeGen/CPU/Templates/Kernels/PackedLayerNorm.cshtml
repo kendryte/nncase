@@ -1,5 +1,5 @@
-@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.PackedLayerNorm>
+@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.VectorizedLayerNorm>
 @{
     var epsType = Model.Args[0].CheckedTensorType.DType is VectorType vt ? vt.ElemType : Model.Args[0].CheckedTensorType.DType;
 }
-packed_layer_norm(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), @Html.Raw(Model.Arguments[3].Symbol.Name), @Html.Raw(epsType.ToC()) { @Model.Target.Epsilon }, fixed_dim_v<@Model.Target.Axis>, fixed_shape_v<@string.Join(",", Model.Target.PackedAxes)>, fixed_shape_v<@string.Join(",", Model.Target.PadedNums)>, @Model.Target.UseMean.ToString().ToLower());
+vectorized_layer_norm(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), @Html.Raw(Model.Arguments[3].Symbol.Name), @Html.Raw(epsType.ToC()) { @Model.Target.Epsilon }, fixed_dim_v<@Model.Target.Axis>, fixed_shape_v<@string.Join(",", Model.Target.VectorizedAxes)>, fixed_shape_v<@string.Join(",", Model.Target.PadedNums)>, @Model.Target.UseMean.ToString().ToLower());

@@ -12,17 +12,17 @@ using static Nncase.IR.F.Tensors;
 namespace Nncase.Tests.Rules.NeutralTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestPackConcat : TransformTestBase
+public class UnitTestVectorizeConcat : TransformTestBase
 {
     [Fact]
-    public void TestConcatUnpackPropagation()
+    public void TestConcatDevectorizePropagation()
     {
-        var lhs = Pack(Testing.Rand<float>(1, 24), [8], [1]).Evaluate().AsTensor();
+        var lhs = Vectorize(Testing.Rand<float>(1, 24), [8], [1]).Evaluate().AsTensor();
         var lhsVar = new Var(new TensorType(lhs.ElementType, lhs.Shape));
         var rhs = Testing.Rand<float>(3, 24);
         var rhsVar = new Var(new TensorType(rhs.ElementType, rhs.Shape));
-        Expr expr = Concat(new IR.Tuple(Unpack(lhsVar, [8], [1]), rhsVar), 0);
-        TestMatched<ConcatUnpackPropagation>(
+        Expr expr = Concat(new IR.Tuple(Devectorize(lhsVar, [8], [1]), rhsVar), 0);
+        TestMatched<ConcatDevectorizePropagation>(
             expr,
             new Dictionary<IVar, IValue> {
                 { lhsVar, Value.FromTensor(lhs) },

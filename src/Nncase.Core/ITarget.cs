@@ -39,7 +39,7 @@ public interface INTTTargetOptions : ITargetOptions
 {
     string ModelName { get; set; }
 
-    bool Packing { get; set; }
+    bool Vectorize { get; set; }
 
     bool UnifiedMemoryArch { get; set; }
 
@@ -157,9 +157,9 @@ public interface ITarget
 
     void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options);
 
-    void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options);
+    void RegisterAutoVectorizeRules(IRulesAddable pass, CompileOptions options);
 
-    void RegisterPostAutoPackingPass(IPassManager passManager, CompileOptions options);
+    void RegisterPostAutoVectorizePass(IPassManager passManager, CompileOptions options);
 
     void RegisterTIRSelectionPass(IPassManager passManager, CompileOptions options);
 }

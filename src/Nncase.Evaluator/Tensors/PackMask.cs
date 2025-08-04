@@ -17,20 +17,20 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
-public sealed class PackMaskEvaluator : ITypeInferencer<PackMask>, ICostEvaluator<PackMask>, IEvaluator<PackMask>
+public sealed class VectorizeMaskEvaluator : ITypeInferencer<VectorizeMask>, ICostEvaluator<VectorizeMask>, IEvaluator<VectorizeMask>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, PackMask target)
+    public IValue Visit(IEvaluateContext context, VectorizeMask target)
     {
-        var input = context.GetOrtArgumentValue(target, PackMask.Input);
-        input = input.Pack(target.Lanes, target.Axis);
+        var input = context.GetOrtArgumentValue(target, VectorizeMask.Input);
+        input = input.Vectorize(target.Lanes, target.Axis);
         return input.ToValue(new MaskVectorType(target.Style, target.ElementBits, target.Lanes));
     }
 
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, PackMask target)
+    public IRType Visit(ITypeInferenceContext context, VectorizeMask target)
     {
-        var input = context.CheckArgumentType<IRType>(target, PackMask.Input);
+        var input = context.CheckArgumentType<IRType>(target, VectorizeMask.Input);
 
         return input switch
         {
@@ -42,9 +42,9 @@ public sealed class PackMaskEvaluator : ITypeInferencer<PackMask>, ICostEvaluato
     }
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, PackMask target)
+    public Cost Visit(ICostEvaluateContext context, VectorizeMask target)
     {
-        var inputType = context.GetArgumentType<IRType>(target, PackMask.Input);
+        var inputType = context.GetArgumentType<IRType>(target, VectorizeMask.Input);
         var outputType = context.GetReturnType<IRType>();
 
         return new()
@@ -54,7 +54,7 @@ public sealed class PackMaskEvaluator : ITypeInferencer<PackMask>, ICostEvaluato
         };
     }
 
-    public Metric Visit(IMetricEvaluateContext context, PackMask target)
+    public Metric Visit(IMetricEvaluateContext context, VectorizeMask target)
     {
         var returnType = context.GetReturnType<TensorType>();
         return new()
@@ -63,12 +63,12 @@ public sealed class PackMaskEvaluator : ITypeInferencer<PackMask>, ICostEvaluato
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, PackMask target, TensorType input)
+    private IRType Visit(ITypeInferenceContext context, VectorizeMask target, TensorType input)
     {
-        return TypeInference.PackMaskType(input, target.Style, target.ElementBits, target.Lanes, target.Axis);
+        return TypeInference.VectorizeMaskType(input, target.Style, target.ElementBits, target.Lanes, target.Axis);
     }
 
-    private IRType Visit(ITypeInferenceContext context, PackMask target, DistributedType input)
+    private IRType Visit(ITypeInferenceContext context, VectorizeMask target, DistributedType input)
     {
         if (Visit(context, target, input.TensorType) is not TensorType tensorType)
         {

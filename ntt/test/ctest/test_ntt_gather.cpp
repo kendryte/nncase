@@ -22,7 +22,7 @@
 using namespace nncase;
 using namespace ortki;
 
-TEST(GatherTestFloat, no_pack_dynamic_shape_int32) {
+TEST(GatherTestFloat, no_vectorize_dynamic_shape_int32) {
 
     int32_t index_array[] = {1, 0, 2};
     auto tb = ntt::make_tensor_view(std::span<int32_t, 3>(index_array, 3),
@@ -50,7 +50,7 @@ TEST(GatherTestFloat, no_pack_dynamic_shape_int32) {
     EXPECT_TRUE(NttTest::compare_tensor(tc, td));
 }
 
-TEST(GatherTestFloat, no_pack_dynamic_shape_int64) {
+TEST(GatherTestFloat, no_vectorize_dynamic_shape_int64) {
 
     int64_t index_array[] = {1, 0, 2};
     auto tb = ntt::make_tensor_view(std::span<int64_t, 3>(index_array, 3),
@@ -78,7 +78,7 @@ TEST(GatherTestFloat, no_pack_dynamic_shape_int64) {
     EXPECT_TRUE(NttTest::compare_tensor(tc, td));
 }
 
-TEST(GatherTestFloat, no_pack_index_int32) {
+TEST(GatherTestFloat, no_vectorize_index_int32) {
 
     int32_t index_array[] = {1, 0, 2};
     auto tb = ntt::make_tensor_view(std::span<int32_t, 3>(index_array, 3),
@@ -101,7 +101,7 @@ TEST(GatherTestFloat, no_pack_index_int32) {
     EXPECT_TRUE(NttTest::compare_tensor(tc, td));
 }
 
-TEST(GatherTestFloat, no_pack_index_int64) {
+TEST(GatherTestFloat, no_vectorize_index_int64) {
 
     int64_t index_array[] = {1, 0, 2};
     auto tb = ntt::make_tensor_view(std::span<int64_t, 3>(index_array, 3),
@@ -124,7 +124,7 @@ TEST(GatherTestFloat, no_pack_index_int64) {
     EXPECT_TRUE(NttTest::compare_tensor(tc, td));
 }
 
-TEST(GatherTestFloat, pack1d_dim0_contiguous) {
+TEST(GatherTestFloat, vectorize1d_dim0_contiguous) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     constexpr size_t M = 32;
@@ -140,7 +140,7 @@ TEST(GatherTestFloat, pack1d_dim0_contiguous) {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
     ntt::gather(pa, tb, pc, 0_dim);
 
     // ort
@@ -156,7 +156,7 @@ TEST(GatherTestFloat, pack1d_dim0_contiguous) {
     EXPECT_TRUE(NttTest::compare_tensor(pc, pd));
 }
 
-TEST(GatherTestFloat, pack1d_dim0_no_contiguous) {
+TEST(GatherTestFloat, vectorize1d_dim0_no_contiguous) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     constexpr size_t M = 32;
@@ -172,7 +172,7 @@ TEST(GatherTestFloat, pack1d_dim0_no_contiguous) {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
     ntt::gather(pa, tb, pc, 0_dim);
 
     // ort
@@ -188,7 +188,7 @@ TEST(GatherTestFloat, pack1d_dim0_no_contiguous) {
     EXPECT_TRUE(NttTest::compare_tensor(pc, pd));
 }
 
-TEST(GatherTestFloat, pack1d_dim1_contiguous) {
+TEST(GatherTestFloat, vectorize1d_dim1_contiguous) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     constexpr size_t M = 4;
@@ -204,7 +204,7 @@ TEST(GatherTestFloat, pack1d_dim1_contiguous) {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
     ntt::gather(pa, tb, pc, 1_dim);
 
     // ort
@@ -220,7 +220,7 @@ TEST(GatherTestFloat, pack1d_dim1_contiguous) {
     EXPECT_TRUE(NttTest::compare_tensor(pc, pd));
 }
 
-TEST(GatherTestFloat, pack1d_dim1_no_contiguous) {
+TEST(GatherTestFloat, vectorize1d_dim1_no_contiguous) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     constexpr size_t M = 4;
@@ -236,7 +236,7 @@ TEST(GatherTestFloat, pack1d_dim1_no_contiguous) {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
     ntt::gather(pa, tb, pc, 1_dim);
 
     // ort

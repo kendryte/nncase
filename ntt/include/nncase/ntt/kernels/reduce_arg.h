@@ -22,9 +22,9 @@
 // namespace nncase::ntt {
 // namespace reduce_arg_detail {
 // template <reduce_op Op, bool KeepDims, bool SelectLastIdx, Tensor TIn,
-//           Tensor TOut, FixedDimension TReduceAxis, FixedDimensions PackedAxes>
+//           Tensor TOut, FixedDimension TReduceAxis, FixedDimensions VectorizedAxes>
 // void reduce_arg_impl(const TIn &input, TOut &output,
-//                      const TReduceAxis &reduce_axis, const PackedAxes &) {
+//                      const TReduceAxis &reduce_axis, const VectorizedAxes &) {
 //     using TIElem = typename TIn::element_type;
 //     using TOElem = typename TOut::element_type;
 //     static_assert(Scalar<TOElem> && Scalar<TIElem>,
@@ -124,18 +124,18 @@
 
 // template <reduce_op Op, bool KeepDims = true, bool SelectLastIdx = false,
 //           Tensor TIn, class TOut, FixedDimension TReduceAxis,
-//           FixedDimensions PackedAxes = shape_t<>,
+//           FixedDimensions VectorizedAxes = shape_t<>,
 //           FixedDimensions PadedNums =
-//               decltype(make_zeros_shape<PackedAxes::rank()>())>
+//               decltype(make_zeros_shape<VectorizedAxes::rank()>())>
 // void reduce_arg(const TIn &input, TOut &&output,
 //                 [[maybe_unused]] const TReduceAxis &reduce_axis,
-//                 [[maybe_unused]] const PackedAxes &packed_axes = {},
+//                 [[maybe_unused]] const VectorizedAxes &vectorized_axes = {},
 //                 [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
-//     static_assert(PackedAxes::rank() == 0, "currently not support packing.");
+//     static_assert(VectorizedAxes::rank() == 0, "currently not support vectorize.");
 //     static_assert(PadedNums::rank() == 0, "not support padding");
 
 //     reduce_arg_detail::reduce_arg_impl<Op, KeepDims, SelectLastIdx, TIn,
 //                                        std::decay_t<TOut>>
-//         impl(input, output, reduce_axis, packed_axes);
+//         impl(input, output, reduce_axis, vectorized_axes);
 // }
 // } // namespace nncase::ntt

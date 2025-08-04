@@ -115,7 +115,7 @@ public partial class NTTAffineSelectionPass
         var (om, ok, on) = (rank - 3, rank - 2, rank - 1);
         var (lm, lk) = (lhsShape.Rank - 2, lhsShape.Rank - 1);
         var (rk, rn) = (rhsShape.Rank - 2, rhsShape.Rank - 1);
-        if (op is IR.NTT.PackedMatMul pm)
+        if (op is IR.NTT.VectorizedMatMul pm)
         {
             if (pm.TransposeA)
             {
@@ -144,7 +144,7 @@ public partial class NTTAffineSelectionPass
             .Body(op switch
             {
                 IR.Math.MatMul => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
-                IR.NTT.PackedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsPackedAxes, pop.RhsPackedAxes, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
+                IR.NTT.VectorizedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsVectorizedAxes, pop.RhsVectorizedAxes, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
                 _ => throw new System.Diagnostics.UnreachableException(),
             }).Build();
     }

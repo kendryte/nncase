@@ -14,23 +14,23 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
-public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Unpack>, IEvaluator<Unpack>
+public sealed class DevectorizeEvaluator : ITypeInferencer<Devectorize>, ICostEvaluator<Devectorize>, IEvaluator<Devectorize>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Unpack target)
+    public IValue Visit(IEvaluateContext context, Devectorize target)
     {
-        var dt = context.CurrentCall.Arguments[Unpack.Input.Index].CheckedDataType;
+        var dt = context.CurrentCall.Arguments[Devectorize.Input.Index].CheckedDataType;
         var elementType = dt is VectorType vt ? vt.ElemType : dt;
         if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
         {
             var newType = new VectorType(DataTypes.UInt8, target.Lanes.ToArray());
-            var input = context.GetArgumentValue(target, Unpack.Input).AsTensor();
+            var input = context.GetArgumentValue(target, Devectorize.Input).AsTensor();
             input = Tensor.FromBytes(newType, input.BytesBuffer.ToArray(), input.Shape);
             var inputOrt = input.ToOrtTensor();
 
             foreach (var axis in target.Axes.Reverse())
             {
-                inputOrt = inputOrt.Unpack(axis);
+                inputOrt = inputOrt.Devectorize(axis);
             }
 
             var output = inputOrt.ToTensor();
@@ -38,10 +38,10 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
         }
         else
         {
-            var input = context.GetOrtArgumentValue(target, Unpack.Input);
+            var input = context.GetOrtArgumentValue(target, Devectorize.Input);
             foreach (var axis in target.Axes.Reverse())
             {
-                input = input.Unpack(axis);
+                input = input.Devectorize(axis);
             }
 
             return Value.FromTensor(input.ToTensor());
@@ -49,9 +49,9 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
     }
 
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Unpack target)
+    public IRType Visit(ITypeInferenceContext context, Devectorize target)
     {
-        var input = context.CheckArgumentType<IRType>(target, Unpack.Input);
+        var input = context.CheckArgumentType<IRType>(target, Devectorize.Input);
 
         return input switch
         {
@@ -63,9 +63,9 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
     }
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, Unpack target)
+    public Cost Visit(ICostEvaluateContext context, Devectorize target)
     {
-        var inputType = context.GetArgumentType<IRType>(target, Unpack.Input);
+        var inputType = context.GetArgumentType<IRType>(target, Devectorize.Input);
         var outputType = context.GetReturnType<IRType>();
 
         return new()
@@ -75,7 +75,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
         };
     }
 
-    public Metric Visit(IMetricEvaluateContext context, Unpack target)
+    public Metric Visit(IMetricEvaluateContext context, Devectorize target)
     {
         var returnType = context.GetReturnType<TensorType>();
         return new()
@@ -84,17 +84,17 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, Unpack target, TensorType input)
+    private IRType Visit(ITypeInferenceContext context, Devectorize target, TensorType input)
     {
         if (target.Lanes.Any(x => x <= 0))
         {
-            return new InvalidType("unpack lane <= 0");
+            return new InvalidType("devectorize lane <= 0");
         }
 
-        return TypeInference.UnpackType(input, target.Axes);
+        return TypeInference.DevectorizeType(input, target.Axes);
     }
 
-    private IRType Visit(ITypeInferenceContext context, Unpack target, DistributedType input)
+    private IRType Visit(ITypeInferenceContext context, Devectorize target, DistributedType input)
     {
         if (Visit(context, target, input.TensorType) is not TensorType tensorType)
         {

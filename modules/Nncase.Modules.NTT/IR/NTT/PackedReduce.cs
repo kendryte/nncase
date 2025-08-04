@@ -7,14 +7,14 @@ using static Nncase.IR.TypePatternUtility;
 namespace Nncase.IR.NTT;
 
 [PatternFunctionalGenerator]
-public sealed partial class PackedReduce : Op
+public sealed partial class VectorizedReduce : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(PackedReduce), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(VectorizedReduce), 0, "input", ParameterKind.Input);
 
-    public static readonly ParameterInfo PadedNums = new(typeof(PackedReduce), 1, "padedNums", IsShapeType());
+    public static readonly ParameterInfo PadedNums = new(typeof(VectorizedReduce), 1, "padedNums", IsShapeType());
 
     public ReduceOp ReduceOp { get; }
 
@@ -24,14 +24,14 @@ public sealed partial class PackedReduce : Op
 
     public bool KeepDims { get; }
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
-    public static (int[] OutPackAxes, Dimension[] OutPadNums, int[] OutLanes, RankedShape OutShape) ComputeOutputInfo(PackedReduce target, Dimension[] inPadedNums, RankedShape inShape, int[] inLanes)
+    public static (int[] OutVectorizeAxes, Dimension[] OutPadNums, int[] OutLanes, RankedShape OutShape) ComputeOutputInfo(VectorizedReduce target, Dimension[] inPadedNums, RankedShape inShape, int[] inLanes)
     {
-        var packedAxes = target.PackedAxes.ToList();
+        var vectorizedAxes = target.VectorizedAxes.ToList();
         var padedNums = inPadedNums.ToList();
         var lanes = inLanes.ToList();
-        var shape = inShape.ToList(); // note the inshape is packed.
+        var shape = inShape.ToList(); // note the inshape is vectorized.
         var offset = 0;
         foreach (var axis in target.Axes)
         {
@@ -45,27 +45,27 @@ public sealed partial class PackedReduce : Op
                 offset--;
             }
 
-            if (packedAxes.IndexOf(axis) is int j && j != -1)
+            if (vectorizedAxes.IndexOf(axis) is int j && j != -1)
             {
-                packedAxes.Remove(axis);
+                vectorizedAxes.Remove(axis);
                 padedNums.RemoveAt(j);
                 lanes.RemoveAt(j);
             }
 
             if (!target.KeepDims)
             {
-                for (int i = 0; i < packedAxes.Count; i++)
+                for (int i = 0; i < vectorizedAxes.Count; i++)
                 {
-                    if (packedAxes[i] > axis)
+                    if (vectorizedAxes[i] > axis)
                     {
-                        packedAxes[i]--;
+                        vectorizedAxes[i]--;
                     }
                 }
             }
         }
 
-        return (packedAxes.ToArray(), padedNums.ToArray(), lanes.ToArray(), new(shape));
+        return (vectorizedAxes.ToArray(), padedNums.ToArray(), lanes.ToArray(), new(shape));
     }
 
-    public override string DisplayProperty() => $"ReduceOp.{ReduceOp}, Axes: {{{string.Join(",", Axes)}}}, InitValue: {InitValue}, KeepDims: {KeepDims}, PackedAxes: {{{string.Join(",", PackedAxes)}}}, PadedNums: {{{string.Join(",", PadedNums)}}}";
+    public override string DisplayProperty() => $"ReduceOp.{ReduceOp}, Axes: {{{string.Join(",", Axes)}}}, InitValue: {InitValue}, KeepDims: {KeepDims}, VectorizedAxes: {{{string.Join(",", VectorizedAxes)}}}, PadedNums: {{{string.Join(",", PadedNums)}}}";
 }

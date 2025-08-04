@@ -8,27 +8,27 @@ namespace Nncase.Evaluator;
 
 public static class NTTEvaluatorUtility
 {
-    public static OrtKISharp.Tensor UnpackTensor(OrtKISharp.Tensor input, IRArray<int> packedAxes, IRArray<int> padNums, out IRArray<int> lanes)
+    public static OrtKISharp.Tensor DevectorizeTensor(OrtKISharp.Tensor input, IRArray<int> vectorizedAxes, IRArray<int> padNums, out IRArray<int> lanes)
     {
-        lanes = input.Shape.TakeLast(packedAxes.Count).Select(i => (int)i).ToArray();
-        OrtKISharp.Tensor unpacked = input;
-        foreach (var axis in packedAxes.Reverse())
+        lanes = input.Shape.TakeLast(vectorizedAxes.Count).Select(i => (int)i).ToArray();
+        OrtKISharp.Tensor devectorized = input;
+        foreach (var axis in vectorizedAxes.Reverse())
         {
-            unpacked = unpacked.Unpack(axis);
+            devectorized = devectorized.Devectorize(axis);
         }
 
-        var shape = unpacked.Shape.ToArray();
+        var shape = devectorized.Shape.ToArray();
 
-        OrtKISharp.Tensor sliced = unpacked;
+        OrtKISharp.Tensor sliced = devectorized;
         if (padNums.Any(i => i > 0))
         {
-            sliced = OrtKI.Slice(unpacked, Enumerable.Repeat(0L, padNums.Count).ToArray(), Enumerable.Range(0, padNums.Count).Select(i => shape[packedAxes[i]] - padNums[i]).ToArray(), packedAxes.Select(i => (long)i).ToArray(), Enumerable.Range(0, padNums.Count).Select(i => 1L).ToArray());
+            sliced = OrtKI.Slice(devectorized, Enumerable.Repeat(0L, padNums.Count).ToArray(), Enumerable.Range(0, padNums.Count).Select(i => shape[vectorizedAxes[i]] - padNums[i]).ToArray(), vectorizedAxes.Select(i => (long)i).ToArray(), Enumerable.Range(0, padNums.Count).Select(i => 1L).ToArray());
         }
 
         return sliced;
     }
 
-    public static OrtKISharp.Tensor RepackTensor(OrtKISharp.Tensor input, IRArray<int> lanes, IRArray<int> packedAxes, IRArray<int> padNums)
+    public static OrtKISharp.Tensor RevectorizeTensor(OrtKISharp.Tensor input, IRArray<int> lanes, IRArray<int> vectorizedAxes, IRArray<int> padNums)
     {
         OrtKISharp.Tensor paded = input;
         var shape = input.Shape;
@@ -36,21 +36,21 @@ public static class NTTEvaluatorUtility
         if (padNums.Any(i => i > 0))
         {
             var pads = Enumerable.Repeat(0L, shape.Length * 2).ToArray();
-            for (int i = 0; i < packedAxes.Count; i++)
+            for (int i = 0; i < vectorizedAxes.Count; i++)
             {
-                pads[shape.Length + packedAxes[i]] = padNums[i];
+                pads[shape.Length + vectorizedAxes[i]] = padNums[i];
             }
 
             // bottom_0,bottom_1,..., top_0, top_1, ...
             paded = OrtKI.Pad(paded, pads, 0f, "constant");
         }
 
-        OrtKISharp.Tensor packed = paded;
-        foreach (var (lane, axis) in lanes.Zip(packedAxes))
+        OrtKISharp.Tensor vectorized = paded;
+        foreach (var (lane, axis) in lanes.Zip(vectorizedAxes))
         {
-            packed = packed.Pack(lane, axis);
+            vectorized = vectorized.Vectorize(lane, axis);
         }
 
-        return packed;
+        return vectorized;
     }
 }

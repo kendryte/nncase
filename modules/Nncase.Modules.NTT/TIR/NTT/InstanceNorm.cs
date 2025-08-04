@@ -27,11 +27,11 @@ public sealed partial class InstanceNorm : NTTKernelOp
 
     public float Epsilon { get; }
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
     public IRArray<Dimension> PadedNums { get; }
 
     public DistributedType DistType { get; }
 
-    public override string DisplayProperty() => $"Epsilon: {Epsilon}, PackedAxes: {PackedAxes}, PadedNums: {PadedNums}";
+    public override string DisplayProperty() => $"Epsilon: {Epsilon}, VectorizedAxes: {VectorizedAxes}, PadedNums: {PadedNums}";
 }

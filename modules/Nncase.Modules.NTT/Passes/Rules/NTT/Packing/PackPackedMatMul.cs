@@ -25,30 +25,30 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackedMatMulUnpackPropagation : RewriteRule<Pattern>
+public sealed partial class VectorizedMatMulDevectorizePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-        IsPackedMatMul(
+        IsVectorizedMatMul(
             "matMul",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsUnpack(
-                "unpack",
+            PatternMatch.F.Tensors.IsDevectorize(
+                "devectorize",
                 "callee",
                 _ => true,
                 IsWildcard("lhs")),
             IsTensorConst("rhs"));
 
-    private Expr? GetReplace(Unpack unpack, PackedMatMul matMul, Call caller, Call callee, Expr lhs, Tensor rhs)
+    private Expr? GetReplace(Devectorize devectorize, VectorizedMatMul matMul, Call caller, Call callee, Expr lhs, Tensor rhs)
     {
         var lhsShape = lhs.CheckedShape;
         var dimInfo = matMul.GetDimInfo(lhsShape.Rank, rhs.Rank);
-        (var lhsPackKind, var rhsPackKind) = matMul.GetPackKind(lhsShape.Rank, rhs.Rank);
-        if (lhsPackKind == PackedMatMul.PackKind.None && rhsPackKind == PackedMatMul.PackKind.N && unpack.Axes == [dimInfo.Lk])
+        (var lhsVectorizeKind, var rhsVectorizeKind) = matMul.GetVectorizeKind(lhsShape.Rank, rhs.Rank);
+        if (lhsVectorizeKind == VectorizedMatMul.VectorizeKind.None && rhsVectorizeKind == VectorizedMatMul.VectorizeKind.N && devectorize.Axes == [dimInfo.Lk])
         {
-            // If the unpack is on K, we can bitcast the lhs to element type.
+            // If the devectorize is on K, we can bitcast the lhs to element type.
             var newDType = ((VectorType)lhs.CheckedTensorType.DType).ElemType;
-            return caller.WithArguments([(PackedMatMul.Lhs, IR.F.Tensors.Bitcast(lhs, newDType))]);
+            return caller.WithArguments([(VectorizedMatMul.Lhs, IR.F.Tensors.Bitcast(lhs, newDType))]);
         }
 
         return null;

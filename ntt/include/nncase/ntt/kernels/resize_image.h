@@ -262,10 +262,10 @@ void resize_neareast_neighbor(
 
 } // namespace resize_detail
 
-template <Tensor TIn, typename TOut, FixedDimensions TPackedAxes,
+template <Tensor TIn, typename TOut, FixedDimensions TVectorizedAxes,
           FixedDimensions TPadedNums, FixedDimensions TNewSize>
 void resize(const TIn &input, TOut &&output,
-            [[maybe_unused]] const TPackedAxes &packedAxes,
+            [[maybe_unused]] const TVectorizedAxes &vectorizedAxes,
             [[maybe_unused]] const TPadedNums &padedNums,
             const TNewSize &new_size, image_resize_mode_t resize_mode,
             image_resize_transformation_mode_t transformation_mode,

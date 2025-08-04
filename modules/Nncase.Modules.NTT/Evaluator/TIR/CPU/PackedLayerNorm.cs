@@ -13,8 +13,8 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.TIR.NTT;
 
-public sealed class PackedLayerNormEvaluator : ITypeInferencer<PackedLayerNorm>
+public sealed class VectorizedLayerNormEvaluator : ITypeInferencer<VectorizedLayerNorm>
 {
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, PackedLayerNorm target) => TupleType.Void;
+    public IRType Visit(ITypeInferenceContext context, VectorizedLayerNorm target) => TupleType.Void;
 }

@@ -25,11 +25,11 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackTransposePropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeTransposePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsPack(
-            "pack",
+        PatternMatch.F.Tensors.IsVectorize(
+            "vectorize",
             "caller",
             _ => true,
             IsTranspose(
@@ -38,37 +38,37 @@ public sealed partial class PackTransposePropagation : RewriteRule<Pattern>
                 IsWildcard("input"),
                 IsFixedShape("perm")));
 
-    private Expr? GetReplace(IR.Tensors.Pack pack, Call caller, Call callee, Expr input, int[] perm)
+    private Expr? GetReplace(IR.Tensors.Vectorize vectorize, Call caller, Call callee, Expr input, int[] perm)
     {
-        var packAxes = pack.Axes.Select(a => perm[a]).ToArray();
+        var vectorizeAxes = vectorize.Axes.Select(a => perm[a]).ToArray();
         return callee.WithArguments([
-            (Transpose.Input, IR.F.Tensors.Pack(input, pack.Lanes.ToArray(), packAxes)),
+            (Transpose.Input, IR.F.Tensors.Vectorize(input, vectorize.Lanes.ToArray(), vectorizeAxes)),
         ]);
     }
 }
 
 [RuleGenerator]
-public sealed partial class TransposeUnpackPropagation : RewriteRule<Pattern>
+public sealed partial class TransposeDevectorizePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         IsTranspose(
             "trans",
             "caller",
-            PatternMatch.F.Tensors.IsUnpack(
-                "unpack",
+            PatternMatch.F.Tensors.IsDevectorize(
+                "devectorize",
                 "callee",
                 _ => true,
                 IsWildcard("input")),
             IsFixedShape("perm"));
 
-    private Expr? GetReplace(IR.Tensors.Unpack unpack, Call caller, Call callee, Expr input, int[] perm)
+    private Expr? GetReplace(IR.Tensors.Devectorize devectorize, Call caller, Call callee, Expr input, int[] perm)
     {
-        var unpackAxes = unpack.Axes.Select(a => perm.IndexOf(a)).ToArray();
-        return IR.F.Tensors.Unpack(
+        var devectorizeAxes = devectorize.Axes.Select(a => perm.IndexOf(a)).ToArray();
+        return IR.F.Tensors.Devectorize(
             caller.WithArguments([
                 (Transpose.Input, input),
             ]),
-            unpack.Lanes.ToArray(),
-            unpackAxes);
+            devectorize.Lanes.ToArray(),
+            devectorizeAxes);
     }
 }

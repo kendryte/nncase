@@ -15,10 +15,10 @@ using static Nncase.IR.F.Tensors;
 namespace Nncase.Tests.Rules.NeutralTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestPackWhere : TransformTestBase
+public class UnitTestVectorizeWhere : TransformTestBase
 {
     [Fact]
-    public void UnitTestPackWherePropagation()
+    public void UnitTestVectorizeWherePropagation()
     {
         var cond = Testing.Rand<bool>(1, 24);
         var condVar = new Var(new TensorType(cond.ElementType, cond.Shape));
@@ -27,8 +27,8 @@ public class UnitTestPackWhere : TransformTestBase
         var rhs = Testing.Rand<float>(1, 24);
         var rhsVar = new Var(new TensorType(rhs.ElementType, rhs.Shape));
         Expr expr = Where(condVar, lhsVar, rhsVar);
-        expr = Pack(expr, [8], [1]);
-        expr = Unpack(expr, [8], [1]);
+        expr = Vectorize(expr, [8], [1]);
+        expr = Devectorize(expr, [8], [1]);
         TestMatchedCore(
             expr,
             new Dictionary<IVar, IValue> {
@@ -36,11 +36,11 @@ public class UnitTestPackWhere : TransformTestBase
                 { lhsVar, Value.FromTensor(lhs) },
                 { rhsVar, Value.FromTensor(rhs) },
             },
-            new PackWherePropagation(MaskVectorStyle.Fat));
+            new VectorizeWherePropagation(MaskVectorStyle.Fat));
     }
 
     [Fact]
-    public void UnitTestPackDynamicWherePropagation()
+    public void UnitTestVectorizeDynamicWherePropagation()
     {
         var dimX = new DimVar("x") { Metadata = { Range = (1, 128) } };
         var cond = Testing.Rand<bool>(3, 1);
@@ -50,8 +50,8 @@ public class UnitTestPackWhere : TransformTestBase
         var rhs = Testing.Rand<float>(3, 24);
         var rhsVar = new Var(new TensorType(rhs.ElementType, [dimX, 24]));
         Expr expr = Where(condVar, lhsVar, rhsVar);
-        expr = Pack(expr, [8], [1]);
-        expr = Unpack(expr, [8], [1]);
+        expr = Vectorize(expr, [8], [1]);
+        expr = Devectorize(expr, [8], [1]);
         TestMatchedCore(
             expr,
             new Dictionary<IVar, IValue> {
@@ -59,11 +59,11 @@ public class UnitTestPackWhere : TransformTestBase
                 { lhsVar, Value.FromTensor(lhs) },
                 { rhsVar, Value.FromTensor(rhs) },
             },
-            new PackWherePropagation(MaskVectorStyle.Fat));
+            new VectorizeWherePropagation(MaskVectorStyle.Fat));
     }
 
     [Fact]
-    public void UnitTestPackDynamicWherePropagationEGraph()
+    public void UnitTestVectorizeDynamicWherePropagationEGraph()
     {
         CompileOptions.DumpFlags = DumpFlags.PassIR | DumpFlags.Rewrite;
         var dimX = new DimVar("x") { Metadata = { Range = (1, 1024) } };
@@ -73,19 +73,19 @@ public class UnitTestPackWhere : TransformTestBase
         var rhs = Testing.Rand<float>(3, 24);
         var rhsVar = new Var(new TensorType(rhs.ElementType, [dimX, 24]));
         Expr expr = Where(condVar, lhs, rhsVar);
-        expr = Pack(expr, [8], [1]);
-        expr = Unpack(expr, [8], [1]);
+        expr = Vectorize(expr, [8], [1]);
+        expr = Devectorize(expr, [8], [1]);
         var func = new Function("main", expr, [condVar, rhsVar]);
         var module = new IRModule(func);
 
-        var pmgr = CompileSession.CreatePassManager("Pack");
+        var pmgr = CompileSession.CreatePassManager("Vectorize");
         pmgr.Add<EGraphRulesPass>()
             .Configure(c =>
             {
-                c.Add<PackWherePropagation>(MaskVectorStyle.Fat);
+                c.Add<VectorizeWherePropagation>(MaskVectorStyle.Fat);
             });
         pmgr.RunAsync(module).Wait();
-        Assert.True(module.Entry is Function { Body: Call { Target: IR.Tensors.Unpack, Arguments: var unpackArgs } }
-            && unpackArgs[0] is Call { Target: IR.Tensors.Where });
+        Assert.True(module.Entry is Function { Body: Call { Target: IR.Tensors.Devectorize, Arguments: var devectorizeArgs } }
+            && devectorizeArgs[0] is Call { Target: IR.Tensors.Where });
     }
 }

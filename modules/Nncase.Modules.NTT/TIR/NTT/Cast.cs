@@ -14,8 +14,8 @@ public sealed partial class Cast : NTTKernelOp
 
     public CastMode CastMode { get; }
 
-    public IRArray<int> PackAxes { get; }
+    public IRArray<int> VectorizeAxes { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}, PackAxes: {string.Join(",", PackAxes.IsDefaultOrEmpty ? Array.Empty<int>() : PackAxes.ToArray())}";
+    public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}, VectorizeAxes: {string.Join(",", VectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : VectorizeAxes.ToArray())}";
 }

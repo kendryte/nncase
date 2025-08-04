@@ -22,7 +22,7 @@
 using namespace nncase;
 using namespace ortki;
 
-TEST(FixedShapeLayerNorm, NoPack0) {
+TEST(FixedShapeLayerNorm, NoVectorize0) {
     auto buffer_0 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
     auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 2>);
     auto buffer_2 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 2>);
@@ -30,9 +30,9 @@ TEST(FixedShapeLayerNorm, NoPack0) {
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 0.f);
 
-    // no pack
+    // no vectorize
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
-    packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 1_dim,
+    vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 1_dim,
                       ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
 
     const float array_golden[] = {
@@ -49,7 +49,7 @@ TEST(FixedShapeLayerNorm, NoPack0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(FixedShapeLayerNorm, NoPack1) {
+TEST(FixedShapeLayerNorm, NoVectorize1) {
     auto buffer_0 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
     auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<4>);
     auto buffer_2 = ntt::make_tensor<float>(ntt::fixed_shape_v<4>);
@@ -57,9 +57,9 @@ TEST(FixedShapeLayerNorm, NoPack1) {
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 1.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
-    // no pack
+    // no vectorize
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
-    packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 2_dim,
+    vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 2_dim,
                       ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
 
     const float array_golden[] = {
@@ -81,7 +81,7 @@ TEST(FixedShapeLayerNorm, NoPack1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(FixedShapeLayerNorm, NoPack2) {
+TEST(FixedShapeLayerNorm, NoVectorize2) {
     auto buffer_1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 13, 2>);
     auto buffer_4 = ntt::make_tensor<float>(ntt::fixed_shape_v<13, 2>);
     auto buffer_7 = ntt::make_tensor<float>(ntt::fixed_shape_v<13, 2>);
@@ -89,9 +89,9 @@ TEST(FixedShapeLayerNorm, NoPack2) {
     std::iota(buffer_4.elements().begin(), buffer_4.elements().end(), 0.f);
     std::iota(buffer_7.elements().begin(), buffer_7.elements().end(), 0.f);
 
-    // no pack with pad
+    // no vectorize with pad
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 13, 2>);
-    packed_layer_norm(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06, 1_dim,
+    vectorized_layer_norm(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06, 1_dim,
                       ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
 
     const float array_golden[] = {
@@ -107,8 +107,8 @@ TEST(FixedShapeLayerNorm, NoPack2) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(FixedShapeLayerNorm, Pack0) {
-    // packed axis == layer norm axis
+TEST(FixedShapeLayerNorm, Vectorize0) {
+    // vectorized axis == layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto buffer_0 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
@@ -126,14 +126,14 @@ TEST(FixedShapeLayerNorm, Pack0) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P, 2>);
     auto buffer_6 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16 / P, 2>);
-    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
-    pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
-    pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
-    packed_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    vectorize(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
+    vectorize(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
+    vectorized_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
-    unpack(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
+    devectorize(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000f,  -0.570438f, -0.924264f, -1.061478f, -0.982080f, -0.686069f,
@@ -149,9 +149,9 @@ TEST(FixedShapeLayerNorm, Pack0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(FixedShapeLayerNorm, Pack1) {
+TEST(FixedShapeLayerNorm, Vectorize1) {
 
-    // packed axis == layer norm axis
+    // vectorized axis == layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto input = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 2, 16>);
@@ -161,23 +161,23 @@ TEST(FixedShapeLayerNorm, Pack1) {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().rbegin(), bias.elements().rend(), 0.f);
 
-    auto input_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto input_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 2, 16 / P>);
-    auto scale_packed =
+    auto scale_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P>);
-    auto bias_packed =
+    auto bias_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P>);
-    ntt::pack(input, input_packed, ntt::fixed_shape_v<2>);
-    ntt::pack(scale, scale_packed, ntt::fixed_shape_v<0>);
-    ntt::pack(bias, bias_packed, ntt::fixed_shape_v<0>);
-    auto output_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    ntt::vectorize(input, input_vectorized, ntt::fixed_shape_v<2>);
+    ntt::vectorize(scale, scale_vectorized, ntt::fixed_shape_v<0>);
+    ntt::vectorize(bias, bias_vectorized, ntt::fixed_shape_v<0>);
+    auto output_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 2, 16 / P>);
-    packed_layer_norm(input_packed, scale_packed, bias_packed, output_packed,
+    vectorized_layer_norm(input_vectorized, scale_vectorized, bias_vectorized, output_vectorized,
                       1E-06, 2_dim, ntt::fixed_shape_v<2>,
                       ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 2, 16>);
-    unpack(output_packed, ntt_output, ntt::fixed_shape_v<2>);
+    devectorize(output_vectorized, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         15.000000, 12.589952, 10.613765, 9.071439,  7.962974,  7.288369,
@@ -193,8 +193,8 @@ TEST(FixedShapeLayerNorm, Pack1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(FixedShapeLayerNorm, Pack2) {
-    // packed axis < layer norm axis
+TEST(FixedShapeLayerNorm, Vectorize2) {
+    // vectorized axis < layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto buffer_0 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
@@ -208,12 +208,12 @@ TEST(FixedShapeLayerNorm, Pack2) {
         ntt::fixed_shape_v<1, 16 / P, 4>);
     auto buffer_4 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16 / P, 4>);
-    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
-    packed_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
-    unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
+    devectorize(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         -0.341640, 1.105573, 4.341640,  9.366562, -0.341640, 1.105573,
@@ -234,7 +234,7 @@ TEST(FixedShapeLayerNorm, Pack2) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(FixedShapeLayerNorm, Pack3) {
+TEST(FixedShapeLayerNorm, Vectorize3) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     auto input = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
     auto scale = ntt::make_tensor<float>(ntt::fixed_shape_v<8>);
@@ -243,17 +243,17 @@ TEST(FixedShapeLayerNorm, Pack3) {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    auto packed_input = ntt::make_tensor<ntt::vector<float, P>>(
+    // vectorized axis < layer norm axis
+    auto vectorized_input = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16 / P, 8>);
-    auto packed_output = ntt::make_tensor<ntt::vector<float, P>>(
+    auto vectorized_output = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16 / P, 8>);
-    pack(input, packed_input, ntt::fixed_shape_v<1>);
-    packed_layer_norm(packed_input, scale, bias, packed_output, 1E-06, 2_dim,
+    vectorize(input, vectorized_input, ntt::fixed_shape_v<1>);
+    vectorized_layer_norm(vectorized_input, scale, bias, vectorized_output, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
-    unpack(packed_output, ntt_output, ntt::fixed_shape_v<1>);
+    devectorize(vectorized_output, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000,  -0.091089, 0.690693,  2.345346,  4.872871,  8.273268,
@@ -285,8 +285,8 @@ TEST(FixedShapeLayerNorm, Pack3) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(FixedShapeLayerNorm, Pack4) {
-    // packed axis > layer norm axis
+TEST(FixedShapeLayerNorm, Vectorize4) {
+    // vectorized axis > layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto input = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
@@ -296,24 +296,24 @@ TEST(FixedShapeLayerNorm, Pack4) {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    auto packed_input = ntt::make_tensor<ntt::vector<float, P>>(
+    // vectorized axis < layer norm axis
+    auto vectorized_input = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16, 8 / P>);
-    auto packed_scale =
+    auto vectorized_scale =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16, 8 / P>);
-    auto packed_bias =
+    auto vectorized_bias =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16, 8 / P>);
-    auto packed_output = ntt::make_tensor<ntt::vector<float, P>>(
+    auto vectorized_output = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16, 8 / P>);
-    pack(input, packed_input, ntt::fixed_shape_v<2>);
-    pack(scale, packed_scale, ntt::fixed_shape_v<1>);
-    pack(bias, packed_bias, ntt::fixed_shape_v<1>);
-    packed_layer_norm(packed_input, packed_scale, packed_bias, packed_output,
+    vectorize(input, vectorized_input, ntt::fixed_shape_v<2>);
+    vectorize(scale, vectorized_scale, ntt::fixed_shape_v<1>);
+    vectorize(bias, vectorized_bias, ntt::fixed_shape_v<1>);
+    vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias, vectorized_output,
                       1E-06, 1_dim, ntt::fixed_shape_v<1>,
                       ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
-    unpack(packed_output, ntt_output, ntt::fixed_shape_v<2>);
+    devectorize(vectorized_output, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         0.000000,   -0.691507,  -1.328887,  -1.912138,  -2.441260,  -2.916255,
@@ -345,7 +345,7 @@ TEST(FixedShapeLayerNorm, Pack4) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(RankedShapeLayerNorm, NoPack0) {
+TEST(RankedShapeLayerNorm, NoVectorize0) {
 
     auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
     auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(16, 2));
@@ -354,9 +354,9 @@ TEST(RankedShapeLayerNorm, NoPack0) {
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 0.f);
 
-    // no pack
+    // no vectorize
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
-    packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 1_dim,
+    vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 1_dim,
                       ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
 
     const float array_golden[] = {
@@ -373,7 +373,7 @@ TEST(RankedShapeLayerNorm, NoPack0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(RankedShapeLayerNorm, NoPack1) {
+TEST(RankedShapeLayerNorm, NoVectorize1) {
     auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(1, 16, 4));
     auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(4));
     auto buffer_2 = ntt::make_tensor<float>(ntt::make_shape(4));
@@ -381,9 +381,9 @@ TEST(RankedShapeLayerNorm, NoPack1) {
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 1.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
-    // no pack
+    // no vectorize
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
-    packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 2_dim,
+    vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06, 2_dim,
                       ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
 
     const float array_golden[] = {
@@ -405,7 +405,7 @@ TEST(RankedShapeLayerNorm, NoPack1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(RankedShapeLayerNorm, NoPack2) {
+TEST(RankedShapeLayerNorm, NoVectorize2) {
 
     auto buffer_1 = ntt::make_tensor<float>(ntt::make_shape(1, 13, 2));
     auto buffer_4 = ntt::make_tensor<float>(ntt::make_shape(13, 2));
@@ -414,9 +414,9 @@ TEST(RankedShapeLayerNorm, NoPack2) {
     std::iota(buffer_4.elements().begin(), buffer_4.elements().end(), 0.f);
     std::iota(buffer_7.elements().begin(), buffer_7.elements().end(), 0.f);
 
-    // no pack with pad
+    // no vectorize with pad
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 13, 2));
-    packed_layer_norm(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06, 1_dim,
+    vectorized_layer_norm(buffer_1, buffer_4, buffer_7, ntt_output, 1e-06, 1_dim,
                       ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
 
     const float array_golden[] = {
@@ -432,8 +432,8 @@ TEST(RankedShapeLayerNorm, NoPack2) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(RankedShapeLayerNorm, Pack0) {
-    // packed axis == layer norm axis
+TEST(RankedShapeLayerNorm, Vectorize0) {
+    // vectorized axis == layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
@@ -451,14 +451,14 @@ TEST(RankedShapeLayerNorm, Pack0) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P, 2));
     auto buffer_6 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 2));
-    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
-    pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
-    pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
-    packed_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    vectorize(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
+    vectorize(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
+    vectorized_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
-    unpack(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
+    devectorize(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000f,  -0.570438f, -0.924264f, -1.061478f, -0.982080f, -0.686069f,
@@ -474,9 +474,9 @@ TEST(RankedShapeLayerNorm, Pack0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(RankedShapeLayerNorm, Pack1) {
+TEST(RankedShapeLayerNorm, Vectorize1) {
 
-    // packed axis == layer norm axis
+    // vectorized axis == layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto input = ntt::make_tensor<float>(ntt::make_shape(1, 2, 16));
@@ -486,23 +486,23 @@ TEST(RankedShapeLayerNorm, Pack1) {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().rbegin(), bias.elements().rend(), 0.f);
 
-    auto input_packed =
+    auto input_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 2, 16 / P));
-    auto scale_packed =
+    auto scale_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P));
-    auto bias_packed =
+    auto bias_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P));
-    ntt::pack(input, input_packed, ntt::fixed_shape_v<2>);
-    ntt::pack(scale, scale_packed, ntt::fixed_shape_v<0>);
-    ntt::pack(bias, bias_packed, ntt::fixed_shape_v<0>);
-    auto output_packed =
+    ntt::vectorize(input, input_vectorized, ntt::fixed_shape_v<2>);
+    ntt::vectorize(scale, scale_vectorized, ntt::fixed_shape_v<0>);
+    ntt::vectorize(bias, bias_vectorized, ntt::fixed_shape_v<0>);
+    auto output_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 2, 16 / P));
-    packed_layer_norm(input_packed, scale_packed, bias_packed, output_packed,
+    vectorized_layer_norm(input_vectorized, scale_vectorized, bias_vectorized, output_vectorized,
                       1E-06, 2_dim, ntt::fixed_shape_v<2>,
                       ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 2, 16));
-    unpack(output_packed, ntt_output, ntt::fixed_shape_v<2>);
+    devectorize(output_vectorized, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         15.000000, 12.589952, 10.613765, 9.071439,  7.962974,  7.288369,
@@ -518,8 +518,8 @@ TEST(RankedShapeLayerNorm, Pack1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(RankedShapeLayerNorm, Pack2) {
-    // packed axis < layer norm axis
+TEST(RankedShapeLayerNorm, Vectorize2) {
+    // vectorized axis < layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(1, 16, 4));
@@ -533,12 +533,12 @@ TEST(RankedShapeLayerNorm, Pack2) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 4));
     auto buffer_4 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 4));
-    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
-    packed_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 4));
-    unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
+    devectorize(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         -0.341640, 1.105573, 4.341640,  9.366562, -0.341640, 1.105573,
@@ -559,7 +559,7 @@ TEST(RankedShapeLayerNorm, Pack2) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(RankedShapeLayerNorm, Pack3) {
+TEST(RankedShapeLayerNorm, Vectorize3) {
 
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     auto input = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
@@ -569,17 +569,17 @@ TEST(RankedShapeLayerNorm, Pack3) {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    auto packed_input =
+    // vectorized axis < layer norm axis
+    auto vectorized_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 8));
-    auto packed_output =
+    auto vectorized_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 8));
-    pack(input, packed_input, ntt::fixed_shape_v<1>);
-    packed_layer_norm(packed_input, scale, bias, packed_output, 1E-06, 2_dim,
+    vectorize(input, vectorized_input, ntt::fixed_shape_v<1>);
+    vectorized_layer_norm(vectorized_input, scale, bias, vectorized_output, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
-    unpack(packed_output, ntt_output, ntt::fixed_shape_v<1>);
+    devectorize(vectorized_output, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000,  -0.091089, 0.690693,  2.345346,  4.872871,  8.273268,
@@ -611,8 +611,8 @@ TEST(RankedShapeLayerNorm, Pack3) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(RankedShapeLayerNorm, Pack4) {
-    // packed axis > layer norm axis
+TEST(RankedShapeLayerNorm, Vectorize4) {
+    // vectorized axis > layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto input = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
@@ -622,24 +622,24 @@ TEST(RankedShapeLayerNorm, Pack4) {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    auto packed_input =
+    // vectorized axis < layer norm axis
+    auto vectorized_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16, 8 / P));
-    auto packed_scale =
+    auto vectorized_scale =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16, 8 / P));
-    auto packed_bias =
+    auto vectorized_bias =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16, 8 / P));
-    auto packed_output =
+    auto vectorized_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16, 8 / P));
-    pack(input, packed_input, ntt::fixed_shape_v<2>);
-    pack(scale, packed_scale, ntt::fixed_shape_v<1>);
-    pack(bias, packed_bias, ntt::fixed_shape_v<1>);
-    packed_layer_norm(packed_input, packed_scale, packed_bias, packed_output,
+    vectorize(input, vectorized_input, ntt::fixed_shape_v<2>);
+    vectorize(scale, vectorized_scale, ntt::fixed_shape_v<1>);
+    vectorize(bias, vectorized_bias, ntt::fixed_shape_v<1>);
+    vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias, vectorized_output,
                       1E-06, 1_dim, ntt::fixed_shape_v<1>,
                       ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
-    unpack(packed_output, ntt_output, ntt::fixed_shape_v<2>);
+    devectorize(vectorized_output, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         0.000000,   -0.691507,  -1.328887,  -1.912138,  -2.441260,  -2.916255,

@@ -34,16 +34,16 @@ public partial class NTTAffineSelectionPass : AffineSelectionPass
     {
         switch (call.Target)
         {
-            case IR.NTT.PackedBinary op:
-                return SelectPackedBinary(op, call, output);
-            case IR.NTT.PackedMatMul:
+            case IR.NTT.VectorizedBinary op:
+                return SelectVectorizedBinary(op, call, output);
+            case IR.NTT.VectorizedMatMul:
                 return SelectMatMul((Op)call.Target, call, output);
-            case IR.Tensors.Pack op:
-                return SelectPack(op, call, output);
-            case IR.NTT.PackedReduce op:
+            case IR.Tensors.Vectorize op:
+                return SelectVectorize(op, call, output);
+            case IR.NTT.VectorizedReduce op:
                 return SelectReduce(op, call, output);
-            case IR.Tensors.Unpack op:
-                return SelectUnpack(op, call, output);
+            case IR.Tensors.Devectorize op:
+                return SelectDevectorize(op, call, output);
             case IR.Math.Binary op:
                 return SelectBinary(op, call, output);
             case IR.Math.MatMul:

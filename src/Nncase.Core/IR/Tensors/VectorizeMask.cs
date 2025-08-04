@@ -6,15 +6,15 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.Tensors;
 
 /// <summary>
-/// PackMask expression.
+/// VectorizeMask expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class PackMask : Op
+public sealed partial class VectorizeMask : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(PackMask), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(VectorizeMask), 0, "input", ParameterKind.Input);
 
     public MaskVectorStyle Style { get; }
 

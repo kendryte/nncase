@@ -6,15 +6,15 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.Tensors;
 
 /// <summary>
-/// Pack expression.
+/// Vectorize expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class Pack : Op
+public sealed partial class Vectorize : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Pack), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(Vectorize), 0, "input", ParameterKind.Input);
 
     public IRArray<int> Lanes { get; }
 

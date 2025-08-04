@@ -85,7 +85,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return true;
     }
 
-    private IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, MatMulDimInfo? dimInfo = null)
+    private IRType VisitTensorType(TensorType lhs, TensorType rhs, bool vectorizeK = false, MatMulDimInfo? dimInfo = null)
     {
         if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
         {
@@ -113,7 +113,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
         if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
         {
-            // pack k or m&n
+            // vectorize k or m&n
             var lhsElemType = vl.ElemType;
             var outElementType = lhsElemType;
             if (lhsElemType.IsFloat() && lhsElemType != DataTypes.Float32)
@@ -121,15 +121,15 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                 outElementType = DataTypes.Float32;
             }
 
-            // TODO: support other custom packing
+            // TODO: support other custom vectorize
             if (vl.Lanes.Count == 1 && vr.Lanes.Count == 1)
             {
                 var scale = 1f * outElementType.SizeInBytes / lhsElemType.SizeInBytes;
-                dtype = packingK ? new VectorType(outElementType, (int)(vl.Lanes[0] / scale)) : new VectorType(outElementType, vl.Lanes[0], vr.Lanes[0]);
+                dtype = vectorizeK ? new VectorType(outElementType, (int)(vl.Lanes[0] / scale)) : new VectorType(outElementType, vl.Lanes[0], vr.Lanes[0]);
             }
             else
             {
-                return new InvalidType("Not supported packing.");
+                return new InvalidType("Not supported vectorize.");
             }
         }
 

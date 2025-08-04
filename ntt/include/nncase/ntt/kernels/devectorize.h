@@ -15,13 +15,13 @@
 #pragma once
 #include "../apply.h"
 #include "../loop.h"
-#include "../shape_infer/unpack.h"
+#include "../shape_infer/devectorize.h"
 #include "../ukernels.h"
 #include <type_traits>
 
 namespace nncase::ntt {
 namespace detail {
-template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
+template <Tensor TIn, Tensor TOut, size_t AxesRank> class devectorize_impl {
   public:
     using TVec = typename TIn::element_type;
 
@@ -40,7 +40,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
 
         if (conti_dims_input == in_rank && conti_dims_output == out_rank &&
             AxesRank <= 2) {
-            ntt::u_unpack(input, output, axes);
+            ntt::u_devectorize(input, output, axes);
         } else {
             const auto domain = input.shape().concat(elem_shape);
             apply(domain, [&](auto index) {
@@ -64,8 +64,8 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
 } // namespace detail
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
-void unpack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
-    detail::unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
+void devectorize(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+    detail::devectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
     impl(input, output, axes);
 }
 } // namespace nncase::ntt

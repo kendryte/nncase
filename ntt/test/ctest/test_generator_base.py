@@ -198,7 +198,7 @@ using namespace ortki;
     def _build_vector_cpp_type(self, base_cpp_type: str, vector_rank: int, P: Optional[str], axes_count: Optional[int] = None) -> str:
         """Utility: given primitive cpp type, return the full `ntt::vector<..., ...>` expression.
         When ``vector_rank == 0`` it just returns the primitive type.
-        When ``vector_rank > 0`` the caller **must** provide ``P`` – the compile-time pack number – and, if ``vector_rank > 1``, also ``axes_count`` (how many axes are packed).
+        When ``vector_rank > 0`` the caller **must** provide ``P`` – the compile-time vectorize number – and, if ``vector_rank > 1``, also ``axes_count`` (how many axes are vectorized).
         """
         if vector_rank == 0:
             return base_cpp_type

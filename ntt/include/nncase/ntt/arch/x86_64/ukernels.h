@@ -124,7 +124,7 @@ SPECIALIZE_U_COMPARE(less_or_equal, 2)
 
 #undef SPECIALIZE_U_COMPARE
 
-inline void permute_8x8_unpack1d(const vector<float, 8> *src, float *dst,
+inline void permute_8x8_devectorize1d(const vector<float, 8> *src, float *dst,
                                  size_t in_stride, size_t out_stride) noexcept {
     __m256 row0 = src[0 * in_stride];
     __m256 row1 = src[1 * in_stride];
@@ -172,7 +172,7 @@ inline void permute_8x8_unpack1d(const vector<float, 8> *src, float *dst,
     _mm256_storeu_ps(&dst[7 * out_stride], row7);
 }
 
-inline void permute_8x8_unpack2d(const vector<float, 8, 8> *src, float *dst,
+inline void permute_8x8_devectorize2d(const vector<float, 8, 8> *src, float *dst,
                                  size_t in_stride, size_t out_stride) noexcept {
     __m256 row0 = src[0](in_stride);
     __m256 row1 = src[1](in_stride);
@@ -220,7 +220,7 @@ inline void permute_8x8_unpack2d(const vector<float, 8, 8> *src, float *dst,
     _mm256_storeu_ps(&dst[7 * out_stride], row7);
 }
 
-inline void permute_8x8_pack1d(const float *src, vector<float, 8> *dst,
+inline void permute_8x8_vectorize1d(const float *src, vector<float, 8> *dst,
                                size_t in_stride = 1,
                                size_t out_stride = 1) noexcept {
     __m256 row0 = _mm256_loadu_ps(&src[0 * in_stride]);
@@ -260,7 +260,7 @@ inline void permute_8x8_pack1d(const float *src, vector<float, 8> *dst,
     dst[7 * out_stride] = _mm256_permute2f128_ps(u3, u7, 0x31);
 }
 
-inline void permute_8x8_pack2d(const float *src, vector<float, 8, 8> *dst,
+inline void permute_8x8_vectorize2d(const float *src, vector<float, 8, 8> *dst,
                                size_t in_stride = 1,
                                size_t out_stride = 1) noexcept {
     __m256 row0 = _mm256_loadu_ps(&src[0 * in_stride]);
@@ -300,8 +300,8 @@ inline void permute_8x8_pack2d(const float *src, vector<float, 8, 8> *dst,
     dst[7](out_stride) = _mm256_permute2f128_ps(u3, u7, 0x31);
 }
 
-// pack
-template <> class u_pack<true, float, vector<float, 8>> {
+// vectorize
+template <> class u_vectorize<true, float, vector<float, 8>> {
   public:
     template <Dimension TM, Dimension TN, Dimension TMStrides>
     constexpr void operator()(const float *input, const TM &M, const TN &N,
@@ -314,20 +314,20 @@ template <> class u_pack<true, float, vector<float, 8>> {
             auto src = input;
             auto dst = output;
             for (size_t j = 0; j < N / speedup_m; j++) {
-                permute_8x8_pack1d(src, dst, m_strides, 1);
+                permute_8x8_vectorize1d(src, dst, m_strides, 1);
                 src += 8;
                 dst += 8;
             }
         } else {
-            ukernels::u_pack<false, float, vector<float, 8>> impl;
+            ukernels::u_vectorize<false, float, vector<float, 8>> impl;
             impl(input, M, N, m_strides, output);
         }
     }
 };
 
-// pack2d
+// vectorize2d
 template <FixedTensor TIn, FixedTensor TOut>
-class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
+class u_vectorize2d<true, TIn, TOut, float, vector<float, 8, 8>> {
   public:
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, const TAxes &axes,
@@ -379,14 +379,14 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 
                 const auto outer_domain =
                     domain.template slice<0, axes_temp[0_dim]>();
-                const auto packed_domain =
+                const auto vectorized_domain =
                     domain.template slice<axes_temp[0_dim], 2>();
                 const auto inner_domain =
                     domain.template slice<axes_temp[1_dim] + 1>();
                 const auto inner_size = inner_domain.length();
 
                 if (inner_size % TVec::shape()[1_dim] != 0) {
-                    ukernels::u_pack2d<false, TIn, TOut, float, TVec> impl;
+                    ukernels::u_vectorize2d<false, TIn, TOut, float, TVec> impl;
                     impl(input, axes, output);
                 } else {
                     ntt::apply(outer_domain, [&](auto index) {
@@ -394,14 +394,14 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
                             inner_index[i] = index[i];
                             outer_index[i] = index[i];
                         });
-                        for (size_t i = 0; i < packed_domain[0_dim]; i++) {
+                        for (size_t i = 0; i < vectorized_domain[0_dim]; i++) {
                             outer_index[axes[0_dim]] = i;
                             auto outer_ptr_keep = &output(outer_index);
                             for (size_t j = 0; j < lanes[0]; j++) {
                                 inner_index[axes[0_dim]] = i * lanes[0_dim] + j;
                                 auto outer_ptr = outer_ptr_keep;
 
-                                for (size_t k = 0; k < packed_domain[1_dim];
+                                for (size_t k = 0; k < vectorized_domain[1_dim];
                                      k++) {
                                     inner_index[axes[1_dim]] = k * lanes[1];
                                     auto input_ptr = &input(inner_index);
@@ -413,7 +413,7 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 
                                         auto src = input_ptr + ld_base;
                                         auto dst = outer_ptr + st_base;
-                                        permute_8x8_pack2d(src, dst, inner_size,
+                                        permute_8x8_vectorize2d(src, dst, inner_size,
                                                            j);
                                     }
 
@@ -427,7 +427,7 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
         } else {
             using TElem = typename TIn::element_type;
             using TVec = typename std::decay_t<TOut>::element_type;
-            ukernels::u_pack2d<false, TIn, TOut, TElem, TVec> impl;
+            ukernels::u_vectorize2d<false, TIn, TOut, TElem, TVec> impl;
             impl(input, axes, output);
         }
     }
@@ -439,7 +439,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank>
          std::same_as<typename TIn::element_type, ntt::vector<float, 8>>) &&
         std::same_as<typename std::decay_t<TOut>::element_type, float> &&
         (AxesRank == 1 || AxesRank == 2))
-class u_unpack_impl<TIn, TOut, AxesRank, true> {
+class u_devectorize_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
     using TElem = typename std::decay_t<TOut>::element_type;
@@ -470,7 +470,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                 auto inner_size = inner_index.length();
 
                 if (inner_size % 8 != 0) {
-                    ukernels::u_unpack_impl<TIn, std::decay_t<TOut>,
+                    ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>,
                                             TAxes::rank(), false>
                         impl;
                     impl(input, output, axes);
@@ -488,7 +488,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                                             8;
 
                         for (size_t i = 0; i < inner_size / 8; i++) {
-                            permute_8x8_unpack1d(src, dst, 1, inner_size);
+                            permute_8x8_devectorize1d(src, dst, 1, inner_size);
                             dst += 8;
                             src += 8;
                         }
@@ -506,7 +506,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
 
             dynamic_shape_t<in_rank> inner_domain;
 
-            auto packed_index = domain.template slice<const_axes[0], 2>();
+            auto vectorized_index = domain.template slice<const_axes[0], 2>();
             auto inner_index =
                 domain.template slice<const_axes[1] + 1,
                                       in_rank - (const_axes[1] + 1)>();
@@ -552,7 +552,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                 });
             } else {
                 if (inner_size % TVec::shape()[1] != 0) {
-                    ukernels::u_unpack_impl<TIn, std::decay_t<TOut>,
+                    ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>,
                                             TAxes::rank(), false>
                         impl;
                     impl(input, output, axes);
@@ -565,8 +565,8 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                               linear_offset(inner_domain, input.strides()) * 64;
                         for (size_t i = 0; i < 8; i++) {
                             auto st_offset_i =
-                                i * packed_index[1] * 8 * inner_size;
-                            for (size_t j = 0; j < packed_index[1]; j++) {
+                                i * vectorized_index[1] * 8 * inner_size;
+                            for (size_t j = 0; j < vectorized_index[1]; j++) {
                                 auto st_offset_j = j * inner_size * 8;
                                 auto ld_offset_j = src + j * inner_size;
                                 auto st_offset =
@@ -574,7 +574,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                                 for (size_t k = 0; k < inner_size / 8; k++) {
                                     auto st_ptr = st_offset + k * 8;
                                     auto ld_ptr = ld_offset_j + k * 8;
-                                    permute_8x8_unpack2d(ld_ptr, st_ptr, i,
+                                    permute_8x8_devectorize2d(ld_ptr, st_ptr, i,
                                                          inner_size);
                                 }
                             }
@@ -583,7 +583,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                 }
             }
         } else {
-            ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+            ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
                                     false>
                 impl;
             impl(input, output, axes);
@@ -598,33 +598,33 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 
 // matmul
 template <>
-struct u_matmul_policy<matmul_pack_kind::no_pack, float, float, float, true> {
+struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack M
+// Vectorize M
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_m, vector<float, 8>, float,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_m, vector<float, 8>, float,
                        vector<float, 8>, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 4;
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack K
+// Vectorize K
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_k, vector<float, 8>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_k, vector<float, 8>,
                        vector<float, 8>, float, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack N
+// Vectorize N
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_n, float, vector<float, 8>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_n, float, vector<float, 8>,
                        vector<float, 8>, true> {
     static constexpr size_t m0_tile = 4;
     static constexpr size_t n0_tile = 2;
@@ -632,13 +632,13 @@ struct u_matmul_policy<matmul_pack_kind::pack_n, float, vector<float, 8>,
 };
 
 template <>
-struct u_matmul_m1_policy<matmul_pack_kind::pack_n, float, vector<float, 8>,
+struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_n, float, vector<float, 8>,
                           vector<float, 8>, true> {
     static constexpr size_t n0_tile = 7;
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_pack_kind::pack_n, AccumulateC, false, false,
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC, false, false,
                 1, 7, float, vector<float, 8>, vector<float, 8>, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
@@ -703,27 +703,27 @@ struct u_matmul<ukernels::matmul_pack_kind::pack_n, AccumulateC, false, false,
     }
 };
 
-// Pack MN
+// Vectorize MN
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_mn, vector<float, 8>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_mn, vector<float, 8>,
                        vector<float, 8>, vector<float, 8, 8>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 4;
 };
 
-// Pack MK
+// Vectorize MK
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_mk, vector<float, 8, 8>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_mk, vector<float, 8, 8>,
                        vector<float, 8>, vector<float, 8>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack KN
+// Vectorize KN
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_kn, vector<float, 8>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_kn, vector<float, 8>,
                        vector<float, 8, 8>, vector<float, 8>, true> {
     static constexpr size_t m0_tile = 4;
     static constexpr size_t n0_tile = 2;
@@ -731,13 +731,13 @@ struct u_matmul_policy<matmul_pack_kind::pack_kn, vector<float, 8>,
 };
 
 template <>
-struct u_matmul_m1_policy<matmul_pack_kind::pack_kn, vector<float, 8>,
+struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_kn, vector<float, 8>,
                           vector<float, 8, 8>, vector<float, 8>, true> {
     static constexpr size_t n0_tile = 4;
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_pack_kind::pack_kn, AccumulateC, false, false,
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, false, false,
                 1, 4, vector<float, 8>, vector<float, 8, 8>, vector<float, 8>,
                 true> {
     template <class TA, class TB, class TC>
@@ -777,9 +777,9 @@ struct u_matmul<ukernels::matmul_pack_kind::pack_kn, AccumulateC, false, false,
     }
 };
 
-// Pack MKN
+// Vectorize MKN
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_mkn, vector<float, 8, 8>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_mkn, vector<float, 8, 8>,
                        vector<float, 8, 8>, vector<float, 8, 8>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;

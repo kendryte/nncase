@@ -12,16 +12,16 @@ using static Nncase.IR.F.Tensors;
 namespace Nncase.Tests.Rules.NeutralTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestPackTranspose : TransformTestBase
+public class UnitTestVectorizeTranspose : TransformTestBase
 {
     [Fact]
-    public void TestPackTransposePropagation()
+    public void TestVectorizeTransposePropagation()
     {
         var input = Testing.Rand<float>(3, 24);
         var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
         Expr expr = Transpose(inputVar, [1, 0]);
-        expr = Pack(expr, [8], [0]);
-        expr = Unpack(expr, [8], [0]);
-        TestMatched<PackTransposePropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
+        expr = Vectorize(expr, [8], [0]);
+        expr = Devectorize(expr, [8], [0]);
+        TestMatched<VectorizeTransposePropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 }

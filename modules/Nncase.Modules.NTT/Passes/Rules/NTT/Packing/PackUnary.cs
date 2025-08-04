@@ -26,11 +26,11 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackUnaryPropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeUnaryPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsPack(
-            "pack",
+        PatternMatch.F.Tensors.IsVectorize(
+            "vectorize",
             "caller",
             _ => true,
             IsUnary(
@@ -42,21 +42,21 @@ public sealed partial class PackUnaryPropagation : RewriteRule<Pattern>
     private Expr? GetReplace(Call caller, Call callee, Expr input)
     {
         return callee.WithArguments([
-            (Unary.Input, caller.WithArguments([(Pack.Input, input)])),
+            (Unary.Input, caller.WithArguments([(Vectorize.Input, input)])),
         ]);
     }
 }
 
 [RuleGenerator]
-public sealed partial class UnaryUnpackPropagation : RewriteRule<Pattern>
+public sealed partial class UnaryDevectorizePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         IsUnary(
             "unary",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsUnpack(
-                "unpack",
+            PatternMatch.F.Tensors.IsDevectorize(
+                "devectorize",
                 "callee",
                 _ => true,
                 IsWildcard("input")));
@@ -64,21 +64,21 @@ public sealed partial class UnaryUnpackPropagation : RewriteRule<Pattern>
     private Expr? GetReplace(Call caller, Call callee, Expr input)
     {
         return callee.WithArguments([
-            (Unpack.Input, caller.WithArguments([(Unary.Input, input)])),
+            (Devectorize.Input, caller.WithArguments([(Unary.Input, input)])),
         ]);
     }
 }
 
 [RuleGenerator]
-public sealed partial class SwishUnpackPropagation : RewriteRule<Pattern>
+public sealed partial class SwishDevectorizePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         IsSwish(
             "swish",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsUnpack(
-                "unpack",
+            PatternMatch.F.Tensors.IsDevectorize(
+                "devectorize",
                 "callee",
                 _ => true,
                 IsWildcard("input")));
@@ -86,7 +86,7 @@ public sealed partial class SwishUnpackPropagation : RewriteRule<Pattern>
     private Expr? GetReplace(Call caller, Call callee, Expr input)
     {
         return callee.WithArguments([
-            (Unpack.Input, caller.WithArguments([(Swish.Input, input)])),
+            (Devectorize.Input, caller.WithArguments([(Swish.Input, input)])),
         ]);
     }
 }

@@ -20,7 +20,7 @@
 
 using namespace nncase;
 
-void benchmark_ntt_gather_pack1d_dim0_contiguous() {
+void benchmark_ntt_gather_vectorize1d_dim0_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -43,7 +43,7 @@ void benchmark_ntt_gather_pack1d_dim0_contiguous() {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++) {
@@ -65,7 +65,7 @@ void benchmark_ntt_gather_pack1d_dim0_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack1d_dim0_no_contiguous() {
+void benchmark_ntt_gather_vectorize1d_dim0_no_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -88,7 +88,7 @@ void benchmark_ntt_gather_pack1d_dim0_no_contiguous() {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++) {
@@ -110,7 +110,7 @@ void benchmark_ntt_gather_pack1d_dim0_no_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack1d_dim1_contiguous() {
+void benchmark_ntt_gather_vectorize1d_dim1_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -133,7 +133,7 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++)
@@ -153,7 +153,7 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
+void benchmark_ntt_gather_vectorize1d_dim1_no_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -176,7 +176,7 @@ void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++)
@@ -196,7 +196,7 @@ void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack2d_dim0_contiguous() {
+void benchmark_ntt_gather_vectorize2d_dim0_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -219,7 +219,7 @@ void benchmark_ntt_gather_pack2d_dim0_contiguous() {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     NttTest::init_tensor(pa, -10.f, 10.f);
-    ntt::pack(ta, pa, ntt::fixed_shape_v<0, 1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<0, 1>);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++)
@@ -239,7 +239,7 @@ void benchmark_ntt_gather_pack2d_dim0_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack2d_dim1_contiguous() {
+void benchmark_ntt_gather_vectorize2d_dim1_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -261,7 +261,7 @@ void benchmark_ntt_gather_pack2d_dim1_contiguous() {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     NttTest::init_tensor(pa, -10.f, 10.f);
-    ntt::pack(ta, pa, ntt::fixed_shape_v<0, 1>);
+    ntt::vectorize(ta, pa, ntt::fixed_shape_v<0, 1>);
 
     // warm up
     for (size_t i = 0; i < warmup_size; i++)
@@ -285,10 +285,10 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    benchmark_ntt_gather_pack1d_dim0_contiguous();
-    benchmark_ntt_gather_pack1d_dim0_no_contiguous();
-    benchmark_ntt_gather_pack1d_dim1_contiguous();
-    benchmark_ntt_gather_pack1d_dim1_no_contiguous();
-    benchmark_ntt_gather_pack2d_dim0_contiguous();
-    benchmark_ntt_gather_pack2d_dim1_contiguous();
+    benchmark_ntt_gather_vectorize1d_dim0_contiguous();
+    benchmark_ntt_gather_vectorize1d_dim0_no_contiguous();
+    benchmark_ntt_gather_vectorize1d_dim1_contiguous();
+    benchmark_ntt_gather_vectorize1d_dim1_no_contiguous();
+    benchmark_ntt_gather_vectorize2d_dim0_contiguous();
+    benchmark_ntt_gather_vectorize2d_dim1_contiguous();
 }

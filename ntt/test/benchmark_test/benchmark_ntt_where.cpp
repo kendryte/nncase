@@ -25,7 +25,7 @@
 using namespace nncase;
 
 template <typename T, size_t N>
-void benchmark_ntt_where_pack(T init_low, T init_high) {
+void benchmark_ntt_where_vectorize(T init_low, T init_high) {
 #ifdef __riscv
     constexpr size_t n = 1;
     constexpr size_t c = 8;
@@ -52,9 +52,9 @@ void benchmark_ntt_where_pack(T init_low, T init_high) {
     NttTest::init_tensor(input2, init_low, init_high);
     auto cond = ntt::make_tensor<bool>(ntt::fixed_shape_v<n, c, h, w>);
     NttTest::init_tensor(cond, 0, 1);
-    auto cond_packed = ntt::make_tensor<ntt::vector<bool, N>>(
+    auto cond_vectorized = ntt::make_tensor<ntt::vector<bool, N>>(
         ntt::fixed_shape_v<n, c, h, w / N>);
-    ntt::pack(cond, cond_packed, ntt::fixed_shape_v<3>);
+    ntt::vectorize(cond, cond_vectorized, ntt::fixed_shape_v<3>);
 
     auto ntt_output =
         ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<n, c, h, w / N>);
@@ -62,7 +62,7 @@ void benchmark_ntt_where_pack(T init_low, T init_high) {
     // warm up
     constexpr size_t warmup_size = 10;
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::where(cond_packed, input1, input2, ntt_output);
+        ntt::where(cond_vectorized, input1, input2, ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
 
@@ -70,7 +70,7 @@ void benchmark_ntt_where_pack(T init_low, T init_high) {
     constexpr size_t run_size = 2000;
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::where(cond_packed, input1, input2, ntt_output);
+        ntt::where(cond_vectorized, input1, input2, ntt_output);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -86,5 +86,5 @@ int main(int argc, char *argv[]) {
     (void)argv;
 
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    benchmark_ntt_where_pack<float, N>(-10.f, 10.f);
+    benchmark_ntt_where_vectorize<float, N>(-10.f, 10.f);
 }

@@ -13,7 +13,7 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.TIR.NTT;
 
-public sealed class PackedSoftMaxEvaluator : ITypeInferencer<PackedSoftmax>
+public sealed class VectorizedSoftMaxEvaluator : ITypeInferencer<VectorizedSoftmax>
 {
-    public IRType Visit(ITypeInferenceContext context, PackedSoftmax target) => TupleType.Void;
+    public IRType Visit(ITypeInferenceContext context, VectorizedSoftmax target) => TupleType.Void;
 }

@@ -13,16 +13,16 @@ using Nncase.PatternMatch;
 namespace Nncase.TIR.NTT;
 
 /// <summary>
-/// Pack expression.
+/// Vectorize expression.
 /// </summary>
-public sealed partial class Pack : NTTKernelOp
+public sealed partial class Vectorize : NTTKernelOp
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Pack), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(Vectorize), 0, "input", ParameterKind.Input);
 
-    public static readonly ParameterInfo Output = new(typeof(Pack), 1, "output", ParameterKind.Input);
+    public static readonly ParameterInfo Output = new(typeof(Vectorize), 1, "output", ParameterKind.Input);
 
     public IRArray<int> Lanes { get; }
 

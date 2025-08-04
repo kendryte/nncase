@@ -15,11 +15,11 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.TIR.NTT;
 
-public sealed class PackEvaluator : ITypeInferencer<Nncase.TIR.NTT.Pack>, IKernelInfoEvaluator<Nncase.TIR.NTT.Pack>
+public sealed class VectorizeEvaluator : ITypeInferencer<Nncase.TIR.NTT.Vectorize>, IKernelInfoEvaluator<Nncase.TIR.NTT.Vectorize>
 {
-    public IRType Visit(ITypeInferenceContext context, Nncase.TIR.NTT.Pack target) => TupleType.Void;
+    public IRType Visit(ITypeInferenceContext context, Nncase.TIR.NTT.Vectorize target) => TupleType.Void;
 
-    public MicroKernelInfo Visit(Nncase.TIR.NTT.Pack op, MicroKernelContext context)
+    public MicroKernelInfo Visit(Nncase.TIR.NTT.Vectorize op, MicroKernelContext context)
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();

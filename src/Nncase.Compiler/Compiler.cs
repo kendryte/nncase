@@ -279,18 +279,18 @@ public class Compiler : ICompiler
         passManager.Add<OptimizeByRangePass>();
     }
 
-    public void AutoPackingPass(IPassManager passManager)
+    public void AutoVectorizePass(IPassManager passManager)
     {
         var target = _compileSession.Target;
-        passManager.AddWithName<EGraphRulesPass>("AutoPacking").Configure(p =>
+        passManager.AddWithName<EGraphRulesPass>("AutoVectorize").Configure(p =>
         {
-            target.RegisterAutoPackingRules(p, _compileSession.CompileOptions);
+            target.RegisterAutoVectorizeRules(p, _compileSession.CompileOptions);
         });
 
         passManager.Add<InferRangePass>();
         passManager.Add<OptimizeByRangePass>();
 
-        target.RegisterPostAutoPackingPass(passManager, _compileSession.CompileOptions);
+        target.RegisterPostAutoVectorizePass(passManager, _compileSession.CompileOptions);
     }
 
     public void AutoDistributedPass(IPassManager passManager)
@@ -371,7 +371,7 @@ public class Compiler : ICompiler
             "TargetDependentPass");
         await RunPassAsync(QuantizePass, "QuantizePass");
 
-        await RunPassAsync(AutoPackingPass, "AutoPackingPass");
+        await RunPassAsync(AutoVectorizePass, "AutoVectorizePass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
         await RunPassAsync(AutoTilingPass, "AutoTilingPass");
 

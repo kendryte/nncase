@@ -30,14 +30,14 @@ class paged_attention_config_node : public attention_config_node {
         size_t num_layers, size_t num_kv_heads, size_t head_dim,
         typecode_t kv_type, size_t block_size,
         const std::array<paged_kvcache_dim_kind, 6> &cache_layout,
-        const std::vector<paged_kvcache_dim_kind> &packed_axes,
+        const std::vector<paged_kvcache_dim_kind> &vectorized_axes,
         const dims_t &lanes,
         const std::vector<paged_kvcache_dim_kind> &sharding_axes,
         const std::vector<dims_t> &axis_policies) noexcept
         : attention_config_node(num_layers, num_kv_heads, head_dim, kv_type),
           block_size_(block_size),
           cache_layout_(cache_layout),
-          packed_axes_(packed_axes.begin(), packed_axes.end()),
+          vectorized_axes_(vectorized_axes.begin(), vectorized_axes.end()),
           lanes_(lanes),
           sharding_axes_(sharding_axes.begin(), sharding_axes.end()),
           axis_policies_(axis_policies.begin(), axis_policies.end()) {}
@@ -68,12 +68,12 @@ class paged_attention_config_node : public attention_config_node {
         return block_layout;
     }
 
-    const auto &packed_axes() const noexcept { return packed_axes_; }
+    const auto &vectorized_axes() const noexcept { return vectorized_axes_; }
 
-    void packed_axes(
-        const std::vector<paged_kvcache_dim_kind> &packed_axes) noexcept {
-        packed_axes_.clear();
-        packed_axes_.assign(packed_axes.begin(), packed_axes.end());
+    void vectorized_axes(
+        const std::vector<paged_kvcache_dim_kind> &vectorized_axes) noexcept {
+        vectorized_axes_.clear();
+        vectorized_axes_.assign(vectorized_axes.begin(), vectorized_axes.end());
     }
 
     const dims_t &lanes() const noexcept { return lanes_; }
@@ -142,9 +142,9 @@ class paged_attention_config_node : public attention_config_node {
                                         dims_t hierarchy) const noexcept {
         auto dims = get_default_dimensions(num_blocks);
 
-        // 1. process packed axes
-        for (size_t i = 0; i < packed_axes_.size() && i < lanes_.size(); i++) {
-            auto axis = static_cast<size_t>(packed_axes_[i]);
+        // 1. process vectorized axes
+        for (size_t i = 0; i < vectorized_axes_.size() && i < lanes_.size(); i++) {
+            auto axis = static_cast<size_t>(vectorized_axes_[i]);
             dims[axis] /= lanes_[i];
         }
 
@@ -181,7 +181,7 @@ class paged_attention_config_node : public attention_config_node {
   private:
     size_t block_size_;
     std::array<paged_kvcache_dim_kind, 6> cache_layout_;
-    paged_kvcache_axes_t packed_axes_;
+    paged_kvcache_axes_t vectorized_axes_;
     dims_t lanes_;
     paged_kvcache_axes_t sharding_axes_;
     itlib::small_vector<dims_t, 8> axis_policies_;

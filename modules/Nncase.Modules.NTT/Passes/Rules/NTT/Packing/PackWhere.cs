@@ -24,9 +24,9 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackWherePropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeWherePropagation : RewriteRule<Pattern>
 {
-    public PackWherePropagation(MaskVectorStyle maskVectorStyle)
+    public VectorizeWherePropagation(MaskVectorStyle maskVectorStyle)
     {
         MaskVectorStyle = maskVectorStyle;
     }
@@ -34,8 +34,8 @@ public sealed partial class PackWherePropagation : RewriteRule<Pattern>
     public MaskVectorStyle MaskVectorStyle { get; }
 
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsPack(
-            "pack",
+        PatternMatch.F.Tensors.IsVectorize(
+            "vectorize",
             "caller",
             _ => true,
             IsWhere(
@@ -46,51 +46,51 @@ public sealed partial class PackWherePropagation : RewriteRule<Pattern>
                 IsWildcard("lhs"),
                 IsWildcard("rhs")));
 
-    private Expr? GetReplace(Pack pack, Call callee, Expr cond, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Vectorize vectorize, Call callee, Expr cond, Expr lhs, Expr rhs)
     {
         var condShape = cond.CheckedShape;
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var outputRank = callee.CheckedShape.Rank;
 
-        var condPackedAxes = new List<int>();
-        var lhsPackedAxes = new List<int>();
-        var rhsPackedAxes = new List<int>();
+        var condVectorizedAxes = new List<int>();
+        var lhsVectorizedAxes = new List<int>();
+        var rhsVectorizedAxes = new List<int>();
         var condLanes = new List<int>();
         var lhsLanes = new List<int>();
         var rhsLanes = new List<int>();
 
-        for (int i = 0; i < pack.Axes.Count; i++)
+        for (int i = 0; i < vectorize.Axes.Count; i++)
         {
-            var axis = pack.Axes[i];
-            var lanes = pack.Lanes[i];
+            var axis = vectorize.Axes[i];
+            var lanes = vectorize.Lanes[i];
 
-            if (!PackUtility.TryPropagateArgument(outputRank, condShape, axis, lanes, condPackedAxes, condLanes))
+            if (!VectorizeUtility.TryPropagateArgument(outputRank, condShape, axis, lanes, condVectorizedAxes, condLanes))
             {
-                return null; // Cannot pack cond.
+                return null; // Cannot vectorize cond.
             }
 
-            if (!PackUtility.TryPropagateArgument(outputRank, lhsShape, axis, lanes, lhsPackedAxes, lhsLanes))
+            if (!VectorizeUtility.TryPropagateArgument(outputRank, lhsShape, axis, lanes, lhsVectorizedAxes, lhsLanes))
             {
-                return null; // Cannot pack lhs.
+                return null; // Cannot vectorize lhs.
             }
 
-            if (!PackUtility.TryPropagateArgument(outputRank, rhsShape, axis, lanes, rhsPackedAxes, rhsLanes))
+            if (!VectorizeUtility.TryPropagateArgument(outputRank, rhsShape, axis, lanes, rhsVectorizedAxes, rhsLanes))
             {
-                return null; // Cannot pack rhs.
+                return null; // Cannot vectorize rhs.
             }
         }
 
-        if (condPackedAxes.Count > 1)
+        if (condVectorizedAxes.Count > 1)
         {
-            return null; // Mask can only be packed along one axis.
+            return null; // Mask can only be vectorized along one axis.
         }
 
         var maskElementBits = lhs.CheckedDataType.SizeInBytes * 8;
         return callee.WithArguments([
-            (Where.Cond, condPackedAxes.Count == 0 ? cond : IR.F.Tensors.PackMask(cond, MaskVectorStyle, maskElementBits, condLanes[0], condPackedAxes[0])),
-            (Where.X, IR.F.Tensors.Pack(lhs, lhsLanes.ToArray(), lhsPackedAxes.ToArray())),
-            (Where.Y, IR.F.Tensors.Pack(rhs, rhsLanes.ToArray(), rhsPackedAxes.ToArray())),
+            (Where.Cond, condVectorizedAxes.Count == 0 ? cond : IR.F.Tensors.VectorizeMask(cond, MaskVectorStyle, maskElementBits, condLanes[0], condVectorizedAxes[0])),
+            (Where.X, IR.F.Tensors.Vectorize(lhs, lhsLanes.ToArray(), lhsVectorizedAxes.ToArray())),
+            (Where.Y, IR.F.Tensors.Vectorize(rhs, rhsLanes.ToArray(), rhsVectorizedAxes.ToArray())),
         ]);
     }
 }

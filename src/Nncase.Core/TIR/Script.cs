@@ -36,7 +36,7 @@ public static class T
     /// Load the **One** value from buffer_var.
     /// Equivalent to ((ElemType*)buffer_var)[index].
     /// <remarks>
-    /// If the buffer has packed type like float32*4, but we load the index with lanes 1, so will return only one float32.
+    /// If the buffer has vectorized type like float32*4, but we load the index with lanes 1, so will return only one float32.
     /// </remarks>
     /// <example>
     /// case 1, type = uint32:

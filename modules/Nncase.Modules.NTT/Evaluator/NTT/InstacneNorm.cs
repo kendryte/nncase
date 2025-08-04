@@ -22,40 +22,40 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
         var scale = context.GetOrtArgumentValue(target, InstacneNorm.Scale);
         var bias = context.GetOrtArgumentValue(target, InstacneNorm.Bias);
         var padedNums = context.GetArgumentValueAsArray<int>(target, InstacneNorm.PadedNums);
-        if (target.PackedAxes.Count == 0)
+        if (target.VectorizedAxes.Count == 0)
         {
             return Value.FromTensor(OrtKI.InstanceNormalization(input, scale, bias, target.Epsilon).ToTensor());
         }
         else
         {
-            var lanes = input.Shape.TakeLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
+            var lanes = input.Shape.TakeLast(target.VectorizedAxes.Count).Select(i => (int)i).ToArray();
             var channelPadNums = 0;
-            for (int i = target.PackedAxes.Count - 1; i >= 0; i--)
+            for (int i = target.VectorizedAxes.Count - 1; i >= 0; i--)
             {
-                var axis = target.PackedAxes[i];
+                var axis = target.VectorizedAxes[i];
                 if (axis == 1)
                 {
                     channelPadNums = padedNums[i];
                 }
 
-                input = input.Unpack(axis);
+                input = input.Devectorize(axis);
             }
 
             if (channelPadNums > 0)
             {
-                var rk = target.PackedAxes.Count;
+                var rk = target.VectorizedAxes.Count;
                 var inshape = input.Shape.ToArray();
                 input = OrtKI.Slice(
                     input,
-                    target.PackedAxes.Select(_ => 0L).ToArray(),
-                    Enumerable.Range(0, rk).Select(i => inshape[target.PackedAxes[i]] - padedNums[i]).ToArray(),
-                    target.PackedAxes.Select(axis => (long)axis).ToArray(),
-                    target.PackedAxes.Select(_ => 1L).ToArray());
+                    target.VectorizedAxes.Select(_ => 0L).ToArray(),
+                    Enumerable.Range(0, rk).Select(i => inshape[target.VectorizedAxes[i]] - padedNums[i]).ToArray(),
+                    target.VectorizedAxes.Select(axis => (long)axis).ToArray(),
+                    target.VectorizedAxes.Select(_ => 1L).ToArray());
             }
 
             if (scale.Shape.Length == 2)
             {
-                scale = scale.Unpack(0);
+                scale = scale.Devectorize(0);
                 if (channelPadNums > 0)
                 {
                     scale = OrtKI.Slice(scale, new[] { 0L }, new[] { scale.Shape[0] - channelPadNums }, new[] { 0L }, new[] { 1L });
@@ -64,7 +64,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
 
             if (bias.Shape.Length == 2)
             {
-                bias = bias.Unpack(0);
+                bias = bias.Devectorize(0);
                 if (channelPadNums > 0)
                 {
                     bias = OrtKI.Slice(bias, new[] { 0L }, new[] { bias.Shape[0] - channelPadNums }, new[] { 0L }, new[] { 1L });
@@ -72,8 +72,8 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
             }
 
             var norm = OrtKI.InstanceNormalization(input, scale, bias, target.Epsilon);
-            var output = NTTEvaluatorUtility.RepackTensor(norm, lanes, target.PackedAxes, padedNums);
-            return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(norm.DataType.ToDataType(), lanes), output.Shape.SkipLast(target.PackedAxes.Count).Select(i => (int)i).ToArray()), output.BytesBuffer.ToArray()));
+            var output = NTTEvaluatorUtility.RevectorizeTensor(norm, lanes, target.VectorizedAxes, padedNums);
+            return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(norm.DataType.ToDataType(), lanes), output.Shape.SkipLast(target.VectorizedAxes.Count).Select(i => (int)i).ToArray()), output.BytesBuffer.ToArray()));
         }
     }
 
@@ -126,14 +126,14 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
 
     private IRType Visit(TensorType input, TensorType scale, TensorType bias, InstacneNorm target)
     {
-        if (target.PackedAxes.Count == 0)
+        if (target.VectorizedAxes.Count == 0)
         {
             return input;
         }
 
-        if (!(target.PackedAxes.Count == 1 && target.PackedAxes[0] == 1 && scale.DType is VectorType && bias.DType is VectorType))
+        if (!(target.VectorizedAxes.Count == 1 && target.VectorizedAxes[0] == 1 && scale.DType is VectorType && bias.DType is VectorType))
         {
-            return new InvalidType("when packed on channel, the scale and bias must be packed");
+            return new InvalidType("when vectorized on channel, the scale and bias must be vectorized");
         }
 
         return input;

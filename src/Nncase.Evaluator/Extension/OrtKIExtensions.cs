@@ -131,7 +131,7 @@ public static class OrtKIExtensions
 
     public static OrtKISharp.Tensor BroadcastTo(this OrtKISharp.Tensor tensor, long[] shape, OrtDataType dtype = OrtDataType.Float) => tensor + OrtKISharp.Tensor.Empty(shape, dtype);
 
-    public static OrtKISharp.Tensor Pack(this OrtKISharp.Tensor tensor, int lanes, int axis)
+    public static OrtKISharp.Tensor Vectorize(this OrtKISharp.Tensor tensor, int lanes, int axis)
     {
         if (axis < 0)
         {
@@ -144,15 +144,15 @@ public static class OrtKIExtensions
         return OrtKI.Transpose(OrtKI.Reshape(tensor, dividedShape, 0), perm);
     }
 
-    public static OrtKISharp.Tensor Unpack(this OrtKISharp.Tensor tensor, int axis)
+    public static OrtKISharp.Tensor Devectorize(this OrtKISharp.Tensor tensor, int axis)
     {
         var perm = Enumerable.Range(0, tensor.Shape.Length);
         perm = perm.Take(axis + 1).Concat(new[] { perm.Last() }).Concat(perm.Skip(axis + 1).SkipLast(1));
-        var unpacked = OrtKI.Transpose(tensor, perm.Select(i => (long)i).ToArray());
-        var shape = unpacked.Shape.ToList();
+        var devectorized = OrtKI.Transpose(tensor, perm.Select(i => (long)i).ToArray());
+        var shape = devectorized.Shape.ToList();
         shape[axis] = shape[axis] * shape[axis + 1];
         shape.RemoveAt(axis + 1);
-        return OrtKI.Reshape(unpacked, shape.ToArray(), 0);
+        return OrtKI.Reshape(devectorized, shape.ToArray(), 0);
     }
 
     private static OrtKISharp.Tensor ToOrtTensor(Tensor tensor, OrtDataType ortDataType, long[] shape)

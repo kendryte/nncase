@@ -55,8 +55,8 @@ result<llm::paged_attention_config> runtime::deserialize_paged_attention_config(
     auto cache_layout =
         json["CacheLayout"].get<std::array<llm::paged_kvcache_dim_kind, 6>>();
 
-    auto packed_axes =
-        json["PackedAxes"].get<std::vector<llm::paged_kvcache_dim_kind>>();
+    auto vectorized_axes =
+        json["VectorizedAxes"].get<std::vector<llm::paged_kvcache_dim_kind>>();
 
     auto lanes = json["Lanes"].get<dims_t>();
 
@@ -71,7 +71,7 @@ result<llm::paged_attention_config> runtime::deserialize_paged_attention_config(
 
     auto config = llm::paged_attention_config(
         std::in_place, num_layers, num_kv_heads, head_dim, kv_type_code,
-        block_size, cache_layout, packed_axes, lanes, sharding_axes,
+        block_size, cache_layout, vectorized_axes, lanes, sharding_axes,
         axis_policies);
 
     return ok(config);

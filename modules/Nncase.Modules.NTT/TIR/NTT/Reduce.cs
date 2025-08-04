@@ -20,7 +20,7 @@ public sealed partial class Reduce : NTTKernelOp
 
     public static readonly ParameterInfo LoadPrevious = new(typeof(Reduce), 2, "loadPrevious");
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
     public IRArray<Dimension> PadedNums { get; }
 

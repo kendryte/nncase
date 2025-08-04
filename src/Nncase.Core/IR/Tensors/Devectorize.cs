@@ -6,15 +6,15 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.Tensors;
 
 /// <summary>
-/// Unpack expression.
+/// Devectorize expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class Unpack : Op
+public sealed partial class Devectorize : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Unpack), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(Devectorize), 0, "input", ParameterKind.Input);
 
     public IRArray<int> Lanes { get; }
 

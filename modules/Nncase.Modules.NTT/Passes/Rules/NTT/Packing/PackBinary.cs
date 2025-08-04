@@ -26,11 +26,11 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackBinaryPropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeBinaryPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsPack(
-            "pack",
+        PatternMatch.F.Tensors.IsVectorize(
+            "vectorize",
             "caller",
             _ => true,
             IsBinary(
@@ -40,90 +40,90 @@ public sealed partial class PackBinaryPropagation : RewriteRule<Pattern>
                 IsWildcard("lhs"),
                 IsWildcard("rhs")));
 
-    private Expr? GetReplace(Pack pack, Call callee, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Vectorize vectorize, Call callee, Expr lhs, Expr rhs)
     {
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var outputRank = callee.CheckedShape.Rank;
 
-        var lhsPackedAxes = new List<int>();
-        var rhsPackedAxes = new List<int>();
+        var lhsVectorizedAxes = new List<int>();
+        var rhsVectorizedAxes = new List<int>();
         var lhsLanes = new List<int>();
         var rhsLanes = new List<int>();
 
-        for (int i = 0; i < pack.Axes.Count; i++)
+        for (int i = 0; i < vectorize.Axes.Count; i++)
         {
-            var axis = pack.Axes[i];
-            var lanes = pack.Lanes[i];
+            var axis = vectorize.Axes[i];
+            var lanes = vectorize.Lanes[i];
 
-            if (!PackUtility.TryPropagateArgument(outputRank, lhsShape, axis, lanes, lhsPackedAxes, lhsLanes))
+            if (!VectorizeUtility.TryPropagateArgument(outputRank, lhsShape, axis, lanes, lhsVectorizedAxes, lhsLanes))
             {
-                return null; // Cannot pack lhs.
+                return null; // Cannot vectorize lhs.
             }
 
-            if (!PackUtility.TryPropagateArgument(outputRank, rhsShape, axis, lanes, rhsPackedAxes, rhsLanes))
+            if (!VectorizeUtility.TryPropagateArgument(outputRank, rhsShape, axis, lanes, rhsVectorizedAxes, rhsLanes))
             {
-                return null; // Cannot pack rhs.
+                return null; // Cannot vectorize rhs.
             }
         }
 
         return callee.WithArguments([
-            (Binary.Lhs, IR.F.Tensors.Pack(lhs, lhsLanes.ToArray(), lhsPackedAxes.ToArray())),
-            (Binary.Rhs, IR.F.Tensors.Pack(rhs, rhsLanes.ToArray(), rhsPackedAxes.ToArray())),
+            (Binary.Lhs, IR.F.Tensors.Vectorize(lhs, lhsLanes.ToArray(), lhsVectorizedAxes.ToArray())),
+            (Binary.Rhs, IR.F.Tensors.Vectorize(rhs, rhsLanes.ToArray(), rhsVectorizedAxes.ToArray())),
         ]);
     }
 }
 
 [RuleGenerator]
-public sealed partial class BinaryUnpackLhsPropagation : RewriteRule<Pattern>
+public sealed partial class BinaryDevectorizeLhsPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
     IsBinary(
             "binary",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsUnpack("unpack", "callee", _ => true, IsWildcard("lhs")),
+            PatternMatch.F.Tensors.IsDevectorize("devectorize", "callee", _ => true, IsWildcard("lhs")),
             IsWildcard("rhs") with { TypePattern = !IsVector() });
 
-    public static Expr? GetReplaceOperand(Unpack unpack, Call caller, Call callee, ParameterInfo unpackedOperandParameter, ParameterInfo theOtherOperandParameter, Expr unpackedOperand, Expr theOtherOperand)
+    public static Expr? GetReplaceOperand(Devectorize devectorize, Call caller, Call callee, ParameterInfo devectorizedOperandParameter, ParameterInfo theOtherOperandParameter, Expr devectorizedOperand, Expr theOtherOperand)
     {
         var theOtherOperandShape = theOtherOperand.CheckedShape;
         var outputRank = callee.CheckedShape.Rank;
 
-        var theOtherOperandPackedAxes = new List<int>();
+        var theOtherOperandVectorizedAxes = new List<int>();
         var theOtherOperandLanes = new List<int>();
 
-        for (int i = 0; i < unpack.Axes.Count; i++)
+        for (int i = 0; i < devectorize.Axes.Count; i++)
         {
-            var axis = unpack.Axes[i];
-            var lanes = unpack.Lanes[i];
+            var axis = devectorize.Axes[i];
+            var lanes = devectorize.Lanes[i];
 
-            if (!PackUtility.TryPropagateArgument(outputRank, theOtherOperandShape, axis, lanes, theOtherOperandPackedAxes, theOtherOperandLanes))
+            if (!VectorizeUtility.TryPropagateArgument(outputRank, theOtherOperandShape, axis, lanes, theOtherOperandVectorizedAxes, theOtherOperandLanes))
             {
-                return null; // Cannot pack theOtherOperand.
+                return null; // Cannot vectorize theOtherOperand.
             }
         }
 
-        var unpackedOperandExtend = outputRank - unpackedOperand.CheckedShape.Rank;
-        var newUnpackAxes = unpack.Axes.Select(a => a + unpackedOperandExtend).ToArray();
+        var devectorizedOperandExtend = outputRank - devectorizedOperand.CheckedShape.Rank;
+        var newDevectorizeAxes = devectorize.Axes.Select(a => a + devectorizedOperandExtend).ToArray();
 
-        return IR.F.Tensors.Unpack(
+        return IR.F.Tensors.Devectorize(
             caller.WithArguments([
-                (unpackedOperandParameter, unpackedOperand),
-                (theOtherOperandParameter, IR.F.Tensors.Pack(theOtherOperand, theOtherOperandLanes.ToArray(), theOtherOperandPackedAxes.ToArray())),
+                (devectorizedOperandParameter, devectorizedOperand),
+                (theOtherOperandParameter, IR.F.Tensors.Vectorize(theOtherOperand, theOtherOperandLanes.ToArray(), theOtherOperandVectorizedAxes.ToArray())),
             ]),
-            unpack.Lanes.ToArray(),
-            newUnpackAxes);
+            devectorize.Lanes.ToArray(),
+            newDevectorizeAxes);
     }
 
-    private Expr? GetReplace(Unpack unpack, Call caller, Call callee, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Devectorize devectorize, Call caller, Call callee, Expr lhs, Expr rhs)
     {
-        return GetReplaceOperand(unpack, caller, callee, Binary.Lhs, Binary.Rhs, lhs, rhs);
+        return GetReplaceOperand(devectorize, caller, callee, Binary.Lhs, Binary.Rhs, lhs, rhs);
     }
 }
 
 [RuleGenerator]
-public sealed partial class BinaryUnpackRhsPropagation : RewriteRule<Pattern>
+public sealed partial class BinaryDevectorizeRhsPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
     IsBinary(
@@ -131,10 +131,10 @@ public sealed partial class BinaryUnpackRhsPropagation : RewriteRule<Pattern>
             "caller",
             _ => true,
             IsWildcard("lhs") with { TypePattern = !IsVector() },
-            PatternMatch.F.Tensors.IsUnpack("unpack", "callee", _ => true, IsWildcard("rhs")));
+            PatternMatch.F.Tensors.IsDevectorize("devectorize", "callee", _ => true, IsWildcard("rhs")));
 
-    private Expr? GetReplace(Unpack unpack, Call caller, Call callee, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Devectorize devectorize, Call caller, Call callee, Expr lhs, Expr rhs)
     {
-        return BinaryUnpackLhsPropagation.GetReplaceOperand(unpack, caller, callee, Binary.Rhs, Binary.Lhs, rhs, lhs);
+        return BinaryDevectorizeLhsPropagation.GetReplaceOperand(devectorize, caller, callee, Binary.Rhs, Binary.Lhs, rhs, lhs);
     }
 }

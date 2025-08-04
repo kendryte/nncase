@@ -2975,10 +2975,10 @@ public sealed class MatMulTransposeCase : IRewriteCase
 
     public IEnumerable<System.Type> Rules => new[] {
         typeof(FoldTwoTransposes),
-        typeof(Passes.Rules.NTT.PackTranspose),
-        typeof(Passes.Rules.NTT.PackMatMul),
-        typeof(Passes.Rules.NTT.FoldPackUnpack),
-        typeof(Passes.Rules.NTT.TransposePackMatMulInputs),
+        typeof(Passes.Rules.NTT.VectorizeTranspose),
+        typeof(Passes.Rules.NTT.VectorizeMatMul),
+        typeof(Passes.Rules.NTT.FoldVectorizeDevectorize),
+        typeof(Passes.Rules.NTT.TransposeVectorizeMatMulInputs),
     };
 
     public Dictionary<IVar, IValue> FeedDict { get; }

@@ -1,4 +1,4 @@
-﻿@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.Unpack>
+﻿@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.Devectorize>
 @{
 }
-@(Model.Indent)unpack(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), fixed_shape_v<@string.Join(",", Model.Target.Axes)>);
+@(Model.Indent)devectorize(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), fixed_shape_v<@string.Join(",", Model.Target.Axes)>);

@@ -30,7 +30,7 @@ public interface IPagedAttentionConfig : IAttentionConfig
 
     IRArray<PagedKVCacheDimKind> BlockLayout => CacheLayout.Where(x => x is PagedKVCacheDimKind.BlockSize or PagedKVCacheDimKind.HeadDim).ToArray();
 
-    IRArray<PagedKVCacheDimKind> PackedAxes { get; }
+    IRArray<PagedKVCacheDimKind> VectorizedAxes { get; }
 
     IRArray<int> Lanes { get; }
 
@@ -72,8 +72,8 @@ public interface IPagedAttentionConfig : IAttentionConfig
     {
         var dims = GetDefaultDimensions(numBlocks);
 
-        // 1. process packed axes
-        foreach (var (axis, lane) in PackedAxes.Zip(Lanes))
+        // 1. process vectorized axes
+        foreach (var (axis, lane) in VectorizedAxes.Zip(Lanes))
         {
             dims[(int)axis] /= lane;
         }
@@ -88,8 +88,8 @@ public interface IPagedAttentionConfig : IAttentionConfig
     {
         var dims = GetDefaultDimensions(numBlocks);
 
-        // 1. process packed axes
-        foreach (var (axis, lane) in PackedAxes.Zip(Lanes))
+        // 1. process vectorized axes
+        foreach (var (axis, lane) in VectorizedAxes.Zip(Lanes))
         {
             dims[(int)axis] /= lane;
         }
@@ -118,7 +118,7 @@ public interface IPagedAttentionConfig : IAttentionConfig
 /// kv cache layout: [num_blocks, num_layers, num_head, 2, block_size].
 ///    block layout: [num_head, block_size].
 ///     slot layout: [num_head].
-/// note the slot or block may have different pack shape.
+/// note the slot or block may have different vectorize shape.
 /// </summary>
 [JsonConverter(typeof(IO.IPagedAttentionKVCacheJsonConverter))]
 public interface IPagedAttentionKVCache : IAttentionKVCache
@@ -207,12 +207,12 @@ public interface IPagedAttentionKVCache : IAttentionKVCache
     long[] LogicalCacheDimensions();
 }
 
-public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType, int BlockSize, IRArray<PagedKVCacheDimKind> CacheLayout, IRArray<PagedKVCacheDimKind> PackedAxes, IRArray<int> Lanes, IRArray<PagedKVCacheDimKind> ShardingAxes, IRArray<SBPSplit> AxisPolicies)
+public sealed record PagedAttentionConfig(int NumLayers, int NumKVHeads, int HeadDim, PrimType KVType, int BlockSize, IRArray<PagedKVCacheDimKind> CacheLayout, IRArray<PagedKVCacheDimKind> VectorizedAxes, IRArray<int> Lanes, IRArray<PagedKVCacheDimKind> ShardingAxes, IRArray<SBPSplit> AxisPolicies)
     : AttentionConfig(NumLayers, NumKVHeads, HeadDim, KVType), IPagedAttentionConfig
 {
     public override string ToString()
     {
-        return $"PagedAttentionConfig(NumLayers={NumLayers}, NumKVHeads={NumKVHeads}, HeadDim={HeadDim}, KVType={KVType}, BlockSize={BlockSize}, CacheLayout=[{string.Join(", ", CacheLayout)}], PackedAxes=[{string.Join(", ", PackedAxes)}], Lanes=[{string.Join(", ", Lanes)}], ShardingAxes=[{string.Join(", ", ShardingAxes)}], AxisPolicies=[{string.Join(", ", AxisPolicies)}])";
+        return $"PagedAttentionConfig(NumLayers={NumLayers}, NumKVHeads={NumKVHeads}, HeadDim={HeadDim}, KVType={KVType}, BlockSize={BlockSize}, CacheLayout=[{string.Join(", ", CacheLayout)}], VectorizedAxes=[{string.Join(", ", VectorizedAxes)}], Lanes=[{string.Join(", ", Lanes)}], ShardingAxes=[{string.Join(", ", ShardingAxes)}], AxisPolicies=[{string.Join(", ", AxisPolicies)}])";
     }
 }
 

@@ -26,17 +26,17 @@ namespace im2col_details {
 /**
  * @brief
  *  support:
- *   1. no pack
- *   2. packed on the input channel.
+ *   1. no vectorize
+ *   2. vectorized on the input channel.
  */
 template <Tensor TIn, Tensor TOut, Dimensions TKernel, Dimensions TStrides,
-          Paddings TPadding, FixedShape PackedAxes, FixedShape PadedNums>
-    requires(PackedAxes::rank() == 0 ||
-             (PackedAxes::rank() == 1 && PackedAxes{}.at(0) == 1))
+          Paddings TPadding, FixedShape VectorizedAxes, FixedShape PadedNums>
+    requires(VectorizedAxes::rank() == 0 ||
+             (VectorizedAxes::rank() == 1 && VectorizedAxes{}.at(0) == 1))
 void im2col_impl(const TIn &input, TOut &output,
                  [[maybe_unused]] const TKernel &kernel,
                  const TStrides &strides, const TPadding &padding,
-                 [[maybe_unused]] const PackedAxes &packedAxes,
+                 [[maybe_unused]] const VectorizedAxes &vectorizedAxes,
                  [[maybe_unused]] const PadedNums &padedNums) {
     using TElem = typename TIn::element_type;
     const auto input_shape = input.shape();
@@ -99,12 +99,12 @@ void im2col_impl(const TIn &input, TOut &output,
  */
 template <Tensor TIn, class TOut, Dimensions TKernel, Dimensions TStrides,
           Paddings TPadding = decltype(make_zeros_paddings<2>()),
-          FixedShape PackedAxes = shape_t<>, FixedShape PadedNums = shape_t<>>
+          FixedShape VectorizedAxes = shape_t<>, FixedShape PadedNums = shape_t<>>
 void im2col(const TIn &input, TOut &&output, const TKernel &kernel,
             const TStrides &strides, const TPadding &padding = {},
-            const PackedAxes &packedAxes = {},
+            const VectorizedAxes &vectorizedAxes = {},
             const PadedNums &padedNums = {}) {
     im2col_details::im2col_impl(input, output, kernel, strides, padding,
-                                packedAxes, padedNums);
+                                vectorizedAxes, padedNums);
 }
 } // namespace nncase::ntt

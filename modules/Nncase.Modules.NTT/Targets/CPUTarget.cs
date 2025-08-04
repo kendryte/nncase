@@ -58,49 +58,49 @@ public class CPUTarget : Target
         passManager.Add<NTTAffineSelectionPass>();
     }
 
-    public override void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options)
+    public override void RegisterAutoVectorizeRules(IRulesAddable pass, CompileOptions options)
     {
         // todo config it in the target options.
         var rank = 1;
         var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 32 : 16;
         var maskVectorStyle = _nttModuleCompiler.MaskVectorStyle;
 
-        pass.Add<Passes.Rules.NTT.PackBinaryPropagation>();
-        pass.Add<Passes.Rules.NTT.PackComparePropagation>(maskVectorStyle);
-        pass.Add<Passes.Rules.NTT.PackConcatPropagation>();
-        pass.Add<Passes.Rules.NTT.PackConv2D>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackExpandPropagation>();
-        pass.Add<Passes.Rules.NTT.PackGatherPropagation>();
-        pass.Add<Passes.Rules.NTT.PackLayerNorm>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackMatMul>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackPadPropagation>();
-        pass.Add<Passes.Rules.NTT.PackReducePropagation>();
-        pass.Add<Passes.Rules.NTT.PackReshapePropagation>();
-        pass.Add<Passes.Rules.NTT.PackResizeImagePropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeBinaryPropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeComparePropagation>(maskVectorStyle);
+        pass.Add<Passes.Rules.NTT.VectorizeConcatPropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeConv2D>(rank, lane);
+        pass.Add<Passes.Rules.NTT.VectorizeExpandPropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeGatherPropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeLayerNorm>(rank, lane);
+        pass.Add<Passes.Rules.NTT.VectorizeMatMul>(rank, lane);
+        pass.Add<Passes.Rules.NTT.VectorizePadPropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeReducePropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeReshapePropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeResizeImagePropagation>();
 
-        // pass.Add<Passes.Rules.NTT.PackScatterND>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackSlicePropagation>();
+        // pass.Add<Passes.Rules.NTT.VectorizeScatterND>(rank, lane);
+        pass.Add<Passes.Rules.NTT.VectorizeSlicePropagation>();
 
-        // pass.Add<Passes.Rules.NTT.PackSwish>(rank, lane);
-        pass.Add<Passes.Rules.NTT.PackTransposePropagation>();
-        pass.Add<Passes.Rules.NTT.PackUnaryPropagation>();
-        pass.Add<Passes.Rules.NTT.PackUnsqueezePropagation>();
-        pass.Add<Passes.Rules.NTT.PackWherePropagation>(maskVectorStyle);
+        // pass.Add<Passes.Rules.NTT.VectorizeSwish>(rank, lane);
+        pass.Add<Passes.Rules.NTT.VectorizeTransposePropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeUnaryPropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeUnsqueezePropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeWherePropagation>(maskVectorStyle);
 
-        pass.Add<Passes.Rules.NTT.ConcatUnpackPropagation>();
-        pass.Add<Passes.Rules.NTT.BinaryUnpackLhsPropagation>();
-        pass.Add<Passes.Rules.NTT.BinaryUnpackRhsPropagation>();
-        pass.Add<Passes.Rules.NTT.PackedMatMulUnpackPropagation>();
-        pass.Add<Passes.Rules.NTT.ReshapeUnpackPropagation>();
-        pass.Add<Passes.Rules.NTT.SliceUnpackPropagation>();
-        pass.Add<Passes.Rules.NTT.SwishUnpackPropagation>();
-        pass.Add<Passes.Rules.NTT.TransposeUnpackPropagation>();
-        pass.Add<Passes.Rules.NTT.UnaryUnpackPropagation>();
+        pass.Add<Passes.Rules.NTT.ConcatDevectorizePropagation>();
+        pass.Add<Passes.Rules.NTT.BinaryDevectorizeLhsPropagation>();
+        pass.Add<Passes.Rules.NTT.BinaryDevectorizeRhsPropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizedMatMulDevectorizePropagation>();
+        pass.Add<Passes.Rules.NTT.ReshapeDevectorizePropagation>();
+        pass.Add<Passes.Rules.NTT.SliceDevectorizePropagation>();
+        pass.Add<Passes.Rules.NTT.SwishDevectorizePropagation>();
+        pass.Add<Passes.Rules.NTT.TransposeDevectorizePropagation>();
+        pass.Add<Passes.Rules.NTT.UnaryDevectorizePropagation>();
 
         pass.Add<Passes.Rules.Neutral.FoldConstCall>();
-        pass.Add<Passes.Rules.NTT.FoldPackUnpack>();
-        pass.Add<Passes.Rules.NTT.FoldPackConcatUnpack>();
-        pass.Add<Passes.Rules.NTT.TransposePackMatMulInputs>();
+        pass.Add<Passes.Rules.NTT.FoldVectorizeDevectorize>();
+        pass.Add<Passes.Rules.NTT.FoldVectorizeConcatDevectorize>();
+        pass.Add<Passes.Rules.NTT.TransposeVectorizeMatMulInputs>();
         pass.Add<Passes.Rules.Neutral.FoldTwoReshapes>();
         pass.Add<Passes.Rules.Neutral.FoldTwoTransposes>();
     }
