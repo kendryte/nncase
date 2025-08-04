@@ -433,7 +433,15 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'NH': '0.0',
                                             'CW': '0.0',
                                             'NW': '0.0',
-                                            },}
+                                            },
+                                  'gather': {'pack1d_dim0_contiguous': '0.0',
+                                            'pack1d_dim0_no_contiguous': '0.0',
+                                            'pack1d_dim1_contiguous': '0.0',
+                                            'pack1d_dim1_no_contiguous': '0.0',
+                                            'pack2d_dim0_contiguous': '0.0',
+                                            'pack2d_dim1_contiguous': '0.0',
+                                            },
+                                  }
 
     def run(self):
         for bin in self.bin_list:
@@ -686,7 +694,15 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                             'NH': '0.0',
                                             'CW': '0.0',
                                             'NW': '0.0',
-                                            },}
+                                            },
+                                  'gather': {'pack1d_dim0_contiguous': '0.0',
+                                            'pack1d_dim0_no_contiguous': '0.0',
+                                            'pack1d_dim1_contiguous': '0.0',
+                                            'pack1d_dim1_no_contiguous': '0.0',
+                                            'pack2d_dim0_contiguous': '0.0',
+                                            'pack2d_dim1_contiguous': '0.0',
+                                            },
+                                  }
 
     def run(self):
         if self.target not in kpu_targets():
