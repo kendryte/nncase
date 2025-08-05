@@ -238,15 +238,20 @@ struct u_matmul_generic {
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
 
+                using TLElemScalar = element_or_scalar_t<TLhsElem>;
+                using TRElemScalar = element_or_scalar_t<TRhsElem>;
+
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = a0_tmp[i](index);
+                        TLElemScalar temp = (a0_tmp[i](index));
+                        a0_grouped[i](index) = (float)temp;
                     });
                 });
 
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = b0_tmp[i](index);
+                        TRElemScalar temp = (b0_tmp[i](index));
+                        b0_grouped[i](index) = (float)temp;
                     });
                 });
 
@@ -274,10 +279,14 @@ struct u_matmul_generic {
                 using TRhsElemGrouped = float;
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
+
+                using TLElemScalar = element_or_scalar_t<TLhsElem>;
+                using TRElemScalar = element_or_scalar_t<TRhsElem>;
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = a0_tmp[i](
+                        TLElemScalar temp = a0_tmp[i](
                             index[0] * a0_grouped[i].shape()[1] + index[1]);
+                        a0_grouped[i](index) = (float)temp;
                     });
                 });
                 loop<N0Tile>([&](auto i) { b0_grouped[i] = b0_tmp[i]; });
@@ -313,11 +322,14 @@ struct u_matmul_generic {
                 using TLhsElemGrouped = float;
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
+                using TLElemScalar = element_or_scalar_t<TLhsElem>;
+                using TRElemScalar = element_or_scalar_t<TRhsElem>;
                 loop<M0Tile>([&](auto i) { a0_grouped[i] = a0_tmp[i]; });
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = b0_tmp[i](
+                        TRElemScalar temp = b0_tmp[i](
                             index[0] * b0_grouped[i].shape()[1] + index[1]);
+                        b0_grouped[i](index) = (float)temp;
                     });
                 });
 
@@ -352,19 +364,23 @@ struct u_matmul_generic {
 
                 using TRhsElemExpanded = replace_element_t<TRhsElem, float>;
                 using TRhsElemGrouped = TRhsElemExpanded;
+                using TLElemScalar = element_or_scalar_t<TLhsElem>;
+                using TRElemScalar = element_or_scalar_t<TRhsElem>;
 
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = a0_tmp[i](
+                        TLElemScalar temp = a0_tmp[i](
                             index[0] * a0_grouped[i].shape()[1] + index[1],
                             index[2]);
+                        a0_grouped[i](index) = (float)temp;
                     });
                 });
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = b0_tmp[i](index);
+                        TRElemScalar temp = b0_tmp[i](index);
+                        b0_grouped[i](index) = (float)temp;
                     });
                 });
 
@@ -404,16 +420,20 @@ struct u_matmul_generic {
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
 
+                using TLElemScalar = element_or_scalar_t<TLhsElem>;
+                using TRElemScalar = element_or_scalar_t<TRhsElem>;
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = a0_tmp[i](
+                        TLElemScalar temp = a0_tmp[i](
                             index[0] * a0_grouped[i].shape()[1] + index[1]);
+                        a0_grouped[i](index) = (float)temp;
                     });
                 });
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = b0_tmp[i](
+                        TRElemScalar temp = b0_tmp[i](
                             index[0] * b0_grouped[i].shape()[1] + index[1]);
+                        b0_grouped[i](index) = (float)temp;
                     });
                 });
 
@@ -456,18 +476,22 @@ struct u_matmul_generic {
 
                 TLhsElemGrouped a0_grouped[M0Tile];
                 TRhsElemGrouped b0_grouped[N0Tile];
+                using TLElemScalar = element_or_scalar_t<TLhsElem>;
+                using TRElemScalar = element_or_scalar_t<TRhsElem>;
                 loop<M0Tile>([&](auto i) {
                     ntt::apply(a0_grouped[i].shape(), [&](auto index) {
-                        a0_grouped[i](index) = a0_tmp[i](
+                        TLElemScalar temp = a0_tmp[i](
                             index[0] * a0_grouped[i].shape()[1] + index[1],
                             index[2]);
+                        a0_grouped[i](index) = (float)temp;
                     });
                 });
                 loop<N0Tile>([&](auto i) {
                     ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                        b0_grouped[i](index) = b0_tmp[i](
+                        TRElemScalar temp = b0_tmp[i](
                             index[1],
                             index[0] * b0_grouped[i].shape()[2] + index[2]);
+                        b0_grouped[i](index) = (float)temp;
                     });
                 });
 
@@ -702,13 +726,16 @@ struct u_matmul<ukernels::matmul_pack_kind::pack_kn, AccumulateC, TransposedA,
 
                     TLhsElemGrouped a0_grouped[M0Tile];
                     TRhsElemGrouped b0_grouped[N0Tile];
+                    using TLElemScalar = element_or_scalar_t<TLhsElem>;
+                    using TRElemScalar = element_or_scalar_t<TRhsElem>;
 
                     loop<M0Tile>([&](auto i) { a0_grouped[i] = a0_tmp[i]; });
 
                     loop<N0Tile>([&](auto i) {
                         ntt::apply(b0_grouped[i].shape(), [&](auto index) {
-                            b0_grouped[i](index) = b0_tmp[i](
+                            TRElemScalar temp = b0_tmp[i](
                                 index[0] * b0_grouped[i].shape()[1] + index[1]);
+                            b0_grouped[i](index) = (float)temp;
                         });
                     });
 

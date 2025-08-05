@@ -508,6 +508,15 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'HW': '0.0',
                                             },
                                   'where': {'pack': '0.0', },
+                                  'matmul': {'no_pack': '0.0',
+                                            'pack_K': '0.0',
+                                            'pack_M': '0.0',
+                                            'pack_N': '0.0',
+                                            'pack_M_N': '0.0',
+                                            'pack_M_K': '0.0',
+                                            'pack_K_N': '0.0',
+                                            'pack_M_K_N': '0.0',
+                                            },
                                   }
 
     def run(self):
@@ -836,6 +845,15 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                             'HW': '0.0',
                                             },
                                   'where': {'pack': '0.0', },
+                                  'matmul': {'no_pack': '0.0',
+                                            'pack_K': '0.0',
+                                            'pack_M': '0.0',
+                                            'pack_N': '0.0',
+                                            'pack_M_N': '0.0',
+                                            'pack_M_K': '0.0',
+                                            'pack_K_N': '0.0',
+                                            'pack_M_K_N': '0.0',
+                                            },
                                   }
 
     def run(self):

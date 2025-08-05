@@ -43,6 +43,7 @@ file(GLOB TEST_NAMES_FP16 CONFIGURE_DEPENDS
     benchmark_ntt_fp16_compare.cpp
     benchmark_ntt_fp16_expand.cpp
     benchmark_ntt_fp16_gather.cpp
+    benchmark_ntt_fp16_matmul.cpp
     benchmark_ntt_fp16_pack.cpp
     benchmark_ntt_fp16_reduce.cpp
     benchmark_ntt_fp16_scatter_nd.cpp
