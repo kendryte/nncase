@@ -49,6 +49,7 @@ file(GLOB TEST_NAMES_FP16 CONFIGURE_DEPENDS
     benchmark_ntt_fp16_rmsnorm.cpp
     benchmark_ntt_fp16_scatter_nd.cpp
     benchmark_ntt_fp16_slice.cpp
+    benchmark_ntt_fp16_softmax.cpp
     benchmark_ntt_fp16_transpose.cpp
     benchmark_ntt_fp16_unary.cpp
     benchmark_ntt_fp16_unpack.cpp

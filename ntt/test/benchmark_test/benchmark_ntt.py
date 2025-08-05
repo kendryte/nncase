@@ -541,6 +541,18 @@ class BenchmarkNTT_x86_64(BenchmarkNTT):
                                             'ranked_reduceAxis2_noPack':'0.0',
                                             'ranked_reduceAxis2_packAxis1':'0.0',
                                             'ranked_reduceAxis2_packAxis2':'0.0',},
+                                  'softmax': {'fixed_reduceAxis1_noPack': '0.0',
+                                            'fixed_reduceAxis2_noPack': '0.0',
+                                            'fixed_reduceAxis1_packAxis1': '0.0',
+                                            'fixed_reduceAxis2_packAxis2': '0.0',
+                                            'fixed_reduceAxis2_packAxis1': '0.0',
+                                            'fixed_reduceAxis1_packAxis2': '0.0',
+                                            'ranked_reduceAxis1_noPack': '0.0',
+                                            'ranked_reduceAxis2_noPack': '0.0',
+                                            'ranked_reduceAxis1_packAxis1': '0.0',
+                                            'ranked_reduceAxis2_packAxis2': '0.0',
+                                            'ranked_reduceAxis2_packAxis1': '0.0',
+                                            'ranked_reduceAxis1_packAxis2': '0.0',},
                                   }
 
     def run(self):
@@ -902,6 +914,18 @@ class BenchmarkNTT_riscv64(BenchmarkNTT, Benchmark_riscv64):
                                             'ranked_reduceAxis2_noPack':'0.0',
                                             'ranked_reduceAxis2_packAxis1':'0.0',
                                             'ranked_reduceAxis2_packAxis2':'0.0',},
+                                  'softmax': {'fixed_reduceAxis1_noPack': '0.0',
+                                            'fixed_reduceAxis2_noPack': '0.0',
+                                            'fixed_reduceAxis1_packAxis1': '0.0',
+                                            'fixed_reduceAxis2_packAxis2': '0.0',
+                                            'fixed_reduceAxis2_packAxis1': '0.0',
+                                            'fixed_reduceAxis1_packAxis2': '0.0',
+                                            'ranked_reduceAxis1_noPack': '0.0',
+                                            'ranked_reduceAxis2_noPack': '0.0',
+                                            'ranked_reduceAxis1_packAxis1': '0.0',
+                                            'ranked_reduceAxis2_packAxis2': '0.0',
+                                            'ranked_reduceAxis2_packAxis1': '0.0',
+                                            'ranked_reduceAxis1_packAxis2': '0.0',},
                                   }
 
     def run(self):
