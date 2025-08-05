@@ -63,6 +63,10 @@ public abstract class Target : ITarget
     {
     }
 
+    public virtual void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options)
+    {
+    }
+
     public virtual void RegisterAutoVectorizeRules(IRulesAddable pass, CompileOptions options)
     {
     }

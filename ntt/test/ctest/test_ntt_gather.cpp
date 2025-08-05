@@ -140,7 +140,7 @@ TEST(GatherTestFloat, vectorize1d_dim0_contiguous) {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
     ntt::gather(pa, tb, pc, 0_dim);
 
     // ort
@@ -172,7 +172,7 @@ TEST(GatherTestFloat, vectorize1d_dim0_no_contiguous) {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
     ntt::gather(pa, tb, pc, 0_dim);
 
     // ort
@@ -204,7 +204,7 @@ TEST(GatherTestFloat, vectorize1d_dim1_contiguous) {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
     ntt::gather(pa, tb, pc, 1_dim);
 
     // ort
@@ -236,7 +236,7 @@ TEST(GatherTestFloat, vectorize1d_dim1_no_contiguous) {
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
     std::iota(tb.elements().begin(), tb.elements().end(), 0);
     std::ranges::for_each(tb.elements(), [](int64_t &x) { x *= Period; });
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
     ntt::gather(pa, tb, pc, 1_dim);
 
     // ort

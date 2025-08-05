@@ -29,7 +29,7 @@ namespace Nncase.Passes.Rules.NTT;
 public sealed partial class VectorizeBinaryPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsVectorize(
+        PatternMatch.F.Tensors.IsPack(
             "vectorize",
             "caller",
             _ => true,
@@ -40,7 +40,7 @@ public sealed partial class VectorizeBinaryPropagation : RewriteRule<Pattern>
                 IsWildcard("lhs"),
                 IsWildcard("rhs")));
 
-    private Expr? GetReplace(Vectorize vectorize, Call callee, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Pack vectorize, Call callee, Expr lhs, Expr rhs)
     {
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
@@ -68,8 +68,8 @@ public sealed partial class VectorizeBinaryPropagation : RewriteRule<Pattern>
         }
 
         return callee.WithArguments([
-            (Binary.Lhs, IR.F.Tensors.Vectorize(lhs, lhsLanes.ToArray(), lhsVectorizedAxes.ToArray())),
-            (Binary.Rhs, IR.F.Tensors.Vectorize(rhs, rhsLanes.ToArray(), rhsVectorizedAxes.ToArray())),
+            (Binary.Lhs, IR.F.Tensors.Pack(lhs, lhsLanes.ToArray(), lhsVectorizedAxes.ToArray())),
+            (Binary.Rhs, IR.F.Tensors.Pack(rhs, rhsLanes.ToArray(), rhsVectorizedAxes.ToArray())),
         ]);
     }
 }
@@ -82,10 +82,10 @@ public sealed partial class BinaryDevectorizeLhsPropagation : RewriteRule<Patter
             "binary",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsDevectorize("devectorize", "callee", _ => true, IsWildcard("lhs")),
+            PatternMatch.F.Tensors.IsUnpack("devectorize", "callee", _ => true, IsWildcard("lhs")),
             IsWildcard("rhs") with { TypePattern = !IsVector() });
 
-    public static Expr? GetReplaceOperand(Devectorize devectorize, Call caller, Call callee, ParameterInfo devectorizedOperandParameter, ParameterInfo theOtherOperandParameter, Expr devectorizedOperand, Expr theOtherOperand)
+    public static Expr? GetReplaceOperand(Unpack devectorize, Call caller, Call callee, ParameterInfo devectorizedOperandParameter, ParameterInfo theOtherOperandParameter, Expr devectorizedOperand, Expr theOtherOperand)
     {
         var theOtherOperandShape = theOtherOperand.CheckedShape;
         var outputRank = callee.CheckedShape.Rank;
@@ -107,16 +107,16 @@ public sealed partial class BinaryDevectorizeLhsPropagation : RewriteRule<Patter
         var devectorizedOperandExtend = outputRank - devectorizedOperand.CheckedShape.Rank;
         var newDevectorizeAxes = devectorize.Axes.Select(a => a + devectorizedOperandExtend).ToArray();
 
-        return IR.F.Tensors.Devectorize(
+        return IR.F.Tensors.Unpack(
             caller.WithArguments([
                 (devectorizedOperandParameter, devectorizedOperand),
-                (theOtherOperandParameter, IR.F.Tensors.Vectorize(theOtherOperand, theOtherOperandLanes.ToArray(), theOtherOperandVectorizedAxes.ToArray())),
+                (theOtherOperandParameter, IR.F.Tensors.Pack(theOtherOperand, theOtherOperandLanes.ToArray(), theOtherOperandVectorizedAxes.ToArray())),
             ]),
             devectorize.Lanes.ToArray(),
             newDevectorizeAxes);
     }
 
-    private Expr? GetReplace(Devectorize devectorize, Call caller, Call callee, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Unpack devectorize, Call caller, Call callee, Expr lhs, Expr rhs)
     {
         return GetReplaceOperand(devectorize, caller, callee, Binary.Lhs, Binary.Rhs, lhs, rhs);
     }
@@ -131,9 +131,9 @@ public sealed partial class BinaryDevectorizeRhsPropagation : RewriteRule<Patter
             "caller",
             _ => true,
             IsWildcard("lhs") with { TypePattern = !IsVector() },
-            PatternMatch.F.Tensors.IsDevectorize("devectorize", "callee", _ => true, IsWildcard("rhs")));
+            PatternMatch.F.Tensors.IsUnpack("devectorize", "callee", _ => true, IsWildcard("rhs")));
 
-    private Expr? GetReplace(Devectorize devectorize, Call caller, Call callee, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Unpack devectorize, Call caller, Call callee, Expr lhs, Expr rhs)
     {
         return BinaryDevectorizeLhsPropagation.GetReplaceOperand(devectorize, caller, callee, Binary.Rhs, Binary.Lhs, rhs, lhs);
     }

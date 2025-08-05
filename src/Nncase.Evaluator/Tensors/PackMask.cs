@@ -23,7 +23,7 @@ public sealed class VectorizeMaskEvaluator : ITypeInferencer<VectorizeMask>, ICo
     public IValue Visit(IEvaluateContext context, VectorizeMask target)
     {
         var input = context.GetOrtArgumentValue(target, VectorizeMask.Input);
-        input = input.Vectorize(target.Lanes, target.Axis);
+        input = input.Pack(0, target.Lanes, target.Axis);
         return input.ToValue(new MaskVectorType(target.Style, target.ElementBits, target.Lanes));
     }
 

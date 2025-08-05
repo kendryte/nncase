@@ -28,7 +28,7 @@ namespace Nncase.Passes.Rules.NTT;
 public sealed partial class VectorizeTransposePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsVectorize(
+        PatternMatch.F.Tensors.IsPack(
             "vectorize",
             "caller",
             _ => true,
@@ -38,11 +38,11 @@ public sealed partial class VectorizeTransposePropagation : RewriteRule<Pattern>
                 IsWildcard("input"),
                 IsFixedShape("perm")));
 
-    private Expr? GetReplace(IR.Tensors.Vectorize vectorize, Call caller, Call callee, Expr input, int[] perm)
+    private Expr? GetReplace(IR.Tensors.Pack vectorize, Call caller, Call callee, Expr input, int[] perm)
     {
         var vectorizeAxes = vectorize.Axes.Select(a => perm[a]).ToArray();
         return callee.WithArguments([
-            (Transpose.Input, IR.F.Tensors.Vectorize(input, vectorize.Lanes.ToArray(), vectorizeAxes)),
+            (Transpose.Input, IR.F.Tensors.Pack(input, vectorize.Lanes.ToArray(), vectorizeAxes)),
         ]);
     }
 }
@@ -54,17 +54,17 @@ public sealed partial class TransposeDevectorizePropagation : RewriteRule<Patter
         IsTranspose(
             "trans",
             "caller",
-            PatternMatch.F.Tensors.IsDevectorize(
+            PatternMatch.F.Tensors.IsUnpack(
                 "devectorize",
                 "callee",
                 _ => true,
                 IsWildcard("input")),
             IsFixedShape("perm"));
 
-    private Expr? GetReplace(IR.Tensors.Devectorize devectorize, Call caller, Call callee, Expr input, int[] perm)
+    private Expr? GetReplace(IR.Tensors.Unpack devectorize, Call caller, Call callee, Expr input, int[] perm)
     {
         var devectorizeAxes = devectorize.Axes.Select(a => perm.IndexOf(a)).ToArray();
-        return IR.F.Tensors.Devectorize(
+        return IR.F.Tensors.Unpack(
             caller.WithArguments([
                 (Transpose.Input, input),
             ]),

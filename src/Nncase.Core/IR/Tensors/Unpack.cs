@@ -9,12 +9,12 @@ namespace Nncase.IR.Tensors;
 /// Devectorize expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class Devectorize : Op
+public sealed partial class Unpack : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Devectorize), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(Unpack), 0, "input", ParameterKind.Input);
 
     public IRArray<int> Lanes { get; }
 

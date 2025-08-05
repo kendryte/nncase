@@ -375,8 +375,8 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }).Result);
 
                 break;
-            case TIR.NTT.Vectorize vectorize:
-                WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Vectorize.cshtml", new TypedKernelTemplateModel<TIR.NTT.Vectorize>(vectorize)
+            case TIR.NTT.Pack vectorize:
+                WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(vectorize)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     Indent = new string(' ', IndentScope.Writer.Indent),
@@ -389,8 +389,8 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
                 break;
-            case TIR.NTT.Devectorize devectorize:
-                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Devectorize.cshtml", new TypedKernelTemplateModel<TIR.NTT.Devectorize>(devectorize)
+            case TIR.NTT.Unpack devectorize:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Unpack>(devectorize)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     Indent = new string(' ', IndentScope.Writer.Indent),

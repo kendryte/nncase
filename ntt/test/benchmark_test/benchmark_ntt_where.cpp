@@ -54,7 +54,7 @@ void benchmark_ntt_where_vectorize(T init_low, T init_high) {
     NttTest::init_tensor(cond, 0, 1);
     auto cond_vectorized = ntt::make_tensor<ntt::vector<bool, N>>(
         ntt::fixed_shape_v<n, c, h, w / N>);
-    ntt::vectorize(cond, cond_vectorized, ntt::fixed_shape_v<3>);
+    ntt::pack(cond, cond_vectorized, ntt::fixed_shape_v<3>);
 
     auto ntt_output =
         ntt::make_tensor<ntt::vector<T, N>>(ntt::fixed_shape_v<n, c, h, w / N>);

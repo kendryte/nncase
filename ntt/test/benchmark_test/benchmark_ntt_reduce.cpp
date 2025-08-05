@@ -27,7 +27,7 @@ constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     NttTest::init_tensor(ta, -10.f, 10.f);                                     \
     auto taP =                                                                 \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
-    ntt::vectorize(ta, taP.view(), ntt::fixed_shape_v<1>);                          \
+    ntt::pack(ta, taP.view(), ntt::fixed_shape_v<1>);                          \
                                                                                \
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);               \
                                                                                \
@@ -55,7 +55,7 @@ constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     NttTest::init_tensor(ta, -10.f, 10.f);                                     \
     auto taP =                                                                 \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
-    ntt::vectorize(ta, taP.view(), ntt::fixed_shape_v<0>);                          \
+    ntt::pack(ta, taP.view(), ntt::fixed_shape_v<0>);                          \
                                                                                \
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);               \
                                                                                \
@@ -83,7 +83,7 @@ constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     NttTest::init_tensor(ta, -10.f, 10.f);                                     \
     auto taP =                                                                 \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
-    ntt::vectorize(ta, taP.view(), ntt::fixed_shape_v<1>);                          \
+    ntt::pack(ta, taP.view(), ntt::fixed_shape_v<1>);                          \
                                                                                \
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);               \
                                                                                \
@@ -111,7 +111,7 @@ constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     NttTest::init_tensor(ta, -10.f, 10.f);                                     \
     auto taP =                                                                 \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
-    ntt::vectorize(ta, taP.view(), ntt::fixed_shape_v<0>);                          \
+    ntt::pack(ta, taP.view(), ntt::fixed_shape_v<0>);                          \
                                                                                \
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);               \
                                                                                \

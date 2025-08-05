@@ -335,9 +335,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.Im2col im2col:
                     WriteIndWithProfiler($"im2col({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", im2col.Kernel)}>, fixed_shape_v<{string.Join(",", im2col.Stride)}>, fixed_paddings_v<{string.Join(",", im2col.Padding)}>, fixed_shape_v<{string.Join(",", im2col.VectorizedAxes)}>, fixed_shape_v<{string.Join(",", im2col.PadedNums)}>);\n");
                     break;
-                case TIR.NTT.Vectorize vectorize:
+                case TIR.NTT.Pack vectorize:
                     {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Vectorize.cshtml", new TypedKernelTemplateModel<TIR.NTT.Vectorize>(vectorize)
+                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(vectorize)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
@@ -346,9 +346,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
                     break;
 
-                case TIR.NTT.Devectorize devectorize:
+                case TIR.NTT.Unpack devectorize:
                     {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Devectorize.cshtml", new TypedKernelTemplateModel<TIR.NTT.Devectorize>(devectorize)
+                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Unpack>(devectorize)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
@@ -417,6 +417,23 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     IndentScope.Writer.IndWrite($"{{tac::detail::tensor_reduce_sync_impl<reduce_op::sum, {rdKind}> impl; impl.reduce_group_sync();\n");
                     IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape_v<{string.Join(",", summa.LhsVectorizedAxes)}>, fixed_shape_v<>, fixed_shape_v<{string.Join(",", summa.RhsVectorizedAxes)}>, fixed_shape_v<>);\n");
                     IndentScope.Writer.IndWrite($"impl.reduce_group_sync();}}\n");
+                    break;
+                case TIR.NTT.PackedMatMul matmul:
+                    {
+                        var dimInfo = IR.NTT.VectorizedMatMul.GetDimInfo(false, true, args[0].CheckedShape.Rank, args[1].CheckedShape.Rank);
+                        WriteWithProfiler(
+                            RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedMatMul.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedMatMul>(matmul)
+                            {
+                                Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
+                            }).Result,
+                            "packed_matmul");
+                        if (args[0] is TIR.Buffer a && a.DistributedType?.AxisPolicies[dimInfo.Lk] is SBPSplit s)
+                        {
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                        }
+                    }
+
                     break;
                 case TIR.Memcopy copy:
                     WriteWithProfiler($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");

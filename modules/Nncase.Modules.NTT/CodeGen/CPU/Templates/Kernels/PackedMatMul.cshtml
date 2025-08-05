@@ -1,0 +1,24 @@
+@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.PackedMatMul>
+@{
+}
+
+@(Model.Indent){
+@if (Model.Arguments[3].Symbol.Name != "nullptr")
+{
+@:@(Model.Indent)if (@Html.Raw(Model.Arguments[3].Symbol.Name)) {
+// @:@(Model.Indent)  constexpr std::string_view function_name = "matmul";
+// @:@(Model.Indent)  auto_profiler profiler(function_name, runtime::profiling_level::device);
+@:@(Model.Indent)  packed_matmul<true>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name));
+@:@(Model.Indent)} else {
+// @:@(Model.Indent)  constexpr std::string_view function_name = "matmul";
+// @:@(Model.Indent)  auto_profiler profiler(function_name, runtime::profiling_level::device);
+@:@(Model.Indent)  packed_matmul<false>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name));
+@:@(Model.Indent)}
+}
+else
+{
+// @:@(Model.Indent)  constexpr std::string_view function_name = "matmul";
+// @:@(Model.Indent)  auto_profiler profiler(function_name, runtime::profiling_level::device);
+@:@(Model.Indent)  packed_matmul<false>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name));
+}
+@(Model.Indent)}

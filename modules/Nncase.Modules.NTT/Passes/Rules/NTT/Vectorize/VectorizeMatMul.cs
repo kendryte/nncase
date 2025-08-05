@@ -32,14 +32,14 @@ public sealed partial class VectorizedMatMulDevectorizePropagation : RewriteRule
             "matMul",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsDevectorize(
+            PatternMatch.F.Tensors.IsUnpack(
                 "devectorize",
                 "callee",
                 _ => true,
                 IsWildcard("lhs")),
             IsTensorConst("rhs"));
 
-    private Expr? GetReplace(Devectorize devectorize, VectorizedMatMul matMul, Call caller, Call callee, Expr lhs, Tensor rhs)
+    private Expr? GetReplace(Unpack devectorize, VectorizedMatMul matMul, Call caller, Call callee, Expr lhs, Tensor rhs)
     {
         var lhsShape = lhs.CheckedShape;
         var dimInfo = matMul.GetDimInfo(lhsShape.Rank, rhs.Rank);

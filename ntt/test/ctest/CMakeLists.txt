@@ -15,10 +15,10 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/..)
 
 # --- Generate test source files ---
 # Define script paths and output file paths in the source directory
-set(GENERATE_PACK_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/generate_vectorize_tests.py)
-set(GENERATED_PACK_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/generated_vectorize_tests.cmake)
-set(GENERATE_UNPACK_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/generate_devectorize_tests.py)
-set(GENERATED_UNPACK_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/generated_devectorize_tests.cmake)
+set(GENERATE_PACK_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/generate_pack_tests.py)
+set(GENERATED_PACK_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/generated_pack_tests.cmake)
+set(GENERATE_UNPACK_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/generate_unpack_tests.py)
+set(GENERATED_UNPACK_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/generated_unpack_tests.cmake)
 
 # Macro to run a generator script only when the output is missing or outdated
 macro(run_generator_if_needed script_path output_file)
@@ -67,14 +67,14 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     test_ntt_gather.cpp
     test_ntt_layer_norm.cpp
     test_ntt_matmul.cpp
-    # test_ntt_vectorize_generated_Float8e4m3.cpp
+    # test_ntt_pack_generated_Float8e4m3.cpp
     test_ntt_reduce.cpp
     test_ntt_rms_norm.cpp
     test_ntt_scatter_nd.cpp
     test_ntt_slice.cpp
     test_ntt_softmax.cpp
     test_ntt_transpose.cpp
-    test_ntt_devectorize.cpp
+    test_ntt_unpack.cpp
     # test_ntt_where.cpp
 )
 

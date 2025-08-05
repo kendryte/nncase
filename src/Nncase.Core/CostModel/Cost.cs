@@ -16,6 +16,8 @@ public static class CostFactorNames
 
     public static readonly string CPUCycles = "CPUCycles";
 
+    public static readonly string Synchronization = "Synchronization";
+
     public static readonly string Comm = "Comm";
 }
 

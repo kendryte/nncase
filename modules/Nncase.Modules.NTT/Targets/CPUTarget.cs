@@ -58,21 +58,29 @@ public class CPUTarget : Target
         passManager.Add<NTTAffineSelectionPass>();
     }
 
+    public override void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options)
+    {
+        var nr = _nttModuleCompiler.Nr;
+
+        pass.Add<Passes.Rules.NTT.PackMatMulByN>(nr);
+    }
+
     public override void RegisterAutoVectorizeRules(IRulesAddable pass, CompileOptions options)
     {
         // todo config it in the target options.
         var rank = 1;
-        var lane = System.Runtime.Intrinsics.Vector256.IsHardwareAccelerated ? 32 : 16;
+        var lane = _nttModuleCompiler.Lane;
         var maskVectorStyle = _nttModuleCompiler.MaskVectorStyle;
+
+        pass.Add<Passes.Rules.NTT.VectorizeConv2D>(rank, lane);
+        pass.Add<Passes.Rules.NTT.VectorizeMatMul>(rank, lane);
+        pass.Add<Passes.Rules.NTT.VectorizeLayerNorm>(rank, lane);
 
         pass.Add<Passes.Rules.NTT.VectorizeBinaryPropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeComparePropagation>(maskVectorStyle);
         pass.Add<Passes.Rules.NTT.VectorizeConcatPropagation>();
-        pass.Add<Passes.Rules.NTT.VectorizeConv2D>(rank, lane);
         pass.Add<Passes.Rules.NTT.VectorizeExpandPropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeGatherPropagation>();
-        pass.Add<Passes.Rules.NTT.VectorizeLayerNorm>(rank, lane);
-        pass.Add<Passes.Rules.NTT.VectorizeMatMul>(rank, lane);
         pass.Add<Passes.Rules.NTT.VectorizePadPropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeReducePropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeReshapePropagation>();

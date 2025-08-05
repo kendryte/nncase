@@ -16,12 +16,12 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.TIR.NTT;
 
-public sealed class DevectorizeEvaluator : ITypeInferencer<Devectorize>, IKernelInfoEvaluator<Devectorize>
+public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, IKernelInfoEvaluator<Unpack>
 {
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, Devectorize target) => TupleType.Void;
+    public IRType Visit(ITypeInferenceContext context, Unpack target) => TupleType.Void;
 
-    public MicroKernelInfo Visit(Devectorize op, MicroKernelContext context)
+    public MicroKernelInfo Visit(Unpack op, MicroKernelContext context)
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();

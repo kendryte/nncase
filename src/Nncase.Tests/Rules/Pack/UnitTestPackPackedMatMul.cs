@@ -18,12 +18,12 @@ public class UnitTestVectorizeVectorizedMatMul : TransformTestBase
     [Fact]
     public void TestVectorizedMatMulDevectorizePropagation()
     {
-        var lhs = Vectorize(Testing.Rand<float>(3, 24), [8], [1]).Evaluate().AsTensor();
+        var lhs = Pack(Testing.Rand<float>(3, 24), [8], [1]).Evaluate().AsTensor();
         var lhsVar = new Var(new TensorType(lhs.ElementType, lhs.Shape));
-        var rhs = Vectorize(Testing.Rand<float>(24, 24), [8], [1]).Evaluate().AsTensor();
-        var expr = Devectorize(lhsVar, [8], [1]);
+        var rhs = Pack(Testing.Rand<float>(24, 24), [8], [1]).Evaluate().AsTensor();
+        var expr = Unpack(lhsVar, [8], [1]);
         expr = VectorizedMatMul(expr, rhs, [], new int[] { 1 });
-        expr = Devectorize(expr, [8], [1]);
+        expr = Unpack(expr, [8], [1]);
         TestMatched<VectorizedMatMulDevectorizePropagation>(
             expr,
             new Dictionary<IVar, IValue> {

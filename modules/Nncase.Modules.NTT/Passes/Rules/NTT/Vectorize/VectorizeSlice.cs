@@ -26,7 +26,7 @@ namespace Nncase.Passes.Rules.NTT;
 public sealed partial class VectorizeSlicePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-    PatternMatch.F.Tensors.IsVectorize(
+    PatternMatch.F.Tensors.IsPack(
             "vectorize",
             "caller",
             _ => true,
@@ -76,12 +76,12 @@ public sealed partial class VectorizeSlicePropagation : RewriteRule<Pattern>
         return true;
     }
 
-    private Expr? GetReplace(Vectorize vectorize, Call caller, Call callee, Expr input, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides)
+    private Expr? GetReplace(Pack vectorize, Call caller, Call callee, Expr input, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides)
     {
         if (TryPropagateVectorize(vectorize.Axes, vectorize.Lanes, begins, ends, axes, strides, out var newBegins, out var newEnds))
         {
             return callee.WithArguments([
-                (Slice.Input, caller.WithArguments([(Vectorize.Input, input)])),
+                (Slice.Input, caller.WithArguments([(Pack.Input, input)])),
                 (Slice.Begins, newBegins),
                 (Slice.Ends, newEnds),
             ]);
@@ -98,7 +98,7 @@ public sealed partial class SliceDevectorizePropagation : RewriteRule<Pattern>
     IsSlice(
         "slice",
         "caller",
-        PatternMatch.F.Tensors.IsDevectorize(
+        PatternMatch.F.Tensors.IsUnpack(
             "devectorize",
             "callee",
             _ => true,
@@ -108,12 +108,12 @@ public sealed partial class SliceDevectorizePropagation : RewriteRule<Pattern>
         IsFixedShape("axes"),
         IsFixedShape("strides"));
 
-    private Expr? GetReplace(Devectorize devectorize, Call caller, Call callee, Expr input, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides)
+    private Expr? GetReplace(Unpack devectorize, Call caller, Call callee, Expr input, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides)
     {
         if (VectorizeSlicePropagation.TryPropagateVectorize(devectorize.Axes, devectorize.Lanes, begins, ends, axes, strides, out var newBegins, out var newEnds))
         {
             return callee.WithArguments([
-                (Devectorize.Input, caller.WithArguments([
+                (Unpack.Input, caller.WithArguments([
                     (Slice.Input, input),
                     (Slice.Begins, newBegins),
                     (Slice.Ends, newEnds),

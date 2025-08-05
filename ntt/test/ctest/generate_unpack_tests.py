@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Generate test cases for NTT devectorize operations
+Generate test cases for NTT unpack operations
 Covering the following cases:
 1. Shape types: fixed/dynamic
 2. Vector dimensions: 1D/2D
 3. Tensor continuity: contiguous/non-contiguous
-4. Devectorize axes: different dimensions
+4. Unpack axes: different dimensions
 """
 
 import itertools
@@ -14,11 +14,11 @@ from typing import List
 from test_generator_base import *
 
 
-class DevectorizeTestGenerator(BaseTestGenerator):
+class UnpackTestGenerator(BaseTestGenerator):
     def __init__(self):
         super().__init__()
 
-    def generate_test_name(self, datatype, shape_type, vector_dim, continuity: Continuity, devectorize_axis_str, ndim):
+    def generate_test_name(self, datatype, shape_type, vector_dim, continuity: Continuity, unpack_axis_str, ndim):
         parts = []
         parts.append(datatype.name_suffix)
         parts.append(shape_type)
@@ -30,30 +30,30 @@ class DevectorizeTestGenerator(BaseTestGenerator):
             op_str = "mul2" if continuity.big_tensor_op == "*2" else "add5"
             parts.append(f"non_contiguous_dim{continuity.non_contiguous_dim}_{op_str}")
 
-        parts.append(f"devectorize_axis_{devectorize_axis_str}")
+        parts.append(f"unpack_axis_{unpack_axis_str}")
         parts.append(f"{ndim}D")
         return "_".join(parts)
 
 
-    def generate_devectorize_axes_str(self, axes):
+    def generate_unpack_axes_str(self, axes):
         if len(axes) == 1:
             return f"ntt::fixed_shape_v<{axes[0]}>"
         else:
             return f"ntt::fixed_shape_v<{', '.join(map(str, axes))}>"
 
-    def generate_ort_reference(self, input_dims, input_dim_names, devectorize_axes, P):
+    def generate_ort_reference(self, input_dims, input_dim_names, unpack_axes, P):
         code = []
         ndim = len(input_dims)
 
-        # Devectorize ORT reference:
+        # Unpack ORT reference:
         # 1. Transpose to move the expanded vector dimensions to the correct axes
-        # 2. Reshape to get the final devectorized tensor
+        # 2. Reshape to get the final unpackd tensor
         code.append("// ORT reference implementation (kernel part)")
 
-        if len(devectorize_axes) > 0:
+        if len(unpack_axes) > 0:
             # 1. Generate transpose permutation
             perm = []
-            p_map = {axis: ndim + i for i, axis in enumerate(devectorize_axes)}
+            p_map = {axis: ndim + i for i, axis in enumerate(unpack_axes)}
             for i in range(ndim):
                 perm.append(i)
                 if i in p_map:
@@ -68,7 +68,7 @@ class DevectorizeTestGenerator(BaseTestGenerator):
         # 2. Reshape to final output shape
         output_dims = []
         for i, name in enumerate(input_dim_names):
-            if i in devectorize_axes:
+            if i in unpack_axes:
                 output_dims.append(f"{name} * P")
             else:
                 output_dims.append(name)
@@ -83,21 +83,21 @@ class DevectorizeTestGenerator(BaseTestGenerator):
         return code
 
 
-    def generate_ntt_ops(self, devectorize_axes):
-        devectorize_axes_str = self.generate_devectorize_axes_str(devectorize_axes)
+    def generate_ntt_ops(self, unpack_axes):
+        unpack_axes_str = self.generate_unpack_axes_str(unpack_axes)
         return [
-            "// Execute devectorize operation",
-            f"ntt::devectorize(ntt_input, ntt_output1, {devectorize_axes_str});",
+            "// Execute unpack operation",
+            f"ntt::unpack(ntt_input, ntt_output1, {unpack_axes_str});",
             ""
         ]
 
-    def generate_ntt_output_to_test(self, datatype, shape_type, dim_names, continuity, vector_dim, P, devectorize_axes, deal_fp8):
+    def generate_ntt_output_to_test(self, datatype, shape_type, dim_names, continuity, vector_dim, P, unpack_axes, deal_fp8):
         """
         Generates the NTT output to be tested.
         This includes:
         1. Creating the NTT input tensor.
         2. Creating the NTT output tensor.
-        3. Calling the ntt::devectorize operation.
+        3. Calling the ntt::unpack operation.
         4. Handling FP8 reinterpret_cast for the output if necessary.
         """
         code = []
@@ -110,31 +110,31 @@ class DevectorizeTestGenerator(BaseTestGenerator):
             continuity=continuity,
             vector_rank=vector_dim,
             P=P,
-            axes_count=len(devectorize_axes),
+            axes_count=len(unpack_axes),
             var_name="ntt_input"))
 
-        # 2. NTT operation (devectorize)
+        # 2. NTT operation (unpack)
         output_dims = []
         for i, name in enumerate(dim_names):
-            if i in devectorize_axes:
+            if i in unpack_axes:
                 output_dims.append(f"{name} * P")
             else:
                 output_dims.append(name)
         output_shape_expr = self.generate_shape_init(shape_type, output_dims)
         
-        devectorize_call_code = self.generate_ntt_ops(devectorize_axes)
+        unpack_call_code = self.generate_ntt_ops(unpack_axes)
 
         op_code = self.generate_ntt_output_and_op_section(
             datatype=datatype,
             output_shape_expr=output_shape_expr,
             deal_fp8=deal_fp8,
-            ntt_op_call_lines=devectorize_call_code
+            ntt_op_call_lines=unpack_call_code
         )
         code.extend(op_code)
         
         return code, output_shape_expr
 
-    def generate_ntt_golden_output(self, datatype, shape_type, dims, dim_names, continuity, vector_dim, P, devectorize_axes, deal_fp8, output_shape_expr):
+    def generate_ntt_golden_output(self, datatype, shape_type, dims, dim_names, continuity, vector_dim, P, unpack_axes, deal_fp8, output_shape_expr):
         """
         Generates the golden output using ORT as a reference.
         This includes:
@@ -152,15 +152,15 @@ class DevectorizeTestGenerator(BaseTestGenerator):
             deal_fp8=deal_fp8,
             P=P,
             vector_rank=vector_dim,
-            axes_count=len(devectorize_axes),
+            axes_count=len(unpack_axes),
             ntt_input_var_name="ntt_input"))
 
         # 2. ORT kernel exec section
-        ort_kernel_lines = self.generate_ort_reference(dims, dim_names, devectorize_axes, P)
+        ort_kernel_lines = self.generate_ort_reference(dims, dim_names, unpack_axes, P)
         code.extend(self.generate_ort_operation_section(ort_kernel_lines))
         return code
 
-    def generate_test_case(self, datatype, shape_type, vector_dim, continuity, devectorize_axes, ndim):
+    def generate_test_case(self, datatype, shape_type, vector_dim, continuity, unpack_axes, ndim):
         is_fp8_type = 'float_e' in datatype.cpp_type
         deal_fp8 = 1 if is_fp8_type else 0
 
@@ -172,19 +172,19 @@ class DevectorizeTestGenerator(BaseTestGenerator):
         else:
             dims, dim_names = [2, 8, 4, 4, 2], ['N', 'C', 'H', 'W', 'D']
 
-        test_name = self.generate_test_name(datatype, shape_type, vector_dim, continuity, "_".join(map(str, devectorize_axes)), ndim)
+        test_name = self.generate_test_name(datatype, shape_type, vector_dim, continuity, "_".join(map(str, unpack_axes)), ndim)
 
         code: List[str] = []
 
         # 1. Test header and constants
-        code.extend(self.generate_test_prologue("DevectorizeTest", datatype, test_name, P, dim_names, dims))
+        code.extend(self.generate_test_prologue("UnpackTest", datatype, test_name, P, dim_names, dims))
         
         # Generate output to test in ntt format
-        ntt_output_code, output_shape_expr = self.generate_ntt_output_to_test(datatype, shape_type, dim_names, continuity, vector_dim, P, devectorize_axes, deal_fp8)
+        ntt_output_code, output_shape_expr = self.generate_ntt_output_to_test(datatype, shape_type, dim_names, continuity, vector_dim, P, unpack_axes, deal_fp8)
         code.extend([f"    {line}" for line in ntt_output_code])
 
         # Generate golden output in ort format
-        golden_output_code = self.generate_ntt_golden_output(datatype, shape_type, dims, dim_names, continuity, vector_dim, P, devectorize_axes, deal_fp8, output_shape_expr)
+        golden_output_code = self.generate_ntt_golden_output(datatype, shape_type, dims, dim_names, continuity, vector_dim, P, unpack_axes, deal_fp8, output_shape_expr)
         code.extend([f"    {line}" for line in golden_output_code])
 
         # Compare outputs
@@ -203,7 +203,7 @@ class DevectorizeTestGenerator(BaseTestGenerator):
         shape_types = ["fixed", "dynamic"]
         vector_dims = [1, 2]
 
-        devectorize_axes_options = {
+        unpack_axes_options = {
             3: [[2], [1], [0], [0, 1], [1, 2]],
             4: [[3], [2], [1], [0], [0, 1], [1, 2], [2, 3]],
             5: [[4], [3], [2], [1], [0], [0, 1], [1, 2], [2, 3], [3, 4]]
@@ -230,12 +230,12 @@ class DevectorizeTestGenerator(BaseTestGenerator):
             current_continuities = full_continuities if ndim == 4 else simple_continuities
 
             for shape_type, vector_dim, continuity in itertools.product(shape_types, vector_dims, current_continuities):
-                for devectorize_axes in devectorize_axes_options[ndim]:
-                    # The vector dimension must match the number of axes to devectorize.
-                    if vector_dim != len(devectorize_axes) and vector_dim > 0:
+                for unpack_axes in unpack_axes_options[ndim]:
+                    # The vector dimension must match the number of axes to unpack.
+                    if vector_dim != len(unpack_axes) and vector_dim > 0:
                         continue
                     
-                    test_code = self.generate_test_case(datatype, shape_type, vector_dim, continuity, devectorize_axes, ndim)
+                    test_code = self.generate_test_case(datatype, shape_type, vector_dim, continuity, unpack_axes, ndim)
                     code.append(test_code)
 
         code.append(self.generate_footer())
@@ -244,14 +244,14 @@ class DevectorizeTestGenerator(BaseTestGenerator):
 
 
 if __name__ == "__main__":
-    generator = DevectorizeTestGenerator()
+    generator = UnpackTestGenerator()
     script_directory = os.path.dirname(os.path.abspath(__file__))
 
     generated_filenames = []
 
     for datatype in ALL_DATATYPES:
         test_code = generator.generate_all_tests_for_type(datatype)
-        filename = f"test_ntt_devectorize_generated_{datatype.name_suffix}.cpp"
+        filename = f"test_ntt_unpack_generated_{datatype.name_suffix}.cpp"
         output_filepath = os.path.join(script_directory, filename)
 
         with open(output_filepath, "w") as f:
@@ -260,4 +260,4 @@ if __name__ == "__main__":
         print(f"Test file generated: {output_filepath}")
         generated_filenames.append(filename)
 
-    generate_cmake_list(script_directory, generated_filenames, "generated_devectorize_tests.cmake", "GENERATED_UNPACK_TEST_SOURCES")
+    generate_cmake_list(script_directory, generated_filenames, "generated_unpack_tests.cmake", "GENERATED_UNPACK_TEST_SOURCES")

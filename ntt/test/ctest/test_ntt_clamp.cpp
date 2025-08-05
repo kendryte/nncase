@@ -75,10 +75,10 @@ TEST(ClampTestFloat, VectorizeM) {
     auto shape2 = ntt::fixed_shape_v<M / P, N>;
     auto vectorize_input = ntt::make_tensor<ntt::vector<float, P>>(shape2);
     auto vectorize_output = ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::clamp(vectorize_input, vectorize_output, min_clamp, max_clamp);
     auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -115,10 +115,10 @@ TEST(ClampTestFloat, VectorizeN) {
     auto shape2 = ntt::fixed_shape_v<M, N / P>;
     auto vectorize_input = ntt::make_tensor<ntt::vector<float, P>>(shape2);
     auto vectorize_output = ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
     ntt::clamp(vectorize_input, vectorize_output, min_clamp, max_clamp);
     auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);

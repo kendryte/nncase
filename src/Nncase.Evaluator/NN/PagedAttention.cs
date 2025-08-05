@@ -67,12 +67,12 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         // devectorize for q
         if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
-            query = query.Devectorize(qlayout.IndexOf(AttentionDimKind.Dim));
+            query = query.Unpack(1, qlayout.IndexOf(AttentionDimKind.Dim));
         }
 
         if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
         {
-            query = query.Devectorize(qlayout.IndexOf(AttentionDimKind.Head));
+            query = query.Unpack(1, qlayout.IndexOf(AttentionDimKind.Head));
         }
 
         // revert transpose
@@ -145,12 +145,12 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         // revectorize for output
         if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
         {
-            concat_output = concat_output.Vectorize(cache.Config.Lanes[cache.Config.VectorizedAxes.IndexOf(PagedKVCacheDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
+            concat_output = concat_output.Pack(0, cache.Config.Lanes[cache.Config.VectorizedAxes.IndexOf(PagedKVCacheDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
         }
 
         if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
-            concat_output = concat_output.Vectorize(cache.Config.Lanes[cache.Config.VectorizedAxes.IndexOf(PagedKVCacheDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
+            concat_output = concat_output.Pack(0, cache.Config.Lanes[cache.Config.VectorizedAxes.IndexOf(PagedKVCacheDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
         }
 
         return concat_output;
@@ -229,7 +229,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         // devectorize head dim
         if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
-            concatCache = concatCache.Devectorize(headDimAxis);
+            concatCache = concatCache.Unpack(1, headDimAxis);
         }
 
         // transpose to [num_head * seq_len, head_dim]

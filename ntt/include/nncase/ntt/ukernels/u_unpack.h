@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 #pragma once
-#include "../loop.h"
+#include "../apply.h"
 #include <cstddef>
 #include <type_traits>
 
 namespace nncase::ntt {
 namespace ukernels {
 
-template <class T1, class T2, bool Arch> struct u_devectorize_policy {
+template <class T1, class T2, bool Arch> struct u_unpack_policy {
     static constexpr size_t unroll = 2;
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank, bool Arch>
-class u_devectorize_impl {
+class u_unpack_impl {
   public:
     using TVec = typename TIn::element_type;
 
@@ -33,8 +33,9 @@ class u_devectorize_impl {
     constexpr void operator()(const TIn &input, TOut &output,
                               const TAxes &axes) {
         constexpr auto rank = TIn::rank();
-        constexpr auto elem_rank = TVec::rank();
-        constexpr auto elem_shape = TVec::shape();
+        constexpr auto elem_rank = TAxes::rank();
+        constexpr auto elem_shape =
+            TVec::shape().template slice<0, TAxes::rank()>();
 
         const auto domain = input.shape().concat(elem_shape);
         ntt::apply(domain, [&](auto index) {
@@ -55,8 +56,8 @@ class u_devectorize_impl {
 } // namespace ukernels
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
-void u_devectorize(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
-    ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank(), true> impl;
+void u_unpack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+    ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(), true> impl;
     impl(input, output, axes);
 }
 

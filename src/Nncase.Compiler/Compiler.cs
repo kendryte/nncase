@@ -279,6 +279,17 @@ public class Compiler : ICompiler
         passManager.Add<OptimizeByRangePass>();
     }
 
+    public void AutoPackingPass(IPassManager passManager)
+    {
+        var target = _compileSession.Target;
+        passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
+        {
+            target.RegisterAutoPackingRules(p, _compileSession.CompileOptions);
+
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+        });
+    }
+
     public void AutoVectorizePass(IPassManager passManager)
     {
         var target = _compileSession.Target;
@@ -372,6 +383,7 @@ public class Compiler : ICompiler
         await RunPassAsync(QuantizePass, "QuantizePass");
 
         await RunPassAsync(AutoVectorizePass, "AutoVectorizePass");
+        await RunPassAsync(AutoPackingPass, "AutoPackingPass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
         await RunPassAsync(AutoTilingPass, "AutoTilingPass");
 

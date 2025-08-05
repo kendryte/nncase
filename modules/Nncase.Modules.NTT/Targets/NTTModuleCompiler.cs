@@ -21,6 +21,20 @@ public class NTTModuleCompiler : IModuleCompiler
         _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}"),
     };
 
+    public int Lane => RuntimeInformation.ProcessArchitecture switch
+    {
+        Architecture.X64 => 32,
+        Architecture.Arm64 => 16,
+        _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}"),
+    };
+
+    public int Nr => RuntimeInformation.ProcessArchitecture switch
+    {
+        Architecture.X64 => 4,
+        Architecture.Arm64 => 4,
+        _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}"),
+    };
+
     public IModuleBuilder CreateModuleBuilder(CompileOptions options) => new NTTModuleBuilder(options);
 
     public bool IsSupportedCall(Call call, CompileOptions options)

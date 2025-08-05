@@ -22,8 +22,8 @@ public class UnitTestVectorizeBinary : TransformTestBase
         var rhs = Testing.Rand<float>(3, 1);
         var rhsVar = new Var(new TensorType(rhs.ElementType, rhs.Shape));
         Expr expr = lhsVar + rhsVar;
-        expr = Vectorize(expr, [8], [1]);
-        expr = Devectorize(expr, [8], [1]);
+        expr = Pack(expr, [8], [1]);
+        expr = Unpack(expr, [8], [1]);
         TestMatched<VectorizeBinaryPropagation>(expr, new Dictionary<IVar, IValue> {
             { lhsVar, Value.FromTensor(lhs) },
             { rhsVar, Value.FromTensor(rhs) },
@@ -33,11 +33,11 @@ public class UnitTestVectorizeBinary : TransformTestBase
     [Fact]
     public void TestBinaryDevectorizeLhsPropagation()
     {
-        var lhs = Vectorize(Testing.Rand<float>(1, 24), [8], [1]).Evaluate().AsTensor();
+        var lhs = Pack(Testing.Rand<float>(1, 24), [8], [1]).Evaluate().AsTensor();
         var lhsVar = new Var(new TensorType(lhs.ElementType, lhs.Shape));
         var rhs = Testing.Rand<float>(3, 1);
         var rhsVar = new Var(new TensorType(rhs.ElementType, rhs.Shape));
-        Expr expr = Devectorize(lhsVar, [8], [1]) + rhsVar;
+        Expr expr = Unpack(lhsVar, [8], [1]) + rhsVar;
         TestMatched<BinaryDevectorizeLhsPropagation>(
             expr,
             new Dictionary<IVar, IValue> {

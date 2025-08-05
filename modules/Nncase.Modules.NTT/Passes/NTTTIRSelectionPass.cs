@@ -49,18 +49,20 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return GenerateBinary(binary.BinaryOp, arguments, output);
             case IR.Tensors.Bitcast bitcast:
                 return GenerateBitcast((Expr)arguments[0], ref output, bitcast.NewType);
-            case IR.Tensors.Vectorize vectorize:
-                return TIR.F.NTT.Vectorize((Expr)arguments[0], output, vectorize.Lanes, vectorize.Axes);
+            case IR.Tensors.Pack vectorize:
+                return TIR.F.NTT.Pack((Expr)arguments[0], output, vectorize.Lanes, vectorize.Axes);
             case IR.Tensors.VectorizeMask vectorize:
-                return TIR.F.NTT.Vectorize((Expr)arguments[0], output, new[] { vectorize.Lanes }, new[] { vectorize.Axis });
-            case IR.Tensors.Devectorize devectorize:
-                return TIR.F.NTT.Devectorize((Expr)arguments[0], output, devectorize.Lanes, devectorize.Axes);
+                return TIR.F.NTT.Pack((Expr)arguments[0], output, new[] { vectorize.Lanes }, new[] { vectorize.Axis });
+            case IR.Tensors.Unpack devectorize:
+                return TIR.F.NTT.Unpack((Expr)arguments[0], output, devectorize.Lanes, devectorize.Axes);
             case IR.NTT.VectorizedBinary vectorizedBinary:
                 return TIR.F.NTT.Binary(vectorizedBinary.BinaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
             case IR.NTT.VectorizedMatMul vectorized_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
                 return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, vectorized_mat_mul_summa.LhsVectorizedAxes, vectorized_mat_mul_summa.RhsVectorizedAxes, vectorized_mat_mul_summa.TransposeA, vectorized_mat_mul_summa.TransposeB);
             case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
                 return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
+            case IR.NTT.PackedMatMul matmul:
+                return TIR.F.NTT.PackedMatMul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.FusedReduce);
             case IR.NTT.VectorizedMatMul vectorizedMatMul:
                 return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, vectorizedMatMul.LhsVectorizedAxes, vectorizedMatMul.RhsVectorizedAxes, vectorizedMatMul.TransposeA, vectorizedMatMul.TransposeB, vectorizedMatMul.FusedReduce);
             case IR.Math.MatMul matmul:

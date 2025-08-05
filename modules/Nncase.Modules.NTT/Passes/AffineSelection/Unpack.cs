@@ -5,15 +5,15 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
 using Nncase.TIR.NTT;
-using Devectorize = Nncase.IR.Tensors.Devectorize;
+using Unpack = Nncase.IR.Tensors.Unpack;
 
 namespace Nncase.Passes;
 
 public partial class NTTAffineSelectionPass
 {
-    private Expr SelectDevectorize(Devectorize devectorize, Call call, Expr output)
+    private Expr SelectDevectorize(Unpack devectorize, Call call, Expr output)
     {
-        var input = (Expr)call[Devectorize.Input];
+        var input = (Expr)call[Unpack.Input];
         if (output.CheckedShape is not { Rank: > 0 })
         {
             return call;
@@ -42,7 +42,7 @@ public partial class NTTAffineSelectionPass
             .Domain(rank, out var _)
             .Read(input, AffineMap.Identity(rank), out var intile)
             .Write(output, affinemap, out var outTile)
-            .Body(TIR.F.NTT.Devectorize(intile, outTile, devectorize.Lanes, devectorize.Axes))
+            .Body(TIR.F.NTT.Unpack(intile, outTile, devectorize.Lanes, devectorize.Axes))
             .Build();
     }
 }

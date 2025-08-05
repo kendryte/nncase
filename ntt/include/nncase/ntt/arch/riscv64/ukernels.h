@@ -597,11 +597,11 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC, false
 };
 
 // vectorize
-template <class T1, class T2> struct u_vectorize_policy<T1, T2, true> {
+template <class T1, class T2> struct u_pack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
 };
 
-template <> class u_vectorize<true, float, vector<float, NTT_VLEN / 32>> {
+template <> class u_pack<true, float, vector<float, NTT_VLEN / 32>> {
   public:
     template <Dimension TM, Dimension TN, Dimension TMStrides>
     constexpr void operator()(const float *input, const TM &M, const TN &N,
@@ -609,10 +609,10 @@ template <> class u_vectorize<true, float, vector<float, NTT_VLEN / 32>> {
                               vector<float, NTT_VLEN / 32> *output) noexcept {
         constexpr size_t vl = NTT_VLEN / 32;
         if (N % vl != 0) {
-            ukernels::u_vectorize<false, float, vector<float, vl>> impl;
+            ukernels::u_pack<false, float, vector<float, vl>> impl;
             impl(input, M, N, m_strides, output);
         } else {
-            using policy_t = u_vectorize_policy<float, vector<float, vl>, true>;
+            using policy_t = u_pack_policy<float, vector<float, vl>, true>;
             constexpr auto unroll = policy_t::unroll;
             const auto in_strides1 = sizeof(float) * m_strides;
             const auto in_strides2 = sizeof(float);
@@ -686,7 +686,7 @@ template <> class u_vectorize<true, float, vector<float, NTT_VLEN / 32>> {
 };
 
 template <class TIn, class TOut>
-class u_vectorize2d<true, TIn, TOut, float,
+class u_pack2d<true, TIn, TOut, float,
                vector<float, NTT_VLEN / 32, NTT_VLEN / 32>> {
   public:
     template <FixedDimensions TAxes>
@@ -703,7 +703,7 @@ class u_vectorize2d<true, TIn, TOut, float,
             auto pin = input.buffer().data();
             auto out_ptr = output.buffer().data();
             using policy_t =
-                u_vectorize_policy<vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+                u_pack_policy<vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                               float, true>;
             constexpr auto unroll1 = 2;
             constexpr auto unroll2 = policy_t::unroll;
@@ -1006,14 +1006,14 @@ class u_vectorize2d<true, TIn, TOut, float,
                 }
             }
         } else {
-            ukernels::u_vectorize2d<false, TIn, TOut, float, vector<float, vl, vl>>
+            ukernels::u_pack2d<false, TIn, TOut, float, vector<float, vl, vl>>
                 impl;
             impl(input, TAxes{}, output);
         }
     }
 };
 
-template <class T1, class T2> struct u_devectorize_policy<T1, T2, true> {
+template <class T1, class T2> struct u_unpack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
 };
 
@@ -1024,7 +1024,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank>
                            ntt::vector<float, NTT_VLEN / 32>>) &&
              std::same_as<typename std::decay_t<TOut>::element_type, float> &&
              (AxesRank == 1 || AxesRank == 2))
-class u_devectorize_impl<TIn, TOut, AxesRank, true> {
+class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
     using TElem = typename std::decay_t<TOut>::element_type;
@@ -1060,7 +1060,7 @@ class u_devectorize_impl<TIn, TOut, AxesRank, true> {
                 auto in_ptr = input.buffer().data();
                 constexpr size_t vl = NTT_VLEN / 32;
                 using policy_t =
-                    u_devectorize_policy<vector<float, vl>, float, true>;
+                    u_unpack_policy<vector<float, vl>, float, true>;
                 constexpr auto unroll = policy_t::unroll;
                 auto in_strides = in_stride * sizeof(vector<float, vl>);
                 auto out_strides = axis_stride * sizeof(float);
@@ -1136,7 +1136,7 @@ class u_devectorize_impl<TIn, TOut, AxesRank, true> {
                     axis_idx++;
                 }
             } else {
-                ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+                ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
                                         false>
                     impl;
                 impl(input, output, axes);
@@ -1153,7 +1153,7 @@ class u_devectorize_impl<TIn, TOut, AxesRank, true> {
             auto in_ptr = input.buffer().data();
             constexpr size_t vl = NTT_VLEN / 32;
             using policy_t =
-                u_devectorize_policy<vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+                u_unpack_policy<vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                                 float, true>;
             constexpr auto unroll1 = 2;
             constexpr auto unroll2 = policy_t::unroll;
@@ -1524,7 +1524,7 @@ class u_devectorize_impl<TIn, TOut, AxesRank, true> {
                 }
             }
         } else {
-            ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+            ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
                                     false>
                 impl;
             impl(input, output, axes);

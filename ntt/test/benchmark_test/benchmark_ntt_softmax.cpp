@@ -91,7 +91,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_vectorizeAxis1() {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1 / P, D2>);
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1 / P, D2>);
 
@@ -128,7 +128,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_vectorizeAxis2() {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
@@ -165,7 +165,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_vectorizeAxis1() {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1 / P, D2>);
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1 / P, D2>);
 
@@ -202,7 +202,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_vectorizeAxis2() {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
@@ -303,7 +303,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_vectorizeAxis1() {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1 / P, D2));
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1 / P, D2));
 
@@ -340,7 +340,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_vectorizeAxis2() {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1, D2 / P));
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1, D2 / P));
 
@@ -377,7 +377,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_vectorizeAxis1() {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1 / P, D2));
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1 / P, D2));
 
@@ -414,7 +414,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_vectorizeAxis2() {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1, D2 / P));
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1, D2 / P));
 

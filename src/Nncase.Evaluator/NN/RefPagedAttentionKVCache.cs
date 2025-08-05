@@ -222,7 +222,7 @@ public sealed record RefPagedAttentionKVCache(
         var (kv_lanes, kv_vectorized_axes) = GetQKVVectorizeParams(config, kvLayout);
         var padedQuery = (options.DynamicShape && options.DynamicPadding) ? IR.F.NN.Pad(queryVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)queryVar;
         var transedQuery = IR.F.Tensors.Transpose(padedQuery, qLayout.Select(x => (int)x).ToArray());
-        var vectorizedQuery = q_lanes.Length > 0 ? IR.F.Tensors.Vectorize(transedQuery, q_lanes, q_vectorized_axes) : transedQuery;
+        var vectorizedQuery = q_lanes.Length > 0 ? IR.F.Tensors.Pack(transedQuery, q_lanes, q_vectorized_axes) : transedQuery;
         Expr updatedKVCache = None.Default;
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
@@ -230,7 +230,7 @@ public sealed record RefPagedAttentionKVCache(
 
             var padedKey = (options.DynamicShape && options.DynamicPadding) ? IR.F.NN.Pad(keyVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)keyVar;
             var transedKey = IR.F.Tensors.Transpose(padedKey, kvLayout.Select(x => (int)x).ToArray());
-            var vectorizedKey = kv_lanes.Length > 0 ? IR.F.Tensors.Vectorize(transedKey, kv_lanes, kv_vectorized_axes) : transedKey;
+            var vectorizedKey = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transedKey, kv_lanes, kv_vectorized_axes) : transedKey;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 vectorizedKey,
                 kvCacheObjVar,
@@ -240,7 +240,7 @@ public sealed record RefPagedAttentionKVCache(
 
             var padedValue = (options.DynamicShape && options.DynamicPadding) ? IR.F.NN.Pad(valueVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)valueVar;
             var transValue = IR.F.Tensors.Transpose(padedValue, kvLayout.Select(x => (int)x).ToArray());
-            var vectorizedValue = kv_lanes.Length > 0 ? IR.F.Tensors.Vectorize(transValue, kv_lanes, kv_vectorized_axes) : transValue;
+            var vectorizedValue = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transValue, kv_lanes, kv_vectorized_axes) : transValue;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
                 vectorizedValue,
                 updatedKVCache,
@@ -264,7 +264,7 @@ public sealed record RefPagedAttentionKVCache(
         }
 
         // devectorize query.
-        var devectorized = q_lanes.Length > 0 ? IR.F.Tensors.Devectorize(vectorizedQuery, q_lanes, q_vectorized_axes) : vectorizedQuery;
+        var devectorized = q_lanes.Length > 0 ? IR.F.Tensors.Unpack(vectorizedQuery, q_lanes, q_vectorized_axes) : vectorizedQuery;
         var untransed = IR.F.Tensors.Transpose(devectorized, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
         var unpaded = (options.DynamicShape && options.DynamicPadding) ? IR.F.Tensors.Slice(untransed, new[] { 0 }, new Dimension[] { numTokensVar }, new[] { 0 }, new[] { 1 }) : untransed;
         Expr root = unpaded;

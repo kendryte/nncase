@@ -28,9 +28,9 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
                 throw new NotSupportedException("Vectorize axes must be one");
             }
 
-            input = IR.F.Tensors.Devectorize(input, ((VectorType)input.ElementType).Lanes.ToArray(), cast.VectorizeAxes.ToArray()).Evaluate().AsTensor();
+            input = IR.F.Tensors.Unpack(input, ((VectorType)input.ElementType).Lanes.ToArray(), cast.VectorizeAxes.ToArray()).Evaluate().AsTensor();
             input = input.CastTo(vt.ElemType);
-            input = IR.F.Tensors.Vectorize(input, vt.Lanes.ToArray(), cast.VectorizeAxes.ToArray()).Evaluate().AsTensor();
+            input = IR.F.Tensors.Pack(input, vt.Lanes.ToArray(), cast.VectorizeAxes.ToArray()).Evaluate().AsTensor();
             return Value.FromTensor(input);
         }
 

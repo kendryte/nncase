@@ -28,13 +28,13 @@ namespace Nncase.Passes.Rules.NTT;
 public sealed partial class VectorizePadPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-    PatternMatch.F.Tensors.IsVectorize(
+    PatternMatch.F.Tensors.IsPack(
             "vectorize",
             "caller",
             _ => true,
             IsPad("pad", "callee", _ => true, IsWildcard("input"), IsPaddings("pads"), IsTensorConst("value")));
 
-    private Expr? GetReplace(Vectorize vectorize, Call caller, Call callee, Expr input, Paddings pads, TensorConst value)
+    private Expr? GetReplace(Pack vectorize, Call caller, Call callee, Expr input, Paddings pads, TensorConst value)
     {
         var newPads = pads.ToArray();
         for (var i = 0; i < vectorize.Axes.Count; i++)
@@ -55,7 +55,7 @@ public sealed partial class VectorizePadPropagation : RewriteRule<Pattern>
         }
 
         return callee.WithArguments([
-            (Pad.Input, caller.WithArguments([(Vectorize.Input, input)])),
+            (Pad.Input, caller.WithArguments([(Pack.Input, input)])),
             (Pad.Pads, new Paddings(newPads)),
         ]);
     }

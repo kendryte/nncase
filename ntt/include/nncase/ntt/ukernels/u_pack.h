@@ -22,11 +22,11 @@
 namespace nncase::ntt {
 namespace ukernels {
 
-template <class T1, class T2, bool Arch> struct u_vectorize_policy {
+template <class T1, class T2, bool Arch> struct u_pack_policy {
     static constexpr size_t unroll = 4;
 };
 
-template <bool Arch, Scalar TIn, Vector TOut> class u_vectorize {
+template <bool Arch, Scalar TIn, Vector TOut> class u_pack {
   public:
     template <Dimension TM, Dimension TN, Dimension TMStrides>
     constexpr void operator()(const TIn *input, const TM &M, const TN &N,
@@ -50,7 +50,7 @@ template <bool Arch, Scalar TIn, Vector TOut> class u_vectorize {
 };
 
 template <bool Arch, class TIn, class TOut, class TElem, class TVec>
-class u_vectorize2d {
+class u_pack2d {
   public:
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, const TAxes &axes,
@@ -84,18 +84,18 @@ class u_vectorize2d {
 
 template <Scalar TIn, Dimension TM, Dimension TN, Dimension TMStrides,
           Vector TOut>
-constexpr void u_vectorize(const TIn *input, const TM &M, const TN &N,
+constexpr void u_pack(const TIn *input, const TM &M, const TN &N,
                       const TMStrides &m_strides, TOut *output) noexcept {
-    ukernels::u_vectorize<true, std::decay_t<TIn>, std::decay_t<TOut>> impl;
+    ukernels::u_pack<true, std::decay_t<TIn>, std::decay_t<TOut>> impl;
     impl(input, M, N, m_strides, output);
 }
 
 template <class TIn, FixedDimensions TAxes, class TOut>
-constexpr void u_vectorize2d(const TIn &input, const TAxes &axes,
+constexpr void u_pack2d(const TIn &input, const TAxes &axes,
                         TOut &output) noexcept {
     using TElem = typename TIn::element_type;
     using TVec = typename std::decay_t<TOut>::element_type;
-    ukernels::u_vectorize2d<true, TIn, TOut, TElem, TVec> impl;
+    ukernels::u_pack2d<true, TIn, TOut, TElem, TVec> impl;
     impl(input, axes, output);
 }
 } // namespace nncase::ntt

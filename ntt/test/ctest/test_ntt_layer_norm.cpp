@@ -126,14 +126,14 @@ TEST(FixedShapeLayerNorm, Vectorize0) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P, 2>);
     auto buffer_6 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16 / P, 2>);
-    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
-    vectorize(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
-    vectorize(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
+    pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
     vectorized_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 2>);
-    devectorize(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000f,  -0.570438f, -0.924264f, -1.061478f, -0.982080f, -0.686069f,
@@ -167,9 +167,9 @@ TEST(FixedShapeLayerNorm, Vectorize1) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P>);
     auto bias_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16 / P>);
-    ntt::vectorize(input, input_vectorized, ntt::fixed_shape_v<2>);
-    ntt::vectorize(scale, scale_vectorized, ntt::fixed_shape_v<0>);
-    ntt::vectorize(bias, bias_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(input, input_vectorized, ntt::fixed_shape_v<2>);
+    ntt::pack(scale, scale_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(bias, bias_vectorized, ntt::fixed_shape_v<0>);
     auto output_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 2, 16 / P>);
     vectorized_layer_norm(input_vectorized, scale_vectorized, bias_vectorized, output_vectorized,
@@ -177,7 +177,7 @@ TEST(FixedShapeLayerNorm, Vectorize1) {
                       ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 2, 16>);
-    devectorize(output_vectorized, ntt_output, ntt::fixed_shape_v<2>);
+    unpack(output_vectorized, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         15.000000, 12.589952, 10.613765, 9.071439,  7.962974,  7.288369,
@@ -208,12 +208,12 @@ TEST(FixedShapeLayerNorm, Vectorize2) {
         ntt::fixed_shape_v<1, 16 / P, 4>);
     auto buffer_4 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16 / P, 4>);
-    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
     vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
-    devectorize(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         -0.341640, 1.105573, 4.341640,  9.366562, -0.341640, 1.105573,
@@ -248,12 +248,12 @@ TEST(FixedShapeLayerNorm, Vectorize3) {
         ntt::fixed_shape_v<1, 16 / P, 8>);
     auto vectorized_output = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16 / P, 8>);
-    vectorize(input, vectorized_input, ntt::fixed_shape_v<1>);
+    pack(input, vectorized_input, ntt::fixed_shape_v<1>);
     vectorized_layer_norm(vectorized_input, scale, bias, vectorized_output, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
-    devectorize(vectorized_output, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(vectorized_output, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000,  -0.091089, 0.690693,  2.345346,  4.872871,  8.273268,
@@ -305,15 +305,15 @@ TEST(FixedShapeLayerNorm, Vectorize4) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16, 8 / P>);
     auto vectorized_output = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<1, 16, 8 / P>);
-    vectorize(input, vectorized_input, ntt::fixed_shape_v<2>);
-    vectorize(scale, vectorized_scale, ntt::fixed_shape_v<1>);
-    vectorize(bias, vectorized_bias, ntt::fixed_shape_v<1>);
+    pack(input, vectorized_input, ntt::fixed_shape_v<2>);
+    pack(scale, vectorized_scale, ntt::fixed_shape_v<1>);
+    pack(bias, vectorized_bias, ntt::fixed_shape_v<1>);
     vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias, vectorized_output,
                       1E-06, 1_dim, ntt::fixed_shape_v<1>,
                       ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
-    devectorize(vectorized_output, ntt_output, ntt::fixed_shape_v<2>);
+    unpack(vectorized_output, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         0.000000,   -0.691507,  -1.328887,  -1.912138,  -2.441260,  -2.916255,
@@ -451,14 +451,14 @@ TEST(RankedShapeLayerNorm, Vectorize0) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P, 2));
     auto buffer_6 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 2));
-    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
-    vectorize(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
-    vectorize(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
+    pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
     vectorized_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 2));
-    devectorize(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(buffer_6, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000f,  -0.570438f, -0.924264f, -1.061478f, -0.982080f, -0.686069f,
@@ -492,9 +492,9 @@ TEST(RankedShapeLayerNorm, Vectorize1) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P));
     auto bias_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16 / P));
-    ntt::vectorize(input, input_vectorized, ntt::fixed_shape_v<2>);
-    ntt::vectorize(scale, scale_vectorized, ntt::fixed_shape_v<0>);
-    ntt::vectorize(bias, bias_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(input, input_vectorized, ntt::fixed_shape_v<2>);
+    ntt::pack(scale, scale_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(bias, bias_vectorized, ntt::fixed_shape_v<0>);
     auto output_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 2, 16 / P));
     vectorized_layer_norm(input_vectorized, scale_vectorized, bias_vectorized, output_vectorized,
@@ -502,7 +502,7 @@ TEST(RankedShapeLayerNorm, Vectorize1) {
                       ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 2, 16));
-    devectorize(output_vectorized, ntt_output, ntt::fixed_shape_v<2>);
+    unpack(output_vectorized, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         15.000000, 12.589952, 10.613765, 9.071439,  7.962974,  7.288369,
@@ -533,12 +533,12 @@ TEST(RankedShapeLayerNorm, Vectorize2) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 4));
     auto buffer_4 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 4));
-    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
     vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 4));
-    devectorize(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         -0.341640, 1.105573, 4.341640,  9.366562, -0.341640, 1.105573,
@@ -574,12 +574,12 @@ TEST(RankedShapeLayerNorm, Vectorize3) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 8));
     auto vectorized_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16 / P, 8));
-    vectorize(input, vectorized_input, ntt::fixed_shape_v<1>);
+    pack(input, vectorized_input, ntt::fixed_shape_v<1>);
     vectorized_layer_norm(vectorized_input, scale, bias, vectorized_output, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
-    devectorize(vectorized_output, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(vectorized_output, ntt_output, ntt::fixed_shape_v<1>);
 
     const float array_golden[] = {
         0.000000,  -0.091089, 0.690693,  2.345346,  4.872871,  8.273268,
@@ -631,15 +631,15 @@ TEST(RankedShapeLayerNorm, Vectorize4) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16, 8 / P));
     auto vectorized_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(1, 16, 8 / P));
-    vectorize(input, vectorized_input, ntt::fixed_shape_v<2>);
-    vectorize(scale, vectorized_scale, ntt::fixed_shape_v<1>);
-    vectorize(bias, vectorized_bias, ntt::fixed_shape_v<1>);
+    pack(input, vectorized_input, ntt::fixed_shape_v<2>);
+    pack(scale, vectorized_scale, ntt::fixed_shape_v<1>);
+    pack(bias, vectorized_bias, ntt::fixed_shape_v<1>);
     vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias, vectorized_output,
                       1E-06, 1_dim, ntt::fixed_shape_v<1>,
                       ntt::fixed_shape_v<>);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(1, 16, 8));
-    devectorize(vectorized_output, ntt_output, ntt::fixed_shape_v<2>);
+    unpack(vectorized_output, ntt_output, ntt::fixed_shape_v<2>);
 
     const float array_golden[] = {
         0.000000,   -0.691507,  -1.328887,  -1.912138,  -2.441260,  -2.916255,

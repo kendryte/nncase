@@ -30,7 +30,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
         {
             var lanes = input.Shape.TakeLast(target.VectorizedAxes.Count).Select(i => (int)i).ToArray();
             var channelPadNums = 0;
-            for (int i = target.VectorizedAxes.Count - 1; i >= 0; i--)
+            for (int i = 0; i < target.VectorizedAxes.Count; i++)
             {
                 var axis = target.VectorizedAxes[i];
                 if (axis == 1)
@@ -38,7 +38,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
                     channelPadNums = padedNums[i];
                 }
 
-                input = input.Devectorize(axis);
+                input = input.Unpack(target.VectorizedAxes.Count - i, axis);
             }
 
             if (channelPadNums > 0)
@@ -55,7 +55,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
 
             if (scale.Shape.Length == 2)
             {
-                scale = scale.Devectorize(0);
+                scale = scale.Unpack(1, 0);
                 if (channelPadNums > 0)
                 {
                     scale = OrtKI.Slice(scale, new[] { 0L }, new[] { scale.Shape[0] - channelPadNums }, new[] { 0L }, new[] { 1L });
@@ -64,7 +64,7 @@ public sealed class InstanceNormEvaluator : IEvaluator<InstacneNorm>, ITypeInfer
 
             if (bias.Shape.Length == 2)
             {
-                bias = bias.Devectorize(0);
+                bias = bias.Unpack(1, 0);
                 if (channelPadNums > 0)
                 {
                     bias = OrtKI.Slice(bias, new[] { 0L }, new[] { bias.Shape[0] - channelPadNums }, new[] { 0L }, new[] { 1L });

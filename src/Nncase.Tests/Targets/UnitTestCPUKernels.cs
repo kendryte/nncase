@@ -781,10 +781,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 113 }, new[] { 0 }, new[] { 2 }, new[] { 0 }, new int[] { }, new int[] { }, 0 })] // note vectorize(Lanes: {32}, Axes: {1}, [seq_len, 1024])
-    [InlineData(new object[] { new long[] { 68, 128 }, new[] { 0, 1 }, new[] { 4 }, new[] { 0 }, new[] { 0 }, new[] { 64 }, 1 })] // note vectorize(Lanes: {64, 128}, Axes: {0, 1}, [seq_len + padding, 1024])
-    [InlineData(new object[] { new long[] { 64, 103 }, new[] { 1 }, new[] { 4 }, new[] { 1 }, new int[] { }, new int[] { }, 2 })] // note vectorize(Lanes: {32}, Axes: {0}, [64, sequence_length])
-    [InlineData(new object[] { new long[] { 1, 99, 128 }, new[] { 1 }, new[] { 4 }, new[] { 1 }, new int[] { }, new int[] { }, 3 })] // note vectorize(Lanes: {32}, Axes: {2}, [1, sequence_length, 128])
+    [InlineData(new object[] { new long[] { 113 }, new[] { 0 }, new[] { 2 }, new[] { 0 }, new int[] { }, new int[] { }, 0 })] // note pack(Lanes: {32}, Axes: {1}, [seq_len, 1024])
+    [InlineData(new object[] { new long[] { 68, 128 }, new[] { 0, 1 }, new[] { 4 }, new[] { 0 }, new[] { 0 }, new[] { 64 }, 1 })] // note pack(Lanes: {64, 128}, Axes: {0, 1}, [seq_len + padding, 1024])
+    [InlineData(new object[] { new long[] { 64, 103 }, new[] { 1 }, new[] { 4 }, new[] { 1 }, new int[] { }, new int[] { }, 2 })] // note pack(Lanes: {32}, Axes: {0}, [64, sequence_length])
+    [InlineData(new object[] { new long[] { 1, 99, 128 }, new[] { 1 }, new[] { 4 }, new[] { 1 }, new int[] { }, new int[] { }, 3 })] // note pack(Lanes: {32}, Axes: {2}, [1, sequence_length, 128])
     public async Task TestDynamicVectorizeDevectorize(long[] shape, int[] axes, int[] hierarchy, int[] dynamicAxes, int[] alignAxes, int[] alignValues, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
@@ -821,8 +821,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 
         var paded = VectorizeUtility.PadForVectorize(input, dynShape, axes, lanes, 0f, out var padNums);
-        var vectorized = IR.F.Tensors.Vectorize(paded, lanes, axes);
-        var devectorized = IR.F.Tensors.Devectorize(vectorized, lanes, axes);
+        var vectorized = IR.F.Tensors.Pack(paded, lanes, axes);
+        var devectorized = IR.F.Tensors.Unpack(vectorized, lanes, axes);
         var sliced = VectorizeUtility.SliceForVectorize(devectorized, dynShape, padNums);
 
         // note 2d vectorize will cause the devectorize issue.
@@ -1026,6 +1026,95 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
+    [InlineData(new object[] { new long[] { 154, 128 * 8 }, new long[] { 128 * 8, 64 * 32 }, false, true, new[] { 4 }, new[] { 0 }, 0 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
+    [InlineData(new object[] { new long[] { 64, 1 }, new long[] { 1, 94 }, true, false, new[] { 4 }, new[] { 3 }, 1 })] // note const(f32[64,1]) @ [1,sequence_length]
+    public async Task TestDynamicPackedMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int[] dynamicAxes, int count)
+    {
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        var dimVar = new DimVar("seq_len")
+        {
+            Metadata = new()
+            {
+                Range = new(1, 256),
+            },
+        };
+
+        var lhsDynShape = new RankedShape(Enumerable.Range(0, lhsShape.Length).Select(i =>
+        {
+            if (dynamicAxes.Contains(i))
+            {
+                return dimVar;
+            }
+
+            return (Dimension)lhsShape[i];
+        }).ToArray());
+        var lhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(lhsShape, 1.0f).Evaluate().AsTensor();
+        Expr lhs = constA ? lhsTensor : new Var(new TensorType(DataTypes.Float32, lhsDynShape));
+
+        if (!constA)
+        {
+            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)lhs, lhs.CheckedShape.ToArray());
+        }
+
+        var rhsDynShape = new RankedShape(Enumerable.Range(0, rhsShape.Length).Select(i =>
+        {
+            if (dynamicAxes.Contains(lhsShape.Length + i))
+            {
+                return dimVar;
+            }
+
+            return (Dimension)rhsShape[i];
+        }).ToArray());
+        var rhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(rhsShape, 1.0f).Evaluate().AsTensor();
+        Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsDynShape));
+        if (!constB)
+        {
+            CompileOptions.ShapeBucketOptions.VarMap.Add((Var)rhs, rhs.CheckedShape.ToArray());
+        }
+
+        var pre = IR.F.Tensors.MatMul(lhs, rhs);
+
+        var feedDict = new Dictionary<IVar, IValue>();
+        foreach (var axis in dynamicAxes)
+        {
+            feedDict.Add(dimVar, Value.FromTensor(lhsShape.Concat(rhsShape).Skip(axis).Take(1).First()));
+        }
+
+        if (!constA)
+        {
+            feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
+        }
+
+        if (!constB)
+        {
+            feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
+        }
+
+        var rule = new Passes.Rules.NTT.VectorizeMatMul(2, Lane, transB: true);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var vectorizedPosts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
+
+        var packRule = new Passes.Rules.NTT.PackMatMulByN(4);
+        var foldRule = new Passes.Rules.Neutral.FoldConstCall();
+        var posts = new List<Expr>();
+        foreach (var post in vectorizedPosts)
+        {
+            var context = new Passes.RunPassContext();
+            var newPost = CompilerServices.Rewrite(post, [packRule], context);
+            if (context.IsMutated)
+            {
+                posts.Add((Expr)newPost);
+            }
+        }
+
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
     [InlineData(new object[] { new long[] { 384, 512 }, new long[] { 2, 512, 512 }, false, true, new[] { 4, 4 }, 0 })]
     [InlineData(new object[] { new long[] { 2, 384, 512 }, new long[] { 2, 512, 512 }, false, false, new[] { 4, 8 }, 1 })]
     [InlineData(new object[] { new long[] { 2, 384, 512 }, new long[] { 2, 512, 512 }, false, true, new[] { 2, 8, 4 }, 2 })]
@@ -1112,7 +1201,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             foreach (var post in posts)
             {
-                if (post is Call { Target: IR.Tensors.Devectorize } callUnVectorize && callUnVectorize.Arguments[0] is Call { Target: IR.NTT.VectorizedReduce } vectorizedReduceCall)
+                if (post is Call { Target: IR.Tensors.Unpack } callUnVectorize && callUnVectorize.Arguments[0] is Call { Target: IR.NTT.VectorizedReduce } vectorizedReduceCall)
                 {
                     vectorizedReduceCall.Arguments[0].Metadata = new() { OutputNames = new[] { "reduceIn" } };
                 }

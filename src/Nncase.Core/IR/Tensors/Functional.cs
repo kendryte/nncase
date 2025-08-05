@@ -182,7 +182,7 @@ public static class Tensors
 
     public static Call Trilu(Expr input, Expr k, Expr upper) => new Call(new Trilu(), input, k, upper);
 
-    public static Expr Vectorize(Expr input, int[] lanes, int[] axes)
+    public static Expr Pack(Expr input, int[] lanes, int[] axes)
     {
         if (lanes.Length != axes.Length)
         {
@@ -194,7 +194,7 @@ public static class Tensors
             return input;
         }
 
-        return new Call(new Vectorize(lanes, axes), input);
+        return new Call(new Pack(lanes, axes), input);
     }
 
     public static Expr VectorizeMask(Expr input, MaskVectorStyle style, int elementBits, int lanes, int axis)
@@ -202,7 +202,7 @@ public static class Tensors
         return new Call(new VectorizeMask(style, elementBits, lanes, axis), input);
     }
 
-    public static Expr Devectorize(Expr input, int[] lanes, int[] axes)
+    public static Expr Unpack(Expr input, int[] lanes, int[] axes)
     {
         if (lanes.Length != axes.Length)
         {
@@ -214,6 +214,6 @@ public static class Tensors
             return input;
         }
 
-        return new Call(new Devectorize(lanes, axes), input);
+        return new Call(new Unpack(lanes, axes), input);
     }
 }

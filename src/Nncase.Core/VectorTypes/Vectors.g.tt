@@ -23,10 +23,45 @@ namespace Nncase;
 
 // NOTE fixed array not suppot generic
 
-<# 
-foreach (var (lanesA, lanesB) in new[] { 
+<#
+var lanesValues = new[] { 
   (0, 4), (0, 8), (0, 16), (0, 32), (0, 64), (0, 128),
-  (4, 4), (8, 8), (16, 16), (32, 16), (32, 32), (32, 64), (32, 128), (64, 32), (64, 64), (64, 128), (128, 64) })
+  (4, 4), (4, 8), (4, 16), (4, 32),
+  (8, 8), (16, 16), (32, 16), (32, 32), (32, 64), (32, 128), (64, 32), (64, 64), (64, 128), (128, 64) };
+#>
+public partial record VectorType
+{
+    public override Type CLRType => Lanes.ToArray() switch
+    {
+<#
+foreach (var (lanesA, lanesB) in lanesValues)
+{
+    var typePrefix = lanesA == 0 ? $"Vector{lanesB.ToString()}" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}";
+    var typeName = typePrefix + "<>";
+    var lanes = lanesA == 0 ? $"[{lanesB}]" : $"[{lanesA}, {lanesB}]";#>
+        <#=lanes#> => typeof(<#=typeName#>).MakeGenericType(ElemType.CLRType),
+<#}#>
+        _ => throw new NotSupportedException($"Unsupported vector lanes: {string.Join(", ", Lanes)}"),
+    };
+}
+
+public partial record DataType
+{
+    private static Dictionary<Type, int[]> _clrTypeLanes = new()
+    {
+<#
+foreach (var (lanesA, lanesB) in lanesValues)
+{
+    var typePrefix = lanesA == 0 ? $"Vector{lanesB.ToString()}" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}";
+    var typeName = typePrefix + "<>";
+    var lanes = lanesA == 0 ? $"[{lanesB}]" : $"[{lanesA}, {lanesB}]";#>
+        { typeof(<#=typeName#>), <#=lanes#> },
+<#}#>
+    };
+}
+
+<# 
+foreach (var (lanesA, lanesB) in lanesValues)
 {
 var typePrefix = lanesA == 0 ? $"Vector{lanesB.ToString()}" : $"Vector{lanesA.ToString()}x{lanesB.ToString()}";
 var typeName = typePrefix + "<T>";

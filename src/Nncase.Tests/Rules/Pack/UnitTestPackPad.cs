@@ -23,8 +23,8 @@ public class UnitTestVectorizePad : TransformTestBase
         var input = Testing.Rand<float>(3, 24);
         var inputVar = new Var(new TensorType(input.ElementType, input.Shape));
         Expr expr = Pad(inputVar, new([(0, 0), (8, 16)]), PadMode.Constant, 0f);
-        expr = Vectorize(expr, [8], [1]);
-        expr = Devectorize(expr, [8], [1]);
+        expr = Pack(expr, [8], [1]);
+        expr = Unpack(expr, [8], [1]);
         TestMatched<VectorizePadPropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 
@@ -35,8 +35,8 @@ public class UnitTestVectorizePad : TransformTestBase
         var input = Testing.Rand<float>(3, 24);
         var inputVar = new Var(new TensorType(input.ElementType, [dimX, 24]));
         Expr expr = Pad(inputVar, new([(0, 0), (8, 16)]), PadMode.Constant, 0f);
-        expr = Vectorize(expr, [8], [1]);
-        expr = Devectorize(expr, [8], [1]);
+        expr = Pack(expr, [8], [1]);
+        expr = Unpack(expr, [8], [1]);
         TestMatched<VectorizePadPropagation>(expr, new Dictionary<IVar, IValue> { { inputVar, Value.FromTensor(input) } });
     }
 
@@ -48,8 +48,8 @@ public class UnitTestVectorizePad : TransformTestBase
         var input = Testing.Rand<float>(16, 3, 128);
         var inputVar = new Var(new TensorType(input.ElementType, [16, sequenceLength, 128]));
         Expr expr = Pad(inputVar, new([(0, 0), (0, 1024 - sequenceLength), (0, 0)]), PadMode.Constant, 0f);
-        expr = Vectorize(expr, [32], [2]);
-        expr = Devectorize(expr, [32], [2]);
+        expr = Pack(expr, [32], [2]);
+        expr = Unpack(expr, [32], [2]);
         var func = new Function("main", expr, [inputVar]);
         var module = new IRModule(func);
 
@@ -60,7 +60,7 @@ public class UnitTestVectorizePad : TransformTestBase
                 c.Add<VectorizePadPropagation>();
             });
         pmgr.RunAsync(module).Wait();
-        Assert.True(module.Entry is Function { Body: Call { Target: IR.Tensors.Devectorize, Arguments: var devectorizeArgs } }
+        Assert.True(module.Entry is Function { Body: Call { Target: IR.Tensors.Unpack, Arguments: var devectorizeArgs } }
             && devectorizeArgs[0] is Call { Target: IR.NN.Pad });
     }
 }

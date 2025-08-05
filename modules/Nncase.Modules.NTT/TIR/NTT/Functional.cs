@@ -56,6 +56,11 @@ public partial class NTT
         return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC);
     }
 
+    public static Call PackedMatMul(Expr lhs, Expr rhs, Expr output, Expr loadC, bool fusedReduce = false)
+    {
+        return new Call(new PackedMatMul(fusedReduce), lhs, rhs, output, loadC);
+    }
+
     public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false)
     {
         return new Call(new SUMMA(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB), lhs, rhs, output, loadC);
@@ -66,16 +71,16 @@ public partial class NTT
         return new Call(new SUMMA(new IRArray<int>(), new IRArray<int>(), false, false), lhs, rhs, output, loadC);
     }
 
-    public static Expr Vectorize(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
+    public static Expr Pack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
     {
-        return new Call(new Vectorize(lanes, axes), input, output);
+        return new Call(new Pack(lanes, axes), input, output);
     }
 
     public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr output, long[] stride, long[] padding, long[] dilation, long groups, PadMode padMode, DistributedType distributedType) => new Call(new Conv2D(stride, padding, dilation, groups, padMode, distributedType), input, weights, bias, output);
 
-    public static Expr Devectorize(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
+    public static Expr Unpack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
     {
-        return new Call(new Devectorize(lanes, axes), input, output);
+        return new Call(new Unpack(lanes, axes), input, output);
     }
 
     public static Expr VectorizedSoftmax(Expr input, Expr output, int axis, IRArray<int> vectorizedAxes)

@@ -91,10 +91,10 @@ TEST(CastTestFloat32ToInt32, Vectorize) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<int32_t, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<M, N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -146,10 +146,10 @@ TEST(CastTestInt32ToFloat32, Vectorize) {
         ntt::make_tensor<ntt::vector<int32_t, P>>(ntt::fixed_shape_v<M / P, N>);
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -201,10 +201,10 @@ TEST(CastTestFloat32ToUint32, Vectorize) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
     auto vectorize_output = ntt::make_tensor<ntt::vector<unsigned int, P>>(
         ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<unsigned int>(ntt::fixed_shape_v<M, N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -256,10 +256,10 @@ TEST(CastTestUint32ToFloat32, Vectorize) {
         ntt::fixed_shape_v<M / P, N>);
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -310,10 +310,10 @@ TEST(CastTestFloat32ToBool_1D, Vectorize) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P>);
     auto vectorize_output = ntt::make_tensor<ntt::vector<bool, P * 4>>(
         ntt::fixed_shape_v<N / P / 4>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<bool>(ntt::fixed_shape_v<N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -341,10 +341,10 @@ TEST(CastTestFloat32ToBool_2D, Vectorize) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<bool>(ntt::fixed_shape_v<M, N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -395,10 +395,10 @@ TEST(CastTestBoolToFloat32_1D, Vectorize) {
         ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<N / P>);
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -426,10 +426,10 @@ TEST(CastTestBoolToFloat32_2D, Vectorize) {
         ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<M / P, N>);
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -481,10 +481,10 @@ TEST(CastTestFloat32ToFloat8E4M3, Vectorize) {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
     auto vectorize_output = ntt::make_tensor<ntt::vector<float_e4m3_t, P>>(
         ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
     auto ntt_output1 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // float8
     auto ntt_output2 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
@@ -533,14 +533,14 @@ TEST(CastTestFloat8E4M3ToFloat32, Vectorize) {
 
     auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
         ntt::fixed_shape_v<M / P1>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
 
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P2>>(ntt::fixed_shape_v<M / P2>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
 
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M>);
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
@@ -588,14 +588,14 @@ TEST(CastTestFloat8E4M3ToBFloat16, Vectorize) {
 
     auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
         ntt::fixed_shape_v<M / P1>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
 
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<bfloat16, P2>>(ntt::fixed_shape_v<M / P2>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
 
     auto ntt_output1 = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<M>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     auto ntt_output2 = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<M>);
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
@@ -643,14 +643,14 @@ TEST(CastTestFloat8E4M3ToHalf, Vectorize) {
 
     auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
         ntt::fixed_shape_v<M / P1>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
 
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<half, P2>>(ntt::fixed_shape_v<M / P2>);
     ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
 
     auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<M>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<M>);
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {

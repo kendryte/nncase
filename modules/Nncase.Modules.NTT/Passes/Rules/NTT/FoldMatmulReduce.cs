@@ -46,7 +46,7 @@ public sealed partial class SwapDevectorizeReduce : IRewriteRule
         IsBoxing(
             target_name: "boxing",
             op => op.NewType is DistributedType dt && dt.AxisPolicies.All(s => s is not SBPPartial),
-            IsDevectorize(
+            IsUnpack(
                 target_name: "devectorize",
                 _ => true,
                 IsVectorizedMatMul(
@@ -56,13 +56,13 @@ public sealed partial class SwapDevectorizeReduce : IRewriteRule
                     IsWildcard("lhs"),
                     IsWildcard("rhs"))));
 
-    public Expr? GetReplace(Call call, Boxing boxing, Devectorize devectorize)
+    public Expr? GetReplace(Call call, Boxing boxing, Unpack devectorize)
     {
         if (call.CheckedType is DistributedType dt && dt.AxisPolicies.Any(s => s is SBPPartial))
         {
             var newType = new DistributedType(dt.TensorType, dt.AxisPolicies.Select(s => s is SBPPartial ? SBP.B : s).ToArray(), dt.Placement);
             var newBoxing = IR.F.Distributed.Boxing(call, newType);
-            return IR.F.Tensors.Devectorize(newBoxing, [.. devectorize.Lanes], [.. devectorize.Axes]);
+            return IR.F.Tensors.Unpack(newBoxing, [.. devectorize.Lanes], [.. devectorize.Axes]);
         }
 
         return null;

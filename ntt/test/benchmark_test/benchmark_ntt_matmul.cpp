@@ -70,8 +70,8 @@ void benchmark_ntt_matmul_vectorize_K() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, K / P>);
     auto pb =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<K / P, N>);
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
-    ntt::vectorize(tb, pb, ntt::fixed_shape_v<0>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++)
         ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape_v<1>,
@@ -109,7 +109,7 @@ void benchmark_ntt_matmul_vectorize_M() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, K>);
     auto pc =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<0>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++) {
         ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape_v<0>,
@@ -149,7 +149,7 @@ void benchmark_ntt_matmul_vectorize_N() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<K, N / P>);
     auto pc =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>);
-    ntt::vectorize(tb, pb, ntt::fixed_shape_v<1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
 
     for (size_t i = 0; i < warmup_num; i++)
         ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape_v<>,
@@ -189,8 +189,8 @@ void benchmark_ntt_matmul_vectorize_M_N() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<K, N / P>);
     auto pc = ntt::make_tensor<ntt::vector<float, P, P>>(
         ntt::fixed_shape_v<M / P, N / P>);
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<0>);
-    ntt::vectorize(tb, pb, ntt::fixed_shape_v<1>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
 
     for (size_t i = 0; i < warmup_num; i++)
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0>,
@@ -230,8 +230,8 @@ void benchmark_ntt_matmul_vectorize_M_K() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<K / P, N>);
     auto pc =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<0, 1>);
-    ntt::vectorize(tb, pb, ntt::fixed_shape_v<0>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<0, 1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++)
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
@@ -271,8 +271,8 @@ void benchmark_ntt_matmul_vectorize_K_N() {
         ntt::fixed_shape_v<K / P, N / P>);
     auto pc =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>);
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<1>);
-    ntt::vectorize(tb, pb, ntt::fixed_shape_v<0, 1>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<0, 1>);
 
     for (size_t i = 0; i < warmup_num; i++)
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<1>,
@@ -312,8 +312,8 @@ void benchmark_ntt_matmul_vectorize_M_K_N() {
         ntt::fixed_shape_v<K / P, N / P>);
     auto pc = ntt::make_tensor<ntt::vector<float, P, P>>(
         ntt::fixed_shape_v<M / P, N / P>);
-    ntt::vectorize(ta, pa, ntt::fixed_shape_v<0, 1>);
-    ntt::vectorize(tb, pb, ntt::fixed_shape_v<0, 1>);
+    ntt::pack(ta, pa, ntt::fixed_shape_v<0, 1>);
+    ntt::pack(tb, pb, ntt::fixed_shape_v<0, 1>);
 
     for (size_t i = 0; i < warmup_num; i++)
         ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,

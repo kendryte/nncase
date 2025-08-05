@@ -234,14 +234,14 @@ TEST(SliceTestFloat, Vectorize_fixed_shape) {
     // ntt
     auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>);
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16, 16>);
     ntt::slice(vectorize_input, vectorize_output, fixed_shape_v<0, 0>,
                fixed_shape_v<16, 16>, ntt::fixed_shape_v<0, 1>,
                ntt::fixed_shape_v<1, 1>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 16 * P>);
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
 
     auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 16 * P>);
     // ort
@@ -266,14 +266,14 @@ TEST(SliceTestFloat, Vectorize_ranked_shape) {
     // ntt
     auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(M, N / P));
-    ntt::vectorize(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
     auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16, 16));
     ntt::slice(vectorize_input, vectorize_output, fixed_shape_v<0, 0>,
                fixed_shape_v<16, 16>, ntt::fixed_shape_v<0, 1>,
                ntt::fixed_shape_v<1, 1>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::make_shape(16, 16 * P));
-    ntt::devectorize(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
 
     auto ntt_output2 = ntt::make_tensor<float>(ntt::make_shape(16, 16 * P));
     // ort

@@ -84,7 +84,7 @@ TEST(ReduceMeanTestFloat, ReduceM_NoVectorize) {
                                                                                \
     auto ntt_input_vectorize =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
-    ntt::vectorize(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);               \
+    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);               \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);      \
@@ -205,7 +205,7 @@ TEST(ReduceMeanTestFloat, ReduceN_NoVectorize) {
                                                                                \
     auto ntt_input_vectorize =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
-    ntt::vectorize(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);               \
+    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);               \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);      \
@@ -322,7 +322,7 @@ TEST(ReduceMeanTestFloat, ReduceMN_NoVectorize) {
                                                                                \
     auto ntt_input_vectorize =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
-    ntt::vectorize(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);               \
+    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);               \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
@@ -385,7 +385,7 @@ TEST(ReduceMeanTestFloat, ReduceMN_VectorizeM) {
                                                                                \
     auto ntt_input_vectorize =                                                      \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
-    ntt::vectorize(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);               \
+    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);               \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \

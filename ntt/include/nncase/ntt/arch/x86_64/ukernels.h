@@ -301,7 +301,7 @@ inline void permute_8x8_vectorize2d(const float *src, vector<float, 8, 8> *dst,
 }
 
 // vectorize
-template <> class u_vectorize<true, float, vector<float, 8>> {
+template <> class u_pack<true, float, vector<float, 8>> {
   public:
     template <Dimension TM, Dimension TN, Dimension TMStrides>
     constexpr void operator()(const float *input, const TM &M, const TN &N,
@@ -319,7 +319,7 @@ template <> class u_vectorize<true, float, vector<float, 8>> {
                 dst += 8;
             }
         } else {
-            ukernels::u_vectorize<false, float, vector<float, 8>> impl;
+            ukernels::u_pack<false, float, vector<float, 8>> impl;
             impl(input, M, N, m_strides, output);
         }
     }
@@ -327,7 +327,7 @@ template <> class u_vectorize<true, float, vector<float, 8>> {
 
 // vectorize2d
 template <FixedTensor TIn, FixedTensor TOut>
-class u_vectorize2d<true, TIn, TOut, float, vector<float, 8, 8>> {
+class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
   public:
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, const TAxes &axes,
@@ -386,7 +386,7 @@ class u_vectorize2d<true, TIn, TOut, float, vector<float, 8, 8>> {
                 const auto inner_size = inner_domain.length();
 
                 if (inner_size % TVec::shape()[1_dim] != 0) {
-                    ukernels::u_vectorize2d<false, TIn, TOut, float, TVec> impl;
+                    ukernels::u_pack2d<false, TIn, TOut, float, TVec> impl;
                     impl(input, axes, output);
                 } else {
                     ntt::apply(outer_domain, [&](auto index) {
@@ -427,7 +427,7 @@ class u_vectorize2d<true, TIn, TOut, float, vector<float, 8, 8>> {
         } else {
             using TElem = typename TIn::element_type;
             using TVec = typename std::decay_t<TOut>::element_type;
-            ukernels::u_vectorize2d<false, TIn, TOut, TElem, TVec> impl;
+            ukernels::u_pack2d<false, TIn, TOut, TElem, TVec> impl;
             impl(input, axes, output);
         }
     }
@@ -439,7 +439,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank>
          std::same_as<typename TIn::element_type, ntt::vector<float, 8>>) &&
         std::same_as<typename std::decay_t<TOut>::element_type, float> &&
         (AxesRank == 1 || AxesRank == 2))
-class u_devectorize_impl<TIn, TOut, AxesRank, true> {
+class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
     using TElem = typename std::decay_t<TOut>::element_type;
@@ -470,7 +470,7 @@ class u_devectorize_impl<TIn, TOut, AxesRank, true> {
                 auto inner_size = inner_index.length();
 
                 if (inner_size % 8 != 0) {
-                    ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>,
+                    ukernels::u_unpack_impl<TIn, std::decay_t<TOut>,
                                             TAxes::rank(), false>
                         impl;
                     impl(input, output, axes);
@@ -552,7 +552,7 @@ class u_devectorize_impl<TIn, TOut, AxesRank, true> {
                 });
             } else {
                 if (inner_size % TVec::shape()[1] != 0) {
-                    ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>,
+                    ukernels::u_unpack_impl<TIn, std::decay_t<TOut>,
                                             TAxes::rank(), false>
                         impl;
                     impl(input, output, axes);
@@ -583,7 +583,7 @@ class u_devectorize_impl<TIn, TOut, AxesRank, true> {
                 }
             }
         } else {
-            ukernels::u_devectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
+            ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(),
                                     false>
                 impl;
             impl(input, output, axes);

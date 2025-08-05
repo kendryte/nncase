@@ -53,12 +53,12 @@ TEST(FixedShapeVectorizedSoftmax, AxisIsVectorizedAxis0) {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<3, 16 / P, 16>);
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<3, 16 / P, 16>);
     vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    devectorize(buffer_3, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(buffer_3, ntt_output, ntt::fixed_shape_v<1>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(buffer_1);
@@ -77,12 +77,12 @@ TEST(FixedShapeVectorizedSoftmax, AxisIsVectorizedAxis1) {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<3, 16, 16 / P>);
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<3, 16, 16 / P>);
     vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    devectorize(buffer_3, ntt_output, ntt::fixed_shape_v<2>);
+    unpack(buffer_3, ntt_output, ntt::fixed_shape_v<2>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(buffer_1);
@@ -101,12 +101,12 @@ TEST(FixedShapeVectorizedSoftmax, AxisIsNotVectorizedAxis0) {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<3, 16 / P, 16>);
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<3, 16 / P, 16>);
     vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    devectorize(buffer_3, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(buffer_3, ntt_output, ntt::fixed_shape_v<1>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(buffer_1);
@@ -125,12 +125,12 @@ TEST(FixedShapeVectorizedSoftmax, AxisIsNotVectorizedAxis1) {
     auto buffer_2 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<3, 16, 16 / P>);
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<3, 16, 16 / P>);
     vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16, 16>);
-    devectorize(buffer_3, ntt_output, ntt::fixed_shape_v<2>);
+    unpack(buffer_3, ntt_output, ntt::fixed_shape_v<2>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(buffer_1);
@@ -185,12 +185,12 @@ TEST(RankedShapeVectorizedSoftmax, AxisIsVectorizedAxis0) {
     auto buffer_2 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(3, 16 / P, 16));
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
     auto buffer_3 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(3, 16 / P, 16));
     vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(3, 16, 16));
-    devectorize(buffer_3, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(buffer_3, ntt_output, ntt::fixed_shape_v<1>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(buffer_1);
@@ -209,12 +209,12 @@ TEST(RankedShapeVectorizedSoftmax, AxisIsVectorizedAxis1) {
     auto buffer_2 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(3, 16, 16 / P));
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
     auto buffer_3 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(3, 16, 16 / P));
     vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(3, 16, 16));
-    devectorize(buffer_3, ntt_output, ntt::fixed_shape_v<2>);
+    unpack(buffer_3, ntt_output, ntt::fixed_shape_v<2>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(buffer_1);
@@ -233,12 +233,12 @@ TEST(RankedShapeVectorizedSoftmax, AxisIsNotVectorizedAxis0) {
     auto buffer_2 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(3, 16 / P, 16));
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<1>);
     auto buffer_3 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(3, 16 / P, 16));
     vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(3, 16, 16));
-    devectorize(buffer_3, ntt_output, ntt::fixed_shape_v<1>);
+    unpack(buffer_3, ntt_output, ntt::fixed_shape_v<1>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(buffer_1);
@@ -257,12 +257,12 @@ TEST(RankedShapeVectorizedSoftmax, AxisIsNotVectorizedAxis1) {
     auto buffer_2 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(3, 16, 16 / P));
 
-    vectorize(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
+    pack(buffer_1, buffer_2, ntt::fixed_shape_v<2>);
     auto buffer_3 =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(3, 16, 16 / P));
     vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(3, 16, 16));
-    devectorize(buffer_3, ntt_output, ntt::fixed_shape_v<2>);
+    unpack(buffer_3, ntt_output, ntt::fixed_shape_v<2>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(buffer_1);

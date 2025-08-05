@@ -59,14 +59,14 @@ void benchmark_ntt_devectorize(const std::string &mode, const size_t run_size) {
     constexpr size_t warmup_size = 10;
 #endif
     for (size_t i = 0; i < warmup_size; i++) {
-        ntt::devectorize(ntt_input, ntt_output, fixed_shape_v<devectorize_dims...>);
+        ntt::unpack(ntt_input, ntt_output, fixed_shape_v<devectorize_dims...>);
         asm volatile("" ::"g"(ntt_output));
     }
 
     // run
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_size; i++) {
-        ntt::devectorize(ntt_input, ntt_output, fixed_shape_v<devectorize_dims...>);
+        ntt::unpack(ntt_input, ntt_output, fixed_shape_v<devectorize_dims...>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();

@@ -27,8 +27,8 @@ public class UnitTestVectorizeWhere : TransformTestBase
         var rhs = Testing.Rand<float>(1, 24);
         var rhsVar = new Var(new TensorType(rhs.ElementType, rhs.Shape));
         Expr expr = Where(condVar, lhsVar, rhsVar);
-        expr = Vectorize(expr, [8], [1]);
-        expr = Devectorize(expr, [8], [1]);
+        expr = Pack(expr, [8], [1]);
+        expr = Unpack(expr, [8], [1]);
         TestMatchedCore(
             expr,
             new Dictionary<IVar, IValue> {
@@ -50,8 +50,8 @@ public class UnitTestVectorizeWhere : TransformTestBase
         var rhs = Testing.Rand<float>(3, 24);
         var rhsVar = new Var(new TensorType(rhs.ElementType, [dimX, 24]));
         Expr expr = Where(condVar, lhsVar, rhsVar);
-        expr = Vectorize(expr, [8], [1]);
-        expr = Devectorize(expr, [8], [1]);
+        expr = Pack(expr, [8], [1]);
+        expr = Unpack(expr, [8], [1]);
         TestMatchedCore(
             expr,
             new Dictionary<IVar, IValue> {
@@ -73,8 +73,8 @@ public class UnitTestVectorizeWhere : TransformTestBase
         var rhs = Testing.Rand<float>(3, 24);
         var rhsVar = new Var(new TensorType(rhs.ElementType, [dimX, 24]));
         Expr expr = Where(condVar, lhs, rhsVar);
-        expr = Vectorize(expr, [8], [1]);
-        expr = Devectorize(expr, [8], [1]);
+        expr = Pack(expr, [8], [1]);
+        expr = Unpack(expr, [8], [1]);
         var func = new Function("main", expr, [condVar, rhsVar]);
         var module = new IRModule(func);
 
@@ -85,7 +85,7 @@ public class UnitTestVectorizeWhere : TransformTestBase
                 c.Add<VectorizeWherePropagation>(MaskVectorStyle.Fat);
             });
         pmgr.RunAsync(module).Wait();
-        Assert.True(module.Entry is Function { Body: Call { Target: IR.Tensors.Devectorize, Arguments: var devectorizeArgs } }
+        Assert.True(module.Entry is Function { Body: Call { Target: IR.Tensors.Unpack, Arguments: var devectorizeArgs } }
             && devectorizeArgs[0] is Call { Target: IR.Tensors.Where });
     }
 }

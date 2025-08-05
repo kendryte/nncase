@@ -34,7 +34,7 @@ public sealed partial class VectorizeWherePropagation : RewriteRule<Pattern>
     public MaskVectorStyle MaskVectorStyle { get; }
 
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsVectorize(
+        PatternMatch.F.Tensors.IsPack(
             "vectorize",
             "caller",
             _ => true,
@@ -46,7 +46,7 @@ public sealed partial class VectorizeWherePropagation : RewriteRule<Pattern>
                 IsWildcard("lhs"),
                 IsWildcard("rhs")));
 
-    private Expr? GetReplace(Vectorize vectorize, Call callee, Expr cond, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Pack vectorize, Call callee, Expr cond, Expr lhs, Expr rhs)
     {
         var condShape = cond.CheckedShape;
         var lhsShape = lhs.CheckedShape;
@@ -89,8 +89,8 @@ public sealed partial class VectorizeWherePropagation : RewriteRule<Pattern>
         var maskElementBits = lhs.CheckedDataType.SizeInBytes * 8;
         return callee.WithArguments([
             (Where.Cond, condVectorizedAxes.Count == 0 ? cond : IR.F.Tensors.VectorizeMask(cond, MaskVectorStyle, maskElementBits, condLanes[0], condVectorizedAxes[0])),
-            (Where.X, IR.F.Tensors.Vectorize(lhs, lhsLanes.ToArray(), lhsVectorizedAxes.ToArray())),
-            (Where.Y, IR.F.Tensors.Vectorize(rhs, rhsLanes.ToArray(), rhsVectorizedAxes.ToArray())),
+            (Where.X, IR.F.Tensors.Pack(lhs, lhsLanes.ToArray(), lhsVectorizedAxes.ToArray())),
+            (Where.Y, IR.F.Tensors.Pack(rhs, rhsLanes.ToArray(), rhsVectorizedAxes.ToArray())),
         ]);
     }
 }

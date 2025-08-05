@@ -25,10 +25,7 @@ public sealed class VectorizedReduceEvaluator : IEvaluator<VectorizedReduce>, IT
         var devectorizedInput = NTTEvaluatorUtility.DevectorizeTensor(input, target.VectorizedAxes, padedNums, out _);
         var axes = target.Axes.Select(i => (long)i).ToArray();
         long keepdims = target.KeepDims ? 1 : 0;
-        foreach (var axis in target.VectorizedAxes.Reverse())
-        {
-            input = input.Devectorize(axis);
-        }
+        input = input.Unpack(target.VectorizedAxes.Count, target.VectorizedAxes);
 
         OrtKISharp.Tensor output;
         switch (target.ReduceOp)

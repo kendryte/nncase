@@ -21,7 +21,7 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <Tensor TIn, Tensor TOut, size_t AxesRank> class devectorize_impl {
+template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
   public:
     using TVec = typename TIn::element_type;
 
@@ -30,8 +30,9 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class devectorize_impl {
                               const TAxes &axes) {
         constexpr auto in_rank = TIn::rank();
         constexpr auto out_rank = TOut::rank();
-        constexpr auto elem_rank = TVec::rank();
-        constexpr auto elem_shape = TVec::shape();
+        constexpr auto elem_rank = TAxes::rank();
+        constexpr auto elem_shape =
+            TVec::shape().template slice<0, TAxes::rank()>();
 
         const auto conti_dims_input =
             contiguous_dims(input.shape(), input.strides());
@@ -40,7 +41,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class devectorize_impl {
 
         if (conti_dims_input == in_rank && conti_dims_output == out_rank &&
             AxesRank <= 2) {
-            ntt::u_devectorize(input, output, axes);
+            ntt::u_unpack(input, output, axes);
         } else {
             const auto domain = input.shape().concat(elem_shape);
             apply(domain, [&](auto index) {
@@ -64,8 +65,8 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class devectorize_impl {
 } // namespace detail
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
-void devectorize(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
-    detail::devectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
+void unpack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+    detail::unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
     impl(input, output, axes);
 }
 } // namespace nncase::ntt

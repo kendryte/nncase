@@ -119,9 +119,9 @@ void benchmark_ntt_layernorm_fixed_reduceAxis1_vectorizeAxis1() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<D1 / P, D2>);
     auto buffer_6 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1 / P, D2>);
-    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
-    vectorize(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
-    vectorize(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
+    pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
 
     // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
@@ -170,9 +170,9 @@ void benchmark_ntt_layernorm_fixed_reduceAxis2_vectorizeAxis2() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<D2 / P>);
     auto bias_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<D2 / P>);
-    ntt::vectorize(input, input_vectorized, ntt::fixed_shape_v<2>);
-    ntt::vectorize(scale, scale_vectorized, ntt::fixed_shape_v<0>);
-    ntt::vectorize(bias, bias_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(input, input_vectorized, ntt::fixed_shape_v<2>);
+    ntt::pack(scale, scale_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(bias, bias_vectorized, ntt::fixed_shape_v<0>);
     auto output_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
@@ -223,7 +223,7 @@ void benchmark_ntt_layernorm_fixed_reduceAxis2_vectorizeAxis1() {
         ntt::fixed_shape_v<D0, D1 / P, D2>);
     auto buffer_4 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1 / P, D2>);
-    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
 
     // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
@@ -275,9 +275,9 @@ void benchmark_ntt_layernorm_fixed_reduceAxis1_vectorizeAxis2() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<D1, D2 / P>);
     auto vectorized_output = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
-    vectorize(input, vectorized_input, ntt::fixed_shape_v<2>);
-    vectorize(scale, vectorized_scale, ntt::fixed_shape_v<1>);
-    vectorize(bias, vectorized_bias, ntt::fixed_shape_v<1>);
+    pack(input, vectorized_input, ntt::fixed_shape_v<2>);
+    pack(scale, vectorized_scale, ntt::fixed_shape_v<1>);
+    pack(bias, vectorized_bias, ntt::fixed_shape_v<1>);
     // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
         vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias,
@@ -410,9 +410,9 @@ void benchmark_ntt_layernorm_ranked_reduceAxis1_vectorizeAxis1() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(D1 / P, D2));
     auto buffer_6 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1 / P, D2));
-    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
-    vectorize(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
-    vectorize(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
+    pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
 
     // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
@@ -462,9 +462,9 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_vectorizeAxis2() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(D2 / P));
     auto bias_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(D2 / P));
-    ntt::vectorize(input, input_vectorized, ntt::fixed_shape_v<2>);
-    ntt::vectorize(scale, scale_vectorized, ntt::fixed_shape_v<0>);
-    ntt::vectorize(bias, bias_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(input, input_vectorized, ntt::fixed_shape_v<2>);
+    ntt::pack(scale, scale_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(bias, bias_vectorized, ntt::fixed_shape_v<0>);
     auto output_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
@@ -516,7 +516,7 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_vectorizeAxis1() {
         ntt::make_shape(D0, D1 / P, D2));
     auto buffer_4 = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1 / P, D2));
-    vectorize(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+    pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
 
     // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
@@ -568,9 +568,9 @@ void benchmark_ntt_layernorm_ranked_reduceAxis1_vectorizeAxis2() {
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(D1, D2 / P));
     auto vectorized_output = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1, D2 / P));
-    vectorize(input, vectorized_input, ntt::fixed_shape_v<2>);
-    vectorize(scale, vectorized_scale, ntt::fixed_shape_v<1>);
-    vectorize(bias, vectorized_bias, ntt::fixed_shape_v<1>);
+    pack(input, vectorized_input, ntt::fixed_shape_v<2>);
+    pack(scale, vectorized_scale, ntt::fixed_shape_v<1>);
+    pack(bias, vectorized_bias, ntt::fixed_shape_v<1>);
     // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
         vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias,

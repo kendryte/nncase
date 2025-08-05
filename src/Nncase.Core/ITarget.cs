@@ -157,6 +157,8 @@ public interface ITarget
 
     void RegisterAffineSelectionPass(IPassManager passManager, CompileOptions options);
 
+    void RegisterAutoPackingRules(IRulesAddable pass, CompileOptions options);
+
     void RegisterAutoVectorizeRules(IRulesAddable pass, CompileOptions options);
 
     void RegisterPostAutoVectorizePass(IPassManager passManager, CompileOptions options);

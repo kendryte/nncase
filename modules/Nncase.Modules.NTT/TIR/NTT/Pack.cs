@@ -15,14 +15,14 @@ namespace Nncase.TIR.NTT;
 /// <summary>
 /// Vectorize expression.
 /// </summary>
-public sealed partial class Vectorize : NTTKernelOp
+public sealed partial class Pack : NTTKernelOp
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Vectorize), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(Pack), 0, "input", ParameterKind.Input);
 
-    public static readonly ParameterInfo Output = new(typeof(Vectorize), 1, "output", ParameterKind.Input);
+    public static readonly ParameterInfo Output = new(typeof(Pack), 1, "output", ParameterKind.Input);
 
     public IRArray<int> Lanes { get; }
 

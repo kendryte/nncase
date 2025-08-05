@@ -12,11 +12,7 @@ public static class NTTEvaluatorUtility
     {
         lanes = input.Shape.TakeLast(vectorizedAxes.Count).Select(i => (int)i).ToArray();
         OrtKISharp.Tensor devectorized = input;
-        foreach (var axis in vectorizedAxes.Reverse())
-        {
-            devectorized = devectorized.Devectorize(axis);
-        }
-
+        devectorized = devectorized.Unpack(vectorizedAxes.Count, vectorizedAxes);
         var shape = devectorized.Shape.ToArray();
 
         OrtKISharp.Tensor sliced = devectorized;
@@ -46,11 +42,7 @@ public static class NTTEvaluatorUtility
         }
 
         OrtKISharp.Tensor vectorized = paded;
-        foreach (var (lane, axis) in lanes.Zip(vectorizedAxes))
-        {
-            vectorized = vectorized.Vectorize(lane, axis);
-        }
-
+        vectorized = vectorized.Pack(0, lanes, vectorizedAxes);
         return vectorized;
     }
 }

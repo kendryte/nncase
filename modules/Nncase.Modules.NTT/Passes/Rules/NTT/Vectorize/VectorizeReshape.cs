@@ -27,7 +27,7 @@ namespace Nncase.Passes.Rules.NTT;
 public sealed partial class VectorizeReshapePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsVectorize(
+        PatternMatch.F.Tensors.IsPack(
             "vectorize",
             "caller",
             _ => true,
@@ -38,7 +38,7 @@ public sealed partial class VectorizeReshapePropagation : RewriteRule<Pattern>
                 IsWildcard("input"),
                 IsRankedShape("newShape")));
 
-    private Expr? GetReplace(Vectorize vectorize, Call caller, Call callee, Expr input, RankedShape newShape)
+    private Expr? GetReplace(Pack vectorize, Call caller, Call callee, Expr input, RankedShape newShape)
     {
         var inShape = input.CheckedShape;
         var maxInputShape = CompilerServices.GetMaxShape(inShape);
@@ -58,7 +58,7 @@ public sealed partial class VectorizeReshapePropagation : RewriteRule<Pattern>
             var axis = vectorize.Axes[i];
             var lanes = vectorize.Lanes[i];
 
-            // 1. [1024] -> vectorize([8, 128], [1], [8]): <8>[128] -> <8>[8, 16]
+            // 1. [1024] -> pack([8, 128], [1], [8]): <8>[128] -> <8>[8, 16]
             foreach ((var inAxis, var newAxes) in forwardDict)
             {
                 var vectorizeAxisIndex = newAxes.IndexOf(axis);
@@ -80,7 +80,7 @@ public sealed partial class VectorizeReshapePropagation : RewriteRule<Pattern>
                 }
             }
 
-            // 2. [8, 128] -> vectorize([1024], [0], [8]): <8>[8, 16] -> <8>[128]
+            // 2. [8, 128] -> pack([1024], [0], [8]): <8>[8, 16] -> <8>[128]
             if (backwardDict.TryGetValue(axis, out var inAxes))
             {
                 // Find appropriate input axis to vectorize
@@ -122,7 +122,7 @@ public sealed partial class VectorizeReshapePropagation : RewriteRule<Pattern>
         }
 
         return IR.F.Tensors.Reshape(
-            IR.F.Tensors.Vectorize(input, vectorizeLanes.ToArray(), vectorizeAxes.ToArray()),
+            IR.F.Tensors.Pack(input, vectorizeLanes.ToArray(), vectorizeAxes.ToArray()),
             new RankedShape(rewritedNewShape));
     }
 }
@@ -135,14 +135,14 @@ public sealed partial class ReshapeDevectorizePropagation : RewriteRule<Pattern>
             "reshape",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsDevectorize(
+            PatternMatch.F.Tensors.IsUnpack(
                 "devectorize",
                 "callee",
                 _ => true,
                 IsWildcard("input")),
             IsRankedShape("newShape"));
 
-    private Expr? GetReplace(Devectorize devectorize, Call caller, Call callee, Expr input, RankedShape newShape)
+    private Expr? GetReplace(Unpack devectorize, Call caller, Call callee, Expr input, RankedShape newShape)
     {
         var maxDevectorizeedShape = CompilerServices.GetMaxShape(callee.CheckedShape);
         var maxNewShape = CompilerServices.GetMaxShape(newShape);
@@ -161,7 +161,7 @@ public sealed partial class ReshapeDevectorizePropagation : RewriteRule<Pattern>
             var axis = devectorize.Axes[i];
             var lanes = devectorize.Lanes[i];
 
-            // 1. devectorize(<8>[128], [0], [8]) -> [8, 128]: <8>[128] -> <8>[8, 16]
+            // 1. unpack(<8>[128], [0], [8]) -> [8, 128]: <8>[128] -> <8>[8, 16]
             if (forwardDict.TryGetValue(axis, out var newAxes))
             {
                 // Find appropriate new axis to vectorize
@@ -194,7 +194,7 @@ public sealed partial class ReshapeDevectorizePropagation : RewriteRule<Pattern>
                 }
             }
 
-            // 2. devectorize(<8>[8, 16], [1], [8]) -> [1024]: <8>[8, 16] -> <8>[128]
+            // 2. unpack(<8>[8, 16], [1], [8]) -> [1024]: <8>[8, 16] -> <8>[128]
             foreach ((var newAxis, var inAxes) in backwardDict)
             {
                 if (devectorizeAxes.Contains(newAxis))
@@ -223,7 +223,7 @@ public sealed partial class ReshapeDevectorizePropagation : RewriteRule<Pattern>
             }
         }
 
-        return IR.F.Tensors.Devectorize(
+        return IR.F.Tensors.Unpack(
             IR.F.Tensors.Reshape(input, new RankedShape(rewritedNewShape)),
             devectorizeLanes.ToArray(),
             devectorizeAxes.ToArray());

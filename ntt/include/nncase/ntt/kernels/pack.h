@@ -15,11 +15,11 @@
 #pragma once
 #include "../apply.h"
 #include "../tensor_traits.h"
-#include "../ukernels/u_vectorize.h"
+#include "../ukernels/u_pack.h"
 
 namespace nncase::ntt {
 namespace detail {
-template <Tensor TIn, Tensor TOut, size_t AxesRank> class vectorize_impl {
+template <Tensor TIn, Tensor TOut, size_t AxesRank> class pack_impl {
   public:
     using TElem = typename TIn::element_type;
     using TVec = typename std::decay_t<TOut>::element_type;
@@ -38,7 +38,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class vectorize_impl {
 
         if (TAxes::rank() == 2 && axes[0_dim] + 1 == axes[1_dim] &&
             conti_dims_input == in_rank && conti_dims_output == out_rank) {
-            ntt::u_vectorize2d(input, axes, output);
+            ntt::u_pack2d(input, axes, output);
         } else {
             const auto domain = output.shape().concat(lanes);
             apply(domain, [&](auto index) {
@@ -66,7 +66,7 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class vectorize_impl {
 };
 
 // 1D vectorize
-template <Tensor TIn, Tensor TOut> class vectorize_impl<TIn, TOut, 1> {
+template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
   public:
     using TVec = typename std::decay_t<TOut>::element_type;
 
@@ -141,7 +141,7 @@ template <Tensor TIn, Tensor TOut> class vectorize_impl<TIn, TOut, 1> {
             const auto rest_dims =
                 output.shape().template slice<TOut::rank() - rest_rank>();
             const auto N = rest_dims.length();
-            ntt::u_vectorize(in_p, M, N, m_strides, out_p);
+            ntt::u_pack(in_p, M, N, m_strides, out_p);
         } else if constexpr (Axis + 1 < TOut::rank()) {
             for (size_t i = 0; i < output.shape()[axis_v]; i++) {
                 apply_transpose<Axis + 1>(input, conti_dims, M, m_strides,
@@ -155,11 +155,11 @@ template <Tensor TIn, Tensor TOut> class vectorize_impl<TIn, TOut, 1> {
 } // namespace detail
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
-void vectorize(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+void pack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
     using TVec = typename std::decay_t<TOut>::element_type;
     static_assert(TVec::rank() == TAxes::rank(),
                   "Output vector rank must match axes rank");
-    detail::vectorize_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
+    detail::pack_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
     impl(input, output, axes);
 }
 } // namespace nncase::ntt

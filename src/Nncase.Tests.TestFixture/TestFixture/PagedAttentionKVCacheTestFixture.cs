@@ -271,7 +271,8 @@ public sealed class PagedAttentionKVCacheTestFixture
                 {
                     if (config.VectorizedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
                     {
-                        histOrtTensors = histOrtTensors.Vectorize(
+                        histOrtTensors = histOrtTensors.Pack(
+                            0,
                             config.Lanes[i],
                             config.VectorizedAxes[i] switch { PagedKVCacheDimKind.NumKVHeads => 1, PagedKVCacheDimKind.HeadDim => 2, _ => throw new ArgumentOutOfRangeException(nameof(config)) });
                     }

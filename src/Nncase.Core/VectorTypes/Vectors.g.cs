@@ -16,6 +16,61 @@ namespace Nncase;
 
 // NOTE fixed array not suppot generic
 
+public partial record VectorType
+{
+    public override Type CLRType => Lanes.ToArray() switch
+    {
+        [4] => typeof(Vector4<>).MakeGenericType(ElemType.CLRType),
+        [8] => typeof(Vector8<>).MakeGenericType(ElemType.CLRType),
+        [16] => typeof(Vector16<>).MakeGenericType(ElemType.CLRType),
+        [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
+        [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
+        [128] => typeof(Vector128<>).MakeGenericType(ElemType.CLRType),
+        [4, 4] => typeof(Vector4x4<>).MakeGenericType(ElemType.CLRType),
+        [4, 8] => typeof(Vector4x8<>).MakeGenericType(ElemType.CLRType),
+        [4, 16] => typeof(Vector4x16<>).MakeGenericType(ElemType.CLRType),
+        [4, 32] => typeof(Vector4x32<>).MakeGenericType(ElemType.CLRType),
+        [8, 8] => typeof(Vector8x8<>).MakeGenericType(ElemType.CLRType),
+        [16, 16] => typeof(Vector16x16<>).MakeGenericType(ElemType.CLRType),
+        [32, 16] => typeof(Vector32x16<>).MakeGenericType(ElemType.CLRType),
+        [32, 32] => typeof(Vector32x32<>).MakeGenericType(ElemType.CLRType),
+        [32, 64] => typeof(Vector32x64<>).MakeGenericType(ElemType.CLRType),
+        [32, 128] => typeof(Vector32x128<>).MakeGenericType(ElemType.CLRType),
+        [64, 32] => typeof(Vector64x32<>).MakeGenericType(ElemType.CLRType),
+        [64, 64] => typeof(Vector64x64<>).MakeGenericType(ElemType.CLRType),
+        [64, 128] => typeof(Vector64x128<>).MakeGenericType(ElemType.CLRType),
+        [128, 64] => typeof(Vector128x64<>).MakeGenericType(ElemType.CLRType),
+        _ => throw new NotSupportedException($"Unsupported vector lanes: {string.Join(", ", Lanes)}"),
+    };
+}
+
+public partial record DataType
+{
+    private static Dictionary<Type, int[]> _clrTypeLanes = new()
+    {
+        { typeof(Vector4<>), [4] },
+        { typeof(Vector8<>), [8] },
+        { typeof(Vector16<>), [16] },
+        { typeof(Vector32<>), [32] },
+        { typeof(Vector64<>), [64] },
+        { typeof(Vector128<>), [128] },
+        { typeof(Vector4x4<>), [4, 4] },
+        { typeof(Vector4x8<>), [4, 8] },
+        { typeof(Vector4x16<>), [4, 16] },
+        { typeof(Vector4x32<>), [4, 32] },
+        { typeof(Vector8x8<>), [8, 8] },
+        { typeof(Vector16x16<>), [16, 16] },
+        { typeof(Vector32x16<>), [32, 16] },
+        { typeof(Vector32x32<>), [32, 32] },
+        { typeof(Vector32x64<>), [32, 64] },
+        { typeof(Vector32x128<>), [32, 128] },
+        { typeof(Vector64x32<>), [64, 32] },
+        { typeof(Vector64x64<>), [64, 64] },
+        { typeof(Vector64x128<>), [64, 128] },
+        { typeof(Vector128x64<>), [128, 64] },
+    };
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public unsafe struct Vector4<T> : IVector<T>, IEquatable<Vector4<T>>
     where T : unmanaged, IEquatable<T>
@@ -593,6 +648,446 @@ public unsafe struct Vector4x4<T> : IVector<T>, IEquatable<Vector4x4<T>>
     public static int Height => 4;
 
     public static int Width => 4;
+
+    public static int Count => Height * Width;
+
+
+    public override string ToString()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct Vector4x8<T> : IVector<T>, IEquatable<Vector4x8<T>>
+    where T : unmanaged, IEquatable<T>
+{
+    private T _item_0_0;
+    private T _item_0_1;
+    private T _item_0_2;
+    private T _item_0_3;
+    private T _item_0_4;
+    private T _item_0_5;
+    private T _item_0_6;
+    private T _item_0_7;
+    private T _item_1_0;
+    private T _item_1_1;
+    private T _item_1_2;
+    private T _item_1_3;
+    private T _item_1_4;
+    private T _item_1_5;
+    private T _item_1_6;
+    private T _item_1_7;
+    private T _item_2_0;
+    private T _item_2_1;
+    private T _item_2_2;
+    private T _item_2_3;
+    private T _item_2_4;
+    private T _item_2_5;
+    private T _item_2_6;
+    private T _item_2_7;
+    private T _item_3_0;
+    private T _item_3_1;
+    private T _item_3_2;
+    private T _item_3_3;
+    private T _item_3_4;
+    private T _item_3_5;
+    private T _item_3_6;
+    private T _item_3_7;
+
+    static Vector4x8()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
+    public static Vector4x8<T> Create(T[] array) 
+    {
+        Vector4x8<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
+    public static Vector4x8<T> Create(T[,] array) 
+    {
+        Vector4x8<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
+    }
+
+    public T this[int i, int j]
+    {
+        get => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width + j);
+        set => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width + j) = value;
+    }
+
+    public bool Equals(Vector4x8<T> other) => AsSpan().SequenceEqual(other.AsSpan());
+
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector4x8<T> other && Equals(other);
+
+    public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
+
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
+    public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
+
+    public static int Height => 4;
+
+    public static int Width => 8;
+
+    public static int Count => Height * Width;
+
+
+    public override string ToString()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct Vector4x16<T> : IVector<T>, IEquatable<Vector4x16<T>>
+    where T : unmanaged, IEquatable<T>
+{
+    private T _item_0_0;
+    private T _item_0_1;
+    private T _item_0_2;
+    private T _item_0_3;
+    private T _item_0_4;
+    private T _item_0_5;
+    private T _item_0_6;
+    private T _item_0_7;
+    private T _item_0_8;
+    private T _item_0_9;
+    private T _item_0_10;
+    private T _item_0_11;
+    private T _item_0_12;
+    private T _item_0_13;
+    private T _item_0_14;
+    private T _item_0_15;
+    private T _item_1_0;
+    private T _item_1_1;
+    private T _item_1_2;
+    private T _item_1_3;
+    private T _item_1_4;
+    private T _item_1_5;
+    private T _item_1_6;
+    private T _item_1_7;
+    private T _item_1_8;
+    private T _item_1_9;
+    private T _item_1_10;
+    private T _item_1_11;
+    private T _item_1_12;
+    private T _item_1_13;
+    private T _item_1_14;
+    private T _item_1_15;
+    private T _item_2_0;
+    private T _item_2_1;
+    private T _item_2_2;
+    private T _item_2_3;
+    private T _item_2_4;
+    private T _item_2_5;
+    private T _item_2_6;
+    private T _item_2_7;
+    private T _item_2_8;
+    private T _item_2_9;
+    private T _item_2_10;
+    private T _item_2_11;
+    private T _item_2_12;
+    private T _item_2_13;
+    private T _item_2_14;
+    private T _item_2_15;
+    private T _item_3_0;
+    private T _item_3_1;
+    private T _item_3_2;
+    private T _item_3_3;
+    private T _item_3_4;
+    private T _item_3_5;
+    private T _item_3_6;
+    private T _item_3_7;
+    private T _item_3_8;
+    private T _item_3_9;
+    private T _item_3_10;
+    private T _item_3_11;
+    private T _item_3_12;
+    private T _item_3_13;
+    private T _item_3_14;
+    private T _item_3_15;
+
+    static Vector4x16()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
+    public static Vector4x16<T> Create(T[] array) 
+    {
+        Vector4x16<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
+    public static Vector4x16<T> Create(T[,] array) 
+    {
+        Vector4x16<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
+    }
+
+    public T this[int i, int j]
+    {
+        get => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width + j);
+        set => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width + j) = value;
+    }
+
+    public bool Equals(Vector4x16<T> other) => AsSpan().SequenceEqual(other.AsSpan());
+
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector4x16<T> other && Equals(other);
+
+    public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
+
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
+    public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
+
+    public static int Height => 4;
+
+    public static int Width => 16;
+
+    public static int Count => Height * Width;
+
+
+    public override string ToString()
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("<");
+        for (int i = 0; i < Height; i++)
+        {
+            sb.Append($"<{Nncase.Utilities.StringUtility.Join<T>(',', AsSpan(i))}>");
+            if (i < Height - 1)
+            {
+                sb.Append(",");
+            }
+        }
+        sb.Append(">");
+        return sb.ToString();
+    }
+}
+
+[StructLayout(LayoutKind.Sequential)]
+public unsafe struct Vector4x32<T> : IVector<T>, IEquatable<Vector4x32<T>>
+    where T : unmanaged, IEquatable<T>
+{
+    private T _item_0_0;
+    private T _item_0_1;
+    private T _item_0_2;
+    private T _item_0_3;
+    private T _item_0_4;
+    private T _item_0_5;
+    private T _item_0_6;
+    private T _item_0_7;
+    private T _item_0_8;
+    private T _item_0_9;
+    private T _item_0_10;
+    private T _item_0_11;
+    private T _item_0_12;
+    private T _item_0_13;
+    private T _item_0_14;
+    private T _item_0_15;
+    private T _item_0_16;
+    private T _item_0_17;
+    private T _item_0_18;
+    private T _item_0_19;
+    private T _item_0_20;
+    private T _item_0_21;
+    private T _item_0_22;
+    private T _item_0_23;
+    private T _item_0_24;
+    private T _item_0_25;
+    private T _item_0_26;
+    private T _item_0_27;
+    private T _item_0_28;
+    private T _item_0_29;
+    private T _item_0_30;
+    private T _item_0_31;
+    private T _item_1_0;
+    private T _item_1_1;
+    private T _item_1_2;
+    private T _item_1_3;
+    private T _item_1_4;
+    private T _item_1_5;
+    private T _item_1_6;
+    private T _item_1_7;
+    private T _item_1_8;
+    private T _item_1_9;
+    private T _item_1_10;
+    private T _item_1_11;
+    private T _item_1_12;
+    private T _item_1_13;
+    private T _item_1_14;
+    private T _item_1_15;
+    private T _item_1_16;
+    private T _item_1_17;
+    private T _item_1_18;
+    private T _item_1_19;
+    private T _item_1_20;
+    private T _item_1_21;
+    private T _item_1_22;
+    private T _item_1_23;
+    private T _item_1_24;
+    private T _item_1_25;
+    private T _item_1_26;
+    private T _item_1_27;
+    private T _item_1_28;
+    private T _item_1_29;
+    private T _item_1_30;
+    private T _item_1_31;
+    private T _item_2_0;
+    private T _item_2_1;
+    private T _item_2_2;
+    private T _item_2_3;
+    private T _item_2_4;
+    private T _item_2_5;
+    private T _item_2_6;
+    private T _item_2_7;
+    private T _item_2_8;
+    private T _item_2_9;
+    private T _item_2_10;
+    private T _item_2_11;
+    private T _item_2_12;
+    private T _item_2_13;
+    private T _item_2_14;
+    private T _item_2_15;
+    private T _item_2_16;
+    private T _item_2_17;
+    private T _item_2_18;
+    private T _item_2_19;
+    private T _item_2_20;
+    private T _item_2_21;
+    private T _item_2_22;
+    private T _item_2_23;
+    private T _item_2_24;
+    private T _item_2_25;
+    private T _item_2_26;
+    private T _item_2_27;
+    private T _item_2_28;
+    private T _item_2_29;
+    private T _item_2_30;
+    private T _item_2_31;
+    private T _item_3_0;
+    private T _item_3_1;
+    private T _item_3_2;
+    private T _item_3_3;
+    private T _item_3_4;
+    private T _item_3_5;
+    private T _item_3_6;
+    private T _item_3_7;
+    private T _item_3_8;
+    private T _item_3_9;
+    private T _item_3_10;
+    private T _item_3_11;
+    private T _item_3_12;
+    private T _item_3_13;
+    private T _item_3_14;
+    private T _item_3_15;
+    private T _item_3_16;
+    private T _item_3_17;
+    private T _item_3_18;
+    private T _item_3_19;
+    private T _item_3_20;
+    private T _item_3_21;
+    private T _item_3_22;
+    private T _item_3_23;
+    private T _item_3_24;
+    private T _item_3_25;
+    private T _item_3_26;
+    private T _item_3_27;
+    private T _item_3_28;
+    private T _item_3_29;
+    private T _item_3_30;
+    private T _item_3_31;
+
+    static Vector4x32()
+    {
+        if (typeof(T) == typeof(bool))
+        {
+            throw new ArgumentException("Boolean is not supported in vector type.");
+        }
+    }
+
+    public static Vector4x32<T> Create(T[] array) 
+    {
+        Vector4x32<T> vec = default;
+        var src = array.AsSpan();
+        var dest = vec.AsSpan();
+        src.CopyTo(dest);
+        return vec;
+    }
+
+    public static Vector4x32<T> Create(T[,] array) 
+    {
+        Vector4x32<T> vec = default;
+        var src = array.AsSpan2D();
+        var dest = vec.AsSpan2D();
+        src.CopyTo(dest);
+        return vec;
+    }
+
+    public T this[int i, int j]
+    {
+        get => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width + j);
+        set => Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width + j) = value;
+    }
+
+    public bool Equals(Vector4x32<T> other) => AsSpan().SequenceEqual(other.AsSpan());
+
+    public override bool Equals([NotNullWhen(true)] object obj) => obj is Vector4x32<T> other && Equals(other);
+
+    public Span<T> AsSpan() => MemoryMarshal.CreateSpan(ref Unsafe.AsRef(in _item_0_0), Count);
+
+
+    public Span<T> AsSpan(int i) => MemoryMarshal.CreateSpan(ref Unsafe.Add(ref Unsafe.AsRef(in _item_0_0), i * Width), Width);
+
+    public Span2D<T> AsSpan2D() => Span2D<T>.DangerousCreate(ref Unsafe.AsRef(in _item_0_0), Height, Width, 1);
+
+    public static int Height => 4;
+
+    public static int Width => 32;
 
     public static int Count => Height * Width;
 

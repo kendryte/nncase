@@ -29,7 +29,7 @@ namespace Nncase.Passes.Rules.NTT;
 public sealed partial class VectorizeUnaryPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsVectorize(
+        PatternMatch.F.Tensors.IsPack(
             "vectorize",
             "caller",
             _ => true,
@@ -42,7 +42,7 @@ public sealed partial class VectorizeUnaryPropagation : RewriteRule<Pattern>
     private Expr? GetReplace(Call caller, Call callee, Expr input)
     {
         return callee.WithArguments([
-            (Unary.Input, caller.WithArguments([(Vectorize.Input, input)])),
+            (Unary.Input, caller.WithArguments([(Pack.Input, input)])),
         ]);
     }
 }
@@ -55,7 +55,7 @@ public sealed partial class UnaryDevectorizePropagation : RewriteRule<Pattern>
             "unary",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsDevectorize(
+            PatternMatch.F.Tensors.IsUnpack(
                 "devectorize",
                 "callee",
                 _ => true,
@@ -64,7 +64,7 @@ public sealed partial class UnaryDevectorizePropagation : RewriteRule<Pattern>
     private Expr? GetReplace(Call caller, Call callee, Expr input)
     {
         return callee.WithArguments([
-            (Devectorize.Input, caller.WithArguments([(Unary.Input, input)])),
+            (Unpack.Input, caller.WithArguments([(Unary.Input, input)])),
         ]);
     }
 }
@@ -77,7 +77,7 @@ public sealed partial class SwishDevectorizePropagation : RewriteRule<Pattern>
             "swish",
             "caller",
             _ => true,
-            PatternMatch.F.Tensors.IsDevectorize(
+            PatternMatch.F.Tensors.IsUnpack(
                 "devectorize",
                 "callee",
                 _ => true,
@@ -86,7 +86,7 @@ public sealed partial class SwishDevectorizePropagation : RewriteRule<Pattern>
     private Expr? GetReplace(Call caller, Call callee, Expr input)
     {
         return callee.WithArguments([
-            (Devectorize.Input, caller.WithArguments([(Swish.Input, input)])),
+            (Unpack.Input, caller.WithArguments([(Swish.Input, input)])),
         ]);
     }
 }

@@ -49,6 +49,6 @@ internal class TensorsModule : IApplicationPart
         registrator.RegisterManyInterface<RankEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizeMaskEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<DevectorizeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<UnpackEvaluator>(reuse: Reuse.Singleton);
     }
 }
