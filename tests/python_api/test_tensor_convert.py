@@ -65,36 +65,6 @@ class TestTensorConversion:
     """Tensor 转换测试"""
 
     @pytest.mark.parametrize("data_name", ["2d_float32", "1d_int32", "3d_float16", "zeros", "ones"])
-    def test_numpy_to_duca_host(self, test_data, tensor_converter, data_name):
-        """测试：numpy -> DUCA host tensor"""
-        arr = test_data[data_name]
-        logger.info(f"测试 numpy -> DUCA host tensor ({data_name})")
-        
-        duca_tensor = tensor_converter.create_duca_host_tensor(arr)
-        assert duca_tensor is not None, f"创建 DUCA host tensor 失败 ({data_name})"
-        
-        # 验证数据一致性
-        converted_data = duca_tensor.to_numpy()
-        assert tensor_converter.verify_data_consistency(
-            arr, converted_data, f"numpy->DUCA host ({data_name})"
-        ), f"数据一致性验证失败 ({data_name})"
-
-    @pytest.mark.parametrize("data_name", ["2d_float32", "1d_int32", "3d_float16", "zeros", "ones"])
-    def test_numpy_to_duca_device(self, test_data, tensor_converter, data_name):
-        """测试：numpy -> DUCA device tensor"""
-        arr = test_data[data_name]
-        logger.info(f"测试 numpy -> DUCA device tensor ({data_name})")
-        
-        duca_tensor = tensor_converter.create_duca_device_tensor(arr)
-        assert duca_tensor is not None, f"创建 DUCA device tensor 失败 ({data_name})"
-        
-        # 验证数据一致性
-        converted_data = duca_tensor.to_numpy()
-        assert tensor_converter.verify_data_consistency(
-            arr, converted_data, f"numpy->DUCA device ({data_name})"
-        ), f"数据一致性验证失败 ({data_name})"
-
-    @pytest.mark.parametrize("data_name", ["2d_float32", "1d_int32", "3d_float16", "zeros", "ones"])
     def test_numpy_to_nrt(self, test_data, tensor_converter, data_name):
         """测试：numpy -> NRT tensor"""
         arr = test_data[data_name]
@@ -110,13 +80,32 @@ class TestTensorConversion:
         ), f"数据一致性验证失败 ({data_name})"
 
     @pytest.mark.parametrize("data_name", ["2d_float32", "1d_int32", "3d_float16", "zeros", "ones"])
-    def test_duca_to_nrt(self, test_data, tensor_converter, data_name):
+    def test_duca_device_to_nrt(self, test_data, tensor_converter, data_name):
         """测试：DUCA tensor -> NRT tensor"""
         arr = test_data[data_name]
-        logger.info(f"测试 DUCA -> NRT tensor ({data_name})")
+        logger.info(f"测试 DUCA device -> NRT tensor ({data_name})")
         
         # 创建 DUCA tensor
         duca_tensor = tensor_converter.create_duca_device_tensor(arr)
+        
+        # 转换为 NRT tensor
+        nrt_tensor = nrt.RuntimeTensor.from_duca(duca_tensor)
+        assert nrt_tensor is not None, f"DUCA->NRT 转换失败 ({data_name})"
+        
+        # 验证数据一致性
+        converted_data = nrt_tensor.to_numpy()
+        assert tensor_converter.verify_data_consistency(
+            arr, converted_data, f"DUCA->NRT ({data_name})"
+        ), f"数据一致性验证失败 ({data_name})"
+        
+    @pytest.mark.parametrize("data_name", ["2d_float32", "1d_int32", "3d_float16", "zeros", "ones"])
+    def test_duca_host_to_nrt(self, test_data, tensor_converter, data_name):
+        """测试：DUCA tensor -> NRT tensor"""
+        arr = test_data[data_name]
+        logger.info(f"测试 DUCA host -> NRT tensor ({data_name})")
+        
+        # 创建 DUCA tensor
+        duca_tensor = tensor_converter.create_duca_host_tensor(arr)
         
         # 转换为 NRT tensor
         nrt_tensor = nrt.RuntimeTensor.from_duca(duca_tensor)
@@ -205,7 +194,26 @@ class TestTensorConversion:
         
         # 验证数据一致性
         assert np.allclose(data_before_del, data_after_del, rtol=1e-5, atol=1e-6), \
-            f"内存生命周期测试失败 ({data_name}): 数据不一致"
+            f"[del DUCA, keep NRT] 内存生命周期测试失败 ({data_name}): 数据不一致"
+            
+        # 创建DUCA tensor
+        duca_tensor = tensor_converter.create_duca_device_tensor(arr)
+        
+        # 转换为NRT tensor
+        nrt_tensor = nrt.RuntimeTensor.from_duca(duca_tensor)
+        
+        # 检查转换后数据
+        data_before_del = duca_tensor.to_numpy()
+        
+        # 删除DUCA tensor
+        del nrt_tensor
+        
+        # 检查删除后数据是否仍然有效
+        data_after_del = duca_tensor.to_numpy()
+        
+        # 验证数据一致性
+        assert np.allclose(data_before_del, data_after_del, rtol=1e-5, atol=1e-6), \
+            f"[del NRT, keep DUCA] 内存生命周期测试失败 ({data_name}): 数据不一致"
         
         logger.success(f"✓ 内存生命周期测试通过 ({data_name})")
 
