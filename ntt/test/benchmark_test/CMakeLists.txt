@@ -38,17 +38,19 @@ file(GLOB TEST_NAMES_F32 CONFIGURE_DEPENDS
 # add fp16 test files
 file(GLOB TEST_NAMES_FP16 CONFIGURE_DEPENDS
     benchmark_ntt_fp16_binary.cpp
-    benchmark_ntt_fp16_unary.cpp
     benchmark_ntt_fp16_clamp.cpp
     benchmark_ntt_fp16_compare.cpp
     benchmark_ntt_fp16_expand.cpp
     benchmark_ntt_fp16_gather.cpp
+    benchmark_ntt_fp16_layernorm.cpp
     benchmark_ntt_fp16_matmul.cpp
     benchmark_ntt_fp16_pack.cpp
     benchmark_ntt_fp16_reduce.cpp
+    benchmark_ntt_fp16_rmsnorm.cpp
     benchmark_ntt_fp16_scatter_nd.cpp
     benchmark_ntt_fp16_slice.cpp
     benchmark_ntt_fp16_transpose.cpp
+    benchmark_ntt_fp16_unary.cpp
     benchmark_ntt_fp16_unpack.cpp
     benchmark_ntt_fp16_where.cpp
 )
