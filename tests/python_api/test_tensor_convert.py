@@ -293,7 +293,7 @@ class TestTensorConversionErrors:
         arr = np.array([1, 2, 3], dtype=np.float32)
         nrt_tensor = tensor_converter.create_nrt_tensor(arr)
 
-        with pytest.raises(Exception):  # 根据实际错误类型调整
+        with pytest.raises(ValueError):  # 根据实际错误类型调整
             nrt_tensor.to_duca("invalid_device", 1)
 
     def test_empty_array_conversion(self, tensor_converter):
