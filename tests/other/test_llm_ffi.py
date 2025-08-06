@@ -20,6 +20,7 @@ import pytest
 import torch
 import numpy as np
 import nncase
+from ml_dtypes import bfloat16
 import os
 print(os.getpid())
 
