@@ -116,6 +116,19 @@ void test_shape() {
     }
 }
 
+void test_strides() {
+    // dynamic shape strides
+    {
+        auto shape = ntt::make_shape(2_dim, 1, 3_dim); // dim1 is dynamic
+        auto strides = ntt::make_strides(3_dim, 3_dim, 1_dim);
+        assert(ntt::contiguous_dims(shape, strides) == 3);
+
+        auto shape1 = ntt::make_shape(8_dim, 1); // dim1 is dynamic
+        auto strides1 = ntt::make_strides(2_dim, 1_dim);
+        assert(ntt::contiguous_dims(shape1, strides1) == 1);
+    }
+}
+
 void test_sharding() {
     // local_index
     {
@@ -733,49 +746,56 @@ void test_unary_binary() {
     }
 
     // 2d binary
-    {// pack and broadcast
-     {auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
-    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<8>);
-    std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
-    std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
-    auto pa =
-        ntt::make_tensor<ntt::vector<float, 4, 4>>(ntt::fixed_shape_v<1, 4, 2>);
-    auto pc =
-        ntt::make_tensor<ntt::vector<float, 4, 4>>(ntt::fixed_shape_v<1, 4, 2>);
-    auto pb = ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<2>);
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1, 2>);
-    ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
-    ntt::binary<ntt::ops::add>(pa, pb, pc.view());
-}
-}
+    {
+        // pack and broadcast
+        {
+            auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
+            auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<8>);
+            std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+            std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
+            auto pa = ntt::make_tensor<ntt::vector<float, 4, 4>>(
+                ntt::fixed_shape_v<1, 4, 2>);
+            auto pc = ntt::make_tensor<ntt::vector<float, 4, 4>>(
+                ntt::fixed_shape_v<1, 4, 2>);
+            auto pb =
+                ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<2>);
+            ntt::pack(ta, pa, ntt::fixed_shape_v<1, 2>);
+            ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
+            ntt::binary<ntt::ops::add>(pa, pb, pc.view());
+        }
+    }
 
-// swish
-{
-    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
-    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
-    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    ntt::unary<ntt::ops::swish>(ta, tb);
+    // swish
+    {
+        auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
+        auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        ntt::unary<ntt::ops::swish>(ta, tb);
 
-    auto pa = ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<3, 3>);
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
-    auto pb = ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<3, 3>);
-    ntt::unary<ntt::ops::swish>(pa, pb);
-}
+        auto pa =
+            ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<3, 3>);
+        ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+        auto pb =
+            ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<3, 3>);
+        ntt::unary<ntt::ops::swish>(pa, pb);
+    }
 
-// swishb
-{
-    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
-    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<1>);
-    auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
-    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    std::iota(tb.elements().begin(), tb.elements().end(), 1.f);
-    ntt::binary<ntt::ops::swishb>(ta, tb, tc);
+    // swishb
+    {
+        auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
+        auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<1>);
+        auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        std::iota(tb.elements().begin(), tb.elements().end(), 1.f);
+        ntt::binary<ntt::ops::swishb>(ta, tb, tc);
 
-    auto pa = ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<3, 3>);
-    ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
-    auto pc = ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<3, 3>);
-    ntt::binary<ntt::ops::swishb>(pa, tb, pc);
-}
+        auto pa =
+            ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<3, 3>);
+        ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
+        auto pc =
+            ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<3, 3>);
+        ntt::binary<ntt::ops::swishb>(pa, tb, pc);
+    }
 }
 
 void test_tensor_view() {
@@ -844,6 +864,26 @@ void test_pack() {
                 assert(vb == va);
             }
         });
+    }
+
+    // fixed pack 2
+    {
+        auto dim_0 = 32_dim / 4;
+        auto seq_length = 28;
+        auto dim_1 = (seq_length + 63) / 64;
+        auto buffer_1 = ntt::make_tensor<float>(
+            ntt::make_shape(dim_0, dim_1), ntt::make_strides(2_dim, 1_dim));
+        for (size_t i = 0; i < 8_dim; i++) {
+            buffer_1(i, 0) = 3.0f;
+        }
+        auto buffer_2 = ntt::make_tensor<ntt::vector<float, 8>>(
+            ntt::make_shape(dim_0 / 8, dim_1), ntt::make_strides(0_dim, 1_dim));
+        ntt::pack(buffer_1, buffer_2, fixed_shape_v<0>);
+        for (size_t i = 0; i < 8_dim; i++) {
+            for (size_t j = 0; j < dim_1; j++) {
+                assert(buffer_2(0, j)(i) == buffer_1(i, j));
+            }
+        }
     }
 
     // fixed pack with pad
@@ -991,93 +1031,98 @@ void test_pack() {
     }
 
     // 2d binary
-    {// pack and broadcast
-     {auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
-    auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<8>);
-    std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
-    std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
-    auto pa =
-        ntt::make_tensor<ntt::vector<float, 4, 4>>(ntt::fixed_shape_v<1, 4, 2>);
-    auto pc =
-        ntt::make_tensor<ntt::vector<float, 4, 4>>(ntt::fixed_shape_v<1, 4, 2>);
-    auto pb = ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<2>);
-    ntt::pack(ta, pa, fixed_shape_v<1, 2>);
-    ntt::pack(tb, pb, fixed_shape_v<0>);
-    ntt::binary<ntt::ops::add>(pa, pb, pc.view());
-}
-}
-// unpack(fixed_shape + fixed_shape)
-{
-    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
-    auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
-    auto tb =
-        ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<1, 16, 32>);
-    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    ntt::pack(ta, tb.view(), fixed_shape_v<1>);
-    ntt::unpack(tb, tc.view(), fixed_shape_v<1>);
-    ntt::apply(tc.shape(), [&](auto index) {
-        NNCASE_UNUSED auto a = ta(index);
-        NNCASE_UNUSED auto c = tc(index);
-        assert(a == c);
-    });
-}
-// unpack(fixed_shape + ranked_shape)
-{
-    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
-    auto tb =
-        ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<1, 16, 32>);
-    auto tc = ntt::make_tensor<float>(ntt::make_shape(1, 64, 32));
+    {
+        // pack and broadcast
+        {
+            auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 8>);
+            auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<8>);
+            std::fill(ta.elements().begin(), ta.elements().end(), 1.f);
+            std::fill(tb.elements().begin(), tb.elements().end(), 1.f);
+            auto pa = ntt::make_tensor<ntt::vector<float, 4, 4>>(
+                ntt::fixed_shape_v<1, 4, 2>);
+            auto pc = ntt::make_tensor<ntt::vector<float, 4, 4>>(
+                ntt::fixed_shape_v<1, 4, 2>);
+            auto pb =
+                ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<2>);
+            ntt::pack(ta, pa, fixed_shape_v<1, 2>);
+            ntt::pack(tb, pb, fixed_shape_v<0>);
+            ntt::binary<ntt::ops::add>(pa, pb, pc.view());
+        }
+    }
 
-    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    ntt::pack(ta, tb.view(), fixed_shape_v<1>);
-    ntt::unpack(tb, tc.view(), fixed_shape_v<1>);
-    ntt::apply(tc.shape(), [&](auto index) {
-        NNCASE_UNUSED auto a = ta(index);
-        NNCASE_UNUSED auto c = tc(index);
-        assert(a == c);
-    });
-}
+    // unpack(fixed_shape + fixed_shape)
+    {
+        auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
+        auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
+        auto tb = ntt::make_tensor<ntt::vector<float, 4>>(
+            ntt::fixed_shape_v<1, 16, 32>);
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        ntt::pack(ta, tb.view(), fixed_shape_v<1>);
+        ntt::unpack(tb, tc.view(), fixed_shape_v<1>);
+        ntt::apply(tc.shape(), [&](auto index) {
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
+            assert(a == c);
+        });
+    }
 
-// vector unary
-{
-    ntt::vector<float, 8> v1(1.f);
-    NNCASE_UNUSED auto v2 = ntt::cos(v1);
-    assert(v2(0) == std::cos(1.f));
-}
+    // unpack(fixed_shape + ranked_shape)
+    {
+        auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
+        auto tb = ntt::make_tensor<ntt::vector<float, 4>>(
+            ntt::fixed_shape_v<1, 16, 32>);
+        auto tc = ntt::make_tensor<float>(ntt::make_shape(1, 64, 32));
 
-// unpack(ranked_shape + fixed_shape)
-{
-    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
-    auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
-    auto tb =
-        ntt::make_tensor<ntt::vector<float, 4>>(ntt::make_shape(1, 16, 32));
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        ntt::pack(ta, tb.view(), fixed_shape_v<1>);
+        ntt::unpack(tb, tc.view(), fixed_shape_v<1>);
+        ntt::apply(tc.shape(), [&](auto index) {
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
+            assert(a == c);
+        });
+    }
 
-    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    ntt::pack(ta, tb.view(), fixed_shape_v<1>);
-    ntt::unpack(tb, tc.view(), fixed_shape_v<1>);
-    ntt::apply(tc.shape(), [&](auto index) {
-        NNCASE_UNUSED auto a = ta(index);
-        NNCASE_UNUSED auto c = tc(index);
-        assert(a == c);
-    });
-}
+    // vector unary
+    {
+        ntt::vector<float, 8> v1(1.f);
+        NNCASE_UNUSED auto v2 = ntt::cos(v1);
+        assert(v2(0) == std::cos(1.f));
+    }
 
-// unpack(ranked_shape + ranked_shape)
-{
-    auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
-    auto tb =
-        ntt::make_tensor<ntt::vector<float, 4>>(ntt::make_shape(1, 16, 32));
-    auto tc = ntt::make_tensor<float>(ntt::make_shape(1, 64, 32));
+    // unpack(ranked_shape + fixed_shape)
+    {
+        auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
+        auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
+        auto tb =
+            ntt::make_tensor<ntt::vector<float, 4>>(ntt::make_shape(1, 16, 32));
 
-    std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
-    ntt::pack(ta, tb.view(), fixed_shape_v<1>);
-    ntt::unpack(tb, tc.view(), fixed_shape_v<1>);
-    ntt::apply(tc.shape(), [&](auto index) {
-        NNCASE_UNUSED auto a = ta(index);
-        NNCASE_UNUSED auto c = tc(index);
-        assert(a == c);
-    });
-}
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        ntt::pack(ta, tb.view(), fixed_shape_v<1>);
+        ntt::unpack(tb, tc.view(), fixed_shape_v<1>);
+        ntt::apply(tc.shape(), [&](auto index) {
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
+            assert(a == c);
+        });
+    }
+
+    // unpack(ranked_shape + ranked_shape)
+    {
+        auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
+        auto tb =
+            ntt::make_tensor<ntt::vector<float, 4>>(ntt::make_shape(1, 16, 32));
+        auto tc = ntt::make_tensor<float>(ntt::make_shape(1, 64, 32));
+
+        std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
+        ntt::pack(ta, tb.view(), fixed_shape_v<1>);
+        ntt::unpack(tb, tc.view(), fixed_shape_v<1>);
+        ntt::apply(tc.shape(), [&](auto index) {
+            NNCASE_UNUSED auto a = ta(index);
+            NNCASE_UNUSED auto c = tc(index);
+            assert(a == c);
+        });
+    }
 }
 
 void test_im2col() {
@@ -1490,7 +1535,8 @@ int main() {
     nncapi->compile_session_create(target.get(), compile_options.get());
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
 #endif
-
+    test_shape();
+    test_strides();
     test_matmul_normal();
     test_matmul_transpose_b();
     test_caching();
