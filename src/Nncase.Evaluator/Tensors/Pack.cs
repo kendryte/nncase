@@ -17,18 +17,21 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.Tensors;
 
-public sealed class VectorizeEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>, IEvaluator<Pack>
+public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>, IEvaluator<Pack>
 {
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pack target)
     {
         if (context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E5M2)
         {
-            var input = context.GetArgumentValue(target, Pack.Input).AsTensor().CastElement<float>();
-            var inputOrt = input.ToOrtTensor();
+            var input = context.GetArgumentValueAsTensor(target, Pack.Input);
+            var inputCasted = input.CastElement<float>();
+            var inputOrt = inputCasted.ToOrtTensor();
             inputOrt = inputOrt.Pack(0, target.Lanes, target.Axes);
             var output = inputOrt.ToTensor().CastElementTo(context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType);
-            return Value.FromTensor(output.CastTo(TypeInference.PackType(input.ElementType, target.Lanes), CastMode.Reinterpret));
+            output = output.CastTo(TypeInference.PackType(input.ElementType, target.Lanes), CastMode.Reinterpret);
+            output = output.Squeeze(output.Rank - 1);
+            return Value.FromTensor(output);
         }
         else
         {

@@ -47,7 +47,7 @@ internal class TensorsModule : IApplicationPart
         registrator.RegisterManyInterface<FixShapeEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<BucketPadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<RankEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<VectorizeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PackEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizeMaskEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UnpackEvaluator>(reuse: Reuse.Singleton);
     }
