@@ -241,7 +241,7 @@ class TestTensorConversion:
             arr, final_array, "完整转换链"
         ), "完整转换链数据一致性验证失败"
 
-# 针对大数组的性能测试
+# Performance tests for large arrays
 
 
 class TestTensorConversionPerformance:
