@@ -310,6 +310,6 @@ class TestTensorConversionErrors:
             pytest.skip(f"空数组转换不支持: {e}")
 
 
-# 如果直接运行此文件，执行所有测试
+# If this file is run directly, execute all tests
 if __name__ == "__main__":
     pytest.main(['-vvs', __file__, '--tb=short'])
