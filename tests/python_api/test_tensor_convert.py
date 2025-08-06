@@ -32,7 +32,7 @@ def tensor_converter():
     """创建 TensorConversionTester 实例"""
     return TensorConversionTester()
 
-# 将原来的类改为辅助类
+# Convert the original class to a helper class
 
 
 class TensorConversionTester:
