@@ -119,11 +119,13 @@ void test_shape() {
 void test_strides() {
     // dynamic shape strides
     {
-        NNCASE_UNUSED auto shape = ntt::make_shape(2_dim, 1, 3_dim); // dim1 is dynamic
+        NNCASE_UNUSED auto shape =
+            ntt::make_shape(2_dim, 1, 3_dim); // dim1 is dynamic
         NNCASE_UNUSED auto strides = ntt::make_strides(3_dim, 3_dim, 1_dim);
         assert(ntt::contiguous_dims(shape, strides) == 3);
 
-        NNCASE_UNUSED auto shape1 = ntt::make_shape(8_dim, 1); // dim1 is dynamic
+        NNCASE_UNUSED auto shape1 =
+            ntt::make_shape(8_dim, 1); // dim1 is dynamic
         NNCASE_UNUSED auto strides1 = ntt::make_strides(2_dim, 1_dim);
         assert(ntt::contiguous_dims(shape1, strides1) == 1);
     }
