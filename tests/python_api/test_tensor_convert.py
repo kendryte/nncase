@@ -16,7 +16,7 @@ logger.add(
 
 @pytest.fixture
 def test_data():
-    """准备不同类型的测试数据"""
+    """Prepare different types of test data."""
     return {
         "2d_float32": np.array([[1, 2, 3], [4, 5, 6]], dtype=np.float32),
         "1d_int32": np.array([1, 2, 3, 4, 5], dtype=np.int32),
