@@ -15,6 +15,7 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/vector_storage.h"
+#include "nncase/ntt/dimension.h"
 #include "tensor_traits.h"
 #include <type_traits>
 
@@ -45,8 +46,11 @@ class basic_vector
         return Lanes{}.template at<Index>();
     }
 
-    static basic_vector<T, Lanes> from_scalar(T value) noexcept;
-    static basic_vector<T, Lanes> unaligned_load_from(const T *ptr) noexcept;
+    template <ScalarOrVector U>
+    static basic_vector<T, Lanes> from_scalar(U value) noexcept;
+
+    template <ScalarOrVector U>
+    static basic_vector<T, Lanes> unaligned_load_from(const U *ptr) noexcept;
 
     constexpr basic_vector() noexcept = default;
     constexpr basic_vector(const buffer_type &buffer) noexcept
@@ -118,4 +122,14 @@ template <Vector T, size_t... Lanes> struct replace_lanes_type {
 
 template <Vector T, size_t... Lanes>
 using replace_lanes_t = typename replace_lanes_type<T, Lanes...>::type;
+
+template <class T> struct vector_rank {
+    static constexpr auto value = dim_zero;
+};
+
+template <Vector T> struct vector_rank<T> {
+    static constexpr auto value = fixed_dim_v<T::rank()>;
+};
+
+template <class T> constexpr inline auto vector_rank_v = vector_rank<T>::value;
 } // namespace nncase::ntt

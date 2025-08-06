@@ -554,6 +554,13 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// <returns>Memory handle.</returns>
     public abstract MemoryHandle PinBuffer();
 
+    /// <summary>
+    /// Reshapes the current tensor to new dimensions, using the same backing storage.
+    /// </summary>
+    /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
+    /// <returns>A new tensor that reinterprets backing Buffer of this tensor with different dimensions.</returns>
+    public abstract Tensor Reshape(ReadOnlySpan<long> dimensions);
+
     /// <inheritdoc/>
     public IEnumerator GetEnumerator()
     {

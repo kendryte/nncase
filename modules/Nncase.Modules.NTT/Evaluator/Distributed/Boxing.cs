@@ -101,6 +101,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                         cost = new Cost()
                         {
                             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(distributedType),
+                            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(distributedType),
                         };
                         break;
                 }
@@ -112,6 +113,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                     default:
                         cost = new Cost()
                         {
+                            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(distributedType),
                             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(distributedType),
                             [CostFactorNames.Synchronization] = synchronizeCost,
                         };

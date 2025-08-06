@@ -16,6 +16,7 @@
 #include "../apply.h"
 #include "../tensor_traits.h"
 #include "../ukernels/u_pack.h"
+#include "../vector.h"
 
 namespace nncase::ntt {
 namespace detail {
@@ -157,7 +158,8 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
 void pack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
     using TVec = typename std::decay_t<TOut>::element_type;
-    static_assert(TVec::rank() == TAxes::rank(),
+    static_assert(TVec::rank() ==
+                      vector_rank_v<typename TIn::value_type> + TAxes::rank(),
                   "Output vector rank must match axes rank");
     detail::pack_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
     impl(input, output, axes);

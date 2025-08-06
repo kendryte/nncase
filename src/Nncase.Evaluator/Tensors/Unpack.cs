@@ -21,7 +21,12 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
     {
         var dt = context.CurrentCall.Arguments[Unpack.Input.Index].CheckedDataType;
         var elementType = dt is VectorType vt ? vt.ElemType : dt;
-        var oldLanesCount = ((VectorType)dt).Lanes.Count;
+        var oldLanesCount = dt switch
+        {
+            VectorType vt2 => vt2.Lanes.Count,
+            MaskVectorType => 1,
+            _ => throw new InvalidOperationException($"Unsupported input type: {dt}"),
+        };
         if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
         {
             var newType = new VectorType(DataTypes.UInt8, target.Lanes.ToArray());

@@ -474,7 +474,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var post = IR.F.Distributed.Boxing(boxed, inputType);
         post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };
-        await RunCases($"Theory{count}", feedDict, new[] { post });
+        await RunCases($"Theory{count}", feedDict, new[] { post }, enableAutoDist: false);
     }
 
     [Theory]
@@ -1898,7 +1898,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
-    internal async Task RunCases(string dumpDir, Dictionary<IVar, IValue> feedDict, IEnumerable<BaseExpr> posts, Dictionary<IVar, IValue>? feedDictRT = null)
+    internal async Task RunCases(string dumpDir, Dictionary<IVar, IValue> feedDict, IEnumerable<BaseExpr> posts, Dictionary<IVar, IValue>? feedDictRT = null, bool enableAutoDist = true)
     {
         var postArray = posts.ToArray();
         using var pinner = new ExprPinner(postArray);
@@ -1908,11 +1908,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
             System.Console.WriteLine(CompilerServices.Print(postArray[i]));
 #endif
             var kernelCase = new CpuKernelCase($"Case{i}", new Fusion("kernel", CPUTarget.Kind, postArray[i], feedDict.Keys.ToArray()), feedDict.Keys.ToArray(), feedDict.Values.Select(v => v.AsTensor()).ToArray(), feedDictRT?.Values.Select(v => v.AsTensor()).ToArray() ?? []);
-            await Run(dumpDir, kernelCase);
+            await Run(dumpDir, kernelCase, enableAutoDist: enableAutoDist);
         }
     }
 
-    internal async Task Run(string dumpDir, CpuKernelCase kernelCase)
+    internal async Task Run(string dumpDir, CpuKernelCase kernelCase, bool enableAutoDist = true)
     {
         using var dumpScope = new Diagnostics.DumpScope(Path.Join(dumpDir, kernelCase.Name), CompileOptions.DumpFlags);
 
@@ -1947,7 +1947,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             }
         }
 #endif
-        await Compile(module);
+        await Compile(module, enableAutoDist: enableAutoDist);
         var (kmodel_path, _) = Testing.BuildKModel("test", module, CompileSession, false);
         Tensor[] actuals;
         if (kernelCase.RTInputs.Any())
@@ -1974,12 +1974,16 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
     }
 
-    private async Task Compile(IRModule module)
+    private async Task Compile(IRModule module, bool enableAutoDist = true)
     {
         var pmgr = CompileSession.CreatePassManager("pmgr");
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
-        compiler.AutoDistributedPass(pmgr);
+        if (enableAutoDist)
+        {
+            compiler.AutoDistributedPass(pmgr);
+        }
+
         compiler.AutoTilingPass(pmgr);
         compiler.TIRPass(pmgr);
         await pmgr.RunAsync(module);
