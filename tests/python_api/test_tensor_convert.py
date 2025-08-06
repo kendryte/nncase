@@ -282,7 +282,7 @@ class TestTensorConversionPerformance:
             large_array, result_array, f"大数组转换 ({size}x{size})"
         ), f"大数组转换数据一致性验证失败 ({size}x{size})"
 
-# 错误处理测试
+# Error handling tests
 
 
 class TestTensorConversionErrors:
