@@ -11,7 +11,7 @@ logger.add(
     format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level} | {message}"
 )
 
-# 测试数据作为 pytest fixture
+# Test data as pytest fixture
 
 
 @pytest.fixture
