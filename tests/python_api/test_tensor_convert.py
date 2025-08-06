@@ -36,7 +36,7 @@ def tensor_converter():
 
 
 class TensorConversionTester:
-    """辅助类：处理tensor转换逻辑"""
+    """Helper class: handles tensor conversion logic"""
 
     def verify_data_consistency(self, original, converted, test_name):
         """验证数据一致性"""
