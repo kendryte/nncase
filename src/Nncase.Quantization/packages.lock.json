@@ -37,28 +37,28 @@
       },
       "Google.OrTools.runtime.linux-arm64": {
         "type": "Transitive",
-        "resolved": "9.12.4544",
-        "contentHash": "uy+/dHt1/6Ya1BrwEl/w6wnCE53nacSeXZNhL0lxEkAZMEyOVvOz9RrnsEBH292U/fK4dbCzZi/g+PmX9lt5dA=="
+        "resolved": "9.14.6206",
+        "contentHash": "3/he2Q/VkhLDH82/Sw6ieQUb1zMUbs6ZdhhDI2DE6mXqjeUa3lX8caSIyC+IgyXwjAN3K5MaOOLJ8QX22W4yGQ=="
       },
       "Google.OrTools.runtime.linux-x64": {
         "type": "Transitive",
-        "resolved": "9.12.4544",
-        "contentHash": "XbP1qGmWEtvylMwsnvZGu+ezvAy+8RFc33TLkFj5eXxe6jEGawpMklsNZawWiReiBDOy0iV71iryaFkiYkrvbA=="
+        "resolved": "9.14.6206",
+        "contentHash": "rldhqtf/OOBifPEoASjAv6qdOlBGSj7HXTgvyKohsA8q0ySCphZOJpYfWoO6Art0r+3FcrldWRoZs0E4iuNQZg=="
       },
       "Google.OrTools.runtime.osx-arm64": {
         "type": "Transitive",
-        "resolved": "9.12.4544",
-        "contentHash": "rOeb2cNqVlTR8RsTFonuLL/9Xw6MKHrivPnJeoDHPYpYuyYECoTLfbk962DtGqFNq5EB9euWZ5VAu4+GlZF9aw=="
+        "resolved": "9.14.6206",
+        "contentHash": "Kp370X4Cmen8Zno6btH45x+qUIG0vT3OaxEgMiezIjCL4nesSO4XTRhKUQwKP5DYmWzSMdfS/ZJUa5rM8L+iAw=="
       },
       "Google.OrTools.runtime.osx-x64": {
         "type": "Transitive",
-        "resolved": "9.12.4544",
-        "contentHash": "ZBpNymftPoBIghMU9DZS8yWSq3MwLaW/ulIPcX4JOKsd0zWk9Bkfk8Ty8tCKA+ptFqKCwoJNOiiIWxVRVwssSw=="
+        "resolved": "9.14.6206",
+        "contentHash": "VFZkhe6NjrkOkVjKrQXdBgwWCKK3HrqtgSqTIgNrpM30Gb36cQuszlPZxoc6JsbTHSFJFvImUr2qlg2S4CTrXg=="
       },
       "Google.OrTools.runtime.win-x64": {
         "type": "Transitive",
-        "resolved": "9.12.4544",
-        "contentHash": "WeYUfkWVuMurRf7ZJQjLwovNs9b77nYqBRzonan0JIOFFau5WJLtkzgjCimUJ2i1yXTFvBFr5o1XWkMt7nwEPw=="
+        "resolved": "9.14.6206",
+        "contentHash": "/2XtRueL9f14BOnTjvzcIGmFXZfIYw/a5MOgJ/UDwBW9iNBgfnoHyzcTbZ0U7W5Oiex+BJtOdwekkmmvSAX1Hg=="
       },
       "libisl.linux-x64": {
         "type": "Transitive",
@@ -178,7 +178,7 @@
           "CommunityToolkit.HighPerformance": "[8.2.2, )",
           "DryIoc.dll": "[5.4.3, )",
           "GiGraph.Dot": "[3.0.1, )",
-          "Google.OrTools": "[9.12.4544, )",
+          "Google.OrTools": "[9.14.6206, )",
           "ISLSharp": "[1.0.4, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[8.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.1, )",
@@ -192,7 +192,7 @@
         "type": "Project",
         "dependencies": {
           "GiGraph.Dot": "[3.0.1, )",
-          "Google.OrTools": "[9.12.4544, )",
+          "Google.OrTools": "[9.14.6206, )",
           "NetFabric.Hyperlinq": "[3.0.0-beta48, )",
           "Nncase.Core": "[1.0.0, )",
           "Nncase.Evaluator": "[1.0.0, )",
@@ -245,23 +245,23 @@
       },
       "Google.OrTools": {
         "type": "CentralTransitive",
-        "requested": "[9.12.4544, )",
-        "resolved": "9.12.4544",
-        "contentHash": "knKqAkgDYU4WaKMDa9Ws8095oSZ5h34ZZuSRwJxuN3VfXbyLpUHUDIOU9YNzeqJUfPfZAZdagN/ga3D8LcNBEA==",
+        "requested": "[9.14.6206, )",
+        "resolved": "9.14.6206",
+        "contentHash": "HLZCX691VXzR5x6YAHUxHvxHC+KyXJIiqKiS/Fu/g23W8XZgmfSGctnchVkrUT8a9Sosyvp1G0GQlV/i9PdVNQ==",
         "dependencies": {
-          "Google.OrTools.runtime.linux-arm64": "9.12.4544",
-          "Google.OrTools.runtime.linux-x64": "9.12.4544",
-          "Google.OrTools.runtime.osx-arm64": "9.12.4544",
-          "Google.OrTools.runtime.osx-x64": "9.12.4544",
-          "Google.OrTools.runtime.win-x64": "9.12.4544",
-          "Google.Protobuf": "3.29.3"
+          "Google.OrTools.runtime.linux-arm64": "9.14.6206",
+          "Google.OrTools.runtime.linux-x64": "9.14.6206",
+          "Google.OrTools.runtime.osx-arm64": "9.14.6206",
+          "Google.OrTools.runtime.osx-x64": "9.14.6206",
+          "Google.OrTools.runtime.win-x64": "9.14.6206",
+          "Google.Protobuf": "3.31.1"
         }
       },
       "Google.Protobuf": {
         "type": "CentralTransitive",
         "requested": "[3.27.3, )",
-        "resolved": "3.29.3",
-        "contentHash": "t7nZFFUFwigCwZ+nIXHDLweXvwIpsOXi+P7J7smPT/QjI3EKxnCzTQOhBqyEh6XEzc/pNH+bCFOOSjatrPt6Tw=="
+        "resolved": "3.31.1",
+        "contentHash": "gSnJbUmGiOTdWddPhqzrEscHq9Ls6sqRDPB9WptckyjTUyx70JOOAaDLkFff8gManZNN3hllQ4aQInnQyq/Z/A=="
       },
       "ISLSharp": {
         "type": "CentralTransitive",
