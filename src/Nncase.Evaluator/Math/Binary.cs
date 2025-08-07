@@ -73,6 +73,11 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             }
         }
 
+        if (!DistributedUtility.IsDistributable(ndsbp))
+        {
+            return new InvalidType("not support binary sbp.");
+        }
+
         return new DistributedType(tensorType, ndsbp, a.Placement);
     }
 
