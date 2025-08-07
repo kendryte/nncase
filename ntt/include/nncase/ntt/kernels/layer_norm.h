@@ -24,10 +24,10 @@ namespace nncase::ntt {
 namespace packed_layer_norm_detail {
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
-          FixedDimensions PackedAxes, FixedDimensions PadedNums,
+          FixedDimensions PackedAxes, Dimensions PadedNums,
           FixedDimension TAxis>
 void within_axis_pack_impl(const TIn &input, const TScale &scale,
-                           const TBias &bias, TOut &&output, const TEp &epsilon,
+                           const TBias &bias, TOut &output, const TEp &epsilon,
                            const PackedAxes &, const PadedNums &, const TAxis &,
                            const bool use_mean = true) {
 
@@ -99,7 +99,7 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
           FixedDimension TAxis, FixedDimensions PackedAxes = shape_t<>,
-          FixedDimensions PadedNums = shape_t<>>
+          Dimensions PadedNums = shape_t<>>
 void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        TOut &&output, const TEp &epsilon,
                        const TAxis &axis = -1_dim,
@@ -107,9 +107,6 @@ void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
                        const PadedNums &padedNums = {},
                        const bool use_mean = true) {
     static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
-    if constexpr (PadedNums::rank() == 1) {
-        static_assert(PadedNums{}[0_dim] == 0, "not support padding");
-    }
 
     packed_layer_norm_detail::within_axis_pack_impl<
         TIn, TScale, TBias, TOut, TEp, PackedAxes, PadedNums, TAxis>(

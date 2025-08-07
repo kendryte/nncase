@@ -356,11 +356,11 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     }
 
                     break;
-                case TIR.NTT.PackedLayerNorm packedLayerNorm:
+                case TIR.NTT.PackedLayerNorm lm:
                     {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedLayerNorm>(packedLayerNorm)
+                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedLayerNorm>(lm)
                         {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
+                            Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).Concat(lm.PadedNums.Select(Visit).Select(x => new KernelArgument { Symbol = x })).ToArray(),
                             Args = args.ToArray(),
                         }).Result);
                     }
