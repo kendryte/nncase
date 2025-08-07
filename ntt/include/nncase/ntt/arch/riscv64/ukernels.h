@@ -39,6 +39,7 @@ SPECIALIZE_U_UNARY(neg, 32)
 SPECIALIZE_U_UNARY(round, 16)
 SPECIALIZE_U_UNARY(sign, 8)
 SPECIALIZE_U_UNARY(square, 32)
+SPECIALIZE_U_UNARY(sqrt, 32)
 
 #undef SPECIALIZE_U_UNARY
 
@@ -480,6 +481,67 @@ struct u_unary<ntt::ops::square<vector<float, NTT_VLEN / 32>>,
                 "vfmul.vv v8, v8, v8\n"
                 "vfmul.vv v16, v16, v16\n"
                 "vfmul.vv v24, v24, v24\n"
+
+                "vse32.v v0,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vse32.v v8,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vse32.v v16,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+                "vse32.v v24,  (%[output])\n"
+                "add %[output], %[output], %[out_strides]\n"
+
+                : [input] "+r"(input), [output] "+r"(output)
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
+                : "v0", "v8", "v16", "v24", "memory");
+
+            count -= unroll;
+        }
+
+        for (size_t i = 0; i < count; i++) {
+            *output = op(*input);
+            input += in_stride;
+            output += out_stride;
+        }
+    }
+};
+
+template <>
+struct u_unary<ntt::ops::sqrt<vector<float, NTT_VLEN / 32>>,
+               vector<float, NTT_VLEN / 32>, true> {
+  public:
+    void operator()(const ntt::ops::sqrt<vector<float, NTT_VLEN / 32>> &op,
+                    const vector<float, NTT_VLEN / 32> *input, size_t in_stride,
+                    vector<float, NTT_VLEN / 32> *output, size_t out_stride,
+                    size_t count) noexcept {
+        using policy_t =
+            u_unary_policy<ntt::ops::sqrt<vector<float, NTT_VLEN / 32>>,
+                           vector<float, NTT_VLEN / 32>, true>;
+        constexpr auto unroll = policy_t::unroll;
+        constexpr auto lmul = 8;
+        constexpr auto vl = NTT_VLEN / 32 * lmul;
+        constexpr auto unit = sizeof(vector<float, vl>);
+        auto in_strides = in_stride * unit;
+        auto out_strides = out_stride * unit;
+
+        while (count / unroll) {
+
+            asm("vsetvli zero, %[vl], e32, m8, ta, ma\n" ::[vl] "r"(vl));
+            asm volatile(
+
+                "vle32.v v0,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vle32.v v8,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vle32.v v16,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+                "vle32.v v24,  (%[input])\n"
+                "add %[input], %[input], %[in_strides]\n"
+
+                "vfsqrt.v v0, v0\n"
+                "vfsqrt.v v8, v8\n"
+                "vfsqrt.v v16, v16\n"
+                "vfsqrt.v v24, v24\n"
 
                 "vse32.v v0,  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
