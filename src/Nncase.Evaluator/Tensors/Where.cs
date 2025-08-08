@@ -182,6 +182,11 @@ public class WhereEvaluator : IEvaluator<Where>, ITypeInferencer<Where>, ICostEv
             ndsbp[i] = policyOut!;
         }
 
+        if (!DistributedUtility.IsDistributable(ndsbp))
+        {
+            return invalid;
+        }
+
         return new DistributedType(targetType, ndsbp, cond.Placement);
     }
 
