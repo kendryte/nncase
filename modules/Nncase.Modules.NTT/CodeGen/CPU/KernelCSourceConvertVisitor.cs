@@ -360,7 +360,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     {
                         WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/VectorizedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.VectorizedLayerNorm>(vectorizedLayerNorm)
                         {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
+                            Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).Concat(vectorizedLayerNorm.PadedNums.Select(Visit).Select(x => new KernelArgument { Symbol = x })).ToArray(),
                             Args = args.ToArray(),
                         }).Result);
                     }

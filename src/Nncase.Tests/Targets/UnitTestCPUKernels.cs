@@ -656,6 +656,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
         targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 40), hierarchy.Length).ToArray();
         targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
         targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
@@ -679,6 +680,38 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var rule = new Passes.Rules.NTT.VectorizeUnary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 101, 256 }, 1, new[] { 8 }, 0, 0 })]
+    [InlineData(new object[] { new long[] { 13, 64, 256 }, 2, new[] { 2, 4 }, 0, 1 })]
+    public async Task TestDynamicLayerNorm(long[] shape, int axis, int[] hierarchy, int dynamicAxis, int count)
+    {
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 40), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var dimVar = new DimVar("seq_len")
+        {
+            Metadata = new() { Range = new(1, 128) },
+        };
+        var inputShape = new RankedShape(Enumerable.Range(0, shape.Length).Select(i => dynamicAxis == i ? dimVar : (Dimension)shape[i]).ToArray());
+        var input = new Var(new TensorType(DataTypes.Float32, inputShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(input, inputShape.ToArray());
+
+        var pre = IR.F.NN.LayerNorm(axis, 1e-6f, input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, new RankedShape(inputShape[axis])).Evaluate().AsTensor(), IR.F.Random.Normal(DataTypes.Float32, 0, 1, 2, new RankedShape(inputShape[axis])).Evaluate().AsTensor(), false);
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
+            { dimVar, Value.FromTensor(shape[dynamicAxis]) },
+        };
+
+        var rule = new Passes.Rules.NTT.VectorizeLayerNorm(Rank, Lane);
         CompilerServices.TryMatch(pre, rule.Pattern, out var result);
         var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
         await RunCases($"Theory{count}", feedDict, posts);

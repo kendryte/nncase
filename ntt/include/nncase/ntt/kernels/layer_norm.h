@@ -24,12 +24,13 @@ namespace nncase::ntt {
 namespace vectorized_layer_norm_detail {
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
-          FixedDimensions VectorizedAxes, FixedDimensions PadedNums,
+          FixedDimensions VectorizedAxes, Dimensions PadedNums,
           FixedDimension TAxis>
 void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
-                           const TBias &bias, TOut &&output, const TEp &epsilon,
-                           const VectorizedAxes &, const PadedNums &, const TAxis &,
-                           const bool use_mean = true) {
+                                const TBias &bias, TOut &output,
+                                const TEp &epsilon, const VectorizedAxes &,
+                                const PadedNums &, const TAxis &,
+                                const bool use_mean = true) {
 
     using TElem = typename TIn::element_type;
     auto input_shape = input.shape();
@@ -45,8 +46,8 @@ void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
         input_shape.template slice<(size_t)axis_value>().length();
 
     constexpr VectorizedAxes vectorized_axes_temp;
-    constexpr bool UseVectorReduce =
-        vectorized_axes_temp.rank() == 1 && vectorized_axes_temp[0] >= axis_value;
+    constexpr bool UseVectorReduce = vectorized_axes_temp.rank() == 1 &&
+                                     vectorized_axes_temp[0] >= axis_value;
 
     TElem finner_size = (TElem)inner_size;
     if constexpr (UseVectorReduce) {
@@ -99,17 +100,15 @@ void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
           FixedDimension TAxis, FixedDimensions VectorizedAxes = shape_t<>,
-          FixedDimensions PadedNums = shape_t<>>
-void vectorized_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
-                       TOut &&output, const TEp &epsilon,
-                       const TAxis &axis = -1_dim,
-                       const VectorizedAxes &vectorizedAxes = {},
-                       const PadedNums &padedNums = {},
-                       const bool use_mean = true) {
-    static_assert(VectorizedAxes::rank() < 2, "currently not support 2d vectorize.");
-    if constexpr (PadedNums::rank() == 1) {
-        static_assert(PadedNums{}[0_dim] == 0, "not support padding");
-    }
+          Dimensions PadedNums = shape_t<>>
+void vectorized_layer_norm(const TIn &input, const TScale &scale,
+                           const TBias &bias, TOut &&output, const TEp &epsilon,
+                           const TAxis &axis = -1_dim,
+                           const VectorizedAxes &vectorizedAxes = {},
+                           const PadedNums &padedNums = {},
+                           const bool use_mean = true) {
+    static_assert(VectorizedAxes::rank() < 2,
+                  "currently not support 2d packing.");
 
     vectorized_layer_norm_detail::within_axis_vectorize_impl<
         TIn, TScale, TBias, TOut, TEp, VectorizedAxes, PadedNums, TAxis>(

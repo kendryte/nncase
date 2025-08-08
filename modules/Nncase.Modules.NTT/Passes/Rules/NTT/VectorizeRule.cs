@@ -1646,7 +1646,7 @@ public sealed class VectorizeLayerNorm : VectorizeRule
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
         var pshape = scale.CheckedShape;
-        var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padsInput), lanes, vectorizedAxes);
+        var packedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padedNums), lanes, vectorizedAxes);
 
         var pAxes = vectorizedAxes.Where(i => i >= op.Axis).Select(i => i - op.Axis).ToArray();
         var vectorizedScale = VectorizeUtility.PadForVectorize(scale, pshape, pAxes, lanes, 0f, out var padsScale);
@@ -1661,11 +1661,13 @@ public sealed class VectorizeLayerNorm : VectorizeRule
             vectorizedBias = IR.F.Tensors.Pack(vectorizedBias, Enumerable.Repeat(lanes[0], pAxes.Length).ToArray(), pAxes);
         }
 
-        var layernorm = IR.F.NTT.VectorizedLayerNorm(vectorizedInput, vectorizedScale, vectorizedBias, op.Axis, op.Epsilon, op.UseMean, vectorizedAxes, new RankedShape(padsInput));
+        var layernorm = IR.F.NTT.VectorizedLayerNorm(packedInput, vectorizedScale, vectorizedBias, op.Axis, op.Epsilon, op.UseMean, vectorizedAxes, new RankedShape(padedNums));
 
-        if (layernorm.CheckedType is not InvalidType)
+        // not support pad on reduction axes.
+        if (layernorm.CheckedType is not InvalidType &&
+            !Enumerable.Range(0, vectorizedAxes.Length).Any(i => vectorizedAxes[i] >= op.Axis && padedNums[i] != new DimConst(0)))
         {
-            var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(layernorm, lanes, vectorizedAxes), inShape, padsInput);
+            var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(layernorm, lanes, vectorizedAxes), inShape, padedNums);
             rets.Add(post);
         }
 

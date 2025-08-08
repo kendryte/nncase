@@ -49,26 +49,45 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return GenerateBinary(binary.BinaryOp, arguments, output);
             case IR.Tensors.Bitcast bitcast:
                 return GenerateBitcast((Expr)arguments[0], ref output, bitcast.NewType);
-            case IR.Tensors.Pack vectorize:
-                return TIR.F.NTT.Pack((Expr)arguments[0], output, vectorize.Lanes, vectorize.Axes);
-            case IR.Tensors.VectorizeMask vectorize:
-                return TIR.F.NTT.Pack((Expr)arguments[0], output, new[] { vectorize.Lanes }, new[] { vectorize.Axis });
-            case IR.Tensors.Unpack devectorize:
-                return TIR.F.NTT.Unpack((Expr)arguments[0], output, devectorize.Lanes, devectorize.Axes);
+            case IR.Tensors.Pack pack:
+                return TIR.F.NTT.Pack((Expr)arguments[0], output, pack.Lanes, pack.Axes);
+            case IR.Tensors.VectorizeMask pack:
+                return TIR.F.NTT.Pack((Expr)arguments[0], output, new[] { pack.Lanes }, new[] { pack.Axis });
+            case IR.Tensors.Unpack unpack:
+                return TIR.F.NTT.Unpack((Expr)arguments[0], output, unpack.Lanes, unpack.Axes);
             case IR.NTT.VectorizedBinary vectorizedBinary:
                 return TIR.F.NTT.Binary(vectorizedBinary.BinaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
-            case IR.NTT.VectorizedMatMul vectorized_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
-                return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, vectorized_mat_mul_summa.LhsVectorizedAxes, vectorized_mat_mul_summa.RhsVectorizedAxes, vectorized_mat_mul_summa.TransposeA, vectorized_mat_mul_summa.TransposeB);
-            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
-                return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
-            case IR.NTT.PackedMatMul matmul:
-                return TIR.F.NTT.PackedMatMul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.FusedReduce);
-            case IR.NTT.VectorizedMatMul vectorizedMatMul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, vectorizedMatMul.LhsVectorizedAxes, vectorizedMatMul.RhsVectorizedAxes, vectorizedMatMul.TransposeA, vectorizedMatMul.TransposeB, vectorizedMatMul.FusedReduce);
-            case IR.Math.MatMul matmul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
+            case IR.NTT.VectorizedMatMul vectorizedMatMul when GetArgumentType(arguments[0]) is DistributedType dta && GetArgumentType(arguments[1]) is DistributedType dtb:
+                var dinfo = vectorizedMatMul.GetDimInfo(dta.TensorType.Shape.Rank, dtb.TensorType.Shape.Rank);
+                if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dta.AxisPolicies[dinfo.Lk] == dtb.AxisPolicies[dinfo.Rn] &&
+                    dta.AxisPolicies[dinfo.Lm] == dtb.AxisPolicies[dinfo.Rk])
+                {
+                    return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, vectorizedMatMul.LhsVectorizedAxes, vectorizedMatMul.RhsVectorizedAxes, vectorizedMatMul.TransposeA, vectorizedMatMul.TransposeB);
+                }
+                else
+                {
+                    return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, vectorizedMatMul.LhsVectorizedAxes, vectorizedMatMul.RhsVectorizedAxes, vectorizedMatMul.TransposeA, vectorizedMatMul.TransposeB, vectorizedMatMul.FusedReduce);
+                }
+
+            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && GetArgumentType(arguments[1]) is DistributedType dtb:
+                if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^2] &&
+                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^1])
+                {
+                    return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
+                }
+                else
+                {
+                    return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
+                }
+
             case IR.CustomNTT.MatMul matmul:
                 return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.LhsVectorizedAxes, matmul.RhsVectorizedAxes, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath, matmul.FuncName);
+            case IR.NTT.PackedMatMul matmul:
+                return TIR.F.NTT.PackedMatMul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.FusedReduce);
             case IR.NN.Conv2D conv:
                 {
                     var input = call[IR.NN.Conv2D.Input];

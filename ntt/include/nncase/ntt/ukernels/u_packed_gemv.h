@@ -15,9 +15,6 @@
 #pragma once
 #include "../apply.h"
 #include "../primitive_ops.h"
-#include "../vector.h"
-#include "nncase/ntt/tensor_traits.h"
-#include <xmmintrin.h>
 
 namespace nncase::ntt {
 namespace ukernels {

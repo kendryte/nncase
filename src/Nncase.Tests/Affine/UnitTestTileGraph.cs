@@ -347,7 +347,7 @@ public sealed class UnitTestTileGraph : TestClassBase
 
         var tiler = new Schedule.GraphTiler();
         using var scope = new Diagnostics.DumpScope($"{count}");
-        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, (INTTTargetOptions)CompileOptions.TargetOptions);
+        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, (INTTTargetOptions)CompileOptions.TargetOptions, Array.Empty<DimVar>());
         action(result);
     }
 
