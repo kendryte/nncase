@@ -141,3 +141,20 @@ public sealed partial class FoldTwoCasts : IRewriteRule
         return false;
     }
 }
+
+[RuleGenerator]
+public sealed partial class FoldTwoNopCasts : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsCast("c2", x => true, IsCast("c1", x => true, IsWildcard("x")));
+
+    private Expr? GetReplace(Expr x, Cast c1, Cast c2)
+    {
+        if (x.CheckedDataType == c2.NewType)
+        {
+            return x;
+        }
+
+        return null;
+    }
+}

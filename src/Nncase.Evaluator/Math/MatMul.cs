@@ -279,7 +279,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             }
             else if (vl.Lanes.Count == 1 && vr.Lanes.Count == 2)
             {
-                dtype = new VectorType(elemType, vr.Lanes[1]);
+                dtype = new VectorType(elemType, vl.Lanes[0] == vr.Lanes[0] ? vr.Lanes[1] : vr.Lanes[0]);
             }
             else if (vl.Lanes.Count == 2 && vr.Lanes.Count == 1)
             {

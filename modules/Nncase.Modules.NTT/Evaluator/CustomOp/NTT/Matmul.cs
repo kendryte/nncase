@@ -50,8 +50,8 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             return (lhs, rhs) switch
             {
-                (DistributedType a, DistributedType b) => new DistributedType((TensorType)VisitTensorType(a.TensorType, b.TensorType, true, dimInfo), target.OutSBPs, a.Placement),
-                (TensorType a, TensorType b) => VisitTensorType(a, b, true, dimInfo),
+                (DistributedType a, DistributedType b) => new DistributedType((TensorType)VisitTensorType(target, a.TensorType, b.TensorType, true, dimInfo), target.OutSBPs, a.Placement),
+                (TensorType a, TensorType b) => VisitTensorType(target, a, b, true, dimInfo),
                 _ => new InvalidType($"{lhs} {rhs} not support"),
             };
         }
@@ -85,7 +85,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return true;
     }
 
-    private IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, MatMulDimInfo? dimInfo = null)
+    private IRType VisitTensorType(MatMul target, TensorType lhs, TensorType rhs, bool packingK = false, MatMulDimInfo? dimInfo = null)
     {
         if (lhs.Shape.IsUnranked || rhs.Shape.IsUnranked)
         {
@@ -108,7 +108,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
         if (lhsDType == DataTypes.Float8E4M3 || lhsDType == DataTypes.Float8E5M2 || lhsDType == DataTypes.Int8)
         {
-            dtype = DataTypes.Float32;
+            dtype = target.OutputDataType;
         }
 
         if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
@@ -118,7 +118,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             var outElementType = lhsElemType;
             if (lhsElemType.IsFloat() && lhsElemType != DataTypes.Float32)
             {
-                outElementType = DataTypes.Float32;
+                outElementType = target.OutputDataType;
             }
 
             // TODO: support other custom packing

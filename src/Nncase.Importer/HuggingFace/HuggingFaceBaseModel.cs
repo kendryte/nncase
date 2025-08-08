@@ -860,7 +860,7 @@ public abstract class HuggingFaceModel
         bool isXpu = Context.CompileSession!.Target.Name == "xpu";
         if (isXpu)
         {
-            queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(DataTypes.Float32)) : queryStates;
+            queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(queryStates.CheckedDataType)) : queryStates;
         }
 
         var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
@@ -887,7 +887,8 @@ public abstract class HuggingFaceModel
             hidden_size);
 
         output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qPackedAxis) : output;
-        output = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(output, DataTypes.Float32) : output;
+
+        // output = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(output, DataTypes.Float32) : output;
         output = IR.F.Tensors.Transpose(output, ModelUtils.GetLayoutPerm(qDestLayout, qSrcLayout));
         if (isXpu)
         {

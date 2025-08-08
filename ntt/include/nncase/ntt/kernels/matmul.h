@@ -71,8 +71,10 @@ constexpr ukernels::matmul_pack_kind get_matmul_pack_kind() noexcept {
     } else if constexpr (LhsPackedAxes::rank() == 1 &&
                          lhs_packed_axes.at(0) == lk &&
                          RhsPackedAxes::rank() == 2 &&
-                         rhs_packed_axes.at(0) == rk &&
-                         rhs_packed_axes.at(1) == rn) {
+                         ((rhs_packed_axes.at(0) == rk &&
+                           rhs_packed_axes.at(1) == rn) ||
+                          (rhs_packed_axes.at(0) == rn &&
+                           rhs_packed_axes.at(1) == rk))) {
         return ukernels::matmul_pack_kind::pack_kn;
     } else if constexpr (LhsPackedAxes::rank() == 2 &&
                          lhs_packed_axes.at(0) == lm &&

@@ -256,42 +256,6 @@ public sealed class UnsqueezeUnpackPropagation : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed class PackCastPropagation : RewriteRule<Pattern>
-{
-    public override Pattern Pattern { get; } =
-        PatternMatch.F.Tensors.IsPack(
-            "pack",
-            "caller",
-            _ => true,
-            IsCast(
-                "cast",
-                "callee",
-                _ => true,
-                IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() }));
-
-    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
-    {
-        var pack = (IR.Tensors.Pack)result["pack"];
-        if (pack.Axes.Count > 1)
-        {
-            var caller = (Call)result["cast"];
-            var input = (Expr)result["input"];
-            var candidate = (Expr)result[Pattern];
-            var scale = 1f * candidate.CheckedDataType.SizeInBytes / input.CheckedDataType.SizeInBytes;
-            var packLanes = pack.Lanes.Select(l => (int)(l * scale)).ToArray();
-
-            var ret = PackCast.AddCandidate(caller, input, pack.Axes.ToArray(), packLanes).FirstOrDefault();
-            if (ret is not null)
-            {
-                return IR.F.Tensors.Pack(ret, pack.Lanes.ToArray(), pack.Axes.ToArray());
-            }
-        }
-
-        return null;
-    }
-}
-
-[RuleGenerator]
 public sealed class CastUnpackPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
