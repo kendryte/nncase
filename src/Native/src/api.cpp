@@ -578,11 +578,12 @@ int nncase_paged_attention_config_create(
             policy_ptr += axis_policies_lens[i];
         }
 
-        *config = nncase::llm::paged_attention_config(
-                      std::in_place, num_layers, num_kv_heads, head_dim,
-                      kv_type, block_size, cache_layout_arr, vectorized_axes_vec,
-                      lanes_vec, sharding_axes_vec, axis_policies_vec)
-                      .detach();
+        *config =
+            nncase::llm::paged_attention_config(
+                std::in_place, num_layers, num_kv_heads, head_dim, kv_type,
+                block_size, cache_layout_arr, vectorized_axes_vec, lanes_vec,
+                sharding_axes_vec, axis_policies_vec)
+                .detach();
 
         return 0;
     }
@@ -638,7 +639,8 @@ int nncase_paged_attention_config_set_cache_layout(
 
 int nncase_paged_attention_config_get_vectorized_axes(
     nncase::llm::paged_attention_config_node *config,
-    nncase::llm::paged_kvcache_dim_kind *vectorized_axes, int32_t vectorized_axes_len) {
+    nncase::llm::paged_kvcache_dim_kind *vectorized_axes,
+    int32_t vectorized_axes_len) {
     if (config && vectorized_axes && vectorized_axes_len) {
         auto src_axes = config->vectorized_axes();
         if (vectorized_axes_len < src_axes.size()) {

@@ -143,7 +143,8 @@ class paged_attention_config_node : public attention_config_node {
         auto dims = get_default_dimensions(num_blocks);
 
         // 1. process vectorized axes
-        for (size_t i = 0; i < vectorized_axes_.size() && i < lanes_.size(); i++) {
+        for (size_t i = 0; i < vectorized_axes_.size() && i < lanes_.size();
+             i++) {
             auto axis = static_cast<size_t>(vectorized_axes_[i]);
             dims[axis] /= lanes_[i];
         }

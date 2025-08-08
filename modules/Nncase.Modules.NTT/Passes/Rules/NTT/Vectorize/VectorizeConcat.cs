@@ -73,9 +73,9 @@ public sealed partial class ConcatDevectorizePropagation : RewriteRule<Pattern>
     private Expr? GetReplace(Concat concat, Call caller, IReadOnlyList<BaseExpr> tupleInputs, IMatchResult result)
     {
         var firstDevectorize = (from i in Enumerable.Range(0, tupleInputs.Count)
-                           let devectorize = result.GetValueOrDefault($"devectorize_{i}") as Unpack
-                           where devectorize is not null
-                           select devectorize).FirstOrDefault();
+                                let devectorize = result.GetValueOrDefault($"devectorize_{i}") as Unpack
+                                where devectorize is not null
+                                select devectorize).FirstOrDefault();
         if (firstDevectorize is null)
         {
             return null; // If no devectorize is found, we cannot replace the concat with a vectorize.

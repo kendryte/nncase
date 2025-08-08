@@ -511,8 +511,8 @@ void test_matmul_transpose_b() {
         auto tc2 = ntt::make_tensor<ntt::vector<float, 4, 4>>(
             ntt::fixed_shape_v<2, 2>);
         ntt::matmul<false, false, true>(
-            vectorizea, vectorizeb, tc2, ntt::fixed_shape_v<0>, ntt::fixed_shape_v<>,
-            ntt::fixed_shape_v<0>, ntt::fixed_shape_v<>);
+            vectorizea, vectorizeb, tc2, ntt::fixed_shape_v<0>,
+            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>, ntt::fixed_shape_v<>);
 
         auto tc2devectorize = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 8>);
         ntt::unpack(tc2, tc2devectorize, ntt::fixed_shape_v<0, 1>);
@@ -535,8 +535,9 @@ void test_matmul_transpose_b() {
         auto tc2 = ntt::make_tensor<ntt::vector<float, 4, 4>>(
             ntt::fixed_shape_v<2, 2>);
         ntt::matmul<false, false, true>(
-            vectorizea, vectorizeb, tc2, ntt::fixed_shape_v<0, 1>, ntt::fixed_shape_v<>,
-            ntt::fixed_shape_v<1, 0>, ntt::fixed_shape_v<>);
+            vectorizea, vectorizeb, tc2, ntt::fixed_shape_v<0, 1>,
+            ntt::fixed_shape_v<>, ntt::fixed_shape_v<1, 0>,
+            ntt::fixed_shape_v<>);
 
         auto tc2devectorize = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 8>);
         ntt::unpack(tc2, tc2devectorize, ntt::fixed_shape_v<0, 1>);
@@ -1148,9 +1149,10 @@ void test_im2col() {
         ntt::pack(input, vectorized_input, ntt::fixed_shape_v<1>);
         auto vectorized_output =
             ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<9, 16>);
-        ntt::im2col(vectorized_input, vectorized_output, ntt::fixed_shape_v<3, 3>,
-                    ntt::fixed_shape_v<1, 1>, ntt::fixed_paddings_v<1, 1, 1, 1>,
-                    ntt::fixed_shape_v<1>, ntt::fixed_shape_v<0>);
+        ntt::im2col(vectorized_input, vectorized_output,
+                    ntt::fixed_shape_v<3, 3>, ntt::fixed_shape_v<1, 1>,
+                    ntt::fixed_paddings_v<1, 1, 1, 1>, ntt::fixed_shape_v<1>,
+                    ntt::fixed_shape_v<0>);
         auto devectorized_output =
             ntt::make_tensor<float>(ntt::fixed_shape_v<36, 16>);
         // vectorized [n,c/4,h,w,4] => [c/4 * h * w, b * oh * ow]

@@ -220,7 +220,8 @@ NNCASE_API int nncase_paged_attention_config_set_cache_layout(
 
 NNCASE_API int nncase_paged_attention_config_get_vectorized_axes(
     nncase::llm::paged_attention_config_node *config,
-    nncase::llm::paged_kvcache_dim_kind *vectorized_axes, int32_t vectorized_axes_len);
+    nncase::llm::paged_kvcache_dim_kind *vectorized_axes,
+    int32_t vectorized_axes_len);
 
 NNCASE_API int nncase_paged_attention_config_set_vectorized_axes(
     nncase::llm::paged_attention_config_node *config,

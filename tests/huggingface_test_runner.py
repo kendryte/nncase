@@ -214,7 +214,7 @@ class HuggingfaceTestRunner(TestRunner):
                              for item in paged_attention_config['cache_layout']]
         # [ nncase.PagedKVCacheDimKind.it for it in paged_attention_config['cache_layout'] ]
         self.vectorized_axes = [getattr(nncase.PagedKVCacheDimKind, item)
-                            for item in paged_attention_config['vectorized_axes']]
+                                for item in paged_attention_config['vectorized_axes']]
         self.lanes = paged_attention_config['lanes']
         self.sharding_axes = [getattr(nncase.PagedKVCacheDimKind, item)
                               for item in paged_attention_config['sharding_axes']]

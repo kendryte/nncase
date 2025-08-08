@@ -85,8 +85,8 @@ void register_runtime_llm_ffi(py::module &m) {
                     py::dtype kv_prim_type, size_t block_size,
                     const std::array<llm::paged_kvcache_dim_kind, 6>
                         cache_layout = {},
-                    const std::vector<llm::paged_kvcache_dim_kind> vectorized_axes =
-                        {},
+                    const std::vector<llm::paged_kvcache_dim_kind>
+                        vectorized_axes = {},
                     const std::vector<size_t> lanes = {},
                     const std::vector<llm::paged_kvcache_dim_kind>
                         sharding_axes = {},
@@ -138,9 +138,8 @@ void register_runtime_llm_ffi(py::module &m) {
                                                                 axes.end());
             },
             [](llm::paged_attention_config_node &self,
-               const std::vector<llm::paged_kvcache_dim_kind> &vectorized_axes) {
-                self.vectorized_axes(vectorized_axes);
-            })
+               const std::vector<llm::paged_kvcache_dim_kind>
+                   &vectorized_axes) { self.vectorized_axes(vectorized_axes); })
         .def_property(
             "lanes",
             [](const llm::paged_attention_config_node &self) {
