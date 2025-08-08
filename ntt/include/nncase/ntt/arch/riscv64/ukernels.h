@@ -129,18 +129,20 @@ struct u_unary<ntt::ops::abs<vector<float, NTT_VLEN / 32>>,
             asm("vsetvli zero, %[vl], e32, m8, ta, ma\n" ::[vl] "r"(vl));
             asm volatile(
 
-                "vle32.v v0,  (%[input])\n"
+                "vle32.v %[in_v0_reg],  (%[input])\n"
                 "add %[input], %[input], %[in_strides]\n"
-                "vle32.v v8,  (%[input])\n"
+                "vle32.v %[in_v8_reg],  (%[input])\n"
                 "add %[input], %[input], %[in_strides]\n"
-                "vle32.v v16,  (%[input])\n"
+                "vle32.v %[in_v16_reg],  (%[input])\n"
                 "add %[input], %[input], %[in_strides]\n"
-                "vle32.v v24,  (%[input])\n"
+                "vle32.v %[in_v24_reg],  (%[input])\n"
                 "add %[input], %[input], %[in_strides]\n"
 
-                : [input] "+r"(input), [output] "+r"(output)
+                : [input] "+r"(input), [output] "+r"(output),
+                  [in_v0_reg] "+vr"(in_v0_reg), [in_v8_reg] "+vr"(in_v8_reg),
+                  [in_v16_reg] "+vr"(in_v16_reg), [in_v24_reg] "+vr"(in_v24_reg)
                 : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
-                : "v0", "v8", "v16", "v24", "memory");
+                : "memory");
 
             in_v0_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v0_reg);
             in_v8_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v8_reg);
@@ -149,18 +151,20 @@ struct u_unary<ntt::ops::abs<vector<float, NTT_VLEN / 32>>,
 
             asm volatile(
 
-                "vse32.v v0,  (%[output])\n"
+                "vse32.v %[in_v0_reg],  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
-                "vse32.v v8,  (%[output])\n"
+                "vse32.v %[in_v8_reg],  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
-                "vse32.v v16,  (%[output])\n"
+                "vse32.v %[in_v16_reg],  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
-                "vse32.v v24,  (%[output])\n"
+                "vse32.v %[in_v24_reg],  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
 
-                : [input] "+r"(input), [output] "+r"(output)
+                : [input] "+r"(input), [output] "+r"(output),
+                  [in_v0_reg] "+vr"(in_v0_reg), [in_v8_reg] "+vr"(in_v8_reg),
+                  [in_v16_reg] "+vr"(in_v16_reg), [in_v24_reg] "+vr"(in_v24_reg)
                 : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
-                : "v0", "v8", "v16", "v24", "memory");
+                : "memory");
 
             count -= unroll;
         }
