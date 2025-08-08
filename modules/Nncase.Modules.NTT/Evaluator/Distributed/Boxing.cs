@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Distributed;
@@ -119,6 +120,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 break;
 
             case (DistributedType a, DistributedType b) when a.Placement == b.Placement && a.AxisPolicies != b.AxisPolicies:
+#if false
                 {
                     var fullLoadStore = new Cost()
                     {
@@ -223,6 +225,92 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                         cost += new Cost()
                         {
                             [CostFactorNames.MemoryLoad] = (UInt128)((scatterPart - 1) * (float)CostUtility.GetMemoryAccess(DistributedUtility.GetDividedTensorType(b)) / scatterPart),
+                        };
+                    }
+                }
+#endif
+                {
+                    var fullLoadStore = new Cost()
+                    {
+                        [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a) * (UInt128)a.TensorType.DType.SizeInBytes * 8,
+                        [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b) * (UInt128)b.TensorType.DType.SizeInBytes * 8,
+                    };
+
+                    float gatherPart = 1;
+                    float scatterPart = 1;
+                    for (int i = 0; i < a.AxisPolicies.Count; i++)
+                    {
+                        switch (a.AxisPolicies[i], b.AxisPolicies[i])
+                        {
+                            case (SBPSplit splitIn, SBP sbpout):
+                                switch (sbpout)
+                                {
+                                    case SBPSplit splitOut:
+                                        {
+                                            var setA = new HashSet<int>(splitIn.Axes);
+                                            var setB = new HashSet<int>(splitOut.Axes);
+                                            var aContainsB = setA.IsSupersetOf(setB);
+                                            var bContainsA = setB.IsSupersetOf(setA);
+                                            if (bContainsA && aContainsB)
+                                            {
+                                                cost += new Cost()
+                                                {
+                                                    [CostFactorNames.CPUCycles] = 1,
+                                                };
+                                            }
+                                            else if (bContainsA)
+                                            {
+                                                var diff = setB.Except(setA).ToArray();
+                                                if (diff.All(d => d > splitIn.Axes[^1]))
+                                                {
+                                                    diff.ForEach(s => scatterPart *= a.Placement.Hierarchy[s]);
+                                                }
+                                                else
+                                                {
+                                                    return fullLoadStore;
+                                                }
+                                            }
+                                            else if (aContainsB)
+                                            {
+                                                setA.Except(setB).ToArray().ForEach(s => gatherPart *= a.Placement.Hierarchy[s]);
+                                            }
+                                            else
+                                            {
+                                                // when split different axis, need global load store.
+                                                return fullLoadStore;
+                                            }
+                                        }
+
+                                        break;
+                                    case SBPBroadCast:
+                                        // scatterPart *= a.Placement.Hierarchy[i];
+                                        splitIn.Axes.ToArray().ForEach(s => gatherPart *= a.Placement.Hierarchy[s]);
+                                        break;
+                                    default:
+                                        throw new NotSupportedException("split to partial");
+                                }
+
+                                break;
+                            case (SBPBroadCast, SBPBroadCast):
+                                // no cost.
+                                cost += new Cost()
+                                {
+                                    [CostFactorNames.CPUCycles] = 1,
+                                };
+                                break;
+                            case (SBPBroadCast, SBPSplit splitOut):
+                                splitOut.Axes.ToArray().ForEach(s => scatterPart *= a.Placement.Hierarchy[s]);
+                                break;
+                            default:
+                                throw new NotSupportedException($"{a} to {b}");
+                        }
+                    }
+
+                    if (gatherPart > 1f)
+                    {
+                        cost += new Cost()
+                        {
+                            [CostFactorNames.MemoryStore] = (UInt128)((gatherPart - 1) / scatterPart * (float)CostUtility.GetMemoryAccess(DistributedUtility.GetDividedTensorType(a))) * (UInt128)a.TensorType.DType.SizeInBytes,
                         };
                     }
                 }
