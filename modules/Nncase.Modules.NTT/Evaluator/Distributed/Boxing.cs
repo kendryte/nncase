@@ -119,7 +119,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
                 break;
 
-            case (DistributedType a, DistributedType b) when a.Placement == b.Placement && a.AxisPolicies != b.AxisPolicies:
+            case (DistributedType a, DistributedType b) when a.TensorType == b.TensorType && a.Placement == b.Placement && a.AxisPolicies != b.AxisPolicies:
 #if false
                 {
                     var fullLoadStore = new Cost()
