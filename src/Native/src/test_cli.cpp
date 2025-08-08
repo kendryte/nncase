@@ -292,7 +292,7 @@ int main(int argc, char **argv) {
       ("i,inputs", "Input files (can be multiple), Output files (can be multiple)", cxxopts::value<std::vector<std::string>>())
       ("l,loop", "Number of inference iterations", cxxopts::value<size_t>()->default_value("1"))
       ("w,warmup", "Enable warmup before inference", cxxopts::value<bool>()->default_value("false")->implicit_value("true"))
-      ("cpu_external_module_path", "Path to external module for CPU backend (optional, for testing purposes)", cxxopts::value<std::string>())
+      ("cpu_external_module_path", "Path to external module for CPU backend (optional, for testing purposes)", cxxopts::value<std::string>()->default_value(""))
       ("h,help", "Print usage");
     // clang-format on
 

@@ -70,7 +70,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                         drType = (DistributedType)Math.MatMulEvaluator.ConvertPartialToBroadcast(drType);
                     }
 
-                    rType = drType with { TensorType = (TensorType)TypeInference.PackType(drType.TensorType, [nr], [b.TensorType.Shape.Rank - 1]) };
+                    rType = drType with { TensorType = (TensorType)TypeInference.PackType(drType.TensorType, [nr], [drType.TensorType.Shape.Rank - 1]) };
                 }
 
                 break;
@@ -81,7 +81,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                     var unpackedB = UnpackedBType(b);
                     var dimInfo = VectorizedMatMul.GetDimInfo(false, true, a.Shape.Rank, unpackedB.Shape.Rank);
                     rType = Math.MatMulEvaluator.VisitTensorType(a, unpackedB, dimInfo: dimInfo, outputDataType: target.OutputDataType);
-                    rType = TypeInference.PackType((TensorType)rType, [nr], [b.Shape.Rank - 1]);
+                    rType = TypeInference.PackType((TensorType)rType, [nr], [((TensorType)rType).Shape.Rank - 1]);
                 }
 
                 break;
@@ -98,6 +98,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         var lhs = context.GetArgumentType<IRType>(target, PackedMatMul.Lhs);
         var rhs = context.GetArgumentType<IRType>(target, PackedMatMul.Rhs);
         var outputType = context.GetReturnType<IRType>();
+        bool hasAllReduce = false;
 
         uint macPerElement = 1;
         if (lhs is TensorType { Shape: Shape lhsShape })
@@ -110,14 +111,25 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
             var lhsType = DistributedUtility.GetDividedTensorType(distributedType);
             var k = distributedType.TensorType.Shape.Rank - 1;
             macPerElement = lhsType.Shape[k].IsFixed ? (uint)lhsType.Shape[k].FixedValue : 1U;
+            hasAllReduce = distributedType.AxisPolicies[^1] is SBPSplit;
         }
 
-        return new()
+        var cost = new Cost()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
             [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
         };
+
+        if (hasAllReduce)
+        {
+            UInt128 synchronizeCost = 25_000; // 25k cycles on 5GHz CPU is about 5us.
+            cost[CostFactorNames.MemoryLoad] += CostUtility.GetMemoryAccess(outputType);
+            cost[CostFactorNames.MemoryStore] += CostUtility.GetMemoryAccess(outputType);
+            cost[CostFactorNames.Synchronization] = synchronizeCost;
+        }
+
+        return cost;
     }
 
     private TensorType UnpackedBType(TensorType tensorType)

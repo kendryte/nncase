@@ -71,7 +71,7 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
   public:
     using TVec = typename std::decay_t<TOut>::element_type;
 
-    static inline constexpr auto VecLen = fixed_dim_v<TVec::shape().length()>;
+    static inline constexpr auto VecLen = TVec::shape().front();
 
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, TOut &output,

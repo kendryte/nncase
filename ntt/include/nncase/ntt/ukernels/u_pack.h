@@ -38,7 +38,7 @@ template <bool Arch, ScalarOrVector TIn, Vector TOut> class u_pack {
             }
         }
 
-        const auto out_length = typename TOut::shape_type{}.length();
+        const auto out_length = TOut::shape().front();
         if (M < out_length) {
             for (dim_t j = 0; j < N; j++) {
                 for (dim_t i = M; i < out_length; i++) {

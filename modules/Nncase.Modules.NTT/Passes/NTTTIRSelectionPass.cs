@@ -206,7 +206,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         var distributedType = inBuffer.DistributedType is DistributedType dt
             ? dt with { TensorType = new TensorType(newType, newDimensions) }
             : null;
-        output = inBuffer.With(name: $"{inBuffer.Name}_as_{newType}", elemType: newType, dimensions: newDimensions, strides: newStrides, distributedType: distributedType);
+        output = inBuffer.With(name: ((TIR.Buffer)output).Name, elemType: newType, dimensions: newDimensions, strides: newStrides, distributedType: distributedType);
         return T.Nop();
     }
 

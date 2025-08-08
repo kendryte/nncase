@@ -22,12 +22,20 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pack target)
     {
-        if (context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E5M2)
+        var input = context.GetArgumentValueAsTensor(target, Pack.Input);
+        var dt = input.ElementType;
+        var elementType = dt is VectorType vt ? vt.ElemType : dt;
+        var oldLanesCount = dt switch
         {
-            var input = context.GetArgumentValueAsTensor(target, Pack.Input);
+            VectorType vt2 => vt2.Lanes.Count,
+            MaskVectorType => 1,
+            _ => 0,
+        };
+        if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
+        {
             var inputCasted = input.CastElement<float>();
             var inputOrt = inputCasted.ToOrtTensor();
-            inputOrt = inputOrt.Pack(0, target.Lanes, target.Axes);
+            inputOrt = inputOrt.Pack(oldLanesCount, target.Lanes, target.Axes);
             var output = inputOrt.ToTensor().CastElementTo(context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType);
             output = output.CastTo(TypeInference.PackType(input.ElementType, target.Lanes), CastMode.Reinterpret);
             output = output.Squeeze(output.Rank - 1);
@@ -35,9 +43,8 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         }
         else
         {
-            var input = context.GetArgumentValue(target, Pack.Input).AsTensor();
             var inputOrt = input.ToOrtTensor();
-            inputOrt = inputOrt.Pack(0, target.Lanes, target.Axes);
+            inputOrt = inputOrt.Pack(oldLanesCount, target.Lanes, target.Axes);
             return inputOrt.ToValue(TypeInference.PackType(input.ElementType, target.Lanes));
         }
     }

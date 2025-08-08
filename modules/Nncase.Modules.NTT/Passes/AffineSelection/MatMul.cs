@@ -127,6 +127,11 @@ public partial class NTTAffineSelectionPass
                 (rk, rn) = (rn, rk);
             }
         }
+        else if (op is IR.NTT.PackedMatMul)
+        {
+            // Transpose B
+            (rk, rn) = (rn, rk);
+        }
 
         lhsRes[lm] = new AffineRange(domains[om].Offset, domains[om].Extent);
         lhsRes[lk] = new AffineRange(domains[ok].Offset, domains[ok].Extent);
@@ -145,6 +150,7 @@ public partial class NTTAffineSelectionPass
             {
                 IR.Math.MatMul => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
                 IR.NTT.VectorizedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsVectorizedAxes, pop.RhsVectorizedAxes, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
+                IR.NTT.PackedMatMul pop => TIR.F.NTT.PackedMatMul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.FusedReduce),
                 _ => throw new System.Diagnostics.UnreachableException(),
             }).Build();
     }

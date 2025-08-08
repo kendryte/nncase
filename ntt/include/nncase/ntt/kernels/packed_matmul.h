@@ -65,18 +65,24 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
         const auto M = c.shape()[c.rank() - 2_dim];
         const auto N = c.shape()[c.rank() - 1_dim];
         const auto K = a.shape()[a.rank() - 1_dim];
-        constexpr auto m0_tile = 2;
 
-        for (size_t n1 = 0; n1 < N; n1++) {
-            for (size_t m1 = 0; m1 < M; m1 += m0_tile) {
-                matmul_2d_l0<m0_tile>(a, b, c, K, m1, n1);
-            }
-        }
+        if (M == 1) {
+            gemv_l0(a, b, c, K, N);
+        } else {
+            constexpr auto m0_tile = 2;
+            const auto m0_tiled_end = M / m0_tile * m0_tile;
 
-        if (M % m0_tile) {
             for (size_t n1 = 0; n1 < N; n1++) {
-                for (size_t m1 = M / m0_tile * m0_tile; m1 < M; m1 += m0_tile) {
+                for (size_t m1 = 0; m1 < m0_tiled_end; m1 += m0_tile) {
                     matmul_2d_l0<m0_tile>(a, b, c, K, m1, n1);
+                }
+            }
+
+            if (M % m0_tile) {
+                for (size_t n1 = 0; n1 < N; n1++) {
+                    for (size_t m1 = m0_tiled_end; m1 < M; m1++) {
+                        matmul_2d_l0<1>(a, b, c, K, m1, n1);
+                    }
                 }
             }
         }
@@ -85,11 +91,24 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
     template <dim_t M0Tile, class TA, class TB, class TC, Dimension TK>
     void matmul_2d_l0(const TA &a, const TB &b, TC &c, const TK &K, dim_t m1,
                       dim_t n1) {
-        auto c0 = c.view(make_shape(m1, n1), fixed_shape_v<M0Tile, 1_dim>);
-        auto a1 =
+        auto c0 = c.view(make_shape(m1, n1), fixed_shape_v<M0Tile, 1_dim>)
+                      .squeeze(fixed_shape_v<1>);
+        auto a0 =
             a.view(make_shape(m1, 0_dim), make_shape(fixed_dim_v<M0Tile>, K));
-        auto b1 = b.view(make_shape(n1, 0_dim), make_shape(1_dim, K));
-        ntt::u_packed_matmul<AccumulateC, M0Tile>(a1, b1, c0, K);
+        auto b0 = b.view(make_shape(n1, 0_dim), make_shape(1_dim, K))
+                      .squeeze(fixed_shape_v<0>);
+        ntt::u_packed_matmul<AccumulateC, M0Tile>(
+            a0.elements().data(), b0.elements().data(), c0.elements().data(),
+            a0.strides()[0_dim], c0.strides()[0_dim], K);
+    }
+
+    template <class TA, class TB, class TC, Dimension TK, Dimension TN>
+    void gemv_l0(const TA &a, const TB &b, TC &c, const TK &K, const TN &N) {
+        auto c0 = c.view(0_dim);
+        auto a0 = a.view(0_dim);
+        ntt::u_packed_gemv<AccumulateC>(
+            a0.elements().data(), b.elements().data(), c0.elements().data(),
+            b.strides()[0_dim], K, N);
     }
 };
 } // namespace detail

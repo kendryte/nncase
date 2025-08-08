@@ -375,6 +375,14 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }).Result);
 
                 break;
+            case TIR.NTT.PackedMatMul matmul:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedMatMul.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedMatMul>(matmul)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+
+                break;
             case TIR.NTT.Pack vectorize:
                 WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(vectorize)
                 {

@@ -34,6 +34,8 @@ public partial class NTTAffineSelectionPass : AffineSelectionPass
     {
         switch (call.Target)
         {
+            case IR.NTT.PackedMatMul op:
+                return SelectMatMul(op, call, output);
             case IR.NTT.VectorizedBinary op:
                 return SelectVectorizedBinary(op, call, output);
             case IR.NTT.VectorizedMatMul:

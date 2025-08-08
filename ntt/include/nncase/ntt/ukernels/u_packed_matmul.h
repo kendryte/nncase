@@ -14,60 +14,65 @@
  */
 #pragma once
 #include "../apply.h"
+#include "../primitive_ops.h"
 #include "../vector.h"
-#include "u_mul_add.h"
-#include <type_traits>
 
 namespace nncase::ntt {
 namespace ukernels {
-template <bool AccumulateC, dim_t M0Tile, class TLhsElem, class TRhsElem,
-          class TOutElem, bool Arch>
+template <bool AccumulateC, dim_t M0Tile, Scalar TAElem, Vector TBPack,
+          Vector TCPack, bool Arch>
 struct u_packed_matmul {
-    static constexpr auto N0Tile = TRhsElem::shape()[0_dim];
+    using TBElem = replace_lanes_t<TBPack, TBPack::shape()[1_dim]>;
+    using TCElem = replace_lanes_t<TCPack, TCPack::shape()[1_dim]>;
+    static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
-    template <class TA, class TB, class TC>
-    constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              dim_t K) noexcept {
-        TOutElem c0_tmp[M0Tile];
-        ntt::apply(c0.shape(), [&](auto index) {
-            c0_tmp[index[0_dim]] = AccumulateC ? c0(index) : TOutElem{};
+    template <Dimension TLda, Dimension TLdc, Dimension TK>
+    constexpr void operator()(NTT_RESTRICT const TAElem *a,
+                              NTT_RESTRICT const TBPack *b,
+                              NTT_RESTRICT TCPack *c, const TLda &lda,
+                              const TLdc &ldc, const TK &K) noexcept {
+        TCElem c0_tmp[M0Tile][N0Tile];
+        ntt::apply(fixed_shape_v<M0Tile, N0Tile>, [&](auto index) {
+            c0_tmp[index[0_dim]][index[1_dim]] =
+                AccumulateC ? c[index[0_dim] * ldc](index[1_dim]) : TCElem{};
         });
 
         for (size_t k1 = 0; k1 < K; k1++) {
-            auto a0 = a.view(make_shape(0, k1), fixed_shape_v<M0Tile, 1>);
-            auto b0 = b(0_dim, k1);
-            TLhsElem a0_tmp[M0Tile];
+            TAElem a0_tmp[M0Tile];
+            TBElem b0_tmp[N0Tile];
 
             ntt::apply(fixed_shape_v<M0Tile>, [&](auto index) {
-                a0_tmp[index[0_dim]] = a0(index[0_dim], 0_dim);
+                a0_tmp[index[0_dim]] = a[index[0_dim] * lda + k1];
+            });
+
+            ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
+                b0_tmp[index[0_dim]] = b[k1](index[0_dim]);
             });
 
             for (size_t n = 0; n < N0Tile; n++) {
                 for (size_t m = 0; m < M0Tile; m++) {
-                    u_mul_add<ukernels::matmul_vectorize_kind::vectorize_n,
-                              true>(a0_tmp[m], b0(n), c0_tmp[m](n));
+                    c0_tmp[m][n] =
+                        ntt::mul_add(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
                 }
             }
         }
 
-        ntt::apply(c0.shape(), [&](auto index) {
-            ntt::store(c0(index), c0_tmp[index[0_dim]]);
+        ntt::apply(fixed_shape_v<M0Tile, N0Tile>, [&](auto index) {
+            ntt::store(c[index[0_dim] * ldc](index[1_dim]),
+                       c0_tmp[index[0_dim]][index[1_dim]]);
         });
     }
 };
 
 } // namespace ukernels
 
-template <bool AccumulateC, dim_t M0Tile, class TA, class TB, class TC,
-          Dimension TK>
-constexpr void u_packed_matmul(const TA &a, const TB &b, TC &c,
+template <bool AccumulateC, dim_t M0Tile, Scalar TAElem, Vector TBPack,
+          Vector TCPack, Dimension TLda, Dimension TLdc, Dimension TK>
+constexpr void u_packed_matmul(const TAElem *a, const TBPack *b, TCPack *c,
+                               const TLda &lda, const TLdc &ldc,
                                const TK &K) noexcept {
-    using TLhsElem = std::decay_t<typename TA::element_type>;
-    using TRhsElem = std::decay_t<typename TB::element_type>;
-    using TOutElem = std::decay_t<typename TC::element_type>;
-    ukernels::u_packed_matmul<AccumulateC, M0Tile, TLhsElem, TRhsElem, TOutElem,
-                              true>
+    ukernels::u_packed_matmul<AccumulateC, M0Tile, TAElem, TBPack, TCPack, true>
         impl;
-    impl(a, b, c, K);
+    impl(a, b, c, lda, ldc, K);
 }
 } // namespace nncase::ntt

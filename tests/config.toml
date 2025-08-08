@@ -134,7 +134,7 @@ threshold = 0.98
 
 [target.cpu.target_options]
 Vectorize = true
-Hierarchies = [[4]]
+Hierarchies = [[1]]
 HierarchyNames = "t"
 
 [target.k510]

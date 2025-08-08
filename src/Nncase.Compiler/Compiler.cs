@@ -287,6 +287,7 @@ public class Compiler : ICompiler
             target.RegisterAutoPackingRules(p, _compileSession.CompileOptions);
 
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            p.Add<Passes.Rules.Neutral.UnpackToBitcast>();
         });
     }
 

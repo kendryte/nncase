@@ -125,7 +125,8 @@ SPECIALIZE_U_COMPARE(less_or_equal, 2)
 #undef SPECIALIZE_U_COMPARE
 
 inline void permute_8x8_devectorize1d(const vector<float, 8> *src, float *dst,
-                                 size_t in_stride, size_t out_stride) noexcept {
+                                      size_t in_stride,
+                                      size_t out_stride) noexcept {
     __m256 row0 = src[0 * in_stride];
     __m256 row1 = src[1 * in_stride];
     __m256 row2 = src[2 * in_stride];
@@ -172,8 +173,9 @@ inline void permute_8x8_devectorize1d(const vector<float, 8> *src, float *dst,
     _mm256_storeu_ps(&dst[7 * out_stride], row7);
 }
 
-inline void permute_8x8_devectorize2d(const vector<float, 8, 8> *src, float *dst,
-                                 size_t in_stride, size_t out_stride) noexcept {
+inline void permute_8x8_devectorize2d(const vector<float, 8, 8> *src,
+                                      float *dst, size_t in_stride,
+                                      size_t out_stride) noexcept {
     __m256 row0 = src[0](in_stride);
     __m256 row1 = src[1](in_stride);
     __m256 row2 = src[2](in_stride);
@@ -221,8 +223,8 @@ inline void permute_8x8_devectorize2d(const vector<float, 8, 8> *src, float *dst
 }
 
 inline void permute_8x8_vectorize1d(const float *src, vector<float, 8> *dst,
-                               size_t in_stride = 1,
-                               size_t out_stride = 1) noexcept {
+                                    size_t in_stride = 1,
+                                    size_t out_stride = 1) noexcept {
     __m256 row0 = _mm256_loadu_ps(&src[0 * in_stride]);
     __m256 row1 = _mm256_loadu_ps(&src[1 * in_stride]);
     __m256 row2 = _mm256_loadu_ps(&src[2 * in_stride]);
@@ -261,8 +263,8 @@ inline void permute_8x8_vectorize1d(const float *src, vector<float, 8> *dst,
 }
 
 inline void permute_8x8_vectorize2d(const float *src, vector<float, 8, 8> *dst,
-                               size_t in_stride = 1,
-                               size_t out_stride = 1) noexcept {
+                                    size_t in_stride = 1,
+                                    size_t out_stride = 1) noexcept {
     __m256 row0 = _mm256_loadu_ps(&src[0 * in_stride]);
     __m256 row1 = _mm256_loadu_ps(&src[1 * in_stride]);
     __m256 row2 = _mm256_loadu_ps(&src[2 * in_stride]);
@@ -413,8 +415,8 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 
                                         auto src = input_ptr + ld_base;
                                         auto dst = outer_ptr + st_base;
-                                        permute_8x8_vectorize2d(src, dst, inner_size,
-                                                           j);
+                                        permute_8x8_vectorize2d(src, dst,
+                                                                inner_size, j);
                                     }
 
                                     outer_ptr += inner_size;
@@ -575,7 +577,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                                     auto st_ptr = st_offset + k * 8;
                                     auto ld_ptr = ld_offset_j + k * 8;
                                     permute_8x8_devectorize2d(ld_ptr, st_ptr, i,
-                                                         inner_size);
+                                                              inner_size);
                                 }
                             }
                         }
@@ -598,7 +600,8 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 
 // matmul
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float, true> {
+struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float,
+                       true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
@@ -606,8 +609,8 @@ struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float,
 
 // Vectorize M
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::vectorize_m, vector<float, 8>, float,
-                       vector<float, 8>, true> {
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_m, vector<float, 8>,
+                       float, vector<float, 8>, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 4;
     static constexpr size_t m0_subtile = 0;
@@ -624,22 +627,23 @@ struct u_matmul_policy<matmul_vectorize_kind::vectorize_k, vector<float, 8>,
 
 // Vectorize N
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::vectorize_n, float, vector<float, 8>,
-                       vector<float, 8>, true> {
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_n, float,
+                       vector<float, 8>, vector<float, 8>, true> {
     static constexpr size_t m0_tile = 4;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 0;
 };
 
 template <>
-struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_n, float, vector<float, 8>,
-                          vector<float, 8>, true> {
+struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_n, float,
+                          vector<float, 8>, vector<float, 8>, true> {
     static constexpr size_t n0_tile = 7;
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC, false, false,
-                1, 7, float, vector<float, 8>, vector<float, 8>, true> {
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC,
+                false, false, 1, 7, float, vector<float, 8>, vector<float, 8>,
+                true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
@@ -737,9 +741,9 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_kn, vector<float, 8>,
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, false, false,
-                1, 4, vector<float, 8>, vector<float, 8, 8>, vector<float, 8>,
-                true> {
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC,
+                false, false, 1, 4, vector<float, 8>, vector<float, 8, 8>,
+                vector<float, 8>, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
@@ -779,8 +783,9 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, fals
 
 // Vectorize MKN
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::vectorize_mkn, vector<float, 8, 8>,
-                       vector<float, 8, 8>, vector<float, 8, 8>, true> {
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_mkn,
+                       vector<float, 8, 8>, vector<float, 8, 8>,
+                       vector<float, 8, 8>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 4;

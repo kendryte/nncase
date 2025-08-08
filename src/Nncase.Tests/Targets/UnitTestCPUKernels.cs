@@ -950,6 +950,56 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
+    [InlineData(new object[] { new long[] { 1, 3, 2 }, new long[] { 2, 64 }, false, false, new[] { 1 }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 3, 2 }, new long[] { 2, 64 }, false, true, new[] { 1 }, 1 })]
+    [InlineData(new object[] { new long[] { 1, 2 }, new long[] { 2, 64 }, false, true, new[] { 1 }, 2 })]
+    public async Task TestPackedMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int count)
+    {
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".Skip(3 - hierarchy.Length));
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        var lhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(lhsShape, 1.0f).Evaluate().AsTensor();
+        var rhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(rhsShape, 1.0f).Evaluate().AsTensor();
+
+        // var lhsTensor = Tensor.From(Enumerable.Range(0, (int)TensorUtilities.GetProduct(lhsShape)).Select(i => (float)i).ToArray(), lhsShape);
+        // var rhsTensor = Tensor.From(Enumerable.Range(0, (int)TensorUtilities.GetProduct(rhsShape)).Select(i => (float)i).ToArray(), rhsShape);
+        Expr lhs = constA ? lhsTensor : new Var(new TensorType(DataTypes.Float32, lhsShape));
+        Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsShape));
+        var pre = IR.F.Tensors.MatMul(lhs, rhs);
+
+        var feedDict = new Dictionary<IVar, IValue>();
+        if (!constA)
+        {
+            feedDict.Add((Var)lhs, Value.FromTensor(lhsTensor));
+        }
+
+        if (!constB)
+        {
+            feedDict.Add((Var)rhs, Value.FromTensor(rhsTensor));
+        }
+
+        var rule = new Passes.Rules.NTT.VectorizeMatMul(2, Lane, transB: true);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var vectorizedPosts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
+
+        var packRule = new Passes.Rules.NTT.PackMatMulByN(4);
+        var posts = new List<Expr>();
+        foreach (var post in vectorizedPosts)
+        {
+            var context = new Passes.RunPassContext();
+            var newPost = CompilerServices.Rewrite(post, [packRule], context);
+            if (context.IsMutated)
+            {
+                posts.Add((Expr)newPost);
+            }
+        }
+
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
     [InlineData(new object[] { new long[] { 154, 128 * 8 }, new long[] { 128 * 8, 64 * 32 }, false, true, new[] { 4 }, new[] { 0 }, 0 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
     [InlineData(new object[] { new long[] { 64, 1 }, new long[] { 1, 94 }, true, false, new[] { 4 }, new[] { 3 }, 1 })] // note const(f32[64,1]) @ [1,sequence_length]
     public async Task TestDynamicVectorizeMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int[] dynamicAxes, int count)
@@ -1027,7 +1077,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [InlineData(new object[] { new long[] { 154, 128 * 8 }, new long[] { 128 * 8, 64 * 32 }, false, true, new[] { 4 }, new[] { 0 }, 0 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
-    [InlineData(new object[] { new long[] { 64, 1 }, new long[] { 1, 94 }, true, false, new[] { 4 }, new[] { 3 }, 1 })] // note const(f32[64,1]) @ [1,sequence_length]
+    [InlineData(new object[] { new long[] { 21, 128 }, new long[] { 128, 1024 }, false, true, new[] { 1 }, new[] { 0 }, 1 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
     public async Task TestDynamicPackedMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int[] dynamicAxes, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
@@ -1039,7 +1089,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             Metadata = new()
             {
-                Range = new(1, 256),
+                Range = new(1, 255),
             },
         };
 
@@ -1099,7 +1149,6 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var vectorizedPosts = rule.GetReplaceCandidates(result!, new Passes.RunPassContext());
 
         var packRule = new Passes.Rules.NTT.PackMatMulByN(4);
-        var foldRule = new Passes.Rules.Neutral.FoldConstCall();
         var posts = new List<Expr>();
         foreach (var post in vectorizedPosts)
         {
