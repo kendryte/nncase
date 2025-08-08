@@ -119,6 +119,10 @@ struct u_unary<ntt::ops::abs<vector<float, NTT_VLEN / 32>>,
         constexpr auto unit = sizeof(vector<float, vl>);
         auto in_strides = in_stride * unit;
         auto out_strides = out_stride * unit;
+        register vfloat32m8_t in_v0_reg asm("v0");
+        register vfloat32m8_t in_v8_reg asm("v8");
+        register vfloat32m8_t in_v16_reg asm("v16");
+        register vfloat32m8_t in_v24_reg asm("v24");
 
         while (count / unroll) {
 
@@ -134,10 +138,16 @@ struct u_unary<ntt::ops::abs<vector<float, NTT_VLEN / 32>>,
                 "vle32.v v24,  (%[input])\n"
                 "add %[input], %[input], %[in_strides]\n"
 
-                "vfabs.v v0, v0\n"
-                "vfabs.v v8, v8\n"
-                "vfabs.v v16, v16\n"
-                "vfabs.v v24, v24\n"
+                : [input] "+r"(input), [output] "+r"(output)
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
+                : "v0", "v8", "v16", "v24", "memory");
+
+            in_v0_reg = nncase::ntt::abs((ntt::vector<float, 32>)in_v0_reg);
+            in_v8_reg = nncase::ntt::abs((ntt::vector<float, 32>)in_v8_reg);
+            in_v16_reg = nncase::ntt::abs((ntt::vector<float, 32>)in_v16_reg);
+            in_v24_reg = nncase::ntt::abs((ntt::vector<float, 32>)in_v24_reg);
+
+            asm volatile(
 
                 "vse32.v v0,  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
