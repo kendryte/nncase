@@ -142,10 +142,10 @@ struct u_unary<ntt::ops::abs<vector<float, NTT_VLEN / 32>>,
                 : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
                 : "v0", "v8", "v16", "v24", "memory");
 
-            in_v0_reg = nncase::ntt::abs((ntt::vector<float, 32>)in_v0_reg);
-            in_v8_reg = nncase::ntt::abs((ntt::vector<float, 32>)in_v8_reg);
-            in_v16_reg = nncase::ntt::abs((ntt::vector<float, 32>)in_v16_reg);
-            in_v24_reg = nncase::ntt::abs((ntt::vector<float, 32>)in_v24_reg);
+            in_v0_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v0_reg);
+            in_v8_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v8_reg);
+            in_v16_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v16_reg);
+            in_v24_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v24_reg);
 
             asm volatile(
 
