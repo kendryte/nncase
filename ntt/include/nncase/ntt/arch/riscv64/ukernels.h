@@ -145,24 +145,42 @@ struct u_unary<ntt::ops::abs<vector<float, NTT_VLEN / 32>>,
                 : "memory");
 
             in_v0_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v0_reg);
-            in_v8_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v8_reg);
-            in_v16_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v16_reg);
-            in_v24_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v24_reg);
-
             asm volatile(
-
                 "vse32.v %[in_v0_reg],  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
+
+                : [input] "+r"(input), [output] "+r"(output),
+                  [in_v0_reg] "+vr"(in_v0_reg)
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
+                : "memory");
+
+            in_v8_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v8_reg);
+            asm volatile(
                 "vse32.v %[in_v8_reg],  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
+
+                : [input] "+r"(input), [output] "+r"(output),
+                  [in_v8_reg] "+vr"(in_v8_reg)
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
+                : "memory");
+
+            in_v16_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v16_reg);
+            asm volatile(
                 "vse32.v %[in_v16_reg],  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
+
+                : [input] "+r"(input), [output] "+r"(output),
+                  [in_v16_reg] "+vr"(in_v16_reg)
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
+                : "memory");
+
+            in_v24_reg = nncase::ntt::abs((ntt::vector<float, vl>)in_v24_reg);
+            asm volatile(
                 "vse32.v %[in_v24_reg],  (%[output])\n"
                 "add %[output], %[output], %[out_strides]\n"
 
                 : [input] "+r"(input), [output] "+r"(output),
-                  [in_v0_reg] "+vr"(in_v0_reg), [in_v8_reg] "+vr"(in_v8_reg),
-                  [in_v16_reg] "+vr"(in_v16_reg), [in_v24_reg] "+vr"(in_v24_reg)
+                  [in_v24_reg] "+vr"(in_v24_reg)
                 : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
                 : "memory");
 
