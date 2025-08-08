@@ -406,6 +406,17 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
             case TIR.NTT.Cast cast:
                 IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
+            case TIR.NTT.PackedLayerNorm lm:
+                {
+                    WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedLayerNorm>(lm)
+                    {
+                        Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).Concat(lm.PadedNums.Select(Visit).Select(x => new KernelArgument { Symbol = x })).ToArray(),
+                        Indent = new string(' ', IndentScope.Writer.Indent),
+                        Args = expr.Arguments[..1].ToArray(),
+                    }).Result);
+                }
+
+                break;
             default:
                 throw new NotSupportedException($"Unsupported call target: {expr.Target}");
         }

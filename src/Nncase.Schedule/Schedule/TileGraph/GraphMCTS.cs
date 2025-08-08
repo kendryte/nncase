@@ -80,7 +80,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
             using var scope = new Diagnostics.DumpScope($"RollOut{_path}");
             try
             {
-                var res = _graphTiler.SolveRootGraph(_graph, _moduleKind, _targetOptions);
+                var res = _graphTiler.SolveRootGraph(_graph, _moduleKind, _targetOptions, Array.Empty<DimVar>());
                 ObjectValue = res.ObjectValue;
                 foreach (var item in res.ResultMemo)
                 {
