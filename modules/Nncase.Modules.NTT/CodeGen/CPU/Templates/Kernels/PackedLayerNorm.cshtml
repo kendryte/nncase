@@ -2,4 +2,4 @@
 @{
     var epsType = Model.Args[0].CheckedTensorType.DType is VectorType vt ? vt.ElemType : Model.Args[0].CheckedTensorType.DType;
 }
-packed_layer_norm(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), @Html.Raw(Model.Arguments[3].Symbol.Name), @Html.Raw(epsType.ToC()) { @Model.Target.Epsilon }, fixed_dim_v<@Model.Target.Axis>, fixed_shape_v<@string.Join(",", Model.Target.PackedAxes)>, fixed_shape_v<@string.Join(",", Model.Target.PadedNums)>, @Model.Target.UseMean.ToString().ToLower());
+@(Model.Indent)packed_layer_norm(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), @Html.Raw(Model.Arguments[3].Symbol.Name), @Html.Raw(epsType.ToC()) { @Model.Target.Epsilon }, fixed_dim_v<@Model.Target.Axis>, fixed_shape_v<@string.Join(",", Model.Target.PackedAxes)>, make_shape(@Html.Raw(string.Join(",", Model.Arguments[4..].Select(i => i.Symbol.Name)))), @Model.Target.UseMean.ToString().ToLower());

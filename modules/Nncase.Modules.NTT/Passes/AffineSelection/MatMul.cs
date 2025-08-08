@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
@@ -14,10 +15,46 @@ public partial class NTTAffineSelectionPass
     {
         var lhs = (Expr)call.Arguments[IR.Math.MatMul.Lhs.Index];
         var rhs = (Expr)call.Arguments[IR.Math.MatMul.Rhs.Index];
+        bool reduceSum = false;
 
         // TODO: summa not support tiling for now.
-        if ((lhs.CheckedType is DistributedType ldt && ldt.AxisPolicies[^1] is SBPSplit)
-            || output.CheckedShape is not { Rank: > 0 })
+        if (lhs.CheckedType is DistributedType dta &&
+            rhs.CheckedType is DistributedType dtb)
+        {
+            if (op is IR.NTT.PackedMatMul pmm)
+            {
+                var dinfo = pmm.GetDimInfo(dta.TensorType.Shape.Rank, dtb.TensorType.Shape.Rank);
+                if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dta.AxisPolicies[dinfo.Lk] == dtb.AxisPolicies[dinfo.Rn] &&
+                    dta.AxisPolicies[dinfo.Lm] == dtb.AxisPolicies[dinfo.Rk])
+                {
+                    return call;
+                }
+
+                if (dta.AxisPolicies[dinfo.Lk] == dtb.AxisPolicies[dinfo.Rk] && dta.AxisPolicies[dinfo.Lk] is SBPSplit)
+                {
+                    reduceSum = true;
+                }
+            }
+            else if (op is IR.Math.MatMul)
+            {
+                if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^2] &&
+                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^1])
+                {
+                    return call;
+                }
+
+                if (dta.AxisPolicies[^1] == dtb.AxisPolicies[^2] && dta.AxisPolicies[^1] is SBPSplit)
+                {
+                    reduceSum = true;
+                }
+            }
+        }
+
+        if (reduceSum)
         {
             return call;
         }

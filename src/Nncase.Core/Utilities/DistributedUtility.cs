@@ -383,7 +383,7 @@ public static class DistributedUtility
             if (distributedType.AxisPolicies.Count > d && distributedType.AxisPolicies[d] is SBPSplit split)
             {
                 var divisor = split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
-                tiles[d] = (tiles[d] + divisor - 1) / divisor;
+                tiles[d] = tiles[d] / divisor;
             }
         }
 

@@ -116,6 +116,21 @@ void test_shape() {
     }
 }
 
+void test_strides() {
+    // dynamic shape strides
+    {
+        NNCASE_UNUSED auto shape =
+            ntt::make_shape(2_dim, 1, 3_dim); // dim1 is dynamic
+        NNCASE_UNUSED auto strides = ntt::make_strides(3_dim, 3_dim, 1_dim);
+        assert(ntt::contiguous_dims(shape, strides) == 3);
+
+        NNCASE_UNUSED auto shape1 =
+            ntt::make_shape(8_dim, 1); // dim1 is dynamic
+        NNCASE_UNUSED auto strides1 = ntt::make_strides(2_dim, 1_dim);
+        assert(ntt::contiguous_dims(shape1, strides1) == 1);
+    }
+}
+
 void test_sharding() {
     // local_index
     {
@@ -846,6 +861,26 @@ void test_pack() {
         });
     }
 
+    // fixed pack 2
+    {
+        auto dim_0 = 32_dim / 4;
+        auto seq_length = 28;
+        auto dim_1 = (seq_length + 63) / 64;
+        auto buffer_1 = ntt::make_tensor<float>(
+            ntt::make_shape(dim_0, dim_1), ntt::make_strides(2_dim, 1_dim));
+        for (size_t i = 0; i < 8_dim; i++) {
+            buffer_1(i, 0) = 3.0f;
+        }
+        auto buffer_2 = ntt::make_tensor<ntt::vector<float, 8>>(
+            ntt::make_shape(dim_0 / 8, dim_1), ntt::make_strides(0_dim, 1_dim));
+        ntt::pack(buffer_1, buffer_2, fixed_shape_v<0>);
+        for (size_t i = 0; i < 8_dim; i++) {
+            for (size_t j = 0; j < dim_1; j++) {
+                assert(buffer_2(0, j)(i) == buffer_1(i, j));
+            }
+        }
+    }
+
     // fixed pack with pad
     {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 3, 4>);
@@ -1006,6 +1041,7 @@ void test_pack() {
     ntt::binary<ntt::ops::add>(pa, pb, pc.view());
 }
 }
+
 // unpack(fixed_shape + fixed_shape)
 {
     auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
@@ -1021,6 +1057,7 @@ void test_pack() {
         assert(a == c);
     });
 }
+
 // unpack(fixed_shape + ranked_shape)
 {
     auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
@@ -1490,7 +1527,8 @@ int main() {
     nncapi->compile_session_create(target.get(), compile_options.get());
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
 #endif
-
+    test_shape();
+    test_strides();
     test_matmul_normal();
     test_matmul_transpose_b();
     test_caching();
