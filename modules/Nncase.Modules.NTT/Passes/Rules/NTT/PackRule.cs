@@ -1646,7 +1646,7 @@ public sealed class PackLayerNorm : PackRule
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
         var pshape = scale.CheckedShape;
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padedNums), lanes, packedAxes);
 
         var pAxes = packedAxes.Where(i => i >= op.Axis).Select(i => i - op.Axis).ToArray();
         var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
@@ -1661,11 +1661,13 @@ public sealed class PackLayerNorm : PackRule
             packedBias = IR.F.Tensors.Pack(packedBias, Enumerable.Repeat(lanes[0], pAxes.Length).ToArray(), pAxes);
         }
 
-        var layernorm = IR.F.NTT.PackedLayerNorm(packedInput, packedScale, packedBias, op.Axis, op.Epsilon, op.UseMean, packedAxes, new RankedShape(padsInput));
+        var layernorm = IR.F.NTT.PackedLayerNorm(packedInput, packedScale, packedBias, op.Axis, op.Epsilon, op.UseMean, packedAxes, new RankedShape(padedNums));
 
-        if (layernorm.CheckedType is not InvalidType)
+        // not support pad on reduction axes.
+        if (layernorm.CheckedType is not InvalidType &&
+            !Enumerable.Range(0, packedAxes.Length).Any(i => packedAxes[i] >= op.Axis && padedNums[i] != new DimConst(0)))
         {
-            var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(layernorm, lanes, packedAxes), inShape, padsInput);
+            var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(layernorm, lanes, packedAxes), inShape, padedNums);
             rets.Add(post);
         }
 

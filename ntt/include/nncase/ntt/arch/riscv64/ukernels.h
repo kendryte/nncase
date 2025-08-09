@@ -1238,6 +1238,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
             domain.template slice<axis + 1, in_rank - (axis + 1)>();
         auto inner_size = inner_index.length();
         constexpr auto vector_size = NTT_VLEN / 32;
+        auto axis_stride = input.strides()[const_axes[0]];
 
         if constexpr (AxesRank == 1) {
             if constexpr (const_axes[0] == (TIn::rank() - 1)) {
@@ -1245,10 +1246,9 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                 auto in_ptr = input.buffer().data();
                 auto out_ptr = output.buffer().data();
                 std::memcpy(out_ptr, in_ptr, size);
-            } else if (inner_size % vector_size == 0) {
+            } else if (inner_size % vector_size == 0 && axis_stride !=0 ) {
 
                 auto in_stride = 1;
-                auto axis_stride = input.strides()[const_axes[0]];
                 auto count = input.size();
                 auto output_local_ptr = output.buffer().data();
 

@@ -248,14 +248,26 @@ internal sealed class PassManager : IPassManager
 
                             break;
                         case EGraphPass p:
-                            _eGraph = await p.RunAsync(_eGraph!, context);
+                            if (_function is Function)
+                            {
+                                _eGraph = await p.RunAsync(_eGraph!, context);
+                            }
+
                             break;
                         case EGraphConstructPass p:
-                            _eGraph = await p.RunAsync(_function, context);
+                            if (_function is Function)
+                            {
+                                _eGraph = await p.RunAsync(_function, context);
+                            }
+
                             break;
                         case EGraphExtractPass p:
-                            ReplaceFunction(await p.RunAsync(_eGraph!, context));
-                            _eGraph = null;
+                            if (_function is Function)
+                            {
+                                ReplaceFunction(await p.RunAsync(_eGraph!, context));
+                                _eGraph = null;
+                            }
+
                             break;
                         default:
                             throw new NotSupportedException($"Unsupported pass type: {pass.GetType().AssemblyQualifiedName}");

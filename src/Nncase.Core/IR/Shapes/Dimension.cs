@@ -157,7 +157,7 @@ public static class DimensionExtensions
 /// <summary>
 /// Shape dimension.
 /// </summary>
-public abstract class Dimension : BaseExpr
+public abstract partial class Dimension : BaseExpr
 {
     public static readonly DimConst Zero = new(0);
     public static readonly DimConst One = new(1);

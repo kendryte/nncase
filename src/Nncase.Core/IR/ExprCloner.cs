@@ -63,29 +63,90 @@ public partial class ExprCloner<TContext> : ExprVisitor<BaseExpr, IRType, TConte
 
     public override IRType VisitType(TupleType type, TContext context)
     {
-        var newTypes = CloneTypeArray(type.Fields.ToArray().AsReadOnlySpan(), context);
-        return type with { Fields = newTypes };
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedTypeArray((ReadOnlySpan<IRType>)type.Fields, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            var newTypes = CloneTypeArray((ReadOnlySpan<IRType>)type.Fields, context);
+            return type with { Fields = newTypes };
+        }
+
+        return type;
     }
 
     public override IRType VisitType(CallableType type, TContext context)
     {
-        var newParamsTypes = CloneTypeArray(type.Parameters.ToArray().AsReadOnlySpan(), context);
-        var newReturnType = CloneType(type.ReturnType, context);
-        return type with { Parameters = newParamsTypes, ReturnType = newReturnType };
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedTypeArray((ReadOnlySpan<IRType>)type.Parameters, context)
+                || IsMutatedType(type.ReturnType, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            var newParamsTypes = CloneTypeArray((ReadOnlySpan<IRType>)type.Parameters, context);
+            var newReturnType = CloneType(type.ReturnType, context);
+            return type with { Parameters = newParamsTypes, ReturnType = newReturnType };
+        }
+
+        return type;
     }
 
     public override IRType VisitType(PointerType type, TContext context) => type;
 
     public override IRType VisitType(DistributedType type, TContext context)
     {
-        var newTensorType = CloneType(type.TensorType, context);
-        return type with { TensorType = newTensorType };
+        bool IsOperandsMutated()
+        {
+            if (IsMutatedType(type.TensorType, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            var newTensorType = CloneType(type.TensorType, context);
+            return type with { TensorType = newTensorType };
+        }
+
+        return type;
     }
 
     public override IRType VisitType(TensorType type, TContext context)
     {
-        var newShape = Clone(type.Shape, context);
-        return type with { Shape = newShape };
+        bool IsOperandsMutated()
+        {
+            if (IsMutated(type.Shape, context))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            var newShape = Clone(type.Shape, context);
+            return type with { Shape = newShape };
+        }
+
+        return type;
     }
 
     public override IRType VisitType(DimensionType type, TContext context) => type;
@@ -156,6 +217,12 @@ public partial class ExprCloner<TContext> : ExprVisitor<BaseExpr, IRType, TConte
 
     protected bool IsMutatedArray(ReadOnlySpan<IVar> values, TContext context)
         => IsMutatedArray(SpanUtility.UnsafeCast<IVar, BaseExpr>(values), context);
+
+    protected bool IsMutatedTypeArray<T>(ReadOnlySpan<T> values, TContext context)
+        where T : IRType
+    {
+        return values.AsValueEnumerable().Any(v => IsMutatedType(v, context));
+    }
 }
 
 public sealed class ReplacingExprCloner : ExprCloner<Unit>

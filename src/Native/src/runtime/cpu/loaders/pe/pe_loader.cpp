@@ -134,6 +134,13 @@ void pe_loader::load(std::span<const std::byte> pe) {
 #endif
 }
 
+void pe_loader::load_from_file(std::string_view path) {
+    image_ = LoadLibraryA(path.data());
+    THROW_WIN32_IF_NOT(image_);
+    entry_ = (void *)GetProcAddress((HMODULE)image_, "block_entry");
+    THROW_WIN32_IF_NOT(entry_);
+}
+
 void *pe_loader::entry() const noexcept {
 #if 1
     return entry_;

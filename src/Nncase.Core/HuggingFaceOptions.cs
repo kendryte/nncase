@@ -19,6 +19,8 @@ public record HuggingFaceOptions
 
     public bool OutputHiddenStates { get; set; }
 
+    public int NumLayers { get; set; } = -1;
+
     // public bool UseCache { get; set; }
     public HuggingFaceAttentionBackendKind AttenionBackend { get; set; }
 

@@ -83,7 +83,7 @@ public sealed class AutoTilePass : FunctionPass
         }
 
         // 3. reconstruction
-        var constructor = new AutoTileReconstructor(tiler, ModuleKind, CompileOptions, condenseAlgo);
+        var constructor = new AutoTileReconstructor(tiler, ModuleKind, CompileOptions, condenseAlgo, func.Parameters.ToArray().OfType<DimVar>().ToArray());
         var post = constructor.Construct();
         return Task.FromResult((BaseFunction)func.With(body: post));
     }
@@ -119,12 +119,13 @@ internal sealed class AutoTileExprGraphConvertor : ExprGraphConvertor<ExprVertex
 
 internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, ExprEdge>
 {
-    public AutoTileReconstructor(GraphTiler tiler, string moduleKind, CompileOptions compileOptions, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo)
+    public AutoTileReconstructor(GraphTiler tiler, string moduleKind, CompileOptions compileOptions, CondensationGraphAlgorithm<ExprVertex, ExprEdge> algo, DimVar[] dynamicDimVars)
         : base(algo)
     {
         Tiler = tiler;
         ModuleKind = moduleKind;
         CompileOptions = compileOptions;
+        DynamicDimVars = dynamicDimVars;
     }
 
     public GraphTiler Tiler { get; }
@@ -132,6 +133,8 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
     public string ModuleKind { get; }
 
     public CompileOptions CompileOptions { get; }
+
+    public DimVar[] DynamicDimVars { get; }
 
     protected override BaseExpr OnAtomCluster(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, int sortIndex)
     {
@@ -160,7 +163,7 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
 
             var cloner = new ExprClusterCloner(extractDict);
             var cloned = (Expr)cloner.Clone(expr, default);
-            var tiled = Tiler.Tile(cloned, ModuleKind, (INTTTargetOptions)CompileOptions.TargetOptions);
+            var tiled = Tiler.Tile(cloned, ModuleKind, (INTTTargetOptions)CompileOptions.TargetOptions, DynamicDimVars);
             var substitutor = new Mutators.Substitutor(e =>
             {
                 if (e is Var v && argumentDict.TryGetValue(v, out var arg))
@@ -212,7 +215,7 @@ internal sealed class AutoTileReconstructor : ExprReconstructor<ExprVertex, Expr
         }
 
         var cloned = clones.Count == 1 ? clones[0] : new IR.Tuple(clones.ToArray());
-        var tiled = Tiler.Tile(cloned, ModuleKind, (INTTTargetOptions)CompileOptions.TargetOptions);
+        var tiled = Tiler.Tile(cloned, ModuleKind, (INTTTargetOptions)CompileOptions.TargetOptions, DynamicDimVars);
         var substitutor = new Mutators.Substitutor(e =>
         {
             if (e is Var v && argumentDict.TryGetValue(v, out var arg))

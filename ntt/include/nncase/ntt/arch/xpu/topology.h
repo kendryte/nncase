@@ -106,7 +106,7 @@ template <> class topology_synchronizer<topology::thread> {
   private:
   public:
     static void synchronize() noexcept {
-#ifndef SYS_MODE
+#ifndef SYS_MODE1
         detail::arrive_and_wait(thread_barriers[cid()][did()][bid()].barrier,
                                 tdim());
 #else
@@ -124,7 +124,7 @@ template <> class topology_synchronizer<topology::block> {
   private:
   public:
     static void synchronize() noexcept {
-#ifndef SYS_MODE
+#ifndef SYS_MODE1
         detail::arrive_and_wait(block_barriers[cid()][did()].barrier,
                                 bdim() * tdim());
 #else
@@ -141,7 +141,7 @@ template <> class topology_synchronizer<topology::die> {
   private:
   public:
     static void synchronize() noexcept {
-#ifndef SYS_MODE
+#ifndef SYS_MODE1
         detail::arrive_and_wait(die_barriers[cid()].barrier,
                                 ddim() * bdim() * tdim());
 #else
@@ -158,7 +158,7 @@ template <> class topology_synchronizer<topology::chip> {
   private:
   public:
     static void synchronize() noexcept {
-#ifndef SYS_MODE
+#ifndef SYS_MODE1
         detail::arrive_and_wait(chip_barrier.barrier,
                                 cdim() * ddim() * bdim() * tdim());
 #else

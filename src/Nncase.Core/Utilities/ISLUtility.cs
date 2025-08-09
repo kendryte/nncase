@@ -21,7 +21,7 @@ public static class ISLUtility
         var dims = shape.Select((d, i) => $"d{i}").ToArray();
         for (int i = 0; i < dims.Length; i++)
         {
-            constraints.Add($"0 <= {dims[i]} < {shape[i]}");
+            constraints.Add($"{dims[i]} < {shape[i]}"); // note we can't assume the dims[i] >= 0, sometimes the shape will be 0, so that the dims[i] = -1.
         }
 
         return new Isl.set(Isl.ctx.Current, $"[{string.Join(',', dimVars)}] -> {{ [{string.Join(',', dims)}] : {string.Join(" and ", constraints)} }}");
