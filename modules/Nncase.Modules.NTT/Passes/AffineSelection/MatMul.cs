@@ -52,6 +52,21 @@ public partial class NTTAffineSelectionPass
                     reduceSum = true;
                 }
             }
+            else if (op is IR.NTT.PackedMatMul)
+            {
+                if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^1] &&
+                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^2])
+                {
+                    return call;
+                }
+
+                if (dta.AxisPolicies[^1] == dtb.AxisPolicies[^1] && dta.AxisPolicies[^1] is SBPSplit)
+                {
+                    reduceSum = true;
+                }
+            }
         }
 
         if (reduceSum)

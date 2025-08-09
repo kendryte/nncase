@@ -24,9 +24,9 @@ struct u_packed_gemv {
     static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
     template <Dimension TLdb, Dimension TK, Dimension TN>
-    constexpr void operator()(NTT_RESTRICT const TAElem *a,
-                              NTT_RESTRICT const TBPack *b,
-                              NTT_RESTRICT TCPack *c, const TLdb &ldb,
+    constexpr void operator()(const TAElem *NTT_RESTRICT a,
+                              const TBPack *NTT_RESTRICT b,
+                              TCPack *NTT_RESTRICT c, const TLdb &ldb,
                               const TK &K, const TN &N) noexcept {
         if constexpr (!AccumulateC) {
             for (size_t n1 = 0; n1 < N; n1++) {

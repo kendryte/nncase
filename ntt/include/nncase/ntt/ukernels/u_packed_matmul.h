@@ -27,9 +27,9 @@ struct u_packed_matmul {
     static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
     template <Dimension TLda, Dimension TLdc, Dimension TK>
-    constexpr void operator()(NTT_RESTRICT const TAElem *a,
-                              NTT_RESTRICT const TBPack *b,
-                              NTT_RESTRICT TCPack *c, const TLda &lda,
+    constexpr void operator()(const TAElem *NTT_RESTRICT a,
+                              const TBPack *NTT_RESTRICT b,
+                              TCPack *NTT_RESTRICT c, const TLda &lda,
                               const TLdc &ldc, const TK &K) noexcept {
         TCElem c0_tmp[M0Tile][N0Tile];
         ntt::apply(fixed_shape_v<M0Tile, N0Tile>, [&](auto index) {
