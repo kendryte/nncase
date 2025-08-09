@@ -284,6 +284,235 @@ TEST(SliceTestFloat, Pack_ranked_shape) {
     RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 2)
 }
 
+// half
+TEST(SliceTestHalf, NoPack_dim_1_step_eq_1) {
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 32>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 4>);
+    ntt::slice(ntt_input, ntt_output1, fixed_shape_v<4>, fixed_shape_v<8>,
+               ntt::fixed_shape_v<1>, ntt::fixed_shape_v<1>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 4>);
+
+    // ort
+    RUN_ORT_SLICE({4}, {8}, {1}, {1})
+}
+
+TEST(SliceTestHalf, NoPack_dim_1_step_gt_1) {
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 32>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 4>);
+    ntt::slice(ntt_input, ntt_output1, fixed_shape_v<4>, fixed_shape_v<12>,
+               ntt::fixed_shape_v<1>, ntt::fixed_shape_v<2>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 4>);
+    // ort
+    RUN_ORT_SLICE({4}, {12}, {1}, {2})
+}
+
+TEST(SliceTestHalf, NoPack_dim_0_step_eq_1) {
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 32>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<4, 32>);
+    ntt::slice(ntt_input, ntt_output1, fixed_shape_v<4>, fixed_shape_v<8>,
+               ntt::fixed_shape_v<0>, ntt::fixed_shape_v<1>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<4, 32>);
+    // ort
+    RUN_ORT_SLICE({4}, {8}, {0}, {1})
+}
+
+TEST(SliceTestHalf, NoPack_dim_0_step_gt_1) {
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 32>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<4, 32>);
+    ntt::slice(ntt_input, ntt_output1, fixed_shape_v<4>, fixed_shape_v<12>,
+               ntt::fixed_shape_v<0>, ntt::fixed_shape_v<2>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<4, 32>);
+    // ort
+    RUN_ORT_SLICE({4}, {12}, {0}, {2})
+}
+
+TEST(SliceTestHalf, NoPack_dim_0_1_step_eq_1) {
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 32>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<4, 4>);
+    ntt::slice(ntt_input, ntt_output1, fixed_shape_v<1, 4>, fixed_shape_v<5, 8>,
+               ntt::fixed_shape_v<0, 1>, ntt::fixed_shape_v<1, 1>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<4, 4>);
+    // ort
+    int64_t starts_buf[] = {1, 4};
+    int64_t stops_buf[] = {5, 8};
+    int64_t axes_buf[] = {0, 1};
+    int64_t steps_buf[] = {1, 1};
+    RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 2)
+}
+
+TEST(SliceTestHalf, NoPack_dim_0_1_step_gt_1) {
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<32, 32>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<4, 4>);
+    ntt::slice(ntt_input, ntt_output1, fixed_shape_v<1, 4>,
+               fixed_shape_v<8, 12>, ntt::fixed_shape_v<0, 1>,
+               ntt::fixed_shape_v<2, 2>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<4, 4>);
+    // ort
+    int64_t starts_buf[] = {1, 4};
+    int64_t stops_buf[] = {8, 12};
+    int64_t axes_buf[] = {0, 1};
+    int64_t steps_buf[] = {2, 2};
+    RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 2)
+}
+
+TEST(SliceTestHalf, NoPack_dim_multiple_step_eq_1) {
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<1, 3, 32, 32>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<1, 2, 4, 4>);
+    ntt::slice(ntt_input, ntt_output1, fixed_shape_v<1, 1, 4>,
+               fixed_shape_v<3, 5, 8>, ntt::fixed_shape_v<1, 2, 3>,
+               ntt::fixed_shape_v<1, 1, 1>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<1, 2, 4, 4>);
+    // ort
+    int64_t starts_buf[] = {1, 1, 4};
+    int64_t stops_buf[] = {3, 5, 8};
+    int64_t axes_buf[] = {1, 2, 3};
+    int64_t steps_buf[] = {1, 1, 1};
+    RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 3)
+}
+
+TEST(SliceTestHalf, NoPack_dim_multiple_step_gt_1) {
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<1, 3, 32, 32>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<1, 2, 5, 6>);
+    ntt::slice(ntt_input, ntt_output1, fixed_shape_v<0, 1, 4>,
+               fixed_shape_v<3, 10, 16>, ntt::fixed_shape_v<1, 2, 3>,
+               ntt::fixed_shape_v<2, 2, 2>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<1, 2, 5, 6>);
+    // ort
+    int64_t starts_buf[] = {0, 1, 4};
+    int64_t stops_buf[] = {3, 10, 16};
+    int64_t axes_buf[] = {1, 2, 3};
+    int64_t steps_buf[] = {2, 2, 2};
+    RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 3)
+}
+
+TEST(SliceTestHalf, Pack_fixed_shape) {
+    constexpr size_t P = NTT_VLEN / (sizeof(half) * 8);
+    constexpr size_t M = 1024;
+    constexpr size_t N = P * 32;
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<M, N>);
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto pack_input =
+        ntt::make_tensor<ntt::vector<half, P>>(ntt::fixed_shape_v<M, N / P>);
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<1>);
+    auto pack_output =
+        ntt::make_tensor<ntt::vector<half, P>>(ntt::fixed_shape_v<16, 16>);
+    ntt::slice(pack_input, pack_output, fixed_shape_v<0, 0>,
+               fixed_shape_v<16, 16>, ntt::fixed_shape_v<0, 1>,
+               ntt::fixed_shape_v<1, 1>);
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<16, 16 * P>);
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<1>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<16, 16 * P>);
+    // ort
+    int64_t starts_buf[] = {0, 0};
+    int64_t stops_buf[] = {16, 16 * P};
+    int64_t axes_buf[] = {0, 1};
+    int64_t steps_buf[] = {1, 1};
+    RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 2)
+}
+
+TEST(SliceTestHalf, Pack_ranked_shape) {
+    constexpr size_t P = NTT_VLEN / (sizeof(half) * 8);
+    constexpr size_t M = 1024;
+    constexpr size_t N = P * 32;
+    half min_input = half(-10.0f);
+    half max_input = half(10.0f);
+
+    // init
+    auto ntt_input = ntt::make_tensor<half>(ntt::make_shape(M, N));
+    NttTest::init_tensor(ntt_input, min_input, max_input);
+
+    // ntt
+    auto pack_input =
+        ntt::make_tensor<ntt::vector<half, P>>(ntt::make_shape(M, N / P));
+    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<1>);
+    auto pack_output =
+        ntt::make_tensor<ntt::vector<half, P>>(ntt::make_shape(16, 16));
+    ntt::slice(pack_input, pack_output, fixed_shape_v<0, 0>,
+               fixed_shape_v<16, 16>, ntt::fixed_shape_v<0, 1>,
+               ntt::fixed_shape_v<1, 1>);
+    auto ntt_output1 = ntt::make_tensor<half>(ntt::make_shape(16, 16 * P));
+    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<1>);
+
+    auto ntt_output2 = ntt::make_tensor<half>(ntt::make_shape(16, 16 * P));
+    // ort
+    int64_t starts_buf[] = {0, 0};
+    int64_t stops_buf[] = {16, 16 * P};
+    int64_t axes_buf[] = {0, 1};
+    int64_t steps_buf[] = {1, 1};
+    RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 2)
+}
+
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

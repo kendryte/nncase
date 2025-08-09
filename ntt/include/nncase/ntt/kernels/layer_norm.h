@@ -48,7 +48,9 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     constexpr bool UseVectorReduce =
         packed_axes_temp.rank() == 1 && packed_axes_temp[0] >= axis_value;
 
-    TElem finner_size = (TElem)inner_size;
+    using TElemScalar = element_or_scalar_t<TElem>;
+    auto temp_size = (TElemScalar)(float)inner_size;
+    TElem finner_size = (TElem)temp_size;
     if constexpr (UseVectorReduce) {
         finner_size = finner_size * (TElem)TElem::size();
     }
