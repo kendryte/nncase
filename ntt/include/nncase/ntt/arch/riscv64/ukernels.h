@@ -102,7 +102,7 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
     }
 };
 
-#define DEFINE_U_UNARY(OP)                                                     \
+#define DEFINE_U_UNARY_F32(OP)                                                 \
     template <>                                                                \
     struct u_unary<ntt::ops::OP<vector<float, NTT_VLEN / 32>>,                 \
                    vector<float, NTT_VLEN / 32>, true> {                       \
@@ -195,15 +195,135 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
         }                                                                      \
     };
 
-DEFINE_U_UNARY(abs)
-DEFINE_U_UNARY(ceil)
-DEFINE_U_UNARY(floor)
-DEFINE_U_UNARY(neg)
-DEFINE_U_UNARY(round)
-DEFINE_U_UNARY(sign)
-DEFINE_U_UNARY(square)
-DEFINE_U_UNARY(sqrt)
-DEFINE_U_UNARY(rsqrt)
+#define DEFINE_U_UNARY_HALF(OP)                                                \
+    template <>                                                                \
+    struct u_unary<ntt::ops::OP<vector<half, NTT_VLEN / 16>>,                  \
+                   vector<half, NTT_VLEN / 16>, true> {                        \
+      public:                                                                  \
+        void operator()(const ntt::ops::OP<vector<half, NTT_VLEN / 16>> &op,   \
+                        const vector<half, NTT_VLEN / 16> *input,              \
+                        size_t in_stride, vector<half, NTT_VLEN / 16> *output, \
+                        size_t out_stride, size_t count) noexcept {            \
+            using policy_t =                                                   \
+                u_unary_policy<ntt::ops::OP<vector<half, NTT_VLEN / 16>>,      \
+                               vector<half, NTT_VLEN / 16>, true>;             \
+            constexpr auto unroll = policy_t::unroll;                          \
+            constexpr auto lmul = 8;                                           \
+            constexpr auto vl = NTT_VLEN / 16 * lmul;                          \
+            constexpr auto unit = sizeof(vector<half, vl>);                    \
+            auto in_strides = in_stride * unit;                                \
+            auto out_strides = out_stride * unit;                              \
+            register vfloat16m8_t v0_reg asm("v0");                            \
+            register vfloat16m8_t v8_reg asm("v8");                            \
+            register vfloat16m8_t v16_reg asm("v16");                          \
+            register vfloat16m8_t v24_reg asm("v24");                          \
+                                                                               \
+            while (count / unroll) {                                           \
+                asm("vsetvli zero, %[vl], e16, m8, ta, ma\n" ::[vl] "r"(vl));  \
+                asm volatile(                                                  \
+                    "vle16.v %[v0_reg],  (%[input])\n"                         \
+                    "add %[input], %[input], %[in_strides]\n"                  \
+                    "vle16.v %[v8_reg],  (%[input])\n"                         \
+                    "add %[input], %[input], %[in_strides]\n"                  \
+                    "vle16.v %[v16_reg],  (%[input])\n"                        \
+                    "add %[input], %[input], %[in_strides]\n"                  \
+                    "vle16.v %[v24_reg],  (%[input])\n"                        \
+                    "add %[input], %[input], %[in_strides]\n"                  \
+                    : [input] "+r"(input), [output] "+r"(output),              \
+                      [v0_reg] "+vr"(v0_reg), [v8_reg] "+vr"(v8_reg),          \
+                      [v16_reg] "+vr"(v16_reg), [v24_reg] "+vr"(v24_reg)       \
+                    : [in_strides] "r"(in_strides), [out_strides] "r"(         \
+                                                        out_strides)           \
+                    : "memory");                                               \
+                                                                               \
+                v0_reg = nncase::ntt::OP((ntt::vector<half, vl>)v0_reg);       \
+                asm volatile(                                                  \
+                    "vse16.v %[v0_reg],  (%[output])\n"                        \
+                    "add %[output], %[output], %[out_strides]\n"               \
+                    : [input] "+r"(input), [output] "+r"(output),              \
+                      [v0_reg] "+vr"(v0_reg)                                   \
+                    : [in_strides] "r"(in_strides), [out_strides] "r"(         \
+                                                        out_strides)           \
+                    : "memory");                                               \
+                                                                               \
+                v8_reg = nncase::ntt::OP((ntt::vector<half, vl>)v8_reg);       \
+                asm volatile(                                                  \
+                    "vse16.v %[v8_reg],  (%[output])\n"                        \
+                    "add %[output], %[output], %[out_strides]\n"               \
+                    : [input] "+r"(input), [output] "+r"(output),              \
+                      [v8_reg] "+vr"(v8_reg)                                   \
+                    : [in_strides] "r"(in_strides), [out_strides] "r"(         \
+                                                        out_strides)           \
+                    : "memory");                                               \
+                                                                               \
+                v16_reg = nncase::ntt::OP((ntt::vector<half, vl>)v16_reg);     \
+                asm volatile(                                                  \
+                    "vse16.v %[v16_reg],  (%[output])\n"                       \
+                    "add %[output], %[output], %[out_strides]\n"               \
+                    : [input] "+r"(input), [output] "+r"(output),              \
+                      [v16_reg] "+vr"(v16_reg)                                 \
+                    : [in_strides] "r"(in_strides), [out_strides] "r"(         \
+                                                        out_strides)           \
+                    : "memory");                                               \
+                                                                               \
+                v24_reg = nncase::ntt::OP((ntt::vector<half, vl>)v24_reg);     \
+                asm volatile(                                                  \
+                    "vse16.v %[v24_reg],  (%[output])\n"                       \
+                    "add %[output], %[output], %[out_strides]\n"               \
+                    : [input] "+r"(input), [output] "+r"(output),              \
+                      [v24_reg] "+vr"(v24_reg)                                 \
+                    : [in_strides] "r"(in_strides), [out_strides] "r"(         \
+                                                        out_strides)           \
+                    : "memory");                                               \
+                                                                               \
+                count -= unroll;                                               \
+            }                                                                  \
+                                                                               \
+            for (size_t i = 0; i < count; i++) {                               \
+                *output = op(*input);                                          \
+                input += in_stride;                                            \
+                output += out_stride;                                          \
+            }                                                                  \
+        }                                                                      \
+    };
+
+DEFINE_U_UNARY_F32(abs)
+DEFINE_U_UNARY_F32(ceil)
+DEFINE_U_UNARY_F32(floor)
+DEFINE_U_UNARY_F32(neg)
+DEFINE_U_UNARY_F32(round)
+DEFINE_U_UNARY_F32(sign)
+DEFINE_U_UNARY_F32(square)
+DEFINE_U_UNARY_F32(sqrt)
+DEFINE_U_UNARY_F32(rsqrt)
+DEFINE_U_UNARY_F32(tanh)
+DEFINE_U_UNARY_F32(exp)
+DEFINE_U_UNARY_F32(log)
+DEFINE_U_UNARY_F32(sin)
+DEFINE_U_UNARY_F32(cos)
+DEFINE_U_UNARY_F32(sinh)
+DEFINE_U_UNARY_F32(cosh)
+DEFINE_U_UNARY_F32(erf)
+DEFINE_U_UNARY_F32(swish)
+
+DEFINE_U_UNARY_HALF(abs)
+DEFINE_U_UNARY_HALF(ceil)
+DEFINE_U_UNARY_HALF(floor)
+DEFINE_U_UNARY_HALF(neg)
+DEFINE_U_UNARY_HALF(round)
+DEFINE_U_UNARY_HALF(sign)
+DEFINE_U_UNARY_HALF(square)
+DEFINE_U_UNARY_HALF(sqrt)
+DEFINE_U_UNARY_HALF(rsqrt)
+DEFINE_U_UNARY_HALF(tanh)
+DEFINE_U_UNARY_HALF(exp)
+DEFINE_U_UNARY_HALF(log)
+DEFINE_U_UNARY_HALF(sin)
+DEFINE_U_UNARY_HALF(cos)
+DEFINE_U_UNARY_HALF(sinh)
+DEFINE_U_UNARY_HALF(cosh)
+DEFINE_U_UNARY_HALF(erf)
+DEFINE_U_UNARY_HALF(swish)
 
 // binary
 #define SPECIALIZE_U_BINARY(op, unroll_num)                                    \
