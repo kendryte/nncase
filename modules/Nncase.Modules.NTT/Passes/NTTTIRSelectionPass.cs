@@ -217,7 +217,11 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 newDimensions[^1] = newDimensions[^1] * srcSize / destSize;
                 if (newStrides.Length > 1)
                 {
-                    newStrides[^2] = newStrides[^2] * srcSize / destSize;
+                    newStrides[^1] = 1;
+                    for (var i = 0; i < newStrides.Length - 1; i++)
+                    {
+                        newStrides[i] = newStrides[i] * srcSize / destSize;
+                    }
                 }
             }
         }

@@ -55,6 +55,8 @@ struct u_packed_matmul {
                         ntt::mul_add(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
                 }
             }
+
+            ntt::prefetch<prefetch_hint::l1>(&b[k1 + 8]);
         }
 
         ntt::apply(fixed_shape_v<M0Tile, N0Tile>, [&](auto index) {
