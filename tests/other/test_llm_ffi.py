@@ -98,15 +98,15 @@ def test_paged_attention_config():
     block_layout = config.block_layout
     assert len(block_layout) == 2  # Should have 2 dimensions
 
-    # Test packed_axes property
-    packed_axes = [
+    # Test vectorized_axes property
+    vectorized_axes = [
         nncase.PagedKVCacheDimKind.NumKVHeads,
         nncase.PagedKVCacheDimKind.HeadDim
     ]
-    config.packed_axes = packed_axes
-    assert len(config.packed_axes) == len(packed_axes)
-    for i, dim in enumerate(packed_axes):
-        assert config.packed_axes[i] == dim
+    config.vectorized_axes = vectorized_axes
+    assert len(config.vectorized_axes) == len(vectorized_axes)
+    for i, dim in enumerate(vectorized_axes):
+        assert config.vectorized_axes[i] == dim
 
     # Test lanes property
     lanes = [2, 4, 8]
@@ -503,14 +503,14 @@ def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.
                                            nncase.PagedKVCacheDimKind.KV,
                                            nncase.PagedKVCacheDimKind.BlockSize,
                                            nncase.PagedKVCacheDimKind.HeadDim]])
-@pytest.mark.parametrize("packed_axes", [[]])
+@pytest.mark.parametrize("vectorized_axes", [[]])
 @pytest.mark.parametrize("sharding_config", [ShardingConfig([nncase.PagedKVCacheDimKind.NumBlocks], [[0]], [1])])
-def test_paged_attention_with_sdpa(head_config, block_config, kv_type: np.dtype, cache_layout, packed_axes, sharding_config):
+def test_paged_attention_with_sdpa(head_config, block_config, kv_type: np.dtype, cache_layout, vectorized_axes, sharding_config):
     (num_layers, num_q_heads, num_kv_heads, head_dim) = head_config
     (block_size,
      num_blocks, max_sessions) = block_config
     max_model_len = (block_size * num_blocks) // max_sessions
-    lanes = [128 / kv_type.itemsize for axes in packed_axes]
+    lanes = [128 / kv_type.itemsize for axes in vectorized_axes]
     (sharding_axes, axis_policies, hierarchy) = sharding_config
 
     config = nncase.PagedAttentionConfig(
@@ -520,7 +520,7 @@ def test_paged_attention_with_sdpa(head_config, block_config, kv_type: np.dtype,
         kv_type,
         block_size,
         cache_layout,
-        packed_axes,
+        vectorized_axes,
         lanes,
         sharding_axes,
         axis_policies)

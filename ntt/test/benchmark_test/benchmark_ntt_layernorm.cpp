@@ -8,8 +8,8 @@
 
 using namespace nncase;
 
-// no pack
-void benchmark_ntt_layernorm_fixed_reduceAxis1_noPack() {
+// no vectorize
+void benchmark_ntt_layernorm_fixed_reduceAxis1_noVectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -29,17 +29,17 @@ void benchmark_ntt_layernorm_fixed_reduceAxis1_noPack() {
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 0.f);
 
-    // no pack
+    // no vectorize
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
 
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+        vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                           1_dim, ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+        vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                           1_dim, ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
@@ -50,7 +50,7 @@ void benchmark_ntt_layernorm_fixed_reduceAxis1_noPack() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_fixed_reduceAxis2_noPack() {
+void benchmark_ntt_layernorm_fixed_reduceAxis2_noVectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -71,15 +71,15 @@ void benchmark_ntt_layernorm_fixed_reduceAxis2_noPack() {
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<D0, D1, D2>);
-    // no pack
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+        vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                           2_dim, ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+        vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                           2_dim, ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
@@ -90,7 +90,7 @@ void benchmark_ntt_layernorm_fixed_reduceAxis2_noPack() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_fixed_reduceAxis1_packAxis1() {
+void benchmark_ntt_layernorm_fixed_reduceAxis1_vectorizeAxis1() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -123,15 +123,15 @@ void benchmark_ntt_layernorm_fixed_reduceAxis1_packAxis1() {
     pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
     pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
 
-    // no pack
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+        vectorized_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
                           ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+        vectorized_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
                           ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(buffer_6));
     }
@@ -142,7 +142,7 @@ void benchmark_ntt_layernorm_fixed_reduceAxis1_packAxis1() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_fixed_reduceAxis2_packAxis2() {
+void benchmark_ntt_layernorm_fixed_reduceAxis2_vectorizeAxis2() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -164,31 +164,31 @@ void benchmark_ntt_layernorm_fixed_reduceAxis2_packAxis2() {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().rbegin(), bias.elements().rend(), 0.f);
 
-    auto input_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto input_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
-    auto scale_packed =
+    auto scale_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<D2 / P>);
-    auto bias_packed =
+    auto bias_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<D2 / P>);
-    ntt::pack(input, input_packed, ntt::fixed_shape_v<2>);
-    ntt::pack(scale, scale_packed, ntt::fixed_shape_v<0>);
-    ntt::pack(bias, bias_packed, ntt::fixed_shape_v<0>);
-    auto output_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    ntt::pack(input, input_vectorized, ntt::fixed_shape_v<2>);
+    ntt::pack(scale, scale_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(bias, bias_vectorized, ntt::fixed_shape_v<0>);
+    auto output_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
-    // no pack
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(input_packed, scale_packed, bias_packed,
-                          output_packed, 1E-06, 2_dim, ntt::fixed_shape_v<2>,
+        vectorized_layer_norm(input_vectorized, scale_vectorized, bias_vectorized,
+                          output_vectorized, 1E-06, 2_dim, ntt::fixed_shape_v<2>,
                           ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(input_packed, scale_packed, bias_packed,
-                          output_packed, 1E-06, 2_dim, ntt::fixed_shape_v<2>,
+        vectorized_layer_norm(input_vectorized, scale_vectorized, bias_vectorized,
+                          output_vectorized, 1E-06, 2_dim, ntt::fixed_shape_v<2>,
                           ntt::fixed_shape_v<>);
-        asm volatile("" ::"g"(output_packed));
+        asm volatile("" ::"g"(output_vectorized));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -197,7 +197,7 @@ void benchmark_ntt_layernorm_fixed_reduceAxis2_packAxis2() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_fixed_reduceAxis2_packAxis1() {
+void benchmark_ntt_layernorm_fixed_reduceAxis2_vectorizeAxis1() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -225,15 +225,15 @@ void benchmark_ntt_layernorm_fixed_reduceAxis2_packAxis1() {
         ntt::fixed_shape_v<D0, D1 / P, D2>);
     pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
 
-    // no pack
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+        vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                           ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+        vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                           ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(buffer_4));
     }
@@ -244,7 +244,7 @@ void benchmark_ntt_layernorm_fixed_reduceAxis2_packAxis1() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_fixed_reduceAxis1_packAxis2() {
+void benchmark_ntt_layernorm_fixed_reduceAxis1_vectorizeAxis2() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -266,31 +266,31 @@ void benchmark_ntt_layernorm_fixed_reduceAxis1_packAxis2() {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    auto packed_input = ntt::make_tensor<ntt::vector<float, P>>(
+    // vectorized axis < layer norm axis
+    auto vectorized_input = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
-    auto packed_scale =
+    auto vectorized_scale =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<D1, D2 / P>);
-    auto packed_bias =
+    auto vectorized_bias =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<D1, D2 / P>);
-    auto packed_output = ntt::make_tensor<ntt::vector<float, P>>(
+    auto vectorized_output = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
-    pack(input, packed_input, ntt::fixed_shape_v<2>);
-    pack(scale, packed_scale, ntt::fixed_shape_v<1>);
-    pack(bias, packed_bias, ntt::fixed_shape_v<1>);
-    // no pack
+    pack(input, vectorized_input, ntt::fixed_shape_v<2>);
+    pack(scale, vectorized_scale, ntt::fixed_shape_v<1>);
+    pack(bias, vectorized_bias, ntt::fixed_shape_v<1>);
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(packed_input, packed_scale, packed_bias,
-                          packed_output, 1E-06, 1_dim, ntt::fixed_shape_v<1>,
+        vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias,
+                          vectorized_output, 1E-06, 1_dim, ntt::fixed_shape_v<1>,
                           ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(packed_input, packed_scale, packed_bias,
-                          packed_output, 1E-06, 1_dim, ntt::fixed_shape_v<1>,
+        vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias,
+                          vectorized_output, 1E-06, 1_dim, ntt::fixed_shape_v<1>,
                           ntt::fixed_shape_v<>);
-        asm volatile("" ::"g"(packed_output));
+        asm volatile("" ::"g"(vectorized_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -299,8 +299,8 @@ void benchmark_ntt_layernorm_fixed_reduceAxis1_packAxis2() {
               << std::endl;
 }
 
-// no pack
-void benchmark_ntt_layernorm_ranked_reduceAxis1_noPack() {
+// no vectorize
+void benchmark_ntt_layernorm_ranked_reduceAxis1_noVectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -320,17 +320,17 @@ void benchmark_ntt_layernorm_ranked_reduceAxis1_noPack() {
     std::iota(buffer_1.elements().begin(), buffer_1.elements().end(), 0.f);
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 0.f);
 
-    // no pack
+    // no vectorize
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
 
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+        vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                           1_dim, ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+        vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                           1_dim, ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
@@ -341,7 +341,7 @@ void benchmark_ntt_layernorm_ranked_reduceAxis1_noPack() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_ranked_reduceAxis2_noPack() {
+void benchmark_ntt_layernorm_ranked_reduceAxis2_noVectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -362,15 +362,15 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_noPack() {
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
     auto ntt_output = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
-    // no pack
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+        vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                           2_dim, ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
+        vectorized_layer_norm(buffer_0, buffer_1, buffer_2, ntt_output, 1e-06,
                           2_dim, ntt::fixed_shape_v<>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
@@ -381,7 +381,7 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_noPack() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_ranked_reduceAxis1_packAxis1() {
+void benchmark_ntt_layernorm_ranked_reduceAxis1_vectorizeAxis1() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -414,15 +414,15 @@ void benchmark_ntt_layernorm_ranked_reduceAxis1_packAxis1() {
     pack(buffer_1, buffer_4, ntt::fixed_shape_v<0>);
     pack(buffer_2, buffer_5, ntt::fixed_shape_v<0>);
 
-    // no pack
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+        vectorized_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
                           ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
+        vectorized_layer_norm(buffer_3, buffer_4, buffer_5, buffer_6, 1E-06, 1_dim,
                           ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(buffer_6));
     }
@@ -433,7 +433,7 @@ void benchmark_ntt_layernorm_ranked_reduceAxis1_packAxis1() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis2() {
+void benchmark_ntt_layernorm_ranked_reduceAxis2_vectorizeAxis2() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -446,7 +446,7 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis2() {
     constexpr size_t D2 = 16;
 #endif
 
-    // packed axis == layer norm axis
+    // vectorized axis == layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto input = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
@@ -456,31 +456,31 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis2() {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().rbegin(), bias.elements().rend(), 0.f);
 
-    auto input_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto input_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1, D2 / P));
-    auto scale_packed =
+    auto scale_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(D2 / P));
-    auto bias_packed =
+    auto bias_vectorized =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(D2 / P));
-    ntt::pack(input, input_packed, ntt::fixed_shape_v<2>);
-    ntt::pack(scale, scale_packed, ntt::fixed_shape_v<0>);
-    ntt::pack(bias, bias_packed, ntt::fixed_shape_v<0>);
-    auto output_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    ntt::pack(input, input_vectorized, ntt::fixed_shape_v<2>);
+    ntt::pack(scale, scale_vectorized, ntt::fixed_shape_v<0>);
+    ntt::pack(bias, bias_vectorized, ntt::fixed_shape_v<0>);
+    auto output_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
-    // no pack
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(input_packed, scale_packed, bias_packed,
-                          output_packed, 1E-06, 2_dim, ntt::fixed_shape_v<2>,
+        vectorized_layer_norm(input_vectorized, scale_vectorized, bias_vectorized,
+                          output_vectorized, 1E-06, 2_dim, ntt::fixed_shape_v<2>,
                           ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(input_packed, scale_packed, bias_packed,
-                          output_packed, 1E-06, 2_dim, ntt::fixed_shape_v<2>,
+        vectorized_layer_norm(input_vectorized, scale_vectorized, bias_vectorized,
+                          output_vectorized, 1E-06, 2_dim, ntt::fixed_shape_v<2>,
                           ntt::fixed_shape_v<>);
-        asm volatile("" ::"g"(output_packed));
+        asm volatile("" ::"g"(output_vectorized));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -489,7 +489,7 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis2() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis1() {
+void benchmark_ntt_layernorm_ranked_reduceAxis2_vectorizeAxis1() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -502,7 +502,7 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis1() {
     constexpr size_t D2 = 16;
 #endif
 
-    // packed axis < layer norm axis
+    // vectorized axis < layer norm axis
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     auto buffer_0 = ntt::make_tensor<float>(ntt::make_shape(D0, D1, D2));
@@ -518,15 +518,15 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis1() {
         ntt::make_shape(D0, D1 / P, D2));
     pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
 
-    // no pack
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+        vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                           ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
+        vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                           ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(buffer_4));
     }
@@ -537,7 +537,7 @@ void benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis1() {
               << std::endl;
 }
 
-void benchmark_ntt_layernorm_ranked_reduceAxis1_packAxis2() {
+void benchmark_ntt_layernorm_ranked_reduceAxis1_vectorizeAxis2() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -559,31 +559,31 @@ void benchmark_ntt_layernorm_ranked_reduceAxis1_packAxis2() {
     std::iota(scale.elements().begin(), scale.elements().end(), 0.f);
     std::iota(bias.elements().begin(), bias.elements().end(), 0.f);
 
-    // packed axis < layer norm axis
-    auto packed_input = ntt::make_tensor<ntt::vector<float, P>>(
+    // vectorized axis < layer norm axis
+    auto vectorized_input = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1, D2 / P));
-    auto packed_scale =
+    auto vectorized_scale =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(D1, D2 / P));
-    auto packed_bias =
+    auto vectorized_bias =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(D1, D2 / P));
-    auto packed_output = ntt::make_tensor<ntt::vector<float, P>>(
+    auto vectorized_output = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::make_shape(D0, D1, D2 / P));
-    pack(input, packed_input, ntt::fixed_shape_v<2>);
-    pack(scale, packed_scale, ntt::fixed_shape_v<1>);
-    pack(bias, packed_bias, ntt::fixed_shape_v<1>);
-    // no pack
+    pack(input, vectorized_input, ntt::fixed_shape_v<2>);
+    pack(scale, vectorized_scale, ntt::fixed_shape_v<1>);
+    pack(bias, vectorized_bias, ntt::fixed_shape_v<1>);
+    // no vectorize
     for (size_t i = 0; i < warmup_num; i++) {
-        packed_layer_norm(packed_input, packed_scale, packed_bias,
-                          packed_output, 1E-06, 1_dim, ntt::fixed_shape_v<1>,
+        vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias,
+                          vectorized_output, 1E-06, 1_dim, ntt::fixed_shape_v<1>,
                           ntt::fixed_shape_v<>);
     }
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_layer_norm(packed_input, packed_scale, packed_bias,
-                          packed_output, 1E-06, 1_dim, ntt::fixed_shape_v<1>,
+        vectorized_layer_norm(vectorized_input, vectorized_scale, vectorized_bias,
+                          vectorized_output, 1E-06, 1_dim, ntt::fixed_shape_v<1>,
                           ntt::fixed_shape_v<>);
-        asm volatile("" ::"g"(packed_output));
+        asm volatile("" ::"g"(vectorized_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
 
@@ -594,19 +594,19 @@ void benchmark_ntt_layernorm_ranked_reduceAxis1_packAxis2() {
 
 int main() {
 
-    benchmark_ntt_layernorm_fixed_reduceAxis1_noPack();
-    benchmark_ntt_layernorm_fixed_reduceAxis2_noPack();
-    benchmark_ntt_layernorm_fixed_reduceAxis1_packAxis1();
-    benchmark_ntt_layernorm_fixed_reduceAxis2_packAxis2();
-    benchmark_ntt_layernorm_fixed_reduceAxis2_packAxis1();
-    benchmark_ntt_layernorm_fixed_reduceAxis1_packAxis2();
+    benchmark_ntt_layernorm_fixed_reduceAxis1_noVectorize();
+    benchmark_ntt_layernorm_fixed_reduceAxis2_noVectorize();
+    benchmark_ntt_layernorm_fixed_reduceAxis1_vectorizeAxis1();
+    benchmark_ntt_layernorm_fixed_reduceAxis2_vectorizeAxis2();
+    benchmark_ntt_layernorm_fixed_reduceAxis2_vectorizeAxis1();
+    benchmark_ntt_layernorm_fixed_reduceAxis1_vectorizeAxis2();
 
-    benchmark_ntt_layernorm_ranked_reduceAxis1_noPack();
-    benchmark_ntt_layernorm_ranked_reduceAxis2_noPack();
-    benchmark_ntt_layernorm_ranked_reduceAxis1_packAxis1();
-    benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis2();
-    benchmark_ntt_layernorm_ranked_reduceAxis2_packAxis1();
-    benchmark_ntt_layernorm_ranked_reduceAxis1_packAxis2();
+    benchmark_ntt_layernorm_ranked_reduceAxis1_noVectorize();
+    benchmark_ntt_layernorm_ranked_reduceAxis2_noVectorize();
+    benchmark_ntt_layernorm_ranked_reduceAxis1_vectorizeAxis1();
+    benchmark_ntt_layernorm_ranked_reduceAxis2_vectorizeAxis2();
+    benchmark_ntt_layernorm_ranked_reduceAxis2_vectorizeAxis1();
+    benchmark_ntt_layernorm_ranked_reduceAxis1_vectorizeAxis2();
 
     return 0;
 }

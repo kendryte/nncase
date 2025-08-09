@@ -42,8 +42,8 @@ internal sealed class PagedAttentionConfigConverter : JsonConverter<IPagedAttent
             root.GetProperty(nameof(IPagedAttentionConfig.CacheLayout)).GetRawText(),
             options)!;
 
-        var packedAxes = JsonSerializer.Deserialize<PagedKVCacheDimKind[]>(
-            root.GetProperty(nameof(IPagedAttentionConfig.PackedAxes)).GetRawText(),
+        var vectorizedAxes = JsonSerializer.Deserialize<PagedKVCacheDimKind[]>(
+            root.GetProperty(nameof(IPagedAttentionConfig.VectorizedAxes)).GetRawText(),
             options)!;
 
         var lanes = JsonSerializer.Deserialize<int[]>(
@@ -65,7 +65,7 @@ internal sealed class PagedAttentionConfigConverter : JsonConverter<IPagedAttent
             kvType,
             blockSize,
             cacheLayout,
-            packedAxes,
+            vectorizedAxes,
             lanes,
             shardingAxes,
             axisPolicies.OfType<IR.SBPSplit>().ToArray());
@@ -86,8 +86,8 @@ internal sealed class PagedAttentionConfigConverter : JsonConverter<IPagedAttent
         writer.WritePropertyName(nameof(IPagedAttentionConfig.CacheLayout));
         JsonSerializer.Serialize(writer, value.CacheLayout, options);
 
-        writer.WritePropertyName(nameof(IPagedAttentionConfig.PackedAxes));
-        JsonSerializer.Serialize(writer, value.PackedAxes, options);
+        writer.WritePropertyName(nameof(IPagedAttentionConfig.VectorizedAxes));
+        JsonSerializer.Serialize(writer, value.VectorizedAxes, options);
 
         writer.WritePropertyName(nameof(IPagedAttentionConfig.Lanes));
         JsonSerializer.Serialize(writer, value.Lanes, options);

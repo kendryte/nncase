@@ -61,7 +61,7 @@ struct attention_config {
 
 template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
           typename KVPrimType, size_t BlockSize, FixedDimensions CacheLayout,
-          FixedDimensions BlockLayout, FixedDimensions PackedAxes,
+          FixedDimensions BlockLayout, FixedDimensions VectorizedAxes,
           FixedDimensions Lanes, FixedDimensions ShardingAxes,
           class... AxisPolicies>
 struct paged_attention_config
@@ -69,14 +69,14 @@ struct paged_attention_config
     static inline constexpr auto block_size = fixed_dim_v<BlockSize>;
     using cache_layout_t = CacheLayout;
     using block_layout_t = BlockLayout;
-    using packed_axes_t = PackedAxes;
+    using vectorized_axes_t = VectorizedAxes;
     using lanes_t = Lanes;
     using sharding_axes_t = ShardingAxes;
     using axis_policies_t = std::tuple<AxisPolicies...>;
 
     static inline constexpr auto cache_layout = cache_layout_t{};
     static inline constexpr auto block_layout = block_layout_t{};
-    static inline constexpr auto packed_axes = packed_axes_t{};
+    static inline constexpr auto vectorized_axes = vectorized_axes_t{};
     static inline constexpr auto lanes = lanes_t{};
     static inline constexpr auto sharding_axes = sharding_axes_t{};
     static inline constexpr auto axis_policies = axis_policies_t{};
@@ -95,17 +95,17 @@ struct paged_attention_config
 
 template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
           typename KVPrimType, size_t BlockSize, FixedDimensions CacheLayout,
-          FixedDimensions BlockLayout, FixedDimensions PackedAxes,
+          FixedDimensions BlockLayout, FixedDimensions VectorizedAxes,
           FixedDimensions Lanes, FixedDimensions ShardingAxes,
           class... AxisPolicies>
 constexpr auto make_paged_attention_config(const CacheLayout &,
                                            const BlockLayout &,
-                                           const PackedAxes &, const Lanes &,
+                                           const VectorizedAxes &, const Lanes &,
                                            const ShardingAxes &,
                                            const AxisPolicies &...) noexcept {
     return paged_attention_config<
         NumLayer, NumKVHead, HeadDim, KVPrimType, BlockSize, CacheLayout,
-        BlockLayout, PackedAxes, Lanes, ShardingAxes, AxisPolicies...>{};
+        BlockLayout, VectorizedAxes, Lanes, ShardingAxes, AxisPolicies...>{};
 }
 
 template <class TConfig> class attention_kv_cache {
@@ -163,19 +163,19 @@ concept ValidIdTensor = Tensor<T> && HasValidShape<T, N>;
 
 template <class Mesh, class TConfig>
 constexpr auto origin_kv_cache_one_block_shape() noexcept {
-    constexpr auto unpacked_shape =
+    constexpr auto devectorized_shape =
         fixed_shape_v<1 /* one block */, TConfig::num_layers, 2,
                       TConfig::block_size, TConfig::num_kv_heads,
                       TConfig::head_dim>;
 
-    auto packed_shape = TConfig::packed_axes.aggregate(
-        unpacked_shape, [&](auto last_shape, auto packed_axis, auto i) {
-            return last_shape.template replace_at<packed_axis>(
-                last_shape[packed_axis] / TConfig::lanes[i]);
+    auto vectorized_shape = TConfig::vectorized_axes.aggregate(
+        devectorized_shape, [&](auto last_shape, auto vectorized_axis, auto i) {
+            return last_shape.template replace_at<vectorized_axis>(
+                last_shape[vectorized_axis] / TConfig::lanes[i]);
         });
 
     auto shard_shape = TConfig::sharding_axes.aggregate(
-        packed_shape, [&](auto last_shape, auto sharding_axis, auto i) {
+        vectorized_shape, [&](auto last_shape, auto sharding_axis, auto i) {
             using axis_policy_t =
                 std::tuple_element_t<i, typename TConfig::axis_policies_t>;
             if constexpr (sharding_axis ==

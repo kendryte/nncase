@@ -154,7 +154,7 @@ constexpr void update_paged_attention_kv_cache(const TSlots &slots_tensor,
                     caching::paged_kvcache_dim_kind::num_kv_heads>();
                 const auto global_head_id =
                     slots_global_offset[head_index] + local_head_id;
-                // todo need consider num_kv_head packed.
+                // todo need consider num_kv_head vectorized.
                 const auto kv_local_head_dim =
                     kv_head_policy.template shard_dim<slots_mesh_type>(
                         config_t::num_kv_heads, shard_index);

@@ -21,7 +21,7 @@ public partial class NTTAffineSelectionPass
         if (lhs.CheckedType is DistributedType dta &&
             rhs.CheckedType is DistributedType dtb)
         {
-            if (op is IR.NTT.PackedMatMul pmm)
+            if (op is IR.NTT.VectorizedMatMul pmm)
             {
                 var dinfo = pmm.GetDimInfo(dta.TensorType.Shape.Rank, dtb.TensorType.Shape.Rank);
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
@@ -48,6 +48,21 @@ public partial class NTTAffineSelectionPass
                 }
 
                 if (dta.AxisPolicies[^1] == dtb.AxisPolicies[^2] && dta.AxisPolicies[^1] is SBPSplit)
+                {
+                    reduceSum = true;
+                }
+            }
+            else if (op is IR.NTT.PackedMatMul)
+            {
+                if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^1] &&
+                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^2])
+                {
+                    return call;
+                }
+
+                if (dta.AxisPolicies[^1] == dtb.AxisPolicies[^1] && dta.AxisPolicies[^1] is SBPSplit)
                 {
                     reduceSum = true;
                 }
@@ -152,7 +167,7 @@ public partial class NTTAffineSelectionPass
         var (om, ok, on) = (rank - 3, rank - 2, rank - 1);
         var (lm, lk) = (lhsShape.Rank - 2, lhsShape.Rank - 1);
         var (rk, rn) = (rhsShape.Rank - 2, rhsShape.Rank - 1);
-        if (op is IR.NTT.PackedMatMul pm)
+        if (op is IR.NTT.VectorizedMatMul pm)
         {
             if (pm.TransposeA)
             {
@@ -163,6 +178,11 @@ public partial class NTTAffineSelectionPass
             {
                 (rk, rn) = (rn, rk);
             }
+        }
+        else if (op is IR.NTT.PackedMatMul)
+        {
+            // Transpose B
+            (rk, rn) = (rn, rk);
         }
 
         lhsRes[lm] = new AffineRange(domains[om].Offset, domains[om].Extent);
@@ -181,7 +201,8 @@ public partial class NTTAffineSelectionPass
             .Body(op switch
             {
                 IR.Math.MatMul => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
-                IR.NTT.PackedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsPackedAxes, pop.RhsPackedAxes, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
+                IR.NTT.VectorizedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsVectorizedAxes, pop.RhsVectorizedAxes, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
+                IR.NTT.PackedMatMul pop => TIR.F.NTT.PackedMatMul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.FusedReduce),
                 _ => throw new System.Diagnostics.UnreachableException(),
             }).Build();
     }

@@ -131,7 +131,7 @@ public static class OrtKIExtensions
 
     public static OrtKISharp.Tensor BroadcastTo(this OrtKISharp.Tensor tensor, long[] shape, OrtDataType dtype = OrtDataType.Float) => tensor + OrtKISharp.Tensor.Empty(shape, dtype);
 
-    public static OrtKISharp.Tensor Pack(this OrtKISharp.Tensor tensor, int lanes, int axis)
+    public static OrtKISharp.Tensor Pack(this OrtKISharp.Tensor tensor, int oldLanesCount, int lanes, int axis)
     {
         if (axis < 0)
         {
@@ -140,19 +140,49 @@ public static class OrtKIExtensions
 
         var shape = tensor.Shape;
         var dividedShape = shape.Take(axis).Concat(new[] { shape[axis] / lanes, lanes }).Concat(shape.Skip(axis + 1)).ToArray();
-        var perm = Enumerable.Range(0, axis + 1).Concat(Enumerable.Range(axis + 2, dividedShape.Length - (axis + 2))).Concat(new[] { axis + 1 }).Select(i => (long)i).ToArray();
+        var perm = Enumerable.Range(0, axis + 1)
+            .Concat(Enumerable.Range(axis + 2, dividedShape.Length - (axis + oldLanesCount + 2)))
+            .Append(axis + 1)
+            .Concat(Enumerable.Range(dividedShape.Length - oldLanesCount, oldLanesCount))
+            .Select(i => (long)i).ToArray();
         return OrtKI.Transpose(OrtKI.Reshape(tensor, dividedShape, 0), perm);
     }
 
-    public static OrtKISharp.Tensor Unpack(this OrtKISharp.Tensor tensor, int axis)
+    public static OrtKISharp.Tensor Pack(this OrtKISharp.Tensor tensor, int oldLanesCount, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
     {
-        var perm = Enumerable.Range(0, tensor.Shape.Length);
-        perm = perm.Take(axis + 1).Concat(new[] { perm.Last() }).Concat(perm.Skip(axis + 1).SkipLast(1));
-        var unpacked = OrtKI.Transpose(tensor, perm.Select(i => (long)i).ToArray());
-        var shape = unpacked.Shape.ToList();
-        shape[axis] = shape[axis] * shape[axis + 1];
+        for (int i = axes.Length - 1; i >= 0; i--)
+        {
+            tensor = tensor.Pack(oldLanesCount++, lanes[i], axes[i]);
+        }
+
+        return tensor;
+    }
+
+    public static OrtKISharp.Tensor Unpack(this OrtKISharp.Tensor tensor, int oldLanesCount, int axis)
+    {
+        if (oldLanesCount <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(oldLanesCount), "Unpack lanes count must be greater than 0.");
+        }
+
+        var lanes = tensor.Shape[^oldLanesCount];
+        var perm = Enumerable.Range(0, tensor.Shape.Length).ToArray();
+        perm = [.. perm[..(axis + 1)], perm[^oldLanesCount], .. perm[(axis + 1)..^oldLanesCount], .. perm[^(oldLanesCount - 1)..]];
+        var devectorized = OrtKI.Transpose(tensor, perm.Select(i => (long)i).ToArray());
+        var shape = devectorized.Shape.ToList();
+        shape[axis] *= lanes;
         shape.RemoveAt(axis + 1);
-        return OrtKI.Reshape(unpacked, shape.ToArray(), 0);
+        return OrtKI.Reshape(devectorized, shape.ToArray(), 0);
+    }
+
+    public static OrtKISharp.Tensor Unpack(this OrtKISharp.Tensor tensor, int oldLanesCount, ReadOnlySpan<int> axes)
+    {
+        for (int i = 0; i < axes.Length; i++)
+        {
+            tensor = tensor.Unpack(oldLanesCount--, axes[i]);
+        }
+
+        return tensor;
     }
 
     private static OrtKISharp.Tensor ToOrtTensor(Tensor tensor, OrtDataType ortDataType, long[] shape)

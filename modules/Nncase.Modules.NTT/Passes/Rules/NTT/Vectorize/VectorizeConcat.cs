@@ -22,11 +22,11 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackConcatPropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeConcatPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
     PatternMatch.F.Tensors.IsPack(
-            "pack",
+            "vectorize",
             "caller",
             _ => true,
             IsConcat(
@@ -35,13 +35,13 @@ public sealed partial class PackConcatPropagation : RewriteRule<Pattern>
                 _ => true,
                 IsTuple(null, IsVArgsRepeat("tupleInputs", () => IsWildcard(null, e => e is Expr) with { TypePattern = HasRankedShape() }))));
 
-    private Expr? GetReplace(Pack pack, Concat concat, Call caller, Call callee, IReadOnlyList<BaseExpr> tupleInputs)
+    private Expr? GetReplace(Pack vectorize, Concat concat, Call caller, Call callee, IReadOnlyList<BaseExpr> tupleInputs)
     {
-        var packAxisIndex = pack.Axes.IndexOf(concat.Axis);
-        if (packAxisIndex != -1
-            && tupleInputs.Any(input => !Dimension.TryDivExactly(input.CheckedShape[concat.Axis], pack.Lanes[packAxisIndex], out _)))
+        var vectorizeAxisIndex = vectorize.Axes.IndexOf(concat.Axis);
+        if (vectorizeAxisIndex != -1
+            && tupleInputs.Any(input => !Dimension.TryDivExactly(input.CheckedShape[concat.Axis], vectorize.Lanes[vectorizeAxisIndex], out _)))
         {
-            return null; // If any input is not packable, we cannot replace the concat with a pack.
+            return null; // If any input is not vectorizeable, we cannot replace the concat with a vectorize.
         }
 
         var newInputs = tupleInputs.Select(input => caller.WithArguments([(Pack.Input, input)])).ToArray();
@@ -50,7 +50,7 @@ public sealed partial class PackConcatPropagation : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed partial class ConcatUnpackPropagation : RewriteRule<Pattern>
+public sealed partial class ConcatDevectorizePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
     IsConcat(
@@ -63,7 +63,7 @@ public sealed partial class ConcatUnpackPropagation : RewriteRule<Pattern>
             for (var i = 0; i < patterns.Length; i++)
             {
                 patterns[i] = IsAlt(
-                    PatternMatch.F.Tensors.IsUnpack($"unpack_{i}", $"callee_{i}", _ => true, IsWildcard($"input_{i}")),
+                    PatternMatch.F.Tensors.IsUnpack($"devectorize_{i}", $"callee_{i}", _ => true, IsWildcard($"input_{i}")),
                     IsWildcard($"input_{i}") with { TypePattern = !IsVector() });
             }
 
@@ -72,13 +72,13 @@ public sealed partial class ConcatUnpackPropagation : RewriteRule<Pattern>
 
     private Expr? GetReplace(Concat concat, Call caller, IReadOnlyList<BaseExpr> tupleInputs, IMatchResult result)
     {
-        var firstUnpack = (from i in Enumerable.Range(0, tupleInputs.Count)
-                           let unpack = result.GetValueOrDefault($"unpack_{i}") as Unpack
-                           where unpack is not null
-                           select unpack).FirstOrDefault();
-        if (firstUnpack is null)
+        var firstDevectorize = (from i in Enumerable.Range(0, tupleInputs.Count)
+                                let devectorize = result.GetValueOrDefault($"devectorize_{i}") as Unpack
+                                where devectorize is not null
+                                select devectorize).FirstOrDefault();
+        if (firstDevectorize is null)
         {
-            return null; // If no unpack is found, we cannot replace the concat with a pack.
+            return null; // If no devectorize is found, we cannot replace the concat with a vectorize.
         }
 
         var newInputs = Enumerable.Range(0, tupleInputs.Count)
@@ -86,32 +86,32 @@ public sealed partial class ConcatUnpackPropagation : RewriteRule<Pattern>
             .ToArray();
         for (int i = 0; i < newInputs.Length; i++)
         {
-            var unpack = result.GetValueOrDefault($"unpack_{i}") as Unpack;
-            if (unpack is not null)
+            var devectorize = result.GetValueOrDefault($"devectorize_{i}") as Unpack;
+            if (devectorize is not null)
             {
-                if (unpack.Axes != firstUnpack.Axes ||
-                    unpack.Lanes != firstUnpack.Lanes)
+                if (devectorize.Axes != firstDevectorize.Axes ||
+                    devectorize.Lanes != firstDevectorize.Lanes)
                 {
-                    return null; // If any unpack has different axes or lanes, we cannot replace the concat.
+                    return null; // If any devectorize has different axes or lanes, we cannot replace the concat.
                 }
             }
             else
             {
-                for (int j = 0; j < firstUnpack.Axes.Count; j++)
+                for (int j = 0; j < firstDevectorize.Axes.Count; j++)
                 {
-                    if (!Dimension.TryDivExactly(newInputs[i].CheckedShape[firstUnpack.Axes[j]], firstUnpack.Lanes[j], out _))
+                    if (!Dimension.TryDivExactly(newInputs[i].CheckedShape[firstDevectorize.Axes[j]], firstDevectorize.Lanes[j], out _))
                     {
-                        return null; // If any input is not unpackable, we cannot replace the concat.
+                        return null; // If any input is not devectorizeable, we cannot replace the concat.
                     }
                 }
 
                 newInputs[i] = IR.F.Tensors.Pack(
                     newInputs[i],
-                    firstUnpack.Lanes.ToArray(),
-                    firstUnpack.Axes.ToArray());
+                    firstDevectorize.Lanes.ToArray(),
+                    firstDevectorize.Axes.ToArray());
             }
         }
 
-        return IR.F.Tensors.Unpack(caller.WithArguments([(Concat.Input, new IR.Tuple(newInputs))]), firstUnpack.Lanes.ToArray(), firstUnpack.Axes.ToArray());
+        return IR.F.Tensors.Unpack(caller.WithArguments([(Concat.Input, new IR.Tuple(newInputs))]), firstDevectorize.Lanes.ToArray(), firstDevectorize.Axes.ToArray());
     }
 }

@@ -213,8 +213,8 @@ class HuggingfaceTestRunner(TestRunner):
         self.cache_layout = [getattr(nncase.PagedKVCacheDimKind, item)
                              for item in paged_attention_config['cache_layout']]
         # [ nncase.PagedKVCacheDimKind.it for it in paged_attention_config['cache_layout'] ]
-        self.packed_axes = [getattr(nncase.PagedKVCacheDimKind, item)
-                            for item in paged_attention_config['packed_axes']]
+        self.vectorized_axes = [getattr(nncase.PagedKVCacheDimKind, item)
+                                for item in paged_attention_config['vectorized_axes']]
         self.lanes = paged_attention_config['lanes']
         self.sharding_axes = [getattr(nncase.PagedKVCacheDimKind, item)
                               for item in paged_attention_config['sharding_axes']]
@@ -228,7 +228,7 @@ class HuggingfaceTestRunner(TestRunner):
             self.kv_type,
             self.block_size,
             self.cache_layout,
-            self.packed_axes,
+            self.vectorized_axes,
             self.lanes,
             self.sharding_axes,
             self.axis_policies

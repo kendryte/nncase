@@ -24,9 +24,9 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool packingK = false, MatMulDimInfo? dimInfo = null, bool transB = false, DataType outputDataType = null!)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool vectorizeK = false, MatMulDimInfo? dimInfo = null, bool transB = false, DataType outputDataType = null!)
     {
-        if (VisitTensorType(a.TensorType, b.TensorType, packingK, dimInfo, outputDataType) is not TensorType outType)
+        if (VisitTensorType(a.TensorType, b.TensorType, vectorizeK, dimInfo, outputDataType) is not TensorType outType)
         {
             return new InvalidType($"{a.TensorType} {b.TensorType} not support");
         }
@@ -214,7 +214,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new DistributedType(a.TensorType, ndsbp, a.Placement);
     }
 
-    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool packingK = false, MatMulDimInfo? dimInfo = null, DataType outputDataType = null!)
+    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool vectorizeK = false, MatMulDimInfo? dimInfo = null, DataType outputDataType = null!)
     {
         if (lhs.Shape is not RankedShape lhsShape
             || rhs.Shape is not RankedShape rhsShape)
@@ -245,7 +245,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             if (vl1.Lanes.Count != 1)
             {
-                return new InvalidType("Only packing m is supported when rhs is not vector type.");
+                return new InvalidType("Only vectorize m is supported when rhs is not vector type.");
             }
 
             dtype = vl1;
@@ -254,7 +254,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         {
             if (vr1.Lanes.Count != 1)
             {
-                return new InvalidType("Only packing n is supported when lhs is not vector type.");
+                return new InvalidType("Only vectorize n is supported when lhs is not vector type.");
             }
 
             dtype = vr1;
@@ -266,7 +266,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         }
         else if (lhs.DType is VectorType vl && rhs.DType is VectorType vr)
         {
-            // pack k or m&n
+            // vectorize k or m&n
             var elemType = vl.ElemType;
             if (elemType.IsFloat() && elemType != outputDataType)
             {
@@ -275,7 +275,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
             if (vl.Lanes.Count == 1 && vr.Lanes.Count == 1)
             {
-                dtype = packingK ? elemType : new VectorType(elemType, vl.Lanes[0], vr.Lanes[0]);
+                dtype = vectorizeK ? elemType : new VectorType(elemType, vl.Lanes[0], vr.Lanes[0]);
             }
             else if (vl.Lanes.Count == 1 && vr.Lanes.Count == 2)
             {
@@ -297,7 +297,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             }
             else
             {
-                return new InvalidType("Not supported packing.");
+                return new InvalidType("Not supported vectorize.");
             }
         }
 

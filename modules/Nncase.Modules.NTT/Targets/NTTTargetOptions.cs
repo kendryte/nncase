@@ -18,10 +18,10 @@ public class NTTTargetOptions : INTTTargetOptions
     [DefaultValue("")]
     public string ModelName { get; set; } = string.Empty;
 
-    [DisplayName("--packing")]
+    [DisplayName("--vectorize")]
     [Description("enable simd layout optimization.")]
     [DefaultValue(false)]
-    public bool Packing { get; set; }
+    public bool Vectorize { get; set; }
 
     [DisplayName("--unified-memory-arch")]
     [Description("whether Unified Memory Architecture. see https://en.wikipedia.org/wiki/Unified_Memory_Access.")]

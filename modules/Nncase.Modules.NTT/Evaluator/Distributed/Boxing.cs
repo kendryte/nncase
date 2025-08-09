@@ -90,7 +90,8 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
     {
         var inType = context.GetArgumentType<IRType>(target, Boxing.Input);
         var returnType = context.GetReturnType<IRType>();
-        var cost = new Cost() { [CostFactorNames.CPUCycles] = 1, [CostFactorNames.MemoryLoad] = 0, [CostFactorNames.MemoryStore] = 0 };
+        UInt128 synchronizeCost = 25_000; // 25k cycles on 5GHz CPU is about 5us.
+        var cost = new Cost() { [CostFactorNames.CPUCycles] = 1, [CostFactorNames.MemoryLoad] = 0, [CostFactorNames.MemoryStore] = 0, [CostFactorNames.Synchronization] = synchronizeCost };
         switch (inType, returnType)
         {
             case (TensorType _, DistributedType distributedType):
@@ -100,6 +101,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                         cost = new Cost()
                         {
                             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(distributedType),
+                            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(distributedType),
                         };
                         break;
                 }
@@ -111,7 +113,9 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                     default:
                         cost = new Cost()
                         {
+                            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(distributedType),
                             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(distributedType),
+                            [CostFactorNames.Synchronization] = synchronizeCost,
                         };
                         break;
                 }
@@ -124,6 +128,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                     {
                         [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
                         [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
+                        [CostFactorNames.Synchronization] = synchronizeCost,
                     };
 
                     float scatterPart = 1;
@@ -233,6 +238,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 {
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
+                    [CostFactorNames.Synchronization] = synchronizeCost,
                 };
                 break;
             case (DistributedType a, DistributedType b) when a.Placement != b.Placement:
@@ -240,6 +246,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 {
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
+                    [CostFactorNames.Synchronization] = synchronizeCost,
                 };
                 break;
             case (DistributedType a, DistributedType b) when a == b:

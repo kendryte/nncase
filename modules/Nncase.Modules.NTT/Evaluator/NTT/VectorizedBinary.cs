@@ -16,7 +16,7 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.IR.NTT;
 
-public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInferencer<PackedBinary>, ICostEvaluator<PackedBinary>
+public sealed class VectorizedBinaryEvaluator : IEvaluator<VectorizedBinary>, ITypeInferencer<VectorizedBinary>, ICostEvaluator<VectorizedBinary>
 {
     internal enum DimKind : int
     {
@@ -24,21 +24,21 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         B, // broadcast
     }
 
-    public IValue Visit(IEvaluateContext context, PackedBinary target)
+    public IValue Visit(IEvaluateContext context, VectorizedBinary target)
     {
-        var a = context.GetOrtArgumentValue(target, PackedBinary.Lhs);
-        var b = context.GetOrtArgumentValue(target, PackedBinary.Rhs);
-        _ = System.Math.Max(target.LhsPackedAxes.Count, target.RhsPackedAxes.Count);
+        var a = context.GetOrtArgumentValue(target, VectorizedBinary.Lhs);
+        var b = context.GetOrtArgumentValue(target, VectorizedBinary.Rhs);
+        _ = System.Math.Max(target.LhsVectorizedAxes.Count, target.RhsVectorizedAxes.Count);
 
-        var maxLaneSize = System.Math.Max(target.LhsPackedAxes.Count, target.RhsPackedAxes.Count);
-        if (target.LhsPackedAxes.Count < maxLaneSize)
+        var maxLaneSize = System.Math.Max(target.LhsVectorizedAxes.Count, target.RhsVectorizedAxes.Count);
+        if (target.LhsVectorizedAxes.Count < maxLaneSize)
         {
-            a = OrtKI.Unsqueeze(a, Enumerable.Range(-maxLaneSize, maxLaneSize - target.LhsPackedAxes.Count).Select(a => (long)a).ToArray());
+            a = OrtKI.Unsqueeze(a, Enumerable.Range(-maxLaneSize, maxLaneSize - target.LhsVectorizedAxes.Count).Select(a => (long)a).ToArray());
         }
 
-        if (target.RhsPackedAxes.Count < maxLaneSize)
+        if (target.RhsVectorizedAxes.Count < maxLaneSize)
         {
-            b = OrtKI.Unsqueeze(b, Enumerable.Range(-maxLaneSize, maxLaneSize - target.RhsPackedAxes.Count).Select(a => (long)a).ToArray());
+            b = OrtKI.Unsqueeze(b, Enumerable.Range(-maxLaneSize, maxLaneSize - target.RhsVectorizedAxes.Count).Select(a => (long)a).ToArray());
         }
 
         var binary = target.BinaryOp switch
@@ -55,10 +55,10 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         return Value.FromTensor(Tensor.FromBytes(context.CurrentCall.CheckedDataType, binary.BytesBuffer.ToArray(), outShape));
     }
 
-    public IRType Visit(ITypeInferenceContext context, PackedBinary target)
+    public IRType Visit(ITypeInferenceContext context, VectorizedBinary target)
     {
-        var lhs = context.CheckArgumentType<IRType>(target, PackedBinary.Lhs);
-        var rhs = context.CheckArgumentType<IRType>(target, PackedBinary.Rhs);
+        var lhs = context.CheckArgumentType<IRType>(target, VectorizedBinary.Lhs);
+        var rhs = context.CheckArgumentType<IRType>(target, VectorizedBinary.Rhs);
 
         return (lhs, rhs) switch
         {
@@ -68,10 +68,10 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         };
     }
 
-    public Cost Visit(ICostEvaluateContext context, PackedBinary target)
+    public Cost Visit(ICostEvaluateContext context, VectorizedBinary target)
     {
-        var lhs = context.GetArgumentType<IRType>(target, PackedBinary.Lhs);
-        var rhs = context.GetArgumentType<IRType>(target, PackedBinary.Rhs);
+        var lhs = context.GetArgumentType<IRType>(target, VectorizedBinary.Lhs);
+        var rhs = context.GetArgumentType<IRType>(target, VectorizedBinary.Rhs);
         var outputType = context.GetReturnType<IRType>();
 
         uint macPerElement = 1;
@@ -93,21 +93,21 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         };
     }
 
-    private IRType Visit(PackedBinary target, TensorType a, TensorType b)
+    private IRType Visit(VectorizedBinary target, TensorType a, TensorType b)
     {
 #if false
         var rank = System.Math.Max(a.Shape.Rank, b.Shape.Rank);
         var outShape = new Dimension[rank];
         var lhsOrginShape = a.Shape.ToArray();
         var rhsOrginShape = b.Shape.ToArray();
-        for (int i = 0; i < target.LhsPackedAxes.Count; i++)
+        for (int i = 0; i < target.LhsVectorizedAxes.Count; i++)
         {
-            lhsOrginShape[target.LhsPackedAxes[i]] = (lhsOrginShape[target.LhsPackedAxes[i]] * ((VectorType)a.DType).Lanes[i]) - target.LhsPadedNums[i];
+            lhsOrginShape[target.LhsVectorizedAxes[i]] = (lhsOrginShape[target.LhsVectorizedAxes[i]] * ((VectorType)a.DType).Lanes[i]) - target.LhsPadedNums[i];
         }
 
-        for (int i = 0; i < target.RhsPackedAxes.Count; i++)
+        for (int i = 0; i < target.RhsVectorizedAxes.Count; i++)
         {
-            rhsOrginShape[target.RhsPackedAxes[i]] = (rhsOrginShape[target.RhsPackedAxes[i]] * ((VectorType)b.DType).Lanes[i]) - target.RhsPadedNums[i];
+            rhsOrginShape[target.RhsVectorizedAxes[i]] = (rhsOrginShape[target.RhsVectorizedAxes[i]] * ((VectorType)b.DType).Lanes[i]) - target.RhsPadedNums[i];
         }
 
         var orginKinds = new DimKind[rank];
@@ -142,7 +142,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
                             orginKinds[rank + i] = DimKind.B;
                             break;
                         default:
-                            return new InvalidType("packed binary not support dim");
+                            return new InvalidType("vectorized binary not support dim");
                     }
 
                     break;
@@ -166,15 +166,15 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
                         switch (ai, bi)
                         {
                             case ( < 0, _):
-                                valid &= orginKinds[target.RhsPackedAxes[bi] - b.Shape.Rank + rank] == DimKind.B && rhsOrginShape[target.RhsPackedAxes[bi]] != 1;
+                                valid &= orginKinds[target.RhsVectorizedAxes[bi] - b.Shape.Rank + rank] == DimKind.B && rhsOrginShape[target.RhsVectorizedAxes[bi]] != 1;
                                 break;
                             case (_, < 0):
-                                valid &= orginKinds[target.LhsPackedAxes[ai] - a.Shape.Rank + rank] == DimKind.B && lhsOrginShape[target.LhsPackedAxes[ai]] != 1;
+                                valid &= orginKinds[target.LhsVectorizedAxes[ai] - a.Shape.Rank + rank] == DimKind.B && lhsOrginShape[target.LhsVectorizedAxes[ai]] != 1;
                                 break;
                             case ( >= 0, >= 0):
-                                var laxis = target.LhsPackedAxes[ai] - a.Shape.Rank + rank;
-                                var raxis = target.RhsPackedAxes[bi] - b.Shape.Rank + rank;
-                                valid &= lhsOrginShape[target.LhsPackedAxes[ai]] == rhsOrginShape[target.RhsPackedAxes[bi]] && laxis == raxis && orginKinds[laxis] == orginKinds[raxis] && orginKinds[raxis] == DimKind.E;
+                                var laxis = target.LhsVectorizedAxes[ai] - a.Shape.Rank + rank;
+                                var raxis = target.RhsVectorizedAxes[bi] - b.Shape.Rank + rank;
+                                valid &= lhsOrginShape[target.LhsVectorizedAxes[ai]] == rhsOrginShape[target.RhsVectorizedAxes[bi]] && laxis == raxis && orginKinds[laxis] == orginKinds[raxis] && orginKinds[raxis] == DimKind.E;
                                 break;
                         }
                     }
@@ -185,7 +185,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
                     }
                     else
                     {
-                        return new InvalidType("can't pack on the broadcast axis!");
+                        return new InvalidType("can't vectorize on the broadcast axis!");
                     }
                 }
 
@@ -217,7 +217,7 @@ public sealed class PackedBinaryEvaluator : IEvaluator<PackedBinary>, ITypeInfer
         return broadcastType;
     }
 
-    private IRType Visit(PackedBinary target, DistributedType a, DistributedType b)
+    private IRType Visit(VectorizedBinary target, DistributedType a, DistributedType b)
     {
         if (a.Placement != b.Placement)
         {

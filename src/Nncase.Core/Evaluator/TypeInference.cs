@@ -446,18 +446,28 @@ public static class TypeInference
     /// <summary>
     /// Pack Type Infer.
     /// </summary>
-    public static IRType PackType(TensorType input, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    public static VectorType PackType(DataType input, ReadOnlySpan<int> lanes)
     {
-        if (input.DType is BooleanType)
+        if (input is BooleanType)
         {
-            return new InvalidType("PackType does not support BooleanType input");
+            throw new TypeInferenceInterruptException(new InvalidType("VectorizeType does not support BooleanType input"));
         }
 
-        var vType = new VectorType(input.DType, lanes.ToArray());
+        return input is VectorType oldVType
+            ? new VectorType(oldVType.ElemType, [.. lanes, .. oldVType.Lanes])
+            : new VectorType(input, lanes.ToArray());
+    }
+
+    /// <summary>
+    /// Pack Type Infer.
+    /// </summary>
+    public static IRType PackType(TensorType input, ReadOnlySpan<int> lanes, ReadOnlySpan<int> axes)
+    {
+        var vType = PackType(input.DType, lanes);
         return PackType(input.Shape, vType, lanes, axes);
     }
 
-    public static IRType PackMaskType(TensorType input, MaskVectorStyle style, int elementBits, int lanes, int axis)
+    public static IRType VectorizeMaskType(TensorType input, MaskVectorStyle style, int elementBits, int lanes, int axis)
     {
         if (input.DType is not BooleanType)
         {
@@ -473,7 +483,7 @@ public static class TypeInference
         return input.DType switch
         {
             MaskVectorType vt => UnpackType(input.Shape, DataTypes.Boolean, [vt.Lanes], axes),
-            VectorType vt => UnpackType(input.Shape, vt.ElemType, vt.Lanes, axes),
+            VectorType vt => UnpackType(input.Shape, UnpackType(vt, axes), vt.Lanes.Take(axes.Count).ToArray(), axes),
             _ => new InvalidType($"UnpackType does not support {input.DType}"),
         };
     }
@@ -727,5 +737,10 @@ public static class TypeInference
         }
 
         return new TensorType(elementType, Shape.Unranked);
+    }
+
+    private static DataType UnpackType(VectorType vectorType, ReadOnlySpan<int> axes)
+    {
+        return axes.Length == vectorType.Lanes.Count ? vectorType.ElemType : vectorType with { Lanes = vectorType.Lanes.Skip(axes.Length).ToArray() };
     }
 }

@@ -69,17 +69,17 @@ class PackTestGenerator(BaseTestGenerator):
         if len(pack_axes) > 0:
             # Calculate permutation
             perm = []
-            packed_dims = []
+            packd_dims = []
             j = 0
             for i in range(ndim):
                 if i in pack_axes:
                     perm.append(j)
-                    packed_dims.append(j + 1)
+                    packd_dims.append(j + 1)
                     j += 2
                 else:
                     perm.append(j)
                     j += 1
-            perm.extend(packed_dims)
+            perm.extend(packd_dims)
             
             code.append("")
             code.append(f"int64_t perms[] = {{{', '.join(map(str, perm))}}};")
@@ -227,7 +227,7 @@ class PackTestGenerator(BaseTestGenerator):
         4.2 For dimension 4, test more complex non-contiguous cases (full_continuities)
         """
         """Uncovered test scope:
-        1. Cases where packed dimensions are not multiples of P, requiring padding
+        1. Cases where packd dimensions are not multiples of P, requiring padding
         """
         shape_types = ["fixed", "dynamic"]
         vector_dims = [1, 2]

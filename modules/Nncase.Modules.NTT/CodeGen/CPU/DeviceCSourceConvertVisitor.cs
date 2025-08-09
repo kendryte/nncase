@@ -348,7 +348,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     BinaryOp = op.BinaryOp,
                 }).Result);
                 break;
-            case TIR.NTT.PackedBinary op:
+            case TIR.NTT.VectorizedBinary op:
                 WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
@@ -375,8 +375,16 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }).Result);
 
                 break;
-            case TIR.NTT.Pack pack:
-                WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(pack)
+            case TIR.NTT.PackedMatMul matmul:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedMatMul.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedMatMul>(matmul)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+
+                break;
+            case TIR.NTT.Pack vectorize:
+                WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(vectorize)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     Indent = new string(' ', IndentScope.Writer.Indent),
@@ -389,8 +397,8 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
                 break;
-            case TIR.NTT.Unpack unpack:
-                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Unpack>(unpack)
+            case TIR.NTT.Unpack devectorize:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Unpack>(devectorize)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     Indent = new string(' ', IndentScope.Writer.Indent),
@@ -406,9 +414,9 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
             case TIR.NTT.Cast cast:
                 IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
                 break;
-            case TIR.NTT.PackedLayerNorm lm:
+            case TIR.NTT.VectorizedLayerNorm lm:
                 {
-                    WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedLayerNorm>(lm)
+                    WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/VectorizedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.VectorizedLayerNorm>(lm)
                     {
                         Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).Concat(lm.PadedNums.Select(Visit).Select(x => new KernelArgument { Symbol = x })).ToArray(),
                         Indent = new string(' ', IndentScope.Writer.Indent),

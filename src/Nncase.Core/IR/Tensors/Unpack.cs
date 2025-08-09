@@ -6,7 +6,7 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.Tensors;
 
 /// <summary>
-/// Unpack expression.
+/// Devectorize expression.
 /// </summary>
 [PatternFunctionalGenerator]
 public sealed partial class Unpack : Op

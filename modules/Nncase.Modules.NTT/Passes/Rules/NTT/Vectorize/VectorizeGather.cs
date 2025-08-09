@@ -22,11 +22,11 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackGatherPropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeGatherPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         PatternMatch.F.Tensors.IsPack(
-            "pack",
+            "vectorize",
             "caller",
             _ => true,
             IsGather(
@@ -36,11 +36,11 @@ public sealed partial class PackGatherPropagation : RewriteRule<Pattern>
                 IsWildcard("input"),
                 IsWildcard("index") with { TypePattern = HasRankedShape() }));
 
-    private Expr? GetReplace(Pack pack, Gather gather, Call caller, Call callee, Expr input, Expr index)
+    private Expr? GetReplace(Pack vectorize, Gather gather, Call caller, Call callee, Expr input, Expr index)
     {
-        if (index.CheckedShape.Rank == 1 && !pack.Axes.Contains(gather.Axis))
+        if (index.CheckedShape.Rank == 1 && !vectorize.Axes.Contains(gather.Axis))
         {
-            // If the pack does not contain the gather axis, we directly pack the gather input.
+            // If the vectorize does not contain the gather axis, we directly vectorize the gather input.
             return callee.WithArguments(
                 [(Gather.Input, caller.WithArguments([(Pack.Input, input)]))]);
         }

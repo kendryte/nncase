@@ -6,7 +6,7 @@ using Nncase.PatternMatch;
 namespace Nncase.IR.Tensors;
 
 /// <summary>
-/// Pack expression.
+/// Vectorize expression.
 /// </summary>
 [PatternFunctionalGenerator]
 public sealed partial class Pack : Op

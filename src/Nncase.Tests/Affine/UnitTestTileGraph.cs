@@ -31,7 +31,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     {
         { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(2, 1, 2), true), (new(2, 0, 2), true), (new(2, 0, 1), false), (new(1, 0, 1), true) }, MergeTileGraphChecker0, 0 },
         { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(1, 0, 2), true), (new(2, 0, 2), false), (new(2, 1, 2), true), }, MergeTileGraphCheckerDefault, 1 },
-        { FunctionSamples.Get1PackMN, new (IntMergePoint, bool)[] { (new(2, 0, 2), true), (new(2, 1, 2), true), (new(2, 0, 1), true), (new(2, 1, 1), true), (new(3, 2, 2), true), (new(5, 4, 2), true) }, MergeTileGraphChecker2, 2 },
+        { FunctionSamples.Get1VectorizeMN, new (IntMergePoint, bool)[] { (new(2, 0, 2), true), (new(2, 1, 2), true), (new(2, 0, 1), true), (new(2, 1, 1), true), (new(3, 2, 2), true), (new(5, 4, 2), true) }, MergeTileGraphChecker2, 2 },
     };
 
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BaseExpr>, int> SolveTileGraphDatas = new()

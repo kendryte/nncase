@@ -24,11 +24,11 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackReshapePropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeReshapePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         PatternMatch.F.Tensors.IsPack(
-            "pack",
+            "vectorize",
             "caller",
             _ => true,
             IsReshape(
@@ -38,7 +38,7 @@ public sealed partial class PackReshapePropagation : RewriteRule<Pattern>
                 IsWildcard("input"),
                 IsRankedShape("newShape")));
 
-    private Expr? GetReplace(Pack pack, Call caller, Call callee, Expr input, RankedShape newShape)
+    private Expr? GetReplace(Pack vectorize, Call caller, Call callee, Expr input, RankedShape newShape)
     {
         var inShape = input.CheckedShape;
         var maxInputShape = CompilerServices.GetMaxShape(inShape);
@@ -50,31 +50,31 @@ public sealed partial class PackReshapePropagation : RewriteRule<Pattern>
 
         // TODO: more complex case
         var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsCompleteDict(mat);
-        var packAxes = new List<int>();
-        var packLanes = new List<int>();
+        var vectorizeAxes = new List<int>();
+        var vectorizeLanes = new List<int>();
         var rewritedNewShape = newShape.ToArray();
-        for (int i = 0; i < pack.Axes.Count; i++)
+        for (int i = 0; i < vectorize.Axes.Count; i++)
         {
-            var axis = pack.Axes[i];
-            var lanes = pack.Lanes[i];
+            var axis = vectorize.Axes[i];
+            var lanes = vectorize.Lanes[i];
 
             // 1. [1024] -> pack([8, 128], [1], [8]): <8>[128] -> <8>[8, 16]
             foreach ((var inAxis, var newAxes) in forwardDict)
             {
-                var packAxisIndex = newAxes.IndexOf(axis);
-                if (packAxisIndex >= 0)
+                var vectorizeAxisIndex = newAxes.IndexOf(axis);
+                if (vectorizeAxisIndex >= 0)
                 {
-                    if (packAxisIndex == newAxes.Count - 1
-                        || newAxes.Skip(packAxisIndex + 1).All(x => x == 1))
+                    if (vectorizeAxisIndex == newAxes.Count - 1
+                        || newAxes.Skip(vectorizeAxisIndex + 1).All(x => x == 1))
                     {
-                        // last axis, just use the pack axis
-                        packAxes.Add(inAxis);
-                        packLanes.Add(lanes);
+                        // last axis, just use the vectorize axis
+                        vectorizeAxes.Add(inAxis);
+                        vectorizeLanes.Add(lanes);
                         rewritedNewShape[axis] /= lanes;
                     }
                     else
                     {
-                        // We doesn't support pack axis in the middle of new shape
+                        // We doesn't support vectorize axis in the middle of new shape
                         return null;
                     }
                 }
@@ -83,13 +83,13 @@ public sealed partial class PackReshapePropagation : RewriteRule<Pattern>
             // 2. [8, 128] -> pack([1024], [0], [8]): <8>[8, 16] -> <8>[128]
             if (backwardDict.TryGetValue(axis, out var inAxes))
             {
-                // Find appropriate input axis to pack
+                // Find appropriate input axis to vectorize
                 bool found = false;
                 foreach (var inAxis in Enumerable.Reverse(inAxes))
                 {
-                    if (packAxes.Contains(inAxis))
+                    if (vectorizeAxes.Contains(inAxis))
                     {
-                        // Already packed this axis
+                        // Already vectorized this axis
                         found = true;
                         continue;
                     }
@@ -99,15 +99,15 @@ public sealed partial class PackReshapePropagation : RewriteRule<Pattern>
                         if (Dimension.TryDivExactly(inShape[inAxis], lanes, out var newDim))
                         {
                             // found a valid axis
-                            packAxes.Add(inAxis);
-                            packLanes.Add(lanes);
+                            vectorizeAxes.Add(inAxis);
+                            vectorizeLanes.Add(lanes);
                             rewritedNewShape[axis] = newDim;
                             found = true;
                             break;
                         }
                         else
                         {
-                            // Dimension cannot be divided exactly, we cannot pack this axis
+                            // Dimension cannot be divided exactly, we cannot vectorize this axis
                             return null;
                         }
                     }
@@ -115,20 +115,20 @@ public sealed partial class PackReshapePropagation : RewriteRule<Pattern>
 
                 if (!found)
                 {
-                    // No valid axis found, we cannot pack this axis
+                    // No valid axis found, we cannot vectorize this axis
                     return null;
                 }
             }
         }
 
         return IR.F.Tensors.Reshape(
-            IR.F.Tensors.Pack(input, packLanes.ToArray(), packAxes.ToArray()),
+            IR.F.Tensors.Pack(input, vectorizeLanes.ToArray(), vectorizeAxes.ToArray()),
             new RankedShape(rewritedNewShape));
     }
 }
 
 [RuleGenerator]
-public sealed partial class ReshapeUnpackPropagation : RewriteRule<Pattern>
+public sealed partial class ReshapeDevectorizePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         IsReshape(
@@ -136,35 +136,35 @@ public sealed partial class ReshapeUnpackPropagation : RewriteRule<Pattern>
             "caller",
             _ => true,
             PatternMatch.F.Tensors.IsUnpack(
-                "unpack",
+                "devectorize",
                 "callee",
                 _ => true,
                 IsWildcard("input")),
             IsRankedShape("newShape"));
 
-    private Expr? GetReplace(Unpack unpack, Call caller, Call callee, Expr input, RankedShape newShape)
+    private Expr? GetReplace(Unpack devectorize, Call caller, Call callee, Expr input, RankedShape newShape)
     {
-        var maxUnpackedShape = CompilerServices.GetMaxShape(callee.CheckedShape);
+        var maxDevectorizeedShape = CompilerServices.GetMaxShape(callee.CheckedShape);
         var maxNewShape = CompilerServices.GetMaxShape(newShape);
-        if (!IRUtility.TryGetShapeMapMatrix(maxUnpackedShape, maxNewShape, out var mat))
+        if (!IRUtility.TryGetShapeMapMatrix(maxDevectorizeedShape, maxNewShape, out var mat))
         {
             return null;
         }
 
         // TODO: more complex case
         var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsCompleteDict(mat);
-        var unpackAxes = new List<int>();
-        var unpackLanes = new List<int>();
+        var devectorizeAxes = new List<int>();
+        var devectorizeLanes = new List<int>();
         var rewritedNewShape = newShape.ToArray();
-        for (int i = 0; i < unpack.Axes.Count; i++)
+        for (int i = 0; i < devectorize.Axes.Count; i++)
         {
-            var axis = unpack.Axes[i];
-            var lanes = unpack.Lanes[i];
+            var axis = devectorize.Axes[i];
+            var lanes = devectorize.Lanes[i];
 
             // 1. unpack(<8>[128], [0], [8]) -> [8, 128]: <8>[128] -> <8>[8, 16]
             if (forwardDict.TryGetValue(axis, out var newAxes))
             {
-                // Find appropriate new axis to pack
+                // Find appropriate new axis to vectorize
                 bool found = false;
                 foreach (var newAxis in Enumerable.Reverse(newAxes))
                 {
@@ -173,15 +173,15 @@ public sealed partial class ReshapeUnpackPropagation : RewriteRule<Pattern>
                         if (Dimension.TryDivExactly(newShape[newAxis], lanes, out var newDim))
                         {
                             // found a valid axis
-                            unpackAxes.Add(newAxis);
-                            unpackLanes.Add(lanes);
+                            devectorizeAxes.Add(newAxis);
+                            devectorizeLanes.Add(lanes);
                             rewritedNewShape[newAxis] = newDim;
                             found = true;
                             break;
                         }
                         else
                         {
-                            // Dimension cannot be divided exactly, we cannot pack this axis
+                            // Dimension cannot be divided exactly, we cannot vectorize this axis
                             return null;
                         }
                     }
@@ -189,7 +189,7 @@ public sealed partial class ReshapeUnpackPropagation : RewriteRule<Pattern>
 
                 if (!found)
                 {
-                    // No valid axis found, we cannot pack this axis
+                    // No valid axis found, we cannot vectorize this axis
                     return null;
                 }
             }
@@ -197,26 +197,26 @@ public sealed partial class ReshapeUnpackPropagation : RewriteRule<Pattern>
             // 2. unpack(<8>[8, 16], [1], [8]) -> [1024]: <8>[8, 16] -> <8>[128]
             foreach ((var newAxis, var inAxes) in backwardDict)
             {
-                if (unpackAxes.Contains(newAxis))
+                if (devectorizeAxes.Contains(newAxis))
                 {
-                    // Already packed this axis
+                    // Already vectorized this axis
                     continue;
                 }
 
-                var packAxisIndex = inAxes.IndexOf(axis);
-                if (packAxisIndex >= 0)
+                var vectorizeAxisIndex = inAxes.IndexOf(axis);
+                if (vectorizeAxisIndex >= 0)
                 {
-                    if (packAxisIndex == inAxes.Count - 1
-                        || inAxes.Skip(packAxisIndex + 1).All(x => x == 1))
+                    if (vectorizeAxisIndex == inAxes.Count - 1
+                        || inAxes.Skip(vectorizeAxisIndex + 1).All(x => x == 1))
                     {
-                        // last axis, just use the pack axis
-                        unpackAxes.Add(newAxis);
-                        unpackLanes.Add(lanes);
+                        // last axis, just use the vectorize axis
+                        devectorizeAxes.Add(newAxis);
+                        devectorizeLanes.Add(lanes);
                         rewritedNewShape[newAxis] /= lanes;
                     }
                     else
                     {
-                        // We doesn't support pack axis in the middle of new shape
+                        // We doesn't support vectorize axis in the middle of new shape
                         return null;
                     }
                 }
@@ -225,7 +225,7 @@ public sealed partial class ReshapeUnpackPropagation : RewriteRule<Pattern>
 
         return IR.F.Tensors.Unpack(
             IR.F.Tensors.Reshape(input, new RankedShape(rewritedNewShape)),
-            unpackLanes.ToArray(),
-            unpackAxes.ToArray());
+            devectorizeLanes.ToArray(),
+            devectorizeAxes.ToArray());
     }
 }

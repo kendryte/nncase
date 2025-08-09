@@ -57,7 +57,7 @@ public sealed record PointerType(DataType ElemType) : DataType
 /// the abstract datatype record.
 /// </summary>
 [JsonConverter(typeof(DataTypeJsonConverter))]
-public abstract record DataType
+public abstract partial record DataType
 {
     internal DataType()
     {
@@ -95,76 +95,15 @@ public abstract record DataType
             {
                 return new MemoryType(FromType(t.GenericTypeArguments[0]));
             }
-            else if (generic == typeof(Vector4<>))
+            else if (generic.Name.StartsWith("Vector"))
             {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 4);
-            }
-            else if (generic == typeof(Vector4x4<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 4, 4);
-            }
-            else if (generic == typeof(Vector8<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 8);
-            }
-            else if (generic == typeof(Vector8x8<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 8, 8);
-            }
-            else if (generic == typeof(Vector16<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 16);
-            }
-            else if (generic == typeof(Vector16x16<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 16, 16);
-            }
-            else if (generic == typeof(Vector32<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 32);
-            }
-            else if (generic == typeof(Vector32x16<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 32, 16);
-            }
-            else if (generic == typeof(Vector32x32<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 32, 32);
-            }
-            else if (generic == typeof(Vector32x64<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 32, 64);
-            }
-            else if (generic == typeof(Vector64<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 64);
-            }
-            else if (generic == typeof(Vector128<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 128);
-            }
-            else if (generic == typeof(Vector32x128<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 32, 128);
-            }
-            else if (generic == typeof(Vector64x32<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 64, 32);
-            }
-            else if (generic == typeof(Vector64x64<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 64, 64);
-            }
-            else if (generic == typeof(Vector64x128<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 64, 128);
-            }
-            else if (generic == typeof(Vector128x64<>))
-            {
-                return new VectorType(FromType(t.GenericTypeArguments[0]), 128, 64);
+                if (_clrTypeLanes.TryGetValue(generic, out var lanes))
+                {
+                    return new VectorType(FromType(t.GenericTypeArguments[0]), lanes);
+                }
             }
 
-            throw new ArgumentException("Unsupported CLR type.");
+            throw new ArgumentException($"Unsupported CLR type: {t.FullName}.");
         }
 
         // Workaround for creating a shape.
@@ -242,7 +181,7 @@ public abstract record ValueType : DataType
 /// <summary>
 /// Vector type.
 /// </summary>
-public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : DataType
+public sealed partial record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : DataType
 {
     public VectorType(DataType elemType, params int[] lanes)
         : this(elemType, new IR.IRArray<int>(lanes))
@@ -252,28 +191,6 @@ public sealed record VectorType(DataType ElemType, IR.IRArray<int> Lanes) : Data
             throw new ArgumentException("Boolean is not supported in vector type.");
         }
     }
-
-    public override Type CLRType => Lanes.ToArray() switch
-    {
-        [4] => typeof(Vector4<>).MakeGenericType(ElemType.CLRType),
-        [4, 4] => typeof(Vector4x4<>).MakeGenericType(ElemType.CLRType),
-        [8] => typeof(Vector8<>).MakeGenericType(ElemType.CLRType),
-        [8, 8] => typeof(Vector8x8<>).MakeGenericType(ElemType.CLRType),
-        [16] => typeof(Vector16<>).MakeGenericType(ElemType.CLRType),
-        [16, 16] => typeof(Vector16x16<>).MakeGenericType(ElemType.CLRType),
-        [32] => typeof(Vector32<>).MakeGenericType(ElemType.CLRType),
-        [32, 16] => typeof(Vector32x16<>).MakeGenericType(ElemType.CLRType),
-        [32, 32] => typeof(Vector32x32<>).MakeGenericType(ElemType.CLRType),
-        [32, 64] => typeof(Vector32x64<>).MakeGenericType(ElemType.CLRType),
-        [64] => typeof(Vector64<>).MakeGenericType(ElemType.CLRType),
-        [128] => typeof(Vector128<>).MakeGenericType(ElemType.CLRType),
-        [32, 128] => typeof(Vector32x128<>).MakeGenericType(ElemType.CLRType),
-        [64, 32] => typeof(Vector64x32<>).MakeGenericType(ElemType.CLRType),
-        [64, 64] => typeof(Vector64x64<>).MakeGenericType(ElemType.CLRType),
-        [64, 128] => typeof(Vector64x128<>).MakeGenericType(ElemType.CLRType),
-        [128, 64] => typeof(Vector128x64<>).MakeGenericType(ElemType.CLRType),
-        _ => throw new NotSupportedException(),
-    };
 
     public override int SizeInBytes => ElemType.SizeInBytes * (int)TensorUtilities.GetProduct(TensorUtilities.ToLongs(Lanes.ToArray()));
 }

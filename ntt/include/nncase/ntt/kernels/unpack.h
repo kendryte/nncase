@@ -15,7 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../loop.h"
-#include "../shape_infer/unpack.h"
+#include "../shape_infer/devectorize.h"
 #include "../ukernels.h"
 #include <type_traits>
 
@@ -30,8 +30,9 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
                               const TAxes &axes) {
         constexpr auto in_rank = TIn::rank();
         constexpr auto out_rank = TOut::rank();
-        constexpr auto elem_rank = TVec::rank();
-        constexpr auto elem_shape = TVec::shape();
+        constexpr auto elem_rank = TAxes::rank();
+        constexpr auto elem_shape =
+            TVec::shape().template slice<0, TAxes::rank()>();
 
         const auto conti_dims_input =
             contiguous_dims(input.shape(), input.strides());

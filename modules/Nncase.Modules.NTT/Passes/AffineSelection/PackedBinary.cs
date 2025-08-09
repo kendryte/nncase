@@ -111,10 +111,10 @@ public partial class NTTAffineSelectionPass
         return true;
     }
 
-    public Expr SelectPackedBinary(PackedBinary binary, Call call, Expr output)
+    public Expr SelectVectorizedBinary(VectorizedBinary binary, Call call, Expr output)
     {
-        var lhs = (Expr)call[PackedBinary.Lhs];
-        var rhs = (Expr)call[PackedBinary.Rhs];
+        var lhs = (Expr)call[VectorizedBinary.Lhs];
+        var rhs = (Expr)call[VectorizedBinary.Rhs];
         if (lhs.CheckedShape is not { Rank: > 0 } || rhs.CheckedShape is not { Rank: > 0 })
         {
             return call;
@@ -132,7 +132,7 @@ public partial class NTTAffineSelectionPass
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(output, AffineMap.Identity(domains.Length), out var outTile)
-            .Body(TIR.F.NTT.PackedBinary(lhsTile, rhsTile, outTile, binary.BinaryOp, binary.LhsPackedAxes, binary.LhsPadedNums, binary.RhsPackedAxes, binary.RhsPadedNums))
+            .Body(TIR.F.NTT.VectorizedBinary(lhsTile, rhsTile, outTile, binary.BinaryOp, binary.LhsVectorizedAxes, binary.LhsPadedNums, binary.RhsVectorizedAxes, binary.RhsPadedNums))
             .Build();
     }
 }

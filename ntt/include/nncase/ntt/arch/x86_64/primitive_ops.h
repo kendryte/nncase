@@ -18,8 +18,28 @@
 #include "../../vector.h"
 #include "arch_types.h"
 #include "avx_mathfun.h"
+#include <xmmintrin.h>
 
 namespace nncase::ntt::ops {
+
+// load/store operation functors
+template <> struct prefetch<prefetch_hint::l0, true> {
+    void operator()(const void *ptr) const noexcept {
+        _mm_prefetch(ptr, _MM_HINT_T0);
+    }
+};
+
+template <> struct prefetch<prefetch_hint::l1, true> {
+    void operator()(const void *ptr) const noexcept {
+        _mm_prefetch(ptr, _MM_HINT_T1);
+    }
+};
+
+template <> struct prefetch<prefetch_hint::l2, true> {
+    void operator()(const void *ptr) const noexcept {
+        _mm_prefetch(ptr, _MM_HINT_T2);
+    }
+};
 
 #ifdef __AVX2__
 

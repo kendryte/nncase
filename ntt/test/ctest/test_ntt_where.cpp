@@ -22,7 +22,7 @@
 using namespace nncase;
 using namespace ortki;
 
-TEST(WhereTestFloat, fixed_fixed_fixed_unpack) {
+TEST(WhereTestFloat, fixed_fixed_fixed_devectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 1;
     constexpr size_t h = 2;
@@ -56,7 +56,7 @@ TEST(WhereTestFloat, fixed_fixed_fixed_unpack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, scalar_fixed_fixed_unpack) {
+TEST(WhereTestFloat, scalar_fixed_fixed_devectorize) {
     constexpr size_t n = 8;
     constexpr size_t c = 8;
     constexpr size_t h = 8;
@@ -90,7 +90,7 @@ TEST(WhereTestFloat, scalar_fixed_fixed_unpack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, fixed_scalar_fixed_unpack) {
+TEST(WhereTestFloat, fixed_scalar_fixed_devectorize) {
     constexpr size_t n = 8;
     constexpr size_t c = 8;
     constexpr size_t h = 8;
@@ -124,7 +124,7 @@ TEST(WhereTestFloat, fixed_scalar_fixed_unpack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, fixed_fixed_scalar_unpack) {
+TEST(WhereTestFloat, fixed_fixed_scalar_devectorize) {
     constexpr size_t n = 8;
     constexpr size_t c = 8;
     constexpr size_t h = 8;
@@ -158,7 +158,7 @@ TEST(WhereTestFloat, fixed_fixed_scalar_unpack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, fixed_scalar_scalar_unpack) {
+TEST(WhereTestFloat, fixed_scalar_scalar_devectorize) {
     // constexpr size_t n = 32;
     // constexpr size_t c = 32;
     // constexpr size_t h = 32;
@@ -192,7 +192,7 @@ TEST(WhereTestFloat, fixed_scalar_scalar_unpack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, scalar_fixed_scalar_unpack) {
+TEST(WhereTestFloat, scalar_fixed_scalar_devectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 8;
     constexpr size_t h = 8;
@@ -226,7 +226,7 @@ TEST(WhereTestFloat, scalar_fixed_scalar_unpack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, scalar_scalar_fixed_unpack) {
+TEST(WhereTestFloat, scalar_scalar_fixed_devectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 8;
     constexpr size_t h = 8;
@@ -260,7 +260,7 @@ TEST(WhereTestFloat, scalar_scalar_fixed_unpack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, scalar_scalar_scalar_unpack) {
+TEST(WhereTestFloat, scalar_scalar_scalar_devectorize) {
     // constexpr size_t n = 1;
     // constexpr size_t c = 8;
     // constexpr size_t h = 8;
@@ -294,7 +294,7 @@ TEST(WhereTestFloat, scalar_scalar_scalar_unpack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, fixed_fixed_fixed_pack) {
+TEST(WhereTestFloat, fixed_fixed_fixed_vectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 1;
     constexpr size_t h = 32;
@@ -314,23 +314,23 @@ TEST(WhereTestFloat, fixed_fixed_fixed_pack) {
     auto ntt_input2 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
     NttTest::init_tensor(ntt_input2, min_input, max_input);
 
-    auto ntt_input1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_input1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto ntt_input2_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_input2_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto ntt_output1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_output1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto condition_packed = ntt::make_tensor<ntt::vector<bool, P>>(
+    auto condition_vectorized = ntt::make_tensor<ntt::vector<bool, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
 
     // ntt
-    ntt::pack(ntt_input1, ntt_input1_packed, fixed_shape_v<3>);
-    ntt::pack(ntt_input2, ntt_input2_packed, fixed_shape_v<3>);
-    ntt::pack(condition, condition_packed, fixed_shape_v<3>);
+    ntt::pack(ntt_input1, ntt_input1_vectorized, fixed_shape_v<3>);
+    ntt::pack(ntt_input2, ntt_input2_vectorized, fixed_shape_v<3>);
+    ntt::pack(condition, condition_vectorized, fixed_shape_v<3>);
 
-    ntt::where(condition_packed, ntt_input1_packed, ntt_input2_packed,
-               ntt_output1_packed);
-    ntt::unpack(ntt_output1_packed, ntt_output1, fixed_shape_v<3>);
+    ntt::where(condition_vectorized, ntt_input1_vectorized, ntt_input2_vectorized,
+               ntt_output1_vectorized);
+    ntt::unpack(ntt_output1_vectorized, ntt_output1, fixed_shape_v<3>);
 
     // ort
     auto ort_condition = NttTest::ntt2ort(condition);
@@ -343,7 +343,7 @@ TEST(WhereTestFloat, fixed_fixed_fixed_pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, fixed_fixed_scalar_pack) {
+TEST(WhereTestFloat, fixed_fixed_scalar_vectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 1;
     constexpr size_t h = 32;
@@ -363,20 +363,20 @@ TEST(WhereTestFloat, fixed_fixed_scalar_pack) {
     auto ntt_input2 = ntt::make_tensor<float>(ntt::fixed_shape_v<1>);
     NttTest::init_tensor(ntt_input2, min_input, max_input);
 
-    auto ntt_input1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_input1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto ntt_output1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_output1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto condition_packed = ntt::make_tensor<ntt::vector<bool, P>>(
+    auto condition_vectorized = ntt::make_tensor<ntt::vector<bool, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
 
     // ntt
-    ntt::pack(ntt_input1, ntt_input1_packed, fixed_shape_v<3>);
-    ntt::pack(condition, condition_packed, fixed_shape_v<3>);
+    ntt::pack(ntt_input1, ntt_input1_vectorized, fixed_shape_v<3>);
+    ntt::pack(condition, condition_vectorized, fixed_shape_v<3>);
 
-    ntt::where(condition_packed, ntt_input1_packed, ntt_input2,
-               ntt_output1_packed);
-    ntt::unpack(ntt_output1_packed, ntt_output1, fixed_shape_v<3>);
+    ntt::where(condition_vectorized, ntt_input1_vectorized, ntt_input2,
+               ntt_output1_vectorized);
+    ntt::unpack(ntt_output1_vectorized, ntt_output1, fixed_shape_v<3>);
 
     // ort
     auto ort_condition = NttTest::ntt2ort(condition);
@@ -389,7 +389,7 @@ TEST(WhereTestFloat, fixed_fixed_scalar_pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, fixed_scalar_fixed_pack) {
+TEST(WhereTestFloat, fixed_scalar_fixed_vectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 1;
     constexpr size_t h = 32;
@@ -410,20 +410,20 @@ TEST(WhereTestFloat, fixed_scalar_fixed_pack) {
     auto ntt_input2 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
     NttTest::init_tensor(ntt_input2, min_input, max_input);
 
-    auto ntt_input2_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_input2_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto ntt_output1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_output1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto condition_packed = ntt::make_tensor<ntt::vector<bool, P>>(
+    auto condition_vectorized = ntt::make_tensor<ntt::vector<bool, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
 
     // ntt
-    ntt::pack(ntt_input2, ntt_input2_packed, fixed_shape_v<3>);
-    ntt::pack(condition, condition_packed, fixed_shape_v<3>);
+    ntt::pack(ntt_input2, ntt_input2_vectorized, fixed_shape_v<3>);
+    ntt::pack(condition, condition_vectorized, fixed_shape_v<3>);
 
-    ntt::where(condition_packed, ntt_input1, ntt_input2_packed,
-               ntt_output1_packed);
-    ntt::unpack(ntt_output1_packed, ntt_output1, fixed_shape_v<3>);
+    ntt::where(condition_vectorized, ntt_input1, ntt_input2_vectorized,
+               ntt_output1_vectorized);
+    ntt::unpack(ntt_output1_vectorized, ntt_output1, fixed_shape_v<3>);
 
     // ort
     auto ort_condition = NttTest::ntt2ort(condition);
@@ -436,7 +436,7 @@ TEST(WhereTestFloat, fixed_scalar_fixed_pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, scalar_fixed_fixed_pack) {
+TEST(WhereTestFloat, scalar_fixed_fixed_vectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 1;
     constexpr size_t h = 32;
@@ -456,20 +456,20 @@ TEST(WhereTestFloat, scalar_fixed_fixed_pack) {
     auto ntt_input2 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
     NttTest::init_tensor(ntt_input2, min_input, max_input);
 
-    auto ntt_input1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_input1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto ntt_input2_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_input2_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto ntt_output1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_output1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
 
     // ntt
-    ntt::pack(ntt_input1, ntt_input1_packed, fixed_shape_v<3>);
-    ntt::pack(ntt_input2, ntt_input2_packed, fixed_shape_v<3>);
+    ntt::pack(ntt_input1, ntt_input1_vectorized, fixed_shape_v<3>);
+    ntt::pack(ntt_input2, ntt_input2_vectorized, fixed_shape_v<3>);
 
-    ntt::where(condition, ntt_input1_packed, ntt_input2_packed,
-               ntt_output1_packed);
-    ntt::unpack(ntt_output1_packed, ntt_output1, fixed_shape_v<3>);
+    ntt::where(condition, ntt_input1_vectorized, ntt_input2_vectorized,
+               ntt_output1_vectorized);
+    ntt::unpack(ntt_output1_vectorized, ntt_output1, fixed_shape_v<3>);
 
     // ort
     auto ort_condition = NttTest::ntt2ort(condition);
@@ -482,7 +482,7 @@ TEST(WhereTestFloat, scalar_fixed_fixed_pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, fixed_scalar_scalar_pack) {
+TEST(WhereTestFloat, fixed_scalar_scalar_vectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 1;
     constexpr size_t h = 32;
@@ -494,7 +494,7 @@ TEST(WhereTestFloat, fixed_scalar_scalar_pack) {
     auto condition = ntt::make_tensor<bool>(ntt::fixed_shape_v<n, c, h, w>);
     NttTest::init_tensor(condition, 0, 1);
 
-    auto condition_packed = ntt::make_tensor<ntt::vector<bool, P>>(
+    auto condition_vectorized = ntt::make_tensor<ntt::vector<bool, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
 
     auto ntt_input1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1>);
@@ -502,17 +502,17 @@ TEST(WhereTestFloat, fixed_scalar_scalar_pack) {
     NttTest::init_tensor(ntt_input1, min_input, max_input);
     NttTest::init_tensor(ntt_input2, min_input, max_input);
 
-    auto ntt_output1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_output1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
 
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
     auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
 
     // ntt
-    ntt::pack(condition, condition_packed, fixed_shape_v<3>);
+    ntt::pack(condition, condition_vectorized, fixed_shape_v<3>);
 
-    ntt::where(condition_packed, ntt_input1, ntt_input2, ntt_output1_packed);
-    ntt::unpack(ntt_output1_packed, ntt_output1, fixed_shape_v<3>);
+    ntt::where(condition_vectorized, ntt_input1, ntt_input2, ntt_output1_vectorized);
+    ntt::unpack(ntt_output1_vectorized, ntt_output1, fixed_shape_v<3>);
 
     // ort
     auto ort_condition = NttTest::ntt2ort(condition);
@@ -525,7 +525,7 @@ TEST(WhereTestFloat, fixed_scalar_scalar_pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, scalar_scalar_fixed_pack) {
+TEST(WhereTestFloat, scalar_scalar_fixed_vectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 1;
     constexpr size_t h = 32;
@@ -542,19 +542,19 @@ TEST(WhereTestFloat, scalar_scalar_fixed_pack) {
     auto ntt_input2 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
     NttTest::init_tensor(ntt_input2, min_input, max_input);
 
-    auto ntt_input2_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_input2_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto ntt_output1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_output1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
 
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
     auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
 
     // ntt
-    ntt::pack(ntt_input2, ntt_input2_packed, fixed_shape_v<3>);
+    ntt::pack(ntt_input2, ntt_input2_vectorized, fixed_shape_v<3>);
 
-    ntt::where(condition, ntt_input1, ntt_input2_packed, ntt_output1_packed);
-    ntt::unpack(ntt_output1_packed, ntt_output1, fixed_shape_v<3>);
+    ntt::where(condition, ntt_input1, ntt_input2_vectorized, ntt_output1_vectorized);
+    ntt::unpack(ntt_output1_vectorized, ntt_output1, fixed_shape_v<3>);
 
     // ort
     auto ort_condition = NttTest::ntt2ort(condition);
@@ -567,7 +567,7 @@ TEST(WhereTestFloat, scalar_scalar_fixed_pack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(WhereTestFloat, scalar_fixed_scalar_pack) {
+TEST(WhereTestFloat, scalar_fixed_scalar_vectorize) {
     constexpr size_t n = 1;
     constexpr size_t c = 1;
     constexpr size_t h = 32;
@@ -584,19 +584,19 @@ TEST(WhereTestFloat, scalar_fixed_scalar_pack) {
     auto ntt_input1 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
     NttTest::init_tensor(ntt_input1, min_input, max_input);
 
-    auto ntt_input1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_input1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
-    auto ntt_output1_packed = ntt::make_tensor<ntt::vector<float, P>>(
+    auto ntt_output1_vectorized = ntt::make_tensor<ntt::vector<float, P>>(
         ntt::fixed_shape_v<n, c, h, w / P>);
 
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
     auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<n, c, h, w>);
 
     // ntt
-    ntt::pack(ntt_input1, ntt_input1_packed, fixed_shape_v<3>);
+    ntt::pack(ntt_input1, ntt_input1_vectorized, fixed_shape_v<3>);
 
-    ntt::where(condition, ntt_input1_packed, ntt_input2, ntt_output1_packed);
-    ntt::unpack(ntt_output1_packed, ntt_output1, fixed_shape_v<3>);
+    ntt::where(condition, ntt_input1_vectorized, ntt_input2, ntt_output1_vectorized);
+    ntt::unpack(ntt_output1_vectorized, ntt_output1, fixed_shape_v<3>);
 
     // ort
     auto ort_condition = NttTest::ntt2ort(condition);

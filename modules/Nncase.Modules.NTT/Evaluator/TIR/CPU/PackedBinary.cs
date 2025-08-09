@@ -17,11 +17,11 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.TIR.NTT;
 
-public sealed class PackedBinaryEvaluator : ITypeInferencer<PackedBinary>, IKernelInfoEvaluator<PackedBinary>
+public sealed class VectorizedBinaryEvaluator : ITypeInferencer<VectorizedBinary>, IKernelInfoEvaluator<VectorizedBinary>
 {
-    public IRType Visit(ITypeInferenceContext context, PackedBinary target) => TupleType.Void;
+    public IRType Visit(ITypeInferenceContext context, VectorizedBinary target) => TupleType.Void;
 
-    public MicroKernelInfo Visit(PackedBinary op, MicroKernelContext context)
+    public MicroKernelInfo Visit(VectorizedBinary op, MicroKernelContext context)
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();

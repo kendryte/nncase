@@ -25,24 +25,24 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackPadPropagation : RewriteRule<Pattern>
+public sealed partial class VectorizePadPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
     PatternMatch.F.Tensors.IsPack(
-            "pack",
+            "vectorize",
             "caller",
             _ => true,
             IsPad("pad", "callee", _ => true, IsWildcard("input"), IsPaddings("pads"), IsTensorConst("value")));
 
-    private Expr? GetReplace(Pack pack, Call caller, Call callee, Expr input, Paddings pads, TensorConst value)
+    private Expr? GetReplace(Pack vectorize, Call caller, Call callee, Expr input, Paddings pads, TensorConst value)
     {
         var newPads = pads.ToArray();
-        for (var i = 0; i < pack.Axes.Count; i++)
+        for (var i = 0; i < vectorize.Axes.Count; i++)
         {
-            var axis = pack.Axes[i];
-            var lanes = pack.Lanes[i];
+            var axis = vectorize.Axes[i];
+            var lanes = vectorize.Lanes[i];
 
-            // Make sure the padding of pack axis can be divided by pack lanes.
+            // Make sure the padding of vectorize axis can be divided by vectorize lanes.
             if (Dimension.TryDivExactly(pads[axis].Before, lanes, out var before) &&
                 Dimension.TryDivExactly(pads[axis].After, lanes, out var after))
             {
@@ -50,7 +50,7 @@ public sealed partial class PackPadPropagation : RewriteRule<Pattern>
             }
             else
             {
-                return null; // Cannot pack this pad.
+                return null; // Cannot vectorize this pad.
             }
         }
 

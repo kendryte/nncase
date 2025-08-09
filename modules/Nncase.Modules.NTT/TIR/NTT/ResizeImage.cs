@@ -24,7 +24,7 @@ public sealed partial class ResizeImage : NTTKernelOp
 
     public static readonly ParameterInfo Output = new(typeof(ResizeImage), 1, "output", HasRank(r => r >= 2, "RanK >= 2"), ParameterKind.Input);
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
     public IRArray<Dimension> PadedNums { get; }
 

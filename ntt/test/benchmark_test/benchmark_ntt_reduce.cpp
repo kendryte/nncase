@@ -46,7 +46,7 @@ constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
                                                                                \
     std::ostringstream oss;                                                    \
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"      \
-        << pack_mode << " took " << std::setprecision(0) << std::fixed         \
+        << vectorize_mode << " took " << std::setprecision(0) << std::fixed         \
         << static_cast<float>(t2 - t1) / run_num << " cycles";                 \
     return oss.str();
 
@@ -74,7 +74,7 @@ constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
                                                                                \
     std::ostringstream oss;                                                    \
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"      \
-        << pack_mode << " took " << std::setprecision(0) << std::fixed         \
+        << vectorize_mode << " took " << std::setprecision(0) << std::fixed         \
         << static_cast<float>(t2 - t1) / run_num << " cycles";                 \
     return oss.str();
 
@@ -102,7 +102,7 @@ constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
                                                                                \
     std::ostringstream oss;                                                    \
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"      \
-        << pack_mode << " took " << std::setprecision(0) << std::fixed         \
+        << vectorize_mode << " took " << std::setprecision(0) << std::fixed         \
         << static_cast<float>(t2 - t1) / run_num << " cycles";                 \
     return oss.str();
 
@@ -130,166 +130,166 @@ constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
                                                                                \
     std::ostringstream oss;                                                    \
     oss << module << "_" << reduce_mode << "_" << reduce_direction << "_"      \
-        << pack_mode << " took " << std::setprecision(0) << std::fixed         \
+        << vectorize_mode << " took " << std::setprecision(0) << std::fixed         \
         << static_cast<float>(t2 - t1) / run_num << " cycles";                 \
     return oss.str();
 
-// 1,Add_reduceN_PackN
+// 1,Add_reduceN_VectorizeN
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_add_reduceN_packN() {
+std::string benchmark_ntt_reduce_add_reduceN_vectorizeN() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceN";
-    std::string pack_mode = "PackN";
+    std::string vectorize_mode = "VectorizeN";
 
     NTT_REDUCEN_PACKN(sum)
 }
 
-// 3,Add_reduceM_PackM
+// 3,Add_reduceM_VectorizeM
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_add_reduceM_packM() {
+std::string benchmark_ntt_reduce_add_reduceM_vectorizeM() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceM";
-    std::string pack_mode = "PackM";
+    std::string vectorize_mode = "VectorizeM";
 
     NTT_REDUCEM_PACKM(sum)
 }
 
-// 5,Add_reduceMN_PackN
+// 5,Add_reduceMN_VectorizeN
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_add_reduceMN_packN() {
+std::string benchmark_ntt_reduce_add_reduceMN_vectorizeN() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "PackN";
+    std::string vectorize_mode = "VectorizeN";
 
     NTT_REDUCEMN_PACKN(sum)
 }
 
-// 6,Add_reduceMN_PackM
+// 6,Add_reduceMN_VectorizeM
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_add_reduceMN_packM() {
+std::string benchmark_ntt_reduce_add_reduceMN_vectorizeM() {
     std::string reduce_mode = "Add";
     std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "PackM";
+    std::string vectorize_mode = "VectorizeM";
 
     NTT_REDUCEMN_PACKM(sum)
 }
 
-// 8,Max_reduceN_PackN
+// 8,Max_reduceN_VectorizeN
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_max_reduceN_packN() {
+std::string benchmark_ntt_reduce_max_reduceN_vectorizeN() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceN";
-    std::string pack_mode = "PackN";
+    std::string vectorize_mode = "VectorizeN";
 
     NTT_REDUCEN_PACKN(max)
 }
 
-// 10,Max_reduceM_PackM
+// 10,Max_reduceM_VectorizeM
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_max_reduceM_packM() {
+std::string benchmark_ntt_reduce_max_reduceM_vectorizeM() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceM";
-    std::string pack_mode = "PackM";
+    std::string vectorize_mode = "VectorizeM";
 
     NTT_REDUCEM_PACKM(max)
 }
 
-// 12,Max_reduceMN_PackN
+// 12,Max_reduceMN_VectorizeN
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_max_reduceMN_packN() {
+std::string benchmark_ntt_reduce_max_reduceMN_vectorizeN() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "PackN";
+    std::string vectorize_mode = "VectorizeN";
 
     NTT_REDUCEMN_PACKN(max)
 }
 
-// 13,Max_reduceMN_PackM
+// 13,Max_reduceMN_VectorizeM
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_max_reduceMN_packM() {
+std::string benchmark_ntt_reduce_max_reduceMN_vectorizeM() {
     std::string reduce_mode = "Max";
     std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "PackM";
+    std::string vectorize_mode = "VectorizeM";
 
     NTT_REDUCEMN_PACKM(max)
 }
 
-// 15,Min_reduceN_PackN
+// 15,Min_reduceN_VectorizeN
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_min_reduceN_packN() {
+std::string benchmark_ntt_reduce_min_reduceN_vectorizeN() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceN";
-    std::string pack_mode = "PackN";
+    std::string vectorize_mode = "VectorizeN";
 
     NTT_REDUCEN_PACKN(min)
 }
 
-// 17,Min_reduceM_PackM
+// 17,Min_reduceM_VectorizeM
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_min_reduceM_packM() {
+std::string benchmark_ntt_reduce_min_reduceM_vectorizeM() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceM";
-    std::string pack_mode = "PackM";
+    std::string vectorize_mode = "VectorizeM";
 
     NTT_REDUCEM_PACKM(min)
 }
 
-// 19,Min_reduceMN_PackN
+// 19,Min_reduceMN_VectorizeN
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_min_reduceMN_packN() {
+std::string benchmark_ntt_reduce_min_reduceMN_vectorizeN() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "PackN";
+    std::string vectorize_mode = "VectorizeN";
 
     NTT_REDUCEMN_PACKN(min)
 }
 
-// 20,Min_reduceMN_PackM
+// 20,Min_reduceMN_VectorizeM
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_min_reduceMN_packM() {
+std::string benchmark_ntt_reduce_min_reduceMN_vectorizeM() {
     std::string reduce_mode = "Min";
     std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "PackM";
+    std::string vectorize_mode = "VectorizeM";
 
     NTT_REDUCEMN_PACKM(min)
 }
 
-// 22,Mean_reduceN_PackN
+// 22,Mean_reduceN_VectorizeN
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_mean_reduceN_packN() {
+std::string benchmark_ntt_reduce_mean_reduceN_vectorizeN() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceN";
-    std::string pack_mode = "PackN";
+    std::string vectorize_mode = "VectorizeN";
 
     NTT_REDUCEN_PACKN(mean)
 }
 
-// 24,Mean_reduceM_PackM
+// 24,Mean_reduceM_VectorizeM
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_mean_reduceM_packM() {
+std::string benchmark_ntt_reduce_mean_reduceM_vectorizeM() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceM";
-    std::string pack_mode = "PackM";
+    std::string vectorize_mode = "VectorizeM";
 
     NTT_REDUCEM_PACKM(mean)
 }
 
-// 26,Mean_reduceMN_PackN
+// 26,Mean_reduceMN_VectorizeN
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_mean_reduceMN_packN() {
+std::string benchmark_ntt_reduce_mean_reduceMN_vectorizeN() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "PackN";
+    std::string vectorize_mode = "VectorizeN";
 
     NTT_REDUCEMN_PACKN(mean)
 }
 
-// 27,Mean_reduceMN_PackM
+// 27,Mean_reduceMN_VectorizeM
 template <size_t M, size_t N>
-std::string benchmark_ntt_reduce_mean_reduceMN_packM() {
+std::string benchmark_ntt_reduce_mean_reduceMN_vectorizeM() {
     std::string reduce_mode = "Mean";
     std::string reduce_direction = "reduceMN";
-    std::string pack_mode = "PackM";
+    std::string vectorize_mode = "VectorizeM";
 
     NTT_REDUCEMN_PACKM(mean)
 }
@@ -306,25 +306,25 @@ int main() {
 
     std::string result;
 
-    BENCHMARK_NTT_REDUCE(add, MN, packM, 2048, 2)
-    BENCHMARK_NTT_REDUCE(max, MN, packM, 2048, 2)
-    BENCHMARK_NTT_REDUCE(min, MN, packM, 2048, 2)
-    BENCHMARK_NTT_REDUCE(mean, MN, packM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(add, MN, vectorizeM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(max, MN, vectorizeM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(min, MN, vectorizeM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(mean, MN, vectorizeM, 2048, 2)
 
-    BENCHMARK_NTT_REDUCE(add, MN, packN, 2, 2048)
-    BENCHMARK_NTT_REDUCE(max, MN, packN, 2, 2048)
-    BENCHMARK_NTT_REDUCE(min, MN, packN, 2, 2048)
-    BENCHMARK_NTT_REDUCE(mean, MN, packN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(add, MN, vectorizeN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(max, MN, vectorizeN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(min, MN, vectorizeN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(mean, MN, vectorizeN, 2, 2048)
 
-    BENCHMARK_NTT_REDUCE(add, M, packM, 2048, 2)
-    BENCHMARK_NTT_REDUCE(max, M, packM, 2048, 2)
-    BENCHMARK_NTT_REDUCE(min, M, packM, 2048, 2)
-    BENCHMARK_NTT_REDUCE(mean, M, packM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(add, M, vectorizeM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(max, M, vectorizeM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(min, M, vectorizeM, 2048, 2)
+    BENCHMARK_NTT_REDUCE(mean, M, vectorizeM, 2048, 2)
 
-    BENCHMARK_NTT_REDUCE(add, N, packN, 2, 2048)
-    BENCHMARK_NTT_REDUCE(max, N, packN, 2, 2048)
-    BENCHMARK_NTT_REDUCE(min, N, packN, 2, 2048)
-    BENCHMARK_NTT_REDUCE(mean, N, packN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(add, N, vectorizeN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(max, N, vectorizeN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(min, N, vectorizeN, 2, 2048)
+    BENCHMARK_NTT_REDUCE(mean, N, vectorizeN, 2, 2048)
 
     return 0;
 }

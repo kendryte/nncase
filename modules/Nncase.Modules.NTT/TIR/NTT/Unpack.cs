@@ -13,7 +13,7 @@ using Nncase.PatternMatch;
 namespace Nncase.TIR.NTT;
 
 /// <summary>
-/// Unpack expression.
+/// Devectorize expression.
 /// </summary>
 public sealed partial class Unpack : NTTKernelOp
 {

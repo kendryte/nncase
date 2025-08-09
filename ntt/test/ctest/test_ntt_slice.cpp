@@ -41,7 +41,7 @@ using namespace ortki;
     NttTest::ort2ntt(ort_output, ntt_output2);                                 \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 
-TEST(SliceTestFloat, NoPack_dim_1_step_eq_1) {
+TEST(SliceTestFloat, NoVectorize_dim_1_step_eq_1) {
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -60,7 +60,7 @@ TEST(SliceTestFloat, NoPack_dim_1_step_eq_1) {
     RUN_ORT_SLICE({4}, {8}, {1}, {1})
 }
 
-TEST(SliceTestFloat, NoPack_dim_1_step_gt_1) {
+TEST(SliceTestFloat, NoVectorize_dim_1_step_gt_1) {
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -78,7 +78,7 @@ TEST(SliceTestFloat, NoPack_dim_1_step_gt_1) {
     RUN_ORT_SLICE({4}, {12}, {1}, {2})
 }
 
-TEST(SliceTestFloat, NoPack_dim_0_step_eq_1) {
+TEST(SliceTestFloat, NoVectorize_dim_0_step_eq_1) {
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -96,7 +96,7 @@ TEST(SliceTestFloat, NoPack_dim_0_step_eq_1) {
     RUN_ORT_SLICE({4}, {8}, {0}, {1})
 }
 
-TEST(SliceTestFloat, NoPack_dim_0_step_gt_1) {
+TEST(SliceTestFloat, NoVectorize_dim_0_step_gt_1) {
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -129,7 +129,7 @@ TEST(SliceTestFloat, NoPack_dim_0_step_gt_1) {
     NttTest::ort2ntt(ort_output, ntt_output2);                                 \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 
-TEST(SliceTestFloat, NoPack_dim_0_1_step_eq_1) {
+TEST(SliceTestFloat, NoVectorize_dim_0_1_step_eq_1) {
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -151,7 +151,7 @@ TEST(SliceTestFloat, NoPack_dim_0_1_step_eq_1) {
     RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 2)
 }
 
-TEST(SliceTestFloat, NoPack_dim_0_1_step_gt_1) {
+TEST(SliceTestFloat, NoVectorize_dim_0_1_step_gt_1) {
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -174,7 +174,7 @@ TEST(SliceTestFloat, NoPack_dim_0_1_step_gt_1) {
     RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 2)
 }
 
-TEST(SliceTestFloat, NoPack_dim_multiple_step_eq_1) {
+TEST(SliceTestFloat, NoVectorize_dim_multiple_step_eq_1) {
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -197,7 +197,7 @@ TEST(SliceTestFloat, NoPack_dim_multiple_step_eq_1) {
     RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 3)
 }
 
-TEST(SliceTestFloat, NoPack_dim_multiple_step_gt_1) {
+TEST(SliceTestFloat, NoVectorize_dim_multiple_step_gt_1) {
     float min_input = -10.0f;
     float max_input = 10.0f;
 
@@ -220,7 +220,7 @@ TEST(SliceTestFloat, NoPack_dim_multiple_step_gt_1) {
     RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 3)
 }
 
-TEST(SliceTestFloat, Pack_fixed_shape) {
+TEST(SliceTestFloat, Vectorize_fixed_shape) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t M = 1024;
     constexpr size_t N = P * 32;
@@ -232,16 +232,16 @@ TEST(SliceTestFloat, Pack_fixed_shape) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<1>);
-    auto pack_output =
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<16, 16>);
-    ntt::slice(pack_input, pack_output, fixed_shape_v<0, 0>,
+    ntt::slice(vectorize_input, vectorize_output, fixed_shape_v<0, 0>,
                fixed_shape_v<16, 16>, ntt::fixed_shape_v<0, 1>,
                ntt::fixed_shape_v<1, 1>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 16 * P>);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<1>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
 
     auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<16, 16 * P>);
     // ort
@@ -252,7 +252,7 @@ TEST(SliceTestFloat, Pack_fixed_shape) {
     RUN_ORT_SLICE2(starts_buf, stops_buf, axes_buf, steps_buf, 2)
 }
 
-TEST(SliceTestFloat, Pack_ranked_shape) {
+TEST(SliceTestFloat, Vectorize_ranked_shape) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t M = 1024;
     constexpr size_t N = P * 32;
@@ -264,16 +264,16 @@ TEST(SliceTestFloat, Pack_ranked_shape) {
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
-    auto pack_input =
+    auto vectorize_input =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(M, N / P));
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<1>);
-    auto pack_output =
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
+    auto vectorize_output =
         ntt::make_tensor<ntt::vector<float, P>>(ntt::make_shape(16, 16));
-    ntt::slice(pack_input, pack_output, fixed_shape_v<0, 0>,
+    ntt::slice(vectorize_input, vectorize_output, fixed_shape_v<0, 0>,
                fixed_shape_v<16, 16>, ntt::fixed_shape_v<0, 1>,
                ntt::fixed_shape_v<1, 1>);
     auto ntt_output1 = ntt::make_tensor<float>(ntt::make_shape(16, 16 * P));
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<1>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
 
     auto ntt_output2 = ntt::make_tensor<float>(ntt::make_shape(16, 16 * P));
     // ort

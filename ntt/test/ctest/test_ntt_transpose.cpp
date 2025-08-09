@@ -24,7 +24,7 @@ using namespace nncase;
 using namespace ortki;
 
 template <size_t perm_h, size_t perm_w>
-void transpose_2D_fixed_shape_unpacked() {
+void transpose_2D_fixed_shape_devectorized() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t org_dims[] = {h, w};
@@ -50,16 +50,16 @@ void transpose_2D_fixed_shape_unpacked() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose2DFixedShapeUnPacked, HW) {
-    transpose_2D_fixed_shape_unpacked<0, 1>();
+TEST(Transpose2DFixedShapeUnVectorized, HW) {
+    transpose_2D_fixed_shape_devectorized<0, 1>();
 }
 
-TEST(Transpose2DFixedShapeUnPacked, WH) {
-    transpose_2D_fixed_shape_unpacked<1, 0>();
+TEST(Transpose2DFixedShapeUnVectorized, WH) {
+    transpose_2D_fixed_shape_devectorized<1, 0>();
 }
 
 template <size_t perm_h, size_t perm_w>
-void transpose_2D_ranked_shape_unpacked() {
+void transpose_2D_ranked_shape_devectorized() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t org_dims[] = {h, w};
@@ -85,15 +85,15 @@ void transpose_2D_ranked_shape_unpacked() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose2DRankedShapeUnPacked, HW) {
-    transpose_2D_ranked_shape_unpacked<0, 1>();
+TEST(Transpose2DRankedShapeUnVectorized, HW) {
+    transpose_2D_ranked_shape_devectorized<0, 1>();
 }
 
-TEST(Transpose2DRankedShapeUnPacked, WH) {
-    transpose_2D_ranked_shape_unpacked<1, 0>();
+TEST(Transpose2DRankedShapeUnVectorized, WH) {
+    transpose_2D_ranked_shape_devectorized<1, 0>();
 }
 
-template <size_t perm_h, size_t perm_w> void transpose_2D_fixed_shape_packed() {
+template <size_t perm_h, size_t perm_w> void transpose_2D_fixed_shape_vectorized() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -121,16 +121,16 @@ template <size_t perm_h, size_t perm_w> void transpose_2D_fixed_shape_packed() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose2DFixedShapePacked, HW) {
-    transpose_2D_fixed_shape_packed<0, 1>();
+TEST(Transpose2DFixedShapeVectorized, HW) {
+    transpose_2D_fixed_shape_vectorized<0, 1>();
 }
 
-TEST(Transpose2DFixedShapePacked, WH) {
-    transpose_2D_fixed_shape_packed<1, 0>();
+TEST(Transpose2DFixedShapeVectorized, WH) {
+    transpose_2D_fixed_shape_vectorized<1, 0>();
 }
 
 template <size_t perm_h, size_t perm_w>
-void transpose_2D_ranked_shape_packed() {
+void transpose_2D_ranked_shape_vectorized() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -158,16 +158,16 @@ void transpose_2D_ranked_shape_packed() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose2DRankedShapePacked, HW) {
-    transpose_2D_ranked_shape_packed<0, 1>();
+TEST(Transpose2DRankedShapeVectorized, HW) {
+    transpose_2D_ranked_shape_vectorized<0, 1>();
 }
 
-TEST(Transpose2DRankedShapePacked, WH) {
-    transpose_2D_ranked_shape_packed<1, 0>();
+TEST(Transpose2DRankedShapeVectorized, WH) {
+    transpose_2D_ranked_shape_vectorized<1, 0>();
 }
 
 template <size_t perm_c, size_t perm_h, size_t perm_w>
-void transpose_3D_fixed_shape_unpacked() {
+void transpose_3D_fixed_shape_devectorized() {
     constexpr size_t c = 3;
     constexpr size_t h = 16;
     constexpr size_t w = 32;
@@ -197,32 +197,32 @@ void transpose_3D_fixed_shape_unpacked() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose3DFixedShapeUnPacked, CHW) {
-    transpose_3D_fixed_shape_unpacked<0, 1, 2>();
+TEST(Transpose3DFixedShapeUnVectorized, CHW) {
+    transpose_3D_fixed_shape_devectorized<0, 1, 2>();
 }
 
-TEST(Transpose3DFixedShapeUnPacked, CWH) {
-    transpose_3D_fixed_shape_unpacked<0, 2, 1>();
+TEST(Transpose3DFixedShapeUnVectorized, CWH) {
+    transpose_3D_fixed_shape_devectorized<0, 2, 1>();
 }
 
-TEST(Transpose3DFixedShapeUnPacked, HCW) {
-    transpose_3D_fixed_shape_unpacked<1, 0, 2>();
+TEST(Transpose3DFixedShapeUnVectorized, HCW) {
+    transpose_3D_fixed_shape_devectorized<1, 0, 2>();
 }
 
-TEST(Transpose3DFixedShapeUnPacked, HWC) {
-    transpose_3D_fixed_shape_unpacked<1, 2, 0>();
+TEST(Transpose3DFixedShapeUnVectorized, HWC) {
+    transpose_3D_fixed_shape_devectorized<1, 2, 0>();
 }
 
-TEST(Transpose3DFixedShapeUnPacked, WCH) {
-    transpose_3D_fixed_shape_unpacked<2, 0, 1>();
+TEST(Transpose3DFixedShapeUnVectorized, WCH) {
+    transpose_3D_fixed_shape_devectorized<2, 0, 1>();
 }
 
-TEST(Transpose3DFixedShapeUnPacked, WHC) {
-    transpose_3D_fixed_shape_unpacked<2, 1, 0>();
+TEST(Transpose3DFixedShapeUnVectorized, WHC) {
+    transpose_3D_fixed_shape_devectorized<2, 1, 0>();
 }
 
 template <size_t perm_c, size_t perm_h, size_t perm_w>
-void transpose_3D_ranked_shape_unpacked() {
+void transpose_3D_ranked_shape_devectorized() {
     constexpr size_t c = 3;
     constexpr size_t h = 16;
     constexpr size_t w = 32;
@@ -250,32 +250,32 @@ void transpose_3D_ranked_shape_unpacked() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose3DRankedShapeUnPacked, CHW) {
-    transpose_3D_ranked_shape_unpacked<0, 1, 2>();
+TEST(Transpose3DRankedShapeUnVectorized, CHW) {
+    transpose_3D_ranked_shape_devectorized<0, 1, 2>();
 }
 
-TEST(Transpose3DRankedShapeUnPacked, CWH) {
-    transpose_3D_ranked_shape_unpacked<0, 2, 1>();
+TEST(Transpose3DRankedShapeUnVectorized, CWH) {
+    transpose_3D_ranked_shape_devectorized<0, 2, 1>();
 }
 
-TEST(Transpose3DRankedShapeUnPacked, HCW) {
-    transpose_3D_ranked_shape_unpacked<1, 0, 2>();
+TEST(Transpose3DRankedShapeUnVectorized, HCW) {
+    transpose_3D_ranked_shape_devectorized<1, 0, 2>();
 }
 
-TEST(Transpose3DRankedShapeUnPacked, HWC) {
-    transpose_3D_ranked_shape_unpacked<1, 2, 0>();
+TEST(Transpose3DRankedShapeUnVectorized, HWC) {
+    transpose_3D_ranked_shape_devectorized<1, 2, 0>();
 }
 
-TEST(Transpose3DRankedShapeUnPacked, WCH) {
-    transpose_3D_ranked_shape_unpacked<2, 0, 1>();
+TEST(Transpose3DRankedShapeUnVectorized, WCH) {
+    transpose_3D_ranked_shape_devectorized<2, 0, 1>();
 }
 
-TEST(Transpose3DRankedShapeUnPacked, WHC) {
-    transpose_3D_fixed_shape_unpacked<2, 1, 0>();
+TEST(Transpose3DRankedShapeUnVectorized, WHC) {
+    transpose_3D_fixed_shape_devectorized<2, 1, 0>();
 }
 
 template <size_t perm_c, size_t perm_h, size_t perm_w>
-void transpose_3D_fixed_shape_packed() {
+void transpose_3D_fixed_shape_vectorized() {
     constexpr size_t c = 3;
     constexpr size_t h = 16;
     constexpr size_t w = 32;
@@ -307,32 +307,32 @@ void transpose_3D_fixed_shape_packed() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose3DFixedShapePacked, CHW) {
-    transpose_3D_fixed_shape_packed<0, 1, 2>();
+TEST(Transpose3DFixedShapeVectorized, CHW) {
+    transpose_3D_fixed_shape_vectorized<0, 1, 2>();
 }
 
-TEST(Transpose3DFixedShapePacked, CWH) {
-    transpose_3D_fixed_shape_packed<0, 2, 1>();
+TEST(Transpose3DFixedShapeVectorized, CWH) {
+    transpose_3D_fixed_shape_vectorized<0, 2, 1>();
 }
 
-TEST(Transpose3DFixedShapePacked, HCW) {
-    transpose_3D_fixed_shape_packed<1, 0, 2>();
+TEST(Transpose3DFixedShapeVectorized, HCW) {
+    transpose_3D_fixed_shape_vectorized<1, 0, 2>();
 }
 
-TEST(Transpose3DFixedShapePacked, HWC) {
-    transpose_3D_fixed_shape_packed<1, 2, 0>();
+TEST(Transpose3DFixedShapeVectorized, HWC) {
+    transpose_3D_fixed_shape_vectorized<1, 2, 0>();
 }
 
-TEST(Transpose3DFixedShapePacked, WCH) {
-    transpose_3D_fixed_shape_packed<2, 0, 1>();
+TEST(Transpose3DFixedShapeVectorized, WCH) {
+    transpose_3D_fixed_shape_vectorized<2, 0, 1>();
 }
 
-TEST(Transpose3DFixedShapePacked, WHC) {
-    transpose_3D_fixed_shape_packed<2, 1, 0>();
+TEST(Transpose3DFixedShapeVectorized, WHC) {
+    transpose_3D_fixed_shape_vectorized<2, 1, 0>();
 }
 
 template <size_t perm_c, size_t perm_h, size_t perm_w>
-void transpose_3D_ranked_shape_packed() {
+void transpose_3D_ranked_shape_vectorized() {
     constexpr size_t c = 3;
     constexpr size_t h = 16;
     constexpr size_t w = 32;
@@ -362,32 +362,32 @@ void transpose_3D_ranked_shape_packed() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose3DRankedShapePacked, CHW) {
-    transpose_3D_ranked_shape_packed<0, 1, 2>();
+TEST(Transpose3DRankedShapeVectorized, CHW) {
+    transpose_3D_ranked_shape_vectorized<0, 1, 2>();
 }
 
-TEST(Transpose3DRankedShapePacked, CWH) {
-    transpose_3D_ranked_shape_packed<0, 2, 1>();
+TEST(Transpose3DRankedShapeVectorized, CWH) {
+    transpose_3D_ranked_shape_vectorized<0, 2, 1>();
 }
 
-TEST(Transpose3DRankedShapePacked, HCW) {
-    transpose_3D_ranked_shape_packed<1, 0, 2>();
+TEST(Transpose3DRankedShapeVectorized, HCW) {
+    transpose_3D_ranked_shape_vectorized<1, 0, 2>();
 }
 
-TEST(Transpose3DRankedShapePacked, HWC) {
-    transpose_3D_ranked_shape_packed<1, 2, 0>();
+TEST(Transpose3DRankedShapeVectorized, HWC) {
+    transpose_3D_ranked_shape_vectorized<1, 2, 0>();
 }
 
-TEST(Transpose3DRankedShapePacked, WCH) {
-    transpose_3D_ranked_shape_packed<2, 0, 1>();
+TEST(Transpose3DRankedShapeVectorized, WCH) {
+    transpose_3D_ranked_shape_vectorized<2, 0, 1>();
 }
 
-TEST(Transpose3DRankedShapePacked, WHC) {
-    transpose_3D_ranked_shape_packed<2, 1, 0>();
+TEST(Transpose3DRankedShapeVectorized, WHC) {
+    transpose_3D_ranked_shape_vectorized<2, 1, 0>();
 }
 
 template <size_t perm_n, size_t perm_c, size_t perm_h, size_t perm_w>
-void transpose_4D_fixed_shape_unpacked() {
+void transpose_4D_fixed_shape_devectorized() {
     constexpr size_t n = 4;
     constexpr size_t c = 3;
     constexpr size_t h = 16;
@@ -418,104 +418,104 @@ void transpose_4D_fixed_shape_unpacked() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose4DFixedShapeUnPacked, NCHW) {
-    transpose_4D_fixed_shape_unpacked<0, 1, 2, 3>();
+TEST(Transpose4DFixedShapeUnVectorized, NCHW) {
+    transpose_4D_fixed_shape_devectorized<0, 1, 2, 3>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, NCWH) {
-    transpose_4D_fixed_shape_unpacked<0, 1, 3, 2>();
+TEST(Transpose4DFixedShapeUnVectorized, NCWH) {
+    transpose_4D_fixed_shape_devectorized<0, 1, 3, 2>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, NHCW) {
-    transpose_4D_fixed_shape_unpacked<0, 2, 1, 3>();
+TEST(Transpose4DFixedShapeUnVectorized, NHCW) {
+    transpose_4D_fixed_shape_devectorized<0, 2, 1, 3>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, NHWC) {
-    transpose_4D_fixed_shape_unpacked<0, 2, 3, 1>();
+TEST(Transpose4DFixedShapeUnVectorized, NHWC) {
+    transpose_4D_fixed_shape_devectorized<0, 2, 3, 1>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, NWCH) {
-    transpose_4D_fixed_shape_unpacked<0, 3, 1, 2>();
+TEST(Transpose4DFixedShapeUnVectorized, NWCH) {
+    transpose_4D_fixed_shape_devectorized<0, 3, 1, 2>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, NWHC) {
-    transpose_4D_fixed_shape_unpacked<0, 3, 2, 1>();
+TEST(Transpose4DFixedShapeUnVectorized, NWHC) {
+    transpose_4D_fixed_shape_devectorized<0, 3, 2, 1>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, CNHW) {
-    transpose_4D_fixed_shape_unpacked<1, 0, 2, 3>();
+TEST(Transpose4DFixedShapeUnVectorized, CNHW) {
+    transpose_4D_fixed_shape_devectorized<1, 0, 2, 3>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, CNWH) {
-    transpose_4D_fixed_shape_unpacked<1, 0, 3, 2>();
+TEST(Transpose4DFixedShapeUnVectorized, CNWH) {
+    transpose_4D_fixed_shape_devectorized<1, 0, 3, 2>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, CHNW) {
-    transpose_4D_fixed_shape_unpacked<1, 2, 0, 3>();
+TEST(Transpose4DFixedShapeUnVectorized, CHNW) {
+    transpose_4D_fixed_shape_devectorized<1, 2, 0, 3>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, CHWN) {
-    transpose_4D_fixed_shape_unpacked<1, 2, 3, 0>();
+TEST(Transpose4DFixedShapeUnVectorized, CHWN) {
+    transpose_4D_fixed_shape_devectorized<1, 2, 3, 0>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, CWNH) {
-    transpose_4D_fixed_shape_unpacked<1, 3, 0, 2>();
+TEST(Transpose4DFixedShapeUnVectorized, CWNH) {
+    transpose_4D_fixed_shape_devectorized<1, 3, 0, 2>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, CWHN) {
-    transpose_4D_fixed_shape_unpacked<1, 3, 2, 0>();
+TEST(Transpose4DFixedShapeUnVectorized, CWHN) {
+    transpose_4D_fixed_shape_devectorized<1, 3, 2, 0>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, HNCW) {
-    transpose_4D_fixed_shape_unpacked<2, 0, 1, 3>();
+TEST(Transpose4DFixedShapeUnVectorized, HNCW) {
+    transpose_4D_fixed_shape_devectorized<2, 0, 1, 3>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, HNWC) {
-    transpose_4D_fixed_shape_unpacked<2, 0, 3, 1>();
+TEST(Transpose4DFixedShapeUnVectorized, HNWC) {
+    transpose_4D_fixed_shape_devectorized<2, 0, 3, 1>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, HCNW) {
-    transpose_4D_fixed_shape_unpacked<2, 1, 0, 3>();
+TEST(Transpose4DFixedShapeUnVectorized, HCNW) {
+    transpose_4D_fixed_shape_devectorized<2, 1, 0, 3>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, HCWN) {
-    transpose_4D_fixed_shape_unpacked<2, 1, 3, 0>();
+TEST(Transpose4DFixedShapeUnVectorized, HCWN) {
+    transpose_4D_fixed_shape_devectorized<2, 1, 3, 0>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, HWNC) {
-    transpose_4D_fixed_shape_unpacked<2, 3, 0, 1>();
+TEST(Transpose4DFixedShapeUnVectorized, HWNC) {
+    transpose_4D_fixed_shape_devectorized<2, 3, 0, 1>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, HWCN) {
-    transpose_4D_fixed_shape_unpacked<2, 3, 1, 0>();
+TEST(Transpose4DFixedShapeUnVectorized, HWCN) {
+    transpose_4D_fixed_shape_devectorized<2, 3, 1, 0>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, WNCH) {
-    transpose_4D_fixed_shape_unpacked<3, 0, 1, 2>();
+TEST(Transpose4DFixedShapeUnVectorized, WNCH) {
+    transpose_4D_fixed_shape_devectorized<3, 0, 1, 2>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, WNHC) {
-    transpose_4D_fixed_shape_unpacked<3, 0, 2, 1>();
+TEST(Transpose4DFixedShapeUnVectorized, WNHC) {
+    transpose_4D_fixed_shape_devectorized<3, 0, 2, 1>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, WCNH) {
-    transpose_4D_fixed_shape_unpacked<3, 1, 0, 2>();
+TEST(Transpose4DFixedShapeUnVectorized, WCNH) {
+    transpose_4D_fixed_shape_devectorized<3, 1, 0, 2>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, WCHN) {
-    transpose_4D_fixed_shape_unpacked<3, 1, 2, 0>();
+TEST(Transpose4DFixedShapeUnVectorized, WCHN) {
+    transpose_4D_fixed_shape_devectorized<3, 1, 2, 0>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, WHNC) {
-    transpose_4D_fixed_shape_unpacked<3, 2, 0, 1>();
+TEST(Transpose4DFixedShapeUnVectorized, WHNC) {
+    transpose_4D_fixed_shape_devectorized<3, 2, 0, 1>();
 }
 
-TEST(Transpose4DFixedShapeUnPacked, WHCN) {
-    transpose_4D_fixed_shape_unpacked<3, 2, 1, 0>();
+TEST(Transpose4DFixedShapeUnVectorized, WHCN) {
+    transpose_4D_fixed_shape_devectorized<3, 2, 1, 0>();
 }
 
 template <size_t perm_n, size_t perm_c, size_t perm_h, size_t perm_w>
-void transpose_4D_ranked_shape_unpacked() {
+void transpose_4D_ranked_shape_devectorized() {
     constexpr size_t n = 4;
     constexpr size_t c = 3;
     constexpr size_t h = 16;
@@ -546,104 +546,104 @@ void transpose_4D_ranked_shape_unpacked() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose4DRankedShapeUnPacked, NCHW) {
-    transpose_4D_ranked_shape_unpacked<0, 1, 2, 3>();
+TEST(Transpose4DRankedShapeUnVectorized, NCHW) {
+    transpose_4D_ranked_shape_devectorized<0, 1, 2, 3>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, NCWH) {
-    transpose_4D_ranked_shape_unpacked<0, 1, 3, 2>();
+TEST(Transpose4DRankedShapeUnVectorized, NCWH) {
+    transpose_4D_ranked_shape_devectorized<0, 1, 3, 2>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, NHCW) {
-    transpose_4D_ranked_shape_unpacked<0, 2, 1, 3>();
+TEST(Transpose4DRankedShapeUnVectorized, NHCW) {
+    transpose_4D_ranked_shape_devectorized<0, 2, 1, 3>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, NHWC) {
-    transpose_4D_ranked_shape_unpacked<0, 2, 3, 1>();
+TEST(Transpose4DRankedShapeUnVectorized, NHWC) {
+    transpose_4D_ranked_shape_devectorized<0, 2, 3, 1>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, NWCH) {
-    transpose_4D_ranked_shape_unpacked<0, 3, 1, 2>();
+TEST(Transpose4DRankedShapeUnVectorized, NWCH) {
+    transpose_4D_ranked_shape_devectorized<0, 3, 1, 2>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, NWHC) {
-    transpose_4D_ranked_shape_unpacked<0, 3, 2, 1>();
+TEST(Transpose4DRankedShapeUnVectorized, NWHC) {
+    transpose_4D_ranked_shape_devectorized<0, 3, 2, 1>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, CNHW) {
-    transpose_4D_ranked_shape_unpacked<1, 0, 2, 3>();
+TEST(Transpose4DRankedShapeUnVectorized, CNHW) {
+    transpose_4D_ranked_shape_devectorized<1, 0, 2, 3>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, CNWH) {
-    transpose_4D_ranked_shape_unpacked<1, 0, 3, 2>();
+TEST(Transpose4DRankedShapeUnVectorized, CNWH) {
+    transpose_4D_ranked_shape_devectorized<1, 0, 3, 2>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, CHNW) {
-    transpose_4D_ranked_shape_unpacked<1, 2, 0, 3>();
+TEST(Transpose4DRankedShapeUnVectorized, CHNW) {
+    transpose_4D_ranked_shape_devectorized<1, 2, 0, 3>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, CHWN) {
-    transpose_4D_ranked_shape_unpacked<1, 2, 3, 0>();
+TEST(Transpose4DRankedShapeUnVectorized, CHWN) {
+    transpose_4D_ranked_shape_devectorized<1, 2, 3, 0>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, CWNH) {
-    transpose_4D_ranked_shape_unpacked<1, 3, 0, 2>();
+TEST(Transpose4DRankedShapeUnVectorized, CWNH) {
+    transpose_4D_ranked_shape_devectorized<1, 3, 0, 2>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, CWHN) {
-    transpose_4D_ranked_shape_unpacked<1, 3, 2, 0>();
+TEST(Transpose4DRankedShapeUnVectorized, CWHN) {
+    transpose_4D_ranked_shape_devectorized<1, 3, 2, 0>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, HNCW) {
-    transpose_4D_ranked_shape_unpacked<2, 0, 1, 3>();
+TEST(Transpose4DRankedShapeUnVectorized, HNCW) {
+    transpose_4D_ranked_shape_devectorized<2, 0, 1, 3>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, HNWC) {
-    transpose_4D_ranked_shape_unpacked<2, 0, 3, 1>();
+TEST(Transpose4DRankedShapeUnVectorized, HNWC) {
+    transpose_4D_ranked_shape_devectorized<2, 0, 3, 1>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, HCNW) {
-    transpose_4D_ranked_shape_unpacked<2, 1, 0, 3>();
+TEST(Transpose4DRankedShapeUnVectorized, HCNW) {
+    transpose_4D_ranked_shape_devectorized<2, 1, 0, 3>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, HCWN) {
-    transpose_4D_ranked_shape_unpacked<2, 1, 3, 0>();
+TEST(Transpose4DRankedShapeUnVectorized, HCWN) {
+    transpose_4D_ranked_shape_devectorized<2, 1, 3, 0>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, HWNC) {
-    transpose_4D_ranked_shape_unpacked<2, 3, 0, 1>();
+TEST(Transpose4DRankedShapeUnVectorized, HWNC) {
+    transpose_4D_ranked_shape_devectorized<2, 3, 0, 1>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, HWCN) {
-    transpose_4D_ranked_shape_unpacked<2, 3, 1, 0>();
+TEST(Transpose4DRankedShapeUnVectorized, HWCN) {
+    transpose_4D_ranked_shape_devectorized<2, 3, 1, 0>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, WNCH) {
-    transpose_4D_ranked_shape_unpacked<3, 0, 1, 2>();
+TEST(Transpose4DRankedShapeUnVectorized, WNCH) {
+    transpose_4D_ranked_shape_devectorized<3, 0, 1, 2>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, WNHC) {
-    transpose_4D_ranked_shape_unpacked<3, 0, 2, 1>();
+TEST(Transpose4DRankedShapeUnVectorized, WNHC) {
+    transpose_4D_ranked_shape_devectorized<3, 0, 2, 1>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, WCNH) {
-    transpose_4D_ranked_shape_unpacked<3, 1, 0, 2>();
+TEST(Transpose4DRankedShapeUnVectorized, WCNH) {
+    transpose_4D_ranked_shape_devectorized<3, 1, 0, 2>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, WCHN) {
-    transpose_4D_ranked_shape_unpacked<3, 1, 2, 0>();
+TEST(Transpose4DRankedShapeUnVectorized, WCHN) {
+    transpose_4D_ranked_shape_devectorized<3, 1, 2, 0>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, WHNC) {
-    transpose_4D_ranked_shape_unpacked<3, 2, 0, 1>();
+TEST(Transpose4DRankedShapeUnVectorized, WHNC) {
+    transpose_4D_ranked_shape_devectorized<3, 2, 0, 1>();
 }
 
-TEST(Transpose4DRankedShapeUnPacked, WHCN) {
-    transpose_4D_ranked_shape_unpacked<3, 2, 1, 0>();
+TEST(Transpose4DRankedShapeUnVectorized, WHCN) {
+    transpose_4D_ranked_shape_devectorized<3, 2, 1, 0>();
 }
 
 template <size_t perm_n, size_t perm_c, size_t perm_h, size_t perm_w>
-void transpose_4D_fixed_shape_packed() {
+void transpose_4D_fixed_shape_vectorized() {
     constexpr size_t n = 4;
     constexpr size_t c = 3;
     constexpr size_t h = 16;
@@ -676,104 +676,104 @@ void transpose_4D_fixed_shape_packed() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose4DFixedShapePacked, NCHW) {
-    transpose_4D_fixed_shape_packed<0, 1, 2, 3>();
+TEST(Transpose4DFixedShapeVectorized, NCHW) {
+    transpose_4D_fixed_shape_vectorized<0, 1, 2, 3>();
 }
 
-TEST(Transpose4DFixedShapePacked, NCWH) {
-    transpose_4D_fixed_shape_packed<0, 1, 3, 2>();
+TEST(Transpose4DFixedShapeVectorized, NCWH) {
+    transpose_4D_fixed_shape_vectorized<0, 1, 3, 2>();
 }
 
-TEST(Transpose4DFixedShapePacked, NHCW) {
-    transpose_4D_fixed_shape_packed<0, 2, 1, 3>();
+TEST(Transpose4DFixedShapeVectorized, NHCW) {
+    transpose_4D_fixed_shape_vectorized<0, 2, 1, 3>();
 }
 
-TEST(Transpose4DFixedShapePacked, NHWC) {
-    transpose_4D_fixed_shape_packed<0, 2, 3, 1>();
+TEST(Transpose4DFixedShapeVectorized, NHWC) {
+    transpose_4D_fixed_shape_vectorized<0, 2, 3, 1>();
 }
 
-TEST(Transpose4DFixedShapePacked, NWCH) {
-    transpose_4D_fixed_shape_packed<0, 3, 1, 2>();
+TEST(Transpose4DFixedShapeVectorized, NWCH) {
+    transpose_4D_fixed_shape_vectorized<0, 3, 1, 2>();
 }
 
-TEST(Transpose4DFixedShapePacked, NWHC) {
-    transpose_4D_fixed_shape_packed<0, 3, 2, 1>();
+TEST(Transpose4DFixedShapeVectorized, NWHC) {
+    transpose_4D_fixed_shape_vectorized<0, 3, 2, 1>();
 }
 
-TEST(Transpose4DFixedShapePacked, CNHW) {
-    transpose_4D_fixed_shape_packed<1, 0, 2, 3>();
+TEST(Transpose4DFixedShapeVectorized, CNHW) {
+    transpose_4D_fixed_shape_vectorized<1, 0, 2, 3>();
 }
 
-TEST(Transpose4DFixedShapePacked, CNWH) {
-    transpose_4D_fixed_shape_packed<1, 0, 3, 2>();
+TEST(Transpose4DFixedShapeVectorized, CNWH) {
+    transpose_4D_fixed_shape_vectorized<1, 0, 3, 2>();
 }
 
-TEST(Transpose4DFixedShapePacked, CHNW) {
-    transpose_4D_fixed_shape_packed<1, 2, 0, 3>();
+TEST(Transpose4DFixedShapeVectorized, CHNW) {
+    transpose_4D_fixed_shape_vectorized<1, 2, 0, 3>();
 }
 
-TEST(Transpose4DFixedShapePacked, CHWN) {
-    transpose_4D_fixed_shape_packed<1, 2, 3, 0>();
+TEST(Transpose4DFixedShapeVectorized, CHWN) {
+    transpose_4D_fixed_shape_vectorized<1, 2, 3, 0>();
 }
 
-TEST(Transpose4DFixedShapePacked, CWNH) {
-    transpose_4D_fixed_shape_packed<1, 3, 0, 2>();
+TEST(Transpose4DFixedShapeVectorized, CWNH) {
+    transpose_4D_fixed_shape_vectorized<1, 3, 0, 2>();
 }
 
-TEST(Transpose4DFixedShapePacked, CWHN) {
-    transpose_4D_fixed_shape_packed<1, 3, 2, 0>();
+TEST(Transpose4DFixedShapeVectorized, CWHN) {
+    transpose_4D_fixed_shape_vectorized<1, 3, 2, 0>();
 }
 
-TEST(Transpose4DFixedShapePacked, HNCW) {
-    transpose_4D_fixed_shape_packed<2, 0, 1, 3>();
+TEST(Transpose4DFixedShapeVectorized, HNCW) {
+    transpose_4D_fixed_shape_vectorized<2, 0, 1, 3>();
 }
 
-TEST(Transpose4DFixedShapePacked, HNWC) {
-    transpose_4D_fixed_shape_packed<2, 0, 3, 1>();
+TEST(Transpose4DFixedShapeVectorized, HNWC) {
+    transpose_4D_fixed_shape_vectorized<2, 0, 3, 1>();
 }
 
-TEST(Transpose4DFixedShapePacked, HCNW) {
-    transpose_4D_fixed_shape_packed<2, 1, 0, 3>();
+TEST(Transpose4DFixedShapeVectorized, HCNW) {
+    transpose_4D_fixed_shape_vectorized<2, 1, 0, 3>();
 }
 
-TEST(Transpose4DFixedShapePacked, HCWN) {
-    transpose_4D_fixed_shape_packed<2, 1, 3, 0>();
+TEST(Transpose4DFixedShapeVectorized, HCWN) {
+    transpose_4D_fixed_shape_vectorized<2, 1, 3, 0>();
 }
 
-TEST(Transpose4DFixedShapePacked, HWNC) {
-    transpose_4D_fixed_shape_packed<2, 3, 0, 1>();
+TEST(Transpose4DFixedShapeVectorized, HWNC) {
+    transpose_4D_fixed_shape_vectorized<2, 3, 0, 1>();
 }
 
-TEST(Transpose4DFixedShapePacked, HWCN) {
-    transpose_4D_fixed_shape_packed<2, 3, 1, 0>();
+TEST(Transpose4DFixedShapeVectorized, HWCN) {
+    transpose_4D_fixed_shape_vectorized<2, 3, 1, 0>();
 }
 
-TEST(Transpose4DFixedShapePacked, WNCH) {
-    transpose_4D_fixed_shape_packed<3, 0, 1, 2>();
+TEST(Transpose4DFixedShapeVectorized, WNCH) {
+    transpose_4D_fixed_shape_vectorized<3, 0, 1, 2>();
 }
 
-TEST(Transpose4DFixedShapePacked, WNHC) {
-    transpose_4D_fixed_shape_packed<3, 0, 2, 1>();
+TEST(Transpose4DFixedShapeVectorized, WNHC) {
+    transpose_4D_fixed_shape_vectorized<3, 0, 2, 1>();
 }
 
-TEST(Transpose4DFixedShapePacked, WCNH) {
-    transpose_4D_fixed_shape_packed<3, 1, 0, 2>();
+TEST(Transpose4DFixedShapeVectorized, WCNH) {
+    transpose_4D_fixed_shape_vectorized<3, 1, 0, 2>();
 }
 
-TEST(Transpose4DFixedShapePacked, WCHN) {
-    transpose_4D_fixed_shape_packed<3, 1, 2, 0>();
+TEST(Transpose4DFixedShapeVectorized, WCHN) {
+    transpose_4D_fixed_shape_vectorized<3, 1, 2, 0>();
 }
 
-TEST(Transpose4DFixedShapePacked, WHNC) {
-    transpose_4D_fixed_shape_packed<3, 2, 0, 1>();
+TEST(Transpose4DFixedShapeVectorized, WHNC) {
+    transpose_4D_fixed_shape_vectorized<3, 2, 0, 1>();
 }
 
-TEST(Transpose4DFixedShapePacked, WHCN) {
-    transpose_4D_fixed_shape_packed<3, 2, 1, 0>();
+TEST(Transpose4DFixedShapeVectorized, WHCN) {
+    transpose_4D_fixed_shape_vectorized<3, 2, 1, 0>();
 }
 
 template <size_t perm_n, size_t perm_c, size_t perm_h, size_t perm_w>
-void transpose_4D_ranked_shape_packed() {
+void transpose_4D_ranked_shape_vectorized() {
     constexpr size_t n = 4;
     constexpr size_t c = 3;
     constexpr size_t h = 16;
@@ -806,100 +806,100 @@ void transpose_4D_ranked_shape_packed() {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(Transpose4DRankedShapePacked, NCHW) {
-    transpose_4D_ranked_shape_packed<0, 1, 2, 3>();
+TEST(Transpose4DRankedShapeVectorized, NCHW) {
+    transpose_4D_ranked_shape_vectorized<0, 1, 2, 3>();
 }
 
-TEST(Transpose4DRankedShapePacked, NCWH) {
-    transpose_4D_ranked_shape_packed<0, 1, 3, 2>();
+TEST(Transpose4DRankedShapeVectorized, NCWH) {
+    transpose_4D_ranked_shape_vectorized<0, 1, 3, 2>();
 }
 
-TEST(Transpose4DRankedShapePacked, NHCW) {
-    transpose_4D_ranked_shape_packed<0, 2, 1, 3>();
+TEST(Transpose4DRankedShapeVectorized, NHCW) {
+    transpose_4D_ranked_shape_vectorized<0, 2, 1, 3>();
 }
 
-TEST(Transpose4DRankedShapePacked, NHWC) {
-    transpose_4D_ranked_shape_packed<0, 2, 3, 1>();
+TEST(Transpose4DRankedShapeVectorized, NHWC) {
+    transpose_4D_ranked_shape_vectorized<0, 2, 3, 1>();
 }
 
-TEST(Transpose4DRankedShapePacked, NWCH) {
-    transpose_4D_ranked_shape_packed<0, 3, 1, 2>();
+TEST(Transpose4DRankedShapeVectorized, NWCH) {
+    transpose_4D_ranked_shape_vectorized<0, 3, 1, 2>();
 }
 
-TEST(Transpose4DRankedShapePacked, NWHC) {
-    transpose_4D_ranked_shape_packed<0, 3, 2, 1>();
+TEST(Transpose4DRankedShapeVectorized, NWHC) {
+    transpose_4D_ranked_shape_vectorized<0, 3, 2, 1>();
 }
 
-TEST(Transpose4DRankedShapePacked, CNHW) {
-    transpose_4D_ranked_shape_packed<1, 0, 2, 3>();
+TEST(Transpose4DRankedShapeVectorized, CNHW) {
+    transpose_4D_ranked_shape_vectorized<1, 0, 2, 3>();
 }
 
-TEST(Transpose4DRankedShapePacked, CNWH) {
-    transpose_4D_ranked_shape_packed<1, 0, 3, 2>();
+TEST(Transpose4DRankedShapeVectorized, CNWH) {
+    transpose_4D_ranked_shape_vectorized<1, 0, 3, 2>();
 }
 
-TEST(Transpose4DRankedShapePacked, CHNW) {
-    transpose_4D_ranked_shape_packed<1, 2, 0, 3>();
+TEST(Transpose4DRankedShapeVectorized, CHNW) {
+    transpose_4D_ranked_shape_vectorized<1, 2, 0, 3>();
 }
 
-TEST(Transpose4DRankedShapePacked, CHWN) {
-    transpose_4D_ranked_shape_packed<1, 2, 3, 0>();
+TEST(Transpose4DRankedShapeVectorized, CHWN) {
+    transpose_4D_ranked_shape_vectorized<1, 2, 3, 0>();
 }
 
-TEST(Transpose4DRankedShapePacked, CWNH) {
-    transpose_4D_ranked_shape_packed<1, 3, 0, 2>();
+TEST(Transpose4DRankedShapeVectorized, CWNH) {
+    transpose_4D_ranked_shape_vectorized<1, 3, 0, 2>();
 }
 
-TEST(Transpose4DRankedShapePacked, CWHN) {
-    transpose_4D_ranked_shape_packed<1, 3, 2, 0>();
+TEST(Transpose4DRankedShapeVectorized, CWHN) {
+    transpose_4D_ranked_shape_vectorized<1, 3, 2, 0>();
 }
 
-TEST(Transpose4DRankedShapePacked, HNCW) {
-    transpose_4D_ranked_shape_packed<2, 0, 1, 3>();
+TEST(Transpose4DRankedShapeVectorized, HNCW) {
+    transpose_4D_ranked_shape_vectorized<2, 0, 1, 3>();
 }
 
-TEST(Transpose4DRankedShapePacked, HNWC) {
-    transpose_4D_ranked_shape_packed<2, 0, 3, 1>();
+TEST(Transpose4DRankedShapeVectorized, HNWC) {
+    transpose_4D_ranked_shape_vectorized<2, 0, 3, 1>();
 }
 
-TEST(Transpose4DRankedShapePacked, HCNW) {
-    transpose_4D_ranked_shape_packed<2, 1, 0, 3>();
+TEST(Transpose4DRankedShapeVectorized, HCNW) {
+    transpose_4D_ranked_shape_vectorized<2, 1, 0, 3>();
 }
 
-TEST(Transpose4DRankedShapePacked, HCWN) {
-    transpose_4D_ranked_shape_packed<2, 1, 3, 0>();
+TEST(Transpose4DRankedShapeVectorized, HCWN) {
+    transpose_4D_ranked_shape_vectorized<2, 1, 3, 0>();
 }
 
-TEST(Transpose4DRankedShapePacked, HWNC) {
-    transpose_4D_ranked_shape_packed<2, 3, 0, 1>();
+TEST(Transpose4DRankedShapeVectorized, HWNC) {
+    transpose_4D_ranked_shape_vectorized<2, 3, 0, 1>();
 }
 
-TEST(Transpose4DRankedShapePacked, HWCN) {
-    transpose_4D_ranked_shape_packed<2, 3, 1, 0>();
+TEST(Transpose4DRankedShapeVectorized, HWCN) {
+    transpose_4D_ranked_shape_vectorized<2, 3, 1, 0>();
 }
 
-TEST(Transpose4DRankedShapePacked, WNCH) {
-    transpose_4D_ranked_shape_packed<3, 0, 1, 2>();
+TEST(Transpose4DRankedShapeVectorized, WNCH) {
+    transpose_4D_ranked_shape_vectorized<3, 0, 1, 2>();
 }
 
-TEST(Transpose4DRankedShapePacked, WNHC) {
-    transpose_4D_ranked_shape_packed<3, 0, 2, 1>();
+TEST(Transpose4DRankedShapeVectorized, WNHC) {
+    transpose_4D_ranked_shape_vectorized<3, 0, 2, 1>();
 }
 
-TEST(Transpose4DRankedShapePacked, WCNH) {
-    transpose_4D_ranked_shape_packed<3, 1, 0, 2>();
+TEST(Transpose4DRankedShapeVectorized, WCNH) {
+    transpose_4D_ranked_shape_vectorized<3, 1, 0, 2>();
 }
 
-TEST(Transpose4DRankedShapePacked, WCHN) {
-    transpose_4D_ranked_shape_packed<3, 1, 2, 0>();
+TEST(Transpose4DRankedShapeVectorized, WCHN) {
+    transpose_4D_ranked_shape_vectorized<3, 1, 2, 0>();
 }
 
-TEST(Transpose4DRankedShapePacked, WHNC) {
-    transpose_4D_ranked_shape_packed<3, 2, 0, 1>();
+TEST(Transpose4DRankedShapeVectorized, WHNC) {
+    transpose_4D_ranked_shape_vectorized<3, 2, 0, 1>();
 }
 
-TEST(Transpose4DRankedShapePacked, WHCN) {
-    transpose_4D_ranked_shape_packed<3, 2, 1, 0>();
+TEST(Transpose4DRankedShapeVectorized, WHCN) {
+    transpose_4D_ranked_shape_vectorized<3, 2, 1, 0>();
 }
 
 int main(int argc, char *argv[]) {

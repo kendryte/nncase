@@ -100,7 +100,7 @@ public static class CSourceExtensions
 
     public static string ToC(this IPagedAttentionConfig config)
     {
-        return $"caching::make_paged_attention_config<{config.NumLayers}, {config.NumKVHeads}, {config.HeadDim}, {config.KVPrimType.ToC()}, {config.BlockSize}>({config.CacheLayout.ToC()}, {config.BlockLayout.ToC()}, {config.PackedAxes.ToC()}, {config.Lanes.ToC()}, {config.ShardingAxes.ToC()}, {config.AxisPolicies.OfType<SBP>().ToC()})";
+        return $"caching::make_paged_attention_config<{config.NumLayers}, {config.NumKVHeads}, {config.HeadDim}, {config.KVPrimType.ToC()}, {config.BlockSize}>({config.CacheLayout.ToC()}, {config.BlockLayout.ToC()}, {config.VectorizedAxes.ToC()}, {config.Lanes.ToC()}, {config.ShardingAxes.ToC()}, {config.AxisPolicies.OfType<SBP>().ToC()})";
     }
 
     public static string ToC(this DataType dataType) => dataType switch

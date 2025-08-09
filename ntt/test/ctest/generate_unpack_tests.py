@@ -47,7 +47,7 @@ class UnpackTestGenerator(BaseTestGenerator):
 
         # Unpack ORT reference:
         # 1. Transpose to move the expanded vector dimensions to the correct axes
-        # 2. Reshape to get the final unpacked tensor
+        # 2. Reshape to get the final unpackd tensor
         code.append("// ORT reference implementation (kernel part)")
 
         if len(unpack_axes) > 0:

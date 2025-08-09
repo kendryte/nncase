@@ -28,7 +28,7 @@ public partial class NTTAffineSelectionPass
             .Domain(rank, out var _)
             .Read(input, AffineMap.Identity(rank), out var inTile)
             .Write(output, AffineMap.Identity(rank), out var outTile)
-            .Body(TIR.F.NTT.Cast(inTile, outTile, cast.NewType, cast.CastMode, cast.PackAxes))
+            .Body(TIR.F.NTT.Cast(inTile, outTile, cast.NewType, cast.CastMode, cast.VectorizeAxes))
             .Build();
     }
 }

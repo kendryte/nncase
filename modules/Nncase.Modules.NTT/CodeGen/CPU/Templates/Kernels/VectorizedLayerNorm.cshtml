@@ -1,0 +1,5 @@
+@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.VectorizedLayerNorm>
+@{
+    var epsType = Model.Args[0].CheckedTensorType.DType is VectorType vt ? vt.ElemType : Model.Args[0].CheckedTensorType.DType;
+}
+@(Model.Indent)vectorized_layer_norm(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name), @Html.Raw(Model.Arguments[3].Symbol.Name), @Html.Raw(epsType.ToC()) { @Model.Target.Epsilon }, fixed_dim_v<@Model.Target.Axis>, fixed_shape_v<@string.Join(",", Model.Target.VectorizedAxes)>, make_shape(@Html.Raw(string.Join(",", Model.Arguments[4..].Select(i => i.Symbol.Name)))), @Model.Target.UseMean.ToString().ToLower());

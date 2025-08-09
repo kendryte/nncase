@@ -11,7 +11,7 @@ namespace Nncase.Passes;
 
 public partial class NTTAffineSelectionPass
 {
-    private Expr SelectUnpack(Unpack unpack, Call call, Expr output)
+    private Expr SelectDevectorize(Unpack devectorize, Call call, Expr output)
     {
         var input = (Expr)call[Unpack.Input];
         if (output.CheckedShape is not { Rank: > 0 })
@@ -27,9 +27,9 @@ public partial class NTTAffineSelectionPass
         for (int axis = 0; axis < rank; axis++)
         {
             // e.g. f32[128,256] -> f32<4>[32,256]
-            if (unpack.Axes.IndexOf(axis) is int i && i != -1)
+            if (devectorize.Axes.IndexOf(axis) is int i && i != -1)
             {
-                results[axis] = new AffineRange(unpack.Lanes[i] * domains[axis].Offset, unpack.Lanes[i] * domains[axis].Extent);
+                results[axis] = new AffineRange(devectorize.Lanes[i] * domains[axis].Offset, devectorize.Lanes[i] * domains[axis].Extent);
             }
             else
             {
@@ -42,7 +42,7 @@ public partial class NTTAffineSelectionPass
             .Domain(rank, out var _)
             .Read(input, AffineMap.Identity(rank), out var intile)
             .Write(output, affinemap, out var outTile)
-            .Body(TIR.F.NTT.Unpack(intile, outTile, unpack.Lanes, unpack.Axes))
+            .Body(TIR.F.NTT.Unpack(intile, outTile, devectorize.Lanes, devectorize.Axes))
             .Build();
     }
 }

@@ -24,9 +24,9 @@ using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.NTT;
 
-public abstract class PackRule : RewriteRule<Pattern>
+public abstract class VectorizeRule : RewriteRule<Pattern>
 {
-    public PackRule(int rank, int lane)
+    public VectorizeRule(int rank, int lane)
     {
         Rank = rank;
         Lane = lane;
@@ -38,7 +38,7 @@ public abstract class PackRule : RewriteRule<Pattern>
 
     public override BaseExpr? GetReplace(IMatchResult result, RunPassContext options) => GetReplaceCandidates(result, options)[0];
 
-    public IEnumerable<int[]> GeneratePackAxes(Shape shape)
+    public IEnumerable<int[]> GenerateVectorizeAxes(Shape shape)
     {
         if (shape.IsUnranked || shape.Rank == 0 || (shape.Rank == 1 && shape[0].IsFixed && shape[0].FixedValue == 1))
         {
@@ -72,30 +72,30 @@ public abstract class PackRule : RewriteRule<Pattern>
     }
 }
 
-public sealed class PackResizeImage : PackRule
+public sealed class VectorizeResizeImage : VectorizeRule
 {
-    public PackResizeImage(int rank, int lane)
+    public VectorizeResizeImage(int rank, int lane)
         : base(rank, lane)
     {
     }
 
     public override Pattern Pattern { get; } = IsResizeImage("target", op => op.TransformationMode == ImageResizeTransformationMode.Asymmetric && op.IsTFResize == false, IsWildcard("input") with { TypePattern = !IsVector() }, IsWildcard("roi"), IsFixedShape("newSize"), IsTensorConst("cubicCoeffA"), IsTensorConst("excludeOutside"), IsTensorConst("extrapolationValue"));
 
-    public static List<Expr> AddCandidate(IR.Imaging.ResizeImage op, Expr input, int[] newSize, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(IR.Imaging.ResizeImage op, Expr input, int[] newSize, int[] vectorizedAxes, int[] lanes)
     {
         var inShape = input.CheckedShape;
 
         var rets = new List<Expr>();
-        if (packedAxes.Length == 0)
+        if (vectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padsInput), lanes, vectorizedAxes);
 
-        var resized = IR.F.NTT.ResizeImage(packedInput, new RankedShape(padsInput), packedAxes, newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
+        var resized = IR.F.NTT.ResizeImage(vectorizedInput, new RankedShape(padsInput), vectorizedAxes, newSize, op.ResizeMode, op.TransformationMode, op.NearestMode);
 
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(resized, lanes, packedAxes), inShape, padsInput!);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(resized, lanes, vectorizedAxes), inShape, padsInput!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -123,9 +123,9 @@ public sealed class PackResizeImage : PackRule
     }
 }
 
-public sealed class PackReduce : PackRule
+public sealed class VectorizeReduce : VectorizeRule
 {
-    public PackReduce(int rank, int lane)
+    public VectorizeReduce(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -138,23 +138,23 @@ public sealed class PackReduce : PackRule
       IsTensorConst("initValue") with { TypePattern = IsFloat() },
       IsTensorConst("keepDims") with { TypePattern = IsBool() });
 
-    public static List<Expr> AddCandidate(IR.Math.Reduce op, Expr input, int[] axes, float initValue, bool keepDims, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(IR.Math.Reduce op, Expr input, int[] axes, float initValue, bool keepDims, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = (RankedShape)input.CheckedShape;
-        if (packedAxes.Length == 0)
+        if (vectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        var packReduceAxes = axes.Intersect(packedAxes) == packedAxes;
-        if (packReduceAxes && op.ReduceOp == ReduceOp.Mean)
+        var vectorizeReduceAxes = axes.Intersect(vectorizedAxes) == vectorizedAxes;
+        if (vectorizeReduceAxes && op.ReduceOp == ReduceOp.Mean)
         {
             return rets;
         }
 
         axes = axes.Select(x => (int)Util.PositiveIndex(x, inShape.Rank)).ToArray();
-        var padValue = packReduceAxes ? op.ReduceOp switch
+        var padValue = vectorizeReduceAxes ? op.ReduceOp switch
         {
             ReduceOp.Mean => 0f,
             ReduceOp.Min => float.MaxValue,
@@ -162,12 +162,12 @@ public sealed class PackReduce : PackRule
             ReduceOp.Sum => 0f,
             _ => throw new NotImplementedException(),
         } : 0f;
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, Tensor.FromScalar(DataTypes.Float32, padValue).CastTo(input.CheckedDataType), out var padsInput), lanes, packedAxes);
+        var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, Tensor.FromScalar(DataTypes.Float32, padValue).CastTo(input.CheckedDataType), out var padsInput), lanes, vectorizedAxes);
 
-        Call reduce = IR.F.NTT.PackedReduce(packedInput, op.ReduceOp, axes, initValue, keepDims, packedAxes, new RankedShape(padsInput));
+        Call reduce = IR.F.NTT.VectorizedReduce(vectorizedInput, op.ReduceOp, axes, initValue, keepDims, vectorizedAxes, new RankedShape(padsInput));
 
-        var (outPackAxes, outPadNums, outLanes, outShape) = IR.NTT.PackedReduce.ComputeOutputInfo((IR.NTT.PackedReduce)reduce.Target, padsInput, inShape, lanes);
-        var post = packReduceAxes ? reduce : PackUtility.SliceForPack(IR.F.Tensors.Unpack(reduce, outLanes, outPackAxes), outShape, outPadNums);
+        var (outVectorizeAxes, outPadNums, outLanes, outShape) = IR.NTT.VectorizedReduce.ComputeOutputInfo((IR.NTT.VectorizedReduce)reduce.Target, padsInput, inShape, lanes);
+        var post = vectorizeReduceAxes ? reduce : VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(reduce, outLanes, outVectorizeAxes), outShape, outPadNums);
 
         if (post.CheckedType is not InvalidType)
         {
@@ -207,9 +207,9 @@ public sealed class PackReduce : PackRule
     }
 }
 
-public sealed class PackInstanceNorm : PackRule
+public sealed class VectorizeInstanceNorm : VectorizeRule
 {
-    public PackInstanceNorm(int rank, int lane)
+    public VectorizeInstanceNorm(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -234,28 +234,28 @@ public sealed class PackInstanceNorm : PackRule
         var pshape = scale.CheckedShape;
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
-        void AddCandidate(int[] packedAxes, int[] lanes)
+        void AddCandidate(int[] vectorizedAxes, int[] lanes)
         {
-            var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+            var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padsInput), lanes, vectorizedAxes);
 
-            var pAxes = packedAxes.Where(i => i == 1).Select(i => 0).ToArray();
-            var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
+            var pAxes = vectorizedAxes.Where(i => i == 1).Select(i => 0).ToArray();
+            var vectorizedScale = VectorizeUtility.PadForVectorize(scale, pshape, pAxes, lanes, 0f, out var padsScale);
             if (pAxes.Length > 0)
             {
-                packedScale = IR.F.Tensors.Pack(packedScale, Enumerable.Repeat(laneSize, pAxes.Length).ToArray(), pAxes);
+                vectorizedScale = IR.F.Tensors.Pack(vectorizedScale, Enumerable.Repeat(laneSize, pAxes.Length).ToArray(), pAxes);
             }
 
-            var packedBias = PackUtility.PadForPack(bias, pshape, pAxes, lanes, 0f, out var padsBias);
+            var vectorizedBias = VectorizeUtility.PadForVectorize(bias, pshape, pAxes, lanes, 0f, out var padsBias);
             if (pAxes.Length > 0)
             {
-                packedBias = IR.F.Tensors.Pack(packedBias, Enumerable.Repeat(laneSize, pAxes.Length).ToArray(), pAxes);
+                vectorizedBias = IR.F.Tensors.Pack(vectorizedBias, Enumerable.Repeat(laneSize, pAxes.Length).ToArray(), pAxes);
             }
 
-            var instanceNorm = IR.F.NTT.InstacneNorm(packedInput, packedScale, packedBias, eps, packedAxes, new RankedShape(padsInput));
+            var instanceNorm = IR.F.NTT.InstacneNorm(vectorizedInput, vectorizedScale, vectorizedBias, eps, vectorizedAxes, new RankedShape(padsInput));
 
             if (instanceNorm.CheckedType is not InvalidType)
             {
-                var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(instanceNorm, lanes, packedAxes), inShape, padsInput);
+                var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(instanceNorm, lanes, vectorizedAxes), inShape, padsInput);
                 rets.Add(post);
             }
         }
@@ -269,9 +269,9 @@ public sealed class PackInstanceNorm : PackRule
     }
 }
 
-public sealed class PackMatMul : PackRule
+public sealed class VectorizeMatMul : VectorizeRule
 {
-    public PackMatMul(int rank = 2, int lane = 16, bool transB = false)
+    public VectorizeMatMul(int rank = 2, int lane = 16, bool transB = false)
         : base(rank, lane)
     {
         TransB = transB;
@@ -300,37 +300,37 @@ public sealed class PackMatMul : PackRule
         var outputDataType = ((Nncase.IR.Math.MatMul)result["matmul"]).OutputDataType;
         var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape, outputDataType);
 
-        // pack A's k and B's k
-        // AddCandidate(rcontext, PackKind.K, PackKind.K);
+        // vectorize A's k and B's k
+        // AddCandidate(rcontext, VectorizeKind.K, VectorizeKind.K);
 
-        // only pack A's m
-        // AddCandidate(rcontext, PackKind.M, PackKind.None);
+        // only vectorize A's m
+        // AddCandidate(rcontext, VectorizeKind.M, VectorizeKind.None);
 
-        // only pack B's n
-        AddCandidate(rcontext, IR.NTT.PackedMatMul.PackKind.None, IR.NTT.PackedMatMul.PackKind.N/* , transB: rhs is Const */);
+        // only vectorize B's n
+        AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.None, IR.NTT.VectorizedMatMul.VectorizeKind.N/* , transB: rhs is Const */);
         if (Rank > 1)
         {
-            // pack A's m and B's n, when B is const, force transpose
-            AddCandidate(rcontext, IR.NTT.PackedMatMul.PackKind.M, IR.NTT.PackedMatMul.PackKind.N/* , transB: rhs is Const */);
+            // vectorize A's m and B's n, when B is const, force transpose
+            AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.M, IR.NTT.VectorizedMatMul.VectorizeKind.N/* , transB: rhs is Const */);
 
-            // pack A's m,k and B's k,n
-            AddCandidate(rcontext, IR.NTT.PackedMatMul.PackKind.M | IR.NTT.PackedMatMul.PackKind.K, IR.NTT.PackedMatMul.PackKind.K | IR.NTT.PackedMatMul.PackKind.N/* , transB: rhs is Const */);
+            // vectorize A's m,k and B's k,n
+            AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.M | IR.NTT.VectorizedMatMul.VectorizeKind.K, IR.NTT.VectorizedMatMul.VectorizeKind.K | IR.NTT.VectorizedMatMul.VectorizeKind.N/* , transB: rhs is Const */);
             if (TransB)
             {
-                AddCandidate(rcontext, IR.NTT.PackedMatMul.PackKind.M | IR.NTT.PackedMatMul.PackKind.K, IR.NTT.PackedMatMul.PackKind.K | IR.NTT.PackedMatMul.PackKind.N, transB: TransB);
+                AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.M | IR.NTT.VectorizedMatMul.VectorizeKind.K, IR.NTT.VectorizedMatMul.VectorizeKind.K | IR.NTT.VectorizedMatMul.VectorizeKind.N, transB: TransB);
             }
 
-            // pack A's m,k and B's k
-            // AddCandidate(rcontext,  IR.NTT.PackedMatMul.PackKind.M |  IR.NTT.PackedMatMul.PackKind.K,  IR.NTT.PackedMatMul.PackKind.K);
+            // vectorize A's m,k and B's k
+            // AddCandidate(rcontext,  IR.NTT.VectorizedMatMul.VectorizeKind.M |  IR.NTT.VectorizedMatMul.VectorizeKind.K,  IR.NTT.VectorizedMatMul.VectorizeKind.K);
 
-            // pack A's k and B's k,n
-            AddCandidate(rcontext, IR.NTT.PackedMatMul.PackKind.K, IR.NTT.PackedMatMul.PackKind.K | IR.NTT.PackedMatMul.PackKind.N/* , transB: lhs is Const */);
+            // vectorize A's k and B's k,n
+            AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.K, IR.NTT.VectorizedMatMul.VectorizeKind.K | IR.NTT.VectorizedMatMul.VectorizeKind.N/* , transB: lhs is Const */);
         }
 
         return rets;
     }
 
-    private void AddCandidate(RuleContext context, IR.NTT.PackedMatMul.PackKind lhsPack, IR.NTT.PackedMatMul.PackKind rhsPack, bool transA = false, bool transB = false)
+    private void AddCandidate(RuleContext context, IR.NTT.VectorizedMatMul.VectorizeKind lhsVectorize, IR.NTT.VectorizedMatMul.VectorizeKind rhsVectorize, bool transA = false, bool transB = false)
     {
         var (rets, lhs, rhs, candidate, _, _, outputDataType) = context;
         var lhsShape = context.LhsShape.ToArray();
@@ -354,87 +354,87 @@ public sealed class PackMatMul : PackRule
         }
 
         int[] lhsLanes;
-        int[] lhsPackedAxes;
+        int[] lhsVectorizedAxes;
         var (lm, lk) = transA ? (lhsShape.Length - 1, lhsShape.Length - 2) : (lhsShape.Length - 2, lhsShape.Length - 1);
         var (rk, rn) = transB ? (rhsShape.Length - 1, rhsShape.Length - 2) : (rhsShape.Length - 2, rhsShape.Length - 1);
-        switch (lhsPack)
+        switch (lhsVectorize)
         {
-            case IR.NTT.PackedMatMul.PackKind.None:
+            case IR.NTT.VectorizedMatMul.VectorizeKind.None:
                 lhsLanes = Array.Empty<int>();
-                lhsPackedAxes = Array.Empty<int>();
+                lhsVectorizedAxes = Array.Empty<int>();
                 break;
-            case IR.NTT.PackedMatMul.PackKind.M:
+            case IR.NTT.VectorizedMatMul.VectorizeKind.M:
                 lhsLanes = [lhsLaneSize];
-                lhsPackedAxes = [lm];
+                lhsVectorizedAxes = [lm];
                 break;
-            case IR.NTT.PackedMatMul.PackKind.K:
+            case IR.NTT.VectorizedMatMul.VectorizeKind.K:
                 lhsLanes = [lhsLaneSize];
-                lhsPackedAxes = [lk];
+                lhsVectorizedAxes = [lk];
                 break;
-            case IR.NTT.PackedMatMul.PackKind.M | IR.NTT.PackedMatMul.PackKind.K:
+            case IR.NTT.VectorizedMatMul.VectorizeKind.M | IR.NTT.VectorizedMatMul.VectorizeKind.K:
                 lhsLanes = [lhsLaneSize, lhsLaneSize];
-                lhsPackedAxes = [lm, lk];
+                lhsVectorizedAxes = [lm, lk];
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(lhsPack), lhsPack.ToString());
+                throw new ArgumentOutOfRangeException(nameof(lhsVectorize), lhsVectorize.ToString());
         }
 
         int[] rhsLanes;
-        int[] rhsPackedAxes;
-        switch (rhsPack)
+        int[] rhsVectorizedAxes;
+        switch (rhsVectorize)
         {
-            case IR.NTT.PackedMatMul.PackKind.None:
+            case IR.NTT.VectorizedMatMul.VectorizeKind.None:
                 rhsLanes = Array.Empty<int>();
-                rhsPackedAxes = Array.Empty<int>();
+                rhsVectorizedAxes = Array.Empty<int>();
                 break;
-            case IR.NTT.PackedMatMul.PackKind.N:
+            case IR.NTT.VectorizedMatMul.VectorizeKind.N:
                 rhsLanes = [rhsLaneSize];
-                rhsPackedAxes = [rn];
+                rhsVectorizedAxes = [rn];
                 break;
-            case IR.NTT.PackedMatMul.PackKind.K:
+            case IR.NTT.VectorizedMatMul.VectorizeKind.K:
                 rhsLanes = [rhsLaneSize];
-                rhsPackedAxes = [rk];
+                rhsVectorizedAxes = [rk];
                 break;
-            case IR.NTT.PackedMatMul.PackKind.K | IR.NTT.PackedMatMul.PackKind.N:
+            case IR.NTT.VectorizedMatMul.VectorizeKind.K | IR.NTT.VectorizedMatMul.VectorizeKind.N:
                 rhsLanes = [rhsLaneSize, rhsLaneSize];
-                rhsPackedAxes = [rk, rn];
+                rhsVectorizedAxes = [rk, rn];
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(rhsPack), rhsPack.ToString());
+                throw new ArgumentOutOfRangeException(nameof(rhsVectorize), rhsVectorize.ToString());
         }
 
-        var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
-        var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+        var vectorizedLhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(lhs, lhsShape, lhsVectorizedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsVectorizedAxes);
+        var vectorizedRhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(rhs, rhsShape, rhsVectorizedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsVectorizedAxes);
 
-        var matmul = IR.F.NTT.PackedMatMul(packedLhs, packedRhs, lhsPackedAxes, rhsPackedAxes, transA, transB, false, outputDataType);
+        var matmul = IR.F.NTT.VectorizedMatMul(vectorizedLhs, vectorizedRhs, lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, false, outputDataType);
 
         var outRank = System.Math.Max(lhsShape.Length, rhsShape.Length);
         _ = outRank - lhsShape.Length;
         _ = outRank - rhsShape.Length;
 
-        var unpackAxes = new List<int>();
+        var devectorizeAxes = new List<int>();
         var unpadNums = new List<Dimension>();
-        var unpackLanes = new List<int>();
-        if (lhsPack.HasFlag(IR.NTT.PackedMatMul.PackKind.M))
+        var devectorizeLanes = new List<int>();
+        if (lhsVectorize.HasFlag(IR.NTT.VectorizedMatMul.VectorizeKind.M))
         {
-            var mPackIndex = Array.IndexOf(lhsPackedAxes, lm);
-            unpackAxes.Add(outRank - 2);
-            unpadNums.Add(lhsPadNums[mPackIndex]);
-            unpackLanes.Add(lhsLaneSize);
+            var mVectorizeIndex = Array.IndexOf(lhsVectorizedAxes, lm);
+            devectorizeAxes.Add(outRank - 2);
+            unpadNums.Add(lhsPadNums[mVectorizeIndex]);
+            devectorizeLanes.Add(lhsLaneSize);
         }
 
-        if (rhsPack.HasFlag(IR.NTT.PackedMatMul.PackKind.N))
+        if (rhsVectorize.HasFlag(IR.NTT.VectorizedMatMul.VectorizeKind.N))
         {
-            var nPackIndex = Array.IndexOf(rhsPackedAxes, rn);
-            unpackAxes.Add(outRank - 1);
-            unpadNums.Add(rhsPadNums[nPackIndex]);
-            unpackLanes.Add(rhsLaneSize);
+            var nVectorizeIndex = Array.IndexOf(rhsVectorizedAxes, rn);
+            devectorizeAxes.Add(outRank - 1);
+            unpadNums.Add(rhsPadNums[nVectorizeIndex]);
+            devectorizeLanes.Add(rhsLaneSize);
         }
 
         Expr post = matmul;
-        if (unpackAxes.Any())
+        if (devectorizeAxes.Any())
         {
-            post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(matmul, unpackLanes.ToArray(), unpackAxes.ToArray()), candidate.CheckedShape, unpadNums.ToArray());
+            post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(matmul, devectorizeLanes.ToArray(), devectorizeAxes.ToArray()), candidate.CheckedShape, unpadNums.ToArray());
         }
 
         if (post.CheckedType is not InvalidType)
@@ -448,9 +448,9 @@ public sealed class PackMatMul : PackRule
     }
 }
 
-public sealed class PackUnary : PackRule
+public sealed class VectorizeUnary : VectorizeRule
 {
-    public PackUnary(int rank, int lane)
+    public VectorizeUnary(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -461,14 +461,14 @@ public sealed class PackUnary : PackRule
       op => op.UnaryOp is not UnaryOp.Exp,
       IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(IR.Math.Unary op, Expr input, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(IR.Math.Unary op, Expr input, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padsInput), lanes, vectorizedAxes);
 
-        var unary = IR.F.Math.Unary(op.UnaryOp, packedInput);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(unary, lanes, packedAxes), inShape, padsInput);
+        var unary = IR.F.Math.Unary(op.UnaryOp, vectorizedInput);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(unary, lanes, vectorizedAxes), inShape, padsInput);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -500,9 +500,9 @@ public sealed class PackUnary : PackRule
     }
 }
 
-public sealed class PackBinary : PackRule
+public sealed class VectorizeBinary : VectorizeRule
 {
-    public PackBinary(int rank, int lane)
+    public VectorizeBinary(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -513,43 +513,43 @@ public sealed class PackBinary : PackRule
       IsWildcard("lhs") with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(IR.Math.Binary op, Expr lhs, Expr rhs, Expr candidate, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes)
+    public static List<Expr> AddCandidate(IR.Math.Binary op, Expr lhs, Expr rhs, Expr candidate, int[] lhsVectorizedAxes, int[] rhsVectorizedAxes, int[] lhsLanes, int[] rhsLanes)
     {
         var rets = new List<Expr>();
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var outShape = candidate.CheckedShape;
-        if (lhsPackedAxes.Length == 0 && rhsPackedAxes.Length == 0)
+        if (lhsVectorizedAxes.Length == 0 && rhsVectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        var alignedLhsPackedAxes = lhsPackedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
-        var alignedRhsPackedAxes = rhsPackedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
-        if (lhsPackedAxes.Any(a => lhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
-            || rhsPackedAxes.Any(a => rhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
+        var alignedLhsVectorizedAxes = lhsVectorizedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
+        var alignedRhsVectorizedAxes = rhsVectorizedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
+        if (lhsVectorizedAxes.Any(a => lhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
+            || rhsVectorizedAxes.Any(a => rhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
         {
             return rets;
         }
 
-        if (lhsPackedAxes.Length > 0 && rhsPackedAxes.Length > 0 && !alignedLhsPackedAxes.Intersect(alignedRhsPackedAxes).Any())
+        if (lhsVectorizedAxes.Length > 0 && rhsVectorizedAxes.Length > 0 && !alignedLhsVectorizedAxes.Intersect(alignedRhsVectorizedAxes).Any())
         {
             return rets;
         }
 
         var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
         var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
-        if (alignedLhsPackedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
-        || alignedRhsPackedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
+        if (alignedLhsVectorizedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsVectorizedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
+        || alignedRhsVectorizedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsVectorizedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
         {
             return rets;
         }
 
-        var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
-        var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+        var vectorizedLhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(lhs, lhsShape, lhsVectorizedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsVectorizedAxes);
+        var vectorizedRhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(rhs, rhsShape, rhsVectorizedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsVectorizedAxes);
 
-        var binary = IR.F.NTT.PackedBinary(packedLhs, packedRhs, op.BinaryOp, lhsPackedAxes, lhsPadNums, rhsPackedAxes, rhsPadNums);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? alignedLhsPackedAxes : alignedRhsPackedAxes), candidate.CheckedShape, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums! : rhsPadNums!);
+        var binary = IR.F.NTT.VectorizedBinary(vectorizedLhs, vectorizedRhs, op.BinaryOp, lhsVectorizedAxes, lhsPadNums, rhsVectorizedAxes, rhsPadNums);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsVectorizedAxes.Length >= rhsVectorizedAxes.Length ? alignedLhsVectorizedAxes : alignedRhsVectorizedAxes), candidate.CheckedShape, lhsVectorizedAxes.Length >= rhsVectorizedAxes.Length ? lhsPadNums! : rhsPadNums!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -570,13 +570,13 @@ public sealed class PackBinary : PackRule
         var lhsLaneSize = Lane / lhs.CheckedDataType.SizeInBytes;
         var rhsLaneSize = Lane / rhs.CheckedDataType.SizeInBytes;
 
-        foreach (var arr in new[] { GeneratePackAxes(lhsShape), GeneratePackAxes(rhsShape) }.CartesianProduct())
+        foreach (var arr in new[] { GenerateVectorizeAxes(lhsShape), GenerateVectorizeAxes(rhsShape) }.CartesianProduct())
         {
-            var lhsPackedAxes = arr.First();
-            var rhsPackedAxes = arr.Skip(1).First();
-            if (lhsPackedAxes.Length <= Rank && rhsPackedAxes.Length <= Rank)
+            var lhsVectorizedAxes = arr.First();
+            var rhsVectorizedAxes = arr.Skip(1).First();
+            if (lhsVectorizedAxes.Length <= Rank && rhsVectorizedAxes.Length <= Rank)
             {
-                rets.AddRange(AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(lhsLaneSize, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsPackedAxes.Length).ToArray()));
+                rets.AddRange(AddCandidate(op, lhs, rhs, candidate, lhsVectorizedAxes, rhsVectorizedAxes, Enumerable.Repeat(lhsLaneSize, lhsVectorizedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsVectorizedAxes.Length).ToArray()));
             }
         }
 
@@ -584,9 +584,9 @@ public sealed class PackBinary : PackRule
     }
 }
 
-public sealed class PackSwish : PackRule
+public sealed class VectorizeSwish : VectorizeRule
 {
-    public PackSwish(int rank, int lane)
+    public VectorizeSwish(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -604,12 +604,12 @@ public sealed class PackSwish : PackRule
         var inShape = input.CheckedShape;
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
-        void AddCandidate(int[] packedAxes, int[] lanes)
+        void AddCandidate(int[] vectorizedAxes, int[] lanes)
         {
-            var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+            var vectorized = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var pads), lanes, vectorizedAxes);
 
-            var swish = IR.F.NN.Swish(packed, beta);
-            var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(swish, lanes, packedAxes), inShape, pads);
+            var swish = IR.F.NN.Swish(vectorized, beta);
+            var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(swish, lanes, vectorizedAxes), inShape, pads);
             if (post.CheckedType is not InvalidType)
             {
                 rets.Add(post);
@@ -632,9 +632,9 @@ public sealed class PackSwish : PackRule
     }
 }
 
-public sealed class PackTranspose : PackRule
+public sealed class VectorizeTranspose : VectorizeRule
 {
-    public PackTranspose(int rank = 2, int lane = 16)
+    public VectorizeTranspose(int rank = 2, int lane = 16)
         : base(rank, lane)
     {
     }
@@ -644,21 +644,21 @@ public sealed class PackTranspose : PackRule
       IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
       IsFixedShape("perm"));
 
-    public static List<Expr> AddCandidate(Expr input, int[] perm, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, int[] perm, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
-        var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+        var vectorized = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var pads), lanes, vectorizedAxes);
 
-        var tarns = IR.F.Tensors.Transpose(packed, perm);
+        var tarns = IR.F.Tensors.Transpose(vectorized, perm);
         if (tarns.CheckedType is not InvalidType)
         {
-            var partialPerm = perm.Select(axis => packedAxes.IndexOf(axis)).Where(x => x != -1).ToArray();
-            var unpackAxes = packedAxes.Select(axis => perm.IndexOf(axis)).ToArray();
-            var unpackPads = Enumerable.Range(0, pads.Length).Select(i => pads[partialPerm[i]]).ToArray();
-            var unpackLanes = Enumerable.Range(0, lanes.Length).Select(i => lanes[partialPerm[i]]).ToArray();
+            var partialPerm = perm.Select(axis => vectorizedAxes.IndexOf(axis)).Where(x => x != -1).ToArray();
+            var devectorizeAxes = vectorizedAxes.Select(axis => perm.IndexOf(axis)).ToArray();
+            var devectorizePads = Enumerable.Range(0, pads.Length).Select(i => pads[partialPerm[i]]).ToArray();
+            var devectorizeLanes = Enumerable.Range(0, lanes.Length).Select(i => lanes[partialPerm[i]]).ToArray();
             var newShape = perm.Select(i => inShape[i]).ToArray();
-            var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(tarns, unpackLanes, unpackAxes), newShape, unpackPads);
+            var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(tarns, devectorizeLanes, devectorizeAxes), newShape, devectorizePads);
             if (post.CheckedType is not InvalidType)
             {
                 rets.Add(post);
@@ -692,9 +692,9 @@ public sealed class PackTranspose : PackRule
     }
 }
 
-public sealed class PackUnsqueeze : PackRule
+public sealed class VectorizeUnsqueeze : VectorizeRule
 {
-    public PackUnsqueeze(int rank, int lane)
+    public VectorizeUnsqueeze(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -704,19 +704,19 @@ public sealed class PackUnsqueeze : PackRule
       IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
       IsFixedShape("axes"));
 
-    public static List<Expr> AddCandidate(Expr input, int[] axes, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, int[] axes, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
-        if (packedAxes.Length == 0)
+        if (vectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+        var vectorized = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var pads), lanes, vectorizedAxes);
 
-        var unseq = IR.F.Tensors.Unsqueeze(packed, axes);
-        var unpackAxes = packedAxes.Select(axis => axis + axes.Count(i => i <= axis)).ToArray();
+        var unseq = IR.F.Tensors.Unsqueeze(vectorized, axes);
+        var devectorizeAxes = vectorizedAxes.Select(axis => axis + axes.Count(i => i <= axis)).ToArray();
         var outShape = inShape.ToList();
         foreach (var axis in axes)
         {
@@ -731,7 +731,7 @@ public sealed class PackUnsqueeze : PackRule
             }
         }
 
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(unseq, lanes, unpackAxes), outShape.ToArray(), pads!);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(unseq, lanes, devectorizeAxes), outShape.ToArray(), pads!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -764,9 +764,9 @@ public sealed class PackUnsqueeze : PackRule
     }
 }
 
-public sealed class PackConv2D : PackRule
+public sealed class VectorizeConv2D : VectorizeRule
 {
-    public PackConv2D(int rank, int lane)
+    public VectorizeConv2D(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -798,13 +798,13 @@ public sealed class PackConv2D : PackRule
         return IR.F.Tensors.Transpose(IR.F.Tensors.Reshape(add, new[] { outShape[1], outShape[0], outShape[2], outShape[3] }), new[] { 1, 0, 2, 3 });
     }
 
-    public static Expr AddPackedCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, long[] wShape, long[] outShape, int lane)
+    public static Expr AddVectorizedCandidate(Expr input, Expr weights, Expr bias, int[] strides, int[] padding, long[] wShape, long[] outShape, int lane)
     {
-        var paddedInput = PackUtility.PadForPack(input, input.CheckedShape.ToValueArray(), new[] { 1 }, new[] { lane }, 0f, out _);
+        var paddedInput = VectorizeUtility.PadForVectorize(input, input.CheckedShape.ToValueArray(), new[] { 1 }, new[] { lane }, 0f, out _);
         var col = IR.F.NTT.Im2col(IR.F.Tensors.Pack(paddedInput, new[] { lane }, new[] { 1 }), new[] { wShape[2], wShape[3] }, strides, padding, new[] { 1 }, new[] { 0 });
-        var paddedW = PackUtility.PadForPack(weights, wShape, new[] { 1 }, new[] { lane }, 0f, out _);
+        var paddedW = VectorizeUtility.PadForVectorize(weights, wShape, new[] { 1 }, new[] { lane }, 0f, out _);
         var newW = IR.F.Tensors.Reshape(IR.F.Tensors.Pack(paddedW, new[] { lane }, new[] { 1 }), new[] { wShape[0], MathUtility.CeilDiv(wShape[1], lane) * wShape[2] * wShape[3] });
-        var matmul = IR.F.NTT.PackedMatMul(newW, col, new[] { 1 }, new[] { 0 }, false, false, false); // [oc, b*oh*ow]
+        var matmul = IR.F.NTT.VectorizedMatMul(newW, col, new[] { 1 }, new[] { 0 }, false, false, false); // [oc, b*oh*ow]
         var newBias = IR.F.Tensors.Reshape(bias, new[] { wShape[0], 1 });
         var add = matmul + newBias;
         if (outShape[0] == 1)
@@ -837,16 +837,16 @@ public sealed class PackConv2D : PackRule
             return rets;
         }
 
-        // only pack on in channels
+        // only vectorize on in channels
         rets.Add(AddCandidate(input, weights, bias, strides, padding, wShape, outShape));
-        rets.Add(AddPackedCandidate(input, weights, bias, strides, padding, wShape, outShape, laneSize));
+        rets.Add(AddVectorizedCandidate(input, weights, bias, strides, padding, wShape, outShape, laneSize));
         return rets;
     }
 }
 
-public sealed class PackReshape : PackRule
+public sealed class VectorizeReshape : VectorizeRule
 {
-    public PackReshape(int rank, int lane)
+    public VectorizeReshape(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -856,32 +856,32 @@ public sealed class PackReshape : PackRule
       IsWildcard("input") with { TypePattern = !IsVector() },
       IsRankedShape("newShape"));
 
-    public static List<Expr> AddCandidate(Expr input, RankedShape newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, RankedShape newShape, Dictionary<int, List<int>> forwardDict, Dictionary<int, List<int>> backwardDict, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
-        if (packedAxes.Length == 0)
+        if (vectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        // not support pack on dynamic dims.
-        if (inShape.Any(s => s is { IsFixed: false } && packedAxes.Contains(inShape.ToArray().IndexOf(s))))
+        // not support vectorize on dynamic dims.
+        if (inShape.Any(s => s is { IsFixed: false } && vectorizedAxes.Contains(inShape.ToArray().IndexOf(s))))
         {
             return rets;
         }
 
-        // 1. skip when the packedAxes will be split or merge.
-        var unpackAxes = new List<int>();
-        foreach (var axis in packedAxes)
+        // 1. skip when the vectorizedAxes will be split or merge.
+        var devectorizeAxes = new List<int>();
+        foreach (var axis in vectorizedAxes)
         {
             var mapedOutAxes = forwardDict[axis];
             if (mapedOutAxes.Count > 1)
             {
                 if (mapedOutAxes.Count(i => newShape[i].FixedValue != 1) > 1)
                 {
-                    // we can pack on split axis and unpack on splited last axis.
-                    unpackAxes.Add(mapedOutAxes[^1]);
+                    // we can vectorize on split axis and devectorize on splited last axis.
+                    devectorizeAxes.Add(mapedOutAxes[^1]);
                 }
                 else
                 {
@@ -892,7 +892,7 @@ public sealed class PackReshape : PackRule
                         continue;
                     }
 
-                    unpackAxes.Add(outAxis);
+                    devectorizeAxes.Add(outAxis);
                 }
             }
             else
@@ -901,9 +901,9 @@ public sealed class PackReshape : PackRule
 
                 // when the outAxis is merged dim, only support no transpose order and no pad.
                 var inAxes = backwardDict[outAxis];
-                if (inAxes.Count == 1 || (inAxes[^1] == axis && inShape[axis] % lanes[packedAxes.IndexOf(axis)] == 0))
+                if (inAxes.Count == 1 || (inAxes[^1] == axis && inShape[axis] % lanes[vectorizedAxes.IndexOf(axis)] == 0))
                 {
-                    unpackAxes.Add(outAxis);
+                    devectorizeAxes.Add(outAxis);
                 }
                 else
                 {
@@ -912,21 +912,21 @@ public sealed class PackReshape : PackRule
             }
         }
 
-        if (unpackAxes.Count == 0 || unpackAxes.Count != packedAxes.Length)
+        if (devectorizeAxes.Count == 0 || devectorizeAxes.Count != vectorizedAxes.Length)
         {
             return rets;
         }
 
-        var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var pads), lanes, packedAxes);
+        var vectorized = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var pads), lanes, vectorizedAxes);
 
-        var packedNewShape = newShape.ToArray();
-        foreach (var (lane, axis) in lanes.Zip(unpackAxes))
+        var vectorizedNewShape = newShape.ToArray();
+        foreach (var (lane, axis) in lanes.Zip(devectorizeAxes))
         {
-            packedNewShape[axis] = Dimension.CeilDiv(packedNewShape[axis], lane);
+            vectorizedNewShape[axis] = Dimension.CeilDiv(vectorizedNewShape[axis], lane);
         }
 
-        var nreshape = IR.F.Tensors.Reshape(packed, packedNewShape);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(nreshape, lanes, unpackAxes.ToArray()), newShape, pads!);
+        var nreshape = IR.F.Tensors.Reshape(vectorized, vectorizedNewShape);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(nreshape, lanes, devectorizeAxes.ToArray()), newShape, pads!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -968,9 +968,9 @@ public sealed class PackReshape : PackRule
     }
 }
 
-public sealed class PackSlice : PackRule
+public sealed class VectorizeSlice : VectorizeRule
 {
-    public PackSlice(int rank, int lane)
+    public VectorizeSlice(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -983,29 +983,29 @@ public sealed class PackSlice : PackRule
       IsFixedShape("axes"),
       IsFixedShape("strides"));
 
-    public static List<Expr> AddCandidate(Expr input, Expr candidate, long[] begins, long[] ends, long[] axes, long[] strides, int[] packAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, Expr candidate, long[] begins, long[] ends, long[] axes, long[] strides, int[] vectorizeAxes, int[] lanes)
     {
         var rets = new List<Expr>();
-        if (packAxes.Length == 0)
+        if (vectorizeAxes.Length == 0)
         {
             return rets;
         }
 
         var inShape = input.CheckedShape;
-        var packedBegins = begins.ToArray();
-        var packedEnds = ends.ToArray();
-        for (int i = 0; i < packAxes.Length; i++)
+        var vectorizedBegins = begins.ToArray();
+        var vectorizedEnds = ends.ToArray();
+        for (int i = 0; i < vectorizeAxes.Length; i++)
         {
-            var packAxis = packAxes[i];
-            int j = axes.IndexOf(packAxis);
+            var vectorizeAxis = vectorizeAxes[i];
+            int j = axes.IndexOf(vectorizeAxis);
 
-            // when the slice axis was packed, it must have no pad.
+            // when the slice axis was vectorized, it must have no pad.
             if (j != -1)
             {
                 if (begins[j] % lanes[i] == 0 && ends[j] % lanes[i] == 0)
                 {
-                    packedBegins[j] = begins[j] / lanes[i];
-                    packedEnds[j] = ends[j] / lanes[i];
+                    vectorizedBegins[j] = begins[j] / lanes[i];
+                    vectorizedEnds[j] = ends[j] / lanes[i];
                 }
                 else
                 {
@@ -1014,10 +1014,10 @@ public sealed class PackSlice : PackRule
             }
         }
 
-        var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packAxes, lanes, 0f, out var pads), lanes, packAxes);
+        var vectorized = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizeAxes, lanes, 0f, out var pads), lanes, vectorizeAxes);
 
-        var slice = IR.F.Tensors.Slice(packed, packedBegins, packedEnds, axes, strides);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(slice, lanes, packAxes), candidate.CheckedShape, pads!);
+        var slice = IR.F.Tensors.Slice(vectorized, vectorizedBegins, vectorizedEnds, axes, strides);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(slice, lanes, vectorizeAxes), candidate.CheckedShape, pads!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1070,9 +1070,9 @@ public sealed class PackSlice : PackRule
     }
 }
 
-public sealed class PackConcat : PackRule
+public sealed class VectorizeConcat : VectorizeRule
 {
-    public PackConcat(int rank, int lane)
+    public VectorizeConcat(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -1092,24 +1092,24 @@ public sealed class PackConcat : PackRule
             return patterns;
         })));
 
-    public static List<Expr> AddCandidate(BaseExpr[] inputs, Expr candidate, int axis, int[] packAxes, int[] lanes)
+    public static List<Expr> AddCandidate(BaseExpr[] inputs, Expr candidate, int axis, int[] vectorizeAxes, int[] lanes)
     {
         var rets = new List<Expr>();
-        if (packAxes.Length == 0)
+        if (vectorizeAxes.Length == 0)
         {
             return rets;
         }
 
-        var packedInputs = new Expr[inputs.Length];
+        var vectorizedInputs = new Expr[inputs.Length];
         Dimension[]? pads = null;
         for (var i = 0; i < inputs.Length; i++)
         {
             var inShape = inputs[i].CheckedShape;
-            packedInputs[i] = IR.F.Tensors.Pack(PackUtility.PadForPack((Expr)inputs[i], inShape, packAxes, lanes, 0f, out pads), lanes, packAxes);
+            vectorizedInputs[i] = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize((Expr)inputs[i], inShape, vectorizeAxes, lanes, 0f, out pads), lanes, vectorizeAxes);
         }
 
-        var concat = IR.F.Tensors.Concat(new IR.Tuple(packedInputs), axis);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(concat, lanes, packAxes), candidate.CheckedShape, pads!);
+        var concat = IR.F.Tensors.Concat(new IR.Tuple(vectorizedInputs), axis);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(concat, lanes, vectorizeAxes), candidate.CheckedShape, pads!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1137,9 +1137,9 @@ public sealed class PackConcat : PackRule
     }
 }
 
-public sealed class PackCompare : PackRule
+public sealed class VectorizeCompare : VectorizeRule
 {
-    public PackCompare(MaskVectorStyle maskVectorStyle, int rank, int lane)
+    public VectorizeCompare(MaskVectorStyle maskVectorStyle, int rank, int lane)
         : base(rank, lane)
     {
         MaskVectorStyle = maskVectorStyle;
@@ -1153,43 +1153,43 @@ public sealed class PackCompare : PackRule
       IsWildcard("lhs") with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(IR.Math.Compare op, Expr lhs, Expr rhs, Expr candidate, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] lhsLanes, int[] rhsLanes, MaskVectorStyle maskVectorStyle)
+    public static List<Expr> AddCandidate(IR.Math.Compare op, Expr lhs, Expr rhs, Expr candidate, int[] lhsVectorizedAxes, int[] rhsVectorizedAxes, int[] lhsLanes, int[] rhsLanes, MaskVectorStyle maskVectorStyle)
     {
         var rets = new List<Expr>();
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var outShape = candidate.CheckedShape;
-        if (lhsPackedAxes.Length == 0 && rhsPackedAxes.Length == 0)
+        if (lhsVectorizedAxes.Length == 0 && rhsVectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        var alignedLhsPackedAxes = lhsPackedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
-        var alignedRhsPackedAxes = rhsPackedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
-        if (lhsPackedAxes.Any(a => lhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
-        || rhsPackedAxes.Any(a => rhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
+        var alignedLhsVectorizedAxes = lhsVectorizedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
+        var alignedRhsVectorizedAxes = rhsVectorizedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
+        if (lhsVectorizedAxes.Any(a => lhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
+        || rhsVectorizedAxes.Any(a => rhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
         {
             return rets;
         }
 
-        if (lhsPackedAxes.Length > 0 && rhsPackedAxes.Length > 0 && !alignedLhsPackedAxes.Intersect(alignedRhsPackedAxes).Any())
+        if (lhsVectorizedAxes.Length > 0 && rhsVectorizedAxes.Length > 0 && !alignedLhsVectorizedAxes.Intersect(alignedRhsVectorizedAxes).Any())
         {
             return rets;
         }
 
         var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
         var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
-        if (alignedLhsPackedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
-        || alignedRhsPackedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
+        if (alignedLhsVectorizedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsVectorizedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
+        || alignedRhsVectorizedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsVectorizedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
         {
             return rets;
         }
 
-        var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
-        var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+        var vectorizedLhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(lhs, lhsShape, lhsVectorizedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsVectorizedAxes);
+        var vectorizedRhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(rhs, rhsShape, rhsVectorizedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsVectorizedAxes);
 
-        var compare = IR.F.Math.Compare(op.CompareOp, packedLhs, packedRhs, maskVectorStyle);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(compare, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsPackedAxes.Length >= rhsPackedAxes.Length ? alignedLhsPackedAxes : alignedRhsPackedAxes), candidate.CheckedShape, lhsPackedAxes.Length >= rhsPackedAxes.Length ? lhsPadNums! : rhsPadNums!);
+        var compare = IR.F.Math.Compare(op.CompareOp, vectorizedLhs, vectorizedRhs, maskVectorStyle);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(compare, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsVectorizedAxes.Length >= rhsVectorizedAxes.Length ? alignedLhsVectorizedAxes : alignedRhsVectorizedAxes), candidate.CheckedShape, lhsVectorizedAxes.Length >= rhsVectorizedAxes.Length ? lhsPadNums! : rhsPadNums!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1210,13 +1210,13 @@ public sealed class PackCompare : PackRule
         var lhsLaneSize = Lane / lhs.CheckedDataType.SizeInBytes;
         var rhsLaneSize = Lane / rhs.CheckedDataType.SizeInBytes;
 
-        foreach (var arr in new[] { GeneratePackAxes(lhsShape), GeneratePackAxes(rhsShape) }.CartesianProduct())
+        foreach (var arr in new[] { GenerateVectorizeAxes(lhsShape), GenerateVectorizeAxes(rhsShape) }.CartesianProduct())
         {
-            var lhsPackedAxes = arr.First();
-            var rhsPackedAxes = arr.Skip(1).First();
-            if (lhsPackedAxes.Length <= Rank && rhsPackedAxes.Length <= Rank)
+            var lhsVectorizedAxes = arr.First();
+            var rhsVectorizedAxes = arr.Skip(1).First();
+            if (lhsVectorizedAxes.Length <= Rank && rhsVectorizedAxes.Length <= Rank)
             {
-                rets.AddRange(AddCandidate(op, lhs, rhs, candidate, lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(lhsLaneSize, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsPackedAxes.Length).ToArray(), MaskVectorStyle));
+                rets.AddRange(AddCandidate(op, lhs, rhs, candidate, lhsVectorizedAxes, rhsVectorizedAxes, Enumerable.Repeat(lhsLaneSize, lhsVectorizedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsVectorizedAxes.Length).ToArray(), MaskVectorStyle));
             }
         }
 
@@ -1224,9 +1224,9 @@ public sealed class PackCompare : PackRule
     }
 }
 
-public sealed class PackCast : PackRule
+public sealed class VectorizeCast : VectorizeRule
 {
-    public PackCast(int rank, int lane)
+    public VectorizeCast(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -1237,24 +1237,24 @@ public sealed class PackCast : PackRule
       _ => true,
       IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(Call call, Expr input, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.Cast)call.Target;
         var inShape = input.CheckedShape;
-        if (packedAxes.Length == 0)
+        if (vectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padsInput), lanes, vectorizedAxes);
 
         var scale = 1f * call.CheckedDataType.SizeInBytes / input.CheckedDataType.SizeInBytes;
         var outLanes = lanes.Select(l => (int)(l / scale)).ToArray();
         var newType = new VectorType(op.NewType, outLanes);
 
-        var cast = IR.F.Tensors.Cast(packedInput, newType, op.CastMode, packedAxes);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(cast, outLanes, packedAxes), inShape, padsInput!);
+        var cast = IR.F.Tensors.Cast(vectorizedInput, newType, op.CastMode, vectorizedAxes);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(cast, outLanes, vectorizedAxes), inShape, padsInput!);
         if (cast.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1286,9 +1286,9 @@ public sealed class PackCast : PackRule
     }
 }
 
-public sealed class PackExpand : PackRule
+public sealed class VectorizeExpand : VectorizeRule
 {
-    public PackExpand(int rank, int lane)
+    public VectorizeExpand(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -1300,32 +1300,32 @@ public sealed class PackExpand : PackRule
       IsWildcard("input") with { TypePattern = !IsVector() },
       IsRankedShape("shape"));
 
-    public static List<Expr> AddCandidate(Call call, Expr input, Shape shape, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, Shape shape, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.Expand)call.Target;
         var inShape = input.CheckedShape;
-        if (packedAxes.Length == 0)
+        if (vectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        if (packedAxes.Any(a => inShape[a] is { IsFixed: true, FixedValue: 1 }))
+        if (vectorizedAxes.Any(a => inShape[a] is { IsFixed: true, FixedValue: 1 }))
         {
             return rets;
         }
 
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padsInput), lanes, vectorizedAxes);
 
         // only support shape >= input.shape
-        var packedNewShape = shape.ToArray();
-        foreach (var (lane, axis) in lanes.Zip(packedAxes))
+        var vectorizedNewShape = shape.ToArray();
+        foreach (var (lane, axis) in lanes.Zip(vectorizedAxes))
         {
-            packedNewShape[axis] = Dimension.CeilDiv(packedNewShape[axis], lane);
+            vectorizedNewShape[axis] = Dimension.CeilDiv(vectorizedNewShape[axis], lane);
         }
 
-        var expand = IR.F.Tensors.Expand(packedInput, packedNewShape);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(expand, lanes, packedAxes), call.CheckedShape, padsInput!);
+        var expand = IR.F.Tensors.Expand(vectorizedInput, vectorizedNewShape);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(expand, lanes, vectorizedAxes), call.CheckedShape, padsInput!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1351,9 +1351,9 @@ public sealed class PackExpand : PackRule
     }
 }
 
-public sealed class PackWhere : PackRule
+public sealed class VectorizeWhere : VectorizeRule
 {
-    public PackWhere(MaskVectorStyle maskVectorStyle, int rank, int lane)
+    public VectorizeWhere(MaskVectorStyle maskVectorStyle, int rank, int lane)
         : base(rank, lane)
     {
         MaskVectorStyle = maskVectorStyle;
@@ -1369,30 +1369,30 @@ public sealed class PackWhere : PackRule
         IsWildcard("lhs") with { TypePattern = !IsVector() },
         IsWildcard("rhs") with { TypePattern = !IsVector() });
 
-    public static List<Expr> AddCandidate(Expr condition, Expr lhs, Expr rhs, Expr candidate, int[] conditionPackedAxes, int[] lhsPackedAxes, int[] rhsPackedAxes, int[] conditionLanes, int[] lhsLanes, int[] rhsLanes, MaskVectorStyle maskVectorStyle)
+    public static List<Expr> AddCandidate(Expr condition, Expr lhs, Expr rhs, Expr candidate, int[] conditionVectorizedAxes, int[] lhsVectorizedAxes, int[] rhsVectorizedAxes, int[] conditionLanes, int[] lhsLanes, int[] rhsLanes, MaskVectorStyle maskVectorStyle)
     {
         var rets = new List<Expr>();
         var conditionShape = condition.CheckedShape;
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var outShape = candidate.CheckedShape;
-        if (conditionPackedAxes.Length == 0 && lhsPackedAxes.Length == 0 && rhsPackedAxes.Length == 0)
+        if (conditionVectorizedAxes.Length == 0 && lhsVectorizedAxes.Length == 0 && rhsVectorizedAxes.Length == 0)
         {
             return rets;
         }
 
-        var alignedConditionPackedAxes = conditionPackedAxes.Select(a => a + outShape.Rank - conditionShape.Rank).ToArray();
-        var alignedLhsPackedAxes = lhsPackedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
-        var alignedRhsPackedAxes = rhsPackedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
-        var union = alignedConditionPackedAxes.Union(alignedLhsPackedAxes).Union(alignedRhsPackedAxes).ToArray();
-        if (union.Length > conditionPackedAxes.Length && union.Length > lhsPackedAxes.Length && union.Length > rhsPackedAxes.Length)
+        var alignedConditionVectorizedAxes = conditionVectorizedAxes.Select(a => a + outShape.Rank - conditionShape.Rank).ToArray();
+        var alignedLhsVectorizedAxes = lhsVectorizedAxes.Select(a => a + outShape.Rank - lhsShape.Rank).ToArray();
+        var alignedRhsVectorizedAxes = rhsVectorizedAxes.Select(a => a + outShape.Rank - rhsShape.Rank).ToArray();
+        var union = alignedConditionVectorizedAxes.Union(alignedLhsVectorizedAxes).Union(alignedRhsVectorizedAxes).ToArray();
+        if (union.Length > conditionVectorizedAxes.Length && union.Length > lhsVectorizedAxes.Length && union.Length > rhsVectorizedAxes.Length)
         {
             return rets;
         }
 
-        if (conditionPackedAxes.Any(a => conditionShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
-            || lhsPackedAxes.Any(a => lhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
-            || rhsPackedAxes.Any(a => rhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
+        if (conditionVectorizedAxes.Any(a => conditionShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
+            || lhsVectorizedAxes.Any(a => lhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1)
+            || rhsVectorizedAxes.Any(a => rhsShape[a] is { IsFixed: true, FixedValue: var d } && d == 1))
         {
             return rets;
         }
@@ -1400,29 +1400,29 @@ public sealed class PackWhere : PackRule
         var alignedCondShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - conditionShape.Rank).Concat(conditionShape).ToArray();
         var alignedLhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - lhsShape.Rank).Concat(lhsShape).ToArray();
         var alignedRhsShape = Enumerable.Repeat(new DimConst(1), outShape.Rank - rhsShape.Rank).Concat(rhsShape).ToArray();
-        if (alignedConditionPackedAxes.Any(a => (alignedLhsShape[a] == alignedCondShape[a] && !alignedLhsPackedAxes.Contains(a)) || (alignedLhsShape[a] != alignedCondShape[a] && alignedLhsShape[a] != new DimConst(1)))
-        || alignedConditionPackedAxes.Any(a => (alignedRhsShape[a] == alignedCondShape[a] && !alignedRhsPackedAxes.Contains(a)) || (alignedRhsShape[a] != alignedCondShape[a] && alignedRhsShape[a] != new DimConst(1)))
-        || alignedLhsPackedAxes.Any(a => (alignedCondShape[a] == alignedLhsShape[a] && !alignedConditionPackedAxes.Contains(a)) || (alignedCondShape[a] != alignedLhsShape[a] && alignedCondShape[a] != new DimConst(1)))
-        || alignedLhsPackedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsPackedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
-        || alignedRhsPackedAxes.Any(a => (alignedCondShape[a] == alignedRhsShape[a] && !alignedConditionPackedAxes.Contains(a)) || (alignedCondShape[a] != alignedRhsShape[a] && alignedCondShape[a] != new DimConst(1)))
-        || alignedRhsPackedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsPackedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
+        if (alignedConditionVectorizedAxes.Any(a => (alignedLhsShape[a] == alignedCondShape[a] && !alignedLhsVectorizedAxes.Contains(a)) || (alignedLhsShape[a] != alignedCondShape[a] && alignedLhsShape[a] != new DimConst(1)))
+        || alignedConditionVectorizedAxes.Any(a => (alignedRhsShape[a] == alignedCondShape[a] && !alignedRhsVectorizedAxes.Contains(a)) || (alignedRhsShape[a] != alignedCondShape[a] && alignedRhsShape[a] != new DimConst(1)))
+        || alignedLhsVectorizedAxes.Any(a => (alignedCondShape[a] == alignedLhsShape[a] && !alignedConditionVectorizedAxes.Contains(a)) || (alignedCondShape[a] != alignedLhsShape[a] && alignedCondShape[a] != new DimConst(1)))
+        || alignedLhsVectorizedAxes.Any(a => (alignedRhsShape[a] == alignedLhsShape[a] && !alignedRhsVectorizedAxes.Contains(a)) || (alignedRhsShape[a] != alignedLhsShape[a] && alignedRhsShape[a] != new DimConst(1)))
+        || alignedRhsVectorizedAxes.Any(a => (alignedCondShape[a] == alignedRhsShape[a] && !alignedConditionVectorizedAxes.Contains(a)) || (alignedCondShape[a] != alignedRhsShape[a] && alignedCondShape[a] != new DimConst(1)))
+        || alignedRhsVectorizedAxes.Any(a => (alignedLhsShape[a] == alignedRhsShape[a] && !alignedLhsVectorizedAxes.Contains(a)) || (alignedLhsShape[a] != alignedRhsShape[a] && alignedLhsShape[a] != new DimConst(1))))
         {
             return rets;
         }
 
         var maskElementBits = lhs.CheckedDataType.SizeInBytes * 8;
-        var paddedCondition = PackUtility.PadForPack(condition, conditionShape, conditionPackedAxes, conditionLanes, 0f, out var conditionPadNums);
-        var packedCondition = conditionLanes.Length == 0 ? condition : IR.F.Tensors.PackMask(paddedCondition, maskVectorStyle, maskElementBits, conditionLanes.Single(), conditionPackedAxes.Single());
-        var packedLhs = IR.F.Tensors.Pack(PackUtility.PadForPack(lhs, lhsShape, lhsPackedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsPackedAxes);
-        var packedRhs = IR.F.Tensors.Pack(PackUtility.PadForPack(rhs, rhsShape, rhsPackedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsPackedAxes);
+        var paddedCondition = VectorizeUtility.PadForVectorize(condition, conditionShape, conditionVectorizedAxes, conditionLanes, 0f, out var conditionPadNums);
+        var vectorizedCondition = conditionLanes.Length == 0 ? condition : IR.F.Tensors.VectorizeMask(paddedCondition, maskVectorStyle, maskElementBits, conditionLanes.Single(), conditionVectorizedAxes.Single());
+        var vectorizedLhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(lhs, lhsShape, lhsVectorizedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsVectorizedAxes);
+        var vectorizedRhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(rhs, rhsShape, rhsVectorizedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsVectorizedAxes);
 
-        var compare = IR.F.Tensors.Where(packedCondition, packedLhs, packedRhs);
+        var compare = IR.F.Tensors.Where(vectorizedCondition, vectorizedLhs, vectorizedRhs);
         var allLanes = new[] { conditionLanes, lhsLanes, rhsLanes };
         var maxIndex = Enumerable.Range(0, allLanes.Length).OrderByDescending(i => allLanes[i].Length).First();
         var outLanes = allLanes[maxIndex];
-        var outPackAxes = new[] { alignedConditionPackedAxes, alignedLhsPackedAxes, alignedRhsPackedAxes }.ElementAt(maxIndex);
+        var outVectorizeAxes = new[] { alignedConditionVectorizedAxes, alignedLhsVectorizedAxes, alignedRhsVectorizedAxes }.ElementAt(maxIndex);
         var outPadNums = new[] { conditionPadNums, lhsPadNums, rhsPadNums }.ElementAt(maxIndex);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(compare, outLanes, outPackAxes), candidate.CheckedShape, outPadNums);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(compare, outLanes, outVectorizeAxes), candidate.CheckedShape, outPadNums);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1447,15 +1447,15 @@ public sealed class PackWhere : PackRule
         // not supoort different lane size.
         var conditionLaneSize = lhsLaneSize;
 
-        foreach (var arr in new[] { GeneratePackAxes(conditionShape), GeneratePackAxes(lhsShape), GeneratePackAxes(rhsShape) }.CartesianProduct())
+        foreach (var arr in new[] { GenerateVectorizeAxes(conditionShape), GenerateVectorizeAxes(lhsShape), GenerateVectorizeAxes(rhsShape) }.CartesianProduct())
         {
-            var conditionPackedAxes = arr.First();
-            var lhsPackedAxes = arr.Skip(1).First();
-            var rhsPackedAxes = arr.Skip(2).First();
-            if (conditionPackedAxes.Length <= Rank && lhsPackedAxes.Length <= Rank && rhsPackedAxes.Length <= Rank
-                && conditionPackedAxes.Length == 1 /* only support one axis for condition */)
+            var conditionVectorizedAxes = arr.First();
+            var lhsVectorizedAxes = arr.Skip(1).First();
+            var rhsVectorizedAxes = arr.Skip(2).First();
+            if (conditionVectorizedAxes.Length <= Rank && lhsVectorizedAxes.Length <= Rank && rhsVectorizedAxes.Length <= Rank
+                && conditionVectorizedAxes.Length == 1 /* only support one axis for condition */)
             {
-                rets.AddRange(AddCandidate(condition, lhs, rhs, candidate, conditionPackedAxes, lhsPackedAxes, rhsPackedAxes, Enumerable.Repeat(conditionLaneSize, conditionPackedAxes.Length).ToArray(), Enumerable.Repeat(lhsLaneSize, lhsPackedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsPackedAxes.Length).ToArray(), MaskVectorStyle));
+                rets.AddRange(AddCandidate(condition, lhs, rhs, candidate, conditionVectorizedAxes, lhsVectorizedAxes, rhsVectorizedAxes, Enumerable.Repeat(conditionLaneSize, conditionVectorizedAxes.Length).ToArray(), Enumerable.Repeat(lhsLaneSize, lhsVectorizedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsVectorizedAxes.Length).ToArray(), MaskVectorStyle));
             }
         }
 
@@ -1463,9 +1463,9 @@ public sealed class PackWhere : PackRule
     }
 }
 
-public sealed class PackGather : PackRule
+public sealed class VectorizeGather : VectorizeRule
 {
-    public PackGather(int rank, int lane)
+    public VectorizeGather(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -1477,22 +1477,22 @@ public sealed class PackGather : PackRule
         IsWildcard("input") with { TypePattern = !IsVector() },
         IsWildcard("index"));
 
-    public static List<Expr> AddCandidate(Call call, Expr input, Expr index, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, Expr index, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.Gather)call.Target;
         var axis = op.Axis;
         var inShape = input.CheckedShape;
-        if (packedAxes.Length == 0 || packedAxes.Contains(axis))
+        if (vectorizedAxes.Length == 0 || vectorizedAxes.Contains(axis))
         {
             return rets;
         }
 
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
+        var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padsInput), lanes, vectorizedAxes);
 
-        var gather = IR.F.Tensors.Gather(packedInput, axis, index);
-        var unpackAxes = packedAxes.Select(a => a < axis ? a : a + index.CheckedShape.Rank - 1).ToArray();
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(gather, lanes, unpackAxes), call.CheckedShape, padsInput!);
+        var gather = IR.F.Tensors.Gather(vectorizedInput, axis, index);
+        var devectorizeAxes = vectorizedAxes.Select(a => a < axis ? a : a + index.CheckedShape.Rank - 1).ToArray();
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(gather, lanes, devectorizeAxes), call.CheckedShape, padsInput!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1518,9 +1518,9 @@ public sealed class PackGather : PackRule
     }
 }
 
-public sealed class PackScatterND : PackRule
+public sealed class VectorizeScatterND : VectorizeRule
 {
-    public PackScatterND(int rank, int lane)
+    public VectorizeScatterND(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -1533,23 +1533,23 @@ public sealed class PackScatterND : PackRule
         IsTensorConst("indices"),
         IsWildcard("updates") with { TypePattern = !IsVector() });
 
-    public static List<Expr> AddCandidate(Call call, Expr input, TensorConst indices, Expr updates, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, TensorConst indices, Expr updates, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.ScatterND)call.Target;
         var inShape = input.CheckedShape;
         var indicesShape = indices.CheckedShape.ToValueArray();
-        if (packedAxes.Length == 0 || Enumerable.Range(0, (int)indicesShape[^1]).Intersect(packedAxes).Any())
+        if (vectorizedAxes.Length == 0 || Enumerable.Range(0, (int)indicesShape[^1]).Intersect(vectorizedAxes).Any())
         {
             return rets;
         }
 
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padsInput), lanes, packedAxes);
-        var updatesPackedAxes = packedAxes.Select(a => a - (inShape.Rank - updates.CheckedShape.Rank)).ToArray();
-        var packedUpdates = IR.F.Tensors.Pack(PackUtility.PadForPack(updates, updates.CheckedShape, updatesPackedAxes, lanes, 0f, out var padsUpdates), lanes, updatesPackedAxes);
+        var vectorizedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padsInput), lanes, vectorizedAxes);
+        var updatesVectorizedAxes = vectorizedAxes.Select(a => a - (inShape.Rank - updates.CheckedShape.Rank)).ToArray();
+        var vectorizedUpdates = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(updates, updates.CheckedShape, updatesVectorizedAxes, lanes, 0f, out var padsUpdates), lanes, updatesVectorizedAxes);
 
-        var scatter_nd = IR.F.Tensors.ScatterND(packedInput, indices, packedUpdates);
-        var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(scatter_nd, lanes, packedAxes), inShape, padsInput!);
+        var scatter_nd = IR.F.Tensors.ScatterND(vectorizedInput, indices, vectorizedUpdates);
+        var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(scatter_nd, lanes, vectorizedAxes), inShape, padsInput!);
         if (post.CheckedType is not InvalidType)
         {
             rets.Add(post);
@@ -1576,9 +1576,9 @@ public sealed class PackScatterND : PackRule
     }
 }
 
-public class PackSoftmax : PackRule
+public class VectorizeSoftmax : VectorizeRule
 {
-    public PackSoftmax(int rank, int lane)
+    public VectorizeSoftmax(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -1588,15 +1588,15 @@ public class PackSoftmax : PackRule
       IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("axis") with { TypePattern = IsIntegralScalar() });
 
-    public static List<Expr> AddCandidate(Expr input, int axis, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Expr input, int axis, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
-        var packed = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, float.NegativeInfinity, out var pads), lanes, packedAxes);
-        var softmax = IR.F.NTT.PackedSoftmax(packed, axis, packedAxes);
+        var vectorized = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, float.NegativeInfinity, out var pads), lanes, vectorizedAxes);
+        var softmax = IR.F.NTT.VectorizedSoftmax(vectorized, axis, vectorizedAxes);
         if (softmax.CheckedType is not InvalidType)
         {
-            var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(softmax, lanes, packedAxes), inShape, pads);
+            var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(softmax, lanes, vectorizedAxes), inShape, pads);
             rets.Add(post);
         }
 
@@ -1627,9 +1627,9 @@ public class PackSoftmax : PackRule
     }
 }
 
-public sealed class PackLayerNorm : PackRule
+public sealed class VectorizeLayerNorm : VectorizeRule
 {
-    public PackLayerNorm(int rank, int lane)
+    public VectorizeLayerNorm(int rank, int lane)
         : base(rank, lane)
     {
     }
@@ -1641,33 +1641,33 @@ public sealed class PackLayerNorm : PackRule
       IsWildcard("scale") with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("bias") with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(LayerNorm op, Expr input, Expr scale, Expr bias, int[] packedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(LayerNorm op, Expr input, Expr scale, Expr bias, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var inShape = input.CheckedShape;
         var pshape = scale.CheckedShape;
-        var packedInput = IR.F.Tensors.Pack(PackUtility.PadForPack(input, inShape, packedAxes, lanes, 0f, out var padedNums), lanes, packedAxes);
+        var packedInput = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(input, inShape, vectorizedAxes, lanes, 0f, out var padedNums), lanes, vectorizedAxes);
 
-        var pAxes = packedAxes.Where(i => i >= op.Axis).Select(i => i - op.Axis).ToArray();
-        var packedScale = PackUtility.PadForPack(scale, pshape, pAxes, lanes, 0f, out var padsScale);
+        var pAxes = vectorizedAxes.Where(i => i >= op.Axis).Select(i => i - op.Axis).ToArray();
+        var vectorizedScale = VectorizeUtility.PadForVectorize(scale, pshape, pAxes, lanes, 0f, out var padsScale);
         if (pAxes.Length > 0)
         {
-            packedScale = IR.F.Tensors.Pack(packedScale, Enumerable.Repeat(lanes[0], pAxes.Length).ToArray(), pAxes);
+            vectorizedScale = IR.F.Tensors.Pack(vectorizedScale, Enumerable.Repeat(lanes[0], pAxes.Length).ToArray(), pAxes);
         }
 
-        var packedBias = PackUtility.PadForPack(bias, pshape, pAxes, lanes, 0f, out var padsBias);
+        var vectorizedBias = VectorizeUtility.PadForVectorize(bias, pshape, pAxes, lanes, 0f, out var padsBias);
         if (pAxes.Length > 0)
         {
-            packedBias = IR.F.Tensors.Pack(packedBias, Enumerable.Repeat(lanes[0], pAxes.Length).ToArray(), pAxes);
+            vectorizedBias = IR.F.Tensors.Pack(vectorizedBias, Enumerable.Repeat(lanes[0], pAxes.Length).ToArray(), pAxes);
         }
 
-        var layernorm = IR.F.NTT.PackedLayerNorm(packedInput, packedScale, packedBias, op.Axis, op.Epsilon, op.UseMean, packedAxes, new RankedShape(padedNums));
+        var layernorm = IR.F.NTT.VectorizedLayerNorm(packedInput, vectorizedScale, vectorizedBias, op.Axis, op.Epsilon, op.UseMean, vectorizedAxes, new RankedShape(padedNums));
 
         // not support pad on reduction axes.
         if (layernorm.CheckedType is not InvalidType &&
-            !Enumerable.Range(0, packedAxes.Length).Any(i => packedAxes[i] >= op.Axis && padedNums[i] != new DimConst(0)))
+            !Enumerable.Range(0, vectorizedAxes.Length).Any(i => vectorizedAxes[i] >= op.Axis && padedNums[i] != new DimConst(0)))
         {
-            var post = PackUtility.SliceForPack(IR.F.Tensors.Unpack(layernorm, lanes, packedAxes), inShape, padedNums);
+            var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(layernorm, lanes, vectorizedAxes), inShape, padedNums);
             rets.Add(post);
         }
 
@@ -1700,13 +1700,13 @@ public sealed class PackLayerNorm : PackRule
 }
 
 [RuleGenerator]
-public sealed partial class FoldPackUnpack : RewriteRule<Pattern>
+public sealed partial class FoldVectorizeDevectorize : RewriteRule<Pattern>
 {
-    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsPack("pack", "caller", _ => true, PatternMatch.F.Tensors.IsUnpack("unpack", "callee", _ => true, IsWildcard("input")));
+    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsPack("vectorize", "caller", _ => true, PatternMatch.F.Tensors.IsUnpack("devectorize", "callee", _ => true, IsWildcard("input")));
 
-    private Expr? GetReplace(IR.Tensors.Pack pack, IR.Tensors.Unpack unpack, Expr input)
+    private Expr? GetReplace(IR.Tensors.Pack vectorize, IR.Tensors.Unpack devectorize, Expr input)
     {
-        if (pack.Axes.SequenceEqual(unpack.Axes) && pack.Lanes.SequenceEqual(unpack.Lanes))
+        if (vectorize.Axes.SequenceEqual(devectorize.Axes) && vectorize.Lanes.SequenceEqual(devectorize.Lanes))
         {
             return input;
         }
@@ -1716,26 +1716,26 @@ public sealed partial class FoldPackUnpack : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed partial class FoldPackConcatUnpack : RewriteRule<Pattern>
+public sealed partial class FoldVectorizeConcatDevectorize : RewriteRule<Pattern>
 {
-    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsPack("pack", "caller", _ => true, PatternMatch.F.Tensors.IsConcat("concat", _ => true, IsTuple("tuple", IsVArgsRepeat("fileds", exprs =>
+    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsPack("vectorize", "caller", _ => true, PatternMatch.F.Tensors.IsConcat("concat", _ => true, IsTuple("tuple", IsVArgsRepeat("fileds", exprs =>
         {
             var patterns = new Pattern[exprs.Length];
             for (int i = 0; i < exprs.Length; i++)
             {
-                patterns[i] = PatternMatch.F.Tensors.IsUnpack($"unpack_{i}", $"callee_{i}", _ => true, IsWildcard($"input_{i}"));
+                patterns[i] = PatternMatch.F.Tensors.IsUnpack($"devectorize_{i}", $"callee_{i}", _ => true, IsWildcard($"input_{i}"));
             }
 
             return patterns;
         }))));
 
-    private Expr? GetReplace(IR.Tensors.Pack pack, IR.Tensors.Concat concat, IReadOnlyList<BaseExpr> fileds, IMatchResult result)
+    private Expr? GetReplace(IR.Tensors.Pack vectorize, IR.Tensors.Concat concat, IReadOnlyList<BaseExpr> fileds, IMatchResult result)
     {
         var inputs = new Expr[fileds.Count];
         for (int i = 0; i < fileds.Count; i++)
         {
-            var unpack = (IR.Tensors.Unpack)result[$"unpack_{i}"];
-            if (pack.Axes.SequenceEqual(unpack.Axes) && pack.Lanes.SequenceEqual(unpack.Lanes))
+            var devectorize = (IR.Tensors.Unpack)result[$"devectorize_{i}"];
+            if (vectorize.Axes.SequenceEqual(devectorize.Axes) && vectorize.Lanes.SequenceEqual(devectorize.Lanes))
             {
                 inputs[i] = (Expr)result[$"input_{i}"];
             }
@@ -1750,11 +1750,11 @@ public sealed partial class FoldPackConcatUnpack : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed partial class TransposePackMatMulInputs : RewriteRule<Pattern>
+public sealed partial class TransposeVectorizeMatMulInputs : RewriteRule<Pattern>
 {
-    public override Pattern Pattern { get; } = PatternMatch.F.NTT.IsPackedMatMul("matmul", "caller", m => m.RhsPackedAxes.Count == 2 && m.TransposeB == false, IsWildcard("lhs"), PatternMatch.F.Tensors.IsPack("rhsPack", "callee", p => p.Axes.Count == 2 && p.Lanes.Count == 2, PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsFixedShape("perm") /* IsAlt(IsTensorConst("rhs"), PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm")) */)));
+    public override Pattern Pattern { get; } = PatternMatch.F.NTT.IsVectorizedMatMul("matmul", "caller", m => m.RhsVectorizedAxes.Count == 2 && m.TransposeB == false, IsWildcard("lhs"), PatternMatch.F.Tensors.IsPack("rhsVectorize", "callee", p => p.Axes.Count == 2 && p.Lanes.Count == 2, PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsFixedShape("perm") /* IsAlt(IsTensorConst("rhs"), PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm")) */)));
 
-    private Expr? GetReplace(IR.NTT.PackedMatMul matmul, Expr lhs, IR.Tensors.Pack rhsPack, Expr transInput, int[] perm, IMatchResult result)
+    private Expr? GetReplace(IR.NTT.VectorizedMatMul matmul, Expr lhs, IR.Tensors.Pack rhsVectorize, Expr transInput, int[] perm, IMatchResult result)
     {
         // note can't enable transpose const b, because const folding will be very solw.
         var inputsShape = transInput.CheckedShape.ToValueArray();
@@ -1762,9 +1762,9 @@ public sealed partial class TransposePackMatMulInputs : RewriteRule<Pattern>
         (tperm[^2], tperm[^1]) = (tperm[^1], tperm[^2]);
         if (tperm.SequenceEqual(perm))
         {
-            var npack = IR.F.Tensors.Pack(transInput, [rhsPack.Lanes[1], rhsPack.Lanes[0]], [rhsPack.Axes[1], rhsPack.Axes[0]]);
-            var newMatmul = new IR.NTT.PackedMatMul(matmul.OutputDataType, matmul.LhsPackedAxes, new[] { matmul.RhsPackedAxes[1], matmul.RhsPackedAxes[0] }, false, true, matmul.FusedReduce);
-            return new Call(newMatmul, lhs, npack);
+            var nvectorize = IR.F.Tensors.Pack(transInput, [rhsVectorize.Lanes[1], rhsVectorize.Lanes[0]], [rhsVectorize.Axes[1], rhsVectorize.Axes[0]]);
+            var newMatmul = new IR.NTT.VectorizedMatMul(matmul.OutputDataType, matmul.LhsVectorizedAxes, new[] { matmul.RhsVectorizedAxes[1], matmul.RhsVectorizedAxes[0] }, false, true, matmul.FusedReduce);
+            return new Call(newMatmul, lhs, nvectorize);
         }
 
         return null;
@@ -1772,13 +1772,13 @@ public sealed partial class TransposePackMatMulInputs : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed partial class FoldNopPack : RewriteRule<Pattern>
+public sealed partial class FoldNopVectorize : RewriteRule<Pattern>
 {
-    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsPack("pack", "call", _ => true, IsWildcard("input"));
+    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsPack("vectorize", "call", _ => true, IsWildcard("input"));
 
-    private Expr? GetReplace(IR.Tensors.Pack pack, Expr input)
+    private Expr? GetReplace(IR.Tensors.Pack vectorize, Expr input)
     {
-        if (pack.Axes.Count == 0)
+        if (vectorize.Axes.Count == 0)
         {
             return input;
         }
@@ -1788,13 +1788,13 @@ public sealed partial class FoldNopPack : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed partial class FoldNopUnpack : RewriteRule<Pattern>
+public sealed partial class FoldNopDevectorize : RewriteRule<Pattern>
 {
-    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsUnpack("unpack", "call", _ => true, IsWildcard("input"));
+    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsUnpack("devectorize", "call", _ => true, IsWildcard("input"));
 
-    private Expr? GetReplace(IR.Tensors.Unpack unpack, Expr input)
+    private Expr? GetReplace(IR.Tensors.Unpack devectorize, Expr input)
     {
-        if (unpack.Axes.Count == 0)
+        if (devectorize.Axes.Count == 0)
         {
             return input;
         }

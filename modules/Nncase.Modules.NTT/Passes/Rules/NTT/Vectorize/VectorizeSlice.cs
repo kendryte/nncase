@@ -23,11 +23,11 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackSlicePropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeSlicePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
     PatternMatch.F.Tensors.IsPack(
-            "pack",
+            "vectorize",
             "caller",
             _ => true,
             IsSlice(
@@ -39,15 +39,15 @@ public sealed partial class PackSlicePropagation : RewriteRule<Pattern>
                 IsFixedShape("axes"),
                 IsFixedShape("strides")));
 
-    public static bool TryPropagatePack(ReadOnlySpan<int> packAxes, ReadOnlySpan<int> packLanes, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides, [MaybeNullWhen(false)] out RankedShape newBegins, [MaybeNullWhen(false)] out RankedShape newEnds)
+    public static bool TryPropagateVectorize(ReadOnlySpan<int> vectorizeAxes, ReadOnlySpan<int> vectorizeLanes, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides, [MaybeNullWhen(false)] out RankedShape newBegins, [MaybeNullWhen(false)] out RankedShape newEnds)
     {
         var newBeginValues = begins.ToArray();
         var newEndValues = ends.ToArray();
 
-        for (var i = 0; i < packAxes.Length; i++)
+        for (var i = 0; i < vectorizeAxes.Length; i++)
         {
-            var axis = packAxes[i];
-            var lanes = packLanes[i];
+            var axis = vectorizeAxes[i];
+            var lanes = vectorizeLanes[i];
 
             var sliceAxisIndex = axes.IndexOf(axis);
             if (sliceAxisIndex != -1)
@@ -56,14 +56,14 @@ public sealed partial class PackSlicePropagation : RewriteRule<Pattern>
                     && Dimension.TryDivExactly(newBeginValues[sliceAxisIndex], lanes, out var newBegin)
                     && Dimension.TryDivExactly(newEndValues[sliceAxisIndex], lanes, out var newEnd))
                 {
-                    // If the slice is aligned with the pack lanes, we can adjust the begins and ends
-                    // to reflect the packing.
+                    // If the slice is aligned with the vectorize lanes, we can adjust the begins and ends
+                    // to reflect the vectorize.
                     newBeginValues[sliceAxisIndex] = newBegin;
                     newEndValues[sliceAxisIndex] = newEnd;
                 }
                 else
                 {
-                    // If the slice is not aligned with the pack lanes, we cannot replace it.
+                    // If the slice is not aligned with the vectorize lanes, we cannot replace it.
                     newBegins = null;
                     newEnds = null;
                     return false;
@@ -76,9 +76,9 @@ public sealed partial class PackSlicePropagation : RewriteRule<Pattern>
         return true;
     }
 
-    private Expr? GetReplace(Pack pack, Call caller, Call callee, Expr input, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides)
+    private Expr? GetReplace(Pack vectorize, Call caller, Call callee, Expr input, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides)
     {
-        if (TryPropagatePack(pack.Axes, pack.Lanes, begins, ends, axes, strides, out var newBegins, out var newEnds))
+        if (TryPropagateVectorize(vectorize.Axes, vectorize.Lanes, begins, ends, axes, strides, out var newBegins, out var newEnds))
         {
             return callee.WithArguments([
                 (Slice.Input, caller.WithArguments([(Pack.Input, input)])),
@@ -92,14 +92,14 @@ public sealed partial class PackSlicePropagation : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed partial class SliceUnpackPropagation : RewriteRule<Pattern>
+public sealed partial class SliceDevectorizePropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
     IsSlice(
         "slice",
         "caller",
         PatternMatch.F.Tensors.IsUnpack(
-            "unpack",
+            "devectorize",
             "callee",
             _ => true,
             IsWildcard("input")),
@@ -108,9 +108,9 @@ public sealed partial class SliceUnpackPropagation : RewriteRule<Pattern>
         IsFixedShape("axes"),
         IsFixedShape("strides"));
 
-    private Expr? GetReplace(Unpack unpack, Call caller, Call callee, Expr input, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides)
+    private Expr? GetReplace(Unpack devectorize, Call caller, Call callee, Expr input, RankedShape begins, RankedShape ends, RankedShape axes, RankedShape strides)
     {
-        if (PackSlicePropagation.TryPropagatePack(unpack.Axes, unpack.Lanes, begins, ends, axes, strides, out var newBegins, out var newEnds))
+        if (VectorizeSlicePropagation.TryPropagateVectorize(devectorize.Axes, devectorize.Lanes, begins, ends, axes, strides, out var newBegins, out var newEnds))
         {
             return callee.WithArguments([
                 (Unpack.Input, caller.WithArguments([

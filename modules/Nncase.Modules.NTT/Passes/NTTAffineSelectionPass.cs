@@ -34,16 +34,18 @@ public partial class NTTAffineSelectionPass : AffineSelectionPass
     {
         switch (call.Target)
         {
-            case IR.NTT.PackedBinary op:
-                return SelectPackedBinary(op, call, output);
-            case IR.NTT.PackedMatMul:
+            case IR.NTT.PackedMatMul op:
+                return SelectMatMul(op, call, output);
+            case IR.NTT.VectorizedBinary op:
+                return SelectVectorizedBinary(op, call, output);
+            case IR.NTT.VectorizedMatMul:
                 return SelectMatMul((Op)call.Target, call, output);
             case IR.Tensors.Pack op:
-                return SelectPack(op, call, output);
-            case IR.NTT.PackedReduce op:
+                return SelectVectorize(op, call, output);
+            case IR.NTT.VectorizedReduce op:
                 return SelectReduce(op, call, output);
             case IR.Tensors.Unpack op:
-                return SelectUnpack(op, call, output);
+                return SelectDevectorize(op, call, output);
             case IR.Math.Binary op:
                 return SelectBinary(op, call, output);
             case IR.Math.MatMul:
@@ -52,7 +54,7 @@ public partial class NTTAffineSelectionPass : AffineSelectionPass
                 return SelectUnaryLike((Expr)call[IR.Math.Unary.Input], new TIR.NTT.Unary(op.UnaryOp), call, output);
             case IR.NN.Swish op:
                 return SelectSwish(op, call, output);
-            case IR.NTT.PackedLayerNorm op:
+            case IR.NTT.VectorizedLayerNorm op:
                 return SelectLayerNorm(op, call, output);
             case IR.NN.LayerNorm op:
                 return SelectLayerNorm(op, call, output);
