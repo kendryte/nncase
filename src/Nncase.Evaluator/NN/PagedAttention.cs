@@ -104,7 +104,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 k = OrtKI.Gather(k, indices, 0);
             }
 
-            var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS") * scale; // [num_heads, query_len, seq_len] [H,L,S]
+            var attn = OrtKI.Einsum([q.Cast(OrtDataType.Float), k.Cast(OrtDataType.Float)], "LHE,HSE->HLS") * scale.Cast(OrtDataType.Float); // [num_heads, query_len, seq_len] [H,L,S]
 
             // compute causal mask
             var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen]));
@@ -112,7 +112,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
             tempMask = OrtKI.Trilu(tempMask, seqLen - queryLen, 0);
             attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen])));
-            attn = attn + OrtKI.Cast(attnBias, (long)attn.DataType);
+            attn = attn + attnBias;
 
             attn = OrtKI.Softmax(attn, -1);
 
@@ -128,7 +128,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 v = OrtKI.Gather(v, indices, 0);
             }
 
-            var output = OrtKI.Einsum([attn, v], "HLS,HSE->LHE"); // [query_len, num_heads, head_dim] [L,H,E]
+            var output = OrtKI.Einsum([attn, v.Cast(OrtDataType.Float)], "HLS,HSE->LHE").Cast(q.DataType); // [query_len, num_heads, head_dim] [L,H,E]
 
             outputs.Add(output);
             queryStart += queryLen;
