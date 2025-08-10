@@ -1047,18 +1047,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
         }
 
-        if (_phase == AutoDistributedPhase.SearchConstant)
-        {
-            foreach (var pick in picks)
-            {
-                if (pick.Value && pick.Key.Expr is TensorConst { ValueType: DistributedType } distConst
-                    && _distributedConstSources.TryGetValue(distConst, out var source))
-                {
-                    DistributedConsts.Add(source, distConst);
-                }
-            }
-        }
-
         return new ExprBuildVisitor(_rootSearchGraph, picks).Visit(rootCluster.Clusters.OfType<DistributedSearchGraph>());
     }
 
