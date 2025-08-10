@@ -21,15 +21,16 @@
 
 namespace nncase::ntt {
 
-namespace packed_layer_norm_detail {
+namespace vectorized_layer_norm_detail {
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
-          FixedDimensions PackedAxes, Dimensions PadedNums,
+          FixedDimensions VectorizedAxes, Dimensions PadedNums,
           FixedDimension TAxis>
-void within_axis_pack_impl(const TIn &input, const TScale &scale,
-                           const TBias &bias, TOut &output, const TEp &epsilon,
-                           const PackedAxes &, const PadedNums &, const TAxis &,
-                           const bool use_mean = true) {
+void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
+                                const TBias &bias, TOut &output,
+                                const TEp &epsilon, const VectorizedAxes &,
+                                const PadedNums &, const TAxis &,
+                                const bool use_mean = true) {
 
     using TElem = typename TIn::element_type;
     auto input_shape = input.shape();
@@ -44,9 +45,9 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     const auto inner_size =
         input_shape.template slice<(size_t)axis_value>().length();
 
-    constexpr PackedAxes packed_axes_temp;
-    constexpr bool UseVectorReduce =
-        packed_axes_temp.rank() == 1 && packed_axes_temp[0] >= axis_value;
+    constexpr VectorizedAxes vectorized_axes_temp;
+    constexpr bool UseVectorReduce = vectorized_axes_temp.rank() == 1 &&
+                                     vectorized_axes_temp[0] >= axis_value;
 
     TElem finner_size = (TElem)inner_size;
     if constexpr (UseVectorReduce) {
@@ -95,22 +96,23 @@ void within_axis_pack_impl(const TIn &input, const TScale &scale,
     });
 }
 
-} // namespace packed_layer_norm_detail
+} // namespace vectorized_layer_norm_detail
 
 template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
-          FixedDimension TAxis, FixedDimensions PackedAxes = shape_t<>,
+          FixedDimension TAxis, FixedDimensions VectorizedAxes = shape_t<>,
           Dimensions PadedNums = shape_t<>>
-void packed_layer_norm(const TIn &input, const TScale &scale, const TBias &bias,
-                       TOut &&output, const TEp &epsilon,
-                       const TAxis &axis = -1_dim,
-                       const PackedAxes &packedAxes = {},
-                       const PadedNums &padedNums = {},
-                       const bool use_mean = true) {
-    static_assert(PackedAxes::rank() < 2, "currently not support 2d packing.");
+void vectorized_layer_norm(const TIn &input, const TScale &scale,
+                           const TBias &bias, TOut &&output, const TEp &epsilon,
+                           const TAxis &axis = -1_dim,
+                           const VectorizedAxes &vectorizedAxes = {},
+                           const PadedNums &padedNums = {},
+                           const bool use_mean = true) {
+    static_assert(VectorizedAxes::rank() < 2,
+                  "currently not support 2d packing.");
 
-    packed_layer_norm_detail::within_axis_pack_impl<
-        TIn, TScale, TBias, TOut, TEp, PackedAxes, PadedNums, TAxis>(
-        input, scale, bias, output, epsilon, packedAxes, padedNums, axis,
+    vectorized_layer_norm_detail::within_axis_vectorize_impl<
+        TIn, TScale, TBias, TOut, TEp, VectorizedAxes, PadedNums, TAxis>(
+        input, scale, bias, output, epsilon, vectorizedAxes, padedNums, axis,
         use_mean);
 }
 } // namespace nncase::ntt

@@ -13,18 +13,18 @@ using static Nncase.IR.F.Tensors;
 namespace Nncase.Tests.Rules.NeutralTest;
 
 [AutoSetupTestMethod(InitSession = true)]
-public class UnitTestPackPackedMatMul : TransformTestBase
+public class UnitTestVectorizeVectorizedMatMul : TransformTestBase
 {
     [Fact]
-    public void TestPackedMatMulUnpackPropagation()
+    public void TestVectorizedMatMulDevectorizePropagation()
     {
         var lhs = Pack(Testing.Rand<float>(3, 24), [8], [1]).Evaluate().AsTensor();
         var lhsVar = new Var(new TensorType(lhs.ElementType, lhs.Shape));
         var rhs = Pack(Testing.Rand<float>(24, 24), [8], [1]).Evaluate().AsTensor();
         var expr = Unpack(lhsVar, [8], [1]);
-        expr = PackedMatMul(expr, rhs, [], new int[] { 1 });
+        expr = VectorizedMatMul(expr, rhs, [], new int[] { 1 });
         expr = Unpack(expr, [8], [1]);
-        TestMatched<PackedMatMulUnpackPropagation>(
+        TestMatched<VectorizedMatMulDevectorizePropagation>(
             expr,
             new Dictionary<IVar, IValue> {
                 { lhsVar, Value.FromTensor(lhs) },

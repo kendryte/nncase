@@ -588,15 +588,15 @@ internal static class ModelUtils
         return data;
     }
 
-    public static (int[] Lanes, int[] Axes) GetQKVPackParams(IPagedAttentionConfig config, AttentionDimKind[] qLayout)
+    public static (int[] Lanes, int[] Axes) GetQKVVectorizeParams(IPagedAttentionConfig config, AttentionDimKind[] qLayout)
     {
         var lanes = new List<int>();
         var axes = new List<int>();
-        for (int i = 0; i < config.PackedAxes.Count; i++)
+        for (int i = 0; i < config.VectorizedAxes.Count; i++)
         {
-            if (config.PackedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
+            if (config.VectorizedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
             {
-                axes.Add(config.PackedAxes[i] switch
+                axes.Add(config.VectorizedAxes[i] switch
                 {
                     PagedKVCacheDimKind.NumKVHeads => qLayout.IndexOf(AttentionDimKind.Head),
                     PagedKVCacheDimKind.HeadDim => qLayout.IndexOf(AttentionDimKind.Dim),

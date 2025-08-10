@@ -16,6 +16,7 @@
 #include "../apply.h"
 #include "../tensor_traits.h"
 #include "../ukernels/u_pack.h"
+#include "../vector.h"
 
 namespace nncase::ntt {
 namespace detail {
@@ -65,17 +66,17 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class pack_impl {
     }
 };
 
-// 1D packing
+// 1D vectorize
 template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
   public:
     using TVec = typename std::decay_t<TOut>::element_type;
 
-    static inline constexpr auto VecLen = fixed_dim_v<TVec::shape().length()>;
+    static inline constexpr auto VecLen = TVec::shape().front();
 
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, TOut &output,
                               const TAxes &axes) {
-        const auto PackAxis = axes[0_dim];
+        const auto VectorizeAxis = axes[0_dim];
         auto in_p = input.elements().data();
         auto out_p = output.elements().data();
         constexpr auto rank = TIn::rank();
@@ -84,24 +85,24 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
         const auto out_conti_dims =
             contiguous_dims(output.shape(), output.strides());
         if ((in_conti_dims == rank) && (out_conti_dims == rank) &&
-            (PackAxis == rank - 1) && (in_shape.length() % VecLen == 0)) {
+            (VectorizeAxis == rank - 1) && (in_shape.length() % VecLen == 0)) {
             for (dim_t i = 0; i < output.shape().length(); i++) {
                 out_p[i] = TVec::unaligned_load_from(in_p);
                 in_p += VecLen;
             }
         } else {
-            apply<0, PackAxis>(input, output, in_p, out_p);
+            apply<0, VectorizeAxis>(input, output, in_p, out_p);
         }
     }
 
   private:
-    template <size_t Axis, size_t PackAxis, class TInP, class TOutP>
+    template <size_t Axis, size_t VectorizeAxis, class TInP, class TOutP>
     constexpr void apply(const TIn &input, TOut &output, TInP in_p,
                          TOutP out_p) {
         const auto axis_v = fixed_dim_v<Axis>;
-        if constexpr (Axis < PackAxis) {
+        if constexpr (Axis < VectorizeAxis) {
             for (size_t i = 0; i < output.shape()[Axis]; i++) {
-                apply<Axis + 1, PackAxis>(input, output, in_p, out_p);
+                apply<Axis + 1, VectorizeAxis>(input, output, in_p, out_p);
                 in_p += input.strides()[axis_v];
                 out_p += output.strides()[axis_v];
             }
@@ -157,7 +158,8 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
 void pack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
     using TVec = typename std::decay_t<TOut>::element_type;
-    static_assert(TVec::rank() == TAxes::rank(),
+    static_assert(TVec::rank() ==
+                      vector_rank_v<typename TIn::value_type> + TAxes::rank(),
                   "Output vector rank must match axes rank");
     detail::pack_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
     impl(input, output, axes);

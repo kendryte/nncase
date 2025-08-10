@@ -70,11 +70,11 @@ class reduce_impl {
     }
 
   public:
-    template <FixedDimensions TReduceAxes, FixedDimensions PackedAxes>
+    template <FixedDimensions TReduceAxes, FixedDimensions VectorizedAxes>
     constexpr void operator()(const TIn &input, TOut &output,
-                              const TReduceAxes &, const PackedAxes &) {
+                              const TReduceAxes &, const VectorizedAxes &) {
         constexpr auto reduce_axes = TReduceAxes{};
-        constexpr auto packed_axes = PackedAxes{};
+        constexpr auto vectorized_axes = VectorizedAxes{};
         ntt::apply(output.shape(), [&](auto index) {
             auto reduced_in = (TInElem)initial_value();
             auto source_index =
@@ -89,7 +89,7 @@ class reduce_impl {
             } else if constexpr (Vector<TOutElem> && TInElem::rank() == 2 &&
                                  TOutElem::rank() == 1) {
                 constexpr auto inner_axis = ntt::where(
-                    packed_axes.at(0) == reduce_axes.at(0), 0_dim, 1_dim);
+                    vectorized_axes.at(0) == reduce_axes.at(0), 0_dim, 1_dim);
                 inner_reduce_impl<Op, false, TInElem, TOutElem, inner_axis>
                     inner_impl;
                 inner_impl(reduced_in, reduced_out);
@@ -114,10 +114,10 @@ class reduce_impl {
                         .length();
                 auto denom = (TOutScalar)inner_size;
                 if constexpr (Vector<TOutElem>) {
-                    const auto inner_size_unpacked = inner_size *
+                    const auto inner_size_devectorized = inner_size *
                                                      TInElem::shape().length() /
                                                      TOutElem::shape().length();
-                    denom = (TOutScalar)inner_size_unpacked;
+                    denom = (TOutScalar)inner_size_devectorized;
                 }
                 output(index) /= denom;
             }
@@ -189,32 +189,32 @@ class reduce_impl {
 } // namespace detail
 
 template <reduce_op Op, bool LoadPrevious = false, Tensor TIn, class TOut,
-          FixedDimensions TReduceAxes, FixedDimensions PackedAxes = shape_t<>,
+          FixedDimensions TReduceAxes, FixedDimensions VectorizedAxes = shape_t<>,
           FixedDimensions PadedNums =
-              decltype(make_zeros_shape<PackedAxes::rank()>())>
+              decltype(make_zeros_shape<VectorizedAxes::rank()>())>
 void reduce(const TIn &input, TOut &&output,
             [[maybe_unused]] const TReduceAxes &reduce_axes,
-            [[maybe_unused]] const PackedAxes &packed_axes = {},
+            [[maybe_unused]] const VectorizedAxes &vectorized_axes = {},
             [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");
     detail::reduce_impl<Op, LoadPrevious, TIn, std::decay_t<TOut>, PadedNums>
         impl;
-    impl(input, output, reduce_axes, packed_axes);
+    impl(input, output, reduce_axes, vectorized_axes);
 }
 
 #define DEFINE_NTT_REDUCE(op)                                                  \
     template <bool LoadPrevious = false, Tensor TIn, class TOut,               \
               FixedDimensions TReduceAxes,                                     \
-              FixedDimensions PackedAxes = shape_t<>,                          \
+              FixedDimensions VectorizedAxes = shape_t<>,                          \
               FixedDimensions PadedNums =                                      \
-                  decltype(make_zeros_shape<PackedAxes::rank()>())>            \
+                  decltype(make_zeros_shape<VectorizedAxes::rank()>())>            \
     void reduce_##op(const TIn &input, TOut &&output,                          \
                      const TReduceAxes &reduce_axes,                           \
-                     const PackedAxes &packed_axes = {},                       \
+                     const VectorizedAxes &vectorized_axes = {},                       \
                      const PadedNums &paded_nums = {}) noexcept {              \
         return reduce<reduce_op::op, LoadPrevious>(                            \
-            input, std::forward<TOut>(output), reduce_axes, packed_axes,       \
+            input, std::forward<TOut>(output), reduce_axes, vectorized_axes,       \
             paded_nums);                                                       \
     }
 

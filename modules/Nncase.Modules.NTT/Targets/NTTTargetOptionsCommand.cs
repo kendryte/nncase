@@ -27,11 +27,11 @@ public sealed class NTTTargetOptionsCommand : Command
             description: "the input model name.",
             getDefaultValue: () => string.Empty);
         Add(ModelNameOption);
-        PackingOption = new Option<bool>(
-            name: "--packing",
+        VectorizeOption = new Option<bool>(
+            name: "--vectorize",
             description: "enable simd layout optimization.",
             getDefaultValue: () => false);
-        Add(PackingOption);
+        Add(VectorizeOption);
         UnifiedMemoryArchOption = new Option<bool>(
             name: "--unified-memory-arch",
             description: "whether Unified Memory Architecture. see https://en.wikipedia.org/wiki/Unified_Memory_Access.",
@@ -119,7 +119,7 @@ public sealed class NTTTargetOptionsCommand : Command
 
     public Option<string> ModelNameOption { get; }
 
-    public Option<bool> PackingOption { get; }
+    public Option<bool> VectorizeOption { get; }
 
     public Option<bool> UnifiedMemoryArchOption { get; }
 
@@ -162,7 +162,7 @@ public sealed class NTTTargetOptionsBinder
         return new NTTTargetOptions()
         {
             ModelName = context.ParseResult.GetValueForOption(_cmd.ModelNameOption)!,
-            Packing = context.ParseResult.GetValueForOption(_cmd.PackingOption)!,
+            Vectorize = context.ParseResult.GetValueForOption(_cmd.VectorizeOption)!,
             UnifiedMemoryArch = context.ParseResult.GetValueForOption(_cmd.UnifiedMemoryArchOption)!,
             MemoryAccessArch = context.ParseResult.GetValueForOption(_cmd.MemoryAccessArchOption)!,
             NocArch = context.ParseResult.GetValueForOption(_cmd.NocArchOption)!,

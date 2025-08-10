@@ -96,7 +96,7 @@ public static class Comparator
 
         if (!a.Shape.ToValueArray().SequenceEqual(b.Shape.ToValueArray()))
         {
-            throw new InvalidOperationException();
+            throw new ArgumentException($"Shape mismatch: {a.Shape} vs {b.Shape}");
         }
 
         var va = a.ToArray<float>();

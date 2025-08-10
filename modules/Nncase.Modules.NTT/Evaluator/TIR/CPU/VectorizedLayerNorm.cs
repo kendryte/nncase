@@ -15,12 +15,12 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.TIR.NTT;
 
-public sealed class PackedLayerNormEvaluator : ITypeInferencer<PackedLayerNorm>, IKernelInfoEvaluator<PackedLayerNorm>
+public sealed class VectorizedLayerNormEvaluator : ITypeInferencer<VectorizedLayerNorm>, IKernelInfoEvaluator<VectorizedLayerNorm>
 {
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, PackedLayerNorm target) => TupleType.Void;
+    public IRType Visit(ITypeInferenceContext context, VectorizedLayerNorm target) => TupleType.Void;
 
-    public MicroKernelInfo Visit(PackedLayerNorm op, MicroKernelContext context)
+    public MicroKernelInfo Visit(VectorizedLayerNorm op, MicroKernelContext context)
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Range(0, domain.Length).Select(i => 1).ToArray();

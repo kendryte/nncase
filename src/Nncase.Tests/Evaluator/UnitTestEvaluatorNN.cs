@@ -53,7 +53,7 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
         (1, 256, 32),
     ];
 
-    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
+    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Vectorized)[] LayoutConfigs =
     [
         (new[] {
             PagedKVCacheDimKind.NumLayers,
@@ -99,13 +99,13 @@ public sealed class PagedAttentionKVCacheTestData : TheoryData<TestFixture.Paged
                 {
                     foreach (var typeCode in TypeConfigs)
                     {
-                        foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
+                        foreach (var (cacheLayout, vectorizedAxes) in LayoutConfigs)
                         {
                             foreach (var (shardingAxes, axisPolicies, placement) in ShardingConfigs)
                             {
                                 foreach (var (qlayout, klayout) in QKLayoutConfigs)
                                 {
-                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, packedAxes, shardingAxes, axisPolicies, qlayout, klayout), placement);
+                                    Add(new TestFixture.PagedAttentionKVCacheTestFixture(queryLens, seqLens, numQHeads, numKVHeads, headDim, blockSize, numBlocks, typeCode, numLayer, cacheLayout, vectorizedAxes, shardingAxes, axisPolicies, qlayout, klayout), placement);
                                 }
                             }
                         }
@@ -134,7 +134,7 @@ public sealed class PagedAttentionSchedulerTestData : TheoryData<PagedAttentionC
         (1, 256, 32),
     ];
 
-    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Packed)[] LayoutConfigs =
+    private static readonly (PagedKVCacheDimKind[] Cache, PagedKVCacheDimKind[] Vectorized)[] LayoutConfigs =
     [
         (new[] {
             PagedKVCacheDimKind.NumLayers,
@@ -171,12 +171,12 @@ public sealed class PagedAttentionSchedulerTestData : TheoryData<PagedAttentionC
             {
                 foreach (var typeCode in TypeConfigs)
                 {
-                    foreach (var (cacheLayout, packedAxes) in LayoutConfigs)
+                    foreach (var (cacheLayout, vectorizedAxes) in LayoutConfigs)
                     {
                         foreach (var (shardingAxes, axisPolicies, hierarchy) in ShardingConfigs)
                         {
                             var kvType = PrimType.FromTypeCode(typeCode);
-                            var config = new PagedAttentionConfig(numLayer, numKVHeads, headDim, kvType, blockSize, cacheLayout, packedAxes, new[] { 128 / kvType.SizeInBytes }, shardingAxes, axisPolicies);
+                            var config = new PagedAttentionConfig(numLayer, numKVHeads, headDim, kvType, blockSize, cacheLayout, vectorizedAxes, new[] { 128 / kvType.SizeInBytes }, shardingAxes, axisPolicies);
                             Add(config, hierarchy);
                         }
                     }

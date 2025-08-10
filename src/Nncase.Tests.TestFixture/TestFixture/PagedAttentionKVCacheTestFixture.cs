@@ -23,7 +23,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         Runtime.TypeCode kvPrimTypeCode,
         int numLayers,
         PagedKVCacheDimKind[] cacheLayout,
-        PagedKVCacheDimKind[] packedAxes,
+        PagedKVCacheDimKind[] vectorizedAxes,
         PagedKVCacheDimKind[] shardingAxes,
         SBPSplit[] axisPolicies,
         AttentionDimKind[] qLayout,
@@ -37,7 +37,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         QLayout = qLayout;
         KLayout = kLayout;
         var kvPrimType = DataType.FromTypeCode(kvPrimTypeCode);
-        var lanes = packedAxes.Select(i => 128 / kvPrimType.SizeInBytes).ToArray();
+        var lanes = vectorizedAxes.Select(i => 128 / kvPrimType.SizeInBytes).ToArray();
         Config = new PagedAttentionConfig(
             numLayers,
             numKVHeads,
@@ -45,7 +45,7 @@ public sealed class PagedAttentionKVCacheTestFixture
             kvPrimType,
             blockSize,
             cacheLayout,
-            packedAxes,
+            vectorizedAxes,
             lanes,
             shardingAxes,
             axisPolicies);
@@ -209,11 +209,11 @@ public sealed class PagedAttentionKVCacheTestFixture
     {
         var dims = defaultDims.ToArray();
         var lanes = new List<int>();
-        for (int i = 0; i < config.PackedAxes.Count; i++)
+        for (int i = 0; i < config.VectorizedAxes.Count; i++)
         {
-            if (config.PackedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
+            if (config.VectorizedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
             {
-                dims[config.PackedAxes[i] switch
+                dims[config.VectorizedAxes[i] switch
                 {
                     PagedKVCacheDimKind.NumKVHeads => 1,
                     PagedKVCacheDimKind.HeadDim => 2,
@@ -266,18 +266,19 @@ public sealed class PagedAttentionKVCacheTestFixture
                 var curOrtTensors = OrtKI.Concat(curOrtTensorList.ToArray(), 1);
                 layerKVInputs[(int)kind] = curOrtTensors;
 
-                // pack tensors.
-                for (int i = 0; i < config.PackedAxes.Count; i++)
+                // vectorize tensors.
+                for (int i = 0; i < config.VectorizedAxes.Count; i++)
                 {
-                    if (config.PackedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
+                    if (config.VectorizedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
                     {
                         histOrtTensors = histOrtTensors.Pack(
+                            0,
                             config.Lanes[i],
-                            config.PackedAxes[i] switch { PagedKVCacheDimKind.NumKVHeads => 1, PagedKVCacheDimKind.HeadDim => 2, _ => throw new ArgumentOutOfRangeException(nameof(config)) });
+                            config.VectorizedAxes[i] switch { PagedKVCacheDimKind.NumKVHeads => 1, PagedKVCacheDimKind.HeadDim => 2, _ => throw new ArgumentOutOfRangeException(nameof(config)) });
                     }
                 }
 
-                var histTensor = Tensor.FromBytes(new TensorType(config.KVType, histOrtTensors.Shape.SkipLast(config.PackedAxes.Count).ToArray()), histOrtTensors.BytesBuffer.ToArray());
+                var histTensor = Tensor.FromBytes(new TensorType(config.KVType, histOrtTensors.Shape.SkipLast(config.VectorizedAxes.Count).ToArray()), histOrtTensors.BytesBuffer.ToArray());
 
                 // assign slot id.
                 var contextTokens = contextLens.Sum();

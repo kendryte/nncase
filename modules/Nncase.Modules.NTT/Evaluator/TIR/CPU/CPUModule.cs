@@ -21,6 +21,7 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<BinaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GetItemEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<MatmulEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<PackedMatMulEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<StackEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SUMMAEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PtrOfEvaluator>(reuse: Reuse.Singleton);
@@ -28,10 +29,10 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<TensorLoadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TensorStoreEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UnaryEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<PackEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<PackedSoftMaxEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<PackedLayerNormEvaluator>(reuse: Reuse.Singleton);
-        registrator.RegisterManyInterface<PackedBinaryEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<VectorizeEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<VectorizedSoftMaxEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<VectorizedLayerNormEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<VectorizedBinaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UnpackEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SliceEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ConcatEvaluator>(reuse: Reuse.Singleton);

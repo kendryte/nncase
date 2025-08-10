@@ -22,29 +22,30 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Pack target)
     {
-        if (context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E4M3 || context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType == DataTypes.Float8E5M2)
+        var input = context.GetArgumentValueAsTensor(target, Pack.Input);
+        var dt = input.ElementType;
+        var elementType = dt is VectorType vt ? vt.ElemType : dt;
+        var oldLanesCount = dt switch
         {
-            var input = IR.F.Tensors.Cast(context.GetArgumentValue(target, Pack.Input).AsTensor(), DataTypes.Float32);
-            var inputOrt = input.Evaluate().AsTensor().ToOrtTensor();
-            foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
-            {
-                inputOrt = inputOrt.Pack(lanes, axis);
-            }
-
-            var output = IR.F.Tensors.Cast(inputOrt.ToTensor(), context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType).Evaluate().AsTensor();
-
-            return Value.FromTensor(Tensor.FromBytes(new VectorType(output.ElementType, target.Lanes), output.BytesBuffer.ToArray(), inputOrt.Shape.SkipLast(target.Lanes.Count).Select(i => i).ToArray()));
+            VectorType vt2 => vt2.Lanes.Count,
+            MaskVectorType => 1,
+            _ => 0,
+        };
+        if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
+        {
+            var inputCasted = input.CastElement<float>();
+            var inputOrt = inputCasted.ToOrtTensor();
+            inputOrt = inputOrt.Pack(oldLanesCount, target.Lanes, target.Axes);
+            var output = inputOrt.ToTensor().CastElementTo(context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType);
+            output = output.CastTo(TypeInference.PackType(input.ElementType, target.Lanes), CastMode.Reinterpret);
+            output = output.Squeeze(output.Rank - 1);
+            return Value.FromTensor(output);
         }
         else
         {
-            var input = context.GetOrtArgumentValue(target, Pack.Input);
-            foreach (var (lanes, axis) in target.Lanes.Zip(target.Axes))
-            {
-                input = input.Pack(lanes, axis);
-            }
-
-            var dt = input.DataType.ToDataType();
-            return input.ToValue(new VectorType(input.DataType.ToDataType(), target.Lanes));
+            var inputOrt = input.ToOrtTensor();
+            inputOrt = inputOrt.Pack(oldLanesCount, target.Lanes, target.Axes);
+            return inputOrt.ToValue(TypeInference.PackType(input.ElementType, target.Lanes));
         }
     }
 
