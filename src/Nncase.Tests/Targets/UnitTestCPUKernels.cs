@@ -234,6 +234,13 @@ public class NotThreadSafeResourceCollection
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestCPUKernels : TestClassBase
 {
+    public enum PostOpKind
+    {
+        None,
+        MulScalar,
+        ScalarDiv,
+    }
+
     public UnitTestCPUKernels()
     {
         DefaultTargetName = CPUTarget.Kind;
@@ -254,12 +261,14 @@ public sealed class UnitTestCPUKernels : TestClassBase
         { [1, 77, 768], [2, 32, 4], new() { new int[][] { [-1, 1], [-1, 1], [0, 2] }, new int[][] { [-1, 2], [-1, 2], [0, 1] } }, 0 },
     };
 
-    public static TheoryData<BinaryOp, long[], long[], int[], int[][], int> TestVectorizeBinaryData { get; } = new()
+    public static TheoryData<BinaryOp, long[], long[], int[], int[][], PostOpKind[], int> TestVectorizeBinaryData { get; } = new()
     {
-        { BinaryOp.Add, [8, 2], [8, 2], [1], [], 0 },
-        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [1], [], 1 },
-        { BinaryOp.Add, [8, 16], [16], [1], [], 2 },
-        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [4], [[-1], [-1], [0], [-1]], 3 },
+        { BinaryOp.Add, [8, 2], [8, 2], [1], [], [], 0 },
+        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [1], [], [], 1 },
+        { BinaryOp.Add, [8, 16], [16], [1], [], [], 2 },
+        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [4], [[-1], [-1], [0], [-1]], [], 3 },
+        { BinaryOp.Add, [8, 2], [8, 2], [1], [], [PostOpKind.MulScalar], 4 },
+        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [1], [], [PostOpKind.MulScalar, PostOpKind.MulScalar], 5 },
     };
 
     public static TheoryData<ReduceOp, long[], int[], float, bool, int[], int[][], int> TestVectorizeReduceData { get; } = new()
@@ -719,7 +728,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [MemberData(nameof(TestVectorizeBinaryData))]
-    public async Task TestVectorizeBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[][] sbps, int count)
+    public async Task TestVectorizeBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[][] sbps, PostOpKind[] postOpKinds, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -730,7 +739,25 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
-        var pre = IR.F.Math.Binary(op, lhs, rhs);
+        Expr postOps = None.Default;
+        if (postOpKinds.Length > 0)
+        {
+            var lambdaInVar = new Var(AnyType.Default);
+            Expr body = lambdaInVar;
+            for (int i = 0; i < postOpKinds.Length; i++)
+            {
+                body = postOpKinds[i] switch
+                {
+                    PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, body, 1.32f),
+                    PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, 0.32f, body),
+                    _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
+                };
+            }
+
+            postOps = new IR.Fusion(CPUTarget.Kind, body, lambdaInVar);
+        }
+
+        var pre = IR.F.Math.Binary(op, lhs, rhs, postOps);
 
         var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },

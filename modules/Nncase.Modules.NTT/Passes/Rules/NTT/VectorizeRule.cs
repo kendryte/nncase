@@ -511,9 +511,10 @@ public sealed class VectorizeBinary : VectorizeRule
       "target",
       _ => true,
       IsWildcard("lhs") with { TypePattern = IsFloat() & !IsVector() },
-      IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("post_ops"));
 
-    public static List<Expr> AddCandidate(IR.Math.Binary op, Expr lhs, Expr rhs, Expr candidate, int[] lhsVectorizedAxes, int[] rhsVectorizedAxes, int[] lhsLanes, int[] rhsLanes)
+    public static List<Expr> AddCandidate(IR.Math.Binary op, Expr lhs, Expr rhs, BaseExpr postOps, Expr candidate, int[] lhsVectorizedAxes, int[] rhsVectorizedAxes, int[] lhsLanes, int[] rhsLanes)
     {
         var rets = new List<Expr>();
         var lhsShape = lhs.CheckedShape;
@@ -548,7 +549,7 @@ public sealed class VectorizeBinary : VectorizeRule
         var vectorizedLhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(lhs, lhsShape, lhsVectorizedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsVectorizedAxes);
         var vectorizedRhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(rhs, rhsShape, rhsVectorizedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsVectorizedAxes);
 
-        var binary = IR.F.NTT.VectorizedBinary(vectorizedLhs, vectorizedRhs, op.BinaryOp, lhsVectorizedAxes, lhsPadNums, rhsVectorizedAxes, rhsPadNums);
+        var binary = IR.F.NTT.VectorizedBinary(vectorizedLhs, vectorizedRhs, postOps, op.BinaryOp, lhsVectorizedAxes, lhsPadNums, rhsVectorizedAxes, rhsPadNums);
         var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsVectorizedAxes.Length >= rhsVectorizedAxes.Length ? alignedLhsVectorizedAxes : alignedRhsVectorizedAxes), candidate.CheckedShape, lhsVectorizedAxes.Length >= rhsVectorizedAxes.Length ? lhsPadNums! : rhsPadNums!);
         if (post.CheckedType is not InvalidType)
         {
@@ -564,6 +565,7 @@ public sealed class VectorizeBinary : VectorizeRule
         var op = (IR.Math.Binary)result["target"];
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];
+        var postOps = (BaseExpr)result["post_ops"];
         var candidate = (Expr)result[Pattern];
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
@@ -576,7 +578,7 @@ public sealed class VectorizeBinary : VectorizeRule
             var rhsVectorizedAxes = arr.Skip(1).First();
             if (lhsVectorizedAxes.Length <= Rank && rhsVectorizedAxes.Length <= Rank)
             {
-                rets.AddRange(AddCandidate(op, lhs, rhs, candidate, lhsVectorizedAxes, rhsVectorizedAxes, Enumerable.Repeat(lhsLaneSize, lhsVectorizedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsVectorizedAxes.Length).ToArray()));
+                rets.AddRange(AddCandidate(op, lhs, rhs, postOps, candidate, lhsVectorizedAxes, rhsVectorizedAxes, Enumerable.Repeat(lhsLaneSize, lhsVectorizedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsVectorizedAxes.Length).ToArray()));
             }
         }
 

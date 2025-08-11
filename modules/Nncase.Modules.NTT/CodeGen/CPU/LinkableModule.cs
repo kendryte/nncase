@@ -47,6 +47,7 @@ internal sealed class LinkableModule : ILinkableModule
         }
 
         WriteDeviceFunctions(codegenDir);
+        WriteFusions(codegenDir);
         var kernelFiles = WriteKernelFunctions(codegenDir);
         WriteTopoAwareRuntime(codegenDir);
         WriteModuleTopologyDef(codegenDir);
@@ -65,6 +66,18 @@ internal sealed class LinkableModule : ILinkableModule
             writer.Write(CSourceBuiltn.DeviceHeader);
 
             foreach (var func in _functions.OfType<LinkableDeviceFunction>())
+            {
+                writer.Write(func.Header);
+            }
+        }
+    }
+
+    private void WriteFusions(string codegenDir)
+    {
+        using (var writer = new StreamWriter(File.Open(Path.Join(codegenDir, "fusions.h"), FileMode.Create)))
+        {
+            writer.Write(CSourceBuiltn.DeviceHeader);
+            foreach (var func in _functions.OfType<LinkableFusionFunction>())
             {
                 writer.Write(func.Header);
             }

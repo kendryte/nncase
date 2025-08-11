@@ -18,6 +18,8 @@ public sealed partial class VectorizedBinary : Op
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(VectorizedBinary), 1, "rhs", ParameterKind.Input);
 
+    public static readonly ParameterInfo PostOps = new(typeof(VectorizedBinary), 2, "post_ops", ParameterKind.Attribute);
+
     public BinaryOp BinaryOp { get; }
 
     public IRArray<int> LhsVectorizedAxes { get; }

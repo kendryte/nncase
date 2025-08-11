@@ -87,40 +87,40 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         var lhs = context.GetArgumentValueAsTensor(binary, Binary.Lhs);
         var rhs = context.GetArgumentValueAsTensor(binary, Binary.Rhs);
         var originDtype = lhs.ElementType;
-
+        IValue result = default;
         if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
         {
             if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
             {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
+                result = Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
             }
             else if (lhs.ElementType == DataTypes.Int64 && rhs.ElementType == DataTypes.Int64)
             {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<long>(), rhs.ToScalar<long>())));
+                result = Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<long>(), rhs.ToScalar<long>())));
             }
             else if (lhs.ElementType == DataTypes.Float32 && rhs.ElementType == DataTypes.Float32)
             {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
+                result = Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
             }
             else if (lhs.ElementType == DataTypes.Boolean && rhs.ElementType == DataTypes.Boolean)
             {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<bool>(), rhs.ToScalar<bool>())));
+                result = Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<bool>(), rhs.ToScalar<bool>())));
             }
             else if (lhs.ElementType == DataTypes.UInt32 && rhs.ElementType == DataTypes.UInt32)
             {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<uint>(), rhs.ToScalar<uint>())));
+                result = Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<uint>(), rhs.ToScalar<uint>())));
             }
             else if (lhs.ElementType is PointerType && (rhs.ElementType == DataTypes.UInt32 || rhs.ElementType == DataTypes.UInt64))
             {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+                result = Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
             }
             else if ((lhs.ElementType == DataTypes.UInt32 || lhs.ElementType == DataTypes.UInt64) && rhs.ElementType is PointerType)
             {
-                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+                result = Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
             }
             else
             {
-                return Ort_compute(binary, lhs, rhs, originDtype);
+                result = Ort_compute(binary, lhs, rhs, originDtype);
             }
         }
 
@@ -131,7 +131,14 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             rhs = rhs.CastElement<float>();
         }
 
-        return Ort_compute(binary, lhs, rhs, originDtype);
+        result = Ort_compute(binary, lhs, rhs, originDtype);
+
+        if (context.CurrentCall[Binary.PostOps] is Fusion lambda)
+        {
+            return CompilerServices.Evaluate(lambda.Body, new Dictionary<IVar, IValue>() { { lambda.Parameters[0], result } });
+        }
+
+        return result;
     }
 
     /// <inheritdoc/>
@@ -139,6 +146,12 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.CheckArgumentType<IRType>(target, Binary.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, Binary.Rhs);
+        var postOps = context.CheckArgumentType<IRType>(target, Binary.PostOps);
+        if (!(postOps is NoneType || postOps is CallableType))
+        {
+            return new InvalidType($"PostOps must be None or Callable, but got {postOps}");
+        }
+
         return (lhs, rhs) switch
         {
             (TensorType a, TensorType b) => Visit(target, a, b),

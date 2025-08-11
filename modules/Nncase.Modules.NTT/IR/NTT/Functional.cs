@@ -53,9 +53,9 @@ public partial class NTT
         return new Call(new VectorizedMatMul(outDataType ?? DataTypes.Float32, lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce), lhs, rhs);
     }
 
-    public static Expr VectorizedBinary(Expr lhs, Expr rhs, BinaryOp binaryOp, IRArray<int> lhsVectorizedAxes, IRArray<Dimension> lhsPadedNums, IRArray<int> rhsVectorizedAxes, IRArray<Dimension> rhsPadedNums)
+    public static Expr VectorizedBinary(Expr lhs, Expr rhs, BaseExpr postOps, BinaryOp binaryOp, IRArray<int> lhsVectorizedAxes, IRArray<Dimension> lhsPadedNums, IRArray<int> rhsVectorizedAxes, IRArray<Dimension> rhsPadedNums)
     {
-        return new Call(new VectorizedBinary(binaryOp, lhsVectorizedAxes, lhsPadedNums, rhsVectorizedAxes, rhsPadedNums), lhs, rhs);
+        return new Call(new VectorizedBinary(binaryOp, lhsVectorizedAxes, lhsPadedNums, rhsVectorizedAxes, rhsPadedNums), lhs, rhs, postOps);
     }
 
     public static Call ResizeImage(Expr input, BaseExpr paddedNums, int[] vectorizedAxes, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)

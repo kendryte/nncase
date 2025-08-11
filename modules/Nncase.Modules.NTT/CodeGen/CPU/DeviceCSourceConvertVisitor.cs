@@ -499,6 +499,20 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         return symbol;
     }
 
+    protected override CSymbol VisitFusion(Fusion fusion)
+    {
+        if (_exprMemo.TryGetValue(fusion, out var symbol))
+        {
+            return symbol;
+        }
+
+        string type = string.Empty;
+        string str = fusion.Name;
+        symbol = new(type, str);
+        _exprMemo.Add(fusion, symbol);
+        return symbol;
+    }
+
     /// <inheritdoc/>
     protected override CSymbol VisitSequential(Sequential expr)
     {
