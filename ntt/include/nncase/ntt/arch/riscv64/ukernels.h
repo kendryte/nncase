@@ -299,8 +299,6 @@ DEFINE_U_UNARY_F32(rsqrt)
 DEFINE_U_UNARY_F32(tanh)
 DEFINE_U_UNARY_F32(exp)
 DEFINE_U_UNARY_F32(log)
-DEFINE_U_UNARY_F32(sin)
-DEFINE_U_UNARY_F32(cos)
 DEFINE_U_UNARY_F32(sinh)
 DEFINE_U_UNARY_F32(cosh)
 DEFINE_U_UNARY_F32(erf)
@@ -318,8 +316,6 @@ DEFINE_U_UNARY_HALF(rsqrt)
 DEFINE_U_UNARY_HALF(tanh)
 DEFINE_U_UNARY_HALF(exp)
 DEFINE_U_UNARY_HALF(log)
-DEFINE_U_UNARY_HALF(sin)
-DEFINE_U_UNARY_HALF(cos)
 DEFINE_U_UNARY_HALF(sinh)
 DEFINE_U_UNARY_HALF(cosh)
 DEFINE_U_UNARY_HALF(erf)
@@ -1246,7 +1242,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
                 auto in_ptr = input.buffer().data();
                 auto out_ptr = output.buffer().data();
                 std::memcpy(out_ptr, in_ptr, size);
-            } else if (inner_size % vector_size == 0 && axis_stride !=0 ) {
+            } else if (inner_size % vector_size == 0 && axis_stride != 0) {
 
                 auto in_stride = 1;
                 auto count = input.size();
