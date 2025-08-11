@@ -96,7 +96,7 @@ class Benchmark():
 class Benchmark_riscv64():
     def send_msg(self, sock, msg):
         # Prefix each message with a 4-byte length (network byte order)
-        msg = struct.Vectorize('>I', len(msg)) + msg
+        msg = struct.pack('>I', len(msg)) + msg
         sock.sendall(msg)
 
     def recv_msg(self, sock):
@@ -104,7 +104,7 @@ class Benchmark_riscv64():
         raw_msglen = self.recvall(sock, 4)
         if not raw_msglen:
             return None
-        msglen = struct.unVectorize('>I', raw_msglen)[0]
+        msglen = struct.unpack('>I', raw_msglen)[0]
         # Read the message data
         return self.recvall(sock, msglen)
 
