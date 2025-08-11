@@ -119,10 +119,11 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
 
             if (inType.AxisPolicies[i] is SBPSplit split && inType.TensorType.DType is VectorType vtIn && outType is TensorType ttOut && ttOut.DType is VectorType vtOut)
             {
+                var outShape = CompilerServices.GetMaxShape(ttOut.Shape);
                 if (vtIn.ElemType != vtOut.ElemType)
                 {
                     var divisor = split.Axes.Select(a => inType.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                    if (shape[i] % divisor != 0)
+                    if (shape[i] % divisor != 0 || outShape[i] % divisor != 0)
                     {
                         return invalid;
                     }
