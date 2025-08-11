@@ -38,7 +38,7 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             inputOrt = inputOrt.Pack(oldLanesCount, target.Lanes, target.Axes);
             var output = inputOrt.ToTensor().CastElementTo(context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType);
             output = output.CastTo(TypeInference.PackType(input.ElementType, target.Lanes), CastMode.Reinterpret);
-            output = output.Squeeze(output.Rank - 1);
+            output = output.Squeeze(Enumerable.Range(output.Rank - target.Lanes.Count, target.Lanes.Count).Select(i => (long)i).ToArray());
             return Value.FromTensor(output);
         }
         else
