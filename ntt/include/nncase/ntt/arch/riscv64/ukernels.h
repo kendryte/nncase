@@ -296,13 +296,13 @@ DEFINE_U_UNARY_F32(sign)
 DEFINE_U_UNARY_F32(square)
 DEFINE_U_UNARY_F32(sqrt)
 DEFINE_U_UNARY_F32(rsqrt)
-DEFINE_U_UNARY_F32(tanh)
-DEFINE_U_UNARY_F32(exp)
-DEFINE_U_UNARY_F32(log)
-DEFINE_U_UNARY_F32(sinh)
-DEFINE_U_UNARY_F32(cosh)
-DEFINE_U_UNARY_F32(erf)
-DEFINE_U_UNARY_F32(swish)
+// DEFINE_U_UNARY_F32(tanh)
+// DEFINE_U_UNARY_F32(exp)
+// DEFINE_U_UNARY_F32(log)
+// DEFINE_U_UNARY_F32(sinh)
+// DEFINE_U_UNARY_F32(cosh)
+// DEFINE_U_UNARY_F32(erf)
+// DEFINE_U_UNARY_F32(swish)
 
 DEFINE_U_UNARY_HALF(abs)
 DEFINE_U_UNARY_HALF(ceil)
@@ -313,13 +313,13 @@ DEFINE_U_UNARY_HALF(sign)
 DEFINE_U_UNARY_HALF(square)
 DEFINE_U_UNARY_HALF(sqrt)
 DEFINE_U_UNARY_HALF(rsqrt)
-DEFINE_U_UNARY_HALF(tanh)
-DEFINE_U_UNARY_HALF(exp)
-DEFINE_U_UNARY_HALF(log)
-DEFINE_U_UNARY_HALF(sinh)
-DEFINE_U_UNARY_HALF(cosh)
-DEFINE_U_UNARY_HALF(erf)
-DEFINE_U_UNARY_HALF(swish)
+// DEFINE_U_UNARY_HALF(tanh)
+// DEFINE_U_UNARY_HALF(exp)
+// DEFINE_U_UNARY_HALF(log)
+// DEFINE_U_UNARY_HALF(sinh)
+// DEFINE_U_UNARY_HALF(cosh)
+// DEFINE_U_UNARY_HALF(erf)
+// DEFINE_U_UNARY_HALF(swish)
 
 // binary
 #define SPECIALIZE_U_BINARY(op, unroll_num)                                    \
@@ -374,7 +374,8 @@ template <> struct u_cast_policy<true> {
 
 // matmul
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float, true> {
+struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float,
+                       true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
@@ -382,8 +383,9 @@ struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float,
 
 // Vectorize M
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::vectorize_m, vector<float, NTT_VLEN / 32>,
-                       float, vector<float, NTT_VLEN / 32>, true> {
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_m,
+                       vector<float, NTT_VLEN / 32>, float,
+                       vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 8;
     static constexpr size_t m0_subtile = 0;
@@ -391,7 +393,8 @@ struct u_matmul_policy<matmul_vectorize_kind::vectorize_m, vector<float, NTT_VLE
 
 // Vectorize K
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::vectorize_k, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_k,
+                       vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>, float, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 2;
@@ -410,7 +413,8 @@ struct u_matmul_policy<matmul_vectorize_kind::vectorize_n, float,
 
 // Vectorize MN
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::vectorize_mn, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_mn,
+                       vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
@@ -420,9 +424,10 @@ struct u_matmul_policy<matmul_vectorize_kind::vectorize_mn, vector<float, NTT_VL
 
 // Vectorize MK
 template <>
-struct u_matmul_policy<
-    matmul_vectorize_kind::vectorize_mk, vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
-    vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>, true> {
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_mk,
+                       vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32>,
+                       vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
@@ -430,7 +435,8 @@ struct u_matmul_policy<
 
 // Vectorize KN
 template <>
-struct u_matmul_policy<matmul_vectorize_kind::vectorize_kn, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_kn,
+                       vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 8;
@@ -450,8 +456,8 @@ struct u_matmul_policy<matmul_vectorize_kind::vectorize_mkn,
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC, false, false,
-                2, 8, vector<float, NTT_VLEN / 32>, float,
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC,
+                false, false, 2, 8, vector<float, NTT_VLEN / 32>, float,
                 vector<float, NTT_VLEN / 32>, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
@@ -778,8 +784,8 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC, false
 #undef NTT_MATMUL_PING
 #undef NTT_MATMUL_TAIL
         } else {
-            u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC, false,
-                     false, 2, 8, vector<float, NTT_VLEN / 32>, float,
+            u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC,
+                     false, false, 2, 8, vector<float, NTT_VLEN / 32>, float,
                      vector<float, NTT_VLEN / 32>, false>
                 impl;
             impl(a, b, c0, K);
