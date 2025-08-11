@@ -16,7 +16,7 @@ static double get_time(struct timespec *start, struct timespec *end) {
     return end->tv_sec - start->tv_sec + (end->tv_nsec - start->tv_nsec) * 1e-9;
 }
 
-template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
+template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_vectorize_NONE() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     // struct timespec start, end;
@@ -44,15 +44,15 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_NONE() {
     auto t =
         std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
         run_num;
-    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
+    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_vectorize_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
               << ", K:" << K << ", N:" << N
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
               << ops / t * 1e-9 << std::endl;
 }
 
-// pack K
-template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K() {
+// vectorize K
+template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_vectorize_K() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -91,15 +91,15 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K() {
     auto t =
         std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
         run_num;
-    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
+    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_vectorize_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
               << ", K:" << K / P << ", N:" << N
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
               << ops / t * 1e-9 << std::endl;
 }
 
-// pack M
-template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M() {
+// vectorize M
+template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_vectorize_M() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -136,15 +136,15 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M() {
     auto t =
         std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
         run_num;
-    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
+    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_vectorize_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
               << ", K:" << K << ", N:" << N
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
               << ops / t * 1e-9 << std::endl;
 }
 
-// pack N
-template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_N() {
+// vectorize N
+template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_vectorize_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -181,15 +181,15 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_N() {
     auto t =
         std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
         run_num;
-    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
+    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_vectorize_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
               << ", K:" << K << ", N:" << N / P
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
               << ops / t * 1e-9 << std::endl;
 }
 
-// pack M and N
-template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_N() {
+// vectorize M and N
+template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_vectorize_M_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -229,15 +229,15 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_N() {
     auto t =
         std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
         run_num;
-    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
+    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_vectorize_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
               << ", K:" << K << ", N:" << N / P
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
               << ops / t * 1e-9 << std::endl;
 }
 
-// pack M and K
-template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K() {
+// vectorize M and K
+template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_vectorize_M_K() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -277,15 +277,15 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K() {
     auto t =
         std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
         run_num;
-    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
+    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_vectorize_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
               << ", K:" << K / P << ", N:" << N
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
               << ops / t * 1e-9 << std::endl;
 }
 
-// pack K and N
-template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K_N() {
+// vectorize K and N
+template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_vectorize_K_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -325,15 +325,15 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_K_N() {
     auto t =
         std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
         run_num;
-    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
+    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_vectorize_"))
               << std::setprecision(0) << std::fixed << ", M:" << M
               << ", K:" << K / P << ", N:" << N / P
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
               << ops / t * 1e-9 << std::endl;
 }
 
-// pack M, K and N
-template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
+// vectorize M, K and N
+template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_vectorize_M_K_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -373,7 +373,7 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
     auto t =
         std::chrono::duration<double, std::ratio<1>>(stop - start).count() /
         run_num;
-    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_pack_"))
+    std::cout << (__FUNCTION__ + std::strlen("benchmark_ntt_matmul_vectorize_"))
               << std::setprecision(0) << std::fixed << ", M:" << M / P
               << ", K:" << K / P << ", N:" << N / P
               << ", GFLOPS:" << std::setprecision(1) << std::fixed
@@ -381,57 +381,57 @@ template <size_t M, size_t K, size_t N> void benchmark_ntt_matmul_pack_M_K_N() {
 }
 
 #define BENCHMARK_NTT_MATMUL(MODE, M_BASE, K_BASE, N_BASE, M_TILE, N_TILE)     \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 1 * M_TILE, K_BASE * 1,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 1 * M_TILE, K_BASE * 1,          \
                                      N_BASE * 1 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 2 * M_TILE, K_BASE * 2,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 2 * M_TILE, K_BASE * 2,          \
                                      N_BASE * 2 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 3 * M_TILE, K_BASE * 3,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 3 * M_TILE, K_BASE * 3,          \
                                      N_BASE * 3 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 4 * M_TILE, K_BASE * 4,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 4 * M_TILE, K_BASE * 4,          \
                                      N_BASE * 4 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 5 * M_TILE, K_BASE * 5,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 5 * M_TILE, K_BASE * 5,          \
                                      N_BASE * 5 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 6 * M_TILE, K_BASE * 6,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 6 * M_TILE, K_BASE * 6,          \
                                      N_BASE * 6 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 7 * M_TILE, K_BASE * 7,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 7 * M_TILE, K_BASE * 7,          \
                                      N_BASE * 7 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 8 * M_TILE, K_BASE * 8,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 8 * M_TILE, K_BASE * 8,          \
                                      N_BASE * 8 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 9 * M_TILE, K_BASE * 9,          \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 9 * M_TILE, K_BASE * 9,          \
                                      N_BASE * 9 * N_TILE>();                   \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 10 * M_TILE, K_BASE * 10,        \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 10 * M_TILE, K_BASE * 10,        \
                                      N_BASE * 10 * N_TILE>();                  \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 11 * M_TILE, K_BASE * 11,        \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 11 * M_TILE, K_BASE * 11,        \
                                      N_BASE * 11 * N_TILE>();                  \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 12 * M_TILE, K_BASE * 12,        \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 12 * M_TILE, K_BASE * 12,        \
                                      N_BASE * 12 * N_TILE>();                  \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 13 * M_TILE, K_BASE * 13,        \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 13 * M_TILE, K_BASE * 13,        \
                                      N_BASE * 13 * N_TILE>();                  \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 14 * M_TILE, K_BASE * 14,        \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 14 * M_TILE, K_BASE * 14,        \
                                      N_BASE * 14 * N_TILE>();                  \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 15 * M_TILE, K_BASE * 15,        \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 15 * M_TILE, K_BASE * 15,        \
                                      N_BASE * 15 * N_TILE>();                  \
-    benchmark_ntt_matmul_pack_##MODE<M_BASE * 16 * M_TILE, K_BASE * 16,        \
+    benchmark_ntt_matmul_vectorize_##MODE<M_BASE * 16 * M_TILE, K_BASE * 16,        \
                                      N_BASE * 16 * N_TILE>();
 
-template <nncase::ntt::ukernels::matmul_pack_kind PackKind>
+template <nncase::ntt::ukernels::matmul_vectorize_kind VectorizeKind>
 void matmul_primitive_analysis() {
 
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
-    switch (PackKind) {
-    case ntt::ukernels::matmul_pack_kind::no_pack:
-        // std::cout << "No packing" << std::endl;
+    switch (VectorizeKind) {
+    case ntt::ukernels::matmul_vectorize_kind::no_vectorize:
+        // std::cout << "No vectorize" << std::endl;
         break;
-    case ntt::ukernels::matmul_pack_kind::pack_m:
+    case ntt::ukernels::matmul_vectorize_kind::vectorize_m:
 
-        // std::cout << "Packing M" << std::endl;
+        // std::cout << "Vectorize M" << std::endl;
         {
             using TLhsElem = ntt::vector<float, P>;
             using TRhsElem = float;
             using TOutElem = ntt::vector<float, P>;
             using policy_t =
-                ntt::ukernels::u_matmul_policy<PackKind, TLhsElem, TRhsElem,
+                ntt::ukernels::u_matmul_policy<VectorizeKind, TLhsElem, TRhsElem,
                                                TOutElem, true>;
 
             BENCHMARK_NTT_MATMUL(M, 8, 1, 1, policy_t::m0_tile,
@@ -439,90 +439,90 @@ void matmul_primitive_analysis() {
         }
 
         break;
-    case ntt::ukernels::matmul_pack_kind::pack_k:
-        // std::cout << "Packing K" << std::endl;
+    case ntt::ukernels::matmul_vectorize_kind::vectorize_k:
+        // std::cout << "Vectorize K" << std::endl;
 
         {
             using TLhsElem = ntt::vector<float, P>;
             using TRhsElem = ntt::vector<float, P>;
             using TOutElem = float;
             using policy_t =
-                ntt::ukernels::u_matmul_policy<PackKind, TLhsElem, TRhsElem,
+                ntt::ukernels::u_matmul_policy<VectorizeKind, TLhsElem, TRhsElem,
                                                TOutElem, true>;
 
             BENCHMARK_NTT_MATMUL(K, 1, 8, 1, policy_t::m0_tile,
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::matmul_pack_kind::pack_n:
-        // std::cout << "Packing N" << std::endl;
+    case ntt::ukernels::matmul_vectorize_kind::vectorize_n:
+        // std::cout << "Vectorize N" << std::endl;
 
         {
             using TLhsElem = float;
             using TRhsElem = ntt::vector<float, P>;
             using TOutElem = ntt::vector<float, P>;
             using policy_t =
-                ntt::ukernels::u_matmul_policy<PackKind, TLhsElem, TRhsElem,
+                ntt::ukernels::u_matmul_policy<VectorizeKind, TLhsElem, TRhsElem,
                                                TOutElem, true>;
 
             BENCHMARK_NTT_MATMUL(N, 1, 1, 8, policy_t::m0_tile,
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::matmul_pack_kind::pack_mn:
-        // std::cout << "Packing M and N" << std::endl;
+    case ntt::ukernels::matmul_vectorize_kind::vectorize_mn:
+        // std::cout << "Vectorize M and N" << std::endl;
 
         {
             using TLhsElem = ntt::vector<float, P>;
             using TRhsElem = ntt::vector<float, P>;
             using TOutElem = ntt::vector<float, P, P>;
             using policy_t =
-                ntt::ukernels::u_matmul_policy<PackKind, TLhsElem, TRhsElem,
+                ntt::ukernels::u_matmul_policy<VectorizeKind, TLhsElem, TRhsElem,
                                                TOutElem, true>;
 
             BENCHMARK_NTT_MATMUL(M_N, 8, 1, 8, policy_t::m0_tile,
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::matmul_pack_kind::pack_mk:
-        // std::cout << "Packing M and K" << std::endl;
+    case ntt::ukernels::matmul_vectorize_kind::vectorize_mk:
+        // std::cout << "Vectorize M and K" << std::endl;
 
         {
             using TLhsElem = ntt::vector<float, P, P>;
             using TRhsElem = ntt::vector<float, P>;
             using TOutElem = ntt::vector<float, P>;
             using policy_t =
-                ntt::ukernels::u_matmul_policy<PackKind, TLhsElem, TRhsElem,
+                ntt::ukernels::u_matmul_policy<VectorizeKind, TLhsElem, TRhsElem,
                                                TOutElem, true>;
 
             BENCHMARK_NTT_MATMUL(M_K, 8, 8, 1, policy_t::m0_tile,
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::matmul_pack_kind::pack_kn:
-        // std::cout << "Packing K and N" << std::endl;
+    case ntt::ukernels::matmul_vectorize_kind::vectorize_kn:
+        // std::cout << "Vectorize K and N" << std::endl;
 
         {
             using TLhsElem = ntt::vector<float, P>;
             using TRhsElem = ntt::vector<float, P, P>;
             using TOutElem = ntt::vector<float, P>;
             using policy_t =
-                ntt::ukernels::u_matmul_policy<PackKind, TLhsElem, TRhsElem,
+                ntt::ukernels::u_matmul_policy<VectorizeKind, TLhsElem, TRhsElem,
                                                TOutElem, true>;
 
             BENCHMARK_NTT_MATMUL(K_N, 1, 8, 8, policy_t::m0_tile,
                                  policy_t::n0_tile);
         }
         break;
-    case ntt::ukernels::matmul_pack_kind::pack_mkn:
-        // std::cout << "Packing M, K, and N" << std::endl;
+    case ntt::ukernels::matmul_vectorize_kind::vectorize_mkn:
+        // std::cout << "Vectorize M, K, and N" << std::endl;
 
         {
             using TLhsElem = ntt::vector<float, P, P>;
             using TRhsElem = ntt::vector<float, P, P>;
             using TOutElem = ntt::vector<float, P, P>;
             using policy_t =
-                ntt::ukernels::u_matmul_policy<PackKind, TLhsElem, TRhsElem,
+                ntt::ukernels::u_matmul_policy<VectorizeKind, TLhsElem, TRhsElem,
                                                TOutElem, true>;
 
             BENCHMARK_NTT_MATMUL(M_K_N, 8, 8, 8, policy_t::m0_tile,
@@ -530,7 +530,7 @@ void matmul_primitive_analysis() {
         }
         break;
     default:
-        std::cout << "Invalid packing kind" << std::endl;
+        std::cout << "Invalid vectorize kind" << std::endl;
         break;
     }
 }
@@ -543,38 +543,38 @@ int main() {
 
 #if NTT_VLEN <= 256
     {
-        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_m;
-        matmul_primitive_analysis<PackMode>();
+        const auto VectorizeMode = nncase::ntt::ukernels::matmul_vectorize_kind::vectorize_m;
+        matmul_primitive_analysis<VectorizeMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_k;
-        matmul_primitive_analysis<PackMode>();
+        const auto VectorizeMode = nncase::ntt::ukernels::matmul_vectorize_kind::vectorize_k;
+        matmul_primitive_analysis<VectorizeMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_n;
-        matmul_primitive_analysis<PackMode>();
+        const auto VectorizeMode = nncase::ntt::ukernels::matmul_vectorize_kind::vectorize_n;
+        matmul_primitive_analysis<VectorizeMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_mn;
-        matmul_primitive_analysis<PackMode>();
+        const auto VectorizeMode = nncase::ntt::ukernels::matmul_vectorize_kind::vectorize_mn;
+        matmul_primitive_analysis<VectorizeMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_mk;
-        matmul_primitive_analysis<PackMode>();
+        const auto VectorizeMode = nncase::ntt::ukernels::matmul_vectorize_kind::vectorize_mk;
+        matmul_primitive_analysis<VectorizeMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_kn;
-        matmul_primitive_analysis<PackMode>();
+        const auto VectorizeMode = nncase::ntt::ukernels::matmul_vectorize_kind::vectorize_kn;
+        matmul_primitive_analysis<VectorizeMode>();
     }
 
     {
-        const auto PackMode = nncase::ntt::ukernels::matmul_pack_kind::pack_mkn;
-        matmul_primitive_analysis<PackMode>();
+        const auto VectorizeMode = nncase::ntt::ukernels::matmul_vectorize_kind::vectorize_mkn;
+        matmul_primitive_analysis<VectorizeMode>();
     }
 #endif
 

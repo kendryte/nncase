@@ -108,7 +108,7 @@ def compile_kmodel(model_path, dump_path, config, is_eval: bool):
 
     # TODO: fix this! need change nncase/python/nncase/__init__.py:174L
     target_options = nncase.NTTTargetOptions()
-    target_options.Packing = False
+    target_options.Vectorize = False
     target_options.Hierarchies = [[1]]
     target_options.HierarchyNames = 't'
     target_options.HierarchySizes = [603979776]

@@ -14,13 +14,13 @@ public sealed partial class SUMMA : NTTKernelOp
 
     public static readonly ParameterInfo LoadC = new(typeof(SUMMA), 3, "loadC");
 
-    public IRArray<int> LhsPackedAxes { get; }
+    public IRArray<int> LhsVectorizedAxes { get; }
 
-    public IRArray<int> RhsPackedAxes { get; }
+    public IRArray<int> RhsVectorizedAxes { get; }
 
     public bool TransposeA { get; }
 
     public bool TransposeB { get; }
 
-    public override string DisplayProperty() => $"LhsPackedAxes: {LhsPackedAxes}, RhsPackedAxes: {RhsPackedAxes}, TransposeA: {TransposeA}, TransposeB: {TransposeB}";
+    public override string DisplayProperty() => $"LhsVectorizedAxes: {LhsVectorizedAxes}, RhsVectorizedAxes: {RhsVectorizedAxes}, TransposeA: {TransposeA}, TransposeB: {TransposeB}";
 }

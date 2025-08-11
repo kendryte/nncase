@@ -180,7 +180,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// </summary>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
     /// <returns>A new tensor that reinterprets backing Buffer of this tensor with different dimensions.</returns>
-    public Tensor<T> Reshape(ReadOnlySpan<long> dimensions)
+    public override Tensor<T> Reshape(ReadOnlySpan<long> dimensions)
     {
         if (Length != TensorUtilities.GetProduct(dimensions))
         {

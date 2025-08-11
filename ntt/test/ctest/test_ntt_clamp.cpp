@@ -23,7 +23,7 @@
 using namespace nncase;
 using namespace ortki;
 
-TEST(ClampTestFloat, NoPack) {
+TEST(ClampTestFloat, NoVectorize) {
     constexpr dim_t M = 32;
     constexpr dim_t N = 32;
     float min_input = static_cast<float>(-10);
@@ -57,7 +57,7 @@ TEST(ClampTestFloat, NoPack) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(ClampTestFloat, PackM) {
+TEST(ClampTestFloat, VectorizeM) {
     constexpr dim_t M = 32;
     constexpr dim_t N = 32;
     constexpr dim_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -73,12 +73,12 @@ TEST(ClampTestFloat, PackM) {
 
     // ntt
     auto shape2 = ntt::fixed_shape_v<M / P, N>;
-    auto pack_input = ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    auto pack_output = ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<0>);
-    ntt::clamp(pack_input, pack_output, min_clamp, max_clamp);
+    auto vectorize_input = ntt::make_tensor<ntt::vector<float, P>>(shape2);
+    auto vectorize_output = ntt::make_tensor<ntt::vector<float, P>>(shape2);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
+    ntt::clamp(vectorize_input, vectorize_output, min_clamp, max_clamp);
     auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<0>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
@@ -97,7 +97,7 @@ TEST(ClampTestFloat, PackM) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
 
-TEST(ClampTestFloat, PackN) {
+TEST(ClampTestFloat, VectorizeN) {
     constexpr dim_t M = 32;
     constexpr dim_t N = 32;
     constexpr dim_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -113,12 +113,12 @@ TEST(ClampTestFloat, PackN) {
 
     // ntt
     auto shape2 = ntt::fixed_shape_v<M, N / P>;
-    auto pack_input = ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    auto pack_output = ntt::make_tensor<ntt::vector<float, P>>(shape2);
-    ntt::pack(ntt_input, pack_input, ntt::fixed_shape_v<1>);
-    ntt::clamp(pack_input, pack_output, min_clamp, max_clamp);
+    auto vectorize_input = ntt::make_tensor<ntt::vector<float, P>>(shape2);
+    auto vectorize_output = ntt::make_tensor<ntt::vector<float, P>>(shape2);
+    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<1>);
+    ntt::clamp(vectorize_input, vectorize_output, min_clamp, max_clamp);
     auto ntt_output1 = ntt::make_tensor<float>(shape1);
-    ntt::unpack(pack_output, ntt_output1, ntt::fixed_shape_v<1>);
+    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<1>);
 
     // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);

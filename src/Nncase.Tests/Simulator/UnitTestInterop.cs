@@ -257,11 +257,11 @@ public class UnitTestInterop
             Assert.Equal(1, r_b.HeadDim);
             Assert.Equal(0, r_b.BlockSize);
 
-            Assert.Empty(r_b.PackedAxes);
+            Assert.Empty(r_b.VectorizedAxes);
             Assert.Empty(r_b.Lanes);
-            r_b.PackedAxes = new[] { IR.NN.PagedKVCacheDimKind.HeadDim };
+            r_b.VectorizedAxes = new[] { IR.NN.PagedKVCacheDimKind.HeadDim };
             r_b.Lanes = new[] { 64 };
-            Assert.True(r_b.PackedAxes.SequenceEqual(new[] { IR.NN.PagedKVCacheDimKind.HeadDim }));
+            Assert.True(r_b.VectorizedAxes.SequenceEqual(new[] { IR.NN.PagedKVCacheDimKind.HeadDim }));
             Assert.True(r_b.Lanes.SequenceEqual(new[] { 64 }));
 
             Assert.Throws<InvalidOperationException>(() =>

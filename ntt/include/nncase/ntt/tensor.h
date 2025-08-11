@@ -306,10 +306,24 @@ class basic_tensor
         return make_tensor_view<T>(buffer(), shape, default_strides(shape));
     }
 
+    template <FixedDimensions TAxes>
+    constexpr auto squeeze(const TAxes &axes) const {
+        auto new_shape = squeeze_dims(shape(), axes);
+        auto new_strides = squeeze_dims(strides(), axes);
+        return make_tensor_view<const T>(buffer(), new_shape, new_strides);
+    }
+
     template <FixedDimensions TAxes> constexpr auto squeeze(const TAxes &axes) {
         auto new_shape = squeeze_dims(shape(), axes);
         auto new_strides = squeeze_dims(strides(), axes);
         return make_tensor_view<T>(buffer(), new_shape, new_strides);
+    }
+
+    template <FixedDimensions TAxes>
+    constexpr auto unsqueeze(const TAxes &axes) const {
+        auto new_shape = unsqueeze_dims(shape(), axes, dim_one);
+        auto new_strides = unsqueeze_dims(strides(), axes, dim_zero);
+        return make_tensor_view<const T>(buffer(), new_shape, new_strides);
     }
 
     template <FixedDimensions TAxes>

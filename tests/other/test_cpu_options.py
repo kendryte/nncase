@@ -19,7 +19,7 @@ import nncase
 
 def test_cpu_options_setter(request):
     opt = nncase.NTTTargetOptions()
-    opt.Packing = True
+    opt.Vectorize = True
     opt.ModelName = "unknow"
     opt.Hierarchies = [[1], [2, 3]]
     opt.NocArch = nncase.NocArchitecture.CrossBar

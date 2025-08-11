@@ -547,9 +547,14 @@ namespace nncase::ntt::vector_ops {
 template <Vector TVector> struct vload_scalar {
     using T = typename TVector::element_type;
 
-    constexpr TVector operator()(const T &value) const noexcept {
+    template <ScalarOrVector U>
+    constexpr TVector operator()(const U &value) const noexcept {
+        const auto domain =
+            TVector::shape()
+                .template slice<0, TVector::rank() - vector_rank_v<U>>();
+
         TVector vec{};
-        ntt::apply(vec.shape(), [&](auto index) { vec(index) = value; });
+        ntt::apply(domain, [&](auto index) { vec(index) = value; });
         return vec;
     }
 };
@@ -557,9 +562,14 @@ template <Vector TVector> struct vload_scalar {
 template <Vector TVector> struct vunaligned_load {
     using T = typename TVector::element_type;
 
-    constexpr TVector operator()(const T *ptr) const noexcept {
+    template <ScalarOrVector U>
+    constexpr TVector operator()(const U *ptr) const noexcept {
+        const auto domain =
+            TVector::shape()
+                .template slice<0, TVector::rank() - vector_rank_v<U>>();
+
         TVector vec{};
-        ntt::apply(vec.shape(), [&](auto index) { vec(index) = *ptr++; });
+        ntt::apply(domain, [&](auto index) { vec(index) = *ptr++; });
         return vec;
     }
 };
@@ -600,13 +610,15 @@ struct vmma {
 
 namespace nncase::ntt {
 template <Scalar T, FixedShape Lanes>
-basic_vector<T, Lanes> basic_vector<T, Lanes>::from_scalar(T value) noexcept {
+template <ScalarOrVector U>
+basic_vector<T, Lanes> basic_vector<T, Lanes>::from_scalar(U value) noexcept {
     return vector_ops::vload_scalar<basic_vector<T, Lanes>>()(value);
 }
 
 template <Scalar T, FixedShape Lanes>
+template <ScalarOrVector U>
 basic_vector<T, Lanes>
-basic_vector<T, Lanes>::unaligned_load_from(const T *ptr) noexcept {
+basic_vector<T, Lanes>::unaligned_load_from(const U *ptr) noexcept {
     return vector_ops::vunaligned_load<basic_vector<T, Lanes>>()(ptr);
 }
 

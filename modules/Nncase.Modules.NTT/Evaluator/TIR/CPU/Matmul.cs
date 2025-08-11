@@ -20,11 +20,11 @@ public sealed class MatmulEvaluator : ITypeInferencer<Matmul>, IKernelInfoEvalua
         var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
 
         var (k, m, n) = (context.BufferShapes[0][^1], context.BufferShapes[2][^2], context.BufferShapes[2][^1]);
-        var (lpack, rpack) = new PackedMatMul(DataTypes.Float32, op.LhsPackedAxes, op.RhsPackedAxes, op.TransposeA, op.TransposeB, op.FusedReduce)
-            .GetPackKind(context.BufferShapes[0].Length, context.BufferShapes[1].Length);
-        switch (lpack, rpack)
+        var (lvectorize, rvectorize) = new VectorizedMatMul(DataTypes.Float32, op.LhsVectorizedAxes, op.RhsVectorizedAxes, op.TransposeA, op.TransposeB, op.FusedReduce)
+            .GetVectorizeKind(context.BufferShapes[0].Length, context.BufferShapes[1].Length);
+        switch (lvectorize, rvectorize)
         {
-            case (PackedMatMul.PackKind.M | PackedMatMul.PackKind.K, PackedMatMul.PackKind.K | PackedMatMul.PackKind.N):
+            case (VectorizedMatMul.VectorizeKind.M | VectorizedMatMul.VectorizeKind.K, VectorizedMatMul.VectorizeKind.K | VectorizedMatMul.VectorizeKind.N):
                 if (m % 2 == 0)
                 {
                     multipliers[^3].Min = 2;

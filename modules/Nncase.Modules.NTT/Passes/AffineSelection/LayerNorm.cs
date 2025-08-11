@@ -27,7 +27,7 @@ public partial class NTTAffineSelectionPass
         {
             axis = layerNorm.Axis;
         }
-        else if (op is IR.NTT.PackedLayerNorm packedLayerNorm)
+        else if (op is IR.NTT.VectorizedLayerNorm packedLayerNorm)
         {
             axis = packedLayerNorm.Axis;
         }
@@ -56,8 +56,8 @@ public partial class NTTAffineSelectionPass
             .Write(output, inputAccess, out var outTile)
             .Body(op switch
             {
-                IR.NN.LayerNorm ln => TIR.F.NTT.PackedLayerNorm(inTile, scaleTile, biasTile, outTile, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<Dimension>()),
-                IR.NTT.PackedLayerNorm ln => TIR.F.NTT.PackedLayerNorm(inTile, scaleTile, biasTile, outTile, ln.Axis, ln.Epsilon, ln.UseMean, ln.PackedAxes, ((RankedShape)call[IR.NTT.PackedLayerNorm.PadedNums]).Dimensions.ToArray()),
+                IR.NN.LayerNorm ln => TIR.F.NTT.VectorizedLayerNorm(inTile, scaleTile, biasTile, outTile, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<Dimension>()),
+                IR.NTT.VectorizedLayerNorm ln => TIR.F.NTT.VectorizedLayerNorm(inTile, scaleTile, biasTile, outTile, ln.Axis, ln.Epsilon, ln.UseMean, ln.VectorizedAxes, ((RankedShape)call[IR.NTT.VectorizedLayerNorm.PadedNums]).Dimensions.ToArray()),
                 _ => throw new NotSupportedException($"Unsupported layer norm operation: {op}"),
             })
             .Build();

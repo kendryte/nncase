@@ -27,12 +27,22 @@ enum class reduce_op {
     prod,
 };
 
+enum class prefetch_hint {
+    l0,
+    l1,
+    l2,
+};
+
 namespace ops {
 
 /**
  * @defgroup Load/Store operation functors
  * @{
  */
+
+template <prefetch_hint Hint, bool Arch> struct prefetch {
+    void operator()(const void *ptr) const noexcept { __builtin_prefetch(ptr); }
+};
 
 template <class TDest, class TSource> struct store {
     constexpr void operator()(TDest &dest, const TSource &v) const noexcept {
@@ -334,6 +344,11 @@ template <class T1, class T2, class T3> struct where {
     constexpr auto name(const T &v, TResult init_value) noexcept {             \
         return ntt::reduce<op>(v, init_value);                                 \
     }
+
+template <prefetch_hint Hint>
+constexpr void prefetch(const void *ptr) noexcept {
+    ops::prefetch<Hint, true>()(ptr);
+}
 
 template <class TDest, class TSource>
 constexpr void store(TDest &dest, const TSource &v) noexcept {

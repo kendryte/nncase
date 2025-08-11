@@ -22,29 +22,31 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackGatherPropagation : RewriteRule<Pattern>
+public sealed partial class PackCastPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         PatternMatch.F.Tensors.IsPack(
             "pack",
             "caller",
             _ => true,
-            IsGather(
-                "gather",
+            IsCast(
+                "cast",
                 "callee",
                 _ => true,
-                IsWildcard("input"),
-                IsWildcard("index") with { TypePattern = HasRankedShape() }));
+                IsWildcard("input")));
 
-    private Expr? GetReplace(Pack pack, Gather gather, Call caller, Call callee, Expr input, Expr index)
+    private Expr? GetReplace(Pack pack, Cast cast, Call caller, Call callee, Expr input)
     {
-        if (index.CheckedShape.Rank == 1 && !pack.Axes.Contains(gather.Axis))
+        var scale = 1f * ((VectorType)caller.CheckedDataType).ElemType.SizeInBytes / input.CheckedDataType.SizeInBytes;
+        if (pack.Axes.Any(a => callee.CheckedShape[a] is { IsFixed: true, FixedValue: var d } && d / scale % 1 != 0))
         {
-            // If the pack does not contain the gather axis, we directly pack the gather input.
-            return callee.WithArguments(
-                [(Gather.Input, caller.WithArguments([(Pack.Input, input)]))]);
+            return null;
         }
 
-        return null;
+        var packLanes = pack.Lanes.Select(l => (int)(l * scale)).ToArray();
+        var newType = new VectorType(cast.NewType, pack.Lanes);
+
+        var ret = IR.F.Tensors.Cast(IR.F.Tensors.Pack(input, packLanes, pack.Axes.ToArray()), newType, CastMode.KDefault, pack.Axes.ToArray());
+        return ret;
     }
 }

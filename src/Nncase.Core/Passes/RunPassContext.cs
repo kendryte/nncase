@@ -58,6 +58,8 @@ public record RunPassContext
     /// </summary>
     public IReadOnlyDictionary<Type, IAnalysisResult> AnalysisResults { get; set; } = ImmutableDictionary<Type, IAnalysisResult>.Empty;
 
+    public bool IsMutated { get; set; }
+
     /// <summary>
     /// Gets analysis results.
     /// </summary>

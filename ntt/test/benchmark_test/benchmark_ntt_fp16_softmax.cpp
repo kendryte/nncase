@@ -27,11 +27,11 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_noPack() {
     auto ntt_output = ntt::make_tensor<half>(ntt::fixed_shape_v<D0, D1, D2>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
+        vectorized_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
+        vectorized_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -59,11 +59,11 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_noPack() {
     auto ntt_output = ntt::make_tensor<half>(ntt::fixed_shape_v<D0, D1, D2>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
+        vectorized_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
+        vectorized_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -96,11 +96,11 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_packAxis1() {
         ntt::fixed_shape_v<D0, D1 / P, D2>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
+        vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
+        vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -133,11 +133,11 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_packAxis2() {
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
+        vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
+        vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -170,11 +170,11 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_packAxis1() {
         ntt::fixed_shape_v<D0, D1 / P, D2>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
+        vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
+        vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -207,11 +207,11 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_packAxis2() {
         ntt::fixed_shape_v<D0, D1, D2 / P>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
+        vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
+        vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -239,11 +239,11 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_noPack() {
     auto ntt_output = ntt::make_tensor<half>(ntt::make_shape(D0, D1, D2));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
+        vectorized_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
+        vectorized_softmax(buffer_1, ntt_output, 1_dim, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -271,11 +271,11 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_noPack() {
     auto ntt_output = ntt::make_tensor<half>(ntt::make_shape(D0, D1, D2));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
+        vectorized_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
+        vectorized_softmax(buffer_1, ntt_output, 2_dim, ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(ntt_output));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -308,11 +308,11 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_packAxis1() {
         ntt::make_tensor<ntt::vector<half, P>>(ntt::make_shape(D0, D1 / P, D2));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
+        vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
+        vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<1>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -345,11 +345,11 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_packAxis2() {
         ntt::make_tensor<ntt::vector<half, P>>(ntt::make_shape(D0, D1, D2 / P));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
+        vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
+        vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<2>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -382,11 +382,11 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_packAxis1() {
         ntt::make_tensor<ntt::vector<half, P>>(ntt::make_shape(D0, D1 / P, D2));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
+        vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
+        vectorized_softmax(buffer_2, buffer_3, 2_dim, ntt::fixed_shape_v<1>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();
@@ -419,11 +419,11 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_packAxis2() {
         ntt::make_tensor<ntt::vector<half, P>>(ntt::make_shape(D0, D1, D2 / P));
 
     for (size_t i = 0; i < warmup_num; i++)
-        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
+        vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        packed_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
+        vectorized_softmax(buffer_2, buffer_3, 1_dim, ntt::fixed_shape_v<2>);
         asm volatile("" ::"g"(buffer_3));
     }
     auto t2 = NttTest::get_cpu_cycle();

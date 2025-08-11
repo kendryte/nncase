@@ -35,6 +35,7 @@
 #include "kernels/layer_norm.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
+#include "kernels/packed_matmul.h"
 #include "kernels/pad.h"
 #include "kernels/paged_attention.h"
 #include "kernels/range.h"
