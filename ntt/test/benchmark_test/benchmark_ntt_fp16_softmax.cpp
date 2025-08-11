@@ -8,8 +8,8 @@
 
 using namespace nncase;
 
-// no pack
-void benchmark_ntt_softmax_fixed_reduceAxis1_noPack() {
+// no vectorize
+void benchmark_ntt_softmax_fixed_reduceAxis1_noVectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -41,7 +41,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_noPack() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_fixed_reduceAxis2_noPack() {
+void benchmark_ntt_softmax_fixed_reduceAxis2_noVectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -73,7 +73,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_noPack() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_fixed_reduceAxis1_packAxis1() {
+void benchmark_ntt_softmax_fixed_reduceAxis1_vectorizeAxis1() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -110,7 +110,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_packAxis1() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_fixed_reduceAxis2_packAxis2() {
+void benchmark_ntt_softmax_fixed_reduceAxis2_vectorizeAxis2() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -147,7 +147,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_packAxis2() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_fixed_reduceAxis2_packAxis1() {
+void benchmark_ntt_softmax_fixed_reduceAxis2_vectorizeAxis1() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -184,7 +184,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis2_packAxis1() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_fixed_reduceAxis1_packAxis2() {
+void benchmark_ntt_softmax_fixed_reduceAxis1_vectorizeAxis2() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -221,7 +221,7 @@ void benchmark_ntt_softmax_fixed_reduceAxis1_packAxis2() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_ranked_reduceAxis1_noPack() {
+void benchmark_ntt_softmax_ranked_reduceAxis1_noVectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -253,7 +253,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_noPack() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_ranked_reduceAxis2_noPack() {
+void benchmark_ntt_softmax_ranked_reduceAxis2_noVectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -285,7 +285,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_noPack() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_ranked_reduceAxis1_packAxis1() {
+void benchmark_ntt_softmax_ranked_reduceAxis1_vectorizeAxis1() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -322,7 +322,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_packAxis1() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_ranked_reduceAxis2_packAxis2() {
+void benchmark_ntt_softmax_ranked_reduceAxis2_vectorizeAxis2() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -359,7 +359,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_packAxis2() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_ranked_reduceAxis2_packAxis1() {
+void benchmark_ntt_softmax_ranked_reduceAxis2_vectorizeAxis1() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -396,7 +396,7 @@ void benchmark_ntt_softmax_ranked_reduceAxis2_packAxis1() {
               << std::endl;
 }
 
-void benchmark_ntt_softmax_ranked_reduceAxis1_packAxis2() {
+void benchmark_ntt_softmax_ranked_reduceAxis1_vectorizeAxis2() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -435,19 +435,19 @@ void benchmark_ntt_softmax_ranked_reduceAxis1_packAxis2() {
 
 int main() {
 
-    benchmark_ntt_softmax_fixed_reduceAxis1_noPack();
-    benchmark_ntt_softmax_fixed_reduceAxis2_noPack();
-    benchmark_ntt_softmax_fixed_reduceAxis1_packAxis1();
-    benchmark_ntt_softmax_fixed_reduceAxis2_packAxis2();
-    benchmark_ntt_softmax_fixed_reduceAxis2_packAxis1();
-    benchmark_ntt_softmax_fixed_reduceAxis1_packAxis2();
+    benchmark_ntt_softmax_fixed_reduceAxis1_noVectorize();
+    benchmark_ntt_softmax_fixed_reduceAxis2_noVectorize();
+    benchmark_ntt_softmax_fixed_reduceAxis1_vectorizeAxis1();
+    benchmark_ntt_softmax_fixed_reduceAxis2_vectorizeAxis2();
+    benchmark_ntt_softmax_fixed_reduceAxis2_vectorizeAxis1();
+    benchmark_ntt_softmax_fixed_reduceAxis1_vectorizeAxis2();
 
-    benchmark_ntt_softmax_ranked_reduceAxis1_noPack();
-    benchmark_ntt_softmax_ranked_reduceAxis2_noPack();
-    benchmark_ntt_softmax_ranked_reduceAxis1_packAxis1();
-    benchmark_ntt_softmax_ranked_reduceAxis2_packAxis2();
-    benchmark_ntt_softmax_ranked_reduceAxis2_packAxis1();
-    benchmark_ntt_softmax_ranked_reduceAxis1_packAxis2();
+    benchmark_ntt_softmax_ranked_reduceAxis1_noVectorize();
+    benchmark_ntt_softmax_ranked_reduceAxis2_noVectorize();
+    benchmark_ntt_softmax_ranked_reduceAxis1_vectorizeAxis1();
+    benchmark_ntt_softmax_ranked_reduceAxis2_vectorizeAxis2();
+    benchmark_ntt_softmax_ranked_reduceAxis2_vectorizeAxis1();
+    benchmark_ntt_softmax_ranked_reduceAxis1_vectorizeAxis2();
 
     return 0;
 }

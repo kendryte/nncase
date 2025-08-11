@@ -21,7 +21,7 @@ using namespace nncase;
 
 template <typename T, size_t N>
 void benchmark_ntt_clamp(T init_low, T init_high, T clamp_low, T clamp_high) {
-    std::string pack_mode = "Pack";
+    std::string vectorize_mode = "Vectorize";
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -54,7 +54,7 @@ void benchmark_ntt_clamp(T init_low, T init_high, T clamp_low, T clamp_high) {
     }
     auto t2 = NttTest::get_cpu_cycle();
 
-    std::cout << __FUNCTION__ << "_" << pack_mode << " took "
+    std::cout << __FUNCTION__ << "_" << vectorize_mode << " took "
               << std::setprecision(1) << std::fixed
               << static_cast<float>(t2 - t1) / size / run_size << " cycles"
               << std::endl;

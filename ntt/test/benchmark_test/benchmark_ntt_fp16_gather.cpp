@@ -20,7 +20,7 @@
 
 using namespace nncase;
 
-void benchmark_ntt_gather_pack1d_dim0_contiguous() {
+void benchmark_ntt_gather_vectorize1d_dim0_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -65,7 +65,7 @@ void benchmark_ntt_gather_pack1d_dim0_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack1d_dim0_no_contiguous() {
+void benchmark_ntt_gather_vectorize1d_dim0_no_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -110,7 +110,7 @@ void benchmark_ntt_gather_pack1d_dim0_no_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack1d_dim1_contiguous() {
+void benchmark_ntt_gather_vectorize1d_dim1_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -153,7 +153,7 @@ void benchmark_ntt_gather_pack1d_dim1_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
+void benchmark_ntt_gather_vectorize1d_dim1_no_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -196,7 +196,7 @@ void benchmark_ntt_gather_pack1d_dim1_no_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack2d_dim0_contiguous() {
+void benchmark_ntt_gather_vectorize2d_dim0_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -239,7 +239,7 @@ void benchmark_ntt_gather_pack2d_dim0_contiguous() {
               << std::endl;
 }
 
-void benchmark_ntt_gather_pack2d_dim1_contiguous() {
+void benchmark_ntt_gather_vectorize2d_dim1_contiguous() {
     constexpr size_t warmup_size = 10;
 #if __riscv
     constexpr size_t run_size = 300;
@@ -285,10 +285,10 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    benchmark_ntt_gather_pack1d_dim0_contiguous();
-    benchmark_ntt_gather_pack1d_dim0_no_contiguous();
-    benchmark_ntt_gather_pack1d_dim1_contiguous();
-    benchmark_ntt_gather_pack1d_dim1_no_contiguous();
-    benchmark_ntt_gather_pack2d_dim0_contiguous();
-    benchmark_ntt_gather_pack2d_dim1_contiguous();
+    benchmark_ntt_gather_vectorize1d_dim0_contiguous();
+    benchmark_ntt_gather_vectorize1d_dim0_no_contiguous();
+    benchmark_ntt_gather_vectorize1d_dim1_contiguous();
+    benchmark_ntt_gather_vectorize1d_dim1_no_contiguous();
+    benchmark_ntt_gather_vectorize2d_dim0_contiguous();
+    benchmark_ntt_gather_vectorize2d_dim1_contiguous();
 }

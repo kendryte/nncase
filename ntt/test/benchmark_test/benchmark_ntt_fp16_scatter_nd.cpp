@@ -25,9 +25,9 @@
 using namespace nncase;
 
 template <typename T, size_t N>
-void benchmark_ntt_scatterND_unpack(T init_low, T init_high, int64_t idx0,
-                                    int64_t idx1, int64_t idx2, int64_t idx3,
-                                    int64_t idx4) {
+void benchmark_ntt_scatterND_devectorize(T init_low, T init_high, int64_t idx0,
+                                         int64_t idx1, int64_t idx2,
+                                         int64_t idx3, int64_t idx4) {
     // #if __riscv
     //     constexpr size_t size1 = 300;
     //     constexpr size_t size2 = 600;
@@ -86,6 +86,6 @@ int main(int argc, char *argv[]) {
     (void)argv;
 
     constexpr size_t N = NTT_VLEN / (sizeof(half) * 8);
-    benchmark_ntt_scatterND_unpack<half, N>(half(-10.f), half(10.f), 1, 3, 5, 7,
-                                            9);
+    benchmark_ntt_scatterND_devectorize<half, N>(half(-10.f), half(10.f), 1, 3,
+                                                 5, 7, 9);
 }
