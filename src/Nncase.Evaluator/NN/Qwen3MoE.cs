@@ -1,0 +1,207 @@
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using Nncase.CostModel;
+using Nncase.IR;
+using Nncase.IR.NN;
+using Nncase.IR.Tensors;
+using Nncase.Utilities;
+using OrtKISharp;
+
+namespace Nncase.Evaluator.NN;
+
+public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluator<Qwen3MoE>, IEvaluator<Qwen3MoE>
+{
+    public IRType Visit(ITypeInferenceContext context, Qwen3MoE target)
+    {
+        /*
+        public static readonly ParameterInfo Q = new(typeof(Qwen3MoE), 0, "q", ParameterKind.Input);
+        public static readonly ParameterInfo MoeGateW = new(typeof(Qwen3MoE), 1, "MoeGateW", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertDownProjW = new(typeof(Qwen3MoE), 2, "MoeExpertDownProjW", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertDownProjScale = new(typeof(Qwen3MoE), 3, "MoeExpertDownProjScale", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertGateProjW = new(typeof(Qwen3MoE), 4, "MoeExpertGateProjW", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertGateProjScale = new(typeof(Qwen3MoE), 5, "MoeExpertGateProjScale", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertUpProjW = new(typeof(Qwen3MoE), 6, "MoeExpertUpProjW", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertUpProjScale = new(typeof(Qwen3MoE), 7, "MoeExpertUpProjScale", ParameterKind.Input);
+        */
+        var q = context.CheckArgumentType<IRType>(target, Qwen3MoE.Q);
+
+        return q switch
+        {
+            DistributedType dq => Visit(context, target, dq),
+            TensorType tq => Visit(context, target, tq),
+            _ => new InvalidType("not support type"),
+        };
+    }
+
+    public Cost Visit(ICostEvaluateContext context, Qwen3MoE target)
+    {
+        var qType = context.GetArgumentType<IRType>(target, Qwen3MoE.Q);
+        var returnType = context.GetReturnType<IRType>();
+
+        // cycles = softmax((q @ k^t) + mask) @ v.
+        return new()
+        {
+            // todo kv cache
+            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(qType),
+
+            // todo [CostFactorNames.CPUCycles].
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+        };
+    }
+
+    public IValue Visit(IEvaluateContext context, Qwen3MoE target)
+    {
+        var q = context.GetOrtArgumentValue(target, Qwen3MoE.Q);
+        var moeGateW = context.GetOrtArgumentValue(target, Qwen3MoE.MoeGateW);
+        var moeExpertDownProjW = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertDownProjW);
+        var moeExpertDownProjScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertDownProjScale);
+        var moeExpertGateProjW = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertGateProjW);
+        var moeExpertGateProjScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertGateProjScale);
+        var moeExpertUpProjW = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertUpProjW);
+        var moeExpertUpProjScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertUpProjScale);
+
+        var layerId = target.LayerId;
+        var hiddenSize = target.HiddenSize;
+        var intermediateSize = target.IntermediateSize;
+        var moeIntermediateSize = target.MoEIntermediateSize;
+        var numExpert = target.NumExpert;
+        var numTopK = target.NumTopK;
+        var isNormTopkProb = target.IsNormTopkProb;
+        Console.WriteLine($"Qwen3MoE: layerId={layerId}, hiddenSize={hiddenSize}, intermediateSize={intermediateSize}, moeIntermediateSize={moeIntermediateSize}, numExpert={numExpert}, numTopK={numTopK}, isNormTopkProb={isNormTopkProb}");
+
+        Console.WriteLine($"Qwen3MoE: q.shape={string.Join(" ", q.Shape)},moeGateW.shape={string.Join(" ", moeGateW.Shape)},  moeExpertDownProjW.shape={string.Join(" ", moeExpertDownProjW.Shape)},  moeExpertDownProjScale.shape={string.Join(" ", moeExpertDownProjScale.Shape)},  moeExpertGateProjW.shape={string.Join(" ", moeExpertGateProjW.Shape)},  moeExpertGateProjScale.shape={string.Join(" ", moeExpertGateProjScale.Shape)},  moeExpertUpProjW.shape={string.Join(" ", moeExpertUpProjW.Shape)},  moeExpertUpProjScale.shape={string.Join(" ", moeExpertUpProjScale.Shape)}");
+        // var (seqLen, hiddenDim) = (q.Shape[0], q.Shape[1]);
+        var seqLen = q.Shape[0];
+        var routerLogits = OrtKI.Einsum(new[] { q, moeGateW }, "ls,ds->ld");
+        routerLogits = OrtKI.Cast(routerLogits, (int)OrtDataType.Float);
+        var routerWeights = OrtKI.Softmax(routerLogits, -1);
+        var topkRes = OrtKI.TopK(routerWeights, OrtKISharp.Tensor.MakeTensor(new[] { numTopK }, new[] { 1L }), -1L, 1L, 1L);
+        routerWeights = topkRes[0];
+        var selectedExperts = topkRes[1];
+
+        if (isNormTopkProb)
+        {
+            routerWeights = OrtKI.Div(routerWeights, OrtKI.ReduceSum(routerWeights, Tensor.FromArray(new[] { -1L }).ToOrtTensor(), keepdims: 1L, 0L));
+        }
+
+        routerWeights = OrtKI.Cast(routerWeights, (long)q.DataType);
+
+        var finalHiddenStates = OrtKISharp.Tensor.MakeTensor(
+            Enumerable.Range(0, (int)(seqLen * hiddenSize)).Select(i => 0).ToArray());
+
+        finalHiddenStates = OrtKI.Reshape(finalHiddenStates, OrtKISharp.Tensor.MakeTensor(new[] { seqLen, hiddenSize }), 0L);
+        finalHiddenStates = OrtKI.Cast(finalHiddenStates, (long)q.DataType);
+
+        var expertMask = OrtKI.OneHot(selectedExperts, numExpert, Tensor.From(new[] { 0L, 1L }).ToOrtTensor(), -1L);
+        expertMask = OrtKI.Cast(expertMask, (long)q.DataType);
+        expertMask = OrtKI.Transpose(expertMask, [2L, 1L, 0L]); // [num_experts, topk, seq_length]
+
+        for (var expertIndex = 0L; expertIndex < numExpert; expertIndex++)
+        {
+            var singleExpertMask = OrtKI.Slice(expertMask, new[] { expertIndex }, new[] { expertIndex + 1L }, new[] { 0L }, new[] { 1L }); // [num_experts -> 1, topk, seq_length]
+            singleExpertMask = OrtKI.Squeeze(singleExpertMask, new[] { 0L }); // [topk, seq_length]
+            var nonZero = OrtKI.NonZero(singleExpertMask).ToArray<long>();
+            var idx = nonZero[..(nonZero.Length / 2)];
+            var topX = nonZero[(nonZero.Length / 2)..];
+            if (nonZero.Length == 0)
+            {
+                continue; // 没有被选中的专家
+            }
+            var currentState = OrtKI.Gather(q, topX, 0);
+
+            // prepare expertMaskReduceSum
+            var expertMaskReduceSum = OrtKI.ReduceSum(singleExpertMask, Tensor.FromArray(new[] { 0L, 1L }).ToOrtTensor(), keepdims: 0L, 0L);
+
+            // prepare q
+            var qExpand = OrtKI.Unsqueeze(currentState, new[] { 0L });
+
+            // prepare gate matmul
+            var gateProjW = OrtKI.Slice(moeExpertGateProjW, new[] { expertIndex }, new[] { expertIndex + 1L }, new[] { 0L }, new[] { 1L });
+            var gateProjScale = OrtKI.Slice(moeExpertGateProjScale, new[] { expertIndex }, new[] { expertIndex + 1L }, new[] { 0L }, new[] { 1L });
+
+            // prepare up matmul
+            var upProjW = OrtKI.Slice(moeExpertUpProjW, new[] { expertIndex }, new[] { expertIndex + 1L }, new[] { 0L }, new[] { 1L });
+            var upProjScale = OrtKI.Slice(moeExpertUpProjScale, new[] { expertIndex }, new[] { expertIndex + 1L }, new[] { 0L }, new[] { 1L });
+
+            // prepare down matmul
+            var downProjW = OrtKI.Slice(moeExpertDownProjW, new[] { expertIndex }, new[] { expertIndex + 1L }, new[] { 0L }, new[] { 1L });
+            var downProjScale = OrtKI.Slice(moeExpertDownProjScale, new[] { expertIndex }, new[] { expertIndex + 1L }, new[] { 0L }, new[] { 1L });
+
+            // MLP
+            var expertOutput = MLP(qExpand, gateProjW, gateProjScale, upProjW, upProjScale, downProjW, downProjScale, hiddenSize, moeIntermediateSize);
+
+            var weightsForSeq = OrtKI.Gather(routerWeights, Tensor.FromArray(topX).ToOrtTensor(), 0L); // [N, topk]
+                                                                                                       // var idxTensor = Tensor.FromArray(idx).ToOrtTensor();                                       // [N]
+                                                                                                       // var oneHot = OrtKI.OneHot(idxTensor, numTopK, Tensor.From(new[] { 0L, 1L }).ToOrtTensor(), -1L); // [N, topk]
+                                                                                                       // oneHot = OrtKI.Cast(oneHot, (long)routerWeights.DataType);
+                                                                                                       // var selectedWeights = OrtKI.ReduceSum(
+                                                                                                       //     OrtKI.Mul(weightsForSeq, oneHot),
+                                                                                                       //     Tensor.FromArray(new[] { 1L }).ToOrtTensor(), // 按 topk 轴求和
+                                                                                                       //     keepdims: 1L,
+                                                                                                       //     noop_with_empty_axes: 0L); // [N, 1]
+
+            var idx2D = OrtKI.Unsqueeze(Tensor.FromArray(idx).ToOrtTensor(), new[] { 1L }); // [N,1]
+            var selectedWeights = OrtKI.GatherElements(weightsForSeq, idx2D, 1L); // [N,1]
+
+            expertOutput = OrtKI.Mul(expertOutput, selectedWeights); // [N, hidden]
+
+            // 4) 等价于 final_hidden_states.index_add_(0, top_x, expertPartial)
+            // ScatterElements 在不同 expert 间可能重复命中同一行，为了实现“加法聚合”，先在零张量上 scatter，再与 final 相加
+            var updates = OrtKI.Cast(expertOutput, (long)q.DataType); // [N, hidden]
+            var idxCol = OrtKI.Unsqueeze(Tensor.FromArray(topX).ToOrtTensor(), new[] { 1L });        // [N, 1]
+            var indices = OrtKI.Tile(idxCol, Tensor.FromArray(new[] { 1L, hiddenSize }).ToOrtTensor()); // [N, hidden] 行索引按列复制
+
+            // var zeroBuf = OrtKI.Sub(finalHiddenStates, finalHiddenStates); // 全 0，形状 [seq_len, hidden]
+            finalHiddenStates = OrtKI.ScatterElements(finalHiddenStates, indices, updates, 0L, "add"); // 沿 axis=0 写入
+            // finalHiddenStates = OrtKI.Add(finalHiddenStates, scattered); 
+        }
+
+        return finalHiddenStates.ToValue();
+    }
+
+    private OrtKISharp.Tensor MLP(OrtKISharp.Tensor q, OrtKISharp.Tensor gateProjW, OrtKISharp.Tensor gateProjScale, OrtKISharp.Tensor upProjW, OrtKISharp.Tensor upProjScale, OrtKISharp.Tensor downProjW, OrtKISharp.Tensor downProjScale, long hiddenSize, long moeIntermediateSize)
+    {
+        // gate_proj(q)
+        // q: [seq_len, hidden_size] -> [1, seq_len, hidden_size]
+        // gateW: [hidden_size, moe_intermediate_size]
+        gateProjScale = OrtKI.Reshape(gateProjScale, OrtKISharp.Tensor.MakeTensor(new[] { 1L, moeIntermediateSize, 1L }), 0L);
+        gateProjW = OrtKI.Mul(gateProjW, gateProjScale);
+        var gateStates = OrtKI.Einsum(new[] { q, gateProjW }, "bhs,bds->bhd");
+
+        // silu(gate)
+        gateStates = OrtKI.Sigmoid(gateStates) * gateStates; // [seq_len, moe_intermediate_size]
+
+        // up_proj(q)
+        // upW: [hidden_size, moe_intermediate_size]
+        upProjScale = OrtKI.Reshape(upProjScale, OrtKISharp.Tensor.MakeTensor(new[] { 1L, moeIntermediateSize, 1L }), 0L);
+        upProjW = OrtKI.Mul(upProjW, upProjScale);
+        var upStates = OrtKI.Einsum(new[] { q, upProjW }, "bhs,bds->bhd");
+
+        // silu(gate(q)) * up(q)
+        var downInput = OrtKI.Mul(gateStates, upStates); // [seq_len, moe_intermediate_size]
+
+        // Down(silu(gate(q)) * up(q))
+        downProjScale = OrtKI.Reshape(downProjScale, OrtKISharp.Tensor.MakeTensor(new[] { 1L, hiddenSize, 1L}), 0L);
+        downProjW = OrtKI.Mul(downProjW, downProjScale);
+        var downProj = OrtKI.Einsum(new[] { downInput, downProjW }, "bhd,bsd->bhs");
+        var expertOutput = OrtKI.Squeeze(downProj, new[] { 0L }); // [seq_len, hidden_size]
+        return expertOutput;
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Qwen3MoE target, TensorType q)
+    {
+        return q;
+    }
+
+    private IRType Visit(ITypeInferenceContext context, Qwen3MoE target, DistributedType q)
+    {
+        // TODO: Handle distributed type inference
+        // For now, we just return the type as is.
+        return q;
+    }
+}
