@@ -44,6 +44,6 @@ void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
         op;
     detail::binary_impl<TLhs, TRhs, std::decay_t<TOut>>()(
         lhs, rhs, output, op,
-        TPostOp<std::remove_cv_t<typename TOut::element_type>>{});
+        TPostOp<typename std::decay_t<TOut>::element_type>{});
 }
 } // namespace nncase::ntt
