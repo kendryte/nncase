@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../../../bfloat16.h"
 #include "../../../half.h"
 #include "../../native_vector.h"
 #ifdef __riscv_vector
@@ -137,6 +138,12 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16mf4_t,          \
                                            NTT_VLEN / 8 / sizeof(half) / 4)    \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vfloat16mf2_t, NTT_VLEN / 8 / sizeof(bfloat16) / 2)    \
+    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vfloat16mf4_t, NTT_VLEN / 8 / sizeof(bfloat16) / 4)    \
+    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float, fixed_vfloat32mf2_t,         \
                                            NTT_VLEN / 8 / sizeof(float) / 2)   \
     NTT_END_DEFINE_NATIVE_VECTOR()
@@ -178,6 +185,10 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16m##lmul##_t,    \
                                            NTT_VLEN / 8 / sizeof(half) * lmul) \
+    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vfloat16m##lmul##_t,                                   \
+        NTT_VLEN / 8 / sizeof(bfloat16) * lmul)                                \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(double, fixed_vfloat64m##lmul##_t,  \
                                            NTT_VLEN / 8 / sizeof(double) *     \

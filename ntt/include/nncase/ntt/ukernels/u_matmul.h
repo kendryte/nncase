@@ -149,7 +149,8 @@ struct u_type_scale<ukernels::matmul_vectorize_kind::vectorize_mn, TA, TB, TC> {
 };
 
 template <class TA, class TB, class TC>
-struct u_type_scale<ukernels::matmul_vectorize_kind::vectorize_mkn, TA, TB, TC> {
+struct u_type_scale<ukernels::matmul_vectorize_kind::vectorize_mkn, TA, TB,
+                    TC> {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
@@ -191,6 +192,7 @@ struct u_matmul_generic {
 
         using TOutElemExpanded = replace_element_t<TOutElem, float>;
         TOutElemExpanded c0_grouped[m0_tile_scaled][n0_tile_scaled];
+        using TOutScalar = element_or_scalar_t<TOutElem>;
         if constexpr (Scalar<TOutElemExpanded>) {
             for (size_t i = 0; i < m0_tile_scaled; i++) {
                 for (size_t j = 0; j < n0_tile_scaled; j++) {
@@ -201,7 +203,8 @@ struct u_matmul_generic {
             for (size_t i = 0; i < m0_tile_scaled; i++) {
                 for (size_t j = 0; j < n0_tile_scaled; j++) {
                     ntt::apply(c0_grouped[i][j].shape(), [&](auto index) {
-                        c0_grouped[i][j](index) = c0_tmp[i][j](index);
+                        TOutScalar temp = c0_tmp[i][j](index);
+                        c0_grouped[i][j](index) = (float)temp;
                     });
                 }
             }
@@ -227,7 +230,8 @@ struct u_matmul_generic {
                 b0_tmp[index[0]] = b0(b0_index);
             });
 
-            if constexpr ((ukernels::matmul_vectorize_kind::vectorize_k == VectorizeKind) &&
+            if constexpr ((ukernels::matmul_vectorize_kind::vectorize_k ==
+                           VectorizeKind) &&
                           (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped = TLhsElemExpanded;
@@ -257,8 +261,8 @@ struct u_matmul_generic {
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
-                        u_mul_add<VectorizeKind, true>(a0_grouped[m], b0_grouped[n],
-                                                  c0_grouped[m][n]);
+                        u_mul_add<VectorizeKind, true>(
+                            a0_grouped[m], b0_grouped[n], c0_grouped[m][n]);
                     }
                 }
 
@@ -268,8 +272,8 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::matmul_vectorize_kind::vectorize_m ==
-                                  VectorizeKind) &&
+            } else if constexpr ((ukernels::matmul_vectorize_kind::
+                                      vectorize_m == VectorizeKind) &&
                                  (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped =
@@ -295,8 +299,8 @@ struct u_matmul_generic {
                     for (size_t m = 0; m < M0Tile; m++) {
                         for (size_t k = 0; k < m0_scale; k++) {
                             u_mul_add<VectorizeKind, true>(a0_grouped[m](k),
-                                                      b0_grouped[n],
-                                                      c0_grouped[k][n]);
+                                                           b0_grouped[n],
+                                                           c0_grouped[k][n]);
                         }
                     }
                 }
@@ -311,8 +315,8 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::matmul_vectorize_kind::vectorize_n ==
-                                  VectorizeKind) &&
+            } else if constexpr ((ukernels::matmul_vectorize_kind::
+                                      vectorize_n == VectorizeKind) &&
                                  (!same_type)) {
                 using TRhsElemExpanded = replace_element_t<TRhsElem, float>;
                 using TRhsElemGrouped =
@@ -337,8 +341,8 @@ struct u_matmul_generic {
                     for (size_t m = 0; m < M0Tile; m++) {
                         for (size_t k = 0; k < n0_scale; k++) {
                             u_mul_add<VectorizeKind, true>(a0_grouped[m],
-                                                      b0_grouped[n](k),
-                                                      c0_grouped[m][k]);
+                                                           b0_grouped[n](k),
+                                                           c0_grouped[m][k]);
                         }
                     }
                 }
@@ -353,8 +357,8 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::matmul_vectorize_kind::vectorize_mk ==
-                                  VectorizeKind) &&
+            } else if constexpr ((ukernels::matmul_vectorize_kind::
+                                      vectorize_mk == VectorizeKind) &&
                                  (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped =
@@ -388,8 +392,8 @@ struct u_matmul_generic {
                     for (size_t m = 0; m < M0Tile; m++) {
                         for (size_t k = 0; k < m0_scale; k++) {
                             u_mul_add<VectorizeKind, true>(a0_grouped[m](k),
-                                                      b0_grouped[n],
-                                                      c0_grouped[k][n]);
+                                                           b0_grouped[n],
+                                                           c0_grouped[k][n]);
                         }
                     }
                 }
@@ -404,8 +408,8 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::matmul_vectorize_kind::vectorize_mn ==
-                                  VectorizeKind) &&
+            } else if constexpr ((ukernels::matmul_vectorize_kind::
+                                      vectorize_mn == VectorizeKind) &&
                                  (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped =
@@ -441,9 +445,9 @@ struct u_matmul_generic {
                     for (size_t m = 0; m < M0Tile; m++) {
                         for (size_t k = 0; k < n0_scale; k++) {
                             for (size_t l = 0; l < m0_scale; l++) {
-                                u_mul_add<VectorizeKind, true>(a0_grouped[m](l),
-                                                          b0_grouped[n](k),
-                                                          c0_grouped[l][k]);
+                                u_mul_add<VectorizeKind, true>(
+                                    a0_grouped[m](l), b0_grouped[n](k),
+                                    c0_grouped[l][k]);
                             }
                         }
                     }
@@ -459,8 +463,8 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::matmul_vectorize_kind::vectorize_mkn ==
-                                  VectorizeKind) &&
+            } else if constexpr ((ukernels::matmul_vectorize_kind::
+                                      vectorize_mkn == VectorizeKind) &&
                                  (!same_type)) {
                 using TLhsElemExpanded = replace_element_t<TLhsElem, float>;
                 using TLhsElemGrouped =
@@ -499,9 +503,9 @@ struct u_matmul_generic {
                     for (size_t m = 0; m < M0Tile; m++) {
                         for (size_t k = 0; k < n0_scale; k++) {
                             for (size_t l = 0; l < m0_scale; l++) {
-                                u_mul_add<VectorizeKind, true>(a0_grouped[m](l),
-                                                          b0_grouped[n](k),
-                                                          c0_grouped[l][k]);
+                                u_mul_add<VectorizeKind, true>(
+                                    a0_grouped[m](l), b0_grouped[n](k),
+                                    c0_grouped[l][k]);
                             }
                         }
                     }
@@ -517,8 +521,8 @@ struct u_matmul_generic {
                     });
                 });
 
-            } else if constexpr ((ukernels::matmul_vectorize_kind::no_vectorize ==
-                                  VectorizeKind) &&
+            } else if constexpr ((ukernels::matmul_vectorize_kind::
+                                      no_vectorize == VectorizeKind) &&
                                  (!same_type)) {
                 float a0_grouped[M0Tile];
                 float b0_grouped[N0Tile];
@@ -528,8 +532,8 @@ struct u_matmul_generic {
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
-                        u_mul_add<VectorizeKind, true>(a0_grouped[m], b0_grouped[n],
-                                                  c0_grouped[m][n]);
+                        u_mul_add<VectorizeKind, true>(
+                            a0_grouped[m], b0_grouped[n], c0_grouped[m][n]);
                     }
                 }
 
@@ -543,7 +547,7 @@ struct u_matmul_generic {
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
                         u_mul_add<VectorizeKind, true>(a0_tmp[m], b0_tmp[n],
-                                                  c0_tmp[m][n]);
+                                                       c0_tmp[m][n]);
                     }
                 }
             }
@@ -559,15 +563,15 @@ template <ukernels::matmul_vectorize_kind VectorizeKind, bool AccumulateC,
           bool TransposedA, bool TransposedB, dim_t M0Tile, dim_t N0Tile,
           class TLhsElem, class TRhsElem, class TOutElem, bool Arch>
 struct u_matmul
-    : u_matmul_generic<VectorizeKind, AccumulateC, TransposedA, TransposedB, M0Tile,
-                       N0Tile, TLhsElem, TRhsElem, TOutElem, Arch> {};
+    : u_matmul_generic<VectorizeKind, AccumulateC, TransposedA, TransposedB,
+                       M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem, Arch> {};
 
 template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
           dim_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
           bool Arch>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC, TransposedA,
-                TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
-                Arch> {
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC,
+                TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem,
+                TOutElem, Arch> {
     inline static constexpr auto b0_tile =
         detail::b0_tile_getter<TransposedB, N0Tile>::tile;
 
@@ -577,8 +581,8 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC, Tran
         using TSubOutElem = ntt::vector<typename TOutElem::element_type,
                                         TOutElem::shape().back()>;
         using policy_t =
-            ntt::ukernels::u_matmul_policy<matmul_vectorize_kind::vectorize_mn, TLhsElem,
-                                           TRhsElem, TOutElem, true>;
+            ntt::ukernels::u_matmul_policy<matmul_vectorize_kind::vectorize_mn,
+                                           TLhsElem, TRhsElem, TOutElem, true>;
         constexpr auto m0_subtile = policy_t::m0_subtile;
 
         if constexpr (m0_subtile) {
@@ -643,24 +647,24 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC, Tran
 template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
           dim_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
           bool Arch>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, TransposedA,
-                TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
-                Arch> {
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC,
+                TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem,
+                TOutElem, Arch> {
     inline static constexpr auto b0_tile =
         detail::b0_tile_getter<TransposedB, N0Tile>::tile;
 
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               size_t K) noexcept {
-        constexpr auto m0_scale =
-            ukernels::u_type_scale<ukernels::matmul_vectorize_kind::vectorize_kn, TA, TB,
-                                   TC>::m0_scale;
-        constexpr auto n0_scale =
-            ukernels::u_type_scale<ukernels::matmul_vectorize_kind::vectorize_kn, TA, TB,
-                                   TC>::n0_scale;
-        constexpr auto same_type =
-            ukernels::u_type_scale<ukernels::matmul_vectorize_kind::vectorize_kn, TA, TB,
-                                   TC>::same_type;
+        constexpr auto m0_scale = ukernels::u_type_scale<
+            ukernels::matmul_vectorize_kind::vectorize_kn, TA, TB,
+            TC>::m0_scale;
+        constexpr auto n0_scale = ukernels::u_type_scale<
+            ukernels::matmul_vectorize_kind::vectorize_kn, TA, TB,
+            TC>::n0_scale;
+        constexpr auto same_type = ukernels::u_type_scale<
+            ukernels::matmul_vectorize_kind::vectorize_kn, TA, TB,
+            TC>::same_type;
         constexpr auto m0_tile_scaled = m0_scale * M0Tile;
         constexpr auto n0_tile_scaled = n0_scale * N0Tile;
 
@@ -672,6 +676,7 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, Tran
 
         using TLhsElemExpanded = replace_element_t<TOutElem, float>;
         TLhsElemExpanded c0_grouped[m0_tile_scaled][n0_tile_scaled];
+        using TOutScalar = element_or_scalar_t<TOutElem>;
         if constexpr (Scalar<TLhsElemExpanded>) {
             for (size_t i = 0; i < m0_tile_scaled; i++) {
                 for (size_t j = 0; j < n0_tile_scaled; j++) {
@@ -682,7 +687,8 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, Tran
             for (size_t i = 0; i < m0_tile_scaled; i++) {
                 for (size_t j = 0; j < n0_tile_scaled; j++) {
                     ntt::apply(c0_grouped[i][j].shape(), [&](auto index) {
-                        c0_grouped[i][j](index) = c0_tmp[i][j](index);
+                        TOutScalar temp = c0_tmp[i][j](index);
+                        c0_grouped[i][j](index) = (float)temp;
                     });
                 }
             }
@@ -779,9 +785,9 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, Tran
 template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
           dim_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
           bool Arch>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mkn, AccumulateC, TransposedA,
-                TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem,
-                Arch> {
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mkn, AccumulateC,
+                TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem,
+                TOutElem, Arch> {
     inline static constexpr auto b0_tile =
         detail::b0_tile_getter<TransposedB, N0Tile>::tile;
 
@@ -791,8 +797,8 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mkn, AccumulateC, Tra
         using TSubOutElem = ntt::vector<typename TOutElem::element_type,
                                         TOutElem::shape().back()>;
         using policy_t =
-            ntt::ukernels::u_matmul_policy<matmul_vectorize_kind::vectorize_mkn, TLhsElem,
-                                           TRhsElem, TOutElem, true>;
+            ntt::ukernels::u_matmul_policy<matmul_vectorize_kind::vectorize_mkn,
+                                           TLhsElem, TRhsElem, TOutElem, true>;
         constexpr auto m0_subtile = policy_t::m0_subtile;
 
         if constexpr (m0_subtile) {
@@ -872,8 +878,8 @@ constexpr void u_matmul(const TA &a, const TB &b, TC &c, const TK &K) noexcept {
     using TLhsElem = std::decay_t<typename TA::element_type>;
     using TRhsElem = std::decay_t<typename TB::element_type>;
     using TOutElem = std::decay_t<typename TC::element_type>;
-    ukernels::u_matmul<VectorizeKind, AccumulateC, TransposedA, TransposedB, M0Tile,
-                       N0Tile, TLhsElem, TRhsElem, TOutElem, true>
+    ukernels::u_matmul<VectorizeKind, AccumulateC, TransposedA, TransposedB,
+                       M0Tile, N0Tile, TLhsElem, TRhsElem, TOutElem, true>
         impl;
     impl(a, b, c, K);
 }

@@ -56,6 +56,12 @@ struct bfloat16 {
   public:
     bfloat16() noexcept = default;
 
+    bfloat16(_Float16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
+
+    operator _Float16() const noexcept {
+        return static_cast<_Float16>(float(*this));
+    }
+
     explicit bfloat16(float v) noexcept : value_(round_to_bfloat16(v).value_) {}
 
     template <class T,
@@ -68,7 +74,7 @@ struct bfloat16 {
 
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
 
-    operator float() const noexcept {
+    explicit operator float() const noexcept {
         fp32 result;
         result.u32 = 0;
         result.u16() = value_;
@@ -319,8 +325,10 @@ inline bfloat16 nearbyint(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(nearbyintf(float(a)));
 }
 inline long lrint(const bfloat16 &a) { return lrintf(float(a)); }
-} // namespace std
 
+template <> struct is_arithmetic<bfloat16> : public true_type {};
+
+} // namespace std
 
 inline nncase::bfloat16 operator"" _bf16(long double x) {
     return nncase::bfloat16(float(x));
