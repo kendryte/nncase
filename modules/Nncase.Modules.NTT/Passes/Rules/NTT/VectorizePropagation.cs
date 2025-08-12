@@ -267,7 +267,8 @@ public sealed class VectorizeCastPropagation : RewriteRule<Pattern>
                 "cast",
                 "callee",
                 _ => true,
-                IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() }));
+                IsWildcard("input", e => e is not Call { Target: IR.Tensors.Unpack }) with { TypePattern = IsFloat() & !IsVector() },
+                IsWildcard("postOps")));
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext context)
     {
@@ -276,11 +277,12 @@ public sealed class VectorizeCastPropagation : RewriteRule<Pattern>
         {
             var caller = (Call)result["cast"];
             var input = (Expr)result["input"];
+            var postOps = (Expr)result["postOps"];
             var candidate = (Expr)result[Pattern];
             var scale = 1f * candidate.CheckedDataType.SizeInBytes / input.CheckedDataType.SizeInBytes;
             var vectorizeLanes = vectorize.Lanes.Select(l => (int)(l * scale)).ToArray();
 
-            var ret = VectorizeCast.AddCandidate(caller, input, vectorize.Axes.ToArray(), vectorizeLanes).FirstOrDefault();
+            var ret = VectorizeCast.AddCandidate(caller, input, postOps, vectorize.Axes.ToArray(), vectorizeLanes).FirstOrDefault();
             if (ret is not null)
             {
                 return IR.F.Tensors.Pack(ret, vectorize.Lanes.ToArray(), vectorize.Axes.ToArray());
@@ -303,7 +305,8 @@ public sealed class CastDevectorizePropagation : RewriteRule<Pattern>
             "devectorize",
             "callee",
             _ => true,
-            IsWildcard("input")));
+            IsWildcard("input")),
+        IsWildcard("postOps"));
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext context)
     {
@@ -312,8 +315,9 @@ public sealed class CastDevectorizePropagation : RewriteRule<Pattern>
         {
             var caller = (Call)result["caller"];
             var callee = (Expr)result["callee"];
+            var postOps = (Expr)result["postOps"];
 
-            var ret = VectorizeCast.AddCandidate(caller, callee, devectorize.Axes.ToArray(), devectorize.Lanes.ToArray()).FirstOrDefault();
+            var ret = VectorizeCast.AddCandidate(caller, callee, postOps, devectorize.Axes.ToArray(), devectorize.Lanes.ToArray()).FirstOrDefault();
             if (ret is not null)
             {
                 return ret;

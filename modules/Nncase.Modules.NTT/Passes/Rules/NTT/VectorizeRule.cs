@@ -1237,9 +1237,10 @@ public sealed class VectorizeCast : VectorizeRule
       "target",
       "call",
       _ => true,
-      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("postOps"));
 
-    public static List<Expr> AddCandidate(Call call, Expr input, int[] vectorizedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, Expr postOps, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.Cast)call.Target;
@@ -1255,7 +1256,7 @@ public sealed class VectorizeCast : VectorizeRule
         var outLanes = lanes.Select(l => (int)(l / scale)).ToArray();
         var newType = new VectorType(op.NewType, outLanes);
 
-        var cast = IR.F.Tensors.Cast(vectorizedInput, newType, op.CastMode, vectorizedAxes);
+        var cast = IR.F.Tensors.Cast(vectorizedInput, newType, op.CastMode, vectorizedAxes, postOps);
         var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(cast, outLanes, vectorizedAxes), inShape, padsInput!);
         if (cast.CheckedType is not InvalidType)
         {
@@ -1270,16 +1271,17 @@ public sealed class VectorizeCast : VectorizeRule
         var rets = new List<Expr>();
         var call = (Call)result["call"];
         var input = (Expr)result["input"];
+        var postOps = (Expr)result["postOps"];
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
-            rets.AddRange(AddCandidate(call, input, [i], [laneSize]));
+            rets.AddRange(AddCandidate(call, input, postOps, [i], [laneSize]));
             for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
-                    rets.AddRange(AddCandidate(call, input, [i, j], [laneSize, laneSize]));
+                    rets.AddRange(AddCandidate(call, input, postOps, [i, j], [laneSize, laneSize]));
                 }
             }
         }

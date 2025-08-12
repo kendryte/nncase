@@ -87,7 +87,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         var lhs = context.GetArgumentValueAsTensor(binary, Binary.Lhs);
         var rhs = context.GetArgumentValueAsTensor(binary, Binary.Rhs);
         var originDtype = lhs.ElementType;
-        IValue result = default;
+        IValue result;
         if (lhs.Shape.IsScalar && rhs.Shape.IsScalar)
         {
             if (lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
@@ -123,15 +123,17 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
                 result = Ort_compute(binary, lhs, rhs, originDtype);
             }
         }
-
-        // for float16/float8/bfloat16 infere
-        if (originDtype.IsFloat())
+        else
         {
-            lhs = lhs.CastElement<float>();
-            rhs = rhs.CastElement<float>();
-        }
+            // for float16/float8/bfloat16 infere
+            if (originDtype.IsFloat())
+            {
+                lhs = lhs.CastElement<float>();
+                rhs = rhs.CastElement<float>();
+            }
 
-        result = Ort_compute(binary, lhs, rhs, originDtype);
+            result = Ort_compute(binary, lhs, rhs, originDtype);
+        }
 
         if (context.CurrentCall[Binary.PostOps] is Fusion lambda)
         {

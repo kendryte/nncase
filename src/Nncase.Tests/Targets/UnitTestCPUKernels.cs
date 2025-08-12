@@ -234,13 +234,6 @@ public class NotThreadSafeResourceCollection
 [AutoSetupTestMethod(InitSession = true)]
 public sealed class UnitTestCPUKernels : TestClassBase
 {
-    public enum PostOpKind
-    {
-        None,
-        MulScalar,
-        ScalarDiv,
-    }
-
     public UnitTestCPUKernels()
     {
         DefaultTargetName = CPUTarget.Kind;
@@ -248,6 +241,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.PassIR | Diagnostics.DumpFlags.Compile | Diagnostics.DumpFlags.Schedule | Diagnostics.DumpFlags.Rewrite | Diagnostics.DumpFlags.CodeGen | Diagnostics.DumpFlags.EGraphCost | Diagnostics.DumpFlags.Tiling;
 #endif
+    }
+
+    public enum PostOpKind
+    {
+        None,
+        MulScalar,
+        ScalarDiv,
     }
 
     public static Placement DefaultPlacement => new Placement(new[] { 1 }, "t");
@@ -944,17 +944,35 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
-    [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
-    [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
-    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
-    [InlineData(new object[] { new long[] { 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
-    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
-    public async Task TestVectorizeCast(long[] shape, Nncase.Runtime.TypeCode type1, Nncase.Runtime.TypeCode type2, int count)
+    [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, new PostOpKind[] { }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, new PostOpKind[] { PostOpKind.MulScalar }, 1 })]
+    [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, new PostOpKind[] { }, 2 })]
+    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, new PostOpKind[] { PostOpKind.MulScalar }, 3 })]
+    [InlineData(new object[] { new long[] { 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, new PostOpKind[] { PostOpKind.MulScalar }, 4 })]
+    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, new PostOpKind[] { PostOpKind.MulScalar }, 5 })]
+    public async Task TestVectorizeCast(long[] shape, Runtime.TypeCode type1, Runtime.TypeCode type2, PostOpKind[] postOpKinds, int count)
     {
+        Expr postOps = None.Default;
+        if (postOpKinds.Length > 0)
+        {
+            var lambdaInVar = new Var(AnyType.Default);
+            Expr body = lambdaInVar;
+            for (int i = 0; i < postOpKinds.Length; i++)
+            {
+                body = postOpKinds[i] switch
+                {
+                    PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, body, Tensor.FromScalar(1.32f).CastElementTo(PrimType.FromTypeCode(type2))),
+                    PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, Tensor.FromScalar(0.32f).CastElementTo(PrimType.FromTypeCode(type2)), body),
+                    _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
+                };
+            }
+
+            postOps = new IR.Fusion(CPUTarget.Kind, body, lambdaInVar);
+        }
+
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var casted1 = IR.F.Tensors.Cast(input, DataType.FromTypeCode(type1));
-        var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2));
+        var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2), postOps: postOps);
         var pre = IR.F.Tensors.Cast(casted2, DataTypes.Float32);
 
         var feedDict = new Dictionary<IVar, IValue>() {
@@ -962,8 +980,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var rule = new Passes.Rules.NTT.VectorizeCast(1, Lane);
-        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        CompilerServices.TryMatchRoot(casted2, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()).Select(e => IR.F.Tensors.Cast(e, DataTypes.Float32)));
         await RunCases($"Theory{count}", feedDict, posts);
     }
 

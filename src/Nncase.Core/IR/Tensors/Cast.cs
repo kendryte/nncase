@@ -22,6 +22,8 @@ public sealed partial class Cast : Op
     /// </summary>
     public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input", ParameterKind.Input);
 
+    public static readonly ParameterInfo PostOps = new(typeof(Cast), 1, "post_ops", ParameterKind.Attribute);
+
     public DataType NewType { get; }
 
     public CastMode CastMode { get; }
@@ -29,5 +31,5 @@ public sealed partial class Cast : Op
     public IRArray<int> VectorizeAxes { get; }
 
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}, VectorizeAxes: {string.Join(",", VectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : VectorizeAxes.ToArray())}";
+    public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}, VectorizeAxes: {{{string.Join(",", VectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : VectorizeAxes.ToArray())}}}";
 }

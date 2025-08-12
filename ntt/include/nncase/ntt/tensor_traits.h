@@ -71,14 +71,14 @@ concept Vector = requires {std::decay_t<T>::IsVector;};
 
 template <typename T>
 concept ShardedTensor = requires {
-    typename T::sharding_type;
-    typename T::mesh_type;
+    typename std::decay_t<T>::sharding_type;
+    typename std::decay_t<T>::mesh_type;
 };
 
 template <typename T>
 concept Tensor = requires {
-    typename T::shape_type;
-    typename T::strides_type;
+    typename std::decay_t<T>::shape_type;
+    typename std::decay_t<T>::strides_type;
 } && !ShardedTensor<T> && !Vector<T>;
 
 template <typename T>

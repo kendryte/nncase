@@ -412,7 +412,16 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }).Result);
                 break;
             case TIR.NTT.Cast cast:
-                IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
+                {
+                    string postOps = string.Empty;
+                    if (expr[TIR.NTT.Cast.PostOps] is Fusion lambda)
+                    {
+                        postOps = $"<{lambda.Name}>";
+                    }
+
+                    IndentScope.Writer.IndWrite($"cast{postOps}({arguments[0].Name}, {arguments[1].Name});\n");
+                }
+
                 break;
             case TIR.NTT.VectorizedLayerNorm lm:
                 {

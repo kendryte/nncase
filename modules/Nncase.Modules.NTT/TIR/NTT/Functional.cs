@@ -198,9 +198,9 @@ public partial class NTT
         return new Call(new TIR.NTT.Clamp(min, max), input, output);
     }
 
-    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode, IRArray<int> vectorizeAxes = default)
+    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode, IRArray<int> vectorizeAxes = default, Expr? postOps = null)
     {
-        return new Call(new TIR.NTT.Cast(newType, castMode, vectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : vectorizeAxes), input, output);
+        return new Call(new TIR.NTT.Cast(newType, castMode, vectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : vectorizeAxes), input, output, postOps ?? None.Default);
     }
 
     public static Call Where(Expr cond, Expr x, Expr y, Expr output)

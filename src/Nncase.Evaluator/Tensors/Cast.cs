@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using DryIoc.ImTools;
 using Nncase.CostModel;
@@ -21,6 +22,7 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
+        IValue result;
         if (cast.NewType is VectorType vt && !cast.VectorizeAxes.IsDefaultOrEmpty)
         {
             if (cast.VectorizeAxes.Count > 1)
@@ -31,16 +33,31 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
             input = IR.F.Tensors.Unpack(input, ((VectorType)input.ElementType).Lanes.ToArray(), cast.VectorizeAxes.ToArray()).Evaluate().AsTensor();
             input = input.CastTo(vt.ElemType);
             input = IR.F.Tensors.Pack(input, vt.Lanes.ToArray(), cast.VectorizeAxes.ToArray()).Evaluate().AsTensor();
-            return Value.FromTensor(input);
+            result = Value.FromTensor(input);
+        }
+        else
+        {
+            result = Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
         }
 
-        return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
+        if (context.CurrentCall[Cast.PostOps] is Fusion lambda)
+        {
+            return CompilerServices.Evaluate(lambda.Body, new Dictionary<IVar, IValue>() { { lambda.Parameters[0], result } });
+        }
+
+        return result;
     }
 
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, Cast target)
     {
         var input = context.CheckArgumentType<IRType>(target, Cast.Input);
+        var postOps = context.CheckArgumentType<IRType>(target, Cast.PostOps);
+        if (!(postOps is NoneType || postOps is CallableType))
+        {
+            return new InvalidType($"PostOps must be None or Callable, but got {postOps}");
+        }
+
         return input switch
         {
             TensorType t => Visit(target, t),
