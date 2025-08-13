@@ -117,4 +117,13 @@ public class CPUTarget : Target
     {
         passManager.Add<NTTTIRSelectionPass>();
     }
+
+    public override void RegisterTargetDependentPass(IPassManager passManager, CompileOptions options)
+    {
+        passManager.Add<DataflowPass>().Configure(p =>
+        {
+            p.Add<Passes.Rules.Neutral.DecomposeQLinearMatMul>();
+            p.Add<Passes.Rules.Neutral.FoldNopBinary>();
+        });
+    }
 }
