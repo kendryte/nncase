@@ -1493,7 +1493,7 @@ void test_cast() {
             ntt::make_tensor<ntt::vector<int32_t, 4>>(ntt::fixed_shape_v<1, 8>);
         std::iota(ta.elements().begin(), ta.elements().end(), 0);
         ntt::pack(ta, tb.view(), ntt::fixed_shape_v<0>);
-        auto tc = ntt::make_tensor<ntt::vector<float32_t, 4>>(
+        auto tc = ntt::make_tensor<ntt::vector<float, 4>>(
             ntt::fixed_shape_v<1, 8>);
         ntt::cast<mul_scalar>(tb, tc, ntt::fixed_shape_v<0>);
         assert(tc(0, 0)(0) == (0.f * 1.2f));
