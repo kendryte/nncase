@@ -32,7 +32,8 @@ public sealed partial class FoldCastPostOps : IRewriteRule
 
         var scalar = IsTensorConst("constScalar") with { TypePattern = IsScalar() | HasShape(new Dimension[] { new DimConst(1) }) };
 
-        Pattern = IsAlt(IsBinary("binary", "caller", b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, cast, scalar),
+        Pattern = IsAlt(
+            IsBinary("binary", "caller", b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, cast, scalar),
             IsBinary("binary", "caller", b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, scalar, cast));
     }
 
@@ -65,7 +66,8 @@ public sealed partial class FoldBinaryPostOps : IRewriteRule
         var binary1 = IsVectorizedBinary("binary1", "callee", _ => true, IsWildcard("lhs"), IsWildcard("rhs"), IsWildcard("postOps"));
         var scalar = IsTensorConst("constScalar") with { TypePattern = IsScalar() | HasShape(new Dimension[] { new DimConst(1) }) };
 
-        Pattern = IsAlt(IsBinary("binary2", "caller", b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, binary1, scalar),
+        Pattern = IsAlt(
+            IsBinary("binary2", "caller", b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, binary1, scalar),
             IsBinary("binary2", "caller", b => b.BinaryOp is BinaryOp.Add or BinaryOp.Mul, scalar, binary1));
     }
 

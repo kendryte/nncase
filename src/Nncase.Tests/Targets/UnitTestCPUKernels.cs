@@ -749,7 +749,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 return post;
             }
 
-            Expr newPost = (Expr)call.Arguments[0];
+            var newPost = (Expr)call.Arguments[0];
             if (postOpKinds.Length > 0)
             {
                 for (int i = 0; i < postOpKinds.Length; i++)
