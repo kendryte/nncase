@@ -36,20 +36,7 @@ public static class Math
     /// <returns>Result expression.</returns>
     public static Call Binary(BinaryOp binaryOp, Expr lhs, Expr rhs)
     {
-        return new Call(new Binary(binaryOp), lhs, rhs, None.Default);
-    }
-
-    /// <summary>
-    /// Call binary with post ops.
-    /// </summary>
-    /// <param name="binaryOp">Binary operator.</param>
-    /// <param name="lhs">Left operand.</param>
-    /// <param name="rhs">Right operand.</param>
-    /// <param name="postOps">Post operations.</param>
-    /// <returns>Result expression.</returns>
-    public static Call Binary(BinaryOp binaryOp, Expr lhs, Expr rhs, Expr postOps)
-    {
-        return new Call(new Binary(binaryOp), lhs, rhs, postOps);
+        return new Call(new Binary(binaryOp), lhs, rhs);
     }
 
     /// <summary>

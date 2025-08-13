@@ -18,7 +18,7 @@ public partial class NTTAffineSelectionPass
     public Expr SelectCast(IR.Tensors.Cast cast, Call call, Expr output)
     {
         var input = (Expr)call[IR.Tensors.Cast.Input];
-        if (output.CheckedShape is not { IsFixed: true, Rank: > 0 })
+        if (output.CheckedShape is not { Rank: > 0 })
         {
             return call;
         }
@@ -28,7 +28,7 @@ public partial class NTTAffineSelectionPass
             .Domain(rank, out var _)
             .Read(input, AffineMap.Identity(rank), out var inTile)
             .Write(output, AffineMap.Identity(rank), out var outTile)
-            .Body(TIR.F.NTT.Cast(inTile, outTile, cast.NewType, cast.CastMode, cast.VectorizeAxes))
+            .Body(TIR.F.NTT.Cast(inTile, outTile, cast.NewType, cast.CastMode, Array.Empty<int>(), None.Default))
             .Build();
     }
 }

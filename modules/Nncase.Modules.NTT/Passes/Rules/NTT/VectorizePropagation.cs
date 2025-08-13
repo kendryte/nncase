@@ -267,8 +267,7 @@ public sealed class CastDevectorizePropagation : RewriteRule<Pattern>
             "devectorize",
             "callee",
             _ => true,
-            IsWildcard("input")),
-        IsWildcard("postOps"));
+            IsWildcard("input")));
 
     public override Expr? GetReplace(IMatchResult result, RunPassContext context)
     {
@@ -277,7 +276,7 @@ public sealed class CastDevectorizePropagation : RewriteRule<Pattern>
         {
             var caller = (Call)result["caller"];
             var callee = (Expr)result["callee"];
-            var postOps = (Expr)result["postOps"];
+            var postOps = None.Default;
 
             var ret = VectorizeCast.AddCandidate(caller, callee, postOps, devectorize.Axes.ToArray(), devectorize.Lanes.ToArray()).FirstOrDefault();
             if (ret is not null)

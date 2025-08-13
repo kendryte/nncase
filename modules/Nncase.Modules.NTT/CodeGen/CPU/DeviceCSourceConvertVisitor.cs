@@ -341,13 +341,6 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     UnaryOp = op.UnaryOp,
                 }).Result);
                 break;
-            case TIR.NTT.Binary op:
-                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
-                {
-                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
-                    BinaryOp = op.BinaryOp,
-                }).Result);
-                break;
             case TIR.NTT.VectorizedBinary op:
                 WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                 {

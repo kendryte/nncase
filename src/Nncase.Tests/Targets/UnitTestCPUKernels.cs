@@ -739,34 +739,37 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
-        Expr postOps = None.Default;
-        if (postOpKinds.Length > 0)
+        var pre = IR.F.Math.Binary(op, lhs, rhs);
+        var rule = new Passes.Rules.NTT.VectorizeBinary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Select(post =>
         {
-            var lambdaInVar = new Var(AnyType.Default);
-            Expr body = lambdaInVar;
-            for (int i = 0; i < postOpKinds.Length; i++)
+            if (post is not Call { Target: IR.Tensors.Unpack unpack } call)
             {
-                body = postOpKinds[i] switch
-                {
-                    PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, body, 1.32f),
-                    PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, 0.32f, body),
-                    _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
-                };
+                return post;
             }
 
-            postOps = new IR.Fusion(CPUTarget.Kind, body, lambdaInVar);
-        }
+            Expr newPost = (Expr)call.Arguments[0];
+            if (postOpKinds.Length > 0)
+            {
+                for (int i = 0; i < postOpKinds.Length; i++)
+                {
+                    newPost = postOpKinds[i] switch
+                    {
+                        PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, newPost, 1.32f),
+                        PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, 0.32f, newPost),
+                        _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
+                    };
+                }
+            }
 
-        var pre = IR.F.Math.Binary(op, lhs, rhs, postOps);
+            return IR.F.Tensors.Unpack(newPost, unpack.Lanes.ToArray(), unpack.Axes.ToArray());
+        });
 
         var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
-
-        var rule = new Passes.Rules.NTT.VectorizeBinary(Rank, Lane);
-        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
 
         if (sbps.Length > 0)
         {
@@ -953,35 +956,40 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public async Task TestVectorizeCast(long[] shape, Runtime.TypeCode type1, Runtime.TypeCode type2, PostOpKind[] postOpKinds, int count)
     {
         Expr postOps = None.Default;
-        if (postOpKinds.Length > 0)
-        {
-            var lambdaInVar = new Var(AnyType.Default);
-            Expr body = lambdaInVar;
-            for (int i = 0; i < postOpKinds.Length; i++)
-            {
-                body = postOpKinds[i] switch
-                {
-                    PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, body, Tensor.FromScalar(1.32f).CastElementTo(PrimType.FromTypeCode(type2))),
-                    PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, Tensor.FromScalar(0.32f).CastElementTo(PrimType.FromTypeCode(type2)), body),
-                    _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
-                };
-            }
-
-            postOps = new IR.Fusion(CPUTarget.Kind, body, lambdaInVar);
-        }
 
         var input = new Var(new TensorType(DataTypes.Float32, shape));
         var casted1 = IR.F.Tensors.Cast(input, DataType.FromTypeCode(type1));
-        var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2), postOps: postOps);
-        var pre = IR.F.Tensors.Cast(casted2, DataTypes.Float32);
+        var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2));
+        var rule = new Passes.Rules.NTT.VectorizeCast(1, Lane);
+        CompilerServices.TryMatchRoot(casted2, rule.Pattern, out var result);
+        var posts = new[] { casted2 }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Select(post =>
+        {
+            if (post is not Call { Target: IR.Tensors.Unpack unpack } call)
+            {
+                return IR.F.Tensors.Cast(post, DataTypes.Float32);
+            }
+
+            var newPost = (Expr)call.Arguments[0];
+            if (postOpKinds.Length > 0)
+            {
+                for (int i = 0; i < postOpKinds.Length; i++)
+                {
+                    newPost = postOpKinds[i] switch
+                    {
+                        PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, newPost, Tensor.FromScalar(1.32f).CastElementTo(PrimType.FromTypeCode(type2))),
+                        PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, Tensor.FromScalar(0.32f).CastElementTo(PrimType.FromTypeCode(type2)), newPost),
+                        _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
+                    };
+                }
+            }
+
+            return IR.F.Tensors.Cast(IR.F.Tensors.Unpack(newPost, unpack.Lanes.ToArray(), unpack.Axes.ToArray()), DataTypes.Float32);
+        });
 
         var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.NTT.VectorizeCast(1, Lane);
-        CompilerServices.TryMatchRoot(casted2, rule.Pattern, out var result);
-        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()).Select(e => IR.F.Tensors.Cast(e, DataTypes.Float32)));
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
@@ -2106,6 +2114,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var pmgr = CompileSession.CreatePassManager("pmgr");
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
+        CompileSessionScope.Current!.Target.RegisterPostAutoVectorizePass(pmgr, CompileSessionScope.Current!.CompileOptions);
         if (enableAutoDist)
         {
             compiler.AutoDistributedPass(pmgr);

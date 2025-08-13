@@ -9,23 +9,27 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.PatternMatch;
 
-namespace Nncase.IR.Tensors;
+namespace Nncase.IR.NTT;
 
 /// <summary>
 /// Cast expression.
 /// </summary>
 [PatternFunctionalGenerator]
-public sealed partial class Cast : Op
+public sealed partial class VectorizedCast : Op
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(VectorizedCast), 0, "input", ParameterKind.Input);
+
+    public static readonly ParameterInfo PostOps = new(typeof(VectorizedCast), 1, "post_ops", ParameterKind.Attribute);
 
     public DataType NewType { get; }
 
     public CastMode CastMode { get; }
 
+    public IRArray<int> VectorizeAxes { get; }
+
     /// <inheritdoc/>
-    public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}";
+    public override string DisplayProperty() => $"{NewType.GetCSharpName()}, CastMode.{CastMode}, VectorizeAxes: {{{string.Join(",", VectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : VectorizeAxes.ToArray())}}}";
 }

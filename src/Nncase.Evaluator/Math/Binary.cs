@@ -135,11 +135,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             result = Ort_compute(binary, lhs, rhs, originDtype);
         }
 
-        if (context.CurrentCall[Binary.PostOps] is Fusion lambda)
-        {
-            return CompilerServices.Evaluate(lambda.Body, new Dictionary<IVar, IValue>() { { lambda.Parameters[0], result } });
-        }
-
         return result;
     }
 
@@ -148,11 +143,6 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
     {
         var lhs = context.CheckArgumentType<IRType>(target, Binary.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, Binary.Rhs);
-        var postOps = context.CheckArgumentType<IRType>(target, Binary.PostOps);
-        if (!(postOps is NoneType || postOps is CallableType))
-        {
-            return new InvalidType($"PostOps must be None or Callable, but got {postOps}");
-        }
 
         return (lhs, rhs) switch
         {

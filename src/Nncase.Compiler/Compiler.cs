@@ -170,8 +170,6 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
             p.Add<Passes.Rules.Neutral.TileToExpand>();
-            p.Add<Passes.Rules.Neutral.FoldCastPostOps>();
-            p.Add<Passes.Rules.Neutral.FoldBinaryPostOps>();
         });
 
         // Decompose complex ops

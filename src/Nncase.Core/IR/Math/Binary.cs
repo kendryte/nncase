@@ -27,11 +27,6 @@ public sealed partial class Binary : Op
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs", ParameterKind.Input);
 
-    /// <summary>
-    /// Gets post-ops.
-    /// </summary>
-    public static readonly ParameterInfo PostOps = new(typeof(Binary), 2, "post_ops", ParameterKind.Attribute);
-
     public BinaryOp BinaryOp { get; }
 
     /// <inheritdoc/>
