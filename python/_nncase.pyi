@@ -29,7 +29,7 @@ class HierarchyKind(Enum):
 class NTTTargetOptions:
     def __init__(self) -> None: ...
     ModelName: str
-    Packing: bool
+    Vectorize: bool
     UnifiedMemoryArch: bool
     MemoryAccessArch: MemoryAccessArchitecture
     NocArch: NocArchitecture
@@ -260,9 +260,9 @@ class PagedAttentionConfig(AttentionConfig):
     block_size: int
     cache_layout: list[PagedKVCacheDimKind]
     lanes: list[int]
-    packed_axes: list[PagedKVCacheDimKind]
+    vectorized_axes: list[PagedKVCacheDimKind]
     sharding_axes: list[PagedKVCacheDimKind]
-    def __init__(self, num_layers: int, num_kv_heads: int, head_dim: int, kv_type: numpy.dtype, block_size: int, cache_layout=..., packed_axes: list[PagedKVCacheDimKind] = ..., lanes: list[int] = ..., sharding_axes: list[PagedKVCacheDimKind] = ..., axis_policies: list[list[int]] = ...) -> None: ...
+    def __init__(self, num_layers: int, num_kv_heads: int, head_dim: int, kv_type: numpy.dtype, block_size: int, cache_layout=..., vectorized_axes: list[PagedKVCacheDimKind] = ..., lanes: list[int] = ..., sharding_axes: list[PagedKVCacheDimKind] = ..., axis_policies: list[list[int]] = ...) -> None: ...
     def set_axis_policy(self, arg0: int, arg1: list[int]) -> None: ...
     @property
     def block_layout(self): ...

@@ -183,33 +183,33 @@ template <> struct u_cast_policy<true> {
 
 // matmul
 template <>
-struct u_matmul_policy<matmul_pack_kind::no_pack, float, float, float, true> {
+struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack M
+// Vectorize M
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_m, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_m, vector<float, NTT_VLEN / 32>,
                        float, vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 8;
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack K
+// Vectorize K
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_k, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_k, vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>, float, true> {
     static constexpr size_t m0_tile = 2;
     static constexpr size_t n0_tile = 2;
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack N
+// Vectorize N
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_n, float,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_n, float,
                        vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 8;
@@ -217,9 +217,9 @@ struct u_matmul_policy<matmul_pack_kind::pack_n, float,
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack MN
+// Vectorize MN
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_mn, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_mn, vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
@@ -227,19 +227,19 @@ struct u_matmul_policy<matmul_pack_kind::pack_mn, vector<float, NTT_VLEN / 32>,
     static constexpr size_t m0_subtile = 4;
 };
 
-// Pack MK
+// Vectorize MK
 template <>
 struct u_matmul_policy<
-    matmul_pack_kind::pack_mk, vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
+    matmul_vectorize_kind::vectorize_mk, vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
     vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 1;
     static constexpr size_t n0_tile = 1;
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack KN
+// Vectorize KN
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_kn, vector<float, NTT_VLEN / 32>,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_kn, vector<float, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32>, true> {
     static constexpr size_t m0_tile = 8;
@@ -247,9 +247,9 @@ struct u_matmul_policy<matmul_pack_kind::pack_kn, vector<float, NTT_VLEN / 32>,
     static constexpr size_t m0_subtile = 0;
 };
 
-// Pack MKN
+// Vectorize MKN
 template <>
-struct u_matmul_policy<matmul_pack_kind::pack_mkn,
+struct u_matmul_policy<matmul_vectorize_kind::vectorize_mkn,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>,
                        vector<float, NTT_VLEN / 32, NTT_VLEN / 32>, true> {
@@ -259,7 +259,7 @@ struct u_matmul_policy<matmul_pack_kind::pack_mkn,
 };
 
 template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_pack_kind::pack_m, AccumulateC, false, false,
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC, false, false,
                 2, 8, vector<float, NTT_VLEN / 32>, float,
                 vector<float, NTT_VLEN / 32>, true> {
     template <class TA, class TB, class TC>
@@ -587,7 +587,7 @@ struct u_matmul<ukernels::matmul_pack_kind::pack_m, AccumulateC, false, false,
 #undef NTT_MATMUL_PING
 #undef NTT_MATMUL_TAIL
         } else {
-            u_matmul<ukernels::matmul_pack_kind::pack_m, AccumulateC, false,
+            u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC, false,
                      false, 2, 8, vector<float, NTT_VLEN / 32>, float,
                      vector<float, NTT_VLEN / 32>, false>
                 impl;
@@ -596,7 +596,7 @@ struct u_matmul<ukernels::matmul_pack_kind::pack_m, AccumulateC, false, false,
     }
 };
 
-// pack
+// vectorize
 template <class T1, class T2> struct u_pack_policy<T1, T2, true> {
     static constexpr size_t unroll = 4;
 };
@@ -692,14 +692,14 @@ class u_pack2d<true, TIn, TOut, float,
     template <FixedDimensions TAxes>
     constexpr void operator()(const TIn &input, const TAxes &,
                               TOut &output) noexcept {
-        constexpr auto PackAxis1 = TAxes{}[0_dim];
-        constexpr auto PackAxis2 = TAxes{}[1_dim];
+        constexpr auto VectorizeAxis1 = TAxes{}[0_dim];
+        constexpr auto VectorizeAxis2 = TAxes{}[1_dim];
         constexpr size_t vl = NTT_VLEN / 32;
         auto input_shape = input.shape();
         auto out_stride = output.strides();
         auto rank = input_shape.rank();
-        if ((input_shape[PackAxis1] % vl == 0) &&
-            (input_shape[PackAxis2] % vl == 0)) {
+        if ((input_shape[VectorizeAxis1] % vl == 0) &&
+            (input_shape[VectorizeAxis2] % vl == 0)) {
             auto pin = input.buffer().data();
             auto out_ptr = output.buffer().data();
             using policy_t =
@@ -710,8 +710,8 @@ class u_pack2d<true, TIn, TOut, float,
             size_t out_offset = 0;
             size_t low_idx = 0;
             size_t high_idx = 0;
-            auto low_stride = out_stride[PackAxis1];
-            auto high_stride = out_stride[PackAxis2];
+            auto low_stride = out_stride[VectorizeAxis1];
+            auto high_stride = out_stride[VectorizeAxis2];
             auto high_dim = low_stride / high_stride;
             auto in_low_strides = low_stride * vl * sizeof(float);
             auto in_high_strides = high_stride * sizeof(float);
@@ -721,7 +721,7 @@ class u_pack2d<true, TIn, TOut, float,
             asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
             size_t count = output.shape().length();
-            if (PackAxis2 != rank - 1) {
+            if (VectorizeAxis2 != rank - 1) {
                 while (count / high_stride) {
                     auto in_ptr = pin + out_offset + low_idx * low_extra +
                                   high_idx * high_extra;
@@ -1147,8 +1147,8 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
             auto low_stride = input.strides()[const_axes[0]];
             auto high_stride = input.strides()[const_axes[1]];
             auto output_local_ptr = output.buffer().data();
-            [[maybe_unused]] auto PackAxis1 = const_axes[0];
-            auto PackAxis2 = const_axes[1];
+            [[maybe_unused]] auto VectorizeAxis1 = const_axes[0];
+            auto VectorizeAxis2 = const_axes[1];
             auto count = input.size();
             auto in_ptr = input.buffer().data();
             constexpr size_t vl = NTT_VLEN / 32;
@@ -1169,7 +1169,7 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
             asm("vsetvli zero, %[vl], e32, m1, ta, ma\n" ::[vl] "r"(vl));
 
             auto rank = input.shape().rank();
-            if (PackAxis2 != rank - 1) {
+            if (VectorizeAxis2 != rank - 1) {
                 while (count / high_stride) {
                     auto out_ptr = output_local_ptr + in_offset +
                                    low_idx * low_extra + high_idx * high_extra;

@@ -129,6 +129,11 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
             }
         }
 
+        if (!DistributedUtility.IsDistributable(newAxisPolicies))
+        {
+            return invalidType;
+        }
+
         return new DistributedType(inType.TensorType with { Shape = newShape }, newAxisPolicies, inType.Placement);
     }
 

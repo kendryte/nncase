@@ -67,8 +67,8 @@ public static class Tensors
     public static Call Bitcast(Expr input, DataType newType) =>
         new Call(new Bitcast(newType), input);
 
-    public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault, IRArray<int> packAxes = default) =>
-        new Call(new Cast(newType, castMode, packAxes), input);
+    public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault, IRArray<int> vectorizeAxes = default) =>
+        new Call(new Cast(newType, castMode, vectorizeAxes), input);
 
     public static Call Concat(BaseExpr input, int axis) => new Call(new Concat(axis), input);
 
@@ -197,9 +197,9 @@ public static class Tensors
         return new Call(new Pack(lanes, axes), input);
     }
 
-    public static Expr PackMask(Expr input, MaskVectorStyle style, int elementBits, int lanes, int axis)
+    public static Expr VectorizeMask(Expr input, MaskVectorStyle style, int elementBits, int lanes, int axis)
     {
-        return new Call(new PackMask(style, elementBits, lanes, axis), input);
+        return new Call(new VectorizeMask(style, elementBits, lanes, axis), input);
     }
 
     public static Expr Unpack(Expr input, int[] lanes, int[] axes)

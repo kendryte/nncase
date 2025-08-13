@@ -69,6 +69,11 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
             }
         }
 
+        if (!DistributedUtility.IsDistributable(ndsbp))
+        {
+            return new InvalidType("invalid sbp.");
+        }
+
         return new DistributedType(tensorType, ndsbp, a.Placement);
     }
 

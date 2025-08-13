@@ -25,6 +25,7 @@
 #define NTT_ASSUME(...)
 #define NTT_UNREACHABLE() __assume(0)
 #define NTT_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#define NTT_RESTRICT __restrict
 #elif __GNUC__
 #define NTT_ASSUME(...)                                                        \
     do {                                                                       \
@@ -33,8 +34,10 @@
     } while (0)
 #define NTT_UNREACHABLE() __builtin_unreachable()
 #define NTT_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#define NTT_RESTRICT __restrict__
 #else
 #define NTT_ASSUME(...) __builtin_assume(__VA_ARGS__)
 #define NTT_UNREACHABLE() __builtin_unreachable()
 #define NTT_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#define NTT_RESTRICT __restrict
 #endif

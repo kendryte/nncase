@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "../loop.h"
+#include "../apply.h"
 #include <cstddef>
 #include <type_traits>
 
@@ -33,8 +33,9 @@ class u_unpack_impl {
     constexpr void operator()(const TIn &input, TOut &output,
                               const TAxes &axes) {
         constexpr auto rank = TIn::rank();
-        constexpr auto elem_rank = TVec::rank();
-        constexpr auto elem_shape = TVec::shape();
+        constexpr auto elem_rank = TAxes::rank();
+        constexpr auto elem_shape =
+            TVec::shape().template slice<0, TAxes::rank()>();
 
         const auto domain = input.shape().concat(elem_shape);
         ntt::apply(domain, [&](auto index) {

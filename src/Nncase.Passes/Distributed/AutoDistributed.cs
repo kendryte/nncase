@@ -313,12 +313,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         Visit(body);
         var rootCluster = TryInstertTerminator(body);
 
-#if false
-        using (var stream = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.PassIR) ? Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot") : Stream.Null)
+        using (var stream = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost) ? Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot") : Stream.Null)
         {
             Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
         }
-#endif
 
         var post = SolveAndExtract(rootCluster);
         return function.With(body: post);
@@ -427,14 +425,14 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         {
             var bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
             {
-                var node = new SearchableNode(new Boxing(nType), nType);
-                bucket.AddVertex(node);
                 var linked = false;
                 foreach (var addedBucket in addedBuckets)
                 {
                     var addedNode = addedBucket.Vertices.First();
                     if (CheckBoxingType(addedNode.IRType, nType) is not InvalidType)
                     {
+                        var node = new SearchableNode(new Boxing(nType), nType);
+                        bucket.AddVertex(node);
                         callCluster.AddEdge(new(node, addedNode, 0, addedBucket));
                         linked |= true;
                     }
@@ -442,7 +440,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
                 if (!linked)
                 {
-                    bucket.RemoveVertex(node);
                     callCluster.RemoveCluster(bucket);
                 }
                 else
@@ -882,6 +879,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         var varMemo = new Dictionary<SearchableNode, BoolVar>();
         var clusterVarMemo = new Dictionary<DistributedSearchGraph, List<BoolVar>>();
         var costMemo = new Dictionary<SearchableNode, CostModel.Cost>();
+        var costScoreMemo = new Dictionary<SearchableNode, UInt128>();
         foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
         {
             clusterVarMemo.Add(cluster, new());
@@ -922,6 +920,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     }
 
                     costMemo.Add(enode, cost);
+                    costScoreMemo.Add(enode, cost.Score);
 
                     var boolVar = cpmodel.NewBoolVar(string.Empty);
                     varMemo.Add(enode, boolVar);
@@ -981,7 +980,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 #endif
 
         // 5. add pick weights for all enode.
-        cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costMemo[n].Score))));
+        cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costScoreMemo[n]))));
 
         if (cpmodel.Validate().Any())
         {
@@ -1019,7 +1018,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         var enableDump = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost);
         CpSolverStatus status;
-        using (var dumpStream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Solve.txt") : Stream.Null)
+        using (var dumpStream = Diagnostics.DumpScope.Current.OpenFile("Costs/Solve.txt"))
         {
             using var writer = new StreamWriter(dumpStream);
             var cb = new PrintCostCallBack(varMemo, costMemo, writer, enableDump);
@@ -1033,12 +1032,10 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-#if false
         using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
             Dump(stream, picks, costMemo);
         }
-#endif
 
         if (_phase == AutoDistributedPhase.SearchConstant)
         {

@@ -13,44 +13,44 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.IR.NTT;
 
-public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITypeInferencer<PackedLayerNorm>, ICostEvaluator<PackedLayerNorm>,
-    IMetricEvaluator<PackedLayerNorm>
+public sealed class VectorizedLayerNormEvaluator : IEvaluator<VectorizedLayerNorm>, ITypeInferencer<VectorizedLayerNorm>, ICostEvaluator<VectorizedLayerNorm>,
+    IMetricEvaluator<VectorizedLayerNorm>
 {
     /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, PackedLayerNorm target)
+    public IValue Visit(IEvaluateContext context, VectorizedLayerNorm target)
     {
-        var input = context.GetOrtArgumentValue(target, PackedLayerNorm.Input);
-        var scale = context.GetOrtArgumentValue(target, PackedLayerNorm.Scale);
-        var bias = context.GetOrtArgumentValue(target, PackedLayerNorm.Bias);
-        var padedNums = context.GetArgumentValueAsArray<int>(target, PackedLayerNorm.PadedNums);
-        var lanes = input.Shape.TakeLast(target.PackedAxes.Count).Select(i => (int)i).ToArray();
-        var unpackedInput = NTTEvaluatorUtility.UnpackTensor(input, target.PackedAxes, padedNums, out _);
-        var packAxes = target.PackedAxes.Where(axis => axis >= target.Axis).Select(axis => axis - target.Axis).ToArray();
-        var pPadedNums = padedNums.Skip(target.PackedAxes.Count - packAxes.Length).ToArray();
-        var unpackedScale = NTTEvaluatorUtility.UnpackTensor(scale, packAxes, pPadedNums, out _);
-        var unpackedBias = NTTEvaluatorUtility.UnpackTensor(bias, packAxes, pPadedNums, out _);
+        var input = context.GetOrtArgumentValue(target, VectorizedLayerNorm.Input);
+        var scale = context.GetOrtArgumentValue(target, VectorizedLayerNorm.Scale);
+        var bias = context.GetOrtArgumentValue(target, VectorizedLayerNorm.Bias);
+        var padedNums = context.GetArgumentValueAsArray<int>(target, VectorizedLayerNorm.PadedNums);
+        var lanes = input.Shape.TakeLast(target.VectorizedAxes.Count).Select(i => (int)i).ToArray();
+        var devectorizedInput = NTTEvaluatorUtility.DevectorizeTensor(input, target.VectorizedAxes, padedNums, out _);
+        var vectorizeAxes = target.VectorizedAxes.Where(axis => axis >= target.Axis).Select(axis => axis - target.Axis).ToArray();
+        var pPadedNums = padedNums.Skip(target.VectorizedAxes.Count - vectorizeAxes.Length).ToArray();
+        var devectorizedScale = NTTEvaluatorUtility.DevectorizeTensor(scale, vectorizeAxes, pPadedNums, out _);
+        var devectorizedBias = NTTEvaluatorUtility.DevectorizeTensor(bias, vectorizeAxes, pPadedNums, out _);
 
-        var shape = unpackedInput.Shape;
-        var inputBuffer = unpackedInput.BytesBuffer.ToArray();
+        var shape = devectorizedInput.Shape;
+        var inputBuffer = devectorizedInput.BytesBuffer.ToArray();
         var inputSpan = MemoryMarshal.Cast<byte, float>(inputBuffer);
-        var scaleBuffer = unpackedScale.BytesBuffer.ToArray();
+        var scaleBuffer = devectorizedScale.BytesBuffer.ToArray();
         var scaleSpan = MemoryMarshal.Cast<byte, float>(scaleBuffer);
-        var biasBuffer = unpackedBias.BytesBuffer.ToArray();
+        var biasBuffer = devectorizedBias.BytesBuffer.ToArray();
         var biasSpan = MemoryMarshal.Cast<byte, float>(biasBuffer);
 
         var output = NN.LayerNormEvaluator.LayerNormImpl(shape, inputSpan, scaleSpan, biasSpan, target.Axis, target.Epsilon, target.UseMean);
-        var outputTensor = OrtKISharp.Tensor.MakeTensor(new Memory<float>(output), OrtDataType.Float, unpackedInput.Shape);
-        outputTensor = NTTEvaluatorUtility.RepackTensor(outputTensor, lanes, target.PackedAxes, padedNums);
+        var outputTensor = OrtKISharp.Tensor.MakeTensor(new Memory<float>(output), OrtDataType.Float, devectorizedInput.Shape);
+        outputTensor = NTTEvaluatorUtility.RevectorizeTensor(outputTensor, lanes, target.VectorizedAxes, padedNums);
 
-        return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, lanes), outputTensor.BytesBuffer.ToArray(), outputTensor.Shape.SkipLast(target.PackedAxes.Count).Select(i => i).ToArray()));
+        return Value.FromTensor(Tensor.FromBytes(new VectorType(DataTypes.Float32, lanes), outputTensor.BytesBuffer.ToArray(), outputTensor.Shape.SkipLast(target.VectorizedAxes.Count).Select(i => i).ToArray()));
     }
 
     /// <inheritdoc/>
-    public IRType Visit(ITypeInferenceContext context, PackedLayerNorm target)
+    public IRType Visit(ITypeInferenceContext context, VectorizedLayerNorm target)
     {
-        var input = context.CheckArgumentType<IRType>(target, PackedLayerNorm.Input);
-        var scale = context.CheckArgumentType<IRType>(target, PackedLayerNorm.Scale);
-        var bias = context.CheckArgumentType<IRType>(target, PackedLayerNorm.Bias);
+        var input = context.CheckArgumentType<IRType>(target, VectorizedLayerNorm.Input);
+        var scale = context.CheckArgumentType<IRType>(target, VectorizedLayerNorm.Scale);
+        var bias = context.CheckArgumentType<IRType>(target, VectorizedLayerNorm.Bias);
 
         return (input, scale, bias) switch
         {
@@ -61,9 +61,9 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
     }
 
     /// <inheritdoc/>
-    public Cost Visit(ICostEvaluateContext context, PackedLayerNorm target)
+    public Cost Visit(ICostEvaluateContext context, VectorizedLayerNorm target)
     {
-        var inputType = context.GetArgumentType<IRType>(target, PackedLayerNorm.Input);
+        var inputType = context.GetArgumentType<IRType>(target, VectorizedLayerNorm.Input);
         var returnType = context.GetReturnType<IRType>();
         switch (inputType, returnType)
         {
@@ -76,8 +76,8 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
                 };
 
             case (DistributedType, DistributedType):
-                var scaleType = context.GetArgumentType<DistributedType>(target, PackedLayerNorm.Scale);
-                var biasType = context.GetArgumentType<DistributedType>(target, PackedLayerNorm.Bias);
+                var scaleType = context.GetArgumentType<DistributedType>(target, VectorizedLayerNorm.Scale);
+                var biasType = context.GetArgumentType<DistributedType>(target, VectorizedLayerNorm.Bias);
 
                 // var ring = GetRingReduceCommunicate(scaleType, new[] { 0, 1 }) + GetRingReduceCommunicate(biasType, new[] { 0, 1 });
                 // var reCompute = inputDistributedType.NdSBP.Select((sbp, i) => sbp is SBPSplit ? 1 : inputDistributedType.Placement.Hierarchy[i]).ToArray().Aggregate(1, (acc, rep) => acc * rep);
@@ -92,9 +92,9 @@ public sealed class PackedLayerNormEvaluator : IEvaluator<PackedLayerNorm>, ITyp
         }
     }
 
-    public Metric Visit(IMetricEvaluateContext context, PackedLayerNorm target)
+    public Metric Visit(IMetricEvaluateContext context, VectorizedLayerNorm target)
     {
-        var inputType = context.GetArgumentType<TensorType>(target, PackedLayerNorm.Input);
+        var inputType = context.GetArgumentType<TensorType>(target, VectorizedLayerNorm.Input);
         var returnType = context.GetReturnType<TensorType>();
 
         var r = MetricUtility.GetFLOPs(returnType);

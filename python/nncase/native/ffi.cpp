@@ -293,9 +293,9 @@ PYBIND11_MODULE(_nncase, m) {
         []() {},
         py::overload_cast<std::string_view>(&cpu_target_options::model_name))
       .def_property(
-        "Packing",
+        "Vectorize",
         []() {},
-        py::overload_cast<bool>(&cpu_target_options::packing))
+        py::overload_cast<bool>(&cpu_target_options::vectorize))
       .def_property(
         "UnifiedMemoryArch",
         []() {},

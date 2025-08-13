@@ -14,11 +14,11 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.IR.NTT;
 
-public sealed class PackedSoftMaxEvaluator : ITypeInferencer<PackedSoftmax>, ICostEvaluator<PackedSoftmax>, IEvaluator<PackedSoftmax>
+public sealed class VectorizedSoftmaxEvaluator : ITypeInferencer<VectorizedSoftmax>, ICostEvaluator<VectorizedSoftmax>, IEvaluator<VectorizedSoftmax>
 {
-    public IRType Visit(ITypeInferenceContext context, PackedSoftmax target)
+    public IRType Visit(ITypeInferenceContext context, VectorizedSoftmax target)
     {
-        var input = context.CheckArgumentType<IRType>(target, PackedSoftmax.Input);
+        var input = context.CheckArgumentType<IRType>(target, VectorizedSoftmax.Input);
 
         return input switch
         {
@@ -29,7 +29,7 @@ public sealed class PackedSoftMaxEvaluator : ITypeInferencer<PackedSoftmax>, ICo
         };
     }
 
-    public Cost Visit(ICostEvaluateContext context, PackedSoftmax target)
+    public Cost Visit(ICostEvaluateContext context, VectorizedSoftmax target)
     {
         var returnType = context.GetReturnType<IRType>();
         return new()
@@ -39,30 +39,30 @@ public sealed class PackedSoftMaxEvaluator : ITypeInferencer<PackedSoftmax>, ICo
         };
     }
 
-    public IValue Visit(IEvaluateContext context, PackedSoftmax target)
+    public IValue Visit(IEvaluateContext context, VectorizedSoftmax target)
     {
-        var input = context.GetOrtArgumentValue(target, PackedSoftmax.Input);
+        var input = context.GetOrtArgumentValue(target, VectorizedSoftmax.Input);
         var shape = input.Shape.Select(i => (int)i).ToArray();
         OrtKISharp.Tensor softmax;
-        if (!target.PackedAxes.Any(i => i == target.Axis))
+        if (!target.VectorizedAxes.Any(i => i == target.Axis))
         {
             softmax = OrtKI.Softmax(input, target.Axis);
         }
         else
         {
-            var packedAxis = shape.Length - target.PackedAxes.Count + target.PackedAxes.IndexOf(target.Axis);
-            var max = OrtKI.ReduceMax(input, new long[] { target.Axis, packedAxis }, 1);
+            var vectorizedAxis = shape.Length - target.VectorizedAxes.Count + target.VectorizedAxes.IndexOf(target.Axis);
+            var max = OrtKI.ReduceMax(input, new long[] { target.Axis, vectorizedAxis }, 1);
             var exp = OrtKI.Exp(input - max);
-            var reduceSum = OrtKI.ReduceSum(exp, new long[] { target.Axis, packedAxis }, 1, 0);
+            var reduceSum = OrtKI.ReduceSum(exp, new long[] { target.Axis, vectorizedAxis }, 1, 0);
             softmax = OrtKI.Div(exp, reduceSum);
         }
 
-        return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(input.DataType.ToDataType(), shape.TakeLast(target.PackedAxes.Count).ToArray()), shape.SkipLast(target.PackedAxes.Count).ToArray()), softmax.BytesBuffer.ToArray()));
+        return Value.FromTensor(Tensor.FromBytes(new TensorType(new VectorType(input.DataType.ToDataType(), shape.TakeLast(target.VectorizedAxes.Count).ToArray()), shape.SkipLast(target.VectorizedAxes.Count).ToArray()), softmax.BytesBuffer.ToArray()));
     }
 
-    private IRType Visit(ITypeInferenceContext context, PackedSoftmax target, TensorType input)
+    private IRType Visit(ITypeInferenceContext context, VectorizedSoftmax target, TensorType input)
     {
-        foreach (var axis in target.PackedAxes)
+        foreach (var axis in target.VectorizedAxes)
         {
             if (axis >= input.Shape.Rank)
             {
@@ -73,7 +73,7 @@ public sealed class PackedSoftMaxEvaluator : ITypeInferencer<PackedSoftmax>, ICo
         return input;
     }
 
-    private IRType Visit(ITypeInferenceContext context, PackedSoftmax target, DistributedType input)
+    private IRType Visit(ITypeInferenceContext context, VectorizedSoftmax target, DistributedType input)
     {
         if (Visit(context, target, input.TensorType) is not TensorType tensorType)
         {

@@ -26,7 +26,7 @@ template <class T1, class T2, bool Arch> struct u_pack_policy {
     static constexpr size_t unroll = 4;
 };
 
-template <bool Arch, Scalar TIn, Vector TOut> class u_pack {
+template <bool Arch, ScalarOrVector TIn, Vector TOut> class u_pack {
   public:
     template <Dimension TM, Dimension TN, Dimension TMStrides>
     constexpr void operator()(const TIn *input, const TM &M, const TN &N,
@@ -38,7 +38,7 @@ template <bool Arch, Scalar TIn, Vector TOut> class u_pack {
             }
         }
 
-        const auto out_length = typename TOut::shape_type{}.length();
+        const auto out_length = TOut::shape().front();
         if (M < out_length) {
             for (dim_t j = 0; j < N; j++) {
                 for (dim_t i = M; i < out_length; i++) {
@@ -82,7 +82,7 @@ class u_pack2d {
 };
 } // namespace ukernels
 
-template <Scalar TIn, Dimension TM, Dimension TN, Dimension TMStrides,
+template <ScalarOrVector TIn, Dimension TM, Dimension TN, Dimension TMStrides,
           Vector TOut>
 constexpr void u_pack(const TIn *input, const TM &M, const TN &N,
                       const TMStrides &m_strides, TOut *output) noexcept {

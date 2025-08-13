@@ -23,8 +23,8 @@ using namespace nncase;
               << std::fixed << static_cast<float>(t2 - t1) / run_num           \
               << " cycles" << std::endl;
 
-// no pack
-void benchmark_ntt_matmul_no_pack() {
+// no vectorize
+void benchmark_ntt_matmul_no_vectorize() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
 #if __riscv
@@ -51,8 +51,8 @@ void benchmark_ntt_matmul_no_pack() {
     PRINT_FUNC_TICK
 }
 
-// pack K
-void benchmark_ntt_matmul_pack_K() {
+// vectorize K
+void benchmark_ntt_matmul_vectorize_K() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -90,8 +90,8 @@ void benchmark_ntt_matmul_pack_K() {
     PRINT_FUNC_TICK
 }
 
-// pack M
-void benchmark_ntt_matmul_pack_M() {
+// vectorize M
+void benchmark_ntt_matmul_vectorize_M() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -130,8 +130,8 @@ void benchmark_ntt_matmul_pack_M() {
     PRINT_FUNC_TICK
 }
 
-// pack N
-void benchmark_ntt_matmul_pack_N() {
+// vectorize N
+void benchmark_ntt_matmul_vectorize_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -168,8 +168,8 @@ void benchmark_ntt_matmul_pack_N() {
     PRINT_FUNC_TICK
 }
 
-// pack M and N
-void benchmark_ntt_matmul_pack_M_N() {
+// vectorize M and N
+void benchmark_ntt_matmul_vectorize_M_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -209,8 +209,8 @@ void benchmark_ntt_matmul_pack_M_N() {
     PRINT_FUNC_TICK
 }
 
-// pack M and K
-void benchmark_ntt_matmul_pack_M_K() {
+// vectorize M and K
+void benchmark_ntt_matmul_vectorize_M_K() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -250,8 +250,8 @@ void benchmark_ntt_matmul_pack_M_K() {
     PRINT_FUNC_TICK
 }
 
-// pack K and N
-void benchmark_ntt_matmul_pack_K_N() {
+// vectorize K and N
+void benchmark_ntt_matmul_vectorize_K_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -291,8 +291,8 @@ void benchmark_ntt_matmul_pack_K_N() {
     PRINT_FUNC_TICK
 }
 
-// pack M, K and N
-void benchmark_ntt_matmul_pack_M_K_N() {
+// vectorize M, K and N
+void benchmark_ntt_matmul_vectorize_M_K_N() {
     constexpr size_t warmup_num = 10;
     constexpr size_t run_num = 3000;
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
@@ -333,14 +333,14 @@ void benchmark_ntt_matmul_pack_M_K_N() {
 }
 
 int main() {
-    benchmark_ntt_matmul_no_pack();
-    benchmark_ntt_matmul_pack_K();
-    benchmark_ntt_matmul_pack_M();
-    benchmark_ntt_matmul_pack_N();
-    benchmark_ntt_matmul_pack_M_N();
-    benchmark_ntt_matmul_pack_M_K();
-    benchmark_ntt_matmul_pack_K_N();
-    benchmark_ntt_matmul_pack_M_K_N();
+    benchmark_ntt_matmul_no_vectorize();
+    benchmark_ntt_matmul_vectorize_K();
+    benchmark_ntt_matmul_vectorize_M();
+    benchmark_ntt_matmul_vectorize_N();
+    benchmark_ntt_matmul_vectorize_M_N();
+    benchmark_ntt_matmul_vectorize_M_K();
+    benchmark_ntt_matmul_vectorize_K_N();
+    benchmark_ntt_matmul_vectorize_M_K_N();
 
     return 0;
 }

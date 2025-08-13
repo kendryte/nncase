@@ -34,6 +34,7 @@ internal class RewriteProvider : IRewriteProvider
                 if (visitor.IsMutated)
                 {
                     isMutated = true;
+                    context.IsMutated = true;
                     if (!ReferenceEquals(lastRule, rule))
                     {
                         lastRule = rule;
