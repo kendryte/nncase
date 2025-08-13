@@ -125,7 +125,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         }
 
         // for float16/float8/bfloat16 infere
-        if (originDtype.IsFloat())
+        if (originDtype.IsFloat() || originDtype == DataTypes.Int8)
         {
             lhs = lhs.CastElement<float>();
             rhs = rhs.CastElement<float>();
