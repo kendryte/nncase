@@ -33,9 +33,10 @@ public sealed partial class VectorizeCastPropagation : RewriteRule<Pattern>
                 "cast",
                 "callee",
                 _ => true,
-                IsWildcard("input")));
+                IsWildcard("input"),
+                IsWildcard("postOps")));
 
-    private Expr? GetReplace(Pack vectorize, Cast cast, Call caller, Call callee, Expr input)
+    private Expr? GetReplace(Pack vectorize, Cast cast, Call caller, Call callee, Expr input, Expr postOps)
     {
         var scale = 1f * ((VectorType)caller.CheckedDataType).ElemType.SizeInBytes / input.CheckedDataType.SizeInBytes;
         if (vectorize.Axes.Any(a => callee.CheckedShape[a] is { IsFixed: true, FixedValue: var d } && d / scale % 1 != 0))
@@ -46,7 +47,7 @@ public sealed partial class VectorizeCastPropagation : RewriteRule<Pattern>
         var vectorizeLanes = vectorize.Lanes.Select(l => (int)(l * scale)).ToArray();
         var newType = new VectorType(cast.NewType, vectorize.Lanes);
 
-        var ret = IR.F.Tensors.Cast(IR.F.Tensors.Pack(input, vectorizeLanes, vectorize.Axes.ToArray()), newType, CastMode.KDefault, vectorize.Axes.ToArray());
+        var ret = IR.F.Tensors.Cast(IR.F.Tensors.Pack(input, vectorizeLanes, vectorize.Axes.ToArray()), newType, CastMode.KDefault, vectorize.Axes.ToArray(), postOps);
         return ret;
     }
 }
