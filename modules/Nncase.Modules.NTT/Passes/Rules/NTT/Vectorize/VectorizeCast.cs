@@ -22,11 +22,11 @@ using static Nncase.PatternMatch.Utility;
 namespace Nncase.Passes.Rules.NTT;
 
 [RuleGenerator]
-public sealed partial class PackCastPropagation : RewriteRule<Pattern>
+public sealed partial class VectorizeCastPropagation : RewriteRule<Pattern>
 {
     public override Pattern Pattern { get; } =
         PatternMatch.F.Tensors.IsPack(
-            "pack",
+            "vectorize",
             "caller",
             _ => true,
             IsCast(
@@ -35,18 +35,18 @@ public sealed partial class PackCastPropagation : RewriteRule<Pattern>
                 _ => true,
                 IsWildcard("input")));
 
-    private Expr? GetReplace(Pack pack, Cast cast, Call caller, Call callee, Expr input)
+    private Expr? GetReplace(Pack vectorize, Cast cast, Call caller, Call callee, Expr input)
     {
         var scale = 1f * ((VectorType)caller.CheckedDataType).ElemType.SizeInBytes / input.CheckedDataType.SizeInBytes;
-        if (pack.Axes.Any(a => callee.CheckedShape[a] is { IsFixed: true, FixedValue: var d } && d / scale % 1 != 0))
+        if (vectorize.Axes.Any(a => callee.CheckedShape[a] is { IsFixed: true, FixedValue: var d } && d / scale % 1 != 0))
         {
             return null;
         }
 
-        var packLanes = pack.Lanes.Select(l => (int)(l * scale)).ToArray();
-        var newType = new VectorType(cast.NewType, pack.Lanes);
+        var vectorizeLanes = vectorize.Lanes.Select(l => (int)(l * scale)).ToArray();
+        var newType = new VectorType(cast.NewType, vectorize.Lanes);
 
-        var ret = IR.F.Tensors.Cast(IR.F.Tensors.Pack(input, packLanes, pack.Axes.ToArray()), newType, CastMode.KDefault, pack.Axes.ToArray());
+        var ret = IR.F.Tensors.Cast(IR.F.Tensors.Pack(input, vectorizeLanes, vectorize.Axes.ToArray()), newType, CastMode.KDefault, vectorize.Axes.ToArray());
         return ret;
     }
 }
