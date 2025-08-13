@@ -119,15 +119,41 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         return input switch
         {
             DistributedType distributedType => Visit(distributedType, paddings, padValue),
-            TensorType tensorType => TypeInference.PadType(tensorType, paddings, padValue),
+            TensorType tensorType => Visit(tensorType, paddings, padValue),
             AnyType anyType => anyType,
             _ => new InvalidType("The pad input type not support"),
         };
     }
 
+    public IRType Visit(TensorType input, Paddings paddings, Expr padValue)
+    {
+        if (TypeInference.PadType(input, paddings, padValue) is not TensorType tensorType)
+        {
+            return new InvalidType("pad infer type failed");
+        }
+
+        var shape = tensorType.Shape.ToArray();
+        for (var i = 0; i < tensorType.Shape.Rank; i++)
+        {
+            if (tensorType.Shape[i] is { IsFixed: false } d && d is DimSum r && r.Bias == 0 && r.Count == 3)
+            {
+                var (a, b, c) = (r.Operands[0], r.Operands[1], r.Operands[2]);
+                if ((b is DimProduct { Scale: var align, Count: 1, Operands: [var ceil] })
+                && ceil is DimFraction { DivMode: DimDivideMode.CeilDiv, Numerator: var numerator, Denominator: DimConst { Value: var denum } }
+                && denum == align && numerator is DimProduct { Scale: 1, Count: 1, Operands: [var s1] } && s1 == a
+                && (c is DimProduct { Scale: -1, Count: 1, Operands: [var s2] }) && s2 == a)
+                {
+                    shape[i] = b;
+                }
+            }
+        }
+
+        return new TensorType(tensorType.DType, shape);
+    }
+
     public IRType Visit(DistributedType input, Paddings paddings, Expr padValue)
     {
-        if (TypeInference.PadType(input.TensorType, paddings, padValue) is not TensorType tensorType)
+        if (Visit(input.TensorType, paddings, padValue) is not TensorType tensorType)
         {
             return new InvalidType("pad infer type failed");
         }
@@ -150,7 +176,16 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         {
             for (var i = 0; i < input.AxisPolicies.Count; i++)
             {
-                if (input.AxisPolicies[i] is SBPSplit && (!paddings[i].IsFixed || paddings[i].Sum().FixedValue != 0))
+                var padForSplit = false;
+                if (tensorType.Shape[i] is { IsFixed: false } d
+                && d is DimProduct { Scale: var align, Count: 1, Operands: [var ceil] }
+                && ceil is DimFraction { DivMode: DimDivideMode.CeilDiv, Numerator: var numerator, Denominator: DimConst { Value: var denum } }
+                && denum == align && numerator is DimProduct { Scale: 1, Count: 1 })
+                {
+                    padForSplit = true;
+                }
+
+                if (!padForSplit && input.AxisPolicies[i] is SBPSplit && (!paddings[i].IsFixed || paddings[i].Sum().FixedValue != 0))
                 {
                     return new InvalidType("dynamic pad not support split on axes for now.");
                 }

@@ -860,7 +860,8 @@ public abstract class HuggingFaceModel
         bool isXpu = Context.CompileSession!.Target.Name == "xpu";
         if (isXpu)
         {
-            queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(queryStates.CheckedDataType)) : queryStates;
+            var padding_m = Dimension.AlignUp(seq_len, 8) - seq_len;
+            queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, padding_m), new(0, 0)), PadMode.Constant, Tensor.Zero(queryStates.CheckedDataType)) : queryStates;
         }
 
         var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
