@@ -61,6 +61,7 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES
        add_compile_options(-march=rv64gv_zvl128b_zvfh -mrvv-vector-bits=zvl -std=c++2b)
    elseif(ENABLE_K80_RUNTIME)
         add_compile_options(-march=rv64gcv_zvl1024b_zvfh_zvfbfmin1p0_xtheadvsfa_xducakernel_xducacopif_xtheadsync_xtheadlpw -menable-experimental-extensions -mrvv-vector-bits=1024 -std=c++2b -Wno-error=unknown-attributes -Wno-unknown-attributes)
+        add_compile_definitions(__ZVFBFMIN__)
    else()
        message(FATAL_ERROR "Unsupported riscv64 target")
    endif()

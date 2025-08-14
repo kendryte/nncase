@@ -58,6 +58,12 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
+#ifdef __ZVFBFMIN__
+    std::cout << "RISC-V RVV vector length: " << NTT_VLEN << std::endl;
+#else
+    std::cout << "X86-64 vector length: " << NTT_VLEN << std::endl;
+#endif
+
     constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
     benchmark_ntt_unary<ntt::ops::abs, float, N>("abs", -10.f, 10.f);
     benchmark_ntt_unary<ntt::ops::acos, float, N>("acos", -1.f, 1.f);
