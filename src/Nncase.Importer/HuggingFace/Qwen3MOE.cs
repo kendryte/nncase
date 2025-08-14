@@ -31,6 +31,7 @@ namespace Nncase.Importer
                 allUpProjW.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.up_proj.weight")!);
                 allUpProjScale.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.up_proj.weight_scale")!);
             }
+
             var gateProjW = IR.F.Tensors.Concat(new IR.Tuple(allGateProjW.ToArray()), 0);
             var gateProjScale = IR.F.Tensors.Concat(new IR.Tuple(allGateProjScale.ToArray()), 0);
             var downProjW = IR.F.Tensors.Concat(new IR.Tuple(allDownProjW.ToArray()), 0);

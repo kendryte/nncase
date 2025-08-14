@@ -24,11 +24,17 @@ public sealed partial class Qwen3MoE : Op
     public static readonly ParameterInfo MoeExpertUpProjScale = new(typeof(Qwen3MoE), 7, "MoeExpertUpProjScale", ParameterKind.Input);
 
     public long LayerId { get; }
+
     public long HiddenSize { get; }
+
     public long IntermediateSize { get; }
+
     public long MoEIntermediateSize { get; }
+
     public long NumExpert { get; }
+
     public long NumTopK { get; }
+
     public bool IsNormTopkProb { get; }
 
     public override string DisplayProperty() => $"LayerId: {LayerId}, HiddenSize {HiddenSize}, IntermediateSize {IntermediateSize}, MoEIntermediateSize {MoEIntermediateSize}, NumExpert {NumExpert}, NumTopK {NumTopK}, IsNormTopkProb {IsNormTopkProb}";

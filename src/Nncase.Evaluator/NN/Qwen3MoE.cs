@@ -75,6 +75,7 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         Console.WriteLine($"Qwen3MoE: layerId={layerId}, hiddenSize={hiddenSize}, intermediateSize={intermediateSize}, moeIntermediateSize={moeIntermediateSize}, numExpert={numExpert}, numTopK={numTopK}, isNormTopkProb={isNormTopkProb}");
 
         Console.WriteLine($"Qwen3MoE: q.shape={string.Join(" ", q.Shape)},moeGateW.shape={string.Join(" ", moeGateW.Shape)},  moeExpertDownProjW.shape={string.Join(" ", moeExpertDownProjW.Shape)},  moeExpertDownProjScale.shape={string.Join(" ", moeExpertDownProjScale.Shape)},  moeExpertGateProjW.shape={string.Join(" ", moeExpertGateProjW.Shape)},  moeExpertGateProjScale.shape={string.Join(" ", moeExpertGateProjScale.Shape)},  moeExpertUpProjW.shape={string.Join(" ", moeExpertUpProjW.Shape)},  moeExpertUpProjScale.shape={string.Join(" ", moeExpertUpProjScale.Shape)}");
+
         // var (seqLen, hiddenDim) = (q.Shape[0], q.Shape[1]);
         var seqLen = q.Shape[0];
         var routerLogits = OrtKI.Einsum(new[] { q, moeGateW }, "ls,ds->ld");
@@ -86,7 +87,6 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         // var expVals = OrtKI.Exp(logitsShifted);                                      // [L,D]
         // var sumExp = OrtKI.ReduceSum(expVals, new[] { -1L }, keepdims: 1L, 0L);           // [L,1]
         // var routerWeights = OrtKI.Div(expVals, sumExp);
-
         var topkRes = OrtKI.TopK(routerWeights, OrtKISharp.Tensor.MakeTensor(new[] { numTopK }, new[] { 1L }), -1L, 1L, 1L);
         routerWeights = topkRes[0];
         var selectedExperts = topkRes[1];
@@ -119,6 +119,7 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
             {
                 continue; // 没有被选中的专家
             }
+
             var currentState = OrtKI.Gather(q, topX, 0);
 
             // prepare expertMaskReduceSum
@@ -158,7 +159,8 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
 
             // var zeroBuf = OrtKI.Sub(finalHiddenStates, finalHiddenStates); // 全 0，形状 [seq_len, hidden]
             finalHiddenStates = OrtKI.ScatterElements(finalHiddenStates, indices, updates, 0L, "add"); // 沿 axis=0 写入
-            // finalHiddenStates = OrtKI.Add(finalHiddenStates, scattered); 
+
+            // finalHiddenStates = OrtKI.Add(finalHiddenStates, scattered);
         }
 
         return finalHiddenStates.ToValue();
@@ -178,6 +180,7 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         gateStates = OrtKI.Cast(gateStates, (long)OrtDataType.Float);
         gateStates = OrtKI.Sigmoid(gateStates) * gateStates; // [seq_len, moe_intermediate_size]
         gateStates = OrtKI.Cast(gateStates, (long)gateType);
+
         // up_proj(q)
         // upW: [hidden_size, moe_intermediate_size]
         upProjScale = OrtKI.Reshape(upProjScale, OrtKISharp.Tensor.MakeTensor(new[] { 1L, moeIntermediateSize, 1L }), 0L);
@@ -188,7 +191,7 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         var downInput = OrtKI.Mul(gateStates, upStates); // [seq_len, moe_intermediate_size]
 
         // Down(silu(gate(q)) * up(q))
-        downProjScale = OrtKI.Reshape(downProjScale, OrtKISharp.Tensor.MakeTensor(new[] { 1L, hiddenSize, 1L}), 0L);
+        downProjScale = OrtKI.Reshape(downProjScale, OrtKISharp.Tensor.MakeTensor(new[] { 1L, hiddenSize, 1L }), 0L);
         downProjW = OrtKI.Mul(downProjW, downProjScale);
         var downProj = OrtKI.Einsum(new[] { downInput, downProjW }, "bhd,bsd->bhs");
         var expertOutput = OrtKI.Squeeze(downProj, new[] { 0L }); // [seq_len, hidden_size]

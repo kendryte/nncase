@@ -68,6 +68,7 @@ public abstract class HuggingFaceModel
             {
                 filePath = orgfilePath;
             }
+
             var tensors = HuggingFaceUtils.LoadAllTensorsFromFile(filePath);
             foreach (var kv in tensors)
             {
@@ -869,6 +870,7 @@ public abstract class HuggingFaceModel
         {
             queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(DataTypes.Float32)) : queryStates;
         }
+
         var qType = queryStates.CheckedDataType;
         var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
         var castQ = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transQ, pagedAttentionConfig.KVPrimType) : transQ;
@@ -943,6 +945,7 @@ public abstract class HuggingFaceModel
         }
 
         var hiddenStates = inputEmbeds;
+
         // if (useCache == true && pastKeyValues == null)
         // {
         //     pastKeyValues = new HuggingFaceUtils.DynamicCache();
