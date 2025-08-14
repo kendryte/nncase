@@ -80,6 +80,13 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         var routerLogits = OrtKI.Einsum(new[] { q, moeGateW }, "ls,ds->ld");
         routerLogits = OrtKI.Cast(routerLogits, (int)OrtDataType.Float);
         var routerWeights = OrtKI.Softmax(routerLogits, -1);
+
+        // var maxPerRow = OrtKI.ReduceMax(routerLogits, new[] { -1L }, keepdims: 1L);   // [L,1]
+        // var logitsShifted = OrtKI.Sub(routerLogits, maxPerRow);                      // [L,D]
+        // var expVals = OrtKI.Exp(logitsShifted);                                      // [L,D]
+        // var sumExp = OrtKI.ReduceSum(expVals, new[] { -1L }, keepdims: 1L, 0L);           // [L,1]
+        // var routerWeights = OrtKI.Div(expVals, sumExp);
+
         var topkRes = OrtKI.TopK(routerWeights, OrtKISharp.Tensor.MakeTensor(new[] { numTopK }, new[] { 1L }), -1L, 1L, 1L);
         routerWeights = topkRes[0];
         var selectedExperts = topkRes[1];
@@ -136,16 +143,8 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
             var expertOutput = MLP(qExpand, gateProjW, gateProjScale, upProjW, upProjScale, downProjW, downProjScale, hiddenSize, moeIntermediateSize);
 
             var weightsForSeq = OrtKI.Gather(routerWeights, Tensor.FromArray(topX).ToOrtTensor(), 0L); // [N, topk]
-                                                                                                       // var idxTensor = Tensor.FromArray(idx).ToOrtTensor();                                       // [N]
-                                                                                                       // var oneHot = OrtKI.OneHot(idxTensor, numTopK, Tensor.From(new[] { 0L, 1L }).ToOrtTensor(), -1L); // [N, topk]
-                                                                                                       // oneHot = OrtKI.Cast(oneHot, (long)routerWeights.DataType);
-                                                                                                       // var selectedWeights = OrtKI.ReduceSum(
-                                                                                                       //     OrtKI.Mul(weightsForSeq, oneHot),
-                                                                                                       //     Tensor.FromArray(new[] { 1L }).ToOrtTensor(), // 按 topk 轴求和
-                                                                                                       //     keepdims: 1L,
-                                                                                                       //     noop_with_empty_axes: 0L); // [N, 1]
 
-            var idx2D = OrtKI.Unsqueeze(Tensor.FromArray(idx).ToOrtTensor(), new[] { 1L }); // [N,1]
+            var idx2D = OrtKI.Unsqueeze(Tensor.FromArray(idx).ToOrtTensor(), new[] { -1L }); // [N,1]
             var selectedWeights = OrtKI.GatherElements(weightsForSeq, idx2D, 1L); // [N,1]
 
             expertOutput = OrtKI.Mul(expertOutput, selectedWeights); // [N, hidden]
@@ -153,7 +152,8 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
             // 4) 等价于 final_hidden_states.index_add_(0, top_x, expertPartial)
             // ScatterElements 在不同 expert 间可能重复命中同一行，为了实现“加法聚合”，先在零张量上 scatter，再与 final 相加
             var updates = OrtKI.Cast(expertOutput, (long)q.DataType); // [N, hidden]
-            var idxCol = OrtKI.Unsqueeze(Tensor.FromArray(topX).ToOrtTensor(), new[] { 1L });        // [N, 1]
+            var idxCol = OrtKI.Unsqueeze(Tensor.FromArray(topX).ToOrtTensor(), new[] { -1L });        // [N, 1]
+
             var indices = OrtKI.Tile(idxCol, Tensor.FromArray(new[] { 1L, hiddenSize }).ToOrtTensor()); // [N, hidden] 行索引按列复制
 
             // var zeroBuf = OrtKI.Sub(finalHiddenStates, finalHiddenStates); // 全 0，形状 [seq_len, hidden]
@@ -174,8 +174,10 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         var gateStates = OrtKI.Einsum(new[] { q, gateProjW }, "bhs,bds->bhd");
 
         // silu(gate)
+        var gateType = gateStates.DataType;
+        gateStates = OrtKI.Cast(gateStates, (long)OrtDataType.Float);
         gateStates = OrtKI.Sigmoid(gateStates) * gateStates; // [seq_len, moe_intermediate_size]
-
+        gateStates = OrtKI.Cast(gateStates, (long)gateType);
         // up_proj(q)
         // upW: [hidden_size, moe_intermediate_size]
         upProjScale = OrtKI.Reshape(upProjScale, OrtKISharp.Tensor.MakeTensor(new[] { 1L, moeIntermediateSize, 1L }), 0L);

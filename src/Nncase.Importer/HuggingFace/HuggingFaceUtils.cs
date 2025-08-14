@@ -12,6 +12,7 @@ using NetFabric.Hyperlinq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nncase;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
 
@@ -397,63 +398,6 @@ internal static class HuggingFaceUtils
 
         throw new NotImplementedException("Unrecognized data type listed: " + dataType);
     }
-
-    // public class DynamicCache
-    // {
-    //     public int SeenTokens;
-    //     public List<object>? KeyCache;
-    //     public List<object>? ValueCache;
-    //     public long GetSeqLength(int layerCount = 0)
-    //     {
-    //         bool isEmptyLayer =
-    //             KeyCache?.Count == 0
-    //             || KeyCache?.Count <= layerCount
-    //             || (int)KeyCache?[layerCount] == 0;
-    //         var layer = (Call)KeyCache?[(Index)layerCount!];
-    //         return isEmptyLayer ? 0 : layer.CheckedShape[-2].FixedValue;
-    //     }
-    //     public Tuple<Call, Call> Update(
-    //         Call keyStates,
-    //         Call valueStates,
-    //         int layerCount,
-    //         Dictionary<string, object> cacheKwargs)
-    //     {
-    //         if (layerCount == 0)
-    //         {
-    //             SeenTokens += (int)keyStates.CheckedShape[-2].FixedValue;
-    //         }
-    //         if (keyStates != null)
-    //         {
-    //             if (KeyCache.Count <= layerCount)
-    //             {
-    //                 for (int i = KeyCache.Count; i <= layerCount; i++)
-    //                 {
-    //                     KeyCache.Add(0);
-    //                     ValueCache.Add(0);
-    //                 }
-    //                 // self.key_cache.append(key_states)
-    //                 // self.value_cache.append(value_states)
-    //                 KeyCache.Add(keyStates);
-    //                 ValueCache.Add(valueStates);
-    //             }
-    //             else if ((int)KeyCache[layerCount] == 0)
-    //             {
-    //                 KeyCache[layerCount] = keyStates;
-    //                 ValueCache[layerCount] = valueStates;
-    //             }
-    //             else
-    //             {
-    //                 KeyCache[layerCount] = Nncase.IR.F.Tensors.Concat(
-    //                     new Nncase.IR.Tuple((Call)KeyCache[layerCount], keyStates),
-    //                     -2);
-    //                 ValueCache[layerCount] = Nncase.IR.F.Tensors.Concat(
-    //                     new Nncase.IR.Tuple((Call)ValueCache[layerCount], valueStates),
-    //                     -2);
-    //             }
-    //         }
-    //         return Tuple.Create((Call)KeyCache[layerCount], (Call)ValueCache[layerCount]);
-    //     }
-    // }
 }
 
 internal static class ModelUtils
@@ -612,6 +556,22 @@ internal static class ModelUtils
     public static int[] GetLayoutPerm(AttentionDimKind[] inputLayout, AttentionDimKind[] targetLayout)
     {
         return targetLayout.Select(i => inputLayout.IndexOf(i)).ToArray();
+    }
+
+    public static Expr CheckShape(Expr shape)
+    {
+        if (shape.CheckedType == null)
+        {
+            shape.InferenceType();
+        }
+
+        DumpScope.Current.DumpIR(shape, "ShapeExprUtilityCheckShape");
+        if (shape.CheckedType is not TensorType || shape.CheckedShape.IsScalar)
+        {
+            throw new InvalidOperationException();
+        }
+
+        return shape;
     }
 }
 
