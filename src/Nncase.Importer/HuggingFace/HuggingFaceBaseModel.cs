@@ -1066,12 +1066,15 @@ public abstract class HuggingFaceModel
         }
     }
 
+    /*
     /// <summary>
     /// LLM MoE (Mixture of Experts) layer (base on Qwen3 moe).
     /// </summary>
     /// <param name="count"> layer idx.</param>
     /// <param name="hiddenStates"> query hidden states.</param>
     /// <returns></returns>
+    */
+
     // public virtual Dictionary<string, Call> LLMMoe(int count, Expr hiddenStates)
     // {
     //     var (seqLen, hiddenDim) = (hiddenStates.CheckedShape[0], hiddenStates.CheckedShape[1]);
