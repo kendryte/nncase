@@ -287,15 +287,15 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
         }                                                                      \
     };
 
-DEFINE_U_UNARY_F32(abs)
-DEFINE_U_UNARY_F32(ceil)
-DEFINE_U_UNARY_F32(floor)
-DEFINE_U_UNARY_F32(neg)
-DEFINE_U_UNARY_F32(round)
-DEFINE_U_UNARY_F32(sign)
-DEFINE_U_UNARY_F32(square)
-DEFINE_U_UNARY_F32(sqrt)
-DEFINE_U_UNARY_F32(rsqrt)
+// DEFINE_U_UNARY_F32(abs)
+// DEFINE_U_UNARY_F32(ceil)
+// DEFINE_U_UNARY_F32(floor)
+// DEFINE_U_UNARY_F32(neg)
+// DEFINE_U_UNARY_F32(round)
+// DEFINE_U_UNARY_F32(sign)
+// DEFINE_U_UNARY_F32(square)
+// DEFINE_U_UNARY_F32(sqrt)
+// DEFINE_U_UNARY_F32(rsqrt)
 // DEFINE_U_UNARY_F32(tanh)
 // DEFINE_U_UNARY_F32(exp)
 // DEFINE_U_UNARY_F32(log)
@@ -304,15 +304,15 @@ DEFINE_U_UNARY_F32(rsqrt)
 // DEFINE_U_UNARY_F32(erf)
 // DEFINE_U_UNARY_F32(swish)
 
-DEFINE_U_UNARY_HALF(abs)
-DEFINE_U_UNARY_HALF(ceil)
-DEFINE_U_UNARY_HALF(floor)
-DEFINE_U_UNARY_HALF(neg)
-DEFINE_U_UNARY_HALF(round)
-DEFINE_U_UNARY_HALF(sign)
-DEFINE_U_UNARY_HALF(square)
-DEFINE_U_UNARY_HALF(sqrt)
-DEFINE_U_UNARY_HALF(rsqrt)
+// DEFINE_U_UNARY_HALF(abs)
+// DEFINE_U_UNARY_HALF(ceil)
+// DEFINE_U_UNARY_HALF(floor)
+// DEFINE_U_UNARY_HALF(neg)
+// DEFINE_U_UNARY_HALF(round)
+// DEFINE_U_UNARY_HALF(sign)
+// DEFINE_U_UNARY_HALF(square)
+// DEFINE_U_UNARY_HALF(sqrt)
+// DEFINE_U_UNARY_HALF(rsqrt)
 // DEFINE_U_UNARY_HALF(tanh)
 // DEFINE_U_UNARY_HALF(exp)
 // DEFINE_U_UNARY_HALF(log)
@@ -895,6 +895,8 @@ class u_pack2d<true, TIn, TOut, float,
         auto input_shape = input.shape();
         auto out_stride = output.strides();
         auto rank = input_shape.rank();
+        [[maybe_unused]] vbfloat16m8_t temp0;
+        [[maybe_unused]] vfloat16m8_t temp1;
         if ((input_shape[VectorizeAxis1] % vl == 0) &&
             (input_shape[VectorizeAxis2] % vl == 0)) {
             auto pin = input.buffer().data();
