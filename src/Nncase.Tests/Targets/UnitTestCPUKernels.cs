@@ -947,17 +947,22 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, new PostOpKind[] { }, 0 })]
-    [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, new PostOpKind[] { PostOpKind.MulScalar }, 1 })]
-    [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, new PostOpKind[] { }, 2 })]
-    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, new PostOpKind[] { PostOpKind.MulScalar }, 3 })]
-    [InlineData(new object[] { new long[] { 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, new PostOpKind[] { PostOpKind.MulScalar }, 4 })]
-    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, new PostOpKind[] { PostOpKind.MulScalar }, 5 })]
-    public async Task TestVectorizeCast(long[] shape, Runtime.TypeCode type1, Runtime.TypeCode type2, PostOpKind[] postOpKinds, int count)
+    [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, new PostOpKind[] { }, new int[] { }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float8E4M3, new PostOpKind[] { PostOpKind.MulScalar }, new int[] { }, 1 })]
+    [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, new PostOpKind[] { }, new int[] { }, 2 })]
+    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, new PostOpKind[] { PostOpKind.MulScalar }, new int[] { }, 3 })]
+    [InlineData(new object[] { new long[] { 43 /* seq_len */, 16, 256 }, Runtime.TypeCode.Float32, Runtime.TypeCode.BFloat16, new PostOpKind[] { PostOpKind.MulScalar }, new int[] { 0 }, 4 })]
+    [InlineData(new object[] { new long[] { 29 /* seq_len */, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float32, new PostOpKind[] { PostOpKind.MulScalar }, new int[] { 0 }, 5 })]
+    public async Task TestVectorizeCast(long[] shape, Runtime.TypeCode type1, Runtime.TypeCode type2, PostOpKind[] postOpKinds, int[] dynamicAxes, int count)
     {
         Expr postOps = None.Default;
 
-        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        var dynShape = new RankedShape(Enumerable.Range(0, shape.Length).Select(i => dynamicAxes.Contains(i) ? new DimVar($"dim{i}")
+        {
+            Metadata = new() { Range = new(1, Dimension.AlignUp(shape[i] * 2, 64).FixedValue) },
+        } : (Dimension)shape[i]).ToArray());
+        var input = new Var(new TensorType(DataTypes.Float32, dynShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(input, dynShape.ToArray());
         var casted1 = IR.F.Tensors.Cast(input, DataType.FromTypeCode(type1));
         var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2));
         var rule = new Passes.Rules.NTT.VectorizeCast(1, Lane);
@@ -989,6 +994,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
+
+        foreach (var axis in dynamicAxes)
+        {
+            feedDict.Add((DimVar)dynShape[axis], Value.FromTensor(shape[axis]));
+        }
 
         await RunCases($"Theory{count}", feedDict, posts);
     }

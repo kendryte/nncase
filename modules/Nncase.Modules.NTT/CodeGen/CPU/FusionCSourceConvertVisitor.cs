@@ -22,12 +22,12 @@ using Razor.Templating.Core;
 
 namespace Nncase.CodeGen.NTT;
 
-public class FusionCSourceConvertVisitor : CSourceConvertVisitor
+public class LambdaCSourceConvertVisitor : CSourceConvertVisitor
 {
     protected readonly StringBuilder _fusionBuilder;
     protected int _ssaValueId;
 
-    public FusionCSourceConvertVisitor()
+    public LambdaCSourceConvertVisitor()
     {
         _fusionBuilder = new();
         _ssaValueId = 0;
@@ -140,7 +140,7 @@ public class FusionCSourceConvertVisitor : CSourceConvertVisitor
             throw new NotSupportedException();
         }
 
-        symbol = new(type, str);
+        symbol = new(type, $"{type}({str})");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

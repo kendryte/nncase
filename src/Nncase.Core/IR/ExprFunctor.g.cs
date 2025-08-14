@@ -159,9 +159,9 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitAffineExpr(Affine.AffineExpr expr, TContext context) => DefaultVisit(expr, context);
 
     /// <summary>
-    /// Visit <see cref="Affine.AffineSymbolBase"/>.
+    /// Visit <see cref="Affine.AffineExpr"/>.
     /// </summary>
-    internal protected virtual TExprResult VisitAffineSymbolBase(Affine.AffineSymbolBase expr, TContext context) => VisitAffineExpr(expr, context);
+    internal protected virtual TExprResult VisitAffineSymbolBase(Affine.AffineExpr expr, TContext context) => VisitAffineExpr(expr, context);
 
     /// <summary>
     /// Visit <see cref="Affine.AffineDim"/>.
@@ -571,12 +571,12 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitAffineExpr(Affine.AffineExpr expr, Unit context) => VisitAffineExpr(expr);
     /// <summary>
-    /// Visit <see cref="Affine.AffineSymbolBase"/>.
+    /// Visit <see cref="Affine.AffineExpr"/>.
     /// </summary>
-    internal protected virtual TExprResult VisitAffineSymbolBase(Affine.AffineSymbolBase expr) => base.VisitAffineSymbolBase(expr, default);
+    internal protected virtual TExprResult VisitAffineSymbolBase(Affine.AffineExpr expr) => base.VisitAffineSymbolBase(expr, default);
     
     /// <inheritdoc/>
-    internal protected sealed override TExprResult VisitAffineSymbolBase(Affine.AffineSymbolBase expr, Unit context) => VisitAffineSymbolBase(expr);
+    internal protected sealed override TExprResult VisitAffineSymbolBase(Affine.AffineExpr expr, Unit context) => VisitAffineSymbolBase(expr);
     /// <summary>
     /// Visit <see cref="Affine.AffineDim"/>.
     /// </summary>

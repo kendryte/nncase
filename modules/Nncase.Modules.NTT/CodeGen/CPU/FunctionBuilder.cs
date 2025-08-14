@@ -145,10 +145,10 @@ internal class FunctionBuilder
         }
         else if (baseFunc is Fusion fusion)
         {
-            var visitor = new FusionCSourceConvertVisitor();
+            var visitor = new LambdaCSourceConvertVisitor();
             visitor.Visit(fusion);
             var header = visitor.GetHeader();
-            return new LinkableFusionFunction(_id, fusion, header, _sectionManager.GetContent(WellknownSectionNames.Text)!);
+            return new LinkableLambdaFunction(_id, fusion, header, _sectionManager.GetContent(WellknownSectionNames.Text)!);
         }
 
         throw new NotSupportedException($"the {baseFunc.GetType()} {baseFunc.Name} is notsupport for codegen!");

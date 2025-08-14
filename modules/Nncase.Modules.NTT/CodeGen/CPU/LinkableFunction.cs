@@ -83,9 +83,9 @@ internal sealed class LinkableDeviceFunction : ILinkableFunction
     public IReadOnlyList<ILinkedSection> Sections { get; }
 }
 
-internal sealed class LinkableFusionFunction : ILinkableFunction
+internal sealed class LinkableLambdaFunction : ILinkableFunction
 {
-    public LinkableFusionFunction(uint id, Fusion sourceFunction, string header, Stream text)
+    public LinkableLambdaFunction(uint id, Fusion sourceFunction, string header, Stream text)
     {
         Id = id;
         SourceFunction = sourceFunction;

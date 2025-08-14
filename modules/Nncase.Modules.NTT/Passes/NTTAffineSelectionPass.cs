@@ -59,8 +59,10 @@ public partial class NTTAffineSelectionPass : AffineSelectionPass
             case IR.NN.LayerNorm op:
                 return SelectLayerNorm(op, call, output);
 
-            // case IR.Tensors.Cast op:
-            // return SelectCast(op, call, output);
+            case IR.Tensors.Cast op:
+                return SelectCast(op, call, output);
+            case IR.NTT.VectorizedCast op:
+                return SelectVectorizedCast(op, call, output);
             case IR.Tensors.Transpose op:
                 return SelectTranspose(op, call, output);
             default:

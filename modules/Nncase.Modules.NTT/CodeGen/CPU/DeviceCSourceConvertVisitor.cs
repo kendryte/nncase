@@ -412,7 +412,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                         postOps = $"<{lambda.Name}>";
                     }
 
-                    IndentScope.Writer.IndWrite($"cast{postOps}({arguments[0].Name}, {arguments[1].Name});\n");
+                    IndentScope.Writer.IndWrite($"cast{postOps}({arguments[0].Name}, {arguments[1].Name}, fixed_shape_v<{string.Join(",", cast.VectorizeAxes.ToArray())}>);\n");
                 }
 
                 break;

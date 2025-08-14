@@ -133,7 +133,7 @@ internal sealed class AffineInverser<T> : AffineExprVisitor<AffineExpr, AffineEx
     {
         return ConstFolding((_symMemo[expr.Lhs], _symMemo[expr.Rhs]) switch
         {
-            (false, true) => Visit(expr.Rhs, ConstFolding(new AffineDivBinary(AffineDivBinaryOp.CeilDiv, target, (AffineSymbolBase)Visit(expr.Lhs, null!)))),
+            (false, true) => Visit(expr.Rhs, ConstFolding(new AffineDivBinary(AffineDivBinaryOp.CeilDiv, target, Visit(expr.Lhs, null!)))),
             (false, false) => expr,
             _ => throw new System.Diagnostics.UnreachableException(),
         });
@@ -143,7 +143,7 @@ internal sealed class AffineInverser<T> : AffineExprVisitor<AffineExpr, AffineEx
     {
         return ConstFolding((_symMemo[expr.Lhs], _symMemo[expr.Rhs]) switch
         {
-            (true, false) => Visit(expr.Lhs, ConstFolding(new AffineMulBinary((AffineSymbolBase)Visit(expr.Rhs, null!), target))),
+            (true, false) => Visit(expr.Lhs, ConstFolding(new AffineMulBinary(Visit(expr.Rhs, null!), target))),
             (false, false) => expr,
             _ => throw new System.Diagnostics.UnreachableException(),
         });
