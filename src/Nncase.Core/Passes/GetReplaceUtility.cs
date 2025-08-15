@@ -65,7 +65,7 @@ public static class Utility
     {
         Fx WithTmpGNNEShape(Fx inCtor) =>
             input =>
-                ((Func<long[], Expr>)(shape =>
+                ((Func<long[], BaseExpr>)(shape =>
                         Reshape(
                             (Expr)inCtor(Reshape((Expr)input, Get4DGNNEShape(shape))),
                             originOutShape)))(input.CheckedShape.ToValueArray());
