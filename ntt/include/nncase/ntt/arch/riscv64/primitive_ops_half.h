@@ -92,7 +92,6 @@ REGISTER_RVV_UNARY_FP16_OP(abs, half, abs_float16)
 
 REGISTER_RVV_FP16_KERNEL(ACOS_FLOAT16)
 REGISTER_RVV_UNARY_FP16_OP(acos, half, acos_float16)
-REGISTER_RVV_UNARY_FP16_OP(acos, bfloat16, acos_float16)
 
 // acosh
 // acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1

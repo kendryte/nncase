@@ -61,6 +61,10 @@
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
     typedef vfloat16mf4_t fixed_vfloat16mf4_t                                  \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
+    typedef vbfloat16mf2_t fixed_vbfloat16mf2_t                                \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
+    typedef vbfloat16mf4_t fixed_vbfloat16mf4_t                                \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
     typedef vfloat32mf2_t fixed_vfloat32mf2_t                                  \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));
 
@@ -83,6 +87,8 @@
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vfloat16m##lmul##_t fixed_vfloat16m##lmul##_t                      \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
+    typedef vbfloat16m##lmul##_t fixed_vbfloat16m##lmul##_t                    \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vfloat32m##lmul##_t fixed_vfloat32m##lmul##_t                      \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vfloat64m##lmul##_t fixed_vfloat64m##lmul##_t                      \
@@ -97,15 +103,15 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
 #ifdef __ZVFBFMIN__
 #define NTT_DEFINE_BFLOAT16_VECTORS_LT()                                       \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        bfloat16, fixed_vfloat16mf2_t, NTT_VLEN / 8 / sizeof(bfloat16) / 2)    \
+        bfloat16, fixed_vbfloat16mf2_t, NTT_VLEN / 8 / sizeof(bfloat16) / 2)   \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        bfloat16, fixed_vfloat16mf4_t, NTT_VLEN / 8 / sizeof(bfloat16) / 4)    \
+        bfloat16, fixed_vbfloat16mf4_t, NTT_VLEN / 8 / sizeof(bfloat16) / 4)   \
     NTT_END_DEFINE_NATIVE_VECTOR()
 
 #define NTT_DEFINE_BFLOAT16_VECTORS_GE(lmul)                                   \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        bfloat16, fixed_vfloat16m##lmul##_t,                                   \
+        bfloat16, fixed_vbfloat16m##lmul##_t,                                  \
         NTT_VLEN / 8 / sizeof(bfloat16) * lmul)                                \
     NTT_END_DEFINE_NATIVE_VECTOR()
 
