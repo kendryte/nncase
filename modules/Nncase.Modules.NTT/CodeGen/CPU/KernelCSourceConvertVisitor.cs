@@ -25,7 +25,7 @@ namespace Nncase.CodeGen.NTT;
 /// <summary>
 /// convert single prim function to c source.
 /// </summary>
-internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisposable
+public sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisposable
 {
     private readonly HashSet<string> _excludedVars = new() { "data" };
     private readonly StringBuilder _kernelBuilder;

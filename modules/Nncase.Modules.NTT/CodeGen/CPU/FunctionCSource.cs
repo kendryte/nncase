@@ -15,6 +15,6 @@ using Nncase.TIR;
 
 namespace Nncase.CodeGen;
 
-internal sealed record KernelCSource(string Declare, string Kernel, ulong CollectivePoolSize)
+public sealed record KernelCSource(string Declare, string Kernel, ulong CollectivePoolSize)
 {
 }

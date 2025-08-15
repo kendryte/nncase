@@ -243,6 +243,21 @@ public static class Math
     public static Call MatMul(Expr lhs, Expr rhs, DataType outDataType) => new(new MatMul(outDataType), lhs, rhs);
 
     /// <summary>
+    /// Call qLinearMatMul.
+    /// </summary>
+    /// <param name="lhs">Left operand.</param>
+    /// <param name="rhs">Right operand.</param>
+    /// <param name="lhsScale">lhs Scale.</param>
+    /// <param name="lhsZeroPoint">lhs ZeroPoint.</param>
+    /// <param name="rhsScale">rhs Scale.</param>
+    /// <param name="rhsZeroPoint">rhs ZeroPoint.</param>
+    /// <param name="outputScale">output Scale.</param>
+    /// <param name="outputZeroPoint">output ZeroPoint.</param>
+    /// <param name="outDataType">outDataType. </param>
+    /// <returns>Result expression.</returns>
+    public static Call QLinearMatMul(Expr lhs, Expr rhs, Expr lhsScale, Expr lhsZeroPoint, Expr rhsScale, Expr rhsZeroPoint, Expr outputScale, Expr outputZeroPoint, DataType outDataType) => new(new QLinearMatMul(outDataType), lhs, rhs, lhsScale, lhsZeroPoint, rhsScale, rhsZeroPoint, outputScale, outputZeroPoint);
+
+    /// <summary>
     /// Call max.
     /// </summary>
     /// <param name="lhs">Left operand.</param>
