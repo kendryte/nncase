@@ -151,17 +151,22 @@ enabled = true
 threshold = 0.98
 
 [target.k230]
-eval = true
+eval = false
 infer = true
 similarity_name = 'cosine'
 
 [target.k230.mode.noptq]
-enabled = false
+enabled = true
 threshold = 0.999
 
 [target.k230.mode.ptq]
-enabled = true
+enabled = false
 threshold = 0.96
+
+[target.k230.target_options]
+Vectorize = true
+Hierarchies = [[1]]
+HierarchyNames = "t"
 
 [target.xpu]
 eval = false
