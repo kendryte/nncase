@@ -72,6 +72,7 @@ struct bfloat16 {
     // bfloat16(int &&val) noexcept : bfloat16(static_cast<float>(val)) {}
 
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
+    bfloat16(int v) noexcept : bfloat16(static_cast<float>(v)) {}
 
     explicit operator float() const noexcept {
         fp32 result;
@@ -283,6 +284,15 @@ inline bool isnan(const bfloat16 &a) { return std::isnan(float(a)); }
 inline bool isfinite(const bfloat16 &a) { return std::isfinite(float(a)); }
 inline bfloat16 abs(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(fabsf(float(a)));
+}
+inline bfloat16 acos(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::acos(float(a)));
+}
+inline bfloat16 asin(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::asin(float(a)));
+}
+inline bfloat16 erf(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::erff(float(a)));
 }
 inline bfloat16 exp(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(expf(float(a)));

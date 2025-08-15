@@ -519,12 +519,12 @@ template <class T> constexpr T asinh<T>::operator()(const T &v) const noexcept {
 
 // cosh(v) = (exp(v) + exp(-v)) / 2
 template <class T> constexpr T cosh<T>::operator()(const T &v) const noexcept {
-    return (ntt::exp(v) + ntt::exp(-v)) / 2;
+    return (ntt::exp(v) + ntt::exp(-v)) / (T)2;
 }
 
 // sinh(v) = (exp(v) - exp(-v)) / 2
 template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
-    return (ntt::exp(v) - ntt::exp(-v)) / 2;
+    return (ntt::exp(v) - ntt::exp(-v)) / (T)2;
 }
 
 // swish(v) = v / (exp(-v) + 1)
