@@ -56,8 +56,10 @@ struct bfloat16 {
   public:
     bfloat16() noexcept = default;
 
+#ifdef __ZVFBFMIN__
     bfloat16(__bf16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
     operator __bf16() const noexcept { return std::bit_cast<__bf16>(value_); }
+#endif
 
     explicit bfloat16(float v) noexcept : value_(round_to_bfloat16(v).value_) {}
 

@@ -31,6 +31,22 @@
 #define NTT_VL(sew, op, lmul) ((NTT_VLEN) / (sew)op(lmul))
 #endif
 
+#ifdef __ZVFBFMIN__
+#define REGISTER_BFLOAT16_TYPE_WITH_LMUL_LT1()                                 \
+    typedef vbfloat16mf2_t fixed_vbfloat16mf2_t                                \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
+    typedef vbfloat16mf4_t fixed_vbfloat16mf4_t                                \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));
+
+#define REGISTER_BFLOAT16_TYPE_WITH_LMUL_GE1(lmul)                             \
+    typedef vbfloat16m##lmul##_t fixed_vbfloat16m##lmul##_t                    \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));
+
+#else
+#define REGISTER_BFLOAT16_TYPE_WITH_LMUL_LT1()
+#define REGISTER_BFLOAT16_TYPE_WITH_LMUL_GE1(lmul)
+#endif
+
 // rvv fixed type
 #define REGISTER_RVV_FIXED_TYPE_WITH_LMUL_LT1                                  \
     typedef vint8mf2_t fixed_vint8mf2_t                                        \
@@ -61,10 +77,7 @@
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
     typedef vfloat16mf4_t fixed_vfloat16mf4_t                                  \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
-    typedef vbfloat16mf2_t fixed_vbfloat16mf2_t                                \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
-    typedef vbfloat16mf4_t fixed_vbfloat16mf4_t                                \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
+    REGISTER_BFLOAT16_TYPE_WITH_LMUL_LT1()                                     \
     typedef vfloat32mf2_t fixed_vfloat32mf2_t                                  \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));
 
@@ -87,8 +100,7 @@
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vfloat16m##lmul##_t fixed_vfloat16m##lmul##_t                      \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
-    typedef vbfloat16m##lmul##_t fixed_vbfloat16m##lmul##_t                    \
-        __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
+    REGISTER_BFLOAT16_TYPE_WITH_LMUL_GE1(lmul)                                 \
     typedef vfloat32m##lmul##_t fixed_vfloat32m##lmul##_t                      \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vfloat64m##lmul##_t fixed_vfloat64m##lmul##_t                      \

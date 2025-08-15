@@ -895,8 +895,6 @@ class u_pack2d<true, TIn, TOut, float,
         auto input_shape = input.shape();
         auto out_stride = output.strides();
         auto rank = input_shape.rank();
-        [[maybe_unused]] vbfloat16m8_t temp0;
-        [[maybe_unused]] vfloat16m8_t temp1;
         if ((input_shape[VectorizeAxis1] % vl == 0) &&
             (input_shape[VectorizeAxis2] % vl == 0)) {
             auto pin = input.buffer().data();
