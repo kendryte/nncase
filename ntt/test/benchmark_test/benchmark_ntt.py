@@ -28,7 +28,7 @@ def ntt_f16_report_file(default: str):
     return os.getenv('BENCHMARK_NTT_F16_REPORT_FILE', default)
 
 def ntt_bf16_report_file(default: str):
-    return os.getenv('BENCHMARK_NTT_F16_REPORT_FILE', default)
+    return os.getenv('BENCHMARK_NTT_BF16_REPORT_FILE', default)
 
 def ntt_matmul_x86_64_report_file(default: str):
     return os.getenv('BENCHMARK_NTT_MATMUL_X86_64_REPORT_FILE', default)
