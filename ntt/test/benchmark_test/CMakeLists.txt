@@ -21,7 +21,7 @@ file(GLOB TEST_NAMES_F32 CONFIGURE_DEPENDS
     # benchmark_ntt_f32_expand.cpp
     # benchmark_ntt_f32_gather.cpp
     # benchmark_ntt_f32_layernorm.cpp
-    # benchmark_ntt_f32_matmul_primitive_size.cpp
+    benchmark_ntt_f32_matmul_primitive_size.cpp
     # benchmark_ntt_f32_matmul.cpp
     # benchmark_ntt_f32_pack.cpp
     # benchmark_ntt_f32_reduce.cpp

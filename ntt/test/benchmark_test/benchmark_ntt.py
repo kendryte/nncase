@@ -1015,7 +1015,7 @@ if __name__ == '__main__':
     # 1.3 merge benchmark list
     benchmark_list = []
     for i in range(len(ntt_x86_64.benchmark_list)):
-        item = {**ntt_x86_64.benchmark_list[i]}
+        item = {**ntt_x86_64.benchmark_list[i], **ntt_riscv64.benchmark_list[i]}
         benchmark_list.append(item)
 
     # 1.4 generate md
