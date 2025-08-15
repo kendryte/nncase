@@ -94,6 +94,26 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(2)
 REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(4)
 REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
 
+#ifdef __ZVFBFMIN__
+#define NTT_DEFINE_BFLOAT16_VECTORS_LT()                                       \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vfloat16mf2_t, NTT_VLEN / 8 / sizeof(bfloat16) / 2)    \
+    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vfloat16mf4_t, NTT_VLEN / 8 / sizeof(bfloat16) / 4)    \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+#define NTT_DEFINE_BFLOAT16_VECTORS_GE(lmul)                                   \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vfloat16m##lmul##_t,                                   \
+        NTT_VLEN / 8 / sizeof(bfloat16) * lmul)                                \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+#else
+#define NTT_DEFINE_BFLOAT16_VECTORS_LT()
+#define NTT_DEFINE_BFLOAT16_VECTORS_GE(lmul)
+#endif
+
 // rvv native vector
 #define NTT_DEFINE_NATIVE_VECTOR_WITH_LMUL_LT1                                 \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(int8_t, fixed_vint8mf2_t,           \
@@ -138,12 +158,7 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16mf4_t,          \
                                            NTT_VLEN / 8 / sizeof(half) / 4)    \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        bfloat16, fixed_vfloat16mf2_t, NTT_VLEN / 8 / sizeof(bfloat16) / 2)    \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        bfloat16, fixed_vfloat16mf4_t, NTT_VLEN / 8 / sizeof(bfloat16) / 4)    \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_DEFINE_BFLOAT16_VECTORS_LT()                                           \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float, fixed_vfloat32mf2_t,         \
                                            NTT_VLEN / 8 / sizeof(float) / 2)   \
     NTT_END_DEFINE_NATIVE_VECTOR()
@@ -186,10 +201,7 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16m##lmul##_t,    \
                                            NTT_VLEN / 8 / sizeof(half) * lmul) \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
-    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
-        bfloat16, fixed_vfloat16m##lmul##_t,                                   \
-        NTT_VLEN / 8 / sizeof(bfloat16) * lmul)                                \
-    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_DEFINE_BFLOAT16_VECTORS_GE(lmul)                                       \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(double, fixed_vfloat64m##lmul##_t,  \
                                            NTT_VLEN / 8 / sizeof(double) *     \
                                                lmul)                           \
