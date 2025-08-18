@@ -1242,8 +1242,8 @@ class u_unpack_impl<TIn, TOut, AxesRank, true> {
         constexpr auto vector_size = NTT_VLEN / 32;
         auto axis_stride = input.strides()[const_axes[0]];
 
-        [[maybe_unused]] vbfloat16m8_t temp0;
-        [[maybe_unused]] vfloat16m8_t temp1;
+        // [[maybe_unused]] vbfloat16m8_t temp0;
+        // [[maybe_unused]] vfloat16m8_t temp1;
 
         if constexpr (AxesRank == 1) {
             if constexpr (const_axes[0] == (TIn::rank() - 1)) {
