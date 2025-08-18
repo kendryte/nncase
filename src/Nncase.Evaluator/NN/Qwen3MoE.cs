@@ -91,7 +91,7 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         routerWeights = topkRes[0];
         var selectedExperts = topkRes[1];
 
-        if (isNormTopkProb)
+        if (isNormTopkProb == 1L)
         {
             routerWeights = OrtKI.Div(routerWeights, OrtKI.ReduceSum(routerWeights, Tensor.FromArray(new[] { -1L }).ToOrtTensor(), keepdims: 1L, 0L));
         }

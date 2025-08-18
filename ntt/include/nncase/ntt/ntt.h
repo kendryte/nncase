@@ -37,6 +37,7 @@
 #include "kernels/pack.h"
 #include "kernels/pad.h"
 #include "kernels/paged_attention.h"
+#include "kernels/qwen3_moe.h"
 #include "kernels/range.h"
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"

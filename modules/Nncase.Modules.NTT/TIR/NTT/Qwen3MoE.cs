@@ -1,18 +1,12 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Nncase.IR.Math;
-using Nncase.PatternMatch;
+using Nncase.IR;
+using Nncase.IR.NN;
 
-namespace Nncase.IR.NN;
+namespace Nncase.TIR.NTT;
 
-[PatternFunctionalGenerator]
-public sealed partial class Qwen3MoE : Op
+public sealed partial class Qwen3MoE : Nncase.TIR.NTT.NTTKernelOp
 {
     public static readonly ParameterInfo Q = new(typeof(Qwen3MoE), 0, "q", ParameterKind.Input);
     public static readonly ParameterInfo MoeGateW = new(typeof(Qwen3MoE), 1, "MoeGateW", ParameterKind.Input);
@@ -36,6 +30,4 @@ public sealed partial class Qwen3MoE : Op
     public long NumTopK { get; }
 
     public long IsNormTopkProb { get; }
-
-    public override string DisplayProperty() => $"LayerId: {LayerId}, HiddenSize {HiddenSize}, IntermediateSize {IntermediateSize}, MoEIntermediateSize {MoEIntermediateSize}, NumExpert {NumExpert}, NumTopK {NumTopK}, IsNormTopkProb {IsNormTopkProb}";
 }

@@ -8,7 +8,7 @@ using Nncase.IR;
 
 namespace Nncase.Importer
 {
-    public class Qwen3MOE : Qwen3
+    public class Qwen3A3B : Qwen3
     {
         public override Call LLMMlp(int count, Expr hiddenStates)
         {
@@ -54,7 +54,7 @@ namespace Nncase.Importer
                 moeIntermediateSize: Config.GetNestedValue<long>("moe_intermediate_size"),
                 numExpert: expertNum,
                 numTopK: Config.GetNestedValue<long>("num_experts_per_tok"),
-                isNormTopkProb: Config.GetNestedValue<bool>("norm_topk_prob"));
+                isNormTopkProb: Config.GetNestedValue<bool>("norm_topk_prob") ? 1L : 0L);
             return (Call)moeRes;
         }
 
