@@ -170,8 +170,10 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
         });
     } else if constexpr (std::is_same_v<T, bfloat16>) {
         std::uniform_real_distribution<float> dis((float)start, (float)stop);
-        ntt::apply(tensor.shape(), [&](auto &index) {
-            tensor(index) = static_cast<bfloat16>(dis(gen));
+        ntt::apply(tensor.shape(), [&]([[maybe_unused]] auto &index) {
+            [[maybe_unused]] auto temp = static_cast<float>(dis(gen));
+            [[maybe_unused]] auto temp1 = tensor(index);
+            // tensor(index) = static_cast<bfloat16>(dis(gen));
         });
     } else {
         std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
