@@ -833,7 +833,7 @@ public abstract class HuggingFaceModel
 
         // // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
-
+        var qType = ((Expr)queryStates).CheckedDataType;
         AttentionDimKind[] qSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         AttentionDimKind[] kvSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         {
@@ -841,12 +841,12 @@ public abstract class HuggingFaceModel
             var kvPerms = ModelUtils.GetLayoutPerm(kvSrcLayout, kvDestLayout);
             var (kvLanes, kvVectorizedAxis) = ModelUtils.GetQKVVectorizeParams(pagedAttentionConfig, kvDestLayout);
             var transK = IR.F.Tensors.Transpose(keyStates, kvPerms);
-            var castK = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transK, pagedAttentionConfig.KVPrimType) : transK;
+            var castK = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transK, pagedAttentionConfig.KVPrimType) : transK;
             var vectorizedK = kvLanes.Length > 0 ? IR.F.Tensors.Pack(castK, kvLanes, kvVectorizedAxis) : castK;
             paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(vectorizedK, paskKeyValues, AttentionCacheKind.Key, count, kvDestLayout);
 
             var transV = IR.F.Tensors.Transpose(valueStates, kvPerms);
-            var castV = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transV, pagedAttentionConfig.KVPrimType) : transV;
+            var castV = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transV, pagedAttentionConfig.KVPrimType) : transV;
             var vectorizedV = kvLanes.Length > 0 ? IR.F.Tensors.Pack(castV, kvLanes, kvVectorizedAxis) : castV;
             paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(vectorizedV, paskKeyValues, AttentionCacheKind.Value, count, kvDestLayout);
         }
@@ -863,7 +863,6 @@ public abstract class HuggingFaceModel
             queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(queryStates.CheckedDataType)) : queryStates;
         }
 
-        var qType = ((Expr)queryStates).CheckedDataType;
         var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
         var castQ = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transQ, pagedAttentionConfig.KVPrimType) : transQ;
         var vectorizedQ = qLanes.Length > 0 ? IR.F.Tensors.Pack(castQ, qLanes, qVectorizedAxis) : castQ;
