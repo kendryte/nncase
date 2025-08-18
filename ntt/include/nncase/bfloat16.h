@@ -29,24 +29,6 @@ struct from_raw_t {
 inline constexpr from_raw_t from_raw{};
 
 struct bfloat16 {
-  private:
-    union fp32 {
-        uint32_t u32;
-        float f32;
-
-        uint16_t u16() const noexcept {
-            constexpr size_t index =
-                std::endian::native == std::endian::little ? 1 : 0;
-            return reinterpret_cast<const uint16_t *>(&u32)[index];
-        }
-
-        uint16_t &u16() noexcept {
-            constexpr size_t index =
-                std::endian::native == std::endian::little ? 1 : 0;
-            return reinterpret_cast<uint16_t *>(&u32)[index];
-        }
-    };
-
     // A value that represents "zero".
     static constexpr uint16_t ZERO_VALUE = 0;
 
@@ -54,63 +36,46 @@ struct bfloat16 {
     static constexpr uint16_t NAN_VALUE = 0x7FC0;
 
   public:
-    bfloat16() noexcept = default;
-
-    explicit bfloat16(float v) noexcept : value_(round_to_bfloat16(v).value_) {}
+    constexpr bfloat16() noexcept = default;
+    constexpr explicit bfloat16(float v) noexcept
+        : value_(round_to_bfloat16(v).value_) {}
 
     template <class T,
               class = std::enable_if_t<std::is_integral<T>::value ||
                                        std::is_floating_point<T>::value>>
-    explicit bfloat16(const T &val) noexcept
+    constexpr explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) {}
-
-    // bfloat16(int &&val) noexcept : bfloat16(static_cast<float>(val)) {}
 
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
 
-    operator float() const noexcept {
-        fp32 result;
-        result.u32 = 0;
-        result.u16() = value_;
-        return result.f32;
+    constexpr operator float() const noexcept {
+        uint32_t value = value_ << 16;
+        return std::bit_cast<float>(value);
     }
 
-    const uint16_t &raw() const noexcept { return value_; }
-    uint16_t &raw() noexcept { return value_; }
+    constexpr const uint16_t &raw() const noexcept { return value_; }
+    constexpr uint16_t &raw() noexcept { return value_; }
 
     static constexpr bfloat16 from_raw(uint16_t v) noexcept {
         return bfloat16(nncase::from_raw, v);
     }
 
-    static bfloat16 truncate_to_bfloat16(const float v) noexcept {
-        bfloat16 output;
-
-        if (!std::isnan(v)) {
-            fp32 f;
-            f.f32 = v;
-            output.value_ = f.u16();
-        } else {
-            output.value_ = NAN_VALUE;
-        }
-
-        return output;
+    static constexpr bfloat16 truncate_to_bfloat16(float v) noexcept {
+        return !std::isnan(v) ? from_raw(static_cast<uint16_t>(
+                                    std::bit_cast<uint32_t>(v) >> 16))
+                              : nan();
     }
 
     // Converts a float point to bfloat16, with round-nearest-to-even as
     // rounding method.
-    static bfloat16 round_to_bfloat16(float v) {
-        uint32_t input;
-        fp32 f;
-        f.f32 = v;
-        input = f.u32;
-        bfloat16 output;
-
+    static constexpr bfloat16 round_to_bfloat16(float v) {
         if (!std::isnan(v)) {
             // Least significant bit of resulting bfloat.
+            uint32_t input = std::bit_cast<uint32_t>(v);
             uint32_t lsb = (input >> 16) & 1;
             uint32_t rounding_bias = 0x7fff + lsb;
             input += rounding_bias;
-            output.value_ = static_cast<uint16_t>(input >> 16);
+            return from_raw(static_cast<uint16_t>(input >> 16));
         } else {
             // If the value is a NaN, squash it to a qNaN with msb of fraction
             // set, this makes sure after truncation we don't end up with an
@@ -118,10 +83,8 @@ struct bfloat16 {
             //
             // qNaN magic: All exponent bits set + most significant bit of
             // fraction set.
-            output.value_ = NAN_VALUE;
+            return nan();
         }
-
-        return output;
     }
 
     static constexpr bfloat16 epsilon() noexcept {
@@ -153,14 +116,6 @@ struct bfloat16 {
     }
 
     static constexpr bfloat16 infinity() noexcept { return from_raw(0x7f80); }
-
-    constexpr bool zero() const noexcept {
-        return (value_ & 0x7FFF) == ZERO_VALUE;
-    }
-
-    void operator=(const float &v) noexcept {
-        value_ = (round_to_bfloat16(v).value_);
-    }
 
   private:
     uint16_t value_;
@@ -320,7 +275,6 @@ inline bfloat16 nearbyint(const bfloat16 &a) {
 }
 inline long lrint(const bfloat16 &a) { return lrintf(float(a)); }
 } // namespace std
-
 
 inline nncase::bfloat16 operator"" _bf16(long double x) {
     return nncase::bfloat16(float(x));
