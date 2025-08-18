@@ -15,6 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../primitive_ops.h"
+#include <type_traits>
 
 namespace nncase::ntt {
 namespace ukernels {
@@ -28,34 +29,30 @@ struct u_packed_gemv {
                               const TBPack *NTT_RESTRICT b,
                               TCPack *NTT_RESTRICT c, const TLdb &ldb,
                               const TK &K, const TN &N) noexcept {
-        if constexpr (!AccumulateC) {
-            for (size_t n1 = 0; n1 < N; n1++) {
-                c[n1] = {};
-            }
-        }
+        using TAccPack = decltype(ntt::cast_elem<float>(c[0_dim]));
 
         for (size_t n1 = 0; n1 < N; n1++) {
             const auto b1 = b + n1 * ldb;
-            TCPack c0 = c[n1];
+            auto c0 = ntt::where(std::integral_constant<bool, AccumulateC>{},
+                                 ntt::cast_elem<float>(c[n1]), TAccPack{});
 
             for (size_t k1 = 0; k1 < K; k1++) {
                 const TAElem a0 = a[k1];
                 const auto b0 = b1[k1];
-                ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
-                    c0(index[0_dim]) =
-                        ntt::mul_add(a0, b0(index[0_dim]), c0(index[0_dim]));
+                ntt::loop<N0Tile>([&](auto tn) {
+                    c0(tn) = ntt::mul_add(a0, b0(tn), c0(tn));
                 });
-
                 ntt::prefetch<prefetch_hint::l2>(&b1[k1 + 8]);
             }
 
             ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
-                c[n1](index[0_dim]) = c0(index[0_dim]);
+                c[n1](index[0_dim]) =
+                    ntt::cast_elem<typename TCPack::element_type>(
+                        c0(index[0_dim]));
             });
         }
     }
 };
-
 } // namespace ukernels
 
 template <bool AccumulateC, Scalar TAElem, Vector TBPack, Vector TCPack,
