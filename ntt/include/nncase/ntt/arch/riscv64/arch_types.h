@@ -31,7 +31,8 @@
 #define NTT_VL(sew, op, lmul) ((NTT_VLEN) / (sew)op(lmul))
 #endif
 
-#ifdef __ZVFBFMIN__
+#if defined(__riscv_vector) &&                                                 \
+    (defined(__riscv_zvfbfmin) || defined(__riscv_zvfbf))
 #define REGISTER_BFLOAT16_TYPE_WITH_LMUL_LT1()                                 \
     typedef vbfloat16mf2_t fixed_vbfloat16mf2_t                                \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
@@ -112,7 +113,8 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(2)
 REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(4)
 REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
 
-#ifdef __ZVFBFMIN__
+#if defined(__riscv_vector) &&                                                 \
+    (defined(__riscv_zvfbfmin) || defined(__riscv_zvfbf))
 #define NTT_DEFINE_BFLOAT16_VECTORS_LT()                                       \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
         bfloat16, fixed_vbfloat16mf2_t, NTT_VLEN / 8 / sizeof(bfloat16) / 2)   \

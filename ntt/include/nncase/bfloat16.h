@@ -56,7 +56,8 @@ struct bfloat16 {
   public:
     bfloat16() noexcept = default;
 
-#ifdef __ZVFBFMIN__
+#if defined(__riscv_vector) &&                                                 \
+    (defined(__riscv_zvfbfmin) || defined(__riscv_zvfbf))
     bfloat16(__bf16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
     operator __bf16() const noexcept { return std::bit_cast<__bf16>(value_); }
 #endif
