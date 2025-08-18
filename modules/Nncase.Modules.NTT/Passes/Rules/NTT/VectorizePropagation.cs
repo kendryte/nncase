@@ -276,8 +276,9 @@ public sealed class CastDevectorizePropagation : RewriteRule<Pattern>
         {
             var caller = (Call)result["caller"];
             var callee = (Expr)result["callee"];
+            var postOps = None.Default;
 
-            var ret = VectorizeCast.AddCandidate(caller, callee, devectorize.Axes.ToArray(), devectorize.Lanes.ToArray()).FirstOrDefault();
+            var ret = VectorizeCast.AddCandidate(caller, callee, postOps, devectorize.Axes.ToArray(), devectorize.Lanes.ToArray()).FirstOrDefault();
             if (ret is not null)
             {
                 return ret;

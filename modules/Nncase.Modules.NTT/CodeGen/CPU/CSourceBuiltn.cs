@@ -56,6 +56,7 @@ using namespace nncase::ntt::distributed::shard_policy;
 
     public const string KernelHeader = @"#pragma once
 #include <nncase/ntt/ntt.h>
+#include ""lambda_functions.h""
 #include ""device_functions.h""
 #include ""kernel_functions.h""
 #include ""topo_aware_runtime.h""

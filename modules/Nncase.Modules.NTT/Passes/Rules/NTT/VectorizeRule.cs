@@ -513,7 +513,7 @@ public sealed class VectorizeBinary : VectorizeRule
       IsWildcard("lhs") with { TypePattern = IsFloat() & !IsVector() },
       IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(IR.Math.Binary op, Expr lhs, Expr rhs, Expr candidate, int[] lhsVectorizedAxes, int[] rhsVectorizedAxes, int[] lhsLanes, int[] rhsLanes)
+    public static List<Expr> AddCandidate(IR.Math.Binary op, Expr lhs, Expr rhs, BaseExpr postOps, Expr candidate, int[] lhsVectorizedAxes, int[] rhsVectorizedAxes, int[] lhsLanes, int[] rhsLanes)
     {
         var rets = new List<Expr>();
         var lhsShape = lhs.CheckedShape;
@@ -548,7 +548,7 @@ public sealed class VectorizeBinary : VectorizeRule
         var vectorizedLhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(lhs, lhsShape, lhsVectorizedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsVectorizedAxes);
         var vectorizedRhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(rhs, rhsShape, rhsVectorizedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsVectorizedAxes);
 
-        var binary = IR.F.NTT.VectorizedBinary(vectorizedLhs, vectorizedRhs, op.BinaryOp, lhsVectorizedAxes, lhsPadNums, rhsVectorizedAxes, rhsPadNums);
+        var binary = IR.F.NTT.VectorizedBinary(vectorizedLhs, vectorizedRhs, postOps, op.BinaryOp, lhsVectorizedAxes, lhsPadNums, rhsVectorizedAxes, rhsPadNums);
         var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(binary, lhsLanes.Length >= rhsLanes.Length ? lhsLanes : rhsLanes, lhsVectorizedAxes.Length >= rhsVectorizedAxes.Length ? alignedLhsVectorizedAxes : alignedRhsVectorizedAxes), candidate.CheckedShape, lhsVectorizedAxes.Length >= rhsVectorizedAxes.Length ? lhsPadNums! : rhsPadNums!);
         if (post.CheckedType is not InvalidType)
         {
@@ -564,6 +564,7 @@ public sealed class VectorizeBinary : VectorizeRule
         var op = (IR.Math.Binary)result["target"];
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];
+        var postOps = None.Default;
         var candidate = (Expr)result[Pattern];
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
@@ -576,7 +577,7 @@ public sealed class VectorizeBinary : VectorizeRule
             var rhsVectorizedAxes = arr.Skip(1).First();
             if (lhsVectorizedAxes.Length <= Rank && rhsVectorizedAxes.Length <= Rank)
             {
-                rets.AddRange(AddCandidate(op, lhs, rhs, candidate, lhsVectorizedAxes, rhsVectorizedAxes, Enumerable.Repeat(lhsLaneSize, lhsVectorizedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsVectorizedAxes.Length).ToArray()));
+                rets.AddRange(AddCandidate(op, lhs, rhs, postOps, candidate, lhsVectorizedAxes, rhsVectorizedAxes, Enumerable.Repeat(lhsLaneSize, lhsVectorizedAxes.Length).ToArray(), Enumerable.Repeat(rhsLaneSize, rhsVectorizedAxes.Length).ToArray()));
             }
         }
 
@@ -1237,7 +1238,7 @@ public sealed class VectorizeCast : VectorizeRule
       _ => true,
       IsWildcard("input") with { TypePattern = IsFloat() & !IsVector() });
 
-    public static List<Expr> AddCandidate(Call call, Expr input, int[] vectorizedAxes, int[] lanes)
+    public static List<Expr> AddCandidate(Call call, Expr input, Expr postOps, int[] vectorizedAxes, int[] lanes)
     {
         var rets = new List<Expr>();
         var op = (IR.Tensors.Cast)call.Target;
@@ -1253,7 +1254,7 @@ public sealed class VectorizeCast : VectorizeRule
         var outLanes = lanes.Select(l => (int)(l / scale)).ToArray();
         var newType = new VectorType(op.NewType, outLanes);
 
-        var cast = IR.F.Tensors.Cast(vectorizedInput, newType, op.CastMode, vectorizedAxes);
+        var cast = IR.F.NTT.VectorizedCast(vectorizedInput, newType, op.CastMode, vectorizedAxes, postOps);
         var post = VectorizeUtility.SliceForVectorize(IR.F.Tensors.Unpack(cast, outLanes, vectorizedAxes), inShape, padsInput!);
         if (cast.CheckedType is not InvalidType)
         {
@@ -1268,16 +1269,17 @@ public sealed class VectorizeCast : VectorizeRule
         var rets = new List<Expr>();
         var call = (Call)result["call"];
         var input = (Expr)result["input"];
+        var postOps = None.Default;
         var laneSize = Lane / input.CheckedDataType.SizeInBytes;
 
         for (int i = 0; i < input.CheckedShape.Rank; i++)
         {
-            rets.AddRange(AddCandidate(call, input, [i], [laneSize]));
+            rets.AddRange(AddCandidate(call, input, postOps, [i], [laneSize]));
             for (int j = i + 1; j < input.CheckedShape.Rank; j++)
             {
                 if (Rank > 1)
                 {
-                    rets.AddRange(AddCandidate(call, input, [i, j], [laneSize, laneSize]));
+                    rets.AddRange(AddCandidate(call, input, postOps, [i, j], [laneSize, laneSize]));
                 }
             }
         }

@@ -45,8 +45,8 @@ public sealed partial class VectorizeCastPropagation : RewriteRule<Pattern>
 
         var vectorizeLanes = vectorize.Lanes.Select(l => (int)(l * scale)).ToArray();
         var newType = new VectorType(cast.NewType, vectorize.Lanes);
-
-        var ret = IR.F.Tensors.Cast(IR.F.Tensors.Pack(input, vectorizeLanes, vectorize.Axes.ToArray()), newType, CastMode.KDefault, vectorize.Axes.ToArray());
+        var postOps = None.Default;
+        var ret = IR.F.NTT.VectorizedCast(IR.F.Tensors.Pack(input, vectorizeLanes, vectorize.Axes.ToArray()), newType, CastMode.KDefault, vectorize.Axes.ToArray(), postOps);
         return ret;
     }
 }

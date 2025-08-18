@@ -341,13 +341,6 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     UnaryOp = op.UnaryOp,
                 }).Result);
                 break;
-            case TIR.NTT.Binary op:
-                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
-                {
-                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
-                    BinaryOp = op.BinaryOp,
-                }).Result);
-                break;
             case TIR.NTT.VectorizedBinary op:
                 WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                 {
@@ -412,7 +405,16 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }).Result);
                 break;
             case TIR.NTT.Cast cast:
-                IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
+                {
+                    string postOps = string.Empty;
+                    if (expr[TIR.NTT.Cast.PostOps] is Fusion lambda)
+                    {
+                        postOps = $"<{lambda.Name}>";
+                    }
+
+                    IndentScope.Writer.IndWrite($"cast{postOps}({arguments[0].Name}, {arguments[1].Name}, fixed_shape_v<{string.Join(",", cast.VectorizeAxes.ToArray())}>);\n");
+                }
+
                 break;
             case TIR.NTT.VectorizedLayerNorm lm:
                 {
@@ -496,6 +498,20 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         string str = $"{string.Join(",", tp.Fields.AsValueEnumerable().Select(x => Visit(x).Name).ToArray())}";
         symbol = new(type, str);
         _exprMemo.Add(tp, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitFusion(Fusion fusion)
+    {
+        if (_exprMemo.TryGetValue(fusion, out var symbol))
+        {
+            return symbol;
+        }
+
+        string type = string.Empty;
+        string str = fusion.Name;
+        symbol = new(type, str);
+        _exprMemo.Add(fusion, symbol);
         return symbol;
     }
 

@@ -21,6 +21,7 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<VectorizedLayerNormEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizedMatMulEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizedBinaryEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<VectorizedCastEvaluator>(reuse: Reuse.Singleton);
 
         registrator.RegisterManyInterface<Im2colEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<InstanceNormEvaluator>(reuse: Reuse.Singleton);

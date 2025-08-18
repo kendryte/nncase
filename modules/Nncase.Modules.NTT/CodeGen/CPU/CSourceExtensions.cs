@@ -188,6 +188,15 @@ public static class CSourceExtensions
         _ => throw new NotSupportedException(binaryOp.ToString()),
     };
 
+    public static string ToNTT(this BinaryOp binaryOp) => binaryOp switch
+    {
+        BinaryOp.Add => "ntt::add",
+        BinaryOp.Sub => "ntt::sub",
+        BinaryOp.Mul => "ntt::mul",
+        BinaryOp.Div => "ntt::div",
+        _ => throw new NotSupportedException(binaryOp.ToString()),
+    };
+
     public static string ToC(this CompareOp op, bool symbol = true)
     {
         if (symbol)

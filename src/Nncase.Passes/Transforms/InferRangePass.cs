@@ -151,10 +151,10 @@ internal sealed class InferRangeVisitor : ExprVisitor<ValueRange<double>, Unit>
             BinaryOp.Sub => new(lhs.Min - rhs.Max, lhs.Max - rhs.Min),
             BinaryOp.Mul => VisitMul(lhs, rhs),
             BinaryOp.CeilDiv => VisitCeilDiv(lhs, rhs),
-            BinaryOp.Div => VisitDiv(lhs, rhs, expr[Binary.Rhs].CheckedDataType),
+            BinaryOp.Div => VisitDiv(lhs, rhs, expr[Binary.Rhs].CheckedType is AnyType ? DataTypes.Float32 : expr[Binary.Rhs].CheckedDataType),
             BinaryOp.Max => new(Math.Max(lhs.Min, rhs.Min), Math.Max(lhs.Max, rhs.Max)),
             BinaryOp.Min => new(Math.Min(lhs.Min, rhs.Min), Math.Min(lhs.Max, rhs.Max)),
-            BinaryOp.Mod => VisitMod(lhs, rhs, expr[Binary.Rhs].CheckedDataType),
+            BinaryOp.Mod => VisitMod(lhs, rhs, expr[Binary.Rhs].CheckedType is AnyType ? DataTypes.Float32 : expr[Binary.Rhs].CheckedDataType),
             _ => ValueRange<double>.Full,
         };
     }

@@ -82,3 +82,27 @@ internal sealed class LinkableDeviceFunction : ILinkableFunction
 
     public IReadOnlyList<ILinkedSection> Sections { get; }
 }
+
+internal sealed class LinkableLambdaFunction : ILinkableFunction
+{
+    public LinkableLambdaFunction(uint id, Fusion sourceFunction, string header, Stream text)
+    {
+        Id = id;
+        SourceFunction = sourceFunction;
+        Header = header;
+        Text = text;
+        Sections = Array.Empty<ILinkedSection>();
+    }
+
+    public uint Id { get; }
+
+    public BaseFunction SourceFunction { get; }
+
+    public string Header { get; }
+
+    public Stream Text { get; }
+
+    public IEnumerable<FunctionRef> FunctionRefs => Enumerable.Empty<FunctionRef>();
+
+    public IReadOnlyList<ILinkedSection> Sections { get; }
+}

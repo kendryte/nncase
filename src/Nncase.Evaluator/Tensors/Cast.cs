@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using DryIoc.ImTools;
 using Nncase.CostModel;
@@ -21,19 +22,6 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
-        if (cast.NewType is VectorType vt && !cast.VectorizeAxes.IsDefaultOrEmpty)
-        {
-            if (cast.VectorizeAxes.Count > 1)
-            {
-                throw new NotSupportedException("Vectorize axes must be one");
-            }
-
-            input = IR.F.Tensors.Unpack(input, ((VectorType)input.ElementType).Lanes.ToArray(), cast.VectorizeAxes.ToArray()).Evaluate().AsTensor();
-            input = input.CastTo(vt.ElemType);
-            input = IR.F.Tensors.Pack(input, vt.Lanes.ToArray(), cast.VectorizeAxes.ToArray()).Evaluate().AsTensor();
-            return Value.FromTensor(input);
-        }
-
         return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
     }
 
@@ -78,27 +66,9 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
 
     private IRType Visit(Cast target, TensorType input)
     {
-        if (input.DType is VectorType vt)
+        if (input.DType is VectorType)
         {
-            if (!target.VectorizeAxes.IsDefaultOrEmpty && target.VectorizeAxes.Any(a => input.Shape[a] is { IsFixed: false }))
-            {
-                return new InvalidType("Vectorize axes must be fixed");
-            }
-
-            var scale = 1f;
-            var newShape = input.Shape.ToArray();
-            if (!target.VectorizeAxes.IsDefaultOrEmpty)
-            {
-                scale = 1f * ((VectorType)target.NewType).ElemType.SizeInBytes / vt.ElemType.SizeInBytes;
-                if (target.VectorizeAxes.Any(a => input.Shape[a].FixedValue * scale % 1 != 0))
-                {
-                    return new InvalidType("Vectorize axes must be divisible by scale");
-                }
-
-                target.VectorizeAxes.ToArray().ForEach(a => newShape[a] = (int)(newShape[a].FixedValue * scale));
-            }
-
-            return new TensorType(target.NewType, newShape);
+            return new InvalidType("Cannot cast vector type.");
         }
 
         return new TensorType(target.NewType, input.Shape);

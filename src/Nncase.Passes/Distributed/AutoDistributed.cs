@@ -1119,6 +1119,9 @@ internal sealed class ExprBuildVisitor
                 case Var or TensorConst or TupleConst or None or Shape or Padding or Paddings or Dimension or Call:
                     expr = root.Expr;
                     break;
+                case Fusion fusion:
+                    expr = fusion;
+                    break;
                 case BaseFunction func:
                     expr = new Call(target: func, arguments: children);
                     break;

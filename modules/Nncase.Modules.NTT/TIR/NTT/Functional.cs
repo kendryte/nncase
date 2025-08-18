@@ -41,11 +41,6 @@ public partial class NTT
         return new Call(new TIR.NTT.Unary(unaryOp), input, output);
     }
 
-    public static Call Binary(BinaryOp binaryOp, Expr lhs, Expr rhs, Expr output)
-    {
-        return new Call(new TIR.NTT.Binary(binaryOp), lhs, rhs, output);
-    }
-
     public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
     {
         return new Call(new Matmul(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC);
@@ -98,9 +93,9 @@ public partial class NTT
         return new Call(new InstanceNorm(epsilon, vectorizedAxes, padedNums, distributedType), input, scale, bias, output);
     }
 
-    public static Expr VectorizedBinary(Expr lhs, Expr rhs, Expr output, BinaryOp binaryOp, IRArray<int> lhsVectorizedAxes, IRArray<Dimension> lhsPadedNums, IRArray<int> rhsVectorizedAxes, IRArray<Dimension> rhsPadedNums)
+    public static Expr VectorizedBinary(Expr lhs, Expr rhs, Expr output, BaseExpr postOps, BinaryOp binaryOp, IRArray<int>? lhsVectorizedAxes = null, IRArray<Dimension>? lhsPadedNums = null, IRArray<int>? rhsVectorizedAxes = null, IRArray<Dimension>? rhsPadedNums = null)
     {
-        return new Call(new VectorizedBinary(binaryOp, lhsVectorizedAxes, lhsPadedNums, rhsVectorizedAxes, rhsPadedNums), lhs, rhs, output);
+        return new Call(new VectorizedBinary(binaryOp, lhsVectorizedAxes ?? Array.Empty<int>(), lhsPadedNums ?? Array.Empty<Dimension>(), rhsVectorizedAxes ?? Array.Empty<int>(), rhsPadedNums ?? Array.Empty<Dimension>()), lhs, rhs, output, postOps);
     }
 
     public static Call ResizeImage(Expr input, Expr output, int[] vectorizedAxes, Dimension[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
@@ -198,9 +193,9 @@ public partial class NTT
         return new Call(new TIR.NTT.Clamp(min, max), input, output);
     }
 
-    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode, IRArray<int> vectorizeAxes = default)
+    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode, IRArray<int> vectorizeAxes = default, Expr? postOps = null)
     {
-        return new Call(new TIR.NTT.Cast(newType, castMode, vectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : vectorizeAxes), input, output);
+        return new Call(new TIR.NTT.Cast(newType, castMode, vectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : vectorizeAxes), input, output, postOps ?? None.Default);
     }
 
     public static Call Where(Expr cond, Expr x, Expr y, Expr output)

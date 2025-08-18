@@ -243,6 +243,13 @@ public sealed class UnitTestCPUKernels : TestClassBase
 #endif
     }
 
+    public enum PostOpKind
+    {
+        None,
+        MulScalar,
+        ScalarDiv,
+    }
+
     public static Placement DefaultPlacement => new Placement(new[] { 1 }, "t");
 
     public static int Lane => Vector256.IsHardwareAccelerated ? 32 : 16;
@@ -254,12 +261,14 @@ public sealed class UnitTestCPUKernels : TestClassBase
         { [1, 77, 768], [2, 32, 4], new() { new int[][] { [-1, 1], [-1, 1], [0, 2] }, new int[][] { [-1, 2], [-1, 2], [0, 1] } }, 0 },
     };
 
-    public static TheoryData<BinaryOp, long[], long[], int[], int[][], int> TestVectorizeBinaryData { get; } = new()
+    public static TheoryData<BinaryOp, long[], long[], int[], int[][], PostOpKind[], int> TestVectorizeBinaryData { get; } = new()
     {
-        { BinaryOp.Add, [8, 2], [8, 2], [1], [], 0 },
-        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [1], [], 1 },
-        { BinaryOp.Add, [8, 16], [16], [1], [], 2 },
-        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [4], [[-1], [-1], [0], [-1]], 3 },
+        { BinaryOp.Add, [8, 2], [8, 2], [1], [], [], 0 },
+        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [1], [], [], 1 },
+        { BinaryOp.Add, [8, 16], [16], [1], [], [], 2 },
+        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [4], [[-1], [-1], [0], [-1]], [], 3 },
+        { BinaryOp.Add, [8, 2], [8, 2], [1], [], [PostOpKind.MulScalar], 4 },
+        { BinaryOp.Mul, [1, 8, 64, 2 * 8], [1, 1, 64, 2 * 8], [1], [], [PostOpKind.MulScalar, PostOpKind.MulScalar], 5 },
     };
 
     public static TheoryData<ReduceOp, long[], int[], float, bool, int[], int[][], int> TestVectorizeReduceData { get; } = new()
@@ -719,7 +728,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
     [Theory]
     [MemberData(nameof(TestVectorizeBinaryData))]
-    public async Task TestVectorizeBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[][] sbps, int count)
+    public async Task TestVectorizeBinary(BinaryOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[][] sbps, PostOpKind[] postOpKinds, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -731,15 +740,36 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var lhs = new Var(new TensorType(DataTypes.Float32, lhsShape));
         var rhs = new Var(new TensorType(DataTypes.Float32, rhsShape));
         var pre = IR.F.Math.Binary(op, lhs, rhs);
+        var rule = new Passes.Rules.NTT.VectorizeBinary(Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Select(post =>
+        {
+            if (post is not Call { Target: IR.Tensors.Unpack unpack } call)
+            {
+                return post;
+            }
+
+            var newPost = (Expr)call.Arguments[0];
+            if (postOpKinds.Length > 0)
+            {
+                for (int i = 0; i < postOpKinds.Length; i++)
+                {
+                    newPost = postOpKinds[i] switch
+                    {
+                        PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, newPost, 1.32f),
+                        PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, 0.32f, newPost),
+                        _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
+                    };
+                }
+            }
+
+            return IR.F.Tensors.Unpack(newPost, unpack.Lanes.ToArray(), unpack.Axes.ToArray());
+        });
 
         var feedDict = new Dictionary<IVar, IValue>() {
             { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
             { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
         };
-
-        var rule = new Passes.Rules.NTT.VectorizeBinary(Rank, Lane);
-        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
 
         if (sbps.Length > 0)
         {
@@ -917,26 +947,59 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
-    [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
-    [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
-    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, 0 })]
-    [InlineData(new object[] { new long[] { 256 }, Runtime.TypeCode.Float16, Runtime.TypeCode.BFloat16, 1 })]
-    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, 2 })]
-    public async Task TestVectorizeCast(long[] shape, Nncase.Runtime.TypeCode type1, Nncase.Runtime.TypeCode type2, int count)
+    [InlineData(new object[] { new long[] { 1, 256, 64, 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, new PostOpKind[] { }, new int[] { }, 0 })]
+    [InlineData(new object[] { new long[] { 1, 64, 64, 256 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float8E4M3, new PostOpKind[] { PostOpKind.MulScalar }, new int[] { }, 1 })]
+    [InlineData(new object[] { new long[] { 1, 64, 256, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float16, new PostOpKind[] { }, new int[] { }, 2 })]
+    [InlineData(new object[] { new long[] { 64 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, new PostOpKind[] { PostOpKind.MulScalar }, new int[] { }, 3 })]
+    [InlineData(new object[] { new long[] { 43 /* seq_len */, 16, 256 }, Runtime.TypeCode.Float32, Runtime.TypeCode.BFloat16, new PostOpKind[] { PostOpKind.MulScalar }, new int[] { 0 }, 4 })]
+    [InlineData(new object[] { new long[] { 29 /* seq_len */, 64 }, Runtime.TypeCode.BFloat16, Runtime.TypeCode.Float32, new PostOpKind[] { PostOpKind.MulScalar }, new int[] { 0 }, 5 })]
+    public async Task TestVectorizeCast(long[] shape, Runtime.TypeCode type1, Runtime.TypeCode type2, PostOpKind[] postOpKinds, int[] dynamicAxes, int count)
     {
-        var input = new Var(new TensorType(DataTypes.Float32, shape));
+        Expr postOps = None.Default;
+
+        var dynShape = new RankedShape(Enumerable.Range(0, shape.Length).Select(i => dynamicAxes.Contains(i) ? new DimVar($"dim{i}")
+        {
+            Metadata = new() { Range = new(1, Dimension.AlignUp(shape[i] * 2, 64).FixedValue) },
+        } : (Dimension)shape[i]).ToArray());
+        var input = new Var(new TensorType(DataTypes.Float32, dynShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(input, dynShape.ToArray());
         var casted1 = IR.F.Tensors.Cast(input, DataType.FromTypeCode(type1));
         var casted2 = IR.F.Tensors.Cast(casted1, DataType.FromTypeCode(type2));
-        var pre = IR.F.Tensors.Cast(casted2, DataTypes.Float32);
+        var rule = new Passes.Rules.NTT.VectorizeCast(1, Lane);
+        CompilerServices.TryMatchRoot(casted2, rule.Pattern, out var result);
+        var posts = new[] { casted2 }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext())).Select(post =>
+        {
+            if (post is not Call { Target: IR.Tensors.Unpack unpack } call)
+            {
+                return IR.F.Tensors.Cast(post, DataTypes.Float32);
+            }
+
+            var newPost = (Expr)call.Arguments[0];
+            if (postOpKinds.Length > 0)
+            {
+                for (int i = 0; i < postOpKinds.Length; i++)
+                {
+                    newPost = postOpKinds[i] switch
+                    {
+                        PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, newPost, Tensor.FromScalar(1.32f).CastElementTo(PrimType.FromTypeCode(type2))),
+                        PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, Tensor.FromScalar(0.32f).CastElementTo(PrimType.FromTypeCode(type2)), newPost),
+                        _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
+                    };
+                }
+            }
+
+            return IR.F.Tensors.Cast(IR.F.Tensors.Unpack(newPost, unpack.Lanes.ToArray(), unpack.Axes.ToArray()), DataTypes.Float32);
+        });
 
         var feedDict = new Dictionary<IVar, IValue>() {
             { input, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, shape).Evaluate() },
         };
 
-        var rule = new Passes.Rules.NTT.VectorizeCast(1, Lane);
-        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
-        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        foreach (var axis in dynamicAxes)
+        {
+            feedDict.Add((DimVar)dynShape[axis], Value.FromTensor(shape[axis]));
+        }
+
         await RunCases($"Theory{count}", feedDict, posts);
     }
 
@@ -2061,6 +2124,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         var pmgr = CompileSession.CreatePassManager("pmgr");
         var compiler = (Nncase.Compiler.Compiler)CompileSession.Compiler;
         compiler.TargetIndependentPass(pmgr);
+        CompileSessionScope.Current!.Target.RegisterPostAutoVectorizePass(pmgr, CompileSessionScope.Current!.CompileOptions);
         if (enableAutoDist)
         {
             compiler.AutoDistributedPass(pmgr);

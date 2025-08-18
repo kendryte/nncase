@@ -10,6 +10,8 @@ public sealed partial class Cast : NTTKernelOp
 
     public static readonly ParameterInfo Output = new(typeof(Cast), 1, "output");
 
+    public static readonly ParameterInfo PostOps = new(typeof(Cast), 2, "post_ops", ParameterKind.Attribute);
+
     public DataType NewType { get; }
 
     public CastMode CastMode { get; }
