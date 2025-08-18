@@ -176,16 +176,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         {
             for (var i = 0; i < input.AxisPolicies.Count; i++)
             {
-                var padForSplit = false;
-                if (tensorType.Shape[i] is { IsFixed: false } d
-                && d is DimProduct { Scale: var align, Count: 1, Operands: [var ceil] }
-                && ceil is DimFraction { DivMode: DimDivideMode.CeilDiv, Numerator: var numerator, Denominator: DimConst { Value: var denum } }
-                && denum == align && numerator is DimProduct { Scale: 1, Count: 1 })
-                {
-                    padForSplit = true;
-                }
-
-                if (!padForSplit && input.AxisPolicies[i] is SBPSplit && (!paddings[i].IsFixed || paddings[i].Sum().FixedValue != 0))
+                if (input.AxisPolicies[i] is SBPSplit && (!paddings[i].IsFixed || paddings[i].Sum().FixedValue != 0))
                 {
                     return new InvalidType("dynamic pad not support split on axes for now.");
                 }
