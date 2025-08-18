@@ -863,8 +863,9 @@ public abstract class HuggingFaceModel
             queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(queryStates.CheckedDataType)) : queryStates;
         }
 
+        var qType = ((Expr)queryStates).CheckedDataType;
         var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
-        var castQ = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transQ, pagedAttentionConfig.KVPrimType) : transQ;
+        var castQ = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transQ, pagedAttentionConfig.KVPrimType) : transQ;
         var vectorizedQ = qLanes.Length > 0 ? IR.F.Tensors.Pack(castQ, qLanes, qVectorizedAxis) : castQ;
 
         // cpu : [q_head, max_query_len, max_seq_len + 1 ]<primtype>
@@ -888,7 +889,7 @@ public abstract class HuggingFaceModel
 
         output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qVectorizedAxis) : output;
 
-        // output = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(output, DataTypes.Float32) : output;
+        output = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(output, qType) : output;
         output = IR.F.Tensors.Transpose(output, ModelUtils.GetLayoutPerm(qDestLayout, qSrcLayout));
         if (isXpu)
         {
