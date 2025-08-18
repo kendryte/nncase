@@ -77,20 +77,33 @@ class basic_vector
 
     template <Dimensions TIndex>
     constexpr decltype(auto) operator()(const TIndex &index) noexcept {
-        if constexpr (requires { traits_type::element_at(buffer_, index); }) {
-            return traits_type::element_at(buffer_, index);
+        if constexpr (TIndex::rank() == 0) {
+            return *this;
         } else {
-            return detail::vector_storage_element_proxy<traits_type, TIndex>(
-                buffer_, index);
+            if constexpr (requires {
+                              traits_type::element_at(buffer_, index);
+                          }) {
+                return traits_type::element_at(buffer_, index);
+            } else {
+                return detail::vector_storage_element_proxy<traits_type,
+                                                            TIndex>(buffer_,
+                                                                    index);
+            }
         }
     }
 
     template <Dimensions TIndex>
     constexpr decltype(auto) operator()(const TIndex &index) const noexcept {
-        if constexpr (requires { traits_type::element_at(buffer_, index); }) {
-            return traits_type::element_at(buffer_, index);
+        if constexpr (TIndex::rank() == 0) {
+            return *this;
         } else {
-            return traits_type::get_element(buffer_, index);
+            if constexpr (requires {
+                              traits_type::element_at(buffer_, index);
+                          }) {
+                return traits_type::element_at(buffer_, index);
+            } else {
+                return traits_type::get_element(buffer_, index);
+            }
         }
     }
 

@@ -273,8 +273,8 @@ class tensor_reduce_sync_impl {
         }
 
         if (Op == ntt::reduce_op::mean) {
-            auto numerator = (TElem)group_size;
-            ntt::binary<ntt::ops::div>(dest, ntt::make_tensor_view_from_address<TElem>(&numerator, ntt::fixed_shape_v<>), dest);
+            auto numerator = (element_or_scalar_t<TElem>)(size_t)group_size;
+            ntt::binary<ntt::ops::div>(dest, ntt::make_tensor_view_from_address(&numerator, ntt::fixed_shape_v<>), dest);
         }
     }
 };
