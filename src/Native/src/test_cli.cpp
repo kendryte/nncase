@@ -71,7 +71,7 @@ result<typecode_t> get_prim_typecode(datatype_t dtype) {
 template <typename T> float dot(const T *v1, const T *v2, size_t size) {
     float ret = 0.f;
     for (size_t i = 0; i < size; i++) {
-        ret += v1[i] * v2[i];
+        ret += (float)v1[i] * (float)v2[i];
     }
     return ret;
 }
@@ -81,8 +81,8 @@ template <typename T> float cosine(std::span<T> actual, std::span<T> expect) {
               << " expect data size: " << expect.size() << std::endl;
     std::cout << "Comparation of first 10 (actual, golden):" << std::endl;
     for (size_t i = 0; i < 10; i++) {
-        std::cout << "index[" << i << "]: " << actual[i] << " " << expect[i]
-                  << std::endl;
+        std::cout << "index[" << i << "]: " << (float)actual[i] << " "
+                  << (float)expect[i] << std::endl;
     }
     float d0 = dot(actual.data(), expect.data(), actual.size());
     float d1 = dot(actual.data(), actual.data(), actual.size());

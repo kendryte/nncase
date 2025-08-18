@@ -30,30 +30,14 @@ inline constexpr fp16_from_raw_t fp16_from_raw{};
 
 struct half {
   private:
-    union fp32 {
-        uint32_t u32;
-        float f32;
-
-        uint16_t u16() const noexcept {
-            constexpr size_t index =
-                std::endian::native == std::endian::little ? 1 : 0;
-            return reinterpret_cast<const uint16_t *>(&u32)[index];
-        }
-
-        uint16_t &u16() noexcept {
-            constexpr size_t index =
-                std::endian::native == std::endian::little ? 1 : 0;
-            return reinterpret_cast<uint16_t *>(&u32)[index];
-        }
-    };
-
     static constexpr uint16_t ZERO_VALUE = 0;
 
     // this is quiet NaN, sNaN only used for send signal
     static constexpr uint16_t NAN_VALUE = 0x7e00;
 
   public:
-    half() noexcept = default;
+    constexpr half() noexcept = default;
+    constexpr half(_Float16 v) noexcept : value_(v) {}
 
     explicit half(float v) noexcept : value_(round_to_half(v).value_) {}
 
@@ -62,84 +46,21 @@ struct half {
                                        std::is_floating_point<T>::value>>
     explicit half(const T &val) noexcept : half(static_cast<float>(val)) {}
 
-    constexpr half(fp16_from_raw_t, uint16_t value) noexcept : value_(value) {}
+    constexpr half(fp16_from_raw_t, uint16_t value) noexcept
+        : value_(std::bit_cast<_Float16>(value)) {}
 
-    operator float() const noexcept {
-        const fp32 magic = {113 << 23};
-        const unsigned int shifted_exp = 0x7c00
-                                         << 13; // exponent mask after shift
-        fp32 o;
+    constexpr operator _Float16() const noexcept { return value_; }
+    constexpr operator float() const noexcept { return (float)value_; }
 
-        o.u32 = (value_ & 0x7fff) << 13;        // exponent/mantissa bits
-        unsigned int exp = shifted_exp & o.u32; // just the exponent
-        o.u32 += (127 - 15) << 23;              // exponent adjust
-
-        // handle exponent special cases
-        if (exp == shifted_exp) {      // Inf/NaN?
-            o.u32 += (128 - 16) << 23; // extra exp adjust
-        } else if (exp == 0) {         // Zero/Denormal?
-            o.u32 += 1 << 23;          // extra exp adjust
-            o.f32 -= magic.f32;        // renormalize
-        }
-
-        o.u32 |= (value_ & 0x8000) << 16; // sign bit
-        return o.f32;
+    constexpr uint16_t raw() const noexcept {
+        return std::bit_cast<uint16_t>(value_);
     }
-
-    const uint16_t &raw() const noexcept { return value_; }
-    uint16_t &raw() noexcept { return value_; }
 
     static constexpr half from_raw(uint16_t v) noexcept {
         return half(nncase::fp16_from_raw, v);
     }
 
-    static half round_to_half(float v) {
-        fp32 f;
-        f.f32 = v;
-        const fp32 f32infy = {255 << 23};
-        const fp32 f16max = {(127 + 16) << 23};
-        const fp32 denorm_magic = {((127 - 15) + (23 - 10) + 1) << 23};
-        unsigned int sign_mask = 0x80000000u;
-
-        unsigned int sign = f.u32 & sign_mask;
-        f.u32 ^= sign;
-
-        // NOTE all the integer compares in this function can be safely
-        // compiled into signed compares since all operands are below
-        // 0x80000000. Important if you want fast straight SSE2 code
-        // (since there's no unsigned PCMPGTD).
-        half o;
-        if (f.u32 >= f16max.u32) // result is Inf or NaN (all exponent bits set)
-        {
-            o.value_ = (f.u32 > f32infy.u32) ? 0x7e00
-                                             : 0x7c00; // NaN->qNaN and Inf->Inf
-        } else {
-            if (f.u32 < (113 << 23)) { // resulting FP16 is subnormal or zero
-                // use a magic value to align our 10 mantissa bits at the bottom
-                // of the float. as long as FP addition is round-to-nearest-even
-                // this just works.
-                f.f32 += denorm_magic.f32;
-
-                // and one integer subtract of the bias later, we have our final
-                // float!
-                o.value_ = static_cast<uint16_t>(f.u32 - denorm_magic.u32);
-            } else {
-                unsigned int mant_odd =
-                    (f.u32 >> 13) & 1; // resulting mantissa is odd
-
-                // update exponent, rounding bias part 1
-                // Equivalent to `f.u32 += ((unsigned int)(15 - 127) << 23) +
-                // 0xfff`, but without arithmetic overflow.
-                f.u32 += 0xc8000fffU;
-                // rounding bias part 2
-                f.u32 += mant_odd;
-                // take the bits!
-                o.value_ = static_cast<uint16_t>(f.u32 >> 13);
-            }
-        }
-        o.value_ |= static_cast<uint16_t>(sign >> 16);
-        return o;
-    }
+    static half round_to_half(float v) { return (_Float16)v; }
 
     static constexpr half epsilon() noexcept { return from_raw(0x0800); }
 
@@ -156,7 +77,7 @@ struct half {
     static constexpr half infinity() noexcept { return from_raw(0x7c00); }
 
     constexpr bool zero() const noexcept {
-        return (value_ & 0x7FFF) == ZERO_VALUE;
+        return (raw() & 0x7FFF) == ZERO_VALUE;
     }
 
     void operator=(const float &v) noexcept {
@@ -164,7 +85,7 @@ struct half {
     }
 
   private:
-    uint16_t value_;
+    _Float16 value_;
 };
 
 #define DEFINE_FP16_BINARY_FP16RET(x)                                          \

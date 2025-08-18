@@ -37,6 +37,8 @@ struct bfloat16 {
 
   public:
     constexpr bfloat16() noexcept = default;
+    constexpr bfloat16(__bf16 v) noexcept : value_(v) {};
+
     constexpr explicit bfloat16(float v) noexcept
         : value_(round_to_bfloat16(v).value_) {}
 
@@ -46,15 +48,19 @@ struct bfloat16 {
     constexpr explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) {}
 
-    constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
+    constexpr bfloat16(from_raw_t, uint16_t value) noexcept
+        : value_(std::bit_cast<__bf16>(value)) {}
+
+    constexpr operator __bf16() const noexcept { return value_; }
 
     constexpr operator float() const noexcept {
-        uint32_t value = value_ << 16;
+        uint32_t value = raw() << 16;
         return std::bit_cast<float>(value);
     }
 
-    constexpr const uint16_t &raw() const noexcept { return value_; }
-    constexpr uint16_t &raw() noexcept { return value_; }
+    constexpr uint16_t raw() const noexcept {
+        return std::bit_cast<uint16_t>(value_);
+    }
 
     static constexpr bfloat16 from_raw(uint16_t v) noexcept {
         return bfloat16(nncase::from_raw, v);
@@ -118,7 +124,7 @@ struct bfloat16 {
     static constexpr bfloat16 infinity() noexcept { return from_raw(0x7f80); }
 
   private:
-    uint16_t value_;
+    __bf16 value_;
 };
 
 #define DEFINE_BF16_BINARY_BF16RET(x)                                          \

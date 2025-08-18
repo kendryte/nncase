@@ -201,7 +201,7 @@ struct u_matmul_generic {
             for (size_t i = 0; i < m0_tile_scaled; i++) {
                 for (size_t j = 0; j < n0_tile_scaled; j++) {
                     ntt::apply(c0_grouped[i][j].shape(), [&](auto index) {
-                        c0_grouped[i][j](index) = c0_tmp[i][j](index);
+                        c0_grouped[i][j](index) = (element_or_scalar_t<TOutElem>)c0_tmp[i][j](index);
                     });
                 }
             }
