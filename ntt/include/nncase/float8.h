@@ -507,7 +507,7 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
     explicit float_e4m3_t(size_t x) : float_e4m3_t(float(x)) {}
 
     CUTLASS_HOST_DEVICE
-    explicit float_e4m3_t(bfloat16 x) : float_e4m3_t(float(bfloat16)) {}
+    explicit float_e4m3_t(bfloat16 x) : float_e4m3_t(float(x)) {}
 
     /// E5M2 conversion. Defined after float_e5m2_t is defined.
     CUTLASS_HOST_DEVICE
