@@ -791,6 +791,46 @@ struct u_matmul_policy<matmul_vectorize_kind::vectorize_mkn,
     static constexpr size_t m0_subtile = 4;
 };
 
+// template <bool AccumulateC, Vector TBPack, Vector TCPack>
+// struct u_packed_gemv<AccumulateC, bfloat16, TBPack, TCPack, true> {
+//     static constexpr auto N0Tile = TCPack::shape()[0_dim];
+
+//     template <Dimension TLdb, Dimension TK, Dimension TN>
+//     constexpr void operator()(const bfloat16 *NTT_RESTRICT a,
+//                               const TBPack *NTT_RESTRICT b,
+//                               TCPack *NTT_RESTRICT c, const TLdb &ldb,
+//                               const TK &K, const TN &N) noexcept {
+//         NTT_ASSUME(K > 0);
+//         if constexpr (!AccumulateC) {
+//             for (size_t n1 = 0; n1 < N; n1++) {
+//                 c[n1] = {};
+//             }
+//         }
+
+//         for (size_t n1 = 0; n1 < N; n1++) {
+//             const auto b1 = b + n1 * ldb;
+//             auto c0 = ntt::cast_elem<float>(c[n1]);
+
+//             for (size_t k1 = 0; k1 < K; k1++) {
+//                 const float a0 = (float)a[k1];
+//                 const auto b0 = ntt::cast_elem<float>(b1[k1]);
+//                 ntt::loop<N0Tile>([&](auto n) {
+//                     ntt::loop<2>([&](auto i) {
+//                         c0(n, i) = ntt::mul_add(a0, b0(n, i), c0(n, i));
+//                     });
+//                 });
+
+//                 ntt::prefetch<prefetch_hint::l2>(&b1[k1 + 8]);
+//             }
+
+//             ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
+//                 c[n1](index[0_dim]) =
+//                     ntt::cast_elem<bfloat16>(c0(index[0_dim]));
+//             });
+//         }
+//     }
+// };
+
 // Where
 template <typename T1, typename T2, typename T3>
 struct u_where_policy<vector<T1, 8>, vector<T2, 8>, vector<T3, 8>, true> {
