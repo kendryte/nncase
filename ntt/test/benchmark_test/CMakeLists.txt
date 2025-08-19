@@ -56,29 +56,9 @@ file(GLOB TEST_NAMES_FP16 CONFIGURE_DEPENDS
     benchmark_ntt_fp16_where.cpp
 )
 
-# add bf16 test files
-file(GLOB TEST_NAMES_BF16 CONFIGURE_DEPENDS
-    benchmark_ntt_bf16_binary.cpp
-    benchmark_ntt_bf16_clamp.cpp
-    benchmark_ntt_bf16_compare.cpp
-    benchmark_ntt_bf16_expand.cpp
-    benchmark_ntt_bf16_gather.cpp
-    benchmark_ntt_bf16_layernorm.cpp
-    benchmark_ntt_bf16_matmul.cpp
-    benchmark_ntt_bf16_pack.cpp
-    benchmark_ntt_bf16_reduce.cpp
-    benchmark_ntt_bf16_rmsnorm.cpp
-    benchmark_ntt_bf16_scatter_nd.cpp
-    benchmark_ntt_bf16_slice.cpp
-    benchmark_ntt_bf16_softmax.cpp
-    benchmark_ntt_bf16_transpose.cpp
-    benchmark_ntt_bf16_unary.cpp
-    benchmark_ntt_bf16_unpack.cpp
-    benchmark_ntt_bf16_where.cpp
-)
 
 # merge F32 AND FP16 INTO TEST_NAMES
-list(APPEND TEST_NAMES ${TEST_NAMES_F32} ${TEST_NAMES_FP16} ${TEST_NAMES_BF16})
+list(APPEND TEST_NAMES ${TEST_NAMES_F32} ${TEST_NAMES_FP16})
 
 foreach(test_name ${TEST_NAMES})
     get_filename_component(tname ${test_name} NAME_WE)
