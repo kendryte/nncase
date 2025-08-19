@@ -20,6 +20,8 @@ public sealed partial class VectorizedBinary : NTTKernelOp
 
     public static readonly ParameterInfo Output = new(typeof(VectorizedBinary), 2, "output", ParameterKind.Input);
 
+    public static readonly ParameterInfo PostOps = new(typeof(VectorizedBinary), 3, "post_ops", ParameterKind.Attribute);
+
     public BinaryOp BinaryOp { get; }
 
     public IRArray<int> LhsVectorizedAxes { get; }

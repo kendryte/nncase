@@ -53,9 +53,14 @@ public partial class NTT
         return new Call(new VectorizedMatMul(outDataType ?? DataTypes.Float32, lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce), lhs, rhs);
     }
 
-    public static Expr VectorizedBinary(Expr lhs, Expr rhs, BinaryOp binaryOp, IRArray<int> lhsVectorizedAxes, IRArray<Dimension> lhsPadedNums, IRArray<int> rhsVectorizedAxes, IRArray<Dimension> rhsPadedNums)
+    public static Expr VectorizedBinary(Expr lhs, Expr rhs, BaseExpr postOps, BinaryOp binaryOp, IRArray<int>? lhsVectorizedAxes = null, IRArray<Dimension>? lhsPadedNums = null, IRArray<int>? rhsVectorizedAxes = null, IRArray<Dimension>? rhsPadedNums = null)
     {
-        return new Call(new VectorizedBinary(binaryOp, lhsVectorizedAxes, lhsPadedNums, rhsVectorizedAxes, rhsPadedNums), lhs, rhs);
+        return new Call(new VectorizedBinary(binaryOp, lhsVectorizedAxes ?? Array.Empty<int>(), lhsPadedNums ?? Array.Empty<Dimension>(), rhsVectorizedAxes ?? Array.Empty<int>(), rhsPadedNums ?? Array.Empty<Dimension>()), lhs, rhs, postOps);
+    }
+
+    public static Call VectorizedCast(Expr input, DataType newType, CastMode castMode, IRArray<int> vectorizeAxes, Expr postOps)
+    {
+        return new Call(new VectorizedCast(newType, castMode, vectorizeAxes), input, postOps);
     }
 
     public static Call ResizeImage(Expr input, BaseExpr paddedNums, int[] vectorizedAxes, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)

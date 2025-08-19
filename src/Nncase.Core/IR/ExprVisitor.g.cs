@@ -947,9 +947,9 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected virtual TExprResult VisitLeafAffineExpr(Affine.AffineExpr expr, TContext context) => DefaultVisitLeaf(expr, context);
 
     /// <summary>
-    /// Visit leaf <see cref="Affine.AffineSymbolBase"/>.
+    /// Visit leaf <see cref="Affine.AffineExpr"/>.
     /// </summary>
-    protected virtual TExprResult VisitLeafAffineSymbolBase(Affine.AffineSymbolBase expr, TContext context) => VisitLeafAffineExpr(expr, context);
+    protected virtual TExprResult VisitLeafAffineSymbolBase(Affine.AffineExpr expr, TContext context) => VisitLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="Affine.AffineDim"/>.
@@ -1836,12 +1836,12 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     protected sealed override TExprResult VisitLeafAffineExpr(Affine.AffineExpr expr, Unit context) => VisitLeafAffineExpr(expr);
 
     /// <summary>
-    /// Visit leaf <see cref="Affine.AffineSymbolBase"/>.
+    /// Visit leaf <see cref="Affine.AffineExpr"/>.
     /// </summary>
-    protected virtual TExprResult VisitLeafAffineSymbolBase(Affine.AffineSymbolBase expr) => base.VisitLeafAffineSymbolBase(expr, default);
+    protected virtual TExprResult VisitLeafAffineSymbolBase(Affine.AffineExpr expr) => base.VisitLeafAffineSymbolBase(expr, default);
     
     /// <inheritdoc/>
-    protected sealed override TExprResult VisitLeafAffineSymbolBase(Affine.AffineSymbolBase expr, Unit context) => VisitLeafAffineSymbolBase(expr);
+    protected sealed override TExprResult VisitLeafAffineSymbolBase(Affine.AffineExpr expr, Unit context) => VisitLeafAffineSymbolBase(expr);
 
     /// <summary>
     /// Visit leaf <see cref="Affine.AffineDim"/>.

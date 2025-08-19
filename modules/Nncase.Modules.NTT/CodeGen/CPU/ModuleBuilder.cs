@@ -58,7 +58,7 @@ public sealed class NTTModuleBuilder : IModuleBuilder
             writer.Write(ref header);
         }
 
-        var linkableFunctions = functions.OfType<TIR.PrimFunction>().Select((f, i) => new FunctionBuilder((uint)i, _rdataWriter, _threadLocalRdataWriters, _blockLocalRdataWriters, (Targets.NTTTargetOptions)CompileOptions.TargetOptions).Build(f)).ToArray();
+        var linkableFunctions = functions.OfType<BaseFunction>().Select((f, i) => new FunctionBuilder((uint)i, _rdataWriter, _threadLocalRdataWriters, _blockLocalRdataWriters, (Targets.NTTTargetOptions)CompileOptions.TargetOptions).Build(f)).ToArray();
         _rdataWriter.Flush();
         var threadLocalRdataContents = Enumerable.Range(0, _threadLocalRdataWriters.Length).Select(i =>
         {

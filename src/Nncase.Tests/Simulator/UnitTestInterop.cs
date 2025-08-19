@@ -33,7 +33,7 @@ public class UnitTestInteropIntegrated : TestClassBase
         var x = new Var("x", type);
         var body = T.Sequential().Body(
             T.AttachBuffer(1.0f, out var constBuffer),
-            TIR.F.NTT.Binary(BinaryOp.Add, x, constBuffer, T.CreateBuffer(type, MemoryLocation.Output, out var outBuffer)),
+            TIR.F.NTT.VectorizedBinary(x, constBuffer, T.CreateBuffer(type, MemoryLocation.Output, out var outBuffer), None.Default, BinaryOp.Add),
             T.Return(outBuffer)).Build();
         var main = new PrimFunction("main_prim", CPUTarget.Kind, body, new[] { x });
         var module = new IRModule(main);

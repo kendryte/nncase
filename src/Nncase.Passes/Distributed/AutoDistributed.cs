@@ -879,6 +879,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         var varMemo = new Dictionary<SearchableNode, BoolVar>();
         var clusterVarMemo = new Dictionary<DistributedSearchGraph, List<BoolVar>>();
         var costMemo = new Dictionary<SearchableNode, CostModel.Cost>();
+        var costScoreMemo = new Dictionary<SearchableNode, UInt128>();
         foreach (var cluster in _rootSearchGraph.Clusters.OfType<DistributedSearchGraph>())
         {
             clusterVarMemo.Add(cluster, new());
@@ -919,6 +920,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     }
 
                     costMemo.Add(enode, cost);
+                    costScoreMemo.Add(enode, cost.Score);
 
                     var boolVar = cpmodel.NewBoolVar(string.Empty);
                     varMemo.Add(enode, boolVar);
@@ -978,7 +980,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 #endif
 
         // 5. add pick weights for all enode.
-        cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costMemo[n].Score))));
+        cpmodel.Minimize(LinearExpr.WeightedSum(_rootSearchGraph.Vertices.Select(n => varMemo[n]), _rootSearchGraph.Vertices.Select(n => checked((long)costScoreMemo[n]))));
 
         if (cpmodel.Validate().Any())
         {
@@ -1116,6 +1118,9 @@ internal sealed class ExprBuildVisitor
             {
                 case Var or TensorConst or TupleConst or None or Shape or Padding or Paddings or Dimension or Call:
                     expr = root.Expr;
+                    break;
+                case Fusion fusion:
+                    expr = fusion;
                     break;
                 case BaseFunction func:
                     expr = new Call(target: func, arguments: children);

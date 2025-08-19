@@ -16,6 +16,7 @@
 #include "../../loop.h"
 #include "../../vector_ops.h"
 #include "arch_types.h"
+#include "nncase/bfloat16.h"
 #include <immintrin.h>
 
 namespace nncase::ntt::vector_ops {
@@ -38,6 +39,18 @@ template <> struct vload_scalar<ntt::vector<float, 8, 8>> {
         ntt::vector<float, 8, 8> out;
         loop<8_dim>([&](auto i) { out(i) = _mm256_set1_ps(v); });
         return out;
+    }
+};
+
+template <> struct vunaligned_load<ntt::vector<bfloat16, 16>, float> {
+    ntt::vector<bfloat16, 16> operator()(const bfloat16 *ptr) const noexcept {
+        return _mm256_loadu_epi16(ptr);
+    }
+};
+
+template <> struct vunaligned_load<ntt::vector<float, 8>, float> {
+    ntt::vector<float, 8> operator()(const float *ptr) const noexcept {
+        return _mm256_loadu_ps(ptr);
     }
 };
 

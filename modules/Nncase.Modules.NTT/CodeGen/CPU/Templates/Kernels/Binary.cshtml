@@ -13,5 +13,7 @@
                     BinaryOp.Pow => "ops::pow",
                     _ => throw new NotSupportedException($"Unsupported binary: {op}."),
                 };
+    string postOps = Model.Arguments[3].Symbol.Name;
+    postOps = postOps == "nullptr" ? "" :  ("," + postOps);
 }
-binary<@BinaryToCFunction(Model.BinaryOp)>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name));
+binary<@BinaryToCFunction(Model.BinaryOp)@(postOps)>(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), @Html.Raw(Model.Arguments[2].Symbol.Name));

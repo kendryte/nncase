@@ -67,8 +67,8 @@ public static class Tensors
     public static Call Bitcast(Expr input, DataType newType) =>
         new Call(new Bitcast(newType), input);
 
-    public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault, IRArray<int> vectorizeAxes = default) =>
-        new Call(new Cast(newType, castMode, vectorizeAxes), input);
+    public static Call Cast(Expr input, DataType newType, CastMode castMode = CastMode.KDefault) =>
+        new Call(new Cast(newType, castMode), input);
 
     public static Call Concat(BaseExpr input, int axis) => new Call(new Concat(axis), input);
 

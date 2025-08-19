@@ -117,4 +117,13 @@ public class CPUTarget : Target
     {
         passManager.Add<NTTTIRSelectionPass>();
     }
+
+    public override void RegisterPostAutoVectorizePass(IPassManager passManager, CompileOptions options)
+    {
+        passManager.AddWithName<DataflowPass>("FoldPostOps").Configure(p =>
+        {
+            p.Add<Passes.Rules.NTT.FoldCastPostOps>();
+            p.Add<Passes.Rules.NTT.FoldBinaryPostOps>();
+        });
+    }
 }

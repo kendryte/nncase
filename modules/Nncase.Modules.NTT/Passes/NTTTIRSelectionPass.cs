@@ -46,7 +46,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Distributed.ForceBoxing forceBoxing:
                 return T.Memcopy(output, (Expr)arguments[0]);
             case IR.Math.Binary binary:
-                return GenerateBinary(binary.BinaryOp, arguments, output);
+                return TIR.F.NTT.VectorizedBinary((Expr)arguments[0], (Expr)arguments[1], output, None.Default, binary.BinaryOp, Array.Empty<int>(), Array.Empty<Dimension>(), Array.Empty<int>(), Array.Empty<Dimension>());
             case IR.Tensors.Bitcast bitcast:
                 return GenerateBitcast((Expr)arguments[0], ref output, bitcast.NewType);
             case IR.Tensors.Pack pack:
@@ -56,7 +56,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Tensors.Unpack unpack:
                 return TIR.F.NTT.Unpack((Expr)arguments[0], output, unpack.Lanes, unpack.Axes);
             case IR.NTT.VectorizedBinary vectorizedBinary:
-                return TIR.F.NTT.Binary(vectorizedBinary.BinaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
+                return TIR.F.NTT.VectorizedBinary((Expr)arguments[0], (Expr)arguments[1], output, (Expr)arguments[2], vectorizedBinary.BinaryOp, vectorizedBinary.LhsVectorizedAxes, vectorizedBinary.LhsPadedNums, vectorizedBinary.RhsVectorizedAxes, vectorizedBinary.RhsPadedNums);
             case IR.NTT.VectorizedMatMul vectorizedMatMul when GetArgumentType(arguments[0]) is DistributedType dta && GetArgumentType(arguments[1]) is DistributedType dtb:
                 var dinfo = vectorizedMatMul.GetDimInfo(dta.TensorType.Shape.Rank, dtb.TensorType.Shape.Rank);
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
@@ -136,7 +136,9 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Math.ReduceArg reduceArg:
                 return TIR.F.NTT.ReduceArg((Expr)arguments[0], output, (int)((DimConst)call[IR.Math.ReduceArg.Axis]).FixedValue, ((TensorConst)call[IR.Math.ReduceArg.KeepDims]).Value.ToArray<bool>()[0], ((TensorConst)call[IR.Math.ReduceArg.SelectLastIndex]).Value.ToArray<bool>()[0], reduceArg.ReduceArgOp, reduceArg.DestType);
             case IR.Tensors.Cast cast:
-                return TIR.F.NTT.Cast((Expr)arguments[0], output, cast.NewType, cast.CastMode, cast.VectorizeAxes);
+                return TIR.F.NTT.Cast((Expr)arguments[0], output, cast.NewType, cast.CastMode, Array.Empty<int>(), None.Default);
+            case IR.NTT.VectorizedCast cast:
+                return TIR.F.NTT.Cast((Expr)arguments[0], output, cast.NewType, cast.CastMode, cast.VectorizeAxes, (Expr)arguments[1]);
             case IR.Tensors.Where where:
                 return TIR.F.NTT.Where((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output);
             case IR.Tensors.Expand expand:
@@ -237,11 +239,6 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
     {
         var input = (Expr)arguments[IR.Math.Unary.Input.Index];
         return TIR.F.NTT.Unary(unaryOp, input, output);
-    }
-
-    private Expr GenerateBinary(BinaryOp binaryOp, IReadOnlyList<BaseExpr> arguments, Expr output)
-    {
-        return TIR.F.NTT.Binary(binaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
     }
 
     private Expr GenerateClamp(Call call, IReadOnlyList<BaseExpr> arguments, Expr output)

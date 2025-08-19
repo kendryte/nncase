@@ -52,13 +52,24 @@ public sealed class VectorizedBinaryEvaluator : IEvaluator<VectorizedBinary>, IT
         };
 
         var outShape = context.Evaluate(context.CurrentCall.CheckedShape).AsTensor().ToArray<long>();
-        return Value.FromTensor(Tensor.FromBytes(context.CurrentCall.CheckedDataType, binary.BytesBuffer.ToArray(), outShape));
+        var result = Value.FromTensor(Tensor.FromBytes(context.CurrentCall.CheckedDataType, binary.BytesBuffer.ToArray(), outShape));
+        if (context.CurrentCall[VectorizedBinary.PostOps] is Fusion lambda)
+        {
+            return CompilerServices.Evaluate(lambda.Body, new Dictionary<IVar, IValue>() { { lambda.Parameters[0], result } });
+        }
+
+        return result;
     }
 
     public IRType Visit(ITypeInferenceContext context, VectorizedBinary target)
     {
         var lhs = context.CheckArgumentType<IRType>(target, VectorizedBinary.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, VectorizedBinary.Rhs);
+        var postOps = context.CheckArgumentType<IRType>(target, VectorizedBinary.PostOps);
+        if (!(postOps is NoneType || (postOps is CallableType)))
+        {
+            return new InvalidType($"PostOps must be None or Callable, but got {postOps}");
+        }
 
         return (lhs, rhs) switch
         {

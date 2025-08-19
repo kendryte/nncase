@@ -132,7 +132,7 @@ public partial class NTTAffineSelectionPass
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(output, AffineMap.Identity(domains.Length), out var outTile)
-            .Body(TIR.F.NTT.VectorizedBinary(lhsTile, rhsTile, outTile, binary.BinaryOp, binary.LhsVectorizedAxes, binary.LhsPadedNums, binary.RhsVectorizedAxes, binary.RhsPadedNums))
+            .Body(TIR.F.NTT.VectorizedBinary(lhsTile, rhsTile, outTile, call[VectorizedBinary.PostOps], binary.BinaryOp, binary.LhsVectorizedAxes, binary.LhsPadedNums, binary.RhsVectorizedAxes, binary.RhsPadedNums))
             .Build();
     }
 }

@@ -23,21 +23,27 @@ template <Tensor TLhs, Tensor TRhs, Tensor TOut>
 class binary_impl
     : public binary_like_impl<binary_impl<TLhs, TRhs, TOut>, TLhs, TRhs, TOut> {
   public:
-    template <Tensor TBroadcastedLhs, Tensor TBroadcastedRhs, class Op>
+    template <Tensor TBroadcastedLhs, Tensor TBroadcastedRhs, class TOp,
+              class TPostOp>
     void invoke_ukernel(const TBroadcastedLhs &lhs, const TBroadcastedRhs &rhs,
-                        TOut &output, const Op &op) {
+                        TOut &output, const TOp &op, const TPostOp &post_op) {
         ntt::apply(output.shape(), [&](auto index) {
             output(index) = op(lhs(index), rhs(index));
+            output(index) = post_op(output(index));
         });
     }
 };
 } // namespace detail
 
-template <template <class T1, class T2> class Op, Tensor TLhs, Tensor TRhs,
-          class TOut>
-void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-            const Op<std::remove_cv_t<typename TLhs::element_type>,
-                     std::remove_cv_t<typename TRhs::element_type>> &op = {}) {
-    detail::binary_impl<TLhs, TRhs, std::decay_t<TOut>>()(lhs, rhs, output, op);
+template <template <class T1, class T2> class TOp,
+          template <class> class TPostOp = DefaultPostOp, Tensor TLhs,
+          Tensor TRhs, class TOut>
+void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
+    const TOp<std::remove_cv_t<typename TLhs::element_type>,
+             std::remove_cv_t<typename TRhs::element_type>>
+        op;
+    detail::binary_impl<TLhs, TRhs, std::decay_t<TOut>>()(
+        lhs, rhs, output, op,
+        TPostOp<typename std::decay_t<TOut>::element_type>{});
 }
 } // namespace nncase::ntt

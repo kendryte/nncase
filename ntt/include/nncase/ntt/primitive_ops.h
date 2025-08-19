@@ -314,6 +314,12 @@ template <class T1, class T2> struct cast {
     }
 };
 
+template <class T1, class T2> struct cast_elem {
+    constexpr T2 operator()(const T1 &v) const noexcept {
+        return static_cast<T2>(v);
+    }
+};
+
 // where
 template <class T1, class T2, class T3> struct where {
     constexpr auto operator()(const T1 &condition, const T2 &x,
@@ -405,6 +411,16 @@ NTT_DEFINE_COMPARE_FUNC_IMPL(less)
 NTT_DEFINE_COMPARE_FUNC_IMPL(less_or_equal)
 NTT_DEFINE_COMPARE_FUNC_IMPL(greater)
 NTT_DEFINE_COMPARE_FUNC_IMPL(greater_or_equal)
+
+template <ScalarOrVector T2, ScalarOrVector T1>
+constexpr auto cast(const T1 &v) noexcept {
+    return ops::cast<T1, T2>()(v);
+}
+
+template <Scalar T2, ScalarOrVector T1>
+constexpr auto cast_elem(const T1 &v) noexcept {
+    return ops::cast_elem<T1, T2>()(v);
+}
 
 template <ScalarOrVector T1, ScalarOrVector T2, ScalarOrVector TResult>
 constexpr TResult mul_add(const T1 &v1, const T2 &v2,
@@ -542,7 +558,8 @@ template <class T1, class T2, class TResult>
 constexpr TResult
 mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
                                      const TResult &v3) const noexcept {
-    return v1 * v2 + v3;
+    using TResultElem = element_or_scalar_t<TResult>;
+    return ntt::cast_elem<TResultElem>(v1 * v2) + v3;
 }
 } // namespace ops
 } // namespace nncase::ntt
