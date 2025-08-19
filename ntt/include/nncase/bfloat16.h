@@ -63,9 +63,7 @@ struct bfloat16 {
         return std::bit_cast<float>(value);
     }
 
-    constexpr uint16_t raw() const noexcept {
-        return std::bit_cast<uint16_t>(value_);
-    }
+    constexpr uint16_t raw() const noexcept { return value_; }
 
     static constexpr bfloat16 from_raw(uint16_t v) noexcept {
         return bfloat16(nncase::from_raw, v);

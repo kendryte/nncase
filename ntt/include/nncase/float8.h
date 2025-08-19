@@ -78,6 +78,7 @@
 
 // #include "nncase/nncase.h"
 #include "half.h"
+#include "bfloat16.h"
 #ifndef CUTLASS_HOST_DEVICE
 #define CUTLASS_HOST_DEVICE inline
 #define CUTLASS_DEVICE inline
@@ -490,6 +491,9 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
     /// Floating point conversion
     CUTLASS_HOST_DEVICE
     explicit float_e4m3_t(float x) { storage = from_float(x).storage; }
+
+    CUTLASS_HOST_DEVICE
+    explicit float_e4m3_t(bfloat16 x) : float_e4m3_t(float(x)) {}
 
     CUTLASS_HOST_DEVICE
     explicit float_e4m3_t(half x) { storage = from_half(x).storage; }
