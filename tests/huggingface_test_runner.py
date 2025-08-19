@@ -77,7 +77,7 @@ def dequantize_weights(model_dir):
         if filename.endswith(".safetensors") and not filename.endswith(".org.safetensors"):
             filepath = os.path.join(model_dir, filename)
             org_filepath = filepath.replace(".safetensors", ".org.safetensors")
-            if filename.endswith(".safetensors") and os.path.exists(os.path.join(model_dir, org_filepath)):
+            if os.path.exists(os.path.join(model_dir, org_filepath)):
                 continue
         
             if not os.path.exists(org_filepath):

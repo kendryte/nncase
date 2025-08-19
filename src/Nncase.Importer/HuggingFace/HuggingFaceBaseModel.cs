@@ -63,7 +63,7 @@ public abstract class HuggingFaceModel
         if (!LoadedFiles.Contains(fileName))
         {
             var filePath = Path.Combine(WeightsDir, fileName);
-            var orgfilePath = filePath.Replace(".safetensor", ".org.safetensor", StringComparison.OrdinalIgnoreCase);
+            var orgfilePath = filePath.Replace(".safetensors", ".org.safetensors", StringComparison.OrdinalIgnoreCase);
             if (File.Exists(orgfilePath))
             {
                 filePath = orgfilePath;
