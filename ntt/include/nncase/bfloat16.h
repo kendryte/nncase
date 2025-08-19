@@ -36,8 +36,16 @@ struct bfloat16 {
     static constexpr uint16_t NAN_VALUE = 0x7FC0;
 
   public:
+#ifdef NTT_HAVE_NATIVE_BF16
+    constexpr bfloat16(__bf16 v) noexcept
+        : value_(std::bit_cast<uint16_t>(v)) {};
+
+    constexpr operator __bf16() const noexcept {
+        return std::bit_cast<__bf16>(value_);
+    }
+#endif
+
     constexpr bfloat16() noexcept = default;
-    constexpr bfloat16(__bf16 v) noexcept : value_(v) {};
 
     constexpr explicit bfloat16(float v) noexcept
         : value_(round_to_bfloat16(v).value_) {}
@@ -48,10 +56,7 @@ struct bfloat16 {
     constexpr explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) {}
 
-    constexpr bfloat16(from_raw_t, uint16_t value) noexcept
-        : value_(std::bit_cast<__bf16>(value)) {}
-
-    constexpr operator __bf16() const noexcept { return value_; }
+    constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
 
     constexpr operator float() const noexcept {
         uint32_t value = raw() << 16;
@@ -124,7 +129,7 @@ struct bfloat16 {
     static constexpr bfloat16 infinity() noexcept { return from_raw(0x7f80); }
 
   private:
-    __bf16 value_;
+    uint16_t value_;
 };
 
 #define DEFINE_BF16_BINARY_BF16RET(x)                                          \
