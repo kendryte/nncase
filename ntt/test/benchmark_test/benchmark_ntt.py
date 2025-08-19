@@ -1395,25 +1395,25 @@ if __name__ == '__main__':
     benchmark_list = sorted(benchmark_list, key=lambda d: (d['kind'], d['op']))
     generate_benchmark_ntt_md(benchmark_list, 'kind', md_file)
     
-    # 2. benchmark ntt bf16
-    # 2.1 x86_64
-    ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path, 'bf16')
-    ntt_x86_64.run()
+    # # 2. benchmark ntt bf16
+    # # 2.1 x86_64
+    # ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path, 'bf16')
+    # ntt_x86_64.run()
 
-    # 2.2 riscv64
-    ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path, 'bf16')
-    ntt_riscv64.run()
+    # # 2.2 riscv64
+    # ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path, 'bf16')
+    # ntt_riscv64.run()
 
-    # 2.3 merge benchmark list
-    benchmark_list = []
-    for i in range(len(ntt_x86_64.benchmark_list)):
-        item = {**ntt_x86_64.benchmark_list[i], **ntt_riscv64.benchmark_list[i]}
-        benchmark_list.append(item)
+    # # 2.3 merge benchmark list
+    # benchmark_list = []
+    # for i in range(len(ntt_x86_64.benchmark_list)):
+    #     item = {**ntt_x86_64.benchmark_list[i], **ntt_riscv64.benchmark_list[i]}
+    #     benchmark_list.append(item)
 
-    # 2.4 generate md
-    md_file = ntt_bf16_report_file('benchmark_ntt_bf16.md')
-    benchmark_list = sorted(benchmark_list, key=lambda d: (d['kind'], d['op']))
-    generate_benchmark_ntt_md(benchmark_list, 'kind', md_file)
+    # # 2.4 generate md
+    # md_file = ntt_bf16_report_file('benchmark_ntt_bf16.md')
+    # benchmark_list = sorted(benchmark_list, key=lambda d: (d['kind'], d['op']))
+    # generate_benchmark_ntt_md(benchmark_list, 'kind', md_file)
 
     # 3. benchmark ntt matmul
     # 3.1 x86_64
