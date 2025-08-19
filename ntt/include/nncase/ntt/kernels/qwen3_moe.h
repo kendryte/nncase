@@ -78,13 +78,13 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
 
     const auto seq_len = q.shape()[0_dim];
 
-    // 1. router logits : [seq_len, num_expert] = q [seq_len, hidden] @ gateW [hidden, num_expert]
+    // 1. router logits : [seq_len, num_expert] = q [seq_len, hidden_size] @ gateW [num_expert, hidden_size]
     std::vector<TElem> router_logits(seq_len * num_expert);
     for (size_t i = 0; i < seq_len; i++) {
         for (size_t e = 0; e < num_expert; e++) {
             TElem acc = (TElem)0;
             for (size_t h = 0; h < hidden_size; h++) {
-                acc += q(i, h) * moeGateW(h, e);
+                acc += q(i, h) * moeGateW(e, h);
             }
             router_logits[i * num_expert + e] = acc; // cast to float already in evaluator, kept same type here.
         }
