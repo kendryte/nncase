@@ -20,6 +20,7 @@
 #include <float.h>
 #include <functional>
 #include <limits>
+#include <type_traits>
 
 #ifdef __F16C__
 #include <immintrin.h>
@@ -54,13 +55,17 @@ struct half {
         : value_(std::bit_cast<_Float16>(value)) {}
 
     constexpr operator _Float16() const noexcept { return value_; }
-    operator float() const noexcept {
+    constexpr operator float() const noexcept {
+        if (std::is_constant_evaluated()) {
+            return (float)value_;
+        } else {
 #ifdef __F16C__
-        // To avoid __extendhfdf2
-        return _cvtsh_ss(raw());
+            // To avoid extendhfdf2
+            return _cvtsh_ss(raw());
 #else
-        return (float)value_;
+            return (float)value_;
 #endif
+        }
     }
 
     constexpr uint16_t raw() const noexcept {
@@ -71,7 +76,20 @@ struct half {
         return half(nncase::fp16_from_raw, v);
     }
 
-    static half round_to_half(float v) { return (_Float16)v; }
+    static constexpr half round_to_half(float v) {
+        if (std::is_constant_evaluated()) {
+            return (_Float16)v;
+        } else {
+#ifdef __F16C__
+            // To avoid truncsfhf2
+            return from_raw(_cvtss_sh(v, _MM_FROUND_NEARBYINT));
+#else
+            return (_Float16)v;
+#endif
+        }
+
+        return (_Float16)v;
+    }
 
     static constexpr half epsilon() noexcept { return from_raw(0x0800); }
 
