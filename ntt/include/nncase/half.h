@@ -21,6 +21,10 @@
 #include <functional>
 #include <limits>
 
+#ifdef __F16C__
+#include <immintrin.h>
+#endif
+
 namespace nncase {
 struct fp16_from_raw_t {
     explicit fp16_from_raw_t() = default;
@@ -50,7 +54,14 @@ struct half {
         : value_(std::bit_cast<_Float16>(value)) {}
 
     constexpr operator _Float16() const noexcept { return value_; }
-    constexpr operator float() const noexcept { return (float)value_; }
+    operator float() const noexcept {
+#ifdef __F16C__
+        // To avoid __extendhfdf2
+        return _cvtsh_ss(raw());
+#else
+        return (float)value_;
+#endif
+    }
 
     constexpr uint16_t raw() const noexcept {
         return std::bit_cast<uint16_t>(value_);
