@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
         "max", half(-10.f), half(10.f), half(-10.f), half(10.f));
     benchmark_ntt_binary<ntt::ops::min, float, N>(
         "min", half(-10.f), half(10.f), half(-10.f), half(10.f));
-    benchmark_ntt_binary<ntt::ops::floor_mod, int32_t, N>(
+    benchmark_ntt_binary<ntt::ops::floor_mod, half, N>(
         "floor_mod", half(-10), half(10), half(1), half(10));
     benchmark_ntt_binary<ntt::ops::mod, float, N>(
         "mod", half(-10.f), half(10.f), half(1.f), half(10.f));

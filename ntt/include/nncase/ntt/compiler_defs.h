@@ -41,3 +41,8 @@
 #define NTT_NO_UNIQUE_ADDRESS [[no_unique_address]]
 #define NTT_RESTRICT __restrict
 #endif
+
+#if defined(__AVX2__) || defined(__aarch64__) || defined(__riscv_zvfbfmin) ||  \
+    defined(__riscv_zvfbf)
+#define NTT_HAVE_NATIVE_BF16 1
+#endif
