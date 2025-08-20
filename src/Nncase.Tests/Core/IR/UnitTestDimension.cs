@@ -164,4 +164,18 @@ public sealed class UnitTestDimension
         var sum = Assert.IsType<DimSum>(product.Operands[0]);
         Assert.Equal(7, sum.Bias);
     }
+
+    [Fact]
+    public void TestDimensionSumSimplify()
+    {
+        var dv = new DimVar("x");
+        var ceilDiv = Dimension.CeilDiv(new DimProduct([dv], 1), 8);
+        var mul = 8 * ceilDiv;
+        var neg = -dv;
+        var sum = mul + neg;
+        sum = dv + sum;
+        Assert.Equal(sum, mul);
+        System.Console.WriteLine(sum);
+        System.Console.WriteLine(mul);
+    }
 }

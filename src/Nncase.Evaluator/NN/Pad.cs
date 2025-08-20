@@ -132,23 +132,7 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             return new InvalidType("pad infer type failed");
         }
 
-        var shape = tensorType.Shape.ToArray();
-        for (var i = 0; i < tensorType.Shape.Rank; i++)
-        {
-            if (tensorType.Shape[i] is { IsFixed: false } d && d is DimSum r && r.Bias == 0 && r.Count == 3)
-            {
-                var (a, b, c) = (r.Operands[0], r.Operands[1], r.Operands[2]);
-                if ((b is DimProduct { Scale: var align, Count: 1, Operands: [var ceil] })
-                && ceil is DimFraction { DivMode: DimDivideMode.CeilDiv, Numerator: var numerator, Denominator: DimConst { Value: var denum } }
-                && denum == align && numerator is DimProduct { Scale: 1, Count: 1, Operands: [var s1] } && s1 == a
-                && (c is DimProduct { Scale: -1, Count: 1, Operands: [var s2] }) && s2 == a)
-                {
-                    shape[i] = b;
-                }
-            }
-        }
-
-        return new TensorType(tensorType.DType, shape);
+        return tensorType;
     }
 
     public IRType Visit(DistributedType input, Paddings paddings, Expr padValue)
