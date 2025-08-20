@@ -47,14 +47,11 @@ struct bfloat16 {
 
     constexpr bfloat16() noexcept = default;
 
-    constexpr explicit bfloat16(float v) noexcept
-        : value_(round_to_bfloat16(v).value_) {}
-
     template <class T,
               class = std::enable_if_t<std::is_integral<T>::value ||
                                        std::is_floating_point<T>::value>>
-    constexpr explicit bfloat16(const T &val) noexcept
-        : bfloat16(static_cast<float>(val)) {}
+    constexpr explicit bfloat16(const T &v) noexcept
+        : value_(round_to_bfloat16(v).value_) {}
 
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
 
@@ -243,6 +240,15 @@ inline bool isfinite(const bfloat16 &a) { return std::isfinite(float(a)); }
 inline bfloat16 abs(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(fabsf(float(a)));
 }
+inline bfloat16 acos(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::acos(float(a)));
+}
+inline bfloat16 asin(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::asin(float(a)));
+}
+inline bfloat16 erf(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::erff(float(a)));
+}
 inline bfloat16 exp(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(expf(float(a)));
 }
@@ -283,6 +289,9 @@ inline bfloat16 nearbyint(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(nearbyintf(float(a)));
 }
 inline long lrint(const bfloat16 &a) { return lrintf(float(a)); }
+
+template <> struct is_arithmetic<bfloat16> : public true_type {};
+
 } // namespace std
 
 inline nncase::bfloat16 operator"" _bf16(long double x) {

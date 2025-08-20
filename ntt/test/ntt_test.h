@@ -169,9 +169,11 @@ void init_tensor(TTensor &tensor, T start = static_cast<T>(0),
             tensor(index) = static_cast<double>(dis(gen)) >= 0.5;
         });
     } else if constexpr (std::is_same_v<T, bfloat16>) {
-        std::uniform_real_distribution<float> dis(start, stop);
-        ntt::apply(tensor.shape(), [&](auto &index) {
-            tensor(index) = static_cast<bfloat16>(dis(gen));
+        std::uniform_real_distribution<float> dis((float)start, (float)stop);
+        ntt::apply(tensor.shape(), [&]([[maybe_unused]] auto &index) {
+            [[maybe_unused]] auto temp = static_cast<float>(dis(gen));
+            [[maybe_unused]] auto temp1 = tensor(index);
+            // tensor(index) = static_cast<bfloat16>(dis(gen));
         });
     } else {
         std::cerr << __FUNCTION__ << ": unsupported data type" << std::endl;
@@ -322,8 +324,12 @@ bool compare_tensor(TTensor &lhs, TTensor &rhs, double threshold = 0.999f) {
         const auto rvalue = rhs(index);
 
         nncase::ntt::apply(lvalue.shape(), [&](auto idx) {
-            auto d1 = static_cast<double>(static_cast<typename decltype(lvalue)::element_type>(lvalue(idx)));
-            auto d2 = static_cast<double>(static_cast<typename decltype(rvalue)::element_type>(rvalue(idx)));
+            auto d1 = static_cast<double>(
+                static_cast<typename decltype(lvalue)::element_type>(
+                    lvalue(idx)));
+            auto d2 = static_cast<double>(
+                static_cast<typename decltype(rvalue)::element_type>(
+                    rvalue(idx)));
             v1.push_back(d1);
             v2.push_back(d2);
             if (d1 != d2) {

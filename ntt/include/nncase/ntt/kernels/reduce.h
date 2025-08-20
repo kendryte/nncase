@@ -112,12 +112,12 @@ class reduce_impl {
                     input.shape()
                         .template slice<reduce_axis, TReduceAxes::rank()>()
                         .length();
-                auto denom = (TOutScalar)inner_size;
+                auto denom = (TOutScalar)(float)inner_size;
                 if constexpr (Vector<TOutElem>) {
-                    const auto inner_size_devectorized = inner_size *
-                                                     TInElem::shape().length() /
-                                                     TOutElem::shape().length();
-                    denom = (TOutScalar)inner_size_devectorized;
+                    const auto inner_size_devectorized =
+                        inner_size * TInElem::shape().length() /
+                        TOutElem::shape().length();
+                    denom = (TOutScalar)(float)inner_size_devectorized;
                 }
                 output(index) /= denom;
             }
@@ -189,7 +189,8 @@ class reduce_impl {
 } // namespace detail
 
 template <reduce_op Op, bool LoadPrevious = false, Tensor TIn, class TOut,
-          FixedDimensions TReduceAxes, FixedDimensions VectorizedAxes = shape_t<>,
+          FixedDimensions TReduceAxes,
+          FixedDimensions VectorizedAxes = shape_t<>,
           FixedDimensions PadedNums =
               decltype(make_zeros_shape<VectorizedAxes::rank()>())>
 void reduce(const TIn &input, TOut &&output,
@@ -206,15 +207,15 @@ void reduce(const TIn &input, TOut &&output,
 #define DEFINE_NTT_REDUCE(op)                                                  \
     template <bool LoadPrevious = false, Tensor TIn, class TOut,               \
               FixedDimensions TReduceAxes,                                     \
-              FixedDimensions VectorizedAxes = shape_t<>,                          \
+              FixedDimensions VectorizedAxes = shape_t<>,                      \
               FixedDimensions PadedNums =                                      \
-                  decltype(make_zeros_shape<VectorizedAxes::rank()>())>            \
+                  decltype(make_zeros_shape<VectorizedAxes::rank()>())>        \
     void reduce_##op(const TIn &input, TOut &&output,                          \
                      const TReduceAxes &reduce_axes,                           \
-                     const VectorizedAxes &vectorized_axes = {},                       \
+                     const VectorizedAxes &vectorized_axes = {},               \
                      const PadedNums &paded_nums = {}) noexcept {              \
         return reduce<reduce_op::op, LoadPrevious>(                            \
-            input, std::forward<TOut>(output), reduce_axes, vectorized_axes,       \
+            input, std::forward<TOut>(output), reduce_axes, vectorized_axes,   \
             paded_nums);                                                       \
     }
 

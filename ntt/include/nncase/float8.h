@@ -77,6 +77,7 @@
 // #include <cuda_fp16.h>
 
 // #include "nncase/nncase.h"
+#include "bfloat16.h"
 #include "half.h"
 #include "bfloat16.h"
 #ifndef CUTLASS_HOST_DEVICE
@@ -507,7 +508,7 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
     explicit float_e4m3_t(int x) : float_e4m3_t(float(x)) {}
 
     CUTLASS_HOST_DEVICE
-    explicit float_e4m3_t(size_t x) : float_e4m3_t(float(x)) {}    
+    explicit float_e4m3_t(size_t x) : float_e4m3_t(float(x)) {}
 
     /// E5M2 conversion. Defined after float_e5m2_t is defined.
     CUTLASS_HOST_DEVICE
@@ -703,7 +704,10 @@ struct alignas(1) float_e5m2_t : float8_base<FloatEncoding::E5M2> {
     explicit float_e5m2_t(int x) : float_e5m2_t(float(x)) {}
 
     CUTLASS_HOST_DEVICE
-    explicit float_e5m2_t(size_t x) : float_e5m2_t(float(x)) {}    
+    explicit float_e5m2_t(size_t x) : float_e5m2_t(float(x)) {}
+
+    CUTLASS_HOST_DEVICE
+    explicit float_e5m2_t(bfloat16 x) : float_e5m2_t(float(x)) {}
 
     /// E4M3 conversion
     CUTLASS_HOST_DEVICE
@@ -1152,9 +1156,15 @@ struct numeric_limits<nncase::float_e5m2_t>
 };
 
 // just for error elemination
-inline bool isinf(const nncase::float_e4m3_t &a) { return std::isinf(float(a)); }
-inline bool isnan(const nncase::float_e4m3_t &a) { return std::isnan(float(a)); }
-inline bool isfinite(const nncase::float_e4m3_t &a) { return std::isfinite(float(a)); }
+inline bool isinf(const nncase::float_e4m3_t &a) {
+    return std::isinf(float(a));
+}
+inline bool isnan(const nncase::float_e4m3_t &a) {
+    return std::isnan(float(a));
+}
+inline bool isfinite(const nncase::float_e4m3_t &a) {
+    return std::isfinite(float(a));
+}
 inline nncase::float_e4m3_t abs(const nncase::float_e4m3_t &a) {
     return nncase::float_e4m3_t(fabsf(float(a)));
 }
@@ -1170,7 +1180,8 @@ inline nncase::float_e4m3_t log10(const nncase::float_e4m3_t &a) {
 inline nncase::float_e4m3_t sqrt(const nncase::float_e4m3_t &a) {
     return nncase::float_e4m3_t(sqrtf(float(a)));
 }
-inline nncase::float_e4m3_t pow(const nncase::float_e4m3_t &a, const nncase::float_e4m3_t &b) {
+inline nncase::float_e4m3_t pow(const nncase::float_e4m3_t &a,
+                                const nncase::float_e4m3_t &b) {
     return nncase::float_e4m3_t(powf(float(a), float(b)));
 }
 inline nncase::float_e4m3_t sin(const nncase::float_e4m3_t &a) {
@@ -1199,10 +1210,15 @@ inline nncase::float_e4m3_t nearbyint(const nncase::float_e4m3_t &a) {
 }
 inline long lrint(const nncase::float_e4m3_t &a) { return lrintf(float(a)); }
 
-
-inline bool isinf(const nncase::float_e5m2_t &a) { return std::isinf(float(a)); }
-inline bool isnan(const nncase::float_e5m2_t &a) { return std::isnan(float(a)); }
-inline bool isfinite(const nncase::float_e5m2_t &a) { return std::isfinite(float(a)); }
+inline bool isinf(const nncase::float_e5m2_t &a) {
+    return std::isinf(float(a));
+}
+inline bool isnan(const nncase::float_e5m2_t &a) {
+    return std::isnan(float(a));
+}
+inline bool isfinite(const nncase::float_e5m2_t &a) {
+    return std::isfinite(float(a));
+}
 inline nncase::float_e5m2_t abs(const nncase::float_e5m2_t &a) {
     return nncase::float_e5m2_t(fabsf(float(a)));
 }
@@ -1218,7 +1234,8 @@ inline nncase::float_e5m2_t log10(const nncase::float_e5m2_t &a) {
 inline nncase::float_e5m2_t sqrt(const nncase::float_e5m2_t &a) {
     return nncase::float_e5m2_t(sqrtf(float(a)));
 }
-inline nncase::float_e5m2_t pow(const nncase::float_e5m2_t &a, const nncase::float_e5m2_t &b) {
+inline nncase::float_e5m2_t pow(const nncase::float_e5m2_t &a,
+                                const nncase::float_e5m2_t &b) {
     return nncase::float_e5m2_t(powf(float(a), float(b)));
 }
 inline nncase::float_e5m2_t sin(const nncase::float_e5m2_t &a) {
