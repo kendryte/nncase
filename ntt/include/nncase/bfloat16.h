@@ -37,6 +37,13 @@ struct bfloat16 {
 
   public:
     constexpr bfloat16() noexcept = default;
+
+#if defined(__riscv_vector) &&                                                 \
+    (defined(__riscv_zvfbfmin) || defined(__riscv_zvfbf))
+    bfloat16(__bf16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
+    operator __bf16() const noexcept { return std::bit_cast<__bf16>(value_); }
+#endif
+
     constexpr explicit bfloat16(float v) noexcept
         : value_(round_to_bfloat16(v).value_) {}
 
@@ -47,6 +54,8 @@ struct bfloat16 {
         : bfloat16(static_cast<float>(val)) {}
 
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
+    constexpr explicit bfloat16(int v) noexcept
+        : bfloat16(static_cast<float>(v)) {}
 
     constexpr operator float() const noexcept {
         uint32_t value = value_ << 16;
@@ -234,6 +243,15 @@ inline bool isfinite(const bfloat16 &a) { return std::isfinite(float(a)); }
 inline bfloat16 abs(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(fabsf(float(a)));
 }
+inline bfloat16 acos(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::acos(float(a)));
+}
+inline bfloat16 asin(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::asin(float(a)));
+}
+inline bfloat16 erf(const bfloat16 &a) {
+    return bfloat16::round_to_bfloat16(std::erff(float(a)));
+}
 inline bfloat16 exp(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(expf(float(a)));
 }
@@ -274,6 +292,9 @@ inline bfloat16 nearbyint(const bfloat16 &a) {
     return bfloat16::round_to_bfloat16(nearbyintf(float(a)));
 }
 inline long lrint(const bfloat16 &a) { return lrintf(float(a)); }
+
+template <> struct is_arithmetic<bfloat16> : public true_type {};
+
 } // namespace std
 
 inline nncase::bfloat16 operator"" _bf16(long double x) {

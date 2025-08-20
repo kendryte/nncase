@@ -220,7 +220,7 @@ template <class T1, class T2> struct outer_product {
  */
 template <class T1, class T2> struct mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return std::fmod(v1, v2);
+        return std::fmod((float)v1, (float)v2);
     }
 };
 
@@ -238,7 +238,7 @@ template <class T1, class T2> struct max {
 
 template <class T1, class T2> struct pow {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return std::pow(v1, v2);
+        return std::pow((float)v1, (float)v2);
     }
 };
 
@@ -525,22 +525,22 @@ constexpr T1 &operator%=(T1 &v1, const T2 &v2) noexcept {
 namespace ops {
 // acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
 template <class T> constexpr T acosh<T>::operator()(const T &v) const noexcept {
-    return ntt::log(v + ntt::sqrt(v * v - 1));
+    return ntt::log(v + ntt::sqrt(v * v - (T)1));
 }
 
 // asinh(v) = ln(v + sqrt(v^2 + 1))
 template <class T> constexpr T asinh<T>::operator()(const T &v) const noexcept {
-    return ntt::log(v + ntt::sqrt(v * v + 1));
+    return ntt::log(v + ntt::sqrt(v * v + (T)1));
 }
 
 // cosh(v) = (exp(v) + exp(-v)) / 2
 template <class T> constexpr T cosh<T>::operator()(const T &v) const noexcept {
-    return (ntt::exp(v) + ntt::exp(-v)) / 2;
+    return (ntt::exp(v) + ntt::exp(-v)) / (T)2;
 }
 
 // sinh(v) = (exp(v) - exp(-v)) / 2
 template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
-    return (ntt::exp(v) - ntt::exp(-v)) / 2;
+    return (ntt::exp(v) - ntt::exp(-v)) / (T)2;
 }
 
 // swish(v) = v / (exp(-v) + 1)

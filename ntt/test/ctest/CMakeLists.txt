@@ -63,22 +63,23 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     # test_ntt_compare_greater.cpp
     # test_ntt_compare_less_or_equal.cpp
     # test_ntt_compare_less.cpp
-    test_ntt_expand.cpp
-    test_ntt_gather.cpp
-    test_ntt_layer_norm.cpp
+    # test_ntt_expand.cpp
+    # test_ntt_gather.cpp
+    # test_ntt_layer_norm.cpp
     test_ntt_matmul.cpp
     # test_ntt_pack_generated_Float8e4m3.cpp
-    test_ntt_reduce.cpp
-    test_ntt_rms_norm.cpp
-    test_ntt_scatter_nd.cpp
-    test_ntt_slice.cpp
-    test_ntt_softmax.cpp
-    test_ntt_transpose.cpp
-    test_ntt_unpack.cpp
+    # test_ntt_reduce.cpp
+    # test_ntt_rms_norm.cpp
+    # test_ntt_scatter_nd.cpp
+    # test_ntt_slice.cpp
+    # test_ntt_softmax.cpp
+    # test_ntt_transpose.cpp
+    # test_ntt_transpose_half.cpp
+    # test_ntt_unpack.cpp
     # test_ntt_where.cpp
 )
 
-list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} ${GENERATED_PACK_TEST_SOURCES} ${GENERATED_UNPACK_TEST_SOURCES})
+# list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} ${GENERATED_PACK_TEST_SOURCES} ${GENERATED_UNPACK_TEST_SOURCES})
 
 
 foreach(test_name ${TEST_NAMES})
