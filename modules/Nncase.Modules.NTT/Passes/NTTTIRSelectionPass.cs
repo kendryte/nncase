@@ -168,7 +168,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.NTT.PackedSoftmax softmax:
                 return TIR.F.NTT.PackedSoftmax((Expr)arguments[0], output, softmax.Axis, softmax.PackedAxes);
             case IR.NN.Qwen3MoE moe:
-                return TIR.F.NTT.Qwen3MoE((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], output, moe.LayerId, moe.HiddenSize, moe.IntermediateSize, moe.MoEIntermediateSize, moe.NumExpert, moe.NumTopK, moe.IsNormTopkProb);
+                return TIR.F.NTT.Qwen3MoE((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], (Expr)arguments[8], (Expr)arguments[9], (Expr)arguments[10], output, moe.LayerId, moe.HiddenSize, moe.IntermediateSize, moe.MoEIntermediateSize, moe.NumExpert, moe.NumTopK, moe.IsNormTopkProb);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

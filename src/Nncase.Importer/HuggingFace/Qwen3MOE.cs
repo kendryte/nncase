@@ -16,36 +16,48 @@ namespace Nncase.Importer
 
             var gateW = GetWeight($"model.layers.{count}.mlp.gate.weight")!;
 
+            List<Expr> allGateInputScale = new();
             List<Expr> allGateProjW = new();
             List<Expr> allGateProjScale = new();
+            List<Expr> allDownInputScale = new();
             List<Expr> allDownProjW = new();
             List<Expr> allDownProjScale = new();
+            List<Expr> allUpInputScale = new();
             List<Expr> allUpProjW = new();
             List<Expr> allUpProjScale = new();
             for (long expertIndex = 0; expertIndex < expertNum; expertIndex++)
             {
+                allGateInputScale.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.gate_proj.input_scale")!);
                 allGateProjW.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.gate_proj.weight")!);
                 allGateProjScale.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.gate_proj.weight_scale")!);
+                allDownInputScale.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.down_proj.input_scale")!);
                 allDownProjW.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.down_proj.weight")!);
                 allDownProjScale.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.down_proj.weight_scale")!);
+                allUpInputScale.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.up_proj.input_scale")!);
                 allUpProjW.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.up_proj.weight")!);
                 allUpProjScale.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.up_proj.weight_scale")!);
             }
 
+            var gateInputScale = IR.F.Tensors.Concat(new IR.Tuple(allGateInputScale.ToArray()), 0);
             var gateProjW = IR.F.Tensors.Concat(new IR.Tuple(allGateProjW.ToArray()), 0);
             var gateProjScale = IR.F.Tensors.Concat(new IR.Tuple(allGateProjScale.ToArray()), 0);
             var downProjW = IR.F.Tensors.Concat(new IR.Tuple(allDownProjW.ToArray()), 0);
+            var downProjInputScale = IR.F.Tensors.Concat(new IR.Tuple(allDownInputScale.ToArray()), 0);
             var downProjScale = IR.F.Tensors.Concat(new IR.Tuple(allDownProjScale.ToArray()), 0);
             var upProjW = IR.F.Tensors.Concat(new IR.Tuple(allUpProjW.ToArray()), 0);
+            var upProjInputScale = IR.F.Tensors.Concat(new IR.Tuple(allUpInputScale.ToArray()), 0);
             var upProjScale = IR.F.Tensors.Concat(new IR.Tuple(allUpProjScale.ToArray()), 0);
 
             var moeRes = IR.F.NN.Qwen3MoE(
                 q: hiddenStates,
                 moeGateW: gateW,
+                moeExpertGateInputScale: gateInputScale,
                 moeExpertGateProjW: gateProjW,
                 moeExpertGateProjScale: gateProjScale,
+                moeExpertDownInputScale: downProjInputScale,
                 moeExpertDownProjW: downProjW,
                 moeExpertDownProjScale: downProjScale,
+                moeExpertUpInputScale: upProjInputScale,
                 moeExpertUpProjW: upProjW,
                 moeExpertUpProjScale: upProjScale,
                 layerId: count,
@@ -58,9 +70,15 @@ namespace Nncase.Importer
             return (Call)moeRes;
         }
 
-        private Call GetWeightAndExpand(string name, long expertNum = 0)
+        private Call? GetWeightAndExpand(string name, long expertNum = 0)
         {
-            var weight = (Expr)GetWeight(name)!;
+            var weight = GetWeight(name);
+            if (weight == null)
+            {
+                // Create an empty tensor with shape [0] to indicate no input scaling
+                weight = Tensor.FromScalar(1.0f).Reshape(new long[] { 1 });
+            }
+
             var expandWeight = IR.F.Tensors.Unsqueeze(weight, new[] { expertNum });
 
             return expandWeight;
