@@ -54,7 +54,7 @@ num_blocks = 16
 max_sessions = 16
 kv_type = "float32"
 cache_layout = ["NumBlocks","NumLayers","KV","NumKVHeads","HeadDim","BlockSize"]
-packed_axes = ["HeadDim"]
+vectorized_axes = ["HeadDim"]
 lanes = [32]
 sharding_axes = ["NumBlocks"]
 axis_policies = [[0]]
@@ -133,7 +133,9 @@ enabled = false
 threshold = 0.98
 
 [target.cpu.target_options]
-Packing = false
+Vectorize = true
+Hierarchies = [[1]]
+HierarchyNames = "t"
 
 [target.k510]
 eval = true
@@ -181,5 +183,5 @@ HierarchySizes = [603979776, 1048576]
 MemoryCapacities = [262144, 150994944]
 MemoryBandWidths = [64, 32]
 UnifiedMemoryArch = false
-Packing = true
+Vectorize = true
 HierarchyKind = "nncase.HierarchyKind.SMT"

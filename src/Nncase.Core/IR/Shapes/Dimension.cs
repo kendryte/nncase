@@ -295,7 +295,8 @@ public abstract partial class Dimension : BaseExpr
             (max == value ||
             (max is DimSum { Bias: >= 0, Count: 1, Operands: [var operandSum] } && operandSum == value) ||
             (max is DimProduct { Scale: >= 0, Count: 1, Operands: [var operandProd] } && operandProd == value) ||
-            (max is DimProduct { Scale: var s, Count: 1, Operands: [var inner1] } && s >= 0 && inner1 is DimFraction { DivMode: DimDivideMode.FloorDiv, Numerator: var inner2, Denominator: DimConst { Value: >= 0 } } && inner2 is DimProduct { Scale: 1, Count: 1, Operands: [var inner3] } && inner3 is DimSum dimSum && dimSum.Operands[0] == value)))
+            (max is DimProduct { Scale: var s, Count: 1, Operands: [var inner1] } && s >= 0 && inner1 is DimFraction { DivMode: DimDivideMode.FloorDiv, Numerator: var inner2, Denominator: DimConst { Value: >= 0 } } && inner2 is DimProduct { Scale: 1, Count: 1, Operands: [var inner3] } && inner3 is DimSum dimSum && dimSum.Operands[0] == value) ||
+            (max is DimProduct { Scale: var align, Count: 1, Operands: [var ceil] } && ceil is DimFraction { DivMode: DimDivideMode.CeilDiv, Numerator: var numerator, Denominator: DimConst { Value: var denum } } && denum == align && numerator == value)))
         {
             return value;
         }

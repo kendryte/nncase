@@ -15,7 +15,7 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.TIR.NTT;
 
-public sealed class PackEvaluator : ITypeInferencer<Nncase.TIR.NTT.Pack>, IKernelInfoEvaluator<Nncase.TIR.NTT.Pack>
+public sealed class VectorizeEvaluator : ITypeInferencer<Nncase.TIR.NTT.Pack>, IKernelInfoEvaluator<Nncase.TIR.NTT.Pack>
 {
     public IRType Visit(ITypeInferenceContext context, Nncase.TIR.NTT.Pack target) => TupleType.Void;
 

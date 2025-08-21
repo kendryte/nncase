@@ -294,7 +294,7 @@ class Compiler:
 
         self._compile_options.input_file = compile_options.input_file
         dump_flags = _nncase.DumpFlags.Nothing if not compile_options.dump_ir else _nncase.DumpFlags(
-            _nncase.DumpFlags.PassIR | _nncase.DumpFlags.Compile | _nncase.DumpFlags.ImportOps)
+            _nncase.DumpFlags.PassIR | _nncase.DumpFlags.Compile | _nncase.DumpFlags.Rewrite | _nncase.DumpFlags.ImportOps)
         if (compile_options.dump_asm):
             dump_flags = _nncase.DumpFlags(
                 dump_flags | _nncase.DumpFlags.CodeGen | _nncase.DumpFlags.Schedule)

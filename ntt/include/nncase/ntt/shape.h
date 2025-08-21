@@ -464,7 +464,7 @@ constexpr auto canonicalize_strides(const TShape &shape,
 }
 
 namespace detail {
-template <size_t Axis, Shape TShape> struct default_strides_impl {
+template <size_t Axis, Shape TShape, bool Canonical = true> struct default_strides_impl {
     static_assert(Axis > 0 && Axis <= TShape::rank(), "Axis out of bounds");
 
     template <Strides TStrides>
@@ -484,9 +484,13 @@ template <size_t Axis, Shape TShape> struct default_strides_impl {
         }();
         auto new_strides = cnt_strides.prepend(new_stride);
         if constexpr (Axis == 1) {
+          if constexpr(Canonical) {
             return canonicalize_strides(shape, new_strides);
+          } else {
+            return new_strides;   
+          }
         } else {
-            return default_strides_impl<Axis - 1, TShape>{}(shape, new_strides);
+            return default_strides_impl<Axis - 1, TShape, Canonical>{}(shape, new_strides);
         }
     }
 };
@@ -499,13 +503,13 @@ constexpr auto broadcast_strides(const TStrides &strides) noexcept {
     return make_zeros_strides<ExtendRank>().concat(strides);
 }
 
-template <Shape TShape>
+template <Shape TShape, bool Canonical = true>
 constexpr auto default_strides([[maybe_unused]] const TShape shape) noexcept {
     constexpr auto rank = TShape::rank();
     if constexpr (rank == 0) {
         return strides_t<>();
     } else {
-        return detail::default_strides_impl<rank, TShape>{}(shape,
+        return detail::default_strides_impl<rank, TShape, Canonical>{}(shape,
                                                             strides_t<>());
     }
 }
@@ -596,8 +600,9 @@ template <Shape TShape, Strides TStrides>
 constexpr dim_t contiguous_dims_impl(const TShape &shape,
                                      const TStrides &strides) {
     auto def_strides = default_strides(shape);
+    auto def_strides_2 = default_strides<TShape, false>(shape);
     for (ptrdiff_t i = (ptrdiff_t)strides.rank() - 1; i >= 0; --i) {
-        if (strides[i] != def_strides[i]) {
+        if (strides[i] != def_strides[i] && !(shape[i] == dim_one && strides[i] == def_strides_2[i])) {
             return shape.rank() - i - 1;
         }
     }

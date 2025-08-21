@@ -585,7 +585,7 @@ public class GraphTiler
         }
     }
 
-    public (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, INTTTargetOptions targetOptions)
+    public (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, INTTTargetOptions targetOptions, DimVar[] dynamicDimVars)
     {
         // bufferize root graph.
         var bufferGraphMemo = rootGraph.Bufferize();
@@ -635,16 +635,18 @@ public class GraphTiler
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
                 result.Visit(primTree, new(bodyBuilder, Array.Empty<Dimension>(), primTree.DomainBoundExprs.ToArray()));
-                var parameters = inputBids.Concat(outputBids).Select(k => (Var)result.PrimBufferMemo[k]).ToArray();
+                var parameters = inputBids.Select(k => (IVar)result.PrimBufferMemo[k]).Concat(
+                    dynamicDimVars.Select(v => (IVar)v.With())).Concat(
+                    outputBids.Select(k => (IVar)result.PrimBufferMemo[k])).ToArray();
                 var funcBuilder = T.PrimFunc(funcName, moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
                 {
-                    var gridBufferToVarMap = inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index)).Zip(parameters).ToDictionary(p => p.First, p => (Expr)p.Second);
+                    var gridBufferToVarMap = inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index)).Zip(parameters.Where(p => p is not DimVar)).ToDictionary(p => p.First, p => (Expr)p.Second);
                     var mutator = new ShapeOfRewriter(gridBufferToVarMap);
                     mutator.Visit(primFunc, default);
                 }
 
-                memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count, inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).ToArray()), result.ObjectiveValue);
+                memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count + dynamicDimVars.Length, inputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).Concat(dynamicDimVars.Select(v => new DimensionType(DimensionKind.Dynamic))).Concat(outputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType)).ToArray()), result.ObjectiveValue);
                 SolveMemo.Add(primTree, memo);
             }
             else
@@ -653,7 +655,7 @@ public class GraphTiler
             }
 
             objectValue += memo.ObjectValue;
-            var finalCall = new Call(memo.Func, inputBids.Select(bid => argumentsMemo[bid]).ToArray());
+            var finalCall = new Call(memo.Func, inputBids.Select(bid => argumentsMemo[bid]).Concat(dynamicDimVars.OfType<BaseExpr>()).ToArray());
             resultMemo.Add(primGraph, finalCall);
 
             // save the output.
@@ -674,7 +676,7 @@ public class GraphTiler
         return (resultMemo, objectValue);
     }
 
-    public BaseExpr Tile(BaseExpr preExpr, string moduleKind, INTTTargetOptions targetOptions)
+    public BaseExpr Tile(BaseExpr preExpr, string moduleKind, INTTTargetOptions targetOptions, DimVar[] dynamicDimVars)
     {
 #if true
         var topLevel = targetOptions.MemoryCapacities.Length;
@@ -684,7 +686,7 @@ public class GraphTiler
             rootGraph.Dump($"tile_graph");
         }
 
-        var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, targetOptions);
+        var (resultMemo, _) = SolveRootGraph(rootGraph, moduleKind, targetOptions, dynamicDimVars);
         var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (BaseExpr)kv.Key, kv => (BaseExpr)resultMemo[kv.Value]));
         return cloner.Clone(preExpr, default);
 #else

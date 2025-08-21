@@ -21,15 +21,15 @@
 namespace nncase::ntt {
 namespace softmax_detail {
 template <Tensor TIn, class TOut, FixedDimension TAxis,
-          FixedDimensions PackedAxes>
-void packed_softmax_impl(const TIn &input, TOut &&output, const TAxis &axis,
-                         const PackedAxes &) {
+          FixedDimensions VectorizedAxes>
+void vectorized_softmax_impl(const TIn &input, TOut &&output, const TAxis &axis,
+                         const VectorizedAxes &) {
     using TElem = typename TIn::element_type;
     auto input_shape = input.shape();
 
-    constexpr PackedAxes packed_axes;
+    constexpr VectorizedAxes vectorized_axes;
     constexpr auto need_reduce =
-        PackedAxes::rank() != 0 && TAxis::value == packed_axes[0];
+        VectorizedAxes::rank() != 0 && TAxis::value == vectorized_axes[0];
     auto domain = shape_infer::reduced_shape_by_axis<TAxis::value>(input_shape);
     ntt::apply(domain, [&](auto index) {
         // max
@@ -74,22 +74,22 @@ void packed_softmax_impl(const TIn &input, TOut &&output, const TAxis &axis,
 } // namespace softmax_detail
 
 /**
- * @brief packed softmax
+ * @brief vectorized softmax
  *  implement notice:
- *    1. need support 2d pack.
+ *    1. need support 2d vectorize.
  *    2. need support paded nums.
- *    3. need different implementation when the packed axis is equal or not
+ *    3. need different implementation when the vectorized axis is equal or not
  * equal axis.
  * @tparam Axis softmax reduced axis
  * @param input input tensor.
  * @param output output output.
- * @param packedAxes  packed axes
+ * @param vectorizedAxes  vectorized axes
  */
 template <Tensor TIn, class TOut, FixedDimension TAxis,
-          FixedDimensions PackedAxes = shape_t<>>
-void packed_softmax(const TIn &input, TOut &&output, const TAxis &axis,
-                    const PackedAxes &packedAxes = {}) noexcept {
-    static_assert(PackedAxes::rank() < 2, "currently not support 2d pack");
-    softmax_detail::packed_softmax_impl(input, output, axis, packedAxes);
+          FixedDimensions VectorizedAxes = shape_t<>>
+void vectorized_softmax(const TIn &input, TOut &&output, const TAxis &axis,
+                    const VectorizedAxes &vectorizedAxes = {}) noexcept {
+    static_assert(VectorizedAxes::rank() < 2, "currently not support 2d vectorize");
+    softmax_detail::vectorized_softmax_impl(input, output, axis, vectorizedAxes);
 }
 } // namespace nncase::ntt

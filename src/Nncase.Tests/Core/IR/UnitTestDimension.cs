@@ -160,8 +160,19 @@ public sealed class UnitTestDimension
         };
         var alignUp = (x + 8 - 1) / 8;
         var frac = Assert.IsType<DimFraction>(alignUp);
-        var product = Assert.IsType<DimProduct>(frac.Numerator);
-        var sum = Assert.IsType<DimSum>(product.Operands[0]);
+        var sum = Assert.IsType<DimSum>(frac.Numerator);
         Assert.Equal(7, sum.Bias);
+    }
+
+    [Fact]
+    public void TestDimensionSumSimplify()
+    {
+        var dv = new DimVar("x");
+        var ceilDiv = Dimension.CeilDiv(new DimProduct([dv], 1), 8);
+        var mul = 8 * ceilDiv;
+        var neg = -dv;
+        var sum = mul + neg;
+        sum = dv + sum;
+        Assert.Equal(sum, mul);
     }
 }

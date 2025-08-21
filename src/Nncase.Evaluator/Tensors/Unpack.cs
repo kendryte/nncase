@@ -21,29 +21,26 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
     {
         var dt = context.CurrentCall.Arguments[Unpack.Input.Index].CheckedDataType;
         var elementType = dt is VectorType vt ? vt.ElemType : dt;
+        var oldLanesCount = dt switch
+        {
+            VectorType vt2 => vt2.Lanes.Count,
+            MaskVectorType => 1,
+            _ => throw new InvalidOperationException($"Unsupported input type: {dt}"),
+        };
         if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
         {
             var newType = new VectorType(DataTypes.UInt8, target.Lanes.ToArray());
             var input = context.GetArgumentValue(target, Unpack.Input).AsTensor();
             input = Tensor.FromBytes(newType, input.BytesBuffer.ToArray(), input.Shape);
             var inputOrt = input.ToOrtTensor();
-
-            foreach (var axis in target.Axes.Reverse())
-            {
-                inputOrt = inputOrt.Unpack(axis);
-            }
-
+            inputOrt = inputOrt.Unpack(oldLanesCount, target.Axes);
             var output = inputOrt.ToTensor();
             return Value.FromTensor(Tensor.FromBytes(elementType, output.BytesBuffer.ToArray(), output.Shape));
         }
         else
         {
             var input = context.GetOrtArgumentValue(target, Unpack.Input);
-            foreach (var axis in target.Axes.Reverse())
-            {
-                input = input.Unpack(axis);
-            }
-
+            input = input.Unpack(oldLanesCount, target.Axes);
             return Value.FromTensor(input.ToTensor());
         }
     }
@@ -88,7 +85,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
     {
         if (target.Lanes.Any(x => x <= 0))
         {
-            return new InvalidType("unpack lane <= 0");
+            return new InvalidType("devectorize lane <= 0");
         }
 
         return TypeInference.UnpackType(input, target.Axes);

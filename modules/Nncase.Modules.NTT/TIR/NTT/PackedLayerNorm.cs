@@ -6,24 +6,24 @@ using Nncase.PatternMatch;
 
 namespace Nncase.TIR.NTT;
 
-public sealed partial class PackedLayerNorm : NTTKernelOp
+public sealed partial class VectorizedLayerNorm : NTTKernelOp
 {
     /// <summary>
     /// Gets input.
     /// </summary>
-    public static readonly ParameterInfo Input = new(typeof(PackedLayerNorm), 0, "input", ParameterKind.Input);
+    public static readonly ParameterInfo Input = new(typeof(VectorizedLayerNorm), 0, "input", ParameterKind.Input);
 
     /// <summary>
     /// Gets scale.
     /// </summary>
-    public static readonly ParameterInfo Scale = new(typeof(PackedLayerNorm), 1, "scale", ParameterKind.Input);
+    public static readonly ParameterInfo Scale = new(typeof(VectorizedLayerNorm), 1, "scale", ParameterKind.Input);
 
     /// <summary>
     /// Gets bias.
     /// </summary>
-    public static readonly ParameterInfo Bias = new(typeof(PackedLayerNorm), 2, "bias", ParameterKind.Input);
+    public static readonly ParameterInfo Bias = new(typeof(VectorizedLayerNorm), 2, "bias", ParameterKind.Input);
 
-    public static readonly ParameterInfo Output = new(typeof(PackedLayerNorm), 3, "output", ParameterKind.Input);
+    public static readonly ParameterInfo Output = new(typeof(VectorizedLayerNorm), 3, "output", ParameterKind.Input);
 
     public int Axis { get; }
 
@@ -31,11 +31,11 @@ public sealed partial class PackedLayerNorm : NTTKernelOp
 
     public bool UseMean { get; }
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
     public IRArray<Dimension> PadedNums { get; }
 
     public DistributedType DistType { get; }
 
-    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, PackedAxes: {PackedAxes}, PadedNums: {PadedNums}";
+    public override string DisplayProperty() => $"Axis: {Axis}, Epsilon: {Epsilon}, UseMean: {UseMean}, VectorizedAxes: {VectorizedAxes}, PadedNums: {PadedNums}";
 }

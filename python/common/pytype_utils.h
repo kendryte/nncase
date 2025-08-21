@@ -65,6 +65,8 @@ pybind11::dtype to_dtype(typecode_t type) {
         return py::dtype::of<int64_t>();
     case dt_float16:
         return py::dtype("float16");
+    case dt_bfloat16:
+        return py::dtype("bfloat16");
     case dt_float32:
         return py::dtype::of<float>();
     case dt_float64:
@@ -110,6 +112,8 @@ typecode_t from_dtype(pybind11::dtype dtype) {
         return dt_int64;
     else if (dtype.is(py::dtype("float16")))
         return dt_float16;
+    else if (dtype.is(py::dtype("bfloat16")))
+        return dt_bfloat16;
     else if (dtype.is(py::dtype::of<float>()))
         return dt_float32;
     else if (dtype.is(py::dtype::of<double>()))

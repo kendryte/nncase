@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include "../../../bfloat16.h"
+#include "../../../half.h"
 #include "../../native_vector.h"
-
 #ifdef __riscv_vector
 #include <riscv_vector.h>
 
@@ -28,6 +29,23 @@
 
 #ifndef NTT_VL_
 #define NTT_VL(sew, op, lmul) ((NTT_VLEN) / (sew)op(lmul))
+#endif
+
+#if defined(__riscv_vector) &&                                                 \
+    (defined(__riscv_zvfbfmin) || defined(__riscv_zvfbf))
+#define REGISTER_BFLOAT16_TYPE_WITH_LMUL_LT1()                                 \
+    typedef vbfloat16mf2_t fixed_vbfloat16mf2_t                                \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
+    typedef vbfloat16mf4_t fixed_vbfloat16mf4_t                                \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));
+
+#define REGISTER_BFLOAT16_TYPE_WITH_LMUL_GE1(lmul)                             \
+    typedef vbfloat16m##lmul##_t fixed_vbfloat16m##lmul##_t                    \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));
+
+#else
+#define REGISTER_BFLOAT16_TYPE_WITH_LMUL_LT1()
+#define REGISTER_BFLOAT16_TYPE_WITH_LMUL_GE1(lmul)
 #endif
 
 // rvv fixed type
@@ -56,6 +74,11 @@
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
     typedef vuint32mf2_t fixed_vuint32mf2_t                                    \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
+    typedef vfloat16mf2_t fixed_vfloat16mf2_t                                  \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));                  \
+    typedef vfloat16mf4_t fixed_vfloat16mf4_t                                  \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 4)));                  \
+    REGISTER_BFLOAT16_TYPE_WITH_LMUL_LT1()                                     \
     typedef vfloat32mf2_t fixed_vfloat32mf2_t                                  \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN / 2)));
 
@@ -76,6 +99,9 @@
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vuint64m##lmul##_t fixed_vuint64m##lmul##_t                        \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
+    typedef vfloat16m##lmul##_t fixed_vfloat16m##lmul##_t                      \
+        __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
+    REGISTER_BFLOAT16_TYPE_WITH_LMUL_GE1(lmul)                                 \
     typedef vfloat32m##lmul##_t fixed_vfloat32m##lmul##_t                      \
         __attribute__((riscv_rvv_vector_bits(NTT_VLEN * lmul)));               \
     typedef vfloat64m##lmul##_t fixed_vfloat64m##lmul##_t                      \
@@ -86,6 +112,27 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(1)
 REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(2)
 REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(4)
 REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
+
+#if defined(__riscv_vector) &&                                                 \
+    (defined(__riscv_zvfbfmin) || defined(__riscv_zvfbf))
+#define NTT_DEFINE_BFLOAT16_VECTORS_LT()                                       \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vbfloat16mf2_t, NTT_VLEN / 8 / sizeof(bfloat16) / 2)   \
+    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vbfloat16mf4_t, NTT_VLEN / 8 / sizeof(bfloat16) / 4)   \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+#define NTT_DEFINE_BFLOAT16_VECTORS_GE(lmul)                                   \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
+        bfloat16, fixed_vbfloat16m##lmul##_t,                                  \
+        NTT_VLEN / 8 / sizeof(bfloat16) * lmul)                                \
+    NTT_END_DEFINE_NATIVE_VECTOR()
+
+#else
+#define NTT_DEFINE_BFLOAT16_VECTORS_LT()
+#define NTT_DEFINE_BFLOAT16_VECTORS_GE(lmul)
+#endif
 
 // rvv native vector
 #define NTT_DEFINE_NATIVE_VECTOR_WITH_LMUL_LT1                                 \
@@ -125,6 +172,13 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
         uint32_t, fixed_vuint32mf2_t, NTT_VLEN / 8 / sizeof(uint32_t) / 2)     \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16mf2_t,          \
+                                           NTT_VLEN / 8 / sizeof(half) / 2)    \
+    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16mf4_t,          \
+                                           NTT_VLEN / 8 / sizeof(half) / 4)    \
+    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_DEFINE_BFLOAT16_VECTORS_LT()                                           \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(float, fixed_vfloat32mf2_t,         \
                                            NTT_VLEN / 8 / sizeof(float) / 2)   \
     NTT_END_DEFINE_NATIVE_VECTOR()
@@ -164,6 +218,10 @@ REGISTER_RVV_FIXED_TYPE_WITH_LMUL_GE1(8)
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(                                    \
         float, fixed_vfloat32m##lmul##_t, NTT_VLEN / 8 / sizeof(float) * lmul) \
     NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(half, fixed_vfloat16m##lmul##_t,    \
+                                           NTT_VLEN / 8 / sizeof(half) * lmul) \
+    NTT_END_DEFINE_NATIVE_VECTOR()                                             \
+    NTT_DEFINE_BFLOAT16_VECTORS_GE(lmul)                                       \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR_DEFAULT(double, fixed_vfloat64m##lmul##_t,  \
                                            NTT_VLEN / 8 / sizeof(double) *     \
                                                lmul)                           \

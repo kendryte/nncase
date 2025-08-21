@@ -15,6 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../loop.h"
+#include "../post_ops.h"
 #include "../tensor_ops.h"
 #include "../ukernels.h"
 #include "../utility.h"
@@ -22,7 +23,9 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
+template <Tensor TIn, Tensor TOut, FixedDimensions VectorizedAxes,
+          template <class> class TPostOp>
+class cast_impl {
     inline static constexpr size_t rank = TIn::rank();
 
     // FIXME: vector<bool> of x86 may fail.
@@ -46,11 +49,11 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
 
   public:
     constexpr void operator()(const TIn &input, TOut &output,
-                              const PackedAxes &) noexcept {
-#if 0        
+                              const VectorizedAxes &) noexcept {
+#if 0
         if constexpr (scale != 1.0f) {
             static_assert(TIn::rank() == 1,
-                          "Only support 1D tensor repack for now!");
+                          "Only support 1D tensor revectorize for now!");
         }
 
         dynamic_shape_t<rank> index{};
@@ -64,23 +67,32 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
             apply<0>(conti_dims, input.shape(), index, input, output);
         }
 #endif
-        constexpr PackedAxes packedAxes;
+        constexpr VectorizedAxes vectorizedAxes;
         if constexpr (scale >= 1.f) {
             ntt::apply(output.shape(), [&](auto index) {
                 auto in_index = index;
-                if constexpr (packedAxes.rank() == 1)
-                    in_index[fixed_dim_v<packedAxes.at(0)>] *= in_offset_scale;
-                ntt::u_cast<in_offset_scale, out_offset_scale>(
-                    &input(in_index), packedAxes.rank() == 1 ? input.strides()[packedAxes.at(0)] : 1, &output(index), 1, 1);
+                if constexpr (vectorizedAxes.rank() == 1)
+                    in_index[fixed_dim_v<vectorizedAxes.at(0)>] *=
+                        in_offset_scale;
+                ntt::u_cast<in_offset_scale, out_offset_scale, TPostOp>(
+                    &input(in_index),
+                    vectorizedAxes.rank() == 1
+                        ? input.strides()[vectorizedAxes.at(0)]
+                        : 1,
+                    &output(index), 1, 1);
             });
         } else {
             ntt::apply(input.shape(), [&](auto index) {
                 auto out_index = index;
-                if constexpr (packedAxes.rank() == 1)
-                    out_index[fixed_dim_v<packedAxes.at(0)>] *=
+                if constexpr (vectorizedAxes.rank() == 1)
+                    out_index[fixed_dim_v<vectorizedAxes.at(0)>] *=
                         out_offset_scale;
-                ntt::u_cast<in_offset_scale, out_offset_scale>(
-                    &input(index), 1, &output(out_index), packedAxes.rank() == 1 ? output.strides()[packedAxes.at(0)] : 1, 1);
+                ntt::u_cast<in_offset_scale, out_offset_scale, TPostOp>(
+                    &input(index), 1, &output(out_index),
+                    vectorizedAxes.rank() == 1
+                        ? output.strides()[vectorizedAxes.at(0)]
+                        : 1,
+                    1);
             });
         }
     }
@@ -114,16 +126,17 @@ template <Tensor TIn, Tensor TOut, FixedDimensions PackedAxes> class cast_impl {
     template <size_t in_offset_scale, size_t out_offset_scale, class T1,
               class T2>
     constexpr void cast_contiguous(const T1 *input, T2 *output, size_t extent) {
-        ntt::u_cast<in_offset_scale, out_offset_scale>(input, 1, output, 1,
-                                                       extent);
+        ntt::u_cast<in_offset_scale, out_offset_scale, TPostOp>(
+            input, 1, output, 1, extent);
     }
 };
 } // namespace detail
 
-template <Tensor TIn, class TOut, FixedDimensions PackedAxes = shape_t<>>
+template <template<class> class TPostOp = DefaultPostOp, Tensor TIn, Tensor TOut,
+          FixedDimensions VectorizedAxes = shape_t<>>
 void cast(const TIn &input, TOut &&output,
-          const PackedAxes &packedAxes = {}) noexcept {
-    detail::cast_impl<TIn, std::decay_t<TOut>, PackedAxes> impl;
-    impl(input, output, packedAxes);
+          const VectorizedAxes &vectorizedAxes = {}) noexcept {
+    detail::cast_impl<TIn, std::decay_t<TOut>, VectorizedAxes, TPostOp> impl;
+    impl(input, output, vectorizedAxes);
 }
 } // namespace nncase::ntt

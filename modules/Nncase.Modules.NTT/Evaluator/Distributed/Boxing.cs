@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using DryIoc.ImTools;
 using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Distributed;
@@ -90,7 +91,8 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
     {
         var inType = context.GetArgumentType<IRType>(target, Boxing.Input);
         var returnType = context.GetReturnType<IRType>();
-        var cost = new Cost() { [CostFactorNames.CPUCycles] = 1, [CostFactorNames.MemoryLoad] = 0, [CostFactorNames.MemoryStore] = 0 };
+        UInt128 synchronizeCost = 25_000; // 25k cycles on 5GHz CPU is about 5us.
+        var cost = new Cost() { [CostFactorNames.CPUCycles] = 1, [CostFactorNames.MemoryLoad] = 0, [CostFactorNames.MemoryStore] = 0, [CostFactorNames.Synchronization] = synchronizeCost };
         switch (inType, returnType)
         {
             case (TensorType _, DistributedType distributedType):
@@ -100,6 +102,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                         cost = new Cost()
                         {
                             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(distributedType),
+                            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(distributedType),
                         };
                         break;
                 }
@@ -111,19 +114,23 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                     default:
                         cost = new Cost()
                         {
+                            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(distributedType),
                             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(distributedType),
+                            [CostFactorNames.Synchronization] = synchronizeCost,
                         };
                         break;
                 }
 
                 break;
 
-            case (DistributedType a, DistributedType b) when a.Placement == b.Placement && a.AxisPolicies != b.AxisPolicies:
+            case (DistributedType a, DistributedType b) when a.TensorType == b.TensorType && a.Placement == b.Placement && a.AxisPolicies != b.AxisPolicies:
+#if false
                 {
                     var fullLoadStore = new Cost()
                     {
                         [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
                         [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
+                        [CostFactorNames.Synchronization] = synchronizeCost,
                     };
 
                     float scatterPart = 1;
@@ -226,6 +233,93 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                         };
                     }
                 }
+#endif
+                {
+                    var fullLoadStore = new Cost()
+                    {
+                        [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a) * (UInt128)a.TensorType.DType.SizeInBytes * 8,
+                        [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b) * (UInt128)b.TensorType.DType.SizeInBytes * 8,
+                        [CostFactorNames.Synchronization] = synchronizeCost,
+                    };
+
+                    float gatherPart = 1;
+                    float scatterPart = 1;
+                    for (int i = 0; i < a.AxisPolicies.Count; i++)
+                    {
+                        switch (a.AxisPolicies[i], b.AxisPolicies[i])
+                        {
+                            case (SBPSplit splitIn, SBP sbpout):
+                                switch (sbpout)
+                                {
+                                    case SBPSplit splitOut:
+                                        {
+                                            var setA = new HashSet<int>(splitIn.Axes);
+                                            var setB = new HashSet<int>(splitOut.Axes);
+                                            var aContainsB = setA.IsSupersetOf(setB);
+                                            var bContainsA = setB.IsSupersetOf(setA);
+                                            if (bContainsA && aContainsB)
+                                            {
+                                                cost += new Cost()
+                                                {
+                                                    [CostFactorNames.CPUCycles] = 1,
+                                                };
+                                            }
+                                            else if (bContainsA)
+                                            {
+                                                var diff = setB.Except(setA).ToArray();
+                                                if (diff.All(d => d > splitIn.Axes[^1]))
+                                                {
+                                                    diff.ForEach(s => scatterPart *= a.Placement.Hierarchy[s]);
+                                                }
+                                                else
+                                                {
+                                                    return fullLoadStore;
+                                                }
+                                            }
+                                            else if (aContainsB)
+                                            {
+                                                setA.Except(setB).ToArray().ForEach(s => gatherPart *= a.Placement.Hierarchy[s]);
+                                            }
+                                            else
+                                            {
+                                                // when split different axis, need global load store.
+                                                return fullLoadStore;
+                                            }
+                                        }
+
+                                        break;
+                                    case SBPBroadCast:
+                                        // scatterPart *= a.Placement.Hierarchy[i];
+                                        splitIn.Axes.ToArray().ForEach(s => gatherPart *= a.Placement.Hierarchy[s]);
+                                        break;
+                                    default:
+                                        throw new NotSupportedException("split to partial");
+                                }
+
+                                break;
+                            case (SBPBroadCast, SBPBroadCast):
+                                // no cost.
+                                cost += new Cost()
+                                {
+                                    [CostFactorNames.CPUCycles] = 1,
+                                };
+                                break;
+                            case (SBPBroadCast, SBPSplit splitOut):
+                                splitOut.Axes.ToArray().ForEach(s => scatterPart *= a.Placement.Hierarchy[s]);
+                                break;
+                            default:
+                                throw new NotSupportedException($"{a} to {b}");
+                        }
+                    }
+
+                    if (gatherPart > 1f)
+                    {
+                        cost += new Cost()
+                        {
+                            [CostFactorNames.MemoryStore] = (UInt128)((gatherPart - 1) / scatterPart * (float)CostUtility.GetMemoryAccess(DistributedUtility.GetDividedTensorType(a))) * (UInt128)a.TensorType.DType.SizeInBytes,
+                        };
+                    }
+                }
 
                 break;
             case (DistributedType a, DistributedType b) when a.TensorType != b.TensorType && a.Placement == b.Placement:
@@ -233,6 +327,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 {
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
+                    [CostFactorNames.Synchronization] = synchronizeCost,
                 };
                 break;
             case (DistributedType a, DistributedType b) when a.Placement != b.Placement:
@@ -240,6 +335,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 {
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(a),
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(b),
+                    [CostFactorNames.Synchronization] = synchronizeCost,
                 };
                 break;
             case (DistributedType a, DistributedType b) when a == b:

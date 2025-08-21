@@ -518,6 +518,22 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     }
 
     /// <summary>
+    /// Cast to typed tensor.
+    /// </summary>
+    /// <param name="type">Element type. When element type of source tensor is a vector type, the result tensor will also be a vector type.</param>
+    /// <param name="castMode">Cast mode.</param>
+    /// <returns>Typed tensor.</returns>
+    public Tensor CastElementTo(DataType type, CastMode castMode = CastMode.KDefault)
+    {
+        if (ElementType is VectorType vt)
+        {
+            return CastTo(vt with { ElemType = type }, castMode);
+        }
+
+        return CastTo(type, castMode);
+    }
+
+    /// <summary>
     /// <see cref="Cast{T}(CastMode)"/>.
     /// </summary>
     public Tensor CastTo(DataType type, CastMode castMode = CastMode.KDefault)
@@ -537,6 +553,13 @@ public abstract partial class Tensor : IStructuralComparable, IStructuralEquatab
     /// </summary>
     /// <returns>Memory handle.</returns>
     public abstract MemoryHandle PinBuffer();
+
+    /// <summary>
+    /// Reshapes the current tensor to new dimensions, using the same backing storage.
+    /// </summary>
+    /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
+    /// <returns>A new tensor that reinterprets backing Buffer of this tensor with different dimensions.</returns>
+    public abstract Tensor Reshape(ReadOnlySpan<long> dimensions);
 
     /// <inheritdoc/>
     public IEnumerator GetEnumerator()

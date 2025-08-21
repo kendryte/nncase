@@ -21,7 +21,7 @@ public static class ISLUtility
         var dims = shape.Select((d, i) => $"d{i}").ToArray();
         for (int i = 0; i < dims.Length; i++)
         {
-            constraints.Add($"0 <= {dims[i]} < {shape[i]}");
+            constraints.Add($"{dims[i]} < {shape[i]}"); // note we can't assume the dims[i] >= 0, sometimes the shape will be 0, so that the dims[i] = -1.
         }
 
         return new Isl.set(Isl.ctx.Current, $"[{string.Join(',', dimVars)}] -> {{ [{string.Join(',', dims)}] : {string.Join(" and ", constraints)} }}");
@@ -148,6 +148,7 @@ internal sealed class AstExprToExprConverter
                 Isl.ast_expr_op_type.select => VisitSelect(astExpr),
                 Isl.ast_expr_op_type.min => Dimension.Min(Visit(astExpr.op_arg(0)), Visit(astExpr.op_arg(1))),
                 Isl.ast_expr_op_type.minus => -Visit(astExpr.op_arg(0)),
+                Isl.ast_expr_op_type.pdiv_r => Visit(astExpr.op_arg(0)) % Visit(astExpr.op_arg(1)),
                 _ => throw new NotSupportedException($"Unsupported expr op type: {astExpr.op_type()}"),
             },
             _ => throw new NotSupportedException($"Unsupported expr type: {astExpr.type()}"),

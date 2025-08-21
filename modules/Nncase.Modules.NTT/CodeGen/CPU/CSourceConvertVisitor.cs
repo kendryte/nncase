@@ -133,7 +133,7 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
             {
                 var dimVarName = Visit(dimVar).Name;
                 var tensorVarName = Visit(tensorVar).Name;
-                IndentScope.Writer.IndWrite($"auto {dimVarName} = {tensorVarName}.shape()[{dimIndex}_dim];\n");
+                IndentScope.Writer.IndWrite($"dim_t {dimVarName} = {tensorVarName}.shape()[{dimIndex}_dim];\n");
                 if (dimVar.Metadata.Range is ValueRange<double> range)
                 {
                     IndentScope.Writer.IndWrite($"if (!({range.Min} <= {dimVarName} && {dimVarName} <= {range.Max})) {{\n");
