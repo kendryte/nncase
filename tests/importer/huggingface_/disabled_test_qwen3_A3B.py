@@ -77,11 +77,10 @@ def test_qwen3_30B_A3B_FP8_dynamic(request):
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-
     # model_name = "/home/yanghaoqi/workspace/Qwen3-30B-A3B-FP8-dynamic"
     model_name = "/home/yanghaoqi/workspace/Qwen3-30B-A3B_fp8_static"
     # model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Qwen3-30B-A3B_fp8_static"
-    
+
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:

@@ -80,7 +80,7 @@ def dequantize_weights(model_dir):
             org_filepath = filepath.replace(".safetensors", ".org.safetensors")
             if os.path.exists(os.path.join(model_dir, org_filepath)):
                 continue
-        
+
             if not os.path.exists(org_filepath):
                 os.rename(filepath, org_filepath)
 
@@ -180,7 +180,8 @@ class HuggingfaceTestRunner(TestRunner):
                     count += 1
             else:
                 if not test_utils.in_ci():
-                    hidden_states = recursive_stack(result.hidden_states).detach().to(torch.float32).numpy()[-1][0]
+                    hidden_states = recursive_stack(result.hidden_states).detach().to(
+                        torch.float32).numpy()[-1][0]
                     dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
                     outputs.append(hidden_states)
                     count += 1
