@@ -105,7 +105,7 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
             for (size_t h = 0; h < hidden_size; h++) {
                 acc += q(i, h) * moeGateW(e, h);
             }
-            router_logits[i * num_expert + e] = acc; // cast to float already in evaluator, kept same type here.
+            router_logits[i * num_expert + e] = acc;
         }
     }
 
@@ -182,28 +182,33 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
 
             // gate
             std::vector<TElem> gate(moe_intermediate_size);
-            // Check if gate proj scale is 2D [num_expert, 1] or 3D [num_expert, moe_intermediate_size, 1]
-            constexpr bool gate_scale_is_2d = (moeExpertGateProjScale.shape().rank() == 2);
-            TElem gate_scale_val = gate_scale_is_2d ? moeExpertGateProjScale(expert, 0) : (TElem)1;
+            constexpr bool gate_scale_is_2d = moeExpertGateProjScale.shape().rank() == 2;
+            TElem gate_scale_val = (TElem)1;
+            if constexpr(gate_scale_is_2d)
+            {
+                gate_scale_val = moeExpertGateProjScale(expert, 0);
+            }
             
             // Check if gate input scale exists (not empty)
-            constexpr bool has_gate_input_scale = (moeExpertGateInputScale.shape().length() > 0);
-            constexpr bool gate_input_scale_is_2d = has_gate_input_scale && (moeExpertGateInputScale.shape().rank() == 2);
-            printf("has_gate_input_scale: %d, gate_input_scale_is_2d: %d\n", has_gate_input_scale, gate_input_scale_is_2d);
-            TElem gate_input_scale_val = (has_gate_input_scale && gate_input_scale_is_2d) ? moeExpertGateInputScale(expert, 0) : (TElem)1;
+            constexpr bool gate_input_scale_is_2d = moeExpertGateInputScale.rank() == 2;
+            TElem gate_input_scale_val = (TElem)1;
+            if constexpr(gate_input_scale_is_2d)
+            {
+                gate_input_scale_val = moeExpertGateInputScale(expert, 0);
+            }
             
             for (size_t d = 0; d < moe_intermediate_size; d++) {
                 TElem acc = (TElem)0;
                 for (size_t h = 0; h < hidden_size; h++) {
                     TElem input_val = q(i, h);
                     // Apply input scaling if available
-                    if constexpr(has_gate_input_scale) {
-                        if constexpr(gate_input_scale_is_2d) {
-                            input_val /= gate_input_scale_val;
-                        } else {
-                            input_val /= moeExpertGateInputScale(expert, h, 0);
-                        }
+
+                    if constexpr(gate_input_scale_is_2d) {
+                        input_val /= gate_input_scale_val;
+                    } else {
+                        input_val /= moeExpertGateInputScale(expert, h, 0);
                     }
+
                     acc += input_val * moeExpertGateProjW(expert, d, h);
                 }
                 if constexpr(gate_scale_is_2d)
@@ -214,7 +219,7 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
                 {
                     acc *= (moeExpertGateProjScale(expert, d, 0) * gate_input_scale_val);
                 }
-                // acc *= gate_scale_is_2d ? gate_scale_val : moeExpertGateProjScale(expert, d, 0);
+
                 // silu
                 TElem sig = sigmoid(acc);
                 gate[d] = sig * acc; // silu(x) = sigmoid(x) * x
@@ -222,26 +227,31 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
             // up
             std::vector<TElem> up(moe_intermediate_size);
             // Check if up proj scale is 2D [num_expert, 1] or 3D [num_expert, moe_intermediate_size, 1]
-            constexpr bool up_scale_is_2d = (moeExpertUpProjScale.shape().rank() == 2);
-            TElem up_scale_val = up_scale_is_2d ? moeExpertUpProjScale(expert, 0) : (TElem)1;
-            
-            // Check if up input scale exists (not empty)
-            constexpr bool has_up_input_scale = (moeExpertUpProjInputScale.shape().length() > 0);
-            constexpr bool up_input_scale_is_2d = has_up_input_scale && (moeExpertUpProjInputScale.shape().rank() == 2);
-            TElem up_input_scale_val = (has_up_input_scale && up_input_scale_is_2d) ? moeExpertUpProjInputScale(expert, 0) : (TElem)1;
-            
+            constexpr bool up_scale_is_2d = (moeExpertUpProjScale.rank() == 2);
+
+            TElem up_scale_val = (TElem)1;
+            if constexpr(up_scale_is_2d)
+            {
+                up_scale_val = moeExpertUpProjScale(expert, 0);
+            }
+
+            constexpr bool up_input_scale_is_2d = moeExpertUpProjInputScale.rank() == 2;
+            TElem up_input_scale_val = (TElem)1;
+            if constexpr(up_input_scale_is_2d)
+            {
+                up_input_scale_val = moeExpertUpProjInputScale(expert, 0);
+            }
+
             for (size_t d = 0; d < moe_intermediate_size; d++) {
                 TElem acc = (TElem)0;
                 for (size_t h = 0; h < hidden_size; h++) {
                     TElem input_val = q(i, h);
-                    // Apply input scaling if available
-                    if constexpr(has_up_input_scale) {
-                        if constexpr(up_input_scale_is_2d) {
-                            input_val /= up_input_scale_val;
-                        } else {
-                            input_val /= moeExpertUpProjInputScale(expert, h, 0);
-                        }
+                    if constexpr(up_input_scale_is_2d) {
+                        input_val /= up_input_scale_val;
+                    } else {
+                        input_val /= moeExpertUpProjInputScale(expert, h, 0);
                     }
+
                     acc += input_val * moeExpertUpProjW(expert, d, h);
                 }
                 if constexpr(up_scale_is_2d)
@@ -252,32 +262,37 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
                 {
                     acc *= (moeExpertUpProjScale(expert, d, 0) * up_input_scale_val);
                 }
-                // acc *= up_scale_is_2d ? up_scale_val : moeExpertUpProjScale(expert, d, 0);
+
                 up[d] = acc;
             }
             // down input = gate * up (elementwise)
             // down: (gate*up)[moe_intermediate_size] @ downW[hidden_size, moe_intermediate_size]
             // Check if down proj scale is 2D [num_expert, 1] or 3D [num_expert, hidden_size, 1]
-            constexpr bool down_scale_is_2d = (moeExpertDownProjScale.shape().rank() == 2);
-            TElem down_scale_val = down_scale_is_2d ? moeExpertDownProjScale(expert, 0) : (TElem)1;
-            
+            constexpr bool down_scale_is_2d = (moeExpertDownProjScale.rank() == 2);
+            TElem down_scale_val = (TElem)1;
+            if constexpr(down_scale_is_2d)
+            {
+                down_scale_val = moeExpertDownProjScale(expert, 0);
+            }
             // Check if down input scale exists (not empty)
-            constexpr bool has_down_input_scale = (moeExpertDownProjInputScale.shape().length() > 0);
-            constexpr bool down_input_scale_is_2d = has_down_input_scale && (moeExpertDownProjInputScale.shape().rank() == 2);
-            TElem down_input_scale_val = (has_down_input_scale && down_input_scale_is_2d) ? moeExpertDownProjInputScale(expert, 0) : (TElem)1;
+            constexpr bool down_input_scale_is_2d = moeExpertDownProjInputScale.rank() == 2;
+            TElem down_input_scale_val = (TElem)1;
+            if constexpr(down_input_scale_is_2d)
+            {
+                down_input_scale_val = moeExpertDownProjInputScale(expert, 0);
+            }
             
             for (size_t h = 0; h < hidden_size; h++) {
                 TElem acc = (TElem)0;
                 for (size_t d = 0; d < moe_intermediate_size; d++) {
                     TElem down_in = gate[d] * up[d];
                     // Apply input scaling if available
-                    if constexpr(has_down_input_scale) {
-                        if constexpr(down_input_scale_is_2d) {
-                            down_in /= down_input_scale_val;
-                        } else {
-                            down_in /= moeExpertDownProjInputScale(expert, d, 0);
-                        }
+                    if constexpr(down_input_scale_is_2d) {
+                        down_in /= down_input_scale_val;
+                    } else {
+                        down_in /= moeExpertDownProjInputScale(expert, d, 0);
                     }
+
                     acc += down_in * moeExpertDownProjW(expert, h, d);
                 }
                 if constexpr(down_scale_is_2d)
@@ -300,8 +315,7 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
 // All tensor rank/shape validation intentionally omitted here (assumed valid
 // upstream). Can be added if needed.
 template <Tensor TQ, Tensor TGateW, Tensor TGateInputScale, Tensor TGateProjW, Tensor TGateProjScale,
-          Tensor TDownInputScale, Tensor TDownProjW, Tensor TDownProjScale, Tensor TUpInputScale, Tensor TUpProjW,
-          Tensor TUpProjScale, class TOut>
+          Tensor TDownInputScale, Tensor TDownProjW, Tensor TDownProjScale, Tensor TUpInputScale, Tensor TUpProjW, Tensor TUpProjScale, class TOut>
 void qwen3_moe(const TQ &q, const TGateW &moeGateW,
                const TGateInputScale &moeExpertGateInputScale,
                 const TGateProjW &moeExpertGateProjW,
@@ -322,7 +336,6 @@ void qwen3_moe(const TQ &q, const TGateW &moeGateW,
                            hidden_size,
                            intermediate_size, moe_intermediate_size,
                            num_expert, num_top_k, is_norm_topk_prob, output);
-    
 }
 
 } // namespace nncase::ntt
