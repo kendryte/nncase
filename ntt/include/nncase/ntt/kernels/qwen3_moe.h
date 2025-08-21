@@ -4,16 +4,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http:            // down input = gate * up (elementwise)
-            // down: (gate*up)[moe_intermediate_size] @ downW[hidden_size, moe_intermediate_size]
-            // Check if down proj scale is 2D [num_expert, 1] or 3D [num_expert, hidden_size, 1]
-            bool down_scale_is_2d = (moeExpertDownProjScale.shape().rank() == 2);
-            TElem down_scale_val = down_scale_is_2d ? moeExpertDownProjScale(expert, 0) : (TElem)1;
-            
-            // Check if down input scale exists (not empty)
-            bool has_down_input_scale = (moeExpertDownProjInputScale.shape().length() > 0);
-            bool down_input_scale_is_2d = has_down_input_scale && (moeExpertDownProjInputScale.shape().rank() == 2);
-            TElem down_input_scale_val = (has_down_input_scale && down_input_scale_is_2d) ? moeExpertDownProjInputScale(expert, 0) : (TElem)1;he.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -105,7 +96,7 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
             for (size_t h = 0; h < hidden_size; h++) {
                 acc += q(i, h) * moeGateW(e, h);
             }
-            router_logits[i * num_expert + e] = acc;
+            router_logits[i * num_expert + e] = acc; // cast to float already in evaluator, kept same type here.
         }
     }
 
@@ -336,6 +327,7 @@ void qwen3_moe(const TQ &q, const TGateW &moeGateW,
                            hidden_size,
                            intermediate_size, moe_intermediate_size,
                            num_expert, num_top_k, is_norm_topk_prob, output);
+
 }
 
 } // namespace nncase::ntt
