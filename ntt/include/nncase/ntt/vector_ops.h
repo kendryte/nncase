@@ -40,6 +40,12 @@ struct tensor_unary_impl<Op, TVector> {
     Op<element_type> op_;
 };
 
+template <Vector TVector> struct tensor_unary_impl<copy, TVector> {
+    using element_type = typename TVector::element_type;
+
+    constexpr TVector operator()(const TVector &v) const noexcept { return v; }
+};
+
 template <template <class T> class Op, Vector TVector>
     requires(TVector::rank() == 2)
 struct tensor_unary_impl<Op, TVector> {

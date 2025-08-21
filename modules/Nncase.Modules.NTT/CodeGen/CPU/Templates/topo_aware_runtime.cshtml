@@ -184,93 +184,94 @@ class tensor_reduce_sync_impl {
         // according to the group size split the tensor.
         // todo should using better split strategy.
         constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
-        // FIXME: support axis calculation.
-        constexpr auto axis = ntt::fixed_dim_v<0>;
-        // constexpr auto axis = ntt::fixed_dim_v<[&] {
-        //     dim_t axis = -1;
-        //     loop<Rank>([&](auto i) {
-        //         if (axis == -1 && src.shape()[i] >= group_size) {
-        //             axis = i;
-        //         }
-        //     });
-        //     if (axis == -1) {
-        //         axis = 0;
-        //     }
-        //     return axis;
-        // }()>;
+        const auto axis = [&] {
+            dim_t axis = -1;
+            loop<Rank>([&](auto i) {
+                if (axis == -1 && src.shape()[i] >= group_size) {
+                    axis = i;
+                }
+            });
+            if (axis == -1) {
+                axis = 0;
+            }
+            return axis;
+        }();
 
         auto remain = src.shape()[axis] % (group_size);
         auto frac = src.shape()[axis] / (group_size);
 
         auto node_number_g = ntt::linear_offset(cur_index_g, group_hierarchy);
-        auto next_index_g = ntt::unravel_index((node_number_g + 1) % group_size, group_hierarchy);
-
-        // keep the non-reduce axis invariant.
-        auto next_index = index_group2global(next_index_g, ntt::make_shape(@(cur_index)));
 
         // reduce-scatter, communicate (group_size - 1) times
         for (auto i = 0; i < group_size - 1; i++) 
         {
-            // check when the last time.
-            auto offset = (node_number_g + i + 2) % group_size;
-            auto new_shape = src.shape().template replace_at<axis>(ntt::where(offset == group_size - 1, frac + remain, frac));
-            auto starts = ntt::generate_shape<Rank>([&](auto j) {
-                if constexpr (j == axis) {
-                    return offset * frac;
+            auto new_shape = ntt::generate_shape<Rank>([&](auto j) {
+                if (j == axis) {
+                    return ntt::where(node_number_g == group_size - 1, frac + remain, frac);
                 } else {
-                    return dim_zero;
+                    return (dim_t)src.shape()[j];
+                }
+            });
+            auto starts = ntt::generate_shape<Rank>([&](auto j) {
+                if (j == axis) {
+                    return node_number_g * frac;
+                } else {
+                    return (dim_t)0;
                 }
             });
             auto viewed_src1_tensor = src.view(starts, new_shape);
             auto viewed_dest_tensor = dest.view(starts, new_shape);
 
+            auto next_index_g = ntt::unravel_index((node_number_g + i + 1) % group_size, group_hierarchy);
+
+            // keep the non-reduce axis invariant.
+            auto next_index = index_group2global(next_index_g, cur_index);
+
+            auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
+                (TElem *)tar::src_ptr_tensor(next_index), src.shape(),
+                src.strides());
+            auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
+
             if (i == 0) {
-                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
-                    (TElem *)tar::src_ptr_tensor(next_index),
-                    src.shape(),
-                    src.strides());
-                auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
                 reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
                             viewed_dest_tensor);
             } else {
-                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
-                    (TElem *)tar::dest_ptr_tensor(next_index),
-                    dest.shape(),
-                    dest.strides());
-                auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
-                reduce_impl(viewed_src1_tensor, viewed_src2_tensor,
+                reduce_impl(viewed_dest_tensor, viewed_src2_tensor,
                             viewed_dest_tensor);
             }
-
-            reduce_group_sync();
         }
+
+        reduce_group_sync();
 
         // all gather
-        auto dest_index_g = ntt::unravel_index((node_number_g + group_size - 1) % group_size, group_hierarchy);
-        auto dest_index = index_group2global(dest_index_g, ntt::make_shape(@(cur_index)));
-
-        auto dest_tensor = ntt::make_tensor_view_from_address<TElem>(
-            (TElem *)tar::dest_ptr_tensor(dest_index),
-            dest.shape(),
-            dest.strides());
         for (size_t i = 0; i < group_size - 1; i++) {
-            auto offset = (node_number_g + i) % (group_size);
+            auto offset = (node_number_g + i + 1) % (group_size);
+            auto src_index_g = ntt::unravel_index(offset % group_size, group_hierarchy);
+            auto src_index = index_group2global(src_index_g, cur_index);
+
+            auto src_tensor = ntt::make_tensor_view_from_address<TElem>(
+                (TElem *)tar::dest_ptr_tensor(src_index), dest.shape(),
+                dest.strides());
             auto starts = ntt::generate_shape<Rank>([&](auto j) {
-                if constexpr (j == axis) {
+                if (j == axis) {
                     return offset * frac;
                 } else {
-                    return dim_zero;
+                    return (dim_t)0;
                 }
             });
-
-            auto new_shape = src.shape().template replace_at<axis>(ntt::where(offset == group_size - 1, frac + remain, frac));
-            auto viewed_src_tensor = dest.view(starts, new_shape);
-            auto viewed_dest_tensor = dest_tensor.view(starts, new_shape);
-            ntt::tensor_copy(viewed_src_tensor,
-                             viewed_dest_tensor);
-
-            reduce_group_sync();
+            auto new_shape = ntt::generate_shape<Rank>([&](auto j) {
+                if (j == axis) {
+                    return ntt::where(offset == group_size - 1, frac + remain, frac);
+                } else {
+                    return (dim_t)src.shape()[j];
+                }
+            });
+            auto viewed_src_tensor = src_tensor.view(starts, new_shape);
+            auto viewed_dest_tensor = dest.view(starts, new_shape);
+            ntt::tensor_copy(viewed_src_tensor, viewed_dest_tensor);
         }
+
+        reduce_group_sync();
 
         if (Op == ntt::reduce_op::mean) {
             auto numerator = (element_or_scalar_t<TElem>)(size_t)group_size;

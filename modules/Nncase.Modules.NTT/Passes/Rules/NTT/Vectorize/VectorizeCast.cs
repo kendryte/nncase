@@ -50,3 +50,33 @@ public sealed partial class VectorizeCastPropagation : RewriteRule<Pattern>
         return ret;
     }
 }
+
+[RuleGenerator]
+public sealed partial class CastDevectorizePropagation : RewriteRule<Pattern>
+{
+    public override Pattern Pattern { get; } =
+        IsCast(
+            "cast",
+            "caller",
+            _ => true,
+            PatternMatch.F.Tensors.IsUnpack(
+                "devectorize",
+                "callee",
+                _ => true,
+                IsWildcard("input")));
+
+    private Expr? GetReplace(Unpack devectorize, Cast cast, Call caller, Call callee, Expr input)
+    {
+        var scale = 1f * caller.CheckedDataType.SizeInBytes / callee.CheckedDataType.SizeInBytes;
+        if (devectorize.Axes.Any(a => input.CheckedShape[a] is { IsFixed: true, FixedValue: var d } && d * scale % 1 != 0))
+        {
+            return null;
+        }
+
+        var vectorizeLanes = devectorize.Lanes.Select(l => (int)(l / scale)).ToArray();
+        var newType = new VectorType(cast.NewType, vectorizeLanes);
+        var postOps = None.Default;
+        var ret = IR.F.Tensors.Unpack(IR.F.NTT.VectorizedCast(input, newType, CastMode.KDefault, devectorize.Axes.ToArray(), postOps), vectorizeLanes, devectorize.Axes.ToArray());
+        return ret;
+    }
+}

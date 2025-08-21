@@ -124,9 +124,10 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
         if (hasAllReduce)
         {
             UInt128 synchronizeCost = 25_000; // 25k cycles on 5GHz CPU is about 5us.
-            cost[CostFactorNames.MemoryLoad] += CostUtility.GetMemoryAccess(outputType);
+            cost[CostFactorNames.MemoryLoad] += CostUtility.GetMemoryAccess(outputType) * 2;
             cost[CostFactorNames.MemoryStore] += CostUtility.GetMemoryAccess(outputType);
-            cost[CostFactorNames.Synchronization] = synchronizeCost;
+            cost[CostFactorNames.CPUCycles] += CostUtility.GetCPUCycles(outputType, 1);
+            cost[CostFactorNames.Synchronization] = synchronizeCost * 3;
         }
 
         return cost;
