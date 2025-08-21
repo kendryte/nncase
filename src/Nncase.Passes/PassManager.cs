@@ -272,6 +272,8 @@ internal sealed class PassManager : IPassManager
                         default:
                             throw new NotSupportedException($"Unsupported pass type: {pass.GetType().AssemblyQualifiedName}");
                     }
+
+                    GC.Collect();
                 }
 
                 return _function;
