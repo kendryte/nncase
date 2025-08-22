@@ -58,8 +58,8 @@ constexpr auto make_dims_impl(const TDims &...dims) noexcept {
 }
 
 template <template <class... TDims> class Derived, dim_t... Dims>
-inline constexpr auto fixed_dims_impl_v =
-    make_dims_impl<Derived>(fixed_dim_v<Dims>...);
+inline constexpr auto
+    fixed_dims_impl_v = make_dims_impl<Derived>(fixed_dim_v<Dims>...);
 
 template <template <class... TDims> class Derived, size_t Rank, Dimension TDim>
 constexpr auto make_repeat_dims_impl(const TDim &dim) noexcept {
@@ -92,8 +92,8 @@ template <template <class... TDims> class Derived, size_t Rank,
 constexpr auto generate_dims_impl(TGenerator &&generator) noexcept {
     auto generate_impl =
         [&generator]<dim_t... I>(std::integer_sequence<dim_t, I...>) {
-            return make_dims_impl<Derived>(generator(fixed_dim_v<I>)...);
-        };
+        return make_dims_impl<Derived>(generator(fixed_dim_v<I>)...);
+    };
     return generate_impl(std::make_integer_sequence<dim_t, Rank>());
 }
 
@@ -236,25 +236,25 @@ struct dims_base {
                 return std::false_type{};
             } else {
                 auto contains_impl =
-                    [this, value]<size_t... I>(std::index_sequence<I...>) {
-                        (void)this;
-                        return (false || ... || (at(fixed_dim_v<I>) == value));
-                    };
+                    [ this, value ]<size_t... I>(std::index_sequence<I...>) {
+                    (void)this;
+                    return (false || ... || (at(fixed_dim_v<I>) == value));
+                };
                 return contains_impl(std::make_index_sequence<rank()>());
             }
         } else {
             auto contains_impl =
-                [this, value]<size_t... I>(std::index_sequence<I...>) {
-                    (void)this;
-                    return (false || ... || (at(fixed_dim_v<I>) == value));
-                };
+                [ this, value ]<size_t... I>(std::index_sequence<I...>) {
+                (void)this;
+                return (false || ... || (at(fixed_dim_v<I>) == value));
+            };
             return contains_impl(std::make_index_sequence<rank()>());
         }
     }
 
     template <Dimension... UDims>
     constexpr auto append(const UDims &...values) const noexcept {
-        auto append_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
+        auto append_impl = [&, this ]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
             return make_dims_impl<Derived>(at(fixed_dim_v<I>)..., values...);
         };
@@ -263,9 +263,8 @@ struct dims_base {
 
     template <Dimension... UDims>
     constexpr auto concat(const Derived<UDims...> &other) const noexcept {
-        auto concat_impl = [this, &other]<size_t... I, size_t... U>(
-                               std::index_sequence<I...>,
-                               std::index_sequence<U...>) {
+        auto concat_impl = [ this, &other ]<size_t... I, size_t... U>(
+            std::index_sequence<I...>, std::index_sequence<U...>) {
             (void)this;
             return make_dims_impl<Derived>(at(fixed_dim_v<I>)...,
                                            other.at(fixed_dim_v<U>)...);
@@ -284,7 +283,7 @@ struct dims_base {
 
     template <Dimension... UDims>
     constexpr auto prepend(const UDims &...values) const noexcept {
-        auto prepend_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
+        auto prepend_impl = [&, this ]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
             return make_dims_impl<Derived>(values..., at(fixed_dim_v<I>)...);
         };
@@ -302,8 +301,8 @@ struct dims_base {
     template <dim_t Index, Dimension TDim>
     constexpr auto replace_at(const TDim &dim) const noexcept {
         constexpr auto PositiveIndex = positive_index(Index, rank());
-        auto replace_impl = [&dim,
-                             this]<size_t... I>(std::index_sequence<I...>) {
+        auto replace_impl =
+            [&dim, this ]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
             return make_dims_impl<Derived>(
                 replace_dim_impl<PositiveIndex, I>(*this, dim)...);
@@ -321,7 +320,7 @@ struct dims_base {
 
     template <FixedDimensions TIndicies>
     constexpr auto select(const TIndicies &indicies) const noexcept {
-        auto select_impl = [&, this]<size_t... I>(std::index_sequence<I...>) {
+        auto select_impl = [&, this ]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
             return make_dims_impl<Derived>(at(indicies.at(fixed_dim_v<I>))...);
         };
@@ -464,7 +463,8 @@ constexpr auto canonicalize_strides(const TShape &shape,
 }
 
 namespace detail {
-template <size_t Axis, Shape TShape, bool Canonical = true> struct default_strides_impl {
+template <size_t Axis, Shape TShape, bool Canonical = true>
+struct default_strides_impl {
     static_assert(Axis > 0 && Axis <= TShape::rank(), "Axis out of bounds");
 
     template <Strides TStrides>
@@ -484,13 +484,14 @@ template <size_t Axis, Shape TShape, bool Canonical = true> struct default_strid
         }();
         auto new_strides = cnt_strides.prepend(new_stride);
         if constexpr (Axis == 1) {
-          if constexpr(Canonical) {
-            return canonicalize_strides(shape, new_strides);
-          } else {
-            return new_strides;   
-          }
+            if constexpr (Canonical) {
+                return canonicalize_strides(shape, new_strides);
+            } else {
+                return new_strides;
+            }
         } else {
-            return default_strides_impl<Axis - 1, TShape, Canonical>{}(shape, new_strides);
+            return default_strides_impl<Axis - 1, TShape, Canonical>{}(
+                shape, new_strides);
         }
     }
 };
@@ -509,8 +510,8 @@ constexpr auto default_strides([[maybe_unused]] const TShape shape) noexcept {
     if constexpr (rank == 0) {
         return strides_t<>();
     } else {
-        return detail::default_strides_impl<rank, TShape, Canonical>{}(shape,
-                                                            strides_t<>());
+        return detail::default_strides_impl<rank, TShape, Canonical>{}(
+            shape, strides_t<>());
     }
 }
 
@@ -524,7 +525,7 @@ constexpr auto linear_offset(const TIndex &index,
     if constexpr (rank == 0) {
         return dim_zero;
     } else {
-        auto impl = [index, strides]<size_t... I>(std::index_sequence<I...>) {
+        auto impl = [ index, strides ]<size_t... I>(std::index_sequence<I...>) {
             return ((index.at(fixed_dim_v<I>) * strides.at(fixed_dim_v<I>)) +
                     ...);
         };
@@ -602,7 +603,8 @@ constexpr dim_t contiguous_dims_impl(const TShape &shape,
     auto def_strides = default_strides(shape);
     auto def_strides_2 = default_strides<TShape, false>(shape);
     for (ptrdiff_t i = (ptrdiff_t)strides.rank() - 1; i >= 0; --i) {
-        if (strides[i] != def_strides[i] && !(shape[i] == dim_one && strides[i] == def_strides_2[i])) {
+        if (strides[i] != def_strides[i] &&
+            !(shape[i] == dim_one && strides[i] == def_strides_2[i])) {
             return shape.rank() - i - 1;
         }
     }
@@ -735,6 +737,78 @@ constexpr auto positive_axes(const TAxes &axes, const TExtent &dim) {
     return generate_shape<TAxes::rank()>(
         [&axes, &dim](auto axis) { return positive_index(axes[axis], dim); });
 }
+
+namespace detail {
+
+template <class TLast, class TCur, class TDim> class recover_dim_inner_impl {
+  public:
+    constexpr auto operator()(const TLast &pstride, const TCur &stride,
+                              const TDim &dim) noexcept {
+        if constexpr (FixedDimension<TLast>) {
+            return ntt::where(pstride == dim_zero, dim, pstride / stride);
+        } else {
+            return pstride == 0 ? dim : pstride / stride;
+        }
+    }
+};
+
+template <class TCur, class TDim>
+class recover_dim_inner_impl<fixed_dim<0>, TCur, TDim> {
+  public:
+    constexpr auto operator()([[maybe_unused]] const fixed_dim<0> &pstride,
+                              [[maybe_unused]] const TCur &stride,
+                              const TDim &dim) noexcept {
+        return dim;
+    }
+};
+
+template <class TLast, class TCur, class TDim> class recover_dim_impl {
+  public:
+    constexpr auto operator()(const TLast &pstride, const TCur &stride,
+                              const TDim &dim) noexcept {
+        if constexpr (FixedDimension<TCur>) {
+            return ntt::where(stride == dim_zero, dim_one,
+                              recover_dim_inner_impl<TLast, TCur, TDim>{}(
+                                  pstride, stride, dim));
+        } else {
+            return stride == 0 ? 1 : (pstride == 0 ? dim : pstride / stride);
+        }
+    }
+};
+
+template <Dimension TLast, Dimension TCur, Dimension TDim>
+constexpr auto recover_dim(const TLast &pstride, const TCur &stride,
+                           const TDim &dim) noexcept {
+    return recover_dim_impl<TLast, TCur, TDim>{}(pstride, stride, dim);
+}
+} // namespace detail
+
+template <Shape TShape, Strides TStrides>
+constexpr auto recover_layout(const TShape &shape, const TStrides &strides) {
+    const auto recover_strides = strides.aggregate(
+        empty_dims_alike_t<TStrides>{}, [&](auto result, auto dim, auto axis) {
+            if constexpr (axis == 0) {
+                return result.append(dim);
+            } else if constexpr (FixedDimension<decltype(dim)>) {
+                return result.append(
+                    ntt::where(dim == dim_zero, result.back(), dim));
+            } else {
+                return result.append(dim == 0 ? result.back() : dim);
+            }
+        });
+
+    return recover_strides.aggregate(
+        empty_dims_alike_t<TShape>{}, [&](auto result, auto stride, auto axis) {
+            constexpr auto paxis = axis - 1_dim;
+            const auto pstride = recover_strides[paxis];
+            const auto dim = shape[axis];
+            if constexpr (axis == 0) {
+                return result.append(dim);
+            } else {
+                return result.append(detail::recover_dim(pstride, stride, dim));
+            }
+        });
+}
 } // namespace nncase::ntt
 
 namespace std {
@@ -744,8 +818,8 @@ struct tuple_size<TDims> : std::integral_constant<size_t, TDims::rank()> {};
 
 template <size_t I, template <class... TDims> class Derived,
           nncase::ntt::Dimension... TDims>
-    requires(nncase::ntt::Dimensions<Derived<TDims...>>)
-struct tuple_element<I, Derived<TDims...>> {
+requires(nncase::ntt::Dimensions<Derived<TDims...>>) struct tuple_element<
+    I, Derived<TDims...>> {
     using type = std::tuple_element_t<I, std::tuple<TDims...>>;
 };
 

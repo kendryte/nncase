@@ -1,7 +1,12 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
+#define USE_Z3
+#if !USE_Z3
 using Google.OrTools.ConstraintSolver;
+#else
+using Microsoft.Z3;
+using IntVar = Microsoft.Z3.IntNum;
+#endif
 using NetFabric.Hyperlinq;
 using Nncase.IR.Affine;
 using QuikGraph;
@@ -44,7 +49,11 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             dimsMap.Clear();
         }
 
-        var tileVars = Enumerable.Range(0, value.DomainRelation.Map.Results.Length).Select(n => Solver.MakeIntVar(1, int.MaxValue, $"op{value.OpId}_d{n}_L{value.Level}")).ToArray();
+        var tileVars = Enumerable.Range(0, value.DomainRelation.Map.Results.Length).Select(n =>
+        {
+            var tileVar = Solver.MakeIntVar(1, long.MaxValue, $"op{value.OpId}_d{n}_L{value.Level}");
+            return tileVar;
+        }).ToArray();
         var forwardExtents = tileVars.Cast<IntExpr>().ToArray();
         if (!TileableNodeMemo.TryGetValue(value, out var dimInfo))
         {
@@ -273,7 +282,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             var subLevelPlace = bufferPlaces[i] = new IntVar[tileNode.Level];
             for (int sl = 0; sl < subLevelPlace.Length; sl++)
             {
-                subLevelPlace[sl] = Solver.MakeBoolVar($"p[cl{tileNode.Level}, op{bid.Node.OpId}, b{bid.Index}, ci{i}, sl{sl}]");
+                subLevelPlace[sl] = Solver.MakeBoolVar($"p_cl{tileNode.Level}_op{bid.Node.OpId}_b{bid.Index}_ci{i}_sl{sl}");
             }
 
             var subDomainShapes = bufferShapes[i] = new IntExpr[accessMap.Results.Length];
@@ -284,7 +293,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             }
 
             bufferSizes[i] = subDomainShapes.Aggregate((IntExpr)Solver.MakeIntConst(bid.Node.Grid.Buffers[bid.Index].CheckedDataType.SizeInBytes), Solver.MakeProd);
-            bufferSizeVars[i] = Solver.MakeIntVar(1, int.MaxValue, $"size[cl{tileNode.Level}, op{bid.Node.OpId}, b{bid.Index}, ci{i}]");
+            bufferSizeVars[i] = Solver.MakeIntVar(1, int.MaxValue, $"size_cl{tileNode.Level}_op{bid.Node.OpId}_b{bid.Index}_ci{i}");
             Solver.Add(Solver.MakeEquality(bufferSizeVars[i], bufferSizes[i]));
 
             var mask = 0U;

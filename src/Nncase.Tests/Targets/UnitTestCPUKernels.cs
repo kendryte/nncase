@@ -1172,8 +1172,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 154, 128 * 8 }, new long[] { 128 * 8, 64 * 32 }, false, true, new[] { 4 }, new[] { 0 }, 0 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
-    [InlineData(new object[] { new long[] { 21, 128 }, new long[] { 128, 1024 }, false, true, new[] { 1 }, new[] { 0 }, 1 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
+    // [InlineData(new object[] { new long[] { 154, 128 * 8 }, new long[] { 128 * 8, 64 * 32 }, false, true, new[] { 4 }, new[] { 0 }, 0 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
+    // [InlineData(new object[] { new long[] { 21, 128 }, new long[] { 128, 1024 }, false, true, new[] { 1 }, new[] { 0 }, 1 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
+    [InlineData(new object[] { new long[] { 123, 2048 }, new long[] { 2048, 1024 }, false, true, new[] { 1 }, new[] { 0 }, 2 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
     public async Task TestDynamicPackedMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int[] dynamicAxes, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
@@ -1185,7 +1186,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         {
             Metadata = new()
             {
-                Range = new(1, 255),
+                Range = new(1, 256),
             },
         };
 

@@ -12,6 +12,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Microsoft.Z3" Version="4.12.2" />
     <PackageVersion Include="ISLSharp" Version="1.0.5" />
     <PackageVersion Include="Avalonia" Version="11.0.2" />
     <PackageVersion Include="Avalonia.Desktop" Version="11.0.2" />

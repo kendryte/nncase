@@ -185,6 +185,7 @@
           "Microsoft.Extensions.Hosting.Abstractions": "[8.0.0, )",
           "Microsoft.Extensions.Logging.Abstractions": "[8.0.1, )",
           "Microsoft.Extensions.Options": "[8.0.2, )",
+          "Microsoft.Z3": "[4.12.2, )",
           "NetFabric.Hyperlinq": "[3.0.0-beta48, )",
           "System.CommandLine": "[2.0.0-beta4.22272.1, )",
           "System.Reactive": "[6.0.0, )"
@@ -266,6 +267,12 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.0",
           "Microsoft.Extensions.Primitives": "8.0.0"
         }
+      },
+      "Microsoft.Z3": {
+        "type": "CentralTransitive",
+        "requested": "[4.12.2, )",
+        "resolved": "4.12.2",
+        "contentHash": "dOV/D1K+OH2Ris7HcXHM2OIyHaFc6t3twNg9d8xqRKs3JZBvWgTp+OmzVfNGPn+Yz/wQDAHeWgecJly5aHGYAw=="
       },
       "OrtKISharp": {
         "type": "CentralTransitive",

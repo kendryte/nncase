@@ -164,4 +164,28 @@ public sealed class UnitTestDimension
         var sum = Assert.IsType<DimSum>(product.Operands[0]);
         Assert.Equal(7, sum.Bias);
     }
+
+    [Fact]
+    public void TestDefaultStrides()
+    {
+        {
+            Shape globalShape = new Dimension[] { 1, new DimVar("seq_len"), 3, 4 };
+            long[] maxShape = [1, 64, 3, 4];
+            var strides = TensorUtilities.GetDefaultStrides(globalShape, maxShape);
+            Assert.Equal(0, strides[0]);
+            Assert.Equal(12, strides[1]);
+            Assert.Equal(4, strides[2]);
+            Assert.Equal(1, strides[3]);
+        }
+
+        {
+            Shape globalShape = new Dimension[] { 2, 1, new DimVar("seq_len"), 4 };
+            long[] maxShape = [2, 1, 64, 4];
+            var strides = TensorUtilities.GetDefaultStrides(globalShape, maxShape);
+            Assert.Equal(256, strides[0]);
+            Assert.Equal(0, strides[1]);
+            Assert.Equal(4, strides[2]);
+            Assert.Equal(1, strides[3]);
+        }
+    }
 }

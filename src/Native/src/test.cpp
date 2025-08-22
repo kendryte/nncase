@@ -129,6 +129,54 @@ void test_strides() {
         NNCASE_UNUSED auto strides1 = ntt::make_strides(2_dim, 1_dim);
         assert(ntt::contiguous_dims(shape1, strides1) == 1);
     }
+
+    {
+        auto shape = ntt::make_shape(1_dim, 43, 3_dim, 4_dim);
+        auto strides = ntt::make_strides(0_dim, 12, 4_dim, 1_dim);
+        auto recovered = ntt::recover_layout(shape, strides);
+        assert(recovered[0] == 1);
+        assert(recovered[1] == 43);
+        assert(recovered[2] == 3);
+        assert(recovered[3] == 4);
+    }
+
+    {
+        auto shape = ntt::make_shape(2_dim, 1_dim, 34 /* 64 */, 4_dim);
+        auto strides = ntt::make_strides(256_dim, 0_dim, 4_dim, 1_dim);
+        auto recovered = ntt::recover_layout(shape, strides);
+        assert(recovered[0] == 2);
+        assert(recovered[1] == 1);
+        assert(recovered[2] == 64);
+        assert(recovered[3] == 4);
+    }
+
+    {
+        auto shape = ntt::make_shape(2_dim, 1_dim, 4_dim, 34);
+        auto strides = ntt::make_strides(256_dim, 0_dim, 64_dim, 1_dim);
+        auto recovered = ntt::recover_layout(shape, strides);
+        assert(recovered[0] == 2);
+        assert(recovered[1] == 1);
+        assert(recovered[2] == 4);
+        assert(recovered[3] == 64);
+    }
+
+    {
+        auto shape = ntt::make_shape(256, 1_dim, 1_dim);
+        auto strides = ntt::make_strides(1_dim, 0_dim, 0_dim);
+        auto recovered = ntt::recover_layout(shape, strides);
+        assert(recovered[0] == 256);
+        assert(recovered[1] == 1);
+        assert(recovered[2] == 1);
+    }
+
+    {
+        auto shape = make_shape(1_dim, 1_dim, 4_dim);
+        auto strides = make_strides(0_dim, 0_dim, 1_dim);
+        auto recovered = ntt::recover_layout(shape, strides);
+        assert(recovered[0] == 1);
+        assert(recovered[1] == 1);
+        assert(recovered[2] == 4);
+    }
 }
 
 void test_sharding() {

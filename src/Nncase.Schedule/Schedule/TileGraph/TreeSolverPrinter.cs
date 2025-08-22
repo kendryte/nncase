@@ -113,6 +113,7 @@ public sealed class TreeSolverPrinter : TreeSolverBase<IntExpr>, ITreeNodeVisito
         writer.Indent++;
 
         writer.WriteLine($"Domain Relation: {value.DomainRelation}");
+        WriteIntExprVector(writer, "TileVars", TileableNodeMemo[value].TileVars, Solution);
         WriteIntExprMatrix(writer, "Shapes", OpNodeMemo[value].Shapes, Solution);
 
         writer.Indent++;

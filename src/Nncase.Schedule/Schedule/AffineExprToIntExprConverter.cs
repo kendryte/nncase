@@ -1,8 +1,14 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
+#define USE_Z3
 
 using System.Reactive;
+#if USE_Z3
+using Microsoft.Z3;
+using IntVar = Microsoft.Z3.IntNum;
+#else
 using Google.OrTools.ConstraintSolver;
+#endif
 using Nncase.IR;
 using Nncase.IR.Affine;
 
@@ -29,7 +35,11 @@ internal sealed class AffineExprToIntExprConverter : ExprVisitor<IntExpr, Unit>
     {
         if (!_extents.TryGetValue(expr.Position, out var v))
         {
+#if USE_Z3
+            v = _solver.Context.MkIntConst(1, int.MaxValue, $"d{expr.Position}_v");
+#else
             v = _solver.MakeIntVar(1, int.MaxValue, $"d{expr.Position}_v");
+#endif
             _extents.Add(expr.Position, v);
         }
 
