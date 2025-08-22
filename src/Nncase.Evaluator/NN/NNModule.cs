@@ -22,6 +22,7 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<PReluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ReluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<Relu6Evaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<RoPEEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SeluEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SigmoidEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<HardSigmoidEvaluator>(reuse: Reuse.Singleton);

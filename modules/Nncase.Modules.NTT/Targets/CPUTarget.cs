@@ -86,6 +86,7 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.VectorizeReducePropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeReshapePropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeResizeImagePropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeRoPEPropagation>();
 
         // pass.Add<Passes.Rules.NTT.VectorizeScatterND>(rank, lane);
         pass.Add<Passes.Rules.NTT.VectorizeSlicePropagation>();
