@@ -177,6 +177,25 @@ void test_strides() {
         assert(recovered[1] == 1);
         assert(recovered[2] == 4);
     }
+
+    {
+        auto shape = make_shape(1_dim, 16_dim, 1_dim, 3_dim);
+        auto strides = make_strides(0_dim, 16_dim, 0_dim, 1_dim);
+        auto recovered = ntt::recover_layout(shape, strides);
+        assert(recovered[0] == 1);
+        assert(recovered[1] == 16);
+        assert(recovered[2] == 1);
+        assert(recovered[3] == 16);
+    }
+
+    {
+        auto shape = make_shape(1_dim, 16_dim, 2_dim);
+        auto strides = make_strides(0_dim, 2_dim, 1_dim);
+        auto recovered = ntt::recover_layout(shape, strides);
+        assert(recovered[0] == 1);
+        assert(recovered[1] == 16);
+        assert(recovered[2] == 2);
+    }
 }
 
 void test_sharding() {
