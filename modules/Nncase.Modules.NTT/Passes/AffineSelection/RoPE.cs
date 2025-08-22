@@ -22,9 +22,9 @@ public partial class NTTAffineSelectionPass
         var sin = (Expr)call[IR.NN.RoPE.Sin];
         var lastDim = input.CheckedShape[^1].FixedValue;
 
-        var rank = input.CheckedShape.Rank - 1;
+        var rank = input.CheckedShape.Rank;
         var domains = IR.F.Affine.Domains(rank);
-        var inOutResults = domains.Select(x => new AffineRange(x.Offset, x.Extent)).Append(new AffineRange(0, lastDim)).ToArray();
+        var inOutResults = domains.Select(x => new AffineRange(x.Offset, x.Extent)).ToArray();
         var inOutMap = new AffineMap(domains, default, inOutResults);
         var sinCosResults = inOutResults[1..];
         var sinCosMap = new AffineMap(domains, default, sinCosResults);
