@@ -52,30 +52,6 @@ struct half {
     constexpr explicit half(const T &v) noexcept
         : value_(round_to_half(v).value_) {}
 
-    constexpr half(fp16_from_raw_t, uint16_t value) noexcept
-        : value_(std::bit_cast<_Float16>(value)) {}
-
-    constexpr operator _Float16() const noexcept { return value_; }
-    constexpr operator float() const noexcept {
-        if (std::is_constant_evaluated()) {
-            return (float)value_;
-        } else {
-#ifdef __F16C__
-            // To avoid extendhfdf2
-            return _cvtsh_ss(raw());
-#else
-            return (float)value_;
-#endif
-        }
-    }
-
-    constexpr uint16_t raw() const noexcept {
-        return std::bit_cast<uint16_t>(value_);
-    }
-
-    static constexpr half from_raw(uint16_t v) noexcept {
-        return half(nncase::fp16_from_raw, v);
-    }
 
     static constexpr half round_to_half(float v) {
         if (std::is_constant_evaluated()) {
@@ -93,6 +69,77 @@ struct half {
     }
 
     static constexpr half epsilon() noexcept { return from_raw(0x0800); }
+
+    // Integer conversion constructors
+    constexpr explicit half(int x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    constexpr explicit half(int64_t x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    constexpr explicit half(uint32_t x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    constexpr explicit half(uint64_t x) noexcept
+        : value_(round_to_half(double(x)).value_) {}
+
+    // Floating point conversion constructors
+    constexpr explicit half(double x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    // bfloat16 conversion constructor
+    constexpr explicit half(bfloat16 x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    constexpr half(fp16_from_raw_t, uint16_t value) noexcept
+        : value_(std::bit_cast<_Float16>(value)) {}
+
+    constexpr operator _Float16() const noexcept { return value_; }
+//     constexpr operator float() const noexcept {
+//         if (std::is_constant_evaluated()) {
+//             return (float)value_;
+//         } else {
+// #ifdef __F16C__
+//             // To avoid extendhfdf2
+//             return _cvtsh_ss(raw());
+// #else
+//             return (float)value_;
+// #endif
+//         }
+//     }
+
+    constexpr uint16_t raw() const noexcept {
+        return std::bit_cast<uint16_t>(value_);
+    }
+
+    static constexpr half from_raw(uint16_t v) noexcept {
+        return half(nncase::fp16_from_raw, v);
+    }
+
+    // Type conversion operators
+    constexpr explicit operator double() const noexcept {
+        return double(float(*this));
+    }
+
+    constexpr explicit operator int() const noexcept {
+        return int(float(*this));
+    }
+
+    constexpr explicit operator int64_t() const noexcept {
+        return int64_t(float(*this));
+    }
+
+    constexpr explicit operator uint32_t() const noexcept {
+        return uint32_t(float(*this));
+    }
+
+    constexpr explicit operator uint64_t() const noexcept {
+        return uint64_t(double(*this));
+    }
+
+    constexpr explicit operator bool() const noexcept {
+        return bool(std::bit_cast<uint16_t>(*this));
+    }
 
     static constexpr half highest() noexcept { return from_raw(0x7bff); }
 

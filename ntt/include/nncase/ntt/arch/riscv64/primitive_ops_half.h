@@ -17,6 +17,12 @@ namespace nncase::ntt::ops {
     kernel(1, 16) kernel(2, 8) kernel(4, 4) kernel(8, 2)
 #endif
 
+// float32 intermediate
+#ifndef REGISTER_RVV_FP16_KERNEL_FP32_IM
+#define REGISTER_RVV_FP16_KERNEL_FP32_IM(kernel)                                       \
+    kernel(1, 16) kernel(2, 8) kernel(4, 4) 
+#endif
+
 #define RVV_UNARY_FP16_OP(op, dtype, vl, kernel)                               \
     template <> struct op<ntt::vector<dtype, vl>> {                            \
         ntt::vector<dtype, vl>                                                 \
@@ -260,6 +266,7 @@ REGISTER_RVV_UNARY_FP16_OP(cosh, half, cosh_float16)
         auto vi = __riscv_vfcvt_x_f_v_i16m##lmul(v, vl);                       \
         auto vf = __riscv_vfcvt_f_x_v_f16m##lmul(vi, vl);                      \
         auto mask = __riscv_vmfgt_vv_f16m##lmul##_b##mlen(vf, v, vl);          \
+        __asm__ volatile("" ::: "memory"); \
         vf = __riscv_vfsub_vf_f16m##lmul##_m(mask, vf, 1.f16, vl);             \
         return vf;                                                             \
     }
@@ -535,6 +542,12 @@ REGISTER_RVV_UNARY_FP16_OP(erf, half, erf_float16)
                 RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 8), \
                                    kernel)
 
+//Fp32 as immidiate result
+#define REGISTER_RVV_BINARY_FP16_OPS_FP32_IM(op, dtype, kernel)                \
+    RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 1), kernel)     \
+        RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 2), kernel) \
+            RVV_BINARY_fp16_OP(op, dtype, NTT_VL(sizeof(dtype) * 8, *, 4),     \
+                    kernel)     
 // add
 #define ADD_FLOAT16(lmul, mlen)                                                \
     inline vfloat16m##lmul##_t add_float16(const vfloat16m##lmul##_t &v1,      \
@@ -642,39 +655,60 @@ REGISTER_RVV_BINARY_FP16_OP(div, half, div_float16)
 REGISTER_RVV_FP16_KERNEL(POW_FLOAT16)
 REGISTER_RVV_BINARY_FP16_OP(pow, half, pow_float16)
 
+#define LMUL_DBL_1 2
+#define LMUL_DBL_2 4
+#define LMUL_DBL_4 8
+
+#define CONCAT_IMPL(a, b) a##b
+#define CONCAT(a, b) CONCAT_IMPL(a, b)
+
+#define DOUBLE_LMUL(lmul) CONCAT(LMUL_DBL_, lmul)
+#define CALL_DBL_LMUL(name, lmul) CONCAT(name, DOUBLE_LMUL(lmul))
+
 // mod
 #define MOD_FLOAT16(lmul, mlen)                                                \
-    inline vfloat16m##lmul##_t mod_float16(const vfloat16m##lmul##_t &v1,      \
+     inline vfloat16m##lmul##_t mod_float16(const vfloat16m##lmul##_t &v1,      \
                                            const vfloat16m##lmul##_t &v2,      \
                                            const size_t vl) {                  \
-        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
-            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
-                __riscv_vfdiv_vv_f16m##lmul(v1, v2, vl), vl),                  \
-            vl);                                                               \
-        return __riscv_vfnmsub_vv_f16m##lmul(quotient, v2, v1, vl);            \
-    }                                                                          \
+        auto v1_f32 = CALL_DBL_LMUL(__riscv_vfwcvt_f_f_v_f32m, lmul)(v1, vl);       \
+        auto v2_f32 = CALL_DBL_LMUL(__riscv_vfwcvt_f_f_v_f32m, lmul)(v2, vl);       \
+        auto division_f32 = CALL_DBL_LMUL(__riscv_vfdiv_vv_f32m, lmul)(v1_f32, v2_f32, vl); \
+        auto quotient_int = CALL_DBL_LMUL(__riscv_vfcvt_rtz_x_f_v_i32m, lmul)(division_f32, vl); \
+        auto quotient_f32 = CALL_DBL_LMUL(__riscv_vfcvt_f_x_v_f32m, lmul)(quotient_int, vl); \
+        auto result_f32 = CALL_DBL_LMUL(__riscv_vfnmsub_vv_f32m, lmul)(quotient_f32, v2_f32, v1_f32, vl); \
+        auto result_f16 = __riscv_vfncvt_f_f_w_f16m##lmul(result_f32, vl);     \
+        return result_f16;                                                     \
+    } \
+                  \
                                                                                \
     inline vfloat16m##lmul##_t mod_float16(const vfloat16m##lmul##_t &v,       \
                                            const half &s, const size_t vl) {   \
-        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
-            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
-                __riscv_vfdiv_vf_f16m##lmul(v, s, vl), vl),                    \
-            vl);                                                               \
-        return __riscv_vfnmsub_vf_f16m##lmul(quotient, s, v, vl);              \
+        float s_f32 = (float)s;                                                \
+        auto v_f32 = CALL_DBL_LMUL(__riscv_vfwcvt_f_f_v_f32m, lmul)(v, vl);         \
+        auto division_f32 = CALL_DBL_LMUL(__riscv_vfdiv_vf_f32m, lmul)(v_f32, s_f32, vl);         \
+        auto quotient_int = CALL_DBL_LMUL(__riscv_vfcvt_rtz_x_f_v_i32m, lmul)(division_f32, vl);  \
+        auto quotient_f32 = CALL_DBL_LMUL(__riscv_vfcvt_f_x_v_f32m, lmul)(quotient_int, vl);      \
+        auto result_f32 = CALL_DBL_LMUL(__riscv_vfnmsub_vf_f32m, lmul)(quotient_f32, s_f32, v_f32, vl);       \
+        auto result_f16 = __riscv_vfncvt_f_f_w_f16m##lmul(result_f32, vl);       \
+        return result_f16;                                                         \
     }                                                                          \
                                                                                \
     inline vfloat16m##lmul##_t mod_float16(                                    \
         const half &s, const vfloat16m##lmul##_t &v2, const size_t vl) {       \
-        auto v1 = __riscv_vfmv_v_f_f16m##lmul(s, vl);                          \
-        auto quotient = __riscv_vfcvt_f_x_v_f16m##lmul(                        \
-            __riscv_vfcvt_rtz_x_f_v_i16m##lmul(                                \
-                __riscv_vfrdiv_vf_f16m##lmul(v2, s, vl), vl),                  \
-            vl);                                                               \
-        return __riscv_vfnmsub_vv_f16m##lmul(quotient, v2, v1, vl);            \
-    }
+        float s_f32 = (float)s;                                                \
+        auto v1_f32 = CALL_DBL_LMUL(__riscv_vfmv_v_f_f32m, lmul)(s_f32, vl);         \
+        auto v2_f32 = CALL_DBL_LMUL(__riscv_vfwcvt_f_f_v_f32m, lmul)(v2, vl);        \
+        auto division_f32 = CALL_DBL_LMUL(__riscv_vfrdiv_vf_f32m, lmul)(v2_f32, s_f32, vl); \
+        auto quotient_int = CALL_DBL_LMUL(__riscv_vfcvt_rtz_x_f_v_i32m, lmul)(division_f32, vl); \
+        auto quotient_f32 = CALL_DBL_LMUL(__riscv_vfcvt_f_x_v_f32m, lmul)(quotient_int, vl); \
+        auto result_f32 = CALL_DBL_LMUL(__riscv_vfnmsub_vv_f32m, lmul)(quotient_f32, v2_f32, v1_f32, vl); \
+        auto result_f16 = __riscv_vfncvt_f_f_w_f16m##lmul(result_f32, vl);     \
+        return result_f16;                                                     \
+    }                                                                          
 
-REGISTER_RVV_FP16_KERNEL(MOD_FLOAT16)
-REGISTER_RVV_BINARY_FP16_OP(mod, half, mod_float16)
+
+REGISTER_RVV_FP16_KERNEL_FP32_IM(MOD_FLOAT16)
+REGISTER_RVV_BINARY_FP16_OPS_FP32_IM(mod, half, mod_float16)
 
 // min
 // template <> struct min<half, half> {
@@ -748,7 +782,16 @@ REGISTER_RVV_BINARY_FP16_OP(max, half, max_float16)
         auto mask1 = __riscv_vmsne_vx_i16m##lmul##_b##mlen(remainder, 0, vl);  \
         auto mask2 = __riscv_vmslt_vx_i16m##lmul##_b##mlen(tmp, 0, vl);        \
         mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
-        remainder = __riscv_vadd_vv_i16m##lmul##_m(mask1, remainder, v2, vl);  \
+        __asm__ volatile("" ::: "memory"); \
+/*        remainder = __riscv_vadd_vv_i16m##lmul##_m(mask1, remainder, v2, vl);  \ */ \
+        asm volatile (              \
+            "vmv.v.v v0, %[mask]\n\t" \
+            "vadd.vv %[rem], %[rem], %[val], v0.t" \
+            : [rem] "+vr" (remainder) \
+            : [mask] "vr" (mask1), \
+              [val] "vr" (v2) \
+            : "v0" \
+        );  \
         return remainder;                                                      \
     }                                                                          \
                                                                                \
@@ -759,7 +802,15 @@ REGISTER_RVV_BINARY_FP16_OP(max, half, max_float16)
         auto mask1 = __riscv_vmsne_vx_i16m##lmul##_b##mlen(remainder, 0, vl);  \
         auto mask2 = __riscv_vmslt_vx_i16m##lmul##_b##mlen(tmp, 0, vl);        \
         mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
-        remainder = __riscv_vadd_vx_i16m##lmul##_m(mask1, remainder, s, vl);   \
+/*        remainder = __riscv_vadd_vv_i16m##lmul##_m(mask1, remainder, v2, vl);  \ */ \
+        asm volatile (              \
+            "vmv.v.v v0, %[mask]\n\t" \
+            "vadd.vx %[rem], %[rem], %[val], v0.t" \
+            : [rem] "+vr" (remainder) \
+            : [mask] "vr" (mask1), \
+              [val] "r" (s) \
+            : "v0" \
+        );  \
         return remainder;                                                      \
     }                                                                          \
                                                                                \
@@ -771,7 +822,15 @@ REGISTER_RVV_BINARY_FP16_OP(max, half, max_float16)
         auto mask1 = __riscv_vmsne_vx_i16m##lmul##_b##mlen(remainder, 0, vl);  \
         auto mask2 = __riscv_vmslt_vx_i16m##lmul##_b##mlen(tmp, 0, vl);        \
         mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
-        remainder = __riscv_vadd_vv_i16m##lmul##_m(mask1, remainder, v2, vl);  \
+/*        remainder = __riscv_vadd_vv_i16m##lmul##_m(mask1, remainder, v2, vl);  \ */ \
+        asm volatile (              \
+            "vmv.v.v v0, %[mask]\n\t" \
+            "vadd.vv %[rem], %[rem], %[val], v0.t" \
+            : [rem] "+vr" (remainder) \
+            : [mask] "vr" (mask1), \
+              [val] "vr" (v2) \
+            : "v0" \
+        );  \
         return remainder;                                                      \
     }
 

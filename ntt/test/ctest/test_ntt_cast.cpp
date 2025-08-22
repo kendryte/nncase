@@ -446,21 +446,21 @@ TEST(CastTestFloat32ToFloat8E4M3, NoVectorize) {
     constexpr size_t N = 32;
     float min_input = -500.0f;
     float max_input = 500.0f;
-
+//#  generate ntt output to test
     // init
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
     NttTest::init_tensor(ntt_input, min_input, max_input);
 
     // ntt
     auto ntt_output1 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
-
+    ntt::cast(ntt_input, ntt_output1);
+//# generate_ort_golden_output
     // float8
     auto ntt_output2 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
         (ntt_output2)(index) = (float_e4m3_t)(ntt_input)(index);
     });
-
+//# compare
     // compare
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }
@@ -471,7 +471,7 @@ TEST(CastTestFloat32ToFloat8E4M3, Vectorize) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
     float min_input = -500.0f;
     float max_input = 500.0f;
-
+//#  generate ntt output to test
     // init
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
     NttTest::init_tensor(ntt_input, min_input, max_input);
@@ -486,12 +486,13 @@ TEST(CastTestFloat32ToFloat8E4M3, Vectorize) {
     auto ntt_output1 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
     ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
+//# generate_ort_golden_output
     // float8
     auto ntt_output2 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
     nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
         (ntt_output2)(index) = float_e4m3_t((ntt_input)(index));
     });
-
+//# compare
     // compare
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 }

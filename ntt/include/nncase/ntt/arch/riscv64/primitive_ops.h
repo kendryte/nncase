@@ -859,17 +859,20 @@ REGISTER_RVV_BINARY_OP(max, float, max_float32)
     inline vfloat32m##lmul##_t pow_float32(const vfloat32m##lmul##_t &v1,      \
                                            const vfloat32m##lmul##_t &v2,      \
                                            const size_t vl) {                  \
+        COMPILER_BARRIER();                     \
         return pow_ps(v1, v2, vl);                                             \
     }                                                                          \
                                                                                \
     inline vfloat32m##lmul##_t pow_float32(const vfloat32m##lmul##_t &v1,      \
                                            const float &s, const size_t vl) {  \
+        COMPILER_BARRIER();                     \
         auto v2 = __riscv_vfmv_v_f_f32m##lmul(s, vl);                          \
         return pow_ps(v1, v2, vl);                                             \
     }                                                                          \
                                                                                \
     inline vfloat32m##lmul##_t pow_float32(                                    \
         const float &s, const vfloat32m##lmul##_t &v2, const size_t vl) {      \
+        COMPILER_BARRIER();                     \
         auto v1 = __riscv_vfmv_v_f_f32m##lmul(s, vl);                          \
         return pow_ps(v1, v2, vl);                                             \
     }
@@ -882,38 +885,73 @@ REGISTER_RVV_BINARY_OP(pow, float, pow_float32)
     inline vint32m##lmul##_t floor_mod_int32(const vint32m##lmul##_t &v1,      \
                                              const vint32m##lmul##_t &v2,      \
                                              const size_t vl) {                \
+        /*if no fence, the result would be  incorrect on large testcases*/      \
         auto remainder = __riscv_vrem_vv_i32m##lmul(v1, v2, vl);               \
         auto tmp = __riscv_vxor_vv_i32m##lmul(v1, v2, vl);                     \
         auto mask1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
         auto mask2 = __riscv_vmslt_vx_i32m##lmul##_b##mlen(tmp, 0, vl);        \
         mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
-        remainder = __riscv_vadd_vv_i32m##lmul##_m(mask1, remainder, v2, vl);  \
+        /*remainder = __riscv_vadd_vv_i32m##lmul##_m(mask1, remainder, v2, vl);*/  \
+        asm volatile (              \
+            "vmv.v.v v0, %[mask]\n\t" \
+            "vadd.vv %[rem], %[rem], %[val], v0.t" \
+            : [rem] "+vr" (remainder) \
+            : [mask] "vr" (mask1), \
+              [val] "vr" (v2) \
+            : "v0" \
+        );  \
+        /* Debug output mask values */                                                                 \
+        /*
+        std::cout << "=== FLOOR_MOD_INT32 DEBUG ===" << std::endl;             \
+        print_rvv_vector_i32<NTT_VLEN/32>(v1, "v1", vl);                       \
+        print_rvv_vector_i32<NTT_VLEN/32>(v2, "v2", vl);                       \
+        print_rvv_vector_i32<NTT_VLEN/32>(remainder1, "remainder1", vl);          \
+        print_rvv_vector_i32<NTT_VLEN/32>(tmp, "tmp (v1^v2)", vl);              \
+        print_rvv_vector_i32<NTT_VLEN/32>(remainder2, "final result", vl);       \
+        std::cout << "=== END DEBUG ===" << std::endl;                         \
+        */ \
         return remainder;                                                      \
     }                                                                          \
                                                                                \
     inline vint32m##lmul##_t floor_mod_int32(                                  \
         const vint32m##lmul##_t &v1, const int32_t &s, const size_t vl) {      \
+        /*if no fence, the result would be  incorrect on large testcases*/      \
         auto remainder = __riscv_vrem_vx_i32m##lmul(v1, s, vl);                \
         auto tmp = __riscv_vxor_vx_i32m##lmul(v1, s, vl);                      \
         auto mask1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
         auto mask2 = __riscv_vmslt_vx_i32m##lmul##_b##mlen(tmp, 0, vl);        \
         mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
-        remainder = __riscv_vadd_vx_i32m##lmul##_m(mask1, remainder, s, vl);   \
+        asm volatile (              \
+            "vmv.v.v v0, %[mask]\n\t" \
+            "vadd.vx %[rem], %[rem], %[val], v0.t" \
+            : [rem] "+vr" (remainder) \
+            : [mask] "vr" (mask1), \
+              [val] "r" (s) \
+            : "v0" \
+        );  \
         return remainder;                                                      \
     }                                                                          \
                                                                                \
     inline vint32m##lmul##_t floor_mod_int32(                                  \
         const int32_t &s, const vint32m##lmul##_t &v2, const size_t vl) {      \
+        /*if no fence, the result would be  incorrect on large testcases*/      \
         auto v1 = __riscv_vmv_v_x_i32m##lmul(s, vl);                           \
         auto remainder = __riscv_vrem_vv_i32m##lmul(v1, v2, vl);               \
         auto tmp = __riscv_vxor_vv_i32m##lmul(v1, v2, vl);                     \
         auto mask1 = __riscv_vmsne_vx_i32m##lmul##_b##mlen(remainder, 0, vl);  \
         auto mask2 = __riscv_vmslt_vx_i32m##lmul##_b##mlen(tmp, 0, vl);        \
         mask1 = __riscv_vmand_mm_b##mlen(mask1, mask2, vl);                    \
-        remainder = __riscv_vadd_vv_i32m##lmul##_m(mask1, remainder, v2, vl);  \
+        asm volatile (              \
+            "vmv.v.v v0, %[mask]\n\t" \
+            "vadd.vv %[rem], %[rem], %[val], v0.t" \
+            : [rem] "+vr" (remainder) \
+            : [mask] "vr" (mask1), \
+              [val] "vr" (v2) \
+            : "v0" \
+        );  \
         return remainder;                                                      \
     }
-
+//Compiler or qemu error on rvv int32 floor_mod kernel.
 REGISTER_RVV_KERNEL(FLOOR_MOD_INT32)
 REGISTER_RVV_BINARY_OP(floor_mod, int32_t, floor_mod_int32)
 

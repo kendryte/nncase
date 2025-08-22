@@ -1,6 +1,12 @@
 name: runtime-build
 
-on: [ push, pull_request ]
+on:
+  push:
+    paths:
+      - 'ntt/**'
+  pull_request:
+    paths:
+      - 'ntt/**'
 
 concurrency:
   group: runtime-build-${{ github.ref }}
