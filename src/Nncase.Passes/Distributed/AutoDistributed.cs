@@ -313,9 +313,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         Visit(body);
         var rootCluster = TryInstertTerminator(body);
 
-        using (var stream = Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost) ? Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot") : Stream.Null)
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
         {
-            Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
+            using (var stream = Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot"))
+            {
+                Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
+            }
         }
 
         var post = SolveAndExtract(rootCluster);
