@@ -41,7 +41,7 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
     }
 
     template <FixedDimension TAxis>
-        requires FixedTensor<TB>
+    requires FixedTensor<TB>
     constexpr void operator()(const TA &input, const TB &indices, TC &output,
                               const TAxis &) noexcept {
 
@@ -54,8 +54,6 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
             (const slice_type *)(indices.elements().data()), indices_len,
             segments);
 
-        auto addr_output_byte =
-            reinterpret_cast<unsigned char *>(output.buffer().data());
         auto addr_output_element = output.buffer().data();
 
         constexpr auto indices_rank = TB::rank();
@@ -80,10 +78,11 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
                         [&](auto j) { src_index[j] = index[j]; });
                     src_index[fixed_dim_v<TAxis::value>] =
                         indices.elements()[seq.start];
-                    auto len =
-                        seq.length * domain_after_axis.length() * element_size;
-                    std::memcpy(addr_output_byte, &(input(src_index)), len);
-                    addr_output_byte += len;
+                    auto len = seq.length * domain_after_axis.length();
+                    ntt::u_unary(ntt::ops::copy<element_type>{},
+                                 &(input(src_index)), 1, addr_output_element, 1,
+                                 len);
+                    addr_output_element += len;
                 }
             });
         } else if (input_conti_dims == rank) {
@@ -112,7 +111,12 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
                         .append((dim_t)indices(indices_index))
                         .concat(out_index.template slice<axis + indices_rank,
                                                          rank - (axis + 1)>());
-                output(out_index) = input(in_index);
+                auto addr_input =
+                    reinterpret_cast<const element_type *>(&(input(src_index)));
+                auto addr_output = reinterpret_cast<const element_type *>(
+                    &(output(out_index)));
+                ntt::u_unary(ntt::ops::copy<element_type>{}, addr_input, 1,
+                             addr_output, 1, 1);
             });
         }
     }
