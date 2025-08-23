@@ -61,7 +61,6 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
         ntt::loop<rank>([&](auto &i) { src_index[i] = 0; });
 
         using element_type = element_or_scalar_t<TA>;
-        constexpr auto element_size = sizeof(element_type);
         auto input_conti_dims = contiguous_dims(input.shape(), input.strides());
         auto domain_before_axis =
             input.shape().template slice<0, TAxis::value>();
@@ -112,7 +111,7 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
                         .concat(out_index.template slice<axis + indices_rank,
                                                          rank - (axis + 1)>());
                 auto addr_input =
-                    reinterpret_cast<const element_type *>(&(input(src_index)));
+                    reinterpret_cast<const element_type *>(&(input(in_index)));
                 auto addr_output = reinterpret_cast<const element_type *>(
                     &(output(out_index)));
                 ntt::u_unary(ntt::ops::copy<element_type>{}, addr_input, 1,
