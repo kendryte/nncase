@@ -1109,6 +1109,12 @@ REGISTER_RVV_MUL_ADD_OP(float, mul_add_float32)
         auto scalar = __riscv_vfmv_v_f_f32m1(0.f, vl);                         \
         auto dest = __riscv_vfredusum_vs_f32m##lmul##_f32m1(v, scalar, vl);    \
         return __riscv_vfmv_f_s_f32m1_f32(dest);                               \
+    }                                                                          \
+    inline float reduce_add_float32(const vfloat32m##lmul##_t &v,              \
+                                    float init_value, const size_t vl) {       \
+        auto scalar = __riscv_vfmv_v_f_f32m1(init_value, vl);                  \
+        auto dest = __riscv_vfredusum_vs_f32m##lmul##_f32m1(v, scalar, vl);    \
+        return __riscv_vfmv_f_s_f32m1_f32(dest);                               \
     }
 
 // register reduce_max kernel
@@ -1119,6 +1125,12 @@ REGISTER_RVV_MUL_ADD_OP(float, mul_add_float32)
         auto scalar = __riscv_vfmv_v_f_f32m1(lowest, vl);                      \
         auto dest = __riscv_vfredmax_vs_f32m##lmul##_f32m1(v, scalar, vl);     \
         return __riscv_vfmv_f_s_f32m1_f32(dest);                               \
+    }                                                                          \
+    inline float reduce_max_float32(const vfloat32m##lmul##_t &v,              \
+                                    float init_value, const size_t vl) {       \
+        auto scalar = __riscv_vfmv_v_f_f32m1(init_value, vl);                  \
+        auto dest = __riscv_vfredmax_vs_f32m##lmul##_f32m1(v, scalar, vl);     \
+        return __riscv_vfmv_f_s_f32m1_f32(dest);                               \
     }
 
 // register reduce_min kernel
@@ -1127,6 +1139,12 @@ REGISTER_RVV_MUL_ADD_OP(float, mul_add_float32)
                                     const size_t vl) {                         \
         float max = std::numeric_limits<float>::max();                         \
         auto scalar = __riscv_vfmv_v_f_f32m1(max, vl);                         \
+        auto dest = __riscv_vfredmin_vs_f32m##lmul##_f32m1(v, scalar, vl);     \
+        return __riscv_vfmv_f_s_f32m1_f32(dest);                               \
+    }                                                                          \
+    inline float reduce_min_float32(const vfloat32m##lmul##_t &v,              \
+                                    float init_value, const size_t vl) {       \
+        auto scalar = __riscv_vfmv_v_f_f32m1(init_value, vl);                  \
         auto dest = __riscv_vfredmin_vs_f32m##lmul##_f32m1(v, scalar, vl);     \
         return __riscv_vfmv_f_s_f32m1_f32(dest);                               \
     }
@@ -1140,6 +1158,10 @@ REGISTER_RVV_KERNEL(REDUCE_MIN_FLOAT32)
     template <> struct reduce<op, dtype, ntt::vector<dtype, vl>> {             \
         dtype operator()(const ntt::vector<dtype, vl> &v) const noexcept {     \
             return kernel(v, vl);                                              \
+        }                                                                      \
+        dtype operator()(const ntt::vector<dtype, vl> &v,                      \
+                         dtype init_value) const noexcept {                    \
+            return kernel(v, init_value, vl);                                  \
         }                                                                      \
     };
 
