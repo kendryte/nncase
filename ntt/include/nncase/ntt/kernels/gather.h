@@ -115,7 +115,7 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
                 auto addr_output = reinterpret_cast<const element_type *>(
                     &(output(out_index)));
                 ntt::u_unary(ntt::ops::copy<element_type>{}, addr_input, 1,
-                             addr_output, 1, 1);
+                             const_cast<std::remove_const_t<element_type>*>(addr_output), 1, 1);
             });
         }
     }
