@@ -37,8 +37,9 @@ class unary_impl : public unary_like_impl<unary_impl<TIn, TOut>, TIn, TOut> {
             (output_conti_dims == TOut::rank())) {
             ntt::u_unary(op, addr_input, 1, addr_output_element, 1, len);
         } else {
-            ntt::apply(output.shape(),
-                       [&](auto index) { output(index) = op(input(index)); });
+            ntt::apply(output.shape(), [&](auto index) {
+                ntt::u_unary(op, &input(index), 1, &output(index), 1, 1);
+            });
         }
     }
 };
