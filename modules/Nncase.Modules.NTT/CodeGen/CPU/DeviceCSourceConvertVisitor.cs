@@ -404,6 +404,9 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
                 break;
+            case TIR.NTT.RoPE rope:
+                WriteIndWithProfiler($"rope({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name}, {arguments[3].Name});\n");
+                break;
             case TIR.NTT.Cast cast:
                 {
                     string postOps = string.Empty;

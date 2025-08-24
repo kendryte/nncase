@@ -25,6 +25,7 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<StackEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SUMMAEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PtrOfEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<RoPEEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SramPtrEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TensorLoadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<TensorStoreEvaluator>(reuse: Reuse.Singleton);

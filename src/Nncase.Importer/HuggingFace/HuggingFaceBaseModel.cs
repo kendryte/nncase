@@ -262,14 +262,8 @@ public abstract class HuggingFaceModel
     {
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
-        var qEmbed = IR.F.Math.Binary(
-            BinaryOp.Add,
-            IR.F.Math.Binary(BinaryOp.Mul, q, cos),
-            IR.F.Math.Binary(BinaryOp.Mul, RotateHalf(q), sin));
-        var kEmbed = IR.F.Math.Binary(
-            BinaryOp.Add,
-            IR.F.Math.Binary(BinaryOp.Mul, k, cos),
-            IR.F.Math.Binary(BinaryOp.Mul, RotateHalf(k), sin));
+        var qEmbed = IR.F.NN.RoPE(q, cos, sin);
+        var kEmbed = IR.F.NN.RoPE(k, cos, sin);
         return System.Tuple.Create(qEmbed, kEmbed);
     }
 

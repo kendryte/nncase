@@ -545,7 +545,10 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     IndentScope.Writer.Write($"shapeof({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Range range:
-                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name},{VisitBuffer(args[2], local: true).Name},{VisitBuffer(args[3], local: true).Name});\n");
+                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
+                    break;
+                case TIR.NTT.RoPE rope:
+                    IndentScope.Writer.Write($"rope({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
                     break;
                 case TIR.NTT.ConstantOfShape constantOfShape:
                     IndentScope.Writer.Write($"constant_of_shape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");

@@ -183,6 +183,11 @@ public partial class NTT
         return new Call(new TIR.NTT.ReduceArg(axis, keepDims, selectLastIndex, reduceArgOp, destType), input, ret);
     }
 
+    public static Call RoPE(Expr input, Expr cos, Expr sin, Expr output)
+    {
+        return new Call(new TIR.NTT.RoPE(), input, cos, sin, output);
+    }
+
     public static Call GatherReduceScatter(Expr input, Expr output, DistributedType inType, DistributedType outType)
     {
         return new Call(new TIR.NTT.GatherReduceScatter(inType, outType), input, output);
