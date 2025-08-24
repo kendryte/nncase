@@ -52,6 +52,8 @@ public partial class NTTAffineSelectionPass : AffineSelectionPass
                 return SelectMatMul((Op)call.Target, call, output);
             case IR.Math.Unary op:
                 return SelectUnaryLike((Expr)call[IR.Math.Unary.Input], new TIR.NTT.Unary(op.UnaryOp), call, output);
+            case IR.NN.RoPE op:
+                return SelectRoPE(op, call, output);
             case IR.NN.Swish op:
                 return SelectSwish(op, call, output);
             case IR.NTT.VectorizedLayerNorm op:

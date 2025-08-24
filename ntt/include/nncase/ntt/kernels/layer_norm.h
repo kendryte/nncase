@@ -23,16 +23,18 @@ namespace nncase::ntt {
 
 namespace vectorized_layer_norm_detail {
 
-template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
+template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut,
           FixedDimensions VectorizedAxes, Dimensions PadedNums,
           FixedDimension TAxis>
 void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
                                 const TBias &bias, TOut &output,
-                                const TEp &epsilon, const VectorizedAxes &,
+                                const float &epsilon, const VectorizedAxes &,
                                 const PadedNums &, const TAxis &,
                                 const bool use_mean = true) {
 
     using TElem = typename TIn::element_type;
+    using TAccElem = decltype(ntt::cast_elem<float>(std::declval<TElem>()));
+
     auto input_shape = input.shape();
     auto input_strides = input.strides();
 
@@ -50,11 +52,11 @@ void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
                                      vectorized_axes_temp[0] >= axis_value;
 
     using TElemScalar = element_or_scalar_t<TElem>;
-    auto temp_size = (TElemScalar)(float)inner_size;
-    TElem finner_size = (TElem)temp_size;
+    auto finner_size = (float)inner_size;
     if constexpr (UseVectorReduce) {
-        finner_size = finner_size * (TElem)TElem::size();
+        finner_size *= TElem::size();
     }
+    const auto norm_factor = 1.f / finner_size;
 
     ntt::apply(domain, [&](auto index) {
         const auto input_p =
@@ -64,48 +66,90 @@ void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
         auto output_p =
             output.elements().data() + linear_offset(index, strides);
 
-        // compute mean
-        TElem mean1 = (TElem)0;
-        if (use_mean) {
-            for (size_t i = 0; i < inner_size; i++)
-                mean1 = mean1 + (input_p[i] / finner_size);
-            if constexpr (UseVectorReduce) {
-                mean1 = (TElem)reduce_sum(mean1);
+        if constexpr (UseVectorReduce) {
+            auto mean = (TElemScalar)0;
+            auto extended_sum = (TAccElem)0;
+            if (use_mean) {
+                auto extended_mean = (TAccElem)0;
+                for (size_t i = 0; i < inner_size; i++)
+                    extended_mean += ntt::cast_elem<float>(input_p[i]);
+                extended_mean *= norm_factor;
+                mean = (TElemScalar)reduce_sum(extended_mean);
+
+                for (auto i = 0; i < inner_size; i++) {
+                    const auto val = ntt::square(input_p[i] - mean);
+                    extended_sum += ntt::cast_elem<float>(val);
+                }
+            } else {
+                for (auto i = 0; i < inner_size; i++) {
+                    const auto val = ntt::square(input_p[i]);
+                    extended_sum += ntt::cast_elem<float>(val);
+                }
+            }
+
+            const auto extended_sum_s = reduce_sum(extended_sum) * norm_factor;
+            auto extended_add = extended_sum_s + epsilon;
+            auto rsqrt = ntt::cast_elem<TElemScalar>(ntt::rsqrt(extended_add));
+
+            if (use_mean) {
+                for (auto i = 0; i < inner_size; i++) {
+                    auto val = (input_p[i] - mean) * rsqrt;
+                    output_p[i] = val * scale_p[i] + bias_p[i];
+                }
+            } else {
+                for (auto i = 0; i < inner_size; i++) {
+                    auto val = input_p[i] * rsqrt;
+                    output_p[i] = val * scale_p[i] + bias_p[i];
+                }
+            }
+        } else {
+            auto mean = (TElem)0;
+            auto extended_sum = (TAccElem)0;
+            if (use_mean) {
+                auto extended_mean = (TAccElem)0;
+                for (size_t i = 0; i < inner_size; i++)
+                    extended_mean += ntt::cast_elem<float>(input_p[i]);
+                extended_mean *= norm_factor;
+                mean = ntt::cast_elem<TElemScalar>(extended_mean);
+
+                for (auto i = 0; i < inner_size; i++) {
+                    const auto val = ntt::square(input_p[i] - mean);
+                    extended_sum += ntt::cast_elem<float>(val);
+                }
+            } else {
+                for (auto i = 0; i < inner_size; i++) {
+                    const auto val = ntt::square(input_p[i]);
+                    extended_sum += ntt::cast_elem<float>(val);
+                }
+            }
+
+            extended_sum *= norm_factor;
+            auto extended_add = extended_sum + epsilon;
+            auto rsqrt = ntt::cast_elem<TElemScalar>(ntt::rsqrt(extended_add));
+
+            if (use_mean) {
+                for (auto i = 0; i < inner_size; i++) {
+                    auto val = (input_p[i] - mean) * rsqrt;
+                    output_p[i] = val * scale_p[i] + bias_p[i];
+                }
+            } else {
+                for (auto i = 0; i < inner_size; i++) {
+                    auto val = input_p[i] * rsqrt;
+                    output_p[i] = val * scale_p[i] + bias_p[i];
+                }
             }
         }
-
-        for (auto i = 0; i < inner_size; i++)
-            output_p[i] = input_p[i] - mean1;
-
-        for (auto i = 0; i < inner_size; i++)
-            output_p[i] = output_p[i] * output_p[i];
-
-        TElem mean2 = (TElem)0;
-        for (auto i = 0; i < inner_size; i++)
-            mean2 = mean2 + (output_p[i] / finner_size);
-        if constexpr (UseVectorReduce) {
-            mean2 = (TElem)reduce_sum(mean2);
-        }
-
-        TElem add = mean2 + epsilon;
-        TElem sqrt = ntt::sqrt(add);
-
-        for (auto i = 0; i < inner_size; i++)
-            output_p[i] = (input_p[i] - mean1) / sqrt;
-
-        for (auto i = 0; i < inner_size; i++)
-            output_p[i] = (output_p[i] * (TElem)scale_p[i]) + (TElem)bias_p[i];
     });
 }
 
 } // namespace vectorized_layer_norm_detail
 
-template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut, Scalar TEp,
+template <Tensor TIn, Tensor TScale, Tensor TBias, typename TOut,
           FixedDimension TAxis, FixedDimensions VectorizedAxes = shape_t<>,
           Dimensions PadedNums = shape_t<>>
 void vectorized_layer_norm(const TIn &input, const TScale &scale,
-                           const TBias &bias, TOut &&output, const TEp &epsilon,
-                           const TAxis &axis = -1_dim,
+                           const TBias &bias, TOut &&output,
+                           const float &epsilon, const TAxis &axis = -1_dim,
                            const VectorizedAxes &vectorizedAxes = {},
                            const PadedNums &padedNums = {},
                            const bool use_mean = true) {
@@ -113,7 +157,7 @@ void vectorized_layer_norm(const TIn &input, const TScale &scale,
                   "currently not support 2d packing.");
 
     vectorized_layer_norm_detail::within_axis_vectorize_impl<
-        TIn, TScale, TBias, TOut, TEp, VectorizedAxes, PadedNums, TAxis>(
+        TIn, TScale, TBias, TOut, VectorizedAxes, PadedNums, TAxis>(
         input, scale, bias, output, epsilon, vectorizedAxes, padedNums, axis,
         use_mean);
 }
