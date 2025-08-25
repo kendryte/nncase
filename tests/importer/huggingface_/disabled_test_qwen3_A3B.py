@@ -27,7 +27,7 @@ def test_qwen3_30B_A3B_static(request):
     shape_bucket_segments_count = 2
     shape_bucket_fix_var_map = {  }
     dump_ir = true
-    
+
     [huggingface_options]
     output_logits = true
     output_hidden_states = false
@@ -52,15 +52,16 @@ def test_qwen3_30B_A3B_static(request):
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-<<<<<<< HEAD
-    # model_name = "/home/yanghaoqi/workspace/Qwen3-30B-A3B-FP8-dynamic"
-    model_name = "/home/yanghaoqi/workspace/Qwen3-30B-A3B_fp8_static"
-    # model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Qwen3-30B-A3B_fp8_static"
-=======
-    model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Qwen3-30B-A3B_fp8_static"
->>>>>>> 93892ee4 (add qwen3moe static test)
 
-    if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
+<< << << < HEAD
+   # model_name = "/home/yanghaoqi/workspace/Qwen3-30B-A3B-FP8-dynamic"
+   model_name = "/home/yanghaoqi/workspace/Qwen3-30B-A3B_fp8_static"
+    # model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Qwen3-30B-A3B_fp8_static"
+== == == =
+   model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Qwen3-30B-A3B_fp8_static"
+>>>>>> > 93892ee4(add qwen3moe static test)
+
+   if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:
         model_file = download_from_huggingface(
