@@ -46,7 +46,6 @@ template <Tensor TIn, Tensor TOut> class reshape_impl {
         // may need other constraints, just assuming possible reshape is filterd
         // by type-infer.
         auto len = input_conti_size == output_conti_size ? input_conti_size : 1;
-        printf("len: %d\n", len);
 
         const size_t size = input.size();
         for (size_t i = 0; i < size; i += len) {
