@@ -13,16 +13,26 @@
  * limitations under the License.
  */
 #pragma once
+#include "../../../half.h"
 #include "../../loop.h"
 #include "../../primitive_ops.h"
 #include "../../vector.h"
 #include "../../vector_ops.h"
 #include "arch_types.h"
+#include "primitive_ops.float32.h"
 #include <immintrin.h>
 
 namespace nncase::ntt::ops {
 
 #if defined(__AVX2__) && defined(__F16C__)
+
+namespace detail {
+inline __m256 broadcast_h_ps(half v) noexcept {
+    auto v1_u16 = _mm_set1_epi16(v.raw());
+    v1_u16 = _mm_broadcastw_epi16(v1_u16);
+    return _mm256_cvtph_ps(v1_u16);
+}
+} // namespace detail
 
 // cast_elem
 template <> struct cast_elem<ntt::vector<half, 16>, float> {
@@ -500,16 +510,16 @@ template <> struct cast_elem<ntt::vector<float, 2, 8>, half> {
 //     }
 // };
 
-// // swish(v) = v / (exp(-v) + 1)
-// template <> struct swish<ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const ntt::vector<float, 8> &v) const noexcept {
-//         return _mm256_mul_ps(
-//             v, _mm256_rcp_ps(_mm256_add_ps(
-//                    exp256_ps(_mm256_sub_ps(_mm256_setzero_ps(), v)),
-//                    _mm256_set1_ps(1.0f))));
-//     }
-// };
+// swish(v) = v / (exp(-v) + 1)
+template <> struct swish<ntt::vector<half, 16>> {
+    ntt::vector<half, 16>
+    operator()(const ntt::vector<half, 16> &v) const noexcept {
+        auto v_fp32 = ntt::cast_elem<float>(v);
+        v_fp32(0_dim) = ntt::swish(v_fp32(0_dim));
+        v_fp32(1_dim) = ntt::swish(v_fp32(1_dim));
+        return ntt::cast_elem<half>(v_fp32);
+    }
+};
 
 // // tanh
 // #define LOG2_INV 0x1.71547652b82fep+0
@@ -637,14 +647,17 @@ template <> struct cast_elem<ntt::vector<float, 2, 8>, half> {
 
 // // binary
 
-// // add
-// template <> struct add<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const ntt::vector<float, 8> &v1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         return _mm256_add_ps(v1, v2);
-//     }
-// };
+// add
+template <> struct add<ntt::vector<half, 16>, ntt::vector<half, 16>> {
+    ntt::vector<half, 16>
+    operator()(const ntt::vector<half, 16> &v1,
+               const ntt::vector<half, 16> &v2) const noexcept {
+        const auto fp32_v1 = ntt::cast_elem<float>(v1);
+        const auto fp32_v2 = ntt::cast_elem<float>(v2);
+        const auto fp32_ret = ntt::add(fp32_v1, fp32_v2);
+        return ntt::cast_elem<half>(fp32_ret);
+    }
+};
 
 // // sub
 // template <> struct sub<ntt::vector<float, 8>, ntt::vector<float, 8>> {
@@ -669,33 +682,42 @@ template <> struct cast_elem<ntt::vector<float, 2, 8>, half> {
 //     }
 // };
 
-// // mul
-// template <> struct mul<ntt::vector<float, 8>, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const ntt::vector<float, 8> &v1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         return _mm256_mul_ps(v1, v2);
-//     }
-// };
+// mul
+template <> struct mul<ntt::vector<half, 16>, ntt::vector<half, 16>> {
+    ntt::vector<half, 16>
+    operator()(const ntt::vector<half, 16> &v1,
+               const ntt::vector<half, 16> &v2) const noexcept {
+        auto v1_fp32 = ntt::cast_elem<float>(v1);
+        auto v2_fp32 = ntt::cast_elem<float>(v2);
+        v1_fp32(0_dim) = _mm256_mul_ps(v1_fp32(0_dim), v2_fp32(0_dim));
+        v1_fp32(1_dim) = _mm256_mul_ps(v1_fp32(1_dim), v2_fp32(1_dim));
+        return ntt::cast_elem<half>(v1_fp32);
+    }
+};
 
-// // mul
-// template <> struct mul<ntt::vector<float, 8>, float> {
-//     ntt::vector<float, 8> operator()(const ntt::vector<float, 8> &v1,
-//                                      const float &f2) const noexcept {
-//         auto v2 = _mm256_set1_ps(f2);
-//         return _mm256_mul_ps(v1, v2);
-//     }
-// };
+// mul
+template <> struct mul<ntt::vector<half, 16>, half> {
+    ntt::vector<half, 16> operator()(const ntt::vector<half, 16> &v1,
+                                     const half &f2) const noexcept {
+        auto v2 = detail::broadcast_h_ps(f2);
+        auto v1_fp32 = ntt::cast_elem<float>(v1);
+        v1_fp32(0_dim) = _mm256_mul_ps(v1_fp32(0_dim), v2);
+        v1_fp32(1_dim) = _mm256_mul_ps(v1_fp32(1_dim), v2);
+        return ntt::cast_elem<half>(v1_fp32);
+    }
+};
 
-// // mul
-// template <> struct mul<float, ntt::vector<float, 8>> {
-//     ntt::vector<float, 8>
-//     operator()(const float &f1,
-//                const ntt::vector<float, 8> &v2) const noexcept {
-//         auto v1 = _mm256_set1_ps(f1);
-//         return _mm256_mul_ps(v1, v2);
-//     }
-// };
+// mul
+template <> struct mul<half, ntt::vector<float, 16>> {
+    ntt::vector<half, 16>
+    operator()(const half &f1, const ntt::vector<half, 16> &v2) const noexcept {
+        auto v1 = detail::broadcast_h_ps(f1);
+        auto v2_fp32 = ntt::cast_elem<float>(v2);
+        v2_fp32(0_dim) = _mm256_mul_ps(v1, v2_fp32(0_dim));
+        v2_fp32(1_dim) = _mm256_mul_ps(v1, v2_fp32(1_dim));
+        return ntt::cast_elem<half>(v2_fp32);
+    }
+};
 
 // template <>
 // struct mul_add<ntt::vector<float, 8>, ntt::vector<float, 8>,
@@ -712,7 +734,7 @@ template <> struct mul_add<half, ntt::vector<half, 16>, ntt::vector<half, 16>> {
     ntt::vector<half, 16>
     operator()(const half &f1, const ntt::vector<half, 16> &v2,
                const ntt::vector<half, 16> &v3) const noexcept {
-        auto v1 = _mm256_set1_ps((float)f1);
+        auto v1 = detail::broadcast_h_ps(f1);
         auto v2_fp32 = ntt::cast_elem<float>(v2);
         auto v3_fp32 = ntt::cast_elem<float>(v3);
         v3_fp32(0_dim) = _mm256_fmadd_ps(v1, v2_fp32(0_dim), v3_fp32(0_dim));
@@ -726,7 +748,7 @@ struct mul_add<half, ntt::vector<half, 16>, ntt::vector<float, 2, 8>> {
     ntt::vector<float, 2, 8>
     operator()(const half &f1, const ntt::vector<half, 16> &v2,
                const ntt::vector<float, 2, 8> &v3) const noexcept {
-        auto v1 = _mm256_set1_ps((float)f1);
+        auto v1 = detail::broadcast_h_ps(f1);
         auto v2_fp32 = ntt::cast_elem<float>(v2);
         ntt::vector<float, 2, 8> result;
         result(0_dim) = _mm256_fmadd_ps(v1, v2_fp32(0_dim), v3(0_dim));

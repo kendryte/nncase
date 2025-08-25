@@ -173,6 +173,8 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.TileToExpand>();
         });
 
+        // passManager.Add<HorizontalMergePass>();
+
         // Decompose complex ops
         passManager.AddWithName<DataflowPass>("DecomposeComplexOps").Configure(p =>
         {

@@ -270,14 +270,8 @@ public abstract class HuggingFaceModel
     {
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
-        var qEmbed = IR.F.Math.Binary(
-            BinaryOp.Add,
-            IR.F.Math.Binary(BinaryOp.Mul, q, cos),
-            IR.F.Math.Binary(BinaryOp.Mul, RotateHalf(q), sin));
-        var kEmbed = IR.F.Math.Binary(
-            BinaryOp.Add,
-            IR.F.Math.Binary(BinaryOp.Mul, k, cos),
-            IR.F.Math.Binary(BinaryOp.Mul, RotateHalf(k), sin));
+        var qEmbed = IR.F.NN.RoPE(q, cos, sin);
+        var kEmbed = IR.F.NN.RoPE(k, cos, sin);
         return System.Tuple.Create(qEmbed, kEmbed);
     }
 
@@ -307,15 +301,9 @@ public abstract class HuggingFaceModel
 
     public virtual Call LLMLayerNorm(Expr hiddenStates, string layerName)
     {
-        // originType->fp32->dolayernorm->origintype
-        // fit layernorm partten 5
         var originDtype = hiddenStates.CheckedDataType;
-        hiddenStates = IR.F.Tensors.Cast(hiddenStates, DataTypes.Float32);
-
-        Expr weight = GetWeight($"{layerName}")!;
-
-        weight = IR.F.Tensors.Cast(weight, DataTypes.Float32);
-        var bias = Tensor.FromScalar(0f, (RankedShape)weight.CheckedShape);
+        var weight = GetWeight($"{layerName}")!.CastTo(originDtype);
+        var bias = Tensor.Zeros(originDtype, weight.Dimensions);
         int axis = -1;
 
         float eps = 1e-6F;
@@ -324,7 +312,7 @@ public abstract class HuggingFaceModel
             eps = (float)Config.GetNestedValue<double>("rms_norm_eps");
         }
 
-        return IR.F.Tensors.Cast(IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false), originDtype);
+        return IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false);
     }
 
     public virtual Call Linear(Expr expr, Tensor weight, Tensor? bias = null, Tensor? scaleIf = null, Tensor? scaleW = null, string layerName = "")

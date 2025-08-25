@@ -545,22 +545,25 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     IndentScope.Writer.Write($"shapeof({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Range range:
-                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name},{VisitBuffer(args[2], local: true).Name},{VisitBuffer(args[3], local: true).Name});\n");
+                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
+                    break;
+                case TIR.NTT.RoPE rope:
+                    IndentScope.Writer.Write($"rope({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
                     break;
                 case TIR.NTT.ConstantOfShape constantOfShape:
                     IndentScope.Writer.Write($"constant_of_shape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
                     break;
                 case TIR.NTT.UpdatePagedAttentionKVCache updatePagedAttentionKVCache:
-                    IndentScope.Writer.IndWrite($"update_paged_attention_kv_cache<caching::attention_cache_kind::{updatePagedAttentionKVCache.CacheKind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {updatePagedAttentionKVCache.LayerId}, {updatePagedAttentionKVCache.Layout.ToC()});\n");
+                    WriteIndWithProfiler($"update_paged_attention_kv_cache<caching::attention_cache_kind::{updatePagedAttentionKVCache.CacheKind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {updatePagedAttentionKVCache.LayerId}, {updatePagedAttentionKVCache.Layout.ToC()});\n");
                     break;
                 case TIR.NTT.GatherPagedAttentionKVCache gakv:
                     IndentScope.Writer.IndWrite($"gather_paged_attention_kv_cache({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
                     break;
                 case TIR.NTT.PagedAttention pagedAttention:
-                    IndentScope.Writer.IndWrite($"paged_attention({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name}, {pagedAttention.Layout.ToC()});\n");
+                    WriteIndWithProfiler($"paged_attention({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name}, {pagedAttention.Layout.ToC()});\n");
                     break;
                 case TIR.NTT.GetPositionIds getPositionIds:
-                    IndentScope.Writer.IndWrite($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: false).Name});\n");
+                    WriteIndWithProfiler($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: false).Name});\n");
                     break;
                 case TIR.NTT.Qwen3MoE qwen3MoE:
                     IndentScope.Writer.IndWrite($"qwen3_moe({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {VisitBuffer(args[4], local: true).Name}, {VisitBuffer(args[5], local: true).Name}, {VisitBuffer(args[6], local: true).Name}, {VisitBuffer(args[7], local: true).Name}, {VisitBuffer(args[8], local: true).Name},{VisitBuffer(args[9], local: true).Name},{VisitBuffer(args[10], local: true).Name},{VisitBuffer(args[11], local: true).Name}, {qwen3MoE.LayerId}, {qwen3MoE.HiddenSize}, {qwen3MoE.IntermediateSize}, {qwen3MoE.MoEIntermediateSize}, {qwen3MoE.NumExpert}, {qwen3MoE.NumTopK}, {qwen3MoE.IsNormTopkProb});\n");

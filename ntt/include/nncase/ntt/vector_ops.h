@@ -40,6 +40,12 @@ struct tensor_unary_impl<Op, TVector> {
     Op<element_type> op_;
 };
 
+template <Vector TVector> struct tensor_unary_impl<copy, TVector> {
+    using element_type = typename TVector::element_type;
+
+    constexpr TVector operator()(const TVector &v) const noexcept { return v; }
+};
+
 template <template <class T> class Op, Vector TVector>
     requires(TVector::rank() == 2)
 struct tensor_unary_impl<Op, TVector> {
@@ -451,21 +457,17 @@ struct reduce<Op, TResult, TVector> {
 
     constexpr TResult operator()(const TVector &v,
                                  TResult init_value) const noexcept {
-        Op<TResult, element_type> op;
-        auto count = v.shape()[0];
         auto value = init_value;
-        for (size_t i = 0; i < count; i++) {
-            value = op(value, v(i));
+        for (size_t i = 0; i < v.shape().front(); i++) {
+            value = ntt::reduce<Op, TResult>(v(i), value);
         }
         return value;
     }
 
     constexpr TResult operator()(const TVector &v) const noexcept {
-        Op<TResult, element_type> op;
-        auto count = v.shape()[0];
-        auto value = v(0);
-        for (size_t i = 1; i < count; i++) {
-            value = op(value, v(i));
+        auto value = ntt::reduce<Op, TResult>(v(0));
+        for (size_t i = 1; i < v.shape().front(); i++) {
+            value = ntt::reduce<Op, TResult>(v(i), value);
         }
         return value;
     }

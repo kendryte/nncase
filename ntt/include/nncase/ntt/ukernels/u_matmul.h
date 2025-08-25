@@ -760,7 +760,7 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC,
                         loop<n0_tile_scaled>([&](auto j) {
                             ntt::apply(c0_tmp[i][j].shape(), [&](auto index) {
                                 c0_tmp[i][j](index) =
-                                    (TElem)c0_grouped[i][j](index);
+                                    (TElem)(float)c0_grouped[i][j](index);
                             });
                         });
                     });

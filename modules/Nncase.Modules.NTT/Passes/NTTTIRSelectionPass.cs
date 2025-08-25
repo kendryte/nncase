@@ -110,6 +110,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 
             case IR.NTT.Im2col im2col:
                 return TIR.F.NTT.Im2col((Expr)arguments[0], output, im2col.Kernel, im2col.Stride, im2col.Padding, im2col.VectorizedAxes, im2col.PadedNums);
+            case IR.NN.RoPE rope:
+                return TIR.F.NTT.RoPE((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output);
             case IR.Imaging.ResizeImage resize:
                 if ((call[IR.Imaging.ResizeImage.Roi] is not None && ((RankedShape)call[IR.Imaging.ResizeImage.Roi].CheckedShape).Size != 0) || resize.IsTFResize)
                 {
