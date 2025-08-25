@@ -168,20 +168,20 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig, IPagedAttentionC
         }
     }
 
-    public IRArray<PagedKVCacheDimKind> PackedAxes
+    public IRArray<PagedKVCacheDimKind> VectorizedAxes
     {
         get
         {
-            var packedAxes = new PagedKVCacheDimKind[8]; // Using max size from small_vector
-            int length = packedAxes.Length;
-            Native.PagedAttentionConfigGetPackedAxes(this, packedAxes, length).ThrowIfFailed();
-            return packedAxes.Where(x => Enum.IsDefined(x)).ToArray();
+            var vectorizedAxes = new PagedKVCacheDimKind[8]; // Using max size from small_vector
+            int length = vectorizedAxes.Length;
+            Native.PagedAttentionConfigGetVectorizedAxes(this, vectorizedAxes, length).ThrowIfFailed();
+            return vectorizedAxes.Where(x => Enum.IsDefined(x)).ToArray();
         }
 
         set
         {
             var arr = value.ToArray();
-            Native.PagedAttentionConfigSetPackedAxes(this, arr, arr.Length).ThrowIfFailed();
+            Native.PagedAttentionConfigSetVectorizedAxes(this, arr, arr.Length).ThrowIfFailed();
         }
     }
 
@@ -271,8 +271,8 @@ public sealed class RTPagedAttentionConfig : RTAttentionConfig, IPagedAttentionC
             cfg.KVPrimType.TypeCode,
             cfg.BlockSize,
             cfg.CacheLayout.ToArray(),
-            cfg.PackedAxes.ToArray(),
-            cfg.PackedAxes.Count,
+            cfg.VectorizedAxes.ToArray(),
+            cfg.VectorizedAxes.Count,
             cfg.Lanes.ToArray(),
             cfg.Lanes.Count,
             cfg.ShardingAxes.ToArray(),

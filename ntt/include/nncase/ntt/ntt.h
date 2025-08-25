@@ -35,6 +35,7 @@
 #include "kernels/layer_norm.h"
 #include "kernels/matmul.h"
 #include "kernels/pack.h"
+#include "kernels/packed_matmul.h"
 #include "kernels/pad.h"
 #include "kernels/paged_attention.h"
 #include "kernels/range.h"
@@ -43,6 +44,7 @@
 #include "kernels/reshape.h"
 #include "kernels/resize_image.h"
 #include "kernels/rms_norm.h"
+#include "kernels/rope.h"
 #include "kernels/scatter_nd.h"
 #include "kernels/shapeof.h"
 #include "kernels/slice.h"
@@ -78,6 +80,7 @@
 #ifdef __riscv_vector
 #include "arch/riscv64/arch_types.h"
 #include "arch/riscv64/primitive_ops.h"
+#include "arch/riscv64/primitive_ops_half.h"
 #include "arch/riscv64/ukernels.h"
 #include "arch/riscv64/vector_ops.h"
 #endif

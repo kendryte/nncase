@@ -15,6 +15,7 @@ using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance;
 using CommunityToolkit.HighPerformance.Helpers;
+using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.Buffers;
 using Nncase.IR;
@@ -180,7 +181,7 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
     /// </summary>
     /// <param name="dimensions">An span of integers that represent the size of each dimension of the DenseTensor to create.</param>
     /// <returns>A new tensor that reinterprets backing Buffer of this tensor with different dimensions.</returns>
-    public Tensor<T> Reshape(ReadOnlySpan<long> dimensions)
+    public override Tensor<T> Reshape(ReadOnlySpan<long> dimensions)
     {
         if (Length != TensorUtilities.GetProduct(dimensions))
         {
@@ -474,6 +475,13 @@ public unsafe sealed partial class Tensor<T> : Tensor, IEnumerable<T>, ICollecti
                         }
                         else
                         {
+                            if (DataType.FromType<TTo>() is VectorType vt)
+                            {
+                                var acc = toDimensions[^vt.Lanes.Count..].Aggregate(1L, (acc, d) => acc * d);
+                                Enumerable.Range(toDimensions.Length - vt.Lanes.Count, vt.Lanes.Count).ToArray().ForEach(i => toDimensions[i] = 1);
+                                toDimensions[^1] = acc;
+                            }
+
                             toDimensions[^1] = toDimensions[^1] * srcSize / destSize;
                         }
                     }

@@ -26,7 +26,7 @@ def test_deepseek_r1_dynamic(request):
     [huggingface_options]
     output_logits = true
     output_hidden_states = true
-
+    num_layers = -1
 
     [generator]
     [generator.inputs]

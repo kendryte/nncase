@@ -64,15 +64,15 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
         var cache = kvCaches.Single().Value;
 
-        // unpack for q
-        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
+        // devectorize for q
+        if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
-            query = query.Unpack(qlayout.IndexOf(AttentionDimKind.Dim));
+            query = query.Unpack(1, qlayout.IndexOf(AttentionDimKind.Dim));
         }
 
-        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
+        if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
         {
-            query = query.Unpack(qlayout.IndexOf(AttentionDimKind.Head));
+            query = query.Unpack(1, qlayout.IndexOf(AttentionDimKind.Head));
         }
 
         // revert transpose
@@ -104,7 +104,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 k = OrtKI.Gather(k, indices, 0);
             }
 
-            var attn = OrtKI.Einsum([q, k], "LHE,HSE->HLS") * scale; // [num_heads, query_len, seq_len] [H,L,S]
+            var attn = OrtKI.Einsum([q.Cast(OrtDataType.Float), k.Cast(OrtDataType.Float)], "LHE,HSE->HLS") * scale.Cast(OrtDataType.Float); // [num_heads, query_len, seq_len] [H,L,S]
 
             // compute causal mask
             var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen]));
@@ -112,7 +112,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
 
             tempMask = OrtKI.Trilu(tempMask, seqLen - queryLen, 0);
             attnBias = OrtKI.Where(OrtKI.Equal(tempMask, OrtKISharp.Tensor.FromScalar(1.0f)), attnBias, OrtKI.Expand(OrtKISharp.Tensor.FromScalar(float.NegativeInfinity), OrtKISharp.Tensor.MakeTensor([queryLen, seqLen])));
-            attn = attn + OrtKI.Cast(attnBias, (long)attn.DataType);
+            attn = attn + attnBias;
 
             attn = OrtKI.Softmax(attn, -1);
 
@@ -128,7 +128,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 v = OrtKI.Gather(v, indices, 0);
             }
 
-            var output = OrtKI.Einsum([attn, v], "HLS,HSE->LHE"); // [query_len, num_heads, head_dim] [L,H,E]
+            var output = OrtKI.Einsum([attn, v.Cast(OrtDataType.Float)], "HLS,HSE->LHE").Cast(q.DataType); // [query_len, num_heads, head_dim] [L,H,E]
 
             outputs.Add(output);
             queryStart += queryLen;
@@ -142,15 +142,15 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
             concat_output = OrtKI.Transpose(concat_output, qlayout.Select(i => (long)i).ToArray());
         }
 
-        // repack for output
-        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
+        // revectorize for output
+        if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.NumKVHeads))
         {
-            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
+            concat_output = concat_output.Pack(0, cache.Config.Lanes[cache.Config.VectorizedAxes.IndexOf(PagedKVCacheDimKind.NumKVHeads)], qlayout.IndexOf(AttentionDimKind.Head));
         }
 
-        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
+        if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
-            concat_output = concat_output.Pack(cache.Config.Lanes[cache.Config.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
+            concat_output = concat_output.Pack(0, cache.Config.Lanes[cache.Config.VectorizedAxes.IndexOf(PagedKVCacheDimKind.HeadDim)], qlayout.IndexOf(AttentionDimKind.Dim));
         }
 
         return concat_output;
@@ -226,10 +226,10 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         // caches is (head * blocks) * [BlockLayout + lanes], concat at block size axis.
         var concatCache = OrtKI.Concat(caches.ToArray(), blockSizeAxis);
 
-        // unpack head dim
-        if (cache.Config.PackedAxes.Contains(PagedKVCacheDimKind.HeadDim))
+        // devectorize head dim
+        if (cache.Config.VectorizedAxes.Contains(PagedKVCacheDimKind.HeadDim))
         {
-            concatCache = concatCache.Unpack(headDimAxis);
+            concatCache = concatCache.Unpack(1, headDimAxis);
         }
 
         // transpose to [num_head * seq_len, head_dim]
@@ -299,14 +299,14 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
                 return new InvalidType("kv cache block layout not support!");
             }
 
-            if (!config.PackedAxes.SequenceEqual([PagedKVCacheDimKind.HeadDim]))
+            if (!config.VectorizedAxes.SequenceEqual([PagedKVCacheDimKind.HeadDim]))
             {
-                return new InvalidType("kv cache pack axes not support!");
+                return new InvalidType("kv cache vectorize axes not support!");
             }
 
             if ((config.Lanes[0] * config.KVPrimType.SizeInBytes) != 128)
             {
-                return new InvalidType("kv cache packed lanes not support!");
+                return new InvalidType("kv cache vectorized lanes not support!");
             }
 
             if (!config.ShardingAxes.SequenceEqual([PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.NumBlocks]))

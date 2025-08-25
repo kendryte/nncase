@@ -28,7 +28,7 @@ public sealed partial class InstacneNorm : Op
 
     public float Epsilon { get; }
 
-    public IRArray<int> PackedAxes { get; }
+    public IRArray<int> VectorizedAxes { get; }
 
-    public override string DisplayProperty() => $"Epsilon: {Epsilon}, PackedAxes: {PackedAxes}, PadedNums: {PadedNums}";
+    public override string DisplayProperty() => $"Epsilon: {Epsilon}, VectorizedAxes: {VectorizedAxes}, PadedNums: {PadedNums}";
 }

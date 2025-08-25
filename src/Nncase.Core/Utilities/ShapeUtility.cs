@@ -68,4 +68,18 @@ public static class ShapeUtility
             throw new NotImplementedException("GetPermuation in Transpose need 2D perm");
         }
     }
+
+    public static ValueRange<double> GetDimSegmentRange(ValueRange<double> range, int segmentIndex, int segmentsCount)
+    {
+        if (segmentIndex == 0)
+        {
+            return new(range.Min, range.Min);
+        }
+
+        var segmentSize = (int)System.Math.Ceiling((range.Max - range.Min) / (segmentsCount - 1));
+        var segmentStart = System.Math.Min(((segmentIndex - 1) * segmentSize) + range.Min + 1, range.Max);
+        var segmentEnd = System.Math.Min(segmentStart + segmentSize, range.Max);
+
+        return new(segmentStart, segmentEnd);
+    }
 }

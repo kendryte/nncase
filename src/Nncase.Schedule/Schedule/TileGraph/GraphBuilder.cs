@@ -46,6 +46,10 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
             return default;
         }
 
+        /*
+            note currently we're not use the affine map's extents for build domain.
+            so the domain we built is not consider the primtive shape. wo also can't use extent when building ast.
+        */
         var bufferShapeValues = current.Buffers.AsValueEnumerable().Select(b => TilingUtilities.GetBufferShape(b, true).ToValueArray()).ToArray();
         var bufferShapes = current.Buffers.AsValueEnumerable().Select(b => TilingUtilities.GetBufferShape(b, false)).ToArray();
         var bufferExprs = Enumerable.Range(0, current.Buffers.Length).Select(current.GetArgument).ToArray();

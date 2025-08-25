@@ -1,0 +1,5 @@
+@model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.VectorizedSoftmax>
+@{
+}
+vectorized_softmax(@Html.Raw(Model.Arguments[0].Symbol.Name), @Html.Raw(Model.Arguments[1].Symbol.Name), fixed_dim_v<@Model.Target.Axis>, fixed_shape_v<@string.Join(",", Model.Target.VectorizedAxes)>);
+

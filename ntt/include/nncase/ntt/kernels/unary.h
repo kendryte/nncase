@@ -24,8 +24,22 @@ class unary_impl : public unary_like_impl<unary_impl<TIn, TOut>, TIn, TOut> {
     template <Tensor TBroadcastedIn, class Op>
     void invoke_ukernel(const TBroadcastedIn &input, TOut &output,
                         const Op &op) {
-        ntt::apply(output.shape(),
-                   [&](auto index) { output(index) = op(input(index)); });
+        auto input_conti_dims = contiguous_dims(input.shape(), input.strides());
+        auto output_conti_dims =
+            contiguous_dims(output.shape(), output.strides());
+
+        auto addr_input = input.elements().data();
+        auto addr_output_element = output.elements().data();
+
+        auto len = input.shape().length();
+
+        if ((input_conti_dims == TIn::rank()) &&
+            (output_conti_dims == TOut::rank())) {
+            ntt::u_unary(op, addr_input, 1, addr_output_element, 1, len);
+        } else {
+            ntt::apply(output.shape(),
+                       [&](auto index) { output(index) = op(input(index)); });
+        }
     }
 };
 } // namespace detail

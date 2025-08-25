@@ -13,6 +13,7 @@ from huggingface_hub import snapshot_download
 from safetensors.torch import load_file, save_file
 import nncase
 from npy2json import convert_npy_to_json
+from ml_dtypes import bfloat16
 
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
@@ -119,6 +120,8 @@ def to_np_type(t: str):
         return np.float32
     elif t == "float16":
         return np.float16
+    elif t == "bfloat16":
+        return bfloat16
     else:
         return None
 
@@ -134,6 +137,7 @@ class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)
         self.model_type = "huggingface"
+        self.num_layers = -1
 
     def from_huggingface(self, model_path):
         pass
@@ -146,27 +150,6 @@ class HuggingfaceTestRunner(TestRunner):
         for idx, input in enumerate(self.inputs):
             if idx != 0:
                 continue
-            '''
-            {
-                'input_ids': tensor([[151644, 8948, ... 198, 151644, 77091, 198]]),
-                'attention_mask': tensor([[1, 1, 1, 1, ..., 1, 1]])
-            }
-            '''
-            # messages = [
-            #     {"role": "system", "content": "You are a assistant!"},
-            #     {"role": "user", "content": input}
-            # ]
-            # text = self.tokenizer.apply_chat_template(
-            #     messages,
-            #     tokenize=False,
-            #     add_generation_prompt=True
-            # )
-            # model_inputs = self.tokenizer([text], return_tensors="pt").to(self.model.device)
-            # if not test_utils.in_ci():
-            #     dump_bin_file(os.path.join(self.case_dir, "input",
-            #                                f'input_{idx}.bin'), input['data'][0])
-            #     dump_txt_file(os.path.join(self.case_dir, "input",
-            #                                f'input_{idx}.txt'), input['data'][0])
 
             # TODO: add attention_mask in inputs
             result = self.model.forward(
@@ -213,8 +196,13 @@ class HuggingfaceTestRunner(TestRunner):
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
 
+        if self.cfg['huggingface_options']['num_layers'] != -1:
+            self.num_layers = self.cfg['huggingface_options']['num_layers']
+            config.num_hidden_layers = self.num_layers
+        else:
+            self.num_layers = config.num_hidden_layers
+
         self.num_kv_heads = config.num_key_value_heads
-        self.num_layers = config.num_hidden_layers
         self.head_dim = config.head_dim if hasattr(
             config, "head_dim") else config.hidden_size // config.num_attention_heads
 
@@ -228,8 +216,8 @@ class HuggingfaceTestRunner(TestRunner):
         self.cache_layout = [getattr(nncase.PagedKVCacheDimKind, item)
                              for item in paged_attention_config['cache_layout']]
         # [ nncase.PagedKVCacheDimKind.it for it in paged_attention_config['cache_layout'] ]
-        self.packed_axes = [getattr(nncase.PagedKVCacheDimKind, item)
-                            for item in paged_attention_config['packed_axes']]
+        self.vectorized_axes = [getattr(nncase.PagedKVCacheDimKind, item)
+                                for item in paged_attention_config['vectorized_axes']]
         self.lanes = paged_attention_config['lanes']
         self.sharding_axes = [getattr(nncase.PagedKVCacheDimKind, item)
                               for item in paged_attention_config['sharding_axes']]
@@ -243,7 +231,7 @@ class HuggingfaceTestRunner(TestRunner):
             self.kv_type,
             self.block_size,
             self.cache_layout,
-            self.packed_axes,
+            self.vectorized_axes,
             self.lanes,
             self.sharding_axes,
             self.axis_policies

@@ -69,6 +69,11 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
             }
         }
 
+        if (!DistributedUtility.IsDistributable(ndsbp))
+        {
+            return new InvalidType("invalid sbp.");
+        }
+
         return new DistributedType(tensorType, ndsbp, a.Placement);
     }
 
@@ -142,6 +147,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
         var operandTypes = TypeInference.BroadcastDistributeTypes(lhs, rhs);
         return (operandTypes[0], operandTypes[1]) switch
         {
+            (DimensionType, DimensionType) => TensorType.Scalar(DataTypes.Boolean),
             (TensorType a, TensorType b) => Visit(a, b, target),
             (DistributedType a, DistributedType b) => Visit(a, b, target),
             _ => new InvalidType($"{lhs} {rhs}"),

@@ -46,27 +46,48 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Distributed.ForceBoxing forceBoxing:
                 return T.Memcopy(output, (Expr)arguments[0]);
             case IR.Math.Binary binary:
-                return GenerateBinary(binary.BinaryOp, arguments, output);
+                return TIR.F.NTT.VectorizedBinary((Expr)arguments[0], (Expr)arguments[1], output, None.Default, binary.BinaryOp, Array.Empty<int>(), Array.Empty<Dimension>(), Array.Empty<int>(), Array.Empty<Dimension>());
             case IR.Tensors.Bitcast bitcast:
                 return GenerateBitcast((Expr)arguments[0], ref output, bitcast.NewType);
             case IR.Tensors.Pack pack:
                 return TIR.F.NTT.Pack((Expr)arguments[0], output, pack.Lanes, pack.Axes);
-            case IR.Tensors.PackMask pack:
+            case IR.Tensors.VectorizeMask pack:
                 return TIR.F.NTT.Pack((Expr)arguments[0], output, new[] { pack.Lanes }, new[] { pack.Axis });
             case IR.Tensors.Unpack unpack:
                 return TIR.F.NTT.Unpack((Expr)arguments[0], output, unpack.Lanes, unpack.Axes);
-            case IR.NTT.PackedBinary packedBinary:
-                return TIR.F.NTT.Binary(packedBinary.BinaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
-            case IR.NTT.PackedMatMul packed_mat_mul_summa when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
-                return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packed_mat_mul_summa.LhsPackedAxes, packed_mat_mul_summa.RhsPackedAxes, packed_mat_mul_summa.TransposeA, packed_mat_mul_summa.TransposeB);
-            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit):
-                return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
-            case IR.NTT.PackedMatMul packedMatMul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, packedMatMul.LhsPackedAxes, packedMatMul.RhsPackedAxes, packedMatMul.TransposeA, packedMatMul.TransposeB, packedMatMul.FusedReduce);
-            case IR.Math.MatMul matmul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
+            case IR.NTT.VectorizedBinary vectorizedBinary:
+                return TIR.F.NTT.VectorizedBinary((Expr)arguments[0], (Expr)arguments[1], output, (Expr)arguments[2], vectorizedBinary.BinaryOp, vectorizedBinary.LhsVectorizedAxes, vectorizedBinary.LhsPadedNums, vectorizedBinary.RhsVectorizedAxes, vectorizedBinary.RhsPadedNums);
+            case IR.NTT.VectorizedMatMul vectorizedMatMul when GetArgumentType(arguments[0]) is DistributedType dta && GetArgumentType(arguments[1]) is DistributedType dtb:
+                var dinfo = vectorizedMatMul.GetDimInfo(dta.TensorType.Shape.Rank, dtb.TensorType.Shape.Rank);
+                if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dta.AxisPolicies[dinfo.Lk] == dtb.AxisPolicies[dinfo.Rn] &&
+                    dta.AxisPolicies[dinfo.Lm] == dtb.AxisPolicies[dinfo.Rk])
+                {
+                    return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, vectorizedMatMul.LhsVectorizedAxes, vectorizedMatMul.RhsVectorizedAxes, vectorizedMatMul.TransposeA, vectorizedMatMul.TransposeB);
+                }
+                else
+                {
+                    return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, vectorizedMatMul.LhsVectorizedAxes, vectorizedMatMul.RhsVectorizedAxes, vectorizedMatMul.TransposeA, vectorizedMatMul.TransposeB, vectorizedMatMul.FusedReduce);
+                }
+
+            case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && GetArgumentType(arguments[1]) is DistributedType dtb:
+                if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
+                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^2] &&
+                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^1])
+                {
+                    return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
+                }
+                else
+                {
+                    return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default);
+                }
+
             case IR.CustomNTT.MatMul matmul:
-                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.LhsPackedAxes, matmul.RhsPackedAxes, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath, matmul.FuncName);
+                return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.LhsVectorizedAxes, matmul.RhsVectorizedAxes, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath, matmul.FuncName);
+            case IR.NTT.PackedMatMul matmul:
+                return TIR.F.NTT.PackedMatMul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.FusedReduce);
             case IR.NN.Conv2D conv:
                 {
                     var input = call[IR.NN.Conv2D.Input];
@@ -88,7 +109,9 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 }
 
             case IR.NTT.Im2col im2col:
-                return TIR.F.NTT.Im2col((Expr)arguments[0], output, im2col.Kernel, im2col.Stride, im2col.Padding, im2col.PackedAxes, im2col.PadedNums);
+                return TIR.F.NTT.Im2col((Expr)arguments[0], output, im2col.Kernel, im2col.Stride, im2col.Padding, im2col.VectorizedAxes, im2col.PadedNums);
+            case IR.NN.RoPE rope:
+                return TIR.F.NTT.RoPE((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output);
             case IR.Imaging.ResizeImage resize:
                 if ((call[IR.Imaging.ResizeImage.Roi] is not None && ((RankedShape)call[IR.Imaging.ResizeImage.Roi].CheckedShape).Size != 0) || resize.IsTFResize)
                 {
@@ -97,7 +120,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 
                 return TIR.F.NTT.ResizeImage((Expr)arguments[0], output, Array.Empty<int>(), Array.Empty<Dimension>(), ((RankedShape)call[IR.Imaging.ResizeImage.NewSize]).ToValueArray().ToInts(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode);
             case IR.NTT.ResizeImage resize:
-                return TIR.F.NTT.ResizeImage((Expr)arguments[0], output, resize.PackedAxes.ToArray(), ((RankedShape)call[IR.NTT.ResizeImage.PadedNums]).Dimensions.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode);
+                return TIR.F.NTT.ResizeImage((Expr)arguments[0], output, resize.VectorizedAxes.ToArray(), ((RankedShape)call[IR.NTT.ResizeImage.PadedNums]).Dimensions.ToArray(), resize.NewSize.ToArray(), resize.ResizeMode, resize.TransformationMode, resize.NearestMode);
             case IR.Tensors.Slice slice:
                 return TIR.F.NTT.Slice((Expr)arguments[0], (RankedShape)arguments[1], (RankedShape)arguments[2], output, ((RankedShape)call[IR.Tensors.Slice.Axes]).ToValueArray().ToInts(), ((RankedShape)call[IR.Tensors.Slice.Strides]).ToValueArray().ToInts());
             case IR.Tensors.Concat concat:
@@ -115,15 +138,17 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Math.ReduceArg reduceArg:
                 return TIR.F.NTT.ReduceArg((Expr)arguments[0], output, (int)((DimConst)call[IR.Math.ReduceArg.Axis]).FixedValue, ((TensorConst)call[IR.Math.ReduceArg.KeepDims]).Value.ToArray<bool>()[0], ((TensorConst)call[IR.Math.ReduceArg.SelectLastIndex]).Value.ToArray<bool>()[0], reduceArg.ReduceArgOp, reduceArg.DestType);
             case IR.Tensors.Cast cast:
-                return TIR.F.NTT.Cast((Expr)arguments[0], output, cast.NewType, cast.CastMode, cast.PackAxes);
+                return TIR.F.NTT.Cast((Expr)arguments[0], output, cast.NewType, cast.CastMode, Array.Empty<int>(), None.Default);
+            case IR.NTT.VectorizedCast cast:
+                return TIR.F.NTT.Cast((Expr)arguments[0], output, cast.NewType, cast.CastMode, cast.VectorizeAxes, (Expr)arguments[1]);
             case IR.Tensors.Where where:
                 return TIR.F.NTT.Where((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output);
             case IR.Tensors.Expand expand:
                 return TIR.F.NTT.Expand((Expr)arguments[0], output);
             case IR.NN.Erf erf:
                 return TIR.F.NTT.Erf((Expr)arguments[0], output);
-            case IR.NTT.PackedReduce pr:
-                return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, pr.PackedAxes.ToArray(), ((RankedShape)call[IR.NTT.PackedReduce.PadedNums]).Dimensions.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp);
+            case IR.NTT.VectorizedReduce pr:
+                return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, pr.VectorizedAxes.ToArray(), ((RankedShape)call[IR.NTT.VectorizedReduce.PadedNums]).Dimensions.ToArray(), pr.Axes, pr.KeepDims, pr.ReduceOp);
             case IR.Math.Compare compare:
                 return TIR.F.NTT.Compare(compare.CompareOp, (Expr)arguments[0], (Expr)arguments[1], output);
             case IR.Tensors.GetItem getItem:
@@ -160,13 +185,13 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.NN.GetPositionIds getPositionIds:
                 return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output);
             case IR.NN.LayerNorm ln:
-                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<Dimension>());
-            case IR.NTT.PackedLayerNorm ln:
-                return TIR.F.NTT.PackedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, ln.PackedAxes, ((RankedShape)call[IR.NTT.PackedLayerNorm.PadedNums]).Dimensions.ToArray());
+                return TIR.F.NTT.VectorizedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<Dimension>());
+            case IR.NTT.VectorizedLayerNorm ln:
+                return TIR.F.NTT.VectorizedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, ln.VectorizedAxes, ((RankedShape)call[IR.NTT.VectorizedLayerNorm.PadedNums]).Dimensions.ToArray());
             case IR.NN.Softmax softmax:
-                return TIR.F.NTT.PackedSoftmax((Expr)arguments[0], output, (int)((DimConst)call[IR.NN.Softmax.Axis]).FixedValue, Array.Empty<int>());
-            case IR.NTT.PackedSoftmax softmax:
-                return TIR.F.NTT.PackedSoftmax((Expr)arguments[0], output, softmax.Axis, softmax.PackedAxes);
+                return TIR.F.NTT.VectorizedSoftmax((Expr)arguments[0], output, (int)((DimConst)call[IR.NN.Softmax.Axis]).FixedValue, Array.Empty<int>());
+            case IR.NTT.VectorizedSoftmax softmax:
+                return TIR.F.NTT.VectorizedSoftmax((Expr)arguments[0], output, softmax.Axis, softmax.VectorizedAxes);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }
@@ -196,7 +221,11 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 newDimensions[^1] = newDimensions[^1] * srcSize / destSize;
                 if (newStrides.Length > 1)
                 {
-                    newStrides[^2] = newStrides[^2] * srcSize / destSize;
+                    newStrides[^1] = 1;
+                    for (var i = 0; i < newStrides.Length - 1; i++)
+                    {
+                        newStrides[i] = newStrides[i] * srcSize / destSize;
+                    }
                 }
             }
         }
@@ -204,7 +233,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         var distributedType = inBuffer.DistributedType is DistributedType dt
             ? dt with { TensorType = new TensorType(newType, newDimensions) }
             : null;
-        output = inBuffer.With(name: $"{inBuffer.Name}_as_{newType}", elemType: newType, dimensions: newDimensions, strides: newStrides, distributedType: distributedType);
+        output = inBuffer.With(name: ((TIR.Buffer)output).Name, elemType: newType, dimensions: newDimensions, strides: newStrides, distributedType: distributedType);
         return T.Nop();
     }
 
@@ -212,11 +241,6 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
     {
         var input = (Expr)arguments[IR.Math.Unary.Input.Index];
         return TIR.F.NTT.Unary(unaryOp, input, output);
-    }
-
-    private Expr GenerateBinary(BinaryOp binaryOp, IReadOnlyList<BaseExpr> arguments, Expr output)
-    {
-        return TIR.F.NTT.Binary(binaryOp, (Expr)arguments[0], (Expr)arguments[1], output);
     }
 
     private Expr GenerateClamp(Call call, IReadOnlyList<BaseExpr> arguments, Expr output)

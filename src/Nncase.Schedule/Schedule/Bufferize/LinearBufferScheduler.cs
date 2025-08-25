@@ -17,16 +17,16 @@ public sealed class LinearBufferScheduler : BufferScheduler
     {
     }
 
-    protected override bool TryScheduleCore(IEnumerable<BufferLifetime> lifetimes, long maxMemoryPoolSize, out long memoryPoolSize)
+    protected override bool TryScheduleCore(IEnumerable<BufferLifetime> lifetimes, long maxMemoryPoolEnd, BufferScheduleOptions options, out long memoryPoolEnd)
     {
-        memoryPoolSize = 0;
+        memoryPoolEnd = options.StartAddress;
         foreach (var lifetime in lifetimes)
         {
             var alignment = lifetime.Buffer.Alignment;
-            var start = MathUtility.AlignUp(memoryPoolSize, alignment);
+            var start = MathUtility.AlignUp(memoryPoolEnd, alignment);
             var size = lifetime.Memory.Size;
             lifetime.Memory.Start = start;
-            memoryPoolSize = lifetime.Memory.Stop = start + size;
+            memoryPoolEnd = lifetime.Memory.Stop = start + size;
         }
 
         return true;

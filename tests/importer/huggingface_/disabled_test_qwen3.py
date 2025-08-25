@@ -30,6 +30,7 @@ def test_qwen3(request):
     [huggingface_options]
     output_logits = true
     output_hidden_states = true
+    num_layers = -1
 
     [paged_attention_config]
     lanes = [8]

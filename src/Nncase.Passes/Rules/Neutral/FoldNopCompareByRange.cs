@@ -23,7 +23,7 @@ public partial class FoldNopCompareByRange : RewriteRule<Pattern>
         IsWildcard("lhs"),
         IsWildcard("rhs"));
 
-    private Expr? GetReplace(Compare compareOp, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Compare compareOp, BaseExpr lhs, BaseExpr rhs)
     {
         var lhsRange = lhs.Metadata.Range ?? ValueRange<double>.Full;
         var rhsRange = rhs.Metadata.Range ?? ValueRange<double>.Full;

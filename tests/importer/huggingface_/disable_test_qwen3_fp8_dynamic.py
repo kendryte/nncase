@@ -32,6 +32,7 @@ def test_qwen3_fp8_dynamic(request):
     [huggingface_options]
     output_logits = false
     output_hidden_states = false
+    num_layers = -1
 
     [generator]
     [generator.inputs]
@@ -70,7 +71,7 @@ def test_qwen3_fp8_dynamic(request):
     max_sessions = 1
     kv_type = "float16"
     cache_layout = ["NumBlocks","NumLayers","NumKVHeads","KV","HeadDim","BlockSize"]
-    packed_axes = ["HeadDim"]
+    vectorized_axes = ["HeadDim"]
     lanes = [64]
     sharding_axes = ["NumKVHeads","NumBlocks"]
     axis_policies = [[1],[2,3]]

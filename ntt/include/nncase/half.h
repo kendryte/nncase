@@ -13,13 +13,20 @@
  * limitations under the License.
  */
 #pragma once
+#include "bfloat16.h"
 #include "ntt/compiler_defs.h"
 #include <bit>
 #include <cmath>
+#include <codecvt>
 #include <cstdint>
 #include <float.h>
 #include <functional>
 #include <limits>
+#include <type_traits>
+
+#ifdef __F16C__
+#include <immintrin.h>
+#endif
 
 namespace nncase {
 struct fp16_from_raw_t {
@@ -30,115 +37,59 @@ inline constexpr fp16_from_raw_t fp16_from_raw{};
 
 struct half {
   private:
-    union fp32 {
-        uint32_t u32;
-        float f32;
-
-        uint16_t u16() const noexcept {
-            constexpr size_t index =
-                std::endian::native == std::endian::little ? 1 : 0;
-            return reinterpret_cast<const uint16_t *>(&u32)[index];
-        }
-
-        uint16_t &u16() noexcept {
-            constexpr size_t index =
-                std::endian::native == std::endian::little ? 1 : 0;
-            return reinterpret_cast<uint16_t *>(&u32)[index];
-        }
-    };
-
     static constexpr uint16_t ZERO_VALUE = 0;
 
     // this is quiet NaN, sNaN only used for send signal
     static constexpr uint16_t NAN_VALUE = 0x7e00;
 
   public:
-    half() noexcept = default;
-
-    explicit half(float v) noexcept : value_(round_to_half(v).value_) {}
+    constexpr half() noexcept = default;
+    constexpr half(_Float16 v) noexcept : value_(v) {}
 
     template <class T,
               class = std::enable_if_t<std::is_integral<T>::value ||
                                        std::is_floating_point<T>::value>>
-    explicit half(const T &val) noexcept : half(static_cast<float>(val)) {}
+    constexpr explicit half(const T &v) noexcept
+        : value_(round_to_half(v).value_) {}
 
-    constexpr half(fp16_from_raw_t, uint16_t value) noexcept : value_(value) {}
+    constexpr half(fp16_from_raw_t, uint16_t value) noexcept
+        : value_(std::bit_cast<_Float16>(value)) {}
 
-    operator float() const noexcept {
-        const fp32 magic = {113 << 23};
-        const unsigned int shifted_exp = 0x7c00
-                                         << 13; // exponent mask after shift
-        fp32 o;
-
-        o.u32 = (value_ & 0x7fff) << 13;        // exponent/mantissa bits
-        unsigned int exp = shifted_exp & o.u32; // just the exponent
-        o.u32 += (127 - 15) << 23;              // exponent adjust
-
-        // handle exponent special cases
-        if (exp == shifted_exp) {      // Inf/NaN?
-            o.u32 += (128 - 16) << 23; // extra exp adjust
-        } else if (exp == 0) {         // Zero/Denormal?
-            o.u32 += 1 << 23;          // extra exp adjust
-            o.f32 -= magic.f32;        // renormalize
+    constexpr operator _Float16() const noexcept { return value_; }
+    constexpr operator float() const noexcept {
+        if (std::is_constant_evaluated()) {
+            return (float)value_;
+        } else {
+#ifdef __F16C__
+            // To avoid extendhfdf2
+            return _cvtsh_ss(raw());
+#else
+            return (float)value_;
+#endif
         }
-
-        o.u32 |= (value_ & 0x8000) << 16; // sign bit
-        return o.f32;
     }
 
-    const uint16_t &raw() const noexcept { return value_; }
-    uint16_t &raw() noexcept { return value_; }
+    constexpr uint16_t raw() const noexcept {
+        return std::bit_cast<uint16_t>(value_);
+    }
 
     static constexpr half from_raw(uint16_t v) noexcept {
         return half(nncase::fp16_from_raw, v);
     }
 
-    static half round_to_half(float v) {
-        fp32 f;
-        f.f32 = v;
-        const fp32 f32infy = {255 << 23};
-        const fp32 f16max = {(127 + 16) << 23};
-        const fp32 denorm_magic = {((127 - 15) + (23 - 10) + 1) << 23};
-        unsigned int sign_mask = 0x80000000u;
-
-        unsigned int sign = f.u32 & sign_mask;
-        f.u32 ^= sign;
-
-        // NOTE all the integer compares in this function can be safely
-        // compiled into signed compares since all operands are below
-        // 0x80000000. Important if you want fast straight SSE2 code
-        // (since there's no unsigned PCMPGTD).
-        half o;
-        if (f.u32 >= f16max.u32) // result is Inf or NaN (all exponent bits set)
-        {
-            o.value_ = (f.u32 > f32infy.u32) ? 0x7e00
-                                             : 0x7c00; // NaN->qNaN and Inf->Inf
+    static constexpr half round_to_half(float v) {
+        if (std::is_constant_evaluated()) {
+            return (_Float16)v;
         } else {
-            if (f.u32 < (113 << 23)) { // resulting FP16 is subnormal or zero
-                // use a magic value to align our 10 mantissa bits at the bottom
-                // of the float. as long as FP addition is round-to-nearest-even
-                // this just works.
-                f.f32 += denorm_magic.f32;
-
-                // and one integer subtract of the bias later, we have our final
-                // float!
-                o.value_ = static_cast<uint16_t>(f.u32 - denorm_magic.u32);
-            } else {
-                unsigned int mant_odd =
-                    (f.u32 >> 13) & 1; // resulting mantissa is odd
-
-                // update exponent, rounding bias part 1
-                // Equivalent to `f.u32 += ((unsigned int)(15 - 127) << 23) +
-                // 0xfff`, but without arithmetic overflow.
-                f.u32 += 0xc8000fffU;
-                // rounding bias part 2
-                f.u32 += mant_odd;
-                // take the bits!
-                o.value_ = static_cast<uint16_t>(f.u32 >> 13);
-            }
+#ifdef __F16C__
+            // To avoid truncsfhf2
+            return from_raw(_cvtss_sh(v, _MM_FROUND_NEARBYINT));
+#else
+            return (_Float16)v;
+#endif
         }
-        o.value_ |= static_cast<uint16_t>(sign >> 16);
-        return o;
+
+        return (_Float16)v;
     }
 
     static constexpr half epsilon() noexcept { return from_raw(0x0800); }
@@ -156,7 +107,7 @@ struct half {
     static constexpr half infinity() noexcept { return from_raw(0x7c00); }
 
     constexpr bool zero() const noexcept {
-        return (value_ & 0x7FFF) == ZERO_VALUE;
+        return (raw() & 0x7FFF) == ZERO_VALUE;
     }
 
     void operator=(const float &v) noexcept {
@@ -164,7 +115,7 @@ struct half {
     }
 
   private:
-    uint16_t value_;
+    _Float16 value_;
 };
 
 #define DEFINE_FP16_BINARY_FP16RET(x)                                          \
@@ -176,6 +127,20 @@ struct half {
     inline bool operator x(half a, half b) noexcept {                          \
         return float(a) x float(b);                                            \
     }
+
+#define DEFINE_FP16_BINARY_FP32RET(x)                                          \
+    inline bool operator x(half a, float b) noexcept { return float(a) x b; }
+
+#define DEFINE_FP16_BINARY_INTRET(x)                                           \
+    inline half operator x(half a, int b) noexcept {                           \
+        return half::round_to_half(float(a) x b);                              \
+    }
+
+DEFINE_FP16_BINARY_FP32RET(<)
+DEFINE_FP16_BINARY_INTRET(-)
+DEFINE_FP16_BINARY_INTRET(+)
+DEFINE_FP16_BINARY_INTRET(*)
+DEFINE_FP16_BINARY_INTRET(/)
 
 DEFINE_FP16_BINARY_FP16RET(+)
 DEFINE_FP16_BINARY_FP16RET(-)
@@ -207,6 +172,68 @@ inline bool operator==(const half &lhs, const half &rhs) noexcept {
 
 inline bool operator!=(const half &lhs, const half &rhs) noexcept {
     return lhs.raw() != rhs.raw();
+}
+
+inline std::ostream &operator<<(std::ostream &os, const half &a) {
+    os << std::to_string(float(a));
+    return os;
+}
+inline half nextafter(const half &from, const half &to) {
+    if (from.raw() == to.raw()) {
+        return to;
+    }
+
+    const uint16_t from_raw = from.raw();
+    const uint16_t to_raw = to.raw();
+
+    const bool is_to_larger =
+        (from_raw < to_raw) ^ ((from_raw ^ to_raw) & 0x8000);
+
+    if (from.zero()) {
+        return is_to_larger ? half::from_raw(0x0001)  // +0 -> +min_positive
+                            : half::from_raw(0x8001); // +0 -> -max_negative
+    }
+
+    uint16_t next_raw;
+
+    if (is_to_larger) {
+        if (from_raw == 0x7C00) {
+            return from;
+        } else if (from_raw == 0xFC00) {
+            return half::from_raw(0xFBFF);
+        } else if (from_raw == 0xFBFF) {
+            return half::from_raw(0xFC00);
+        } else if (from_raw == 0x7BFF) {
+            return half::from_raw(0x7C00);
+        }
+
+        next_raw = from_raw + 1;
+    } else {
+        if (from_raw == 0x0000) {
+            return half::from_raw(0x8001);
+        } else if (from_raw == 0x8000) {
+            return half::from_raw(0x8001);
+        } else if (from_raw == 0x7C00) {
+            return half::from_raw(0x7BFF);
+        } else if (from_raw == 0xFC00) {
+            return from;
+        }
+
+        next_raw = from_raw - 1;
+    }
+
+    const bool sign_changed = ((from_raw ^ next_raw) & 0x8000) != 0;
+    if (sign_changed) {
+        next_raw = is_to_larger ? 0x7C00 : 0xFC00;
+    }
+
+    return half::from_raw(next_raw);
+}
+inline half fmod(const half &a, const half &b) {
+    return half::round_to_half(std::fmod(float(a), float(b)));
+}
+inline half powh(const half &a, const half &b) {
+    return half::round_to_half(std::pow(float(a), float(b)));
 }
 } // namespace nncase
 
@@ -273,24 +300,21 @@ template <> struct numeric_limits<nncase::half> {
 };
 
 using nncase::half;
-inline bool isinf(const half &a) { return std::isinf(float(a)); }
+inline bool isinf(const half &a) { return std::isinf((float)(a)); }
 inline bool isnan(const half &a) { return std::isnan(float(a)); }
 inline bool isfinite(const half &a) { return std::isfinite(float(a)); }
 inline half abs(const half &a) { return half::round_to_half(fabsf(float(a))); }
+inline half fabs(const half &a) { return half::round_to_half(fabs(float(a))); }
 inline half exp(const half &a) { return half::round_to_half(expf(float(a))); }
 inline half log(const half &a) { return half::round_to_half(logf(float(a))); }
 inline half log10(const half &a) {
     return half::round_to_half(log10f(float(a)));
 }
 inline half sqrt(const half &a) { return half::round_to_half(sqrtf(float(a))); }
-inline half pow(const half &a, const half &b) {
-    return half::round_to_half(powf(float(a), float(b)));
-}
-
 inline half sin(const half &a) { return half::round_to_half(sinf(float(a))); }
 inline half cos(const half &a) { return half::round_to_half(cosf(float(a))); }
 inline half tan(const half &a) { return half::round_to_half(tanf(float(a))); }
-inline half tanh(const half &a) { return half::round_to_half(tanhf(float(a))); }
+inline half tanh(const half &a) { return half::round_to_half(tanh(float(a))); }
 inline half floor(const half &a) {
     return half::round_to_half(floorf(float(a)));
 }
@@ -301,7 +325,23 @@ inline half round(const half &a) {
 inline half nearbyint(const half &a) {
     return half::round_to_half(nearbyintf(float(a)));
 }
+inline half acos(const half &a) {
+    return half::round_to_half(std::acos(float(a)));
+}
+inline half asin(const half &a) {
+    return half::round_to_half(std::asin(float(a)));
+}
+inline half cosh(const half &a) {
+    return half::round_to_half(std::cosh(float(a)));
+}
+inline half sinh(const half &a) {
+    return half::round_to_half(std::sinh(float(a)));
+}
+inline half erf(const half &a) {
+    return half::round_to_half(std::erff(float(a)));
+}
 inline long lrint(const half &a) { return lrintf(float(a)); }
 
 template <> struct is_floating_point<half> : public std::true_type {};
+template <> struct is_arithmetic<half> : public true_type {};
 } // namespace std

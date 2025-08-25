@@ -44,14 +44,19 @@ public static class LinqExtensions
         return -1;
     }
 
-    public static int IndexOf<T>(this IReadOnlyList<T> source, T value)
+    public static int IndexOf<T>(this IReadOnlyList<T> source, T value, IEqualityComparer<T>? comparer = null)
     {
+        if (comparer == null)
+        {
+            comparer = EqualityComparer<T>.Default;
+        }
+
         if (source != null && source.Count != 0)
         {
             for (int i = 0; i < source.Count; i++)
             {
                 T val = source[i];
-                if (EqualityComparer<T>.Default.Equals(val, value))
+                if (comparer.Equals(val, value))
                 {
                     return i;
                 }

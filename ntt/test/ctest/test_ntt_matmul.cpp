@@ -37,7 +37,7 @@ using namespace ortki;
     NttTest::ort2ntt(ort_output, ntt_output2);                                 \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 
-TEST(MatmulTestFloat, NoPack) {
+TEST(MatmulTestFloat, NoVectorize) {
     // init
     MATMUL_INPUT_FLOAT_INIT
 
@@ -50,7 +50,7 @@ TEST(MatmulTestFloat, NoPack) {
     NTT_MATMUL_FLOAT_COMPARE
 }
 
-TEST(MatmulTestFloat, Pack_K) {
+TEST(MatmulTestFloat, Vectorize_K) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -73,7 +73,7 @@ TEST(MatmulTestFloat, Pack_K) {
     NTT_MATMUL_FLOAT_COMPARE
 }
 
-TEST(MatmulTestFloat, Pack_M) {
+TEST(MatmulTestFloat, Vectorize_M) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -96,7 +96,7 @@ TEST(MatmulTestFloat, Pack_M) {
     NTT_MATMUL_FLOAT_COMPARE
 }
 
-TEST(MatmulTestFloat, Pack_N) {
+TEST(MatmulTestFloat, Vectorize_N) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -118,7 +118,7 @@ TEST(MatmulTestFloat, Pack_N) {
     NTT_MATMUL_FLOAT_COMPARE
 }
 
-TEST(MatmulTestFloat, Pack_M_N) {
+TEST(MatmulTestFloat, Vectorize_M_N) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -143,7 +143,7 @@ TEST(MatmulTestFloat, Pack_M_N) {
     NTT_MATMUL_FLOAT_COMPARE
 }
 
-TEST(MatmulTestFloat, Pack_M_K) {
+TEST(MatmulTestFloat, Vectorize_M_K) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -168,7 +168,7 @@ TEST(MatmulTestFloat, Pack_M_K) {
     NTT_MATMUL_FLOAT_COMPARE
 }
 
-TEST(MatmulTestFloat, Pack_K_N) {
+TEST(MatmulTestFloat, Vectorize_K_N) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -193,7 +193,7 @@ TEST(MatmulTestFloat, Pack_K_N) {
     NTT_MATMUL_FLOAT_COMPARE
 }
 
-TEST(MatmulTestFloat, Pack_M_K_N) {
+TEST(MatmulTestFloat, Vectorize_M_K_N) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -238,7 +238,7 @@ TEST(MatmulTestFloat, Pack_M_K_N) {
     NttTest::ort2ntt(ort_output, ntt_output2);                                 \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_output2));
 
-TEST(MatmulTestFloatE4M3Float32, NoPack) {
+TEST(MatmulTestFloatE4M3Float32, NoVectorize) {
     // init
     MATMUL_INPUT_INIT(float_e4m3_t, (ntt::fixed_shape_v<64, 64>), -448.f,
                       448.f);
@@ -251,7 +251,7 @@ TEST(MatmulTestFloatE4M3Float32, NoPack) {
                           ntt_output)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_K0) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_K0) {
     constexpr size_t P = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
 
     // init
@@ -275,7 +275,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_K0) {
                           ntt_f8_rhs, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_K1) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_K1) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -322,7 +322,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_K1) {
     NttTest::ort2ntt(ort_output, ntt_output2);                                 \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
 
-TEST(MatmulTestFloatE4M3Float32, Pack_M0) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_M0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -352,7 +352,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_M0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_M1) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_M1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -382,7 +382,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_M1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_N0) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -412,7 +412,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_N0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_N1) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -442,7 +442,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_N1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_M_K0) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_M_K0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -473,7 +473,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_M_K0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_M_K1) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_M_K1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -504,7 +504,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_M_K1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_K_N0) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_K_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -535,7 +535,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_K_N0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_K_N1) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_K_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -566,7 +566,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_K_N1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_M_N0) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_M_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -597,7 +597,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_M_N0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_M_N1) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_M_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -628,7 +628,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_M_N1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_M_K_N0) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_M_K_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -659,7 +659,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_M_K_N0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Float32, Pack_M_K_N1) {
+TEST(MatmulTestFloatE4M3Float32, Vectorize_M_K_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -690,7 +690,7 @@ TEST(MatmulTestFloatE4M3Float32, Pack_M_K_N1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output1)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, NoPack) {
+TEST(MatmulTestFloatE4M3Bfloat16, NoVectorize) {
     // init
     MATMUL_INPUT_INIT(float_e4m3_t, (ntt::fixed_shape_v<64, 64>), -448.f,
                       448.f);
@@ -705,7 +705,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, NoPack) {
                           ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_K0) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_K0) {
     constexpr size_t P = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
 
     // init
@@ -747,7 +747,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_K0) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_K1) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_K1) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
 
     // init
@@ -789,7 +789,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_K1) {
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output_f32, ntt_output2));
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_M0) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_M0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -821,7 +821,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_M0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_M1) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_M1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -853,7 +853,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_M1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_N0) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -885,7 +885,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_N0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_N1) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -917,7 +917,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_N1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K0) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_M_K0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -950,7 +950,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K1) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_M_K1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -983,7 +983,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_K_N0) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_K_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -1016,7 +1016,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_K_N0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_K_N1) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_K_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -1049,7 +1049,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_K_N1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_N0) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_M_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -1082,7 +1082,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_N0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_N1) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_M_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -1115,7 +1115,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_N1) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K_N0) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_M_K_N0) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 
@@ -1148,7 +1148,7 @@ TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K_N0) {
     VERIFY_MATMUL_WITH_ORT(M, K, N, ntt_output_f32)
 }
 
-TEST(MatmulTestFloatE4M3Bfloat16, Pack_M_K_N1) {
+TEST(MatmulTestFloatE4M3Bfloat16, Vectorize_M_K_N1) {
     constexpr size_t P1 = NTT_VLEN / (sizeof(float) * 8);
     constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
 

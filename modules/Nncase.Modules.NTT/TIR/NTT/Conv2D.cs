@@ -13,7 +13,7 @@ using Nncase.PatternMatch;
 namespace Nncase.TIR.NTT;
 
 /// <summary>
-/// Pack expression.
+/// Vectorize expression.
 /// </summary>
 public sealed partial class Conv2D : NTTKernelOp
 {

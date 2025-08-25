@@ -19,6 +19,7 @@
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <string_view>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -56,7 +57,8 @@ result<void> cpu_runtime_module::initialize_before_functions(
             this->cdim_ = header.cdim;
             return ok();
         }));
-    try_set(text_, context.get_or_read_section(".text", text_storage_, false));
+
+    try_(initialize_text(context));
     try_set(rdata_,
             context.get_or_read_section(".rdata", rdata_storage_, false));
     try_set(thread_local_rdata_,
@@ -66,6 +68,25 @@ result<void> cpu_runtime_module::initialize_before_functions(
             context.get_or_read_section(".block_local_rdata",
                                         block_local_rdata_storage_, false));
     return ok();
+}
+result<void> cpu_runtime_module::initialize_text(
+    runtime_module_init_context &context) noexcept {
+    auto cpu_external_module_path =
+        context.interp().options().get<std::string>("cpu_external_module_path");
+    if (cpu_external_module_path.is_ok() &&
+        !cpu_external_module_path.unwrap().empty()) {
+        loader_.load_from_file(cpu_external_module_path.unwrap());
+    } else {
+        try_set(text_,
+                context.get_or_read_section(".text", text_storage_, false));
+        loader_.load(text_);
+    }
+
+    return ok();
+}
+
+result<block_entry_t> cpu_runtime_module::block_entry() const noexcept {
+    return ok((block_entry_t)loader_.entry());
 }
 
 result<std::unique_ptr<runtime_function>>

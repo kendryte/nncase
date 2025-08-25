@@ -58,7 +58,8 @@ internal static class DimHelpers
         return (scale, newOperands.Length) switch
         {
             (_, 0) => new DimConst(scale),
-            (0, 1) => newOperands[0],
+            (0, 1) => 0,
+            (1, 1) => newOperands[0],
             _ => new DimProduct(newOperands, scale),
         };
     }

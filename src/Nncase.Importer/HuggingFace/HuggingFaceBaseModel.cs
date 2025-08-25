@@ -262,14 +262,8 @@ public abstract class HuggingFaceModel
     {
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
-        var qEmbed = IR.F.Math.Binary(
-            BinaryOp.Add,
-            IR.F.Math.Binary(BinaryOp.Mul, q, cos),
-            IR.F.Math.Binary(BinaryOp.Mul, RotateHalf(q), sin));
-        var kEmbed = IR.F.Math.Binary(
-            BinaryOp.Add,
-            IR.F.Math.Binary(BinaryOp.Mul, k, cos),
-            IR.F.Math.Binary(BinaryOp.Mul, RotateHalf(k), sin));
+        var qEmbed = IR.F.NN.RoPE(q, cos, sin);
+        var kEmbed = IR.F.NN.RoPE(k, cos, sin);
         return System.Tuple.Create(qEmbed, kEmbed);
     }
 
@@ -299,15 +293,9 @@ public abstract class HuggingFaceModel
 
     public virtual Call LLMLayerNorm(Expr hiddenStates, string layerName)
     {
-        // originType->fp32->dolayernorm->origintype
-        // fit layernorm partten 5
         var originDtype = hiddenStates.CheckedDataType;
-        hiddenStates = IR.F.Tensors.Cast(hiddenStates, DataTypes.Float32);
-
-        Expr weight = GetWeight($"{layerName}")!;
-
-        weight = IR.F.Tensors.Cast(weight, DataTypes.Float32);
-        var bias = Tensor.FromScalar(0f, (RankedShape)weight.CheckedShape);
+        var weight = GetWeight($"{layerName}")!.CastTo(originDtype);
+        var bias = Tensor.Zeros(originDtype, weight.Dimensions);
         int axis = -1;
 
         float eps = 1e-6F;
@@ -316,7 +304,7 @@ public abstract class HuggingFaceModel
             eps = (float)Config.GetNestedValue<double>("rms_norm_eps");
         }
 
-        return IR.F.Tensors.Cast(IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false), originDtype);
+        return IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false);
     }
 
     public virtual Call Linear(Expr expr, Tensor weight, Tensor? bias = null, Tensor? scaleIf = null, Tensor? scaleW = null, string layerName = "")
@@ -833,22 +821,22 @@ public abstract class HuggingFaceModel
 
         // // apply_rotary_pos_emb
         (queryStates, keyStates) = ApplyRotaryPosEmb(queryStates, keyStates, cos, sin);
-
+        var qType = ((Expr)queryStates).CheckedDataType;
         AttentionDimKind[] qSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         AttentionDimKind[] kvSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         {
             AttentionDimKind[] kvDestLayout = { AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim };
             var kvPerms = ModelUtils.GetLayoutPerm(kvSrcLayout, kvDestLayout);
-            var (kvLanes, kvPackedAxis) = ModelUtils.GetQKVPackParams(pagedAttentionConfig, kvDestLayout);
+            var (kvLanes, kvVectorizedAxis) = ModelUtils.GetQKVVectorizeParams(pagedAttentionConfig, kvDestLayout);
             var transK = IR.F.Tensors.Transpose(keyStates, kvPerms);
-            var castK = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transK, pagedAttentionConfig.KVPrimType) : transK;
-            var packedK = kvLanes.Length > 0 ? IR.F.Tensors.Pack(castK, kvLanes, kvPackedAxis) : castK;
-            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedK, paskKeyValues, AttentionCacheKind.Key, count, kvDestLayout);
+            var castK = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transK, pagedAttentionConfig.KVPrimType) : transK;
+            var vectorizedK = kvLanes.Length > 0 ? IR.F.Tensors.Pack(castK, kvLanes, kvVectorizedAxis) : castK;
+            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(vectorizedK, paskKeyValues, AttentionCacheKind.Key, count, kvDestLayout);
 
             var transV = IR.F.Tensors.Transpose(valueStates, kvPerms);
-            var castV = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transV, pagedAttentionConfig.KVPrimType) : transV;
-            var packedV = kvLanes.Length > 0 ? IR.F.Tensors.Pack(castV, kvLanes, kvPackedAxis) : castV;
-            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(packedV, paskKeyValues, AttentionCacheKind.Value, count, kvDestLayout);
+            var castV = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transV, pagedAttentionConfig.KVPrimType) : transV;
+            var vectorizedV = kvLanes.Length > 0 ? IR.F.Tensors.Pack(castV, kvLanes, kvVectorizedAxis) : castV;
+            paskKeyValues = IR.F.NN.UpdatePagedAttentionKVCache(vectorizedV, paskKeyValues, AttentionCacheKind.Value, count, kvDestLayout);
         }
 
         var scaling = Tensor.FromScalar((float)(1.0f / System.Math.Sqrt((double)head_dim)));
@@ -856,16 +844,17 @@ public abstract class HuggingFaceModel
         // var mergedKeyValue = MergeKV(keyStates, valueStates);
         AttentionDimKind[] qDestLayout = { AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq };
         var qPerm = ModelUtils.GetLayoutPerm(qSrcLayout, qDestLayout);
-        var (qLanes, qPackedAxis) = ModelUtils.GetQKVPackParams(pagedAttentionConfig, qDestLayout);
+        var (qLanes, qVectorizedAxis) = ModelUtils.GetQKVVectorizeParams(pagedAttentionConfig, qDestLayout);
         bool isXpu = Context.CompileSession!.Target.Name == "xpu";
         if (isXpu)
         {
-            queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, ((long)seq_len.Metadata.Range!.Value.Max) - seq_len), new(0, 0)), PadMode.Constant, Tensor.Zero(DataTypes.Float32)) : queryStates;
+            var padding_m = Dimension.AlignUp(seq_len, 8) - seq_len;
+            queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, padding_m), new(0, 0)), PadMode.Constant, Tensor.Zero(queryStates.CheckedDataType)) : queryStates;
         }
 
         var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
-        var castQ = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(transQ, pagedAttentionConfig.KVPrimType) : transQ;
-        var packedQ = qLanes.Length > 0 ? IR.F.Tensors.Pack(castQ, qLanes, qPackedAxis) : castQ;
+        var castQ = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transQ, pagedAttentionConfig.KVPrimType) : transQ;
+        var vectorizedQ = qLanes.Length > 0 ? IR.F.Tensors.Pack(castQ, qLanes, qVectorizedAxis) : castQ;
 
         // cpu : [q_head, max_query_len, max_seq_len + 1 ]<primtype>
         var extra_size = pagedAttentionConfig.KVPrimType.SizeInBytes * (long)Context.Config["num_attention_heads"] * Context.ImportOptions.HuggingFaceOptions.MaxModelLen * (Context.ImportOptions.HuggingFaceOptions.MaxModelLen + 1);
@@ -878,7 +867,7 @@ public abstract class HuggingFaceModel
 
         var hidden_size = Context!.Config.ContainsKey("head_dim") ? (int)((long)Context!.Config!["num_attention_heads"] * (long)Context!.Config!["head_dim"]) : (int)(long)Context!.Config!["hidden_size"];
         var output = IR.F.NN.PagedAttention(
-            packedQ,
+            vectorizedQ,
             paskKeyValues,
             IR.F.Buffer.Uninitialized(DataTypes.UInt8, TIR.MemoryLocation.Data, [extra_size]),
             scaling.CastTo(pagedAttentionConfig.KVPrimType, CastMode.KDefault),
@@ -886,8 +875,9 @@ public abstract class HuggingFaceModel
             qDestLayout,
             hidden_size);
 
-        output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qPackedAxis) : output;
-        output = pagedAttentionConfig.KVPrimType != DataTypes.Float32 ? IR.F.Tensors.Cast(output, DataTypes.Float32) : output;
+        output = qLanes.Length > 0 ? IR.F.Tensors.Unpack(output, qLanes, qVectorizedAxis) : output;
+
+        output = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(output, qType) : output;
         output = IR.F.Tensors.Transpose(output, ModelUtils.GetLayoutPerm(qDestLayout, qSrcLayout));
         if (isXpu)
         {
