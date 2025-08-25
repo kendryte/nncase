@@ -26,7 +26,7 @@ class binary_impl
   public:
     template <Tensor TBroadcastedLhs, Tensor TBroadcastedRhs, class TOp>
     void invoke_ukernel(const TBroadcastedLhs &lhs, const TBroadcastedRhs &rhs,
-                        TOut &output, const TOp &op) {
+                        TOut &output, const TOp &op, bool is_broadcast) {
 
         auto lhs_conti_dims = contiguous_dims(lhs.shape(), lhs.strides());
         auto rhs_conti_dims = contiguous_dims(rhs.shape(), rhs.strides());
@@ -42,7 +42,7 @@ class binary_impl
         using Elem = element_or_scalar_t<TOut>;
         TPostOp<Elem> post_op;
 
-        if ((lhs_conti_dims == TLhs::rank()) &&
+        if (!is_broadcast && (lhs_conti_dims == TLhs::rank()) &&
             (rhs_conti_dims == TRhs::rank()) &&
             (output_conti_dims == TOut::rank())) {
             ntt::u_binary(op, post_op, addr_lhs, 1, addr_rhs, 1,
@@ -64,7 +64,8 @@ void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
     const TOp<std::remove_cv_t<typename TLhs::element_type>,
               std::remove_cv_t<typename TRhs::element_type>>
         op;
-    detail::binary_impl<TLhs, TRhs, std::decay_t<TOut>, TPostOp>()(lhs, rhs,
-                                                                   output, op);
+    bool is_broadcast = lhs.shape() != rhs.shape();
+    detail::binary_impl<TLhs, TRhs, std::decay_t<TOut>, TPostOp>()(
+        lhs, rhs, output, op, is_broadcast);
 }
 } // namespace nncase::ntt
