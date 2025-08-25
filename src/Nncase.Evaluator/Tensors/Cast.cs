@@ -66,11 +66,6 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
 
     private IRType Visit(Cast target, TensorType input)
     {
-        if (input.DType is VectorType)
-        {
-            return new InvalidType("Cannot cast vector type.");
-        }
-
         return new TensorType(target.NewType, input.Shape);
     }
 
