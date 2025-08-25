@@ -19,18 +19,40 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <Tensor TLhs, Tensor TRhs, Tensor TOut>
+template <Tensor TLhs, Tensor TRhs, Tensor TOut, template <class> class TPostOp>
 class binary_impl
-    : public binary_like_impl<binary_impl<TLhs, TRhs, TOut>, TLhs, TRhs, TOut> {
+    : public binary_like_impl<binary_impl<TLhs, TRhs, TOut, TPostOp>, TLhs,
+                              TRhs, TOut> {
   public:
-    template <Tensor TBroadcastedLhs, Tensor TBroadcastedRhs, class TOp,
-              class TPostOp>
+    template <Tensor TBroadcastedLhs, Tensor TBroadcastedRhs, class TOp>
     void invoke_ukernel(const TBroadcastedLhs &lhs, const TBroadcastedRhs &rhs,
-                        TOut &output, const TOp &op, const TPostOp &post_op) {
-        ntt::apply(output.shape(), [&](auto index) {
-            output(index) = op(lhs(index), rhs(index));
-            output(index) = post_op(output(index));
-        });
+                        TOut &output, const TOp &op) {
+
+        auto lhs_conti_dims = contiguous_dims(lhs.shape(), lhs.strides());
+        auto rhs_conti_dims = contiguous_dims(rhs.shape(), rhs.strides());
+        auto output_conti_dims =
+            contiguous_dims(output.shape(), output.strides());
+
+        auto addr_lhs = lhs.elements().data();
+        auto addr_rhs = rhs.elements().data();
+        auto addr_output_element = output.elements().data();
+
+        auto len = output.shape().length();
+
+        using Elem = element_or_scalar_t<TOut>;
+        TPostOp<Elem> post_op;
+
+        if ((lhs_conti_dims == TLhs::rank()) &&
+            (rhs_conti_dims == TRhs::rank()) &&
+            (output_conti_dims == TOut::rank())) {
+            ntt::u_binary(op, post_op, addr_lhs, 1, addr_rhs, 1,
+                          addr_output_element, 1, len);
+        } else {
+            ntt::apply(output.shape(), [&](auto index) {
+                output(index) = op(lhs(index), rhs(index));
+                output(index) = post_op(output(index));
+            });
+        }
     }
 };
 } // namespace detail
@@ -40,10 +62,9 @@ template <template <class T1, class T2> class TOp,
           Tensor TRhs, class TOut>
 void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
     const TOp<std::remove_cv_t<typename TLhs::element_type>,
-             std::remove_cv_t<typename TRhs::element_type>>
+              std::remove_cv_t<typename TRhs::element_type>>
         op;
-    detail::binary_impl<TLhs, TRhs, std::decay_t<TOut>>()(
-        lhs, rhs, output, op,
-        TPostOp<typename std::decay_t<TOut>::element_type>{});
+    detail::binary_impl<TLhs, TRhs, std::decay_t<TOut>, TPostOp>()(lhs, rhs,
+                                                                   output, op);
 }
 } // namespace nncase::ntt

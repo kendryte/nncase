@@ -14,16 +14,17 @@
  */
 #pragma once
 #include "../primitive_ops.h"
-
 namespace nncase::ntt {
 namespace ukernels {
 template <class Op, class T1, class T2, bool Arch> struct u_binary_policy {
     static constexpr size_t unroll = 1;
 };
 
-template <class Op, class T1, class T2, class TOut, bool Arch> struct u_binary {
+template <class Op, class PostOp, class T1, class T2, class TOut, bool Arch>
+struct u_binary {
   public:
-    constexpr void operator()(Op &op, const T1 *input1, const T2 *input2,
+    constexpr void operator()(Op &op, [[maybe_unused]] PostOp &post_op,
+                              const T1 *input1, const T2 *input2,
                               size_t input1_stride, size_t input2_stride,
                               TOut *output, size_t output_stride,
                               size_t count) noexcept {
@@ -33,6 +34,7 @@ template <class Op, class T1, class T2, class TOut, bool Arch> struct u_binary {
         while (count / unroll) {
             for (size_t i = 0; i < unroll; i++) {
                 *output = op(*input1, *input2);
+                *output = post_op(*output);
                 input1 += input1_stride;
                 input2 += input2_stride;
                 output += output_stride;
@@ -42,6 +44,7 @@ template <class Op, class T1, class T2, class TOut, bool Arch> struct u_binary {
 
         for (size_t i = 0; i < count; i++) {
             *output = op(*input1, *input2);
+            *output = post_op(*output);
             input1 += input1_stride;
             input2 += input2_stride;
             output += output_stride;
@@ -50,12 +53,13 @@ template <class Op, class T1, class T2, class TOut, bool Arch> struct u_binary {
 };
 } // namespace ukernels
 
-template <class Op, class T1, class T2, class TOut>
-constexpr void u_binary(Op &op, const T1 *input1, size_t input1_stride,
-                        const T2 *input2, size_t input2_stride, TOut *output,
+template <class Op, class PostOp, class T1, class T2, class TOut>
+constexpr void u_binary(Op &op, PostOp &post_op, const T1 *input1,
+                        size_t input1_stride, const T2 *input2,
+                        size_t input2_stride, TOut *output,
                         size_t output_stride, size_t count) noexcept {
-    ukernels::u_binary<Op, T1, T2, TOut, true> impl;
-    impl(op, input1, input2, input1_stride, input2_stride, output,
+    ukernels::u_binary<Op, PostOp, T1, T2, TOut, true> impl;
+    impl(op, post_op, input1, input2, input1_stride, input2_stride, output,
          output_stride, count);
 }
 } // namespace nncase::ntt
