@@ -53,7 +53,7 @@
     static element_type_ get_element(const native_type &array,                 \
                                      const TIndex &index) noexcept {           \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
-        return cast_type(array)[index[dim_zero]];                              \
+        return cast_type(array)[(size_t)index[dim_zero]];                              \
     }                                                                          \
                                                                                \
     template <Dimensions TIndex>                                               \
@@ -61,7 +61,7 @@
                             element_type_ value) noexcept {                    \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
         auto casted_array = cast_type(array);                                  \
-        casted_array[index[dim_zero]] = value;                                 \
+        casted_array[(size_t)index[dim_zero]] = value;                                 \
         array = (native_type)casted_array;                                     \
     }
 
