@@ -57,19 +57,21 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
     public IValue Visit(IEvaluateContext context, Qwen3MoE target)
     {
         var q = context.GetOrtArgumentValue(target, Qwen3MoE.Q);
-        var moeGateW = context.GetOrtArgumentValue(target, Qwen3MoE.MoeGateW);
+        var qType = q.DataType;
+        q = q.Cast(OrtDataType.Float);
+        var moeGateW = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeGateW).AsTensor());
 
-        var moeExpertDownInputScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertDownInputScale);
-        var moeExpertDownProjW = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertDownProjW);
-        var moeExpertDownProjScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertDownProjScale);
+        var moeExpertDownInputScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertDownInputScale).AsTensor());
+        var moeExpertDownProjW = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertDownProjW).AsTensor());
+        var moeExpertDownProjScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertDownProjScale).AsTensor());
 
-        var moeExpertGateInputScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertGateInputScale);
-        var moeExpertGateProjW = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertGateProjW);
-        var moeExpertGateProjScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertGateProjScale);
+        var moeExpertGateInputScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertGateInputScale).AsTensor());
+        var moeExpertGateProjW = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertGateProjW).AsTensor());
+        var moeExpertGateProjScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertGateProjScale).AsTensor());
 
-        var moeExpertUpInputScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertUpInputScale);
-        var moeExpertUpProjW = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertUpProjW);
-        var moeExpertUpProjScale = context.GetOrtArgumentValue(target, Qwen3MoE.MoeExpertUpProjScale);
+        var moeExpertUpInputScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertUpInputScale).AsTensor());
+        var moeExpertUpProjW = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertUpProjW).AsTensor());
+        var moeExpertUpProjScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertUpProjScale).AsTensor());
 
         var layerId = target.LayerId;
         var hiddenSize = target.HiddenSize;
@@ -168,7 +170,14 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
             finalHiddenStates = OrtKI.ScatterElements(finalHiddenStates, indices, updates, 0L, "add");
         }
 
+        finalHiddenStates = OrtKI.Cast(finalHiddenStates, (long)qType);
+
         return finalHiddenStates.ToValue();
+    }
+
+    private OrtKISharp.Tensor GetOrtTensor(Tensor tensor)
+    {
+        return IR.F.Tensors.Cast(tensor, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
     }
 
     private OrtKISharp.Tensor SliceAndSqueeze(OrtKISharp.Tensor tensor, long index)

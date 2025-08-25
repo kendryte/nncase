@@ -38,28 +38,28 @@ namespace Nncase.Importer
                 allUpProjScale.Add(GetWeightAndExpand($"model.layers.{count}.mlp.experts.{expertIndex}.up_proj.weight_scale")!);
             }
 
-            var gateInputScale = IR.F.Tensors.Concat(new IR.Tuple(allGateInputScale.ToArray()), 0);
-            var gateProjW = IR.F.Tensors.Concat(new IR.Tuple(allGateProjW.ToArray()), 0);
-            var gateProjScale = IR.F.Tensors.Concat(new IR.Tuple(allGateProjScale.ToArray()), 0);
-            var downProjW = IR.F.Tensors.Concat(new IR.Tuple(allDownProjW.ToArray()), 0);
-            var downProjInputScale = IR.F.Tensors.Concat(new IR.Tuple(allDownInputScale.ToArray()), 0);
-            var downProjScale = IR.F.Tensors.Concat(new IR.Tuple(allDownProjScale.ToArray()), 0);
-            var upProjW = IR.F.Tensors.Concat(new IR.Tuple(allUpProjW.ToArray()), 0);
-            var upProjInputScale = IR.F.Tensors.Concat(new IR.Tuple(allUpInputScale.ToArray()), 0);
-            var upProjScale = IR.F.Tensors.Concat(new IR.Tuple(allUpProjScale.ToArray()), 0);
+            var gateInputScale = IR.F.Tensors.Concat(new IR.Tuple(allGateInputScale.ToArray()), 0).Evaluate();
+            var gateProjW = IR.F.Tensors.Concat(new IR.Tuple(allGateProjW.ToArray()), 0).Evaluate();
+            var gateProjScale = IR.F.Tensors.Concat(new IR.Tuple(allGateProjScale.ToArray()), 0).Evaluate();
+            var downProjW = IR.F.Tensors.Concat(new IR.Tuple(allDownProjW.ToArray()), 0).Evaluate();
+            var downProjInputScale = IR.F.Tensors.Concat(new IR.Tuple(allDownInputScale.ToArray()), 0).Evaluate();
+            var downProjScale = IR.F.Tensors.Concat(new IR.Tuple(allDownProjScale.ToArray()), 0).Evaluate();
+            var upProjW = IR.F.Tensors.Concat(new IR.Tuple(allUpProjW.ToArray()), 0).Evaluate();
+            var upProjInputScale = IR.F.Tensors.Concat(new IR.Tuple(allUpInputScale.ToArray()), 0).Evaluate();
+            var upProjScale = IR.F.Tensors.Concat(new IR.Tuple(allUpProjScale.ToArray()), 0).Evaluate();
 
             var moeRes = IR.F.NN.Qwen3MoE(
                 q: hiddenStates,
                 moeGateW: gateW,
-                moeExpertGateInputScale: gateInputScale,
-                moeExpertGateProjW: gateProjW,
-                moeExpertGateProjScale: gateProjScale,
-                moeExpertDownInputScale: downProjInputScale,
-                moeExpertDownProjW: downProjW,
-                moeExpertDownProjScale: downProjScale,
-                moeExpertUpInputScale: upProjInputScale,
-                moeExpertUpProjW: upProjW,
-                moeExpertUpProjScale: upProjScale,
+                moeExpertGateInputScale: gateInputScale.AsTensor(),
+                moeExpertGateProjW: gateProjW.AsTensor(),
+                moeExpertGateProjScale: gateProjScale.AsTensor(),
+                moeExpertDownInputScale: downProjInputScale.AsTensor(),
+                moeExpertDownProjW: downProjW.AsTensor(),
+                moeExpertDownProjScale: downProjScale.AsTensor(),
+                moeExpertUpInputScale: upProjInputScale.AsTensor(),
+                moeExpertUpProjW: upProjW.AsTensor(),
+                moeExpertUpProjScale: upProjScale.AsTensor(),
                 layerId: count,
                 hiddenSize: Config.GetNestedValue<long>("hidden_size"),
                 intermediateSize: Config.GetNestedValue<long>("intermediate_size"),

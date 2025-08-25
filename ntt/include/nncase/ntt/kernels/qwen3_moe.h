@@ -84,51 +84,51 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
                     size_t hidden_size, size_t /*intermediate_size*/,
                     size_t moe_intermediate_size, size_t num_expert,
                     size_t num_top_k, size_t is_norm_topk_prob, TOut &output) {
-    using TElem = typename TQ::element_type;
+    using EndTElem = typename TQ::element_type;
 
     const auto seq_len = q.shape()[0_dim];
 
     // 1. router logits : [seq_len, num_expert] = q [seq_len, hidden_size] @ gateW [num_expert, hidden_size]
-    std::vector<TElem> router_logits(seq_len * num_expert);
+    std::vector<float> router_logits(seq_len * num_expert);
     for (size_t i = 0; i < seq_len; i++) {
         for (size_t e = 0; e < num_expert; e++) {
-            TElem acc = (TElem)0;
+            float acc = 0.f;
             for (size_t h = 0; h < hidden_size; h++) {
-                acc += q(i, h) * moeGateW(e, h);
+                acc += (float)q(i, h) * (float)moeGateW(e, h);
             }
             router_logits[i * num_expert + e] = acc; // cast to float already in evaluator, kept same type here.
         }
     }
 
     // 2. softmax along experts
-    std::vector<TElem> router_probs(router_logits); // copy
+    std::vector<float> router_probs(router_logits); // copy
     for (size_t i = 0; i < seq_len; i++) {
-        const TElem *row_in = &router_logits[i * num_expert];
-        TElem *row_out = &router_probs[i * num_expert];
+        const auto *row_in = &router_logits[i * num_expert];
+        auto *row_out = &router_probs[i * num_expert];
         // max
-        TElem m = row_in[0];
+        auto m = row_in[0];
         for (size_t e = 1; e < num_expert; e++) m = ntt::max(m, row_in[e]);
         // exp and sum
-        TElem sum = (TElem)0;
+        float sum = 0.f;
         for (size_t e = 0; e < num_expert; e++) {
-            TElem v = row_in[e] - m;
-            v = (TElem)std::exp((double)v);
+            float v = row_in[e] - m;
+            v = std::exp(v);
             row_out[e] = v;
             sum += v;
         }
         // normalize
-        TElem inv_sum = (TElem)1 / sum;
+        auto inv_sum = 1.f / sum;
         for (size_t e = 0; e < num_expert; e++) row_out[e] = row_out[e] * inv_sum;
     }
 
     // 3. TopK per token
     std::vector<int32_t> topk_indices(seq_len * num_top_k, -1);
-    std::vector<TElem> topk_probs(seq_len * num_top_k, (TElem)0);
+    std::vector<float> topk_probs(seq_len * num_top_k, 0.f);
     for (size_t i = 0; i < seq_len; i++) {
         // Maintain a small local buffer (value, index)
         // Use simple insertion selection for small num_top_k.
         for (size_t e = 0; e < num_expert; e++) {
-            TElem p = router_probs[i * num_expert + e];
+            float p = router_probs[i * num_expert + e];
             // find position
             size_t pos = num_top_k;
             for (size_t k = 0; k < num_top_k; k++) {
@@ -147,16 +147,16 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
         }
         // optional renormalization
         if (is_norm_topk_prob) {
-            TElem sum = (TElem)0;
+            float sum = 0.f;
             for (size_t k = 0; k < num_top_k; k++) sum += topk_probs[i * num_top_k + k];
-            TElem inv = sum != (TElem)0 ? (TElem)1 / sum : (TElem)0;
+            float inv = sum != 0.f ? 1.f / sum : 0.f;
             for (size_t k = 0; k < num_top_k; k++) topk_probs[i * num_top_k + k] *= inv;
         }
     }
 
     // 4. Zero initialize output
     for (size_t i = 0; i < seq_len; i++)
-        for (size_t h = 0; h < hidden_size; h++) output(i, h) = (TElem)0;
+        for (size_t h = 0; h < hidden_size; h++) output(i, h) = (EndTElem)0;
 
     // 5. For each token, accumulate expert contributions.
     for (size_t i = 0; i < seq_len; i++) {
@@ -165,42 +165,42 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
         for (size_t k = 0; k < num_top_k; k++) {
             int32_t expert = topk_indices[i * num_top_k + k];
             if (expert < 0) continue;
-            TElem prob = topk_probs[i * num_top_k + k];
+            auto prob = topk_probs[i * num_top_k + k];
             // --- MLP ---
             // gate/up: [moe_intermediate_size, hidden_size]
             // down:    [hidden_size, moe_intermediate_size]
             // scales: match output dim of corresponding matmul
 
             // gate
-            std::vector<TElem> gate(moe_intermediate_size);
+            std::vector<float> gate(moe_intermediate_size);
             constexpr bool gate_scale_is_2d = moeExpertGateProjScale.shape().rank() == 2;
-            TElem gate_scale_val = (TElem)1;
+            float gate_scale_val = 1.f;
             if constexpr(gate_scale_is_2d)
             {
-                gate_scale_val = moeExpertGateProjScale(expert, 0);
+                gate_scale_val = (float)moeExpertGateProjScale(expert, 0);
             }
             
             // Check if gate input scale exists (not empty)
             constexpr bool gate_input_scale_is_2d = moeExpertGateInputScale.rank() == 2;
-            TElem gate_input_scale_val = (TElem)1;
+            float gate_input_scale_val = 1.f;
             if constexpr(gate_input_scale_is_2d)
             {
-                gate_input_scale_val = moeExpertGateInputScale(expert, 0);
+                gate_input_scale_val = (float)moeExpertGateInputScale(expert, 0);
             }
             
             for (size_t d = 0; d < moe_intermediate_size; d++) {
-                TElem acc = (TElem)0;
+                float acc = 0.f;
                 for (size_t h = 0; h < hidden_size; h++) {
-                    TElem input_val = q(i, h);
+                    auto input_val = (float)q(i, h);
                     // Apply input scaling if available
 
                     if constexpr(gate_input_scale_is_2d) {
                         input_val /= gate_input_scale_val;
                     } else {
-                        input_val /= moeExpertGateInputScale(expert, h, 0);
+                        input_val /= (float)moeExpertGateInputScale(expert, h, 0);
                     }
 
-                    acc += input_val * moeExpertGateProjW(expert, d, h);
+                    acc += input_val * (float)moeExpertGateProjW(expert, d, h);
                 }
                 if constexpr(gate_scale_is_2d)
                 {
@@ -208,42 +208,42 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
                 }
                 else
                 {
-                    acc *= (moeExpertGateProjScale(expert, d, 0) * gate_input_scale_val);
+                    acc *= ((float)moeExpertGateProjScale(expert, d, 0) * gate_input_scale_val);
                 }
 
                 // silu
-                TElem sig = sigmoid(acc);
+                auto sig = sigmoid(acc);
                 gate[d] = sig * acc; // silu(x) = sigmoid(x) * x
             }
             // up
-            std::vector<TElem> up(moe_intermediate_size);
+            std::vector<float> up(moe_intermediate_size);
             // Check if up proj scale is 2D [num_expert, 1] or 3D [num_expert, moe_intermediate_size, 1]
             constexpr bool up_scale_is_2d = (moeExpertUpProjScale.rank() == 2);
 
-            TElem up_scale_val = (TElem)1;
+            float up_scale_val = 1.f;
             if constexpr(up_scale_is_2d)
             {
-                up_scale_val = moeExpertUpProjScale(expert, 0);
+                up_scale_val = (float)moeExpertUpProjScale(expert, 0);
             }
 
             constexpr bool up_input_scale_is_2d = moeExpertUpProjInputScale.rank() == 2;
-            TElem up_input_scale_val = (TElem)1;
+            float up_input_scale_val = 1.f;
             if constexpr(up_input_scale_is_2d)
             {
-                up_input_scale_val = moeExpertUpProjInputScale(expert, 0);
+                up_input_scale_val = (float)moeExpertUpProjInputScale(expert, 0);
             }
 
             for (size_t d = 0; d < moe_intermediate_size; d++) {
-                TElem acc = (TElem)0;
+                float acc = 0.f;
                 for (size_t h = 0; h < hidden_size; h++) {
-                    TElem input_val = q(i, h);
+                    float input_val = (float)q(i, h);
                     if constexpr(up_input_scale_is_2d) {
                         input_val /= up_input_scale_val;
                     } else {
-                        input_val /= moeExpertUpProjInputScale(expert, h, 0);
+                        input_val /= (float)moeExpertUpProjInputScale(expert, h, 0);
                     }
 
-                    acc += input_val * moeExpertUpProjW(expert, d, h);
+                    acc += input_val * (float)moeExpertUpProjW(expert, d, h);
                 }
                 if constexpr(up_scale_is_2d)
                 {
@@ -251,7 +251,7 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
                 }
                 else
                 {
-                    acc *= (moeExpertUpProjScale(expert, d, 0) * up_input_scale_val);
+                    acc *= ((float)moeExpertUpProjScale(expert, d, 0) * up_input_scale_val);
                 }
 
                 up[d] = acc;
@@ -260,31 +260,31 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
             // down: (gate*up)[moe_intermediate_size] @ downW[hidden_size, moe_intermediate_size]
             // Check if down proj scale is 2D [num_expert, 1] or 3D [num_expert, hidden_size, 1]
             constexpr bool down_scale_is_2d = (moeExpertDownProjScale.rank() == 2);
-            TElem down_scale_val = (TElem)1;
+            float down_scale_val = 1.f;
             if constexpr(down_scale_is_2d)
             {
-                down_scale_val = moeExpertDownProjScale(expert, 0);
+                down_scale_val = (float)moeExpertDownProjScale(expert, 0);
             }
             // Check if down input scale exists (not empty)
             constexpr bool down_input_scale_is_2d = moeExpertDownProjInputScale.rank() == 2;
-            TElem down_input_scale_val = (TElem)1;
+            float down_input_scale_val = 1.f;
             if constexpr(down_input_scale_is_2d)
             {
-                down_input_scale_val = moeExpertDownProjInputScale(expert, 0);
+                down_input_scale_val = (float)moeExpertDownProjInputScale(expert, 0);
             }
             
             for (size_t h = 0; h < hidden_size; h++) {
-                TElem acc = (TElem)0;
+                float acc = 0.f;
                 for (size_t d = 0; d < moe_intermediate_size; d++) {
-                    TElem down_in = gate[d] * up[d];
+                    float down_in = gate[d] * up[d];
                     // Apply input scaling if available
                     if constexpr(down_input_scale_is_2d) {
                         down_in /= down_input_scale_val;
                     } else {
-                        down_in /= moeExpertDownProjInputScale(expert, d, 0);
+                        down_in /= (float)moeExpertDownProjInputScale(expert, d, 0);
                     }
 
-                    acc += down_in * moeExpertDownProjW(expert, h, d);
+                    acc += down_in * (float)moeExpertDownProjW(expert, h, d);
                 }
                 if constexpr(down_scale_is_2d)
                 {
@@ -292,9 +292,9 @@ void qwen3_moe_impl(const TQ &q, const TGateW &moeGateW,
                 }
                 else
                 {
-                    acc *= (moeExpertDownProjScale(expert, h, 0) * down_input_scale_val);
+                    acc *= ((float)moeExpertDownProjScale(expert, h, 0) * down_input_scale_val);
                 }
-                output(i, h) += prob * acc; // accumulate
+                output(i, h) += (EndTElem)(prob * acc); // accumulate
             }
         }
     }
@@ -317,7 +317,7 @@ void qwen3_moe(const TQ &q, const TGateW &moeGateW,
                const TUpInputScale &moeExpertUpInputScale,
                const TUpProjW &moeExpertUpProjW,
                const TUpProjScale &moeExpertUpProjScale,
-               TOut &&output, size_t layer_id, size_t hidden_size,
+               TOut &&output, size_t /* layer_id */, size_t hidden_size,
                size_t intermediate_size, size_t moe_intermediate_size,
                size_t num_expert, size_t num_top_k, size_t is_norm_topk_prob) noexcept {
     detail::qwen3_moe_impl(q, moeGateW, 
