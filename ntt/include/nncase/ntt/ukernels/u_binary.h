@@ -21,15 +21,18 @@ template <class Op, class T1, class T2, bool Arch> struct u_binary_policy {
     static constexpr size_t unroll = 1;
 };
 
-template <class Op, class PostOp, class T1, class T2, class TOut, bool Arch>
+template <class Op, template <class> class TPostOp, class T1, class T2,
+          class TOut, bool Arch>
 struct u_binary {
   public:
-    constexpr void operator()(const Op &op, PostOp &post_op, const T1 *input1,
-                              const T2 *input2, size_t input1_stride,
-                              size_t input2_stride, TOut *output,
-                              size_t output_stride, size_t count) noexcept {
+    constexpr void operator()(const Op &op, const T1 *input1, const T2 *input2,
+                              size_t input1_stride, size_t input2_stride,
+                              TOut *output, size_t output_stride,
+                              size_t count) noexcept {
         using policy_t = u_binary_policy<Op, T1, T2, Arch>;
         constexpr auto unroll = policy_t::unroll;
+
+        TPostOp<TOut> post_op;
 
         while (count / unroll) {
             for (size_t i = 0; i < unroll; i++) {
@@ -53,13 +56,13 @@ struct u_binary {
 };
 } // namespace ukernels
 
-template <class Op, class PostOp, class T1, class T2, class TOut>
-constexpr void u_binary(const Op &op, PostOp &post_op, const T1 *input1,
-                        size_t input1_stride, const T2 *input2,
-                        size_t input2_stride, TOut *output,
+template <class Op, template <class> class TPostOp, class T1, class T2,
+          class TOut>
+constexpr void u_binary(const Op &op, const T1 *input1, size_t input1_stride,
+                        const T2 *input2, size_t input2_stride, TOut *output,
                         size_t output_stride, size_t count) noexcept {
-    ukernels::u_binary<Op, PostOp, T1, T2, TOut, true> impl;
-    impl(op, post_op, input1, input2, input1_stride, input2_stride, output,
+    ukernels::u_binary<Op, TPostOp, T1, T2, TOut, true> impl;
+    impl(op, input1, input2, input1_stride, input2_stride, output,
          output_stride, count);
 }
 } // namespace nncase::ntt

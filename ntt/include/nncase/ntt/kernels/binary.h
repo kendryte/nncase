@@ -46,8 +46,8 @@ class binary_impl
         if (!is_broadcast && (lhs_conti_dims == TLhs::rank()) &&
             (rhs_conti_dims == TRhs::rank()) &&
             (output_conti_dims == TOut::rank())) {
-            ntt::u_binary(op, post_op, addr_lhs, 1, addr_rhs, 1,
-                          addr_output_element, 1, len);
+            ntt::u_binary<TOp, TPostOp, Elem, Elem, Elem>(
+                op, addr_lhs, 1, addr_rhs, 1, addr_output_element, 1, len);
         } else {
             ntt::apply(output.shape(), [&](auto index) {
                 output(index) = op(lhs(index), rhs(index));

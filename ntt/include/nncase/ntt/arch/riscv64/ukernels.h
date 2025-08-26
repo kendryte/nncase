@@ -513,16 +513,15 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 
 #undef SPECIALIZE_U_BINARY
 
-template <>
+template <template <class> class TPostOp>
 struct u_binary<
     ntt::ops::add<vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>>,
-    DefaultPostOp<vector<float, NTT_VLEN / 32>>, vector<float, NTT_VLEN / 32>,
-    vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>, true> {
+    TPostOp, vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>,
+    vector<float, NTT_VLEN / 32>, true> {
   public:
     constexpr void
     operator()(const ntt::ops::add<vector<float, NTT_VLEN / 32>,
                                    vector<float, NTT_VLEN / 32>> &op,
-               DefaultPostOp<vector<float, NTT_VLEN / 32>> &post_op,
                const vector<float, NTT_VLEN / 32> *input1,
                const vector<float, NTT_VLEN / 32> *input2, size_t input1_stride,
                size_t input2_stride, vector<float, NTT_VLEN / 32> *output,
@@ -542,6 +541,9 @@ struct u_binary<
         register vfloat32m8_t v8_reg asm("v8");
         register vfloat32m8_t v16_reg asm("v16");
 
+        TPostOp<vector<float, vl>> post_op_m8;
+        TPostOp<vector<float, NTT_VLEN / 32>> post_op_m1;
+
         while (count / unroll) {
 
             asm("vsetvli zero, %[vl], e32, m8, ta, ma\n" ::[vl] "r"(vl));
@@ -557,6 +559,7 @@ struct u_binary<
 
             v16_reg = nncase::ntt::add((ntt::vector<float, vl>)v0_reg,
                                        (ntt::vector<float, vl>)v8_reg);
+            v16_reg = post_op_m8((ntt::vector<float, vl>)v16_reg);
 
             asm volatile("vse32.v %[v16_reg],  (%[output])\n"
                          "add %[output], %[output], %[out_strides]\n"
@@ -569,7 +572,7 @@ struct u_binary<
 
         for (size_t i = 0; i < count; i++) {
             *output = op(*input1, *input2);
-            *output = post_op(*output);
+            *output = post_op_m1(*output);
             input1 += input1_stride;
             input2 += input2_stride;
             output += output_stride;
