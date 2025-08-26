@@ -228,6 +228,19 @@ public sealed class DimSum : Dimension, IEquatable<DimSum?>
             return Unknown;
         }
 
+        if (dimensions.Length == 2 && bias == 0)
+        {
+            var (a, b) = (dimensions[0], dimensions[1]);
+            if (b is DimSum { Bias: 0, Count: 2, Operands: [var alignUp, var neg] }
+                && (alignUp is DimProduct { Scale: var align, Count: 1, Operands: [var ceil] })
+                && ceil is DimFraction { DivMode: DimDivideMode.CeilDiv, Numerator: var numerator, Denominator: DimConst { Value: var denum } }
+                && denum == align && numerator == a
+                && (neg is DimProduct { Scale: -1, Count: 1, Operands: [var s2] }) && s2 == a)
+            {
+                return alignUp;
+            }
+        }
+
         Dimension lhs = bias;
         for (var i = 0; i < dimensions.Length; i++)
         {

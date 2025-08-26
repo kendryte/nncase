@@ -30,7 +30,7 @@ struct tensor_unary_impl<Op, TVector> {
     using element_type = typename TVector::element_type;
 
     constexpr TVector operator()(const TVector &v) const noexcept {
-        TVector value;
+        TVector value{};
         ntt::apply(v.shape(),
                    [&](auto index) { value(index) = op_(v(index)); });
         return value;
@@ -38,6 +38,12 @@ struct tensor_unary_impl<Op, TVector> {
 
   private:
     Op<element_type> op_;
+};
+
+template <Vector TVector> struct tensor_unary_impl<copy, TVector> {
+    using element_type = typename TVector::element_type;
+
+    constexpr TVector operator()(const TVector &v) const noexcept { return v; }
 };
 
 template <template <class T> class Op, Vector TVector>
@@ -68,7 +74,7 @@ struct tensor_binary_impl<Op, TVector, T2> {
 
     constexpr TVector operator()(const TVector &v1,
                                  const T2 &v2) const noexcept {
-        TVector value;
+        TVector value{};
         if constexpr (Vector<T2>) {
             if constexpr (TVector::rank() == 2 && T2::rank() == 1) {
                 ntt::apply(v1.shape(), [&](auto index) {
@@ -342,7 +348,7 @@ template <class T1, Vector T2, Vector T3> struct where<T1, T2, T3> {
 
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const T3 &v2) const noexcept {
-        T2 value;
+        T2 value{};
         if constexpr (Vector<T1>) {
             ntt::apply(v1.shape(), [&](auto index) {
                 value(index) = op_(condition(index), v1(index), v2(index));
@@ -451,21 +457,17 @@ struct reduce<Op, TResult, TVector> {
 
     constexpr TResult operator()(const TVector &v,
                                  TResult init_value) const noexcept {
-        Op<TResult, element_type> op;
-        auto count = v.shape()[0];
         auto value = init_value;
-        for (size_t i = 0; i < count; i++) {
-            value = op(value, v(i));
+        for (size_t i = 0; i < v.shape().front(); i++) {
+            value = ntt::reduce<Op, TResult>(v(i), value);
         }
         return value;
     }
 
     constexpr TResult operator()(const TVector &v) const noexcept {
-        Op<TResult, element_type> op;
-        auto count = v.shape()[0];
-        auto value = v(0);
-        for (size_t i = 1; i < count; i++) {
-            value = op(value, v(i));
+        auto value = ntt::reduce<Op, TResult>(v(0));
+        for (size_t i = 1; i < v.shape().front(); i++) {
+            value = ntt::reduce<Op, TResult>(v(i), value);
         }
         return value;
     }
@@ -475,7 +477,7 @@ template <Vector TVector, Scalar TScalar> struct clamp<TVector, TScalar> {
     using element_type = typename TVector::element_type;
     constexpr auto operator()(const TVector &v, const TScalar &min,
                               const TScalar &max) const noexcept {
-        TVector value;
+        TVector value{};
         ntt::apply(v.shape(),
                    [&](auto index) { value(index) = op_(v(index), min, max); });
         return value;

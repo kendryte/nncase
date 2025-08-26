@@ -77,6 +77,7 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.VectorizeLayerNorm>(rank, lane);
 
         pass.Add<Passes.Rules.NTT.VectorizeBinaryPropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeCastPropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeComparePropagation>(maskVectorStyle);
         pass.Add<Passes.Rules.NTT.VectorizeConcatPropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeExpandPropagation>();
@@ -85,6 +86,7 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.VectorizeReducePropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeReshapePropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeResizeImagePropagation>();
+        pass.Add<Passes.Rules.NTT.VectorizeRoPEPropagation>();
 
         // pass.Add<Passes.Rules.NTT.VectorizeScatterND>(rank, lane);
         pass.Add<Passes.Rules.NTT.VectorizeSlicePropagation>();
@@ -95,6 +97,7 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.VectorizeUnsqueezePropagation>();
         pass.Add<Passes.Rules.NTT.VectorizeWherePropagation>(maskVectorStyle);
 
+        pass.Add<Passes.Rules.NTT.CastDevectorizePropagation>();
         pass.Add<Passes.Rules.NTT.ConcatDevectorizePropagation>();
         pass.Add<Passes.Rules.NTT.BinaryDevectorizeLhsPropagation>();
         pass.Add<Passes.Rules.NTT.BinaryDevectorizeRhsPropagation>();

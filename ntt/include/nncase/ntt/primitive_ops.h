@@ -197,9 +197,9 @@ template <class T1, class T2> struct ceil_div {
  */
 template <class T1, class T2> struct floor_mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return v1 -
-               std::floor(static_cast<double>(v1) / static_cast<double>(v2)) *
-                   v2;
+        return (T1)((double)v1 - std::floor(static_cast<double>(v1) /
+                                            static_cast<double>(v2)) *
+                                     (double)v2);
     }
 };
 

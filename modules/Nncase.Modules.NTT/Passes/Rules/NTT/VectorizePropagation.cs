@@ -256,40 +256,6 @@ public sealed class UnsqueezeDevectorizePropagation : RewriteRule<Pattern>
 }
 
 [RuleGenerator]
-public sealed class CastDevectorizePropagation : RewriteRule<Pattern>
-{
-    public override Pattern Pattern { get; } =
-    IsCast(
-        "cast",
-        "caller",
-        _ => true,
-        PatternMatch.F.Tensors.IsUnpack(
-            "devectorize",
-            "callee",
-            _ => true,
-            IsWildcard("input")));
-
-    public override Expr? GetReplace(IMatchResult result, RunPassContext context)
-    {
-        var devectorize = (IR.Tensors.Unpack)result["devectorize"];
-        if (devectorize.Axes.Count > 1)
-        {
-            var caller = (Call)result["caller"];
-            var callee = (Expr)result["callee"];
-            var postOps = None.Default;
-
-            var ret = VectorizeCast.AddCandidate(caller, callee, postOps, devectorize.Axes.ToArray(), devectorize.Lanes.ToArray()).FirstOrDefault();
-            if (ret is not null)
-            {
-                return ret;
-            }
-        }
-
-        return null;
-    }
-}
-
-[RuleGenerator]
 public sealed class VectorizeComparePropagation : RewriteRule<Pattern>
 {
     public VectorizeComparePropagation(MaskVectorStyle maskVectorStyle)

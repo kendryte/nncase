@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "primitive_ops.bfloat16.h"
+#include "primitive_ops.float16.h"
 #include "primitive_ops.float32.h"
 
 namespace nncase::ntt::ops {

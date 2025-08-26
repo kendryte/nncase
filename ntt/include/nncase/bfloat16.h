@@ -36,34 +36,31 @@ struct bfloat16 {
     static constexpr uint16_t NAN_VALUE = 0x7FC0;
 
   public:
-    constexpr bfloat16() noexcept = default;
+#ifdef NTT_HAVE_NATIVE_BF16
+    constexpr bfloat16(__bf16 v) noexcept
+        : value_(std::bit_cast<uint16_t>(v)) {};
 
-#if defined(__riscv_vector) &&                                                 \
-    (defined(__riscv_zvfbfmin) || defined(__riscv_zvfbf))
-    bfloat16(__bf16 v) noexcept : value_(std::bit_cast<uint16_t>(v)) {}
-    operator __bf16() const noexcept { return std::bit_cast<__bf16>(value_); }
+    constexpr operator __bf16() const noexcept {
+        return std::bit_cast<__bf16>(value_);
+    }
 #endif
 
-    constexpr explicit bfloat16(float v) noexcept
-        : value_(round_to_bfloat16(v).value_) {}
+    constexpr bfloat16() noexcept = default;
 
     template <class T,
               class = std::enable_if_t<std::is_integral<T>::value ||
                                        std::is_floating_point<T>::value>>
-    constexpr explicit bfloat16(const T &val) noexcept
-        : bfloat16(static_cast<float>(val)) {}
+    constexpr explicit bfloat16(const T &v) noexcept
+        : value_(round_to_bfloat16(v).value_) {}
 
     constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
-    constexpr explicit bfloat16(int v) noexcept
-        : bfloat16(static_cast<float>(v)) {}
 
     constexpr operator float() const noexcept {
-        uint32_t value = value_ << 16;
+        uint32_t value = raw() << 16;
         return std::bit_cast<float>(value);
     }
 
-    constexpr const uint16_t &raw() const noexcept { return value_; }
-    constexpr uint16_t &raw() noexcept { return value_; }
+    constexpr uint16_t raw() const noexcept { return value_; }
 
     static constexpr bfloat16 from_raw(uint16_t v) noexcept {
         return bfloat16(nncase::from_raw, v);

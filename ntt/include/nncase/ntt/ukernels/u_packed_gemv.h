@@ -42,7 +42,6 @@ struct u_packed_gemv {
                 ntt::loop<N0Tile>([&](auto tn) {
                     c0(tn) = ntt::mul_add(a0, b0(tn), c0(tn));
                 });
-                ntt::prefetch<prefetch_hint::l2>(&b1[k1 + 8]);
             }
 
             ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
