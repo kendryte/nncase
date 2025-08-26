@@ -583,6 +583,76 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
         }                                                                      \
     };
 
+#define DEFINE_U_BINARY_HALF_24V(OP)                                           \
+    template <template <class> class TPostOp>                                  \
+    struct u_binary<ntt::ops::OP<vector<half, NTT_VLEN / 16>,                  \
+                                 vector<half, NTT_VLEN / 16>>,                 \
+                    TPostOp, vector<half, NTT_VLEN / 16>,                      \
+                    vector<half, NTT_VLEN / 16>, vector<half, NTT_VLEN / 16>,  \
+                    true> {                                                    \
+      public:                                                                  \
+        constexpr void                                                         \
+        operator()(const ntt::ops::OP<vector<half, NTT_VLEN / 16>,             \
+                                      vector<half, NTT_VLEN / 16>> &op,        \
+                   const vector<half, NTT_VLEN / 16> *input1,                  \
+                   const vector<half, NTT_VLEN / 16> *input2,                  \
+                   size_t input1_stride, size_t input2_stride,                 \
+                   vector<half, NTT_VLEN / 16> *output, size_t output_stride,  \
+                   size_t count) noexcept {                                    \
+            using policy_t =                                                   \
+                u_binary_policy<ntt::ops::OP<vector<half, NTT_VLEN / 16>,      \
+                                             vector<half, NTT_VLEN / 16>>,     \
+                                vector<half, NTT_VLEN / 16>,                   \
+                                vector<half, NTT_VLEN / 16>, true>;            \
+            constexpr auto unroll = policy_t::unroll;                          \
+            constexpr auto lmul = 8;                                           \
+            constexpr auto vl = NTT_VLEN / 16 * lmul;                          \
+            constexpr auto unit = sizeof(vector<half, vl>);                    \
+            auto in_strides = input1_stride * unit;                            \
+            auto out_strides = output_stride * unit;                           \
+            register vfloat16m8_t v0_reg asm("v0");                            \
+            register vfloat16m8_t v8_reg asm("v8");                            \
+            register vfloat16m8_t v16_reg asm("v16");                          \
+                                                                               \
+            TPostOp<vector<half, vl>> post_op_m8;                              \
+            TPostOp<vector<half, NTT_VLEN / 16>> post_op_m1;                   \
+                                                                               \
+            while (count / unroll) {                                           \
+                asm("vsetvli zero, %[vl], e16, m8, ta, ma\n" ::[vl] "r"(vl));  \
+                asm volatile(                                                  \
+                    "vle16.v %[v0_reg],  (%[input1])\n"                        \
+                    "add %[input1], %[input1], %[in_strides]\n"                \
+                    "vle16.v %[v8_reg],  (%[input2])\n"                        \
+                    "add %[input2], %[input2], %[in_strides]\n"                \
+                    : [input1] "+r"(input1), [input2] "+r"(input2),            \
+                      [v0_reg] "+vr"(v0_reg), [v8_reg] "+vr"(v8_reg)           \
+                    : [in_strides] "r"(in_strides), [out_strides] "r"(         \
+                                                        out_strides)           \
+                    : "memory");                                               \
+                                                                               \
+                v16_reg = nncase::ntt::OP((ntt::vector<half, vl>)v0_reg,       \
+                                          (ntt::vector<half, vl>)v8_reg);      \
+                v16_reg = post_op_m8((ntt::vector<half, vl>)v16_reg);          \
+                                                                               \
+                asm volatile("vse16.v %[v16_reg],  (%[output])\n"              \
+                             "add %[output], %[output], %[out_strides]\n"      \
+                             : [output] "+r"(output), [v16_reg] "+vr"(v16_reg) \
+                             : [out_strides] "r"(out_strides)                  \
+                             : "memory");                                      \
+                                                                               \
+                count -= unroll;                                               \
+            }                                                                  \
+                                                                               \
+            for (size_t i = 0; i < count; i++) {                               \
+                *output = op(*input1, *input2);                                \
+                *output = post_op_m1(*output);                                 \
+                input1 += input1_stride;                                       \
+                input2 += input2_stride;                                       \
+                output += output_stride;                                       \
+            }                                                                  \
+        }                                                                      \
+    };
+
 DEFINE_U_BINARY_F32_24V(add)
 DEFINE_U_BINARY_F32_24V(sub)
 DEFINE_U_BINARY_F32_24V(mul)
@@ -590,6 +660,14 @@ DEFINE_U_BINARY_F32_24V(div)
 DEFINE_U_BINARY_F32_24V(max)
 DEFINE_U_BINARY_F32_24V(min)
 DEFINE_U_BINARY_F32_24V(mod)
+
+DEFINE_U_BINARY_HALF_24V(add)
+DEFINE_U_BINARY_HALF_24V(sub)
+DEFINE_U_BINARY_HALF_24V(mul)
+DEFINE_U_BINARY_HALF_24V(div)
+DEFINE_U_BINARY_HALF_24V(max)
+DEFINE_U_BINARY_HALF_24V(min)
+DEFINE_U_BINARY_HALF_24V(mod)
 
 // clamp
 template <> struct u_clamp_policy<true> {
