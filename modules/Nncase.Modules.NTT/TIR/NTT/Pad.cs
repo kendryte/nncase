@@ -34,4 +34,6 @@ public sealed partial class Pad : NTTKernelOp
     public static readonly ParameterInfo Output = new(typeof(Pad), 2, "output");
 
     public float PadValue { get; }
+
+    public IRArray<int> ActualPadAxes { get; }
 }

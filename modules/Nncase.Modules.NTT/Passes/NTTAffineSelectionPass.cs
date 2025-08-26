@@ -67,6 +67,9 @@ public partial class NTTAffineSelectionPass : AffineSelectionPass
                 return SelectVectorizedCast(op, call, output);
             case IR.Tensors.Transpose op:
                 return SelectTranspose(op, call, output);
+
+            // case IR.NN.Pad op:
+            //     return SelectPad(op, call, output);
             default:
                 return call;
         }

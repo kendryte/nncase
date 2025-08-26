@@ -430,6 +430,13 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }
 
                 break;
+            case TIR.NTT.Pad pad:
+                {
+                    var padValueType = expr.Arguments[0].CheckedTensorType.DType is VectorType vt ? vt.ElemType : expr.Arguments[0].CheckedTensorType.DType;
+                    WriteWithProfiler($"pad({arguments[0].Name}, {arguments[2].Name}, {arguments[1].Name}, {expr.Arguments[0].CheckedDataType.ToC()} {{ ({padValueType.ToC()}){pad.PadValue} }});\n");
+                }
+
+                break;
             default:
                 throw new NotSupportedException($"Unsupported call target: {expr.Target}");
         }
