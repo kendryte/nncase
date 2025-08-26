@@ -426,9 +426,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         var addedBuckets = bucketMemo.Values.ToArray();
         foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
         {
-            var bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
-            if (!bucketMemo.ContainsKey(nType))
+            if (!bucketMemo.TryGetValue(nType, out var bucket))
             {
+                bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                 var linked = false;
                 foreach (var addedBucket in addedBuckets)
                 {
