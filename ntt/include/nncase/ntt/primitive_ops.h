@@ -220,7 +220,7 @@ template <class T1, class T2> struct outer_product {
  */
 template <class T1, class T2> struct mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return std::fmod(v1, v2);
+        return std::fmod((float)v1, (float)v2);
     }
 };
 
@@ -238,7 +238,7 @@ template <class T1, class T2> struct max {
 
 template <class T1, class T2> struct pow {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return std::pow(v1, v2);
+        return std::pow((float)v1, (float)v2);
     }
 };
 
