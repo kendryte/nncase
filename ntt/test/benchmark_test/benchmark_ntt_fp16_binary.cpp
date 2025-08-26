@@ -58,6 +58,8 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
+#if __riscv
+
     constexpr size_t N = NTT_VLEN / (sizeof(half) * 8);
     benchmark_ntt_binary<ntt::ops::add, half, N>("add", half(-10.f), half(10.f),
                                                  half(-10.f), half(10.f));
@@ -77,4 +79,5 @@ int main(int argc, char *argv[]) {
                                                  half(1.f), half(10.f));
     benchmark_ntt_binary<ntt::ops::pow, half, N>("pow", half(0.f), half(3.f),
                                                  half(0.f), half(3.f));
+#endif
 }
