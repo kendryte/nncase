@@ -23,11 +23,10 @@ template <class Op, class T1, class T2, bool Arch> struct u_binary_policy {
 template <class Op, class PostOp, class T1, class T2, class TOut, bool Arch>
 struct u_binary {
   public:
-    constexpr void operator()(Op &op, [[maybe_unused]] PostOp &post_op,
-                              const T1 *input1, const T2 *input2,
-                              size_t input1_stride, size_t input2_stride,
-                              TOut *output, size_t output_stride,
-                              size_t count) noexcept {
+    constexpr void operator()(const Op &op, PostOp &post_op, const T1 *input1,
+                              const T2 *input2, size_t input1_stride,
+                              size_t input2_stride, TOut *output,
+                              size_t output_stride, size_t count) noexcept {
         using policy_t = u_binary_policy<Op, T1, T2, Arch>;
         constexpr auto unroll = policy_t::unroll;
 
@@ -54,7 +53,7 @@ struct u_binary {
 } // namespace ukernels
 
 template <class Op, class PostOp, class T1, class T2, class TOut>
-constexpr void u_binary(Op &op, PostOp &post_op, const T1 *input1,
+constexpr void u_binary(const Op &op, PostOp &post_op, const T1 *input1,
                         size_t input1_stride, const T2 *input2,
                         size_t input2_stride, TOut *output,
                         size_t output_stride, size_t count) noexcept {

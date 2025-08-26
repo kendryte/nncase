@@ -513,6 +513,47 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 
 #undef SPECIALIZE_U_BINARY
 
+template <class PostOp>
+struct u_binary<
+    ntt::ops::add<vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>>,
+    PostOp, vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>,
+    vector<float, NTT_VLEN / 32>, true> {
+  public:
+    constexpr void
+    operator()(const ntt::ops::add<vector<float, NTT_VLEN / 32>,
+                                   vector<float, NTT_VLEN / 32>> &op,
+               PostOp &post_op, const vector<float, NTT_VLEN / 32> *input1,
+               const vector<float, NTT_VLEN / 32> *input2, size_t input1_stride,
+               size_t input2_stride, vector<float, NTT_VLEN / 32> *output,
+               size_t output_stride, size_t count) noexcept {
+        using policy_t =
+            u_binary_policy<ntt::ops::add<vector<float, NTT_VLEN / 32>,
+                                          vector<float, NTT_VLEN / 32>>,
+                            vector<float, NTT_VLEN / 32>,
+                            vector<float, NTT_VLEN / 32>, true>;
+        constexpr auto unroll = policy_t::unroll;
+
+        while (count / unroll) {
+            for (size_t i = 0; i < unroll; i++) {
+                *output = op(*input1, *input2);
+                *output = post_op(*output);
+                input1 += input1_stride;
+                input2 += input2_stride;
+                output += output_stride;
+                count--;
+            }
+        }
+
+        for (size_t i = 0; i < count; i++) {
+            *output = op(*input1, *input2);
+            *output = post_op(*output);
+            input1 += input1_stride;
+            input2 += input2_stride;
+            output += output_stride;
+        }
+    }
+};
+
 // clamp
 template <> struct u_clamp_policy<true> {
     static constexpr size_t unroll = 8;
