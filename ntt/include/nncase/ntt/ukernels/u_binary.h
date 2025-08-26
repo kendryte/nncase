@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../post_ops.h"
 #include "../primitive_ops.h"
 namespace nncase::ntt {
 namespace ukernels {

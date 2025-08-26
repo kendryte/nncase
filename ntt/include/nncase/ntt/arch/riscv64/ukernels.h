@@ -513,16 +513,17 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
 
 #undef SPECIALIZE_U_BINARY
 
-template <class PostOp>
+template <>
 struct u_binary<
     ntt::ops::add<vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>>,
-    PostOp, vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>,
-    vector<float, NTT_VLEN / 32>, true> {
+    DefaultPostOp<vector<float, NTT_VLEN / 32>>, vector<float, NTT_VLEN / 32>,
+    vector<float, NTT_VLEN / 32>, vector<float, NTT_VLEN / 32>, true> {
   public:
     constexpr void
     operator()(const ntt::ops::add<vector<float, NTT_VLEN / 32>,
                                    vector<float, NTT_VLEN / 32>> &op,
-               PostOp &post_op, const vector<float, NTT_VLEN / 32> *input1,
+               DefaultPostOp<vector<float, NTT_VLEN / 32>> &post_op,
+               const vector<float, NTT_VLEN / 32> *input1,
                const vector<float, NTT_VLEN / 32> *input2, size_t input1_stride,
                size_t input2_stride, vector<float, NTT_VLEN / 32> *output,
                size_t output_stride, size_t count) noexcept {
@@ -532,16 +533,38 @@ struct u_binary<
                             vector<float, NTT_VLEN / 32>,
                             vector<float, NTT_VLEN / 32>, true>;
         constexpr auto unroll = policy_t::unroll;
+        constexpr auto lmul = 8;
+        constexpr auto vl = NTT_VLEN / 32 * lmul;
+        constexpr auto unit = sizeof(vector<float, vl>);
+        auto in_strides = input1_stride * unit;
+        auto out_strides = output_stride * unit;
+        register vfloat32m8_t v0_reg asm("v0");
+        register vfloat32m8_t v8_reg asm("v8");
+        register vfloat32m8_t v16_reg asm("v16");
 
         while (count / unroll) {
-            for (size_t i = 0; i < unroll; i++) {
-                *output = op(*input1, *input2);
-                *output = post_op(*output);
-                input1 += input1_stride;
-                input2 += input2_stride;
-                output += output_stride;
-                count--;
-            }
+
+            asm("vsetvli zero, %[vl], e32, m8, ta, ma\n" ::[vl] "r"(vl));
+            asm volatile(
+                "vle32.v %[v0_reg],  (%[input1])\n"
+                "add %[input1], %[input1], %[in_strides]\n"
+                "vle32.v %[v8_reg],  (%[input2])\n"
+                "add %[input2], %[input2], %[in_strides]\n"
+                : [input1] "+r"(input1), [input2] "+r"(input2),
+                  [v0_reg] "+vr"(v0_reg), [v8_reg] "+vr"(v8_reg)
+                : [in_strides] "r"(in_strides), [out_strides] "r"(out_strides)
+                : "memory");
+
+            v16_reg = nncase::ntt::add((ntt::vector<float, vl>)v0_reg,
+                                       (ntt::vector<float, vl>)v8_reg);
+
+            asm volatile("vse32.v %[v16_reg],  (%[output])\n"
+                         "add %[output], %[output], %[out_strides]\n"
+                         : [output] "+r"(output), [v16_reg] "+vr"(v16_reg)
+                         : [out_strides] "r"(out_strides)
+                         : "memory");
+
+            count -= unroll;
         }
 
         for (size_t i = 0; i < count; i++) {

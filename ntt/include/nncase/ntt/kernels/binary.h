@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../post_ops.h"
 #include "../ukernels.h"
 #include "detail/binary_like_impl.h"
 #include <type_traits>
