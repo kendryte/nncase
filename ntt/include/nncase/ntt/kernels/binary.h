@@ -40,13 +40,15 @@ class binary_impl
 
         auto len = output.shape().length();
 
-        using Elem = element_or_scalar_t<TOut>;
-        TPostOp<Elem> post_op;
+        using TLhsElem = element_or_scalar_t<TLhs>;
+        using TRhsElem = element_or_scalar_t<TRhs>;
+        using TOutElem = element_or_scalar_t<TOut>;
+        TPostOp<TOutElem> post_op;
 
         if (!is_broadcast && (lhs_conti_dims == TLhs::rank()) &&
             (rhs_conti_dims == TRhs::rank()) &&
             (output_conti_dims == TOut::rank())) {
-            ntt::u_binary<TOp, TPostOp, Elem, Elem, Elem>(
+            ntt::u_binary<TOp, TPostOp, TLhsElem, TRhsElem, TOutElem>(
                 op, addr_lhs, 1, addr_rhs, 1, addr_output_element, 1, len);
         } else {
             ntt::apply(output.shape(), [&](auto index) {
