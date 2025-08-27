@@ -451,6 +451,31 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     bucketMemo.TryAdd(nType, bucket);
                 }
             }
+            else
+            {
+                bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                var linked = false;
+                var addedBucket = addedBuckets[0];
+                {
+                    var addedNode = addedBucket.Vertices.First();
+                    if (CheckBoxingType(addedNode.IRType, nType) is not InvalidType)
+                    {
+                        var node = new SearchableNode(new Boxing(nType), nType);
+                        bucket.AddVertex(node);
+                        callCluster.AddEdge(new(node, addedNode, 0, addedBucket));
+                        linked |= true;
+                    }
+                }
+
+                if (!linked)
+                {
+                    callCluster.RemoveCluster(bucket);
+                }
+                else
+                {
+                    bucketMemo.TryAdd(nType, bucket);
+                }
+            }
         }
 
         // 5. filter
