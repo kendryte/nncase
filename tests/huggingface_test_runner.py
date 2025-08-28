@@ -14,6 +14,8 @@ from safetensors.torch import load_file, save_file
 import nncase
 from npy2json import convert_npy_to_json
 from ml_dtypes import bfloat16
+import logging
+logging.getLogger("transformers").setLevel(logging.ERROR)
 
 
 def download_from_huggingface(model_api, tokenizer_api, model_name, need_save=False):
@@ -135,68 +137,230 @@ def dump_data_to_file(dir_path, file_path, data):
     convert_npy_to_json(os.path.join(dir_path, f'{file_path}.npy'), dir_path)
 
 
+def debug_actual_structure(actual):
+    print(f'Type of actual: {type(actual)}')
+    print(f'Length of actual: {len(actual)}')
+    if actual:
+        print(f'Type of actual[0]: {type(actual[0])}')
+        if hasattr(actual[0], 'shape'):
+            print(f'Shape of actual[0]: {actual[0].shape}')
+        elif isinstance(actual[0], list):
+            print(f'Length of actual[0]: {len(actual[0])}')
+            if actual[0]:
+                print(f'Type of actual[0][0]: {type(actual[0][0])}')
+
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)
         self.model_type = "huggingface"
         self.num_layers = -1
+        self.local_inputs: List[Any] = []
+
+    def get_result(self, model):
+        results = []
+        for idx in range(model.outputs_size):
+            results.append(model.get_output_tensor(idx).to_numpy())
+        return results
+
+    def hf_eval(self, model, input_data):
+        print(f"kv_object.context_lens.to_numpy(): {input_data[1].context_lens.to_runtime_tensor().to_numpy()}")
+        print(f"kv_object.seq_lens.to_numpy(): {input_data[1].seq_lens.to_runtime_tensor().to_numpy()}")
+        print(f"kv_object.block_tables.to_numpy(): {input_data[1].block_tables.to_runtime_tensor().to_numpy()}")
+        print(f"kv_object.slot_mapping.to_numpy(): {input_data[1].slot_mapping.to_runtime_tensor().to_numpy()}")
+        
+        for idx, i in enumerate(input_data):
+            value = None
+            if isinstance(i, nncase._nncase.RefPagedAttentionKVCache):
+                value = i.as_ivalue()
+            else:
+                value = nncase.RuntimeTensor.from_numpy(i['data'][0])
+            model.set_input_tensor(idx, value)
+
+        model.run()
+        return self.get_result(model)
+
+    def hf_infer(self, model, input_data):
+        print(f"kv_object.context_lens.to_numpy(): {input_data[1].context_lens.to_numpy()}")
+        print(f"kv_object.seq_lens.to_numpy(): {input_data[1].seq_lens.to_numpy()}")
+        print(f"kv_object.block_tables.to_numpy(): {input_data[1].block_tables.to_numpy()}")
+        print(f"kv_object.slot_mapping.to_numpy(): {input_data[1].slot_mapping.to_numpy()}")
+        for idx, value in enumerate(input_data):
+            new_data = None
+            if isinstance(value, nncase.PagedAttentionKVCache):
+                new_data = nncase.RuntimeTensor.from_object(value)
+            else:
+                new_data = nncase.RuntimeTensor.from_numpy(np.array(value['data'][0], dtype=np.int64))
+            model.set_input_tensor(idx, new_data)
+        model.run()
+        return self.get_result(model)
+
+    def pipeline_run(self, model, infer_or_eval):
+        import copy
+        input_data = self.local_inputs
+        data = copy.deepcopy(input_data[0])
+        loop_data = [data, input_data[1]]
+        res = []
+        for i in range(self.cfg['huggingface_options']['max_tokens']):
+            result = np.array([0])
+            print(loop_data[0])
+            current_length = loop_data[0]['data'][0].shape[-1]
+            print(f"current_length: {current_length}")
+            kv_object = loop_data[1]['scheduler'].schedule([0], [current_length])
+            if infer_or_eval == "infer":
+                result = self.hf_infer(model, [loop_data[0], kv_object])
+            else:
+                result = self.hf_eval(model, [loop_data[0], kv_object])
+            new_token = np.argmax(result[0][-1, :], axis=-1)
+            res.append(new_token)
+            loop_data[0]['data'] = [np.array([new_token], dtype=np.int64)]
+
+        return np.array([res], dtype=np.int64)
+    
+    def prefill_run(self, model, infer_or_eval):
+        input_data = self.local_inputs
+        data = copy.deepcopy(input_data[0])
+        loop_data = [data, input_data[1]]
+        result = np.array([0])
+        current_length = loop_data[0]['data'][0].shape[-1]
+        kv_object = loop_data[1]['scheduler'].schedule([0], [current_length])
+        if infer_or_eval == "infer":
+            result = self.hf_infer(model, [loop_data[0], kv_object])
+        else:
+            result = self.hf_eval(model, [loop_data[0], kv_object])
+
+        return result
 
     def from_huggingface(self, model_path):
         pass
+    
+    def huggingface_run(self, func, model_file, judge_type):
+        if not self.inputs:
+            self.parse_model(model_file)
 
-    def run(self, model_dir):
-        super().run(model_dir)
+        self.generate_all_data()
+        self.local_inputs = [self.inputs[0], self.inputs[1]]
+        self.write_compile_opt()
+        expected = self.cpu_infer(model_file)
+        targets = self.cfg['target']
+        model_content = self.read_model_file(model_file)
+        import_options = self.get_import_options()
+
+        compiler = None
+        dump_hist = self.cfg['dump_hist']
+        for k_target, v_target in targets.items():
+            tmp_dir = os.path.join(self.case_dir, 'tmp')
+            if v_target['eval'] or v_target['infer']:
+                compile_options = self.get_compile_options(k_target, model_file, tmp_dir)
+                compile_options.target_options = self.get_target_options(
+                    k_target, v_target.get("target_options", None))
+                compiler = nncase.Compiler(compile_options)
+                self.import_model(compiler, model_content, import_options)
+
+            for stage in ['eval', 'infer']:
+                if v_target[stage]:
+                    for k_mode, v_mode in v_target['mode'].items():
+                        if v_mode['enabled']:
+                            os.makedirs(tmp_dir, exist_ok=True)
+                            if stage == 'eval':
+                                self.local_inputs = [self.inputs[0], self.inputs[1]]
+                                evaluator = compiler.create_evaluator(3)
+                                actual = func(evaluator, "eval")
+                            else:
+                                self.local_inputs = [self.inputs[0], self.inputs[2]]
+                                compiler.compile()
+                                kmodel_path = os.path.join(tmp_dir, self.cfg['kmodel_name'])
+                                with open(kmodel_path, 'wb') as f:
+                                    compiler.gencode(f)
+                                sim = nncase.Simulator()
+                                with open(kmodel_path, 'rb') as f:
+                                    sim.load_model(f)
+                                
+                                actual = func(sim, "infer")
+
+                            # debug_actual_structure(actual)
+                            # print("----------")
+
+                            # debug_actual_structure(expected)
+                            print(actual)
+                            target_dir = os.path.join(self.case_dir, stage, k_target)
+                            os.makedirs(target_dir, exist_ok=True)
+                            mode_dir = os.path.join(target_dir, k_mode)
+                            shutil.move(tmp_dir, mode_dir)
+
+                            judge, result = self.compare_results(
+                                np.array(expected), np.array(actual), stage, k_target, judge_type, k_mode, v_mode['threshold'], dump_hist, mode_dir)
+
+                            
+                            if not judge:
+                                if test_utils.in_ci():
+                                    self.clear(self.case_dir)
+                                # assert (judge), f"Fault result in {stage} + {result}"
+
+        if test_utils.in_ci():
+            self.clear(self.case_dir)
+
+    
+    def run(self, model_file):
+        if self.cfg['huggingface_options']['pipeline']:
+            self.huggingface_run(self.pipeline_run, model_file, "LLM")
+        else:
+            self.huggingface_run(self.prefill_run, model_file, "cosine")
+        
 
     def cpu_infer(self, model_file: List[str]):
+        self.local_inputs = [self.inputs[0]]
         outputs = []
-        for idx, input in enumerate(self.inputs):
-            if idx != 0:
-                continue
-
+        for idx, input in enumerate(self.local_inputs):
             # TODO: add attention_mask in inputs
-            result = self.model.forward(
-                torch.from_numpy(np.expand_dims(input['data'][0], 0)),
-                return_dict=True,
-                use_cache=False,
-                output_attentions=False,
-                output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
-                                      else False) if self.cfg['huggingface_options']['output_logits'] else True
-            )
-
-            ''' will be used in future[pipeline run]
-            # logits = self.model.generate(
-            #     torch.from_numpy(input['data'][0]),
-            #     generation_config=self.generation_config,
-            # )
-            # generated_ids = generated_ids[0][input['data'][0].shape[-1]:-1]
-            # output = self.tokenizer.decode(generated_ids, skip_special_tokens=True)
-            '''
-            count = 0
-            if (self.cfg['huggingface_options']['output_logits']):
-                if not test_utils.in_ci():
-                    logits = result.logits.detach().to(torch.float32).numpy()[0]
-                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', logits)
-                    outputs.append(logits)
-                    count += 1
+            if self.cfg['huggingface_options']['pipeline']:
+                result = self.model.generate(
+                    input_ids=torch.from_numpy(np.expand_dims(input['data'][0], 0)),
+                    generation_config=self.generation_config)
+                res = result[:, input['data'][0].shape[-1]:]
+                # print(self.tokenizer.batch_decode(res))
+                print(res)
+                outputs.append(res.numpy())
+                return outputs
             else:
-                if not test_utils.in_ci():
-                    hidden_states = recursive_stack(result.hidden_states).detach().to(
-                        torch.float32).numpy()[-1][0]
-                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
-                    outputs.append(hidden_states)
-                    count += 1
+                result = self.model.forward(
+                    torch.from_numpy(np.expand_dims(input['data'][0], 0)),
+                    return_dict=True,
+                    use_cache=False,
+                    output_attentions=False,
+                    output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
+                                        else False) if self.cfg['huggingface_options']['output_logits'] else True
+                )
 
-            if (self.cfg['huggingface_options']['output_hidden_states']):
-                if not test_utils.in_ci():
-                    hidden_states = recursive_stack(result.hidden_states).detach().numpy()
-                    hidden_states = np.squeeze(hidden_states, 1)
-                    dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
-                    outputs.append(hidden_states)
-                    count += 1
+                count = 0
+                if (self.cfg['huggingface_options']['output_logits']):
+                    if not test_utils.in_ci():
+                        logits = result.logits.detach().to(torch.float32).numpy()[0]
+                        dump_data_to_file(self.case_dir, f'cpu_result_{count}', logits)
+                        outputs.append(logits)
+                        count += 1
+                else:
+                    if not test_utils.in_ci():
+                        hidden_states = recursive_stack(result.hidden_states).detach().to(
+                            torch.float32).numpy()[-1][0]
+                        dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
+                        outputs.append(hidden_states)
+                        count += 1
+
+                if (self.cfg['huggingface_options']['output_hidden_states']):
+                    if not test_utils.in_ci():
+                        hidden_states = recursive_stack(result.hidden_states).detach().numpy()
+                        hidden_states = np.squeeze(hidden_states, 1)
+                        dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
+                        outputs.append(hidden_states)
+                        count += 1
 
         return outputs
 
     def parse_model(self, model_path):
+        if self.cfg['huggingface_options']['pipeline']:
+            if self.cfg['huggingface_options']['output_logits'] == False:
+                raise RuntimeError("output_logits must be `True` in pipeline mode")
+        
         config = AutoConfig.from_pretrained(model_path + "/config.json")
 
         if self.cfg['huggingface_options']['num_layers'] != -1:
@@ -251,7 +415,7 @@ class HuggingfaceTestRunner(TestRunner):
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens
-        self.generation_config.max_new_tokens = 64
+        self.generation_config.max_new_tokens = self.cfg['huggingface_options']['max_tokens']
         self.generation_config.do_sample = False
         self.generation_config.temperature = 0.0  # for Stable result
         if (self.cfg['huggingface_options']['output_logits']):
@@ -271,9 +435,19 @@ class HuggingfaceTestRunner(TestRunner):
         self.inputs.append(input_dict)
         self.calibs.append(copy.deepcopy(input_dict))
 
-        input_scheduler = nncase._nncase.RefPagedAttentionScheduler(
+        input_scheduler_eval = nncase._nncase.RefPagedAttentionScheduler(
             self.kv_cache_config, self.num_blocks, self.max_model_len, self.hierarchy)
-        calibs_scheduler = nncase._nncase.RefPagedAttentionScheduler(
+        calibs_scheduler_eval = nncase._nncase.RefPagedAttentionScheduler(
+            self.kv_cache_config, self.num_blocks, self.max_model_len, self.hierarchy)
+
+        self.inputs.append(dict(name='kv_cache_eval', dtype='PagedAttentionKVCache',
+                                shape=[], model_shape=[], scheduler=input_scheduler_eval))
+        self.calibs.append(dict(name='kv_cache_eval', dtype='PagedAttentionKVCache',
+                                shape=[], model_shape=[], scheduler=calibs_scheduler_eval))
+
+        input_scheduler = nncase.PagedAttentionScheduler(
+            self.kv_cache_config, self.num_blocks, self.max_model_len, self.hierarchy)
+        calibs_scheduler = nncase.PagedAttentionScheduler(
             self.kv_cache_config, self.num_blocks, self.max_model_len, self.hierarchy)
 
         self.inputs.append(dict(name='kv_cache', dtype='PagedAttentionKVCache',
