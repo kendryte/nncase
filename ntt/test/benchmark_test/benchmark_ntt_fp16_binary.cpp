@@ -58,23 +58,26 @@ int main(int argc, char *argv[]) {
     (void)argc;
     (void)argv;
 
-    constexpr size_t N = NTT_VLEN / (sizeof(float) * 8);
-    benchmark_ntt_binary<ntt::ops::add, float, N>(
-        "add", half(-10.f), half(10.f), half(-10.f), half(10.f));
-    benchmark_ntt_binary<ntt::ops::sub, float, N>(
-        "sub", half(-10.f), half(10.f), half(-10.f), half(10.f));
-    benchmark_ntt_binary<ntt::ops::mul, float, N>(
-        "mul", half(-10.f), half(10.f), half(-10.f), half(10.f));
-    benchmark_ntt_binary<ntt::ops::div, float, N>(
-        "div", half(-10.f), half(10.f), half(1.f), half(10.f));
-    benchmark_ntt_binary<ntt::ops::max, float, N>(
-        "max", half(-10.f), half(10.f), half(-10.f), half(10.f));
-    benchmark_ntt_binary<ntt::ops::min, float, N>(
-        "min", half(-10.f), half(10.f), half(-10.f), half(10.f));
+#if __riscv
+
+    constexpr size_t N = NTT_VLEN / (sizeof(half) * 8);
+    benchmark_ntt_binary<ntt::ops::add, half, N>("add", half(-10.f), half(10.f),
+                                                 half(-10.f), half(10.f));
+    benchmark_ntt_binary<ntt::ops::sub, half, N>("sub", half(-10.f), half(10.f),
+                                                 half(-10.f), half(10.f));
+    benchmark_ntt_binary<ntt::ops::mul, half, N>("mul", half(-10.f), half(10.f),
+                                                 half(-10.f), half(10.f));
+    benchmark_ntt_binary<ntt::ops::div, half, N>("div", half(-10.f), half(10.f),
+                                                 half(1.f), half(10.f));
+    benchmark_ntt_binary<ntt::ops::max, half, N>("max", half(-10.f), half(10.f),
+                                                 half(-10.f), half(10.f));
+    benchmark_ntt_binary<ntt::ops::min, half, N>("min", half(-10.f), half(10.f),
+                                                 half(-10.f), half(10.f));
     benchmark_ntt_binary<ntt::ops::floor_mod, half, N>(
         "floor_mod", half(-10), half(10), half(1), half(10));
-    benchmark_ntt_binary<ntt::ops::mod, float, N>(
-        "mod", half(-10.f), half(10.f), half(1.f), half(10.f));
-    benchmark_ntt_binary<ntt::ops::pow, float, N>("pow", half(0.f), half(3.f),
-                                                  half(0.f), half(3.f));
+    benchmark_ntt_binary<ntt::ops::mod, half, N>("mod", half(-10.f), half(10.f),
+                                                 half(1.f), half(10.f));
+    benchmark_ntt_binary<ntt::ops::pow, half, N>("pow", half(0.f), half(3.f),
+                                                 half(0.f), half(3.f));
+#endif
 }
