@@ -18,6 +18,8 @@
 #include "../post_ops.h"
 #include "../tensor_ops.h"
 #include "../ukernels.h"
+#include <cassert>
+#include <stdio.h>
 #include "../utility.h"
 #include "nncase/ntt/shape.h"
 
@@ -27,20 +29,24 @@ template <Tensor TIn, Tensor TOut, FixedDimensions VectorizedAxes,
           template <class> class TPostOp>
 class cast_impl {
     inline static constexpr size_t rank = TIn::rank();
-
-    // FIXME: vector<bool> of x86 may fail.
+    // !! For vector<bool>, the element counts must be same as the other cast oprand.
     using InElemType = element_or_scalar_t<TIn>;
     using OutElemType = element_or_scalar_t<TOut>;
     static_assert((Vector<InElemType> && Vector<OutElemType>) ||
                       (Scalar<InElemType> && Scalar<OutElemType>),
                   "input & output must have the same type.");
     inline static constexpr auto in_ele_size =
-        sizeof(std::conditional_t<Vector<InElemType>,
+        sizeof(std::conditional_t<Vector<InElemType>,  //if vector
                                   element_or_scalar_t<InElemType>, size_t>);
     inline static constexpr auto out_ele_size =
         sizeof(std::conditional_t<Vector<OutElemType>,
                                   element_or_scalar_t<OutElemType>, size_t>);
-    inline static constexpr float scale = (float)in_ele_size / out_ele_size;
+
+    inline static constexpr bool is_bool_vector =
+        Vector<InElemType> && (  std::is_same_v<element_or_scalar_t<InElemType>, bool> ||
+                                        std::is_same_v<element_or_scalar_t<OutElemType>, bool>);
+
+    inline static constexpr float scale = is_bool_vector ? 1.0f : (float)in_ele_size / out_ele_size;
 
     inline static constexpr auto in_offset_scale = scale > 1.0f ? (size_t)scale
                                                                 : (size_t)1;
@@ -69,11 +75,18 @@ class cast_impl {
 #endif
         constexpr VectorizedAxes vectorizedAxes;
         if constexpr (scale >= 1.f) {
+            if constexpr (VectorizedAxes::rank() == 1) {
+                assert(
+                    (dim_value(input.shape()[fixed_dim_v<VectorizedAxes::at(0)>]) ==
+                     dim_value(output.shape()[fixed_dim_v<VectorizedAxes::at(0)>]) * scale)
+                    );
+            }
             ntt::apply(output.shape(), [&](auto index) {
                 auto in_index = index;
-                if constexpr (vectorizedAxes.rank() == 1)
+                if constexpr (VectorizedAxes::rank() == 1)
                     in_index[fixed_dim_v<vectorizedAxes.at(0)>] *=
                         in_offset_scale;
+                __asm__ volatile("" ::: "memory");
                 ntt::u_cast<in_offset_scale, out_offset_scale, TPostOp>(
                     &input(in_index),
                     vectorizedAxes.rank() == 1
@@ -82,11 +95,18 @@ class cast_impl {
                     &output(index), 1, 1);
             });
         } else {
+            if constexpr (VectorizedAxes::rank() == 1) {
+                assert(
+                    (float)dim_value(input.shape()[fixed_dim_v<VectorizedAxe::at(0)>]) ==
+                    (float)dim_value(output.shape()[fixed_dim_v<VectorizedAxes::at(0)>]) * scale
+                );
+            }
             ntt::apply(input.shape(), [&](auto index) {
                 auto out_index = index;
                 if constexpr (vectorizedAxes.rank() == 1)
                     out_index[fixed_dim_v<vectorizedAxes.at(0)>] *=
                         out_offset_scale;
+                __asm__ volatile("" ::: "memory");
                 ntt::u_cast<in_offset_scale, out_offset_scale, TPostOp>(
                     &input(index), 1, &output(out_index),
                     vectorizedAxes.rank() == 1
@@ -101,6 +121,7 @@ class cast_impl {
 #if 0    
     template <size_t Axis, Dimension TContiguousDims, Shape TRestDims>
     constexpr void
+    //rest_dims is the dims of the tensor to be casted
     apply(const TContiguousDims &conti_dims, const TRestDims &rest_dims,
           dynamic_shape_t<rank> &index, const TIn &input, TOut &output) {
         if (conti_dims == rest_dims.rank()) {

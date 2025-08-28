@@ -48,7 +48,7 @@ typedef int32x4_t v4si;   // vector of 4 uint32
 /* natural logarithm computed for 4 simultaneous float
    return NaN for x <= 0
 */
-v4sf log_ps(v4sf x) {
+v4sf log_ps_fp32(v4sf x) {
     v4sf one = vdupq_n_f32(1);
 
     x = vmaxq_f32(x,
@@ -134,7 +134,7 @@ v4sf log_ps(v4sf x) {
 #define c_cephes_exp_p5 5.0000001201E-1
 
 /* exp() computed for 4 float at once */
-v4sf exp_ps(v4sf x) {
+v4sf exp_ps_fp32(v4sf x) {
     v4sf tmp, fx;
 
     v4sf one = vdupq_n_f32(1);

@@ -13,12 +13,22 @@ find_package(Python3 REQUIRED)
 
 include_directories(${CMAKE_CURRENT_LIST_DIR}/..)
 
+# add_definitions(-DDE_BUG)
+
 # --- Generate test source files ---
-# Define script paths and output file paths in the source directory
-set(GENERATE_PACK_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/generate_pack_tests.py)
-set(GENERATED_PACK_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/generated_pack_tests.cmake)
-set(GENERATE_UNPACK_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/generate_unpack_tests.py)
-set(GENERATED_UNPACK_CMAKE ${CMAKE_CURRENT_SOURCE_DIR}/generated_unpack_tests.cmake)
+# Define kernel names for automatic test generation. Add more kernels here.
+set(KERNEL_NAMES binary pack unpack cast)
+# set(KERNEL_NAMES binary pack unpack)
+# set(KERNEL_NAMES  pack unpack)
+# set(KERNEL_NAMES binary cast)
+# set(KERNEL_NAMES cast)
+
+# Set directories
+set(TEST_GENERATOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_generator)
+set(GENERATED_DIR ${CMAKE_CURRENT_SOURCE_DIR}/generated)
+
+# Create generated directory if it doesn't exist
+file(MAKE_DIRECTORY ${GENERATED_DIR})
 
 # Macro to run a generator script only when the output is missing or outdated
 macro(run_generator_if_needed script_path output_file)
@@ -38,50 +48,80 @@ macro(run_generator_if_needed script_path output_file)
     endif()
 endmacro()
 
-# Run the generators
-run_generator_if_needed(${GENERATE_PACK_SCRIPT} ${GENERATED_PACK_CMAKE})
-run_generator_if_needed(${GENERATE_UNPACK_SCRIPT} ${GENERATED_UNPACK_CMAKE})
 
-# Include the generated cmake files which define test source variables
-include(${GENERATED_PACK_CMAKE})
-include(${GENERATED_UNPACK_CMAKE})
+# Automatically process all kernel generators
+foreach(kernel ${KERNEL_NAMES})
+    string(TOUPPER ${kernel} KERNEL_UPPER)
+    
+    set(GENERATOR_SCRIPT ${TEST_GENERATOR_DIR}/generate_${kernel}_tests.py)
+    set(GENERATED_CMAKE ${GENERATED_DIR}/generated_${kernel}_tests.cmake)
+    
+    if(EXISTS ${GENERATOR_SCRIPT})
+        run_generator_if_needed(${GENERATOR_SCRIPT} ${GENERATED_CMAKE})
+        
+        if(EXISTS ${GENERATED_CMAKE})
+            include(${GENERATED_CMAKE})
+            list(APPEND GENERATED_TEST_SOURCES ${GENERATED_${KERNEL_UPPER}_TEST_SOURCES})
+        endif()
+    else()
+        message(WARNING "Generator script for ${kernel} not found: ${GENERATOR_SCRIPT}")
+    endif()
+endforeach()
 
-macro(add_test_exec name)
-    add_executable(${name} ${name}.cpp)
-    target_link_libraries(${name} PRIVATE GTest::gtest_main nncaseruntime ortki::ortki)
-    add_test(NAME ${name} COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${name}> -P ${NNCASE_CMAKE_DIR}/run_test.cmake)
+macro(add_test_exec test_source_file)
+    get_filename_component(tname ${test_source_file} NAME_WE)
+    add_executable(${tname} ${test_source_file})
+    target_compile_options(${tname} PRIVATE )
+    target_link_libraries(${tname} PRIVATE GTest::gtest_main nncaseruntime ortki::ortki)
+    add_test(NAME ${tname} COMMAND ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${tname}> -P ${NNCASE_CMAKE_DIR}/run_test.cmake)
+
 endmacro()
 
 file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
-
+    # generated/test_ntt_binary_generated_add_Uint16.cpp
+    test_ntt_playground.cpp
+    # generated/test_ntt_binary_float16_pow_generated.cpp
+    # generated/test_ntt_binary_float32_floor_mod_generated.cpp
+    # generated/test_ntt_binary_float32_floor_mod_generated.cpp
+    # generated/test_ntt_binary_float16_floor_mod_generated.cpp
+    # generated/test_ntt_binary_float64_floor_mod_generated.cpp
+    # generated/test_ntt_binary_int16_floor_mod_generated.cpp
+    # generated/test_ntt_binary_float32_sub_generated.cpp
+    # generated/test_ntt_cast_from_bfloat16_generated.cpp
+    # generated/test_ntt_binary_uint8_sub_generated.cpp
+    # test_ntt_pack_generated_Uint64
     # test_ntt_binary_mul.cpp
     # test_ntt_binary_sub.cpp
     # test_ntt_cast.cpp
-    # test_ntt_clamp.cpp
-    # test_ntt_compare_equal.cpp
-    # test_ntt_compare_greater_or_equal.cpp
-    # test_ntt_compare_greater.cpp
-    # test_ntt_compare_less_or_equal.cpp
-    # test_ntt_compare_less.cpp
+
+    # test_ntt_unary_abs.cpp
+    test_ntt_clamp.cpp
+    test_ntt_compare_equal.cpp
+    test_ntt_compare_greater_or_equal.cpp
+    test_ntt_compare_greater.cpp
+    test_ntt_compare_less_or_equal.cpp
+    test_ntt_compare_less.cpp
     test_ntt_expand.cpp
     test_ntt_gather.cpp
-    # test_ntt_layer_norm.cpp
+    test_ntt_layer_norm.cpp
     test_ntt_matmul.cpp
-    # test_ntt_pack_generated_Float8e4m3.cpp
     test_ntt_reduce.cpp
     test_ntt_rms_norm.cpp
     test_ntt_scatter_nd.cpp
-    test_ntt_slice.cpp
+    # test_ntt_slice.cpp
     test_ntt_softmax.cpp
     test_ntt_transpose.cpp
     test_ntt_unpack.cpp
-
-    # test_ntt_where.cpp
+    test_ntt_where.cpp
+    # test_ntt_cast_from_float32_generated.cpp
 )
 
-list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} ${GENERATED_PACK_TEST_SOURCES} ${GENERATED_UNPACK_TEST_SOURCES})
+# Combine handwritten and generated tests
+list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} ${GENERATED_TEST_SOURCES})
+# list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} )
+# list(APPEND TEST_NAMES ${GENERATED_TEST_SOURCES} )
 
-foreach(test_name ${TEST_NAMES})
-    get_filename_component(tname ${test_name} NAME_WE)
-    add_test_exec(${tname})
+
+foreach(test_file ${TEST_NAMES})
+    add_test_exec(${test_file})
 endforeach()

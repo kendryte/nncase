@@ -399,10 +399,10 @@ _RVV_FLOAT16_TANH_OP(2, 8)
 _RVV_FLOAT16_TANH_OP(4, 4)
 _RVV_FLOAT16_TANH_OP(8, 2)
 
+/*
 #define _RVV_FLOAT16_POW_OP(LMUL, MLEN, TLEN)                                  \
     static inline vfloat##TLEN##m##LMUL##_t pow_ps_fp16(                       \
         vfloat##TLEN##m##LMUL##_t a, vfloat##TLEN##m##LMUL##_t b, size_t vl) { \
-        /* pow(x, m) = exp(m * log(x)) */                                      \
         return exp_ps_fp16(                                                    \
             __riscv_vfmul_vv_f##TLEN##m##LMUL(b, log_ps_fp16(a, vl), vl), vl); \
     }
@@ -411,7 +411,28 @@ _RVV_FLOAT16_POW_OP(1, 16, 16)
 _RVV_FLOAT16_POW_OP(2, 8, 16)
 _RVV_FLOAT16_POW_OP(4, 4, 16)
 _RVV_FLOAT16_POW_OP(8, 2, 16)
+*/
 
+// //for a fp16 which is greater than 1024, it must be a interger val
+// const half fp16_inf = half::infinity();
+// __RVV_FLOAT_IS_INTEGER(1, 16, 16, half(1024.0f), fp16_inf)
+// __RVV_FLOAT_IS_INTEGER(2, 8, 16, half(1024.0f), fp16_inf)
+// __RVV_FLOAT_IS_INTEGER(4, 4, 16, half(1024.0f), fp16_inf)
+// __RVV_FLOAT_IS_INTEGER(8, 2, 16, half(1024.0f), fp16_inf)
+
+// //for a fp16 which is greater than 2048, it must be a even interger val
+// __RVV_FLOAT_IS_EVEN(1, 16, 16, half(2048.0f), fp16_inf)
+// __RVV_FLOAT_IS_EVEN(2, 8, 16,  half(2048.0f), fp16_inf)
+// __RVV_FLOAT_IS_EVEN(4, 4, 16,  half(2048.0f), fp16_inf)
+// __RVV_FLOAT_IS_EVEN(8, 2, 16,  half(2048.0f), fp16_inf)
+
+
+// const half fp16_nan = half::quiet_NaN();
+// const half fp16_0 = half(0.f);
+// _RVV_FLOAT_POW_OP(1, 16, 16)
+// _RVV_FLOAT_POW_OP(2, 8, 16)
+// _RVV_FLOAT_POW_OP(4, 4, 16)
+// _RVV_FLOAT_POW_OP(8, 2, 16)
 // erf
 struct sv_erff_half_data {
     static constexpr size_t N = 513;

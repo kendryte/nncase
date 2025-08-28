@@ -205,15 +205,19 @@ TEST(FixedShapeLayerNorm, Vectorize2) {
     std::iota(buffer_2.elements().begin(), buffer_2.elements().end(), 1.f);
 
     auto buffer_3 = ntt::make_tensor<ntt::vector<float, P>>(
-        ntt::fixed_shape_v<1, 16 / P, 4>);
+        ntt::fixed_shape_v<1, 16 / P, 4>) ;
     auto buffer_4 = ntt::make_tensor<ntt::vector<float, P>>(
-        ntt::fixed_shape_v<1, 16 / P, 4>);
+        ntt::fixed_shape_v<1, 16 / P, 4>) ;
     pack(buffer_0, buffer_3, ntt::fixed_shape_v<1>);
+
+    __asm__ volatile("" ::: "memory"); 
     vectorized_layer_norm(buffer_3, buffer_1, buffer_2, buffer_4, 1E-06, 2_dim,
                       ntt::fixed_shape_v<1>, ntt::fixed_shape_v<>);
 
+    // __asm__ volatile("" ::: "memory"); doesn't work
     auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16, 4>);
     unpack(buffer_4, ntt_output, ntt::fixed_shape_v<1>);
+    // NttTest::print_tensor(ntt_output, "ntt_output");
 
     const float array_golden[] = {
         -0.341640, 1.105573, 4.341640,  9.366562, -0.341640, 1.105573,

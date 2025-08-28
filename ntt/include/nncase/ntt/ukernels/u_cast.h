@@ -32,8 +32,32 @@ struct u_cast {
                               size_t output_stride, size_t count) noexcept {
         using policy_t = u_cast_policy<Arch>;
         constexpr auto unroll = policy_t::unroll;
+        
+        if constexpr (in_offset_scale == 8 && out_offset_scale == 1) {
+            while (count / unroll) {
+                for (size_t i = 0; i < unroll; i++) {
+                    *output =
+                        ntt::ops::cast<T1, T2>()(*(input + 0 * input_stride), *(input + 1 * input_stride),
+                                                 *(input + 2 * input_stride), *(input + 3 * input_stride),
+                                                 *(input + 4 * input_stride), *(input + 5 * input_stride),
+                                                 *(input + 6 * input_stride), *(input + 7 * input_stride));
+                    input += input_stride * in_offset_scale;
+                    output += output_stride * out_offset_scale;
+                    count--;
+                }
+            }
 
-        if constexpr (in_offset_scale == 4 && out_offset_scale == 1) {
+            for (size_t i = 0; i < count; i++) {
+                *output = ntt::ops::cast<T1, T2>()(
+                    *(input + 0 * input_stride), *(input + 1 * input_stride),
+                    *(input + 2 * input_stride), *(input + 3 * input_stride),
+                    *(input + 4 * input_stride), *(input + 5 * input_stride),
+                    *(input + 6 * input_stride), *(input + 7 * input_stride));
+                input += input_stride * in_offset_scale;
+                output += output_stride * out_offset_scale;
+            }
+        }
+        else if constexpr (in_offset_scale == 4 && out_offset_scale == 1) {
             while (count / unroll) {
                 for (size_t i = 0; i < unroll; i++) {
                     *output =
@@ -78,7 +102,6 @@ struct u_cast {
             }
         } else if constexpr (in_offset_scale == 1 && out_offset_scale > 1) {
             using value_type = typename T2::element_type;
-            constexpr auto lanes = T2::shape();
 
             while (count / unroll) {
                 for (size_t i = 0; i < unroll; i++) {
@@ -104,6 +127,7 @@ struct u_cast {
             }
 
         } else {
+
             while (count / unroll) {
                 for (size_t i = 0; i < unroll; i++) {
                     *output = ntt::ops::cast<T1, T2>()(*input);

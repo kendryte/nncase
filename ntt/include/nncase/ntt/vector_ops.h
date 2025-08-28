@@ -64,12 +64,17 @@ struct tensor_unary_impl<Op, TVector> {
     Op<sub_vector_type> op_;
 };
 
-template <template <class T1, class T2> class Op, class T1, class T2>
+template <template <class OpTLhs, class OpTRhs> class Op, class T1, class T2>
 struct tensor_binary_impl;
 
-template <template <class T1, class T2> class Op, Vector TVector, class T2>
+//here, T1 and T2 can be scalar or vector
+//T1 1D vector, T2 scalar or 1D vector
+//T1 2D vector, T2 scalar or 1D vector
+//T1 2D vector, T2 2D vector
+template <template <class OpTLhs, class OpTRhs> class Op, Vector TVector, class T2>
+requires((!Vector<T2> || !(TVector::rank() == 1 && T2::rank() == 2)))
 struct tensor_binary_impl<Op, TVector, T2> {
-    using element_type1 = typename TVector::element_type;
+    using element_type1 = TVector::element_type;
     using element_type2 = element_or_scalar_t<T2>;
 
     constexpr TVector operator()(const TVector &v1,
@@ -77,15 +82,28 @@ struct tensor_binary_impl<Op, TVector, T2> {
         TVector value{};
         if constexpr (Vector<T2>) {
             if constexpr (TVector::rank() == 2 && T2::rank() == 1) {
-                ntt::apply(v1.shape(), [&](auto index) {
-                    value(index) = op_(v1(index), v2(index[1_dim]));
+                static_assert(TVector::shape().at(1) == T2::shape().at(0), "vector shape not match");
+                Op<get_last_lane_vector_t<TVector>, T2> op_;  //Op<2D,1D> delegate to Op<1D, 1D>
+                ntt::loop<TVector::shape().at(0)>([&](auto m) {
+                    value(m) = op_(v1(m), v2);
                 });
-            } else {
+            } else if constexpr (TVector::rank() == 1 && T2::rank() == 1) {
+                static_assert(TVector::shape().at(0) == T2::shape().at(0), "vector shape not match");
+                Op<element_type1, element_type2> op_;  //Op<1D, 1D> delegate to Op<scalar, scalar>
                 ntt::apply(v1.shape(), [&](auto index) {
-                    value(index) = op_(v1(index), v2(index));
+                    value(index) = op_(v1(index), v2(index)); 
+                });
+            } else if constexpr (TVector::rank() == 2 && T2::rank() == 2) {
+                static_assert(TVector::shape() == T2::shape(), "2D vector shape not match");
+                using vec_1D_type1 = get_last_lane_vector_t<TVector>;
+                using vec_1D_type2 = get_last_lane_vector_t<T2>;
+                Op<vec_1D_type1, vec_1D_type2> op_; //Op<2D, 2D> delegate to Op<1D, 1D>
+                ntt::loop<TVector::shape().at(0)>([&](auto m) {
+                    value(m) = op_(v1(m), v2(m));
                 });
             }
         } else {
+            Op<element_type1, element_type2> op_;  //Op<1D/2D, scalar> delegate to Op<scalar, scalar>
             ntt::apply(v1.shape(),
                        [&](auto index) { value(index) = op_(v1(index), v2); });
         }
@@ -93,43 +111,49 @@ struct tensor_binary_impl<Op, TVector, T2> {
         return value;
     }
 
-  private:
-    Op<element_type1, element_type2> op_;
+//   private:
+//     Op<element_type1, element_type2> op_;
 };
 
-template <template <class T1, class T2> class Op, Vector T1, Vector T2>
-    requires(T1::rank() == 2 && T2::rank() == 2)
-struct tensor_binary_impl<Op, T1, T2> {
-    using sub_vector_type =
-        vector<typename T1::element_type, T1::shape().at(1)>;
 
-    constexpr T1 operator()(const T1 &v1, const T2 &v2) const noexcept {
-        T1 value;
-        for (size_t m = 0; m < T1::shape().at(0); m++) {
-            value(m) = op_(v1(m), v2(m));
-        }
-        return value;
-    }
-
-  private:
-    Op<sub_vector_type, sub_vector_type> op_;
-};
-
+//T1 scalar, T2 1D vector or 2D vector
 template <template <class T1, class T2> class Op, Scalar TScalar,
           Vector TVector>
 struct tensor_binary_impl<Op, TScalar, TVector> {
-    using element_type2 = typename TVector::element_type;
+    using element_type2 = TVector::element_type;
 
     constexpr TVector operator()(const TScalar &v1,
                                  const TVector &v2) const noexcept {
-        TVector value;
-        ntt::apply(v2.shape(),
-                   [&](auto index) { value(index) = op_(v1, v2(index)); });
+        TVector value{};
+        ntt::apply(v2.shape(), [&](auto index) {
+            value(index) = (op_(v1, v2(index)));
+        });
         return value;
     }
 
   private:
     Op<TScalar, element_type2> op_;
+};
+
+//T1 1D vector, T2 2D vector
+template <template <class T1, class T2> class Op, Vector TVec1,
+          Vector TVec2>
+    requires(TVec1::rank() == 1 && TVec2::rank() == 2)
+struct tensor_binary_impl<Op, TVec1, TVec2> {
+    using element_type1 = TVec1::element_type;
+    using element_type2 = TVec2::element_type;
+    using vec_1D_type2 = get_last_lane_vector_t<TVec2>;
+    constexpr TVec2 operator()(const TVec1 &v1, const TVec2 &v2) const noexcept {
+        TVec2 value{};
+        static_assert(TVec1::shape().at(0) == TVec2::shape().at(1), "vector shape not match");
+        ntt::loop<TVec2::shape().at(0)>([&](auto m) {
+            value(m) = op_(v1, v2(m));
+        });
+        return value;
+    }
+
+  private:
+    Op<TVec1, vec_1D_type2> op_;
 };
 
 // compare tensor impl
@@ -138,7 +162,7 @@ struct tensor_compare_impl;
 
 template <template <class T1, class T2> class Op, Vector TVector, class T2>
 struct tensor_compare_impl<Op, TVector, T2> {
-    using element_type1 = typename TVector::element_type;
+    using element_type1 =  typename TVector::element_type;
     using element_type2 = element_or_scalar_t<T2>;
     static constexpr size_t vl = TVector::template lane<0>();
     using TOut = ntt::vector<bool, vl>;
@@ -189,7 +213,7 @@ struct tensor_compare_impl<Op, T1, T2> {
 template <template <class T1, class T2> class Op, Scalar TScalar,
           Vector TVector>
 struct tensor_compare_impl<Op, TScalar, TVector> {
-    using element_type2 = typename TVector::element_type;
+    using element_type2 = TVector::element_type;
     static constexpr size_t vl = TVector::template lane<0>();
     using TOut = ntt::vector<bool, vl>;
     constexpr TOut operator()(const TScalar &v1,
@@ -264,11 +288,13 @@ NTT_DEFINE_TENSOR_COMPARE_IMPL(greater_or_equal);
 NTT_DEFINE_TENSOR_COMPARE_IMPL(less);
 NTT_DEFINE_TENSOR_COMPARE_IMPL(less_or_equal);
 
+//assert TVec1 == TVec2 == 1D vector
 template <Vector TVector> struct inner_product<TVector, TVector> {
     using element_type = typename TVector::element_type;
 
     constexpr auto operator()(const TVector &v1,
                               const TVector &v2) const noexcept {
+        //datatype infer: op_<vector, vector> delegate to op_<scalar, scalar>
         using result_type = decltype(op_(std::declval<element_type>(),
                                          std::declval<element_type>()));
         result_type value{};
@@ -279,6 +305,30 @@ template <Vector TVector> struct inner_product<TVector, TVector> {
 
   private:
     ops::inner_product<element_type, element_type> op_;
+};
+
+template <Vector TVector> 
+requires (std::is_same_v<typename TVector::element_type, float_e4m3_t> || std::is_same_v<typename TVector::element_type, float_e5m2_t>
+            || std::is_same_v<typename TVector::element_type, half>)
+struct inner_product<TVector, TVector> {
+    //ulp is too large for fp8
+    //intermediate result should be float
+
+    using element_type = typename TVector::element_type;
+
+    constexpr auto operator()(const TVector &v1,
+                              const TVector &v2) const noexcept {
+        //datatype infer: op_<vector, vector> delegate to op_<scalar, scalar>
+        using result_type = float;
+        result_type value{};
+        ntt::apply(v1.shape(),
+                   [&](auto index) { value += op_float_(float(v1(index)), float(v2(index))); });
+        return element_type(value);
+    }
+
+  private:
+    ops::inner_product<element_type, element_type> op_;
+    ops::inner_product<float, float> op_float_ = ops::inner_product<float, float>();
 };
 
 template <Vector TVector1, Vector TVector2>
@@ -491,7 +541,7 @@ template <Vector TVector1, Vector TVector2> struct cast<TVector1, TVector2> {
     using from_type = typename TVector1::element_type;
     using to_type = typename TVector2::element_type;
     constexpr auto operator()(const TVector1 &v) const noexcept {
-        TVector2 value;
+        TVector2 value{};
         ntt::apply(v.shape(),
                    [&](auto index) { value(index) = op_(v(index)); });
         return value;
@@ -502,8 +552,7 @@ template <Vector TVector1, Vector TVector2> struct cast<TVector1, TVector2> {
         requires(sizeof...(tensors) > 1)
     {
         static_assert((... && (std::decay_t<TVectors>::rank() == 1)));
-
-        TVector2 value;
+        TVector2 value{};
         size_t count = 0;
 
         auto process_tensor = [&](const auto &tensor) {
@@ -518,6 +567,8 @@ template <Vector TVector1, Vector TVector2> struct cast<TVector1, TVector2> {
     }
 
     constexpr auto operator()(const TVector1 &v) const noexcept
+    //size means the number of elements
+    //assert(TVector1::size() = n * TVector2::size())
         requires(Vector<TVector1> && (TVector1::size() != TVector2::size()))
     {
 

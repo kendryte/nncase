@@ -180,12 +180,13 @@ template <class T1, class T2> struct mul {
 
 template <class T1, class T2> struct div {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        static_assert(std::is_same_v<T1, T2>, "T1 and T2 must be same type");
         return v1 / v2;
     }
 };
 
 template <class T1, class T2> struct ceil_div {
+    static_assert(std::is_integral_v<T1> && std::is_integral_v<T2>,
+                  "T1 and T2 must be integral types");
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return (v1 + (v2 - 1)) / v2;
     }
@@ -197,9 +198,20 @@ template <class T1, class T2> struct ceil_div {
  */
 template <class T1, class T2> struct floor_mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return (T1)((double)v1 - std::floor(static_cast<double>(v1) /
-                                            static_cast<double>(v2)) *
-                                     (double)v2);
+            return (T1)(double(v1) -
+                   std::floor(static_cast<double>(v1) / static_cast<double>(v2)) *
+                       static_cast<double>(v2));
+    }
+};
+
+
+template <typename T>
+requires (std::is_same_v<T, float_e4m3_t> || std::is_same_v<T, float_e5m2_t>)
+struct floor_mod<T, T> {
+    constexpr auto operator()(T v1,
+                              T v2) const noexcept {
+
+        return T(v1 - (std::floor(float(v1) / float(v2)) * v2));
     }
 };
 
@@ -220,9 +232,22 @@ template <class T1, class T2> struct outer_product {
  */
 template <class T1, class T2> struct mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return std::fmod((float)v1, (float)v2);
+        return (T1)std::fmod((double)v1, (double)v2);
     }
 };
+
+
+template <typename T>
+requires (std::is_same_v<T, float_e4m3_t> || std::is_same_v<T, float_e5m2_t>)
+struct mod<T, T> {
+    constexpr auto operator()(T v1,
+                              T v2) const noexcept {
+        return T(
+            std::fmod(static_cast<float>(v1), static_cast<float>(v2)));
+    }
+};
+
+
 
 template <class T1, class T2> struct min {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
@@ -238,7 +263,7 @@ template <class T1, class T2> struct max {
 
 template <class T1, class T2> struct pow {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return std::pow((float)v1, (float)v2);
+        return (T1)std::pow((float)v1, (float)v2);
     }
 };
 
@@ -310,7 +335,9 @@ template <class T1, class T2> struct clamp {
 
 template <class T1, class T2> struct cast {
     constexpr T2 operator()(const T1 &v) const noexcept {
+        // printf("cast from %f to %f\n", (double)(float)v, (double)static_cast<T2>(v));
         return static_cast<T2>(v);
+        
     }
 };
 
@@ -551,7 +578,8 @@ template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
 // swishb(v) = v / (exp(-v*beta) + 1)
 template <class T, class B>
 constexpr T swishb<T, B>::operator()(const T &v, const B &beta) const noexcept {
-    return v / (ntt::exp(-v * beta) + 1);
+    //-(double)v is for uint type.
+    return static_cast<T>(double(v) / (ntt::exp((-(double)v) *(double)beta) + (double)1));
 }
 
 template <class T1, class T2, class TResult>
