@@ -497,7 +497,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                     )
                 if not test_utils.in_ci():
                     if method == 'text':
-                        tokendizer_data = self.tokenizer([data], return_tensors="np").input_ids[0].astype(np.int64)
+                        tokendizer_data = self.tokenizer(
+                            [data], return_tensors="np").input_ids[0].astype(np.int64)
                         dump_txt_file(os.path.join(self.case_dir, name,
                                                    f'text_{name}_{input_idx}_{batch_idx}.txt'), tokendizer_data)
                     else:

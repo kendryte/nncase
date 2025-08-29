@@ -137,6 +137,7 @@ def dump_data_to_file(dir_path, file_path, data):
         dump_npy_file(os.path.join(dir_path, f'{file_path}.npy'), data)
         convert_npy_to_json(os.path.join(dir_path, f'{file_path}.npy'), dir_path)
 
+
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
         super().__init__(case_name, overwrite_configs)
@@ -151,14 +152,14 @@ class HuggingfaceTestRunner(TestRunner):
         new_token = np.argmax(logits[0, -1, :], axis=-1)  # int64
         # Decode HF token
         return (new_token, self.tokenizer.decode(new_token, skip_special_tokens=False))
-    
+
     def get_result(self, model, token_num, eval_or_infer):
         results = []
         next_token_id = None
         next_token = None
         for idx in range(model.outputs_size):
             res = model.get_output_tensor(idx).to_numpy()
-            
+
             dump_data_to_file(self.tmp_dir, f'nncase_result_{token_num}_{idx}', res)
             if (self.cfg['huggingface_options']['output_logits']) and idx == 0:
                 results.append(res)
@@ -166,13 +167,14 @@ class HuggingfaceTestRunner(TestRunner):
             elif idx == 0:
                 logits_to_keep = 0
                 slice_indices = slice(-logits_to_keep, None) if isinstance(logits_to_keep,
-                                                                 int) else logits_to_keep
-                nncase_logits = self.model.lm_head(torch.tensor(res[np.newaxis, ...][:, slice_indices, :]).detach().to(torch.float32).numpy())
+                                                                           int) else logits_to_keep
+                nncase_logits = self.model.lm_head(torch.tensor(
+                    res[np.newaxis, ...][:, slice_indices, :]).detach().to(torch.float32).numpy())
                 next_token_id, next_token = self.decode_token(nncase_logits)
-                
+
         return results, next_token_id, next_token
 
-    def hf_eval(self, model, input_data, token_num):        
+    def hf_eval(self, model, input_data, token_num):
         for idx, i in enumerate(input_data):
             value = None
             if isinstance(i, nncase._nncase.RefPagedAttentionKVCache):
@@ -210,23 +212,25 @@ class HuggingfaceTestRunner(TestRunner):
             current_length = loop_data[0].shape[-1]
             kv_object = loop_data[1]['scheduler'].schedule([0], [current_length])
             if infer_or_eval == "infer":
-                result, next_token_id, next_token = self.hf_infer(model, [loop_data[0], kv_object], token_num=i)
+                result, next_token_id, next_token = self.hf_infer(
+                    model, [loop_data[0], kv_object], token_num=i)
             else:
-                result, next_token_id, next_token = self.hf_eval(model, [loop_data[0], kv_object], token_num=i)
-                
+                result, next_token_id, next_token = self.hf_eval(
+                    model, [loop_data[0], kv_object], token_num=i)
+
             if next_token_id == self.tokenizer.eos_token_id:
-                    break
+                break
             token_ids.append(next_token_id)
             tokens.append(next_token)
-            
+
             loop_data[0] = np.array([next_token_id], dtype=np.int64)
-            
+
             results.append(result)
         return results, token_ids, tokens
 
     def from_huggingface(self, model_path):
         pass
-    
+
     def huggingface_run(self, func, model_file, judge_type):
         if not self.inputs:
             self.parse_model(model_file)
@@ -258,7 +262,8 @@ class HuggingfaceTestRunner(TestRunner):
                             if stage == 'eval':
                                 self.local_inputs = [self.inputs[0], self.inputs[1]]
                                 evaluator = compiler.create_evaluator(3)
-                                actual_results, actual_token_ids, actual_tokens = func(evaluator, "eval")
+                                actual_results, actual_token_ids, actual_tokens = func(
+                                    evaluator, "eval")
                             else:
                                 self.local_inputs = [self.inputs[0], self.inputs[2]]
                                 compiler.compile()
@@ -268,7 +273,7 @@ class HuggingfaceTestRunner(TestRunner):
                                 sim = nncase.Simulator()
                                 with open(kmodel_path, 'rb') as f:
                                     sim.load_model(f)
-                                
+
                                 actual_results, actual_token_ids, actual_tokens = func(sim, "infer")
 
                             target_dir = os.path.join(self.case_dir, stage, k_target)
@@ -290,19 +295,17 @@ class HuggingfaceTestRunner(TestRunner):
                                 if test_utils.in_ci():
                                     self.clear(self.case_dir)
                                 assert (token_judge), f"{token_result}"
-                                
+
                             print(f"gt    :{expect_tokens}\nactual:{actual_tokens}")
 
         if test_utils.in_ci():
             self.clear(self.case_dir)
 
-    
     def run(self, model_file):
         # if self.cfg['huggingface_options']['pipeline']:
         self.huggingface_run(self.pipeline_run, model_file, "LLM")
         # else:
         #     self.huggingface_run(self.prefill_run, model_file, "cosine")
-        
 
     def cpu_infer(self, model_file: List[str]):
         self.local_inputs = [self.inputs[0]]
@@ -327,10 +330,10 @@ class HuggingfaceTestRunner(TestRunner):
                         return_dict=True,
                         use_cache=True,
                         # output_attentions=False,
-                        output_hidden_states= not self.cfg['huggingface_options']['output_logits'],
+                        output_hidden_states=not self.cfg['huggingface_options']['output_logits'],
                     )
                 hf_past_key_values = result.past_key_values
-                
+
                 count = 0
                 logits = None
                 if (self.cfg['huggingface_options']['output_logits']):
@@ -344,12 +347,13 @@ class HuggingfaceTestRunner(TestRunner):
                     dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states)
                     outputs.append(hidden_states[0])
                     count += 1
-                    
+
                     hidden_states = result.hidden_states[-1]
                     logits_to_keep = 0
                     slice_indices = slice(-logits_to_keep,
-                                        None) if isinstance(logits_to_keep, int) else logits_to_keep
-                    logits = self.model.lm_head(hidden_states)[:, slice_indices, :].detach().to(torch.float32).numpy()
+                                          None) if isinstance(logits_to_keep, int) else logits_to_keep
+                    logits = self.model.lm_head(hidden_states)[
+                        :, slice_indices, :].detach().to(torch.float32).numpy()
                 next_token_id, decoded_token = self.decode_token(logits)
                 tokens_ids.append(next_token_id)
                 tokens.append(decoded_token)
@@ -358,7 +362,7 @@ class HuggingfaceTestRunner(TestRunner):
                 if next_token_id == self.tokenizer.eos_token_id:
                     print(f"EOS token reached at step {i}")
                     break
-                
+
                 data = torch.tensor([[next_token_id]], dtype=torch.long, device=device)
 
                 atten_mask = torch.cat(
@@ -474,14 +478,15 @@ class HuggingfaceTestRunner(TestRunner):
         compiler.import_huggingface(model_content, import_options)
 
     def compare_results(self,
-                        ref_ouputs: List[List[np.ndarray]],#[token0:[result0, result1], token1:[result0, result1]]
+                        # [token0:[result0, result1], token1:[result0, result1]]
+                        ref_ouputs: List[List[np.ndarray]],
                         test_outputs: List[List[np.ndarray]],
                         stage, target, similarity_name, mode, threshold, dump_hist, dump_dir) -> Tuple[bool, str]:
         i = 0
         judges = []
         result = ''
         for token_idx, (expected_token_result, actual_token_result) in enumerate(zip(ref_ouputs, test_outputs)):
-            
+
             for idx, (expected, actual) in enumerate(zip(expected_token_result, actual_token_result)):
 
                 expected = expected.astype(np.float32)
@@ -499,9 +504,9 @@ class HuggingfaceTestRunner(TestRunner):
         return sum(judges) == len(judges), result
 
     def compare_token_result(self,
-                        ref_ouputs: List,
-                        test_outputs: List,
-                        stage, target, threshold) -> Tuple[bool, str]:
+                             ref_ouputs: List,
+                             test_outputs: List,
+                             stage, target, threshold) -> Tuple[bool, str]:
         assert len(ref_ouputs) == len(test_outputs)
         max_len = len(ref_ouputs)
         match_count = 0
@@ -517,9 +522,9 @@ class HuggingfaceTestRunner(TestRunner):
                 match_count += 1 if match_status == "✓" else 0
                 expect_str = str(expect_token).replace('|', '\\|').replace('\n', ' ')
                 actual_str = str(actual_token).replace('|', '\\|').replace('\n', ' ')
-                
+
                 f.write(f"| {i:5} | {expect_str:11} | {actual_str:11} | {match_status:5} |\n")
-            compare_result = float(match_count)/max_len
+            compare_result = float(match_count) / max_len
             f.write(f"|-------|-------------|-------------|-------|\n")
             f.write(f"|       |             |             |{compare_result:1.4f} |\n\n")
 
@@ -527,4 +532,3 @@ class HuggingfaceTestRunner(TestRunner):
                 return True, f"All tokens matched!"
             else:
                 return False, f"Token match ratio {compare_result:.2f}, {match_count}/{max_len}  below threshold {threshold}"
-
