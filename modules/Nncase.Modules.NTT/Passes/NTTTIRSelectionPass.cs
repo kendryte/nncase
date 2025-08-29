@@ -185,7 +185,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 output = call;
                 return call;
             case IR.NN.GetPositionIds getPositionIds:
-                return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output);
+                return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output, (DistributedType)call.CheckedType);
             case IR.NN.LayerNorm ln:
                 return TIR.F.NTT.VectorizedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<Dimension>());
             case IR.NTT.VectorizedLayerNorm ln:

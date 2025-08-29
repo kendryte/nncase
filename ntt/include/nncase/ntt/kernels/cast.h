@@ -77,8 +77,8 @@ class cast_impl {
         if constexpr (scale >= 1.f) {
             if constexpr (VectorizedAxes::rank() == 1) {
                 assert(
-                    (dim_value(input.shape()[fixed_dim_v<VectorizedAxes::at(0)>]) ==
-                     dim_value(output.shape()[fixed_dim_v<VectorizedAxes::at(0)>]) * scale)
+                    (dim_value(input.shape()[fixed_dim_v<vectorizedAxes.at(0)>]) ==
+                     dim_value(output.shape()[fixed_dim_v<vectorizedAxes.at(0)>]) * scale)
                     );
             }
             ntt::apply(output.shape(), [&](auto index) {
@@ -97,7 +97,7 @@ class cast_impl {
         } else {
             if constexpr (VectorizedAxes::rank() == 1) {
                 assert(
-                    (float)dim_value(input.shape()[fixed_dim_v<VectorizedAxe::at(0)>]) ==
+                    (float)dim_value(input.shape()[fixed_dim_v<VectorizedAxes::at(0)>]) ==
                     (float)dim_value(output.shape()[fixed_dim_v<VectorizedAxes::at(0)>]) * scale
                 );
             }

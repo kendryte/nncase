@@ -248,8 +248,8 @@ public partial class NTT
         return new Call(new TIR.NTT.Range(), begin, end, step, ret);
     }
 
-    public static Expr GetPositionIds(Expr kvCache, Expr ret)
+    public static Expr GetPositionIds(Expr kvCache, Expr ret, DistributedType distributedType)
     {
-        return new Call(new TIR.NTT.GetPositionIds(), kvCache, ret);
+        return new Call(new TIR.NTT.GetPositionIds(distributedType), kvCache, ret);
     }
 }
