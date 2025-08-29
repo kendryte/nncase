@@ -131,23 +131,11 @@ def to_np_type(t: str):
 
 
 def dump_data_to_file(dir_path, file_path, data):
-    dump_bin_file(os.path.join(dir_path, f'{file_path}.bin'), data)
-    dump_txt_file(os.path.join(dir_path, f'{file_path}.txt'), data)
-    dump_npy_file(os.path.join(dir_path, f'{file_path}.npy'), data)
-    convert_npy_to_json(os.path.join(dir_path, f'{file_path}.npy'), dir_path)
-
-
-def debug_actual_structure(actual):
-    print(f'Type of actual: {type(actual)}')
-    print(f'Length of actual: {len(actual)}')
-    if actual:
-        print(f'Type of actual[0]: {type(actual[0])}')
-        if hasattr(actual[0], 'shape'):
-            print(f'Shape of actual[0]: {actual[0].shape}')
-        elif isinstance(actual[0], list):
-            print(f'Length of actual[0]: {len(actual[0])}')
-            if actual[0]:
-                print(f'Type of actual[0][0]: {type(actual[0][0])}')
+    if not test_utils.in_ci():
+        dump_bin_file(os.path.join(dir_path, f'{file_path}.bin'), data)
+        dump_txt_file(os.path.join(dir_path, f'{file_path}.txt'), data)
+        dump_npy_file(os.path.join(dir_path, f'{file_path}.npy'), data)
+        convert_npy_to_json(os.path.join(dir_path, f'{file_path}.npy'), dir_path)
 
 class HuggingfaceTestRunner(TestRunner):
     def __init__(self, case_name, overwrite_configs: str = None):
@@ -156,79 +144,85 @@ class HuggingfaceTestRunner(TestRunner):
         self.num_layers = -1
         self.local_inputs: List[Any] = []
 
-    def get_result(self, model):
+    def decode_token(self, logits: np.ndarray):
+        """
+            logits: [batch_size, seq_lens, vocab_size]
+        """
+        new_token = np.argmax(logits[0, -1, :], axis=-1)  # int64
+        # Decode HF token
+        return (new_token, self.tokenizer.decode(new_token, skip_special_tokens=False))
+    
+    def get_result(self, model, token_num, eval_or_infer):
         results = []
+        next_token_id = None
+        next_token = None
         for idx in range(model.outputs_size):
-            results.append(model.get_output_tensor(idx).to_numpy())
-        return results
+            res = model.get_output_tensor(idx).to_numpy()
+            
+            dump_data_to_file(self.tmp_dir, f'nncase_result_{token_num}_{idx}', res)
+            if (self.cfg['huggingface_options']['output_logits']) and idx == 0:
+                results.append(res)
+                next_token_id, next_token = self.decode_token(res[np.newaxis, ...])
+            elif idx == 0:
+                logits_to_keep = 0
+                slice_indices = slice(-logits_to_keep, None) if isinstance(logits_to_keep,
+                                                                 int) else logits_to_keep
+                nncase_logits = self.model.lm_head(torch.tensor(res[np.newaxis, ...][:, slice_indices, :]).detach().to(torch.float32).numpy())
+                next_token_id, next_token = self.decode_token(nncase_logits)
+                
+        return results, next_token_id, next_token
 
-    def hf_eval(self, model, input_data):
-        print(f"kv_object.context_lens.to_numpy(): {input_data[1].context_lens.to_runtime_tensor().to_numpy()}")
-        print(f"kv_object.seq_lens.to_numpy(): {input_data[1].seq_lens.to_runtime_tensor().to_numpy()}")
-        print(f"kv_object.block_tables.to_numpy(): {input_data[1].block_tables.to_runtime_tensor().to_numpy()}")
-        print(f"kv_object.slot_mapping.to_numpy(): {input_data[1].slot_mapping.to_runtime_tensor().to_numpy()}")
-        
+    def hf_eval(self, model, input_data, token_num):        
         for idx, i in enumerate(input_data):
             value = None
             if isinstance(i, nncase._nncase.RefPagedAttentionKVCache):
                 value = i.as_ivalue()
             else:
-                value = nncase.RuntimeTensor.from_numpy(i['data'][0])
+                value = nncase.RuntimeTensor.from_numpy(i)
             model.set_input_tensor(idx, value)
 
         model.run()
-        return self.get_result(model)
+        return self.get_result(model, token_num, "eval")
 
-    def hf_infer(self, model, input_data):
-        print(f"kv_object.context_lens.to_numpy(): {input_data[1].context_lens.to_numpy()}")
-        print(f"kv_object.seq_lens.to_numpy(): {input_data[1].seq_lens.to_numpy()}")
-        print(f"kv_object.block_tables.to_numpy(): {input_data[1].block_tables.to_numpy()}")
-        print(f"kv_object.slot_mapping.to_numpy(): {input_data[1].slot_mapping.to_numpy()}")
+    def hf_infer(self, model, input_data, token_num):
         for idx, value in enumerate(input_data):
             new_data = None
             if isinstance(value, nncase.PagedAttentionKVCache):
                 new_data = nncase.RuntimeTensor.from_object(value)
             else:
-                new_data = nncase.RuntimeTensor.from_numpy(np.array(value['data'][0], dtype=np.int64))
+                new_data = nncase.RuntimeTensor.from_numpy(value)
             model.set_input_tensor(idx, new_data)
         model.run()
-        return self.get_result(model)
+        return self.get_result(model, token_num, "infer")
 
     def pipeline_run(self, model, infer_or_eval):
-        import copy
         input_data = self.local_inputs
-        data = copy.deepcopy(input_data[0])
+        import copy
+        text = copy.deepcopy(input_data[0]['data'])
+        data = self.tokenizer(text, return_tensors="np").input_ids[0].astype(np.int64)
         loop_data = [data, input_data[1]]
-        res = []
+
+        token_ids = []
+        tokens = []
+        results = []
         for i in range(self.cfg['huggingface_options']['max_tokens']):
-            result = np.array([0])
-            print(loop_data[0])
-            current_length = loop_data[0]['data'][0].shape[-1]
-            print(f"current_length: {current_length}")
+            result = None
+            current_length = loop_data[0].shape[-1]
             kv_object = loop_data[1]['scheduler'].schedule([0], [current_length])
             if infer_or_eval == "infer":
-                result = self.hf_infer(model, [loop_data[0], kv_object])
+                result, next_token_id, next_token = self.hf_infer(model, [loop_data[0], kv_object], token_num=i)
             else:
-                result = self.hf_eval(model, [loop_data[0], kv_object])
-            new_token = np.argmax(result[0][-1, :], axis=-1)
-            res.append(new_token)
-            loop_data[0]['data'] = [np.array([new_token], dtype=np.int64)]
-
-        return np.array([res], dtype=np.int64)
-    
-    def prefill_run(self, model, infer_or_eval):
-        input_data = self.local_inputs
-        data = copy.deepcopy(input_data[0])
-        loop_data = [data, input_data[1]]
-        result = np.array([0])
-        current_length = loop_data[0]['data'][0].shape[-1]
-        kv_object = loop_data[1]['scheduler'].schedule([0], [current_length])
-        if infer_or_eval == "infer":
-            result = self.hf_infer(model, [loop_data[0], kv_object])
-        else:
-            result = self.hf_eval(model, [loop_data[0], kv_object])
-
-        return result
+                result, next_token_id, next_token = self.hf_eval(model, [loop_data[0], kv_object], token_num=i)
+                
+            if next_token_id == self.tokenizer.eos_token_id:
+                    break
+            token_ids.append(next_token_id)
+            tokens.append(next_token)
+            
+            loop_data[0] = np.array([next_token_id], dtype=np.int64)
+            
+            results.append(result)
+        return results, token_ids, tokens
 
     def from_huggingface(self, model_path):
         pass
@@ -238,9 +232,9 @@ class HuggingfaceTestRunner(TestRunner):
             self.parse_model(model_file)
 
         self.generate_all_data()
-        self.local_inputs = [self.inputs[0], self.inputs[1]]
         self.write_compile_opt()
-        expected = self.cpu_infer(model_file)
+        expect_results, expect_token_ids, expect_tokens = self.cpu_infer(model_file)
+
         targets = self.cfg['target']
         model_content = self.read_model_file(model_file)
         import_options = self.get_import_options()
@@ -248,9 +242,9 @@ class HuggingfaceTestRunner(TestRunner):
         compiler = None
         dump_hist = self.cfg['dump_hist']
         for k_target, v_target in targets.items():
-            tmp_dir = os.path.join(self.case_dir, 'tmp')
+            self.tmp_dir = os.path.join(self.case_dir, 'tmp')
             if v_target['eval'] or v_target['infer']:
-                compile_options = self.get_compile_options(k_target, model_file, tmp_dir)
+                compile_options = self.get_compile_options(k_target, model_file, self.tmp_dir)
                 compile_options.target_options = self.get_target_options(
                     k_target, v_target.get("target_options", None))
                 compiler = nncase.Compiler(compile_options)
@@ -260,107 +254,128 @@ class HuggingfaceTestRunner(TestRunner):
                 if v_target[stage]:
                     for k_mode, v_mode in v_target['mode'].items():
                         if v_mode['enabled']:
-                            os.makedirs(tmp_dir, exist_ok=True)
+                            os.makedirs(self.tmp_dir, exist_ok=True)
                             if stage == 'eval':
                                 self.local_inputs = [self.inputs[0], self.inputs[1]]
                                 evaluator = compiler.create_evaluator(3)
-                                actual = func(evaluator, "eval")
+                                actual_results, actual_token_ids, actual_tokens = func(evaluator, "eval")
                             else:
                                 self.local_inputs = [self.inputs[0], self.inputs[2]]
                                 compiler.compile()
-                                kmodel_path = os.path.join(tmp_dir, self.cfg['kmodel_name'])
+                                kmodel_path = os.path.join(self.tmp_dir, self.cfg['kmodel_name'])
                                 with open(kmodel_path, 'wb') as f:
                                     compiler.gencode(f)
                                 sim = nncase.Simulator()
                                 with open(kmodel_path, 'rb') as f:
                                     sim.load_model(f)
                                 
-                                actual = func(sim, "infer")
+                                actual_results, actual_token_ids, actual_tokens = func(sim, "infer")
 
-                            # debug_actual_structure(actual)
-                            # print("----------")
-
-                            # debug_actual_structure(expected)
-                            print(actual)
                             target_dir = os.path.join(self.case_dir, stage, k_target)
                             os.makedirs(target_dir, exist_ok=True)
                             mode_dir = os.path.join(target_dir, k_mode)
-                            shutil.move(tmp_dir, mode_dir)
+                            shutil.move(self.tmp_dir, mode_dir)
 
                             judge, result = self.compare_results(
-                                np.array(expected), np.array(actual), stage, k_target, judge_type, k_mode, v_mode['threshold'], dump_hist, mode_dir)
-
-                            
+                                expect_results, actual_results, stage, k_target, "cosine", k_mode, v_mode['threshold'], dump_hist, mode_dir)
                             if not judge:
                                 if test_utils.in_ci():
                                     self.clear(self.case_dir)
-                                # assert (judge), f"Fault result in {stage} + {result}"
+                                print(f"Fault result in {stage}\n{result}")
+
+                            token_judge, token_result = self.compare_token_result(
+                                expect_token_ids, actual_token_ids, stage, k_target, v_mode['threshold'])
+
+                            if not token_judge:
+                                if test_utils.in_ci():
+                                    self.clear(self.case_dir)
+                                assert (token_judge), f"{token_result}"
+                                
+                            print(f"gt    :{expect_tokens}\nactual:{actual_tokens}")
 
         if test_utils.in_ci():
             self.clear(self.case_dir)
 
     
     def run(self, model_file):
-        if self.cfg['huggingface_options']['pipeline']:
-            self.huggingface_run(self.pipeline_run, model_file, "LLM")
-        else:
-            self.huggingface_run(self.prefill_run, model_file, "cosine")
+        # if self.cfg['huggingface_options']['pipeline']:
+        self.huggingface_run(self.pipeline_run, model_file, "LLM")
+        # else:
+        #     self.huggingface_run(self.prefill_run, model_file, "cosine")
         
 
     def cpu_infer(self, model_file: List[str]):
         self.local_inputs = [self.inputs[0]]
         outputs = []
-        for idx, input in enumerate(self.local_inputs):
-            # TODO: add attention_mask in inputs
-            if self.cfg['huggingface_options']['pipeline']:
-                result = self.model.generate(
-                    input_ids=torch.from_numpy(np.expand_dims(input['data'][0], 0)),
-                    generation_config=self.generation_config)
-                res = result[:, input['data'][0].shape[-1]:]
-                # print(self.tokenizer.batch_decode(res))
-                print(res)
-                outputs.append(res.numpy())
-                return outputs
-            else:
-                result = self.model.forward(
-                    torch.from_numpy(np.expand_dims(input['data'][0], 0)),
-                    return_dict=True,
-                    use_cache=False,
-                    output_attentions=False,
-                    output_hidden_states=(True if self.cfg['huggingface_options']['output_hidden_states']
-                                        else False) if self.cfg['huggingface_options']['output_logits'] else True
-                )
+        tokens_ids = []
+        tokens = []
+        device = next(self.model.parameters()).device
 
+        for idx, input in enumerate(self.local_inputs):
+
+            tokenizer_data = self.tokenizer(input['data'], return_tensors="pt")
+            data = tokenizer_data.input_ids.to(device)
+            atten_mask = tokenizer_data.attention_mask.to(device)
+            hf_past_key_values = None
+
+            for i in range(self.cfg['huggingface_options']['max_tokens']):
+                with torch.no_grad():
+                    result = self.model(
+                        input_ids=data,
+                        attention_mask=atten_mask,
+                        past_key_values=hf_past_key_values,
+                        return_dict=True,
+                        use_cache=True,
+                        # output_attentions=False,
+                        output_hidden_states= not self.cfg['huggingface_options']['output_logits'],
+                    )
+                hf_past_key_values = result.past_key_values
+                
                 count = 0
+                logits = None
                 if (self.cfg['huggingface_options']['output_logits']):
-                    if not test_utils.in_ci():
-                        logits = result.logits.detach().to(torch.float32).numpy()[0]
-                        dump_data_to_file(self.case_dir, f'cpu_result_{count}', logits)
-                        outputs.append(logits)
-                        count += 1
+                    logits = result.logits.detach().to(torch.float32).numpy()
+                    dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', logits[0])
+                    outputs.append(logits)
+                    count += 1
                 else:
-                    if not test_utils.in_ci():
-                        hidden_states = recursive_stack(result.hidden_states).detach().to(
-                            torch.float32).numpy()[-1][0]
-                        dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
-                        outputs.append(hidden_states)
-                        count += 1
+                    hidden_states = recursive_stack(result.hidden_states).detach().to(
+                        torch.float32).numpy()[-1]
+                    dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states)
+                    outputs.append(hidden_states[0])
+                    count += 1
+                    
+                    hidden_states = result.hidden_states[-1]
+                    logits_to_keep = 0
+                    slice_indices = slice(-logits_to_keep,
+                                        None) if isinstance(logits_to_keep, int) else logits_to_keep
+                    logits = self.model.lm_head(hidden_states)[:, slice_indices, :].detach().to(torch.float32).numpy()
+                next_token_id, decoded_token = self.decode_token(logits)
+                tokens_ids.append(next_token_id)
+                tokens.append(decoded_token)
+
+                # Check for EOS token
+                if next_token_id == self.tokenizer.eos_token_id:
+                    print(f"EOS token reached at step {i}")
+                    break
+                
+                data = torch.tensor([[next_token_id]], dtype=torch.long, device=device)
+
+                atten_mask = torch.cat(
+                    [atten_mask, torch.ones((1, 1), dtype=atten_mask.dtype, device=device)], dim=1
+                )
 
                 if (self.cfg['huggingface_options']['output_hidden_states']):
                     if not test_utils.in_ci():
                         hidden_states = recursive_stack(result.hidden_states).detach().numpy()
                         hidden_states = np.squeeze(hidden_states, 1)
-                        dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
-                        outputs.append(hidden_states)
+                        dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states)
+                        outputs.append(hidden_states[0])
                         count += 1
 
-        return outputs
+        return outputs, tokens_ids, tokens
 
     def parse_model(self, model_path):
-        if self.cfg['huggingface_options']['pipeline']:
-            if self.cfg['huggingface_options']['output_logits'] == False:
-                raise RuntimeError("output_logits must be `True` in pipeline mode")
-        
         config = AutoConfig.from_pretrained(model_path + "/config.json")
 
         if self.cfg['huggingface_options']['num_layers'] != -1:
@@ -410,9 +425,9 @@ class HuggingfaceTestRunner(TestRunner):
         #     dequantize_weights(model_path)
         #     delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, config=config, torch_dtype="auto", device_map="auto", trust_remote_code=True).eval()
+            model_path, config=config, torch_dtype="auto", device_map="auto").eval()
         # restore_weights(model_path)
-        self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens
         self.generation_config.max_new_tokens = self.cfg['huggingface_options']['max_tokens']
@@ -457,3 +472,59 @@ class HuggingfaceTestRunner(TestRunner):
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_huggingface(model_content, import_options)
+
+    def compare_results(self,
+                        ref_ouputs: List[List[np.ndarray]],#[token0:[result0, result1], token1:[result0, result1]]
+                        test_outputs: List[List[np.ndarray]],
+                        stage, target, similarity_name, mode, threshold, dump_hist, dump_dir) -> Tuple[bool, str]:
+        i = 0
+        judges = []
+        result = ''
+        for token_idx, (expected_token_result, actual_token_result) in enumerate(zip(ref_ouputs, test_outputs)):
+            
+            for idx, (expected, actual) in enumerate(zip(expected_token_result, actual_token_result)):
+
+                expected = expected.astype(np.float32)
+                actual = actual.astype(np.float32)
+                dump_file = os.path.join(dump_dir, f'nncase_result_{token_idx}_{idx}_hist.csv')
+                judge, similarity_info = compare_ndarray(
+                    expected, actual, similarity_name, threshold, dump_hist, dump_file)
+                result_info = "{0} [ {1} {2} {3} {4} ] Output {5}:".format(
+                    'Pass' if judge else 'Fail', stage, target, mode, token_idx, idx)
+                result += result_info + similarity_info
+                judges.append(judge)
+
+        with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+            f.write(result)
+        return sum(judges) == len(judges), result
+
+    def compare_token_result(self,
+                        ref_ouputs: List,
+                        test_outputs: List,
+                        stage, target, threshold) -> Tuple[bool, str]:
+        assert len(ref_ouputs) == len(test_outputs)
+        max_len = len(ref_ouputs)
+        match_count = 0
+        # for token_idx, (expected_token_result, actual_token_result) in enumerate(zip(ref_ouputs, test_outputs)):
+        with open(os.path.join(self.case_dir, 'token_compare.txt'), 'a+', encoding='utf-8') as f:
+            f.write(f"# {target} {stage} Token Comparison Results\n")
+            f.write("| Index | Huggingface |   nncase    | Match |\n")
+            f.write("|-------|-------------|-------------|-------|\n")
+            for i in range(max_len):
+                expect_token = ref_ouputs[i] if i < len(ref_ouputs) else "N/A"
+                actual_token = test_outputs[i] if i < len(test_outputs) else "N/A"
+                match_status = "✓" if expect_token == actual_token else "✗"
+                match_count += 1 if match_status == "✓" else 0
+                expect_str = str(expect_token).replace('|', '\\|').replace('\n', ' ')
+                actual_str = str(actual_token).replace('|', '\\|').replace('\n', ' ')
+                
+                f.write(f"| {i:5} | {expect_str:11} | {actual_str:11} | {match_status:5} |\n")
+            compare_result = float(match_count)/max_len
+            f.write(f"|-------|-------------|-------------|-------|\n")
+            f.write(f"|       |             |             |{compare_result:1.4f} |\n\n")
+
+            if compare_result > threshold:
+                return True, f"All tokens matched!"
+            else:
+                return False, f"Token match ratio {compare_result:.2f}, {match_count}/{max_len}  below threshold {threshold}"
+

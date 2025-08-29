@@ -49,7 +49,6 @@ public abstract class HuggingFaceModel
 
     public Tensor? GetWeight(string weightName)
     {
-        Console.WriteLine($"get weights: {weightName}");
         if (LoadedWeights.TryGetValue(weightName, out var tensor))
         {
             return tensor;
