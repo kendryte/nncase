@@ -43,6 +43,12 @@ struct bfloat16 {
     constexpr operator __bf16() const noexcept {
         return std::bit_cast<__bf16>(value_);
     }
+// #else
+//     constexpr operator float() const noexcept {
+//         uint32_t value = raw() << 16;
+//         return std::bit_cast<float>(value);
+//     }
+
 #endif
 
     constexpr bfloat16() noexcept = default;
@@ -52,25 +58,6 @@ struct bfloat16 {
                                        std::is_floating_point<T>::value>>
     constexpr explicit bfloat16(const T &v) noexcept
         : value_(round_to_bfloat16(v).value_) {}
-
-    constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
-
-    constexpr operator float() const noexcept {
-        uint32_t value = raw() << 16;
-        return std::bit_cast<float>(value);
-    }
-
-    constexpr uint16_t raw() const noexcept { return value_; }
-
-    static constexpr bfloat16 from_raw(uint16_t v) noexcept {
-        return bfloat16(nncase::from_raw, v);
-    }
-
-    static constexpr bfloat16 truncate_to_bfloat16(float v) noexcept {
-        return !std::isnan(v) ? from_raw(static_cast<uint16_t>(
-                                    std::bit_cast<uint32_t>(v) >> 16))
-                              : nan();
-    }
 
     // Converts a float point to bfloat16, with round-nearest-to-even as
     // rounding method.
@@ -92,6 +79,90 @@ struct bfloat16 {
             return nan();
         }
     }
+
+    // Integer conversion constructors
+    constexpr explicit bfloat16(int x) noexcept
+        : value_(round_to_bfloat16(float(x)).value_) {}
+
+    constexpr explicit bfloat16(int64_t x) noexcept
+        : value_(round_to_bfloat16(float(x)).value_) {}
+
+    constexpr explicit bfloat16(uint32_t x) noexcept
+        : value_(round_to_bfloat16(float(x)).value_) {}
+
+    constexpr explicit bfloat16(uint64_t x) noexcept
+        : value_(round_to_bfloat16(double(x)).value_) {}
+
+    constexpr explicit bfloat16(float x) noexcept
+        : value_(round_to_bfloat16((x)).value_) {}
+    // Floating point conversion constructors
+    constexpr explicit bfloat16(double x) noexcept
+        : value_(round_to_bfloat16(float(x)).value_) {}
+
+    constexpr bfloat16(from_raw_t, uint16_t value) noexcept : value_(value) {}
+
+    constexpr operator float() const noexcept {
+        uint32_t value = raw() << 16;
+        return std::bit_cast<float>(value);
+    }
+
+    constexpr uint16_t raw() const noexcept { return value_; }
+
+    static constexpr bfloat16 from_raw(uint16_t v) noexcept {
+        return bfloat16(nncase::from_raw, v);
+    }
+
+    // Type conversion operators
+    constexpr explicit operator double() const noexcept {
+        return double(float(*this));
+    }
+
+    constexpr explicit operator int() const noexcept {
+        return int(float(*this));
+    }
+
+    constexpr explicit operator int64_t() const noexcept {
+        return int64_t(float(*this));
+    }
+
+    constexpr explicit operator uint32_t() const noexcept {
+        return uint32_t(float(*this));
+    }
+
+    constexpr explicit operator uint64_t() const noexcept {
+        return uint64_t(double(*this));
+    }
+
+
+    constexpr explicit operator uint8_t() const noexcept {
+        return uint8_t(float(*this));
+    }
+
+    constexpr explicit operator int8_t() const noexcept {
+        return int8_t(float(*this));
+    }
+
+
+    constexpr explicit operator int16_t() const noexcept {
+        return int16_t(float(*this));
+    }
+
+    constexpr explicit operator uint16_t() const noexcept {
+        return uint16_t(float(*this));
+    }
+
+
+    constexpr explicit operator bool() const noexcept {
+        return bool(std::bit_cast<uint16_t>(*this));
+    }
+
+    static constexpr bfloat16 truncate_to_bfloat16(float v) noexcept {
+        return !std::isnan(v) ? from_raw(static_cast<uint16_t>(
+                                    std::bit_cast<uint32_t>(v) >> 16))
+                              : nan();
+    }
+
+
 
     static constexpr bfloat16 epsilon() noexcept {
         // 0x1.0p-7
@@ -297,3 +368,4 @@ template <> struct is_arithmetic<bfloat16> : public true_type {};
 inline nncase::bfloat16 operator"" _bf16(long double x) {
     return nncase::bfloat16(float(x));
 }
+

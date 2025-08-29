@@ -26,11 +26,33 @@ namespace detail {
 template <Tensor TIn, Tensor TOut> class reshape_impl {
   public:
     constexpr void operator()(const TIn &input, TOut &output) {
+        using element_type = element_or_scalar_t<TIn>;
+        auto input_conti_dims = contiguous_dims(input.shape(), input.strides());
+        auto output_conti_dims =
+            contiguous_dims(output.shape(), output.strides());
+
+        auto input_conti_size =
+            input.shape().aggregate(1, [&](const auto acc, auto dim, auto i) {
+                return i >= input.shape().rank() - input_conti_dims ? acc * dim
+                                                                    : acc;
+            });
+        auto output_conti_size =
+            output.shape().aggregate(1, [&](const auto acc, auto dim, auto i) {
+                return i >= output.shape().rank() - output_conti_dims
+                           ? acc * dim
+                           : acc;
+            });
+
+        // may need other constraints, just assuming possible reshape is filterd
+        // by type-infer.
+        auto len = input_conti_size == output_conti_size ? input_conti_size : 1;
+
         const size_t size = input.size();
-        for (size_t i = 0; i < size; i++) {
+        for (size_t i = 0; i < size; i += len) {
             auto in_index = unravel_index(i, input.shape());
             auto out_index = unravel_index(i, output.shape());
-            output(out_index) = input(in_index);
+            ntt::u_unary(ntt::ops::copy<element_type>{}, &input(in_index), 1,
+                         &output(out_index), 1, len);
         }
     }
 };

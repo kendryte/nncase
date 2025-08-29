@@ -145,4 +145,32 @@ template <Vector T> struct vector_rank<T> {
 };
 
 template <class T> constexpr inline auto vector_rank_v = vector_rank<T>::value;
+
+template <typename TShape>
+struct last_lane;
+
+template <nncase::ntt::Dimension D>
+struct last_lane<nncase::ntt::shape_t<D>> {
+    static constexpr size_t value = D::value;
+};
+
+template <nncase::ntt::Dimension D1, nncase::ntt::Dimension... Dims>
+struct last_lane<nncase::ntt::shape_t<D1, Dims...>> {
+    static constexpr size_t value = last_lane<nncase::ntt::shape_t<Dims...>>::value;
+};
+
+template <nncase::ntt::Vector TVec>
+struct get_last_lane_vector {
+    using element_type = typename TVec::element_type;
+    using shape_type = typename TVec::shape_type;
+    
+    static constexpr size_t last_dim = last_lane<shape_type>::value;
+    
+    using type = nncase::ntt::replace_lanes_t<TVec, last_dim>;
+};
+
+template<typename TVec>
+using get_last_lane_vector_t = typename get_last_lane_vector<TVec>::type;
+
+
 } // namespace nncase::ntt

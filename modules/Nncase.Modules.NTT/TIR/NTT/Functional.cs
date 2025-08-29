@@ -163,9 +163,9 @@ public partial class NTT
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    public static Expr Pad(Expr input, Expr ret, Paddings pads, float padValue)
+    public static Expr Pad(Expr input, Expr ret, Paddings pads, float padValue, IRArray<int> actualPadAxes)
     {
-        return new Call(new Pad(padValue), input, pads, ret);
+        return new Call(new Pad(padValue, actualPadAxes), input, pads, ret);
     }
 
     public static Expr Im2col(Expr input, Expr output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> vectorizedAxes, IRArray<int> padedNums)

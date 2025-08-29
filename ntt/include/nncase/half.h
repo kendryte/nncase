@@ -52,6 +52,45 @@ struct half {
     constexpr explicit half(const T &v) noexcept
         : value_(round_to_half(v).value_) {}
 
+
+    static constexpr half round_to_half(float v) {
+        if (std::is_constant_evaluated()) {
+            return (_Float16)v;
+        } else {
+#ifdef __F16C__
+            // To avoid truncsfhf2
+            return from_raw(_cvtss_sh(v, _MM_FROUND_NEARBYINT));
+#else
+            return (_Float16)v;
+#endif
+        }
+
+        return (_Float16)v;
+    }
+
+    static constexpr half epsilon() noexcept { return from_raw(0x0800); }
+
+    // Integer conversion constructors
+    constexpr explicit half(int x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    constexpr explicit half(int64_t x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    constexpr explicit half(uint32_t x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    constexpr explicit half(uint64_t x) noexcept
+        : value_(round_to_half(double(x)).value_) {}
+
+    // Floating point conversion constructors
+    constexpr explicit half(double x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
+    // bfloat16 conversion constructor
+    constexpr explicit half(bfloat16 x) noexcept
+        : value_(round_to_half(float(x)).value_) {}
+
     constexpr half(fp16_from_raw_t, uint16_t value) noexcept
         : value_(std::bit_cast<_Float16>(value)) {}
 
@@ -77,22 +116,48 @@ struct half {
         return half(nncase::fp16_from_raw, v);
     }
 
-    static constexpr half round_to_half(float v) {
-        if (std::is_constant_evaluated()) {
-            return (_Float16)v;
-        } else {
-#ifdef __F16C__
-            // To avoid truncsfhf2
-            return from_raw(_cvtss_sh(v, _MM_FROUND_NEARBYINT));
-#else
-            return (_Float16)v;
-#endif
-        }
-
-        return (_Float16)v;
+    // Type conversion operators
+    constexpr explicit operator double() const noexcept {
+        return double(float(*this));
     }
 
-    static constexpr half epsilon() noexcept { return from_raw(0x0800); }
+    constexpr explicit operator int8_t() const noexcept {
+        return int(float(*this));
+    }
+
+    constexpr explicit operator uint8_t() const noexcept {
+        return int(float(*this));
+    }
+
+
+    constexpr explicit operator int16_t() const noexcept {
+        return int(float(*this));
+    }
+
+
+    constexpr explicit operator uint16_t() const noexcept {
+        return int(float(*this));
+    }
+    
+    constexpr explicit operator int() const noexcept {
+        return int(float(*this));
+    }
+
+    constexpr explicit operator int64_t() const noexcept {
+        return int64_t(float(*this));
+    }
+
+    constexpr explicit operator uint32_t() const noexcept {
+        return uint32_t(float(*this));
+    }
+
+    constexpr explicit operator uint64_t() const noexcept {
+        return uint64_t(double(*this));
+    }
+
+    constexpr explicit operator bool() const noexcept {
+        return bool(std::bit_cast<uint16_t>(*this));
+    }
 
     static constexpr half highest() noexcept { return from_raw(0x7bff); }
 

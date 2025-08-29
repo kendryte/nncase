@@ -1377,8 +1377,8 @@ if __name__ == '__main__':
     
     # 2. benchmark ntt f16
     # 2.1 x86_64
-    ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path, 'fp16')
-    ntt_x86_64.run()
+    # ntt_x86_64 = BenchmarkNTT_x86_64(args.x86_64_target, args.x86_64_path, 'fp16')
+    # ntt_x86_64.run()
 
     # 2.2 riscv64
     ntt_riscv64 = BenchmarkNTT_riscv64(args.riscv64_target, args.riscv64_path, 'fp16')
@@ -1386,8 +1386,8 @@ if __name__ == '__main__':
 
     # 2.3 merge benchmark list
     benchmark_list = []
-    for i in range(len(ntt_x86_64.benchmark_list)):
-        item = {**ntt_x86_64.benchmark_list[i], **ntt_riscv64.benchmark_list[i]}
+    for i in range(len(ntt_riscv64.benchmark_list)):
+        item = { **ntt_riscv64.benchmark_list[i] }
         benchmark_list.append(item)
 
     # 2.4 generate md

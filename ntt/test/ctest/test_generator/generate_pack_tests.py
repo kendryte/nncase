@@ -34,11 +34,6 @@ class PackTestGenerator(BaseTestGenerator):
         return "_".join(parts)
     
     
-    def generate_pack_axes_str(self, axes):
-        if len(axes) == 1:
-            return f"ntt::fixed_shape_v<{axes[0]}>"
-        else:
-            return f"ntt::fixed_shape_v<{', '.join(map(str, axes))}>"
     
     def generate_ort_reference(self, input_dims, input_dim_names, pack_axes):
         code = []
@@ -49,10 +44,11 @@ class PackTestGenerator(BaseTestGenerator):
         dim_idx = 0
         for i in range(ndim):
             if i in pack_axes:
+                vec_param = "P" if i == pack_axes[-1] else "4"
                 axis_idx = pack_axes.index(i)
                 # Use string expressions instead of calculated results
-                reshape_dims_str.append(f"(int64_t)({input_dim_names[i]} / P)")
-                reshape_dims_str.append(f"(int64_t)P")
+                reshape_dims_str.append(f"(int64_t)({input_dim_names[i]} / {vec_param})")
+                reshape_dims_str.append(f"(int64_t){vec_param}")
             else:
                 reshape_dims_str.append(f"(int64_t){input_dim_names[i]}")
         
@@ -112,31 +108,30 @@ class PackTestGenerator(BaseTestGenerator):
         code.extend(self.generate_ntt_input_section(
             datatype=datatype,
             shape_type=shape_type,
-            dim_names=dim_names,
+            dims_spec=dim_names,
             continuity=continuity,
             vector_rank=0,  # Pack input is always scalar tensor
             P=P,
-            axes_count=len(pack_axes),
             var_name="ntt_input"))
 
         # 2. NTT operation (pack)
         output_dims = []
         for i, name in enumerate(dim_names):
             if i in pack_axes:
-                output_dims.append(f"{name} / P")
+                vec_param = "P" if i == pack_axes[-1] else "4"
+                output_dims.append(f"{name} / {vec_param}")
             else:
                 output_dims.append(name)
         output_shape_expr = self.generate_shape_init(shape_type, output_dims)
         
-        output_element_type = self._build_vector_cpp_type(
-            datatype.cpp_type, vector_dim, 'P', len(pack_axes))
+        output_element_type = self.get_element_cpp_type(datatype.cpp_type, vector_dim, 'P')
 
         pack_call_code = self.generate_ntt_ops(pack_axes)
 
         op_code = self.generate_ntt_output_and_op_section(
             datatype=datatype,
             output_shape_expr=output_shape_expr,
-            deal_fp8=deal_fp8,
+            cast_mode=deal_fp8,
             ntt_op_call_lines=pack_call_code,
             output_element_type=output_element_type
         )
@@ -144,7 +139,7 @@ class PackTestGenerator(BaseTestGenerator):
         
         return code, output_shape_expr, output_element_type
 
-    def generate_ntt_golden_output(self, datatype, shape_type, dims, dim_names, continuity, P, pack_axes, deal_fp8):
+    def generate_ort_golden_output(self, datatype, shape_type, dims, dim_names, continuity, P, pack_axes, deal_fp8):
         """
         Generates the golden output using ORT as a reference.
         This includes:
@@ -157,12 +152,11 @@ class PackTestGenerator(BaseTestGenerator):
         code.extend(self.generate_ort_input_section(
             datatype=datatype,
             shape_type=shape_type,
-            dim_names=dim_names,
+            dims_spec=dim_names,
             continuity=continuity,
-            deal_fp8=deal_fp8,
+            cast_mode=deal_fp8,
             P=P,
             vector_rank=0, # Pack input is scalar
-            axes_count=len(pack_axes),
             ntt_input_var_name="ntt_input"))
 
         # 2. ORT kernel exec section
@@ -182,7 +176,7 @@ class PackTestGenerator(BaseTestGenerator):
 
         P = f"NTT_VLEN / (sizeof({datatype.cpp_type}) * 8)"
         if ndim == 3:
-            dims, dim_names = [1, 77, 3], ['C', 'H', 'W']
+            dims, dim_names = [2, 77, 3], ['C', 'H', 'W']
         elif ndim == 4:
             dims, dim_names = [2, 8, 4, 4], ['N', 'C', 'H', 'W']
         else:
@@ -201,7 +195,7 @@ class PackTestGenerator(BaseTestGenerator):
         code.extend([f"    {line}" for line in ntt_output_code])
 
         # 3. Generate golden output in ort format
-        golden_output_code = self.generate_ntt_golden_output(
+        golden_output_code = self.generate_ort_golden_output(
             datatype, shape_type, dims, dim_names, continuity, P, pack_axes, deal_fp8)
         code.extend([f"    {line}" for line in golden_output_code])
 
@@ -284,12 +278,19 @@ if __name__ == "__main__":
     generator = PackTestGenerator()
     script_directory = os.path.dirname(os.path.abspath(__file__))
     
+    # Get the parent directory (ctest) and then the generated subdirectory
+    ctest_directory = os.path.dirname(script_directory)
+    generated_directory = os.path.join(ctest_directory, "generated")
+    
+    # Ensure generated directory exists
+    os.makedirs(generated_directory, exist_ok=True)
+
     generated_filenames = [] # collect all generated file names
 
     for datatype in ALL_DATATYPES:
         test_code = generator.generate_all_tests_for_type(datatype)
         filename = f"test_ntt_pack_generated_{datatype.name_suffix}.cpp"
-        output_filepath = os.path.join(script_directory, filename)
+        output_filepath = os.path.join(generated_directory, filename)
 
         with open(output_filepath, "w") as f:
             f.write(test_code)
@@ -297,4 +298,4 @@ if __name__ == "__main__":
         print(f"Test file generated: {output_filepath}")
         generated_filenames.append(filename) 
     
-    generate_cmake_list(script_directory, generated_filenames, "generated_pack_tests.cmake", "GENERATED_PACK_TEST_SOURCES")
+    generate_cmake_list(generated_directory, generated_filenames, "generated_pack_tests.cmake", "GENERATED_PACK_TEST_SOURCES")
