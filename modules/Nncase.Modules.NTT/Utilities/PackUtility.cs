@@ -7,15 +7,15 @@ using Nncase.IR.Shapes;
 
 namespace Nncase.Utilities;
 
-public static class PackUtility
+public static class VectorizeUtility
 {
-    public static Expr PadForPack(Expr input, Shape shape, int[] packedAxes, int[] lanes, Expr value, out Dimension[] padNums, int[]? extraPads = null)
+    public static Expr PadForVectorize(Expr input, Shape shape, int[] vectorizedAxes, int[] lanes, Expr value, out Dimension[] padNums, int[]? extraPads = null)
     {
         var isPadded = false;
         var pads = Paddings.Zeros(shape.Rank).ToDimensionArray();
-        for (int i = 0; i < packedAxes.Length; i++)
+        for (int i = 0; i < vectorizedAxes.Length; i++)
         {
-            var axis = packedAxes[i];
+            var axis = vectorizedAxes[i];
             if (shape[axis] % lanes[i] != 0)
             {
                 pads[axis, 1] = PadForAlign(shape[axis], lanes[i]);
@@ -32,10 +32,10 @@ public static class PackUtility
             }
         }
 
-        padNums = Shape.Repeat(Dimension.Zero, packedAxes.Length).ToArray();
-        for (int i = 0; i < packedAxes.Length; i++)
+        padNums = Shape.Repeat(Dimension.Zero, vectorizedAxes.Length).ToArray();
+        for (int i = 0; i < vectorizedAxes.Length; i++)
         {
-            padNums[i] = pads[packedAxes[i], 1];
+            padNums[i] = pads[vectorizedAxes[i], 1];
         }
 
         if (isPadded)
@@ -46,7 +46,7 @@ public static class PackUtility
         return input;
     }
 
-    public static Expr SliceForPack(Expr input, Shape shape, Dimension[] padNums)
+    public static Expr SliceForVectorize(Expr input, Shape shape, Dimension[] padNums)
     {
         bool isPadded = false;
         var ends = shape;
@@ -182,7 +182,7 @@ public static class PackUtility
         return (forward, backward);
     }
 
-    public static bool TryPropagateArgument(int outputRank, Shape argumentShape, int axis, int lanes, IList<int> argumentPackedAxes, IList<int> argumentLanes)
+    public static bool TryPropagateArgument(int outputRank, Shape argumentShape, int axis, int lanes, IList<int> argumentVectorizedAxes, IList<int> argumentLanes)
     {
         var argumentExt = outputRank - argumentShape.Rank;
         var argumentAxis = axis - argumentExt;
@@ -193,13 +193,13 @@ public static class PackUtility
             {
                 if (lhsDim != 1)
                 {
-                    argumentPackedAxes.Add(argumentAxis);
+                    argumentVectorizedAxes.Add(argumentAxis);
                     argumentLanes.Add(lanes);
                 }
             }
             else
             {
-                return false; // Cannot pack dynamic dimension.
+                return false; // Cannot vectorize dynamic dimension.
             }
         }
 

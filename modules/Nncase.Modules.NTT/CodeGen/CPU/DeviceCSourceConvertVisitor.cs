@@ -341,14 +341,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     UnaryOp = op.UnaryOp,
                 }).Result);
                 break;
-            case TIR.NTT.Binary op:
-                WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
-                {
-                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
-                    BinaryOp = op.BinaryOp,
-                }).Result);
-                break;
-            case TIR.NTT.PackedBinary op:
+            case TIR.NTT.VectorizedBinary op:
                 WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
@@ -375,8 +368,16 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }).Result);
 
                 break;
-            case TIR.NTT.Pack pack:
-                WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(pack)
+            case TIR.NTT.PackedMatMul matmul:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedMatMul.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedMatMul>(matmul)
+                {
+                    Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                    Indent = new string(' ', IndentScope.Writer.Indent),
+                }).Result);
+
+                break;
+            case TIR.NTT.Pack vectorize:
+                WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(vectorize)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     Indent = new string(' ', IndentScope.Writer.Indent),
@@ -389,8 +390,8 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
                 break;
-            case TIR.NTT.Unpack unpack:
-                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Unpack>(unpack)
+            case TIR.NTT.Unpack devectorize:
+                IndentScope.Writer.Write(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Unpack>(devectorize)
                 {
                     Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
                     Indent = new string(' ', IndentScope.Writer.Indent),
@@ -403,11 +404,41 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     Indent = new string(' ', IndentScope.Writer.Indent),
                 }).Result);
                 break;
+            case TIR.NTT.RoPE rope:
+                WriteIndWithProfiler($"rope({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name}, {arguments[3].Name});\n");
+                break;
             case TIR.NTT.Cast cast:
-                IndentScope.Writer.IndWrite($"cast({arguments[0].Name}, {arguments[1].Name});\n");
+                {
+                    string postOps = string.Empty;
+                    if (expr[TIR.NTT.Cast.PostOps] is Fusion lambda)
+                    {
+                        postOps = $"<{lambda.Name}>";
+                    }
+
+                    IndentScope.Writer.IndWrite($"cast{postOps}({arguments[0].Name}, {arguments[1].Name}, fixed_shape_v<{string.Join(",", cast.VectorizeAxes.ToArray())}>);\n");
+                }
+
+                break;
+            case TIR.NTT.VectorizedLayerNorm lm:
+                {
+                    WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/VectorizedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.VectorizedLayerNorm>(lm)
+                    {
+                        Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).Concat(lm.PadedNums.Select(Visit).Select(x => new KernelArgument { Symbol = x })).ToArray(),
+                        Indent = new string(' ', IndentScope.Writer.Indent),
+                        Args = expr.Arguments[..1].ToArray(),
+                    }).Result);
+                }
+
+                break;
+            case TIR.NTT.Pad pad:
+                {
+                    var padValueType = expr.Arguments[0].CheckedTensorType.DType is VectorType vt ? vt.ElemType : expr.Arguments[0].CheckedTensorType.DType;
+                    WriteWithProfiler($"pad({arguments[0].Name}, {arguments[2].Name}, {arguments[1].Name}, {expr.Arguments[0].CheckedDataType.ToC()} {{ ({padValueType.ToC()}){pad.PadValue} }});\n");
+                }
+
                 break;
             default:
-                throw new NotSupportedException();
+                throw new NotSupportedException($"Unsupported call target: {expr.Target}");
         }
 
         symbol = new(type, str);
@@ -477,6 +508,20 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         string str = $"{string.Join(",", tp.Fields.AsValueEnumerable().Select(x => Visit(x).Name).ToArray())}";
         symbol = new(type, str);
         _exprMemo.Add(tp, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitFusion(Fusion fusion)
+    {
+        if (_exprMemo.TryGetValue(fusion, out var symbol))
+        {
+            return symbol;
+        }
+
+        string type = string.Empty;
+        string str = fusion.Name;
+        symbol = new(type, str);
+        _exprMemo.Add(fusion, symbol);
         return symbol;
     }
 

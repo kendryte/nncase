@@ -218,11 +218,11 @@ public sealed record RefPagedAttentionKVCache(
         }
 
         // Build computation graph
-        var (q_lanes, q_packed_axes) = GetQKVPackParams(config, qLayout);
-        var (kv_lanes, kv_packed_axes) = GetQKVPackParams(config, kvLayout);
+        var (q_lanes, q_vectorized_axes) = GetQKVVectorizeParams(config, qLayout);
+        var (kv_lanes, kv_vectorized_axes) = GetQKVVectorizeParams(config, kvLayout);
         var padedQuery = (options.DynamicShape && options.DynamicPadding) ? IR.F.NN.Pad(queryVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)queryVar;
         var transedQuery = IR.F.Tensors.Transpose(padedQuery, qLayout.Select(x => (int)x).ToArray());
-        var packedQuery = q_lanes.Length > 0 ? IR.F.Tensors.Pack(transedQuery, q_lanes, q_packed_axes) : transedQuery;
+        var vectorizedQuery = q_lanes.Length > 0 ? IR.F.Tensors.Pack(transedQuery, q_lanes, q_vectorized_axes) : transedQuery;
         Expr updatedKVCache = None.Default;
         for (int layerId = 0; layerId < config.NumLayers; layerId++)
         {
@@ -230,9 +230,9 @@ public sealed record RefPagedAttentionKVCache(
 
             var padedKey = (options.DynamicShape && options.DynamicPadding) ? IR.F.NN.Pad(keyVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)keyVar;
             var transedKey = IR.F.Tensors.Transpose(padedKey, kvLayout.Select(x => (int)x).ToArray());
-            var packedKey = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transedKey, kv_lanes, kv_packed_axes) : transedKey;
+            var vectorizedKey = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transedKey, kv_lanes, kv_vectorized_axes) : transedKey;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
-                packedKey,
+                vectorizedKey,
                 kvCacheObjVar,
                 AttentionCacheKind.Key,
                 layerId,
@@ -240,9 +240,9 @@ public sealed record RefPagedAttentionKVCache(
 
             var padedValue = (options.DynamicShape && options.DynamicPadding) ? IR.F.NN.Pad(valueVar, new IR.Shapes.Paddings(new(0, options.DynamicMaxTokens - numTokensVar), new(0, 0), new(0, 0)), PadMode.Constant, Tensor.Zeros(config.KVPrimType, [])) : (Expr)valueVar;
             var transValue = IR.F.Tensors.Transpose(padedValue, kvLayout.Select(x => (int)x).ToArray());
-            var packedValue = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transValue, kv_lanes, kv_packed_axes) : transValue;
+            var vectorizedValue = kv_lanes.Length > 0 ? IR.F.Tensors.Pack(transValue, kv_lanes, kv_vectorized_axes) : transValue;
             updatedKVCache = IR.F.NN.UpdatePagedAttentionKVCache(
-                packedValue,
+                vectorizedValue,
                 updatedKVCache,
                 AttentionCacheKind.Value,
                 layerId,
@@ -253,8 +253,8 @@ public sealed record RefPagedAttentionKVCache(
             //     new RankedShape(numQHeads, numTokensVar, seqLens.Max() + 1) : // [head_q, num_tokens, max_seq_len + 1]
             //     new long[] { numQHeads, queryLens.Max(), seqLens.Max() + 1 };
             Shape extraShape = [10 * 1024 * 1024];
-            packedQuery = IR.F.NN.PagedAttention(
-                packedQuery,
+            vectorizedQuery = IR.F.NN.PagedAttention(
+                vectorizedQuery,
                 updatedKVCache,
                 IR.F.Buffer.Uninitialized(config.KVPrimType, Nncase.TIR.MemoryLocation.Data, extraShape), // [head_q, max_query_len, max_seq_len] + [head_q, max_query_len, 1]
                 Tensor.FromScalar(1.0f).CastTo(config.KVPrimType, CastMode.KDefault),
@@ -263,9 +263,9 @@ public sealed record RefPagedAttentionKVCache(
                 numQHeads * config.HeadDim);
         }
 
-        // unpack query.
-        var unpacked = q_lanes.Length > 0 ? IR.F.Tensors.Unpack(packedQuery, q_lanes, q_packed_axes) : packedQuery;
-        var untransed = IR.F.Tensors.Transpose(unpacked, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
+        // devectorize query.
+        var devectorized = q_lanes.Length > 0 ? IR.F.Tensors.Unpack(vectorizedQuery, q_lanes, q_vectorized_axes) : vectorizedQuery;
+        var untransed = IR.F.Tensors.Transpose(devectorized, qLayout.Select((x, i) => ((int)x, i)).OrderBy(p => p.Item1).Select(p => p.i).ToArray());
         var unpaded = (options.DynamicShape && options.DynamicPadding) ? IR.F.Tensors.Slice(untransed, new[] { 0 }, new Dimension[] { numTokensVar }, new[] { 0 }, new[] { 1 }) : untransed;
         Expr root = unpaded;
 
@@ -277,15 +277,15 @@ public sealed record RefPagedAttentionKVCache(
         return (root, queryVar, kvVars, kvCacheObjVar);
     }
 
-    public static (int[] Lanes, int[] Axes) GetQKVPackParams(IPagedAttentionConfig config, AttentionDimKind[] qLayout)
+    public static (int[] Lanes, int[] Axes) GetQKVVectorizeParams(IPagedAttentionConfig config, AttentionDimKind[] qLayout)
     {
         var lanes = new List<int>();
         var axes = new List<int>();
-        for (int i = 0; i < config.PackedAxes.Count; i++)
+        for (int i = 0; i < config.VectorizedAxes.Count; i++)
         {
-            if (config.PackedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
+            if (config.VectorizedAxes[i] is PagedKVCacheDimKind.HeadDim or PagedKVCacheDimKind.NumKVHeads)
             {
-                axes.Add(config.PackedAxes[i] switch
+                axes.Add(config.VectorizedAxes[i] switch
                 {
                     PagedKVCacheDimKind.NumKVHeads => qLayout.IndexOf(AttentionDimKind.Head),
                     PagedKVCacheDimKind.HeadDim => qLayout.IndexOf(AttentionDimKind.Dim),
@@ -317,7 +317,7 @@ public sealed record RefPagedAttentionKVCache(
         int[] defaultLayout = [-1, -1, -1, 0, -1, 1];
         long[] defaultStarts = [blockOffset, 0];
         long[] defaultShape = [1, PagedAttentionConfig.HeadDim];
-        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim) is int i && i != -1)
+        if (PagedAttentionConfig.VectorizedAxes.IndexOf(PagedKVCacheDimKind.HeadDim) is int i && i != -1)
         {
             defaultShape[1] /= PagedAttentionConfig.Lanes[i];
         }
@@ -334,7 +334,7 @@ public sealed record RefPagedAttentionKVCache(
         PagedKVCacheDimKind[] defaultLayout = [PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.BlockSize, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim];
         long[] defaultStarts = [blockIdValue, layerId, (long)kind, 0, (long)headId, 0];
         long[] defaultShape = [1, 1, 1, PagedAttentionConfig.BlockSize, 1, PagedAttentionConfig.HeadDim];
-        if (PagedAttentionConfig.PackedAxes.IndexOf(PagedKVCacheDimKind.HeadDim) is int i && i != -1)
+        if (PagedAttentionConfig.VectorizedAxes.IndexOf(PagedKVCacheDimKind.HeadDim) is int i && i != -1)
         {
             defaultShape[^1] /= PagedAttentionConfig.Lanes[i];
         }

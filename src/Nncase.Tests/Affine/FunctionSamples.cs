@@ -64,19 +64,19 @@ public static class FunctionSamples
     }
 
     /// <summary>
-    /// Tileflow default case with pack M.
+    /// Tileflow default case with vectorize M.
     /// </summary>
     /// <returns>function.</returns>
-    public static Function Get1PackMN()
+    public static Function Get1VectorizeMN()
     {
         Function func;
         {
             var a = new Var(new TensorType(DataTypes.Float32, new[] { 128, 256 }));
             var b = new Var(new TensorType(DataTypes.Float32, new[] { 256, 384 }));
-            var c = IR.F.NTT.PackedMatMul(IR.F.Tensors.Pack(a, new[] { 4, 4 }, new[] { 0, 1 }), IR.F.Tensors.Pack(b, new[] { 4, 4 }, new[] { 0, 1 }), new[] { 0, 1 }, new[] { 0, 1 }, false, false, false);
+            var c = IR.F.NTT.VectorizedMatMul(IR.F.Tensors.Pack(a, new[] { 4, 4 }, new[] { 0, 1 }), IR.F.Tensors.Pack(b, new[] { 4, 4 }, new[] { 0, 1 }), new[] { 0, 1 }, new[] { 0, 1 }, false, false, false);
             var d = IR.F.Math.Exp(c);
             var e = new Var(new TensorType(DataTypes.Float32, new[] { 384, 512 }));
-            var f = IR.F.NTT.PackedMatMul(d, IR.F.Tensors.Pack(e, new[] { 4 }, new[] { 0 }), new[] { 0, 1 }, new[] { 0 }, false, false, false);
+            var f = IR.F.NTT.VectorizedMatMul(d, IR.F.Tensors.Pack(e, new[] { 4 }, new[] { 0 }), new[] { 0, 1 }, new[] { 0 }, false, false, false);
             func = new("main", CPUTarget.Kind, f, [a, b, e]);
         }
 

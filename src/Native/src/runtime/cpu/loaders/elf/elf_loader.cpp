@@ -100,10 +100,26 @@ void elf_loader::load(std::span<const std::byte> elf) {
     }
 }
 
+void elf_loader::load_from_file(std::string_view path) {
+    handle_ = dlopen(path.data(), RTLD_NOW);
+    if (!handle_) {
+        throw std::runtime_error("dlopen error:" + std::string(dlerror()));
+    }
+
+    entry_ = dlsym(handle_, "block_entry");
+    if (!entry_) {
+        throw std::runtime_error("dlsym error:" + std::string(dlerror()));
+    }
+}
+
 void *elf_loader::entry() const noexcept {
+    if (entry_) {
+        return entry_;
+    }
+
     if (ctx_.ehdr.e_type == ET_EXEC) {
         return image_ + ctx_.ehdr.e_entry;
     } else {
-        return entry_;
+        return nullptr;
     }
 }

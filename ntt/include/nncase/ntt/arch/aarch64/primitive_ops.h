@@ -23,7 +23,7 @@ namespace nncase::ntt::ops {
 template <> struct exp<ntt::vector<float, 4>> {
     ntt::vector<float, 4>
     operator()(const ntt::vector<float, 4> &v) const noexcept {
-        return exp_ps(v);
+        return exp_ps_fp32(v);
     }
 };
 
@@ -44,7 +44,7 @@ template <> struct sin<ntt::vector<float, 4>> {
 template <> struct log<ntt::vector<float, 4>> {
     ntt::vector<float, 4>
     operator()(const ntt::vector<float, 4> &v) const noexcept {
-        return log_ps(v);
+        return log_ps_fp32(v);
     }
 };
 
@@ -100,11 +100,17 @@ template <> struct reduce<ops::add, float, ntt::vector<float, 4>> {
     float operator()(const ntt::vector<float, 4> &tensor) {
         return vaddvq_f32(tensor);
     }
+    float operator()(const ntt::vector<float, 4> &tensor, float init_value) {
+        return vaddvq_f32(tensor) + init_value;
+    }
 };
 
 template <> struct reduce<ops::max, float, ntt::vector<float, 4>> {
     float operator()(const ntt::vector<float, 4> &tensor) {
         return vmaxvq_f32(tensor);
+    }
+    float operator()(const ntt::vector<float, 4> &tensor, float init_value) {
+        return std::max(vmaxvq_f32(tensor), init_value);
     }
 };
 

@@ -16,6 +16,7 @@
 #include "elfload.h"
 #include <nncase/compiler_defs.h>
 #include <span>
+#include <string_view>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -25,6 +26,7 @@ class elf_loader {
     ~elf_loader();
 
     void load(std::span<const std::byte> pe);
+    void load_from_file(std::string_view path);
     void *entry() const noexcept;
 
   private:

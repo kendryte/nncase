@@ -188,7 +188,7 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
-    protected sealed override BaseExpr VisitLeafAffineSymbolBase(Affine.AffineSymbolBase expr, TContext context)
+    protected sealed override BaseExpr VisitLeafAffineSymbolBase(Affine.AffineExpr expr, TContext context)
     {
         return RewriteLeafAffineSymbolBase(expr, context);
     }
@@ -579,9 +579,9 @@ public partial class ExprRewriter<TContext>
     protected virtual BaseExpr RewriteLeafAffineExpr(Affine.AffineExpr expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Affine.AffineSymbolBase"/>.
+    /// Rewrite leaf <see cref="Affine.AffineExpr"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr, TContext context) => RewriteLeafAffineExpr(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineExpr expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDim"/>.
@@ -1020,12 +1020,12 @@ public partial class ExprRewriter
     protected sealed override BaseExpr RewriteLeafAffineExpr(Affine.AffineExpr expr, Unit context) => RewriteLeafAffineExpr(expr);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Affine.AffineSymbolBase"/>.
+    /// Rewrite leaf <see cref="Affine.AffineExpr"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr) => RewriteLeafAffineExpr(expr);
+    protected virtual BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineExpr expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
-    protected sealed override BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineSymbolBase expr, Unit context) => RewriteLeafAffineSymbolBase(expr);
+    protected sealed override BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineExpr expr, Unit context) => RewriteLeafAffineSymbolBase(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDim"/>.

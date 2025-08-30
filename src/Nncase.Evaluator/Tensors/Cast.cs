@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using DryIoc.ImTools;
 using Nncase.CostModel;
@@ -21,19 +22,6 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
     public IValue Visit(IEvaluateContext context, Cast cast)
     {
         var input = context.GetArgumentValue(cast, Cast.Input).AsTensor();
-        if (cast.NewType is VectorType vt && !cast.PackAxes.IsDefaultOrEmpty)
-        {
-            if (cast.PackAxes.Count > 1)
-            {
-                throw new NotSupportedException("Pack axes must be one");
-            }
-
-            input = IR.F.Tensors.Unpack(input, ((VectorType)input.ElementType).Lanes.ToArray(), cast.PackAxes.ToArray()).Evaluate().AsTensor();
-            input = input.CastTo(vt.ElemType);
-            input = IR.F.Tensors.Pack(input, vt.Lanes.ToArray(), cast.PackAxes.ToArray()).Evaluate().AsTensor();
-            return Value.FromTensor(input);
-        }
-
         return Value.FromTensor(input.CastTo(cast.NewType, cast.CastMode));
     }
 
@@ -78,29 +66,6 @@ public class CastEvaluator : IEvaluator<Cast>, ITypeInferencer<Cast>, IOpPrinter
 
     private IRType Visit(Cast target, TensorType input)
     {
-        if (input.DType is VectorType vt)
-        {
-            if (!target.PackAxes.IsDefaultOrEmpty && target.PackAxes.Any(a => input.Shape[a] is { IsFixed: false }))
-            {
-                return new InvalidType("Pack axes must be fixed");
-            }
-
-            var scale = 1f;
-            var newShape = input.Shape.ToArray();
-            if (!target.PackAxes.IsDefaultOrEmpty)
-            {
-                scale = 1f * ((VectorType)target.NewType).ElemType.SizeInBytes / vt.ElemType.SizeInBytes;
-                if (target.PackAxes.Any(a => input.Shape[a].FixedValue * scale % 1 != 0))
-                {
-                    return new InvalidType("Pack axes must be divisible by scale");
-                }
-
-                target.PackAxes.ToArray().ForEach(a => newShape[a] = (int)(newShape[a].FixedValue * scale));
-            }
-
-            return new TensorType(target.NewType, newShape);
-        }
-
         return new TensorType(target.NewType, input.Shape);
     }
 

@@ -201,9 +201,13 @@ public static class TensorUtilities
 
         // Post process: replace the stride with 0 if the dimension is 1.
         // Note: we use globalShape to determine if the dimension is 1, because we will not broadcast the splited dimension.
+        // Note: stride optimization require local shape.
         for (int i = 0; i < strides.Length; i++)
         {
-            strides[i] = Dimension.Select(globalShape[i], Dimension.One, Dimension.Zero, strides[i]);
+            if (globalShape[i] is DimConst)
+            {
+                strides[i] = Dimension.Select(globalShape[i], Dimension.One, Dimension.Zero, strides[i]);
+            }
         }
 
         return strides;

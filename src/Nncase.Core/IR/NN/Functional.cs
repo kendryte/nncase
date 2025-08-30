@@ -65,6 +65,8 @@ public static class NN
 
     public static Call Relu6(Expr input) => new Call(new Relu6(), input);
 
+    public static Call RoPE(Expr input, Expr cos, Expr sin) => new Call(new RoPE(), input, cos, sin);
+
     public static Call PRelu(Expr input, Expr slope) => new Call(new PRelu(), input, slope);
 
     public static Call Selu(Expr input, Expr alpha, Expr gamma) => new Call(new Selu(), input, alpha, gamma);

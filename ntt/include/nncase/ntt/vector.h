@@ -15,6 +15,7 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/vector_storage.h"
+#include "nncase/ntt/dimension.h"
 #include "tensor_traits.h"
 #include <type_traits>
 
@@ -45,8 +46,11 @@ class basic_vector
         return Lanes{}.template at<Index>();
     }
 
-    static basic_vector<T, Lanes> from_scalar(T value) noexcept;
-    static basic_vector<T, Lanes> unaligned_load_from(const T *ptr) noexcept;
+    template <ScalarOrVector U>
+    static basic_vector<T, Lanes> from_scalar(U value) noexcept;
+
+    template <ScalarOrVector U>
+    static basic_vector<T, Lanes> unaligned_load_from(const U *ptr) noexcept;
 
     constexpr basic_vector() noexcept = default;
     constexpr basic_vector(const buffer_type &buffer) noexcept
@@ -73,20 +77,33 @@ class basic_vector
 
     template <Dimensions TIndex>
     constexpr decltype(auto) operator()(const TIndex &index) noexcept {
-        if constexpr (requires { traits_type::element_at(buffer_, index); }) {
-            return traits_type::element_at(buffer_, index);
+        if constexpr (TIndex::rank() == 0) {
+            return *this;
         } else {
-            return detail::vector_storage_element_proxy<traits_type, TIndex>(
-                buffer_, index);
+            if constexpr (requires {
+                              traits_type::element_at(buffer_, index);
+                          }) {
+                return traits_type::element_at(buffer_, index);
+            } else {
+                return detail::vector_storage_element_proxy<traits_type,
+                                                            TIndex>(buffer_,
+                                                                    index);
+            }
         }
     }
 
     template <Dimensions TIndex>
     constexpr decltype(auto) operator()(const TIndex &index) const noexcept {
-        if constexpr (requires { traits_type::element_at(buffer_, index); }) {
-            return traits_type::element_at(buffer_, index);
+        if constexpr (TIndex::rank() == 0) {
+            return *this;
         } else {
-            return traits_type::get_element(buffer_, index);
+            if constexpr (requires {
+                              traits_type::element_at(buffer_, index);
+                          }) {
+                return traits_type::element_at(buffer_, index);
+            } else {
+                return traits_type::get_element(buffer_, index);
+            }
         }
     }
 
@@ -118,4 +135,42 @@ template <Vector T, size_t... Lanes> struct replace_lanes_type {
 
 template <Vector T, size_t... Lanes>
 using replace_lanes_t = typename replace_lanes_type<T, Lanes...>::type;
+
+template <class T> struct vector_rank {
+    static constexpr auto value = dim_zero;
+};
+
+template <Vector T> struct vector_rank<T> {
+    static constexpr auto value = fixed_dim_v<T::rank()>;
+};
+
+template <class T> constexpr inline auto vector_rank_v = vector_rank<T>::value;
+
+template <typename TShape>
+struct last_lane;
+
+template <nncase::ntt::Dimension D>
+struct last_lane<nncase::ntt::shape_t<D>> {
+    static constexpr size_t value = D::value;
+};
+
+template <nncase::ntt::Dimension D1, nncase::ntt::Dimension... Dims>
+struct last_lane<nncase::ntt::shape_t<D1, Dims...>> {
+    static constexpr size_t value = last_lane<nncase::ntt::shape_t<Dims...>>::value;
+};
+
+template <nncase::ntt::Vector TVec>
+struct get_last_lane_vector {
+    using element_type = typename TVec::element_type;
+    using shape_type = typename TVec::shape_type;
+    
+    static constexpr size_t last_dim = last_lane<shape_type>::value;
+    
+    using type = nncase::ntt::replace_lanes_t<TVec, last_dim>;
+};
+
+template<typename TVec>
+using get_last_lane_vector_t = typename get_last_lane_vector<TVec>::type;
+
+
 } // namespace nncase::ntt

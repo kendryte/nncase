@@ -27,12 +27,22 @@ enum class reduce_op {
     prod,
 };
 
+enum class prefetch_hint {
+    l0,
+    l1,
+    l2,
+};
+
 namespace ops {
 
 /**
  * @defgroup Load/Store operation functors
  * @{
  */
+
+template <prefetch_hint Hint, bool Arch> struct prefetch {
+    void operator()(const void *ptr) const noexcept { __builtin_prefetch(ptr); }
+};
 
 template <class TDest, class TSource> struct store {
     constexpr void operator()(TDest &dest, const TSource &v) const noexcept {
@@ -170,12 +180,13 @@ template <class T1, class T2> struct mul {
 
 template <class T1, class T2> struct div {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        static_assert(std::is_same_v<T1, T2>, "T1 and T2 must be same type");
         return v1 / v2;
     }
 };
 
 template <class T1, class T2> struct ceil_div {
+    static_assert(std::is_integral_v<T1> && std::is_integral_v<T2>,
+                  "T1 and T2 must be integral types");
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
         return (v1 + (v2 - 1)) / v2;
     }
@@ -187,9 +198,20 @@ template <class T1, class T2> struct ceil_div {
  */
 template <class T1, class T2> struct floor_mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return v1 -
-               std::floor(static_cast<double>(v1) / static_cast<double>(v2)) *
-                   v2;
+            return (T1)(double(v1) -
+                   std::floor(static_cast<double>(v1) / static_cast<double>(v2)) *
+                       static_cast<double>(v2));
+    }
+};
+
+
+template <typename T>
+requires (std::is_same_v<T, float_e4m3_t> || std::is_same_v<T, float_e5m2_t>)
+struct floor_mod<T, T> {
+    constexpr auto operator()(T v1,
+                              T v2) const noexcept {
+
+        return T(v1 - (std::floor(float(v1) / float(v2)) * v2));
     }
 };
 
@@ -210,9 +232,22 @@ template <class T1, class T2> struct outer_product {
  */
 template <class T1, class T2> struct mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return std::fmod(v1, v2);
+        return (T1)std::fmod((double)v1, (double)v2);
     }
 };
+
+
+template <typename T>
+requires (std::is_same_v<T, float_e4m3_t> || std::is_same_v<T, float_e5m2_t>)
+struct mod<T, T> {
+    constexpr auto operator()(T v1,
+                              T v2) const noexcept {
+        return T(
+            std::fmod(static_cast<float>(v1), static_cast<float>(v2)));
+    }
+};
+
+
 
 template <class T1, class T2> struct min {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
@@ -228,7 +263,7 @@ template <class T1, class T2> struct max {
 
 template <class T1, class T2> struct pow {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return std::pow(v1, v2);
+        return (T1)std::pow((float)v1, (float)v2);
     }
 };
 
@@ -300,6 +335,14 @@ template <class T1, class T2> struct clamp {
 
 template <class T1, class T2> struct cast {
     constexpr T2 operator()(const T1 &v) const noexcept {
+        // printf("cast from %f to %f\n", (double)(float)v, (double)static_cast<T2>(v));
+        return static_cast<T2>(v);
+        
+    }
+};
+
+template <class T1, class T2> struct cast_elem {
+    constexpr T2 operator()(const T1 &v) const noexcept {
         return static_cast<T2>(v);
     }
 };
@@ -334,6 +377,11 @@ template <class T1, class T2, class T3> struct where {
     constexpr auto name(const T &v, TResult init_value) noexcept {             \
         return ntt::reduce<op>(v, init_value);                                 \
     }
+
+template <prefetch_hint Hint>
+constexpr void prefetch(const void *ptr) noexcept {
+    ops::prefetch<Hint, true>()(ptr);
+}
 
 template <class TDest, class TSource>
 constexpr void store(TDest &dest, const TSource &v) noexcept {
@@ -390,6 +438,16 @@ NTT_DEFINE_COMPARE_FUNC_IMPL(less)
 NTT_DEFINE_COMPARE_FUNC_IMPL(less_or_equal)
 NTT_DEFINE_COMPARE_FUNC_IMPL(greater)
 NTT_DEFINE_COMPARE_FUNC_IMPL(greater_or_equal)
+
+template <ScalarOrVector T2, ScalarOrVector T1>
+constexpr auto cast(const T1 &v) noexcept {
+    return ops::cast<T1, T2>()(v);
+}
+
+template <Scalar T2, ScalarOrVector T1>
+constexpr auto cast_elem(const T1 &v) noexcept {
+    return ops::cast_elem<T1, T2>()(v);
+}
 
 template <ScalarOrVector T1, ScalarOrVector T2, ScalarOrVector TResult>
 constexpr TResult mul_add(const T1 &v1, const T2 &v2,
@@ -494,22 +552,22 @@ constexpr T1 &operator%=(T1 &v1, const T2 &v2) noexcept {
 namespace ops {
 // acosh(v) = ln(v + sqrt(v^2 - 1)), v >= 1
 template <class T> constexpr T acosh<T>::operator()(const T &v) const noexcept {
-    return ntt::log(v + ntt::sqrt(v * v - 1));
+    return ntt::log(v + ntt::sqrt(v * v - (T)1));
 }
 
 // asinh(v) = ln(v + sqrt(v^2 + 1))
 template <class T> constexpr T asinh<T>::operator()(const T &v) const noexcept {
-    return ntt::log(v + ntt::sqrt(v * v + 1));
+    return ntt::log(v + ntt::sqrt(v * v + (T)1));
 }
 
 // cosh(v) = (exp(v) + exp(-v)) / 2
 template <class T> constexpr T cosh<T>::operator()(const T &v) const noexcept {
-    return (ntt::exp(v) + ntt::exp(-v)) / 2;
+    return (ntt::exp(v) + ntt::exp(-v)) / (T)2;
 }
 
 // sinh(v) = (exp(v) - exp(-v)) / 2
 template <class T> constexpr T sinh<T>::operator()(const T &v) const noexcept {
-    return (ntt::exp(v) - ntt::exp(-v)) / 2;
+    return (ntt::exp(v) - ntt::exp(-v)) / (T)2;
 }
 
 // swish(v) = v / (exp(-v) + 1)
@@ -520,14 +578,16 @@ template <class T> constexpr T swish<T>::operator()(const T &v) const noexcept {
 // swishb(v) = v / (exp(-v*beta) + 1)
 template <class T, class B>
 constexpr T swishb<T, B>::operator()(const T &v, const B &beta) const noexcept {
-    return v / (ntt::exp(-v * beta) + 1);
+    //-(double)v is for uint type.
+    return static_cast<T>(double(v) / (ntt::exp((-(double)v) *(double)beta) + (double)1));
 }
 
 template <class T1, class T2, class TResult>
 constexpr TResult
 mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
                                      const TResult &v3) const noexcept {
-    return v1 * v2 + v3;
+    using TResultElem = element_or_scalar_t<TResult>;
+    return ntt::cast_elem<TResultElem>(v1 * v2) + v3;
 }
 } // namespace ops
 } // namespace nncase::ntt

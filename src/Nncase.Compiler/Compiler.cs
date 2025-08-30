@@ -172,6 +172,8 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.TileToExpand>();
         });
 
+        // passManager.Add<HorizontalMergePass>();
+
         // Decompose complex ops
         passManager.AddWithName<DataflowPass>("DecomposeComplexOps").Configure(p =>
         {
@@ -282,24 +284,38 @@ public class Compiler : ICompiler
     public void AutoPackingPass(IPassManager passManager)
     {
         var target = _compileSession.Target;
-        passManager.AddWithName<EGraphRulesPass>("AutoPacking").Configure(p =>
+        passManager.AddWithName<DataflowPass>("AutoPacking").Configure(p =>
         {
             target.RegisterAutoPackingRules(p, _compileSession.CompileOptions);
+
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
+            p.Add<Passes.Rules.Neutral.UnpackToBitcast>();
+        });
+    }
+
+    public void AutoVectorizePass(IPassManager passManager)
+    {
+        var target = _compileSession.Target;
+        passManager.AddWithName<EGraphRulesPass>("AutoVectorize").Configure(p =>
+        {
+            target.RegisterAutoVectorizeRules(p, _compileSession.CompileOptions);
         });
 
         passManager.Add<InferRangePass>();
         passManager.Add<OptimizeByRangePass>();
 
-        target.RegisterPostAutoPackingPass(passManager, _compileSession.CompileOptions);
+        target.RegisterPostAutoVectorizePass(passManager, _compileSession.CompileOptions);
     }
 
     public void AutoDistributedPass(IPassManager passManager)
     {
         foreach (var moduleCompiler in _compileSession.Target.ModuleCompilers)
         {
-            passManager.AddWithName<AutoDistributedPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
+            passManager.AddWithName<AutoDistributedWithShapeBucketPass>($"AutoDistributed_{moduleCompiler.ModuleKind}", false, moduleCompiler.ModuleKind);
         }
 
+        passManager.Add<AddFunctionToModule>();
+        passManager.Add<RemoveUnusedFunctions>();
         passManager.AddWithName<DataflowPass>("OptimizeAfterAutoDistributed").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldConstCall>();
@@ -369,6 +385,7 @@ public class Compiler : ICompiler
             "TargetDependentPass");
         await RunPassAsync(QuantizePass, "QuantizePass");
 
+        await RunPassAsync(AutoVectorizePass, "AutoVectorizePass");
         await RunPassAsync(AutoPackingPass, "AutoPackingPass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
         await RunPassAsync(AutoTilingPass, "AutoTilingPass");
@@ -501,7 +518,7 @@ public class Compiler : ICompiler
                 Console.Write($"\r[{timestamp}] {ColorText(spinner.ToString(), ConsoleColor.Blue)} Running pass:   {passNamePadded} {ColorText(timeFormatted, ConsoleColor.Cyan)}");
 
                 index++;
-                await Task.Delay(100, cancellationToken).ConfigureAwait(false);
+                await Task.Delay(100, default).ConfigureAwait(false);
             }
         }
         catch (OperationCanceledException)
@@ -537,7 +554,7 @@ public class Compiler : ICompiler
     {
         try
         {
-            Console.Write("\r" + new string(' ', Console.WindowWidth - 1) + "\r");
+            Console.Write("\r" + new string(' ', Math.Max(0, Console.WindowWidth - 1)) + "\r");
         }
         catch
         {

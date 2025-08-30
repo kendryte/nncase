@@ -1,8 +1,6 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-#define MULTI_CORE_CPU
-
 // #define PROFILE_CALL
 using System;
 using System.Collections;
@@ -29,45 +27,25 @@ namespace Nncase.CodeGen.NTT;
 /// </summary>
 internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisposable
 {
+    private readonly HashSet<string> _excludedVars = new() { "data" };
     private readonly StringBuilder _kernelBuilder;
-
-    private readonly StringBuilder _sharedBuilder;
     private readonly HashSet<TIR.PrimFunction> _refFuncs;
-    private readonly StringWriter _sharedWriter;
     private readonly HashSet<TIR.Buffer> _declaredBuffers = new(ReferenceEqualityComparer.Instance);
     private Var[]? _tensorParams;
-    private ulong _collective_pool_size;
 
-    public KernelCSourceConvertVisitor(ulong dataAlign, ulong dataUsage, ulong rdataPoolSize, ulong threadLocalRdataPoolSize, ulong blockLocalRdataPoolSize, NTTTargetOptions targetOptions)
+    public KernelCSourceConvertVisitor(NTTTargetOptions targetOptions)
     {
-        DataAlign = dataAlign;
-        DataUsage = dataUsage;
-        RdataPoolSize = rdataPoolSize;
-        ThreadLocalRdataPoolSize = threadLocalRdataPoolSize;
-        BlockLocalRdataPoolSize = blockLocalRdataPoolSize;
         _kernelBuilder = new StringBuilder();
-        _sharedBuilder = new StringBuilder();
-        _sharedWriter = new StringWriter(_sharedBuilder);
         _refFuncs = new(ReferenceEqualityComparer.Instance);
-        _collective_pool_size = 0;
+        CollectivePoolSize = 0;
         TargetOptions = targetOptions;
     }
 
-    public int CallCount { get; private set; }
-
     public NTTTargetOptions TargetOptions { get; }
 
-    public ulong DataAlign { get; }
+    public ulong CollectivePoolSize { get; private set; }
 
-    public ulong DataUsage { get; }
-
-    public ulong RdataPoolSize { get; }
-
-    public ulong ThreadLocalRdataPoolSize { get; }
-
-    public ulong BlockLocalRdataPoolSize { get; }
-
-    private Var[] TensorParams => _tensorParams ??= VisitEntry.Parameters.ToArray().OfType<Var>().ToArray();
+    private Var[] TensorParams => _tensorParams ??= VisitEntry.Parameters.ToArray().OfType<Var>().Where(x => !_excludedVars.Contains(x.Name)).ToArray();
 
     public static void WriteWithProfiler(string functionName, string tagName = "")
     {
@@ -111,20 +89,19 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
     public KernelCSource GetCSource()
     {
+        var paramsExcluded = VisitEntry.Parameters.ToArray().OfType<IVar>().Where(x => !_excludedVars.Contains(x.Name)).ToArray();
         var templateHeader = TensorParams.Length == 0 ? string.Empty : $"template<{string.Join(", ", Enumerable.Range(0, TensorParams.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine;
         var ctype = templateHeader +
-            $"void {VisitEntry.Name}({string.Concat(VisitEntry.Parameters.AsValueEnumerable().Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *thread_local_rdata, const std::byte *block_local_rdata, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
+            $"void {VisitEntry.Name}({string.Concat(paramsExcluded.Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *thread_local_rdata, const std::byte *block_local_rdata, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
         return new(
-            CSourceBuiltn.MakeMain(VisitEntry, DataAlign, DataUsage, RdataPoolSize, ThreadLocalRdataPoolSize, BlockLocalRdataPoolSize, _exprMemo.Keys.OfType<TIR.Buffer>().Where(b => b.MemSpan.Buffer.Location is MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata), TargetOptions),
-            CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
-            CSourceBuiltn.TopoAwareRuntimeDef(TargetOptions, DataAlign, _collective_pool_size),
-            CSourceBuiltn.ModuleTopologyDef(TargetOptions));
+            Declare: ctype + ";\n",
+            Kernel: CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
+            CollectivePoolSize: CollectivePoolSize);
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        _sharedWriter.Dispose();
     }
 
     protected override CSymbol VisitVar(Var expr)
@@ -275,6 +252,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             : $"tensor<{dtypeStr}, {dimensionStr}, {strideStr}> ";
 
         symbol = new(type, expr.Name);
+        DeclBuffer(expr, symbol);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }
@@ -299,7 +277,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         {
             foreach (var item in expr.Arguments.ToArray().OfType<TIR.Buffer>())
             {
-                DeclBuffer(item);
+                Visit(item);
             }
 #if PROFILE_CALL
             IndentScope.Writer.Write($"auto start_{CallCount} = get_ms_time();\n");
@@ -319,7 +297,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     {
                         var fullShape = args[0].CheckedShape.ToValueArray();
                         (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
-                        _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
+                        CollectivePoolSize = Math.Max(CollectivePoolSize, (ulong)maxSize);
                         var indices = args[0].CheckedShape.Select(e => Visit(e).Name).ToSlicing(load.NdSbp, load.Placement)[0];
                         WriteWithProfiler($"tac::tensor_boxing_load_sync<fixed_shape_t<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
@@ -334,7 +312,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     {
                         var fullShape = args[0].CheckedShape.ToValueArray();
                         (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
-                        _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
+                        CollectivePoolSize = Math.Max(CollectivePoolSize, (ulong)maxSize);
                         var indices = args[0].CheckedShape.Select(e => Visit(e).Name).ToSlicing(store.NdSbp, store.Placement)[0];
                         WriteWithProfiler($"tac::tensor_boxing_store_sync<fixed_shape_t<{string.Join(',', fullShape)}>>({indices}, {VisitBuffer(args[0], local: true).Name});\n");
                     }
@@ -344,22 +322,12 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     }
 
                     break;
-                case TIR.NTT.Binary binary:
-                    {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
-                        {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
-                            BinaryOp = binary.BinaryOp,
-                        }).Result);
-                    }
-
-                    break;
                 case TIR.NTT.Im2col im2col:
-                    WriteIndWithProfiler($"im2col({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", im2col.Kernel)}>, fixed_shape_v<{string.Join(",", im2col.Stride)}>, fixed_paddings_v<{string.Join(",", im2col.Padding)}>, fixed_shape_v<{string.Join(",", im2col.PackedAxes)}>, fixed_shape_v<{string.Join(",", im2col.PadedNums)}>);\n");
+                    WriteIndWithProfiler($"im2col({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", im2col.Kernel)}>, fixed_shape_v<{string.Join(",", im2col.Stride)}>, fixed_paddings_v<{string.Join(",", im2col.Padding)}>, fixed_shape_v<{string.Join(",", im2col.VectorizedAxes)}>, fixed_shape_v<{string.Join(",", im2col.PadedNums)}>);\n");
                     break;
-                case TIR.NTT.Pack pack:
+                case TIR.NTT.Pack vectorize:
                     {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(pack)
+                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Pack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Pack>(vectorize)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
@@ -368,9 +336,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
                     break;
 
-                case TIR.NTT.Unpack unpack:
+                case TIR.NTT.Unpack devectorize:
                     {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Unpack>(unpack)
+                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unpack.cshtml", new TypedKernelTemplateModel<TIR.NTT.Unpack>(devectorize)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Indent = string.Join(string.Empty, Enumerable.Repeat(' ', IndentScope.Writer.Indent)),
@@ -378,25 +346,25 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     }
 
                     break;
-                case TIR.NTT.PackedLayerNorm packedLayerNorm:
+                case TIR.NTT.VectorizedLayerNorm vectorizedLayerNorm:
                     {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedLayerNorm>(packedLayerNorm)
+                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/VectorizedLayerNorm.cshtml", new TypedKernelTemplateModel<TIR.NTT.VectorizedLayerNorm>(vectorizedLayerNorm)
                         {
-                            Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
+                            Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).Concat(vectorizedLayerNorm.PadedNums.Select(Visit).Select(x => new KernelArgument { Symbol = x })).ToArray(),
                             Args = args.ToArray(),
                         }).Result);
                     }
 
                     break;
                 case TIR.NTT.InstanceNorm instanceNorm:
-                    WriteWithProfiler($"instance_norm({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape_v<{string.Join(",", instanceNorm.PackedAxes)}>{{}}, fixed_shape_v<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
+                    WriteWithProfiler($"instance_norm({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {args[0].CheckedDataType.ToC()} {{ {instanceNorm.Epsilon} }}, fixed_shape_v<{string.Join(",", instanceNorm.VectorizedAxes)}>{{}}, fixed_shape_v<{string.Join(",", instanceNorm.PadedNums)}>{{}} );\n");
                     break;
                 case TIR.NTT.ResizeImage resize:
-                    WriteIndWithProfiler($"resize({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", resize.PackedAxes)}>, fixed_shape_v<{string.Join(",", resize.PadedNums)}>, fixed_shape_v<{string.Join(",", resize.NewSize)}>, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()});\n");
+                    WriteIndWithProfiler($"resize({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", resize.VectorizedAxes)}>, fixed_shape_v<{string.Join(",", resize.PadedNums)}>, fixed_shape_v<{string.Join(",", resize.NewSize)}>, image_resize_mode_t::{resize.ResizeMode.ToC()}, image_resize_transformation_mode_t::{resize.TransformationMode.ToC()}, image_resize_nearest_mode_t::{resize.NearestMode.ToC()});\n");
                     break;
-                case TIR.NTT.PackedSoftmax packedsoftmax:
+                case TIR.NTT.VectorizedSoftmax vectorizedsoftmax:
                     {
-                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedSoftMax.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedSoftmax>(packedsoftmax)
+                        WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/VectorizedSoftmax.cshtml", new TypedKernelTemplateModel<TIR.NTT.VectorizedSoftmax>(vectorizedsoftmax)
                         {
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                             Args = args.ToArray(),
@@ -404,11 +372,11 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     }
 
                     break;
-                case TIR.NTT.PackedBinary packedBinary:
+                case TIR.NTT.VectorizedBinary vectorizedBinary:
                     {
                         WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Binary.cshtml", new BinaryKernelTemplateModel
                         {
-                            BinaryOp = packedBinary.BinaryOp,
+                            BinaryOp = vectorizedBinary.BinaryOp,
                             Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
                         }).Result);
                     }
@@ -419,7 +387,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     break;
                 case TIR.NTT.Matmul matmul:
                     {
-                        var dimInfo = IR.NTT.PackedMatMul.GetDimInfo(matmul.TransposeA, matmul.TransposeB, args[0].CheckedShape.Rank, args[1].CheckedShape.Rank);
+                        var dimInfo = IR.NTT.VectorizedMatMul.GetDimInfo(matmul.TransposeA, matmul.TransposeB, args[0].CheckedShape.Rank, args[1].CheckedShape.Rank);
                         WriteWithProfiler(
                             RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Matmul.cshtml", new TypedKernelTemplateModel<TIR.NTT.Matmul>(matmul)
                             {
@@ -437,8 +405,25 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.SUMMA summa:
                     var rdKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => i >= TargetOptions.HierarchyNames.Length - 2 ? "r" + TargetOptions.HierarchyNames[i] : string.Empty + TargetOptions.HierarchyNames[i]));
                     IndentScope.Writer.IndWrite($"{{tac::detail::tensor_reduce_sync_impl<reduce_op::sum, {rdKind}> impl; impl.reduce_group_sync();\n");
-                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape_v<{string.Join(",", summa.LhsPackedAxes)}>, fixed_shape_v<>, fixed_shape_v<{string.Join(",", summa.RhsPackedAxes)}>, fixed_shape_v<>);\n");
+                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape_v<{string.Join(",", summa.LhsVectorizedAxes)}>, fixed_shape_v<>, fixed_shape_v<{string.Join(",", summa.RhsVectorizedAxes)}>, fixed_shape_v<>);\n");
                     IndentScope.Writer.IndWrite($"impl.reduce_group_sync();}}\n");
+                    break;
+                case TIR.NTT.PackedMatMul matmul:
+                    {
+                        var dimInfo = IR.NTT.VectorizedMatMul.GetDimInfo(false, true, args[0].CheckedShape.Rank, args[1].CheckedShape.Rank);
+                        WriteWithProfiler(
+                            RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/PackedMatMul.cshtml", new TypedKernelTemplateModel<TIR.NTT.PackedMatMul>(matmul)
+                            {
+                                Arguments = args.Select(x => new KernelArgument { Symbol = VisitBuffer(x, local: true) }).ToArray(),
+                            }).Result,
+                            "packed_matmul");
+                        if (args[0] is TIR.Buffer a && a.DistributedType?.AxisPolicies[dimInfo.Lk] is SBPSplit s)
+                        {
+                            var reduceKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => (s.Axes.Contains(i) ? "r" : string.Empty) + TargetOptions.HierarchyNames[i]));
+                            WriteIndWithProfiler($"tac::tensor_reduce_sync<reduce_op::{ReduceOp.Sum.ToC()}, {reduceKind}>({VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
+                        }
+                    }
+
                     break;
                 case TIR.Memcopy copy:
                     WriteWithProfiler($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");
@@ -480,7 +465,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"pad({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitDimOrShape(args[1]).Name}, {args[0].CheckedDataType.ToC()} {{ ({padValueType.ToC()}){pad.PadValue} }});\n");
                     break;
                 case TIR.NTT.Reduce reduce:
-                    WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", reduce.Axes)}>, fixed_shape_v<{string.Join(",", reduce.PackedAxes)}>);\n");
+                    WriteWithProfiler($"reduce_{reduce.ReduceOp.ToC()}({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", reduce.Axes)}>, fixed_shape_v<{string.Join(",", reduce.VectorizedAxes)}>);\n");
                     break;
                 case TIR.NTT.ReduceArg reduceArg:
                     WriteWithProfiler($"reduce_arg<ops::{reduceArg.ReduceArgOp.ToC()[4..]}, {reduceArg.Axis}, {reduceArg.SelectLastIndex.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}, {reduceArg.KeepDims.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
@@ -491,7 +476,16 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteWithProfiler($"clamp({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, (float){min}, (float){max});\n");
                     break;
                 case TIR.NTT.Cast cast:
-                    WriteWithProfiler($"cast({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", cast.PackAxes.ToArray())}>);\n");
+                    {
+                        string postOps = string.Empty;
+                        if (expr[TIR.NTT.Cast.PostOps] is Fusion lambda)
+                        {
+                            postOps = $"<{lambda.Name}>";
+                        }
+
+                        WriteWithProfiler($"cast{postOps}({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, fixed_shape_v<{string.Join(",", cast.VectorizeAxes.ToArray())}>);\n");
+                    }
+
                     break;
                 case TIR.NTT.Where where:
                     WriteWithProfiler($"where({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
@@ -532,7 +526,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                         else
                         {
                             (var maxSize, _) = TensorUtilities.GetTensorMaxSizeAndStrides(args[0].CheckedTensorType);
-                            _collective_pool_size = Math.Max(_collective_pool_size, (ulong)maxSize);
+                            CollectivePoolSize = Math.Max(CollectivePoolSize, (ulong)maxSize);
                             WriteWithProfiler($"reshard({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name});\n");
                         }
                     }
@@ -551,22 +545,25 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     IndentScope.Writer.Write($"shapeof({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name});\n");
                     break;
                 case TIR.NTT.Range range:
-                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name},{VisitBuffer(args[2], local: true).Name},{VisitBuffer(args[3], local: true).Name});\n");
+                    IndentScope.Writer.Write($"range({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
+                    break;
+                case TIR.NTT.RoPE rope:
+                    IndentScope.Writer.Write($"rope({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name});\n");
                     break;
                 case TIR.NTT.ConstantOfShape constantOfShape:
                     IndentScope.Writer.Write($"constant_of_shape({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
                     break;
                 case TIR.NTT.UpdatePagedAttentionKVCache updatePagedAttentionKVCache:
-                    IndentScope.Writer.IndWrite($"update_paged_attention_kv_cache<caching::attention_cache_kind::{updatePagedAttentionKVCache.CacheKind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {updatePagedAttentionKVCache.LayerId}, {updatePagedAttentionKVCache.Layout.ToC()});\n");
+                    WriteIndWithProfiler($"update_paged_attention_kv_cache<caching::attention_cache_kind::{updatePagedAttentionKVCache.CacheKind.ToString().ToLower(System.Globalization.CultureInfo.CurrentCulture)}>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {updatePagedAttentionKVCache.LayerId}, {updatePagedAttentionKVCache.Layout.ToC()});\n");
                     break;
                 case TIR.NTT.GatherPagedAttentionKVCache gakv:
                     IndentScope.Writer.IndWrite($"gather_paged_attention_kv_cache({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name});\n");
                     break;
                 case TIR.NTT.PagedAttention pagedAttention:
-                    IndentScope.Writer.IndWrite($"paged_attention({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name}, {pagedAttention.Layout.ToC()});\n");
+                    WriteIndWithProfiler($"paged_attention({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name}, {pagedAttention.Layout.ToC()});\n");
                     break;
                 case TIR.NTT.GetPositionIds getPositionIds:
-                    IndentScope.Writer.IndWrite($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: false).Name});\n");
+                    WriteIndWithProfiler($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: false).Name});\n");
                     break;
                 default:
                     throw new NotSupportedException(kop.ToString());
@@ -579,18 +576,40 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         {
             foreach (var item in expr.Arguments.ToArray().OfType<TIR.Buffer>())
             {
-                DeclBuffer(item);
+                Visit(item);
             }
 #if DEBUG_PRINT
             IndentScope.Writer.IndWrite($"runtime_util->printf(\"call {deviceFunc.Name} bid %d tid %d\\n\", bid, tid);\n");
 #endif
-            var arguments = expr.Arguments.AsValueEnumerable().Select(x => x switch
+            var argumentNames = new List<string>();
+            string? dataName = null;
+            foreach (var arg in expr.Arguments)
             {
-                TIR.Buffer b => VisitBuffer(b, local: true),
-                _ => Visit(x),
-            }).ToArray();
+                if (arg is TIR.Buffer b)
+                {
+                    var buffer = VisitBuffer(b, local: true);
+                    if (b.Name.StartsWith("data_"))
+                    {
+                        dataName = $"rdata, thread_local_rdata, block_local_rdata, (std::byte *){buffer.Name}.buffer().data(), output, output_descs";
+                    }
+                    else
+                    {
+                        argumentNames.Add(buffer.Name);
+                    }
+                }
+                else
+                {
+                    argumentNames.Add(Visit(arg).Name);
+                }
+            }
+
+            if (dataName is not null)
+            {
+                argumentNames.Add(dataName);
+            }
+
             _refFuncs.Add(deviceFunc);
-            WriteIndWithProfiler($"{deviceFunc.Name}({string.Join(",", arguments.Select(arg => arg.Name))});\n");
+            WriteIndWithProfiler($"{deviceFunc.Name}({string.Join(", ", argumentNames)});\n");
         }
         else
         {
@@ -625,7 +644,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     str = CSourceUtilities.ConvertAsTensor(op, arguments);
                     break;
                 default:
-                    throw new NotSupportedException(expr.Target.GetType().Name);
+                    throw new NotSupportedException($"Unsupported call target: {expr.Target}");
             }
         }
 
@@ -785,12 +804,10 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         return symbol;
     }
 
-    private void DeclBuffer(TIR.Buffer buffer)
+    private void DeclBuffer(TIR.Buffer buffer, CSymbol symbol)
     {
         if (_declaredBuffers.Add(buffer))
         {
-            var symbol = Visit(buffer);
-
             IndentScope.Writer.IndWrite($"auto {symbol.Name}");
             if (buffer.MemSpan.Buffer.Start is not None)
             {

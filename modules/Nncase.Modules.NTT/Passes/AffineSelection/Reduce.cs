@@ -10,9 +10,9 @@ namespace Nncase.Passes;
 
 public partial class NTTAffineSelectionPass
 {
-    public Expr SelectReduce(IR.NTT.PackedReduce reduce, Call call, Expr output)
+    public Expr SelectReduce(IR.NTT.VectorizedReduce reduce, Call call, Expr output)
     {
-        var input = (Expr)call[IR.NTT.PackedReduce.Input];
+        var input = (Expr)call[IR.NTT.VectorizedReduce.Input];
         if (output.CheckedShape is not { IsFixed: true, Rank: > 0 }
             || reduce.ReduceOp == ReduceOp.Mean)
         {
@@ -47,7 +47,7 @@ public partial class NTTAffineSelectionPass
             .Domain(rank, out var domainVar)
             .Read(input, AffineMap.Identity(rank), out var intile)
             .Write(output, affinemap, out var outTile)
-            .Body(TIR.F.NTT.Reduce(intile, outTile, GetLoadPreviousExpr(reduce.Axes, domainVar), reduce.PackedAxes.ToArray(), ((RankedShape)call[IR.NTT.PackedReduce.PadedNums]).Dimensions.ToArray(), reduce.Axes, reduce.KeepDims, reduce.ReduceOp))
+            .Body(TIR.F.NTT.Reduce(intile, outTile, GetLoadPreviousExpr(reduce.Axes, domainVar), reduce.VectorizedAxes.ToArray(), ((RankedShape)call[IR.NTT.VectorizedReduce.PadedNums]).Dimensions.ToArray(), reduce.Axes, reduce.KeepDims, reduce.ReduceOp))
             .Build();
     }
 

@@ -35,7 +35,7 @@ public partial class NTTAffineSelectionPass
             .Read(lhs, lhsMap, out var lhsTile)
             .Read(rhs, rhsMap, out var rhsTile)
             .Write(output, AffineMap.Identity(domains.Length), out var outTile)
-            .Body(TIR.F.NTT.Binary(binary.BinaryOp, lhsTile, rhsTile, outTile))
+            .Body(TIR.F.NTT.VectorizedBinary(lhsTile, rhsTile, outTile, None.Default, binary.BinaryOp, Array.Empty<int>(), Array.Empty<Dimension>(), Array.Empty<int>(), Array.Empty<Dimension>()))
             .Build();
     }
 }

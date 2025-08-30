@@ -37,11 +37,11 @@ public abstract class AffineExpr : BaseExpr
 
     public static AffineExpr operator -(AffineExpr lhs, AffineExpr rhs) => lhs + -rhs;
 
-    public static AffineExpr operator *(AffineSymbolBase lhs, AffineExpr rhs) => new AffineMulBinary(lhs, rhs);
+    public static AffineExpr operator *(AffineExpr lhs, AffineExpr rhs) => new AffineMulBinary(lhs, rhs);
 
     public static AffineExpr operator *(AffineConstant lhs, AffineExpr rhs) => new AffineMulBinary(lhs, rhs);
 
-    public static AffineExpr operator %(AffineExpr lhs, AffineSymbolBase rhs) => new AffineDivBinary(AffineDivBinaryOp.Mod, lhs, rhs);
+    public static AffineExpr operator %(AffineExpr lhs, AffineExpr rhs) => new AffineDivBinary(AffineDivBinaryOp.Mod, lhs, rhs);
 
     public static AffineExpr operator %(AffineExpr lhs, AffineConstant rhs) => new AffineDivBinary(AffineDivBinaryOp.Mod, lhs, rhs);
 
@@ -63,8 +63,8 @@ public abstract class AffineExpr : BaseExpr
             AffineExtent e when e.Position < newDomains.Length => newDomains[e.Position].Extent,
             AffineSymbol e when e.Position < newSymbols.Length => newSymbols[e.Position],
             AffineAddBinary e => new AffineAddBinary(e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
-            AffineMulBinary e => new AffineMulBinary((AffineSymbolBase)e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
-            AffineDivBinary e => new AffineDivBinary(e.BinaryOp, e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), (AffineSymbolBase)e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
+            AffineMulBinary e => new AffineMulBinary(e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
+            AffineDivBinary e => new AffineDivBinary(e.BinaryOp, e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
             _ => this,
         };
     }
@@ -155,17 +155,10 @@ public sealed class AffineDim : AffineExpr
     protected override int GetHashCodeCore() => HashCode.Combine(Position);
 }
 
-public abstract class AffineSymbolBase : AffineExpr
-{
-    public AffineSymbolBase()
-        : base(Array.Empty<BaseExpr>())
-    {
-    }
-}
-
-public sealed class AffineExtent : AffineSymbolBase
+public sealed class AffineExtent : AffineExpr
 {
     public AffineExtent(int position)
+        : base(Array.Empty<BaseExpr>())
     {
         Position = position;
     }
@@ -184,9 +177,10 @@ public sealed class AffineExtent : AffineSymbolBase
     protected override int GetHashCodeCore() => HashCode.Combine(Position);
 }
 
-public sealed class AffineSymbol : AffineSymbolBase
+public sealed class AffineSymbol : AffineExpr
 {
     public AffineSymbol(int position)
+        : base(Array.Empty<BaseExpr>())
     {
         Position = position;
     }
@@ -203,9 +197,10 @@ public sealed class AffineSymbol : AffineSymbolBase
     public override string ToString() => $"s{Position}";
 }
 
-public sealed class AffineConstant : AffineSymbolBase
+public sealed class AffineConstant : AffineExpr
 {
     public AffineConstant(long value)
+        : base(Array.Empty<BaseExpr>())
     {
         Value = value;
     }
@@ -247,12 +242,12 @@ public sealed class AffineAddBinary : AffineExpr
 
 public sealed class AffineMulBinary : AffineExpr
 {
-    public AffineMulBinary(AffineSymbolBase lhs, AffineExpr rhs)
+    public AffineMulBinary(AffineExpr lhs, AffineExpr rhs)
         : base(new BaseExpr[] { lhs, rhs })
     {
     }
 
-    public AffineSymbolBase Lhs => (AffineSymbolBase)Operands[0];
+    public AffineExpr Lhs => (AffineExpr)Operands[0];
 
     public AffineExpr Rhs => (AffineExpr)Operands[1];
 
@@ -261,14 +256,14 @@ public sealed class AffineMulBinary : AffineExpr
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineMulBinary(this, context);
 
-    public AffineMulBinary With(AffineSymbolBase? lhs = null, AffineExpr? rhs = null) => new AffineMulBinary(lhs ?? Lhs, rhs ?? Rhs);
+    public AffineMulBinary With(AffineExpr? lhs = null, AffineExpr? rhs = null) => new AffineMulBinary(lhs ?? Lhs, rhs ?? Rhs);
 
     public override string ToString() => $"({Lhs} * {Rhs})";
 }
 
 public sealed class AffineDivBinary : AffineExpr
 {
-    public AffineDivBinary(AffineDivBinaryOp binaryOp, AffineExpr lhs, AffineSymbolBase rhs)
+    public AffineDivBinary(AffineDivBinaryOp binaryOp, AffineExpr lhs, AffineExpr rhs)
         : base(new BaseExpr[] { lhs, rhs })
     {
         BinaryOp = binaryOp;
@@ -278,14 +273,14 @@ public sealed class AffineDivBinary : AffineExpr
 
     public AffineExpr Lhs => (AffineExpr)Operands[0];
 
-    public AffineSymbolBase Rhs => (AffineSymbolBase)Operands[1];
+    public AffineExpr Rhs => (AffineExpr)Operands[1];
 
     /// <inheritdoc/>
     public override TExprResult Accept<TExprResult, TContext>(AffineExprVisitor<TExprResult, TContext> functor, TContext context) => functor.VisitAffineDivBinary(this, context);
 
     public override TExprResult Accept<TExprResult, TTypeResult, TContext>(ExprFunctor<TExprResult, TTypeResult, TContext> functor, TContext context) => functor.VisitAffineDivBinary(this, context);
 
-    public AffineDivBinary With(AffineDivBinaryOp? binaryOp = null, AffineExpr? lhs = null, AffineSymbolBase? rhs = null) => new AffineDivBinary(binaryOp ?? BinaryOp, lhs ?? Lhs, rhs ?? Rhs);
+    public AffineDivBinary With(AffineDivBinaryOp? binaryOp = null, AffineExpr? lhs = null, AffineExpr? rhs = null) => new AffineDivBinary(binaryOp ?? BinaryOp, lhs ?? Lhs, rhs ?? Rhs);
 
     public override string ToString() => $"({Lhs} {F.Affine.ToString(BinaryOp)} {Rhs})";
 }

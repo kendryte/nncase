@@ -41,14 +41,9 @@ public partial class NTT
         return new Call(new TIR.NTT.Unary(unaryOp), input, output);
     }
 
-    public static Call Binary(BinaryOp binaryOp, Expr lhs, Expr rhs, Expr output)
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
     {
-        return new Call(new TIR.NTT.Binary(binaryOp), lhs, rhs, output);
-    }
-
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
-    {
-        return new Call(new Matmul(lhsPackedAxes, rhsPackedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC);
+        return new Call(new Matmul(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC)
@@ -56,9 +51,14 @@ public partial class NTT
         return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC);
     }
 
-    public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsPackedAxes, IRArray<int> rhsPackedAxes, bool transA = false, bool transB = false)
+    public static Call PackedMatMul(Expr lhs, Expr rhs, Expr output, Expr loadC, bool fusedReduce = false)
     {
-        return new Call(new SUMMA(lhsPackedAxes, rhsPackedAxes, transA, transB), lhs, rhs, output, loadC);
+        return new Call(new PackedMatMul(fusedReduce), lhs, rhs, output, loadC);
+    }
+
+    public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false)
+    {
+        return new Call(new SUMMA(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB), lhs, rhs, output, loadC);
     }
 
     public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC)
@@ -78,29 +78,29 @@ public partial class NTT
         return new Call(new Unpack(lanes, axes), input, output);
     }
 
-    public static Expr PackedSoftmax(Expr input, Expr output, int axis, IRArray<int> packedAxes)
+    public static Expr VectorizedSoftmax(Expr input, Expr output, int axis, IRArray<int> vectorizedAxes)
     {
-        return new Call(new PackedSoftmax(axis, packedAxes), input, output);
+        return new Call(new VectorizedSoftmax(axis, vectorizedAxes), input, output);
     }
 
-    public static Expr PackedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> packedAxes, IRArray<Dimension> padedNums)
+    public static Expr VectorizedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums)
     {
-        return new Call(new PackedLayerNorm(axis, epsilon, usemean, packedAxes, padedNums, null!), input, scale, bias, output);
+        return new Call(new VectorizedLayerNorm(axis, epsilon, usemean, vectorizedAxes, padedNums, null!), input, scale, bias, output);
     }
 
-    public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> packedAxes, IRArray<Dimension> padedNums, DistributedType distributedType)
+    public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums, DistributedType distributedType)
     {
-        return new Call(new InstanceNorm(epsilon, packedAxes, padedNums, distributedType), input, scale, bias, output);
+        return new Call(new InstanceNorm(epsilon, vectorizedAxes, padedNums, distributedType), input, scale, bias, output);
     }
 
-    public static Expr PackedBinary(Expr lhs, Expr rhs, Expr output, BinaryOp binaryOp, IRArray<int> lhsPackedAxes, IRArray<Dimension> lhsPadedNums, IRArray<int> rhsPackedAxes, IRArray<Dimension> rhsPadedNums)
+    public static Expr VectorizedBinary(Expr lhs, Expr rhs, Expr output, BaseExpr postOps, BinaryOp binaryOp, IRArray<int>? lhsVectorizedAxes = null, IRArray<Dimension>? lhsPadedNums = null, IRArray<int>? rhsVectorizedAxes = null, IRArray<Dimension>? rhsPadedNums = null)
     {
-        return new Call(new PackedBinary(binaryOp, lhsPackedAxes, lhsPadedNums, rhsPackedAxes, rhsPadedNums), lhs, rhs, output);
+        return new Call(new VectorizedBinary(binaryOp, lhsVectorizedAxes ?? Array.Empty<int>(), lhsPadedNums ?? Array.Empty<Dimension>(), rhsVectorizedAxes ?? Array.Empty<int>(), rhsPadedNums ?? Array.Empty<Dimension>()), lhs, rhs, output, postOps);
     }
 
-    public static Call ResizeImage(Expr input, Expr output, int[] packedAxes, Dimension[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
+    public static Call ResizeImage(Expr input, Expr output, int[] vectorizedAxes, Dimension[] padedNums, int[] newSize, ImageResizeMode resizeMode, ImageResizeTransformationMode transformationMode, ImageResizeNearestMode nearestMode)
     {
-        return new Call(new ResizeImage(packedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input, output);
+        return new Call(new ResizeImage(vectorizedAxes, padedNums, newSize, resizeMode, transformationMode, nearestMode), input, output);
     }
 
     public static Expr Slice(Expr input, RankedShape begins, RankedShape ends, Expr ret, int[] axes, int[] strides)
@@ -163,24 +163,29 @@ public partial class NTT
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    public static Expr Pad(Expr input, Expr ret, Paddings pads, float padValue)
+    public static Expr Pad(Expr input, Expr ret, Paddings pads, float padValue, IRArray<int> actualPadAxes)
     {
-        return new Call(new Pad(padValue), input, pads, ret);
+        return new Call(new Pad(padValue, actualPadAxes), input, pads, ret);
     }
 
-    public static Expr Im2col(Expr input, Expr output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> packedAxes, IRArray<int> padedNums)
+    public static Expr Im2col(Expr input, Expr output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> vectorizedAxes, IRArray<int> padedNums)
     {
-        return new Call(new Im2col(kernel, stride, padding, packedAxes, padedNums), input, output);
+        return new Call(new Im2col(kernel, stride, padding, vectorizedAxes, padedNums), input, output);
     }
 
-    public static Expr Reduce(Expr input, Expr ret, Expr loadPrevious, int[] packedAxes, Dimension[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
+    public static Expr Reduce(Expr input, Expr ret, Expr loadPrevious, int[] vectorizedAxes, Dimension[] padedNums, IRArray<int> axis, bool keepDims, ReduceOp reduceOp)
     {
-        return new Call(new TIR.NTT.Reduce(packedAxes, padedNums, axis, keepDims, reduceOp), input, ret, loadPrevious);
+        return new Call(new TIR.NTT.Reduce(vectorizedAxes, padedNums, axis, keepDims, reduceOp), input, ret, loadPrevious);
     }
 
     public static Expr ReduceArg(Expr input, Expr ret, int axis, bool keepDims, bool selectLastIndex, ReduceArgOp reduceArgOp, DataType destType)
     {
         return new Call(new TIR.NTT.ReduceArg(axis, keepDims, selectLastIndex, reduceArgOp, destType), input, ret);
+    }
+
+    public static Call RoPE(Expr input, Expr cos, Expr sin, Expr output)
+    {
+        return new Call(new TIR.NTT.RoPE(), input, cos, sin, output);
     }
 
     public static Call GatherReduceScatter(Expr input, Expr output, DistributedType inType, DistributedType outType)
@@ -193,9 +198,9 @@ public partial class NTT
         return new Call(new TIR.NTT.Clamp(min, max), input, output);
     }
 
-    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode, IRArray<int> packAxes = default)
+    public static Call Cast(Expr input, Expr output, DataType newType, CastMode castMode, IRArray<int> vectorizeAxes = default, Expr? postOps = null)
     {
-        return new Call(new TIR.NTT.Cast(newType, castMode, packAxes.IsDefaultOrEmpty ? Array.Empty<int>() : packAxes), input, output);
+        return new Call(new TIR.NTT.Cast(newType, castMode, vectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : vectorizeAxes), input, output, postOps ?? None.Default);
     }
 
     public static Call Where(Expr cond, Expr x, Expr y, Expr output)
