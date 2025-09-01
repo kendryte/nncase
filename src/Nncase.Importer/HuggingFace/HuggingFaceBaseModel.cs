@@ -339,14 +339,10 @@ public abstract class HuggingFaceModel
             qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Float8E4M3);
             var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 }).Evaluate().AsTensor();
             var qWeights = IR.F.Tensors.Cast(transposed_weight, DataTypes.Float8E4M3);
-            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights, expr.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights, DataTypes.Float32).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
 
-            var result = expr.CheckedDataType switch
-            {
-                var t when t == DataTypes.BFloat16 => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, (BFloat16)(deqScaleA * deqScaleB)),
-                var t when t == DataTypes.Float16 => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, (Half)(deqScaleA * deqScaleB)),
-                _ => Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB),
-            };
+            var result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA * deqScaleB);
+            result = Nncase.IR.F.Tensors.Cast(result, expr.CheckedDataType);
             if (bias != null)
             {
                 bias = bias.CastTo(expr.CheckedDataType);
@@ -357,6 +353,7 @@ public abstract class HuggingFaceModel
         }
         else if (scaleIf is null && scaleW is not null)
         {
+            var exprType = expr.CheckedDataType;
             long[] axes = new long[] { expr.CheckedShape.Rank - 1 };
             var max = Nncase.IR.F.Tensors.ReduceMax(expr, axes, float.MinValue, true);
             var min = Nncase.IR.F.Tensors.ReduceMin(expr, axes, float.MaxValue, true);
@@ -379,11 +376,11 @@ public abstract class HuggingFaceModel
             qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Float8E4M3);
             var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 }).Evaluate().AsTensor();
             var qWeights = IR.F.Tensors.Cast(transposed_weight, DataTypes.Float8E4M3);
-            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights, expr.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights, DataTypes.Float32).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
 
-            if (deqScaleA.CheckedDataType != expr.CheckedDataType)
+            if (deqScaleA.CheckedDataType != qMatmul.CheckedDataType)
             {
-                deqScaleA = Nncase.IR.F.Tensors.Cast(deqScaleA, expr.CheckedDataType);
+                deqScaleA = Nncase.IR.F.Tensors.Cast(deqScaleA, qMatmul.CheckedDataType);
             }
 
             var result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA);
@@ -393,13 +390,14 @@ public abstract class HuggingFaceModel
                 long[] dims = System.Linq.Enumerable.Range(0, qMatmul.CheckedShape.Rank).Select(i => 1L).ToArray();
                 dims[dims.Length - 1] = deqScaleB.Shape[0].FixedValue;
                 deqScaleB = Tensor.From<float>(deqScaleB.ToArray<float>(), dims);
-                if (deqScaleB.ElementType != expr.CheckedDataType)
+                if (deqScaleB.ElementType != qMatmul.CheckedDataType)
                 {
-                    deqScaleB = deqScaleB.CastTo(expr.CheckedDataType);
+                    deqScaleB = deqScaleB.CastTo(qMatmul.CheckedDataType);
                 }
             }
 
             result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, result, deqScaleB);
+            result = Nncase.IR.F.Tensors.Cast(result, exprType);
             if (bias != null)
             {
                 result = IR.F.Math.Add(result, bias);
