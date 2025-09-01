@@ -171,6 +171,8 @@ class HuggingfaceTestRunner(TestRunner):
                 nncase_logits = self.model.lm_head(torch.tensor(
                     res[np.newaxis, ...][:, slice_indices, :]).detach().to(torch.float32).numpy())
                 next_token_id, next_token = self.decode_token(nncase_logits)
+            else:
+                results.append(res)
 
         return results, next_token_id, next_token
 
@@ -309,11 +311,11 @@ class HuggingfaceTestRunner(TestRunner):
 
     def cpu_infer(self, model_file: List[str]):
         self.local_inputs = [self.inputs[0]]
+        all_outputs = []
         outputs = []
         tokens_ids = []
         tokens = []
         device = next(self.model.parameters()).device
-
         for idx, input in enumerate(self.local_inputs):
 
             tokenizer_data = self.tokenizer(input['data'], return_tensors="pt")
@@ -322,6 +324,7 @@ class HuggingfaceTestRunner(TestRunner):
             hf_past_key_values = None
 
             for i in range(self.cfg['huggingface_options']['max_tokens']):
+                outputs = []
                 with torch.no_grad():
                     result = self.model(
                         input_ids=data,
@@ -330,7 +333,7 @@ class HuggingfaceTestRunner(TestRunner):
                         return_dict=True,
                         use_cache=True,
                         # output_attentions=False,
-                        output_hidden_states=not self.cfg['huggingface_options']['output_logits'],
+                        output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
                     )
                 hf_past_key_values = result.past_key_values
 
@@ -374,10 +377,10 @@ class HuggingfaceTestRunner(TestRunner):
                         hidden_states = recursive_stack(result.hidden_states).detach().numpy()
                         hidden_states = np.squeeze(hidden_states, 1)
                         dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states)
-                        outputs.append(hidden_states[0])
+                        outputs.append(hidden_states)
                         count += 1
-
-        return outputs, tokens_ids, tokens
+                all_outputs.append(outputs)
+        return all_outputs, tokens_ids, tokens
 
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
@@ -488,7 +491,7 @@ class HuggingfaceTestRunner(TestRunner):
         for token_idx, (expected_token_result, actual_token_result) in enumerate(zip(ref_ouputs, test_outputs)):
 
             for idx, (expected, actual) in enumerate(zip(expected_token_result, actual_token_result)):
-
+                print(f"token idx: {token_idx}, idx: {idx}")
                 expected = expected.astype(np.float32)
                 actual = actual.astype(np.float32)
                 dump_file = os.path.join(dump_dir, f'nncase_result_{token_idx}_{idx}_hist.csv')
