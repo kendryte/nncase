@@ -132,7 +132,9 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Tensors.Gather gather:
                 return TIR.F.NTT.Gather((Expr)arguments[0], (Expr)arguments[1], output, gather.Axis);
             case IR.NN.Pad pad:
-                return TIR.F.NTT.Pad((Expr)arguments[0], output, (Paddings)call[IR.NN.Pad.Pads], ((TensorConst)call[IR.NN.Pad.Value]).Value.ToArray<float>()[0]);
+                var paddings = (Paddings)call[IR.NN.Pad.Pads];
+                var actualPadAxes = Enumerable.Range(0, paddings.Count).Where(i => !(paddings[i] is { IsFixed: true } pad && pad.Sum() == 0)).ToArray();
+                return TIR.F.NTT.Pad((Expr)arguments[0], output, paddings, ((TensorConst)call[IR.NN.Pad.Value]).Value.ToArray<float>()[0], actualPadAxes);
             case IR.Math.Reduce reduce:
                 return TIR.F.NTT.Reduce((Expr)arguments[0], output, false, Array.Empty<int>(), Array.Empty<Dimension>(), ((RankedShape)call[IR.Math.Reduce.Axes]).ToValueArray().Select(x => Util.PositiveIndex(x, arguments[0].CheckedTensorType)).OrderBy(a => a).ToArray().ToInts(), ((TensorConst)call[IR.Math.Reduce.KeepDims]).Value.ToArray<bool>()[0], reduce.ReduceOp);
             case IR.Math.ReduceArg reduceArg:
@@ -183,7 +185,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 output = call;
                 return call;
             case IR.NN.GetPositionIds getPositionIds:
-                return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output);
+                return TIR.F.NTT.GetPositionIds((Expr)arguments[1], output, (DistributedType)call.CheckedType);
             case IR.NN.LayerNorm ln:
                 return TIR.F.NTT.VectorizedLayerNorm((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output, ln.Axis, ln.Epsilon, ln.UseMean, Array.Empty<int>(), Array.Empty<Dimension>());
             case IR.NTT.VectorizedLayerNorm ln:

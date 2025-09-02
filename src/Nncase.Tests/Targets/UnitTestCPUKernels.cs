@@ -51,7 +51,7 @@ public class CpuKernelCase
     public IReadOnlyList<Tensor> RTInputs { get; set; }
 }
 
-public sealed class TestUpdatePagedAttentionCase : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture, int[], int>
+public sealed class TestUpdatePagedAttentionCaseData : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture, int[], int>
 {
     private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
     [
@@ -107,7 +107,7 @@ public sealed class TestUpdatePagedAttentionCase : TheoryData<TestFixture.PagedA
          [AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head]),
     ];
 
-    public TestUpdatePagedAttentionCase()
+    public TestUpdatePagedAttentionCaseData()
     {
         int count = 0;
         foreach (var (name, queryLens, seqLens) in TestScenarios)
@@ -137,7 +137,7 @@ public sealed class TestUpdatePagedAttentionCase : TheoryData<TestFixture.PagedA
     }
 }
 
-public sealed class TestPagedAttentionCase : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture, int[], int>
+public sealed class TestPagedAttentionCaseData : TheoryData<TestFixture.PagedAttentionKVCacheTestFixture, int[], int>
 {
     private static readonly (string Name, long[] QueryLens, long[] SeqLens)[] TestScenarios =
     [
@@ -195,7 +195,7 @@ public sealed class TestPagedAttentionCase : TheoryData<TestFixture.PagedAttenti
          [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]),
     ];
 
-    public TestPagedAttentionCase()
+    public TestPagedAttentionCaseData()
     {
         int count = 0;
         foreach (var (name, queryLens, seqLens) in TestScenarios)
@@ -284,7 +284,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     };
 
     [Theory]
-    [ClassData(typeof(TestUpdatePagedAttentionCase))]
+    [ClassData(typeof(TestUpdatePagedAttentionCaseData))]
     public async Task TestUpdatePagedAttentionCase(PagedAttentionKVCacheTestFixture fixture, int[] hierarchy, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
@@ -351,7 +351,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [ClassData(typeof(TestPagedAttentionCase))]
+    [ClassData(typeof(TestPagedAttentionCaseData))]
     public async Task TestPagedAttentionCase(PagedAttentionKVCacheTestFixture fixture, int[] hierarchy, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
@@ -1093,6 +1093,164 @@ public sealed class UnitTestCPUKernels : TestClassBase
         }
 
         await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { CompareOp.Equal, new long[] { 34 }, new long[] { 1 }, new[] { 4 }, new int[] { }, new int[] { 0 }, 0 })]
+    public async Task TestDynamicVectorizeCompare(CompareOp op, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[] sbps, int[] dynamicAxes, int count)
+    {
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var dimVar = new DimVar("seq_length")
+        {
+            Metadata = new()
+            {
+                Range = new(1, 256),
+            },
+        };
+
+        var lhsDynShape = new RankedShape(Enumerable.Range(0, lhsShape.Length).Select(i => dynamicAxes.Contains(i) ? dimVar : (Dimension)lhsShape[i]).ToArray());
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsDynShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDynShape.ToArray());
+        var rhsDynShape = new RankedShape(Enumerable.Range(0, rhsShape.Length).Select(i => dynamicAxes.Contains(lhsDynShape.Rank + i) ? dimVar : (Dimension)rhsShape[i]).ToArray());
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsDynShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDynShape.ToArray());
+        var pre = IR.F.Math.Compare(op, lhs, rhs);
+
+        var lhsElems = Enumerable.Range(0, (int)TensorUtilities.GetProduct(lhsShape)).Select(i => (float)i).ToArray();
+        var rhsElems = Enumerable.Range(0, (int)TensorUtilities.GetProduct(rhsShape)).Select(i => (float)i).ToArray();
+
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { lhs, Value.FromTensor(Tensor.From(lhsElems, lhsShape)) },
+            { rhs, Value.FromTensor(Tensor.From(rhsElems, rhsShape)) },
+            { dimVar, Value.FromTensor(lhsShape.Concat(rhsShape).Skip(dynamicAxes[0]).First()) },
+        };
+
+        var rule = new Passes.Rules.NTT.VectorizeCompare(MaskVectorStyle.Slim, Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 56 /* seq_length */, 1 }, new long[] { 1 }, new long[] { 56, 16 }, new int[] { 4 }, new int[] { }, new int[] { 0, 3 }, 0 })]
+    public async Task TestDynamicVectorizeWhere(long[] condShape, long[] lhsShape, long[] rhsShape, int[] hierarchy, int[] sbps, int[] dynamicAxes, int count)
+    {
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 30), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var dimVar = new DimVar("seq_length")
+        {
+            Metadata = new()
+            {
+                Range = new(1, 128),
+            },
+        };
+
+        var condDynShape = new RankedShape(Enumerable.Range(0, condShape.Length).Select(i => dynamicAxes.Contains(i) ? dimVar : (Dimension)condShape[i]).ToArray());
+        var cond = new Var(new TensorType(DataTypes.Boolean, condDynShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(cond, condDynShape.ToArray());
+
+        var lhsDynShape = new RankedShape(Enumerable.Range(0, lhsShape.Length).Select(i => dynamicAxes.Contains(condShape.Length + i) ? dimVar : (Dimension)lhsShape[i]).ToArray());
+        var lhs = new Var(new TensorType(DataTypes.Float32, lhsDynShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(lhs, lhsDynShape.ToArray());
+
+        var rhsDynShape = new RankedShape(Enumerable.Range(0, rhsShape.Length).Select(i => dynamicAxes.Contains(condShape.Length + lhsShape.Length + i) ? dimVar : (Dimension)rhsShape[i]).ToArray());
+        var rhs = new Var(new TensorType(DataTypes.Float32, rhsDynShape));
+        CompileOptions.ShapeBucketOptions.VarMap.Add(rhs, rhsDynShape.ToArray());
+
+        var pre = IR.F.Tensors.Where(cond, lhs, rhs);
+
+        var feedDict = new Dictionary<IVar, IValue>() {
+            { cond, IR.F.Random.Normal(DataTypes.Boolean, 0, 1, 1, condShape).Evaluate() },
+            { lhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate() },
+            { rhs, IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate() },
+            { dimVar, Value.FromTensor(condShape.Concat(lhsShape).Concat(rhsShape).Skip(dynamicAxes[0]).First()) },
+        };
+
+        var rule = new Passes.Rules.NTT.VectorizeWhere(MaskVectorStyle.Slim, Rank, Lane);
+        CompilerServices.TryMatch(pre, rule.Pattern, out var result);
+        var posts = new[] { pre }.Concat(rule.GetReplaceCandidates(result!, new Passes.RunPassContext()));
+        await RunCases($"Theory{count}", feedDict, posts);
+    }
+
+    [Theory]
+    [InlineData(new object[] { new long[] { 83 }, new long[] { 83 }, new[] { 4 }, 0 })]
+    [InlineData(new object[] { new long[] { 1 }, new long[] { 84 }, new[] { 4 }, 1 })]
+    [InlineData(new object[] { new long[] { 12, 1 }, new long[] { 12, 84 }, new[] { 4 }, 2 })]
+    [InlineData(new object[] { new long[] { 4, 4, 4, 4 }, new long[] { 4, 12, 20, 28 }, new[] { 4 }, 3 })]
+    [InlineData(new object[] { new long[] { 25, 28, 31, 19, 25 }, new long[] { 25 + 0, 28 + 1, 31 + 16, 19 + 4, 25 + 7 }, new[] { 4 }, 3 })]
+    public async Task TestDynamicGetPositionIds(long[] queryLens, long[] seqLens, int[] hierarchy, int count)
+    {
+        var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
+        targetOptions.Hierarchies[0] = hierarchy;
+        targetOptions.HierarchyNames = string.Join(string.Empty, "cbt".TakeLast(hierarchy.Length));
+        targetOptions.HierarchySizes = Enumerable.Repeat((long)MathF.Pow(2, 40), hierarchy.Length).ToArray();
+        targetOptions.HierarchyLatencies = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+        targetOptions.HierarchyBandWidths = Enumerable.Repeat(1, hierarchy.Length).ToArray();
+
+        var dimVar = new DimVar("seq_length")
+        {
+            Metadata = new() { Range = new(1, MathUtility.AlignUp(queryLens.Sum(), 128)) },
+        };
+
+        var fixture = new PagedAttentionKVCacheTestFixture(queryLens, seqLens, 2, 2, 64, 64, (int)MathUtility.CeilDiv(seqLens.Select(seq_len => MathUtility.CeilDiv(seq_len, 64)).Sum(), hierarchy.Max()) * hierarchy.Max(), Runtime.TypeCode.Float32, 1, [PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize], [PagedKVCacheDimKind.HeadDim], [PagedKVCacheDimKind.NumBlocks], [SBP.S(0)], [AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head], [AttentionDimKind.Seq, AttentionDimKind.Dim, AttentionDimKind.Head]);
+
+        var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
+        var dataGeneratorOptions = new PagedAttentionKVCacheTestFixture.DataGeneratorOptions(Random: true, IncreaseBy: [AttentionDimKind.Head], ResetForKV: true);
+        var referenceResults = PagedAttentionKVCacheTestFixture.PrepareReferenceResults(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.Config.NumKVHeads, fixture.Config.HeadDim, fixture.Config.NumLayers, fixture.Config.KVPrimType, dataGeneratorOptions);
+
+        var (_, _, _, kVCacheObjVar) = Evaluator.NN.RefPagedAttentionKVCache.BuildPagedAttentionKernel(fixture.QueryLens, fixture.SeqLens, fixture.NumQHeads, fixture.NumBlocks, fixture.QLayout, fixture.KLayout, fixture.Config, new(true));
+
+        var kvinputs = PagedAttentionKVCacheTestFixture.PrepareKVInputs(fixture.QueryLens, fixture.SeqLens, fixture.ContextLens, fixture.NumBlocks, placement, referenceResults, fixture.Config);
+
+        var pre = IR.F.NN.GetPositionIds(dimVar, kVCacheObjVar);
+
+        var feedDict = new Dictionary<IVar, IValue>
+        {
+            { kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(kvinputs.KVCacheObj))) },
+            { dimVar, Value.FromTensor(queryLens.Sum()) },
+        };
+
+        var rtFeedDict = new Dictionary<IVar, IValue>();
+        var kvCacheAddrs = new List<long>();
+        {
+            var logicalKVShape = kvinputs.KVCacheObj.KVCaches.Dimensions.ToArray();
+            foreach (var topoIndices in hierarchy.Select(i => Enumerable.Range(0, i)).CartesianProduct().Select(arr => arr.Select(i => (long)i).ToArray()))
+            {
+                var indices = topoIndices.Concat(Enumerable.Repeat(0L, logicalKVShape.Length - hierarchy.Length)).ToArray();
+                var shape = Enumerable.Repeat(1L, hierarchy.Length).Concat(logicalKVShape[hierarchy.Length..]).ToArray();
+                var kvStorage = kvinputs.KVCacheObj.KVCaches.View(indices, shape);
+
+                // FIXME: Memory leak here
+                unsafe
+                {
+                    kvCacheAddrs.Add((long)kvStorage.PinBuffer().Pointer);
+                }
+            }
+        }
+
+        var rtkvObj = RTPagedAttentionKVCache.Create(
+                    kvinputs.KVCacheObj.NumSeqs,
+                    kvinputs.KVCacheObj.NumTokens,
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.ContextLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SeqLens),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.BlockTables),
+                    RTTensor.FromTensor(kvinputs.KVCacheObj.SlotMapping),
+                    RTTensor.FromTensor(kvCacheAddrs.ToArray()));
+        rtFeedDict.Add(kVCacheObjVar, Value.FromTensor(Tensor.FromScalar(new Reference<IPagedAttentionKVCache>(rtkvObj))));
+        rtFeedDict.Add(dimVar, Value.FromTensor(queryLens.Sum()));
+
+        await RunCases($"Theory{count}", feedDict, new[] { pre }, rtFeedDict);
     }
 
     [Theory]

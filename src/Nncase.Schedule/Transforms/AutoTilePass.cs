@@ -83,7 +83,23 @@ public sealed class AutoTilePass : FunctionPass
         }
 
         // 3. reconstruction
-        var constructor = new AutoTileReconstructor(tiler, ModuleKind, CompileOptions, condenseAlgo, func.Parameters.ToArray().OfType<DimVar>().ToArray());
+        var dimVars = new List<DimVar>(func.Parameters.ToArray().OfType<DimVar>().ToArray());
+        foreach (var (tensorVar, dimExprs) in CompileOptions.ShapeBucketOptions.VarMap)
+        {
+            for (int i = 0; i < dimExprs.Length; i++)
+            {
+                var dimExpr = dimExprs[i];
+                if (dimExpr is DimVar dimVar)
+                {
+                    if (!dimVars.Contains(dimVar))
+                    {
+                        dimVars.Add(dimVar);
+                    }
+                }
+            }
+        }
+
+        var constructor = new AutoTileReconstructor(tiler, ModuleKind, CompileOptions, condenseAlgo, dimVars.ToArray());
         var post = constructor.Construct();
         return Task.FromResult((BaseFunction)func.With(body: post));
     }

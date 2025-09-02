@@ -163,9 +163,9 @@ public partial class NTT
         return new Call(new Transpose(perm), buffer, ret);
     }
 
-    public static Expr Pad(Expr input, Expr ret, Paddings pads, float padValue)
+    public static Expr Pad(Expr input, Expr ret, Paddings pads, float padValue, IRArray<int> actualPadAxes)
     {
-        return new Call(new Pad(padValue), input, pads, ret);
+        return new Call(new Pad(padValue, actualPadAxes), input, pads, ret);
     }
 
     public static Expr Im2col(Expr input, Expr output, IRArray<long> kernel, IRArray<int> stride, IRArray<int> padding, IRArray<int> vectorizedAxes, IRArray<int> padedNums)
@@ -248,8 +248,8 @@ public partial class NTT
         return new Call(new TIR.NTT.Range(), begin, end, step, ret);
     }
 
-    public static Expr GetPositionIds(Expr kvCache, Expr ret)
+    public static Expr GetPositionIds(Expr kvCache, Expr ret, DistributedType distributedType)
     {
-        return new Call(new TIR.NTT.GetPositionIds(), kvCache, ret);
+        return new Call(new TIR.NTT.GetPositionIds(distributedType), kvCache, ret);
     }
 }

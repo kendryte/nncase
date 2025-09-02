@@ -563,7 +563,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     WriteIndWithProfiler($"paged_attention({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name}, {pagedAttention.Layout.ToC()});\n");
                     break;
                 case TIR.NTT.GetPositionIds getPositionIds:
-                    WriteIndWithProfiler($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: false).Name});\n");
+                    WriteIndWithProfiler($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {KernelUtility.ShardingToC(getPositionIds.DistributedType)}, {Visit(getPositionIds.DistributedType.TensorType.Shape).Name});\n");
                     break;
                 default:
                     throw new NotSupportedException(kop.ToString());

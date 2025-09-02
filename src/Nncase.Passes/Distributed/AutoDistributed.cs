@@ -426,10 +426,36 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         var addedBuckets = bucketMemo.Values.ToArray();
         foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
         {
-            var bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+            if (!bucketMemo.TryGetValue(nType, out var bucket))
             {
+                bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                 var linked = false;
                 foreach (var addedBucket in addedBuckets)
+                {
+                    var addedNode = addedBucket.Vertices.First();
+                    if (CheckBoxingType(addedNode.IRType, nType) is not InvalidType)
+                    {
+                        var node = new SearchableNode(new Boxing(nType), nType);
+                        bucket.AddVertex(node);
+                        callCluster.AddEdge(new(node, addedNode, 0, addedBucket));
+                        linked |= true;
+                    }
+                }
+
+                if (!linked)
+                {
+                    callCluster.RemoveCluster(bucket);
+                }
+                else
+                {
+                    bucketMemo.TryAdd(nType, bucket);
+                }
+            }
+            else
+            {
+                bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
+                var linked = false;
+                var addedBucket = addedBuckets[0];
                 {
                     var addedNode = addedBucket.Vertices.First();
                     if (CheckBoxingType(addedNode.IRType, nType) is not InvalidType)

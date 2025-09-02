@@ -24,16 +24,26 @@ public static class TilingUtilities
 
     public static (Isl.set DomainSet, bool[] DomainDynamic, long[] DomainBoundValues, Dimension[] DomainBoundExprs) InferDomainBounds(Expr[] bufferExprs, Isl.set[] shapeDomains, Isl.map[] accessMaps, HashSet<DimVar> dimVars)
     {
-        var reversedAccessMaps = accessMaps.Zip(shapeDomains).Select(pair => pair.First.reverse().intersect_domain(pair.Second)).ToArray();
+        var reversedAccessMaps = accessMaps.Zip(shapeDomains).Select(pair =>
+        {
+            var reverse = pair.First.reverse();
+            if (pair.Second.n_dim() == 0)
+            {
+                return reverse;
+            }
+
+            return reverse.intersect_domain(pair.Second);
+        }).ToArray();
         Isl.map domainMap = null!;
         var shapeExprMap = new Dictionary<string, Dimension>();
+        int z = 0;
         for (int i = 0; i < shapeDomains.Length; i++)
         {
             var reversedAccess = reversedAccessMaps[i];
             domainMap = domainMap is null ? reversedAccess : domainMap.flat_domain_product(reversedAccess!);
             for (int j = 0; j < shapeDomains[i].n_dim(); j++)
             {
-                domainMap = domainMap.set_dim_name(Isl.dim_type.in_, (uint)(i + j), $"d{i}_{j}");
+                domainMap = domainMap.set_dim_name(Isl.dim_type.in_, (uint)z++, $"d{i}_{j}");
                 shapeExprMap.Add($"d{i}_{j}", new IR.DimAt(new IR.Shapes.ShapeOf(bufferExprs[i]), j));
             }
         }

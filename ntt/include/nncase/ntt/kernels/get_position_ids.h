@@ -19,40 +19,45 @@
 
 namespace nncase::ntt {
 
-template <class TKVCache, ShardedTensor TOut>
-void get_position_ids(TKVCache &&kv_cache_tensor, TOut output) {
+template <class TKVCache, Tensor TOut, class TSharding, Shape TGlobalShape>
+void get_position_ids(TKVCache &&kv_cache_tensor, TOut output,
+                      const TSharding &sharding,
+                      const TGlobalShape &global_shape) {
     using TOutType = typename std::decay_t<TOut>;
-    using mesh_type = typename TOutType::mesh_type;
-    using TOutElem = typename TOutType::local_tensor_type::value_type;
+    using mesh_type = typename TSharding::mesh_type;
+    using TOutElem = typename TOutType::value_type;
 
     const auto local_mesh_index = mesh_type::local_index();
     const auto global_offset =
-        output.sharding().global_offset(output.shape(), local_mesh_index);
-    auto local_output = output.local();
-    const auto local_shape = local_output.shape();
+        sharding.global_offset(global_shape, local_mesh_index);
+    const auto local_shape = output.shape();
 
     const auto global_start = global_offset[0_dim];
     const auto global_end = global_start + local_shape[0_dim];
 
     auto &kv_cache = kv_cache_tensor(fixed_shape_v<>);
-    size_t out_i = 0;
-    size_t acc = 0;
-    for (size_t seq_id = 0; seq_id < kv_cache.num_seqs(); seq_id++) {
+    for (size_t seq_id = 0, query_start_loc = 0, out_loc = 0;
+         seq_id < kv_cache.num_seqs(); seq_id++) {
         size_t context_len = kv_cache.context_len(seq_id);
         size_t seq_len = kv_cache.seq_len(seq_id);
         auto query_len = seq_len - context_len;
-        if (acc >= global_end)
-            break;
-
-        if (acc + query_len < global_start)
-            continue;
-
-        for (size_t i = global_start > acc ? global_start - acc : 0;
-             i < query_len, out_i < local_shape[0_dim]; i++) {
-            local_output(out_i) = (TOutElem)(context_len + i);
-            out_i++;
+        auto query_end_loc = query_start_loc + query_len;
+        if (query_start_loc >= global_end) {
+            return;
         }
-        acc += query_len;
+
+        if (query_end_loc <= global_start) {
+            query_start_loc = query_end_loc;
+            continue;
+        }
+
+        for (size_t pos_id = context_len + (global_start + out_loc - query_start_loc);
+             pos_id < seq_len && out_loc < local_shape[0_dim]; pos_id++) {
+            output(out_loc) = static_cast<TOutElem>(pos_id);
+            out_loc++;
+        }
+
+        query_start_loc = query_end_loc;
     }
 }
 } // namespace nncase::ntt

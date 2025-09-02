@@ -154,6 +154,7 @@ public static class DataTypes
         ReferenceType refType => $"new ReferenceType({refType.ElemType.GetCSharpName()})",
         ValueType valueType => $"new {valueType.GetType().Name}()",
         VectorType vtype => $"{GetCSharpName(vtype.ElemType)}<{string.Join(",", vtype.Lanes)}>",
+        MaskVectorType mvtype => $"new MaskVectorType({mvtype.Style}, {mvtype.ElementBits}, {mvtype.Lanes})",
         _ => throw new ArgumentOutOfRangeException(dataType.GetType().Name),
     };
 

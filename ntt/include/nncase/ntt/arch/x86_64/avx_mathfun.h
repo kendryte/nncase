@@ -68,6 +68,10 @@ _PI32AVX_CONST(4, 4);
 
 _PS256_CONST(1, 1.0f);
 _PS256_CONST(0p5, 0.5f);
+_PS256_CONST(2,  2.0f);
+_PS256_CONST(nan,  NAN);
+
+
 /* the smallest non denormalized float number */
 _PS256_CONST_TYPE(min_norm_pos, int, 0x00800000);
 _PS256_CONST_TYPE(mant_mask, int, 0x7f800000);
@@ -75,6 +79,7 @@ _PS256_CONST_TYPE(inv_mant_mask, int, ~0x7f800000);
 
 _PS256_CONST_TYPE(sign_mask, int, (int)0x80000000);
 _PS256_CONST_TYPE(inv_sign_mask, int, ~0x80000000);
+_PS256_CONST_TYPE(all_bits,  int, -1);      
 
 _PI32_CONST256(0, 0);
 _PI32_CONST256(1, 1);
@@ -748,9 +753,54 @@ static inline __m256 tan256_ps(__m256 x) {
     return ytan;
 }
 
+
+// static inline __m256 pow256_ps(__m256 a, __m256 b) {
+//     // pow(x, m) = exp(m * log(x))
+//     return exp256_ps(_mm256_mul_ps(b, log256_ps(a)));
+// }
 static inline __m256 pow256_ps(__m256 a, __m256 b) {
-    // pow(x, m) = exp(m * log(x))
-    return exp256_ps(_mm256_mul_ps(b, log256_ps(a)));
+    // --- constants ---
+    const __m256 zero     =  _mm256_setzero_ps();
+    const __m256 two      = *(__m256*)_ps256_2;
+    const __m256 half     = *(__m256*)_ps256_0p5;
+    const __m256 nan_val  = *(__m256*)_ps256_nan;
+    const __m256 abs_mask = *(__m256*)_ps256_inv_sign_mask;
+    const __m256 sign_mask= *(__m256*)_ps256_sign_mask;
+    const __m256 all_bits = *(__m256*)_ps256_all_bits;
+
+    // --- input a  ---
+    __m256 neg_a_mask = _mm256_cmp_ps(a, zero, _CMP_LT_OS);
+    __m256 abs_a = _mm256_and_ps(a, abs_mask);
+
+    // ---  |a|^b ---
+    __m256 result = exp256_ps(_mm256_mul_ps(b, log256_ps(abs_a)));
+
+    // --- handle a < 0 ---
+    if (_mm256_movemask_ps(neg_a_mask) != 0) {
+        __m256 b_floor = _mm256_floor_ps(b);
+        __m256 is_int_mask = _mm256_cmp_ps(b, b_floor, _CMP_EQ_OQ);
+
+        __m256 b_div_2_floor = _mm256_floor_ps(_mm256_mul_ps(b, half));
+        __m256 is_odd_mask = _mm256_cmp_ps(_mm256_mul_ps(b_div_2_floor, two), b_floor, _CMP_NEQ_UQ);
+
+        //  set to neg, a < 0 AND b is odd
+        __m256 flip_sign_mask = _mm256_and_ps(neg_a_mask, is_int_mask);
+        flip_sign_mask = _mm256_and_ps(flip_sign_mask, is_odd_mask);
+
+        // set to NaN, a < 0 AND b is not an integer
+        __m256 is_not_int_mask = _mm256_xor_ps(is_int_mask, all_bits);
+        __m256 set_nan_mask = _mm256_and_ps(neg_a_mask, is_not_int_mask);
+
+        // --- use the masks to adjust the result ---
+        // a. set to neg
+        __m256 sign_flipper = _mm256_and_ps(flip_sign_mask, sign_mask);
+        result = _mm256_xor_ps(result, sign_flipper);
+        
+        // b. set to NaN
+        result = _mm256_blendv_ps(result, nan_val, set_nan_mask);
+    }
+
+    return result;
 }
 
 static inline __m256 asin256_ps(__m256 x) {
