@@ -106,6 +106,7 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     test_ntt_layer_norm.cpp
     test_ntt_matmul.cpp
     test_ntt_reduce.cpp
+    test_ntt_reshard.cpp
     test_ntt_rms_norm.cpp
     test_ntt_scatter_nd.cpp
     # test_ntt_slice.cpp

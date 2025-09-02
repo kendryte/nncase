@@ -170,6 +170,9 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
                 1_dim) = (uintptr_t)(params.block_local_rdata.data() +
                                      params.block_local_rdata.size_bytes());
 
+            // Make sure all global data inited.
+            ntt::distributed::topology_synchronize();
+
             thread_main(params.input_descs, params.output_descs,
                         params.rdata.data(), thread_local_rdata.data(),
                         params.block_local_rdata.data(), local_data.data(),
