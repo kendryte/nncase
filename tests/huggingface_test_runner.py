@@ -3,8 +3,6 @@ from typing import Sequence
 import shutil
 import os
 import numpy as np
-from numpy.core.defchararray import array
-from numpy.lib.function_base import select
 from test_runner import *
 import io
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
@@ -221,7 +219,9 @@ class HuggingfaceTestRunner(TestRunner):
                     model, [loop_data[0], kv_object], token_num=i)
 
             if next_token_id == self.tokenizer.eos_token_id:
+                print(f"EOS token reached at step {i}")
                 break
+
             token_ids.append(next_token_id)
             tokens.append(next_token)
 
