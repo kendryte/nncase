@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -14,13 +15,13 @@ namespace Nncase.Passes;
 
 public partial class NTTAffineSelectionPass
 {
-    public static bool TryGetWhereAffineRelation(IR.Shape condShape, IR.Shape lhsShape, IR.Shape rhsShape, out AffineDomain[] domains, out AffineMap condMap, out AffineMap lhsMap, out AffineMap rhsMap)
+    public static bool TryGetWhereAffineRelation(IR.Shape condShape, IR.Shape lhsShape, IR.Shape rhsShape, [MaybeNullWhen(false)] out AffineDomain[] domains, [MaybeNullWhen(false)] out AffineMap condMap, [MaybeNullWhen(false)] out AffineMap lhsMap, [MaybeNullWhen(false)] out AffineMap rhsMap)
     {
         var rank = Math.Max(condShape.Rank, Math.Max(lhsShape.Rank, rhsShape.Rank));
         domains = IR.F.Affine.Domains(rank);
-        condMap = null!;
-        lhsMap = null!;
-        rhsMap = null!;
+        condMap = null;
+        lhsMap = null;
+        rhsMap = null;
         var condRes = new AffineRange[condShape.Rank];
         var lhsRes = new AffineRange[lhsShape.Rank];
         var rhsRes = new AffineRange[rhsShape.Rank];
