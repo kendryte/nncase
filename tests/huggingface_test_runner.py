@@ -167,7 +167,7 @@ class HuggingfaceTestRunner(TestRunner):
                 slice_indices = slice(-logits_to_keep, None) if isinstance(logits_to_keep,
                                                                            int) else logits_to_keep
                 nncase_logits = self.model.lm_head(torch.tensor(
-                    res[np.newaxis, ...][:, slice_indices, :]).detach().to(torch.float32).numpy())
+                    res[np.newaxis, ...][:, slice_indices, :], dtype=self.hf_config.torch_dtype)).detach().to(torch.float32).numpy()
                 next_token_id, next_token = self.decode_token(nncase_logits)
             else:
                 results.append(res)
@@ -293,13 +293,11 @@ class HuggingfaceTestRunner(TestRunner):
                             token_judge, token_result = self.compare_token_result(
                                 expect_token_ids, actual_token_ids, stage, k_target, v_mode['threshold'])
 
+                            print(f"gt    :{expect_tokens}\nactual:{actual_tokens}")
                             if not token_judge:
                                 if test_utils.in_ci():
                                     self.clear(self.case_dir)
                                 assert (token_judge), f"{token_result}"
-
-                            print(f"gt    :{expect_tokens}\nactual:{actual_tokens}")
-
         if test_utils.in_ci():
             self.clear(self.case_dir)
 
@@ -384,6 +382,7 @@ class HuggingfaceTestRunner(TestRunner):
 
     def parse_model(self, model_path):
         config = AutoConfig.from_pretrained(model_path + "/config.json")
+        self.hf_config = config
 
         if self.cfg['huggingface_options']['num_layers'] != -1:
             self.num_layers = self.cfg['huggingface_options']['num_layers']
@@ -428,12 +427,12 @@ class HuggingfaceTestRunner(TestRunner):
 
         self.cfg['huggingface_options']['config'] = self.kv_cache_config
 
-        # if hasattr(config, "quantization_config"):
-        #     dequantize_weights(model_path)
-        #     delattr(config, "quantization_config")
+        if hasattr(config, "quantization_config"):
+            dequantize_weights(model_path)
+            delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, config=config, torch_dtype="auto", device_map="auto").eval()
-        # restore_weights(model_path)
+            model_path, config=config, torch_dtype="auto", device_map="auto", trust_remote_code=True).eval()
+        restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens
@@ -489,9 +488,7 @@ class HuggingfaceTestRunner(TestRunner):
         judges = []
         result = ''
         for token_idx, (expected_token_result, actual_token_result) in enumerate(zip(ref_ouputs, test_outputs)):
-
             for idx, (expected, actual) in enumerate(zip(expected_token_result, actual_token_result)):
-                print(f"token idx: {token_idx}, idx: {idx}")
                 expected = expected.astype(np.float32)
                 actual = actual.astype(np.float32)
                 dump_file = os.path.join(dump_dir, f'nncase_result_{token_idx}_{idx}_hist.csv')
