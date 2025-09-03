@@ -52,13 +52,13 @@ endmacro()
 # Automatically process all kernel generators
 foreach(kernel ${KERNEL_NAMES})
     string(TOUPPER ${kernel} KERNEL_UPPER)
-    
+
     set(GENERATOR_SCRIPT ${TEST_GENERATOR_DIR}/generate_${kernel}_tests.py)
     set(GENERATED_CMAKE ${GENERATED_DIR}/generated_${kernel}_tests.cmake)
-    
+
     if(EXISTS ${GENERATOR_SCRIPT})
         run_generator_if_needed(${GENERATOR_SCRIPT} ${GENERATED_CMAKE})
-        
+
         if(EXISTS ${GENERATED_CMAKE})
             include(${GENERATED_CMAKE})
             list(APPEND GENERATED_TEST_SOURCES ${GENERATED_${KERNEL_UPPER}_TEST_SOURCES})

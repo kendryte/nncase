@@ -363,6 +363,8 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
     constexpr void overlap_aware_reshard(const SrcTensor &src,
                                          DestTensor &dest) noexcept {
+        // Make sure both src and dest ready.
+        distributed::topology_synchronize();
 
         // 1. get dest global offset
         auto local_mesh_index = mesh_type::local_index();
