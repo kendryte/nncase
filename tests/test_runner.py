@@ -393,6 +393,8 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
         import_opt = self.cfg['huggingface_options']
         e = '"'
         for k, v in import_opt.items():
+            if k == "max_tokens":
+                continue
             setattr(import_options.huggingface_options, k, v)
 
         return import_options
@@ -488,18 +490,17 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         {"role": "system", "content": "You are a assistant!"},
                         {"role": "user", "content": data[batch_idx]}
                     ]
-                    text = self.tokenizer.apply_chat_template(
+                    data = self.tokenizer.apply_chat_template(
                         messages,
                         tokenize=False,
                         add_generation_prompt=True
                     )
-                    data = self.tokenizer([text], return_tensors="np").input_ids[0].astype(np.int64)
-                    if dtype == 'PagedAttentionKVCache':
-                        data = input['scheduler'].schedule([0], [data.shape[0]])
                 if not test_utils.in_ci():
                     if method == 'text':
+                        tokendizer_data = self.tokenizer(
+                            [data], return_tensors="np").input_ids[0].astype(np.int64)
                         dump_txt_file(os.path.join(self.case_dir, name,
-                                                   f'text_{name}_{input_idx}_{batch_idx}.txt'), data)
+                                                   f'text_{name}_{input_idx}_{batch_idx}.txt'), tokendizer_data)
                     else:
                         dump_bin_file(os.path.join(self.case_dir, name,
                                                    f'{name}_{input_idx}_{batch_idx}.bin'), data)
@@ -511,9 +512,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         convert_npy_to_json(os.path.join(self.case_dir, name,
                                                          f'{name}_{input_idx}_{batch_idx}.npy'),
                                             os.path.join(self.case_dir, name))
-                    elif dtype == 'PagedAttentionKVCache':
-                        data.dump_json(os.path.join(self.case_dir, name,
-                                                    f'{name}_{input_idx}_{batch_idx}.json'))
+                    # elif dtype == 'PagedAttentionKVCache' and not self.cfg['huggingface_options']['pipeline']:
+                    #     data.dump_json(os.path.join(self.case_dir, name,
+                    #                                 f'{name}_{input_idx}_{batch_idx}.json'))
                 samples.append(data)
             input['data'] = samples
 
