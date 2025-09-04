@@ -19,8 +19,8 @@
 
 namespace nncase::ntt {
 namespace ukernels {
-template <bool AccumulateC, Scalar TAElem, Vector TBPack, Vector TCPack,
-          bool Arch>
+template <bool AccumulateC, template <class> class TAccOp, Scalar TAElem,
+          Vector TBPack, Vector TCPack, bool Arch>
 struct u_packed_gemv {
     static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
@@ -30,6 +30,7 @@ struct u_packed_gemv {
                               TCPack *NTT_RESTRICT c, const TLdb &ldb,
                               const TK &K, const TN &N) noexcept {
         using TAccPack = decltype(ntt::cast_elem<float>(c[0_dim]));
+        constexpr auto accOp = TAccOp<TAccPack>{};
 
         for (size_t n1 = 0; n1 < N; n1++) {
             const auto b1 = b + n1 * ldb;
@@ -47,19 +48,21 @@ struct u_packed_gemv {
             ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
                 c[n1](index[0_dim]) =
                     ntt::cast_elem<typename TCPack::element_type>(
-                        c0(index[0_dim]));
+                        accOp(c0(index[0_dim])));
             });
         }
     }
 };
 } // namespace ukernels
 
-template <bool AccumulateC, Scalar TAElem, Vector TBPack, Vector TCPack,
-          Dimension TLdb, Dimension TK, Dimension TN>
+template <bool AccumulateC, template <class> class TAccOp, Scalar TAElem,
+          Vector TBPack, Vector TCPack, Dimension TLdb, Dimension TK,
+          Dimension TN>
 constexpr void u_packed_gemv(const TAElem *a, const TBPack *b, TCPack *c,
                              const TLdb &ldb, const TK &K,
                              const TN &N) noexcept {
-    ukernels::u_packed_gemv<AccumulateC, TAElem, TBPack, TCPack, true> impl;
+    ukernels::u_packed_gemv<AccumulateC, TAccOp, TAElem, TBPack, TCPack, true>
+        impl;
     impl(a, b, c, ldb, K, N);
 }
 } // namespace nncase::ntt

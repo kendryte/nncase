@@ -22,16 +22,16 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <bool AccumulateC, class TLhs, class TRhs, class TOut>
+template <bool AccumulateC, template <class> class TAccOp, class TLhs, class TRhs, class TOut>
 class packed_matmul_impl;
 
 /**
  * @brief 1D-vectorized matmul with packed B.
  * @remarks Loop orders: (m, n, k)
  */
-template <bool AccumulateC, ValidMatmulTensor TLhs, ValidMatmulTensor TRhs,
+template <bool AccumulateC, template <class> class TAccOp,ValidMatmulTensor TLhs, ValidMatmulTensor TRhs,
           ValidMatmulTensor TOut>
-class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
+class packed_matmul_impl<AccumulateC, TAccOp, TLhs, TRhs, TOut> {
     using TOutElem = typename TOut::element_type;
 
   public:
@@ -106,7 +106,7 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
     void gemv_l0(const TA &a, const TB &b, TC &c, const TK &K, const TN &N) {
         auto c0 = c.view(0_dim);
         auto a0 = a.view(0_dim);
-        ntt::u_packed_gemv<AccumulateC>(
+        ntt::u_packed_gemv<AccumulateC, TAccOp>(
             a0.elements().data(), b.elements().data(), c0.elements().data(),
             b.strides()[0_dim], K, N);
     }
@@ -127,13 +127,13 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
  * @param rhsPadedNums
  */
 template <bool AccumulateC = false, bool TransposedA = false,
-          bool TransposedB = false, Tensor TLhs, Tensor TRhs, class TOut,
+          bool TransposedB = false, template <class> class TAccOp = DefaultPostOp, Tensor TLhs, Tensor TRhs, class TOut,
           FixedDimensions LhsVectorizedAxes = shape_t<>,
           FixedDimensions LhsPadedNums = shape_t<>,
           FixedDimensions RhsVectorizedAxes = shape_t<>,
           FixedDimensions RhsPadedNums = shape_t<>>
 void packed_matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
-    detail::packed_matmul_impl<AccumulateC, TLhs, TRhs, std::decay_t<TOut>>
+    detail::packed_matmul_impl<AccumulateC, TAccOp, TLhs, TRhs, std::decay_t<TOut>>
         impl;
     impl(lhs, rhs, output);
 

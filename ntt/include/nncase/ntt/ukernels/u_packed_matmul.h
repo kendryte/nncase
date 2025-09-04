@@ -19,7 +19,7 @@
 
 namespace nncase::ntt {
 namespace ukernels {
-template <bool AccumulateC, dim_t M0Tile, Scalar TAElem, Vector TBPack,
+template <bool AccumulateC, dim_t M0Tile, template <class> class TAccOp, Scalar TAElem, Vector TBPack,
           Vector TCPack, bool Arch>
 struct u_packed_matmul {
     using TBElem = replace_lanes_t<TBPack, TBPack::shape()[1_dim]>;
@@ -32,6 +32,7 @@ struct u_packed_matmul {
                               TCPack *NTT_RESTRICT c, const TLda &lda,
                               const TLdc &ldc, const TK &K) noexcept {
         TCElem c0_tmp[M0Tile][N0Tile];
+        constexpr auto accOp = TAccOp<TCElem>{};
         ntt::apply(fixed_shape_v<M0Tile, N0Tile>, [&](auto index) {
             c0_tmp[index[0_dim]][index[1_dim]] =
                 AccumulateC ? c[index[0_dim] * ldc](index[1_dim]) : TCElem{};
@@ -61,19 +62,19 @@ struct u_packed_matmul {
 
         ntt::apply(fixed_shape_v<M0Tile, N0Tile>, [&](auto index) {
             ntt::store(c[index[0_dim] * ldc](index[1_dim]),
-                       c0_tmp[index[0_dim]][index[1_dim]]);
+                       accOp(c0_tmp[index[0_dim]][index[1_dim]]));
         });
     }
 };
 
 } // namespace ukernels
 
-template <bool AccumulateC, dim_t M0Tile, Scalar TAElem, Vector TBPack,
+template <bool AccumulateC, dim_t M0Tile, template <class> class TAccOp, Scalar TAElem, Vector TBPack,
           Vector TCPack, Dimension TLda, Dimension TLdc, Dimension TK>
 constexpr void u_packed_matmul(const TAElem *a, const TBPack *b, TCPack *c,
                                const TLda &lda, const TLdc &ldc,
                                const TK &K) noexcept {
-    ukernels::u_packed_matmul<AccumulateC, M0Tile, TAElem, TBPack, TCPack, true>
+    ukernels::u_packed_matmul<AccumulateC, M0Tile, TAccOp, TAElem, TBPack, TCPack, true>
         impl;
     impl(a, b, c, lda, ldc, K);
 }

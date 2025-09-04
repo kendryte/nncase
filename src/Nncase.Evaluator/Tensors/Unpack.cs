@@ -16,10 +16,14 @@ namespace Nncase.Evaluator.Tensors;
 
 public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Unpack>, IEvaluator<Unpack>
 {
-    /// <inheritdoc/>
-    public IValue Visit(IEvaluateContext context, Unpack target)
+    public static Tensor UnpackImpl(Tensor input, IRArray<int> axes)
     {
-        var dt = context.CurrentCall.Arguments[Unpack.Input.Index].CheckedDataType;
+        if (axes.Count == 0)
+        {
+            return input;
+        }
+
+        var dt = input.ElementType;
         var elementType = dt is VectorType vt ? vt.ElemType : dt;
         var oldLanesCount = dt switch
         {
@@ -27,22 +31,26 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
             MaskVectorType => 1,
             _ => throw new InvalidOperationException($"Unsupported input type: {dt}"),
         };
+
         if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
         {
-            var newType = new VectorType(DataTypes.UInt8, target.Lanes.ToArray());
-            var input = context.GetArgumentValue(target, Unpack.Input).AsTensor();
-            input = Tensor.FromBytes(newType, input.BytesBuffer.ToArray(), input.Shape);
-            var inputOrt = input.ToOrtTensor();
-            inputOrt = inputOrt.Unpack(oldLanesCount, target.Axes);
+            var newType = new VectorType(DataTypes.UInt8, ((VectorType)dt).Lanes.ToArray());
+            var inputOrt = Tensor.FromBytes(newType, input.BytesBuffer.ToArray(), input.Shape).ToOrtTensor();
+            inputOrt = inputOrt.Unpack(oldLanesCount, axes);
             var output = inputOrt.ToTensor();
-            return Value.FromTensor(Tensor.FromBytes(elementType, output.BytesBuffer.ToArray(), output.Shape));
+            return Tensor.FromBytes(elementType, output.BytesBuffer.ToArray(), output.Shape);
         }
         else
         {
-            var input = context.GetOrtArgumentValue(target, Unpack.Input);
-            input = input.Unpack(oldLanesCount, target.Axes);
-            return Value.FromTensor(input.ToTensor());
+            return input.ToOrtTensor().Unpack(oldLanesCount, axes).ToTensor();
         }
+    }
+
+    /// <inheritdoc/>
+    public IValue Visit(IEvaluateContext context, Unpack target)
+    {
+        var input = context.GetArgumentValueAsTensor(target, Unpack.Input);
+        return Value.FromTensor(UnpackImpl(input, target.Axes));
     }
 
     /// <inheritdoc/>
