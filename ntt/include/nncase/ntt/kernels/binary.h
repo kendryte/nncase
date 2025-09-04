@@ -34,22 +34,40 @@ class binary_impl
         auto output_conti_dims =
             contiguous_dims(output.shape(), output.strides());
 
-        auto addr_lhs = lhs.elements().data();
-        auto addr_rhs = rhs.elements().data();
-        auto addr_output_element = output.elements().data();
+        constexpr auto rank = TOut::rank();
+        auto conti_dims = std::min(lhs_conti_dims, rhs_conti_dims);
+        conti_dims = std::min(conti_dims, output_conti_dims);
+        dynamic_shape_t<rank> apply_shape;
+        ntt::loop<rank>([&](auto j) {
+            if (j > rank - conti_dims - 1)
+                apply_shape[j] = 1;
+            else
+                apply_shape[j] = lhs.shape()[j];
+        });
+        dynamic_shape_t<rank> inner_shape;
+        ntt::loop<rank>([&](auto j) {
+            if (j > rank - conti_dims - 1)
+                inner_shape[j] = lhs.shape()[j];
+            else
+                inner_shape[j] = 1;
+        });
 
-        auto len = output.shape().length();
+        auto len = inner_shape.length();
 
         using TLhsElem = element_or_scalar_t<TLhs>;
         using TRhsElem = element_or_scalar_t<TRhs>;
         using TOutElem = element_or_scalar_t<TOut>;
         TPostOp<TOutElem> post_op;
 
-        if (!is_broadcast && (lhs_conti_dims == TLhs::rank()) &&
-            (rhs_conti_dims == TRhs::rank()) &&
-            (output_conti_dims == TOut::rank())) {
-            ntt::u_binary<TOp, TPostOp, TLhsElem, TRhsElem, TOutElem>(
-                op, addr_lhs, 1, addr_rhs, 1, addr_output_element, 1, len);
+        if (!is_broadcast) {
+            ntt::apply(apply_shape, [&](auto index) {
+                auto addr_lhs = &lhs(index);
+                auto addr_rhs = &rhs(index);
+                auto addr_output_element = &output(index);
+                ntt::u_binary<TOp, TPostOp, TLhsElem, TRhsElem, TOutElem>(
+                    op, addr_lhs, 1, addr_rhs, 1, addr_output_element, 1, len);
+            });
+
         } else {
             ntt::apply(output.shape(), [&](auto index) {
                 output(index) = op(lhs(index), rhs(index));

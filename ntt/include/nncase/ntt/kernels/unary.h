@@ -47,7 +47,7 @@ class unary_impl : public unary_like_impl<unary_impl<TIn, TOut>, TIn, TOut> {
 
         auto len = inner_shape.length();
 
-        ntt::apply(apply_shape, [&]([[maybe_unused]] auto index) {
+        ntt::apply(apply_shape, [&](auto index) {
             auto addr_input = &input(index);
             auto addr_output_element = &output(index);
             ntt::u_unary(op, addr_input, 1, addr_output_element, 1, len);
