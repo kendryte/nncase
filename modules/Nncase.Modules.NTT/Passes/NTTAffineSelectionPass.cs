@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using Nncase.Passes.Transforms;
@@ -60,13 +61,18 @@ public partial class NTTAffineSelectionPass : AffineSelectionPass
                 return SelectLayerNorm(op, call, output);
             case IR.NN.LayerNorm op:
                 return SelectLayerNorm(op, call, output);
-
             case IR.Tensors.Cast op:
                 return SelectCast(op, call, output);
             case IR.NTT.VectorizedCast op:
                 return SelectVectorizedCast(op, call, output);
             case IR.Tensors.Transpose op:
                 return SelectTranspose(op, call, output);
+            case IR.Tensors.Where op:
+                return SelectWhere(op, call, output);
+            case IR.Math.Compare op:
+                return SelectCompare(op, call, output);
+            case IR.NN.GetPositionIds op:
+                return SelectGetPositionIds(op, call, output);
 
             // case IR.NN.Pad op:
             //     return SelectPad(op, call, output);

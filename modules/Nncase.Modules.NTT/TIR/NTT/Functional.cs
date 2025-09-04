@@ -248,9 +248,9 @@ public partial class NTT
         return new Call(new TIR.NTT.Range(), begin, end, step, ret);
     }
 
-    public static Expr GetPositionIds(Expr kvCache, Expr ret)
+    public static Expr GetPositionIds(Expr kvCache, Expr ret, DistributedType distributedType)
     {
-        return new Call(new TIR.NTT.GetPositionIds(), kvCache, ret);
+        return new Call(new TIR.NTT.GetPositionIds(distributedType), kvCache, ret);
     }
 
     public static Expr Qwen3MoE(Expr hiddenStates, Expr moeGateW, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, Expr ret, long layerId, long hiddenSize, long intermediateSize, long moeIntermediateSize, long numExpert, long numTopK, long isNormTopkProb)
