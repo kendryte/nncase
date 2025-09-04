@@ -19,6 +19,17 @@
 
 #include "caching.h"
 #include "distributed.h"
+#include "primitive_ops.h"
+
+// Include arch specializations early so kernels see optimized overrides
+#ifdef __riscv_vector
+#include "arch/riscv64/arch_types.h"
+#include "arch/riscv64/primitive_ops.h"
+#include "arch/riscv64/primitive_ops_half.h"
+#include "arch/riscv64/ukernels.h"
+#include "arch/riscv64/vector_ops.h"
+#endif
+
 #include "kernels/binary.h"
 #include "kernels/cast.h"
 #include "kernels/clamp.h"
@@ -56,7 +67,6 @@
 #include "kernels/unary.h"
 #include "kernels/unpack.h"
 #include "kernels/where.h"
-#include "primitive_ops.h"
 #include "profiling.h"
 #include "tensor.h"
 #include "tensor_ops.h"
@@ -78,13 +88,6 @@
 #endif
 #endif
 
-#ifdef __riscv_vector
-#include "arch/riscv64/arch_types.h"
-#include "arch/riscv64/primitive_ops.h"
-#include "arch/riscv64/primitive_ops_half.h"
-#include "arch/riscv64/ukernels.h"
-#include "arch/riscv64/vector_ops.h"
-#endif
 
 #ifdef NNCASE_XPU_MODULE
 #include "arch/xpu/arch_types.h"
