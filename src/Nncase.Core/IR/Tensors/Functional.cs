@@ -92,7 +92,7 @@ public static class Tensors
     public static Call ScatterND(Expr input, Expr indices, Expr updates) =>
         new Call(new ScatterND(), input, indices, updates);
 
-    public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(DataTypes.Float32), input, other);
+    public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(DataTypes.Float32), input, other, None.Default);
 
     public static Call MatMul(Expr input, Expr other, DataType outDataType, Expr? scale = null) => new Call(new MatMul(outDataType), input, other, scale ?? None.Default);
 

@@ -77,6 +77,16 @@ public static class OrtKIExtensions
         return tensor.ToTensor();
     }
 
+    public static TensorValue ToValue(this OrtKISharp.Tensor tensor, IRType type)
+    {
+        return type switch
+        {
+            DistributedType dt => ToValue(tensor, dt.TensorType.DType),
+            TensorType t => ToValue(tensor, t.DType),
+            _ => throw new ArgumentOutOfRangeException(nameof(type), "Unsupported IRType"),
+        };
+    }
+
     public static TensorValue ToValue(this OrtKISharp.Tensor tensor, DataType dataType) => dataType switch
     {
         MaskVectorType maskVectorType => Tensor.From(
