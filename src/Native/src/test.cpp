@@ -315,8 +315,8 @@ void test_matmul_normal() {
             auto pc = ntt::make_tensor<ntt::vector<float, 8>>(
                 ntt::fixed_shape_v<1, 2>);
             ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
-            ntt::matmul<false>(pa, tb, pc, 0.5f, ntt::fixed_shape_v<0>,
-                               {}, {}, {});
+            ntt::matmul<false>(pa, tb, pc, 0.5f, ntt::fixed_shape_v<0>, {}, {},
+                               {});
             assert(are_floats_equal(pc(0, 0)(0), 280.f * 0.5f));
             assert(are_floats_equal(pc(0, 1)(0), 308.f * 0.5f));
             assert(are_floats_equal(pc(0, 0)(1), 728.f * 0.5f));
