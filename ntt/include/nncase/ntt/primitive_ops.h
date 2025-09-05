@@ -263,7 +263,7 @@ template <class T1, class T2> struct max {
 
 template <class T1, class T2> struct pow {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-        return (T1)std::pow((float)v1, (float)v2);
+        return (T1)std::pow((double)v1, (double)v2);
     }
 };
 

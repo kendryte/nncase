@@ -198,8 +198,8 @@ class CastTestGenerator(BaseTestGenerator):
         is_fp8_cast = 'float_e' in from_type.cpp_type or 'float_e' in to_type.cpp_type
 
         if not is_fp8_cast:
-            # Generate ORT input section using prepare_contiguous_input
-            continuity_var_name, copy_code = self.prepare_contiguous_input(
+            # Generate ORT input section using _prepare_contiguous_input
+            continuity_var_name, copy_code = self._prepare_contiguous_input(
                 "ntt_input", from_type, vector_rank, P,
                 shape_type, dims_spec, continuity
             )
