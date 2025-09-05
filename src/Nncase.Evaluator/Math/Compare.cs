@@ -82,6 +82,7 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
     {
         var lhs = context.GetArgumentValueAsTensor(target, Compare.Lhs);
         var rhs = context.GetArgumentValueAsTensor(target, Compare.Rhs);
+        var returnType = context.GetReturnType();
         if (lhs.Shape.IsScalar && rhs.Shape.IsScalar && lhs.ElementType == DataTypes.Int32 && rhs.ElementType == DataTypes.Int32)
         {
             return Value.FromTensor(Tensor.FromScalar(Compute(target.CompareOp, lhs.ToScalar<int>(), rhs.ToScalar<int>())));
@@ -104,12 +105,12 @@ public class CompareEvaluator : IEvaluator<Compare>, ITypeInferencer<Compare>, I
 
         return target.CompareOp switch
         {
-            CompareOp.Equal => OrtKI.Equal(a, b).ToValue(),
-            CompareOp.LowerOrEqual => OrtKI.LessOrEqual(a, b).ToValue(),
-            CompareOp.GreaterOrEqual => OrtKI.GreaterOrEqual(a, b).ToValue(),
-            CompareOp.GreaterThan => OrtKI.Greater(a, b).ToValue(),
-            CompareOp.LowerThan => OrtKI.Less(a, b).ToValue(),
-            CompareOp.NotEqual => OrtKI.Not(OrtKI.Equal(a, b)).ToValue(),
+            CompareOp.Equal => OrtKI.Equal(a, b).ToValue(returnType),
+            CompareOp.LowerOrEqual => OrtKI.LessOrEqual(a, b).ToValue(returnType),
+            CompareOp.GreaterOrEqual => OrtKI.GreaterOrEqual(a, b).ToValue(returnType),
+            CompareOp.GreaterThan => OrtKI.Greater(a, b).ToValue(returnType),
+            CompareOp.LowerThan => OrtKI.Less(a, b).ToValue(returnType),
+            CompareOp.NotEqual => OrtKI.Not(OrtKI.Equal(a, b)).ToValue(returnType),
             _ => throw new ArgumentOutOfRangeException(target.CompareOp.ToString()),
         };
     }

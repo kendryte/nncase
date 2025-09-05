@@ -23,27 +23,24 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
             return input;
         }
 
-        var dt = input.ElementType;
-        var elementType = dt is VectorType vt ? vt.ElemType : dt;
-        var oldLanesCount = dt switch
+        var (oldLanesCount, basicElemType) = input.ElementType switch
         {
-            VectorType vt2 => vt2.Lanes.Count,
-            MaskVectorType => 1,
-            _ => throw new InvalidOperationException($"Unsupported input type: {dt}"),
+            VectorType vt2 => (vt2.Lanes.Count, vt2.ElemType),
+            MaskVectorType => (1, DataTypes.Boolean),
+            _ => throw new InvalidOperationException($"Unsupported input type: {input.ElementType}"),
         };
 
-        if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
+        var remainLanes = oldLanesCount - axes.Count;
+
+        var preType = input.ElementType.Legalize((DataTypes.Float8E4M3, DataTypes.UInt8), (DataTypes.Float8E5M2, DataTypes.UInt8));
+        var postType = remainLanes switch
         {
-            var newType = new VectorType(DataTypes.UInt8, ((VectorType)dt).Lanes.ToArray());
-            var inputOrt = Tensor.FromBytes(newType, input.BytesBuffer.ToArray(), input.Shape).ToOrtTensor();
-            inputOrt = inputOrt.Unpack(oldLanesCount, axes);
-            var output = inputOrt.ToTensor();
-            return Tensor.FromBytes(elementType, output.BytesBuffer.ToArray(), output.Shape);
-        }
-        else
-        {
-            return input.ToOrtTensor().Unpack(oldLanesCount, axes).ToTensor();
-        }
+            0 => basicElemType,
+            > 0 when input.ElementType is VectorType vt => new VectorType(basicElemType, vt.Lanes.Take(remainLanes).ToArray()),
+            _ => throw new InvalidOperationException($"Unsupported remain lanes: {remainLanes}"),
+        };
+
+        return input.ToOrtTensor(preType).Unpack(oldLanesCount, axes).ToTensor(postType);
     }
 
     /// <inheritdoc/>
