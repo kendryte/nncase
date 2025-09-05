@@ -363,7 +363,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
     constexpr void overlap_aware_reshard(const SrcTensor &src,
                                          DestTensor &dest) noexcept {
-        // Make sure both src and dest ready.
+        // make sure src ready.
         distributed::topology_synchronize();
 
         // 1. get dest global offset
@@ -476,6 +476,8 @@ struct reshard_impl<SrcTensor, DestTensor> {
                 tensor_copy(src_block, dest_block);
             }
         }
+
+        distributed::topology_synchronize();
     }
 };
 } // namespace detail
