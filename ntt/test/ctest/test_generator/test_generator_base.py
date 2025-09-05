@@ -78,6 +78,43 @@ class BaseTestGenerator:
             'double': 'DataType_DOUBLE',
             'bfloat16': 'DataType_BFLOAT16',
         }
+        self.indent = "    "
+        self.simple_continuities = [
+            Continuity(is_contiguous=True, non_contiguous_dim=None, big_tensor_op=None),
+            # Continuity(is_contiguous=False, non_contiguous_dim=1, big_tensor_op="*2"),
+            Continuity(is_contiguous=False, non_contiguous_dim=2, big_tensor_op="+3"),
+        ]
+
+        self.ulp_tolerances = {
+            "default": {
+                "default": 1
+            }
+        }
+
+        self.ort_custom_function = {}
+        self.ntt_op_str = ""
+
+
+    def _generate_ort_custom_op(self, datatype, custom_op_name):
+        """Generate custom ORT operation functions"""
+        if custom_op_name in self.ort_custom_function:
+            return self.ort_custom_function[custom_op_name](datatype)
+        return ""
+
+    def _get_ulp_tolerance(self, op_str, datatype):
+        """Get the ULP tolerance for a specific operation and data type."""
+        if op_str in self.ulp_tolerances:
+            return self.ulp_tolerances[op_str].get(datatype.cpp_type, self.ulp_tolerances[op_str]["default"])
+        return self.ulp_tolerances["default"].get(datatype.cpp_type, self.ulp_tolerances["default"]["default"])
+
+    def _need_cast_in_ort(self, datatype, op_str):
+        """Check if datatype needs to be cast in ORT for the given operation."""
+        if not hasattr(self, 'types_need_cast_in_ort'):
+            raise NotImplementedError(
+                f"{self.__class__.__name__} must implement 'types_need_cast_in_ort' attribute"
+            )
+        types_to_cast_in_ort = self.types_need_cast_in_ort.get(op_str, self.types_need_cast_in_ort["default"])
+        return datatype.cpp_type in types_to_cast_in_ort
 
     def get_unpacked_dims(self, dim_names, unpack_axes) -> List[str]:
         """Generate dimension expressions for an unpack operation."""
@@ -105,6 +142,15 @@ class BaseTestGenerator:
             dim_strs = [str(d) for d in dim_spec]
             return f"ntt::make_shape({', '.join(dim_strs)})"
 
+    def _get_allow_zr(self, var_name ):
+        ans = "true"
+        if(self.is_div_operation() and "rhs" in var_name):
+            ans = "false"
+        if(self.ntt_op_str == "pow" and "lhs" in var_name):
+            ans = "false"
+
+        return ans
+
 #shape_type: str: "dynamic" or "fixed"
 #shape_type: bool: True (is_dynamic) or False (is_fixed)
 #dim_spec: dim_names(list[str]) or dim_spec(list[int])
@@ -117,7 +163,7 @@ class BaseTestGenerator:
 
         if continuity.is_contiguous:
             code.append(f"auto {var_name} = ntt::make_tensor<{element_cpp_type}>({shape_expr});")
-            allow_zr = "false" if self.is_div_operation() and "rhs" in var_name else "true"
+            allow_zr = self._get_allow_zr(var_name)
             integer_only_str = "true" if integer_only else "false"
             code.append(f"NttTest::init_tensor({var_name}, {datatype.min_val}, {datatype.max_val}, {allow_zr}, {integer_only_str});")
         else:  # non-contiguous
@@ -132,7 +178,7 @@ class BaseTestGenerator:
 
             code.append(f"// Create non-contiguous tensor (on dimension {dim_to_change})")
             code.append(f"auto big_tensor{name_suffix} = ntt::make_tensor<{element_cpp_type}>({big_shape_expr});")
-            allow_zr = "false" if self.is_div_operation() else "true"
+            allow_zr = self._get_allow_zr(var_name)
             integer_only_str = "true" if integer_only else "false"
             code.append(f"NttTest::init_tensor(big_tensor{name_suffix}, {datatype.min_val}, {datatype.max_val}, {allow_zr}, {integer_only_str});")
             code.append(f"")
@@ -403,8 +449,100 @@ using namespace ortki;
             ])
 
         return self.generate_ntt_operation_section(op_section)
+    
+    def generate_ort_cast_back(self, datatype, cast_input_var = "ort_output", cast_output_var = "ort_golden"):
+        """cast ort tensor of double back to ort tensor of original type"""
+        """if original type is uint, cast to int64 first"""
+        code = []
+        code.append(f"// Cast outputs from double to original datatype")
+        original_type = self.ort_datatype_map[datatype.cpp_type]
+        var_name_cast_to_orig_type = cast_input_var
+        if("uint" in datatype.cpp_type):
+            var_name_cast_to_orig_type = cast_output_var+"int"
+            code.append(f"auto {var_name_cast_to_orig_type} = ortki_Cast({cast_input_var}, 1, ortki::DataType_INT64);")
+        code.append(f"auto {cast_output_var} = ortki_Cast({var_name_cast_to_orig_type}, 1, ortki::{original_type});")
+        return code
 
-    def prepare_contiguous_input(self, input_name, datatype, vector_rank, vec_param, 
+    # back2ntt used in ntt cast version.
+    def _cast_ort_golden_double_into_ntt_shape(self, code, datatype, ntt_op_str,
+            output_is_dynamic, output_dims_spec, output_vector_rank,
+            output_vec_param, ort_golden_double_var, cast_target = "double"):
+        """Process ORT output back to NTT format with proper casting and vectorization"""
+        """
+        5. transform back to ntt tensor of double scalar
+        6. cast back to original type, still tensor of scalar
+        7. vectorized back to original tensor of vector (if necessary)
+        """
+        # 3. transform ort_golden_double to ntt_golden{cpp_type}_scalar
+        code.append(f"//  transform ort_golden_{cast_target} to ntt_golden{datatype.cpp_type}_scalar")
+
+        
+        # # Get shape of ntt_golden_double_scalar based on aligned shapes and operation
+        golden_scalar_dims = self.generate_ntt_golden_double_scalar_dims_spec(ntt_op_str, output_dims_spec, output_vector_rank)
+
+        golden_scalar_shape_expr = self.generate_shape_init(output_is_dynamic, golden_scalar_dims)
+
+        code.append(f"auto ntt_golden_{cast_target}_scalar = ntt::make_unique_tensor<{cast_target}>({golden_scalar_shape_expr});")
+        code.append(f"NttTest::ort2ntt({ort_golden_double_var}, *ntt_golden_{cast_target}_scalar);")
+        code.append("")
+        code.append(f"auto ntt_golden_{datatype.cpp_type}_scalar = ntt::make_unique_tensor<{datatype.cpp_type}>({golden_scalar_shape_expr});")
+        code.append(f"ntt::cast(*ntt_golden_{cast_target}_scalar, *ntt_golden_{datatype.cpp_type}_scalar);")
+
+        # 4. transform ntt_golden_{datatype.cpp_type}_scalar to ntt_golden
+        code.append("")
+        if output_vector_rank > 0:
+            # 4.b if ntt_output is tensor of vector
+            code.append("// 4.b if ntt_output is tensor of vector")
+            unsqueeze_shape_dims = output_dims_spec + (["1"] if output_vector_rank == 1 else ["1", "1"])
+            unsqueeze_shape_expr = self.generate_shape_init(output_is_dynamic, unsqueeze_shape_dims)
+            vector_type_str = self.get_element_cpp_type(datatype.cpp_type, output_vector_rank, output_vec_param)
+            code.append(f"auto ntt_golden_unsqueeze = ntt::make_tensor<{vector_type_str}>({unsqueeze_shape_expr});")
+            dims_spec_len = len(output_dims_spec)
+            pack_dims = f"{dims_spec_len}" if output_vector_rank == 1 else f"{dims_spec_len}, {dims_spec_len + 1}"
+            code.append(f"ntt::pack(*ntt_golden_{datatype.cpp_type}_scalar, ntt_golden_unsqueeze, fixed_shape_v<{pack_dims}>);")
+            code.append(f"auto ntt_golden = ntt_golden_unsqueeze.squeeze( (fixed_shape_v<{pack_dims}>));")
+        else:
+            # 4.a if ntt_output is not tensor of vector
+            code.append("// 4.a if ntt_output is not tensor of vector")
+            code.append(f"auto ntt_golden = *ntt_golden_{datatype.cpp_type}_scalar;")
+
+        code.append("")
+
+
+
+    def generate_ntt_golden_double_scalar_dims_spec(self, ntt_op_str, output_dims_spec, output_vector_rank):
+        if output_vector_rank > 0:
+            if output_vector_rank == 1:
+                golden_scalar_dims = output_dims_spec + ["P"]
+            else:  # 2D vector
+                if ntt_op_str == "outer_product":
+                    golden_scalar_dims = output_dims_spec  + ["P", "P"]
+                else:
+                    golden_scalar_dims = output_dims_spec + ["4", "P"]
+        else:
+            golden_scalar_dims = output_dims_spec
+
+        return golden_scalar_dims
+    
+    def generate_ort_output(self, datatype, ntt_op_str):
+        
+        # Check both dictionaries for the operation string
+        if ntt_op_str in self.op_str_map_exhaustive:
+            op_str = self.op_str_map_exhaustive[ntt_op_str]
+        elif ntt_op_str in self.op_str_map_simplified:
+            op_str = self.op_str_map_simplified[ntt_op_str]
+        else:
+            raise KeyError(f"Operation '{ntt_op_str}' not found in either op_str_map_exhaustive or op_str_map_simplified")
+            
+        if callable(op_str):
+            op_str = op_str(datatype)
+        return [
+            f"// Execute Ort operation",
+            f"{op_str}",
+            ""
+        ]
+
+    def _prepare_contiguous_input(self, input_name, datatype, vector_rank, vec_param, 
                                   is_dynamic_shape, dims_spec, continuity):
         
         continuity_var_name = input_name
@@ -425,6 +563,7 @@ using namespace ortki;
         
         return continuity_var_name, code
 
+    """ Not a good abstraction """
     def generate_ort_input_section(self,
                                    datatype: DataType,
                                    shape_type,
@@ -490,6 +629,7 @@ using namespace ortki;
         return header + ort_operation_lines + [""]
     
 
+    #back2ntt early version
     def generate_ort_back2ntt_and_compare_section(self,
                                                   datatype: DataType,
                                                   output_element_cpp_type: str,
@@ -547,6 +687,7 @@ using namespace ortki;
         lines.append("")
         return lines
 
+    #back2ntt used for cast in ort 
     def generate_ort_back2ntt(self,
                                 datatype: DataType,
                                 output_element_cpp_type: str,
