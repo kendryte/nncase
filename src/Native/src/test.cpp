@@ -253,7 +253,7 @@ void test_matmul_normal() {
             ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<2, 2>);
         ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
         ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
-        ntt::matmul<false>(pa, pb, tc, std::nullopt, ntt::fixed_shape_v<1>, {},
+        ntt::matmul<false>(pa, pb, tc, nullptr, ntt::fixed_shape_v<1>, {},
                            ntt::fixed_shape_v<0>);
         assert(tc(0, 0) == 2480.f);
         assert(tc(0, 1) == 2600.f);
@@ -278,7 +278,7 @@ void test_matmul_normal() {
         auto tb =
             ntt::make_tensor<ntt::vector<float, 8>>(ntt::make_shape(2, 4));
         auto tc = ntt::make_tensor<float>(ntt::make_shape(1, 4));
-        ntt::matmul<true>(ta, tb, tc, std::nullopt, ntt::fixed_shape_v<1>, {},
+        ntt::matmul<true>(ta, tb, tc, nullptr, ntt::fixed_shape_v<1>, {},
                           ntt::fixed_shape_v<0>, {});
     }
 
@@ -293,7 +293,7 @@ void test_matmul_normal() {
         auto pc =
             ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<1, 2>);
         ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
-        ntt::matmul<false>(pa, tb, pc, std::nullopt, ntt::fixed_shape_v<0>, {},
+        ntt::matmul<false>(pa, tb, pc, nullptr, ntt::fixed_shape_v<0>, {},
                            {}, {});
         assert(are_floats_equal(pc(0, 0)(0), 280.f));
         assert(are_floats_equal(pc(0, 1)(0), 308.f));
@@ -339,7 +339,7 @@ void test_matmul_normal() {
         auto pc =
             ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<3, 1>);
         ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
-        ntt::matmul<false>(ta, pb, pc, std::nullopt, ntt::fixed_shape_v<>, {},
+        ntt::matmul<false>(ta, pb, pc, nullptr, ntt::fixed_shape_v<>, {},
                            ntt::fixed_shape_v<1>, ntt::fixed_shape_v<0>);
         assert(are_floats_equal(pc(0, 0)(0), 560.f));
         assert(are_floats_equal(pc(0, 0)(1), 588.f));
@@ -369,7 +369,7 @@ void test_matmul_normal() {
             ntt::fixed_shape_v<1, 1>);
         ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
         ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
-        ntt::matmul<false>(pa, pb, pc, std::nullopt, ntt::fixed_shape_v<0>, {},
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0>, {},
                            ntt::fixed_shape_v<1>, {});
         assert(are_floats_equal(pc(0, 0)(0, 0), 560.f));
         assert(are_floats_equal(pc(0, 0)(0, 1), 588.f));
@@ -403,7 +403,7 @@ void test_matmul_normal() {
             ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<1, 4>);
         ntt::pack(ta, pa, ntt::fixed_shape_v<0, 1>);
         ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
-        ntt::matmul<false>(pa, pb, pc, std::nullopt, ntt::fixed_shape_v<0, 1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<0>, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<0>);
         assert(are_floats_equal(pc(0, 0)(0), 560.f));
@@ -438,7 +438,7 @@ void test_matmul_normal() {
             ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<4, 1>);
         ntt::pack(ta, pa, ntt::fixed_shape_v<1>);
         ntt::pack(tb, pb, ntt::fixed_shape_v<0, 1>);
-        ntt::matmul<false>(pa, pb, pc, std::nullopt, ntt::fixed_shape_v<1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<0>, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<0, 0>);
         assert(are_floats_equal(pc(0, 0)(0), 560.f));
@@ -475,7 +475,7 @@ void test_matmul_normal() {
             ntt::fixed_shape_v<1, 1>);
         ntt::pack(ta, pa, ntt::fixed_shape_v<0, 1>);
         ntt::pack(tb, pb, ntt::fixed_shape_v<0, 1>);
-        ntt::matmul<false>(pa, pb, pc, std::nullopt, ntt::fixed_shape_v<0, 1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<0>, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<0>);
         ntt::unpack(pc, devectorizec.view(), ntt::fixed_shape_v<0, 1>);
@@ -498,7 +498,7 @@ void test_matmul_normal() {
             ntt::fixed_shape_v<2, 2, 4>);
         ntt::pack(ta, pa, ntt::fixed_shape_v<3>);
         ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
-        ntt::matmul<false>(pa, pb, tc, std::nullopt, ntt::fixed_shape_v<3>,
+        ntt::matmul<false>(pa, pb, tc, nullptr, ntt::fixed_shape_v<3>,
                            ntt::fixed_shape_v<0>, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<0>);
         assert(tc(0, 0, 0, 0) == 4960.f);
@@ -541,7 +541,7 @@ void test_matmul_transpose_b() {
         ntt::pack(tranb, vectorizeb, ntt::fixed_shape_v<0>);
         auto tc2 =
             ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<8, 2>);
-        ntt::matmul<false, false, true>(ta, vectorizeb, tc2, std::nullopt, {},
+        ntt::matmul<false, false, true>(ta, vectorizeb, tc2, nullptr, {},
                                         {}, ntt::fixed_shape_v<0>);
 
         auto tc2devectorize = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 8>);
@@ -563,7 +563,7 @@ void test_matmul_transpose_b() {
         auto tc2 = ntt::make_tensor<ntt::vector<float, 4, 4>>(
             ntt::fixed_shape_v<2, 2>);
         ntt::matmul<false, false, true>(
-            vectorizea, vectorizeb, tc2, std::nullopt, ntt::fixed_shape_v<0>,
+            vectorizea, vectorizeb, tc2, nullptr, ntt::fixed_shape_v<0>,
             ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>, ntt::fixed_shape_v<>);
 
         auto tc2devectorize = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 8>);
@@ -587,7 +587,7 @@ void test_matmul_transpose_b() {
         auto tc2 = ntt::make_tensor<ntt::vector<float, 4, 4>>(
             ntt::fixed_shape_v<2, 2>);
         ntt::matmul<false, false, true>(
-            vectorizea, vectorizeb, tc2, std::nullopt, ntt::fixed_shape_v<0, 1>,
+            vectorizea, vectorizeb, tc2, nullptr, ntt::fixed_shape_v<0, 1>,
             ntt::fixed_shape_v<>, ntt::fixed_shape_v<1, 0>,
             ntt::fixed_shape_v<>);
 

@@ -642,7 +642,7 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_n, float,
 
 template <bool AccumulateC, class TScale>
     requires std::is_same_v<TScale, float> ||
-    std::is_same_v<TScale, std::nullopt_t> struct u_matmul<
+    std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
         ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC, false, false,
         1, 7, float, vector<float, 8>, vector<float, 8>, TScale, true> {
     template <class TA, class TB, class TC>
@@ -745,7 +745,7 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_kn, vector<float, 8>,
 
 template <bool AccumulateC, class TScale>
     requires std::is_same_v<TScale, float> ||
-    std::is_same_v<TScale, std::nullopt_t> struct u_matmul<
+    std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
         ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, false,
         false, 1, 4, vector<float, 8>, vector<float, 8, 8>, vector<float, 8>,
         TScale, true> {
@@ -771,7 +771,7 @@ template <bool AccumulateC, class TScale>
         for (size_t k = 0; k < K; k++) {
             for (size_t sk = 0; sk < 8; sk++) {
                 a0_0 = _mm256_broadcast_ss((const float *)&a(0, k) + sk);
-                if constexpr (!std::is_same_v<TScale, std::nullopt_t>) {
+                if constexpr (!std::is_same_v<TScale, std::nullptr_t>) {
                     a0_0 = _mm256_mul_ps(a0_0, _mm256_broadcast_ss(&scale));
                 }
 

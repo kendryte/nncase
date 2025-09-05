@@ -413,7 +413,7 @@ NTT_DEFINE_BINARY_FUNC_IMPL(add)
 NTT_DEFINE_BINARY_FUNC_IMPL(sub)
 NTT_DEFINE_BINARY_FUNC_IMPL(mul)
 template <ScalarOrVector T1, class T2>
-requires std::is_same_v<T2, std::nullopt_t> constexpr auto
+requires std::is_same_v<T2, std::nullptr_t> constexpr auto
 mul(const T1 &v1, const T2 &) noexcept {
     return v1;
 }

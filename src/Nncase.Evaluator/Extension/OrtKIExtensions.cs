@@ -79,7 +79,15 @@ public static class OrtKIExtensions
             },
             new TensorInitializerWithOrt(tensor),
             tensor.Shape.Take(tensor.Shape.Length - vectorType.Lanes.Count).ToArray()).CastTo(vectorType),
-        PrimType primType => tensor.ToTensor().CastTo(primType),
+        PrimType primType => Tensor.From(
+            tensor.DataType.ToDataType() switch
+            {
+                var ortDtype when ortDtype == primType => primType,
+                var ortDtype when ortDtype != primType && ortDtype.SizeInBytes == primType.SizeInBytes => primType,
+                _ => throw new InvalidOperationException($"Cannot convert OrtKI tensor with data type {tensor.DataType.ToDataType()} to vector type with element type {primType}."),
+            },
+            new TensorInitializerWithOrt(tensor),
+            tensor.Shape),
         _ => throw new NotSupportedException(),
     };
 

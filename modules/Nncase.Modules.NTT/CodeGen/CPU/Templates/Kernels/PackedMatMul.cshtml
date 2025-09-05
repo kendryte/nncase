@@ -1,8 +1,6 @@
 @model Nncase.CodeGen.NTT.TypedKernelTemplateModel<Nncase.TIR.NTT.PackedMatMul>
 @{
   string scale = Model.Arguments[4].Symbol.Name;
-  scale = scale == "nullptr" ? "std::nullopt" : scale;
-
 }
 
 @(Model.Indent){

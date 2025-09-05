@@ -419,11 +419,6 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.SUMMA summa:
                     {
                         var scale = Visit(args[3]).Name;
-                        if (scale == "nullptr")
-                        {
-                            scale = "std::nullopt";
-                        }
-
                         var rdKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => i >= TargetOptions.HierarchyNames.Length - 2 ? "r" + TargetOptions.HierarchyNames[i] : string.Empty + TargetOptions.HierarchyNames[i]));
                         IndentScope.Writer.IndWrite($"{{tac::detail::tensor_reduce_sync_impl<reduce_op::sum, {rdKind}> impl; impl.reduce_group_sync();\n");
                         IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, {scale}, fixed_shape_v<{string.Join(",", summa.LhsVectorizedAxes)}>, fixed_shape_v<>, fixed_shape_v<{string.Join(",", summa.RhsVectorizedAxes)}>, fixed_shape_v<>);\n");

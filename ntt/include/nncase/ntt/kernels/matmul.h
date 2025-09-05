@@ -245,7 +245,7 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut, TScale,
  */
 template <bool AccumulateC = false, bool TransposedA = false,
           bool TransposedB = false, Tensor TLhs, Tensor TRhs, class TOut,
-          class TScale = std::nullopt_t,
+          class TScale = std::nullptr_t,
           FixedDimensions LhsVectorizedAxes = shape_t<>,
           FixedDimensions LhsPadedNums = shape_t<>,
           FixedDimensions RhsVectorizedAxes = shape_t<>,
@@ -253,7 +253,7 @@ template <bool AccumulateC = false, bool TransposedA = false,
 void matmul(
     [[maybe_unused]] const TLhs &lhs, [[maybe_unused]] const TRhs &rhs,
     [[maybe_unused]] TOut &&output,
-    [[maybe_unused]] const TScale &scale = std::nullopt,
+    [[maybe_unused]] const TScale &scale = nullptr,
     [[maybe_unused]] const LhsVectorizedAxes &lhsVectorizedAxes =
         fixed_shape_v<>,
     [[maybe_unused]] const LhsPadedNums &lhsPadedNums = fixed_shape_v<>,
