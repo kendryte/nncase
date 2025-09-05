@@ -30,7 +30,7 @@ template <bool AccumulateC = false, bool TransposedA = false,
           FixedDimensions LhsPadedNums, FixedDimensions RhsVectorizedAxes,
           FixedDimensions RhsPadedNums>
 void summa(
-    const TLhs &lhs, const TRhs &rhs, TOut &&output, TScale &scale,
+    const TLhs &lhs, const TRhs &rhs, TOut &&output, const TScale &scale,
     [[maybe_unused]] LhsVectorizedAxes lhsVectorizedAxes = fixed_shape_v<>,
     [[maybe_unused]] LhsPadedNums lhsPadedNums = fixed_shape_v<>,
     [[maybe_unused]] RhsVectorizedAxes rhsVectorizedAxes = fixed_shape_v<>,

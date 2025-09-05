@@ -87,7 +87,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.CustomNTT.MatMul matmul:
                 return TIR.F.NTT.Matmul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, (Expr)arguments[2], matmul.LhsVectorizedAxes, matmul.RhsVectorizedAxes, matmul.TransposeA, matmul.TransposeB, false, matmul.CSourcePath, matmul.FuncName);
             case IR.NTT.PackedMatMul matmul:
-                return TIR.F.NTT.PackedMatMul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, matmul.FusedReduce);
+                return TIR.F.NTT.PackedMatMul((Expr)arguments[0], (Expr)arguments[1], output, None.Default, (Expr)arguments[2], matmul.FusedReduce);
             case IR.NN.Conv2D conv:
                 {
                     var input = call[IR.NN.Conv2D.Input];
