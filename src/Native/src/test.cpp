@@ -293,8 +293,8 @@ void test_matmul_normal() {
         auto pc =
             ntt::make_tensor<ntt::vector<float, 8>>(ntt::fixed_shape_v<1, 2>);
         ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
-        ntt::matmul<false>(pa, tb, pc, nullptr, ntt::fixed_shape_v<0>, {},
-                           {}, {});
+        ntt::matmul<false>(pa, tb, pc, nullptr, ntt::fixed_shape_v<0>, {}, {},
+                           {});
         assert(are_floats_equal(pc(0, 0)(0), 280.f));
         assert(are_floats_equal(pc(0, 1)(0), 308.f));
         assert(are_floats_equal(pc(0, 0)(1), 728.f));
@@ -541,8 +541,8 @@ void test_matmul_transpose_b() {
         ntt::pack(tranb, vectorizeb, ntt::fixed_shape_v<0>);
         auto tc2 =
             ntt::make_tensor<ntt::vector<float, 4>>(ntt::fixed_shape_v<8, 2>);
-        ntt::matmul<false, false, true>(ta, vectorizeb, tc2, nullptr, {},
-                                        {}, ntt::fixed_shape_v<0>);
+        ntt::matmul<false, false, true>(ta, vectorizeb, tc2, nullptr, {}, {},
+                                        ntt::fixed_shape_v<0>);
 
         auto tc2devectorize = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 8>);
         ntt::unpack(tc2, tc2devectorize, ntt::fixed_shape_v<1>);
