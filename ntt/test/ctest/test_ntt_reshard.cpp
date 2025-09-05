@@ -157,7 +157,7 @@ TEST(CpuTest, reshard_2D_same_sharding_spec_broadcast) {
 
     std::vector<std::thread> threads;
     for (size_t id = 0; id < num; id++) {
-        threads.emplace_back([bdims, tdims, id, M, N, p_in] {
+        threads.emplace_back([id, p_in] {
             size_t cid = id / (bdims * tdims);
             size_t bid = id % (bdims * tdims) / tdims;
             size_t tid = id % (bdims * tdims) % tdims;
@@ -281,7 +281,7 @@ TEST(CpuTest, reshard_2D_same_sharding_sepc_split) {
 
     std::vector<std::thread> threads;
     for (size_t id = 0; id < num; id++) {
-        threads.emplace_back([bdims, tdims, id, M, N, p_in] {
+        threads.emplace_back([id, p_in] {
             size_t cid = id / (bdims * tdims);
             size_t bid = id % (bdims * tdims) / tdims;
             size_t tid = id % (bdims * tdims) % tdims;
@@ -408,7 +408,7 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_broadcast_split) {
 
     std::vector<std::thread> threads;
     for (size_t id = 0; id < num; id++) {
-        threads.emplace_back([cdims, bdims, tdims, id, M, N, p_in, p_out] {
+        threads.emplace_back([id, p_in, p_out] {
             size_t cid = id / (bdims * tdims);
             size_t bid = id % (bdims * tdims) / tdims;
             size_t tid = id % (bdims * tdims) % tdims;
@@ -539,7 +539,7 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_split_broadcast) {
 
     std::vector<std::thread> threads;
     for (size_t id = 0; id < num; id++) {
-        threads.emplace_back([cdims, bdims, tdims, id, M, N, p_in] {
+        threads.emplace_back([id, p_in] {
             size_t cid = id / (bdims * tdims);
             size_t bid = id % (bdims * tdims) / tdims;
             size_t tid = id % (bdims * tdims) % tdims;
@@ -675,7 +675,7 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_different_split_axis) {
 
     std::vector<std::thread> threads;
     for (size_t id = 0; id < num; id++) {
-        threads.emplace_back([bdims, tdims, id, M, N, p_in, p_out] {
+        threads.emplace_back([id, p_in, p_out] {
             size_t cid = id / (bdims * tdims);
             size_t bid = id % (bdims * tdims) / tdims;
             size_t tid = id % (bdims * tdims) % tdims;
@@ -810,7 +810,7 @@ TEST(CpuTest, reshard_3D_different_sharding_spec_different_split_axis) {
 
     std::vector<std::thread> threads;
     for (size_t id = 0; id < num; id++) {
-        threads.emplace_back([bdims, tdims, id, M, N, K, p_in, p_out] {
+        threads.emplace_back([id, p_in, p_out] {
             size_t cid = id / (bdims * tdims);
             size_t bid = id % (bdims * tdims) / tdims;
             size_t tid = id % (bdims * tdims) % tdims;
@@ -941,8 +941,7 @@ TEST(CpuTest, reshard_reshape) {
     constexpr size_t num = cdims * bdims * tdims;
     std::vector<std::thread> threads;
     for (size_t id = 0; id < num; id++) {
-        threads.emplace_back([cdims, bdims, tdims, id, M_LHS, N_LHS, M_RHS,
-        N_RHS, K_RHS, p_in, p_out] {
+        threads.emplace_back([id, p_in, p_out] {
             size_t cid = id / (bdims * tdims);
             size_t bid = id % (bdims * tdims) / tdims;
             size_t tid = id % (bdims * tdims) % tdims;
