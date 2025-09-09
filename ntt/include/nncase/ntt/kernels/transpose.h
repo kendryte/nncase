@@ -52,9 +52,11 @@ void transpose(const TIn &input, TOut &&output,
 
     if (segments <= 4 && conti_dims_input == rank &&
         conti_dims_output == rank) {
+        printf("%s, %d: \n", __FILE__, __LINE__);
         u_transpose<TIn, std::decay_t<TOut>, TPerms, segments>(
             input, output, perms, std::make_index_sequence<segments>{});
     } else {
+        printf("%s, %d: \n", __FILE__, __LINE__);
         constexpr auto pos_perms = positive_axes(perm_const, rank);
 
         ntt::apply(input.shape(), [&](auto index) {

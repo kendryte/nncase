@@ -20,7 +20,7 @@
 #include "nncase/ntt/vector.h"
 #include <cstddef>
 #include <riscv_vector.h>
-
+#include "u_transpose.h"
 namespace nncase::ntt::ukernels {
 
 // unary
