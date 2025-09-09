@@ -981,8 +981,8 @@ public sealed class UnitTestCPUKernels : TestClassBase
                 {
                     newPost = postOpKinds[i] switch
                     {
-                        PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, newPost, Tensor.FromScalar(1.32f).CastElementTo(PrimType.FromTypeCode(type2))),
-                        PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, Tensor.FromScalar(0.32f).CastElementTo(PrimType.FromTypeCode(type2)), newPost),
+                        PostOpKind.MulScalar => IR.F.Math.Binary(BinaryOp.Mul, newPost, Tensor.FromScalar(1.32f).CastElementTo(DataType.FromTypeCode(type2))),
+                        PostOpKind.ScalarDiv => IR.F.Math.Binary(BinaryOp.Div, Tensor.FromScalar(0.32f).CastElementTo(DataType.FromTypeCode(type2)), newPost),
                         _ => throw new NotSupportedException($"Unsupported post operation kind: {postOpKinds[i]}"),
                     };
                 }
@@ -1254,9 +1254,11 @@ public sealed class UnitTestCPUKernels : TestClassBase
     }
 
     [Theory]
-    [InlineData(new object[] { new long[] { 154, 128 * 8 }, new long[] { 128 * 8, 64 * 32 }, false, true, new[] { 4 }, new[] { 0 }, 0 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
-    [InlineData(new object[] { new long[] { 64, 1 }, new long[] { 1, 94 }, true, false, new[] { 4 }, new[] { 3 }, 1 })] // note const(f32[64,1]) @ [1,sequence_length]
-    public async Task TestDynamicVectorizeMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int[] dynamicAxes, int count)
+    [InlineData(new object[] { new long[] { 7, 1024 }, new long[] { 1024, 64 }, false, true, new[] { 1 }, new[] { 0 }, Runtime.TypeCode.Float32, null!, Runtime.TypeCode.Float32, 0 })] // note const(f32[sequence_length,2048]) @ [2048,4096]
+    [InlineData(new object[] { new long[] { 64, 1 }, new long[] { 1, 94 }, true, false, new[] { 4 }, new[] { 3 }, Runtime.TypeCode.Float32, null!, Runtime.TypeCode.Float32, 1 })] // note const(f32[64,1]) @ [1,sequence_length]
+    [InlineData(new object[] { new long[] { 7, 1024 }, new long[] { 1024, 64 }, false, true, new[] { 1 }, new[] { 0 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, Runtime.TypeCode.Float16, 2 })] // note const(f32[sequence_length,2048]) @ [2048,4096], f8 in, f16 out
+    [InlineData(new object[] { new long[] { 7, 512 }, new long[] { 512, 128 }, false, true, new[] { 1 }, new[] { 0 }, Runtime.TypeCode.Float8E4M3, Runtime.TypeCode.Float32, Runtime.TypeCode.Float32, 3 })] // note const(f32[sequence_length,2048]) @ [2048,4096], f8 in, f32 out
+    public async Task TestDynamicVectorizeMatMul(long[] lhsShape, long[] rhsShape, bool constA, bool constB, int[] hierarchy, int[] dynamicAxes, Runtime.TypeCode inType, Runtime.TypeCode? scaleType, Runtime.TypeCode outType, int count)
     {
         var targetOptions = (NTTTargetOptions)CompileOptions.TargetOptions;
         targetOptions.Hierarchies[0] = hierarchy;
@@ -1280,8 +1282,9 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
             return (Dimension)lhsShape[i];
         }).ToArray());
-        var lhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 1, lhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(lhsShape, 1.0f).Evaluate().AsTensor();
-        Expr lhs = constA ? lhsTensor : new Var(new TensorType(DataTypes.Float32, lhsDynShape));
+        var lhsType = DataType.FromTypeCode(inType);
+        var lhsTensor = IR.F.Random.Normal(lhsType, 0, 1, 1, lhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(lhsShape, 1.0f).Evaluate().AsTensor();
+        Expr lhs = constA ? lhsTensor : new Var(new TensorType(lhsType, lhsDynShape));
 
         if (!constA)
         {
@@ -1297,14 +1300,20 @@ public sealed class UnitTestCPUKernels : TestClassBase
 
             return (Dimension)rhsShape[i];
         }).ToArray());
-        var rhsTensor = IR.F.Random.Normal(DataTypes.Float32, 0, 1, 3, rhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(rhsShape, 1.0f).Evaluate().AsTensor();
-        Expr rhs = constB ? rhsTensor : new Var(new TensorType(DataTypes.Float32, rhsDynShape));
+        var rhsTensor = IR.F.Random.Normal(lhsType, 0, 1, 3, rhsShape).Evaluate().AsTensor(); // IR.F.Tensors.ConstantOfShape(rhsShape, 1.0f).Evaluate().AsTensor();
+        Expr rhs = constB ? rhsTensor : new Var(new TensorType(lhsType, rhsDynShape));
         if (!constB)
         {
             CompileOptions.ShapeBucketOptions.VarMap.Add((Var)rhs, rhs.CheckedShape.ToArray());
         }
 
-        var pre = IR.F.Tensors.MatMul(lhs, rhs);
+        Expr scale = None.Default;
+        if (scaleType is not null)
+        {
+            scale = Tensor.FromScalar(1.23f).CastElementTo(DataType.FromTypeCode(scaleType.Value));
+        }
+
+        var pre = IR.F.Tensors.MatMul(lhs, rhs, DataType.FromTypeCode(outType), scale);
 
         var feedDict = new Dictionary<IVar, IValue>();
         foreach (var axis in dynamicAxes)
@@ -2273,7 +2282,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
         for (int i = 0; i < outputs.Length; i++)
         {
             var cos = Comparator.CosSimilarity(outputs[i], actuals[i]);
-            Assert.True(cos > 0.999, $"the {CompileOptions.DumpDir} output {i} cos: {cos} ");
+            Assert.True(cos > 0.999, $"the {Diagnostics.DumpScope.Current.Directory} output {i} cos: {cos} ");
         }
     }
 

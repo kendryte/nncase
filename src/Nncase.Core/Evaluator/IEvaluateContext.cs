@@ -102,4 +102,6 @@ public interface IEvaluateContext
     {
         return GetArgumentValue(op, parameter).AsTensor().ToArray<T>();
     }
+
+    IRType GetReturnType() => CurrentCall.CheckedType;
 }

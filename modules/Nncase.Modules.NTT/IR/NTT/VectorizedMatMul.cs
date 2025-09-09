@@ -19,6 +19,11 @@ public sealed partial class VectorizedMatMul : Op
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(VectorizedMatMul), 1, "rhs", ParameterKind.Input);
 
+    /// <summary>
+    /// Gets the scale.
+    /// </summary>
+    public static readonly ParameterInfo Scale = new(typeof(VectorizedMatMul), 2, "scale", ParameterKind.Attribute);
+
     [Flags]
     public enum VectorizeKind : byte
     {
@@ -82,6 +87,19 @@ public sealed partial class VectorizedMatMul : Op
             default:
                 throw new NotSupportedException($"{LhsVectorizedAxes.Count}, {RhsVectorizedAxes.Count}");
         }
+    }
+
+    public IRArray<int> GetOutVectorizeAxes(int lhsRank, int rhsRank)
+    {
+        var rank = System.Math.Max(lhsRank, rhsRank);
+        var (lhsKind, rhsKind) = GetVectorizeKind(lhsRank, rhsRank);
+        return (lhsKind.HasFlag(VectorizeKind.M), rhsKind.HasFlag(VectorizeKind.N)) switch
+        {
+            (true, true) => new[] { rank - 2, rank - 1 },
+            (true, false) => new[] { rank - 2 },
+            (false, true) => new[] { rank - 1 },
+            (false, false) => Array.Empty<int>(),
+        };
     }
 
     public override string DisplayProperty() => $"LhsVectorizedAxes: {LhsVectorizedAxes}, RhsVectorizedAxes: {RhsVectorizedAxes}, TransposeA: {TransposeA}, TransposeB: {TransposeB}";

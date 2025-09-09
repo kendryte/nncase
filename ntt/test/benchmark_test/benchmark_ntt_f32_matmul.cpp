@@ -74,13 +74,13 @@ void benchmark_ntt_matmul_vectorize_K() {
     ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape_v<1>,
+        ntt::matmul<false>(pa, pb, tc, nullptr, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, tc, ntt::fixed_shape_v<1>,
+        ntt::matmul<false>(pa, pb, tc, nullptr, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(tc));
@@ -112,7 +112,7 @@ void benchmark_ntt_matmul_vectorize_M() {
     ntt::pack(ta, pa, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++) {
-        ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape_v<0>,
+        ntt::matmul<false>(pa, tb, pc, nullptr, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
                            ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
@@ -120,7 +120,7 @@ void benchmark_ntt_matmul_vectorize_M() {
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, tb, pc, ntt::fixed_shape_v<0>,
+        ntt::matmul<false>(pa, tb, pc, nullptr, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<>,
                            ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
@@ -152,13 +152,13 @@ void benchmark_ntt_matmul_vectorize_N() {
     ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape_v<>,
+        ntt::matmul<false>(ta, pb, pc, nullptr, ntt::fixed_shape_v<>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(ta, pb, pc, ntt::fixed_shape_v<>,
+        ntt::matmul<false>(ta, pb, pc, nullptr, ntt::fixed_shape_v<>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
@@ -193,13 +193,13 @@ void benchmark_ntt_matmul_vectorize_M_N() {
     ntt::pack(tb, pb, ntt::fixed_shape_v<1>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
@@ -234,13 +234,13 @@ void benchmark_ntt_matmul_vectorize_M_K() {
     ntt::pack(tb, pb, ntt::fixed_shape_v<0>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0>,
                            ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
@@ -275,13 +275,13 @@ void benchmark_ntt_matmul_vectorize_K_N() {
     ntt::pack(tb, pb, ntt::fixed_shape_v<0, 1>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<1>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
@@ -316,13 +316,13 @@ void benchmark_ntt_matmul_vectorize_M_K_N() {
     ntt::pack(tb, pb, ntt::fixed_shape_v<0, 1>);
 
     for (size_t i = 0; i < warmup_num; i++)
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<>);
 
     auto t1 = NttTest::get_cpu_cycle();
     for (size_t i = 0; i < run_num; i++) {
-        ntt::matmul<false>(pa, pb, pc, ntt::fixed_shape_v<0, 1>,
+        ntt::matmul<false>(pa, pb, pc, nullptr, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<>, ntt::fixed_shape_v<0, 1>,
                            ntt::fixed_shape_v<>);
         asm volatile("" ::"g"(pc));
