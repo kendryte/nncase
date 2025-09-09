@@ -402,7 +402,6 @@ struct reshard_impl<SrcTensor, DestTensor> {
                     size_t remainder = block;
                     auto axes_reverse = policy.axes.reverse();
                     loop<policy_rank>([&](auto idx) {
-                        // auto i = policy_rank - 1 - idx;
                         auto ax = axes_reverse[idx];
                         size_t dim_size = mesh_type::shape[ax];
                         size_t c = remainder % dim_size;
@@ -430,9 +429,8 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
         // 3. traverse src index
         auto src_global_shape = src.shape();
-        auto src_local_shape = src.local().shape();
 #if ENABLE_RESHARD_DEBUG
-        std::cout << "candidates size = " << candidates.size() << std::endl;
+        dump_shape("mesh_idx", local_mesh_index);
 #endif
         for (size_t linear_shard_id = 0; linear_shard_id < candidates.size();
              ++linear_shard_id) {
@@ -441,6 +439,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
             const auto shard_index =
                 unravel_index(linear_shard_id, mesh_type::shape);
+            auto src_remote = src.remote(shard_index);
             slice_with_global_offset<tensor_rank> src_slice{};
             slice_with_global_offset<tensor_rank> dest_slice{};
 
@@ -454,7 +453,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
                 size_t start =
                     std::max(src_start_offset[i], dest_start_offset[i]);
                 size_t stop =
-                    std::min(src_start_offset[i] + src_local_shape[i],
+                    std::min(src_start_offset[i] + src_remote.shape()[i],
                              dest_start_offset[i] + dest_local_shape[i]);
                 if (start >= stop) {
                     overlap = false;
@@ -468,11 +467,13 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
             // copy overlap
             if (overlap) {
-                auto src_new = src.remote(shard_index);
                 auto src_block =
-                    src_new.view(src_slice.local_offset, src_slice.shape);
+                    src_remote.view(src_slice.local_offset, src_slice.shape);
                 auto dest_block =
                     dest.local().view(dest_slice.local_offset, src_slice.shape);
+#if ENABLE_RESHARD_DEBUG
+                dump_shape("src_blk.shape", src_block.shape());
+#endif
                 tensor_copy(src_block, dest_block);
             }
         }
