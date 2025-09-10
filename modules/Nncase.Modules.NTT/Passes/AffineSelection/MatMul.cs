@@ -172,7 +172,7 @@ public partial class NTTAffineSelectionPass
 #pragma warning restore SA1008 // Opening parenthesis should be spaced correctly
         }
 
-        var (om, ok, on) = (rank - 3, rank - 2, rank - 1);
+        var (om, on, ok) = (rank - 3, rank - 2, rank - 1);
         var (lm, lk) = (lhsShape.Rank - 2, lhsShape.Rank - 1);
         var (rk, rn) = (rhsShape.Rank - 2, rhsShape.Rank - 1);
         if (op is IR.NTT.VectorizedMatMul pm)

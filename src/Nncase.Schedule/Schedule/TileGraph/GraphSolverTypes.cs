@@ -29,12 +29,16 @@ public sealed record BufferIdentity(TileGrid Node, int Index)
 /// note only the nodes which store at top level have valid Places[0], else the Places[0] is empty.
 /// store level in [0, create level == top level ? create level : top level - 1), 0 means level 1, 1 means level 2. </param>
 /// <param name="Shapes">the buffer shape according to the placement.</param>
-/// <param name="SizeVars">the buffer size according to the placement.</param>
-/// <param name="SizeExprs">the buffer size expr.</param>
-/// <param name="Trips">related loop trips.</param>
-/// <param name="Masks">record this tile's loop vars which involved buffer size.</param>
-public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] SizeVars, T[] SizeExprs, T[] Trips, LoopMask[] Masks)
+/// <param name="Sizes">the buffer size according to the placement.</param>
+/// <param name="Trips">related loop trips at current domain.</param>
+/// <param name="Mask">the loop mask of this buffer at current domain.</param>
+public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] Sizes, T[] Trips, LoopMask Mask)
 {
+    public int GetLastRelatedPos()
+    {
+        var lastLoop = Mask.LastRelated(Places.Length - 1);
+        return lastLoop + 1;
+    }
 }
 
 /// <summary>

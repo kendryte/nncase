@@ -16,7 +16,7 @@ public sealed class PackedMatMulEvaluator : ITypeInferencer<PackedMatMul>, IKern
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
-        var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
+        var tilebounds = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
 
         var (k, m, n) = (context.BufferShapes[0][^1], context.BufferShapes[2][^2], context.BufferShapes[2][^1]);
         var bufferInfos = new MicroKernelBufferInfo[context.BufferShapes.Length];
@@ -24,7 +24,7 @@ public sealed class PackedMatMulEvaluator : ITypeInferencer<PackedMatMul>, IKern
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[1] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[2] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read | MicroKernelBufferInfo.BufferState.Write);
-        return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
+        return new MicroKernelInfo(tilebounds, bufferInfos, GetComputeCycle);
     }
 
     private static Google.OrTools.ConstraintSolver.IntExpr GetComputeCycle(Google.OrTools.ConstraintSolver.IntExpr[][] bufferShapes, Google.OrTools.ConstraintSolver.Solver solver, MicroKernelContext context)

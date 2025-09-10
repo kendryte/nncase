@@ -27,9 +27,14 @@ internal static class OrToolsExtensions
     public static IntExpr CeilDiv(this int numer, IntExpr denom) =>
         denom.solver().MakeDiv(numer + (denom - 1), denom);
 
-    public static IntExpr MakeProd(this Solver solver, IntVarVector ints)
+    public static IntExpr MakeProd(this Solver solver, IEnumerable<IntExpr> ints)
     {
-        return ints.Skip(1).Aggregate((IntExpr)ints.First(), solver.MakeProd);
+        return ints.Skip(1).Aggregate(ints.First(), solver.MakeProd);
+    }
+
+    public static IntExpr MakeSum(this Solver solver, IEnumerable<IntExpr> ints)
+    {
+        return ints.Skip(1).Aggregate(ints.First(), solver.MakeSum);
     }
 
     public static long[][] Value(this Assignment sol, IntExpr[][] inputs)
