@@ -31,20 +31,22 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
             MaskVectorType => 1,
             _ => 0,
         };
-
-        OrtKISharp.Tensor inputOrt;
         if (elementType == DataTypes.Float8E4M3 || elementType == DataTypes.Float8E5M2)
         {
             var inputCasted = input.CastElement<float>();
-            inputOrt = inputCasted.ToOrtTensor();
+            var inputOrt = inputCasted.ToOrtTensor();
+            inputOrt = inputOrt.Pack(oldLanesCount, target.Lanes, target.Axes);
+            var output = inputOrt.ToTensor().CastElementTo(context.CurrentCall.Arguments[Pack.Input.Index].CheckedDataType);
+            output = output.CastTo(TypeInference.PackType(input.ElementType, target.Lanes), CastMode.Reinterpret);
+            output = output.Squeeze(Enumerable.Range(output.Rank - target.Lanes.Count, target.Lanes.Count).Select(i => (long)i).ToArray());
+            return Value.FromTensor(output);
         }
         else
         {
-            inputOrt = input.ToOrtTensor();
+            var inputOrt = input.ToOrtTensor();
+            inputOrt = inputOrt.Pack(oldLanesCount, target.Lanes, target.Axes);
+            return inputOrt.ToValue(TypeInference.PackType(input.ElementType, target.Lanes));
         }
-
-        inputOrt = inputOrt.Pack(oldLanesCount, target.Lanes, target.Axes);
-        return inputOrt.ToValue(TypeInference.PackType(input.ElementType, target.Lanes));
     }
 
     /// <inheritdoc/>
