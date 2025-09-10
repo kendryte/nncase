@@ -31,26 +31,22 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         var pads = context.GetArgumentValueAsArray<long>(pad, Pad.Pads);
         var constValue = context.GetArgumentValue(pad, Pad.Value);
 
-        var inType = input.AsTensor().ElementType;
-        try
+        var inputTensor = input.AsTensor();
+        var constTensor = constValue.AsTensor();
+        var inType = inputTensor.ElementType;
+        var constType = constTensor.ElementType;
+        var legalMap = new Dictionary<PrimType, PrimType>
         {
-            if (inType.IsFloat() && inType != DataTypes.Float32)
-            {
-                if (inType is VectorType vt && vt.ElemType != DataTypes.Float32)
-                {
-                    input = Value.FromTensor(input.AsTensor().CastTo(vt with { ElemType = DataTypes.Float32 }));
-                    constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
-                }
-                else if (inType is not VectorType && inType != DataTypes.Float32)
-                {
-                    input = Cast(input.AsTensor(), DataTypes.Float32).Evaluate();
-                    constValue = Cast(constValue.AsTensor(), DataTypes.Float32).Evaluate();
-                }
-            }
-        }
-        catch
-        {
-        }
+            { DataTypes.Float16, DataTypes.Float32 },
+            { DataTypes.BFloat16, DataTypes.Float32 },
+            { DataTypes.Float8E4M3, DataTypes.Float32 },
+            { DataTypes.Float8E5M2, DataTypes.Float32 },
+        };
+        var legalInType = inType.Legalize(legalMap);
+        var legalConstType = constType.Legalize(legalMap);
+
+        inputTensor = inputTensor.CastElementTo(legalInType);
+        constTensor = constTensor.CastElementTo(legalConstType);
 
         if (inType is VectorType)
         {
@@ -58,9 +54,9 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
             pads = pads.Concat([0, 0]).ToArray();
         }
 
-        var inputOrt = input.AsTensor().ToOrtTensor();
+        var inputOrt = inputTensor.ToOrtTensor();
         var padsOrt = Tensor.From(pads, [inputOrt.Rank, 2]).ToOrtTensor();
-        var constValueOrt = constValue.AsTensor().ToOrtTensor();
+        var constValueOrt = constTensor.ToOrtTensor();
 
         var mode = pad.PadMode switch
         {
@@ -101,12 +97,12 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         if (pad.PadMode == PadMode.Symmetric)
         {
             var ret = SymmetricPad(inputOrt, ToOnnxPadFormat(padsOrt), constValueOrt);
-            return ret.ToValue(inType);
+            return Value.FromTensor(ret.ToTensor(legalInType).CastElementTo(inType));
         }
         else
         {
             var ret = OrtKI.Pad(inputOrt, ToOnnxPadFormat(padsOrt), constValueOrt, mode);
-            return ret.ToValue(inType);
+            return Value.FromTensor(ret.ToTensor(legalInType).CastElementTo(inType));
         }
     }
 
