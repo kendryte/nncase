@@ -16,5 +16,6 @@ internal class NTTModule : IApplicationPart
     {
         registrator.RegisterManyInterface<UnaryEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<MatMulEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LayerNormEvaluator>(reuse: Reuse.Singleton);
     }
 }

@@ -304,7 +304,7 @@ public abstract class HuggingFaceModel
             eps = (float)Config.GetNestedValue<double>("rms_norm_eps");
         }
 
-        return IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false);
+        return IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false).With(metadata: new IRMetadata() { OutputNames = new[] { layerName.Substring(0, layerName.Length - 7) } });
     }
 
     public virtual Call Linear(Expr expr, Tensor weight, Tensor? bias = null, Tensor? scaleIf = null, Tensor? scaleW = null, string layerName = "")
