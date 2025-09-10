@@ -43,7 +43,7 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
         // rotate half
         var rotated = OrtKI.Concat([OrtKI.Neg(parts[1]), parts[0]], sliceAxis);
         var output = OrtKI.Add(OrtKI.Mul(input, cos), OrtKI.Mul(rotated, sin));
-        return output.ToValue(originDtype);
+        return IR.F.Tensors.Cast(output.ToTensor(), originDtype).Evaluate();
     }
 
     /// <inheritdoc/>
