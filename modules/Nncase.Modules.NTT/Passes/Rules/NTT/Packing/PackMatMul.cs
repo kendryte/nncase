@@ -40,7 +40,8 @@ public sealed partial class PackMatMulByN : RewriteRule<Pattern>
             "caller",
             _ => true,
             IsWildcard("lhs"),
-            IsWildcard("rhs"));
+            IsWildcard("rhs"),
+            IsNone());
 
     private Expr? GetReplace(VectorizedMatMul matMul, Call caller, Expr lhs, Expr rhs)
     {

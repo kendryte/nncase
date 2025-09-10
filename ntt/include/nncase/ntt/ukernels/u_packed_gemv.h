@@ -20,15 +20,15 @@
 namespace nncase::ntt {
 namespace ukernels {
 template <bool AccumulateC, Scalar TAElem, Vector TBPack, Vector TCPack,
-          bool Arch>
+          class TScale, bool Arch>
 struct u_packed_gemv {
     static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
     template <Dimension TLdb, Dimension TK, Dimension TN>
-    constexpr void operator()(const TAElem *NTT_RESTRICT a,
-                              const TBPack *NTT_RESTRICT b,
-                              TCPack *NTT_RESTRICT c, const TLdb &ldb,
-                              const TK &K, const TN &N) noexcept {
+    constexpr void
+    operator()(const TAElem *NTT_RESTRICT a, const TBPack *NTT_RESTRICT b,
+               TCPack *NTT_RESTRICT c, const TScale &scale, const TLdb &ldb,
+               const TK &K, const TN &N) noexcept {
         using TAccPack = decltype(ntt::cast_elem<float>(c[0_dim]));
 
         for (size_t n1 = 0; n1 < N; n1++) {
@@ -37,7 +37,7 @@ struct u_packed_gemv {
                                  ntt::cast_elem<float>(c[n1]), TAccPack{});
 
             for (size_t k1 = 0; k1 < K; k1++) {
-                const TAElem a0 = a[k1];
+                const TAElem a0 = ntt::mul(a[k1], scale);
                 const auto b0 = b1[k1];
                 ntt::loop<N0Tile>([&](auto tn) {
                     c0(tn) = ntt::mul_add(a0, b0(tn), c0(tn));
@@ -55,11 +55,12 @@ struct u_packed_gemv {
 } // namespace ukernels
 
 template <bool AccumulateC, Scalar TAElem, Vector TBPack, Vector TCPack,
-          Dimension TLdb, Dimension TK, Dimension TN>
+          class TScale, Dimension TLdb, Dimension TK, Dimension TN>
 constexpr void u_packed_gemv(const TAElem *a, const TBPack *b, TCPack *c,
-                             const TLdb &ldb, const TK &K,
+                             const TScale &scale, const TLdb &ldb, const TK &K,
                              const TN &N) noexcept {
-    ukernels::u_packed_gemv<AccumulateC, TAElem, TBPack, TCPack, true> impl;
-    impl(a, b, c, ldb, K, N);
+    ukernels::u_packed_gemv<AccumulateC, TAElem, TBPack, TCPack, TScale, true>
+        impl;
+    impl(a, b, c, scale, ldb, K, N);
 }
 } // namespace nncase::ntt

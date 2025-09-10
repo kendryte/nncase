@@ -296,7 +296,7 @@ void paged_attention(
 
                     // [1, valid_block_size] = [1, dim']<dim> @ [dim',
                     // valid_block_size]<dim>
-                    ntt::matmul<false>(q_slice, k_slice, s_slice,
+                    ntt::matmul<false>(q_slice, k_slice, s_slice, nullptr,
                                        fixed_shape_v<1>, {}, fixed_shape_v<0>,
                                        ntt::fixed_shape_v<>);
                 }
@@ -381,11 +381,11 @@ void paged_attention(
                     // clang-format on
                     if (context_bid == 0) {
                         ntt::matmul<false, false, true>(
-                            s_slice, v_slice, d_slice, fixed_shape_v<>,
+                            s_slice, v_slice, d_slice, nullptr, fixed_shape_v<>,
                             fixed_shape_v<>, fixed_shape_v<0>, fixed_shape_v<>);
                     } else {
                         ntt::matmul<true, false, true>(
-                            s_slice, v_slice, d_slice, fixed_shape_v<>,
+                            s_slice, v_slice, d_slice, nullptr, fixed_shape_v<>,
                             fixed_shape_v<>, fixed_shape_v<0>, fixed_shape_v<>);
                     }
                 }

@@ -670,9 +670,7 @@ DEFINE_U_BINARY_HALF_24V(min)
 DEFINE_U_BINARY_HALF_24V(mod)
 
 // clamp
-template <> struct u_clamp_policy<true> {
-    static constexpr size_t unroll = 8;
-};
+template <> struct u_clamp_policy<true> { static constexpr size_t unroll = 8; };
 
 // reduce
 template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
@@ -680,9 +678,7 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 };
 
 // cast
-template <> struct u_cast_policy<true> {
-    static constexpr size_t unroll = 4;
-};
+template <> struct u_cast_policy<true> { static constexpr size_t unroll = 4; };
 
 // matmul
 template <>
@@ -767,13 +763,14 @@ struct u_matmul_policy<matmul_vectorize_kind::vectorize_mkn,
     static constexpr size_t m0_subtile = 4;
 };
 
-template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC,
-                false, false, 2, 8, vector<float, NTT_VLEN / 32>, float,
-                vector<float, NTT_VLEN / 32>, true> {
+template <bool AccumulateC, class TScale>
+requires std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
+    ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC, false, false, 2,
+    8, vector<float, NTT_VLEN / 32>, float, vector<float, NTT_VLEN / 32>,
+    TScale, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              size_t K) noexcept {
+                              const TScale &scale, size_t K) noexcept {
         if constexpr (FixedTensor<TA> && FixedTensor<TB> && FixedTensor<TC>) {
             NTT_ASSUME(K > 0);
 
@@ -1098,9 +1095,9 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC,
         } else {
             u_matmul<ukernels::matmul_vectorize_kind::vectorize_m, AccumulateC,
                      false, false, 2, 8, vector<float, NTT_VLEN / 32>, float,
-                     vector<float, NTT_VLEN / 32>, false>
+                     vector<float, NTT_VLEN / 32>, TScale, false>
                 impl;
-            impl(a, b, c0, K);
+            impl(a, b, c0, scale, K);
         }
     }
 };
@@ -1527,13 +1524,13 @@ template <class T1, class T2> struct u_unpack_policy<T1, T2, true> {
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank>
-    requires((std::same_as<typename TIn::element_type,
-                           ntt::vector<float, NTT_VLEN / 32, NTT_VLEN / 32>> ||
-              std::same_as<typename TIn::element_type,
-                           ntt::vector<float, NTT_VLEN / 32>>) &&
-             std::same_as<typename std::decay_t<TOut>::element_type, float> &&
-             (AxesRank == 1 || AxesRank == 2))
-class u_unpack_impl<TIn, TOut, AxesRank, true> {
+requires((std::same_as<typename TIn::element_type,
+                       ntt::vector<float, NTT_VLEN / 32, NTT_VLEN / 32>> ||
+          std::same_as<typename TIn::element_type,
+                       ntt::vector<float, NTT_VLEN / 32>>)&&std::
+             same_as<typename std::decay_t<TOut>::element_type, float> &&
+         (AxesRank == 1 ||
+          AxesRank == 2)) class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
     using TElem = typename std::decay_t<TOut>::element_type;

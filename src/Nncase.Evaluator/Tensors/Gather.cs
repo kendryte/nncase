@@ -25,7 +25,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         var input = context.GetOrtArgumentValue(gather, Gather.Input);
         var axis = gather.Axis;
         var index = context.GetOrtArgumentValue(gather, Gather.Index);
-        return OrtKI.Gather(input, index, axis).ToValue();
+        return OrtKI.Gather(input, index, axis).ToValue(context.GetReturnType());
     }
 
     /// <inheritdoc/>

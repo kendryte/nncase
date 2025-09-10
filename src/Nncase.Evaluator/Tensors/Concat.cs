@@ -45,7 +45,7 @@ public class ConcatEvaluator : IEvaluator<Concat>, ITypeInferencer<Concat>, ICos
         else
         {
             var axis = cat.Axis;
-            return OrtKI.Concat(inputOrg.Select(t => t.ToOrtTensor()).ToArray(), axis).ToValue();
+            return OrtKI.Concat(inputOrg.Select(t => t.ToOrtTensor()).ToArray(), axis).ToValue(dataType);
         }
     }
 

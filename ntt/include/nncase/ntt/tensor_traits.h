@@ -15,6 +15,7 @@
 #pragma once
 #include <cstring>
 #include <type_traits>
+#include <optional>
 #include "../bfloat16.h"
 #include "../float8.h"
 #include "../half.h"
