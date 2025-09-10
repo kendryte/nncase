@@ -45,8 +45,15 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         var legalInType = inType.Legalize(legalMap);
         var legalConstType = constType.Legalize(legalMap);
 
-        inputTensor = inputTensor.CastElementTo(legalInType);
-        constTensor = constTensor.CastElementTo(legalConstType);
+        if (inType != legalInType)
+        {
+            inputTensor = inputTensor.CastElementTo(legalInType);
+        }
+
+        if (constType != legalConstType)
+        {
+            constTensor = constTensor.CastElementTo(legalConstType);
+        }
 
         if (inType is VectorType)
         {
@@ -97,12 +104,24 @@ public class PadEvaluator : IEvaluator<Pad>, ITypeInferencer<Pad>, ICostEvaluato
         if (pad.PadMode == PadMode.Symmetric)
         {
             var ret = SymmetricPad(inputOrt, ToOnnxPadFormat(padsOrt), constValueOrt);
-            return Value.FromTensor(ret.ToTensor(legalInType).CastElementTo(inType));
+            var retTensor = ret.ToTensor(legalInType);
+            if (inType != legalInType)
+            {
+                retTensor = retTensor.CastElementTo(inType);
+            }
+
+            return Value.FromTensor(retTensor);
         }
         else
         {
             var ret = OrtKI.Pad(inputOrt, ToOnnxPadFormat(padsOrt), constValueOrt, mode);
-            return Value.FromTensor(ret.ToTensor(legalInType).CastElementTo(inType));
+            var retTensor = ret.ToTensor(legalInType);
+            if (inType != legalInType)
+            {
+                retTensor = retTensor.CastElementTo(inType);
+            }
+
+            return Value.FromTensor(retTensor);
         }
     }
 
