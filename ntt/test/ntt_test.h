@@ -225,8 +225,7 @@ bool are_close(T a, T b,[[maybe_unused]] float ulp_tlrce = 1, double abs_tol = 1
 
     // ULP check for all non-integer types (including float, half, double, etc.)
     if constexpr (!std::is_integral_v<T>) {
-        // std::cout << "std::fabs(a-b) " << std::fabs((a-b))  <<std::endl;
-        // std::cout << "ulp(b):" <<ulp(b) << "   ulp(a)" << ulp(a) << std::endl;
+
         if(std::isinf(double(a)) != std::isinf(double(b))){
             // Special handling for float type: if a is float_max_from_exp and b is greater than float_max_from_exp, return true
             if constexpr (std::is_same_v<T, float>) {
@@ -236,12 +235,19 @@ bool are_close(T a, T b,[[maybe_unused]] float ulp_tlrce = 1, double abs_tol = 1
                 if (std::abs(a_abs - float_max_from_exp) <= std::max(abs_tol, rel_tol * std::max(a_abs, std::abs(float_max_from_exp)))) {
                     return true;
                 }
+                if (std::fabs(double(a - b)) <= ulp_tlrce*double(ulp(b)) || std::fabs(double(a - b)) <= ulp_tlrce*double(ulp(a))) {
+                    return true;
+                }
+
             }
             return false;
         }
         if (std::fabs(double(a - b)) <= ulp_tlrce*double(ulp(b)) || std::fabs(double(a - b)) <= ulp_tlrce*double(ulp(a))) {
             return true;
         }
+        std::cout << "std::fabs(a-b) " << std::fabs(double(a-b))  <<std::endl;
+        std::cout << "ulp(b):" <<(double)ulp(b) << "   ulp(a)" << (double)ulp(a) << std::endl;
+        std::cout << "ulp tolerance: " << (double)ulp(b) * ulp_tlrce << "\n";
     }
     
 
