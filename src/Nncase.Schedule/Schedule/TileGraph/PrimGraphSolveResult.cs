@@ -19,6 +19,7 @@ namespace Nncase.Schedule.TileGraph;
 /// </summary>
 public record class NodeWithBuffer(TileNode Node, BufferIdentity Id)
 {
+    public long MaxSize => TensorUtilities.GetProduct(Id.Node.BufferShapes[Id.Index].ToArray()) * Id.Node.GetBufferElemSize(Id.Index);
 }
 
 public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<TreeSolveResult.Context, Unit>

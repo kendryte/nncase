@@ -127,7 +127,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
                 {
                     bufferInfo = GetBufferInfo(value, curId, currentAccessMap, currentLifeness, tileVars, forwardExtents, backWardExtents, result.ElemSize);
                     bufferInfoMap.Add(curId, bufferInfo);
-                    bufferResults.Add(new(curId, currentLifeness, value.DomainRelation.Map * currentAccessMap, bufferInfo.Sizes[0]));
+                    bufferResults.Add(new(curId, currentLifeness, value.DomainRelation.Map * currentAccessMap, result.ElemSize));
                 }
             }
 
@@ -160,7 +160,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             for (int a = 0; a < value.BufferShapes.Length; a++)
             {
                 shapes[a] = new IntExpr[value.BufferShapes[a].Length];
-                elemSizes[a] = sizes[a] = Solver.MakeIntConst(value.Grid.Buffers[a].CheckedDataType.SizeInBytes);
+                elemSizes[a] = sizes[a] = Solver.MakeIntConst(value.GetBufferElemSize(a));
                 var extentVars = tileVars;
                 var converter = new AffineExprToIntExprConverter(Solver, extentVars);
                 accessMaps[a] = value.Grid.AccessMaps[a];

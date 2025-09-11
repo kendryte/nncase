@@ -93,6 +93,8 @@ public sealed class TileGrid : ITileable
 
     public AffineMap WriteAccess => Grid.AccessMaps[^1];
 
+    public long GetBufferElemSize(int i) => Grid.Buffers[i].CheckedDataType.SizeInBytes;
+
     public MicroKernelInfo GetKernelInfo(ITargetOptions targetOptions) => CompilerServices.GetOpMicroKernelInfo(Op, new(Op, Grid.AccessMaps.ToImmutableArray(), BufferShapes, targetOptions));
 
     public override string ToString()

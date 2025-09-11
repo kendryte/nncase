@@ -95,24 +95,19 @@ public class GraphTiler
             var beginTime = int.MaxValue;
             var endTime = int.MinValue;
 
-            foreach (var (tileNode, nodeInfo) in tileNodeMemo)
+            foreach (var (tileNode, nodeInfo) in tileNodeMemo.Where(kv => kv.Key.Level == sl)) // only consider create and store at same level.
             {
                 foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
                 {
                     var nodeBuffer = new NodeWithBuffer(tileNode, bid);
-                    nodeBufferLiveness[nodeBuffer] = bufferInfo.Liveness;
                     beginTime = Math.Min(beginTime, bufferInfo.Liveness.Item1);
                     endTime = Math.Max(endTime, bufferInfo.Liveness.Item2);
                     var extents = new List<IntExpr>();
                     var ci = bufferInfo.GetLastRelatedPos();
-                    if (sl >= bufferInfo.Places[ci].Length)
-                    {
-                        continue;
-                    }
 
                     extents.Add(solver.MakeProd(bufferInfo.Places[ci][sl], bufferInfo.Sizes[ci]));
-
                     nodeBufferSizes[nodeBuffer] = solver.MakeSum(extents);
+                    nodeBufferLiveness[nodeBuffer] = bufferInfo.Liveness;
                 }
             }
 
@@ -137,12 +132,21 @@ public class GraphTiler
 
                 if (!lastTimeStamp.SetEquals(curTimeStamp))
                 {
-                    var bufs = curTimeStamp.Select(key => nodeBufferSizes[key]).ToArray();
-                    var size = solver.MakeSum(bufs);
-                    var cons = solver.MakeLessOrEqual(size, memCapacities[sl]);
-                    cons.SetName($"capacity[sl{sl}, t{i}]");
+                    var bufSizes = curTimeStamp.Select(key => nodeBufferSizes[key]).ToArray();
+                    var totalSize = solver.MakeSum(bufSizes);
+                    var cons = solver.MakeLessOrEqual(totalSize, memCapacities[sl]);
+                    cons.SetName($"capacity_le[sl{sl}, t{i}]");
                     solver.Add(cons);
                     constraints.Add(cons);
+
+                    // note can't determine the memory usage threshold.
+                    // if (sl == 0)
+                    // {
+                    //     cons = solver.MakeGreaterOrEqual(totalSize, Math.Min((long)(curTimeStamp.Select(k => k.MaxSize).Sum() * 0.95), (long)(memCapacities[sl] * 0.5)));
+                    //     cons.SetName($"capacity_ge[sl{sl}, t{i}]");
+                    //     solver.Add(cons);
+                    //     constraints.Add(cons);
+                    // }
                     lastTimeStamp.Clear(); // update last stamp.
                     lastTimeStamp.UnionWith(curTimeStamp);
                 }
@@ -157,14 +161,13 @@ public class GraphTiler
         var levelDataWrites = Enumerable.Range(0, memCapacities.Length).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
         foreach (var (tileNode, nodeInfo) in tileNodeMemo)
         {
-            var createLevel = tileNode.Level;
             var nodeWrites = Enumerable.Range(0, memCapacities.Length).Select(_ => new List<IntExpr>()).ToArray();
             var nodeReads = Enumerable.Range(0, memCapacities.Length).Select(_ => new List<IntExpr>()).ToArray();
             foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
             {
                 var binfo = bid.Node.GetKernelInfo(targetOptions).BufferInfos;
                 var reused = nodeInfo.DefUseMap.ContainsKey(bid);
-                for (int sl = 0; sl < levelCount; sl++)
+                for (int sl = 0; sl <= tileNode.Level; sl++)
                 {
                     // skip the buffer which store at top level
                     var volume = (IntExpr)solver.MakeIntConst(1);
@@ -205,13 +208,12 @@ public class GraphTiler
             memoryCycles[i] = (levelDataWrites[i] + levelDataReads[i]).CeilDiv(memBandWidths[i]);
         }
 
-        IntExpr computeCycles = solver.MakeIntConst(0);
-        // solver.MakeIntConst(32L * (384 * 512 * 2 * (256 - 1)));
-        // foreach (var (tileNode, nodeInfo) in tileNodeMemo.Where(kv => kv.Key.Level == 0))
-        // {
-        //     computeCycles = computeCycles * nodeInfo.TripCounts[^1];
-        //     break;
-        // }
+        IntExpr computeCycles = solver.MakeIntConst(10000);
+        foreach (var (tileNode, nodeInfo) in tileNodeMemo.Where(kv => kv.Key.Level == 0))
+        {
+            computeCycles = computeCycles * nodeInfo.TripCounts[^1];
+            break;
+        }
 
         var totalCycles = (IntExpr)computeCycles;
         for (int i = 0; i < memCapacities.Length; i++)
@@ -224,6 +226,7 @@ public class GraphTiler
         var objectiveMonitor = solver.MakeMinimize(totalCyclesVar, 1);
         var collector = solver.MakeNBestValueSolutionCollector(5, false);
         collector.AddObjective(totalCyclesVar);
+        collector.Add(totalCyclesVar);
         collector.Add(levelDataReads.Select(i => i.Var()).ToArray());
         collector.Add(levelDataWrites.Select(i => i.Var()).ToArray());
         collector.Add(computeCycles.Var());
@@ -272,7 +275,6 @@ public class GraphTiler
                 collector.Add(item.Var());
             }
         }
-
 
         // var defaultPhaseParameters = new DefaultPhaseParameters();
         // var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
@@ -335,7 +337,7 @@ public class GraphTiler
         var status = solver.Solve(decisionBuilder, monitors.ToArray());
         if (!status)
         {
-            DumpAssgin(primTree, new TreeSolverPrinter(null, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
+            DumpAssgin(primTree, new TreeSolverPrinter(null, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferLifenessConstraints, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
             throw new InvalidOperationException("tiling solve failed!");
         }
 
@@ -348,15 +350,15 @@ public class GraphTiler
 
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            DumpAssgin(primTree, new TreeSolverPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
+            DumpAssgin(primTree, new TreeSolverPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferLifenessConstraints, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
 
-            DumpAssgin(primTree, new TreeSolverPythonPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
+            DumpAssgin(primTree, new TreeSolverPythonPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferLifenessConstraints, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
         }
 
         return new TreeSolveResult(bufferGraphMemo[primTree.Wrapped], sol.ObjectiveValue(), levelBufferSizesAssgin, levelBufferLifeness, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions, moduleKind);
     }
 
-    public static void DumpAssgin(ITreeNode tree, TreeSolverPythonPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<int, Constraint[]> lowestStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
+    public static void DumpAssgin(ITreeNode tree, TreeSolverPythonPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<int, Constraint[]> lowestStoreBufferNumsConstrains, Dictionary<int, Constraint[]> levelBufferLifenessConstraints, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
     {
         using (var stream = Diagnostics.DumpScope.Current.OpenFile($"modeling.py"))
         {
@@ -366,7 +368,7 @@ public class GraphTiler
         }
     }
 
-    public static void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<int, Constraint[]> eachLevelStoreBufferNumsConstrains, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
+    public static void DumpAssgin(ITreeNode tree, TreeSolverPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<int, Constraint[]> eachLevelStoreBufferNumsConstrains, Dictionary<int, Constraint[]> levelBufferLifenessConstraints, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)
     {
         using (var stream = Diagnostics.DumpScope.Current.OpenFile($"modeling.yaml"))
         {
@@ -385,6 +387,15 @@ public class GraphTiler
             writer.WriteLine("EachLevelStoreBufferNumsConstrains:");
             writer.Indent++;
             foreach (var (node, cons) in eachLevelStoreBufferNumsConstrains)
+            {
+                TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), cons, printer.Solution);
+            }
+
+            writer.Indent--;
+
+            writer.WriteLine("EachLevelBufferLifenessConstraints:");
+            writer.Indent++;
+            foreach (var (node, cons) in levelBufferLifenessConstraints)
             {
                 TreeSolverPrinter.WriteIntExprVector(writer, node.ToString(), cons, printer.Solution);
             }
