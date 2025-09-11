@@ -26,14 +26,14 @@ public class GraphTiler
     /// </summary>
     public static TreeSolveResult SolvePrimGraph(TileNode primTree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, INTTTargetOptions targetOptions, string moduleKind)
     {
-        int[] memoryCapacities = targetOptions.MemoryCapacities;
-        int[] memoryBandWidths = targetOptions.MemoryBandWidths;
-        var topLevel = memoryCapacities.Length - 1;
-        TreeSolverInitializer.Init(primTree, bufferGraphMemo, topLevel, targetOptions, out var solver, out var opNodeMemo, out var tileNodeMemo, out var tileableNodeMemo);
+        int[] memCapacities = targetOptions.MemoryCapacities;
+        int[] memBandWidths = targetOptions.MemoryBandWidths;
+        var levelCount = memCapacities.Length - 1;
+        TreeSolverInitializer.Init(primTree, bufferGraphMemo, levelCount, targetOptions, out var solver, out var opNodeMemo, out var tileNodeMemo, out var tileableNodeMemo);
 
         // 0. each level buffer store at last accessed loop.
         var eachLevelStoreBufferConstrains = new Dictionary<int, Constraint[]>();
-        for (int level = 0; level < topLevel; level++)
+        for (int level = 0; level < levelCount; level++)
         {
             var cons = new List<Constraint>();
             foreach (var (tileNode, nodeInfo) in tileNodeMemo.Where(kv => kv.Key.Level == level))
@@ -88,7 +88,7 @@ public class GraphTiler
         var levelBufferSizes = new Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>>();
         var levelBufferLifeness = new Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>>();
         var levelBufferLifenessConstraints = new Dictionary<int, Constraint[]>();
-        for (int sl = 0; sl < topLevel; sl++)
+        for (int sl = 0; sl < levelCount; sl++)
         {
             var nodeBufferSizes = levelBufferSizes[sl] = new();
             var nodeBufferLiveness = levelBufferLifeness[sl] = new();
@@ -139,7 +139,7 @@ public class GraphTiler
                 {
                     var bufs = curTimeStamp.Select(key => nodeBufferSizes[key]).ToArray();
                     var size = solver.MakeSum(bufs);
-                    var cons = solver.MakeLessOrEqual(size, memoryCapacities[sl]);
+                    var cons = solver.MakeLessOrEqual(size, memCapacities[sl]);
                     cons.SetName($"capacity[sl{sl}, t{i}]");
                     solver.Add(cons);
                     constraints.Add(cons);
@@ -153,18 +153,18 @@ public class GraphTiler
 
         // when buffer is read, the data read from last level memory.
         // when buffer is write, the data write to current level memory.
-        var levelDataReads = Enumerable.Range(0, topLevel + 1).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
-        var levelDataWrites = Enumerable.Range(0, topLevel + 1).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
+        var levelDataReads = Enumerable.Range(0, memCapacities.Length).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
+        var levelDataWrites = Enumerable.Range(0, memCapacities.Length).Select(i => (IntExpr)solver.MakeIntConst(0)).ToArray();
         foreach (var (tileNode, nodeInfo) in tileNodeMemo)
         {
             var createLevel = tileNode.Level;
-            var nodeWrites = Enumerable.Range(0, topLevel + 1).Select(_ => new List<IntExpr>()).ToArray();
-            var nodeReads = Enumerable.Range(0, topLevel + 1).Select(_ => new List<IntExpr>()).ToArray();
+            var nodeWrites = Enumerable.Range(0, memCapacities.Length).Select(_ => new List<IntExpr>()).ToArray();
+            var nodeReads = Enumerable.Range(0, memCapacities.Length).Select(_ => new List<IntExpr>()).ToArray();
             foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
             {
                 var binfo = bid.Node.GetKernelInfo(targetOptions).BufferInfos;
                 var reused = nodeInfo.DefUseMap.ContainsKey(bid);
-                for (int sl = 0; sl < topLevel; sl++)
+                for (int sl = 0; sl < levelCount; sl++)
                 {
                     // skip the buffer which store at top level
                     var volume = (IntExpr)solver.MakeIntConst(1);
@@ -185,7 +185,7 @@ public class GraphTiler
                 }
             }
 
-            for (int l = 0; l < topLevel + 1; l++)
+            for (int l = 0; l < memCapacities.Length; l++)
             {
                 if (nodeWrites[l].Any())
                 {
@@ -199,26 +199,34 @@ public class GraphTiler
             }
         }
 
-        var memoryCycles = new IntExpr[topLevel + 1];
-        for (int i = 0; i < topLevel + 1; i++)
+        var memoryCycles = new IntExpr[memCapacities.Length];
+        for (int i = 0; i < memCapacities.Length; i++)
         {
-            memoryCycles[i] = (levelDataWrites[i] + levelDataReads[i]).CeilDiv(memoryBandWidths[i]);
+            memoryCycles[i] = (levelDataWrites[i] + levelDataReads[i]).CeilDiv(memBandWidths[i]);
         }
 
-        var computeCycles = solver.MakeIntConst(0);
+        IntExpr computeCycles = solver.MakeIntConst(0);
+        // solver.MakeIntConst(32L * (384 * 512 * 2 * (256 - 1)));
+        // foreach (var (tileNode, nodeInfo) in tileNodeMemo.Where(kv => kv.Key.Level == 0))
+        // {
+        //     computeCycles = computeCycles * nodeInfo.TripCounts[^1];
+        //     break;
+        // }
+
         var totalCycles = (IntExpr)computeCycles;
-        for (int i = 0; i < topLevel + 1; i++)
+        for (int i = 0; i < memCapacities.Length; i++)
         {
             totalCycles += memoryCycles[i];
         }
 
         var totalCyclesVar = totalCycles.Var();
-        totalCyclesVar.SetRange(1, long.MaxValue / memoryBandWidths[0]); /* avoid crash. */
+        totalCyclesVar.SetRange(1, long.MaxValue / memBandWidths[0]); /* avoid crash. */
         var objectiveMonitor = solver.MakeMinimize(totalCyclesVar, 1);
         var collector = solver.MakeNBestValueSolutionCollector(5, false);
         collector.AddObjective(totalCyclesVar);
         collector.Add(levelDataReads.Select(i => i.Var()).ToArray());
         collector.Add(levelDataWrites.Select(i => i.Var()).ToArray());
+        collector.Add(computeCycles.Var());
         collector.Add(memoryCycles.Select(i => i.Var()).ToArray());
         var searchAbleVars = new List<IntVar>();
         foreach (var (node, diminfo) in tileableNodeMemo)
@@ -265,17 +273,30 @@ public class GraphTiler
             }
         }
 
-        var defaultPhaseParameters = new DefaultPhaseParameters();
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+
+        // var defaultPhaseParameters = new DefaultPhaseParameters();
+        // var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
+        DecisionBuilder decisionBuilder;
         {
-            defaultPhaseParameters.display_level = DefaultPhaseParameters.NORMAL;
-        }
-        else
-        {
-            defaultPhaseParameters.display_level = DefaultPhaseParameters.NONE;
+            var phaseTileVars = new List<IntVar>();
+            var phaseOtherVars = new List<IntVar>();
+            foreach (var (node, info) in opNodeMemo)
+            {
+                foreach (var tilevar in tileableNodeMemo[node].TileVars.Reverse())
+                {
+                    if (searchAbleVars.Contains(tilevar.Var()))
+                    {
+                        phaseTileVars.Add(tilevar.Var());
+                    }
+                }
+            }
+
+            phaseOtherVars.AddRange(searchAbleVars.Except(phaseTileVars));
+            var phaseTiles = solver.MakePhase(phaseTileVars.ToArray(), Solver.CHOOSE_FIRST_UNBOUND, Solver.ASSIGN_MAX_VALUE);
+            var phaseOthers = solver.MakePhase(phaseOtherVars.ToArray(), Solver.CHOOSE_FIRST_UNBOUND, Solver.ASSIGN_MIN_VALUE);
+            decisionBuilder = solver.Compose(phaseTiles, phaseOthers);
         }
 
-        var decisionBuilder = solver.MakeDefaultPhase(searchAbleVars.ToArray(), defaultPhaseParameters);
         var solve_max_time = 30;
         if (System.Environment.GetEnvironmentVariable("NNCASE_TILING_MAX_TIME") is string s_solve_max_time)
         {
@@ -491,7 +512,7 @@ public class GraphTiler
     {
 #if true
         var topLevel = targetOptions.MemoryCapacities.Length - 1;
-        var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
+        var rootGraph = TieredTileGraphBuilder.Build(preExpr, topLevel, out var exprMemo);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
             rootGraph.Dump($"tile_graph");

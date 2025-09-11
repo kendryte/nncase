@@ -60,7 +60,7 @@ public sealed class TileGrid : ITileable
 {
     public TileGrid(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<long> domainBounds, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic, IEnumerable<IEnumerable<long>> bufferShapes)
     {
-        Level = 0;
+        Level = -1;
         Grid = grid;
         Op = op;
         OpId = opId;

@@ -279,7 +279,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         Dumpper.DumpIR(post, $"post{count}");
 #endif
 
-        var builder = new GraphBuilder(2);
+        var builder = new TieredTileGraphBuilder(2);
         builder.Visit(post);
         var graph = builder.RootGraph;
 #if DEBUG
@@ -300,7 +300,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         Dumpper.DumpIR(post, $"post{count}");
 #endif
 
-        var builder = new GraphBuilder(2);
+        var builder = new TieredTileGraphBuilder(2);
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 #if DEBUG
@@ -332,7 +332,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
+        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length);
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 
@@ -361,7 +361,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
+        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length);
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 
@@ -385,7 +385,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var builder = new GraphBuilder(targetOptions.MemoryBandWidths.Length);
+        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length);
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 
@@ -408,7 +408,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var func = FunctionSamples.Get3();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
         var grid = (IR.Affine.Grid)((Function)post).Body;
-        var rootGraph = GraphBuilder.Build(grid, 2, out _);
+        var rootGraph = TieredTileGraphBuilder.Build(grid, 2, out _);
 #if DEBUG
         rootGraph.Dump($"g");
 #endif

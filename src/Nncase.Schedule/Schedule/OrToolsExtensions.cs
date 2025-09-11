@@ -13,7 +13,7 @@ namespace Nncase.Schedule;
 
 internal static class OrToolsExtensions
 {
-    private static readonly Regex _rangePattern = new Regex(@"\(\d+..\d+\)", RegexOptions.Compiled);
+    private static readonly Regex _rangePattern = new Regex(@"\(\d+ ?.. ?\d+\)", RegexOptions.Compiled);
 
     public static IntExpr CeilDiv(this IntExpr numer, long denom) =>
         (numer + (denom - 1)) / denom;

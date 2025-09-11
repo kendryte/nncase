@@ -12,11 +12,11 @@ namespace Nncase.Schedule.TileGraph;
 
 public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVisitor<TreeSolverInitializer.Context, TreeSolverInitializer.InitResult>
 {
-    public TreeSolverInitializer(Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, int topLevel, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, INTTTargetOptions targetOptions)
+    public TreeSolverInitializer(Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, int levelCount, Solver solver, Dictionary<OpNode, OpNodeInfo<IntExpr>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<IntExpr>> levelBufferInfos, Dictionary<ITileable, DomainInfo<IntExpr>> domainDimInfos, INTTTargetOptions targetOptions)
         : base(solver, primitiveBufferInfo, levelBufferInfos, domainDimInfos, targetOptions)
     {
         BufferGraphMemo = bufferGraphMemo;
-        TopLevel = topLevel;
+        TopLevel = levelCount;
     }
 
     public int TimeStamp { get; private set; }
@@ -25,13 +25,13 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
 
     public int TopLevel { get; }
 
-    public static void Init(TileNode tree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, int topLevel, INTTTargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, out Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, out Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo)
+    public static void Init(TileNode tree, Dictionary<TieredTileGraph, BufferGraph> bufferGraphMemo, int levelCount, INTTTargetOptions options, out Solver solver, out Dictionary<OpNode, OpNodeInfo<IntExpr>> opNodeMemo, out Dictionary<TileNode, TileNodeInfo<IntExpr>> tileNodeMemo, out Dictionary<ITileable, DomainInfo<IntExpr>> tileableNodeMemo)
     {
         solver = new Solver("GraphSolver");
         opNodeMemo = new Dictionary<OpNode, OpNodeInfo<IntExpr>>();
         tileNodeMemo = new Dictionary<TileNode, TileNodeInfo<IntExpr>>();
         tileableNodeMemo = new Dictionary<ITileable, DomainInfo<IntExpr>>();
-        var initializer = new TreeSolverInitializer(bufferGraphMemo, topLevel, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
+        var initializer = new TreeSolverInitializer(bufferGraphMemo, levelCount, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, options);
         initializer.Visit(tree, Context.Default);
     }
 
@@ -141,7 +141,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
     {
         var (pid, pvars, ptrips) = context;
         var dimsMap = GetDimsMap(value);
-        var tileVars = Enumerable.Range(0, value.DomainBounds.Length).Select(n => Solver.MakeIntVar(1, long.MaxValue, $"op{value.OpId}_d{n}_L{value.Level}")).ToArray();
+        var tileVars = Enumerable.Range(0, value.DomainBounds.Length).Select(n => Solver.MakeIntVar(1, long.MaxValue, $"op{value.OpId}_d{n}")).ToArray();
 
         var kernelInfo = value.GetKernelInfo(TargetOptions);
 
@@ -257,6 +257,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
     {
         var rank = tileNode.DomainRelation.Map.Results.Length;
         var fullPos = rank + 1;
+        var levelCount = tileNode.Level + 1;
         var bufferPlaces = Enumerable.Range(0, fullPos).Select(i => Array.Empty<IntExpr>()).ToArray();
         var bufferShapes = Enumerable.Range(0, fullPos).Select(i => Array.Empty<IntExpr>()).ToArray();
         var bufferSizes = new IntExpr[fullPos];
@@ -266,7 +267,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         var resultStr = accessMap.ToString().Split("->")[1];
         for (int pos = 0; pos < fullPos; pos++)
         {
-            var subLevelPlace = bufferPlaces[pos] = new IntVar[tileNode.Level];
+            var subLevelPlace = bufferPlaces[pos] = new IntVar[levelCount];
             for (int sl = 0; sl < subLevelPlace.Length; sl++)
             {
                 subLevelPlace[sl] = Solver.MakeBoolVar($"p[cl{tileNode.Level}, op{bid.Node.OpId}, b{bid.Index}, ci{pos}, sl{sl}]");
