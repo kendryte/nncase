@@ -477,7 +477,7 @@ public class GraphTiler
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
-                result.Visit(primTree, new(bodyBuilder, Array.Empty<Dimension>(), primTree.DomainBoundExprs.ToArray()));
+                result.Visit(primTree, new(bodyBuilder, Enumerable.Repeat(new DimConst(0), primTree.DomainBoundExprs.Length).ToArray(), primTree.DomainBoundExprs.ToArray()));
                 var parameters = inputBids.Select(k => (IVar)result.PrimBufferMemo[k]).Concat(
                     dynamicDimVars.Select(v => (IVar)v.With())).Concat(
                     outputBids.Select(k => (IVar)result.PrimBufferMemo[k])).ToArray();

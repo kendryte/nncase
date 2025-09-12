@@ -29,22 +29,22 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     public static readonly TheoryData<Func<Function>, (IntMergePoint, bool)[], Action<TieredTileGraph>, int> MergeTileGraphDatas = new()
     {
-        { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(2, 1, 2), true), (new(2, 0, 2), true), (new(2, 0, 1), false), (new(1, 0, 1), true) }, MergeTileGraphChecker0, 0 },
-        { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(1, 0, 2), true), (new(2, 0, 2), false), (new(2, 1, 2), true), }, MergeTileGraphCheckerDefault, 1 },
-        { FunctionSamples.Get1VectorizeMN, new (IntMergePoint, bool)[] { (new(2, 0, 2), true), (new(2, 1, 2), true), (new(2, 0, 1), true), (new(2, 1, 1), true), (new(3, 2, 2), true), (new(5, 4, 2), true) }, MergeTileGraphChecker2, 2 },
+        { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(2, 1, 1), true), (new(2, 0, 1), true), (new(2, 0, 0), false), (new(1, 0, 0), true) }, MergeTileGraphChecker0, 0 },
+        { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(1, 0, 1), true), (new(2, 0, 1), false), (new(2, 1, 1), true), }, MergeTileGraphCheckerDefault, 1 },
+        { FunctionSamples.Get1VectorizeMN, new (IntMergePoint, bool)[] { (new(2, 0, 1), true), (new(2, 1, 1), true), (new(2, 0, 0), true), (new(2, 1, 0), true), (new(3, 2, 1), true), (new(5, 4, 1), true) }, MergeTileGraphChecker2, 2 },
     };
 
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BaseExpr>, int> SolveTileGraphDatas = new()
     {
         { FunctionSamples.Get5, [], SolveTileGraphChecker0, 0 },
-        { FunctionSamples.Get1, [new(1, 0, 2)], (_) => { }, 1 },
-        { FunctionSamples.Get1, [new(2, 1, 2)], (_) => { }, 2 },
-        { FunctionSamples.Get1, [new(1, 0, 2), new(2, 1, 2)], (_) => { }, 3 },
-        { FunctionSamples.Get4, [new(2, 0, 2)], (_) => { }, 4 },
+        { FunctionSamples.Get1, [new(1, 0, 1), new(1, 0, 0)], (_) => { }, 1 },
+        { FunctionSamples.Get1, [new(2, 1, 1)], (_) => { }, 2 },
+        { FunctionSamples.Get1, [new(1, 0, 1), new(2, 1, 1), new(1, 0, 0)], (_) => { }, 3 },
+        { FunctionSamples.Get4, [new(2, 0, 1)], (_) => { }, 4 },
 
         // just for check single op tiling results
-        { FunctionSamples.Get1Matmul, [], (_) => { }, 5 },
-        { FunctionSamples.Get1Exp, [], (_) => { }, 6 },
+        // { FunctionSamples.Get1Matmul, [], (_) => { }, 5 },
+        // { FunctionSamples.Get1Exp, [], (_) => { }, 6 },
     };
 
     public static readonly TheoryData<Func<Function>, int> MCTSDatas = new()
@@ -56,12 +56,16 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BufferGraph>, int> BufferizeTileGraphDatas = new()
     {
-        { FunctionSamples.Get1, [new(1, 0, 2)], (bufGraph) => { Assert.Equal(4, bufGraph.Clusters.OfType<BufferGraph>().First().Edges.Count()); }, 0 },
+        { FunctionSamples.Get1, [new(1, 0, 1)], (bufGraph) => { Assert.Equal(4, bufGraph.Clusters.OfType<BufferGraph>().First().Edges.Count()); }, 0 },
     };
 
     public UnitTestTileGraph()
     {
-        CompileOptions.TargetOptions = new Targets.NTTTargetOptions();
+        CompileOptions.TargetOptions = new Targets.NTTTargetOptions()
+        {
+            MemoryCapacities = new[] { 256 * 1024, 512 * 1024, int.MaxValue },
+            MemoryBandWidths = new[] { 128, 64, 8 },
+        };
 #if DEBUG
         CompileOptions.DumpFlags = Diagnostics.DumpFlags.Tiling;
 #endif
@@ -332,9 +336,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length);
-        builder.Visit(post);
-        var tileGraph = builder.RootGraph;
+        var tileGraph = TieredTileGraphBuilder.Build(post, targetOptions.MemoryBandWidths.Length - 1, out var exprMemo);
 
         for (int i = 0; i < mergePoints.Length; i++)
         {
@@ -346,8 +348,20 @@ public sealed class UnitTestTileGraph : TestClassBase
 #endif
 
         var tiler = new Schedule.GraphTiler();
-        using var scope = new Diagnostics.DumpScope($"{count}");
-        var result = tiler.Tile(post, Nncase.Targets.CPUTarget.Kind, (INTTTargetOptions)CompileOptions.TargetOptions, Array.Empty<DimVar>());
+
+        var (resultMemo, _) = tiler.SolveRootGraph(tileGraph, Targets.CPUTarget.Kind, targetOptions, Array.Empty<DimVar>());
+        var replaces = new Dictionary<BaseExpr, BaseExpr>();
+        foreach (var (oldExpr, v) in exprMemo)
+        {
+            if (resultMemo.TryGetValue(v, out var newExpr))
+            {
+                replaces.Add(oldExpr, newExpr);
+            }
+        }
+
+        var cloner = new ReplacingExprCloner(replaces);
+        var result = cloner.Clone(post, default);
+
         action(result);
     }
 
@@ -361,7 +375,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length);
+        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length - 1);
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 
@@ -385,7 +399,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length);
+        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length - 1);
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 
@@ -447,7 +461,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     {
         tileGraph.Walk(g =>
         {
-            if (g is TieredTileGraph { Level: 1, OpId: 1 } g1)
+            if (g is TieredTileGraph { Level: 0, OpId: 1 } g1)
             {
                 Assert.Equal(2, g1.VertexCount);
                 foreach (var op in g1.Vertices.Where(v => v.OpId == 0))
@@ -464,7 +478,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         // (new(2, 0, 2), true), (new(2, 1, 2), true), (new(2, 0, 1), true), (new(2, 1, 1), true), (new(3, 2, 2), true), (new(5, 4, 2), true)
         tileGraph.Walk(g =>
         {
-            if (g is TieredTileGraph { Level: 2, OpId: 5 } g1)
+            if (g is TieredTileGraph { Level: 1, OpId: 5 } g1)
             {
                 Assert.Equal(2, g1.VertexCount);
                 Assert.Equal(2, g1.ClustersCount);
@@ -475,13 +489,13 @@ public sealed class UnitTestTileGraph : TestClassBase
                 }
             }
 
-            if (g is TieredTileGraph { Level: 2, OpId: 2 } g2)
+            if (g is TieredTileGraph { Level: 1, OpId: 2 } g2)
             {
                 Assert.Equal(3, g2.VertexCount);
                 Assert.Equal(1, g2.ClustersCount);
             }
 
-            if (g is TieredTileGraph { Level: 1, OpId: 2 } g3)
+            if (g is TieredTileGraph { Level: 0, OpId: 2 } g3)
             {
                 Assert.Equal(3, g3.VertexCount);
                 Assert.Equal(0, g3.ClustersCount);

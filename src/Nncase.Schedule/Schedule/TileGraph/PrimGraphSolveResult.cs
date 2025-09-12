@@ -58,21 +58,24 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
     public string ModuleKind { get; }
 
-    public RankedShape PartialShapeFromDomain(Isl.set parentDomain, Isl.set tiledDomain, Isl.map access, uint dim, Dictionary<string, Dimension> paramDimMap)
+    public RankedShape PartialShapeFromDomain(Isl.set parentDomain, DomainRelation domainRel, Isl.set tiledDomain, Isl.map access, uint dim, Dictionary<string, Dimension> paramDimMap)
     {
-        var domainRank = parentDomain.dim(Isl.dim_type.set);
+        var domainRank = tiledDomain.dim(Isl.dim_type.set);
         var shapeRank = access.dim(Isl.dim_type.out_);
 
+        var (domainRelMinMpa, domainRelMaxMpa) = domainRel.ToMinMaxMpa();
         var parentMaxMpa = parentDomain.max_multi_pw_aff();
         var parentMinMpa = parentDomain.min_multi_pw_aff();
+        var currentMaxMpa = domainRelMaxMpa.pullback(parentMaxMpa);
+        var currentMinMpa = domainRelMinMpa.pullback(parentMinMpa);
         var tiledMaxMpa = tiledDomain.max_multi_pw_aff();
         var tiledMinMpa = tiledDomain.min_multi_pw_aff();
         var accessMpa = new Isl.multi_pw_aff(access.as_pw_multi_aff());
 
         for (int i = (int)dim; i < domainRank; i++)
         {
-            tiledMaxMpa = tiledMaxMpa.set_at(i, parentMaxMpa.at(i));
-            tiledMinMpa = tiledMinMpa.set_at(i, parentMinMpa.at(i));
+            tiledMaxMpa = tiledMaxMpa.set_at(i, currentMaxMpa.at(i));
+            tiledMinMpa = tiledMinMpa.set_at(i, currentMinMpa.at(i));
         }
 
         var bufferMaxMpa = accessMpa.pullback(tiledMaxMpa.add_constant(1));
@@ -129,7 +132,11 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             tilemap = new Isl.map(Isl.ctx.Current, $"{{ [{string.Join(',', dims)}] -> [{string.Join(',', outerDims)},{string.Join(',', innerDims)}] : {string.Join(" and ", constraints)} }}");
         }
 
-        var tiledParentDomain = tilemap.intersect_domain(parentDomain).range();
+        var currentDomain = parentDomain.apply(value.DomainRelation.ToMap());
+        var currentRanges = value.DomainRelation.Map.Apply(parentOffsets, parentExtents);
+        var currentOffsets = currentRanges.Select(r => r.Start).ToArray();
+        var currentExtents = currentRanges.Select(r => r.Stop).ToArray();
+        var tiledParentDomain = tilemap.intersect_domain(currentDomain).range();
         var tiledChildDomain = tiledParentDomain.move_dims(Isl.dim_type.param, 0, Isl.dim_type.set, 0, (uint)domainRank);
         var childBoundsMpa = tiledChildDomain.max_multi_pw_aff().add_constant(1).sub(tiledChildDomain.min_multi_pw_aff());
 
@@ -138,7 +145,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         for (int i = value.DomainRelation.Map.Results.Length - 1; i >= 0; i--)
         {
             Dimension start = 0L;
-            Dimension stop = parentExtents[i];
+            Dimension stop = currentExtents[i];
             Dimension stride = nodeMemo.BackWardExtents[0][i] / TileableNodeMemo[value].TileVars[i];
             loopBuilders[i] = T.Serial(out var loopVar, (0L, stop, stride), $"d{i}_Op{value.OpId}_L{value.Level}");
             loopVars[i] = loopVar;
@@ -165,17 +172,11 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             }
         }
 
-        var initOffsets = Enumerable.Repeat<Dimension>(0L, loopVars.Length).ToArray();
-        foreach (var (k, v) in TileableNodeMemo[value].DimsMap)
-        {
-            initOffsets[k] += parentOffsets[v];
-        }
-
         // forwardOffsets[0] means partentOffsets, forwardOffsets[i] means partentOffsets[0:i] + loop vars[0:i]
         var forwardOffsets = new Dimension[loopVars.Length + 1][];
         for (int i = 0; i < loopVars.Length + 1; i++)
         {
-            var offsets = forwardOffsets[i] = initOffsets.ToArray();
+            var offsets = forwardOffsets[i] = currentOffsets.ToArray();
 
             for (int j = 0; j < i; j++)
             {
@@ -201,7 +202,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                         var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
 
                         // calculate the buffer shape.
-                        var partialShape = PartialShapeFromDomain(parentDomain, tiledChildDomain, accessMap, (uint)i, paramDimMap);
+                        var partialShape = PartialShapeFromDomain(parentDomain, value.DomainRelation, tiledChildDomain, accessMap, (uint)i, paramDimMap);
                         var viewInfo = GetParentSubViewInfo(sl, value, bid, bufferInfo.Map, forwardOffsets[i], partialShape);
                         Expr subView;
                         if (viewInfo.InnerAllocated)
@@ -312,16 +313,21 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
     public Unit Visit(OpNode value, Context context)
     {
-        var (parentbuilder, partentOffsets, parentExtents) = context;
+        var (parentbuilder, parentOffsets, parentExtents) = context;
         var parentDomain = ISLUtility.ToParametricDomain(parentExtents, out var paramVarMap);
         var paramDimMap = paramVarMap.Select(p => (p.Key.Name, p.Value)).Concat(parentExtents.Select((d, i) => ($"d{i}", d))).ToDictionary();
+
+        var currentDomain = parentDomain.apply(value.DomainRelation.ToMap());
+        var currentRanges = value.DomainRelation.Map.Apply(parentOffsets, parentExtents);
+        var currentOffsets = currentRanges.Select(r => r.Start).ToArray();
+        var currentExtents = currentRanges.Select(r => r.Stop).ToArray();
 
         var buffers = new Expr[value.BufferShapes.Length];
         for (int i = 0; i < value.BufferShapes.Length; i++)
         {
             var bid = new BufferIdentity(value.Wrapped, i);
-            var shape = PartialShapeFromDomain(parentDomain, parentDomain, AffineUtility.AsMap(value.Grid.AccessMaps[i]), (uint)parentDomain.dim(Isl.dim_type.set), paramDimMap);
-            var viewInfo = GetParentSubViewInfo(value.Level, value, bid, value.DomainRelation.Map * OpNodeMemo[value].Maps[i], partentOffsets, shape);
+            var shape = PartialShapeFromDomain(parentDomain, value.DomainRelation, currentDomain, AffineUtility.AsMap(value.Grid.AccessMaps[i]), (uint)currentDomain.dim(Isl.dim_type.set), paramDimMap);
+            var viewInfo = GetParentSubViewInfo(value.Level, value, bid, value.DomainRelation.Map * OpNodeMemo[value].Maps[i], currentOffsets, shape);
 
             buffers[i] = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, viewInfo.Shape);
         }
@@ -332,7 +338,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             bodyVarReplaces.Add(value.Grid.BodyParameters[i], buffers[i]);
         }
 
-        var domain = new IR.Tuple(partentOffsets.Select(off => new IR.Tuple(IR.F.Shapes.AsTensor(off), (Expr)0L)).ToArray());
+        var domain = new IR.Tuple(currentOffsets.Select(off => new IR.Tuple(IR.F.Shapes.AsTensor(off), (Expr)0L)).ToArray());
         bodyVarReplaces.Add(value.Grid.DomainParameter, domain);
         var nestBody = new ReplacingExprCloner(bodyVarReplaces).Clone(value.Grid.Body, default);
         parentbuilder.Body(nestBody);

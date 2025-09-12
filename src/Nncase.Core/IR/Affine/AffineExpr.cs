@@ -55,6 +55,21 @@ public abstract class AffineExpr : BaseExpr
     /// <returns>Visit result.</returns>
     public abstract TExprResult Accept<TExprResult, TContext>(AffineExprVisitor<TExprResult, TContext> functor, TContext context);
 
+    public string GetDisplayString(ReadOnlySpan<AffineSymbol> symbols)
+    {
+        return this switch
+        {
+            AffineConstant e => e.Value.ToString(),
+            AffineExtent e => $"t{e.Position}",
+            AffineDim e => $"d{e.Position}",
+            AffineSymbol e => e.ToString(),
+            AffineAddBinary e => $"({e.Lhs.GetDisplayString(symbols)} + {e.Rhs.GetDisplayString(symbols)})",
+            AffineMulBinary e => $"({e.Lhs.GetDisplayString(symbols)} * {e.Rhs.GetDisplayString(symbols)})",
+            AffineDivBinary e => $"({e.Lhs.GetDisplayString(symbols)} {F.Affine.ToString(e.BinaryOp)} {e.Rhs.GetDisplayString(symbols)})",
+            _ => throw new UnreachableException(),
+        };
+    }
+
     internal AffineExpr ReplaceDomainsAndSymbols(ReadOnlySpan<AffineRange> newDomains, ReadOnlySpan<AffineSymbol> newSymbols)
     {
         return this switch
@@ -113,21 +128,6 @@ public abstract class AffineExpr : BaseExpr
             AffineAddBinary e => e.Lhs.Apply(dims, extents, symbols) + e.Rhs.Apply(dims, extents, symbols),
             AffineMulBinary e => e.Lhs.Apply(dims, extents, symbols) * e.Rhs.Apply(dims, extents, symbols),
             AffineDivBinary e => ApplyDivBinary(e.BinaryOp, e.Lhs.Apply(dims, extents, symbols), e.Rhs.Apply(dims, extents, symbols)),
-            _ => throw new UnreachableException(),
-        };
-    }
-
-    internal string GetDisplayString(ReadOnlySpan<AffineSymbol> symbols)
-    {
-        return this switch
-        {
-            AffineConstant e => e.Value.ToString(),
-            AffineExtent e => $"t{e.Position}",
-            AffineDim e => $"d{e.Position}",
-            AffineSymbol e => e.ToString(),
-            AffineAddBinary e => $"({e.Lhs.GetDisplayString(symbols)} + {e.Rhs.GetDisplayString(symbols)})",
-            AffineMulBinary e => $"({e.Lhs.GetDisplayString(symbols)} * {e.Rhs.GetDisplayString(symbols)})",
-            AffineDivBinary e => $"({e.Lhs.GetDisplayString(symbols)} {F.Affine.ToString(e.BinaryOp)} {e.Rhs.GetDisplayString(symbols)})",
             _ => throw new UnreachableException(),
         };
     }

@@ -11,8 +11,10 @@ using System.Runtime.CompilerServices;
 using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.Utilities;
 using QuikGraph;
 using QuikGraph.Collections;
+using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule.TileGraph;
 
@@ -51,6 +53,58 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
         }
 
         return new DomainRelation(DomainOp, other.RangeOp, Map * other.Map);
+    }
+
+    public Isl.map ToMap()
+    {
+        var domains = string.Join(", ", Enumerable.Range(0, Map.Domains.Length).Select(i => $"d{i}"));
+        if (Map.Symbols.Length > 0)
+        {
+            throw new NotSupportedException("Isl map does not support symbols yet.");
+        }
+
+        var constraints = new List<string>();
+        string RangeAddDim(AffineConstant low, AffineConstant up)
+        {
+            var dim = $"d{domains.Length + constraints.Count}";
+            constraints.Add($"{low} <= {dim} < {up}");
+            return dim;
+        }
+
+        var results = StringUtility.Join(", ", Map.Results.ToArray().Select(expr => expr.Offset switch
+        {
+            AffineConstant c => RangeAddDim(c.Value, (AffineConstant)expr.Extent),
+            _ => expr.Offset.GetDisplayString(Map.Symbols),
+        }));
+
+        return new Isl.map(Isl.ctx.Current, $"{{ [{domains}] -> [{results}] : {string.Join(" and ", constraints)} }}");
+    }
+
+    /// <summary>
+    /// only use for domain relation from parent to child.
+    /// </summary>
+    public (Isl.multi_pw_aff MinMpa, Isl.multi_pw_aff MaxMpa) ToMinMaxMpa()
+    {
+        var domains = string.Join(", ", Enumerable.Range(0, Map.Domains.Length).Select(i => $"d{i}"));
+        if (Map.Symbols.Length > 0)
+        {
+            throw new NotSupportedException("Isl map does not support symbols yet.");
+        }
+
+        var minResults = StringUtility.Join(", ", Map.Results.ToArray().Select(expr => expr.Offset switch
+        {
+            AffineConstant c => c.Value.ToString(),
+            _ => expr.Offset.GetDisplayString(Map.Symbols),
+        }));
+
+        var maxResults = StringUtility.Join(", ", Map.Results.ToArray().Select(expr => expr.Offset switch
+        {
+            AffineConstant c => expr.Extent.GetDisplayString(Map.Symbols),
+            _ => expr.Offset.GetDisplayString(Map.Symbols),
+        }));
+
+        return (new Isl.multi_pw_aff(Isl.ctx.Current, $"{{ [{domains}] -> [{minResults}] }}"),
+                new Isl.multi_pw_aff(Isl.ctx.Current, $"{{ [{domains}] -> [{maxResults}] }}"));
     }
 
     public override string ToString() => $"Op{DomainOp} -> Op{RangeOp}: {Map}";
