@@ -11,7 +11,8 @@ class UnaryTestGenerator(BaseTestGenerator):
         self.op_str_map_exhaustive= {
             "abs": f"auto ort_output = ortki_Abs(ort_input);", 
             "cos": f"auto ort_output = ortki_Cos(ort_input);",
-            "sin": f"auto ort_output = ortki_Sin(ort_input);"
+            "sin": f"auto ort_output = ortki_Sin(ort_input);",
+            "exp": f"auto ort_output = ortki_Exp(ort_input);"
             # "acos", "acosh", "asin", "asinh", "ceil", "copy", "cos", "cosh",
             # "exp", "erf", "floor", "log", "neg", "round", "rsqrt", "sign", "sin",
             # "sinh", "sqrt", "square", "tanh", "swish",
@@ -58,6 +59,9 @@ class UnaryTestGenerator(BaseTestGenerator):
             "cos": {
                 "float": DataType("float", "Float32", "-1e6", "1e6", False),
                 "double": DataType("double", "Float64", "-1e6", "1e6", False),
+            },
+            "exp": {
+            "float": DataType("float", "Float32", "-88.0", "88.0", False),
             }
         }
 
