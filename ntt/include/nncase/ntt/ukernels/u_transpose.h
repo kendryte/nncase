@@ -15,8 +15,8 @@
 #pragma once
 #include "../loop.h"
 #include <cstddef>
-#include <type_traits>
 #include <iostream>
+#include <type_traits>
 
 namespace nncase::ntt {
 namespace ukernels {
@@ -38,9 +38,9 @@ class u_transpose_impl {
 };
 
 #define DEFINE_U_TRANSPOSE_IMPL_4D(PERM0, PERM1, PERM2, PERM3, ACCESS_EXPR)    \
-    template <Tensor TIn, class TOut, bool Arch>                                          \
+    template <Tensor TIn, class TOut, bool Arch>                               \
     class u_transpose_impl<TIn, TOut,                                          \
-                           fixed_shape_t<PERM0, PERM1, PERM2, PERM3>, Arch> {        \
+                           fixed_shape_t<PERM0, PERM1, PERM2, PERM3>, Arch> {  \
       public:                                                                  \
         constexpr void                                                         \
         operator()(const TIn &input, TOut &output,                             \
@@ -54,8 +54,9 @@ class u_transpose_impl {
     }
 
 #define DEFINE_U_TRANSPOSE_IMPL_3D(PERM0, PERM1, PERM2, ACCESS_EXPR)           \
-    template <Tensor TIn, class TOut, bool Arch>                                          \
-    class u_transpose_impl<TIn, TOut, fixed_shape_t<PERM0, PERM1, PERM2>, Arch> {    \
+    template <Tensor TIn, class TOut, bool Arch>                               \
+    class u_transpose_impl<TIn, TOut, fixed_shape_t<PERM0, PERM1, PERM2>,      \
+                           Arch> {                                             \
       public:                                                                  \
         constexpr void                                                         \
         operator()(const TIn &input, TOut &output,                             \
@@ -67,7 +68,17 @@ class u_transpose_impl {
         }                                                                      \
     }
 
-
+#define DEFINE_U_TRANSPOSE_IMPL_2D(PERM0, PERM1, ACCESS_EXPR)                  \
+    template <Tensor TIn, class TOut, bool Arch>                               \
+    class u_transpose_impl<TIn, TOut, fixed_shape_t<PERM0, PERM1>, Arch> {     \
+      public:                                                                  \
+        constexpr void operator()(const TIn &input, TOut &output,              \
+                                  const fixed_shape_t<PERM0, PERM1> &) {       \
+            for (auto i = 0; i < input.shape()[0]; ++i)                        \
+                for (auto j = 0; j < input.shape()[1]; ++j)                    \
+                    output ACCESS_EXPR = input(i, j);                          \
+        }                                                                      \
+    }
 
 DEFINE_U_TRANSPOSE_IMPL_4D(0, 1, 2, 3, (i, j, k, l));
 DEFINE_U_TRANSPOSE_IMPL_4D(0, 1, 3, 2, (i, j, l, k));
@@ -106,9 +117,9 @@ DEFINE_U_TRANSPOSE_IMPL_3D(2, 0, 1, (k, i, j));
 DEFINE_U_TRANSPOSE_IMPL_3D(2, 1, 0, (k, j, i));
 
 // 2D
-// DEFINE_U_TRANSPOSE_IMPL_2D(0, 1, (i, j));
-// DEFINE_U_TRANSPOSE_IMPL_2D(1, 0, (j, i));
-};
+DEFINE_U_TRANSPOSE_IMPL_2D(0, 1, (i, j));
+DEFINE_U_TRANSPOSE_IMPL_2D(1, 0, (j, i));
+}; // namespace ukernels
 namespace u_transpose_detail {
 struct segment {
     size_t start;
@@ -241,8 +252,8 @@ void u_transpose(const TIn &input, TOut &output, const TPerms &,
     using TInCompressed = decltype(compressed_input);
     using TOutCompressed = decltype(compressed_output);
     using TPermsCompressed = fixed_shape_t<perm_compressed[Index]...>;
-    ukernels::u_transpose_impl<
-        TInCompressed, std::decay_t<TOutCompressed>, TPermsCompressed, true>
+    ukernels::u_transpose_impl<TInCompressed, std::decay_t<TOutCompressed>,
+                               TPermsCompressed, true>
         impl;
     impl(compressed_input, compressed_output,
          fixed_shape_v<perm_compressed[Index]...>);
