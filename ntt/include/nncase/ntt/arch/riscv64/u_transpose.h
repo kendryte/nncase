@@ -20,30 +20,36 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
                [[maybe_unused]] const fixed_shape_t<1, 0> &) const {
         static_assert(TIn::rank() == 2);
 
-        // using InElem = typename TIn::element_type;
         using InElem = element_or_scalar_t<TIn>;
         using OutElem = typename std::decay_t<TOut>::element_type;
-#ifdef __riscv_vector
-        printf("%s, %d: \n", __FILE__, __LINE__);
-        {
-            if constexpr (Vector<InElem>) {
-                printf("%s, %d: \n", __FILE__, __LINE__);
-            } else {
-                printf("%s, %d: \n", __FILE__, __LINE__);
-            }
-        }
+
         const size_t M = input.shape()[0];
         const size_t N = input.shape()[1];
         if (input.strides()[1] == 1 && output.strides()[1] == 1 &&
             input.strides()[0] == N && output.strides()[0] == M) 
         {
             if constexpr (Vector<InElem>) {
-                printf("%s, %d: \n", __FILE__, __LINE__);
-                std::cout<<input.shape()[0] <<" "<<input.shape()[1] <<std::endl;
-                return ;
+                const InElem *vec_input_ptr = input.elements().data();
+                InElem *vec_output_ptr = output.elements().data();
+                const intptr_t out_stride_bytes = sizeof(float);
+
+                for (size_t i = 0; i < M; ++i) {
+                    const auto row = vec_input_ptr + i*N;
+                    size_t remain = N * (NTT_VLEN / 32);
+                    size_t j = 0;
+                    size_t k = 0;
+                    while (remain) {
+                        size_t vl = __riscv_vsetvl_e32m1(remain);
+                        vfloat32m1_t v = __riscv_vle32_v_f32m1((float*)(row+k), vl);
+                        auto col_dst = vec_output_ptr + (k++)*M + i;
+                        __riscv_vsse32_v_f32m1((float*)col_dst,out_stride_bytes, v,
+                                               vl);
+                            remain -= vl;
+                            j += vl;
+                        }
+                }
+                return;
             } else {
-                printf("%s, %d: \n", __FILE__, __LINE__);
-                std::cout<<input.shape()[0] <<" "<<input.shape()[1] <<std::endl;
                 const float *in_base = input.elements().data();
                 float *out_base = output.elements().data();
                 const intptr_t out_stride_bytes =
@@ -56,7 +62,7 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
                     while (remain) {
                         size_t vl = __riscv_vsetvl_e32m4(remain);
                         vfloat32m4_t v = __riscv_vle32_v_f32m4(row + j, vl);
-                        auto col_dst = out_base + j*M + i; // 输出矩阵列首地址
+                        auto col_dst = out_base + j * M + i;
                         __riscv_vsse32_v_f32m4(col_dst, out_stride_bytes, v,
                                                vl);
                         j += vl;
@@ -66,10 +72,8 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
                 return;
             }
         }
-            // }
-#endif
+       
         printf("%s, %d: \n", __FILE__, __LINE__);
-        // 标量回退
         for (size_t i = 0; i < input.shape()[0]; ++i)
             for (size_t j = 0; j < input.shape()[1]; ++j)
                 output(j, i) = input(i, j);
