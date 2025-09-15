@@ -332,7 +332,9 @@ struct reshard_impl<SrcTensor, DestTensor> {
     constexpr void operator()(const SrcTensor &src, DestTensor &dest) noexcept {
         if constexpr (std::is_same_v<typename SrcTensor::shape_type,
                                      typename DestTensor::shape_type>) {
-            if (src.shape() == dest.shape()) {
+            if (src.shape() == dest.shape() &&
+                src.local().strides() == default_strides(src.shape()) &&
+                dest.local().strides() == default_strides(dest.shape())) {
                 return overlap_aware_reshard(src, dest);
             }
         }
@@ -368,10 +370,10 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
         // 1. get dest global offset
         auto local_mesh_index = mesh_type::local_index();
-        auto dest_global_shape = dest.shape();
+        auto global_shape = dest.shape();
         auto dest_local_shape = dest.local().shape();
         auto dest_start_offset =
-            dest.sharding().global_offset(dest_global_shape, local_mesh_index);
+            dest.sharding().global_offset(global_shape, local_mesh_index);
         constexpr auto tensor_rank = SrcTensor::shape_type::rank();
 
         // 2. get src candidates mesh index
@@ -381,12 +383,12 @@ struct reshard_impl<SrcTensor, DestTensor> {
             const auto policy = std::get<axis>(src.sharding().axis_policies);
             if constexpr (distributed::SplitShardPolicy<
                               std::decay_t<decltype(policy)>>) {
-                size_t total_blocks = 1;
+                size_t num_blocks = 1;
                 constexpr auto policy_rank = policy.axes.rank();
                 for (size_t i = 0; i < policy_rank; i++) {
-                    total_blocks *= mesh_type::shape.at(policy.axes.at(i));
+                    num_blocks *= mesh_type::shape.at(policy.axes.at(i));
                 }
-                size_t block_size = src.shape()[axis] / total_blocks;
+                size_t block_size = global_shape[axis] / num_blocks;
                 size_t start_block = dest_start_offset[axis] / block_size;
                 size_t end_block =
                     (dest_start_offset[axis] + dest_local_shape[axis] - 1) /
@@ -428,7 +430,6 @@ struct reshard_impl<SrcTensor, DestTensor> {
         }
 
         // 3. traverse src index
-        auto src_global_shape = src.shape();
 #if ENABLE_RESHARD_DEBUG
         dump_shape("mesh_idx", local_mesh_index);
 #endif
@@ -446,7 +447,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
             // get src slice range
             bool overlap = true;
             auto src_start_offset =
-                src.sharding().global_offset(src_global_shape, shard_index);
+                src.sharding().global_offset(global_shape, shard_index);
             loop<tensor_rank>([&](auto idx) {
                 // check overlap between src and dest slices
                 auto i = dim_value(idx);
