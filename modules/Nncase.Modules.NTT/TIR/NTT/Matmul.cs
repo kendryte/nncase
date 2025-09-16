@@ -16,6 +16,8 @@ public sealed partial class Matmul : NTTKernelOp
 
     public static readonly ParameterInfo Scale = new(typeof(Matmul), 4, "scale");
 
+    public static readonly ParameterInfo ExtraWorkload = new(typeof(Matmul), 5, "extraWorkload");
+
     public IRArray<int> LhsVectorizedAxes { get; }
 
     public IRArray<int> RhsVectorizedAxes { get; }
