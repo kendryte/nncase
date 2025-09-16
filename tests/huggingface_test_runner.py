@@ -197,7 +197,7 @@ class HuggingfaceTestRunner(TestRunner):
         if self.cfg['huggingface_options']['tensor_type'] == "bfloat16":
             raise RuntimeError(
                 f"Not support bfloat16 tensor type now (because of ort)! Just 'float16' or 'float32'.")
-        
+
         config = AutoConfig.from_pretrained(model_path + "/config.json")
 
         if self.cfg['huggingface_options']['num_layers'] != -1:
