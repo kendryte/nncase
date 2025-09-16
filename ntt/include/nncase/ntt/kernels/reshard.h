@@ -332,10 +332,12 @@ struct reshard_impl<SrcTensor, DestTensor> {
     constexpr void operator()(const SrcTensor &src, DestTensor &dest) noexcept {
         if constexpr (std::is_same_v<typename SrcTensor::shape_type,
                                      typename DestTensor::shape_type>) {
-            if (src.shape() == dest.shape() &&
-                src.local().strides() == default_strides(src.shape()) &&
-                dest.local().strides() == default_strides(dest.shape())) {
-                return overlap_aware_reshard(src, dest);
+            if (src.shape() == dest.shape()) {
+                // make sure src ready.
+                distributed::topology_synchronize();
+                overlap_aware_reshard(src, dest);
+                distributed::topology_synchronize();
+                return;
             }
         }
 
@@ -365,13 +367,16 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
     constexpr void overlap_aware_reshard(const SrcTensor &src,
                                          DestTensor &dest) noexcept {
-        // make sure src ready.
-        distributed::topology_synchronize();
-
         // 1. get dest global offset
         auto local_mesh_index = mesh_type::local_index();
         auto global_shape = dest.shape();
+        auto src_local_shape = src.local().shape();
         auto dest_local_shape = dest.local().shape();
+        if (src_local_shape.length() == 0 ||
+            dest_local_shape.length() == 0) {
+            return;
+        }
+
         auto dest_start_offset =
             dest.sharding().global_offset(global_shape, local_mesh_index);
         constexpr auto tensor_rank = SrcTensor::shape_type::rank();
@@ -388,7 +393,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
                 for (size_t i = 0; i < policy_rank; i++) {
                     num_blocks *= mesh_type::shape.at(policy.axes.at(i));
                 }
-                size_t block_size = global_shape[axis] / num_blocks;
+                size_t block_size = (global_shape[axis] + num_blocks - 1) / num_blocks;
                 size_t start_block = dest_start_offset[axis] / block_size;
                 size_t end_block =
                     (dest_start_offset[axis] + dest_local_shape[axis] - 1) /
@@ -478,8 +483,6 @@ struct reshard_impl<SrcTensor, DestTensor> {
                 tensor_copy(src_block, dest_block);
             }
         }
-
-        distributed::topology_synchronize();
     }
 };
 } // namespace detail
