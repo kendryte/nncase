@@ -31,6 +31,16 @@ namespace nncase::ntt::ops {
     kernel(1, 32) kernel(2, 16) kernel(4, 8) kernel(8, 4)
 #endif
 
+#ifndef REGISTER_RVV_KERNEL_LMUL_LT4
+#define REGISTER_RVV_KERNEL_LMUL_LT4(kernel)                                   \
+    kernel(1, 32) kernel(2, 16) kernel(4, 8)
+#endif
+
+#ifndef REGISTER_RVV_KERNEL_LMUL_8
+#define REGISTER_RVV_KERNEL_LMUL_8(kernel)                                     \
+    kernel(8, 4)
+#endif
+
 #ifndef REGISTER_RVV_KERNEL_1_4
 #define REGISTER_RVV_KERNEL_1_4(kernel)                                        \
     kernel(f8, f2, 64) kernel(f4, 1, 32) kernel(f2, 2, 16) kernel(1, 4, 8)     \
@@ -339,6 +349,7 @@ REGISTER_RVV_UNARY_OP(ceil, float, ceil_float32)
 
 // cos
 // from glibc 2.40: sysdeps/aarch64/fpu/cosf_advsimd.c
+
 #define COS_FLOAT32(lmul, mlen)                                                \
     inline vfloat32m##lmul##_t cos_float32(const vfloat32m##lmul##_t &v,       \
                                            const size_t vl) {                  \
@@ -376,8 +387,98 @@ REGISTER_RVV_UNARY_OP(ceil, float, ceil_float32)
         return __riscv_vreinterpret_v_i32m##lmul##_f32m##lmul(tmp);            \
     }
 
-REGISTER_RVV_KERNEL(COS_FLOAT32)
+
+#define COS_FLOAT32_LMUL_8(lmul, mlen)                                                \
+    inline vfloat32m##lmul##_t cos_float32(const vfloat32m##lmul##_t &v,       \
+                                           const size_t vl) {                  \
+        auto n = __riscv_vfmv_v_f_f32m##lmul(0x1.45f306p-2f, vl);              \
+        auto half = __riscv_vfmv_v_f_f32m##lmul(0.5f, vl);                     \
+                                                                               \
+        /*  n = rint((|x|+pi/2)/pi) - 0.5. */                                  \
+        auto r = __riscv_vfabs_v_f32m##lmul(v, vl);                            \
+        n = __riscv_vfmadd_vv_f32m##lmul(n, r, half, vl);                      \
+        auto ni = __riscv_vfcvt_x_f_v_i32m##lmul(n, vl);                       \
+        n = __riscv_vfcvt_f_x_v_f32m##lmul(ni, vl);                            \
+        auto odd = __riscv_vadd_vx_i32m##lmul(ni, 0x1.8p+23, vl);              \
+        n = __riscv_vfsub_vf_f32m##lmul(n, 0.5f, vl);                          \
+        odd = __riscv_vsll_vx_i32##m##lmul(odd, 31, vl);                       \
+                                                                               \
+        /* r = |x| - n*pi  (range reduction into -pi/2 .. pi/2).  */           \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r, 0x1.921fb6p+1f, n, vl);           \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r, -0x1.777a5cp-24f, n, vl);         \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r, -0x1.ee59dap-49f, n, vl);         \
+                                                                               \
+    /* y = sin(r). Implemented using Horner's method. */                       \
+    auto r2 = __riscv_vfmul_vv_f32m##lmul(r, r, vl);                           \
+                                                                              \
+    /* Define polynomial coefficients for sin(r)/r ≈ 1 + P(r^2) */            \
+    const float s_c9 = 0x1.5b2e76p-19f; /* 1/9! */                              \
+    const float s_c7 = -0x1.9f42eap-13f;/* -1/7! */                              \
+    const float s_c5 = 0x1.110df4p-7f;  /* 1/5! */                              \
+    const float s_c3 = -0x1.555548p-3f; /* -1/3! */                              \
+                                                                              \
+    /* Evaluate P(r^2) from the innermost term outwards using FMA */          \
+    /* y = C9 */                                                              \
+    auto y = __riscv_vfmul_vf_f32m##lmul(r2,  s_c9, vl); /* c9 */ \
+    y = __riscv_vfadd_vf_f32m##lmul(y,    s_c7, vl); /* + c7 */ \
+    y = __riscv_vfmul_vv_f32m##lmul(y,    r2, vl); \
+    y = __riscv_vfadd_vf_f32m##lmul(y,     s_c5, vl); /* + c5 */ \
+    y = __riscv_vfmul_vv_f32m##lmul(y,    r2, vl); \
+    y = __riscv_vfadd_vf_f32m##lmul(y,    s_c3, vl); /* + c3 */ \
+                                  \
+    y = __riscv_vfmul_vv_f32m##lmul(y, r, vl); \
+    y = __riscv_vfmadd_vv_f32m##lmul(y, r2, r, vl);                            \
+                                                                              \
+    /* Apply sign correction based on the quadrant from range reduction */    \
+    auto tmp = __riscv_vreinterpret_v_f32m##lmul##_i32m##lmul(y);              \
+    tmp = __riscv_vxor_vv_i32m##lmul(tmp, odd, vl);                            \
+    return __riscv_vreinterpret_v_i32m##lmul##_f32m##lmul(tmp);                \
+    }
+
+#if 0
+// less registers usage, but calculate more terms of polynomial
+#define COS_FLOAT32_LMUL_8(lmul, mlen) \
+    inline vfloat32m##lmul##_t cos_float32(const vfloat32m##lmul##_t &v, size_t vl) { \
+    /* r = |x| */ \
+    vfloat32m##lmul##_t r = __riscv_vfabs_v_f32m##lmul(v, vl); \
+    \
+    /*k = round(|x|/pi) */ \
+    vfloat32m##lmul##_t n = __riscv_vfmul_vf_f32m##lmul(r, 0x1.45f306p-2f, vl); /* 1/pi */ \
+    vint32m##lmul##_t ki = __riscv_vfcvt_x_f_v_i32m##lmul(n, vl); \
+    n = __riscv_vfcvt_f_x_v_f32m##lmul(ki, vl); \
+    \
+    vint32m##lmul##_t odd = __riscv_vand_vx_i32m##lmul(ki, 1, vl); \
+    odd = __riscv_vsll_vx_i32m##lmul(odd, 31, vl); \
+    \
+    r = __riscv_vfnmsac_vf_f32m##lmul(r,  0x1.921fb6p+1f, n, vl); \
+    r = __riscv_vfnmsac_vf_f32m##lmul(r, -0x1.777a5cp-24f, n, vl); \
+    r = __riscv_vfnmsac_vf_f32m##lmul(r, -0x1.ee59dap-49f, n, vl); \
+    \
+    vfloat32m##lmul##_t r2 = __riscv_vfmul_vv_f32m##lmul(r, r, vl); \
+    \
+    vfloat32m##lmul##_t y = __riscv_vfmv_v_f_f32m##lmul(-2.755731884e-07f, vl); /* c10 */ \
+    y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl); \
+    y = __riscv_vfadd_vf_f32m##lmul(y,  2.4801587642e-05f, vl); /* + c8 */ \
+    y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl); \
+    y = __riscv_vfadd_vf_f32m##lmul(y, -1.3888889225e-03f, vl); /* + c6 */ \
+    y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl); \
+    y = __riscv_vfadd_vf_f32m##lmul(y,  4.1666667908e-02f, vl); /* + c4 */ \
+    y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl); \
+    y = __riscv_vfadd_vf_f32m##lmul(y, -5.0000000000e-01f, vl); /* + c2 */ \
+    y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl); \
+    y = __riscv_vfadd_vf_f32m##lmul(y,  1.0000000000e+00f, vl); /* + 1  */ \
+    \
+    vint32m##lmul##_t tmp = __riscv_vreinterpret_v_f32m##lmul##_i32m##lmul(y); \
+    tmp = __riscv_vxor_vv_i32m##lmul(tmp, odd, vl); \
+  return __riscv_vreinterpret_v_i32m##lmul##_f32m##lmul(tmp); \
+  }
+
+#endif
+
+REGISTER_RVV_KERNEL_LMUL_LT4(COS_FLOAT32)
+REGISTER_RVV_KERNEL_LMUL_8(COS_FLOAT32_LMUL_8)
 REGISTER_RVV_UNARY_OP(cos, float, cos_float32)
+
 
 // cosh(v) = (exp(v) + exp(-v)) / 2
 #if 0
@@ -575,8 +676,117 @@ REGISTER_RVV_UNARY_OP(sign, float, sign_float32)
         return __riscv_vreinterpret_v_i32m##lmul##_f32m##lmul(tmp);            \
     }
 
-REGISTER_RVV_KERNEL(SIN_FLOAT32)
+// Specialization for LMUL=8 with tuned instruction order 
+#define SIN_FLOAT32_LMUL_8(lmul, mlen)                                        \
+    inline vfloat32m##lmul##_t sin_float32(const vfloat32m##lmul##_t &v,      \
+                                           const size_t vl) {                 \
+        auto n = __riscv_vfmv_v_f_f32m##lmul(0x1.45f306p-2f, vl);             \
+                                                                               \
+        /* r = |x| and capture sign bit from input. */                        \
+        auto r = __riscv_vfabs_v_f32m##lmul(v, vl);                            \
+        auto sign = __riscv_vxor_vv_i32m##lmul(                                \
+            __riscv_vreinterpret_v_f32m##lmul##_i32m##lmul(v),                 \
+            __riscv_vreinterpret_v_f32m##lmul##_i32m##lmul(r), vl);            \
+                                                                               \
+        /* k = rint(|x|/pi). */                                               \
+        n = __riscv_vfmul_vv_f32m##lmul(n, r, vl);                             \
+        auto ni = __riscv_vfcvt_x_f_v_i32m##lmul(n, vl);                       \
+        n = __riscv_vfcvt_f_x_v_f32m##lmul(ni, vl);                            \
+        auto odd = __riscv_vadd_vx_i32m##lmul(ni, 0x1.8p+23, vl);              \
+        odd = __riscv_vsll_vx_i32##m##lmul(odd, 31, vl);                       \
+        /* Merge sign and odd early to lower register pressure. */             \
+        sign = __riscv_vxor_vv_i32m##lmul(sign, odd, vl);                      \
+                                                                               \
+        /* r = |x| - k*pi  (range reduction into -pi/2 .. pi/2).  */           \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r, 0x1.921fb6p+1f, n, vl);           \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r, -0x1.777a5cp-24f, n, vl);         \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r, -0x1.ee59dap-49f, n, vl);         \
+                                                                               \
+        /* y = sin(r). Implemented using Horner's method (LMUL=8 tuned). */    \
+        auto r2 = __riscv_vfmul_vv_f32m##lmul(r, r, vl);                       \
+                                                                               \
+        /* sin(r)/r ≈ 1 + c3*r^2 + c5*r^4 + c7*r^6 + c9*r^8 */                 \
+        const float s_c9 = 0x1.5b2e76p-19f; /* +1/9!  */                       \
+        const float s_c7 = -0x1.9f42eap-13f;/* -1/7!  */                       \
+        const float s_c5 = 0x1.110df4p-7f;  /* +1/5!  */                       \
+        const float s_c3 = -0x1.555548p-3f; /* -1/3!  */                       \
+                                                                               \
+        auto y = __riscv_vfmul_vf_f32m##lmul(r2, s_c9, vl);                    \
+        y = __riscv_vfadd_vf_f32m##lmul(y, s_c7, vl);                          \
+        y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl);                            \
+        y = __riscv_vfadd_vf_f32m##lmul(y, s_c5, vl);                          \
+        y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl);                            \
+        y = __riscv_vfadd_vf_f32m##lmul(y, s_c3, vl);                          \
+                                                                               \
+        y = __riscv_vfmul_vv_f32m##lmul(y, r, vl);                             \
+        y = __riscv_vfmadd_vv_f32m##lmul(y, r2, r, vl);                        \
+                                                                               \
+        auto tmp = __riscv_vreinterpret_v_f32m##lmul##_i32m##lmul(y);          \
+        tmp = __riscv_vxor_vv_i32m##lmul(tmp, sign, vl);                       \
+        return __riscv_vreinterpret_v_i32m##lmul##_f32m##lmul(tmp);            \
+    }
+
+#if 0
+//with peak register less than 4, 
+// but precision error is too high. ulp error can reach ~10
+// New LMUL=8 sin using cos polynomial to reduce live registers.
+#define SIN_FLOAT32_LMUL_8(lmul, mlen)                                        \
+    inline vfloat32m##lmul##_t sin_float32(const vfloat32m##lmul##_t &v,      \
+                                           const size_t vl) {                 \
+        /* r = |x| and capture sign from input */                              \
+        auto r = __riscv_vfabs_v_f32m##lmul(v, vl);                            \
+        auto sign = __riscv_vxor_vv_i32m##lmul(                                \
+            __riscv_vreinterpret_v_f32m##lmul##_i32m##lmul(v),                 \
+            __riscv_vreinterpret_v_f32m##lmul##_i32m##lmul(r), vl);            \
+                                                                               \
+        /* k = round(|x|/pi) */                                               \
+        auto n = __riscv_vfmul_vf_f32m##lmul(r, 0x1.45f306p-2f, vl);           \
+        auto ki = __riscv_vfcvt_x_f_v_i32m##lmul(n, vl);                       \
+        n = __riscv_vfcvt_f_x_v_f32m##lmul(ki, vl);                            \
+        /* odd = ((k & 1) << 31), merge into sign early */                     \
+        auto odd = __riscv_vand_vx_i32m##lmul(ki, 1, vl);                      \
+        odd = __riscv_vsll_vx_i32m##lmul(odd, 31, vl);                         \
+        sign = __riscv_vxor_vv_i32m##lmul(sign, odd, vl);                      \
+                                                                               \
+        /* r = |x| - k*pi (3-term high-precision split) */                     \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r,  0x1.921fb6p+1f, n, vl);          \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r, -0x1.777a5cp-24f, n, vl);         \
+        r = __riscv_vfnmsac_vf_f32m##lmul(r, -0x1.ee59dap-49f, n, vl);         \
+                                                                               \
+        /* r' = pi/2 - r using 3-term split to reduce cancellation error */    \
+        /* pi/2 split: +0x1.921fb6p+0f, -0x1.777a5cp-25f, -0x1.ee59dap-50f */  \
+        r = __riscv_vfrsub_vf_f32m##lmul(r,  0x1.921fb6p+0f, vl);              \
+        r = __riscv_vfadd_vf_f32m##lmul(r, -0x1.777a5cp-25f, vl);              \
+        r = __riscv_vfadd_vf_f32m##lmul(r, -0x1.ee59dap-50f, vl);              \
+                                                                               \
+        /* r2 = r'^2 */                                                        \
+        auto r2 = __riscv_vfmul_vv_f32m##lmul(r, r, vl);                       \
+                                                                               \
+        /* cos polynomial (Horner, no vfmadd): keep {sign, r2, y} */           \
+vfloat32m##lmul##_t y = __riscv_vfmv_v_f_f32m##lmul( 2.08767569e-09f, vl); /* c12 = 1/12! */\
+y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl);\
+y = __riscv_vfadd_vf_f32m##lmul(y, -2.755731884e-07f, vl);                  /* + c10 = -1/10! */\
+y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl);\
+y = __riscv_vfadd_vf_f32m##lmul(y,  2.4801587642e-05f, vl);                  /* + c8  = 1/8! */ \
+        y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl);                            \
+        y = __riscv_vfadd_vf_f32m##lmul(y, -1.3888889225e-03f, vl);            \
+        y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl);                            \
+        y = __riscv_vfadd_vf_f32m##lmul(y,  4.1666667908e-02f, vl);            \
+        y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl);                            \
+        y = __riscv_vfadd_vf_f32m##lmul(y, -5.0000000000e-01f, vl);            \
+        y = __riscv_vfmul_vv_f32m##lmul(y, r2, vl);                            \
+        y = __riscv_vfadd_vf_f32m##lmul(y,  1.0000000000e+00f, vl);            \
+                                                                               \
+        auto tmp = __riscv_vreinterpret_v_f32m##lmul##_i32m##lmul(y);          \
+        tmp = __riscv_vxor_vv_i32m##lmul(tmp, sign, vl);                       \
+        return __riscv_vreinterpret_v_i32m##lmul##_f32m##lmul(tmp);            \
+    }
+#endif
+
+REGISTER_RVV_KERNEL_LMUL_LT4(SIN_FLOAT32)
+REGISTER_RVV_KERNEL_LMUL_8(SIN_FLOAT32_LMUL_8)
 REGISTER_RVV_UNARY_OP(sin, float, sin_float32)
+
 
 // sinh(v) = (exp(v) - exp(-v)) / 2
 #if 0
