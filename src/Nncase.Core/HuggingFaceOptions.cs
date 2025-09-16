@@ -21,6 +21,8 @@ public record HuggingFaceOptions
 
     public int NumLayers { get; set; } = -1;
 
+    public string TensorType { get; set; } = string.Empty;
+
     // public bool UseCache { get; set; }
     public HuggingFaceAttentionBackendKind AttenionBackend { get; set; }
 
