@@ -59,6 +59,7 @@ public class UnitTestCustomOpScheme : TestClassBase
       ""Cost"": 1,
       ""CSourcePath"": """",
       ""FuncName"": """"
+      ""ExtraWorkload"": """"
     }
   ]
 }";
