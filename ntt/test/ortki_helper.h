@@ -22,6 +22,7 @@
 #include <ortki/c_api.h>
 #include <ortki/operators.h>
 #include <string>
+#include <vector>
 
 namespace nncase {
 namespace NttTest {
@@ -65,20 +66,26 @@ template <typename T> ortki::DataType primitive_type2ort_type() {
 template <ntt::TensorOrVector TTensor>
 ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
     using T = typename std::decay_t<TTensor>::element_type;
-    void *buffer;
-    if constexpr (ntt::Vector<TTensor>) {
-        buffer = &tensor.buffer();
-    } else {
-        buffer = tensor.elements().data();
-    }
-    auto ort_type = primitive_type2ort_type<T>();
-    auto rank = tensor.shape().rank();
-    std::vector<size_t> v(rank);
-    for (size_t i = 0; i < rank; i++)
-        v[i] = tensor.shape()[i];
 
-    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
-    return make_tensor(buffer, ort_type, shape, rank);
+    // Helper to build an Ort tensor from any NTT tensor/vector instance.
+    auto &src = tensor;
+    auto ort_type = primitive_type2ort_type<T>();
+    auto rank = src.shape().rank();
+    std::vector<int64_t> shape_int64(rank);
+    for (size_t i = 0; i < rank; i++)
+        shape_int64[i] = src.shape()[i];
+
+    auto ort_tensor =
+        make_tensor_empty(ort_type, shape_int64.data(), rank);
+    size_t bytes = 0;
+    auto *dst = static_cast<T *>(tensor_buffer(ort_tensor, &bytes));
+    [[maybe_unused]] const size_t total = src.shape().length();
+    assert(bytes == total * sizeof(T));
+    size_t linear_index = 0;
+    ntt::apply(src.shape(), [&](auto index) {
+        dst[linear_index++] = src(index);
+    });
+    return ort_tensor;
 }
 
 template <ntt::TensorOfVector TTensor>
@@ -93,18 +100,23 @@ ortki::OrtKITensor *ntt2ort(TTensor &tensor) {
     for (size_t i = 0; i < r1; i++)
         v[i] = tensor.shape()[i];
     for (size_t i = r1; i < r2; i++)
-        v[i] = vec_type::shape()[i-r1];
-    vec_elem_type *buffer = new vec_elem_type[tensor.shape().length() * vec_type::size()];
-    vec_elem_type *buffer_ptr = buffer;
+        v[i] = vec_type::shape()[i - r1];
+
+    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
+    auto ort_tensor = make_tensor_empty(ort_type, shape, r2);
+    size_t bytes = 0;
+    auto *buffer_ptr = static_cast<vec_elem_type *>(tensor_buffer(ort_tensor, &bytes));
+    [[maybe_unused]] const size_t total = tensor.shape().length() * vec_type::size();
+    assert(bytes == total * sizeof(vec_elem_type));
+    size_t linear_index = 0;
     ntt::apply(tensor.shape(), [&](auto tindex) {
         const auto &vec_src = tensor(tindex);
         ntt::apply(vec_src.shape(), [&](auto vindex) {
-            *buffer_ptr++ = vec_src(vindex);
+            buffer_ptr[linear_index++] = vec_src(vindex);
         });
     });
 
-    const int64_t *shape = reinterpret_cast<const int64_t *>(v.data());
-    return make_tensor(buffer, ort_type, shape, r2);
+    return ort_tensor;
 }
 
 template <ntt::TensorOrVector TTensor>

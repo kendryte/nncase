@@ -233,7 +233,7 @@ class BinaryTestGenerator(BaseTestGenerator):
         )
 
 
-    def _generate_aligned_ntt_scalar_input(self, ntt_op_str, datatype, input_var_name, continuity_var_name, 
+    def _generate_aligned_ntt_scalar_input(self, ntt_op_str, datatype, input_var_name, var_name, 
                                    is_dynamic_shape, dims_spec, vector_rank, other_vector_rank):
         """Generate aligned NTT input tensors for fp8 operations"""
         """ normal case: tensor<vector<P>, axbxc> -> tensor<scalar, axbxcxP>
@@ -253,7 +253,7 @@ class BinaryTestGenerator(BaseTestGenerator):
 
             if vector_rank == 0:
                 code.append(f"// for tensors pair that are all tensor of scalar")
-                code.append(f"auto {input_var_name}_unsqueezed = {continuity_var_name};")
+                code.append(f"auto {input_var_name}_unsqueezed = {var_name};")
                 aligned_dims = dims_spec
             else:
                 if vector_rank == 1:
@@ -273,7 +273,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                     unsqueeze_dims = f"{len(dims_spec)}, {len(dims_spec)+1}"
                     aligned_dims = [str(d) for d in dims_spec] + ["4" ,"P"]
                     unpack_dims = unsqueeze_dims
-                code.append(f"auto {input_var_name}_unsqueezed = ({continuity_var_name}).unsqueeze(fixed_shape_v<{unsqueeze_dims}>);")
+                code.append(f"auto {input_var_name}_unsqueezed = ({var_name}).unsqueeze(fixed_shape_v<{unsqueeze_dims}>);")
         else:
             # vector_rank would be 0 or 1
             diff_rank = other_vector_rank - vector_rank
@@ -285,7 +285,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                 # this vector rank should be 1 or 0
                 unsqueeze_dims = f"{len(dims_spec)}, {len(dims_spec)+1}"
                 unpack_dims = f"{len(dims_spec) + 1}"
-            code.append(f"auto {input_var_name}_unsqueezed = ({continuity_var_name}).unsqueeze(fixed_shape_v<{unsqueeze_dims}>);")
+            code.append(f"auto {input_var_name}_unsqueezed = ({var_name}).unsqueeze(fixed_shape_v<{unsqueeze_dims}>);")
             aligned_dims = [str(d) for d in dims_spec] + ["1"] * (other_vector_rank-1)
             aligned_dims.append("P" if vector_rank == 1 else "1")
 
@@ -308,18 +308,22 @@ class BinaryTestGenerator(BaseTestGenerator):
         """
         # 1.1 get ntt_input_lhs_aligned_{cpp.type}_scalar, ntt_input_rhs_aligned
         # Prepare contiguous inputs
-        lhs_continuity_var_name, lhs_copy_code = self._prepare_contiguous_input(
+        """
+        lhs_var_name, lhs_copy_code = self._prepare_contiguous_input(
             "ntt_input_lhs", datatype, lhs_vector_rank, lhs_vec_param,
             lhs_is_dynamic_shape, lhs_dims_spec, lhs_continuity
         )
         code.extend(lhs_copy_code)
         
-        rhs_continuity_var_name, rhs_copy_code = self._prepare_contiguous_input(
+        rhs_var_name, rhs_copy_code = self._prepare_contiguous_input(
             "ntt_input_rhs", datatype, rhs_vector_rank, rhs_vec_param,
             rhs_is_dynamic_shape, rhs_dims_spec, rhs_continuity
         )
         code.extend(rhs_copy_code)
         
+        """
+        lhs_var_name = "ntt_input_lhs"
+        rhs_var_name = "ntt_input_rhs"
         code.append("// align in NTT, then cast to double, then process in ORT")
         
         # Determine if tensors need alignment based on vector ranks
@@ -332,20 +336,20 @@ class BinaryTestGenerator(BaseTestGenerator):
             # 1.1.a for tensors pair that one of which is tensor of vector
             # Generate aligned lhs input
             lhs_code, lhs_aligned_dims = self._generate_aligned_ntt_scalar_input(
-                ntt_op_str, datatype, "ntt_input_lhs", lhs_continuity_var_name, lhs_is_dynamic_shape, 
+                ntt_op_str, datatype, "ntt_input_lhs", lhs_var_name, lhs_is_dynamic_shape, 
                 lhs_dims_spec, lhs_vector_rank, rhs_vector_rank)
             code.extend(lhs_code)
                 
             # Generate aligned rhs input
             rhs_code, rhs_aligned_dims = self._generate_aligned_ntt_scalar_input(
-                ntt_op_str, datatype, "ntt_input_rhs", rhs_continuity_var_name, rhs_is_dynamic_shape,
+                ntt_op_str, datatype, "ntt_input_rhs", rhs_var_name, rhs_is_dynamic_shape,
                 rhs_dims_spec, rhs_vector_rank, lhs_vector_rank)
             code.extend(rhs_code)
         else:
         # 1.1.b for tensors pair that are all tensor of scalar
             code.append("// 1.1.b for tensors pair that are all tensor of scalar")
-            code.append(f"auto ntt_input_lhs_aligned = ({lhs_continuity_var_name}).view();")
-            code.append(f"auto ntt_input_rhs_aligned = ({rhs_continuity_var_name}).view();")
+            code.append(f"auto ntt_input_lhs_aligned = ({lhs_var_name}).view();")
+            code.append(f"auto ntt_input_rhs_aligned = ({rhs_var_name}).view();")
         
         # 1.2 get ntt_lhs/rhs_double
         lhs_double_shape_expr = self.generate_shape_init(lhs_is_dynamic_shape, lhs_aligned_dims)
@@ -445,40 +449,21 @@ class BinaryTestGenerator(BaseTestGenerator):
         # Check if datatype needs to be cast to float32
         need_cast_in_ort = self._need_cast_in_ort(datatype, ntt_op_str)
 
-        lhs_continuity_var_name, lhs_copy_code = self._prepare_contiguous_input(
+        lhs_var_name, lhs_copy_code = self._prepare_contiguous_input(
             "ntt_input_lhs", datatype, lhs_vector_rank, lhs_vec_param,
             lhs_is_dynamic_shape, lhs_dims_spec, lhs_continuity
         )
         code.extend(lhs_copy_code)
-        ntt2ort_lhs = lhs_continuity_var_name
+        ntt2ort_lhs = lhs_var_name
 
-        rhs_continuity_var_name, rhs_copy_code = self._prepare_contiguous_input(
+        rhs_var_name, rhs_copy_code = self._prepare_contiguous_input(
             "ntt_input_rhs", datatype, rhs_vector_rank, rhs_vec_param,
             rhs_is_dynamic_shape, rhs_dims_spec, rhs_continuity
         )
         code.extend(rhs_copy_code)
-        ntt2ort_rhs = rhs_continuity_var_name
+        ntt2ort_rhs = rhs_var_name
 
         if need_cast_in_ort:
-            #original version:  only do binary operation in ort, all cast is done in ntt.
-            # Cast inputs to double before sending to ort
-            # code.append("// Cast inputs to float32 for ORT computation")
-            
-            # # Lambda function to cast input to float32
-            # cast_to_float = lambda side, input_var, vector_rank, vec_param, is_dynamic, dims_spec: (
-            #     code.append(f"auto ntt_{side}_double = ntt::make_tensor<{self.get_element_cpp_type('double', vector_rank, vec_param)}>({self.generate_shape_init(is_dynamic, dims_spec)});"),
-            #     code.append(f"ntt::cast({input_var}, ntt_{side}_double);")
-            # )
-            
-            # # Cast both inputs
-            # cast_to_float("lhs", ort_input_lhs, lhs_vector_rank, lhs_vec_param, lhs_is_dynamic_shape, lhs_dims_spec)
-            # cast_to_float("rhs", ort_input_rhs, rhs_vector_rank, rhs_vec_param, rhs_is_dynamic_shape, rhs_dims_spec)
-            
-            # # Update variable references
-            # ort_input_lhs = "ntt_lhs_double"
-            # ort_input_rhs = "ntt_rhs_double"
-            
-            #new version: do binary operation in ort, and cast is also put in ort.
             code.append("// ort_input_lhs, ort_input_rhs would be tensor of double in ort format")
 
             code.append("")
