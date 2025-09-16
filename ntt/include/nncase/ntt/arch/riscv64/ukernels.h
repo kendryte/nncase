@@ -108,37 +108,41 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
     }
 };
 
-#define DEFINE_U_UNARY_F32_16V(OP)                                             \
+#define DEFINE_U_UNARY_16V(OP, LMUL, DTYPE, BITS, BUILDIN_DTYPE)               \
     template <>                                                                \
-    struct u_unary<ntt::ops::OP<vector<float, NTT_VLEN / 32>>,                 \
-                   vector<float, NTT_VLEN / 32>, true> {                       \
+    struct u_unary<ntt::ops::OP<vector<DTYPE, NTT_VLEN / BITS>>,               \
+                   vector<DTYPE, NTT_VLEN / BITS>, true> {                     \
       public:                                                                  \
-        void operator()(const ntt::ops::OP<vector<float, NTT_VLEN / 32>> &op,  \
-                        const vector<float, NTT_VLEN / 32> *input,             \
-                        size_t in_stride,                                      \
-                        vector<float, NTT_VLEN / 32> *output,                  \
-                        size_t out_stride, size_t count) noexcept {            \
+        void                                                                   \
+        operator()(const ntt::ops::OP<vector<DTYPE, NTT_VLEN / BITS>> &op,     \
+                   const vector<DTYPE, NTT_VLEN / BITS> *input,                \
+                   size_t in_stride, vector<DTYPE, NTT_VLEN / BITS> *output,   \
+                   size_t out_stride, size_t count) noexcept {                 \
             using policy_t =                                                   \
-                u_unary_policy<ntt::ops::OP<vector<float, NTT_VLEN / 32>>,     \
-                               vector<float, NTT_VLEN / 32>, true>;            \
+                u_unary_policy<ntt::ops::OP<vector<DTYPE, NTT_VLEN / BITS>>,   \
+                               vector<DTYPE, NTT_VLEN / BITS>, true>;          \
             constexpr auto unroll = policy_t::unroll;                          \
-            constexpr auto lmul = 8;                                           \
-            constexpr auto vl = NTT_VLEN / 32 * lmul;                          \
+            constexpr auto lmul = LMUL;                                        \
+            constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<float, vl> v0 =                                    \
-                    __riscv_vle32_v_f32m8((const float *)input, vl);           \
+                ntt::vector<DTYPE, vl> v0 =                                    \
+                    __riscv_vle##BITS##_v_f##BITS##m##LMUL(                    \
+                        (const BUILDIN_DTYPE *)input, vl);                     \
                 input += in_stride * lmul;                                     \
-                ntt::vector<float, vl> v8 =                                    \
-                    __riscv_vle32_v_f32m8((const float *)input, vl);           \
+                ntt::vector<DTYPE, vl> v8 =                                    \
+                    __riscv_vle##BITS##_v_f##BITS##m##LMUL(                    \
+                        (const BUILDIN_DTYPE *)input, vl);                     \
                 input += in_stride * lmul;                                     \
                 __asm__ __volatile__("" : : : "memory");                       \
                 v0 = nncase::ntt::OP(v0);                                      \
                 v8 = nncase::ntt::OP(v8);                                      \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse32_v_f32m8((float *)output, v0, vl);                \
+                __riscv_vse##BITS##_v_f##BITS##m##LMUL(                        \
+                    (BUILDIN_DTYPE *)output, v0, vl);                          \
                 output += out_stride * lmul;                                   \
-                __riscv_vse32_v_f32m8((float *)output, v8, vl);                \
+                __riscv_vse##BITS##_v_f##BITS##m##LMUL(                        \
+                    (BUILDIN_DTYPE *)output, v8, vl);                          \
                 output += out_stride * lmul;                                   \
                 count -= unroll;                                               \
             }                                                                  \
@@ -151,29 +155,31 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
         }                                                                      \
     };
 
-#define DEFINE_U_UNARY_F32_LMULV(OP, LMUL)                                     \
+#define DEFINE_U_UNARY_8V(OP, LMUL, DTYPE, BITS, BUILDIN_DTYPE)                \
     template <>                                                                \
-    struct u_unary<ntt::ops::OP<vector<float, NTT_VLEN / 32>>,                 \
-                   vector<float, NTT_VLEN / 32>, true> {                       \
+    struct u_unary<ntt::ops::OP<vector<DTYPE, NTT_VLEN / BITS>>,               \
+                   vector<DTYPE, NTT_VLEN / BITS>, true> {                     \
       public:                                                                  \
-        void operator()(const ntt::ops::OP<vector<float, NTT_VLEN / 32>> &op,  \
-                        const vector<float, NTT_VLEN / 32> *input,             \
-                        size_t in_stride,                                      \
-                        vector<float, NTT_VLEN / 32> *output,                  \
-                        size_t out_stride, size_t count) noexcept {            \
+        void                                                                   \
+        operator()(const ntt::ops::OP<vector<DTYPE, NTT_VLEN / BITS>> &op,     \
+                   const vector<DTYPE, NTT_VLEN / BITS> *input,                \
+                   size_t in_stride, vector<DTYPE, NTT_VLEN / BITS> *output,   \
+                   size_t out_stride, size_t count) noexcept {                 \
             using policy_t =                                                   \
-                u_unary_policy<ntt::ops::OP<vector<float, NTT_VLEN / 32>>,     \
-                               vector<float, NTT_VLEN / 32>, true>;            \
+                u_unary_policy<ntt::ops::OP<vector<DTYPE, NTT_VLEN / BITS>>,   \
+                               vector<DTYPE, NTT_VLEN / BITS>, true>;          \
             constexpr auto unroll = policy_t::unroll;                          \
             constexpr auto lmul = LMUL;                                        \
-            constexpr auto vl = NTT_VLEN / 32 * lmul;                          \
+            constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<float, vl> v0 =                                    \
-                    __riscv_vle32_v_f32m##LMUL((const float *)input, vl);      \
+                ntt::vector<DTYPE, vl> v0 =                                    \
+                    __riscv_vle##BITS##_v_f##BITS##m##LMUL(                    \
+                        (const BUILDIN_DTYPE *)input, vl);                     \
                 input += in_stride * lmul;                                     \
                 v0 = nncase::ntt::OP(v0);                                      \
-                __riscv_vse32_v_f32m##LMUL((float *)output, v0, vl);           \
+                __riscv_vse##BITS##_v_f##BITS##m##LMUL(                        \
+                    (BUILDIN_DTYPE *)output, v0, vl);                          \
                 output += out_stride * lmul;                                   \
                 count -= unroll;                                               \
             }                                                                  \
@@ -186,104 +192,38 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
         }                                                                      \
     };
 
-#define DEFINE_U_UNARY_HALF_16V(OP)                                            \
+#define DEFINE_U_UNARY_SWISH(LMUL, DTYPE, BITS, BUILDIN_DTYPE)                 \
     template <>                                                                \
-    struct u_unary<ntt::ops::OP<vector<half, NTT_VLEN / 16>>,                  \
-                   vector<half, NTT_VLEN / 16>, true> {                        \
+    struct u_unary<ntt::ops::swish<vector<DTYPE, NTT_VLEN / BITS>>,            \
+                   vector<DTYPE, NTT_VLEN / BITS>, true> {                     \
       public:                                                                  \
-        void operator()(const ntt::ops::OP<vector<half, NTT_VLEN / 16>> &op,   \
-                        const vector<half, NTT_VLEN / 16> *input,              \
-                        size_t in_stride, vector<half, NTT_VLEN / 16> *output, \
-                        size_t out_stride, size_t count) noexcept {            \
-            using policy_t =                                                   \
-                u_unary_policy<ntt::ops::OP<vector<half, NTT_VLEN / 16>>,      \
-                               vector<half, NTT_VLEN / 16>, true>;             \
-            constexpr auto unroll = policy_t::unroll;                          \
-            constexpr auto lmul = 8;                                           \
-            constexpr auto vl = NTT_VLEN / 16 * lmul;                          \
-                                                                               \
-            while (count / unroll) {                                           \
-                ntt::vector<half, vl> v0 =                                     \
-                    __riscv_vle16_v_f16m8((const _Float16 *)input, vl);        \
-                input += in_stride * lmul;                                     \
-                ntt::vector<half, vl> v8 =                                     \
-                    __riscv_vle16_v_f16m8((const _Float16 *)input, vl);        \
-                input += in_stride * lmul;                                     \
-                __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
-                v8 = nncase::ntt::OP(v8);                                      \
-                __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse16_v_f16m8((_Float16 *)output, v0, vl);             \
-                output += out_stride * lmul;                                   \
-                __riscv_vse16_v_f16m8((_Float16 *)output, v8, vl);             \
-                output += out_stride * lmul;                                   \
-                count -= unroll;                                               \
-            }                                                                  \
-                                                                               \
-            for (size_t i = 0; i < count; i++) {                               \
-                *output = op(*input);                                          \
-                input += in_stride;                                            \
-                output += out_stride;                                          \
-            }                                                                  \
-        }                                                                      \
-    };
-
-#define DEFINE_U_UNARY_HALF_8V(OP)                                             \
-    template <>                                                                \
-    struct u_unary<ntt::ops::OP<vector<half, NTT_VLEN / 16>>,                  \
-                   vector<half, NTT_VLEN / 16>, true> {                        \
-      public:                                                                  \
-        void operator()(const ntt::ops::OP<vector<half, NTT_VLEN / 16>> &op,   \
-                        const vector<half, NTT_VLEN / 16> *input,              \
-                        size_t in_stride, vector<half, NTT_VLEN / 16> *output, \
-                        size_t out_stride, size_t count) noexcept {            \
-            using policy_t =                                                   \
-                u_unary_policy<ntt::ops::OP<vector<half, NTT_VLEN / 16>>,      \
-                               vector<half, NTT_VLEN / 16>, true>;             \
-            constexpr auto unroll = policy_t::unroll;                          \
-            constexpr auto lmul = 8;                                           \
-            constexpr auto vl = NTT_VLEN / 16 * lmul;                          \
-                                                                               \
-            while (count / unroll) {                                           \
-                ntt::vector<half, vl> v0 =                                     \
-                    __riscv_vle16_v_f16m8((const _Float16 *)input, vl);        \
-                input += in_stride * lmul;                                     \
-                v0 = nncase::ntt::OP(v0);                                      \
-                __riscv_vse16_v_f16m8((_Float16 *)output, v0, vl);             \
-                output += out_stride * lmul;                                   \
-                count -= unroll;                                               \
-            }                                                                  \
-                                                                               \
-            for (size_t i = 0; i < count; i++) {                               \
-                *output = op(*input);                                          \
-                input += in_stride;                                            \
-                output += out_stride;                                          \
-            }                                                                  \
-        }                                                                      \
-    };
-
-#define DEFINE_U_UNARY_HALF_LMULV(OP, LMUL)                                    \
-    template <>                                                                \
-    struct u_unary<ntt::ops::OP<vector<half, NTT_VLEN / 16>>,                  \
-                   vector<half, NTT_VLEN / 16>, true> {                        \
-      public:                                                                  \
-        void operator()(const ntt::ops::OP<vector<half, NTT_VLEN / 16>> &op,   \
-                        const vector<half, NTT_VLEN / 16> *input,              \
-                        size_t in_stride, vector<half, NTT_VLEN / 16> *output, \
-                        size_t out_stride, size_t count) noexcept {            \
-            using policy_t =                                                   \
-                u_unary_policy<ntt::ops::OP<vector<half, NTT_VLEN / 16>>,      \
-                               vector<half, NTT_VLEN / 16>, true>;             \
+        void                                                                   \
+        operator()(const ntt::ops::swish<vector<DTYPE, NTT_VLEN / BITS>> &op,  \
+                   const vector<DTYPE, NTT_VLEN / BITS> *input,                \
+                   size_t in_stride, vector<DTYPE, NTT_VLEN / BITS> *output,   \
+                   size_t out_stride, size_t count) noexcept {                 \
+            using policy_t = u_unary_policy<                                   \
+                ntt::ops::swish<vector<DTYPE, NTT_VLEN / BITS>>,               \
+                vector<DTYPE, NTT_VLEN / BITS>, true>;                         \
             constexpr auto unroll = policy_t::unroll;                          \
             constexpr auto lmul = LMUL;                                        \
-            constexpr auto vl = NTT_VLEN / 16 * lmul;                          \
+            constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
+            auto ones = ntt::vector<DTYPE, vl>((DTYPE)1.0f);                   \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<half, vl> v0 =                                     \
-                    __riscv_vle16_v_f16m##LMUL((const _Float16 *)input, vl);   \
+                ntt::vector<DTYPE, vl> v0 =                                    \
+                    __riscv_vle##BITS##_v_f##BITS##m##LMUL(                    \
+                        (const BUILDIN_DTYPE *)input, vl);                     \
                 input += in_stride * lmul;                                     \
-                v0 = nncase::ntt::OP(v0);                                      \
-                __riscv_vse16_v_f16m##LMUL((_Float16 *)output, v0, vl);        \
+                __asm__ __volatile__("" : : : "memory");                       \
+                auto v1 = nncase::ntt::neg(v0);                                \
+                auto v2 = nncase::ntt::exp(v1);                                \
+                auto v3 = nncase::ntt::add(v2, ones);                          \
+                auto v4 = nncase::ntt::div(v0, v3);                            \
+                __asm__ __volatile__("" : : : "memory");                       \
+                                                                               \
+                __riscv_vse##BITS##_v_f##BITS##m##LMUL(                        \
+                    (BUILDIN_DTYPE *)output, v4, vl);                          \
                 output += out_stride * lmul;                                   \
                 count -= unroll;                                               \
             }                                                                  \
@@ -296,51 +236,51 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
         }                                                                      \
     };
 
-DEFINE_U_UNARY_F32_16V(abs)
-DEFINE_U_UNARY_F32_16V(acos)
-DEFINE_U_UNARY_F32_16V(acosh)
-DEFINE_U_UNARY_F32_16V(asin)
-DEFINE_U_UNARY_F32_16V(asinh)
-DEFINE_U_UNARY_F32_16V(ceil)
-DEFINE_U_UNARY_F32_LMULV(cos, 8)
-DEFINE_U_UNARY_F32_16V(cosh)
-DEFINE_U_UNARY_F32_16V(erf)
-DEFINE_U_UNARY_F32_LMULV(exp, 8)
-DEFINE_U_UNARY_F32_16V(floor)
-DEFINE_U_UNARY_F32_16V(log)
-DEFINE_U_UNARY_F32_16V(neg)
-DEFINE_U_UNARY_F32_16V(round)
-DEFINE_U_UNARY_F32_16V(sign)
-DEFINE_U_UNARY_F32_16V(square)
-DEFINE_U_UNARY_F32_16V(sqrt)
-DEFINE_U_UNARY_F32_16V(rsqrt)
-DEFINE_U_UNARY_F32_LMULV(sin, 8)
-DEFINE_U_UNARY_F32_16V(sinh)
-DEFINE_U_UNARY_F32_LMULV(swish, 8)
-DEFINE_U_UNARY_F32_16V(tanh)
+DEFINE_U_UNARY_16V(abs, 8, float, 32, float)
+DEFINE_U_UNARY_16V(acos, 8, float, 32, float)
+DEFINE_U_UNARY_16V(acosh, 8, float, 32, float)
+DEFINE_U_UNARY_16V(asin, 8, float, 32, float)
+DEFINE_U_UNARY_16V(asinh, 8, float, 32, float)
+DEFINE_U_UNARY_16V(ceil, 8, float, 32, float)
+DEFINE_U_UNARY_8V(cos, 8, float, 32, float)
+DEFINE_U_UNARY_16V(cosh, 8, float, 32, float)
+DEFINE_U_UNARY_16V(erf, 8, float, 32, float)
+DEFINE_U_UNARY_8V(exp, 8, float, 32, float)
+DEFINE_U_UNARY_16V(floor, 8, float, 32, float)
+DEFINE_U_UNARY_16V(log, 8, float, 32, float)
+DEFINE_U_UNARY_16V(neg, 8, float, 32, float)
+DEFINE_U_UNARY_16V(round, 8, float, 32, float)
+DEFINE_U_UNARY_16V(sign, 8, float, 32, float)
+DEFINE_U_UNARY_16V(square, 8, float, 32, float)
+DEFINE_U_UNARY_16V(sqrt, 8, float, 32, float)
+DEFINE_U_UNARY_16V(rsqrt, 8, float, 32, float)
+DEFINE_U_UNARY_8V(sin, 8, float, 32, float)
+DEFINE_U_UNARY_16V(sinh, 8, float, 32, float)
+DEFINE_U_UNARY_SWISH(8, float, 32, float)
+DEFINE_U_UNARY_16V(tanh, 8, float, 32, float)
 
-DEFINE_U_UNARY_HALF_16V(abs)
-DEFINE_U_UNARY_HALF_16V(acos)
-DEFINE_U_UNARY_HALF_16V(acosh)
-DEFINE_U_UNARY_HALF_16V(asin)
-DEFINE_U_UNARY_HALF_16V(asinh)
-DEFINE_U_UNARY_HALF_16V(ceil)
-DEFINE_U_UNARY_HALF_LMULV(cos, 8)
-DEFINE_U_UNARY_HALF_16V(cosh)
-DEFINE_U_UNARY_HALF_16V(erf)
-DEFINE_U_UNARY_HALF_LMULV(exp, 8)
-DEFINE_U_UNARY_HALF_16V(floor)
-DEFINE_U_UNARY_HALF_16V(log)
-DEFINE_U_UNARY_HALF_16V(neg)
-DEFINE_U_UNARY_HALF_16V(round)
-DEFINE_U_UNARY_HALF_16V(sign)
-DEFINE_U_UNARY_HALF_16V(square)
-DEFINE_U_UNARY_HALF_16V(sqrt)
-DEFINE_U_UNARY_HALF_16V(rsqrt)
-DEFINE_U_UNARY_HALF_LMULV(sin, 8)
-DEFINE_U_UNARY_HALF_16V(sinh)
-DEFINE_U_UNARY_HALF_LMULV(swish, 8)
-DEFINE_U_UNARY_HALF_16V(tanh)
+DEFINE_U_UNARY_16V(abs, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(acos, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(acosh, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(asin, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(asinh, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(ceil, 8, half, 16, _Float16)
+DEFINE_U_UNARY_8V(cos, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(cosh, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(erf, 8, half, 16, _Float16)
+DEFINE_U_UNARY_8V(exp, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(floor, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(log, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(neg, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(round, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(sign, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(square, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(sqrt, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(rsqrt, 8, half, 16, _Float16)
+DEFINE_U_UNARY_8V(sin, 8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(sinh, 8, half, 16, _Float16)
+DEFINE_U_UNARY_SWISH(8, half, 16, _Float16)
+DEFINE_U_UNARY_16V(tanh, 8, half, 16, _Float16)
 
 // binary
 #define SPECIALIZE_U_BINARY(op, unroll_num)                                    \
