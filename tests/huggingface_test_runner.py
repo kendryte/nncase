@@ -194,7 +194,6 @@ class HuggingfaceTestRunner(TestRunner):
         return outputs
 
     def parse_model(self, model_path):
-        # 判断模型是否以dynamic结尾，如果同时tensor_type为bfloat16则报错
         if self.cfg['huggingface_options']['tensor_type'] == "bfloat16":
             raise RuntimeError(
                 f"Not support bfloat16 tensor type now (because of ort)! Just 'float16' or 'float32'.")
