@@ -24,24 +24,24 @@ namespace Nncase.Passes.Rules.Neutral;
 [RuleGenerator]
 public sealed partial class CombineClampAdd : IRewriteRule
 {
-  /// <inheritdoc/>
-  public IPattern Pattern { get; init; } = IsClamp(
-    CombineClampUtility.GetBinaryPattern(BinaryOp.Add, "add"),
-    IsTensorConst("min", t => t.Value.ElementType == DataTypes.Float32),
-    IsTensorConst("max", t => t.Value.ElementType == DataTypes.Float32));
+    /// <inheritdoc/>
+    public IPattern Pattern { get; init; } = IsClamp(
+      CombineClampUtility.GetBinaryPattern(BinaryOp.Add, "add"),
+      IsTensorConst("min", t => t.Value.ElementType == DataTypes.Float32),
+      IsTensorConst("max", t => t.Value.ElementType == DataTypes.Float32));
 
-  private Expr? GetReplace(Expr input, Tensor<float> addConst, Tensor<float> min, Tensor<float> max)
-  {
-    var newType = Evaluator.TypeInference.BroadcastType(new TensorType(addConst.ElementType, addConst.Shape), new TensorType(min.ElementType, min.Shape));
-    if (newType is not TensorType newClampType || !newClampType.Shape.IsFixed)
+    private Expr? GetReplace(Expr input, Tensor<float> addConst, Tensor<float> min, Tensor<float> max)
     {
-      return null;
-    }
+        var newType = Evaluator.TypeInference.BroadcastType(new TensorType(addConst.ElementType, addConst.Shape), new TensorType(min.ElementType, min.Shape));
+        if (newType is not TensorType newClampType || !newClampType.Shape.IsFixed)
+        {
+            return null;
+        }
 
-    var newMin = (min.ToOrtTensor() - addConst.ToOrtTensor()).ToValue();
-    var newMax = (max.ToOrtTensor() - addConst.ToOrtTensor()).ToValue();
-    return Add(Clamp(input, Const.FromValue(newMin), Const.FromValue(newMax)), addConst);
-  }
+        var newMin = (min.ToOrtTensor() - addConst.ToOrtTensor()).ToValue();
+        var newMax = (max.ToOrtTensor() - addConst.ToOrtTensor()).ToValue();
+        return Add(Clamp(input, Const.FromValue(newMin), Const.FromValue(newMax)), addConst);
+    }
 }
 
 /// <summary>
@@ -50,66 +50,66 @@ public sealed partial class CombineClampAdd : IRewriteRule
 [RuleGenerator]
 public sealed partial class CombineClampMul : IRewriteRule
 {
-  /// <inheritdoc/>
-  public IPattern Pattern { get; } = IsClamp(
-    CombineClampUtility.GetBinaryPattern(BinaryOp.Mul, "mul"),
-    IsTensorConst("min", t => t.Value.ElementType == DataTypes.Float32),
-    IsTensorConst("max", t => t.Value.ElementType == DataTypes.Float32));
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsClamp(
+      CombineClampUtility.GetBinaryPattern(BinaryOp.Mul, "mul"),
+      IsTensorConst("min", t => t.Value.ElementType == DataTypes.Float32),
+      IsTensorConst("max", t => t.Value.ElementType == DataTypes.Float32));
 
-  private Expr? GetReplace(Expr input, Tensor<float> mulConst, Tensor<float> min, Tensor<float> max)
-  {
-    var newType = Evaluator.TypeInference.BroadcastType(new TensorType(mulConst.ElementType, mulConst.Shape), new TensorType(min.ElementType, min.Shape));
-    if (newType is not TensorType newClampType || !newClampType.Shape.IsFixed)
+    private Expr? GetReplace(Expr input, Tensor<float> mulConst, Tensor<float> min, Tensor<float> max)
     {
-      return null;
-    }
+        var newType = Evaluator.TypeInference.BroadcastType(new TensorType(mulConst.ElementType, mulConst.Shape), new TensorType(min.ElementType, min.Shape));
+        if (newType is not TensorType newClampType || !newClampType.Shape.IsFixed)
+        {
+            return null;
+        }
 
-    // avoid div zero.
-    // if (mulConst.All(f => f == 0.0f))
-    // {
-    //     return null;
-    // }
-    var tmulConst = mulConst.ToOrtTensor();
-    var mint = min.ToOrtTensor();
-    var maxt = max.ToOrtTensor();
-    var cond = OrtKISharp.OrtKI.Greater(tmulConst, OrtKISharp.Tensor.FromScalar<float>(0.0f));
-    var tmpMin = mint / tmulConst;
-    var tmpMax = maxt / tmulConst;
-    var newMin = OrtKISharp.OrtKI.Where(cond, tmpMin, tmpMax);
-    var newMax = OrtKISharp.OrtKI.Where(cond, tmpMax, tmpMin);
-    return Mul(
-      Clamp(
-        input,
-        Const.FromValue(newMin.ToValue()),
-        Const.FromValue(newMax.ToValue())),
-      mulConst);
-  }
+        // avoid div zero.
+        // if (mulConst.All(f => f == 0.0f))
+        // {
+        //     return null;
+        // }
+        var tmulConst = mulConst.ToOrtTensor();
+        var mint = min.ToOrtTensor();
+        var maxt = max.ToOrtTensor();
+        var cond = OrtKISharp.OrtKI.Greater(tmulConst, OrtKISharp.Tensor.FromScalar<float>(0.0f));
+        var tmpMin = mint / tmulConst;
+        var tmpMax = maxt / tmulConst;
+        var newMin = OrtKISharp.OrtKI.Where(cond, tmpMin, tmpMax);
+        var newMax = OrtKISharp.OrtKI.Where(cond, tmpMax, tmpMin);
+        return Mul(
+          Clamp(
+            input,
+            Const.FromValue(newMin.ToValue()),
+            Const.FromValue(newMax.ToValue())),
+          mulConst);
+    }
 }
 
 [RuleGenerator]
 public sealed partial class CombineTwoBinaryMul : IRewriteRule
 {
-  /// <inheritdoc/>
-  public IPattern Pattern { get; } = IsBinary(
-    "mul1",
-    "mul1Call",
-    op => op.BinaryOp == BinaryOp.Mul,
-    IsBinary("mul2", "mul2Call", op => op.BinaryOp == BinaryOp.Mul, IsWildcard("input1"), IsWildcard("input2")),
-    IsTensorConst("mul1Const") with { TypePattern = IsScalar() | HasShape([1]) });
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsBinary(
+      "mul1",
+      "mul1Call",
+      op => op.BinaryOp == BinaryOp.Mul,
+      IsBinary("mul2", "mul2Call", op => op.BinaryOp == BinaryOp.Mul, IsWildcard("input1"), IsWildcard("input2")),
+      IsTensorConst("mul1Const") with { TypePattern = IsScalar() | HasShape([1]) });
 
-  private Expr? GetReplace(Expr input1, Expr input2, TensorConst mul1Const, Call mul1Call, Call mul2Call)
-  {
-    return Mul(Mul(input1, mul1Const), input2);
-  }
+    private Expr? GetReplace(Expr input1, Expr input2, TensorConst mul1Const, Call mul1Call, Call mul2Call)
+    {
+        return Mul(Mul(input1, mul1Const), input2);
+    }
 }
 
 internal static class CombineClampUtility
 {
-  public static Pattern GetInputPattern() => IsWildcard("input", x => x is not Const) with { TypePattern = HasDataType(DataTypes.Float32) };
+    public static Pattern GetInputPattern() => IsWildcard("input", x => x is not Const) with { TypePattern = HasDataType(DataTypes.Float32) };
 
-  public static Pattern GetConstPattern(string prefix) => IsTensorConst(prefix + "Const", t => t.Value.ElementType == DataTypes.Float32);
+    public static Pattern GetConstPattern(string prefix) => IsTensorConst(prefix + "Const", t => t.Value.ElementType == DataTypes.Float32);
 
-  public static Pattern GetBinaryPattern(BinaryOp op, string constPrefix) => IsAlt(
-    IsBinary(op, GetInputPattern(), GetConstPattern(constPrefix)),
-    IsBinary(op, GetConstPattern(constPrefix), GetInputPattern()));
+    public static Pattern GetBinaryPattern(BinaryOp op, string constPrefix) => IsAlt(
+      IsBinary(op, GetInputPattern(), GetConstPattern(constPrefix)),
+      IsBinary(op, GetConstPattern(constPrefix), GetInputPattern()));
 }

@@ -611,7 +611,8 @@ class huggingface_options : public clr_object_base {
     }
     std::string tensor_type() { return ""; }
     void tensor_type(std::string value) {
-        nncase_clr_api()->huggingface_options_tensor_type(obj_.get(), value.data(), value.length());
+        nncase_clr_api()->huggingface_options_tensor_type(
+            obj_.get(), value.data(), value.length());
     }
 
     huggingface_attenion_backend attention_backend() {
