@@ -926,12 +926,10 @@ public abstract class HuggingFaceModel
         Expr hiddenStates;
         if (ImportOptions.HuggingFaceOptions.TensorType == "default")
         {
-            Console.WriteLine($"HuggingFaceOptions.TensorType is {ImportOptions.HuggingFaceOptions.TensorType}, no need to cast inputEmbeds.");
             hiddenStates = inputEmbeds;
         }
         else
         {
-            Console.WriteLine($"HuggingFaceOptions.TensorType is {ImportOptions.HuggingFaceOptions.TensorType}, need to cast inputEmbeds.");
             hiddenStates = IR.F.Tensors.Cast(inputEmbeds, HuggingFaceUtils.Str2Dtype(ImportOptions.HuggingFaceOptions.TensorType)).With(metadata: new IRMetadata() { OutputNames = new[] { "embd cast" } });
         }
 
