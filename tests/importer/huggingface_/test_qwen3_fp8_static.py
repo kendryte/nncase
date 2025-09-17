@@ -65,7 +65,7 @@ def test_qwen3_fp8_static(request):
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "/Users/curio/workspace/huggingface_cache/local_model/Qwen3-0_6B_fp8_static"
+    model_name = "AngelSlim/Qwen3-0_6B_fp8_static"
 
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
