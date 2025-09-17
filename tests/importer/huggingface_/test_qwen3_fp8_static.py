@@ -33,7 +33,7 @@ def test_qwen3_fp8_static(request):
     output_logits = false
     output_hidden_states = false
     num_layers = -1
-    tensor_type = "float32"
+    tensor_type = "float16"
 
     [generator]
     [generator.inputs]
