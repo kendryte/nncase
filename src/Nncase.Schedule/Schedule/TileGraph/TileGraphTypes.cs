@@ -25,7 +25,7 @@ public interface ITileable
     int OpId { get; }
 
     /// <summary>
-    /// Gets or sets the domain relation which from parent domain map to current node's domain.
+    /// Gets and sets the domain relation which from parent domain map to current node's domain.
     /// todo using isl map as domain relation, so we can get the dynamic property directly.
     /// </summary>
     DomainRelation DomainRelation { get; set; }
@@ -112,14 +112,14 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
 
 public sealed class TileGrid : ITileable
 {
-    public TileGrid(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<long> domainBounds, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic, IEnumerable<IEnumerable<long>> bufferShapes)
+    public TileGrid(Grid grid, Op op, int opId, IEnumerable<long> domainBounds, DomainRelation relation, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic, IEnumerable<IEnumerable<long>> bufferShapes)
     {
         Level = -1;
         Grid = grid;
         Op = op;
         OpId = opId;
         DomainDynamic = ImmutableArray.CreateRange(domainDynamic);
-        DomainRelation = new(opId, opId, AffineMap.Identity(domainBounds.Count()));
+        DomainRelation = relation;
         DomainBounds = ImmutableArray.CreateRange(domainBounds);
         DomainBoundExprs = ImmutableArray.CreateRange(domainBoundsExpr);
         BufferShapes = ImmutableArray.CreateRange(bufferShapes.Select(x => ImmutableArray.CreateRange(x)));
@@ -160,11 +160,11 @@ public sealed class TileGrid : ITileable
 [DebuggerDisplay("Op{OpId}@{Level} VertexCount = {VertexCount}, EdgeCount = {EdgeCount}")]
 public sealed class TieredTileGraph : TieredAdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>, ITileable
 {
-    public TieredTileGraph(int topLevel, [NotNull] AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>> wrappedGraph)
+    public TieredTileGraph([NotNull] AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>> wrappedGraph)
         : base(wrappedGraph)
     {
         OpId = -1;
-        Level = topLevel;
+        Level = -1;
         DomainRelation = new(-1, -1, IR.Affine.AffineMap.Identity(0));
     }
 

@@ -9,6 +9,10 @@ namespace Nncase.Schedule.MonteCarloTreeSearch;
 public interface IEnvironmentState<TAction>
     where TAction : class
 {
+    long ObjectValue { get; }
+
+    string SearchPath();
+
     int LegalActions();
 
     TAction GetNextAction(int index);

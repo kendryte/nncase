@@ -477,15 +477,25 @@ public class GraphTiler
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
                 result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
-                result.Visit(primTree, new(bodyBuilder, Enumerable.Repeat(new DimConst(0), primTree.DomainBoundExprs.Length).ToArray(), primTree.DomainBoundExprs.ToArray()));
+                var initOffsets = Enumerable.Repeat(new DimConst(0), primTree.DomainBoundExprs.Length).ToArray();
+                var initBounds = primTree.DomainBoundExprs.Select(e => e switch
+                {
+                    // just clone the bounds avoid expr was modified by ShapeOfRewriter.
+                    DimAt { Shape: ShapeOf shapeof } at => new DimAt(new ShapeOf(shapeof.Value), at.Index)
+                    {
+                        Metadata = at.Metadata,
+                    },
+                    _ => e,
+                }).ToArray();
+                result.Visit(primTree, new(bodyBuilder, initOffsets, initBounds));
                 var parameters = inputBids.Select(k => (IVar)result.PrimBufferMemo[k]).Concat(
                     dynamicDimVars.Select(v => (IVar)v.With())).Concat(
                     outputBids.Select(k => (IVar)result.PrimBufferMemo[k])).ToArray();
                 var funcBuilder = T.PrimFunc(funcName, moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
                 {
-                    var gridBufferToVarMap = inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index)).Zip(parameters.Where(p => p is not DimVar)).ToDictionary(p => p.First, p => (Expr)p.Second);
-                    var mutator = new ShapeOfRewriter(gridBufferToVarMap);
+                    var gridBufferToVarMap = inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index)).Zip(parameters.Where(p => p is not DimVar)).ToDictionary(p => p.First, p => (Expr)p.Second, (IEqualityComparer<Expr>)ReferenceEqualityComparer.Instance);
+                    var mutator = new AtShapeOfRewriter(gridBufferToVarMap);
                     mutator.Visit(primFunc, default);
                 }
 
@@ -494,7 +504,7 @@ public class GraphTiler
             }
             else
             {
-                (inputBids, outputBids) = bufferGraphMemo[primGraph].GetInputsOutputs();
+                (inputBids, outputBids) = bufferGraphMemo[primGraph].GetInputsOutputs(bufferGraphMemo[rootGraph]);
             }
 
             objectValue += memo.ObjectValue;
@@ -586,35 +596,27 @@ public class GraphTiler
     {
     }
 
-    private sealed class ShapeOfRewriter : ExprRewriter
+    private sealed class AtShapeOfRewriter : ExprRewriter
     {
         private readonly Dictionary<Expr, Expr> _exprMap;
 
-        public ShapeOfRewriter(Dictionary<Expr, Expr> exprMap)
+        public AtShapeOfRewriter(Dictionary<Expr, Expr> exprMap)
             : base(false)
         {
             _exprMap = exprMap;
         }
 
-        protected override BaseExpr VisitShapeOf(ShapeOf expr, Unit context)
+        protected override BaseExpr VisitDimAt(DimAt at, Unit context)
         {
-            // VisitOperands(expr, context);
-            if (CanVisitAttributes(expr))
+            if (at.Shape is ShapeOf { Value: Expr expr } && _exprMap.TryGetValue(expr, out var newExpr))
             {
-                VisitAttributes(expr, context);
+                return new DimAt(new ShapeOf(newExpr), at.Index)
+                {
+                    Metadata = at.Metadata,
+                };
             }
 
-            return VisitLeafShapeOf(expr, context);
-        }
-
-        protected override BaseExpr RewriteLeafShapeOf(ShapeOf expr)
-        {
-            if (_exprMap.TryGetValue(expr.Value, out var newValue))
-            {
-                return new ShapeOf(newValue);
-            }
-
-            return expr;
+            return base.VisitDimAt(at, context);
         }
     }
 }

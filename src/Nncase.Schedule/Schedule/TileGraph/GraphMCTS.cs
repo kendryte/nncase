@@ -64,8 +64,9 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     public IEnvironmentState<MergePoint>? PerformAction(MergePoint mergePoint)
     {
-        var newGraph = _graph.Clone();
-        if (newGraph.Merge(mergePoint))
+        var newGraph = _graph.Clone(out var memo);
+        var mp = new MergePoint(memo[mergePoint.Consumer], memo[mergePoint.Producer], mergePoint.Level);
+        if (newGraph.Merge(mp))
         {
             return new MCTState(newGraph, _moduleKind, $"{_path}.{_permformCount}", _graphTiler, _targetOptions);
         }
@@ -96,6 +97,8 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
         return ObjectValue;
     }
+
+    public string SearchPath() => _path;
 
     private sealed class LeafTileGraphComparer : IEqualityComparer<TieredTileGraph>
     {
@@ -155,10 +158,11 @@ public sealed class MCTNode : SearchNode<MergePoint>
 
     public override void Dump(System.CodeDom.Compiler.IndentedTextWriter writer)
     {
-        writer.WriteLine($"- name: {this}");
+        writer.WriteLine($"- name: {State.SearchPath()}");
         writer.WriteLine($"  Action: {Action}");
         writer.WriteLine($"  QualityValue: {QualityValue}");
         writer.WriteLine($"  VisitTimes: {VisitTimes}");
+        writer.WriteLine($"  ObjectValue: {State.ObjectValue}");
         writer.WriteLine($"  Children:");
         writer.Indent += 1;
         foreach (var item in Children)
@@ -174,7 +178,8 @@ public sealed class MCTSearcher : Searcher<MergePoint>
 {
     private readonly Random _random = new Random(1010);
 
-    public MCTSearcher()
+    public MCTSearcher(int searchTimes)
+        : base(searchTimes)
     {
         BestObjectValue = double.PositiveInfinity;
         BestMCTNode = null;

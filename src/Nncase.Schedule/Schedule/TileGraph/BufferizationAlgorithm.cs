@@ -103,15 +103,15 @@ public sealed class BufferizationAlgorithm : AlgorithmBase<TieredTileGraph>
                     BufferGraphMemo.Add(childGraph, childBufferGraph);
                 }
             }
+        }
 
-            foreach (var edge in rootGraph.Edges)
+        foreach (var edge in rootGraph.Edges)
+        {
+            if (opnodes.Contains(edge.Source) && opnodes.Contains(edge.Target))
             {
-                if (opnodes.Contains(edge.Source) && opnodes.Contains(edge.Target))
-                {
-                    var source = new BufferIdentity(edge.Source, edge.Source.ReadAccesses.Length);
-                    var target = new BufferIdentity(edge.Target, edge.Tag);
-                    bufferGraph.AddEdge(new(source, target, BufferEdgeKind.Outer));
-                }
+                var source = new BufferIdentity(edge.Source, edge.Source.ReadAccesses.Length);
+                var target = new BufferIdentity(edge.Target, edge.Tag);
+                bufferGraph.AddEdge(new(source, target, BufferEdgeKind.Outer));
             }
         }
 

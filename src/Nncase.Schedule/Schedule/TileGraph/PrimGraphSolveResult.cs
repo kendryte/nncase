@@ -30,7 +30,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         : base(null!, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         PrimBufferGraph = primBufferGraph;
-        (Inputs, Outputs) = primBufferGraph.GetInputsOutputs();
+        (Inputs, Outputs) = primBufferGraph.GetInputsOutputs(primBufferGraph.Parent!);
         ObjectiveValue = objectiveValue;
         LevelBufferSizes = levelNodeBufferBoxs;
         LevelBufferLifeness = levelTreeBufferLifeness;
@@ -40,6 +40,9 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         _subViewMemo = new();
     }
 
+    /// <summary>
+    /// Gets the primitive buffer memo. buffer identity to var/alloc/attach/view.
+    /// </summary>
     public Dictionary<BufferIdentity, Expr> PrimBufferMemo { get; }
 
     public BufferGraph PrimBufferGraph { get; }
@@ -327,7 +330,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         {
             var bid = new BufferIdentity(value.Wrapped, i);
             var shape = PartialShapeFromDomain(parentDomain, value.DomainRelation, currentDomain, AffineUtility.AsMap(value.Grid.AccessMaps[i]), (uint)currentDomain.dim(Isl.dim_type.set), paramDimMap);
-            var viewInfo = GetParentSubViewInfo(value.Level, value, bid, value.DomainRelation.Map * OpNodeMemo[value].Maps[i], currentOffsets, shape);
+            var viewInfo = GetParentSubViewInfo(value.Level, value, bid, OpNodeMemo[value].Maps[i], currentOffsets, shape);
 
             buffers[i] = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, viewInfo.Shape);
         }
@@ -457,7 +460,6 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         var tensorType = GetBufferTensorType(expr);
 
         // TODO: Currently we only support the buffer which is not distributed.
-        // var distributedType = GetBufferDistributedType(expr);
         if (!PrimBufferMemo.TryGetValue(bid, out var buffer))
         {
             buffer = new Var($"{bid}", tensorType);
@@ -509,12 +511,11 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         }
         else
         {
-            var (outputs, inputs) = PrimBufferGraph.GetInputsOutputs();
-            if (outputs.Contains(bid))
+            if (Outputs.Contains(bid))
             {
                 parentBuffer = GetTopLevelDeclareBuffer(bid);
             }
-            else if (inputs.Contains(bid))
+            else if (Inputs.Contains(bid))
             {
                 parentBuffer = GetTopLevelDeclareBuffer(bid);
             }

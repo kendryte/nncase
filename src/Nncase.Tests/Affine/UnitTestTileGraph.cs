@@ -21,42 +21,44 @@ public sealed class UnitTestTileGraph : TestClassBase
 {
     public static readonly TheoryData<Func<Function>, int> BuildTileGraphDatas = new()
     {
-        { FunctionSamples.Get1, 0 },
-        { FunctionSamples.Get2, 1 },
-        { FunctionSamples.Get3, 2 },
-        { FunctionSamples.Get5, 3 },
+        { FunctionSamples.GetMatmulExpMatmul, 0 },
+        { FunctionSamples.GetMatmulBinaryBinary, 1 },
+        { FunctionSamples.GetMulDivMulSub, 2 },
+        { FunctionSamples.GetBinaryNeg, 3 },
     };
 
-    public static readonly TheoryData<Func<Function>, (IntMergePoint, bool)[], Action<TieredTileGraph>, int> MergeTileGraphDatas = new()
+    public static readonly TheoryData<Func<Function>, (IntMergePoint, bool)[], Action<TieredTileGraph>, int, int> MergeTileGraphDatas = new()
     {
-        { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(2, 1, 1), true), (new(2, 0, 1), true), (new(2, 0, 0), false), (new(1, 0, 0), true) }, MergeTileGraphChecker0, 0 },
-        { FunctionSamples.Get1, new (IntMergePoint, bool)[] { (new(1, 0, 1), true), (new(2, 0, 1), false), (new(2, 1, 1), true), }, MergeTileGraphCheckerDefault, 1 },
-        { FunctionSamples.Get1VectorizeMN, new (IntMergePoint, bool)[] { (new(2, 0, 1), true), (new(2, 1, 1), true), (new(2, 0, 0), true), (new(2, 1, 0), true), (new(3, 2, 1), true), (new(5, 4, 1), true) }, MergeTileGraphChecker2, 2 },
+        { FunctionSamples.GetMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(2, 1, 0), true), }, MergeTileGraphCheckerDefault, 1, 1 },
+        { FunctionSamples.GetMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(2, 1, 1), true), (new(2, 0, 1), true), (new(2, 0, 0), false), (new(1, 0, 0), true) }, MergeTileGraphChecker0, 2, 0 },
+        { FunctionSamples.GetMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(1, 0, 1), true), (new(2, 0, 1), false), (new(2, 1, 1), true), }, MergeTileGraphCheckerDefault, 2, 1 },
+        { FunctionSamples.GetVectorizeMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(2, 0, 1), true), (new(2, 1, 1), true), (new(2, 0, 0), true), (new(2, 1, 0), true), (new(3, 2, 1), true), (new(5, 4, 1), true) }, MergeTileGraphChecker2, 2, 2 },
     };
 
-    public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BaseExpr>, int> SolveTileGraphDatas = new()
+    public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BaseExpr>, int, int> SolveTileGraphDatas = new()
     {
-        { FunctionSamples.Get5, [], SolveTileGraphChecker0, 0 },
-        { FunctionSamples.Get1, [new(1, 0, 1), new(1, 0, 0)], (_) => { }, 1 },
-        { FunctionSamples.Get1, [new(2, 1, 1)], (_) => { }, 2 },
-        { FunctionSamples.Get1, [new(1, 0, 1), new(2, 1, 1), new(1, 0, 0)], (_) => { }, 3 },
-        { FunctionSamples.Get4, [new(2, 0, 1)], (_) => { }, 4 },
+        { FunctionSamples.GetBinaryNeg, [], SolveTileGraphChecker0, 2, 0 },
+        { FunctionSamples.GetMatmulExpMatmul, [new(1, 0, 1), new(1, 0, 0)], (_) => { }, 2, 1 },
+        { FunctionSamples.GetMatmulExpMatmul, [new(2, 1, 1)], (_) => { }, 2, 2 },
+        { FunctionSamples.GetMatmulExpMatmul, [new(1, 0, 1), new(2, 1, 1), new(1, 0, 0)], (_) => { }, 2, 3 },
+        { FunctionSamples.GetAddBranchMerge, [new(1, 0, 1)], (_) => { }, 1, 4 },
+        { FunctionSamples.GetUnaryCastTrans, [new(2, 1, 0), new(2, 0, 0)], (_) => { }, 1, 5 },
 
         // just for check single op tiling results
         // { FunctionSamples.Get1Matmul, [], (_) => { }, 5 },
         // { FunctionSamples.Get1Exp, [], (_) => { }, 6 },
     };
 
-    public static readonly TheoryData<Func<Function>, int> MCTSDatas = new()
+    public static readonly TheoryData<Func<Function>, int, int> MCTSDatas = new()
     {
-        { FunctionSamples.Get1, 0 },
-        { FunctionSamples.Get4, 1 },
-        { FunctionSamples.Get6, 2 },
+        { FunctionSamples.GetMatmulExpMatmul, 1, 0 },
+        { FunctionSamples.GetAddBranchMerge, 1, 1 },
+        { FunctionSamples.GetQwen3Rope, 1, 2 },
     };
 
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BufferGraph>, int> BufferizeTileGraphDatas = new()
     {
-        { FunctionSamples.Get1, [new(1, 0, 1)], (bufGraph) => { Assert.Equal(4, bufGraph.Clusters.OfType<BufferGraph>().First().Edges.Count()); }, 0 },
+        { FunctionSamples.GetMatmulExpMatmul, [new(1, 0, 1)], (bufGraph) => { Assert.Equal(4, bufGraph.Clusters.OfType<BufferGraph>().First().Edges.Count()); }, 0 },
     };
 
     public UnitTestTileGraph()
@@ -295,16 +297,23 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     [Theory]
     [MemberData(nameof(MergeTileGraphDatas))]
-    public void TestMergeTileGraph(Func<Function> functor, (IntMergePoint, bool)[] mergePoints, Action<TieredTileGraph> checker, int count)
+    public void TestMergeTileGraph(Func<Function> functor, (IntMergePoint, bool)[] mergePoints, Action<TieredTileGraph> checker, int levelCount, int count)
     {
         using var ctx = IntegerSetLibrary.ctx.Create();
+        var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
+        if (levelCount == 1)
+        {
+            targetOptions.MemoryCapacities = new[] { 256 * 1024, int.MaxValue };
+            targetOptions.MemoryBandWidths = new[] { 128, 16 };
+        }
+
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 #if DEBUG
         Dumpper.DumpIR(post, $"post{count}");
 #endif
 
-        var builder = new TieredTileGraphBuilder(2);
+        var builder = new TieredTileGraphBuilder(levelCount);
         builder.Visit(post);
         var tileGraph = builder.RootGraph;
 #if DEBUG
@@ -328,13 +337,21 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     [Theory]
     [MemberData(nameof(SolveTileGraphDatas))]
-    public void TestSolveTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BaseExpr> action, int count)
+    public void TestSolveTileGraph(Func<Function> functor, IntMergePoint[] mergePoints, Action<BaseExpr> action, int levelCount, int count)
     {
         using var ctx = IntegerSetLibrary.ctx.Create();
         var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
+        if (levelCount == 1)
+        {
+            targetOptions.MemoryCapacities = new[] { 256 * 1024, int.MaxValue };
+            targetOptions.MemoryBandWidths = new[] { 128, 16 };
+        }
+
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
-
+#if DEBUG
+        Dumpper.DumpIR(post, $"post{count}");
+#endif
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
         var tileGraph = TieredTileGraphBuilder.Build(post, targetOptions.MemoryBandWidths.Length - 1, out var exprMemo);
 
@@ -361,16 +378,24 @@ public sealed class UnitTestTileGraph : TestClassBase
 
         var cloner = new ReplacingExprCloner(replaces);
         var result = cloner.Clone(post, default);
-
+#if DEBUG
+        Dumpper.DumpIR(result, $"result{count}", flags: Diagnostics.PrinterFlags.Normal);
+#endif
         action(result);
     }
 
-    [Theory(Skip = "Enable it when Dynamic Tiling Stage 2")]
+    [Theory]
     [MemberData(nameof(MCTSDatas))]
-    public void TestMCTS(Func<Function> functor, int count)
+    public void TestMCTS(Func<Function> functor, int levelCount, int count)
     {
         using var ctx = IntegerSetLibrary.ctx.Create();
         var targetOptions = (INTTTargetOptions)CompileOptions.TargetOptions;
+        if (levelCount == 1)
+        {
+            targetOptions.MemoryCapacities = new[] { 256 * 1024, int.MaxValue };
+            targetOptions.MemoryBandWidths = new[] { 128, 16 };
+        }
+
         var func = functor();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
@@ -382,7 +407,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var tiler = new Schedule.GraphTiler();
         var state = new MCTState(tileGraph, "cpu", count.ToString(), tiler, targetOptions);
         var rootNode = new MCTNode(state);
-        var searcher = new MCTSearcher();
+        var searcher = new MCTSearcher(60);
         searcher.Search(rootNode);
 #if DEBUG
         rootNode.Dump("mct");
@@ -419,7 +444,7 @@ public sealed class UnitTestTileGraph : TestClassBase
     public void TestPrimTreeEqualityComparer()
     {
         using var ctx = IntegerSetLibrary.ctx.Create();
-        var func = FunctionSamples.Get3();
+        var func = FunctionSamples.GetMulDivMulSub();
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
         var grid = (IR.Affine.Grid)((Function)post).Body;
         var rootGraph = TieredTileGraphBuilder.Build(grid, 2, out _);

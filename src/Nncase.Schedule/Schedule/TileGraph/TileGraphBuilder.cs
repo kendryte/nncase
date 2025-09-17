@@ -20,7 +20,7 @@ public sealed class TieredTileGraphBuilder : ExprVisitor<Unit, Unit>
 
     public TieredTileGraphBuilder(int levelCount)
     {
-        RootGraph = new(-1, new AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>());
+        RootGraph = new(new AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>());
         _memo = new();
         _exprMemo = new();
         LevelCount = levelCount;
@@ -73,7 +73,7 @@ public sealed class TieredTileGraphBuilder : ExprVisitor<Unit, Unit>
             throw new InvalidOperationException("body is not call");
         }
 
-        var opNode = new TileGrid(current, op, copId, dimNames, domainBoundValues, domainBoundExprs, domainDynamic, bufferShapeValues);
+        var opNode = new TileGrid(current, op, copId, domainBoundValues, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)), domainBoundExprs, domainDynamic, bufferShapeValues);
 
         var tileNodeRoot = RootGraph.CreateCluster<TieredTileGraph>(LevelCount - 1, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)), domainBoundExprs, domainDynamic);
         var tileNodeTail = tileNodeRoot;
