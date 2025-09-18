@@ -475,7 +475,7 @@ public class GraphTiler
             {
                 var result = SolvePrimGraph(primTree, bufferGraphMemo, targetOptions, moduleKind);
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
-                result.ScheduleBuffers();
+                var maxAlign = result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
                 var initOffsets = Enumerable.Repeat(new DimConst(0), primTree.DomainBoundExprs.Length).ToArray();
                 var initBounds = primTree.DomainBoundExprs.Select(e => e switch
@@ -500,6 +500,7 @@ public class GraphTiler
                 }
 
                 primFunc.SchedResult.IsScheduled = true; // avoid buffersize pass schedule it again.
+                primFunc.SchedResult.DataAlign = (ulong)maxAlign;
                 memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count + dynamicDimVars.Length, inputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).Concat(dynamicDimVars.Select(v => new DimensionType(DimensionKind.Dynamic))).Concat(outputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType)).ToArray()), result.ObjectiveValue);
                 SolveMemo.Add(primTree, memo);
             }

@@ -189,6 +189,11 @@ internal sealed class LinkableModule : ILinkableModule
             rdataAlign = Math.Max(rdataAlign, func.PrimFunction.SchedResult.DataAlign);
         }
 
+        foreach (var func in _functions.OfType<LinkableDeviceFunction>())
+        {
+            rdataAlign = Math.Max(rdataAlign, func.PrimFunction.SchedResult.DataAlign);
+        }
+
         var elfPath = CompileCSource(codegenDir);
         var funcText = File.ReadAllBytes(elfPath);
         textWriter.Write(funcText);

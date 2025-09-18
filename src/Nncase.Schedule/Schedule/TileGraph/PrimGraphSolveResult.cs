@@ -348,8 +348,9 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         return default;
     }
 
-    public void ScheduleBuffers()
+    public long ScheduleBuffers()
     {
+        var maxAlign = 0L;
         foreach (var (level, nodeBufferSizes) in LevelBufferSizes)
         {
             var nodeBufferOffsets = LevelBufferOffsets[level] = new();
@@ -363,11 +364,14 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 {
                     var x = model.NewFixedSizeIntervalVar(LevelBufferLifeness[level][key].Item1, LevelBufferLifeness[level][key].Item2 - LevelBufferLifeness[level][key].Item1, $"x{count}");
                     var ystart = model.NewIntVar(0, TargetOptions.MemoryCapacities[level] - size, $"ystart{count}");
+                    var align = key.Id.Node.GetBufferElemSize(key.Id.Index);
                     if (ModuleKind == "xpu")
                     {
-                        model.AddModuloEquality(0, ystart, 128);
+                        align = 128;
                     }
 
+                    maxAlign = Math.Max(maxAlign, align);
+                    model.AddModuloEquality(0, ystart, align);
                     var y = model.NewFixedSizeIntervalVar(ystart, size, $"y{count}");
                     cons.AddRectangle(x, y);
                     rectangles.Add(key, (x, y));
@@ -414,6 +418,8 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 nodeBufferOffsets[k] = (ulong)solver.Value(y.StartExpr());
             }
         }
+
+        return maxAlign;
     }
 
     private TensorType GetBufferTensorType(Expr expr)
