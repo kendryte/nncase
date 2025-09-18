@@ -71,7 +71,7 @@ def test_qwen3_fp8_static(request):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:
         model_file = download_from_huggingface(
-            AutoModelForCausalLM, AutoTokenizer, model_name, need_save=True)
+            AutoModelForCausalLM, AutoTokenizer, model_name, need_save=False)
 
     runner.run(model_file)
 
