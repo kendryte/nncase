@@ -56,10 +56,11 @@ result<void> cpu_runtime_module::initialize_before_functions(
             this->bdim_ = header.bdim;
             this->cdim_ = header.cdim;
             auto cache_levels = reader.template read<int32_t>();
-            
+
             for (size_t i = 0; i < 3; i++) {
                 if (i < cache_levels) {
-                    this->thread_local_cache_starts_[i] = reader.template read<int32_t>();
+                    this->thread_local_cache_starts_[i] =
+                        reader.template read<int32_t>();
                 } else {
                     this->thread_local_cache_starts_[i] = -1;
                 }
