@@ -226,7 +226,7 @@ jobs:
 
       - name: Create Test Environment
         run: mkdir test_results
-        
+
       - name: Test LLM
         working-directory: ${{github.workspace}}
         shell: bash
@@ -235,6 +235,7 @@ jobs:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
           NNCASE_TILING_MAX_SOLUTIONS: 1
         run: |
+          dotnet tool install --global dotnet-coverage
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/llm_ffi.xml pytest tests/other/ --doctest-modules --junitxml=test_results/llm_ffi.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/llm_huggingface.xml pytest tests/importer/huggingface_/ --doctest-modules --junitxml=test_results/llm_huggingface.xml
 
@@ -245,7 +246,6 @@ jobs:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
           NNCASE_TILING_MAX_SOLUTIONS: 1
         run: |
-          dotnet tool install --global dotnet-coverage
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest -n 2 tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest -n 2 tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest -n 2 tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
