@@ -405,7 +405,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var tileGraph = builder.RootGraph;
 
         var tiler = new Schedule.GraphTiler();
-        var state = new MCTState(tileGraph, "cpu", count.ToString(), tiler, targetOptions);
+        var state = new MCTState(tileGraph, "cpu", count.ToString(), tiler, targetOptions, Array.Empty<DimVar>());
         var rootNode = new MCTNode(state);
         var searcher = new MCTSearcher(60);
         searcher.Search(rootNode);

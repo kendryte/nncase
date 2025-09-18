@@ -25,7 +25,7 @@ public interface ITileable
     int OpId { get; }
 
     /// <summary>
-    /// Gets and sets the domain relation which from parent domain map to current node's domain.
+    /// Gets or sets the domain relation which from parent domain map to current node's domain.
     /// todo using isl map as domain relation, so we can get the dynamic property directly.
     /// </summary>
     DomainRelation DomainRelation { get; set; }
@@ -78,33 +78,6 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
         }));
 
         return new Isl.map(Isl.ctx.Current, $"{{ [{domains}] -> [{results}] : {string.Join(" and ", constraints)} }}");
-    }
-
-    /// <summary>
-    /// only use for domain relation from parent to child.
-    /// </summary>
-    public (Isl.multi_pw_aff MinMpa, Isl.multi_pw_aff MaxMpa) ToMinMaxMpa()
-    {
-        var domains = string.Join(", ", Enumerable.Range(0, Map.Domains.Length).Select(i => $"d{i}"));
-        if (Map.Symbols.Length > 0)
-        {
-            throw new NotSupportedException("Isl map does not support symbols yet.");
-        }
-
-        var minResults = StringUtility.Join(", ", Map.Results.ToArray().Select(expr => expr.Offset switch
-        {
-            AffineConstant c => c.Value.ToString(),
-            _ => expr.Offset.GetDisplayString(Map.Symbols),
-        }));
-
-        var maxResults = StringUtility.Join(", ", Map.Results.ToArray().Select(expr => expr.Offset switch
-        {
-            AffineConstant c => expr.Extent.GetDisplayString(Map.Symbols),
-            _ => expr.Offset.GetDisplayString(Map.Symbols),
-        }));
-
-        return (new Isl.multi_pw_aff(Isl.ctx.Current, $"{{ [{domains}] -> [{minResults}] }}"),
-                new Isl.multi_pw_aff(Isl.ctx.Current, $"{{ [{domains}] -> [{maxResults}] }}"));
     }
 
     public override string ToString() => $"Op{DomainOp} -> Op{RangeOp}: {Map}";

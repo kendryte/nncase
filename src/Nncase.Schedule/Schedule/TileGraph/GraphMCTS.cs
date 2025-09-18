@@ -29,15 +29,18 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     private readonly INTTTargetOptions _targetOptions;
 
+    private readonly DimVar[] _dynamicDimVars;
+
     private readonly TieredTileGraph _graph;
 
     private int _permformCount;
 
-    public MCTState(TieredTileGraph graph, string moduleKind, string searchPath, GraphTiler graphTiler, INTTTargetOptions targetOptions)
+    public MCTState(TieredTileGraph graph, string moduleKind, string searchPath, GraphTiler graphTiler, INTTTargetOptions targetOptions, DimVar[] dynamicDimVars)
     {
         _graph = graph;
         _moduleKind = moduleKind;
         _targetOptions = targetOptions;
+        _dynamicDimVars = dynamicDimVars;
         _mergePoints.AddRange(graph.GetMergePoints());
         _legalIndex.AddRange(Enumerable.Range(0, _mergePoints.Count));
         _path = searchPath;
@@ -68,7 +71,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
         var mp = new MergePoint(memo[mergePoint.Consumer], memo[mergePoint.Producer], mergePoint.Level);
         if (newGraph.Merge(mp))
         {
-            return new MCTState(newGraph, _moduleKind, $"{_path}.{_permformCount}", _graphTiler, _targetOptions);
+            return new MCTState(newGraph, _moduleKind, $"{_path}.{_permformCount}", _graphTiler, _targetOptions, _dynamicDimVars);
         }
 
         return null;
@@ -81,7 +84,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
             using var scope = new Diagnostics.DumpScope($"RollOut{_path}");
             try
             {
-                var res = _graphTiler.SolveRootGraph(_graph, _moduleKind, _targetOptions, Array.Empty<DimVar>());
+                var res = _graphTiler.SolveRootGraph(_graph, _moduleKind, _targetOptions, _dynamicDimVars);
                 ObjectValue = res.ObjectValue;
                 foreach (var item in res.ResultMemo)
                 {

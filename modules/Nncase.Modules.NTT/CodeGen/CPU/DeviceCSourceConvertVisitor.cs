@@ -187,8 +187,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         var size = Visit(expr.Size);
         string name = expr.Location switch
         {
-            MemoryLocation.L2Data => $"L2Data + {start.Name}",
-            MemoryLocation.L1Data => $"L1Data + {start.Name}",
+            MemoryLocation.Cache => $"tar::get_cache_address<{expr.Hierarchy}>()",
             MemoryLocation.Input or MemoryLocation.Output => start.Name,
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };
@@ -326,9 +325,9 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     var strideSymbols = buffer.Strides.AsValueEnumerable().Select(Visit).ToArray();
 
                     var dtypeStr = buffer.ElemType.ToC();
-                    var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, false);
-                    var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, false);
-                    str = $"{{span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name}), {dimensionStr}, {strideStr}}}";
+                    var dimensionStrs = dimensionSymbols.Select(x => x.Name);
+                    var strideStrs = strideSymbols.Select(x => x.Name);
+                    str = $"make_tensor_view(span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name}), make_shape({StringUtility.Join(", ", dimensionStrs)}), make_strides({StringUtility.Join(", ", strideStrs)}))";
                 }
 
                 break;

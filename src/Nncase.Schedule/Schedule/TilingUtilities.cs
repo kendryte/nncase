@@ -107,4 +107,31 @@ public static class TilingUtilities
         var dims = dimVars.Select(x => solutionCollector.Value(0, x)).ToArray();
         return dims;
     }
+
+    /// <summary>
+    /// some times we need to get the min/max value of an affine map.
+    /// </summary>
+    public static (Isl.multi_pw_aff MinMpa, Isl.multi_pw_aff MaxMpa) ToMinMaxMpa(AffineMap map)
+    {
+        var domains = string.Join(", ", Enumerable.Range(0, map.Domains.Length).Select(i => $"d{i}"));
+        if (map.Symbols.Length > 0)
+        {
+            throw new NotSupportedException("Isl map does not support symbols yet.");
+        }
+
+        var minResults = StringUtility.Join(", ", map.Results.ToArray().Select(expr => expr.Offset switch
+        {
+            AffineConstant c => c.Value.ToString(),
+            _ => expr.Offset.GetDisplayString(map.Symbols),
+        }));
+
+        var maxResults = StringUtility.Join(", ", map.Results.ToArray().Select(expr => expr.Offset switch
+        {
+            AffineConstant c => expr.Extent.GetDisplayString(map.Symbols),
+            _ => expr.Offset.GetDisplayString(map.Symbols),
+        }));
+
+        return (new Isl.multi_pw_aff(Isl.ctx.Current, $"{{ [{domains}] -> [{minResults}] }}"),
+                new Isl.multi_pw_aff(Isl.ctx.Current, $"{{ [{domains}] -> [{maxResults}] }}"));
+    }
 }

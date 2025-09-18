@@ -499,6 +499,7 @@ public class GraphTiler
                     mutator.Visit(primFunc, default);
                 }
 
+                primFunc.SchedResult.IsScheduled = true; // avoid buffersize pass schedule it again.
                 memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count + dynamicDimVars.Length, inputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).Concat(dynamicDimVars.Select(v => new DimensionType(DimensionKind.Dynamic))).Concat(outputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType)).ToArray()), result.ObjectiveValue);
                 SolveMemo.Add(primTree, memo);
             }
@@ -531,9 +532,9 @@ public class GraphTiler
 
     public BaseExpr Tile(BaseExpr preExpr, string moduleKind, INTTTargetOptions targetOptions, DimVar[] dynamicDimVars)
     {
-#if true
-        var topLevel = targetOptions.MemoryCapacities.Length - 1;
-        var rootGraph = TieredTileGraphBuilder.Build(preExpr, topLevel, out var exprMemo);
+        var levelCount = targetOptions.MemoryCapacities.Length - 1;
+        var rootGraph = TieredTileGraphBuilder.Build(preExpr, levelCount, out var exprMemo);
+#if false
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
             rootGraph.Dump($"tile_graph");
@@ -543,11 +544,21 @@ public class GraphTiler
         var cloner = new ReplacingExprCloner(exprMemo.ToDictionary(kv => (BaseExpr)kv.Key, kv => (BaseExpr)resultMemo[kv.Value]));
         return cloner.Clone(preExpr, default);
 #else
-        var topLevel = targetOptions.MemoryCapacities.Length;
-        var rootGraph = GraphBuilder.Build(preExpr, topLevel, out var exprMemo);
-        var rootState = new MCTState(rootGraph, moduleKind, "0", SolveMemo, targetOptions);
+        var rootState = new MCTState(rootGraph, moduleKind, "0", this, targetOptions, dynamicDimVars);
         var rootNode = new MCTNode(rootState);
-        var searcher = new MCTSearcher();
+        var visitTimes = 100u;
+        if (System.Environment.GetEnvironmentVariable("NNCASE_TILING_MAX_VISIT") is string s_search_times)
+        {
+            try
+            {
+                visitTimes = uint.Parse(s_search_times);
+            }
+            catch (System.Exception)
+            {
+            }
+        }
+
+        var searcher = new MCTSearcher((int)visitTimes);
         searcher.Search(rootNode);
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
@@ -555,7 +566,7 @@ public class GraphTiler
         }
 
         var bestState = (MCTState)searcher.BestMCTNode!.State;
-        var replaces = new Dictionary<Expr, Expr>();
+        var replaces = new Dictionary<BaseExpr, BaseExpr>();
         foreach (var (oldExpr, v) in exprMemo)
         {
             if (bestState.Results.TryGetValue(v, out var newExpr))
