@@ -143,10 +143,12 @@ public static class OrtKIExtensions
         throw new ArgumentOutOfRangeException("Unsupported OrtDataType: " + dt);
     }
 
-    public static DataType Legalize(this DataType from, params (PrimType, PrimType)[] pairs) => from switch
+    public static DataType Legalize(this DataType from, params (PrimType, PrimType)[] pairs) => Legalize(from, pairs.ToDictionary(t => t.Item1, t => t.Item2));
+
+    public static DataType Legalize(this DataType from, Dictionary<PrimType, PrimType> dict) => from switch
     {
-        VectorType vt => vt with { ElemType = vt.ElemType.Legalize(pairs) },
-        PrimType pt => pairs.Where(p => p.Item1 == pt).Select(p => p.Item2).FirstOrDefault() ?? pt,
+        VectorType vt => vt with { ElemType = vt.ElemType.Legalize(dict) },
+        PrimType pt => dict.TryGetValue(pt, out var newPt) ? newPt : pt,
         MaskVectorType mv => mv,
         _ => throw new InvalidOperationException($"Cannot convert data type {from}."),
     };

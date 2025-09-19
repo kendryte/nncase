@@ -930,43 +930,23 @@ public abstract class HuggingFaceModel
             inputEmbeds = Embedding(inputIds, embedTokensWeight, padding_idx);
         }
 
-        var hiddenStates = inputEmbeds;
+        // Notice: The type of inputEmbeds is same as safetensors' dtype.
+        // Here, we will cast it to the type defined by `HuggingFaceOptions.TensorType`.
+        Expr hiddenStates;
+        if (ImportOptions.HuggingFaceOptions.TensorType == "default")
+        {
+            hiddenStates = inputEmbeds;
+        }
+        else
+        {
+            hiddenStates = IR.F.Tensors.Cast(inputEmbeds, HuggingFaceUtils.Str2Dtype(ImportOptions.HuggingFaceOptions.TensorType)).With(metadata: new IRMetadata() { OutputNames = new[] { "embd cast" } });
+        }
 
-        // if (useCache == true && pastKeyValues == null)
-        // {
-        //     pastKeyValues = new HuggingFaceUtils.DynamicCache();
-        // }
-
-        // if (cachePosition == null)
-        // {
-        //     if (pastKeyValues != null)
-        //     {
-        //         var pastSeenTokens = pastKeyValues.GetSeqLength();
-        //         int sequenceLength =
-        //             inputEmbeds.CheckedShape[1].FixedValue;
-        //         var cachePositionList = Enumerable.Range(pastSeenTokens, pastSeenTokens + sequenceLength).ToArray();
-        //         cachePosition = Tensor.FromArray(cachePositionList);
-        //     }
-        // }
-        //
-        // TODO : _update_casualMask
-        // casualMask = self._update_casualMask(
-        //     attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
-        // )
-        // Call? casualMask = null;
         var (invFreq, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
         var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreq, attentionScaling);
 
-        // var allHiddenStates = new List<Expr>();
-        // var allSelfAttns = new List<Expr>();
-        // var allKVcaches = new List<Expr>();
-        // Expr? lastHiddenStates = null;
-        // Expr? allSelfAttns = null;
         Expr? allHiddenStates = null;
 
-        // Expr? allSelfAttns = null;
-        // Expr? allKVcaches = null;
-        // _ = new List<Tuple<Call, Call>>();
         for (int i = 0; i < (int)(long)Context!.Config!["num_hidden_layers"]; i++)
         {
             if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)

@@ -43,9 +43,10 @@ public partial class ToCustomMatmul : RewriteRule<Pattern>
         "call",
         _ => true,
         IsWildcard("lhs"),
-        IsWildcard("rhs"));
+        IsWildcard("rhs"),
+        IsWildcard("scale"));
 
-    private Expr? GetReplace(Call call, MatMul mm, Expr lhs, Expr rhs)
+    private Expr? GetReplace(Call call, MatMul mm, Expr lhs, Expr rhs, Expr scale)
     {
         if (Scheme is null)
         {
@@ -69,7 +70,7 @@ public partial class ToCustomMatmul : RewriteRule<Pattern>
         {
             return call.With(
                 target: new IR.CustomNTT.MatMul(null!, null!, false, false, node!.SBP[0], node!.SBP[1], node!.SBP[2], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName, mm.OutputDataType),
-                arguments: new[] { lhs, rhs },
+                arguments: new[] { lhs, rhs, scale },
                 metadata: call.Metadata);
         }
 

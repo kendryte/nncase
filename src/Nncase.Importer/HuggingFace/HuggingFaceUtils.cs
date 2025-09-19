@@ -149,6 +149,26 @@ internal static class HuggingFaceUtils
         return config;
     }
 
+    public static PrimType Str2Dtype(string str)
+    {
+        return str switch
+        {
+            "float32" => DataTypes.Float32,
+            "float16" => DataTypes.Float16,
+            "bfloat16" => DataTypes.BFloat16,
+            "int8" => DataTypes.Int8,
+            "int16" => DataTypes.Int16,
+            "int32" => DataTypes.Int32,
+            "int64" => DataTypes.Int64,
+            "uint8" => DataTypes.UInt8,
+            "uint16" => DataTypes.UInt16,
+            "uint32" => DataTypes.UInt32,
+            "uint64" => DataTypes.UInt64,
+            "bool" => DataTypes.Boolean,
+            _ => throw new NotImplementedException("Unrecognized data type listed: " + str),
+        };
+    }
+
     public static Dictionary<string, Tensor> LoadAllTensorsFromFile(string path)
     {
         var constTensors = new Dictionary<string, Tensor>();
