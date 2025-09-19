@@ -363,6 +363,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 SearchableNode { Expr: Paddings attr } => attr,
                 SearchableNode { Expr: Const attr } => attr,
                 SearchableNode { Expr: Call { Target: AsTensor } attr } => attr,
+                SearchableNode n when expr.Target is PrimFunctionWrapper => n.Expr,
                 SearchableNode n => new Var(n.IRType),
             }).ToArray();
             var newExprs = BuildEquivalentCalls(expr.Target, tempArgs);

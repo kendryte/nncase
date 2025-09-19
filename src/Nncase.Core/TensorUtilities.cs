@@ -113,7 +113,7 @@ public static class TensorUtilities
     /// <summary>
     /// Gets the set of strides that can be used to calculate the offset of n-dimensions in a 1-dimensional layout.
     /// </summary>
-    public static T[] GetDefaultStridesGeneric<T>(ReadOnlySpan<T> dimensions)
+    public static T[] GetDefaultStridesGeneric<T>(ReadOnlySpan<T> dimensions, bool postOpt = true)
         where T : struct, ISignedNumber<T>
     {
         if (dimensions.IsEmpty)
@@ -131,11 +131,14 @@ public static class TensorUtilities
         }
 
         // Post process: replace the stride with 0 if the dimension is 1.
-        for (int i = 0; i < strides.Length; i++)
+        if (postOpt)
         {
-            if (dimensions[i] == T.One)
+            for (int i = 0; i < strides.Length; i++)
             {
-                strides[i] = T.Zero;
+                if (dimensions[i] == T.One)
+                {
+                    strides[i] = T.Zero;
+                }
             }
         }
 
@@ -155,7 +158,7 @@ public static class TensorUtilities
     /// <summary>
     /// get strides.
     /// </summary>
-    public static Dimension[] GetDefaultStrides(ReadOnlySpan<Dimension> dimensions)
+    public static Dimension[] GetDefaultStrides(ReadOnlySpan<Dimension> dimensions, bool postOpt = true)
     {
         if (dimensions.IsEmpty)
         {
@@ -172,9 +175,12 @@ public static class TensorUtilities
         }
 
         // Post process: replace the stride with 0 if the dimension is 1.
-        for (int i = 0; i < strides.Length; i++)
+        if (postOpt)
         {
-            strides[i] = Dimension.Select(dimensions[i], Dimension.One, Dimension.Zero, strides[i]);
+            for (int i = 0; i < strides.Length; i++)
+            {
+                strides[i] = Dimension.Select(dimensions[i], Dimension.One, Dimension.Zero, strides[i]);
+            }
         }
 
         return strides;

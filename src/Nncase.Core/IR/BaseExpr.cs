@@ -27,8 +27,6 @@ public class IRMetadata
     public IReadOnlyList<string>? OutputNames { get; set; }
 
     public ValueRange<double>? Range { get; set; }
-
-    public int ParameterSize { get; set; }
 }
 
 /// <summary>
