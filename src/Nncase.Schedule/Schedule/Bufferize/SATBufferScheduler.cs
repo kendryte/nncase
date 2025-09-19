@@ -51,6 +51,12 @@ public sealed class SATBufferScheduler : BufferScheduler
             bufferId++;
         }
 
+        if (boxs.Count == 0)
+        {
+            memoryPoolEnd = options.StartAddress;
+            return true;
+        }
+
         var memPoolEndVar = model.NewIntVar(0, maxMemoryPoolEnd, nameof(maxMemoryPoolEnd));
         model.AddMaxEquality(memPoolEndVar, yEnds);
         model.Minimize(memPoolEndVar);
