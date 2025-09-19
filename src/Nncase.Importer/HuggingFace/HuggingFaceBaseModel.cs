@@ -921,43 +921,23 @@ public abstract class HuggingFaceModel
             inputEmbeds = Embedding(inputIds, embedTokensWeight, padding_idx);
         }
 
-        var hiddenStates = inputEmbeds;
+        // Notice: The type of inputEmbeds is same as safetensors' dtype.
+        // Here, we will cast it to the type defined by `HuggingFaceOptions.TensorType`.
+        Expr hiddenStates;
+        if (ImportOptions.HuggingFaceOptions.TensorType == "default")
+        {
+            hiddenStates = inputEmbeds;
+        }
+        else
+        {
+            hiddenStates = IR.F.Tensors.Cast(inputEmbeds, HuggingFaceUtils.Str2Dtype(ImportOptions.HuggingFaceOptions.TensorType)).With(metadata: new IRMetadata() { OutputNames = new[] { "embd cast" } });
+        }
 
-        // if (useCache == true && pastKeyValues == null)
-        // {
-        //     pastKeyValues = new HuggingFaceUtils.DynamicCache();
-        // }
-
-        // if (cachePosition == null)
-        // {
-        //     if (pastKeyValues != null)
-        //     {
-        //         var pastSeenTokens = pastKeyValues.GetSeqLength();
-        //         int sequenceLength =
-        //             inputEmbeds.CheckedShape[1].FixedValue;
-        //         var cachePositionList = Enumerable.Range(pastSeenTokens, pastSeenTokens + sequenceLength).ToArray();
-        //         cachePosition = Tensor.FromArray(cachePositionList);
-        //     }
-        // }
-        //
-        // TODO : _update_casualMask
-        // casualMask = self._update_casualMask(
-        //     attention_mask, inputs_embeds, cache_position, past_key_values, output_attentions
-        // )
-        // Call? casualMask = null;
         var (invFreq, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
         var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreq, attentionScaling);
 
-        // var allHiddenStates = new List<Expr>();
-        // var allSelfAttns = new List<Expr>();
-        // var allKVcaches = new List<Expr>();
-        // Expr? lastHiddenStates = null;
-        // Expr? allSelfAttns = null;
         Expr? allHiddenStates = null;
 
-        // Expr? allSelfAttns = null;
-        // Expr? allKVcaches = null;
-        // _ = new List<Tuple<Call, Call>>();
         for (int i = 0; i < (int)(long)Context!.Config!["num_hidden_layers"]; i++)
         {
             if (Context.ImportOptions!.HuggingFaceOptions.OutputHiddenStates)
@@ -998,80 +978,6 @@ public abstract class HuggingFaceModel
         // return Tuple.Create(lastHiddenStates, allSelfAttns, allKVcaches);
     }
 
-    // private IR.Tuple SdpaAttention(
-    //     Call query,
-    //     Call key,
-    //     Call value,
-    //     Expr? attentionMask,
-    //     float scaling,
-    //     bool isCausal,
-    //     Expr seqLen)
-    // {
-    //     /*
-    //      * def scaled_dot_product_attention(query, key, value, attn_mask=None, dropout_p=0.0,
-    //            is_causal=False, scale=None, enable_gqa=False) -> torch.Tensor:
-    //            L, S = query.size(-2), key.size(-2)
-    //            scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
-    //            attn_bias = torch.zeros(L, S, dtype=query.dtype)
-    //            if is_causal:
-    //                assert attn_mask is None
-    //                temp_mask = torch.ones(L, S, dtype=torch.bool).tril(diagonal=0)
-    //                attn_bias.masked_fill_(temp_mask.logical_not(), float("-inf"))
-    //                attn_bias.to(query.dtype)
-    //            if attn_mask is not None:
-    //                if attn_mask.dtype == torch.bool:
-    //                    attn_bias.masked_fill_(attn_mask.logical_not(), float("-inf"))
-    //                else:
-    //                    attn_bias += attn_mask
-    //            if enable_gqa:
-    //                key = key.repeat_interleave(query.size(-3)//key.size(-3), -3)
-    //                value = value.repeat_interleave(query.size(-3)//value.size(-3), -3)
-    //            attn_weight = query @ key.transpose(-2, -1) * scale_factor
-    //            attn_weight += attn_bias
-    //            attn_weight = torch.softmax(attn_weight, dim=-1)
-    //            attn_weight = torch.dropout(attn_weight, dropout_p, train=True)
-    //            return attn_weight @ value
-    //      */
-    //     var numKVGroups = (long)Context!.Config!["num_attention_heads"] / (long)Context.Config!["num_key_value_heads"];
-    //     var keyStates = RepeatKV(key, numKVGroups);
-    //     var valueStates = RepeatKV(value, numKVGroups);
-    //     // var scalingExpr = Cast(Tensor.FromScalar(scaling), query.CheckedDataType);
-    //     var casualMask = attentionMask;
-    //     if (attentionMask != null)
-    //     {
-    //         // casualMask
-    //         casualMask = Slice(
-    //            casualMask!,
-    //            new[] { 0L },
-    //            Stack(new IR.Tuple(ShapeOf(keyStates)[-2]), 0),
-    //            new[] { -1L },
-    //            new[] { 1L });
-    //     }
-    //     // if (isCausal == null)
-    //     // {
-    //     isCausal = if (casualMask == null && seqLen > 1) true else false
-    //     // }
-    //     var (l, s) = (ShapeOf(query)[-2], ShapeOf(key)[-2]);
-    //     var scaleFactor = 1.0f / F.Math.Sqrt(Cast(ShapeOf(query)[-1], query.CheckedDataType));
-    //     var attnBias = (Call)F.Tensors.Broadcast(Tensor.FromScalar(0f), F.Tensors.Stack(new IR.Tuple(l, s), 0L));
-    //     // if (isCausal == true)
-    //     // {
-    //     //     var tempMask = (Call)Tensor.FromScalar(0f, new RankedShape(l, s));
-    //     // }
-    //     if (attentionMask != null)
-    //     {
-    //         attnBias = Binary(BinaryOp.Add, attnBias, attentionMask);
-    //     }
-    //     var attnWeight =
-    //         IR.F.Math.MatMul(
-    //             queryStates,
-    //             Transpose(keyStates, ShapeExprUtility.GetPermutation(keyStates, [-2, -1]))) * scaleFactor;
-    //     attnWeight += attnBias;
-    //     attnWeight = Softmax(attnWeight, -1L);
-    //     var attnOutput = F.Math.MatMul(attnWeight, valueStates);
-    //     attnOutput = Transpose(attnOutput, ShapeExprUtility.GetPermutation(attnOutput, [1, 2]));
-    //     return Tuple.Create(attnOutput, (Call)null);
-    // }
     public virtual void VisitForCausalLM()
     {
         if (Context!.ConstTensors == null)
