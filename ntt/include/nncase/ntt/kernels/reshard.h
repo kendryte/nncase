@@ -443,7 +443,6 @@ struct reshard_impl<SrcTensor, DestTensor> {
 
         // 2.3 compute Cartesian product of coords
         std::array<bool, mesh_type::shape.length()> candidates{};
-        bool found_candidates = false;
         std::array<size_t, mesh_type::rank()> current_coord{};
         auto compute_cartesian_product = [&](auto&& self, auto axis_const) -> void {
             constexpr size_t axis = decltype(axis_const)::value;
@@ -454,7 +453,6 @@ struct reshard_impl<SrcTensor, DestTensor> {
                 });
                 size_t linear_idx = linear_offset(coord, mesh_type::shape);
                 candidates[linear_idx] = true;
-                found_candidates = true;
                 return;
             } else {
                 const auto& coord = std::get<axis>(coords);
