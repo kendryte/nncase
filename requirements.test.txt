@@ -20,3 +20,4 @@ tabulate
 transformers==4.52.4
 accelerate>=0.26.0
 ml-dtypes
+compressed_tensors
