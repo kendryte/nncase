@@ -33,11 +33,19 @@ public static class Affine
     public static AffineDivBinary FloorDiv(this AffineExpr lhs, AffineSymbol rhs) =>
         new AffineDivBinary(AffineDivBinaryOp.FloorDiv, lhs, rhs);
 
-    public static string ToString(AffineDivBinaryOp binaryOp) => binaryOp switch
+    public static string ToString(AffineDivBinaryOp binaryOp, AffineExpr lhs, AffineExpr rhs) => binaryOp switch
     {
-        AffineDivBinaryOp.FloorDiv => "floordiv",
-        AffineDivBinaryOp.CeilDiv => "ceildiv",
-        AffineDivBinaryOp.Mod => "%",
+        AffineDivBinaryOp.FloorDiv => $"floor({lhs} / {rhs})",
+        AffineDivBinaryOp.CeilDiv => $"ceil({lhs} / {rhs})",
+        AffineDivBinaryOp.Mod => $"({lhs} % {rhs})",
+        _ => throw new ArgumentOutOfRangeException(nameof(binaryOp)),
+    };
+
+    public static string GetDisplayString(AffineDivBinaryOp binaryOp, AffineExpr lhs, AffineExpr rhs, ReadOnlySpan<AffineSymbol> symbols) => binaryOp switch
+    {
+        AffineDivBinaryOp.FloorDiv => $"floor({lhs.GetDisplayString(symbols)} / {rhs.GetDisplayString(symbols)})",
+        AffineDivBinaryOp.CeilDiv => $"ceil({lhs.GetDisplayString(symbols)} / {rhs.GetDisplayString(symbols)})",
+        AffineDivBinaryOp.Mod => $"({lhs.GetDisplayString(symbols)} % {rhs.GetDisplayString(symbols)})",
         _ => throw new ArgumentOutOfRangeException(nameof(binaryOp)),
     };
 

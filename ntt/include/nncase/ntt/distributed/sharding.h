@@ -22,8 +22,7 @@
 #include <type_traits>
 
 namespace nncase::ntt::distributed {
-template <class T>
-concept Sharding = requires(T t) {
+template <class T> concept Sharding = requires(T t) {
     typename T::mesh_type;
     typename T::axis_policies_type;
 };
@@ -165,16 +164,6 @@ constexpr auto make_sharding(const AxisPolicies &...axis_policies) noexcept {
 }
 
 namespace detail {
-template <size_t Axis, class Sharding, class GlobalShape>
-constexpr auto get_local_shard_dim(const Sharding &sharding,
-                                   const GlobalShape &shape) noexcept {
-    static_assert(GlobalShape::rank() == Sharding::rank(), "Invalid sharding.");
-
-    auto local_dim = shape.at(Axis);
-    return std::get<Axis>(sharding.axis_policies)
-        .template local_dim<typename Sharding::mesh_type>(local_dim);
-}
-
 template <class Sharding, class GlobalShape, size_t... Ids>
 constexpr bool is_divisible(const Sharding &sharding, const GlobalShape &shape,
                             std::index_sequence<Ids...>) noexcept {
@@ -182,15 +171,6 @@ constexpr bool is_divisible(const Sharding &sharding, const GlobalShape &shape,
                  .template is_divisible<typename Sharding::mesh_type>(
                      shape.at(Ids))) &&
             ...);
-}
-
-template <class Sharding, Shape GlobalShape>
-constexpr auto local_shard_shape(const Sharding &sharding,
-                                 const GlobalShape &shape) noexcept {
-    auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
-        return make_ranked_shape(get_local_shard_dim<Axes>(sharding, shape)...);
-    };
-    return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
 }
 
 template <Sharding TSharding>
@@ -248,4 +228,25 @@ constexpr auto tensor_axes_of_non_split_shard_policies() noexcept {
     });
 }
 } // namespace detail
+
+template <size_t Axis, class TSharding, class GlobalShape>
+constexpr auto local_shard_dim(const TSharding &sharding,
+                               const GlobalShape &global_shape) noexcept {
+    static_assert(GlobalShape::rank() == TSharding::rank(), "Invalid sharding.");
+
+    using mesh_type = typename TSharding::mesh_type;
+    const auto local_index = mesh_type::local_index();
+    return std::get<Axis>(sharding.axis_policies)
+        .template shard_dim<typename TSharding::mesh_type>(global_shape[fixed_dim_v<Axis>], local_index);
+}
+
+template <class Sharding, Shape GlobalShape>
+constexpr auto local_shard_shape(const Sharding &sharding,
+                                 const GlobalShape &shape) noexcept {
+    auto get_dims = [&]<size_t... Axes>(std::index_sequence<Axes...>) {
+        return make_ranked_shape(local_shard_dim<Axes>(sharding, shape)...);
+    };
+    return get_dims(std::make_index_sequence<GlobalShape::rank()>{});
+}
+
 } // namespace nncase::ntt::distributed

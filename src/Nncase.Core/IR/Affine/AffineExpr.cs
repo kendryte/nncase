@@ -65,7 +65,7 @@ public abstract class AffineExpr : BaseExpr
             AffineSymbol e => e.ToString(),
             AffineAddBinary e => $"({e.Lhs.GetDisplayString(symbols)} + {e.Rhs.GetDisplayString(symbols)})",
             AffineMulBinary e => $"({e.Lhs.GetDisplayString(symbols)} * {e.Rhs.GetDisplayString(symbols)})",
-            AffineDivBinary e => $"({e.Lhs.GetDisplayString(symbols)} {F.Affine.ToString(e.BinaryOp)} {e.Rhs.GetDisplayString(symbols)})",
+            AffineDivBinary e => F.Affine.GetDisplayString(e.BinaryOp, e.Lhs, e.Rhs, symbols),
             _ => throw new UnreachableException(),
         };
     }
@@ -282,5 +282,5 @@ public sealed class AffineDivBinary : AffineExpr
 
     public AffineDivBinary With(AffineDivBinaryOp? binaryOp = null, AffineExpr? lhs = null, AffineExpr? rhs = null) => new AffineDivBinary(binaryOp ?? BinaryOp, lhs ?? Lhs, rhs ?? Rhs);
 
-    public override string ToString() => $"({Lhs} {F.Affine.ToString(BinaryOp)} {Rhs})";
+    public override string ToString() => F.Affine.ToString(BinaryOp, Lhs, Rhs);
 }

@@ -53,7 +53,7 @@ public sealed class TieredTileGraphBuilder : ExprVisitor<Unit, Unit>
         */
         var bufferShapeValues = current.Buffers.AsValueEnumerable().Select(b => TilingUtilities.GetBufferShape(b, true).ToValueArray()).ToArray();
         var bufferShapes = current.Buffers.AsValueEnumerable().Select(b => TilingUtilities.GetBufferShape(b, false)).ToArray();
-        var bufferExprs = Enumerable.Range(0, current.Buffers.Length).Select(current.GetArgument).ToArray();
+        var bufferRuntimeShapes = current.Buffers.AsValueEnumerable().Select(TilingUtilities.GetBufferRuntimeShape).ToArray();
         Isl.set[] bufferDomains;
         HashSet<DimVar> dimVars = new();
         {
@@ -63,7 +63,7 @@ public sealed class TieredTileGraphBuilder : ExprVisitor<Unit, Unit>
         }
 
         var accessMaps = current.AccessMaps.AsValueEnumerable().Select(AffineUtility.AsMap).ToArray();
-        var (domain, domainDynamic, domainBoundValues, domainBoundExprs) = TilingUtilities.InferDomainBounds(bufferExprs, bufferDomains, accessMaps, dimVars);
+        var (domain, domainDynamic, domainBoundValues, domainBoundExprs) = TilingUtilities.InferDomainBounds(bufferRuntimeShapes, bufferDomains, accessMaps, dimVars);
 
         var copId = _opId++;
         var domainDims = current.AccessMaps[0].Domains.Length;

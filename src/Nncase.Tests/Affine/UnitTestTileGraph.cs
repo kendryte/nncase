@@ -30,9 +30,10 @@ public sealed class UnitTestTileGraph : TestClassBase
     public static readonly TheoryData<Func<Function>, (IntMergePoint, bool)[], Action<TieredTileGraph>, int, int> MergeTileGraphDatas = new()
     {
         { FunctionSamples.GetMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(2, 1, 0), true), }, MergeTileGraphCheckerDefault, 1, 1 },
-        { FunctionSamples.GetMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(2, 1, 1), true), (new(2, 0, 1), true), (new(2, 0, 0), false), (new(1, 0, 0), true) }, MergeTileGraphChecker0, 2, 0 },
-        { FunctionSamples.GetMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(1, 0, 1), true), (new(2, 0, 1), false), (new(2, 1, 1), true), }, MergeTileGraphCheckerDefault, 2, 1 },
-        { FunctionSamples.GetVectorizeMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(2, 0, 1), true), (new(2, 1, 1), true), (new(2, 0, 0), true), (new(2, 1, 0), true), (new(3, 2, 1), true), (new(5, 4, 1), true) }, MergeTileGraphChecker2, 2, 2 },
+        { FunctionSamples.GetMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(2, 1, 1), true), (new(2, 0, 1), true), (new(2, 0, 0), false), (new(1, 0, 0), true) }, MergeTileGraphChecker0, 2, 2 },
+        { FunctionSamples.GetMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(1, 0, 1), true), (new(2, 0, 1), false), (new(2, 1, 1), true), }, MergeTileGraphCheckerDefault, 2, 3 },
+        { FunctionSamples.GetVectorizeMatmulExpMatmul, new (IntMergePoint, bool)[] { (new(2, 0, 1), true), (new(2, 1, 1), true), (new(2, 0, 0), true), (new(2, 1, 0), true), (new(3, 2, 1), true), (new(5, 4, 1), true) }, MergeTileGraphChecker2, 2, 4 },
+        { FunctionSamples.GetDynamicVectorizedSwish, new (IntMergePoint, bool)[] { (new(2, 1, 0), true), (new(2, 0, 0), true) }, MergeTileGraphCheckerDefault, 1, 5 },
     };
 
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BaseExpr>, int, int> SolveTileGraphDatas = new()
@@ -313,9 +314,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         Dumpper.DumpIR(post, $"post{count}");
 #endif
 
-        var builder = new TieredTileGraphBuilder(levelCount);
-        builder.Visit(post);
-        var tileGraph = builder.RootGraph;
+        var tileGraph = TieredTileGraphBuilder.Build(post, levelCount, out var exprMemo);
 #if DEBUG
         tileGraph.Dump($"g{count}");
 #endif

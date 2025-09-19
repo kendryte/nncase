@@ -24,11 +24,8 @@ public static class GraphExtensions
                     {
                         var name = $"Op{tg.OpId}@L{tg.Level}";
                         arg.GraphFormat.Label = name;
-                        if (tg.DomainRelation is not null)
-                        {
-                            arg.GraphFormat.Label += System.Environment.NewLine + tg.DomainRelation.ToString();
-                        }
-
+                        arg.GraphFormat.Label += System.Environment.NewLine + tg.DomainRelation.ToString();
+                        arg.GraphFormat.Label += System.Environment.NewLine + $"DomainBounds: [{string.Join(", ", tg.DomainBoundExprs)}]";
                         arg.GraphFormat.LabelLocation = QuikGraph.Graphviz.Dot.GraphvizLabelLocation.T;
                         arg.GraphFormat.LabelJustification = QuikGraph.Graphviz.Dot.GraphvizLabelJustification.L;
                         arg.GraphFormat.BackgroundColor = _colors[tg.OpId];
@@ -39,11 +36,7 @@ public static class GraphExtensions
                 {
                     var parentCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
                     var title = arg.Vertex.ToString();
-                    if (arg.Vertex.DomainRelation is not null)
-                    {
-                        title += System.Environment.NewLine + arg.Vertex.DomainRelation.ToString();
-                    }
-
+                    title += System.Environment.NewLine + arg.Vertex.DomainRelation.ToString();
                     parentCell.Cells.Add(new() { Text = title, Port = "Title" });
                     var childCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
                     parentCell.Cells.Add(childCell);
@@ -61,7 +54,7 @@ public static class GraphExtensions
 
                     for (int i = 0; i < arg.Vertex.DomainBounds.Length; i++)
                     {
-                        boundCell.Cells.Add(new() { Text = $"d{i}: {arg.Vertex.DomainBounds[i]}" });
+                        boundCell.Cells.Add(new() { Text = $"d{i}: {arg.Vertex.DomainBounds[i]} : {arg.Vertex.DomainBoundExprs[i]}" });
                     }
 
                     arg.VertexFormat.Record.Cells.Add(parentCell);

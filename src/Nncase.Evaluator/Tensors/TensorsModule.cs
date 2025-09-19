@@ -50,5 +50,6 @@ internal class TensorsModule : IApplicationPart
         registrator.RegisterManyInterface<PackEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<VectorizeMaskEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<UnpackEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<LocalShardDimEvaluator>(reuse: Reuse.Singleton);
     }
 }

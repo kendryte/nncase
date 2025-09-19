@@ -478,15 +478,7 @@ public class GraphTiler
                 var maxAlign = result.ScheduleBuffers();
                 var bodyBuilder = T.Sequential();
                 var initOffsets = Enumerable.Repeat(new DimConst(0), primTree.DomainBoundExprs.Length).ToArray();
-                var initBounds = primTree.DomainBoundExprs.Select(e => e switch
-                {
-                    // just clone the bounds avoid expr was modified by ShapeOfRewriter.
-                    DimAt { Shape: ShapeOf shapeof } at => new DimAt(new ShapeOf(shapeof.Value), at.Index)
-                    {
-                        Metadata = at.Metadata,
-                    },
-                    _ => e,
-                }).ToArray();
+                var initBounds = primTree.DomainBoundExprs.ToArray();
                 result.Visit(primTree, new(bodyBuilder, initOffsets, initBounds));
                 var parameters = inputBids.Select(k => (IVar)result.PrimBufferMemo[k]).Concat(
                     dynamicDimVars.Select(v => (IVar)v.With())).Concat(
@@ -494,9 +486,10 @@ public class GraphTiler
                 var funcBuilder = T.PrimFunc(funcName, moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
                 {
-                    var gridBufferToVarMap = inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index)).Zip(parameters.Where(p => p is not DimVar)).ToDictionary(p => p.First, p => (Expr)p.Second, (IEqualityComparer<Expr>)ReferenceEqualityComparer.Instance);
-                    var mutator = new AtShapeOfRewriter(gridBufferToVarMap);
-                    mutator.Visit(primFunc, default);
+                    // note noneed to rewrite shapeof, because we don't use shapeof new.
+                    // var gridBufferToVarMap = inputBids.Concat(outputBids).Select(bid => bid.Node.Grid.GetArgument(bid.Index)).Zip(parameters.Where(p => p is not DimVar)).ToDictionary(p => p.First, p => (Expr)p.Second, (IEqualityComparer<Expr>)ReferenceEqualityComparer.Instance);
+                    // var mutator = new AtShapeOfRewriter(gridBufferToVarMap);
+                    // mutator.Visit(primFunc, default);
                 }
 
                 primFunc.SchedResult.IsScheduled = true; // avoid buffersize pass schedule it again.
