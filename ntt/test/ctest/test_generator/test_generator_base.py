@@ -184,10 +184,23 @@ class BaseTestGenerator:
             code.append(f"")
             code.append(f"auto {var_name} = ntt::make_tensor_view_from_address<{element_cpp_type}>(")
             code.append(f"    big_tensor{name_suffix}.elements().data(),")
-            code.append(f"    {shape_expr}")
+            code.append(f"    {shape_expr},")
+            # Use canonicalized strides so that any dimension with size 1 gets stride 0.
+            # This ensures correct semantics when the view shape has broadcastable dims.
+            code.append(f"    {self._build_view_strides(shape_expr, f'big_tensor{name_suffix}.strides()')}")
             code.append(f"    );")
 
         return code
+
+    def _build_view_strides(self, shape_expr: str, base_strides_expr: str) -> str:
+        """
+        Build the strides expression for a tensor view. Any dimension with size 1
+        in the target view shape must have a stride of 0 to support broadcasting semantics.
+
+        We achieve this by invoking `ntt::canonicalize_strides(view_shape, base_strides)`
+        in the generated C++.
+        """
+        return f"ntt::canonicalize_strides({shape_expr}, {base_strides_expr})"
 
 
     def generate_demension_constants(self, dim_names, dims, datatype, P):
