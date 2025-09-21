@@ -245,9 +245,9 @@ bool are_close(T a, T b,[[maybe_unused]] float ulp_tlrce = 1, double abs_tol = 1
         if (std::fabs(double(a - b)) <= ulp_tlrce*double(ulp(b)) || std::fabs(double(a - b)) <= ulp_tlrce*double(ulp(a))) {
             return true;
         }
-        std::cout << "std::fabs(a-b) " << std::fabs(double(a-b))  <<std::endl;
-        std::cout << "ulp(b):" <<(double)ulp(b) << "   ulp(a)" << (double)ulp(a) << std::endl;
-        std::cout << "ulp tolerance: " << (double)ulp(b) * ulp_tlrce << "\n";
+        // std::cout << "std::fabs(a-b) " << std::fabs(double(a-b))  <<std::endl;
+        // std::cout << "ulp(b):" <<(double)ulp(b) << "   ulp(a)" << (double)ulp(a) << std::endl;
+        // std::cout << "ulp tolerance: " << (double)ulp(b) * ulp_tlrce << "\n";
     }
     
 

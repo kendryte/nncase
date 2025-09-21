@@ -30,7 +30,7 @@ def test_qwen3_fp8_static(request):
     shape_bucket_fix_var_map = { "batch_size"=1 }
     
     [huggingface_options]
-    output_logits = false
+    output_logits = true
     output_hidden_states = false
     num_layers = -1
     tensor_type = "float16"
