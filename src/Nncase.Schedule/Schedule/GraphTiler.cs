@@ -86,12 +86,14 @@ public class GraphTiler
         // 5. add the memory schedule constraints, each level has own memory plan schedule.
         // 5.1. sum(place[cl,b,ci,sl]*size[cl,b,ci], sl), sl = [0,toplevel)
         var levelBufferSizes = new Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>>();
+        var levelBufferShapes = new Dictionary<int, Dictionary<NodeWithBuffer, IntExpr[]>>();
         var levelBufferLifeness = new Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>>();
         var levelBufferLifenessConstraints = new Dictionary<int, Constraint[]>();
         for (int sl = 0; sl < levelCount; sl++)
         {
             var nodeBufferSizes = levelBufferSizes[sl] = new();
             var nodeBufferLiveness = levelBufferLifeness[sl] = new();
+            var nodeBufferShapes = levelBufferShapes[sl] = new();
             var beginTime = int.MaxValue;
             var endTime = int.MinValue;
 
@@ -107,6 +109,7 @@ public class GraphTiler
 
                     extents.Add(solver.MakeProd(bufferInfo.Places[ci][sl], bufferInfo.Sizes[ci]));
                     nodeBufferSizes[nodeBuffer] = solver.MakeSum(extents);
+                    nodeBufferShapes[nodeBuffer] = bufferInfo.Shapes[ci];
                     nodeBufferLiveness[nodeBuffer] = bufferInfo.Liveness;
                 }
             }
@@ -260,11 +263,16 @@ public class GraphTiler
             }
         }
 
-        foreach (var (_, nodeBufferSizes) in levelBufferSizes)
+        foreach (var (level, nodeBufferSizes) in levelBufferSizes)
         {
-            foreach (var (_, bufferSize) in nodeBufferSizes)
+            foreach (var (nodeBuffer, bufferSize) in nodeBufferSizes)
             {
                 collector.Add(bufferSize.Var());
+
+                foreach (var shape in levelBufferShapes[level][nodeBuffer])
+                {
+                    collector.Add(shape.Var());
+                }
             }
         }
 
@@ -344,6 +352,21 @@ public class GraphTiler
         var sol = collector.Solution(collector.SolutionCount() - 1);
 
         var levelBufferSizesAssgin = levelBufferSizes.ToDictionary(kv => kv.Key, kv => kv.Value.ToDictionary(p => p.Key, p => sol.Value(p.Value.Var())));
+        var levelBufferInfos = new Dictionary<int, Dictionary<NodeWithBuffer, NodeWithBufferInfo>>();
+        foreach (var (level, nodeBufferSizes) in levelBufferSizes)
+        {
+            var nodeBufferInfos = new Dictionary<NodeWithBuffer, NodeWithBufferInfo>();
+            foreach (var (nodeBuffer, sizeVar) in nodeBufferSizes)
+            {
+                var liveness = levelBufferLifeness[level][nodeBuffer];
+                var shapes = levelBufferShapes[level][nodeBuffer].Select(s => sol.Value(s.Var())).ToArray();
+                var strides = TensorUtilities.GetDefaultStrides(shapes);
+                nodeBufferInfos[nodeBuffer] = new NodeWithBufferInfo(sol.Value(sizeVar.Var()), liveness, shapes, strides);
+            }
+
+            levelBufferInfos[level] = nodeBufferInfos;
+        }
+
         var opNodeMemoAssgin = opNodeMemo.ToDictionary(kv => kv.Key, kv => new OpNodeInfo<long>(kv.Value.Maps, sol.Value(kv.Value.Shapes), sol.Value(kv.Value.Sizes)));
         var tileNodeMemoAssgin = tileNodeMemo.ToDictionary(kv => kv.Key, kv => new TileNodeInfo<long>(sol.Value(kv.Value.TripCounts), sol.Value(kv.Value.BackWardExtents), kv.Value.DefUseMap, kv.Value.BufferInfoMap.ToDictionary(p => p.Key, p => new TileNodeBufferInfo<long>(p.Value.Liveness, p.Value.Map, sol.Value(p.Value.Places), sol.Value(p.Value.Shapes), sol.Value(p.Value.Sizes), sol.Value(p.Value.Trips), p.Value.Mask))));
         var tileableNodeMemoAssgin = tileableNodeMemo.ToDictionary(kv => kv.Key, kv => new DomainInfo<long>(sol.Value(kv.Value.TileVars), sol.Value(kv.Value.ForwardExtents), kv.Value.DimsMap));
@@ -355,7 +378,7 @@ public class GraphTiler
             DumpAssgin(primTree, new TreeSolverPythonPrinter(sol, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferLifenessConstraints, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
         }
 
-        return new TreeSolveResult(bufferGraphMemo[primTree.Wrapped], sol.ObjectiveValue(), levelBufferSizesAssgin, levelBufferLifeness, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions, moduleKind);
+        return new TreeSolveResult(bufferGraphMemo[primTree.Wrapped], sol.ObjectiveValue(), levelBufferInfos, opNodeMemoAssgin, tileNodeMemoAssgin, tileableNodeMemoAssgin, targetOptions, moduleKind);
     }
 
     public static void DumpAssgin(ITreeNode tree, TreeSolverPythonPrinter printer, Dictionary<OpNode, Constraint[]> tileVarConstraints, Dictionary<int, Constraint[]> lowestStoreBufferNumsConstrains, Dictionary<int, Constraint[]> levelBufferLifenessConstraints, Dictionary<int, Dictionary<NodeWithBuffer, IntExpr>> levelBufferSizes, IntExpr[] levelDataReads, IntExpr[] levelDataWrites, IntExpr[] memoryCycles, IntExpr computeCycles, IntVar totalCycles)

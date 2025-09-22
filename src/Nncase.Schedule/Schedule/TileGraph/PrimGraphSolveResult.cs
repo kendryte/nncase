@@ -22,20 +22,23 @@ public record class NodeWithBuffer(TileNode Node, BufferIdentity Id)
     public long MaxSize => TensorUtilities.GetProduct(Id.Node.BufferShapes[Id.Index].ToArray()) * Id.Node.GetBufferElemSize(Id.Index);
 }
 
+public record NodeWithBufferInfo(long Size, Tuple<int, int> Liveness, long[] Shape, long[] Strides)
+{
+    public ulong Offset { get; set; } = ulong.MaxValue;
+}
+
 public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<TreeSolveResult.Context, Unit>
 {
     private readonly Dictionary<ITileable, Dictionary<BufferIdentity, SubViewInfo>> _subViewMemo;
 
-    public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, long>> levelNodeBufferBoxs, Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> levelTreeBufferLifeness, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, INTTTargetOptions targetOptions, string moduleKind)
+    public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, NodeWithBufferInfo>> levelNodeBufferInfos, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, INTTTargetOptions targetOptions, string moduleKind)
         : base(null!, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         PrimBufferGraph = primBufferGraph;
         (Inputs, Outputs) = primBufferGraph.GetInputsOutputs(primBufferGraph.Parent!);
         ObjectiveValue = objectiveValue;
-        LevelBufferSizes = levelNodeBufferBoxs;
-        LevelBufferLifeness = levelTreeBufferLifeness;
+        LevelNodeBufferInfos = levelNodeBufferInfos;
         ModuleKind = moduleKind;
-        LevelBufferOffsets = new();
         PrimBufferMemo = new();
         _subViewMemo = new();
     }
@@ -53,11 +56,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
     public long ObjectiveValue { get; }
 
-    public Dictionary<int, Dictionary<NodeWithBuffer, long>> LevelBufferSizes { get; }
-
-    public Dictionary<int, Dictionary<NodeWithBuffer, ulong>> LevelBufferOffsets { get; }
-
-    public Dictionary<int, Dictionary<NodeWithBuffer, Tuple<int, int>>> LevelBufferLifeness { get; }
+    public Dictionary<int, Dictionary<NodeWithBuffer, NodeWithBufferInfo>> LevelNodeBufferInfos { get; }
 
     public string ModuleKind { get; }
 
@@ -152,6 +151,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             Dimension stop = currentExtents[i];
             Dimension stride = nodeMemo.BackWardExtents[0][i] / TileableNodeMemo[value].TileVars[i];
             loopBuilders[i] = T.Serial(out var loopVar, (0L, stop, stride), $"d{i}_Op{value.OpId}_L{value.Level}");
+            loopVar.Metadata.Range = new(0, nodeMemo.BackWardExtents[0][i]);
             loopVars[i] = loopVar;
             paramDimMap.Add($"d{i}_out", loopVar);
             {
@@ -221,7 +221,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                             else
                             {
                                 // for device we should use copy.
-                                var offset = LevelBufferOffsets[sl][new(value, bid)];
+                                var offset = LevelNodeBufferInfos[sl][new(value, bid)].Offset;
                                 var dtype = viewInfo.Buffer.CheckedDataType;
                                 var physicalBuffer = new PhysicalBuffer(dtype.SizeInBytes, offset, bufferInfo.Sizes[i], MemoryLocation.Data, 0);
                                 subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(physicalBuffer), viewInfo.Shape.ToArray(), TensorUtilities.GetDefaultStrides(bufferInfo.Shapes[i].Select(i => (Dimension)i).ToArray()), distributedType);
@@ -351,19 +351,18 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     public long ScheduleBuffers()
     {
         var maxAlign = 0L;
-        foreach (var (level, nodeBufferSizes) in LevelBufferSizes)
+        foreach (var (level, nodeBufferInfos) in LevelNodeBufferInfos)
         {
-            var nodeBufferOffsets = LevelBufferOffsets[level] = new();
             var model = new CpModel();
             var rectangles = new Dictionary<NodeWithBuffer, (IntervalVar XInterval, IntervalVar YInterval)>();
             int count = 0;
             var cons = model.AddNoOverlap2D();
-            foreach (var (key, size) in nodeBufferSizes)
+            foreach (var (key, info) in nodeBufferInfos)
             {
-                if (size > 0)
+                if (info.Size > 0)
                 {
-                    var x = model.NewFixedSizeIntervalVar(LevelBufferLifeness[level][key].Item1, LevelBufferLifeness[level][key].Item2 - LevelBufferLifeness[level][key].Item1, $"x{count}");
-                    var ystart = model.NewIntVar(0, TargetOptions.MemoryCapacities[level] - size, $"ystart{count}");
+                    var x = model.NewFixedSizeIntervalVar(info.Liveness.Item1, info.Liveness.Item2 - info.Liveness.Item1, $"x{count}");
+                    var ystart = model.NewIntVar(0, TargetOptions.MemoryCapacities[level] - info.Size, $"ystart{count}");
                     var align = key.Id.Node.GetBufferElemSize(key.Id.Index);
                     if (ModuleKind == "xpu")
                     {
@@ -372,39 +371,12 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
                     maxAlign = Math.Max(maxAlign, align);
                     model.AddModuloEquality(0, ystart, align);
-                    var y = model.NewFixedSizeIntervalVar(ystart, size, $"y{count}");
+                    var y = model.NewFixedSizeIntervalVar(ystart, info.Size, $"y{count}");
                     cons.AddRectangle(x, y);
                     rectangles.Add(key, (x, y));
                     count++;
                 }
             }
-
-#if false
-            // process inplace buffer.
-            foreach (var (k, (x, y)) in rectangles)
-            {
-                var inplaceMemo = k.Id.Node.Op.GetInPlaceMemo();
-                if (!inplaceMemo.TryGetValue(k.Id.Index, out var sourceIndex))
-                {
-                    continue;
-                }
-
-                // 1. when source buffer is isolated. we can find it in rectangles.
-                foreach (var sourceKey in rectangles.Keys.Where(n => ReferenceEquals(n.Node, k.Node) && n.Id.Index == sourceIndex))
-                {
-                    model.Add(rectangles[sourceKey].YInterval.StartExpr() == y.StartExpr());
-                }
-
-                // 2. source buffer has been reused. we need find it in defuseMap firstly.
-                foreach (var (defId, _) in TileNodeMemo[k.Node].DefUseMap.Where(kv => ReferenceEquals(kv.Value.Node, k.Id.Node) && kv.Value.Index == sourceIndex))
-                {
-                    foreach (var defKey in rectangles.Keys.Where(n => ReferenceEquals(n.Node, k.Node) && n.Id == defId))
-                    {
-                        model.Add(rectangles[defKey].YInterval.StartExpr() == y.StartExpr());
-                    }
-                }
-            }
-#endif
 
             var solver = new CpSolver();
             var status = solver.Solve(model);
@@ -415,7 +387,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
             foreach (var (k, (_, y)) in rectangles)
             {
-                nodeBufferOffsets[k] = (ulong)solver.Value(y.StartExpr());
+                nodeBufferInfos[k].Offset = (ulong)solver.Value(y.StartExpr());
             }
         }
 
@@ -552,8 +524,11 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             if (storeLevel <= rootNode.Level)
             {
                 tensorType = new TensorType(tensorType.DType, shape); // according to subtensor shape.
-                var start = LevelBufferOffsets[storeLevel][new(node, bid)];
-                buffer = T.AttachBuffer(Tensor.FromPointer(start, tensorType.DType), tensorType, MemoryLocation.Cache, storeLevel, out _, $"{bid}");
+                var info = LevelNodeBufferInfos[storeLevel][new(node, bid)];
+                var alignment = tensorType.DType.SizeInBytes;
+                var strides = info.Strides.Select(i => (Dimension)i).ToArray(); // using fixed strides.
+                var physicalBuffer = new PhysicalBuffer(alignment, Tensor.FromPointer(info.Offset, tensorType.DType), info.Size, MemoryLocation.Cache, storeLevel);
+                buffer = new TIR.Buffer($"{bid}", tensorType.DType, new MemSpan(physicalBuffer), shape.Dimensions.ToArray(), strides, null);
                 innerAllocated = true;
             }
             else
