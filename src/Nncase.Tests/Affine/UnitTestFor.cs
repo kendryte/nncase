@@ -32,13 +32,25 @@ public class UnitTestFor
     [Fact]
     public void TestAffineMapInverse()
     {
-        // [d0,d1,d2] -> [d0, d2]
-        var write = AffineMap.FromCallable((dims, syms) => new AffineRange[] { new(dims[0].Offset, dims[0].Extent), new(dims[2].Offset, dims[2].Extent) }, 3, 0);
+        {
+            // [d0,d1,d2] -> [d0, d2]
+            var write = AffineMap.FromCallable((dims, syms) => new AffineRange[] { new(dims[0].Offset, dims[0].Extent), new(dims[2].Offset, dims[2].Extent) }, 3, 0);
 
-        var d = new AffineDim(0);
-        var rg = AffineUtility.Inverse<AffineDim>(write.Results[0].Offset, d, out var independentVar);
-        Assert.Equal(rg, new AffineDim(0));
-        Assert.Equal(independentVar, new AffineDim(0));
+            var d = new AffineDim(0);
+            var rg = AffineUtility.Inverse<AffineDim>(write.Results[0].Offset, d, out var independentVar);
+            Assert.Equal(rg, new AffineDim(0));
+            Assert.Equal(independentVar, new AffineDim(0));
+        }
+
+        {
+            // [d0] -> [d0 * 4] => [d0] -> [d0 / 4]
+            var write = AffineMap.FromCallable((dims, syms) => new AffineRange[] { new(dims[0].Offset * 4, dims[0].Extent) }, 1, 0);
+
+            var d = new AffineDim(0);
+            var rg = AffineUtility.Inverse<AffineDim>(write.Results[0].Offset, d, out var independentVar);
+            Assert.IsType<AffineDivBinary>(rg);
+            Assert.Equal(independentVar, new AffineDim(0));
+        }
     }
 
     [Fact]
