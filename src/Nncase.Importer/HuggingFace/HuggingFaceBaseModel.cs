@@ -399,6 +399,7 @@ public abstract class HuggingFaceModel
         else
         {
             var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 });
+            transposed_weight = IR.F.Tensors.Cast(transposed_weight, expr.CheckedDataType);
             var result = IR.F.Math.MatMul(expr, transposed_weight, expr.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
             if (bias != null)
             {
