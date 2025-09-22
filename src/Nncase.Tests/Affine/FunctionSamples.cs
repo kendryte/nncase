@@ -296,9 +296,9 @@ public static class FunctionSamples
         };
 
         var v1 = new Var("input", new TensorType(DataTypes.Float32, new RankedShape(32, 12, 4 * Dimension.CeilDiv(dim2, 4), dim3)));
-        var v2 = IR.F.Tensors.Pack(v1, [4], [2]); // {f32<4>[32,12,(ceil(dim2 / 4)),dim3], (S(0),B,B,B), [8@t,12,32,128]} , 
-        var v3 = IR.F.NN.Swish(v2); // {f32<4>[32,12,(ceil(dim2 / 4)),dim3], (S(0),B,B,B), [8@t,12,32,128]} , 
-        var v4 = IR.F.Tensors.Unpack(v3, [4], [2]); // {f32[32,12,(4 * ceil(dim2 / 4)),dim3], (S(0),B,B,B), [8@t,12,128,128]} , 
+        var v2 = IR.F.Tensors.Pack(v1, [4], [2]); // {f32<4>[32,12,(ceil(dim2 / 4)),dim3], (S(0),B,B,B), [8@t,12,32,128]} ,
+        var v3 = IR.F.NN.Swish(v2); // {f32<4>[32,12,(ceil(dim2 / 4)),dim3], (S(0),B,B,B), [8@t,12,32,128]} ,
+        var v4 = IR.F.Tensors.Unpack(v3, [4], [2]); // {f32[32,12,(4 * ceil(dim2 / 4)),dim3], (S(0),B,B,B), [8@t,12,128,128]} ,
         return new Function("main", CPUTarget.Kind, v4, [v1, dim2, dim3]);
     }
 }

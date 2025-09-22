@@ -179,7 +179,7 @@ public sealed class AffineMap : BaseExpr
 
                     seen[dim.Position] = true;
                     break;
-                case (AffineDivBinary { BinaryOp: AffineDivBinaryOp.FloorDiv, Lhs: AffineDim dim, Rhs: AffineConstant c }, AffineExtent extent) when dim.Position == extent.Position:
+                case (AffineDivBinary { BinaryOp: AffineDivBinaryOp.FloorDiv, Lhs: AffineDim dim, Rhs: AffineConstant }, AffineExtent extent) when dim.Position == extent.Position:
                     if (seen[dim.Position])
                     {
                         return false;
