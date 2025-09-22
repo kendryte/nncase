@@ -112,6 +112,10 @@ PYBIND11_MODULE(_nncase, m) {
             "num_layers", py::overload_cast<>(&huggingface_options::num_layers),
             py::overload_cast<int32_t>(&huggingface_options::num_layers))
         .def_property(
+            "tensor_type",
+            py::overload_cast<>(&huggingface_options::tensor_type),
+            py::overload_cast<std::string>(&huggingface_options::tensor_type))
+        .def_property(
             "attention_backend",
             py::overload_cast<>(&huggingface_options::attention_backend),
             py::overload_cast<huggingface_attenion_backend>(

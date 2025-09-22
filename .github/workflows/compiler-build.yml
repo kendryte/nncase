@@ -227,22 +227,6 @@ jobs:
       - name: Create Test Environment
         run: mkdir test_results
 
-      - name: Test
-        working-directory: ${{github.workspace}}
-        shell: bash
-        env:
-          NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
-          NNCASE_TILING_MAX_SOLUTIONS: 1
-        run: |
-          dotnet tool install --global dotnet-coverage
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
-          #dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_combine.xml pytest tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
-          #dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_model.xml pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
-          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/ncnn_basic.xml pytest tests/importer/ncnn_/basic/ --doctest-modules --junitxml=test_results/ncnn_basic.xml
-          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
-
       - name: Test LLM
         working-directory: ${{github.workspace}}
         shell: bash
@@ -251,8 +235,25 @@ jobs:
           NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
           NNCASE_TILING_MAX_SOLUTIONS: 1
         run: |
+          dotnet tool install --global dotnet-coverage
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/llm_ffi.xml pytest tests/other/ --doctest-modules --junitxml=test_results/llm_ffi.xml
           dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/llm_huggingface.xml pytest tests/importer/huggingface_/ --doctest-modules --junitxml=test_results/llm_huggingface.xml
+
+      - name: Test
+        working-directory: ${{github.workspace}}
+        shell: bash
+        env:
+          NNCASE_COMPILER: ${{github.workspace}}/install/Nncase.Compiler.dll
+          NNCASE_TILING_MAX_SOLUTIONS: 1
+        run: |
+          dotnet tool install --global dotnet-coverage
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_basic.xml pytest -n 2 tests/importer/onnx_/basic/ --doctest-modules --junitxml=test_results/onnx_basic.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/onnx_combine.xml pytest -n 2 tests/importer/onnx_/combine/ --doctest-modules --junitxml=test_results/onnx_combine.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_basic.xml pytest -n 2 tests/importer/tflite_/basic/ --doctest-modules --junitxml=test_results/tflite_basic.xml
+          #dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_combine.xml pytest -n 2 tests/importer/tflite_/combine/ --doctest-modules --junitxml=test_results/tflite_combine.xml
+          #dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/tflite_model.xml pytest tests/importer/tflite_/model/ --doctest-modules --junitxml=test_results/tflite_model.xml
+          dotnet-coverage collect -s tools/dotnet_coverage.settings.xml -f cobertura -o coverage/ncnn_basic.xml pytest -n 2 tests/importer/ncnn_/basic/ --doctest-modules --junitxml=test_results/ncnn_basic.xml
+          dotnet-coverage merge -o coverage.integration.xml -f cobertura -r coverage/*.xml
 
       - name: Upload Coverage
         uses: actions/upload-artifact@v4

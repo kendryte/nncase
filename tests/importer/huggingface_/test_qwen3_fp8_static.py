@@ -17,21 +17,23 @@ import os
 import pytest
 from huggingface_test_runner import HuggingfaceTestRunner, download_from_huggingface
 from transformers import AutoModelForCausalLM, AutoTokenizer
+print("getpid", os.getpid())
 
 
-def test_qwen2(request):
+def test_qwen3_fp8_static(request):
     cfg = """
     [compile_opt]
+    dump_ir = true
     shape_bucket_enable = true
     shape_bucket_range_info = { "sequence_length"=[1,512] }
     shape_bucket_segments_count = 2
-    shape_bucket_fix_var_map = { }
+    shape_bucket_fix_var_map = { "batch_size"=1 }
     
     [huggingface_options]
     output_logits = true
     output_hidden_states = false
     num_layers = -1
-    tensor_type = "float32"
+    tensor_type = "float16"
 
     [generator]
     [generator.inputs]
@@ -54,16 +56,22 @@ def test_qwen2(request):
     [target]
     [target.cpu]
     infer = false
+    [target.xpu]
+    infer = true
+
+    [target.cpu.mode.noptq]
+    enabled = true
+    threshold = 0.98
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "Qwen/Qwen2.5-0.5B-Instruct"
+    model_name = "AngelSlim/Qwen3-0_6B_fp8_static"
 
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)
     else:
         model_file = download_from_huggingface(
-            AutoModelForCausalLM, AutoTokenizer, model_name, need_save=True)
+            AutoModelForCausalLM, AutoTokenizer, model_name, need_save=False)
 
     runner.run(model_file)
 
