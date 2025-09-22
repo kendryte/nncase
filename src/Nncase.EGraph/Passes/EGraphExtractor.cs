@@ -296,6 +296,9 @@ internal sealed class SatExprBuildVisitor
             case Function func:
                 expr = children.Length == 0 ? func : func.With(body: children[0], parameters: children[1..].Cast<IVar>().ToArray());
                 break;
+            case PrimFunctionWrapper wrapper:
+                expr = children.Length == 0 ? wrapper : wrapper.With(target: children[0] as TIR.PrimFunction);
+                break;
             case If @if:
                 expr = @if.With(condition: (Expr)children[0], then: (BaseFunction)children[1], @else: (BaseFunction)children[2], arguments: children[3..]);
                 break;
