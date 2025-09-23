@@ -43,11 +43,13 @@ public partial class ToCustomLayerNorm : RewriteRule<Pattern>
     public CustomOpScheme Scheme { get; }
 
     /// <inheritdoc/>
-    public override Pattern Pattern => IsCast(
-        "cast",
-        "castCall",
-        _ => true,
-        IsAlt(GetLayerNorm(), GetLayernromWithScale()));
+    public override Pattern Pattern => IsAlt(
+        GetLayerNorm(),
+        IsCast(
+            "cast",
+            "castCall",
+            _ => true,
+            IsAlt(GetLayerNorm(), GetLayernromWithScale())));
 
     private Pattern GetLayerNorm() => PatternMatch.F.NN.IsLayerNorm(
         "ln",
@@ -72,7 +74,6 @@ public partial class ToCustomLayerNorm : RewriteRule<Pattern>
 
     private Expr? GetReplace(IMatchResult result)
     {
-        var cast = (Cast)result["cast"];
         var lnCall = (Call)result["lnCall"];
         var ln = (IR.NN.LayerNorm)lnCall.Target;
         var input = (Expr)result["input"];
@@ -87,6 +88,17 @@ public partial class ToCustomLayerNorm : RewriteRule<Pattern>
         // Name pattern
         var node = Scheme.Outputs.FirstOrDefault(op => lnCall.Metadata.OutputNames?[0] is string outputName && Regex.IsMatch(outputName, op.Name ?? string.Empty));
 
+        var newType = lnCall.CheckedDataType;
+        try
+        {
+            var cast = (Cast)result["cast"];
+            newType = cast.NewType;
+        }
+        catch
+        {
+            // do nothing
+        }
+
         if (node is not null)
         {
             try
@@ -94,7 +106,7 @@ public partial class ToCustomLayerNorm : RewriteRule<Pattern>
                 var postScale = (TensorConst)result["postScale"];
                 var newPostScale = postScale.Value.Reshape([]);
                 return lnCall.With(
-                    target: new IR.CustomNTT.LayerNorm(ln.Axis, ln.Epsilon, ln.UseMean, ln.ChannelFirst, [], node!.SBP[0], node!.SBP[1], node!.SBP[2], node!.SBP[3], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName, cast.NewType),
+                    target: new IR.CustomNTT.LayerNorm(ln.Axis, ln.Epsilon, ln.UseMean, ln.ChannelFirst, [], node!.SBP[0], node!.SBP[1], node!.SBP[2], node!.SBP[3], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName, newType),
                     arguments: new[] { input, scale, bias, newPostScale },
                     metadata: lnCall.Metadata);
             }
@@ -102,7 +114,7 @@ public partial class ToCustomLayerNorm : RewriteRule<Pattern>
             {
                 var postScale = Tensor.FromScalar(DataTypes.Float32, 1f).CastTo(scale.CheckedDataType);
                 return lnCall.With(
-                    target: new IR.CustomNTT.LayerNorm(ln.Axis, ln.Epsilon, ln.UseMean, ln.ChannelFirst, [], node!.SBP[0], node!.SBP[1], node!.SBP[2], node!.SBP[3], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName, cast.NewType),
+                    target: new IR.CustomNTT.LayerNorm(ln.Axis, ln.Epsilon, ln.UseMean, ln.ChannelFirst, [], node!.SBP[0], node!.SBP[1], node!.SBP[2], node!.SBP[3], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName, newType),
                     arguments: new[] { input, scale, bias, postScale },
                     metadata: lnCall.Metadata);
             }
