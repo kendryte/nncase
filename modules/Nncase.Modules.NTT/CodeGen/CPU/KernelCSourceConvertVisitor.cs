@@ -99,6 +99,11 @@ public sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDispos
             CollectivePoolSize: CollectivePoolSize);
     }
 
+    public IEnumerable<BaseFunction> GetFunctionRefs()
+    {
+        return _refFuncs;
+    }
+
     /// <inheritdoc/>
     public void Dispose()
     {

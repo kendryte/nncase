@@ -1,0 +1,36 @@
+@using System.Linq
+@using NetFabric.Hyperlinq
+@using Nncase
+@model Nncase.CodeGen.NTT.ExternalFunctionsModel
+@{
+}
+
+@foreach (var (func, fid) in Model.Func.Zip(Model.FuncIds))
+{
+  var argc = func.ParameterTypes.Count();
+  var argt = string.Join(",", Enumerable.Range(0, argc).Select(i => $"class TArg{i}"));
+  var argv = string.Join(",", Enumerable.Range(0, argc).Select(i => $"TArg{i} arg{i}"));
+  
+@:template<@argt>
+@:void @(func.Name)(@argv) {
+@:  nncase::ntt::runtime::thread_inout_desc inout_descs[@argc];
+  for(int i = 0; i < argc; i++) {
+    var name = $"arg{i}";
+@:
+@:  auto @(name)_span = span_cast<std::byte>(@(name).elements());
+@:  inout_descs[@i].data = @(name)_span.data();
+@:  inout_descs[@i].size = @(name)_span.size_bytes();
+@:  size_t @(name)_shape[@(name).rank()];
+@:  size_t @(name)_strides[@(name).rank()];
+@:  loop<@(name).rank()>([&](auto i){
+@:    @(name)_shape[i] = @(name).shape()[i];
+@:    @(name)_strides[i] = @(name).strides()[i];
+@:  });
+@:  inout_descs[@i].shape = @(name)_shape;
+@:  inout_descs[@i].strides = @(name)_strides;
+@:  inout_descs[@i].rank = @(name).rank();
+  }
+@:
+@:  nncase::ntt::runtime::invoke_external_function(@(fid.ModuleId), @(fid.Id), @argc, inout_descs);
+@:}
+}

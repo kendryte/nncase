@@ -28,11 +28,11 @@ internal sealed class LinkableKernelFunction : ILinkableFunction
 {
     public const string KernelHeaderSectionName = ".desc";
 
-    public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, KernelCSource funcCSource, KernelMemoryPoolDesc memoryPoolDesc, Stream text, params ILinkedSection[] sections)
+    public LinkableKernelFunction(uint id, TIR.PrimFunction sourceFunction, IEnumerable<FunctionRef> functionRefs, KernelCSource funcCSource, KernelMemoryPoolDesc memoryPoolDesc, Stream text, params ILinkedSection[] sections)
     {
         Id = id;
         SourceFunction = sourceFunction;
-        PrimFunction = sourceFunction;
+        FunctionRefs = functionRefs.ToArray();
         FunctionCSource = funcCSource;
         MemoryPoolDesc = memoryPoolDesc;
         Text = text;
@@ -43,7 +43,7 @@ internal sealed class LinkableKernelFunction : ILinkableFunction
 
     public BaseFunction SourceFunction { get; }
 
-    public TIR.PrimFunction PrimFunction { get; }
+    public TIR.PrimFunction PrimFunction => (TIR.PrimFunction)SourceFunction;
 
     public KernelCSource FunctionCSource { get; }
 
@@ -51,7 +51,7 @@ internal sealed class LinkableKernelFunction : ILinkableFunction
 
     public Stream Text { get; }
 
-    public IEnumerable<FunctionRef> FunctionRefs => Enumerable.Empty<FunctionRef>();
+    public IEnumerable<FunctionRef> FunctionRefs { get; }
 
     public IReadOnlyList<ILinkedSection> Sections { get; }
 }

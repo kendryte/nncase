@@ -48,6 +48,7 @@ internal sealed class LinkableModule : ILinkableModule
 
         WriteDeviceFunctions(codegenDir);
         var kernelFiles = WriteKernelFunctions(codegenDir);
+        WriteExternalFunctions(codegenDir, linkContext);
         WriteTopoAwareRuntime(codegenDir);
         WriteModuleTopologyDef(codegenDir);
 
@@ -68,6 +69,28 @@ internal sealed class LinkableModule : ILinkableModule
             {
                 writer.Write(func.Header);
             }
+        }
+    }
+
+    private void WriteExternalFunctions(string codegenDir, ILinkContext linkContext)
+    {
+        using (var writer = new StreamWriter(File.Open(Path.Join(codegenDir, "external_functions.h"), FileMode.Create)))
+        {
+            writer.Write(CSourceBuiltn.ExternalHeader);
+
+            var funcs = new List<IR.BaseFunction>();
+            var funcIds = new List<FunctionId>();
+            foreach (var kernelFunc in _functions.OfType<LinkableKernelFunction>())
+            {
+                foreach (var funcRef in kernelFunc.FunctionRefs.Where(f => f.Callable.ModuleKind != CPUTarget.Kind))
+                {
+                    var fid = linkContext.GetFunctionId(funcRef.Callable);
+                    funcs.Add(funcRef.Callable);
+                    funcIds.Add(fid);
+                }
+            }
+
+            writer.Write(CSourceBuiltn.ExternalFunctionsDef(funcs.ToArray(), funcIds.ToArray(), _targetOptions));
         }
     }
 

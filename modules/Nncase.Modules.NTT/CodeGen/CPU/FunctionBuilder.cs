@@ -114,6 +114,7 @@ internal class FunctionBuilder
             var visitor = new KernelCSourceConvertVisitor(TargetOptions);
             visitor.Visit(function);
             var functionCSource = visitor.GetCSource();
+            var functionRefs = visitor.GetFunctionRefs().Select(f => new FunctionRef(0, 0, f, FunctionIdComponent.ModuleId, 0)).ToArray();
 
             // 5. write the kernel desc
             using (var writer = _sectionManager.GetWriter(LinkableKernelFunction.KernelHeaderSectionName))
@@ -131,7 +132,7 @@ internal class FunctionBuilder
                 threadLocalRdataPoolSize,
                 blockLocalRdataPoolSize);
             var kernelDescSection = new LinkedSection(_sectionManager.GetContent(LinkableKernelFunction.KernelHeaderSectionName)!, ".desc", 0, 8, (uint)sizeof(KernelDescHeader));
-            return new LinkableKernelFunction(_id, function, functionCSource, memoryPoolDesc, _sectionManager.GetContent(WellknownSectionNames.Text)!, kernelDescSection);
+            return new LinkableKernelFunction(_id, function, functionRefs, functionCSource, memoryPoolDesc, _sectionManager.GetContent(WellknownSectionNames.Text)!, kernelDescSection);
         }
         else
         {

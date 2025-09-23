@@ -65,6 +65,14 @@ pthread_key_t cpu_thread_context_key;
 thread_local cpu_thread_context_t cpu_thread_context;
 #endif
 
+void *runtime_func = nullptr;
+invoke_external_function_t invoke_external_function_ptr = nullptr;
+
+void invoke_external_function(size_t module_id, size_t function_id, size_t argc,
+                              nncase::ntt::runtime::thread_inout_desc *argv){
+    invoke_external_function_ptr(runtime_func, module_id, function_id, argc, argv);
+}
+
 void *thread_alloc(size_t bytes, size_t alignment) {
 #ifdef WIN32
     return _aligned_malloc(bytes, alignment);
@@ -101,6 +109,8 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
     tdim = params.tdim;
     bdim = params.bdim;
     cdim = params.cdim;
+    runtime_func = params.runtime_func;
+    invoke_external_function_ptr = params.invoke_external_function;
 
 #ifdef __APPLE__
     cpu_thread_context_key = params.cpu_thread_context_key;

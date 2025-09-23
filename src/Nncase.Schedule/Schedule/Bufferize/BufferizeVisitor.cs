@@ -70,7 +70,7 @@ public sealed class BufferizeVisitor : ExprRewriter
 
     protected override BaseExpr RewriteLeafCall(Call expr)
     {
-        if (expr.Target is PrimFunction func && !func.Name.StartsWith("device_func"))
+        if (expr.Target is PrimFunction func && !func.Name.StartsWith("device_func") && func.ModuleKind == Callable.CPUModuleKind)
         {
             if (!func.SchedResult.IsScheduled)
             {

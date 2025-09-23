@@ -19,10 +19,10 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
-#include <string>
 
 #ifdef __APPLE__
 #include <pthread.h>
@@ -243,6 +243,11 @@ class timer_record : public nncase::ntt::runtime::timer_record_base<record_id> {
     void set_id(record_id id) override { instance_id_ = id; }
 };
 
+using invoke_external_function_t = void (*)(void *runtime_func, size_t module_id,
+                                           size_t function_id, size_t argc,
+                                           nncase::ntt::runtime::thread_inout_desc
+                                               *argv);
+
 struct cpu_block_entry_params_t {
     size_t tdim;
     size_t bdim;
@@ -250,6 +255,8 @@ struct cpu_block_entry_params_t {
     size_t bid;
     size_t cid;
     size_t cpu_id_offset;
+    void* runtime_func;
+    invoke_external_function_t invoke_external_function;
     const thread_inout_desc *input_descs;
     thread_inout_desc *const output_descs;
     std::span<const std::byte> rdata;
@@ -278,6 +285,9 @@ struct cpu_thread_context_t {
 extern size_t tdim;
 extern size_t bdim;
 extern size_t cdim;
+
+void invoke_external_function(size_t module_id, size_t function_id, size_t argc,
+                              nncase::ntt::runtime::thread_inout_desc *argv);
 } // namespace nncase::ntt::runtime
 
 extern "C" NTT_RUNTIME_API void

@@ -35,6 +35,10 @@ public record NTTTargetOptionsModel(NTTTargetOptions Options, ulong Alignment, u
 {
 }
 
+public record ExternalFunctionsModel(BaseFunction[] Func, FunctionId[] FuncIds, NTTTargetOptions Options)
+{
+}
+
 public static class CSourceBuiltn
 {
     public const string DeviceHeader = @"#pragma once
@@ -54,9 +58,18 @@ using namespace nncase::ntt::distributed::shard_policy;
 
 ";
 
+    public const string ExternalHeader = @"#pragma once
+#include <nncase/ntt/ntt.h>
+using namespace nncase::ntt;
+using namespace nncase::ntt::distributed;
+using namespace nncase::ntt::distributed::shard_policy;
+
+";
+
     public const string KernelHeader = @"#pragma once
 #include <nncase/ntt/ntt.h>
 #include ""device_functions.h""
+#include ""external_functions.h""
 #include ""kernel_functions.h""
 #include ""topo_aware_runtime.h""
 using namespace nncase::ntt;
@@ -72,6 +85,12 @@ using namespace nncase::ntt::distributed;
 using namespace nncase::ntt::distributed::shard_policy;
 
 ";
+
+    public static string ExternalFunctionsDef(BaseFunction[] funcs, FunctionId[] funcIds, NTTTargetOptions options)
+    {
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/external_functions.h.cshtml", new ExternalFunctionsModel(funcs, funcIds,options)).Result;
+        return content;
+    }
 
     public static string TopoAwareRuntimeDef(NTTTargetOptions options, ulong dataAlign, ulong collective_pool_size)
     {

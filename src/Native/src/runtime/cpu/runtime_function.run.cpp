@@ -27,6 +27,26 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cpu;
 using namespace nncase::ntt::runtime;
 
+static void invoke_external_function_trampoline(
+    void *runtime_func, size_t module_id, size_t function_id, size_t argc,
+    nncase::ntt::runtime::thread_inout_desc *argv) {
+    auto &interp = reinterpret_cast<cpu_runtime_function *>(runtime_func)
+                       ->module()
+                       .interp();
+    auto module = interp.find_module_by_id(module_id).unwrap();
+    auto func = module->find_function_by_id(function_id).unwrap();
+    value_t parameters[21];
+    for (size_t i = 0; i < argc; i++) {
+        parameters[i] =
+            hrt::create(datatype_t::uint8, {argv[i].size}, {1},
+                        std::span<std::byte>(argv[i].data, argv[i].size), false)
+                .unwrap()
+                .impl();
+    }
+
+    func->invoke(std::span<value_t>(parameters, argc)).unwrap();
+}
+
 result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
     std::vector<std::thread> blocks;
     timer_record timer_records[24];
@@ -54,6 +74,8 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                     .bid = bid,
                     .cid = cid,
                     .cpu_id_offset = tid_offset,
+                    .runtime_func = reinterpret_cast<void *>(this),
+                    .invoke_external_function = &invoke_external_function_trampoline,
                     .input_descs = this->input_descs_.data(),
                     .output_descs = this->output_descs_.data(),
                     .rdata = module().rdata(),
