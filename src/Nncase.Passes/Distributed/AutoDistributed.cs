@@ -362,8 +362,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 SearchableNode { Expr: Padding attr } => attr,
                 SearchableNode { Expr: Paddings attr } => attr,
                 SearchableNode { Expr: Const attr } => attr,
-                SearchableNode { Expr: Call { Target: AsTensor } attr } => attr,
-                SearchableNode n when expr.Target is PrimFunctionWrapper => n.Expr,
                 SearchableNode n => new Var(n.IRType),
             }).ToArray();
             var newExprs = BuildEquivalentCalls(expr.Target, tempArgs);
@@ -381,7 +379,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     bucketMemo.Add(checkType, dbucket);
                 }
 
-                var dnode = new SearchableNode(isSupported && newExpr is Call newCall ? newCall.Target : newExpr, checkType);
+                var dnode = new SearchableNode(newExpr is Call newCall ? newCall.Target : newExpr, checkType);
                 dbucket.AddVertex(dnode);
 
                 foreach (var ((arg, _), i) in combBuckets.Zip(used).Where(p => p.Second is true).Select((arg, i) => (arg, i)))
@@ -463,10 +461,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         IEnumerable<(Expr Call, bool[] Used)> calls = [(new Call(target, tempArgs), Enumerable.Repeat(true, tempArgs.Length).ToArray())];
         if (target is IR.Tensors.Reshape && tempArgs[0].CheckedType is DistributedType distType && tempArgs[1] is Shape { IsFixed: true } constNewShape)
         {
+#if false
             var newTensorType = new TensorType(distType.TensorType.DType, constNewShape);
             calls = calls.Concat(DistributedUtility.GetLeafCandidatePolicies(newTensorType, distType.Placement)
                 .Where(p => SingleNodeMemoryCheck(new(newTensorType, p, distType.Placement), _moduleKind, TargetOptions))
                 .Select(ndsbp => ((Expr)new Call(new Boxing(new DistributedType(newTensorType, ndsbp, distType.Placement)), tempArgs[0]), new[] { true, false })));
+#endif
         }
         else if (target is Boxing { NewType: TensorType } && tempArgs[0] is TensorConst tc && tc.ValueType is DistributedType distributedType)
         {

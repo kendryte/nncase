@@ -36,7 +36,7 @@ public sealed partial class AutoDistributedWithShapeBucketPass : FunctionPass
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        if (input is not Function function || input.Metadata is AutoDistributedMetaData { Skip: true })
+        if (input.ModuleKind != _moduleKind || input is not Function function || input.Metadata is AutoDistributedMetaData { Skip: true })
         {
             return Task.FromResult(input);
         }
