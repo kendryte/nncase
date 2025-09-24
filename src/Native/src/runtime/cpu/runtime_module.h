@@ -36,6 +36,8 @@ class cpu_runtime_module : public runtime_module {
     cpu_runtime_module() noexcept;
     virtual ~cpu_runtime_module();
 
+    result<uintptr_t> native_handle(uint32_t flags) const noexcept override;
+
     uint64_t tdim() const noexcept { return tdim_; }
     uint64_t bdim() const noexcept { return bdim_; }
     uint64_t cdim() const noexcept { return cdim_; }
