@@ -85,6 +85,12 @@ result<void> cpu_runtime_module::initialize_text(
     return ok();
 }
 
+result<uintptr_t>
+cpu_runtime_module::native_handle(uint32_t flags) const noexcept {
+    CHECK_WITH_ERR(flags == 0, std::errc::invalid_argument);
+    return ok(loader_.handle());
+}
+
 result<block_entry_t> cpu_runtime_module::block_entry() const noexcept {
     return ok((block_entry_t)loader_.entry());
 }
