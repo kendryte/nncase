@@ -4,13 +4,16 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Shapes;
+using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
@@ -399,25 +402,52 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
         null,
         "trans",
         IsReshape(
-            IsWildcard("input") with { TypePattern = HasFixedShape() },
-            IsFixedShape("newShape")) with
-        { TypePattern = HasFixedShape() },
+            IsWildcard("input"),
+            IsRankedShape("newShape")),
         IsFixedShape("perm"));
 
-    private Expr? GetReplace(Call trans, Expr input, long[] newShape, int[] perm)
+    private Expr? GetReplace(Call trans, Expr input, RankedShape newShape, int[] perm)
     {
-        var inShape = input.CheckedShape.ToValueArray();
-        var outShape = trans.CheckedShape.ToValueArray();
-        if (!(newShape.Length == inShape.Length + 1))
+        var inShape = (RankedShape)input.CheckedShape;
+        var outShape = (RankedShape)trans.CheckedShape;
+
+        if (TryProcessSqueezeUnsqueeze(input, inShape, newShape, perm, out var result))
+        {
+            return result;
+        }
+
+        var maxInputShape = CompilerServices.GetMaxShape(inShape);
+        var maxNewShape = CompilerServices.GetMaxShape(newShape);
+        if (!IRUtility.TryGetShapeMapMatrix(maxInputShape, maxNewShape, out var mat))
         {
             return null;
+        }
+
+        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsCompleteDict(mat);
+        if (forwardDict.Any(d => d.Value.Count > 1))
+        {
+            return null;
+        }
+
+        var newPerm = perm.Select(p => backwardDict[p]).SelectMany(a => a).ToArray();
+
+        return Reshape(Transpose(input, newPerm), outShape);
+    }
+
+    private bool TryProcessSqueezeUnsqueeze(Expr input, RankedShape inShape, RankedShape newShape, int[] perm, [MaybeNullWhen(false)] out Expr result)
+    {
+        if (!(newShape.Rank == inShape.Rank + 1))
+        {
+            result = null;
+            return false;
         }
 
         // check reshape is sequeeze
         var axis = RulesUtility.FindSqueezeAxis(newShape, inShape);
         if (axis == -1)
         {
-            return null;
+            result = null;
+            return false;
         }
 
         var newPerm = perm.ToList();
@@ -427,7 +457,8 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
         var inv = perm.Select((p, i) => (p, i)).OrderBy(tp => tp.p).ToArray();
         var invNewShape = newPerm.Select(i => inShape[i]).ToList();
         invNewShape.Insert(perm.ToList().IndexOf(axis), 1);
-        return Reshape(Transpose(input, newPerm.ToArray()), invNewShape.ToArray());
+        result = Reshape(Transpose(input, newPerm.ToArray()), invNewShape.ToArray());
+        return true;
     }
 }
 
@@ -548,5 +579,34 @@ public sealed partial class CombineActivationsTranspose : IRewriteRule
         return Transpose(
           newCall,
           perm);
+    }
+}
+
+[RuleGenerator]
+public sealed partial class CombineSliceTranspose : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsTranspose(
+        "transpose",
+        _ => true,
+        IsSlice(
+            "slice",
+            "sliceCall",
+            _ => true,
+            IsWildcard("input"),
+            IsRankedShape("begins"),
+            IsRankedShape("ends"),
+            IsFixedShape("axes"),
+            IsFixedShape("strides")),
+        IsFixedShape("perm"));
+
+    private Expr GetReplace(Slice slice, Call sliceCall, Expr input, long[] perm, RankedShape begins, RankedShape ends, long[] axes, long[] strides)
+    {
+        var newAxes = axes.Select(a => perm.IndexOf(a)).Order().ToArray();
+        var newBegins = newAxes.Select(a => begins[axes.IndexOf(perm[a])]).ToArray();
+        var newEnds = newAxes.Select(a => ends[axes.IndexOf(perm[a])]).ToArray();
+        var newStrides = newAxes.Select(a => strides[axes.IndexOf(perm[a])]).ToArray();
+
+        return Slice(Transpose(input, perm), newBegins, newEnds, newAxes, newStrides).InheritMetaData(sliceCall);
     }
 }

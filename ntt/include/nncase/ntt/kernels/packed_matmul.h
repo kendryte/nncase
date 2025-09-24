@@ -22,7 +22,7 @@
 
 namespace nncase::ntt {
 namespace detail {
-template <bool AccumulateC, class TLhs, class TRhs, class TOut>
+template <bool AccumulateC, class TLhs, class TRhs, class TOut, class TScale>
 class packed_matmul_impl;
 
 /**
@@ -30,12 +30,13 @@ class packed_matmul_impl;
  * @remarks Loop orders: (m, n, k)
  */
 template <bool AccumulateC, ValidMatmulTensor TLhs, ValidMatmulTensor TRhs,
-          ValidMatmulTensor TOut>
-class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
+          ValidMatmulTensor TOut, class TScale>
+class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut, TScale> {
     using TOutElem = typename TOut::element_type;
 
   public:
-    void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
+    void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output,
+                    const TScale &scale) {
         const auto domain =
             output.shape().template slice<0, TOut::rank() - 2>();
         ntt::apply(domain, [&](auto out_offset_prefix) {
@@ -55,33 +56,34 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
                          .squeeze(make_index_shape<rhs_shape.rank() - 2_dim>());
             auto c = output.view(out_offset, out_shape)
                          .squeeze(make_index_shape<out_shape.rank() - 2_dim>());
-            matmul_2d_l1(a, b, c);
+            matmul_2d_l1(a, b, c, scale);
         });
     }
 
   private:
     template <class TA, class TB, class TC>
-    constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c) {
+    constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c,
+                                const TScale &scale) {
         const auto M = c.shape()[c.rank() - 2_dim];
         const auto N = c.shape()[c.rank() - 1_dim];
         const auto K = a.shape()[a.rank() - 1_dim];
 
         if (M == 1) {
-            gemv_l0(a, b, c, K, N);
+            gemv_l0(a, b, c, scale, K, N);
         } else {
             constexpr auto m0_tile = 2;
             const auto m0_tiled_end = M / m0_tile * m0_tile;
 
             for (size_t n1 = 0; n1 < N; n1++) {
                 for (size_t m1 = 0; m1 < m0_tiled_end; m1 += m0_tile) {
-                    matmul_2d_l0<m0_tile>(a, b, c, K, m1, n1);
+                    matmul_2d_l0<m0_tile>(a, b, c, scale, K, m1, n1);
                 }
             }
 
             if (M % m0_tile) {
                 for (size_t n1 = 0; n1 < N; n1++) {
                     for (size_t m1 = m0_tiled_end; m1 < M; m1++) {
-                        matmul_2d_l0<1>(a, b, c, K, m1, n1);
+                        matmul_2d_l0<1>(a, b, c, scale, K, m1, n1);
                     }
                 }
             }
@@ -89,8 +91,8 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
     }
 
     template <dim_t M0Tile, class TA, class TB, class TC, Dimension TK>
-    void matmul_2d_l0(const TA &a, const TB &b, TC &c, const TK &K, dim_t m1,
-                      dim_t n1) {
+    void matmul_2d_l0(const TA &a, const TB &b, TC &c, const TScale &scale,
+                      const TK &K, dim_t m1, dim_t n1) {
         auto c0 = c.view(make_shape(m1, n1), fixed_shape_v<M0Tile, 1_dim>)
                       .squeeze(fixed_shape_v<1>);
         auto a0 =
@@ -99,16 +101,17 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
                       .squeeze(fixed_shape_v<0>);
         ntt::u_packed_matmul<AccumulateC, M0Tile>(
             a0.elements().data(), b0.elements().data(), c0.elements().data(),
-            a0.strides()[0_dim], c0.strides()[0_dim], K);
+            scale, a0.strides()[0_dim], c0.strides()[0_dim], K);
     }
 
     template <class TA, class TB, class TC, Dimension TK, Dimension TN>
-    void gemv_l0(const TA &a, const TB &b, TC &c, const TK &K, const TN &N) {
+    void gemv_l0(const TA &a, const TB &b, TC &c, const TScale &scale,
+                 const TK &K, const TN &N) {
         auto c0 = c.view(0_dim);
         auto a0 = a.view(0_dim);
         ntt::u_packed_gemv<AccumulateC>(
             a0.elements().data(), b.elements().data(), c0.elements().data(),
-            b.strides()[0_dim], K, N);
+            scale, b.strides()[0_dim], K, N);
     }
 };
 } // namespace detail
@@ -128,14 +131,16 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut> {
  */
 template <bool AccumulateC = false, bool TransposedA = false,
           bool TransposedB = false, Tensor TLhs, Tensor TRhs, class TOut,
-          FixedDimensions LhsVectorizedAxes = shape_t<>,
+          class TScale, FixedDimensions LhsVectorizedAxes = shape_t<>,
           FixedDimensions LhsPadedNums = shape_t<>,
           FixedDimensions RhsVectorizedAxes = shape_t<>,
           FixedDimensions RhsPadedNums = shape_t<>>
-void packed_matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
-    detail::packed_matmul_impl<AccumulateC, TLhs, TRhs, std::decay_t<TOut>>
+void packed_matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
+                   const TScale &scale) {
+    detail::packed_matmul_impl<AccumulateC, TLhs, TRhs, std::decay_t<TOut>,
+                               TScale>
         impl;
-    impl(lhs, rhs, output);
+    impl(lhs, rhs, output, scale);
 
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
     // TODO: remove this when tiling is ready

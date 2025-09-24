@@ -30,19 +30,17 @@ class unary_impl : public unary_like_impl<unary_impl<TIn, TOut>, TIn, TOut> {
 
         constexpr auto rank = TIn::rank();
         auto conti_dims = std::min(input_conti_dims, output_conti_dims);
-        dynamic_shape_t<rank> apply_shape;
-        ntt::loop<rank>([&](auto j) {
-            if (j > rank - conti_dims - 1)
-                apply_shape[j] = 1;
+        auto apply_shape = generate_shape<rank>([&](auto i) {
+            if (i > rank - conti_dims - 1)
+                return (dim_t)1;
             else
-                apply_shape[j] = input.shape()[j];
+                return (dim_t)input.shape()[i];
         });
-        dynamic_shape_t<rank> inner_shape;
-        ntt::loop<rank>([&](auto j) {
-            if (j > rank - conti_dims - 1)
-                inner_shape[j] = input.shape()[j];
+        auto inner_shape = generate_shape<rank>([&](auto i) {
+            if (i > rank - conti_dims - 1)
+                return (dim_t)input.shape()[i];
             else
-                inner_shape[j] = 1;
+                return (dim_t)1_dim;
         });
 
         auto len = inner_shape.length();

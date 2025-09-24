@@ -11,7 +11,8 @@ class UnaryTestGenerator(BaseTestGenerator):
         self.op_str_map_exhaustive= {
             "abs": f"auto ort_output = ortki_Abs(ort_input);", 
             "cos": f"auto ort_output = ortki_Cos(ort_input);",
-            "sin": f"auto ort_output = ortki_Sin(ort_input);"
+            "sin": f"auto ort_output = ortki_Sin(ort_input);",
+            # "exp": f"auto ort_output = ortki_Exp(ort_input);"
             # "acos", "acosh", "asin", "asinh", "ceil", "copy", "cos", "cosh",
             # "exp", "erf", "floor", "log", "neg", "round", "rsqrt", "sign", "sin",
             # "sinh", "sqrt", "square", "tanh", "swish",
@@ -58,6 +59,9 @@ class UnaryTestGenerator(BaseTestGenerator):
             "cos": {
                 "float": DataType("float", "Float32", "-1e6", "1e6", False),
                 "double": DataType("double", "Float64", "-1e6", "1e6", False),
+            },
+            "exp": {
+                "float": DataType("float", "Float32", "-70.0", "70.0", False),
             }
         }
 
@@ -173,7 +177,7 @@ class UnaryTestGenerator(BaseTestGenerator):
 
     def _generate_vector_to_scalar_conversion(
         self, code, 
-        datatype, input_var_name, input_continuity_var_name, input_is_dynamic,
+        datatype, input_var_name, input_is_dynamic,
                 input_dims_spec, vec_rank
     ):
         assert(vec_rank > 0)
@@ -191,14 +195,14 @@ class UnaryTestGenerator(BaseTestGenerator):
             scalar_dims = [str(d) for d in input_dims_spec] + ["4" ,"P"]
             unpack_dims = unsqueeze_dims
 
-        code.append(f"auto {input_var_name}_unsqueezed = ({input_continuity_var_name}).unsqueeze(fixed_shape_v<{unsqueeze_dims}>);")
+        code.append(f"auto {input_var_name}_unsqueezed = ({input_var_name}).unsqueeze(fixed_shape_v<{unsqueeze_dims}>);")
 
         # 2. unpack
         code.append(f"auto {input_var_name}_scalar = ntt::make_tensor<{datatype.cpp_type}>(fixed_shape_v<{','.join(map(str,scalar_dims))}>);")
         code.append(f"ntt::unpack({input_var_name}_unsqueezed, {input_var_name}_scalar, fixed_shape_v<{unpack_dims}>);")
         return scalar_dims
 
-    def _prepare_contiguous_double_scalar_input(
+    def _prepare_double_scalar_input(
         self, code, datatype, input_is_dynamic, input_dims_spec, 
         vector_rank, vec_param, input_continuity, cast_target = "double"
     ):
@@ -208,12 +212,14 @@ class UnaryTestGenerator(BaseTestGenerator):
         2.1  ntt_tensor_contiguous of vector -> ntt_tensor_contiguous of scalar
         3.  ntt_tensor_aligned_of_scalar -> ntt_tensor_aligned_double
         """
-
-        input_continuity_var_name, input_copy_code = self._prepare_contiguous_input(
+        """
+        input_var_name, input_copy_code = self._prepare_contiguous_input(
             "ntt_input", datatype, vector_rank, vec_param,
             input_is_dynamic, input_dims_spec, input_continuity
         )
         code.extend(input_copy_code)
+        """
+        input_var_name = "ntt_input"
 
         code.append(f"// align in NTT, then cast to {cast_target}, then process in ORT")
 
@@ -222,12 +228,12 @@ class UnaryTestGenerator(BaseTestGenerator):
         input_scalar_dims = input_dims_spec
         if input_is_vec:
             input_scalar_dims = self._generate_vector_to_scalar_conversion(
-                code, datatype, "ntt_input", input_continuity_var_name, input_is_dynamic,
+                code, datatype,  input_var_name, input_is_dynamic,
                 input_dims_spec, vector_rank
             )
         else:
             code.append("// 1.1.b for input that are tensor of scalar")
-            code.append(f"auto ntt_input_scalar = ({input_continuity_var_name}).view();")
+            code.append(f"auto ntt_input_scalar = ({input_var_name}).view();")
 
         input_double_shape_expr = self.generate_shape_init(input_is_dynamic, input_scalar_dims)
 
@@ -258,7 +264,7 @@ class UnaryTestGenerator(BaseTestGenerator):
         """Special handling for types that cannot be cast in ORT"""
         code = []
 
-        self._prepare_contiguous_double_scalar_input(
+        self._prepare_double_scalar_input(
             code, datatype, input_is_dynamic, dims_spec,
             vector_rank, vec_param, input_continuity, cast_target)
 
@@ -281,13 +287,15 @@ class UnaryTestGenerator(BaseTestGenerator):
         code = []
         
         need_cast_in_ort = self._need_cast_in_ort(datatype, op_str)
-
-        input_continuity_var_name, input_copy_code = self._prepare_contiguous_input(
+        """
+        input_var_name, input_copy_code = self._prepare_contiguous_input(
             "ntt_input", datatype, vector_rank, vec_param,
             input_is_dynamic, dims_spec, input_continuity
         )
         code.extend(input_copy_code)
-        ntt2ort_input = input_continuity_var_name
+        """
+        input_var_name = "ntt_input"
+        ntt2ort_input = input_var_name
         ort_input_origin_type = "ort_input_org"
         code.append(f"auto {ort_input_origin_type} = NttTest::ntt2ort({ntt2ort_input});")
 

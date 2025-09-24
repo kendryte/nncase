@@ -13,6 +13,7 @@ target_include_directories(nncase_ntt_module PUBLIC ${CMAKE_CURRENT_LIST_DIR}/..
 set_target_properties(nncase_ntt_module PROPERTIES PREFIX "" SUFFIX "")
 set_target_properties(nncase_ntt_module PROPERTIES POSITION_INDEPENDENT_CODE ON)
 target_compile_definitions(nncase_ntt_module PUBLIC -DNNCASE_CPU_MODULE=1)
+set_property(TARGET nncase_ntt_module PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 
 target_sources(nncase_ntt_module PRIVATE ${CMAKE_CURRENT_LIST_DIR}/../src/cpu_runtime.cpp)
 
@@ -31,4 +32,6 @@ if (MSVC)
                                                     "libcpmt$<$<CONFIG:Debug>:d>")
 elseif(APPLE)
     target_link_options(nncase_ntt_module PRIVATE -ld_classic -lc)
+else()
+    target_link_libraries(nncase_ntt_module PRIVATE pthread)
 endif()

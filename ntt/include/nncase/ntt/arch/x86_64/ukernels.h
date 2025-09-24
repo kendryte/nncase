@@ -436,12 +436,12 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank>
-    requires(
-        (std::same_as<typename TIn::element_type, ntt::vector<float, 8, 8>> ||
-         std::same_as<typename TIn::element_type, ntt::vector<float, 8>>) &&
-        std::same_as<typename std::decay_t<TOut>::element_type, float> &&
-        (AxesRank == 1 || AxesRank == 2))
-class u_unpack_impl<TIn, TOut, AxesRank, true> {
+requires(
+    (std::same_as<typename TIn::element_type, ntt::vector<float, 8, 8>> ||
+     std::same_as<typename TIn::element_type, ntt::vector<float, 8>>)&&std::
+        same_as<typename std::decay_t<TOut>::element_type, float> &&
+    (AxesRank == 1 ||
+     AxesRank == 2)) class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
     using TElem = typename std::decay_t<TOut>::element_type;
@@ -640,13 +640,14 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_n, float,
     static constexpr size_t n0_tile = 7;
 };
 
-template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC,
-                false, false, 1, 7, float, vector<float, 8>, vector<float, 8>,
-                true> {
+template <bool AccumulateC, class TScale>
+    requires std::is_same_v<TScale, float> ||
+    std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
+        ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC, false, false,
+        1, 7, float, vector<float, 8>, vector<float, 8>, TScale, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              size_t K) noexcept {
+                              const TScale &scale, size_t K) noexcept {
         NTT_ASSUME(K > 0);
 
         register __m256 c0_0 asm("ymm0") = {};
@@ -679,7 +680,9 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC,
 
         for (size_t k = 0; k < K; k++) {
             a0_0 = _mm256_broadcast_ss(&a(0, k));
-
+            if constexpr (std::is_same_v<TScale, float>) {
+                a0_0 = _mm256_mul_ps(a0_0, _mm256_broadcast_ss(&scale));
+            }
             b0_0 = b(k, 0);
             b0_1 = b(k, 1);
             b0_2 = b(k, 2);
@@ -740,13 +743,15 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_kn, vector<float, 8>,
     static constexpr size_t n0_tile = 4;
 };
 
-template <bool AccumulateC>
-struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC,
-                false, false, 1, 4, vector<float, 8>, vector<float, 8, 8>,
-                vector<float, 8>, true> {
+template <bool AccumulateC, class TScale>
+    requires std::is_same_v<TScale, float> ||
+    std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
+        ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, false,
+        false, 1, 4, vector<float, 8>, vector<float, 8, 8>, vector<float, 8>,
+        TScale, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
-                              size_t K) noexcept {
+                              const TScale &scale, size_t K) noexcept {
         NTT_ASSUME(K > 0);
 
         register __m256 c0_0 asm("ymm0") = {};
@@ -766,6 +771,9 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC,
         for (size_t k = 0; k < K; k++) {
             for (size_t sk = 0; sk < 8; sk++) {
                 a0_0 = _mm256_broadcast_ss((const float *)&a(0, k) + sk);
+                if constexpr (!std::is_same_v<TScale, std::nullptr_t>) {
+                    a0_0 = _mm256_mul_ps(a0_0, _mm256_broadcast_ss(&scale));
+                }
 
                 c0_0 = _mm256_fmadd_ps(a0_0, b(k, 0)(sk), c0_0);
                 c0_1 = _mm256_fmadd_ps(a0_0, b(k, 1)(sk), c0_1);

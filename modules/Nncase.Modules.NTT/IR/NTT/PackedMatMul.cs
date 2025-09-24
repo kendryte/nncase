@@ -19,6 +19,11 @@ public sealed partial class PackedMatMul : Op
     /// </summary>
     public static readonly ParameterInfo Rhs = new(typeof(PackedMatMul), 1, "rhs", ParameterKind.Input);
 
+    /// <summary>
+    /// Gets scale.
+    /// </summary>
+    public static readonly ParameterInfo Scale = new(typeof(PackedMatMul), 2, "scale", ParameterKind.Attribute);
+
     public DataType OutputDataType { get; }
 
     public bool FusedReduce { get; }

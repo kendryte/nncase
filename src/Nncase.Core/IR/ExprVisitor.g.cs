@@ -526,6 +526,18 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     }
 
     /// <inheritdoc />
+    protected internal override TExprResult VisitThreadIdDim(Distributed.ThreadIdDim expr, TContext context)
+    {
+        VisitOperands(expr, context);
+        if (CanVisitAttributes(expr))
+        {
+            VisitAttributes(expr, context);
+        }
+
+        return VisitLeafThreadIdDim(expr, context);
+    }
+
+    /// <inheritdoc />
     protected internal override TExprResult VisitAsDim(AsDim expr, TContext context)
     {
         VisitOperands(expr, context);
@@ -947,11 +959,6 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     protected virtual TExprResult VisitLeafAffineExpr(Affine.AffineExpr expr, TContext context) => DefaultVisitLeaf(expr, context);
 
     /// <summary>
-    /// Visit leaf <see cref="Affine.AffineExpr"/>.
-    /// </summary>
-    protected virtual TExprResult VisitLeafAffineSymbolBase(Affine.AffineExpr expr, TContext context) => VisitLeafAffineExpr(expr, context);
-
-    /// <summary>
     /// Visit leaf <see cref="Affine.AffineDim"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafAffineDim(Affine.AffineDim expr, TContext context) => VisitLeafAffineExpr(expr, context);
@@ -959,17 +966,17 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// <summary>
     /// Visit leaf <see cref="Affine.AffineExtent"/>.
     /// </summary>
-    protected virtual TExprResult VisitLeafAffineExtent(Affine.AffineExtent expr, TContext context) => VisitLeafAffineSymbolBase(expr, context);
+    protected virtual TExprResult VisitLeafAffineExtent(Affine.AffineExtent expr, TContext context) => VisitLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="Affine.AffineSymbol"/>.
     /// </summary>
-    protected virtual TExprResult VisitLeafAffineSymbol(Affine.AffineSymbol expr, TContext context) => VisitLeafAffineSymbolBase(expr, context);
+    protected virtual TExprResult VisitLeafAffineSymbol(Affine.AffineSymbol expr, TContext context) => VisitLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="Affine.AffineConstant"/>.
     /// </summary>
-    protected virtual TExprResult VisitLeafAffineConstant(Affine.AffineConstant expr, TContext context) => VisitLeafAffineSymbolBase(expr, context);
+    protected virtual TExprResult VisitLeafAffineConstant(Affine.AffineConstant expr, TContext context) => VisitLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="Affine.AffineAddBinary"/>.
@@ -1025,6 +1032,11 @@ public partial class ExprVisitor<TExprResult, TTypeResult, TContext>
     /// Visit leaf <see cref="Buffers.BufferOf"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafBufferOf(Buffers.BufferOf expr, TContext context) => DefaultVisitLeaf(expr, context);
+
+    /// <summary>
+    /// Visit leaf <see cref="Distributed.ThreadIdDim"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafThreadIdDim(Distributed.ThreadIdDim expr, TContext context) => VisitLeafDimension(expr, context);
 
     /// <summary>
     /// Visit leaf <see cref="Dimension"/>.
@@ -1443,6 +1455,13 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitBufferOf(Buffers.BufferOf expr, Unit context) => VisitBufferOf(expr);
     /// <summary>
+    /// Visit <see cref="Distributed.ThreadIdDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitThreadIdDim(Distributed.ThreadIdDim expr) => base.VisitThreadIdDim(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitThreadIdDim(Distributed.ThreadIdDim expr, Unit context) => VisitThreadIdDim(expr);
+    /// <summary>
     /// Visit <see cref="AsDim"/>.
     /// </summary>
     internal protected virtual TExprResult VisitAsDim(AsDim expr) => base.VisitAsDim(expr, default);
@@ -1836,14 +1855,6 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     protected sealed override TExprResult VisitLeafAffineExpr(Affine.AffineExpr expr, Unit context) => VisitLeafAffineExpr(expr);
 
     /// <summary>
-    /// Visit leaf <see cref="Affine.AffineExpr"/>.
-    /// </summary>
-    protected virtual TExprResult VisitLeafAffineSymbolBase(Affine.AffineExpr expr) => base.VisitLeafAffineSymbolBase(expr, default);
-    
-    /// <inheritdoc/>
-    protected sealed override TExprResult VisitLeafAffineSymbolBase(Affine.AffineExpr expr, Unit context) => VisitLeafAffineSymbolBase(expr);
-
-    /// <summary>
     /// Visit leaf <see cref="Affine.AffineDim"/>.
     /// </summary>
     protected virtual TExprResult VisitLeafAffineDim(Affine.AffineDim expr) => base.VisitLeafAffineDim(expr, default);
@@ -1962,6 +1973,14 @@ public partial class ExprVisitor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     protected sealed override TExprResult VisitLeafBufferOf(Buffers.BufferOf expr, Unit context) => VisitLeafBufferOf(expr);
+
+    /// <summary>
+    /// Visit leaf <see cref="Distributed.ThreadIdDim"/>.
+    /// </summary>
+    protected virtual TExprResult VisitLeafThreadIdDim(Distributed.ThreadIdDim expr) => base.VisitLeafThreadIdDim(expr, default);
+    
+    /// <inheritdoc/>
+    protected sealed override TExprResult VisitLeafThreadIdDim(Distributed.ThreadIdDim expr, Unit context) => VisitLeafThreadIdDim(expr);
 
     /// <summary>
     /// Visit leaf <see cref="Dimension"/>.

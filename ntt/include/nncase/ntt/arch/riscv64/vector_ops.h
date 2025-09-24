@@ -37,12 +37,12 @@ struct vmma<AccC, false, ntt::vector<float, 1, 4>, ntt::vector<float, 4, 4>,
                const ntt::vector<float, 4, 4> &rhs,
                const ntt::vector<float, 1, 4> &v3) const noexcept {
         auto output = v3;
-        auto t0 = AccC ? ntt::mul_add(lhs(0, 0), rhs(0), output(0))
-                       : ntt::mul(lhs(0, 0), rhs(0));
-        auto t1 = ntt::mul(lhs(0, 1), rhs(1));
-        t0 = ntt::mul_add(lhs(0, 2), rhs(2), t0);
-        t1 = ntt::mul_add(lhs(0, 3), rhs(3), t1);
-        output(0) = ntt::add(t0, t1);
+        auto t0 = AccC ? ntt::mul_add(lhs(0, 0), rhs(0_dim), output(0_dim))
+                       : ntt::mul(lhs(0, 0), rhs(0_dim));
+        auto t1 = ntt::mul(lhs(0, 1), rhs(1_dim));
+        t0 = ntt::mul_add(lhs(0, 2), rhs(2_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 3), rhs(3_dim), t1);
+        output(0_dim) = ntt::add(t0, t1);
         return output;
     }
 };
@@ -56,48 +56,48 @@ struct vmma<AccC, false, ntt::vector<float, 1, 32>, ntt::vector<float, 32, 32>,
                const ntt::vector<float, 1, 32> &v3) const noexcept {
         auto output = v3;
 
-        auto t0 = AccC ? ntt::mul_add(lhs(0, 0), rhs(0), output(0))
-                       : ntt::mul(lhs(0, 0), rhs(0));
-        auto t1 = ntt::mul(lhs(0, 1), rhs(1));
-        t0 = ntt::mul_add(lhs(0, 2), rhs(2), t0);
-        t1 = ntt::mul_add(lhs(0, 3), rhs(3), t1);
+        auto t0 = AccC ? ntt::mul_add(lhs(0, 0), rhs(0_dim), output(0_dim))
+                       : ntt::mul(lhs(0, 0), rhs(0_dim));
+        auto t1 = ntt::mul(lhs(0, 1), rhs(1_dim));
+        t0 = ntt::mul_add(lhs(0, 2), rhs(2_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 3), rhs(3_dim), t1);
 
-        t0 = ntt::mul_add(lhs(0, 4), rhs(4), t0);
-        t1 = ntt::mul_add(lhs(0, 5), rhs(5), t1);
-        t0 = ntt::mul_add(lhs(0, 6), rhs(6), t0);
-        t1 = ntt::mul_add(lhs(0, 7), rhs(7), t1);
+        t0 = ntt::mul_add(lhs(0, 4), rhs(4_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 5), rhs(5_dim), t1);
+        t0 = ntt::mul_add(lhs(0, 6), rhs(6_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 7), rhs(7_dim), t1);
 
-        t0 = ntt::mul_add(lhs(0, 8), rhs(8), t0);
-        t1 = ntt::mul_add(lhs(0, 9), rhs(9), t1);
-        t0 = ntt::mul_add(lhs(0, 10), rhs(10), t0);
-        t1 = ntt::mul_add(lhs(0, 11), rhs(11), t1);
+        t0 = ntt::mul_add(lhs(0, 8), rhs(8_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 9), rhs(9_dim), t1);
+        t0 = ntt::mul_add(lhs(0, 10), rhs(10_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 11), rhs(11_dim), t1);
 
-        t0 = ntt::mul_add(lhs(0, 12), rhs(12), t0);
-        t1 = ntt::mul_add(lhs(0, 13), rhs(13), t1);
-        t0 = ntt::mul_add(lhs(0, 14), rhs(14), t0);
-        t1 = ntt::mul_add(lhs(0, 15), rhs(15), t1);
+        t0 = ntt::mul_add(lhs(0, 12), rhs(12_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 13), rhs(13_dim), t1);
+        t0 = ntt::mul_add(lhs(0, 14), rhs(14_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 15), rhs(15_dim), t1);
 
-        t0 = ntt::mul_add(lhs(0, 16), rhs(16), t0);
-        t1 = ntt::mul_add(lhs(0, 17), rhs(17), t1);
-        t0 = ntt::mul_add(lhs(0, 18), rhs(18), t0);
-        t1 = ntt::mul_add(lhs(0, 19), rhs(19), t1);
+        t0 = ntt::mul_add(lhs(0, 16), rhs(16_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 17), rhs(17_dim), t1);
+        t0 = ntt::mul_add(lhs(0, 18), rhs(18_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 19), rhs(19_dim), t1);
 
-        t0 = ntt::mul_add(lhs(0, 20), rhs(20), t0);
-        t1 = ntt::mul_add(lhs(0, 21), rhs(21), t1);
-        t0 = ntt::mul_add(lhs(0, 22), rhs(22), t0);
-        t1 = ntt::mul_add(lhs(0, 23), rhs(23), t1);
+        t0 = ntt::mul_add(lhs(0, 20), rhs(20_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 21), rhs(21_dim), t1);
+        t0 = ntt::mul_add(lhs(0, 22), rhs(22_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 23), rhs(23_dim), t1);
 
-        t0 = ntt::mul_add(lhs(0, 24), rhs(24), t0);
-        t1 = ntt::mul_add(lhs(0, 25), rhs(25), t1);
-        t0 = ntt::mul_add(lhs(0, 26), rhs(26), t0);
-        t1 = ntt::mul_add(lhs(0, 27), rhs(27), t1);
+        t0 = ntt::mul_add(lhs(0, 24), rhs(24_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 25), rhs(25_dim), t1);
+        t0 = ntt::mul_add(lhs(0, 26), rhs(26_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 27), rhs(27_dim), t1);
 
-        t0 = ntt::mul_add(lhs(0, 28), rhs(28), t0);
-        t1 = ntt::mul_add(lhs(0, 29), rhs(29), t1);
-        t0 = ntt::mul_add(lhs(0, 30), rhs(30), t0);
-        t1 = ntt::mul_add(lhs(0, 31), rhs(31), t1);
+        t0 = ntt::mul_add(lhs(0, 28), rhs(28_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 29), rhs(29_dim), t1);
+        t0 = ntt::mul_add(lhs(0, 30), rhs(30_dim), t0);
+        t1 = ntt::mul_add(lhs(0, 31), rhs(31_dim), t1);
 
-        output(0) = ntt::add(t0, t1);
+        output(0_dim) = ntt::add(t0, t1);
         return output;
     }
 };
@@ -111,16 +111,16 @@ struct vmma<AccC, false, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
                const ntt::vector<float, 4, 4> &v3) const noexcept {
         auto output = v3;
         ntt::vector<float, 1, 4> lhs_2d[4]{
-            {{lhs(0)}},
-            {{lhs(1)}},
-            {{lhs(2)}},
-            {{lhs(3)}},
+            {{lhs(0_dim)}},
+            {{lhs(1_dim)}},
+            {{lhs(2_dim)}},
+            {{lhs(3_dim)}},
         };
         ntt::vector<float, 1, 4> output_2d[4]{
-            {{v3(0)}},
-            {{v3(1)}},
-            {{v3(2)}},
-            {{v3(3)}},
+            {{v3(0_dim)}},
+            {{v3(1_dim)}},
+            {{v3(2_dim)}},
+            {{v3(3_dim)}},
         };
 
         output_2d[0] = ntt::vmma<AccC>(lhs_2d[0], rhs, output_2d[0]);
@@ -128,10 +128,10 @@ struct vmma<AccC, false, ntt::vector<float, 4, 4>, ntt::vector<float, 4, 4>,
         output_2d[2] = ntt::vmma<AccC>(lhs_2d[2], rhs, output_2d[2]);
         output_2d[3] = ntt::vmma<AccC>(lhs_2d[3], rhs, output_2d[3]);
 
-        output(0) = output_2d[0](0);
-        output(1) = output_2d[1](0);
-        output(2) = output_2d[2](0);
-        output(3) = output_2d[3](0);
+        output(0_dim) = output_2d[0](0);
+        output(1_dim) = output_2d[1](0);
+        output(2_dim) = output_2d[2](0);
+        output(3_dim) = output_2d[3](0);
 
         return output;
     }

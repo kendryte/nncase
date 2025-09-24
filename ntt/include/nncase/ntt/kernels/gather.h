@@ -15,6 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../tensor_traits.h"
+#include "copy.h"
 
 namespace nncase::ntt {
 namespace detail {
@@ -41,7 +42,7 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
     }
 
     template <FixedDimension TAxis>
-    requires FixedTensor<TB>
+        requires FixedTensor<TB>
     constexpr void operator()(const TA &input, const TB &indices, TC &output,
                               const TAxis &) noexcept {
 
@@ -112,10 +113,10 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
                                                          rank - (axis + 1)>());
                 auto addr_input =
                     reinterpret_cast<const element_type *>(&(input(in_index)));
-                auto addr_output = reinterpret_cast<const element_type *>(
-                    &(output(out_index)));
+                auto addr_output =
+                    reinterpret_cast<element_type *>(&(output(out_index)));
                 ntt::u_unary(ntt::ops::copy<element_type>{}, addr_input, 1,
-                             const_cast<std::remove_const_t<element_type>*>(addr_output), 1, 1);
+                             addr_output, 1, 1);
             });
         }
     }
@@ -162,6 +163,7 @@ class distributed_gather_impl {
     using mesh_type = typename TA::mesh_type;
     using local_input_tensor_type = typename TA::local_tensor_type;
     using element_type = local_input_tensor_type::value_type;
+    using TInShape = typename local_input_tensor_type::shape_type;
 
     inline static constexpr auto rank = TA::rank();
     inline static constexpr auto indices_rank = TB::rank();
@@ -175,29 +177,44 @@ class distributed_gather_impl {
         const auto global_offset =
             input.sharding().global_offset(input.shape(), local_mesh_index);
         const auto local_input = input.local();
-        const auto local_shape = local_input.shape();
+        const auto local_in_shape = local_input.shape();
 
         const auto axis_global_start = global_offset[axis];
-        const auto axis_global_end = axis_global_start + local_shape[axis];
+        const auto axis_global_end = axis_global_start + local_in_shape[axis];
 
-        ntt::apply(output.shape(), [&](auto out_index) {
-            const auto indices_index =
-                out_index.template slice<axis, indices_rank>();
-            auto global_idx = indices(indices_index);
+        const auto out_slice_shape =
+            local_in_shape.template slice<0, axis>()
+                .concat(make_ones_shape<indices_rank>())
+                .concat(local_in_shape.template slice<axis + 1>());
+        const auto in_slice_shape =
+            local_in_shape.template slice<0, axis>().append(1_dim).concat(
+                local_in_shape.template slice<axis + 1>());
 
+        ntt::apply(indices.shape(), [&](auto indices_index) {
+            const auto out_offset =
+                make_zeros_shape<axis>()
+                    .concat(indices_index)
+                    .concat(make_zeros_shape<rank - axis - 1>());
+            auto out_slice =
+                output.view(out_offset, out_slice_shape)
+                    .squeeze(make_index_shape<indices_rank, axis>());
+            const auto global_idx = indices(indices_index);
             if (global_idx >= axis_global_start &&
                 global_idx < axis_global_end) {
-                const auto in_index =
-                    out_index.template slice<0, axis>()
-                        .append((dim_t)global_idx - axis_global_start)
-                        .concat(out_index.template slice<axis + indices_rank,
-                                                         rank - (axis + 1)>());
-                output(out_index) = local_input(in_index);
+                const auto in_offset =
+                    make_zeros_shape<axis>()
+                        .append(global_idx - axis_global_start)
+                        .concat(make_zeros_shape<rank - axis - 1>());
+                const auto in_slice =
+                    local_input.view(in_offset, in_slice_shape)
+                        .squeeze(make_index_shape<1, axis>());
+                ntt::tensor_copy_async(in_slice, out_slice);
             } else {
-                // Index is outside the local shard's range, fill with zeros
-                output(out_index) = element_type{};
+                ntt::tensor_zero(out_slice);
             }
         });
+
+        ntt::tensor_copy_wait<void>();
     }
 };
 

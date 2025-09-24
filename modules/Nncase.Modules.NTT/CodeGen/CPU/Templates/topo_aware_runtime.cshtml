@@ -76,7 +76,7 @@ void tensor_boxing_load_sync(const GlobalShape &global_shape, const Index &index
     using TOutBase = std::decay_t<TDst>;
     using TElem = typename TOutBase::element_type;
     auto gtensor = ntt::make_tensor_view<TElem>((TElem *)tar::collective_pool_ptr, global_shape);
-    ntt::tensor_copy(gtensor.view(index, dest.shape()), dest);
+    ntt::tensor_copy_sync(gtensor.view(index, dest.shape()), dest);
     tar::@(GetName(Enumerable.Range(0, hierarchy.Length)))(@(string.Join(",", Enumerable.Repeat("0", hierarchy.Length)))).arrive_and_wait();
 }
 
@@ -86,7 +86,7 @@ void tensor_boxing_store_sync(const GlobalShape &global_shape, const Index &inde
     using TSrcBase = std::decay_t<TSrc>;
     using TElem = typename TSrcBase::element_type;
     auto gtensor = ntt::make_tensor_view<TElem>((TElem *)tar::collective_pool_ptr, global_shape);
-    ntt::tensor_copy(src, gtensor.view(index, src.shape()));
+    ntt::tensor_copy_sync(src, gtensor.view(index, src.shape()));
     tar::@(GetName(Enumerable.Range(0, hierarchy.Length)))(@(string.Join(",", Enumerable.Repeat("0", hierarchy.Length)))).arrive_and_wait();
 }
 
@@ -268,9 +268,10 @@ class tensor_reduce_sync_impl {
             });
             auto viewed_src_tensor = src_tensor.view(starts, new_shape);
             auto viewed_dest_tensor = dest.view(starts, new_shape);
-            ntt::tensor_copy(viewed_src_tensor, viewed_dest_tensor);
+            ntt::tensor_copy_async(viewed_src_tensor, viewed_dest_tensor);
         }
 
+        ntt::tensor_copy_wait<void>();
         reduce_group_sync();
 
         if (Op == ntt::reduce_op::mean) {

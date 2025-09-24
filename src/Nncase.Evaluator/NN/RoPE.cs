@@ -25,12 +25,10 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
         var sinTensor = context.GetArgumentValueAsTensor(target, RoPE.Sin);
 
         var originDtype = inputTensor.ElementType;
-        if (originDtype.IsFloat() && originDtype is PrimType && originDtype != DataTypes.Float32)
-        {
-            inputTensor = inputTensor.Cast<float>();
-            cosTensor = cosTensor.Cast<float>();
-            sinTensor = sinTensor.Cast<float>();
-        }
+        var legalOriginDtype = originDtype.Legalize([(DataTypes.Float16, DataTypes.Float32)]);
+        inputTensor = inputTensor.CastElementTo(legalOriginDtype);
+        cosTensor = cosTensor.CastElementTo(legalOriginDtype);
+        sinTensor = sinTensor.CastElementTo(legalOriginDtype);
 
         var input = inputTensor.ToOrtTensor();
         var cos = cosTensor.ToOrtTensor();
@@ -42,8 +40,8 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
 
         // rotate half
         var rotated = OrtKI.Concat([OrtKI.Neg(parts[1]), parts[0]], sliceAxis);
-        var output = OrtKI.Add(OrtKI.Mul(input, cos), OrtKI.Mul(rotated, sin));
-        return output.ToValue(originDtype);
+        var output = OrtKI.Add(OrtKI.Mul(input, cos), OrtKI.Mul(rotated, sin)).ToTensor(legalOriginDtype);
+        return Value.FromTensor(output.CastElementTo(originDtype));
     }
 
     /// <inheritdoc/>
@@ -67,7 +65,7 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
         var inputType = context.GetArgumentType<IRType>(target, RoPE.Input);
         var cosType = context.GetArgumentType<IRType>(target, RoPE.Cos);
         var sinType = context.GetArgumentType<IRType>(target, RoPE.Sin);
-        var macPerElement = 2; // 1 for mul, 1 for add
+        var macPerElement = 4; // 2 for mul, 1 for add, 1 for neg and concat
         var returnType = context.GetReturnType<IRType>();
         return new()
         {
@@ -83,12 +81,12 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
         var cosType = context.GetArgumentType<TensorType>(target, RoPE.Cos);
         var sinType = context.GetArgumentType<TensorType>(target, RoPE.Sin);
         var returnType = context.GetReturnType<TensorType>();
-        var macPerElement = 2; // 1 for mul, 1 for add
+        var macPerElement = 4; // 2 for mul, 1 for add, 1 for neg and concat
 
         return new()
         {
             [MetricFactorNames.OffChipMemoryTraffic] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(cosType) + CostUtility.GetMemoryAccess(sinType) + CostUtility.GetMemoryAccess(returnType),
-            [MetricFactorNames.FLOPs] = MetricUtility.GetFLOPs(returnType, macPerElement),
+            [MetricFactorNames.FLOPs] = CostUtility.GetCPUCycles(returnType, macPerElement),
         };
     }
 
@@ -101,9 +99,14 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
     {
         var invalid = new InvalidType($"{input}, {scale}, {bias} not support");
         if (input.Placement != scale.Placement || scale.Placement != bias.Placement
-            || !input.AxisPolicies[1..].SequenceEqual(scale.AxisPolicies)
-            || !scale.AxisPolicies.SequenceEqual(bias.AxisPolicies)
-            || input.AxisPolicies[^1] is not SBPBroadCast)
+            || !scale.AxisPolicies.SequenceEqual(bias.AxisPolicies))
+        {
+            return invalid;
+        }
+
+        // [head, seq, dim]
+        if (!input.AxisPolicies[1..].SequenceEqual(scale.AxisPolicies)
+            || input.AxisPolicies[2] is not SBPBroadCast)
         {
             return invalid;
         }

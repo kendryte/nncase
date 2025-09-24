@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using DryIoc.ImTools;
@@ -24,9 +25,9 @@ namespace Nncase.Evaluator.Math;
 /// </summary>
 public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICostEvaluator<MatMul>, IMetricEvaluator<MatMul>
 {
-    public static IRType VisitDistributedType(DistributedType a, DistributedType b, bool vectorizeK = false, MatMulDimInfo? dimInfo = null, bool transB = false, DataType outputDataType = null!)
+    public static IRType VisitDistributedType(DistributedType a, DistributedType b, IRType scale, bool vectorizeK = false, MatMulDimInfo? dimInfo = null, bool transB = false, DataType outputDataType = null!)
     {
-        if (VisitTensorType(a.TensorType, b.TensorType, vectorizeK, dimInfo, outputDataType) is not TensorType outType)
+        if (VisitTensorType(a.TensorType, b.TensorType, scale, vectorizeK, dimInfo, outputDataType) is not TensorType outType)
         {
             return new InvalidType($"{a.TensorType} {b.TensorType} not support");
         }
@@ -44,6 +45,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var (lm, lk, rk, rn) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
         var aMaxShape = CompilerServices.GetMaxShape(a.TensorType.Shape);
         var bMaxShape = CompilerServices.GetMaxShape(b.TensorType.Shape);
+        bool isPartial = false;
 
         // TODO: keep summa only
         if (!a.TensorType.Shape.IsFixed || !b.TensorType.Shape.IsFixed || transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
@@ -104,12 +106,19 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             ndsbp[oRank - 2] = a.AxisPolicies[lm];
             ndsbp[oRank - 1] = b.AxisPolicies[rn];
 
+            if (a.AxisPolicies[lk] is SBPSplit || b.AxisPolicies[rk] is SBPSplit)
+            {
+                ndsbp[oRank - 2] = ndsbp[oRank - 2];
+                ndsbp[oRank - 1] = ndsbp[oRank - 1];
+                isPartial = true;
+            }
+
             if (!DistributedUtility.IsDistributable(outType, ndsbp, a.Placement))
             {
                 return new InvalidType("no valid sbp.");
             }
 
-            return new DistributedType(outType, ndsbp, a.Placement);
+            return new DistributedType(outType, ndsbp, a.Placement, Partial: isPartial);
         }
         else
         {
@@ -140,6 +149,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     {
                         ndsbp[oRank - 2] = a.AxisPolicies[lm];
                         ndsbp[oRank - 1] = b.AxisPolicies[rn];
+                        isPartial = true;
                     }
                     else
                     {
@@ -201,7 +211,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
             if (DistributedUtility.IsDistributable(ndsbp))
             {
-                return new DistributedType(outType, ndsbp, a.Placement);
+                return new DistributedType(outType, ndsbp, a.Placement, isPartial);
             }
 
             return new InvalidType("no valid sbp.");
@@ -214,7 +224,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new DistributedType(a.TensorType, ndsbp, a.Placement);
     }
 
-    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, bool vectorizeK = false, MatMulDimInfo? dimInfo = null, DataType outputDataType = null!)
+    public static IRType VisitTensorType(TensorType lhs, TensorType rhs, IRType scale, bool vectorizeK = false, MatMulDimInfo? dimInfo = null, DataType outputDataType = null!)
     {
         if (lhs.Shape is not RankedShape lhsShape
             || rhs.Shape is not RankedShape rhsShape)
@@ -239,6 +249,14 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         if (lhsDType == DataTypes.Float8E4M3 || lhsDType == DataTypes.Float8E5M2 || lhsDType == DataTypes.Int8)
         {
             dtype = outputDataType;
+        }
+
+        if (scale is TensorType scaleType)
+        {
+            if (!scaleType.IsScalar || (scaleType.DType != DataTypes.Float32) || (lhsDType.SizeInBytes != 1))
+            {
+                return new InvalidType("Scale should be a float32 scalar when lhs or rhs is float8/int8.");
+            }
         }
 
         if (lhs.DType is VectorType vl1 && rhs.DType is not VectorType)
@@ -314,22 +332,36 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return new TensorType(dtype, front.Concat(end).ToArray());
     }
 
-    public static IValue InferValue(DataType dataType, Tensor lhs, Tensor rhs, DataType outputDataType = null!)
+    public static IValue InferValue(DataType dataType, Tensor lhs, Tensor rhs, DataType outputDataType = null!, IValue scale = null!)
     {
+        IValue result;
         if (dataType.IsFloat() && dataType != DataTypes.Float32)
         {
-            var lhsOrt = Cast(lhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-            var rhsOrt = Cast(rhs, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
-            var result = OrtKI.MatMul(lhsOrt, rhsOrt).ToTensor();
-            var ret = Cast(result, outputDataType).Evaluate().AsTensor();
-            return Value.FromTensor(ret);
+            var lhsOrt = lhs.CastElementTo(DataTypes.Float32).ToOrtTensor();
+            var rhsOrt = rhs.CastElementTo(DataTypes.Float32).ToOrtTensor();
+            var matmul = OrtKI.MatMul(lhsOrt, rhsOrt);
+            if (scale is TensorValue)
+            {
+                matmul = OrtKI.Mul(matmul, scale.AsTensor().ToOrtTensor());
+            }
+
+            var ret = matmul.ToTensor().CastElementTo(outputDataType);
+            result = Value.FromTensor(ret);
         }
         else
         {
             var input = lhs.ToOrtTensor();
             var other = rhs.ToOrtTensor();
-            return OrtKI.MatMul(input, other).ToValue();
+            var matmul = OrtKI.MatMul(input, other);
+            if (scale is TensorValue)
+            {
+                matmul = OrtKI.Mul(matmul, scale.AsTensor().ToOrtTensor());
+            }
+
+            result = Value.FromTensor(matmul.ToTensor());
         }
+
+        return result;
     }
 
     /// <inheritdoc/>
@@ -338,8 +370,9 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var dataType = context.CurrentCall.Arguments[MatMul.Lhs.Index].CheckedDataType;
         var lhs = context.GetArgumentValue(matMul, MatMul.Lhs).AsTensor();
         var rhs = context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor();
+        var scale = context.GetArgumentValue(matMul, MatMul.Scale);
         var outputDataType = matMul.OutputDataType;
-        return InferValue(dataType, lhs, rhs, outputDataType);
+        return InferValue(dataType, lhs, rhs, outputDataType, scale);
     }
 
     /// <inheritdoc/>
@@ -347,11 +380,12 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         var lhs = context.CheckArgumentType<IRType>(target, MatMul.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, MatMul.Rhs);
+        var scale = context.CheckArgumentType<IRType>(target, MatMul.Scale);
         var outputDataType = target.OutputDataType;
         return (lhs, rhs) switch
         {
-            (DistributedType a, DistributedType b) => VisitDistributedType(a, b, false, null, false, outputDataType),
-            (TensorType a, TensorType b) => VisitTensorType(a, b, false, null, outputDataType),
+            (DistributedType a, DistributedType b) => VisitDistributedType(a, b, scale, false, null, false, outputDataType),
+            (TensorType a, TensorType b) => VisitTensorType(a, b, scale, false, null, outputDataType),
             _ => new InvalidType($"{lhs} {rhs} not support"),
         };
     }

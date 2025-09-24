@@ -17,102 +17,48 @@ public sealed class VectorizedMatMulEvaluator : IEvaluator<VectorizedMatMul>, IT
 {
     public IValue Visit(IEvaluateContext context, VectorizedMatMul target)
     {
-        var lhs = context.GetOrtArgumentValue(target, VectorizedMatMul.Lhs); // [x,m/32,k/32,m',k']
-        var rhs = context.GetOrtArgumentValue(target, VectorizedMatMul.Rhs); // [x,k/32,n/32,k',n']
+        var lhs = context.GetArgumentValueAsTensor(target, VectorizedMatMul.Lhs); // [x,m/32,k/32]<m',k'>
+        var rhs = context.GetArgumentValueAsTensor(target, VectorizedMatMul.Rhs); // [x,k/32,n/32]<k',n'>
 
-        var outRank = context.CurrentCall.CheckedShape.Rank;
-        var outLanes = Array.Empty<int>();
-        var outShape = Array.Empty<long>();
-        var axes = Array.Empty<int>();
-        var (lm, lk) = target.TransposeA ? (lhs.Rank - target.RhsVectorizedAxes.Count - 1, lhs.Rank - target.RhsVectorizedAxes.Count - 2) : (lhs.Rank - target.LhsVectorizedAxes.Count - 2, lhs.Rank - target.LhsVectorizedAxes.Count - 1);
-        var (rk, rn) = target.TransposeB ? (rhs.Rank - target.RhsVectorizedAxes.Count - 1, rhs.Rank - target.RhsVectorizedAxes.Count - 2) : (rhs.Rank - target.RhsVectorizedAxes.Count - 2, rhs.Rank - target.RhsVectorizedAxes.Count - 1);
-        if (target.LhsVectorizedAxes.Count == 0 && target.RhsVectorizedAxes.Count == 1)
-        {
-            outLanes = new[] { (int)rhs.Shape[^1] };
-            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
-            axes = new[] { outRank - 1 };
-        }
-        else if (target.LhsVectorizedAxes.Count == 1 && target.RhsVectorizedAxes.Count == 0)
-        {
-            outLanes = new[] { (int)lhs.Shape[^1] };
-            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
-            axes = new[] { outRank - 2 };
-        }
-        else if (target.LhsVectorizedAxes.Count == 1 && target.RhsVectorizedAxes.Count == 1)
-        {
-            if (target.LhsVectorizedAxes[0] == lk && target.RhsVectorizedAxes[0] == rk)
-            {
-                outLanes = Array.Empty<int>();
-                axes = Array.Empty<int>();
-            }
-            else
-            {
-                outLanes = new[] { (int)lhs.Shape[^1], (int)rhs.Shape[^1] };
-                axes = new[] { outRank - 2, outRank - 1 };
-            }
-
-            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
-        }
-        else if (target.LhsVectorizedAxes.Count == 1 && target.RhsVectorizedAxes.Count == 2)
-        {
-            outLanes = new[] { (int)rhs.Shape[^1] };
-            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
-            axes = new[] { outRank - 1 };
-        }
-        else if (target.LhsVectorizedAxes.Count == 2 && target.RhsVectorizedAxes.Count == 1)
-        {
-            outLanes = new[] { (int)lhs.Shape[^2] };
-            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
-            axes = new[] { outRank - 2 };
-        }
-        else if (target.LhsVectorizedAxes.Count == 2 && target.RhsVectorizedAxes.Count == 2)
-        {
-            outLanes = new[] { (int)lhs.Shape[^2], (int)rhs.Shape[^1] };
-            outShape = new[] { lhs.Shape[lm], rhs.Shape[rn] };
-            axes = new[] { outRank - 2, outRank - 1 };
-        }
-        else
-        {
-            throw new NotImplementedException("VectorizedMatMul with more than 2 vectorized axes is not supported.");
-        }
-
-        var maxRank = System.Math.Max(lhs.Shape.Length - target.LhsVectorizedAxes.Count, rhs.Shape.Length - target.RhsVectorizedAxes.Count);
-        outShape = Enumerable.Repeat(1L, maxRank - lhs.Shape.Length + target.LhsVectorizedAxes.Count).Concat(lhs.Shape.SkipLast(2 + target.LhsVectorizedAxes.Count)).
-         Zip(Enumerable.Repeat(1L, maxRank - rhs.Shape.Length + target.RhsVectorizedAxes.Count).Concat(rhs.Shape.SkipLast(2 + target.RhsVectorizedAxes.Count))).
-         Select(p => System.Math.Max(p.First, p.Second)).
-         Concat(outShape).ToArray();
-
-        lhs = lhs.Unpack(target.LhsVectorizedAxes.Count, target.LhsVectorizedAxes);
-        rhs = rhs.Unpack(target.RhsVectorizedAxes.Count, target.RhsVectorizedAxes);
+        lhs = Evaluator.Tensors.UnpackEvaluator.UnpackImpl(lhs, target.LhsVectorizedAxes);
+        rhs = Evaluator.Tensors.UnpackEvaluator.UnpackImpl(rhs, target.RhsVectorizedAxes);
 
         if (target.TransposeA)
         {
             var perm = Enumerable.Range(0, lhs.Rank).Select(i => (long)i).ToArray();
             (perm[^2], perm[^1]) = (perm[^1], perm[^2]);
-            lhs = OrtKI.Transpose(lhs, perm);
+            lhs = lhs.Transpose(perm);
         }
 
         if (target.TransposeB)
         {
             var perm = Enumerable.Range(0, rhs.Rank).Select(i => (long)i).ToArray();
             (perm[^2], perm[^1]) = (perm[^1], perm[^2]);
-            rhs = OrtKI.Transpose(rhs, perm);
+            rhs = rhs.Transpose(perm);
         }
 
-        var matmul = Math.MatMulEvaluator.InferValue(lhs.DataType.ToDataType(), lhs.ToTensor(), rhs.ToTensor()).AsTensor().ToOrtTensor();
-        if (outLanes.Length > 0)
+        var matmul = Math.MatMulEvaluator.InferValue(lhs.ElementType, lhs, rhs, outputDataType: target.OutputDataType, scale: context.GetArgumentValue(target, VectorizedMatMul.Scale)).AsTensor().ToOrtTensor();
+
+        TensorType outputType = context.CurrentCall.CheckedType switch
         {
-            matmul = matmul.Pack(0, outLanes, axes);
+            DistributedType dt => dt.TensorType,
+            TensorType t => t,
+            _ => throw new ArgumentOutOfRangeException(string.Empty),
+        };
+
+        if (outputType.DType is VectorType ov)
+        {
+            matmul = matmul.Pack(0, ov.Lanes, target.GetOutVectorizeAxes(lhs.Rank, rhs.Rank));
         }
 
-        return Value.FromTensor(Tensor.FromBytes(outLanes.Length == 0 ? DataTypes.Float32 : new VectorType(DataTypes.Float32, outLanes), matmul.BytesBuffer.ToArray(), outShape));
+        return matmul.ToValue(outputType.DType);
     }
 
     public IRType Visit(ITypeInferenceContext context, VectorizedMatMul target)
     {
         var lhs = context.CheckArgumentType<IRType>(target, VectorizedMatMul.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, VectorizedMatMul.Rhs);
-
+        var scale = context.CheckArgumentType<IRType>(target, VectorizedMatMul.Scale);
         IRType rType;
         string? errorMessage = null;
         switch (lhs, rhs)
@@ -122,7 +68,7 @@ public sealed class VectorizedMatMulEvaluator : IEvaluator<VectorizedMatMul>, IT
                     var dimInfo = target.GetDimInfo(a.TensorType.Shape.Rank, b.TensorType.Shape.Rank);
                     (var lhsVectorizeKind, var rhsVectorizeKind) = target.GetVectorizeKind(a.TensorType.Shape.Rank, b.TensorType.Shape.Rank);
                     bool vectorizeK = lhsVectorizeKind == VectorizedMatMul.VectorizeKind.K && rhsVectorizeKind == VectorizedMatMul.VectorizeKind.K;
-                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, vectorizeK, dimInfo, target.TransposeB, target.OutputDataType);
+                    rType = Math.MatMulEvaluator.VisitDistributedType(a, b, scale, vectorizeK, dimInfo, target.TransposeB, target.OutputDataType);
                     if (target.FusedReduce)
                     {
                         rType = Math.MatMulEvaluator.ConvertPartialToBroadcast((DistributedType)rType);
@@ -135,7 +81,7 @@ public sealed class VectorizedMatMulEvaluator : IEvaluator<VectorizedMatMul>, IT
                     var dimInfo = target.GetDimInfo(a.Shape.Rank, b.Shape.Rank);
                     (var lhsVectorizeKind, var rhsVectorizeKind) = target.GetVectorizeKind(a.Shape.Rank, b.Shape.Rank);
                     bool vectorizeK = lhsVectorizeKind == VectorizedMatMul.VectorizeKind.K && rhsVectorizeKind == VectorizedMatMul.VectorizeKind.K;
-                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, vectorizeK, dimInfo, target.OutputDataType);
+                    rType = Math.MatMulEvaluator.VisitTensorType(a, b, scale, vectorizeK, dimInfo, target.OutputDataType);
                 }
 
                 break;

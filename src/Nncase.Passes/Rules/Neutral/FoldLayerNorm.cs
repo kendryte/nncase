@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DryIoc;
+using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Math;
@@ -505,5 +506,52 @@ public sealed partial class ConvertLayerNormChannelFirstToLast : RewriteRule<Cal
         }
 
         return Tensors.Transpose(LayerNorm(x.CheckedShape.Rank - 1, eps, Tensors.Transpose(x, inPerm.ToArray()), newScale, newBias, useMean, true), outPerm.ToArray());
+    }
+}
+
+[RuleGenerator]
+public sealed partial class FoldLayerNormBinary : RewriteRule<CallPattern>
+{
+    public override CallPattern Pattern { get; } =
+    IsBinary(
+        "binary",
+        "binaryCall",
+        _ => true,
+        IsLayerNorm(
+            "ln",
+            "_",
+            _ => true,
+            IsWildcard("x"),
+            IsTensorConst("scale"),
+            IsTensorConst("bias")),
+        IsTensorConst("binaryConst"));
+
+    private Expr? GetReplace(LayerNorm ln, Binary binary, Expr x, TensorConst scale, TensorConst bias, TensorConst binaryConst)
+    {
+        if (TypeInference.BroadcastType(scale.CheckedTensorType, binaryConst.CheckedTensorType) == scale.CheckedTensorType)
+        {
+            if (binary.BinaryOp == BinaryOp.Add)
+            {
+                return LayerNorm(ln.Axis, ln.Epsilon, x, scale, IR.F.Math.Add(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst);
+            }
+            else if (binary.BinaryOp == BinaryOp.Sub)
+            {
+                return LayerNorm(ln.Axis, ln.Epsilon, x, scale, IR.F.Math.Sub(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst);
+            }
+            else if (binary.BinaryOp == BinaryOp.Mul)
+            {
+                return LayerNorm(ln.Axis, ln.Epsilon, x, IR.F.Math.Mul(scale, binaryConst).Evaluate().AsTensor(), IR.F.Math.Mul(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst);
+            }
+            else if (binary.BinaryOp == BinaryOp.Div)
+            {
+                return LayerNorm(ln.Axis, ln.Epsilon, x, IR.F.Math.Div(scale, binaryConst).Evaluate().AsTensor(), IR.F.Math.Div(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        return null;
     }
 }

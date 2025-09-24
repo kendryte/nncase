@@ -120,19 +120,23 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             }
             else
             {
-                result = Ort_compute(binary, lhs, rhs, originDtype);
+                result = Value.FromTensor(Ort_compute(binary, lhs, rhs, originDtype));
             }
         }
         else
         {
             // for float16/float8/bfloat16 infere
+            var expandOrgDtype = originDtype.Legalize([(DataTypes.Float16, DataTypes.Float32),
+                                    (DataTypes.BFloat16, DataTypes.Float32),
+                                    (DataTypes.Float8E4M3, DataTypes.Float32),
+                                    (DataTypes.Float8E5M2, DataTypes.Float32)]);
             if (originDtype.IsFloat())
             {
                 lhs = lhs.CastElement<float>();
                 rhs = rhs.CastElement<float>();
             }
 
-            result = Ort_compute(binary, lhs, rhs, originDtype);
+            result = Value.FromTensor(Ort_compute(binary, lhs, rhs, expandOrgDtype).CastTo(originDtype));
         }
 
         return result;
@@ -307,7 +311,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
         _ => throw new ArgumentOutOfRangeException(nameof(op)),
     };
 
-    private IValue Ort_compute(Binary binary, Tensor lhs, Tensor rhs, DataType dataType)
+    private Tensor Ort_compute(Binary binary, Tensor lhs, Tensor rhs, DataType dataType)
     {
         var a = lhs.ToOrtTensor();
         var b = rhs.ToOrtTensor();
@@ -348,7 +352,7 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             BinaryOp.LeftShift => OrtKI.LeftShift(a, b),
             BinaryOp.RightShift => OrtKI.RightShift(a, b),
             _ => throw new ArgumentOutOfRangeException(nameof(binary)),
-        }).ToValue(dataType);
+        }).ToTensor(dataType);
     }
 
     private IRType Visit(Binary target, TensorType lhs, TensorType rhs)
