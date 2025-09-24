@@ -190,20 +190,20 @@ class HuggingfaceTestRunner(TestRunner):
             count = 0
             if (self.cfg['huggingface_options']['output_logits']):
                 if not test_utils.in_ci():
-                    logits = result.logits.detach().numpy()[0]
+                    logits = result.logits.detach().to(torch.float32).numpy()[0]
                     dump_data_to_file(self.case_dir, f'cpu_result_{count}', logits)
                     outputs.append(logits)
                     count += 1
             else:
                 if not test_utils.in_ci():
-                    hidden_states = recursive_stack(result.hidden_states).detach().numpy()[-1][0]
+                    hidden_states = recursive_stack(result.hidden_states).detach().to(torch.float32).numpy()[-1][0]
                     dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
                     outputs.append(hidden_states)
                     count += 1
 
             if (self.cfg['huggingface_options']['output_hidden_states']):
                 if not test_utils.in_ci():
-                    hidden_states = recursive_stack(result.hidden_states).detach().numpy()
+                    hidden_states = recursive_stack(result.hidden_states).detach().to(torch.float32).numpy()
                     hidden_states = np.squeeze(hidden_states, 1)
                     dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
                     outputs.append(hidden_states)
@@ -282,7 +282,7 @@ class HuggingfaceTestRunner(TestRunner):
             # dequantize_weights(model_path)
             # delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
-            model_path, config=config, torch_dtype="auto", device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
+            model_path, config=config, torch_dtype="auto", device_map="cpu", trust_remote_code=True).eval()
         # restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
