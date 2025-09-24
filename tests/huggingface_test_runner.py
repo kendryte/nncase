@@ -3,8 +3,6 @@ from typing import Sequence
 import shutil
 import os
 import numpy as np
-from numpy.core.defchararray import array
-from numpy.lib.function_base import select
 from test_runner import *
 import io
 from transformers import AutoModelForCausalLM, AutoTokenizer, AutoConfig
@@ -101,7 +99,24 @@ def dequantize_weights(model_dir):
                         print(f"Warning: Corresponding weight {weight_key} not found, skipping.")
 
             save_file(state_dict, filepath)
+def normlize_safetensor(model_dir):
+    for filename in os.listdir(model_dir):
+        if filename.endswith(".safetensors") and not filename.endswith(".org.safetensors"):
+            filepath = os.path.join(model_dir, filename)
+            org_filepath = filepath.replace(".safetensors", ".org.safetensors")
 
+            if not os.path.exists(org_filepath):
+                os.rename(filepath, org_filepath)
+
+            state_dict = load_file(org_filepath)
+
+            for key in list(state_dict.keys()):
+                if key.endswith('_scale'):
+                    weight_tensor = state_dict[key]
+                    if weight_tensor.dim() == 0:
+                        state_dict[key] = weight_tensor.unsqueeze(0)
+
+            save_file(state_dict, filepath)
 
 def restore_weights(model_dir):
     for filename in os.listdir(model_dir):
@@ -260,11 +275,12 @@ class HuggingfaceTestRunner(TestRunner):
                         print("[quantization_config] attribute 'ignored_layers' renamed to 'ignore'")
             except Exception as e:
                 print(f"[quantization_config] rename ignored_layers failed: {e}")
-            dequantize_weights(model_path)
-            delattr(config, "quantization_config")
+            normlize_safetensor(model_path)
+            # dequantize_weights(model_path)
+            # delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path, config=config, torch_dtype="auto", device_map="cpu", trust_remote_code=True).to(torch.float32).eval()
-        restore_weights(model_path)
+        # restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path, trust_remote_code=True)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens
