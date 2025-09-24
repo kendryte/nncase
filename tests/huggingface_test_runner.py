@@ -196,14 +196,16 @@ class HuggingfaceTestRunner(TestRunner):
                     count += 1
             else:
                 if not test_utils.in_ci():
-                    hidden_states = recursive_stack(result.hidden_states).detach().to(torch.float32).numpy()[-1][0]
+                    hidden_states = recursive_stack(result.hidden_states).detach().to(
+                        torch.float32).numpy()[-1][0]
                     dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
                     outputs.append(hidden_states)
                     count += 1
 
             if (self.cfg['huggingface_options']['output_hidden_states']):
                 if not test_utils.in_ci():
-                    hidden_states = recursive_stack(result.hidden_states).detach().to(torch.float32).numpy()
+                    hidden_states = recursive_stack(
+                        result.hidden_states).detach().to(torch.float32).numpy()
                     hidden_states = np.squeeze(hidden_states, 1)
                     dump_data_to_file(self.case_dir, f'cpu_result_{count}', hidden_states)
                     outputs.append(hidden_states)
