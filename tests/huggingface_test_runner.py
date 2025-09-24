@@ -99,6 +99,8 @@ def dequantize_weights(model_dir):
                         print(f"Warning: Corresponding weight {weight_key} not found, skipping.")
 
             save_file(state_dict, filepath)
+
+
 def normlize_safetensor(model_dir):
     for filename in os.listdir(model_dir):
         if filename.endswith(".safetensors") and not filename.endswith(".org.safetensors"):
@@ -117,6 +119,7 @@ def normlize_safetensor(model_dir):
                         state_dict[key] = weight_tensor.unsqueeze(0)
 
             save_file(state_dict, filepath)
+
 
 def restore_weights(model_dir):
     for filename in os.listdir(model_dir):
