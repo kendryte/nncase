@@ -40,7 +40,7 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
                     while (remain) {
                         size_t vl = __riscv_vsetvl_e32m1(remain);
                         vfloat32m1_t v =
-                            __riscv_vle32_v_f32m1((float *)(row + k), vl);
+                            __riscv_vle32_v_f32m1((float *)(row + j), vl);
                         auto col_dst = vec_output_ptr + (j++) * M + i;
                         __riscv_vsse32_v_f32m1((float *)col_dst,
                                                out_stride_bytes, v, vl);
@@ -78,7 +78,6 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
                     static_cast<intptr_t>(output.stride()[1] * sizeof(float));
                 const intptr_t in_stride_bytes =
                     static_cast<intptr_t>(input.stride()[1] * sizeof(float));
-                
                 for (size_t i = 0; i < M; ++i) {
                     const float *row = in_base + i * N;
                     float *col_dst = out_base + i * output.stride()[0];
