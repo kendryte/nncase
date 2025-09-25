@@ -565,7 +565,6 @@ template <> struct u_cast_policy<true> {
                 prepend_lanes_t<vector<IN_ELEM, vl_in>, 2> in_temp1{};                     \
                                                                                            \
                 if (input_stride == 1) {                                                   \
-                    std::cout << "input_stride == 1" << std::endl;                         \
                     auto in0 = __riscv_vle##IN_BW##_v_##IN_INTRINSIC_ELEM##m4(             \
                         (const IN_BUILTIN_ELEM *)(input + 0 * half_unroll),                \
                         vl_in);                                                            \
