@@ -45,12 +45,12 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
         _legalIndex.AddRange(Enumerable.Range(0, _mergePoints.Count));
         _path = searchPath;
         _graphTiler = graphTiler;
-        Results = new(new LeafTileGraphComparer());
+        ArgumentMemo = new();
     }
 
     public long ObjectValue { get; private set; }
 
-    public Dictionary<TieredTileGraph, Expr> Results { get; }
+    public Dictionary<BufferIdentity, Expr> ArgumentMemo { get; }
 
     public MergePoint GetNextAction(int index)
     {
@@ -86,9 +86,10 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
             {
                 var res = _graphTiler.SolveRootGraph(_graph, _moduleKind, _targetOptions, _dynamicDimVars);
                 ObjectValue = res.ObjectValue;
-                foreach (var item in res.ResultMemo)
+
+                foreach (var item in res.ArgumentMemo)
                 {
-                    Results.Add(item.Key, item.Value);
+                    ArgumentMemo.Add(item.Key, item.Value);
                 }
             }
             catch (System.Exception)

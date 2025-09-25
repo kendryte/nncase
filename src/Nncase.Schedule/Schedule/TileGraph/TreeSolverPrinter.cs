@@ -25,7 +25,7 @@ public sealed class TreeSolverPrinter : TreeSolverBase<IntExpr>, ITreeNodeVisito
             value = $"= {assignment.Value(expr.Var())}";
         }
 
-        writer.WriteLine($"{prefix}: {intExpr.ToSimplifyString()} {value}");
+        writer.WriteLine($"{prefix}: {intExpr.ToSimplifyString(solution is not null)} {value}");
     }
 
     public static void WriteIntExprVector(IndentedTextWriter writer, string prefix, PropagationBaseObject[] intExprs, Assignment? solution = null)
@@ -45,7 +45,7 @@ public sealed class TreeSolverPrinter : TreeSolverBase<IntExpr>, ITreeNodeVisito
                 value = $"= {assignment.Value(expr.Var())}";
             }
 
-            writer.WriteLine($"- {i}: {intExprs[i].ToSimplifyString()} {value}");
+            writer.WriteLine($"- {i}: {intExprs[i].ToSimplifyString(solution is not null)} {value}");
         }
 
         writer.Indent--;

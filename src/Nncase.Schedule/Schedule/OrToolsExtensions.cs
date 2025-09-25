@@ -66,9 +66,9 @@ internal static class OrToolsExtensions
         return vec;
     }
 
-    public static string ToSimplifyString(this PropagationBaseObject intExpr)
+    public static string ToSimplifyString(this PropagationBaseObject intExpr, bool removeRange = true)
     {
         var str = intExpr.ToString();
-        return _rangePattern.Replace(str, string.Empty);
+        return removeRange ? _rangePattern.Replace(str, string.Empty) : str;
     }
 }

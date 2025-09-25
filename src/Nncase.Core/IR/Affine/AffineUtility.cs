@@ -40,6 +40,9 @@ public static class AffineUtility
                 case (AffineDim dim, AffineExtent ext) when dim.Position == ext.Position:
                     ranges[dim.Position] = new(offset, extent);
                     break;
+                case (null, null) when offset is AffineConstant && extent is AffineConstant:
+                    ranges[i] = new(0, bounds[i]);
+                    break;
                 default:
                     throw new System.Diagnostics.UnreachableException();
             }

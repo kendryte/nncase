@@ -103,10 +103,10 @@ public static class GraphExtensions
                 {
                     switch (arg.Edge.Tag)
                     {
-                        case BufferEdgeKind.Inter:
+                        case BufferEdgeKind.Intra:
                             arg.EdgeFormat.Style = QuikGraph.Graphviz.Dot.GraphvizEdgeStyle.Dashed;
                             break;
-                        case BufferEdgeKind.Outer:
+                        case BufferEdgeKind.Inter:
                             arg.EdgeFormat.Style = QuikGraph.Graphviz.Dot.GraphvizEdgeStyle.Solid;
                             break;
                         default:
@@ -266,40 +266,34 @@ public static class GraphExtensions
         return index >= grid.Reads.Length ? grid.Buffers[^1] : grid.Reads[index];
     }
 
-    public static (HashSet<TVertex> Inputs, HashSet<TVertex> Outputs) GetInputsOutputs<TVertex, TEdge>(this QuikGraph.IEdgeListAndIncidenceGraph<TVertex, TEdge> g)
-        where TEdge : QuikGraph.IEdge<TVertex>
+    public static (HashSet<BufferIdentity> Inputs, HashSet<BufferIdentity> Outputs) GetInputsOutputs(this BufferGraph g, BufferGraph? parent)
     {
-        var sources = new HashSet<TVertex>();
-        var targets = new HashSet<TVertex>();
+        var sources = new HashSet<BufferIdentity>();
+        var targets = new HashSet<BufferIdentity>();
         foreach (var item in g.Edges)
         {
             sources.Add(item.Source);
             targets.Add(item.Target);
         }
 
-        var inputs = new HashSet<TVertex>(sources.Except(targets));
-        var outputs = new HashSet<TVertex>(targets.Except(sources));
-        return (inputs, outputs);
-    }
-
-    public static (HashSet<TVertex> Inputs, HashSet<TVertex> Outputs) GetInputsOutputs<TVertex, TEdge>(this IEdgeListAndIncidenceGraph<TVertex, TEdge> g, IEdgeListAndIncidenceGraph<TVertex, TEdge> parent)
-        where TEdge : IEdge<TVertex>
-    {
-        var sources = new HashSet<TVertex>();
-        var targets = new HashSet<TVertex>();
-        foreach (var item in g.Edges)
+        var inputs = new HashSet<BufferIdentity>(sources.Except(targets));
+        var outputs = new HashSet<BufferIdentity>(targets.Except(sources));
+        foreach (var item in g.Vertices)
         {
-            sources.Add(item.Source);
-            targets.Add(item.Target);
-        }
-
-        var inputs = new HashSet<TVertex>(sources.Except(targets));
-        var outputs = new HashSet<TVertex>(targets.Except(sources));
-        foreach (var item in parent.Edges)
-        {
-            if (g.ContainsVertex(item.Source) && !g.ContainsVertex(item.Target))
+            if (item.IsOutputLiveOut)
             {
-                outputs.Add(item.Source);
+                outputs.Add(item);
+            }
+        }
+
+        if (parent is not null)
+        {
+            foreach (var item in parent.Edges)
+            {
+                if (g.ContainsVertex(item.Source) && !g.ContainsVertex(item.Target))
+                {
+                    outputs.Add(item.Source);
+                }
             }
         }
 
@@ -322,7 +316,7 @@ public static class GraphExtensions
             {
                 if (!updatedMemo.TryGetValue(item, out var newItem))
                 {
-                    newItem = new TileGrid(item.Grid, item.Op, item.OpId, item.DomainBounds.ToArray(), item.DomainRelation, item.DomainBoundExprs.ToArray(), item.DomainDynamic.ToArray(), item.BufferShapes.Select(x => x.ToArray()));
+                    newItem = new TileGrid(item.Grid, item.Op, item.OpId, item.DomainBounds.ToArray(), item.DomainRelation, item.DomainBoundExprs.ToArray(), item.DomainDynamic.ToArray(), item.BufferShapes.Select(x => x.ToArray()), item.Attribute);
                     updatedMemo.Add(item, newItem);
                 }
 

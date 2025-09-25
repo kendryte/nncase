@@ -19,30 +19,10 @@ public sealed class MatmulEvaluator : ITypeInferencer<Matmul>, IKernelInfoEvalua
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
         var tilebounds = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
 
-        var (k, m, n) = (context.BufferShapes[0][^1], context.BufferShapes[2][^2], context.BufferShapes[2][^1]);
-        var (lvectorize, rvectorize) = new VectorizedMatMul(DataTypes.Float32, op.LhsVectorizedAxes, op.RhsVectorizedAxes, op.TransposeA, op.TransposeB, op.FusedReduce)
-            .GetVectorizeKind(context.BufferShapes[0].Length, context.BufferShapes[1].Length);
-        switch (lvectorize, rvectorize)
-        {
-            case (VectorizedMatMul.VectorizeKind.M | VectorizedMatMul.VectorizeKind.K, VectorizedMatMul.VectorizeKind.K | VectorizedMatMul.VectorizeKind.N):
-                if (m % 2 == 0)
-                {
-                    tilebounds[^3].Min = 2;
-                }
-
-                if (k % 2 == 0)
-                {
-                    tilebounds[^2].Min = 2;
-                }
-
-                if (n % 4 == 0)
-                {
-                    tilebounds[^1].Min = 4;
-                }
-
-                break;
-        }
-
+        // var vmatmul = new VectorizedMatMul(DataTypes.Float32, op.LhsVectorizedAxes, op.RhsVectorizedAxes, op.TransposeA, op.TransposeB, op.FusedReduce);
+        // var (lvectorize, rvectorize) = vmatmul.GetVectorizeKind(context.BufferShapes[0].Length, context.BufferShapes[1].Length);
+        // var dimInfo = vmatmul.GetDimInfo(context.BufferShapes[0].Length, context.BufferShapes[1].Length);
+        // var (k, m, n) = (context.BufferShapes[0][dimInfo.Lk], context.BufferShapes[0][dimInfo.Lm], context.BufferShapes[1][dimInfo.Rn]);
         var bufferInfos = new MicroKernelBufferInfo[context.BufferShapes.Length];
         var opt = (INTTTargetOptions)context.TargetOptions;
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
@@ -55,7 +35,7 @@ public sealed class MatmulEvaluator : ITypeInferencer<Matmul>, IKernelInfoEvalua
     {
         var ashape = bufferShapes[0];
         var cshape = bufferShapes[2];
-        var (k, m, n) = (ashape[^1], cshape[^2], cshape[^1]);
+        var (k, m, n) = (ashape[((Matmul)context.Op).TransposeA ? ^2 : ^1], cshape[^2], cshape[^1]);
 
         // var kb = context.BufferShapes[0][^1];
         return 16000 * (1 + solver.MakeIsLessVar(k, solver.MakeIntConst(8)) + solver.MakeIsLessVar(n, solver.MakeIntConst(8)) + solver.MakeIsLessVar(m, solver.MakeIntConst(8)));

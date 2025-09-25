@@ -97,7 +97,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         var backWardExtents = GetBackWardExtents(tileVars, childResult.DimsMaps, childResult.BackWardExtents);
 
         // {source id : target id}
-        var defUseMap = BufferGraphMemo[value.Wrapped].Edges.Where(e => e.Tag == BufferEdgeKind.Outer).ToDictionary(e => e.Source, e => e.Target);
+        var defUseMap = BufferGraphMemo[value.Wrapped].Edges.Where(e => e.Tag == BufferEdgeKind.Inter).ToDictionary(e => e.Source, e => e.Target);
         var bufferResults = new List<BufferResult>();
 
         // each tile node have buffer place vars.
@@ -116,9 +116,8 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
 
                 AffineMap currentAccessMap = result.AccessMap;
                 Tuple<int, int> currentLifeness = result.Lifeness;
-                if (defUseMap.TryGetValue(curId, out var sinkId))
+                if (defUseMap.TryGetValue(curId, out var sinkId) && Array.FindIndex(childResult.BufferResults, r => r.Bid == sinkId) is var sinkIndex && sinkIndex != -1)
                 {
-                    var sinkIndex = Array.FindIndex(childResult.BufferResults, r => r.Bid == sinkId);
                     currentAccessMap = childResult.BufferResults[sinkIndex].AccessMap;
                     currentLifeness = new(Math.Min(result.Lifeness.Item1, childResult.BufferResults[sinkIndex].Lifeness.Item1), Math.Max(result.Lifeness.Item2, childResult.BufferResults[sinkIndex].Lifeness.Item2));
                 }

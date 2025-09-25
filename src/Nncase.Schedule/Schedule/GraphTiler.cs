@@ -451,20 +451,25 @@ public class GraphTiler
         }
     }
 
-    public (Dictionary<TieredTileGraph, Expr> ResultMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, INTTTargetOptions targetOptions, DimVar[] dynamicDimVars)
+    public (Dictionary<BufferIdentity, Expr> ArgumentMemo, long ObjectValue) SolveRootGraph(TieredTileGraph rootGraph, string moduleKind, INTTTargetOptions targetOptions, DimVar[] dynamicDimVars)
     {
+        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
+        {
+            rootGraph.Dump($"root_tile_graph");
+        }
+
         // bufferize root graph.
         var bufferGraphMemo = rootGraph.Bufferize();
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            bufferGraphMemo[rootGraph].Dump($"tile_buffer_graph");
+            bufferGraphMemo[rootGraph].Dump($"root_buffer_graph");
         }
 
         // condense the root graph.
         var condensedGraph = rootGraph.Condense();
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Tiling))
         {
-            using (var file = Diagnostics.DumpScope.Current.OpenFile($"condensed_tile_graph.dot"))
+            using (var file = Diagnostics.DumpScope.Current.OpenFile($"root_condensed_graph.dot"))
             {
                 using var writer = new StreamWriter(file);
                 writer.Write(condensedGraph.ToGraphviz(init =>
@@ -483,8 +488,7 @@ public class GraphTiler
         // convert root graph as tree.
         var rootTree = TileNode.FromTileGraph(rootGraph, out var treeGraphMemo);
 
-        var argumentsMemo = bufferGraphMemo[rootGraph].GetInputsOutputs().Inputs.ToDictionary(k => k, k => k.Node.Grid.GetArgument(k.Index));
-        var resultMemo = new Dictionary<TieredTileGraph, Expr>();
+        var argumentMemo = bufferGraphMemo[rootGraph].GetInputsOutputs(null).Inputs.ToDictionary(k => k, k => k.Node.Grid.GetArgument(k.Index));
         long objectValue = 0;
         foreach (var (primGraph, i) in condensedGraph.TopologicalSort().Select((s, i) => (s, i)))
         {
@@ -526,25 +530,30 @@ public class GraphTiler
             }
 
             objectValue += memo.ObjectValue;
-            var finalCall = new Call(memo.Func, inputBids.Select(bid => argumentsMemo[bid]).Concat(dynamicDimVars.OfType<BaseExpr>()).ToArray());
-            resultMemo.Add(primGraph, finalCall);
+            var finalCall = new Call(memo.Func, inputBids.Select(bid => argumentMemo[bid]).Concat(dynamicDimVars.OfType<BaseExpr>()).ToArray());
 
             // save the output.
-            foreach (var outputBid in outputBids)
+            foreach (var (outputBid, outputIndex) in outputBids.Select((b, i) => (b, i)))
             {
-                if (!argumentsMemo.TryGetValue(outputBid, out var _))
+                if (!argumentMemo.TryGetValue(outputBid, out var _))
                 {
-                    foreach (var outEdge in bufferGraphMemo[rootGraph].OutEdges(outputBid).Where(e => e.Tag is BufferEdgeKind.Outer))
+                    // if outputBid is output buffer, we need to find it's grid as next call argument.
+                    var actualOutputBid = bufferGraphMemo[rootGraph].OutEdges(outputBid).
+                        Where(e => e.Tag is BufferEdgeKind.Inter).
+                        Select(edge => edge.Target).
+                        FirstOrDefault(outputBid);
+                    var outputExpr = finalCall;
+                    if (outputBids.Count > 1)
                     {
-                        argumentsMemo.Add(outEdge.Target, finalCall);
+                        outputExpr = IR.F.Tensors.GetItem(outputExpr, outputIndex);
                     }
 
-                    argumentsMemo.Add(outputBid, finalCall);
+                    argumentMemo.Add(actualOutputBid, outputExpr);
                 }
             }
         }
 
-        return (resultMemo, objectValue);
+        return (argumentMemo, objectValue);
     }
 
     public BaseExpr Tile(BaseExpr preExpr, string moduleKind, INTTTargetOptions targetOptions, DimVar[] dynamicDimVars)
@@ -584,11 +593,14 @@ public class GraphTiler
 
         var bestState = (MCTState)searcher.BestMCTNode!.State;
         var replaces = new Dictionary<BaseExpr, BaseExpr>();
-        foreach (var (oldExpr, v) in exprMemo)
+
+        foreach (var (bid, value) in bestState.ArgumentMemo)
         {
-            if (bestState.Results.TryGetValue(v, out var newExpr))
+            // use bid to find the old expr.
+            var oldExpr = bid.IsOutput ? bid.Node.Grid : bid.Node.Grid.GetArgument(bid.Index);
+            if (!replaces.ContainsKey(oldExpr))
             {
-                replaces.Add(oldExpr, newExpr);
+                replaces.Add(oldExpr, value);
             }
         }
 

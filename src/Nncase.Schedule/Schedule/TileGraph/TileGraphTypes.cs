@@ -18,6 +18,17 @@ using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule.TileGraph;
 
+[Flags]
+public enum TileGridAttribute : uint
+{
+    None = 0,
+
+    /// <summary>
+    /// The grid is required by outside, e.g., the output of the function.
+    /// </summary>
+    LiveOut = 1 << 1,
+}
+
 public interface ITileable
 {
     int Level { get; }
@@ -85,7 +96,7 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
 
 public sealed class TileGrid : ITileable
 {
-    public TileGrid(Grid grid, Op op, int opId, IEnumerable<long> domainBounds, DomainRelation relation, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic, IEnumerable<IEnumerable<long>> bufferShapes)
+    public TileGrid(Grid grid, Op op, int opId, IEnumerable<long> domainBounds, DomainRelation relation, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic, IEnumerable<IEnumerable<long>> bufferShapes, TileGridAttribute attribute)
     {
         Level = -1;
         Grid = grid;
@@ -93,6 +104,7 @@ public sealed class TileGrid : ITileable
         OpId = opId;
         DomainDynamic = ImmutableArray.CreateRange(domainDynamic);
         DomainRelation = relation;
+        Attribute = attribute;
         DomainBounds = ImmutableArray.CreateRange(domainBounds);
         DomainBoundExprs = ImmutableArray.CreateRange(domainBoundsExpr);
         BufferShapes = ImmutableArray.CreateRange(bufferShapes.Select(x => ImmutableArray.CreateRange(x)));
@@ -103,6 +115,8 @@ public sealed class TileGrid : ITileable
     public int OpId { get; }
 
     public DomainRelation DomainRelation { get; set; }
+
+    public TileGridAttribute Attribute { get; }
 
     public Grid Grid { get; }
 

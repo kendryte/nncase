@@ -199,6 +199,24 @@ public static class FunctionSamples
     }
 
     /// <summary>
+    /// for check reconstruct result.
+    /// </summary>
+    public static Function GetBinaryUnary()
+    {
+        Function func;
+        {
+            var shape = new[] { 1, 12, 14, 14 };
+            var a = new IR.Var("a", new IR.TensorType(DataTypes.Float32, shape));
+            var b = new IR.Var("b", new IR.TensorType(DataTypes.Float32, shape));
+            var c = IR.F.Math.Binary(BinaryOp.Mul, a, b);
+            var d = IR.F.Math.Unary(UnaryOp.Neg, c);
+            func = new IR.Function("main", CPUTarget.Kind, new IR.Tuple(c, d), [a, b]);
+        }
+
+        return func;
+    }
+
+    /// <summary>
     /// qwen case.
     /// </summary>
     public static Function GetQwen3Rope()

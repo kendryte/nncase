@@ -35,7 +35,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         : base(null!, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         PrimBufferGraph = primBufferGraph;
-        (Inputs, Outputs) = primBufferGraph.GetInputsOutputs(primBufferGraph.Parent!);
+        (Inputs, Outputs) = primBufferGraph.GetInputsOutputs(primBufferGraph.Parent as BufferGraph);
         ObjectiveValue = objectiveValue;
         LevelNodeBufferInfos = levelNodeBufferInfos;
         ModuleKind = moduleKind;

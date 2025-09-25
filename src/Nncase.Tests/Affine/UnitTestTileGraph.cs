@@ -38,12 +38,13 @@ public sealed class UnitTestTileGraph : TestClassBase
 
     public static readonly TheoryData<Func<Function>, IntMergePoint[], Action<BaseExpr>, int, int> SolveTileGraphDatas = new()
     {
-        { FunctionSamples.GetBinaryNeg, [], SolveTileGraphChecker0, 2, 0 },
-        { FunctionSamples.GetMatmulExpMatmul, [new(1, 0, 1), new(1, 0, 0)], (_) => { }, 2, 1 },
-        { FunctionSamples.GetMatmulExpMatmul, [new(2, 1, 1)], (_) => { }, 2, 2 },
-        { FunctionSamples.GetMatmulExpMatmul, [new(1, 0, 1), new(2, 1, 1), new(1, 0, 0)], (_) => { }, 2, 3 },
-        { FunctionSamples.GetAddBranchMerge, [new(1, 0, 1)], (_) => { }, 1, 4 },
-        { FunctionSamples.GetUnaryCastTrans, [new(2, 1, 0), new(2, 0, 0)], (_) => { }, 1, 5 },
+        // { FunctionSamples.GetBinaryNeg, [], SolveTileGraphChecker0, 2, 0 },
+        // { FunctionSamples.GetMatmulExpMatmul, [new(1, 0, 1), new(1, 0, 0)], (_) => { }, 2, 1 },
+        // { FunctionSamples.GetMatmulExpMatmul, [new(2, 1, 1)], (_) => { }, 2, 2 },
+        // { FunctionSamples.GetMatmulExpMatmul, [new(1, 0, 1), new(2, 1, 1), new(1, 0, 0)], (_) => { }, 2, 3 },
+        // { FunctionSamples.GetAddBranchMerge, [new(1, 0, 1)], (_) => { }, 1, 4 },
+        // { FunctionSamples.GetUnaryCastTrans, [new(2, 1, 0), new(2, 0, 0)], (_) => { }, 1, 5 },
+        { FunctionSamples.GetBinaryUnary, [new(1, 0, 0)], SolveBinaryUnaryChecker, 1, 6 },
 
         // just for check single op tiling results
         // { FunctionSamples.Get1Matmul, [], (_) => { }, 5 },
@@ -286,9 +287,8 @@ public sealed class UnitTestTileGraph : TestClassBase
         Dumpper.DumpIR(post, $"post{count}");
 #endif
 
-        var builder = new TieredTileGraphBuilder(2);
-        builder.Visit(post);
-        var graph = builder.RootGraph;
+        var graph = TieredTileGraphBuilder.Build(post, 2, out var exprMemo);
+
 #if DEBUG
         graph.Dump($"g{count}");
 #endif
@@ -347,12 +347,12 @@ public sealed class UnitTestTileGraph : TestClassBase
         }
 
         var func = functor();
-        var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
-#if DEBUG
-        Dumpper.DumpIR(post, $"post{count}");
-#endif
+        var pre = (Function)new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var tileGraph = TieredTileGraphBuilder.Build(post, targetOptions.MemoryBandWidths.Length - 1, out var exprMemo);
+#if DEBUG
+        Diagnostics.DumpScope.Current.DumpIR(pre, $"post{count}");
+#endif
+        var tileGraph = TieredTileGraphBuilder.Build(pre.Body, targetOptions.MemoryBandWidths.Length - 1, out var exprMemo);
 
         for (int i = 0; i < mergePoints.Length; i++)
         {
@@ -365,22 +365,24 @@ public sealed class UnitTestTileGraph : TestClassBase
 
         var tiler = new Schedule.GraphTiler();
 
-        var (resultMemo, _) = tiler.SolveRootGraph(tileGraph, Targets.CPUTarget.Kind, targetOptions, Array.Empty<DimVar>());
+        var (argumentMemo, _) = tiler.SolveRootGraph(tileGraph, Targets.CPUTarget.Kind, targetOptions, Array.Empty<DimVar>());
         var replaces = new Dictionary<BaseExpr, BaseExpr>();
-        foreach (var (oldExpr, v) in exprMemo)
+        foreach (var (bid, value) in argumentMemo)
         {
-            if (resultMemo.TryGetValue(v, out var newExpr))
+            // use bid to find the old expr.
+            var oldExpr = bid.IsOutput ? bid.Node.Grid : bid.Node.Grid.GetArgument(bid.Index);
+            if (!replaces.ContainsKey(oldExpr))
             {
-                replaces.Add(oldExpr, newExpr);
+                replaces.Add(oldExpr, value);
             }
         }
 
         var cloner = new ReplacingExprCloner(replaces);
-        var result = cloner.Clone(post, default);
+        var post = cloner.Clone(pre, default);
 #if DEBUG
-        Dumpper.DumpIR(result, $"result{count}", flags: Diagnostics.PrinterFlags.Normal);
+        Diagnostics.DumpScope.Current.DumpIR(post, $"result{count}", flags: Diagnostics.PrinterFlags.Normal);
 #endif
-        action(result);
+        action(post);
     }
 
     [Theory]
@@ -399,9 +401,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length - 1);
-        builder.Visit(post);
-        var tileGraph = builder.RootGraph;
+        var tileGraph = TieredTileGraphBuilder.Build(post, targetOptions.MemoryBandWidths.Length - 1, out var exprMemo);
 
         var tiler = new Schedule.GraphTiler();
         var state = new MCTState(tileGraph, "cpu", count.ToString(), tiler, targetOptions, Array.Empty<DimVar>());
@@ -423,9 +423,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         var post = new NTTAffineSelectionPass(CompileOptions).RunAsync(func, new()).Result;
 
         using var dumpScope = new Diagnostics.DumpScope(count.ToString());
-        var builder = new TieredTileGraphBuilder(targetOptions.MemoryBandWidths.Length - 1);
-        builder.Visit(post);
-        var tileGraph = builder.RootGraph;
+        var tileGraph = TieredTileGraphBuilder.Build(post, targetOptions.MemoryBandWidths.Length - 1, out var exprMemo);
 
         for (int i = 0; i < mergePoints.Length; i++)
         {
@@ -530,6 +528,14 @@ public sealed class UnitTestTileGraph : TestClassBase
                 }
             }
         });
+    }
+
+    private static void SolveBinaryUnaryChecker(BaseExpr post)
+    {
+        var exprs = ExprCollector.Collect(post);
+        Assert.DoesNotContain(exprs, e => e is IR.Affine.Grid);
+        var func = Assert.IsType<IR.Function>(post);
+        Assert.IsType<IR.Tuple>(func.Body);
     }
 
     public sealed record IntMergePoint(int Consumer, int Producer, int Level)

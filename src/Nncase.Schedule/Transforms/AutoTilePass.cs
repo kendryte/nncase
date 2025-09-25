@@ -78,6 +78,16 @@ public sealed class AutoTilePass : FunctionPass
                 algo.FormatVertex += (s, arg) =>
                 {
                     arg.VertexFormat.Label = $"{arg.Vertex.Expr.GetType().Name}";
+                    if (arg.Vertex.Expr is Grid grid)
+                    {
+                        foreach (var field in grid.Body.Fields)
+                        {
+                            if (field is IR.Call call)
+                            {
+                                arg.VertexFormat.Label += $"\n {call.Target.GetType().Name}";
+                            }
+                        }
+                    }
                 };
             });
         }

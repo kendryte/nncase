@@ -13,6 +13,8 @@ public sealed record BufferIdentity(TileGrid Node, int Index)
 {
     public bool IsOutput => Index == Node.ReadAccesses.Length;
 
+    public bool IsOutputLiveOut => IsOutput && Node.Attribute.HasFlag(TileGridAttribute.LiveOut);
+
     public override string ToString() => IsOutput ? $"Op{Node.OpId}_Out" : $"Op{Node.OpId}_in{Index}";
 }
 

@@ -77,9 +77,27 @@ public abstract class AffineExpr : BaseExpr
             AffineDim e when e.Position < newDomains.Length => newDomains[e.Position].Offset,
             AffineExtent e when e.Position < newDomains.Length => newDomains[e.Position].Extent,
             AffineSymbol e when e.Position < newSymbols.Length => newSymbols[e.Position],
-            AffineAddBinary e => new AffineAddBinary(e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
-            AffineMulBinary e => new AffineMulBinary(e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
-            AffineDivBinary e => new AffineDivBinary(e.BinaryOp, e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)),
+            AffineAddBinary e => (e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)) switch
+            {
+                (AffineConstant lhs, AffineConstant rhs) => lhs.Value + rhs.Value,
+                (AffineExpr lhs, AffineExpr rhs) => new AffineAddBinary(lhs, rhs),
+            },
+            AffineMulBinary e => (e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)) switch
+            {
+                (AffineConstant lhs, AffineConstant rhs) => lhs.Value * rhs.Value,
+                (AffineExpr lhs, AffineExpr rhs) => new AffineMulBinary(lhs, rhs),
+            },
+            AffineDivBinary e => (e.Lhs.ReplaceDomainsAndSymbols(newDomains, newSymbols), e.Rhs.ReplaceDomainsAndSymbols(newDomains, newSymbols)) switch
+            {
+                (AffineConstant lhs, AffineConstant rhs) => e.BinaryOp switch
+                {
+                    AffineDivBinaryOp.FloorDiv => lhs.Value / rhs.Value,
+                    AffineDivBinaryOp.CeilDiv => (lhs.Value + rhs.Value - 1) / rhs.Value,
+                    AffineDivBinaryOp.Mod => lhs.Value % rhs.Value,
+                    _ => throw new UnreachableException(),
+                },
+                (AffineExpr lhs, AffineExpr rhs) => new AffineDivBinary(e.BinaryOp, lhs, rhs),
+            },
             _ => this,
         };
     }
