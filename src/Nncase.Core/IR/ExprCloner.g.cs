@@ -1192,6 +1192,23 @@ public partial class ExprCloner<TContext>
     }
 
     /// <inheritdoc />
+    protected override BaseExpr VisitLeafThreadIdDim(Distributed.ThreadIdDim expr, TContext context)
+    {
+        bool IsOperandsMutated()
+        {
+            return false;
+        }
+
+        if (CloneUnmutated || IsOperandsMutated())
+        {
+            return expr.With(
+            );
+        }
+
+        return expr;
+    }
+
+    /// <inheritdoc />
     protected override BaseExpr VisitLeafAsDim(AsDim expr, TContext context)
     {
         bool IsOperandsMutated()

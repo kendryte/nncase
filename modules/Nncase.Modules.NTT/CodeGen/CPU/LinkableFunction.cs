@@ -20,6 +20,9 @@ internal unsafe struct KernelDescHeader
 
     [MarshalAs(UnmanagedType.U8)]
     public ulong LocalDataPoolSize;
+
+    [MarshalAs(UnmanagedType.U8)]
+    public ulong BlockLocalDataPoolSize;
 }
 
 internal sealed record KernelMemoryPoolDesc(ulong RdataPoolSize, ulong ThreadLocalRdataPoolSize, ulong BlockLocalRdataPoolSize);

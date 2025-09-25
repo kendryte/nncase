@@ -19,6 +19,7 @@
 #include "runtime_section_context.h"
 #include "span_reader.h"
 #include "stream_reader.h"
+#include <cstdint>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -44,6 +45,7 @@ class NNCASE_API runtime_module {
     result<void> initialize(stream_reader &reader,
                             interpreter &interp) noexcept;
     const module_kind_t &kind() const noexcept;
+    virtual result<uintptr_t> native_handle(uint32_t flags) const noexcept;
 
     interpreter &interp() const noexcept { return *interp_; }
 

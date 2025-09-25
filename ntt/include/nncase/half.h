@@ -14,9 +14,9 @@
  */
 #pragma once
 #include "bfloat16.h"
+#include "math.h"
 #include "ntt/compiler_defs.h"
 #include <bit>
-#include <cmath>
 #include <codecvt>
 #include <cstdint>
 #include <float.h>
@@ -51,7 +51,6 @@ struct half {
                                        std::is_floating_point<T>::value>>
     constexpr explicit half(const T &v) noexcept
         : value_(round_to_half(v).value_) {}
-
 
     static constexpr half round_to_half(float v) {
         if (std::is_constant_evaluated()) {
@@ -129,16 +128,14 @@ struct half {
         return int(float(*this));
     }
 
-
     constexpr explicit operator int16_t() const noexcept {
         return int(float(*this));
     }
 
-
     constexpr explicit operator uint16_t() const noexcept {
         return int(float(*this));
     }
-    
+
     constexpr explicit operator int() const noexcept {
         return int(float(*this));
     }
@@ -184,20 +181,22 @@ struct half {
 };
 
 #define DEFINE_FP16_BINARY_FP16RET(x)                                          \
-    inline half operator x(half a, half b) noexcept {                          \
+    NTT_ALWAYS_INLINE half operator x(half a, half b) noexcept {               \
         return half::round_to_half(float(a) x float(b));                       \
     }
 
 #define DEFINE_FP16_BINARY_BOOLRET(x)                                          \
-    inline bool operator x(half a, half b) noexcept {                          \
+    NTT_ALWAYS_INLINE bool operator x(half a, half b) noexcept {               \
         return float(a) x float(b);                                            \
     }
 
 #define DEFINE_FP16_BINARY_FP32RET(x)                                          \
-    inline bool operator x(half a, float b) noexcept { return float(a) x b; }
+    NTT_ALWAYS_INLINE bool operator x(half a, float b) noexcept {              \
+        return float(a) x b;                                                   \
+    }
 
 #define DEFINE_FP16_BINARY_INTRET(x)                                           \
-    inline half operator x(half a, int b) noexcept {                           \
+    NTT_ALWAYS_INLINE half operator x(half a, int b) noexcept {                \
         return half::round_to_half(float(a) x b);                              \
     }
 
@@ -217,7 +216,7 @@ DEFINE_FP16_BINARY_BOOLRET(>=)
 DEFINE_FP16_BINARY_BOOLRET(>)
 
 #define DEFINE_FP16_BINARY_SELF_MOD(x, op)                                     \
-    inline half &operator x(half & a, half b) noexcept {                       \
+    NTT_ALWAYS_INLINE half &operator x(half & a, half b) noexcept {            \
         a = a op b;                                                            \
         return a;                                                              \
     }
@@ -227,15 +226,15 @@ DEFINE_FP16_BINARY_SELF_MOD(-=, -)
 DEFINE_FP16_BINARY_SELF_MOD(*=, *)
 DEFINE_FP16_BINARY_SELF_MOD(/=, /)
 
-inline half operator-(half a) noexcept {
+NTT_ALWAYS_INLINE half operator-(half a) noexcept {
     return half::round_to_half(-float(a));
 }
 
-inline bool operator==(const half &lhs, const half &rhs) noexcept {
+NTT_ALWAYS_INLINE bool operator==(const half &lhs, const half &rhs) noexcept {
     return lhs.raw() == rhs.raw();
 }
 
-inline bool operator!=(const half &lhs, const half &rhs) noexcept {
+NTT_ALWAYS_INLINE bool operator!=(const half &lhs, const half &rhs) noexcept {
     return lhs.raw() != rhs.raw();
 }
 
@@ -294,10 +293,11 @@ inline half nextafter(const half &from, const half &to) {
 
     return half::from_raw(next_raw);
 }
-inline half fmod(const half &a, const half &b) {
+
+NTT_ALWAYS_INLINE half fmod(const half &a, const half &b) {
     return half::round_to_half(std::fmod(float(a), float(b)));
 }
-inline half powh(const half &a, const half &b) {
+NTT_ALWAYS_INLINE half powh(const half &a, const half &b) {
     return half::round_to_half(std::pow(float(a), float(b)));
 }
 } // namespace nncase

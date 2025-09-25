@@ -80,11 +80,13 @@ public class VectorizedCastEvaluator : IEvaluator<VectorizedCast>, ITypeInferenc
     public Cost Visit(ICostEvaluateContext context, VectorizedCast target)
     {
         var input = context.GetArgumentType<IRType>(target, VectorizedCast.Input);
+        var output = context.GetReturnType<IRType>();
+        var macPerElement = 4;
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(input),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(target.NewType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(target.NewType, 1),
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(output),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(input, macPerElement),
         };
     }
 

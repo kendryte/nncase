@@ -15,17 +15,18 @@ namespace Nncase.Passes;
 
 public partial class NTTAffineSelectionPass
 {
-    public Expr SelectRoPE(IR.NN.RoPE rope, Call call, Expr output)
+    public Expr SelectRoPE(IR.NTT.VectorizedRoPE rope, Call call, Expr output)
     {
-        var input = (Expr)call[IR.NN.RoPE.Input];
-        var cos = (Expr)call[IR.NN.RoPE.Cos];
-        var sin = (Expr)call[IR.NN.RoPE.Sin];
-        var lastDim = input.CheckedShape[^1].FixedValue;
+        var input = (Expr)call[IR.NTT.VectorizedRoPE.Input];
+        var cos = (Expr)call[IR.NTT.VectorizedRoPE.Cos];
+        var sin = (Expr)call[IR.NTT.VectorizedRoPE.Sin];
 
         var rank = input.CheckedShape.Rank;
         var domains = IR.F.Affine.Domains(rank);
         var inOutResults = domains.Select(x => new AffineRange(x.Offset, x.Extent)).ToArray();
         var inOutMap = new AffineMap(domains, default, inOutResults);
+
+        // [head, dim, seq]
         var sinCosResults = inOutResults[1..];
         var sinCosMap = new AffineMap(domains, default, sinCosResults);
 

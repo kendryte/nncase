@@ -87,6 +87,7 @@ public sealed class SchedFunctionResult
         ThreadLocalRdatas = new(ReferenceEqualityComparer.Instance);
         BlockLocalRdatas = new(ReferenceEqualityComparer.Instance);
         DataUsage = 0;
+        BlockLocalDataPoolSize = 0;
         IsScheduled = false;
     }
 
@@ -109,6 +110,11 @@ public sealed class SchedFunctionResult
     /// Gets or sets the data section length.
     /// </summary>
     public ulong DataUsage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the block local data section length.
+    /// </summary>
+    public ulong BlockLocalDataPoolSize { get; set; }
 
     /// <summary>
     /// Gets or sets the data section align.

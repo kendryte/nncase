@@ -28,19 +28,28 @@ class unary_impl : public unary_like_impl<unary_impl<TIn, TOut>, TIn, TOut> {
         auto output_conti_dims =
             contiguous_dims(output.shape(), output.strides());
 
-        auto addr_input = input.elements().data();
-        auto addr_output_element = output.elements().data();
+        constexpr auto rank = TIn::rank();
+        auto conti_dims = std::min(input_conti_dims, output_conti_dims);
+        auto apply_shape = generate_shape<rank>([&](auto i) {
+            if (i > rank - conti_dims - 1)
+                return (dim_t)1;
+            else
+                return (dim_t)input.shape()[i];
+        });
+        auto inner_shape = generate_shape<rank>([&](auto i) {
+            if (i > rank - conti_dims - 1)
+                return (dim_t)input.shape()[i];
+            else
+                return (dim_t)1_dim;
+        });
 
-        auto len = input.shape().length();
+        auto len = inner_shape.length();
 
-        if ((input_conti_dims == TIn::rank()) &&
-            (output_conti_dims == TOut::rank())) {
+        ntt::apply(apply_shape, [&](auto index) {
+            auto addr_input = &input(index);
+            auto addr_output_element = &output(index);
             ntt::u_unary(op, addr_input, 1, addr_output_element, 1, len);
-        } else {
-            ntt::apply(output.shape(), [&](auto index) {
-                ntt::u_unary(op, &input(index), 1, &output(index), 1, 1);
-            });
-        }
+        });
     }
 };
 } // namespace detail

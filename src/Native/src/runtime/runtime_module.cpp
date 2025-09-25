@@ -121,6 +121,11 @@ const module_kind_t &runtime_module::kind() const noexcept {
     return header_.kind;
 }
 
+result<uintptr_t>
+runtime_module::native_handle([[maybe_unused]] uint32_t flags) const noexcept {
+    return err(std::errc::not_supported);
+}
+
 result<void> runtime_module::initialize(std::span<const std::byte> payload,
                                         interpreter &interp) noexcept {
     interp_ = &interp;

@@ -883,7 +883,8 @@ void test_tensor_view() {
     {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 3>);
         auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 1, 3>);
-        ntt::tensor_copy(ta.reshape(ntt::fixed_shape_v<2, 1, 3>), tb.view());
+        ntt::tensor_copy_sync(ta.reshape(ntt::fixed_shape_v<2, 1, 3>),
+                              tb.view());
         assert(ta(0, 0) == tb(0, 0, 0));
         assert(ta(0, 1) == tb(0, 0, 1));
         assert(ta(0, 2) == tb(0, 0, 2));
@@ -897,7 +898,7 @@ void test_tensor_view() {
         auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 6>);
         std::iota(tc.elements().begin(), tc.elements().end(), 0.f);
         auto td = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 3>);
-        ntt::tensor_copy(
+        ntt::tensor_copy_sync(
             tc.view(ntt::make_shape(0, 3), ntt::fixed_shape_v<2, 3>), td);
         ntt::apply(ntt::fixed_shape_v<2, 3>, [&](NNCASE_UNUSED auto index) {
             assert(tc(index[0], index[1] + 3) == td(index));
