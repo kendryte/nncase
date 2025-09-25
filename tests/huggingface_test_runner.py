@@ -101,7 +101,7 @@ def dequantize_weights(model_dir):
             save_file(state_dict, filepath)
 
 
-def normlize_safetensor(model_dir):
+def normalize_safetensor(model_dir):
     for filename in os.listdir(model_dir):
         if filename.endswith(".safetensors") and not filename.endswith(".org.safetensors"):
             filepath = os.path.join(model_dir, filename)
@@ -280,7 +280,7 @@ class HuggingfaceTestRunner(TestRunner):
                         print("[quantization_config] attribute 'ignored_layers' renamed to 'ignore'")
             except Exception as e:
                 print(f"[quantization_config] rename ignored_layers failed: {e}")
-            normlize_safetensor(model_path)
+            normalize_safetensor(model_path)
             # dequantize_weights(model_path)
             # delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
