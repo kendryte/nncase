@@ -25,7 +25,8 @@ namespace detail {
 template <class TTraits, class TIndex> class vector_storage_element_proxy {
   public:
     using buffer_type = typename TTraits::buffer_type;
-    using element_type = typename TTraits::element_type;
+    using element_type = std::remove_cv_t<decltype(TTraits::get_element(
+        std::declval<buffer_type>(), std::declval<TIndex>()))>;
 
     constexpr vector_storage_element_proxy(buffer_type &buffer,
                                            TIndex index) noexcept
@@ -37,7 +38,10 @@ template <class TTraits, class TIndex> class vector_storage_element_proxy {
 
     constexpr vector_storage_element_proxy &
     operator=(element_type value) noexcept {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
         TTraits::set_element(buffer_, index_, value);
+#pragma GCC diagnostic pop
         return *this;
     }
 
@@ -49,6 +53,17 @@ template <class TTraits, class TIndex> class vector_storage_element_proxy {
   private:
     buffer_type &buffer_;
     TIndex index_;
+};
+
+template <class TTraits, class TIndex>
+struct unwrap_proxy_impl<vector_storage_element_proxy<TTraits, TIndex>> {
+    constexpr auto operator()(
+        const vector_storage_element_proxy<TTraits, TIndex> &proxy) noexcept {
+        using element_type =
+            typename vector_storage_element_proxy<TTraits,
+                                                  TIndex>::element_type;
+        return (element_type)proxy;
+    }
 };
 } // namespace detail
 

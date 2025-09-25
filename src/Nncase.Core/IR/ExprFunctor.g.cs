@@ -159,11 +159,6 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     internal protected virtual TExprResult VisitAffineExpr(Affine.AffineExpr expr, TContext context) => DefaultVisit(expr, context);
 
     /// <summary>
-    /// Visit <see cref="Affine.AffineExpr"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitAffineSymbolBase(Affine.AffineExpr expr, TContext context) => VisitAffineExpr(expr, context);
-
-    /// <summary>
     /// Visit <see cref="Affine.AffineDim"/>.
     /// </summary>
     internal protected virtual TExprResult VisitAffineDim(Affine.AffineDim expr, TContext context) => VisitAffineExpr(expr, context);
@@ -171,17 +166,17 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     /// <summary>
     /// Visit <see cref="Affine.AffineExtent"/>.
     /// </summary>
-    internal protected virtual TExprResult VisitAffineExtent(Affine.AffineExtent expr, TContext context) => VisitAffineSymbolBase(expr, context);
+    internal protected virtual TExprResult VisitAffineExtent(Affine.AffineExtent expr, TContext context) => VisitAffineExpr(expr, context);
 
     /// <summary>
     /// Visit <see cref="Affine.AffineSymbol"/>.
     /// </summary>
-    internal protected virtual TExprResult VisitAffineSymbol(Affine.AffineSymbol expr, TContext context) => VisitAffineSymbolBase(expr, context);
+    internal protected virtual TExprResult VisitAffineSymbol(Affine.AffineSymbol expr, TContext context) => VisitAffineExpr(expr, context);
 
     /// <summary>
     /// Visit <see cref="Affine.AffineConstant"/>.
     /// </summary>
-    internal protected virtual TExprResult VisitAffineConstant(Affine.AffineConstant expr, TContext context) => VisitAffineSymbolBase(expr, context);
+    internal protected virtual TExprResult VisitAffineConstant(Affine.AffineConstant expr, TContext context) => VisitAffineExpr(expr, context);
 
     /// <summary>
     /// Visit <see cref="Affine.AffineAddBinary"/>.
@@ -237,6 +232,11 @@ public partial class ExprFunctor<TExprResult, TTypeResult, TContext>
     /// Visit <see cref="Buffers.BufferOf"/>.
     /// </summary>
     internal protected virtual TExprResult VisitBufferOf(Buffers.BufferOf expr, TContext context) => DefaultVisit(expr, context);
+
+    /// <summary>
+    /// Visit <see cref="Distributed.ThreadIdDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitThreadIdDim(Distributed.ThreadIdDim expr, TContext context) => VisitDimension(expr, context);
 
     /// <summary>
     /// Visit <see cref="Dimension"/>.
@@ -571,13 +571,6 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitAffineExpr(Affine.AffineExpr expr, Unit context) => VisitAffineExpr(expr);
     /// <summary>
-    /// Visit <see cref="Affine.AffineExpr"/>.
-    /// </summary>
-    internal protected virtual TExprResult VisitAffineSymbolBase(Affine.AffineExpr expr) => base.VisitAffineSymbolBase(expr, default);
-    
-    /// <inheritdoc/>
-    internal protected sealed override TExprResult VisitAffineSymbolBase(Affine.AffineExpr expr, Unit context) => VisitAffineSymbolBase(expr);
-    /// <summary>
     /// Visit <see cref="Affine.AffineDim"/>.
     /// </summary>
     internal protected virtual TExprResult VisitAffineDim(Affine.AffineDim expr) => base.VisitAffineDim(expr, default);
@@ -682,6 +675,13 @@ public partial class ExprFunctor<TExprResult, TTypeResult>
     
     /// <inheritdoc/>
     internal protected sealed override TExprResult VisitBufferOf(Buffers.BufferOf expr, Unit context) => VisitBufferOf(expr);
+    /// <summary>
+    /// Visit <see cref="Distributed.ThreadIdDim"/>.
+    /// </summary>
+    internal protected virtual TExprResult VisitThreadIdDim(Distributed.ThreadIdDim expr) => base.VisitThreadIdDim(expr, default);
+    
+    /// <inheritdoc/>
+    internal protected sealed override TExprResult VisitThreadIdDim(Distributed.ThreadIdDim expr, Unit context) => VisitThreadIdDim(expr);
     /// <summary>
     /// Visit <see cref="Dimension"/>.
     /// </summary>

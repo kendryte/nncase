@@ -3,20 +3,24 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reactive;
 using System.Text;
 using System.Threading.Tasks;
+using DryIoc.ImTools;
 using Microsoft.Extensions.DependencyInjection;
 using NetFabric.Hyperlinq;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.Shapes;
+using Nncase.IR.Tensors;
 using Nncase.Passes.Analysis;
 using Nncase.Passes.Mutators;
 using Nncase.Passes.Transforms;
 using Nncase.Targets;
 using Nncase.TIR;
+using Nncase.Utilities;
 
 namespace Nncase.Passes;
 
@@ -42,7 +46,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Math.Clamp clamp:
                 return GenerateClamp(call, arguments, output);
             case IR.Distributed.Boxing boxing:
-                return GenerateBoxing(call, boxing, arguments, output);
+                return GenerateBoxing(call, boxing, arguments, ref output);
             case IR.Distributed.ForceBoxing forceBoxing:
                 return T.Memcopy(output, (Expr)arguments[0]);
             case IR.Math.Binary binary:
@@ -110,7 +114,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 
             case IR.NTT.Im2col im2col:
                 return TIR.F.NTT.Im2col((Expr)arguments[0], output, im2col.Kernel, im2col.Stride, im2col.Padding, im2col.VectorizedAxes, im2col.PadedNums);
-            case IR.NN.RoPE rope:
+            case IR.NTT.VectorizedRoPE rope:
                 return TIR.F.NTT.RoPE((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output);
             case IR.Imaging.ResizeImage resize:
                 if ((call[IR.Imaging.ResizeImage.Roi] is not None && ((RankedShape)call[IR.Imaging.ResizeImage.Roi].CheckedShape).Size != 0) || resize.IsTFResize)
@@ -156,13 +160,13 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Tensors.GetItem getItem:
                 return TIR.F.NTT.GetItem((Expr)arguments[0], arguments[1], output);
             case IR.Tensors.Reshape:
-                return TIR.F.NTT.Reshape((Expr)arguments[0], output);
+                return GenerateReshape((Expr)arguments[0], ref output);
             case IR.Tensors.ScatterND scatterND:
                 return TIR.F.NTT.ScatterND((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], output);
             case IR.Tensors.Stack stack:
                 return TIR.F.NTT.Stack(((IR.Tuple)arguments[0]).Fields.AsValueEnumerable().Select(x => (Expr)x).ToArray(), output, ((TensorConst)call[IR.Tensors.Stack.Axis]).Value.ToScalar<int>());
             case IR.Tensors.Unsqueeze:
-                return TIR.F.NTT.Reshape((Expr)arguments[0], output);
+                return GenerateReshape((Expr)arguments[0], ref output);
             case IR.NN.UpdatePagedAttentionKVCache upkv:
                 output = (Expr)arguments[1];
                 return TIR.F.NTT.UpdatePagedAttentionKVCache((Expr)arguments[0], (Expr)arguments[1], upkv.CacheKind, upkv.LayerId, upkv.Layout);
@@ -196,6 +200,36 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.VectorizedSoftmax((Expr)arguments[0], output, softmax.Axis, softmax.VectorizedAxes);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
+        }
+    }
+
+    private Expr GenerateReshape(Expr input, ref Expr output, bool sequeeze = false)
+    {
+        if (input is not TIR.Buffer inBuffer)
+        {
+            throw new NotSupportedException("Reshape only support buffer input");
+        }
+
+        var outBuffer = (TIR.Buffer)output;
+
+        var bitcast = outBuffer.DistributedType is DistributedType ? false : true;
+        if (!bitcast)
+        {
+            if (inBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray().SequenceEqual(outBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray()))
+            {
+                bitcast = true;
+            }
+        }
+
+        // If the size is not same, we cannot bitcast.
+        if ((inBuffer.MemSpan.Size == outBuffer.MemSpan.Size) && (bitcast || sequeeze))
+        {
+            output = inBuffer.With(name: outBuffer.Name, elemType: outBuffer.ElemType, dimensions: outBuffer.Dimensions.ToArray(), strides: outBuffer.Strides.ToArray(), distributedType: outBuffer.DistributedType);
+            return T.Nop();
+        }
+        else
+        {
+            return TIR.F.NTT.Reshape(input, output);
         }
     }
 
@@ -252,7 +286,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         return TIR.F.NTT.Clamp((Expr)arguments[0], output, min, max);
     }
 
-    private Expr GenerateBoxing(Call call, IR.Distributed.Boxing boxing, IReadOnlyList<BaseExpr> arguments, Expr output)
+    private Expr GenerateBoxing(Call call, IR.Distributed.Boxing boxing, IReadOnlyList<BaseExpr> arguments, ref Expr output)
     {
         switch (call[IR.Distributed.Boxing.Input].CheckedType, boxing.NewType)
         {
@@ -261,9 +295,161 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case (DistributedType distTensorType, TensorType):
                 return TIR.F.NTT.TensorStore((Expr)arguments[0], output, distTensorType.AxisPolicies, distTensorType.Placement);
             case (DistributedType inType, DistributedType outType):
-                return TIR.F.NTT.GatherReduceScatter((Expr)arguments[0], output, inType, outType);
+                return GenerateReshard((Expr)arguments[0], ref output, inType, outType);
             default:
                 throw new NotSupportedException();
         }
+    }
+
+    private Expr GenerateReshard(Expr input, ref Expr output, DistributedType inType, DistributedType outType)
+    {
+        if (input is TIR.Buffer inBuffer)
+        {
+            if (TryGenerateGatherThreadsReshard(inBuffer, ref output, inType, outType, out var newCall))
+            {
+                return newCall;
+            }
+            else if (TryGenerateSplitThreadsReshard(inBuffer, ref output, inType, outType, out newCall))
+            {
+                return newCall;
+            }
+        }
+
+        return TIR.F.NTT.GatherReduceScatter(input, output, inType, outType);
+    }
+
+    private bool TryGenerateGatherThreadsReshard(TIR.Buffer inBuffer, ref Expr output, DistributedType inType, DistributedType outType, [MaybeNullWhen(false)] out Expr newCall)
+    {
+        var threadAxis = inType.Placement.Rank - 1;
+        PhysicalBuffer? oldPhysicalBuffer = null;
+
+        // S -> B
+        var reducedInPolices = inType.AxisPolicies.Select(sbp => sbp is SBPSplit split && split.Axes.Contains(threadAxis) ? (split.Axes.Count == 1 ? (SBP)SBP.B : SBP.S(split.Axes.Except([threadAxis]).ToArray())) : sbp);
+        if (reducedInPolices.ToArray().SequenceEqual(outType.AxisPolicies.ToArray()))
+        {
+            oldPhysicalBuffer = inBuffer.MemSpan.Buffer;
+        }
+
+        var oldOutputBuffer = (TIR.Buffer)output;
+        if (oldPhysicalBuffer is not null)
+        {
+            var threads = inType.Placement.Hierarchy[threadAxis];
+            var newPhysicalBuffer = oldPhysicalBuffer.With(
+                size: oldOutputBuffer.MemSpan.Size,
+                location: MemoryLocation.BlockLocalData);
+
+            // 1. Replace all uses of old buffer to new buffer.
+            var userBuffers = (from memSpan in oldPhysicalBuffer.Users.OfType<TIR.MemSpan>()
+                               from userBuffer in memSpan.Users.OfType<TIR.Buffer>()
+                               select userBuffer).ToArray();
+
+            foreach (var userBuffer in userBuffers)
+            {
+                var userType = userBuffer.DistributedType!;
+                var threadAxisDim = userType.AxisPolicies.ToArray().IndexOf(x => x is SBPSplit split && split.Axes.Contains(threadAxis));
+                if (threadAxisDim >= 0)
+                {
+                    var newStrides = userBuffer.Strides.ToArray();
+                    for (int i = 0; i < userType.AxisPolicies.Count; i++)
+                    {
+                        if (i < threadAxisDim)
+                        {
+                            newStrides[i] *= threads;
+                        }
+
+                        if (i == threadAxisDim)
+                        {
+                            var newStart = userBuffer.MemSpan.Start;
+                            if (newStart != Dimension.Zero)
+                            {
+                                // We don't support sliced buffer.
+                                newCall = null;
+                                return false;
+                            }
+
+                            var dividedType = DistributedUtility.GetDividedTensorType(userType);
+                            newStart = dividedType.Shape[i] * newStrides[i] * userBuffer.CheckedDataType.SizeInBytes * IR.F.Distributed.ThreadId();
+                            var newSize = TensorUtilities.GetMaxSize(dividedType.Shape, newStrides.Select(x => x.FixedValue).ToArray(), userBuffer.CheckedDataType.SizeInBytes);
+                            var newBuffer = userBuffer.With(
+                                memSpan: userBuffer.MemSpan.With(
+                                    buffer: newPhysicalBuffer,
+                                    start: newStart,
+                                    size: newSize),
+                                strides: newStrides);
+                            ReplaceUtility.ReplaceAllUsesWith(userBuffer, newBuffer);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 2. Create new output buffer.
+            output = oldOutputBuffer.With(
+                memSpan: oldOutputBuffer.MemSpan.With(buffer: newPhysicalBuffer));
+            newCall = TIR.F.NTT.SynchronizeThreads();
+            return true;
+        }
+
+        newCall = null;
+        return false;
+    }
+
+    private bool TryGenerateSplitThreadsReshard(TIR.Buffer inBuffer, ref Expr output, DistributedType inType, DistributedType outType, [MaybeNullWhen(false)] out Expr newCall)
+    {
+        // Avoid P -> B -> S
+        if (inType.Partial)
+        {
+            newCall = null;
+            return false;
+        }
+
+        var threadAxis = inType.Placement.Rank - 1;
+        PhysicalBuffer? oldPhysicalBuffer = null;
+        var reducedOutPolices = outType.AxisPolicies.Select(sbp => sbp is SBPSplit split && split.Axes.Contains(threadAxis) ? (split.Axes.Count == 1 ? (SBP)SBP.B : SBP.S(split.Axes.Except([threadAxis]).ToArray())) : sbp);
+        int splitAxis = -1;
+
+        // B -> S
+        if (reducedOutPolices.ToArray().SequenceEqual(inType.AxisPolicies.ToArray()))
+        {
+            oldPhysicalBuffer = inBuffer.MemSpan.Buffer;
+            splitAxis = outType.AxisPolicies.ToArray().IndexOf(x => x is SBPSplit split && split.Axes.Contains(threadAxis));
+        }
+
+        var oldOutputBuffer = (TIR.Buffer)output;
+        if (oldPhysicalBuffer is not null)
+        {
+            var threads = inType.Placement.Hierarchy[threadAxis];
+            var newPhysicalBuffer = oldPhysicalBuffer.With(
+                location: MemoryLocation.BlockLocalData);
+
+            // 1. Replace all uses of old mem span to new mem span.
+            var userMemSpans = oldPhysicalBuffer.Users.OfType<TIR.MemSpan>().ToArray();
+
+            foreach (var userMemSpan in userMemSpans)
+            {
+                var newMemSpan = userMemSpan.With(buffer: newPhysicalBuffer);
+                ReplaceUtility.ReplaceAllUsesWith(userMemSpan, newMemSpan);
+            }
+
+            // 2. Create new output buffer.
+            var newStart = oldOutputBuffer.MemSpan.Start;
+            if (newStart != Dimension.Zero)
+            {
+                // We don't support sliced buffer.
+                newCall = null;
+                return false;
+            }
+
+            var dividedType = DistributedUtility.GetDividedTensorType(outType);
+            newStart = dividedType.Shape[splitAxis] * oldOutputBuffer.Strides[splitAxis] * oldOutputBuffer.CheckedDataType.SizeInBytes * IR.F.Distributed.ThreadId();
+
+            output = oldOutputBuffer.With(
+                memSpan: oldOutputBuffer.MemSpan.With(buffer: newPhysicalBuffer, start: newStart), strides: inBuffer.Strides.ToArray());
+            newCall = TIR.F.NTT.SynchronizeThreads();
+            return true;
+        }
+
+        newCall = null;
+        return false;
     }
 }

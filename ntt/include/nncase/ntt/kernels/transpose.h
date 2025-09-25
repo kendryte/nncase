@@ -41,6 +41,9 @@ template <Tensor TIn, class TOut, FixedDimensions TPerms>
 void transpose(const TIn &input, TOut &&output,
                [[maybe_unused]] const TPerms &perms =
                    make_index_shape<TIn::rank()>().reverse()) {
+    using TInElem = TIn::element_type;
+    using TOutElem = std::decay_t<TOut>::element_type;
+
     constexpr auto rank = TIn::rank();
     const auto conti_dims_input =
         contiguous_dims(input.shape(), input.strides());
@@ -56,12 +59,19 @@ void transpose(const TIn &input, TOut &&output,
             input, output, perms, std::make_index_sequence<segments>{});
     } else {
         constexpr auto pos_perms = positive_axes(perm_const, rank);
+        const TInElem *NTT_RESTRICT input_p = input.elements().data();
+        TOutElem *NTT_RESTRICT output_p = output.elements().data();
 
-        ntt::apply(input.shape(), [&](auto index) {
-            auto out_index = generate_shape<rank>(
-                [&](auto i) { return index[pos_perms[i]]; });
-            output(out_index) = input(index);
-        });
+        ntt::apply(
+            input.shape(),
+            [&](auto index, auto in_offset) {
+                const auto out_index = generate_shape<rank>(
+                    [&](auto i) { return index[pos_perms[i]]; });
+                const auto out_offset =
+                    linear_offset(out_index, output.strides());
+                output_p[out_offset] = input_p[in_offset];
+            },
+            input.strides());
     }
     // }
 }

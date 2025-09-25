@@ -110,6 +110,16 @@ DEFINE_NTT_DIM_COMPARE_OP(>=)
 
 #undef DEFINE_NTT_DIM_COMPARE_OP
 
+template <bool Value>
+constexpr auto operator||(std::integral_constant<bool, Value>,
+                          bool b) noexcept {
+    if constexpr (Value) {
+        return std::integral_constant<bool, true>{};
+    } else {
+        return b;
+    }
+}
+
 template <Dimension TNum, Dimension TDenom>
     requires(FixedDimension<TNum> || FixedDimension<TDenom>)
 constexpr auto ceil_div([[maybe_unused]] const TNum &num,

@@ -35,7 +35,7 @@ void scatter_nd_impl(const TIn &input, const TIndex &indices,
     const auto updates_strides = updates.strides();
     [[maybe_unused]] const auto out_strides = output.strides();
 
-    ntt::tensor_copy(input, output);
+    ntt::tensor_copy_sync(input, output);
     constexpr auto k = indices_shape.rank() - dim_one;
     const auto update_indices = indices_shape.template slice<0, k>();
     const auto update_indices_strides = indices_strides.template slice<0, k>();

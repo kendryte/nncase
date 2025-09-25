@@ -15,6 +15,7 @@
 #pragma once
 #include "apply.h"
 #include "dimension.h"
+#include "loop.h"
 #include "primitive_ops.h"
 #include "tensor_traits.h"
 #include "vector.h"
@@ -53,10 +54,9 @@ struct tensor_unary_impl<Op, TVector> {
         vector<typename TVector::element_type, TVector::shape().at(1)>;
 
     constexpr TVector operator()(const TVector &v) const noexcept {
-        TVector value;
-        for (size_t m = 0; m < TVector::shape().at(0); m++) {
-            value(m) = op_(v(m));
-        }
+        TVector value{};
+        ntt::loop<TVector::shape().at(0)>(
+            [&](auto m) { value(m) = op_(v(m)); });
         return value;
     }
 
@@ -67,12 +67,13 @@ struct tensor_unary_impl<Op, TVector> {
 template <template <class OpTLhs, class OpTRhs> class Op, class T1, class T2>
 struct tensor_binary_impl;
 
-//here, T1 and T2 can be scalar or vector
-//T1 1D vector, T2 scalar or 1D vector
-//T1 2D vector, T2 scalar or 1D vector
-//T1 2D vector, T2 2D vector
-template <template <class OpTLhs, class OpTRhs> class Op, Vector TVector, class T2>
-requires((!Vector<T2> || !(TVector::rank() == 1 && T2::rank() == 2)))
+// here, T1 and T2 can be scalar or vector
+// T1 1D vector, T2 scalar or 1D vector
+// T1 2D vector, T2 scalar or 1D vector
+// T1 2D vector, T2 2D vector
+template <template <class OpTLhs, class OpTRhs> class Op, Vector TVector,
+          class T2>
+    requires((!Vector<T2> || !(TVector::rank() == 1 && T2::rank() == 2)))
 struct tensor_binary_impl<Op, TVector, T2> {
     using element_type1 = TVector::element_type;
     using element_type2 = element_or_scalar_t<T2>;
@@ -82,28 +83,33 @@ struct tensor_binary_impl<Op, TVector, T2> {
         TVector value{};
         if constexpr (Vector<T2>) {
             if constexpr (TVector::rank() == 2 && T2::rank() == 1) {
-                static_assert(TVector::shape().at(1) == T2::shape().at(0), "vector shape not match");
-                Op<get_last_lane_vector_t<TVector>, T2> op_;  //Op<2D,1D> delegate to Op<1D, 1D>
-                ntt::loop<TVector::shape().at(0)>([&](auto m) {
-                    value(m) = op_(v1(m), v2);
-                });
+                static_assert(TVector::shape().at(1) == T2::shape().at(0),
+                              "vector shape not match");
+                Op<get_last_lane_vector_t<TVector>, T2>
+                    op_; // Op<2D,1D> delegate to Op<1D, 1D>
+                ntt::loop<TVector::shape().at(0)>(
+                    [&](auto m) { value(m) = op_(v1(m), v2); });
             } else if constexpr (TVector::rank() == 1 && T2::rank() == 1) {
-                static_assert(TVector::shape().at(0) == T2::shape().at(0), "vector shape not match");
-                Op<element_type1, element_type2> op_;  //Op<1D, 1D> delegate to Op<scalar, scalar>
+                static_assert(TVector::shape().at(0) == T2::shape().at(0),
+                              "vector shape not match");
+                Op<element_type1, element_type2>
+                    op_; // Op<1D, 1D> delegate to Op<scalar, scalar>
                 ntt::apply(v1.shape(), [&](auto index) {
-                    value(index) = op_(v1(index), v2(index)); 
+                    value(index) = op_(v1(index), v2(index));
                 });
             } else if constexpr (TVector::rank() == 2 && T2::rank() == 2) {
-                static_assert(TVector::shape() == T2::shape(), "2D vector shape not match");
+                static_assert(TVector::shape() == T2::shape(),
+                              "2D vector shape not match");
                 using vec_1D_type1 = get_last_lane_vector_t<TVector>;
                 using vec_1D_type2 = get_last_lane_vector_t<T2>;
-                Op<vec_1D_type1, vec_1D_type2> op_; //Op<2D, 2D> delegate to Op<1D, 1D>
-                ntt::loop<TVector::shape().at(0)>([&](auto m) {
-                    value(m) = op_(v1(m), v2(m));
-                });
+                Op<vec_1D_type1, vec_1D_type2>
+                    op_; // Op<2D, 2D> delegate to Op<1D, 1D>
+                ntt::loop<TVector::shape().at(0)>(
+                    [&](auto m) { value(m) = op_(v1(m), v2(m)); });
             }
         } else {
-            Op<element_type1, element_type2> op_;  //Op<1D/2D, scalar> delegate to Op<scalar, scalar>
+            Op<element_type1, element_type2>
+                op_; // Op<1D/2D, scalar> delegate to Op<scalar, scalar>
             ntt::apply(v1.shape(),
                        [&](auto index) { value(index) = op_(v1(index), v2); });
         }
@@ -111,12 +117,11 @@ struct tensor_binary_impl<Op, TVector, T2> {
         return value;
     }
 
-//   private:
-//     Op<element_type1, element_type2> op_;
+    //   private:
+    //     Op<element_type1, element_type2> op_;
 };
 
-
-//T1 scalar, T2 1D vector or 2D vector
+// T1 scalar, T2 1D vector or 2D vector
 template <template <class T1, class T2> class Op, Scalar TScalar,
           Vector TVector>
 struct tensor_binary_impl<Op, TScalar, TVector> {
@@ -125,9 +130,8 @@ struct tensor_binary_impl<Op, TScalar, TVector> {
     constexpr TVector operator()(const TScalar &v1,
                                  const TVector &v2) const noexcept {
         TVector value{};
-        ntt::apply(v2.shape(), [&](auto index) {
-            value(index) = (op_(v1, v2(index)));
-        });
+        ntt::apply(v2.shape(),
+                   [&](auto index) { value(index) = (op_(v1, v2(index))); });
         return value;
     }
 
@@ -135,20 +139,20 @@ struct tensor_binary_impl<Op, TScalar, TVector> {
     Op<TScalar, element_type2> op_;
 };
 
-//T1 1D vector, T2 2D vector
-template <template <class T1, class T2> class Op, Vector TVec1,
-          Vector TVec2>
+// T1 1D vector, T2 2D vector
+template <template <class T1, class T2> class Op, Vector TVec1, Vector TVec2>
     requires(TVec1::rank() == 1 && TVec2::rank() == 2)
 struct tensor_binary_impl<Op, TVec1, TVec2> {
     using element_type1 = TVec1::element_type;
     using element_type2 = TVec2::element_type;
     using vec_1D_type2 = get_last_lane_vector_t<TVec2>;
-    constexpr TVec2 operator()(const TVec1 &v1, const TVec2 &v2) const noexcept {
+    constexpr TVec2 operator()(const TVec1 &v1,
+                               const TVec2 &v2) const noexcept {
         TVec2 value{};
-        static_assert(TVec1::shape().at(0) == TVec2::shape().at(1), "vector shape not match");
-        ntt::loop<TVec2::shape().at(0)>([&](auto m) {
-            value(m) = op_(v1, v2(m));
-        });
+        static_assert(TVec1::shape().at(0) == TVec2::shape().at(1),
+                      "vector shape not match");
+        ntt::loop<TVec2::shape().at(0)>(
+            [&](auto m) { value(m) = op_(v1, v2(m)); });
         return value;
     }
 
@@ -162,7 +166,7 @@ struct tensor_compare_impl;
 
 template <template <class T1, class T2> class Op, Vector TVector, class T2>
 struct tensor_compare_impl<Op, TVector, T2> {
-    using element_type1 =  typename TVector::element_type;
+    using element_type1 = typename TVector::element_type;
     using element_type2 = element_or_scalar_t<T2>;
     static constexpr size_t vl = TVector::template lane<0>();
     using TOut = ntt::vector<bool, vl>;
@@ -288,13 +292,13 @@ NTT_DEFINE_TENSOR_COMPARE_IMPL(greater_or_equal);
 NTT_DEFINE_TENSOR_COMPARE_IMPL(less);
 NTT_DEFINE_TENSOR_COMPARE_IMPL(less_or_equal);
 
-//assert TVec1 == TVec2 == 1D vector
+// assert TVec1 == TVec2 == 1D vector
 template <Vector TVector> struct inner_product<TVector, TVector> {
     using element_type = typename TVector::element_type;
 
     constexpr auto operator()(const TVector &v1,
                               const TVector &v2) const noexcept {
-        //datatype infer: op_<vector, vector> delegate to op_<scalar, scalar>
+        // datatype infer: op_<vector, vector> delegate to op_<scalar, scalar>
         using result_type = decltype(op_(std::declval<element_type>(),
                                          std::declval<element_type>()));
         result_type value{};
@@ -307,28 +311,31 @@ template <Vector TVector> struct inner_product<TVector, TVector> {
     ops::inner_product<element_type, element_type> op_;
 };
 
-template <Vector TVector> 
-requires (std::is_same_v<typename TVector::element_type, float_e4m3_t> || std::is_same_v<typename TVector::element_type, float_e5m2_t>
-            || std::is_same_v<typename TVector::element_type, half>)
+template <Vector TVector>
+    requires(std::is_same_v<typename TVector::element_type, float_e4m3_t> ||
+             std::is_same_v<typename TVector::element_type, float_e5m2_t> ||
+             std::is_same_v<typename TVector::element_type, half>)
 struct inner_product<TVector, TVector> {
-    //ulp is too large for fp8
-    //intermediate result should be float
+    // ulp is too large for fp8
+    // intermediate result should be float
 
     using element_type = typename TVector::element_type;
 
     constexpr auto operator()(const TVector &v1,
                               const TVector &v2) const noexcept {
-        //datatype infer: op_<vector, vector> delegate to op_<scalar, scalar>
+        // datatype infer: op_<vector, vector> delegate to op_<scalar, scalar>
         using result_type = float;
         result_type value{};
-        ntt::apply(v1.shape(),
-                   [&](auto index) { value += op_float_(float(v1(index)), float(v2(index))); });
+        ntt::apply(v1.shape(), [&](auto index) {
+            value += op_float_(float(v1(index)), float(v2(index)));
+        });
         return element_type(value);
     }
 
   private:
     ops::inner_product<element_type, element_type> op_;
-    ops::inner_product<float, float> op_float_ = ops::inner_product<float, float>();
+    ops::inner_product<float, float> op_float_ =
+        ops::inner_product<float, float>();
 };
 
 template <Vector TVector1, Vector TVector2>
@@ -359,7 +366,7 @@ template <Vector TVector, class T2> struct mul_add<TVector, T2, TVector> {
 
     constexpr auto operator()(const TVector &v1, const T2 &v2,
                               const TVector &v3) const noexcept {
-        TVector value;
+        TVector value{};
         if constexpr (Vector<T2>) {
             ntt::apply(v1.shape(), [&](auto index) {
                 value(index) = op_(v1(index), v2(index), v3(index));
@@ -382,7 +389,7 @@ struct mul_add<TScalar, TVector, TVector> {
 
     constexpr auto operator()(const TScalar &s1, const TVector &v2,
                               const TVector &v3) const noexcept {
-        TVector value;
+        TVector value{};
         ntt::apply(v3.shape(), [&](auto index) {
             value(index) = op_(s1, v2(index), v3(index));
         });
@@ -391,6 +398,45 @@ struct mul_add<TScalar, TVector, TVector> {
 
   private:
     ops::mul_add<element_type, element_type, element_type> op_;
+};
+
+template <Vector TVector, class T2> struct mul_sub<TVector, T2, TVector> {
+    using element_type = typename TVector::element_type;
+
+    constexpr auto operator()(const TVector &v1, const T2 &v2,
+                              const TVector &v3) const noexcept {
+        TVector value{};
+        if constexpr (Vector<T2>) {
+            ntt::apply(v1.shape(), [&](auto index) {
+                value(index) = op_(v1(index), v2(index), v3(index));
+            });
+        } else {
+            ntt::apply(v1.shape(), [&](auto index) {
+                value(index) = op_(v1(index), v2, v3(index));
+            });
+        }
+        return value;
+    }
+
+  private:
+    ops::mul_sub<element_type, element_type, element_type> op_;
+};
+
+template <Scalar TScalar, Vector TVector>
+struct mul_sub<TScalar, TVector, TVector> {
+    using element_type = typename TVector::element_type;
+
+    constexpr auto operator()(const TScalar &s1, const TVector &v2,
+                              const TVector &v3) const noexcept {
+        TVector value{};
+        ntt::apply(v3.shape(), [&](auto index) {
+            value(index) = op_(s1, v2(index), v3(index));
+        });
+        return value;
+    }
+
+  private:
+    ops::mul_sub<element_type, element_type, element_type> op_;
 };
 
 template <class T1, Vector T2, Vector T3> struct where<T1, T2, T3> {
@@ -421,7 +467,7 @@ template <class T1, Scalar T2, Vector TVector> struct where<T1, T2, TVector> {
 
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const TVector &v2) const noexcept {
-        TVector value;
+        TVector value{};
         ntt::apply(v2.shape(), [&](auto index) {
             value(index) = op_(condition(index), v1, v2(index));
         });
@@ -438,7 +484,7 @@ template <class T1, Vector TVector, Scalar T2> struct where<T1, TVector, T2> {
 
     constexpr auto operator()(const T1 &condition, const TVector &v1,
                               const T2 &v2) const noexcept {
-        TVector value;
+        TVector value{};
         ntt::apply(v1.shape(), [&](auto index) {
             value(index) = op_(condition(index), v1(index), v2);
         });
@@ -456,7 +502,7 @@ template <Vector T1, Scalar T2, Scalar T3> struct where<T1, T2, T3> {
     using element_type = TOut::element_type;
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const T3 &v2) const noexcept {
-        TOut value;
+        TOut value{};
         ntt::apply(condition.shape(), [&](auto index) {
             value(index) = op_(condition(index), v1, v2);
         });
@@ -472,7 +518,7 @@ template <Scalar T1, Scalar T2, Vector T3> struct where<T1, T2, T3> {
     using element_type = typename T3::element_type;
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const T3 &v2) const noexcept {
-        T3 value;
+        T3 value{};
         ntt::apply(v2.shape(), [&](auto index) {
             value(index) = op_(condition, v1, v2(index));
         });
@@ -488,7 +534,7 @@ template <Scalar T1, Vector T2, Scalar T3> struct where<T1, T2, T3> {
     using element_type = typename T2::element_type;
     constexpr auto operator()(const T1 &condition, const T2 &v1,
                               const T3 &v2) const noexcept {
-        T2 value;
+        T2 value{};
         ntt::apply(v1.shape(), [&](auto index) {
             value(index) = op_(condition, v1(index), v2);
         });
@@ -508,17 +554,16 @@ struct reduce<Op, TResult, TVector> {
     constexpr TResult operator()(const TVector &v,
                                  TResult init_value) const noexcept {
         auto value = init_value;
-        for (size_t i = 0; i < v.shape().front(); i++) {
-            value = ntt::reduce<Op, TResult>(v(i), value);
-        }
+        ntt::loop<TVector::shape().front()>(
+            [&](auto i) { value = ntt::reduce<Op, TResult>(v(i), value); });
         return value;
     }
 
     constexpr TResult operator()(const TVector &v) const noexcept {
-        auto value = ntt::reduce<Op, TResult>(v(0));
-        for (size_t i = 1; i < v.shape().front(); i++) {
-            value = ntt::reduce<Op, TResult>(v(i), value);
-        }
+        auto value = ntt::reduce<Op, TResult>(v(0_dim));
+        ntt::loop<TVector::shape().front() - 1>([&](auto i) {
+            value = ntt::reduce<Op, TResult>(v(i + 1_dim), value);
+        });
         return value;
     }
 };
@@ -537,66 +582,77 @@ template <Vector TVector, Scalar TScalar> struct clamp<TVector, TScalar> {
     ops::clamp<element_type, TScalar> op_;
 };
 
-template <Vector TVector1, Vector TVector2> struct cast<TVector1, TVector2> {
-    using from_type = typename TVector1::element_type;
-    using to_type = typename TVector2::element_type;
-    constexpr auto operator()(const TVector1 &v) const noexcept {
-        TVector2 value{};
-        ntt::apply(v.shape(),
-                   [&](auto index) { value(index) = op_(v(index)); });
-        return value;
-    }
+template <Vector TFromVector, Scalar TTo>
+    requires(std::is_same_v<typename TFromVector::element_type, bool>)
+struct cast_elem<TFromVector, TTo> {
+    constexpr auto operator()(const TFromVector &froms) const noexcept {
+        if constexpr (std::is_same_v<TTo, bool>) {
+            return froms; // No cast needed
+        } else {
+            if constexpr (TFromVector::rank() > 1) {
+                constexpr auto domain = TFromVector::shape().front();
+                using TToInnerVector =
+                    std::remove_cv_t<decltype(ntt::cast_elem<TTo>(
+                        froms(0_dim)))>;
+                using to_shape_t =
+                    std::remove_cv_t<decltype(TToInnerVector::shape().prepend(
+                        domain))>;
 
-    template <typename... TVectors>
-    constexpr auto operator()(const TVectors &...tensors) const noexcept
-        requires(sizeof...(tensors) > 1)
-    {
-        static_assert((... && (std::decay_t<TVectors>::rank() == 1)));
-        TVector2 value{};
-        size_t count = 0;
+                basic_vector<TTo, to_shape_t> tos{};
+                ntt::loop<domain>([&](auto outer_index) {
+                    tos(outer_index) = ntt::cast_elem<TTo>(froms(outer_index));
+                });
+                return tos;
+            } else {
+                constexpr auto lanes = TFromVector::shape().front();
 
-        auto process_tensor = [&](const auto &tensor) {
-            ntt::apply(tensor.shape(), [&](auto index) {
-                value(count++) = op_(tensor(index));
-            });
-        };
-
-        (..., process_tensor(tensors));
-
-        return value;
-    }
-
-    constexpr auto operator()(const TVector1 &v) const noexcept
-    //size means the number of elements
-    //assert(TVector1::size() = n * TVector2::size())
-        requires(Vector<TVector1> && (TVector1::size() != TVector2::size()))
-    {
-
-        static_assert(TVector1::rank() == 1 && TVector2::rank() == 1);
-        static_assert(ntt::Vector<TVector2>);
-        static_assert(TVector2::rank() == 1);
-        using value_type2 = typename TVector2::element_type;
-        constexpr auto lanes1 = TVector1::shape();
-        constexpr auto lanes2 = TVector2::shape();
-        constexpr auto type_scale = lanes1[0] / lanes2[0];
-
-        using TOut = ntt::vector<value_type2, type_scale, lanes2[0]>;
-        TOut Output;
-
-        size_t count = 0;
-        for (size_t i = 0; i < type_scale; i++) {
-            ntt::apply(Output(i).shape(),
-                       [&](auto index) { Output(i)(index) = op_(v(count++)); });
+                vector<TTo, lanes> tos{};
+                ops::cast_elem<bool, TTo> cast_op;
+                ntt::loop<lanes>(
+                    [&](auto lane) { tos(lane) = cast_op(froms(lane)); });
+                return tos;
+            }
         }
-
-        return Output;
     }
-
-  private:
-    ops::cast<from_type, to_type> op_;
 };
 
-template <Vector TFromVector, Scalar TTo> struct cast_elem<TFromVector, TTo> {
+template <Vector TFromVector> struct cast_elem<TFromVector, bool> {
+    using TFromElem = typename TFromVector::element_type;
+
+    constexpr auto operator()(const TFromVector &froms) const noexcept {
+        if constexpr (std::is_same_v<TFromElem, bool>) {
+            return froms; // No cast needed
+        } else {
+            if constexpr (TFromVector::rank() > 1) {
+                constexpr auto domain = TFromVector::shape().front();
+                using TToInnerVector =
+                    std::remove_cv_t<decltype(ntt::cast_elem<bool>(
+                        froms(0_dim)))>;
+                using to_shape_t =
+                    std::remove_cv_t<decltype(TToInnerVector::shape().prepend(
+                        domain))>;
+
+                basic_vector<bool, to_shape_t> tos{};
+                ntt::loop<domain>([&](auto outer_index) {
+                    tos(outer_index) = ntt::cast_elem<bool>(froms(outer_index));
+                });
+                return tos;
+            } else {
+                constexpr auto lanes = TFromVector::shape().front();
+
+                vector<bool, lanes> tos{};
+                ops::cast_elem<TFromElem, bool> cast_op;
+                ntt::loop<lanes>(
+                    [&](auto lane) { tos(lane) = cast_op(froms(lane)); });
+                return tos;
+            }
+        }
+    }
+};
+
+template <Vector TFromVector, Scalar TTo>
+    requires(!std::is_same_v<typename TFromVector::element_type, bool>)
+struct cast_elem<TFromVector, TTo> {
     using TFromElem = typename TFromVector::element_type;
 
     constexpr auto operator()(const TFromVector &froms) const noexcept
@@ -605,9 +661,29 @@ template <Vector TFromVector, Scalar TTo> struct cast_elem<TFromVector, TTo> {
         if constexpr (std::is_same_v<TFromElem, TTo>) {
             return froms; // No cast needed
         } else {
-            using TToVector =
-                basic_vector<TTo, typename TFromVector::shape_type>;
-            return ntt::cast<TFromVector, TToVector>()(froms);
+            if constexpr (TFromVector::rank() > 1) {
+                constexpr auto domain = TFromVector::shape().front();
+                using TToInnerVector =
+                    std::remove_cv_t<decltype(ntt::cast_elem<TTo>(
+                        froms(0_dim)))>;
+                using to_shape_t =
+                    std::remove_cv_t<decltype(TToInnerVector::shape().prepend(
+                        domain))>;
+
+                basic_vector<TTo, to_shape_t> tos{};
+                ntt::loop<domain>([&](auto outer_index) {
+                    tos(outer_index) = ntt::cast_elem<TTo>(froms(outer_index));
+                });
+                return tos;
+            } else {
+                constexpr auto lanes = TFromVector::shape().front();
+
+                vector<TTo, lanes> tos{};
+                ops::cast_elem<TFromElem, TTo> cast_op;
+                ntt::loop<lanes>(
+                    [&](auto lane) { tos(lane) = cast_op(froms(lane)); });
+                return tos;
+            }
         }
     }
 
@@ -622,7 +698,7 @@ template <Vector TFromVector, Scalar TTo> struct cast_elem<TFromVector, TTo> {
                 std::remove_cv_t<decltype(TToInnerVector::shape().prepend(
                     domain))>;
 
-            basic_vector<TTo, to_shape_t> tos;
+            basic_vector<TTo, to_shape_t> tos{};
             ntt::loop<domain>([&](auto outer_index) {
                 tos(outer_index) = ntt::cast_elem<TTo>(froms(outer_index));
             });
@@ -632,8 +708,8 @@ template <Vector TFromVector, Scalar TTo> struct cast_elem<TFromVector, TTo> {
             static_assert(N == sizeof(TFromElem) / sizeof(TTo));
             constexpr auto lanes = TFromVector::shape().back();
 
-            vector<TTo, N * lanes> tos;
-            ops::cast<TFromElem, TTo> cast_op;
+            vector<TTo, N * lanes> tos{};
+            ops::cast_elem<TFromElem, TTo> cast_op;
             ntt::loop<N>([&](auto n) {
                 ntt::loop<lanes>([&](auto lane) {
                     tos(n * lanes + lane) = cast_op(froms(n, lane));
@@ -664,7 +740,7 @@ template <Vector TFromVector, Scalar TTo> struct cast_elem<TFromVector, TTo> {
             constexpr auto lanes = TFromVector::shape().back() / N;
 
             vector<TTo, N, lanes> tos;
-            ops::cast<TFromElem, TTo> cast_op;
+            ops::cast_elem<TFromElem, TTo> cast_op;
             ntt::loop<N>([&](auto n) {
                 ntt::loop<lanes>([&](auto lane) {
                     tos(n, lane) = cast_op(froms(n * lanes + lane));
@@ -715,24 +791,28 @@ struct vmma {
                       "only support 2d mma");
         TResult output = v3;
         if constexpr (TransA) {
-            // <k,m> @ <k,n>
-            if constexpr (AccC) {
-                output = ntt::outer_product(lhs(0), rhs(0)) + output;
-            } else {
-                output = ntt::outer_product(lhs(0), rhs(0));
-            }
-
-            for (size_t k = 1; k < T1::shape().at(0); k++) {
-                output = ntt::outer_product(lhs(k), rhs(k)) + output;
-            }
+            ntt::loop<T1::shape().at(0)>([&](auto k) {
+                // <k,m> @ <k,n>
+                if constexpr (k == 0) {
+                    if constexpr (AccC) {
+                        output =
+                            ntt::outer_product(lhs(0_dim), rhs(0_dim)) + output;
+                    } else {
+                        output = ntt::outer_product(lhs(0_dim), rhs(0_dim));
+                    }
+                } else {
+                    output = ntt::outer_product(lhs(k), rhs(k)) + output;
+                }
+            });
         } else {
-            for (size_t k = 0; k < T2::shape().at(0); k++) {
-                for (size_t m = 0; m < T1::shape().at(0); m++) {
+            ntt::loop<T2::shape().at(0)>([&](auto k) {
+                // <m,k> @ <k,n>
+                ntt::loop<T1::shape().at(0)>([&](auto m) {
                     output(m) = (k != 0 || AccC)
                                     ? ntt::mul_add(lhs(m, k), rhs(k), output(m))
                                     : ntt::mul(lhs(m, k), rhs(k));
-                }
-            }
+                });
+            });
         }
 
         return output;

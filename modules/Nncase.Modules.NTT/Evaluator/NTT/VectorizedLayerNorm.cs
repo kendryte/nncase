@@ -84,7 +84,7 @@ public sealed class VectorizedLayerNormEvaluator : IEvaluator<VectorizedLayerNor
                 return new()
                 {
                     [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(scaleType) + CostUtility.GetMemoryAccess(biasType),
-                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 1),
+                    [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(inputType, 64),
                     [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
                 };
             default:

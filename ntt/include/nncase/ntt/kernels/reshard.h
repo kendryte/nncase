@@ -77,7 +77,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
         const auto global_offset =
             dest.sharding().global_offset(dest.shape(), local_shard_index);
         auto local = dest.local();
-        tensor_copy(src.view(global_offset, local.shape()), local);
+        tensor_copy_sync(src.view(global_offset, local.shape()), local);
     }
 };
 
@@ -104,7 +104,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
         if (shape.length() != 0) {
             // Not empty slice
             auto local = src.local().view(local_offset, shape);
-            tensor_copy(local, dest.view(global_offset, shape));
+            tensor_copy_sync(local, dest.view(global_offset, shape));
         }
         distributed::topology_synchronize();
     }
@@ -502,9 +502,11 @@ struct reshard_impl<SrcTensor, DestTensor> {
                     remote_tensor.view(src_slice.local_offset, src_slice.shape);
                 auto dest_block =
                     dest.local().view(dest_slice.local_offset, src_slice.shape);
-                tensor_copy(src_block, dest_block);
+                tensor_copy_async(src_block, dest_block);
             }
         }
+
+        tensor_copy_wait<void>();
     }
 };
 } // namespace detail

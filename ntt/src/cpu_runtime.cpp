@@ -134,10 +134,12 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
                               THREAD_AFFINITY_POLICY, (thread_policy_t)&policy,
                               THREAD_AFFINITY_POLICY_COUNT);
 #else
+#ifdef _POSIX_PRIORITY_SCHEDULING
             cpu_set_t cpuset;
             CPU_ZERO(&cpuset);
             CPU_SET(cpu_id, &cpuset);
             pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+#endif
 #endif
             auto thread_local_rdata_offset =
                 (size_t)params.thread_local_rdata_header[tid * 2];
@@ -146,13 +148,19 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
             auto thread_local_rdata = params.thread_local_rdata.subspan(
                 thread_local_rdata_offset, thread_local_rdata_size);
 
-            // Set distributed pointers
             const auto program_ids = make_shape(params.cid, params.bid, tid);
+
+            // Get thread local data
+            auto thread_local_block_data = params.thread_local_data;
+            const auto thread_local_data_size =
+                thread_local_block_data.size_bytes() / params.tdim;
+            auto thread_local_data = thread_local_block_data.subspan(
+                thread_local_data_size * tid, thread_local_data_size);
+
+            // Get block local data
             auto block_local_data = params.block_local_data;
-            const auto local_data_size =
-                block_local_data.size_bytes() / params.tdim;
-            auto local_data = block_local_data.subspan(local_data_size * tid,
-                                                       local_data_size);
+
+            // Set distributed pointers
             ntt::distributed::detail::global_thread_local_rdata_ptr(
                 program_ids)(0_dim) = (uintptr_t)thread_local_rdata.data();
             ntt::distributed::detail::global_thread_local_rdata_ptr(
@@ -160,10 +168,10 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
                 (uintptr_t)(thread_local_rdata.data() +
                             thread_local_rdata.size_bytes());
             ntt::distributed::detail::global_local_data_ptr(program_ids)(
-                0_dim) = (uintptr_t)local_data.data();
+                0_dim) = (uintptr_t)thread_local_data.data();
             ntt::distributed::detail::global_local_data_ptr(program_ids)(
-                1_dim) =
-                (uintptr_t)(local_data.data() + local_data.size_bytes());
+                1_dim) = (uintptr_t)(thread_local_data.data() +
+                                     thread_local_data.size_bytes());
             ntt::distributed::detail::global_block_local_rdata_ptr(program_ids)(
                 0_dim) = (uintptr_t)params.block_local_rdata.data();
             ntt::distributed::detail::global_block_local_rdata_ptr(program_ids)(
@@ -172,7 +180,8 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
 
             thread_main(params.input_descs, params.output_descs,
                         params.rdata.data(), thread_local_rdata.data(),
-                        params.block_local_rdata.data(), local_data.data(),
+                        params.block_local_rdata.data(),
+                        thread_local_data.data(), block_local_data.data(),
                         params.output);
         });
     }
