@@ -98,6 +98,10 @@ public partial class BinaryEvaluator : IEvaluator<Binary>, ITypeInferencer<Binar
             {
                 return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<long>(), rhs.ToScalar<long>())));
             }
+            else if (lhs.ElementType == DataTypes.UInt64 && rhs.ElementType == DataTypes.UInt64)
+            {
+                return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<ulong>(), rhs.ToScalar<ulong>())));
+            }
             else if (lhs.ElementType == DataTypes.Float32 && rhs.ElementType == DataTypes.Float32)
             {
                 return Value.FromTensor(Tensor.FromScalar(Compute(binary.BinaryOp, lhs.ToScalar<float>(), rhs.ToScalar<float>())));
