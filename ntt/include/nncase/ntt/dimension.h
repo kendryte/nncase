@@ -16,6 +16,7 @@
 #include "primitive_ops.h"
 #include "tensor_traits.h"
 #include <algorithm>
+#include <concepts>
 #include <cstdint>
 #include <numeric>
 #include <type_traits>
@@ -60,7 +61,7 @@ template <char c, char... cv> struct char_literal<c, cv...> {
 };
 } // namespace detail
 
-template <char... cv> inline constexpr auto operator"" _dim() {
+template <char... cv> inline constexpr auto operator""_dim() {
     constexpr auto value = detail::char_literal<cv...>::to_int;
     return fixed_dim_v<value>;
 }
@@ -184,16 +185,15 @@ constexpr auto positive_index(const TIndex &index,
         } else {
             return index;
         }
+    } else if constexpr (std::unsigned_integral<TIndex>) {
+        return index;
     } else {
         return index < 0 ? index + dim : index;
     }
 }
 
-namespace detail {
-template <class Cond, class T, class F> struct dim_where_impl;
-
-template <class Cond, Dimension T, Dimension F>
-struct dim_where_impl<Cond, T, F> {
+namespace ops {
+template <class Cond, Dimension T, Dimension F> struct where<Cond, T, F> {
     constexpr dim_t operator()(const Cond &cond, const T &true_dim,
                                const F &false_dim) const noexcept {
         return cond ? dim_value(true_dim) : dim_value(false_dim);
@@ -201,7 +201,7 @@ struct dim_where_impl<Cond, T, F> {
 };
 
 template <bool Value, class T, class F>
-struct dim_where_impl<std::integral_constant<bool, Value>, T, F> {
+struct where<std::integral_constant<bool, Value>, T, F> {
     constexpr auto
     operator()(const std::integral_constant<bool, Value> &,
                [[maybe_unused]] const T &true_dim,
@@ -213,12 +213,5 @@ struct dim_where_impl<std::integral_constant<bool, Value>, T, F> {
         }
     }
 };
-} // namespace detail
-
-template <class Cond, class T, class F>
-constexpr auto where(const Cond &cond, const T &true_dim,
-                     const F &false_dim) noexcept {
-    detail::dim_where_impl<Cond, T, F> impl;
-    return impl(cond, true_dim, false_dim);
-}
+} // namespace ops
 } // namespace nncase::ntt

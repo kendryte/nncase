@@ -51,7 +51,7 @@ class where_impl : public elementwise_impl<where_impl<TCond, TX, TY, TOut>,
 } // namespace detail
 
 template <Tensor TCond, Tensor TX, Tensor TY, class TOut>
-void where(const TCond &cond, const TX &x, const TY &y, TOut &&output) {
+constexpr void where(const TCond &cond, const TX &x, const TY &y, TOut &&output) {
     detail::where_impl<TCond, TX, TY, std::decay_t<TOut>>()(cond, x, y, output);
 }
 } // namespace nncase::ntt

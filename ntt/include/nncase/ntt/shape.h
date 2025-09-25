@@ -41,9 +41,11 @@ struct dynamic_dims_type_impl;
 
 template <template <class... TDims> class Derived, size_t... I>
 struct dynamic_dims_type_impl<Derived, std::index_sequence<I...>> {
-    template <std::size_t> using elem_type = dim_t;
+    template <std::size_t> struct elem_type {
+        using type = dim_t;
+    };
 
-    using type = Derived<elem_type<I>...>;
+    using type = Derived<typename elem_type<I>::type...>;
 };
 
 template <template <class... TDims> class Derived, size_t Rank>
@@ -410,8 +412,9 @@ inline constexpr auto zeros_dims_alike_v =
     }                                                                          \
                                                                                \
     template <dim_t... Dims>                                                   \
-    inline constexpr auto fixed_##dims_type##_v =                              \
-        detail::fixed_dims_impl_v<dims_type##_t, Dims...>;                     \
+    constexpr auto make_fixed_##dims_type##() noexcept {                       \
+        return detail::fixed_dims_impl_v<dims_type##_t, Dims...>;              \
+    }                                                                          \
                                                                                \
     template <size_t Rank> constexpr auto make_zeros_##dims_type() noexcept {  \
         return detail::make_zeros_dims_impl<dims_type##_t, Rank>();            \
@@ -512,6 +515,9 @@ default_strides([[maybe_unused]] const TShape shape) noexcept {
     constexpr auto rank = TShape::rank();
     if constexpr (rank == 0) {
         return strides_t<>();
+    } else if constexpr (FixedDimensions<TShape>) {
+        return detail::default_strides_impl<rank, TShape, Canonical>{}(
+            TShape{}, strides_t<>());
     } else {
         return detail::default_strides_impl<rank, TShape, Canonical>{}(
             shape, strides_t<>());

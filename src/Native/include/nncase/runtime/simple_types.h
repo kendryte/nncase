@@ -131,7 +131,7 @@ inline constexpr size_t typecode_bytes(typecode_t typecode) {
     case dt_reference:
         return sizeof(intptr_t);
     default:
-        return -1;
+        return size_t(-1);
     }
 }
 

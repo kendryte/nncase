@@ -37,7 +37,7 @@ endif()
 
 project(nncase
   VERSION ${NNCASE_VERSION}
-  LANGUAGES C CXX ASM)
+  LANGUAGES C CXX ASM CUDA)
 
 option(DOTNET_INIT_FOR_CONFIG "Initialize dotnet from runtimeconfig" OFF)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)

@@ -20,7 +20,7 @@ BEGIN_NS_NNCASE_RUNTIME
 
 inline constexpr size_t MAX_SECTION_NAME_LENGTH = 32;
 inline constexpr size_t MAX_MODULE_KIND_LENGTH = 16;
-inline constexpr uint32_t MODEL_HAS_NO_ENTRY = -1;
+inline constexpr uint32_t MODEL_HAS_NO_ENTRY = uint32_t(-1);
 
 typedef std::array<char, MAX_MODULE_KIND_LENGTH> module_kind_t;
 
@@ -95,7 +95,7 @@ struct shape_header {
     }
 };
 
-NNCASE_INLINE_VAR constexpr uint32_t MODEL_IDENTIFIER = 'KMDL';
+NNCASE_INLINE_VAR constexpr uint32_t MODEL_IDENTIFIER = 0x4b4d444c; // 'KMDL';
 NNCASE_INLINE_VAR constexpr uint32_t MODEL_VERSION = 7;
 
 END_NS_NNCASE_RUNTIME

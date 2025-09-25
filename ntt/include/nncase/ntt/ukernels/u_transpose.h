@@ -128,7 +128,7 @@ constexpr std::array<segment, Rank> get_segments() {
 
     constexpr TPerms perms;
 
-    std::array<segment, Rank> segments;
+    std::array<segment, Rank> segments{};
 
     size_t segment_count = 0;
     size_t start = 0;

@@ -184,9 +184,11 @@ template <class I> struct dynamic_paddings_type_impl;
 
 template <size_t... I>
 struct dynamic_paddings_type_impl<std::index_sequence<I...>> {
-    template <std::size_t> using elem_type = dim_t;
+    template <std::size_t> struct elem_type {
+        using type = padding_t<dim_t, dim_t>;
+    };
 
-    using type = paddings_t<elem_type<I>...>;
+    using type = paddings_t<typename elem_type<I>::type...>;
 };
 
 template <size_t Rank>
