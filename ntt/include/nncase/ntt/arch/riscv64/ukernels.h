@@ -664,9 +664,8 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
                 constexpr auto vl_in = NTT_VLEN / IN_BW * lmul;                              \
                 constexpr auto vl_out = NTT_VLEN / OUT_BW * lmul;                            \
                 vector<IN_ELEM, vl_in> in_temp;                                              \
-                asm volatile("vl4re" #IN_BW ".v %0, (%1);"                                   \
-                             : "=vr"(in_temp)                                                \
-                             : "r"(input));                                                  \
+                in_temp = __riscv_vle##IN_BW##_v_##IN_INTRINSIC_ELEM##m4(                    \
+                    (const IN_BUILTIN_ELEM *)input, vl_in);                                  \
                 auto tmp_output = ntt::cast_elem<T2Elem>(in_temp);                           \
                 auto out_ptr = output;                                                       \
                                                                                              \
