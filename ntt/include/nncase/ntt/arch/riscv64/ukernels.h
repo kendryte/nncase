@@ -663,7 +663,7 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
                 constexpr auto lmul = 4;                                                     \
                 constexpr auto vl_in = NTT_VLEN / IN_BW * lmul;                              \
                 constexpr auto vl_out = NTT_VLEN / OUT_BW * lmul;                            \
-                fixed_v##IN_INTRINSIC_ELEM##m4_t in_temp;                                    \
+                v##IN_INTRINSIC_ELEM##m4_t in_temp;                                          \
                 asm volatile("vl4re" #IN_BW ".v %0, (%1);"                                   \
                              : "=vr"(in_temp)                                                \
                              : "r"(input));                                                  \
