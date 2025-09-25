@@ -88,7 +88,7 @@ using namespace nncase::ntt::distributed::shard_policy;
 
     public static string ExternalFunctionsDef(BaseFunction[] funcs, FunctionId[] funcIds, NTTTargetOptions options)
     {
-        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/external_functions.h.cshtml", new ExternalFunctionsModel(funcs, funcIds,options)).Result;
+        var content = RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/external_functions.h.cshtml", new ExternalFunctionsModel(funcs, funcIds, options)).Result;
         return content;
     }
 
