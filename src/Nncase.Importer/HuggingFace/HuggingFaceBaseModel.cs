@@ -364,7 +364,7 @@ public abstract class HuggingFaceModel
         {
             var dtype = expr.CheckedDataType;
 
-            // TODO: only support by-tensor int8 now!
+            // TODO: only support int8 for now.
             if (weight.ElementType == DataTypes.Int8)
             {
                 long[] axes = new long[] { expr.CheckedShape.Rank - 1 };
@@ -380,7 +380,7 @@ public abstract class HuggingFaceModel
                 var qInput = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, qScaleA);
                 qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Int8);
                 var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 }).Evaluate().AsTensor();
-                var qMatmul = Nncase.IR.F.Math.QLinearMatMul(qInput, transposed_weight, deqScaleA, 0, deqScaleB, 0, Tensor.FromScalar(DataTypes.Float32, 1f).CastTo(dtype), 0, dtype).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+                var qMatmul = Nncase.IR.F.Math.QLinearMatMul(qInput, transposed_weight, deqScaleA, 0, Tensor.FromScalar(DataTypes.Float32, 1f).CastTo(dtype), 0, deqScaleB, 0, dtype).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
 
                 if (bias != null)
                 {
