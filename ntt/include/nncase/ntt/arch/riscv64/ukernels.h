@@ -663,11 +663,12 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
                 constexpr auto lmul = 4;                                                     \
                 constexpr auto vl_in = NTT_VLEN / IN_BW * lmul;                              \
                 constexpr auto vl_out = NTT_VLEN / OUT_BW * lmul;                            \
-                vector<IN_ELEM, vl_in> in_temp;                                              \
+                v##IN_INTRINSIC_ELEM##m4_t in_temp;                                          \
                 asm volatile("vl4re" #IN_BW ".v %0, (%1);"                                   \
                              : "=vr"(in_temp)                                                \
                              : "r"(input));                                                  \
-                auto tmp_output = ntt::cast_elem<T2Elem>(in_temp);                           \
+                auto tmp_output =                                                            \
+                    ntt::cast_elem<T2Elem>((vector<IN_ELEM, vl_in>)in_temp);                 \
                 auto out_ptr = output;                                                       \
                                                                                              \
                 if (input_stride == 1) {                                                     \
@@ -746,9 +747,9 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
         }                                                                                    \
     };
 
-DEFINE_U_CAST_1_2(half, 16, float, 32, _Float16, float, f16, f32)
+DEFINE_U_CAST_1_2(half, 16, float, 32, _Float16, float, float16, f32)
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
-DEFINE_U_CAST_1_2(float_e4m3_t, 8, half, 16, int8_t, _Float16, i8, f16)
+DEFINE_U_CAST_1_2(float_e4m3_t, 8, half, 16, int8_t, _Float16, float8e4m3, f16)
 #endif
 
 // matmul
