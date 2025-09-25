@@ -17,7 +17,7 @@ using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule;
 
-public class GraphTiler
+public sealed class GraphTiler
 {
     public Dictionary<TileNode, TiledFunc> SolveMemo { get; } = new Dictionary<TileNode, TiledFunc>(new ITreeNodeComparer());
 
@@ -346,7 +346,7 @@ public class GraphTiler
         if (!status)
         {
             DumpAssgin(primTree, new TreeSolverPrinter(null, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferLifenessConstraints, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
-            throw new InvalidOperationException("tiling solve failed!");
+            throw new SloveFailedException("tiling solve failed!");
         }
 
         var sol = collector.Solution(collector.SolutionCount() - 1);
@@ -537,18 +537,26 @@ public class GraphTiler
             {
                 if (!argumentMemo.TryGetValue(outputBid, out var _))
                 {
-                    // if outputBid is output buffer, we need to find it's grid as next call argument.
-                    var actualOutputBid = bufferGraphMemo[rootGraph].OutEdges(outputBid).
-                        Where(e => e.Tag is BufferEdgeKind.Inter).
-                        Select(edge => edge.Target).
-                        FirstOrDefault(outputBid);
                     var outputExpr = finalCall;
+
+                    // process the tuple output.
                     if (outputBids.Count > 1)
                     {
                         outputExpr = IR.F.Tensors.GetItem(outputExpr, outputIndex);
                     }
 
-                    argumentMemo.Add(actualOutputBid, outputExpr);
+                    argumentMemo.Add(outputBid, outputExpr);
+
+                    // other prim graph's argument requires input bid, so we need to find it.
+                    foreach (var sinkBid in bufferGraphMemo[rootGraph].OutEdges(outputBid).
+                        Where(e => e.Tag is BufferEdgeKind.Inter).
+                        Select(edge => edge.Target))
+                    {
+                        if (!argumentMemo.ContainsKey(sinkBid))
+                        {
+                            argumentMemo.Add(sinkBid, outputExpr);
+                        }
+                    }
                 }
             }
         }
@@ -658,5 +666,13 @@ public class GraphTiler
 
             return base.VisitDimAt(at, context);
         }
+    }
+}
+
+internal sealed class SloveFailedException : Exception
+{
+    public SloveFailedException(string message)
+        : base(message)
+    {
     }
 }

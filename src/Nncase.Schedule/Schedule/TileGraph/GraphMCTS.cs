@@ -92,7 +92,7 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
                     ArgumentMemo.Add(item.Key, item.Value);
                 }
             }
-            catch (System.Exception)
+            catch (SloveFailedException)
             {
                 ObjectValue = long.MaxValue;
                 return ObjectValue;
