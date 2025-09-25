@@ -341,7 +341,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
         else
         {
-            isSupported = expr.Target is AsTensor or IR.Tensors.Range ? false : true;
+            isSupported = expr.Target is AsTensor or IR.Tensors.Range or IR.Math.QLinearMatMul ? false : true;
             foreach (var param in op.Parameters)
             {
                 argClusters[param.Index] = VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
