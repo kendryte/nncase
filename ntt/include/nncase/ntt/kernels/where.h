@@ -28,9 +28,24 @@ class where_impl : public elementwise_impl<where_impl<TCond, TX, TY, TOut>,
               Tensor TBroadcastedY>
     constexpr void apply(const TBroadcastedCond &cond, const TBroadcastedX &x,
                          const TBroadcastedY &y, TOut &output) {
-        ntt::apply(output.shape(), [&](auto index) {
-            output(index) = ntt::where(cond(index), x(index), y(index));
-        });
+        using TCondElem = typename TBroadcastedCond::element_type;
+        using TXElem = typename TBroadcastedX::element_type;
+        using TYElem = typename TBroadcastedY::element_type;
+        using TOutElem = typename TOut::element_type;
+
+        const TCondElem *NTT_RESTRICT cond_p = cond.elements().data();
+        const TXElem *NTT_RESTRICT x_p = x.elements().data();
+        const TYElem *NTT_RESTRICT y_p = y.elements().data();
+        TOutElem *NTT_RESTRICT output_p = output.elements().data();
+
+        ntt::apply(
+            output.shape(),
+            [&](auto, auto cond_offset, auto x_offset, auto y_offset,
+                auto out_offset) {
+                output_p[out_offset] = ntt::where(cond_p[cond_offset],
+                                                  x_p[x_offset], y_p[y_offset]);
+            },
+            cond.strides(), x.strides(), y.strides(), output.strides());
     }
 };
 } // namespace detail

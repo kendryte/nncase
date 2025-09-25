@@ -23,7 +23,7 @@ public class NTTModuleCompiler : IModuleCompiler
 
     public int Lane => RuntimeInformation.ProcessArchitecture switch
     {
-        Architecture.X64 => 32,
+        Architecture.X64 => 16,
         Architecture.Arm64 => 16,
         _ => throw new NotSupportedException($"Unsupported architecture: {RuntimeInformation.ProcessArchitecture}"),
     };

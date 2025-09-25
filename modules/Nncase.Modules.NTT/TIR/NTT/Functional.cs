@@ -203,6 +203,11 @@ public partial class NTT
         return new Call(new TIR.NTT.Cast(newType, castMode, vectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : vectorizeAxes), input, output, postOps ?? None.Default);
     }
 
+    public static Call SynchronizeThreads()
+    {
+        return new Call(new TIR.NTT.SynchronizeThreads());
+    }
+
     public static Call Where(Expr cond, Expr x, Expr y, Expr output)
     {
         return new Call(new TIR.NTT.Where(), cond, x, y, output);

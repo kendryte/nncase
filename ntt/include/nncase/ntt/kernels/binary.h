@@ -34,27 +34,70 @@ class binary_impl
         auto output_conti_dims =
             contiguous_dims(output.shape(), output.strides());
 
-        auto addr_lhs = lhs.elements().data();
-        auto addr_rhs = rhs.elements().data();
-        auto addr_output_element = output.elements().data();
+        constexpr auto rank = TOut::rank();
+        auto conti_dims = std::min(lhs_conti_dims, rhs_conti_dims);
+        conti_dims = std::min(conti_dims, output_conti_dims);
+        auto ref_shape = lhs.shape();
 
-        auto len = output.shape().length();
+        auto lhs_u_strides = 1;
+        auto rhs_u_strides = 1;
+        constexpr auto zero_strides = make_zeros_strides<rank>();
+        if (rhs.strides() == zero_strides) {
+            conti_dims = std::min(lhs_conti_dims, output_conti_dims);
+            ref_shape = lhs.shape();
+            rhs_u_strides = 0;
+        } else if (lhs.strides() == zero_strides) {
+            conti_dims = std::min(rhs_conti_dims, output_conti_dims);
+            ref_shape = rhs.shape();
+            lhs_u_strides = 0;
+        }
 
-        using TLhsElem = element_or_scalar_t<TLhs>;
-        using TRhsElem = element_or_scalar_t<TRhs>;
-        using TOutElem = element_or_scalar_t<TOut>;
+        auto apply_shape = generate_shape<rank>([&](auto i) {
+            if (i > rank - conti_dims - 1)
+                return (dim_t)1;
+            else
+                return (dim_t)ref_shape[i];
+        });
+        auto inner_shape = generate_shape<rank>([&](auto i) {
+            if (i > rank - conti_dims - 1)
+                return (dim_t)ref_shape[i];
+            else
+                return (dim_t)1_dim;
+        });
+
+        auto len = inner_shape.length();
+
+        using TLhsElem = typename TLhs::element_type;
+        using TRhsElem = typename TRhs::element_type;
+        using TOutElem = typename TOut::element_type;
         TPostOp<TOutElem> post_op;
 
-        if (!is_broadcast && (lhs_conti_dims == TLhs::rank()) &&
-            (rhs_conti_dims == TRhs::rank()) &&
-            (output_conti_dims == TOut::rank())) {
-            ntt::u_binary<TOp, TPostOp, TLhsElem, TRhsElem, TOutElem>(
-                op, addr_lhs, 1, addr_rhs, 1, addr_output_element, 1, len);
-        } else {
-            ntt::apply(output.shape(), [&](auto index) {
-                output(index) = op(lhs(index), rhs(index));
-                output(index) = post_op(output(index));
+        // Todo: only support broadcast if one of the input is scalar
+        // currently. Because this covers 90+% of the scenarios.
+        if ((Vector<TLhsElem> && Vector<TRhsElem> && !is_broadcast) ||
+            (Scalar<TLhsElem> && lhs_u_strides == 0) ||
+            (Scalar<TRhsElem> && rhs_u_strides == 0)) {
+            ntt::apply(apply_shape, [&](auto index) {
+                const TLhsElem *NTT_RESTRICT addr_lhs = &lhs(index);
+                const TRhsElem *NTT_RESTRICT addr_rhs = &rhs(index);
+                TOutElem *NTT_RESTRICT addr_output_element = &output(index);
+                ntt::u_binary<TOp, TPostOp, TLhsElem, TRhsElem, TOutElem>(
+                    op, addr_lhs, lhs_u_strides, addr_rhs, rhs_u_strides,
+                    addr_output_element, 1, len);
             });
+
+        } else {
+            const TLhsElem *NTT_RESTRICT lhs_p = lhs.elements().data();
+            const TRhsElem *NTT_RESTRICT rhs_p = rhs.elements().data();
+            TOutElem *NTT_RESTRICT output_p = output.elements().data();
+            ntt::apply(
+                output.shape(),
+                [&](auto, auto lhs_offset, auto rhs_offset,
+                    auto output_offset) {
+                    auto value = op(lhs_p[lhs_offset], rhs_p[rhs_offset]);
+                    output_p[output_offset] = post_op(value);
+                },
+                lhs.strides(), rhs.strides(), output.strides());
         }
     }
 };

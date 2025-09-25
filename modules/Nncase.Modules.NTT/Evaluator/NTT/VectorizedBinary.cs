@@ -85,22 +85,21 @@ public sealed class VectorizedBinaryEvaluator : IEvaluator<VectorizedBinary>, IT
         var rhs = context.GetArgumentType<IRType>(target, VectorizedBinary.Rhs);
         var outputType = context.GetReturnType<IRType>();
 
-        uint macPerElement = 1;
-        if (lhs is TensorType { Shape: RankedShape lhsShape })
-        {
-            macPerElement = !lhsShape.IsScalar && lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
-        }
-        else if (lhs is DistributedType distributedType)
-        {
-            var lhsType = DistributedUtility.GetDividedTensorType(distributedType);
-            macPerElement = lhsType.Shape[^1].IsFixed ? (uint)lhsType.Shape[^1].FixedValue : 1U;
-        }
-
+        // uint macPerElement = 1;
+        // if (lhs is TensorType { Shape: RankedShape lhsShape })
+        // {
+        //     macPerElement = !lhsShape.IsScalar && lhsShape[^1].IsFixed ? (uint)lhsShape[^1].FixedValue : 1U;
+        // }
+        // else if (lhs is DistributedType distributedType)
+        // {
+        //     var lhsType = DistributedUtility.GetDividedTensorType(distributedType);
+        //     macPerElement = lhsType.Shape[^1].IsFixed ? (uint)lhsType.Shape[^1].FixedValue : 1U;
+        // }
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(lhs) + CostUtility.GetMemoryAccess(rhs),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, (int)MetricUtility.GetBinaryFLOPs(target.BinaryOp)),
         };
     }
 

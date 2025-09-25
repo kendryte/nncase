@@ -38,6 +38,11 @@ public partial class NTT
         return new Call(new VectorizedReduce(reduceOp, axes, initValue, keepDims, vectorizedAxes), input, padedNums);
     }
 
+    public static Expr VectorizedRoPE(Expr input, Expr cos, Expr sin)
+    {
+        return new Call(new VectorizedRoPE(), input, cos, sin);
+    }
+
     public static Expr InstacneNorm(Expr input, Expr scale, Expr bias, float epsilon, IRArray<int> vectorizedAxes, BaseExpr padedNums)
     {
         return new Call(new InstacneNorm(epsilon, vectorizedAxes), input, scale, bias, padedNums);

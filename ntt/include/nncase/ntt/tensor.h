@@ -15,6 +15,7 @@
 #pragma once
 #include "detail/shape_storage.h"
 #include "detail/tensor_storage.h"
+#include "nncase/ntt/compiler_defs.h"
 #include "nncase/ntt/dimension.h"
 #include "tensor_traits.h"
 #include "vector.h"
@@ -148,32 +149,35 @@ class basic_tensor
     using storage_type::elements;
 
     template <bool IsViewV = IsView, class = std::enable_if_t<!IsViewV>>
-    constexpr basic_tensor(TShape shape, TStrides strides) noexcept
+    NTT_ALWAYS_INLINE constexpr basic_tensor(TShape shape,
+                                             TStrides strides) noexcept
         : size_impl_type(std::move(shape), std::move(strides)),
           storage_type(shape.length()) {}
 
-    constexpr basic_tensor(buffer_type buffer, TShape shape,
-                           TStrides strides) noexcept
+    NTT_ALWAYS_INLINE constexpr basic_tensor(buffer_type buffer, TShape shape,
+                                             TStrides strides) noexcept
         : size_impl_type(std::move(shape), std::move(strides)),
           storage_type(std::in_place, std::move(buffer)) {}
 
-    constexpr basic_tensor(const basic_tensor<T, TShape, TStrides, IsView>
-                               &other) noexcept = default;
+    NTT_ALWAYS_INLINE constexpr basic_tensor(
+        const basic_tensor<T, TShape, TStrides, IsView> &other) noexcept =
+        default;
 
-    constexpr basic_tensor(
+    NTT_ALWAYS_INLINE constexpr basic_tensor(
         basic_tensor<T, TShape, TStrides, IsView> &&other) noexcept = default;
 
     template <class U = T, class = std::enable_if_t<std::is_const_v<U>>>
-    constexpr basic_tensor(basic_tensor<std::remove_const_t<U>, TShape,
-                                        TStrides, IsView> &&other) noexcept
+    NTT_ALWAYS_INLINE constexpr basic_tensor(
+        basic_tensor<std::remove_const_t<U>, TShape, TStrides, IsView>
+            &&other) noexcept
         : size_impl_type(std::move(other.shape()), std::move(other.strides())),
           storage_type(std::in_place, std::move(other.buffer())) {}
 
-    constexpr basic_tensor &
+    NTT_ALWAYS_INLINE constexpr basic_tensor &
     operator=(const basic_tensor<T, TShape, TStrides, IsView> &other) noexcept =
         default;
 
-    constexpr basic_tensor &operator=(
+    NTT_ALWAYS_INLINE constexpr basic_tensor &operator=(
         basic_tensor<T, TShape, TStrides, IsView> &&other) noexcept = default;
 
     class const_iterator {

@@ -296,7 +296,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         requires detail::ValidIdTensor<id_length, TId>
     {
         auto destView = get_slot_view<Kind>(layer_id, head_id, slot_id);
-        ntt::tensor_copy(slot, destView);
+        ntt::tensor_copy_async(slot, destView);
     }
 
     template <attention_cache_kind Kind, typename T>
@@ -393,7 +393,7 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
         const auto block_offset = global_slot_offset / TConfig::block_size;
         const auto local_slot_offset = global_slot_offset % TConfig::block_size;
         auto block_id = make_tensor<int64_t>(id_shape);
-        tensor_copy(slot_id, block_id);
+        tensor_copy_sync(slot_id, block_id);
         block_id(-1_dim) = block_offset;
         // printf("[nncase_log] try get slot: [%ld, %ld, %ld]\n",
         // slot_id(0),

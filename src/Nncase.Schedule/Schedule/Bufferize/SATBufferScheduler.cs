@@ -51,34 +51,48 @@ public sealed class SATBufferScheduler : BufferScheduler
             bufferId++;
         }
 
-        var memPoolEndVar = model.NewIntVar(0, maxMemoryPoolEnd, nameof(maxMemoryPoolEnd));
-        model.AddMaxEquality(memPoolEndVar, yEnds);
-        model.Minimize(memPoolEndVar);
-
-        var solver = new CpSolver();
-        solver.StringParameters = $"max_time_in_seconds:{600},num_workers:{Environment.ProcessorCount}";
-        CpSolverStatus solve_status = solver.Solve(model);
-        if (solve_status != CpSolverStatus.Optimal && solve_status != CpSolverStatus.Feasible)
+        if (boxs.Count != 0)
         {
-            memoryPoolEnd = default;
-            return false;
+            var memPoolEndVar = model.NewIntVar(0, maxMemoryPoolEnd, nameof(maxMemoryPoolEnd));
+            model.AddMaxEquality(memPoolEndVar, yEnds);
+            model.Minimize(memPoolEndVar);
+
+            var solver = new CpSolver();
+            solver.StringParameters = $"max_time_in_seconds:{600},num_workers:{Environment.ProcessorCount}";
+            CpSolverStatus solve_status = solver.Solve(model);
+            if (solve_status != CpSolverStatus.Optimal && solve_status != CpSolverStatus.Feasible)
+            {
+                memoryPoolEnd = default;
+                return false;
+            }
+
+            foreach (var lifetime in lifetimes)
+            {
+                if (lifetime.Memory.Size == 0)
+                {
+                    lifetime.Memory.Start = options.StartAddress;
+                    lifetime.Memory.Stop = options.StartAddress;
+                }
+                else
+                {
+                    lifetime.Memory.Start = checked(solver.Value(boxs[lifetime.Buffer].Y.StartExpr()));
+                    lifetime.Memory.Stop = checked(solver.Value(boxs[lifetime.Buffer].Y.EndExpr()));
+                }
+            }
+
+            memoryPoolEnd = solver.Value(memPoolEndVar);
         }
-
-        foreach (var lifetime in lifetimes)
+        else
         {
-            if (lifetime.Memory.Size == 0)
+            foreach (var lifetime in lifetimes)
             {
                 lifetime.Memory.Start = options.StartAddress;
                 lifetime.Memory.Stop = options.StartAddress;
             }
-            else
-            {
-                lifetime.Memory.Start = checked(solver.Value(boxs[lifetime.Buffer].Y.StartExpr()));
-                lifetime.Memory.Stop = checked(solver.Value(boxs[lifetime.Buffer].Y.EndExpr()));
-            }
+
+            memoryPoolEnd = options.StartAddress;
         }
 
-        memoryPoolEnd = solver.Value(memPoolEndVar);
         return true;
     }
 

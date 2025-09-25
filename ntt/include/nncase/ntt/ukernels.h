@@ -17,6 +17,7 @@
 #include "ukernels/u_cast.h"
 #include "ukernels/u_clamp.h"
 #include "ukernels/u_compare.h"
+#include "ukernels/u_layer_norm.h"
 #include "ukernels/u_matmul.h"
 #include "ukernels/u_mul_add.h"
 #include "ukernels/u_pack.h"
