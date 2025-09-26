@@ -574,10 +574,10 @@ template <> struct u_cast_policy<true> {
                 prepend_lanes_t<vector<IN_ELEM, vl_in>, 2> in_temp1{};                     \
                                                                                            \
                 if (input_stride == 1) {                                                   \
-                    fixed_vfloat##IN_BW##m4_t in0;                                         \
-                    fixed_vfloat##IN_BW##m4_t in1;                                         \
-                    fixed_vfloat##IN_BW##m4_t in2;                                         \
-                    fixed_vfloat##IN_BW##m4_t in3;                                         \
+                    vfloat##IN_BW##m4_t in0;                                               \
+                    vfloat##IN_BW##m4_t in1;                                               \
+                    vfloat##IN_BW##m4_t in2;                                               \
+                    vfloat##IN_BW##m4_t in3;                                               \
                     asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in0)                                              \
                                  : "r"(input + 0 * half_unroll));                          \
@@ -595,10 +595,10 @@ template <> struct u_cast_policy<true> {
                     in_temp1(0_dim) = in2;                                                 \
                     in_temp1(1_dim) = in3;                                                 \
                 } else {                                                                   \
-                    fixed_vfloat##IN_BW##m4_t in0;                                         \
-                    fixed_vfloat##IN_BW##m4_t in1;                                         \
-                    fixed_vfloat##IN_BW##m4_t in2;                                         \
-                    fixed_vfloat##IN_BW##m4_t in3;                                         \
+                    vfloat##IN_BW##m4_t in0;                                               \
+                    vfloat##IN_BW##m4_t in1;                                               \
+                    vfloat##IN_BW##m4_t in2;                                               \
+                    vfloat##IN_BW##m4_t in3;                                               \
                     asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in0)                                              \
                                  : "r"(input));                                            \
@@ -685,9 +685,13 @@ template <> struct u_cast_policy<true> {
                 auto v24 = ntt::cast_elem<T2Elem>(in_temp1);                               \
                 v16 = TPostOps<vector<OUT_ELEM, vl_out>>()(v16);                           \
                 v24 = TPostOps<vector<OUT_ELEM, vl_out>>()(v24);                           \
-                asm volatile("vs4r.v %0, (%1);" ::"vr"(v16), "r"(output)                   \
+                                                                                           \
+                asm volatile("vs4r.v %0, (%1);" ::"vr"(                                    \
+                                 (v##OUT_INTRINSIC_ELEM##m4_t)v16),                        \
+                             "r"(output)                                                   \
                              : "memory");                                                  \
-                asm volatile("vs4r.v %0, (%1);" ::"vr"(v24),                               \
+                asm volatile("vs4r.v %0, (%1);" ::"vr"(                                    \
+                                 (v##OUT_INTRINSIC_ELEM##m4_t)v24),                        \
                              "r"(output + half_unroll)                                     \
                              : "memory");                                                  \
                 output += unroll;                                                          \
@@ -710,9 +714,9 @@ template <> struct u_cast_policy<true> {
         }                                                                                  \
     };
 
-DEFINE_U_CAST_2_1(float, 32, half, 16, float, _Float16, f32, f16)
+DEFINE_U_CAST_2_1(float, 32, half, 16, float, _Float16, f32, float16)
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
-DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
+DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, float8e4m3)
 #endif
 
 #define DEFINE_U_CAST_1_2(IN_ELEM, IN_BW, OUT_ELEM, OUT_BW, IN_BUILTIN_ELEM,                 \
