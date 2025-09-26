@@ -362,8 +362,8 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
             TPostOp<vector<DTYPE, NTT_VLEN / BITS>> post_op_m1;                \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<DTYPE, vl> v0;                                     \
-                ntt::vector<DTYPE, vl> v8;                                     \
+                vfloat##BITS##m8_t v0;                                         \
+                vfloat##BITS##m8_t v8;                                         \
                 asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
                              : "=vr"(v0)                                       \
                              : "r"(input1));                                   \
@@ -373,11 +373,14 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
                              : "r"(input2));                                   \
                 input2 += input2_stride * lmul;                                \
                                                                                \
-                auto v16 = nncase::ntt::OP(v0, v8);                            \
+                auto v16 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v0,         \
+                                           (ntt::vector<DTYPE, vl>)v8);        \
                 v16 = post_op_m8(v16);                                         \
                                                                                \
-                asm volatile("vs8r.v %0, (%1);" ::"vr"(v16), "r"(output)       \
-                             : "memory");                                      \
+                asm volatile(                                                  \
+                    "vs8r.v %0, (%1);" ::"vr"((vfloat##BITS##m8_t)v16),        \
+                    "r"(output)                                                \
+                    : "memory");                                               \
                 output += output_stride * lmul;                                \
                 count -= unroll;                                               \
             }                                                                  \
