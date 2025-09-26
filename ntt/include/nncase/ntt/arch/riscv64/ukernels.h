@@ -574,10 +574,10 @@ template <> struct u_cast_policy<true> {
                 prepend_lanes_t<vector<IN_ELEM, vl_in>, 2> in_temp1{};                     \
                                                                                            \
                 if (input_stride == 1) {                                                   \
-                    vector<IN_ELEM, vl_in> in0;                                            \
-                    vector<IN_ELEM, vl_in> in1;                                            \
-                    vector<IN_ELEM, vl_in> in2;                                            \
-                    vector<IN_ELEM, vl_in> in3;                                            \
+                    fixed_vfloat##IN_BW##m4_t in0;                                         \
+                    fixed_vfloat##IN_BW##m4_t in1;                                         \
+                    fixed_vfloat##IN_BW##m4_t in2;                                         \
+                    fixed_vfloat##IN_BW##m4_t in3;                                         \
                     asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in0)                                              \
                                  : "r"(input + 0 * half_unroll));                          \
@@ -595,10 +595,10 @@ template <> struct u_cast_policy<true> {
                     in_temp1(0_dim) = in2;                                                 \
                     in_temp1(1_dim) = in3;                                                 \
                 } else {                                                                   \
-                    vector<IN_ELEM, vl_in> in0;                                            \
-                    vector<IN_ELEM, vl_in> in1;                                            \
-                    vector<IN_ELEM, vl_in> in2;                                            \
-                    vector<IN_ELEM, vl_in> in3;                                            \
+                    fixed_vfloat##IN_BW##m4_t in0;                                         \
+                    fixed_vfloat##IN_BW##m4_t in1;                                         \
+                    fixed_vfloat##IN_BW##m4_t in2;                                         \
+                    fixed_vfloat##IN_BW##m4_t in3;                                         \
                     asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in0)                                              \
                                  : "r"(input));                                            \
