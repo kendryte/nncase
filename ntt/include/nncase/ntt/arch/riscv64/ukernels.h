@@ -730,17 +730,18 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
                 constexpr auto lmul = 4;                                                     \
                 constexpr auto vl_in = NTT_VLEN / IN_BW * lmul;                              \
                 constexpr auto vl_out = NTT_VLEN / OUT_BW * lmul;                            \
-                v##IN_INTRINSIC_ELEM##m4_t in_temp[2];                                       \
+                v##IN_INTRINSIC_ELEM##m4_t in_temp0;                                         \
+                v##IN_INTRINSIC_ELEM##m4_t in_temp1;                                         \
                 asm volatile("vl4re" #IN_BW ".v %0, (%1);"                                   \
-                             : "=vr"(in_temp[0])                                             \
+                             : "=vr"(in_temp0)                                               \
                              : "r"(input + 0 * half_unroll));                                \
                 asm volatile("vl4re" #IN_BW ".v %0, (%1);"                                   \
-                             : "=vr"(in_temp[1])                                             \
+                             : "=vr"(in_temp1)                                               \
                              : "r"(input + 1 * half_unroll));                                \
                 auto tmp_output0 =                                                           \
-                    ntt::cast_elem<T2Elem>((vector<IN_ELEM, vl_in>)in_temp);                 \
+                    ntt::cast_elem<T2Elem>((vector<IN_ELEM, vl_in>)in_temp0);                \
                 auto tmp_output1 =                                                           \
-                    ntt::cast_elem<T2Elem>((vector<IN_ELEM, vl_in>)in_temp);                 \
+                    ntt::cast_elem<T2Elem>((vector<IN_ELEM, vl_in>)in_temp1);                \
                 auto out_ptr = output;                                                       \
                                                                                              \
                 if (input_stride == 1) {                                                     \
