@@ -300,6 +300,19 @@ public static class GraphExtensions
         return (inputs, outputs);
     }
 
+    public static BiDictionary<TKey, TElement> ToBiDictionary<TSource, TKey, TElement>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector)
+        where TKey : notnull
+        where TElement : notnull
+    {
+        var bidict = new BiDictionary<TKey, TElement>();
+        foreach (var item in source)
+        {
+            bidict.Add(keySelector(item), elementSelector(item));
+        }
+
+        return bidict;
+    }
+
     private static void CloneInternal(TieredTileGraph sourceGraph, TieredTileGraph destGraph, Dictionary<TileGrid, TileGrid> updatedMemo)
     {
         if (sourceGraph.ClustersCount != 0)

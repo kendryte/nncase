@@ -78,7 +78,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             var results = new List<BufferResult>();
             var names = new List<Dictionary<int, int>>();
             var extents = new List<IntExpr[]>();
-            var childDefUseMap = new Dictionary<BufferIdentity, BufferIdentity>();
+            var childDefUseMap = new BiDictionary<BufferIdentity, BufferIdentity>();
             foreach (var child in value.Children)
             {
                 var res = child.Accept(this, childContext);
@@ -96,30 +96,35 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
 
         var backWardExtents = GetBackWardExtents(tileVars, childResult.DimsMaps, childResult.BackWardExtents);
 
-        // {source id : target id}
-        var defUseMap = BufferGraphMemo[value.Wrapped].Edges.Where(e => e.Tag == BufferEdgeKind.Inter).ToDictionary(e => e.Source, e => e.Target);
+        // {def bid : use bid}
+        var defUseMap = BufferGraphMemo[value.Wrapped].Edges.Where(e => e.Tag == BufferEdgeKind.Inter).ToBiDictionary(e => e.Source, e => e.Target);
         var bufferResults = new List<BufferResult>();
 
         // each tile node have buffer place vars.
         if (!TileNodeMemo.TryGetValue(value, out var info))
         {
             var bufferInfoMap = new Dictionary<BufferIdentity, TileNodeBufferInfo<IntExpr>>();
-            var reusedIds = new HashSet<BufferIdentity>(childResult.BufferResults.Where(r => defUseMap.ContainsKey(r.Bid)).Select(r => defUseMap[r.Bid]));
             for (int i = 0; i < childResult.BufferResults.Length; i++)
             {
                 var result = childResult.BufferResults[i];
                 var curId = result.Bid;
-                if (reusedIds.Contains(curId))
+                if (defUseMap.ContainsValue(curId))
                 {
                     continue;
                 }
 
                 AffineMap currentAccessMap = result.AccessMap;
                 Tuple<int, int> currentLifeness = result.Lifeness;
-                if (defUseMap.TryGetValue(curId, out var sinkId) && Array.FindIndex(childResult.BufferResults, r => r.Bid == sinkId) is var sinkIndex && sinkIndex != -1)
+                if (defUseMap.TryGetByKey(curId, out var sinkBIds))
                 {
-                    currentAccessMap = childResult.BufferResults[sinkIndex].AccessMap;
-                    currentLifeness = new(Math.Min(result.Lifeness.Item1, childResult.BufferResults[sinkIndex].Lifeness.Item1), Math.Max(result.Lifeness.Item2, childResult.BufferResults[sinkIndex].Lifeness.Item2));
+                    foreach (var sinkBid in sinkBIds)
+                    {
+                        if (Array.FindIndex(childResult.BufferResults, r => r.Bid == sinkBid) is var sinkIndex && sinkIndex != -1)
+                        {
+                            currentAccessMap = childResult.BufferResults[sinkIndex].AccessMap;
+                            currentLifeness = new(Math.Min(currentLifeness.Item1, childResult.BufferResults[sinkIndex].Lifeness.Item1), Math.Max(currentLifeness.Item2, childResult.BufferResults[sinkIndex].Lifeness.Item2));
+                        }
+                    }
                 }
 
                 if (!bufferInfoMap.TryGetValue(curId, out var bufferInfo))
@@ -316,7 +321,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
     /// <param name="DefUseMap">the defuse map is used to record cache buffer in the top memory level. </param>
     /// <param name="DimsMaps">dims map.</param>
     /// <param name="BackWardExtents"> backward extents for cout the buffer size. </param>
-    public sealed record InitResult(BufferResult[] BufferResults, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<int, int>[] DimsMaps, IntExpr[][] BackWardExtents)
+    public sealed record InitResult(BufferResult[] BufferResults, BiDictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<int, int>[] DimsMaps, IntExpr[][] BackWardExtents)
     {
     }
 

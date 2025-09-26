@@ -52,21 +52,21 @@ public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap M
 /// <param name="BackWardExtents">accumulated backward extents.</param>
 /// <param name="DefUseMap">key is def, value is use.</param>
 /// <param name="BufferInfoMap">buffer info memo.</param>
-public sealed record TileNodeInfo<T>(T[] TripCounts, T[][] BackWardExtents, Dictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<BufferIdentity, TileNodeBufferInfo<T>> BufferInfoMap)
+public sealed record TileNodeInfo<T>(T[] TripCounts, T[][] BackWardExtents, BiDictionary<BufferIdentity, BufferIdentity> DefUseMap, Dictionary<BufferIdentity, TileNodeBufferInfo<T>> BufferInfoMap)
 {
-    public BufferIdentity GetByChildBuffer(BufferIdentity cbid)
+    public BufferIdentity GetByChildBuffer(BufferIdentity sinkBid)
     {
-        if (DefUseMap.Values.Contains(cbid))
+        if (DefUseMap.TryGetByValue(sinkBid, out var sourceBid))
         {
-            return DefUseMap.Where(kv => kv.Value == cbid).First().Key;
+            return sourceBid;
         }
 
-        if (!BufferInfoMap.ContainsKey(cbid))
+        if (!BufferInfoMap.ContainsKey(sinkBid))
         {
-            throw new KeyNotFoundException(cbid.ToString());
+            throw new KeyNotFoundException(sinkBid.ToString());
         }
 
-        return cbid;
+        return sinkBid;
     }
 }
 
@@ -89,4 +89,52 @@ public sealed record DomainInfo<T>(T[] TileVars, T[] ForwardExtents, Dictionary<
 /// <param name="Sizes">each buffer's size.</param>
 public sealed record OpNodeInfo<T>(AffineMap[] Maps, T[][] Shapes, T[] Sizes)
 {
+}
+
+public class BiDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IEnumerable
+    where TKey : notnull
+    where TValue : notnull
+{
+    private readonly Dictionary<TKey, HashSet<TValue>> _forward = new();
+
+    private readonly Dictionary<TValue, TKey> _reverse = new();
+
+    public bool TryGetByKey(TKey key, [MaybeNullWhen(false)] out HashSet<TValue> value) => _forward.TryGetValue(key, out value);
+
+    public bool TryGetByValue(TValue value, [MaybeNullWhen(false)] out TKey key) => _reverse.TryGetValue(value, out key);
+
+    public bool Add(TKey key, TValue value)
+    {
+        if (!_forward.TryGetValue(key, out var values))
+        {
+            values = new() { };
+            _forward[key] = values;
+        }
+
+        if (values.Contains(value))
+        {
+            return false;
+        }
+
+        values.Add(value);
+        _reverse[value] = key;
+        return true;
+    }
+
+    public bool ContainsKey(TKey value) => _forward.ContainsKey(value);
+
+    public bool ContainsValue(TValue value) => _reverse.ContainsKey(value);
+
+    public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+    {
+        foreach (var kv in _forward)
+        {
+            foreach (var value in kv.Value)
+            {
+                yield return new KeyValuePair<TKey, TValue>(kv.Key, value);
+            }
+        }
+    }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

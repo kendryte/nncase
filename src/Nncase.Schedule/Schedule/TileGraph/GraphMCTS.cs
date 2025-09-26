@@ -92,10 +92,17 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
                     ArgumentMemo.Add(item.Key, item.Value);
                 }
             }
-            catch (SloveFailedException)
+            catch (System.Exception e)
             {
-                ObjectValue = long.MaxValue;
-                return ObjectValue;
+                if (e is SolveFailedException or QuikGraphException)
+                {
+                    ObjectValue = long.MaxValue;
+                    return ObjectValue;
+                }
+                else
+                {
+                    throw;
+                }
             }
         }
 

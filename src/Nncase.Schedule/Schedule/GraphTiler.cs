@@ -346,7 +346,7 @@ public sealed class GraphTiler
         if (!status)
         {
             DumpAssgin(primTree, new TreeSolverPrinter(null, solver, opNodeMemo, tileNodeMemo, tileableNodeMemo, targetOptions), tileVarConstraints, eachLevelStoreBufferConstrains, levelBufferLifenessConstraints, levelBufferSizes, levelDataReads, levelDataWrites, memoryCycles, computeCycles, totalCyclesVar);
-            throw new SloveFailedException("tiling solve failed!");
+            throw new SolveFailedException("tiling solve failed!");
         }
 
         var sol = collector.Solution(collector.SolutionCount() - 1);
@@ -669,9 +669,9 @@ public sealed class GraphTiler
     }
 }
 
-internal sealed class SloveFailedException : Exception
+internal sealed class SolveFailedException : Exception
 {
-    public SloveFailedException(string message)
+    public SolveFailedException(string message)
         : base(message)
     {
     }
