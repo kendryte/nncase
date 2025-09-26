@@ -128,35 +128,41 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<DTYPE, vl> v0 = __riscv_vle##BITS##_v_f##BITS##m8( \
-                    (const BUILDIN_DTYPE *)input, vl);                         \
+                fixed_vfloat##BITS##m8_t v0;                                   \
+                fixed_vfloat##BITS##m8_t v8;                                   \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul;                                     \
-                ntt::vector<DTYPE, vl> v8 = __riscv_vle##BITS##_v_f##BITS##m8( \
-                    (const BUILDIN_DTYPE *)input, vl);                         \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v8)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul;                                     \
                 __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
-                v8 = nncase::ntt::OP(v8);                                      \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v0);              \
+                v8 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v8);              \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse##BITS##_v_f##BITS##m8((BUILDIN_DTYPE *)output, v0, \
-                                                  vl);                         \
+                asm volatile("vs8r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul;                                   \
-                __riscv_vse##BITS##_v_f##BITS##m8((BUILDIN_DTYPE *)output, v8, \
-                                                  vl);                         \
+                asm volatile("vs8r.v %0, (%1);" ::"vr"(v8), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul;                                   \
                 count -= unroll;                                               \
             }                                                                  \
                                                                                \
             constexpr auto unroll8 = 8;                                        \
             while (count / unroll8) {                                          \
-                ntt::vector<DTYPE, vl> v0 = __riscv_vle##BITS##_v_f##BITS##m8( \
-                    (const BUILDIN_DTYPE *)input, vl);                         \
+                fixed_vfloat##BITS##m8_t v0;                                   \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul;                                     \
                 __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v0);              \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse##BITS##_v_f##BITS##m8((BUILDIN_DTYPE *)output, v0, \
-                                                  vl);                         \
+                asm volatile("vs8r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul;                                   \
                 count -= unroll8;                                              \
             }                                                                  \
@@ -165,15 +171,16 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto lmul4 = 4;                                          \
             constexpr auto vl4 = NTT_VLEN / BITS * lmul4;                      \
             while (count / unroll4) {                                          \
-                ntt::vector<DTYPE, vl4> v0 =                                   \
-                    __riscv_vle##BITS##_v_f##BITS##m4(                         \
-                        (const BUILDIN_DTYPE *)input, vl4);                    \
+                fixed_vfloat##BITS##m4_t v0;                                   \
+                asm volatile("vl4re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul4;                                    \
                 __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl4>)v0);             \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse##BITS##_v_f##BITS##m4((BUILDIN_DTYPE *)output, v0, \
-                                                  vl4);                        \
+                asm volatile("vs4r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul4;                                  \
                 count -= unroll4;                                              \
             }                                                                  \
@@ -182,15 +189,16 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto lmul2 = 2;                                          \
             constexpr auto vl2 = NTT_VLEN / BITS * lmul2;                      \
             while (count / unroll2) {                                          \
-                ntt::vector<DTYPE, vl2> v0 =                                   \
-                    __riscv_vle##BITS##_v_f##BITS##m2(                         \
-                        (const BUILDIN_DTYPE *)input, vl2);                    \
+                fixed_vfloat##BITS##m2_t v0;                                   \
+                asm volatile("vl2re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul2;                                    \
                 __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl2>)v0);             \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse##BITS##_v_f##BITS##m2((BUILDIN_DTYPE *)output, v0, \
-                                                  vl2);                        \
+                asm volatile("vs2r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul2;                                  \
                 count -= unroll2;                                              \
             }                                                                  \
@@ -223,13 +231,14 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<DTYPE, vl> v0 =                                    \
-                    __riscv_vle##BITS##_v_f##BITS##m##LMUL(                    \
-                        (const BUILDIN_DTYPE *)input, vl);                     \
+                fixed_vfloat##BITS##m8_t v0;                                   \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul;                                     \
-                v0 = nncase::ntt::OP(v0);                                      \
-                __riscv_vse##BITS##_v_f##BITS##m##LMUL(                        \
-                    (BUILDIN_DTYPE *)output, v0, vl);                          \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v0);              \
+                asm volatile("vs8r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul;                                   \
                 count -= unroll;                                               \
             }                                                                  \
