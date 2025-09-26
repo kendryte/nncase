@@ -128,8 +128,8 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
                                                                                \
             while (count / unroll) {                                           \
-                fixed_vfloat##BITS##m8_t v0;                                   \
-                fixed_vfloat##BITS##m8_t v8;                                   \
+                vfloat##BITS##m8_t v0;                                         \
+                vfloat##BITS##m8_t v8;                                         \
                 asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
                              : "=vr"(v0)                                       \
                              : "r"(input));                                    \
@@ -153,7 +153,7 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
                                                                                \
             constexpr auto unroll8 = 8;                                        \
             while (count / unroll8) {                                          \
-                fixed_vfloat##BITS##m8_t v0;                                   \
+                vfloat##BITS##m8_t v0;                                         \
                 asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
                              : "=vr"(v0)                                       \
                              : "r"(input));                                    \
@@ -171,7 +171,7 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto lmul4 = 4;                                          \
             constexpr auto vl4 = NTT_VLEN / BITS * lmul4;                      \
             while (count / unroll4) {                                          \
-                fixed_vfloat##BITS##m4_t v0;                                   \
+                vfloat##BITS##m4_t v0;                                         \
                 asm volatile("vl4re" #BITS ".v %0, (%1);"                      \
                              : "=vr"(v0)                                       \
                              : "r"(input));                                    \
@@ -189,7 +189,7 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto lmul2 = 2;                                          \
             constexpr auto vl2 = NTT_VLEN / BITS * lmul2;                      \
             while (count / unroll2) {                                          \
-                fixed_vfloat##BITS##m2_t v0;                                   \
+                vfloat##BITS##m2_t v0;                                         \
                 asm volatile("vl2re" #BITS ".v %0, (%1);"                      \
                              : "=vr"(v0)                                       \
                              : "r"(input));                                    \
@@ -231,7 +231,7 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
                                                                                \
             while (count / unroll) {                                           \
-                fixed_vfloat##BITS##m8_t v0;                                   \
+                vfloat##BITS##m8_t v0;                                         \
                 asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
                              : "=vr"(v0)                                       \
                              : "r"(input));                                    \
