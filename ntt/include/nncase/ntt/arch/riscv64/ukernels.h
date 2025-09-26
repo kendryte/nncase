@@ -590,13 +590,13 @@ template <> struct u_cast_policy<true> {
                                  : "r"(input + 0 * half_unroll));                          \
                     asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in1)                                              \
-                                 : "r"(input + 0 * half_unroll));                          \
+                                 : "r"(input + 1 * half_unroll));                          \
                     asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in2)                                              \
-                                 : "r"(input + 0 * half_unroll));                          \
+                                 : "r"(input + 2 * half_unroll));                          \
                     asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in3)                                              \
-                                 : "r"(input + 0 * half_unroll));                          \
+                                 : "r"(input + 3 * half_unroll));                          \
                     in_temp0(0_dim) = in0;                                                 \
                     in_temp0(1_dim) = in1;                                                 \
                     in_temp1(0_dim) = in2;                                                 \
