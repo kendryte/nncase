@@ -90,6 +90,7 @@ class nncaseConan(ConanFile):
         tc.variables['ENABLE_VULKAN_RUNTIME'] = self.options.vulkan_runtime
         tc.variables['BUILD_PYTHON_BINDING'] = self.options.python
         tc.variables['BUILD_TESTING'] = self.options.tests
+        tc.variables['CMAKE_CUDA_ARCHITECTURES'] = "120"
         if self.options.get_safe("python_root", default="") != "":
             tc.variables['Python3_ROOT_DIR'] = self.options.python_root
         if self.options.runtime:

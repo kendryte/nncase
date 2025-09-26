@@ -14,7 +14,7 @@
  */
 #pragma once
 #include "../compiler_defs.h"
-#include "nncase/ntt/shape.h"
+#include "../tensor_traits.h"
 #include <cstddef>
 #include <type_traits>
 
@@ -68,7 +68,7 @@ struct NTT_EMPTY_BASES tensor_size_impl : public shape_storage<Shape>,
         class = std::enable_if_t<FixedShape<TDummy1> && FixedStrides<TDummy2>>>
     constexpr tensor_size_impl() noexcept {}
 
-    tensor_size_impl(Shape shape, Strides strides)
+    constexpr tensor_size_impl(Shape shape, Strides strides)
         : shape_storage<Shape>(shape), strides_storage<Strides>(strides) {}
 };
 } // namespace nncase::ntt::detail

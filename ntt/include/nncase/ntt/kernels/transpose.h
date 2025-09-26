@@ -38,9 +38,9 @@ constexpr auto segments_cnt(const TPerms &) noexcept {
 template <Tensor TIn, class TOut, FixedDimensions TPerms>
     requires(bool(TIn::rank() == std::decay_t<TOut>::rank()) &&
              bool(TIn::rank() == TPerms::rank()))
-void transpose(const TIn &input, TOut &&output,
-               [[maybe_unused]] const TPerms &perms =
-                   make_index_shape<TIn::rank()>().reverse()) {
+constexpr void transpose(const TIn &input, TOut &&output,
+                         [[maybe_unused]] const TPerms &perms =
+                             make_index_shape<TIn::rank()>().reverse()) {
     using TInElem = TIn::element_type;
     using TOutElem = std::decay_t<TOut>::element_type;
 

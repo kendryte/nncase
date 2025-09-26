@@ -26,8 +26,9 @@ class binary_impl
                               TRhs, TOut> {
   public:
     template <Tensor TBroadcastedLhs, Tensor TBroadcastedRhs, class TOp>
-    void invoke_ukernel(const TBroadcastedLhs &lhs, const TBroadcastedRhs &rhs,
-                        TOut &output, const TOp &op, bool is_broadcast) {
+    constexpr void invoke_ukernel(const TBroadcastedLhs &lhs,
+                                  const TBroadcastedRhs &rhs, TOut &output,
+                                  const TOp &op, bool is_broadcast) {
 
         auto lhs_conti_dims = contiguous_dims(lhs.shape(), lhs.strides());
         auto rhs_conti_dims = contiguous_dims(rhs.shape(), rhs.strides());
@@ -106,7 +107,7 @@ class binary_impl
 template <template <class T1, class T2> class TOp,
           template <class> class TPostOp = DefaultPostOp, Tensor TLhs,
           Tensor TRhs, class TOut>
-void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
+constexpr void binary(const TLhs &lhs, const TRhs &rhs, TOut &&output) {
     const TOp<std::remove_cv_t<typename TLhs::element_type>,
               std::remove_cv_t<typename TRhs::element_type>>
         op;

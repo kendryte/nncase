@@ -22,12 +22,14 @@
 namespace nncase::ntt {
 namespace detail {
 
-template <typename T> concept HasValidRank = requires(T t) {
+template <typename T>
+concept HasValidRank = requires(T t) {
     T::rank();
     requires T::rank() >= 2;
 };
 
-template <typename T> concept ValidMatmulTensor = Tensor<T> &&HasValidRank<T>;
+template <typename T>
+concept ValidMatmulTensor = Tensor<T> && HasValidRank<T>;
 
 template <class TLhs, class TRhs, typename LhsVectorizedAxes,
           typename RhsVectorizedAxes, bool TransposedA = false,
@@ -122,8 +124,8 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut, TScale,
         TOutElem, true>;
 
   public:
-    void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output,
-                    const TScale &scale) {
+    constexpr void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output,
+                              const TScale &scale) {
         const auto domain =
             output.shape().template slice<0, TOut::rank() - 2>();
         ntt::apply(domain, [&](auto out_offset_prefix) {
@@ -200,8 +202,9 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut, TScale,
 
     template <dim_t M0Tile, dim_t N0Tile, class TA, class TB, class TC,
               Dimension TK>
-    void matmul_2d_l0(const TA &a, const TB &b, TC &c, const TScale &scale,
-                      const TK &K, dim_t m1, dim_t n1) {
+    constexpr void matmul_2d_l0(const TA &a, const TB &b, TC &c,
+                                const TScale &scale, const TK &K, dim_t m1,
+                                dim_t n1) {
 
         constexpr auto m0_scale =
             ukernels::u_type_scale<vectorize_kind, TA, TB, TC>::m0_scale;
@@ -250,16 +253,16 @@ template <bool AccumulateC = false, bool TransposedA = false,
           FixedDimensions LhsPadedNums = shape_t<>,
           FixedDimensions RhsVectorizedAxes = shape_t<>,
           FixedDimensions RhsPadedNums = shape_t<>>
-void matmul(
-    [[maybe_unused]] const TLhs &lhs, [[maybe_unused]] const TRhs &rhs,
-    [[maybe_unused]] TOut &&output,
-    [[maybe_unused]] const TScale &scale = nullptr,
-    [[maybe_unused]] const LhsVectorizedAxes &lhsVectorizedAxes =
-        fixed_shape_v<>,
-    [[maybe_unused]] const LhsPadedNums &lhsPadedNums = fixed_shape_v<>,
-    [[maybe_unused]] const RhsVectorizedAxes &rhsVectorizedAxes =
-        fixed_shape_v<>,
-    [[maybe_unused]] const RhsPadedNums &rhsPadedNums = fixed_shape_v<>) {
+constexpr void
+matmul([[maybe_unused]] const TLhs &lhs, [[maybe_unused]] const TRhs &rhs,
+       [[maybe_unused]] TOut &&output,
+       [[maybe_unused]] const TScale &scale = nullptr,
+       [[maybe_unused]] const LhsVectorizedAxes &lhsVectorizedAxes =
+           fixed_shape_v<>,
+       [[maybe_unused]] const LhsPadedNums &lhsPadedNums = fixed_shape_v<>,
+       [[maybe_unused]] const RhsVectorizedAxes &rhsVectorizedAxes =
+           fixed_shape_v<>,
+       [[maybe_unused]] const RhsPadedNums &rhsPadedNums = fixed_shape_v<>) {
 
     constexpr LhsPadedNums lhsPadedNumsType;
     constexpr RhsPadedNums rhsPadedNumsType;

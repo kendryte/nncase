@@ -17,7 +17,7 @@ endif()
 
 if (CMAKE_CUDA_COMPILER)
     message(STATUS "Configuring for CUDA")
-    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:--expt-relaxed-constexpr>)
+    #add_compile_options(-save-temps)
 endif()
 
 if(${CMAKE_SYSTEM_PROCESSOR} MATCHES

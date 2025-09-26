@@ -21,7 +21,7 @@ namespace detail {
 template <class TIn, class TOut, bool Arch> class copy_impl;
 template <class TIn, class TOut, bool Arch> class copy_impl {
   public:
-    void operator()(const TIn &input, TOut &output) {
+    constexpr void operator()(const TIn &input, TOut &output) {
         nncase::ntt::template unary<ops::copy>(input, output);
     }
 };
@@ -29,21 +29,22 @@ template <class TIn, class TOut, bool Arch> class copy_impl {
 template <class NOUSE, bool Arch> class copy_wait_impl;
 template <class NOUSE, bool Arch> class copy_wait_impl {
   public:
-    void operator()() {}
+    constexpr void operator()() {}
 };
 } // namespace detail
 
-template <class NOUSE>
-void tensor_copy_wait() noexcept { detail::copy_wait_impl<NOUSE, true>()(); }
+template <class NOUSE> constexpr void tensor_copy_wait() noexcept {
+    detail::copy_wait_impl<NOUSE, true>()();
+}
 
 template <class TIn, class TOut>
-void tensor_copy_async(const TIn &input, TOut &&output) noexcept {
+constexpr void tensor_copy_async(const TIn &input, TOut &&output) noexcept {
     detail::copy_impl<TIn, TOut, true> impl;
     impl(input, output);
 }
 
 template <class TIn, class TOut>
-void tensor_copy_sync(const TIn &input, TOut &&output) noexcept {
+constexpr void tensor_copy_sync(const TIn &input, TOut &&output) noexcept {
     detail::copy_impl<TIn, TOut, true> impl;
     impl(input, output);
     tensor_copy_wait<void>();
@@ -57,7 +58,7 @@ template <Tensor TTensor, bool Arch> struct tensor_zero_impl {
 };
 } // namespace detail
 
-template <class TOut> void tensor_zero(TOut &&output) noexcept {
+template <class TOut> constexpr void tensor_zero(TOut &&output) noexcept {
     detail::tensor_zero_impl<std::decay_t<TOut>, true>()(output);
 }
 } // namespace nncase::ntt

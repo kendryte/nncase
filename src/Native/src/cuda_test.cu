@@ -12,13 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "nncase/ntt/caching.h"
-#include "nncase/ntt/distributed/sharded_tensor.h"
-#include "nncase/ntt/distributed/sharding.h"
-#include "nncase/ntt/primitive_ops.h"
-#include "nncase/ntt/shape.h"
-#include "nncase/ntt/tensor.h"
-#include "nncase/ntt/vector.h"
 #include <chrono>
 #include <cmath>
 #include <cstdint>
@@ -35,10 +28,17 @@
 
 namespace nncase::ntt::runtime {
 // just for test
+#ifdef __CUDA_ARCH__
+__device__ cuda_thread_context_t &cuda_thread_context_t::current() noexcept {
+    static cuda_thread_context_t ctx{};
+    return ctx;
+}
+#else
 cpu_thread_context_t &cpu_thread_context_t::current() noexcept {
     static cpu_thread_context_t ctx{.tid = 0, .bid = 0, .cid = 0};
     return ctx;
 }
+#endif
 } // namespace nncase::ntt::runtime
 
 using namespace nncase;
@@ -50,11 +50,23 @@ constexpr bool are_floats_equal(float a, float b, float epsilon = 1e-6) {
     return std::fabs(a - b) < epsilon;
 }
 
+#define CHECK_CUDA(ans)                                                        \
+    {                                                                          \
+        gpuAssert((ans), __FILE__, __LINE__);                                  \
+    }
+inline void gpuAssert(cudaError_t code, const char *file, int line) {
+    if (code != cudaSuccess) {
+        fprintf(stderr, "CUDA error %s %d: %s\n", file, line,
+                cudaGetErrorString(code));
+        exit(code);
+    }
+}
+
 #define TRY(x)                                                                 \
     if (x)                                                                     \
         throw 1;
 
-void test_shape() {
+NTT_HOST_DEVICE void test_shape() {
 
     // fixed shape
     {
@@ -91,14 +103,14 @@ void test_shape() {
 
     {
         float arr[] = {1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f};
-        auto buffer = std::span(arr);
+        auto buffer = ntt::span(arr);
         auto tv = ntt::make_tensor_view(buffer, ntt::fixed_shape_v<2, 4>);
         static_assert(tv.rank() == 2);
     }
 
     {
         const float arr[] = {1.f, 2.f, 3.f, 4.f, 5.f, 6.f, 7.f, 8.f};
-        auto buffer = std::span(arr);
+        auto buffer = ntt::span(arr);
         auto tv = ntt::make_tensor_view(buffer, ntt::fixed_shape_v<2, 4>);
         static_assert(tv.rank() == 2);
     }
@@ -116,7 +128,7 @@ void test_shape() {
     }
 }
 
-void test_strides() {
+NTT_HOST_DEVICE void test_strides() {
     // dynamic shape strides
     {
         NNCASE_UNUSED auto shape =
@@ -131,7 +143,7 @@ void test_strides() {
     }
 }
 
-void test_sharding() {
+NTT_HOST_DEVICE void test_sharding() {
     // local_index
     {
         using mesh_type =
@@ -191,7 +203,7 @@ void test_sharding() {
     }
 }
 
-void test_matmul_normal() {
+NTT_HOST_DEVICE void test_matmul_normal() {
     // no vectorize
     {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 4>);
@@ -502,7 +514,7 @@ void test_matmul_normal() {
     }
 }
 
-void test_matmul_transpose_b() {
+NTT_HOST_DEVICE void test_matmul_transpose_b() {
     // 1. reference value
     auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 8>);
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 8>);
@@ -591,20 +603,20 @@ void test_matmul_transpose_b() {
 }
 
 template <class T> struct act_1 {
-    auto operator()(const T &v) const noexcept { return v * 2.0f; }
+    constexpr auto operator()(const T &v) const noexcept { return v * 2.0f; }
 };
 
 template <class T> struct mul_scalar2 {
   public:
-    auto operator()(const T &a) const { return ntt::mul(a, 2.3f); };
+    constexpr auto operator()(const T &a) const { return ntt::mul(a, 2.3f); };
 };
 
 template <class T> struct mul_scalar {
   public:
-    auto operator()(const T &a) const { return ntt::mul(a, 1.2f); };
+    constexpr auto operator()(const T &a) const { return ntt::mul(a, 1.2f); };
 };
 
-void test_unary_binary() {
+NTT_HOST_DEVICE void test_unary_binary() {
     // unary
     {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16>);
@@ -700,12 +712,13 @@ void test_unary_binary() {
     }
 }
 
-void test_tensor_view() {
+NTT_HOST_DEVICE void test_tensor_view() {
     // reshape
     {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 3>);
         auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 1, 3>);
-        ntt::tensor_copy(ta.reshape(ntt::fixed_shape_v<2, 1, 3>), tb.view());
+        ntt::tensor_copy_sync(ta.reshape(ntt::fixed_shape_v<2, 1, 3>),
+                              tb.view());
         assert(ta(0, 0) == tb(0, 0, 0));
         assert(ta(0, 1) == tb(0, 0, 1));
         assert(ta(0, 2) == tb(0, 0, 2));
@@ -719,7 +732,7 @@ void test_tensor_view() {
         auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 6>);
         std::iota(tc.elements().begin(), tc.elements().end(), 0.f);
         auto td = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 3>);
-        ntt::tensor_copy(
+        ntt::tensor_copy_sync(
             tc.view(ntt::make_shape(0, 3), ntt::fixed_shape_v<2, 3>), td);
         ntt::apply(ntt::fixed_shape_v<2, 3>, [&](NNCASE_UNUSED auto index) {
             assert(tc(index[0], index[1] + 3) == td(index));
@@ -746,7 +759,7 @@ void test_tensor_view() {
     }
 }
 
-__host__ void test_vectorize() {
+NTT_HOST_DEVICE void test_vectorize() {
     // fixed vectorize
     {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 64, 32>);
@@ -847,9 +860,9 @@ __host__ void test_vectorize() {
                 auto va = ta(index);
                 auto vb = b(i);
                 if (va != vb) {
-                    std::cerr << "va(" << va << ") != vb(" << vb << ")"
-                              << std::endl;
-                    std::abort();
+                    printf("va(%f) != vb(%f)\n", ntt::unwrap_proxy(va),
+                           ntt::unwrap_proxy(vb));
+                    assert(false);
                 }
             }
         });
@@ -896,7 +909,7 @@ __host__ void test_vectorize() {
     }
 }
 
-void test_im2col() {
+NTT_HOST_DEVICE void test_im2col() {
     // im2col
     {
         auto input = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1, 4, 4>);
@@ -950,7 +963,7 @@ void test_im2col() {
     }
 }
 
-void test_concat() {
+NTT_HOST_DEVICE void test_concat() {
     auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 8>);
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16>);
     auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
@@ -990,7 +1003,7 @@ void test_concat() {
     assert(tc(0, 23) == 15.f);
 }
 
-void test_slice() {
+NTT_HOST_DEVICE void test_slice() {
     auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 8>);
     auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 16>);
@@ -1017,7 +1030,7 @@ void test_slice() {
     assert(tc(0, 7) == 15.f);
 }
 
-void test_transpose() {
+NTT_HOST_DEVICE void test_transpose() {
     auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<3, 24>);
     auto tb = ntt::make_tensor<float>(ntt::fixed_shape_v<24, 3>);
     std::iota(ta.elements().begin(), ta.elements().end(), 0.f);
@@ -1044,7 +1057,7 @@ void test_transpose() {
     assert(pb(0, 2)(3) == 51.f);
 }
 
-void test_gather() {
+NTT_HOST_DEVICE void test_gather() {
     auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<6, 3>);
     auto tb = ntt::make_tensor<int64_t>(ntt::fixed_shape_v<1, 3>);
     auto tc = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 3, 3>);
@@ -1075,7 +1088,7 @@ void test_gather() {
     assert(tf(0, 0, 0, 2) == 5.0f);
 }
 
-void test_pad() {
+NTT_HOST_DEVICE void test_pad() {
     auto td = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 2, 3>);
     auto te = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 2, 3>);
     std::iota(td.elements().begin(), td.elements().end(), 0.f);
@@ -1086,7 +1099,7 @@ void test_pad() {
     assert(te(3, 0, 1) == 1.3f);
 }
 
-void test_reduce() {
+NTT_HOST_DEVICE void test_reduce() {
     // vectorize 1d
     {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 16>);
@@ -1195,7 +1208,7 @@ void test_reduce() {
     }
 }
 
-void test_cast() {
+NTT_HOST_DEVICE void test_cast() {
     // normal cast
     {
         auto ta = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 16>);
@@ -1248,7 +1261,7 @@ void test_cast() {
     }
 }
 
-void test_expand() {
+NTT_HOST_DEVICE void test_expand() {
     // [1, 3, 5, 7] strides = [3*5*7, 5*7, 7 , 1]
     //          [1] strides = [1] -> shape [1, 3, 5, 7] strides = [0, 0, 0, 1]
     // [1, 3, 5, 7] strides = [3*5*7, 5*7, 7 , 1]
@@ -1269,7 +1282,7 @@ void test_expand() {
     assert(are_floats_equal(tb(1, 1), 1.f));
 }
 
-__host__ __device__ void test_where() {
+NTT_HOST_DEVICE void test_where() {
     auto tcond = ntt::make_tensor<bool>(ntt::fixed_shape_v<2, 2>);
     auto tx = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 2>);
     auto ty = ntt::make_tensor<float>(ntt::fixed_shape_v<2, 2>);
@@ -1321,6 +1334,28 @@ void test_reduce_arg() {
 }
 #endif
 
+__global__ void test_device() {
+    printf("Start Device tests...\n");
+    test_shape();
+    test_strides();
+    test_matmul_normal();
+    test_matmul_transpose_b();
+    test_unary_binary();
+    test_tensor_view();
+    test_vectorize();
+    test_im2col();
+    test_concat();
+    test_slice();
+    test_transpose();
+    test_gather();
+    test_pad();
+    test_reduce();
+    test_cast();
+    test_expand();
+    test_where();
+    printf("All Device tests passed!\n");
+}
+
 int main() {
 #if 0
     nncase_clr_initialize(
@@ -1333,6 +1368,7 @@ int main() {
     nncapi->compile_session_create(target.get(), compile_options.get());
     compiler = nncapi->compile_session_get_compiler(compile_session.get());
 #endif
+    printf("Start Host tests...\n");
     test_shape();
     test_strides();
     test_matmul_normal();
@@ -1353,6 +1389,10 @@ int main() {
 #if 0
     test_reduce_arg();
 #endif
+    printf("All Host tests passed!\n");
+
+    test_device<<<1, 1>>>();
+    CHECK_CUDA(cudaDeviceSynchronize());
 
 #if 0
     auto kmodel = read_file(

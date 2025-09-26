@@ -25,7 +25,7 @@ class expand_impl : public unary_like_impl<expand_impl<TIn, TOut>, TIn, TOut> {
 
   public:
     template <Tensor TBroadcastedIn>
-    void invoke_ukernel(const TBroadcastedIn &input, TOut &output) {
+    constexpr void invoke_ukernel(const TBroadcastedIn &input, TOut &output) {
         ntt::apply(output.shape(),
                    [&](auto index) { output(index) = input(index); });
     }
@@ -34,7 +34,7 @@ class expand_impl : public unary_like_impl<expand_impl<TIn, TOut>, TIn, TOut> {
 } // namespace detail
 
 template <Tensor TIn, typename TOut>
-void expand(const TIn &input, TOut &&output) noexcept {
+constexpr void expand(const TIn &input, TOut &&output) noexcept {
     detail::expand_impl<TIn, std::decay_t<TOut>> impl;
     impl(input, output);
 }

@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "distributed/remote_tensor.h"
-#include "distributed/sharded_tensor.h"
-#include "distributed/sharding.h"
-#include "distributed/topology.h"
+
+namespace nncase::ntt::distributed {
+enum class topology { chip, block, thread, count__ };
+} // namespace nncase::ntt::distributed

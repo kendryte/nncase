@@ -1384,22 +1384,22 @@ struct numeric_limits<nncase::float_e5m2_t>
 //
 
 CUTLASS_HOST_DEVICE
-nncase::float_e4m3_t operator"" _fe4m3(long double x) {
+nncase::float_e4m3_t operator""_fe4m3(long double x) {
     return nncase::float_e4m3_t(float(x));
 }
 
 CUTLASS_HOST_DEVICE
-nncase::float_e4m3_t operator"" _fe4m3(unsigned long long int x) {
+nncase::float_e4m3_t operator""_fe4m3(unsigned long long int x) {
     return nncase::float_e4m3_t(int(x));
 }
 
 CUTLASS_HOST_DEVICE
-nncase::float_e5m2_t operator"" _fe5m2(long double x) {
+nncase::float_e5m2_t operator""_fe5m2(long double x) {
     return nncase::float_e5m2_t(float(x));
 }
 
 CUTLASS_HOST_DEVICE
-nncase::float_e5m2_t operator"" _fe5m2(unsigned long long int x) {
+nncase::float_e5m2_t operator""_fe5m2(unsigned long long int x) {
     return nncase::float_e5m2_t(int(x));
 }
 

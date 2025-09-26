@@ -52,3 +52,9 @@
     defined(__riscv_zvfbf)
 #define NTT_HAVE_NATIVE_BF16 1
 #endif
+
+#ifdef __CUDACC__
+#define NTT_HOST_DEVICE __host__ __device__
+#else
+#define NTT_HOST_DEVICE
+#endif

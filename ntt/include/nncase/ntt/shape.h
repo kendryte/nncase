@@ -17,7 +17,7 @@
 #include "dimension.h"
 #include "loop.h"
 #include "nncase/ntt/tensor_traits.h"
-#include <array>
+#include "std_containers.h"
 #include <cmath>
 #include <cstddef>
 #include <cstring>
@@ -339,10 +339,10 @@ struct dims_base {
         return slice_impl(std::make_index_sequence<Rank>());
     }
 
-    constexpr std::array<dim_t, rank()> to_array() const noexcept {
+    constexpr ntt::array<dim_t, rank()> to_array() const noexcept {
         auto at_impl = [this]<size_t... I>(std::index_sequence<I...>) {
             (void)this;
-            return std::array<dim_t, rank()>{at(fixed_dim_v<I>)...};
+            return ntt::array<dim_t, rank()>{at(fixed_dim_v<I>)...};
         };
         return at_impl(std::make_index_sequence<rank()>());
     }
@@ -412,9 +412,8 @@ inline constexpr auto zeros_dims_alike_v =
     }                                                                          \
                                                                                \
     template <dim_t... Dims>                                                   \
-    constexpr auto make_fixed_##dims_type##() noexcept {                       \
-        return detail::fixed_dims_impl_v<dims_type##_t, Dims...>;              \
-    }                                                                          \
+    inline constexpr auto fixed_##dims_type##_v =                              \
+        detail::fixed_dims_impl_v<dims_type##_t, Dims...>;                     \
                                                                                \
     template <size_t Rank> constexpr auto make_zeros_##dims_type() noexcept {  \
         return detail::make_zeros_dims_impl<dims_type##_t, Rank>();            \

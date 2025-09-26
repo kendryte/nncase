@@ -13,7 +13,21 @@
  * limitations under the License.
  */
 #pragma once
-#include "distributed/remote_tensor.h"
-#include "distributed/sharded_tensor.h"
-#include "distributed/sharding.h"
-#include "distributed/topology.h"
+#include "compiler_defs.h"
+#include <array>
+#include <span>
+
+#ifdef __CUDA_ARCH__
+#include <cuda/std/array>
+#include <cuda/std/span>
+#endif
+
+namespace nncase::ntt {
+#ifdef __CUDA_ARCH__
+using cuda::std::array;
+using cuda::std::span;
+#else
+using std::array;
+using std::span;
+#endif
+} // namespace nncase::ntt

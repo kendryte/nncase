@@ -43,6 +43,8 @@ class elementwise_impl {
     }
 
   protected:
-    TDerived &derived() noexcept { return static_cast<TDerived &>(*this); }
+    constexpr TDerived &derived() noexcept {
+        return static_cast<TDerived &>(*this);
+    }
 };
 } // namespace nncase::ntt::detail

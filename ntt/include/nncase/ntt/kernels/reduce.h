@@ -191,10 +191,11 @@ template <reduce_op Op, bool LoadPrevious = false, Tensor TIn, class TOut,
           FixedDimensions VectorizedAxes = shape_t<>,
           FixedDimensions PadedNums =
               decltype(make_zeros_shape<VectorizedAxes::rank()>())>
-void reduce(const TIn &input, TOut &&output,
-            [[maybe_unused]] const TReduceAxes &reduce_axes,
-            [[maybe_unused]] const VectorizedAxes &vectorized_axes = {},
-            [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
+constexpr void
+reduce(const TIn &input, TOut &&output,
+       [[maybe_unused]] const TReduceAxes &reduce_axes,
+       [[maybe_unused]] const VectorizedAxes &vectorized_axes = {},
+       [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");
     detail::reduce_impl<Op, LoadPrevious, TIn, std::decay_t<TOut>, PadedNums>
@@ -208,10 +209,10 @@ void reduce(const TIn &input, TOut &&output,
               FixedDimensions VectorizedAxes = shape_t<>,                      \
               FixedDimensions PadedNums =                                      \
                   decltype(make_zeros_shape<VectorizedAxes::rank()>())>        \
-    void reduce_##op(const TIn &input, TOut &&output,                          \
-                     const TReduceAxes &reduce_axes,                           \
-                     const VectorizedAxes &vectorized_axes = {},               \
-                     const PadedNums &paded_nums = {}) noexcept {              \
+    constexpr void reduce_##op(const TIn &input, TOut &&output,                \
+                               const TReduceAxes &reduce_axes,                 \
+                               const VectorizedAxes &vectorized_axes = {},     \
+                               const PadedNums &paded_nums = {}) noexcept {    \
         return reduce<reduce_op::op, LoadPrevious>(                            \
             input, std::forward<TOut>(output), reduce_axes, vectorized_axes,   \
             paded_nums);                                                       \

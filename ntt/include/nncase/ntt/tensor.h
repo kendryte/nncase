@@ -63,9 +63,9 @@ constexpr auto make_span(T *data, const TShape &shape,
                          const TStrides &strides) noexcept {
     if constexpr (FixedShape<TShape> && FixedStrides<TStrides>) {
         constexpr size_t size = linear_size(TShape{}, TStrides{});
-        return std::span<T, size>(data, size);
+        return ntt::span<T, size>(data, size);
     } else {
-        return std::span<T>(data, linear_size(shape, strides));
+        return ntt::span<T>(data, linear_size(shape, strides));
     }
 }
 

@@ -56,7 +56,8 @@ class u_unpack_impl {
 } // namespace ukernels
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
-void u_unpack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+constexpr void u_unpack(const TIn &input, TOut &&output,
+                        const TAxes &axes) noexcept {
     ukernels::u_unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank(), true> impl;
     impl(input, output, axes);
 }

@@ -65,7 +65,8 @@ template <Tensor TIn, Tensor TOut, size_t AxesRank> class unpack_impl {
 } // namespace detail
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
-void unpack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+constexpr void unpack(const TIn &input, TOut &&output,
+                      const TAxes &axes) noexcept {
     detail::unpack_impl<TIn, std::decay_t<TOut>, TAxes::rank()> impl;
     impl(input, output, axes);
 }

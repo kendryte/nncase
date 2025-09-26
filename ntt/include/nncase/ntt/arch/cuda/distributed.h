@@ -13,7 +13,5 @@
  * limitations under the License.
  */
 #pragma once
-#include "distributed/remote_tensor.h"
-#include "distributed/sharded_tensor.h"
-#include "distributed/sharding.h"
-#include "distributed/topology.h"
+#include "remote_tensor.h"
+#include "topology.h"

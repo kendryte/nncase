@@ -16,16 +16,35 @@
 #include "../bfloat16.h"
 #include "../float8.h"
 #include "../half.h"
+#include "std_containers.h"
 
 #include "caching.h"
 #include "distributed.h"
 #include "primitive_ops.h"
+
+// Arch specific types & ops
+
+#ifdef __CUDA_ARCH__
+#else
+#ifndef NNCASE_XPU_MODULE
+#ifdef __AVX2__
+#include "arch/x86_64/arch_types.h"
+#include "arch/x86_64/primitive_ops.h"
+#include "arch/x86_64/ukernels.h"
+#include "arch/x86_64/vector_ops.h"
+#elif __aarch64__
+#include "arch/aarch64/arch_types.h"
+#include "arch/aarch64/primitive_ops.h"
+#include "arch/aarch64/vector_ops.h"
+#endif
+#endif
 
 #ifdef __riscv_vector
 #include "arch/riscv64/arch_types.h"
 #include "arch/riscv64/primitive_ops.h"
 #include "arch/riscv64/ukernels.h"
 #include "arch/riscv64/vector_ops.h"
+#endif
 #endif
 
 #include "kernels/binary.h"
@@ -37,7 +56,6 @@
 #include "kernels/conv2d.h"
 #include "kernels/copy.h"
 #include "kernels/expand.h"
-#include "kernels/gather.h"
 #include "kernels/get_item.h"
 #include "kernels/get_position_ids.h"
 #include "kernels/im2col.h"
@@ -73,26 +91,24 @@
 #include "vector.h"
 #include "vector_ops.h"
 
-#ifndef NNCASE_XPU_MODULE
-#ifdef __AVX2__
-#include "arch/x86_64/arch_types.h"
-#include "arch/x86_64/primitive_ops.h"
-#include "arch/x86_64/ukernels.h"
-#include "arch/x86_64/vector_ops.h"
-#elif __aarch64__
-#include "arch/aarch64/arch_types.h"
-#include "arch/aarch64/primitive_ops.h"
-#include "arch/aarch64/vector_ops.h"
-#endif
-#endif
-
+// Distributed & Runtime
 
 #ifdef NNCASE_XPU_MODULE
 #include "arch/xpu/arch_types.h"
 #include "arch/xpu/distributed.h"
 #include "arch/xpu/runtime.h"
+#elif defined(__CUDA_ARCH__)
+#include "arch/cuda/distributed.h"
+#include "arch/cuda/profiling.h"
+#include "arch/cuda/runtime.h"
 #else
 #include "arch/cpu/distributed.h"
 #include "arch/cpu/profiling.h"
 #include "arch/cpu/runtime.h"
 #endif
+
+#include "caching.h"
+#include "distributed.h"
+#include "kernels/gather.h"
+#include "kernels/paged_attention.h"
+#include "kernels/reshard.h"

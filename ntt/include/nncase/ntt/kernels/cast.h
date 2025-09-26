@@ -225,8 +225,8 @@ class cast_impl {
 
 template <template <class> class TPostOp = DefaultPostOp, Tensor TIn,
           Tensor TOut, FixedDimensions VectorizedAxes = shape_t<>>
-void cast(const TIn &input, TOut &&output,
-          const VectorizedAxes &vectorizedAxes = {}) noexcept {
+constexpr void cast(const TIn &input, TOut &&output,
+                    const VectorizedAxes &vectorizedAxes = {}) noexcept {
     detail::cast_impl<TIn, std::decay_t<TOut>, VectorizedAxes, TPostOp> impl;
     impl(input, output, vectorizedAxes);
 }

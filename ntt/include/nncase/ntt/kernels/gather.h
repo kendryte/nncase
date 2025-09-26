@@ -128,8 +128,8 @@ template <Tensor TA, Tensor TB, Tensor TC> class gather_impl {
     };
 
     template <typename T>
-    size_t find_continuous_segments(const T *arr, size_t arrSize,
-                                    segment *segments) {
+    constexpr size_t find_continuous_segments(const T *arr, size_t arrSize,
+                                              segment *segments) {
         if (arrSize == 0)
             return 0;
 
@@ -221,15 +221,15 @@ class distributed_gather_impl {
 } // namespace detail
 
 template <Tensor TA, Tensor TB, class TC, FixedDimension TAxis>
-void gather(const TA &input, const TB &indices, TC &&output,
-            const TAxis &axis) noexcept {
+constexpr void gather(const TA &input, const TB &indices, TC &&output,
+                      const TAxis &axis) noexcept {
     detail::gather_impl<TA, TB, std::decay_t<TC>> impl;
     impl(input, indices, output, axis);
 }
 
 template <ShardedTensor TA, Tensor TB, class TC, FixedDimension TAxis>
-void gather(const TA &input, const TB &indices, TC &&output,
-            const TAxis &axis) noexcept {
+constexpr void gather(const TA &input, const TB &indices, TC &&output,
+                      const TAxis &axis) noexcept {
     detail::distributed_gather_impl<TA, TB, std::decay_t<TC>> impl;
     impl(input, indices, output, axis);
 }

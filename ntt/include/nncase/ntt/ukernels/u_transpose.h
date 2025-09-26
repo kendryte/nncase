@@ -227,8 +227,8 @@ template <Tensor TIn, class TOut, FixedDimensions TPerms, size_t Segments,
           size_t... Index>
     requires(bool(TIn::rank() == std::decay_t<TOut>::rank()) &&
              bool(TIn::rank() == TPerms::rank()))
-void u_transpose(const TIn &input, TOut &output, const TPerms &,
-                 std::index_sequence<Index...>) {
+constexpr void u_transpose(const TIn &input, TOut &output, const TPerms &,
+                           std::index_sequence<Index...>) {
 
     const std::array<size_t, Segments> dims_compressed =
         u_transpose_detail::compress_dimensions<TPerms, TIn, Segments>(input);

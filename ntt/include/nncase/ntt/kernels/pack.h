@@ -156,7 +156,8 @@ template <Tensor TIn, Tensor TOut> class pack_impl<TIn, TOut, 1> {
 } // namespace detail
 
 template <Tensor TIn, class TOut, FixedDimensions TAxes>
-void pack(const TIn &input, TOut &&output, const TAxes &axes) noexcept {
+constexpr void pack(const TIn &input, TOut &&output,
+                    const TAxes &axes) noexcept {
     using TVec = typename std::decay_t<TOut>::element_type;
     static_assert(TVec::rank() ==
                       vector_rank_v<typename TIn::value_type> + TAxes::rank(),

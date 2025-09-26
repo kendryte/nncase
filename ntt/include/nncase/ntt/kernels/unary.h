@@ -22,8 +22,8 @@ template <Tensor TIn, Tensor TOut>
 class unary_impl : public unary_like_impl<unary_impl<TIn, TOut>, TIn, TOut> {
   public:
     template <Tensor TBroadcastedIn, class Op>
-    void invoke_ukernel(const TBroadcastedIn &input, TOut &output,
-                        const Op &op) {
+    constexpr void invoke_ukernel(const TBroadcastedIn &input, TOut &output,
+                                  const Op &op) {
         auto input_conti_dims = contiguous_dims(input.shape(), input.strides());
         auto output_conti_dims =
             contiguous_dims(output.shape(), output.strides());
@@ -55,8 +55,9 @@ class unary_impl : public unary_like_impl<unary_impl<TIn, TOut>, TIn, TOut> {
 } // namespace detail
 
 template <template <class T> class Op, Tensor TIn, class TOut>
-void unary(const TIn &input, TOut &&output,
-           const Op<std::remove_cv_t<typename TIn::element_type>> &op = {}) {
+constexpr void
+unary(const TIn &input, TOut &&output,
+      const Op<std::remove_cv_t<typename TIn::element_type>> &op = {}) {
     detail::unary_impl<TIn, std::decay_t<TOut>> impl;
     impl(input, output, op);
 }
