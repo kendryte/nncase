@@ -9,9 +9,6 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.Schedule.MonteCarloTreeSearch;
 using QuikGraph;
-using QuikGraph.Algorithms;
-using QuikGraph.Algorithms.ShortestPath;
-using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule.TileGraph;
 

@@ -498,7 +498,7 @@ public sealed class GraphTiler
             HashSet<BufferIdentity> inputBids;
             HashSet<BufferIdentity> outputBids;
 
-            if (!SolveMemo.TryGetValue(primTree, out var memo))
+            if (!SolveMemo.TryGetValue(primTree, out var tiled))
             {
                 var result = SolvePrimGraph(primTree, bufferGraphMemo, targetOptions, moduleKind);
                 (inputBids, outputBids) = (result.Inputs, result.Outputs);
@@ -521,16 +521,16 @@ public sealed class GraphTiler
 
                 primFunc.SchedResult.IsScheduled = true; // avoid buffersize pass schedule it again.
                 primFunc.SchedResult.DataAlign = (ulong)maxAlign;
-                memo = new(new PrimFunctionWrapper(primFunc, inputBids.Count + dynamicDimVars.Length, inputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).Concat(dynamicDimVars.Select(v => new DimensionType(DimensionKind.Dynamic))).Concat(outputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType)).ToArray()), result.ObjectiveValue);
-                SolveMemo.Add(primTree, memo);
+                tiled = new(new PrimFunctionWrapper(primFunc, inputBids.Count + dynamicDimVars.Length, inputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType).Concat(dynamicDimVars.Select(v => new DimensionType(DimensionKind.Dynamic))).Concat(outputBids.Select(bid => bid.Node.Grid.GetArgument(bid.Index).CheckedType)).ToArray()), result.ObjectiveValue);
+                SolveMemo.Add(primTree, tiled);
             }
             else
             {
                 (inputBids, outputBids) = bufferGraphMemo[primGraph].GetInputsOutputs(bufferGraphMemo[rootGraph]);
             }
 
-            objectValue += memo.ObjectValue;
-            var finalCall = new Call(memo.Func, inputBids.Select(bid => argumentMemo[bid]).Concat(dynamicDimVars.OfType<BaseExpr>()).ToArray());
+            objectValue += tiled.ObjectValue;
+            var finalCall = new Call(tiled.Func, inputBids.Select(bid => argumentMemo[bid]).Concat(dynamicDimVars.OfType<BaseExpr>()).ToArray());
 
             // save the output.
             foreach (var (outputBid, outputIndex) in outputBids.Select((b, i) => (b, i)))

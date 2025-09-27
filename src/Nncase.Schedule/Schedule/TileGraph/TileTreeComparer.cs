@@ -39,6 +39,7 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
         HashCode hascode = default;
         hascode.Add(a.Level);
         hascode.Add(a.DomainRelation.Map);
+        hascode.Add(StructuralComparisons.StructuralEqualityComparer.GetHashCode(a.DomainDynamic));
         foreach (var item in a.Children)
         {
             hascode.Add(item, this);
@@ -52,6 +53,8 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
         HashCode code = default;
         code.Add(a.Level);
         code.Add(a.DomainRelation.Map);
+        code.Add(a.Wrapped.Attribute);
+        code.Add(StructuralComparisons.StructuralEqualityComparer.GetHashCode(a.DomainDynamic));
         code.Add(StructuralComparisons.StructuralEqualityComparer.GetHashCode(a.DomainBounds));
         code.Add(StructuralComparisons.StructuralEqualityComparer.GetHashCode(a.BufferShapes));
         code.Add(GridHashCode(a.Grid));
@@ -62,6 +65,8 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
     {
         return a.Wrapped.Level.Equals(b.Wrapped.Level) &&
         a.Wrapped.DomainRelation.Map.Equals(b.Wrapped.DomainRelation.Map) &&
+        a.Wrapped.Attribute.Equals(b.Wrapped.Attribute) &&
+        StructuralComparisons.StructuralEqualityComparer.Equals(a.Wrapped.DomainDynamic, b.Wrapped.DomainDynamic) &&
         StructuralComparisons.StructuralEqualityComparer.Equals(a.Wrapped.DomainBounds, b.Wrapped.DomainBounds) &&
         StructuralComparisons.StructuralEqualityComparer.Equals(a.Wrapped.BufferShapes, b.Wrapped.BufferShapes) &&
         GridEquals(a.Wrapped.Grid, b.Wrapped.Grid);
@@ -72,6 +77,7 @@ public sealed class ITreeNodeComparer : IEqualityComparer<ITreeNode>
         return a.Children.Length.Equals(b.Children.Length) &&
             a.Level.Equals(b.Level) &&
             a.DomainRelation.Map.Equals(b.DomainRelation.Map) &&
+            StructuralComparisons.StructuralEqualityComparer.Equals(a.Wrapped.DomainDynamic, b.Wrapped.DomainDynamic) &&
             Enumerable.Range(0, a.Children.Length).All(i => Equals(a.Children[i], b.Children[i]));
     }
 
