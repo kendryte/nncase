@@ -303,6 +303,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 
     private Expr GenerateReshard(Expr input, ref Expr output, DistributedType inType, DistributedType outType)
     {
+        // FIXME: re-balance issue.
+#if false
         if (input is TIR.Buffer inBuffer)
         {
             if (TryGenerateGatherThreadsReshard(inBuffer, ref output, inType, outType, out var newCall))
@@ -314,6 +316,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return newCall;
             }
         }
+#endif
 
         return TIR.F.NTT.GatherReduceScatter(input, output, inType, outType);
     }
