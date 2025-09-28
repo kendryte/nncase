@@ -13,11 +13,10 @@
  * limitations under the License.
  */
 #pragma once
-#include "nncase/ntt/dimension.h"
-#include "shape.h"
+#include "dimension.h"
+#include "std_containers.h"
 #include "tensor_traits.h"
 #include <cstring>
-#include <span>
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -49,8 +48,8 @@ constexpr auto get_safe_stride(const TTensor &tensor,
 } // namespace utility_detail
 
 template <class U, class T, size_t Extent>
-constexpr auto span_cast(std::span<T, Extent> src) noexcept {
-    using return_type = std::span<U, Extent == std::dynamic_extent
+constexpr auto span_cast(ntt::span<T, Extent> src) noexcept {
+    using return_type = ntt::span<U, Extent == std::dynamic_extent
                                          ? std::dynamic_extent
                                          : Extent * sizeof(T) / sizeof(U)>;
     if constexpr (std::is_const_v<U>) {
@@ -61,9 +60,9 @@ constexpr auto span_cast(std::span<T, Extent> src) noexcept {
 }
 
 template <class T, size_t SrcExtent, Dimension TOffset, Dimension TExtent>
-constexpr auto make_subspan(std::span<T, SrcExtent> src, const TOffset &offset,
+constexpr auto make_subspan(ntt::span<T, SrcExtent> src, const TOffset &offset,
                             const TExtent &extent) noexcept {
-    using return_type = std::span<
+    using return_type = ntt::span<
         T, ntt::where(std::integral_constant<bool, FixedDimension<TExtent>>{},
                       TExtent{}, std::dynamic_extent)>;
     return return_type{src.data() + dim_value(offset),

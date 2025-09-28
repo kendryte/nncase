@@ -22,6 +22,8 @@ public class CSourceCompiler
 {
     private static string? _vcVarPath;
 
+    private readonly bool _isCUDA;
+
     /// <summary>
     /// compiler exe name.
     /// </summary>
@@ -37,8 +39,9 @@ public class CSourceCompiler
     /// </summary>
     private string _ext = string.Empty;
 
-    public CSourceCompiler()
+    public CSourceCompiler(bool isCUDA)
     {
+        _isCUDA = isCUDA;
         PlatformSpecific();
         ArchSpecific();
     }
@@ -186,8 +189,16 @@ public class CSourceCompiler
 
     private string ArgumentsSpecific(string sourcePath, string outPath)
     {
-        var archConfig = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
-        "-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl" : string.Empty;
+        string archConfig = string.Empty;
+        if (_isCUDA)
+        {
+            archConfig = $"-DCMAKE_CUDA_ARCHITECTURES=120 -DCMAKE_CUDA_COMPILER=clang++";
+        }
+        else
+        {
+            archConfig = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
+            "-DCMAKE_C_COMPILER=clang-cl -DCMAKE_CXX_COMPILER=clang-cl" : string.Empty;
+        }
 
 #if DEBUG
         var config = "Release";

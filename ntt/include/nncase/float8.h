@@ -36,7 +36,7 @@
 */
 #pragma once
 
-#if defined(__GNUC__) && defined(__x86_64__)
+#if defined(__GNUC__) && defined(__x86_64__) && !defined(__clang__)
 #pragma GCC optimize("no-strict-aliasing")
 #endif
 

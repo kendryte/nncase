@@ -31,13 +31,13 @@ namespace nncase::ntt {
 // auto_profiler, start timing and end timing
 class auto_profiler {
   public:
-    inline uint64_t get_current_time() const {
+    __device__ inline uint64_t get_current_time() const {
         return std::chrono::duration_cast<std::chrono::microseconds>(
                    std::chrono::high_resolution_clock::now().time_since_epoch())
             .count();
     }
 
-    auto_profiler(std::string_view function_name)
+    __device__ auto_profiler(std::string_view function_name)
         : cid_(program_id<topology::chip>()),
           bid_(program_id<topology::block>()),
           tid_(program_id<topology::thread>()) {
@@ -50,15 +50,15 @@ class auto_profiler {
         }
     }
 
-    auto_profiler(std::string_view function_name,
-                  runtime::profiling_level level)
+    __device__ auto_profiler(std::string_view function_name,
+                             runtime::profiling_level level)
         : auto_profiler(function_name) { // 调用另一个构造函数
         if (enable_profiling_) {
             level_ = level; // 设置 level
         }
     }
 
-    ~auto_profiler() {
+    __device__ ~auto_profiler() {
         if (enable_profiling_) {
             timer_storage_->set_id({cid_, bid_, tid_});
             end_time_ = get_current_time();
@@ -78,11 +78,11 @@ class auto_profiler {
     nncase::ntt::runtime::timer_record *timer_storage_;
     bool enable_profiling_;
 
-    inline __device__ bool get_profiler_option() noexcept {
+    __device__ inline bool get_profiler_option() noexcept {
         return runtime::cuda_thread_context_t::current().enable_profiling;
     }
 
-    inline __device__ nncase::ntt::runtime::timer_record *
+    __device__ inline nncase::ntt::runtime::timer_record *
     get_timer_record() noexcept {
         return runtime::cuda_thread_context_t::current().timer_records;
     }

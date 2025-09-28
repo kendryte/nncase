@@ -394,7 +394,7 @@ public class Compiler : ICompiler
         await RunPassAsync(AutoVectorizePass, "AutoVectorizePass");
         await RunPassAsync(AutoPackingPass, "AutoPackingPass");
         await RunPassAsync(AutoDistributedPass, "AutoDistributedPass");
-        await RunPassAsync(AutoTilingPass, "AutoTilingPass");
+        //await RunPassAsync(AutoTilingPass, "AutoTilingPass");
 
         await RunPassAsync(TIRPass, "TIRPass");
 

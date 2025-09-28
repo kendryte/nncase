@@ -94,7 +94,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         }
 
         var ctype = $"template<{string.Join(", ", Enumerable.Range(0, expr.Parameters.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine +
-            $"void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select((s, i) => $"T{i} &&{s.Name}").ToArray())})";
+            $"NTT_DEVICE void {expr.Name}({string.Join(", ", expr.Parameters.AsValueEnumerable().Select(Visit).Select((s, i) => $"T{i} &&{s.Name}").ToArray())})";
 
         using (var scope = new IndentScope(_deviceBuilder))
         {
@@ -192,7 +192,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };
 
-        var str = $"std::span<std::byte, {size.Name}>({name} + {start.Name}, {size.Name})";
+        var str = $"ntt::span<std::byte, {size.Name}>({name} + {start.Name}, {size.Name})";
         symbol = new(start.Type, str);
         _exprMemo.Add(expr, symbol);
         return symbol;

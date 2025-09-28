@@ -30,8 +30,9 @@ internal sealed class LinkedModule : ILinkedModule
 {
     public const string ModuleHeaderSectionName = ".desc";
 
-    public unsafe LinkedModule(IReadOnlyList<ILinkedFunction> functions, Stream desc, Stream text, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> threadLocalCaches, IReadOnlyList<Stream> blockLocalRdatas, ulong rdataAlign)
+    public unsafe LinkedModule(string moduleKind, IReadOnlyList<ILinkedFunction> functions, Stream desc, Stream text, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> threadLocalCaches, IReadOnlyList<Stream> blockLocalRdatas, ulong rdataAlign)
     {
+        ModuleKind = moduleKind;
         Functions = functions;
         Sections =
         [
@@ -44,7 +45,7 @@ internal sealed class LinkedModule : ILinkedModule
         ];
     }
 
-    public string ModuleKind => "cpu";
+    public string ModuleKind { get; }
 
     public uint Version => 0;
 

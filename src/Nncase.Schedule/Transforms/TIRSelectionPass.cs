@@ -25,8 +25,7 @@ public abstract class TIRSelectionPass : FunctionPass
 
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
-        if (input.ModuleKind == ModuleKind
-            && input is Function func)
+        if (input is Function func)
         {
             var callers = func.Users.Where(x => x is Call or FunctionWrapper).ToArray();
             var isEntry = callers.Length == 0;

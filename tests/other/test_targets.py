@@ -19,6 +19,7 @@ import nncase
 
 def test_targets(request):
     assert nncase.check_target("cpu")
+    assert nncase.check_target("cuda")
     #assert nncase.check_target("k210")
     #assert nncase.check_target("vulkan")
 

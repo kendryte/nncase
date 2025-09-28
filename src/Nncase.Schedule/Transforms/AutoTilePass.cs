@@ -58,7 +58,7 @@ public sealed class AutoTilePass : FunctionPass
         using var ctx = IntegerSetLibrary.ctx.Create();
         ctx.set_ast_build_detect_min_max(1);
         var tiler = new GraphTiler();
-        if (!(input is Function func && func.ModuleKind == ModuleKind))
+        if (!(input is Function func))
         {
             return Task.FromResult(input);
         }

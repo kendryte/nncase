@@ -139,6 +139,29 @@ Vectorize = true
 Hierarchies = [[1]]
 HierarchyNames = "t"
 
+[target.cuda]
+eval = false
+infer = true
+similarity_name = 'cosine'
+
+[target.cuda.mode.noptq]
+enabled = true
+threshold = 0.999
+
+[target.cuda.mode.ptq]
+enabled = false
+threshold = 0.98
+
+[target.cuda.target_options]
+Hierarchies = [[1]]
+HierarchyNames = "t"
+HierarchySizes = [603979776, 1048576]
+MemoryCapacities = [262144, 150994944]
+MemoryBandWidths = [64, 32]
+UnifiedMemoryArch = false
+Vectorize = true
+HierarchyKind = "nncase.HierarchyKind.SMT"
+
 [target.k510]
 eval = true
 infer = true

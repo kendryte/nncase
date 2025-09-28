@@ -17,6 +17,7 @@ namespace Nncase.CodeGen.NTT;
 
 internal sealed class LinkableModule : ILinkableModule
 {
+    private readonly string _moduleKind;
     private readonly Stream _desc;
     private readonly Stream _rdata;
     private readonly IReadOnlyList<Stream> _threadLocalRdatas;
@@ -25,8 +26,9 @@ internal sealed class LinkableModule : ILinkableModule
     private readonly IReadOnlyList<ILinkableFunction> _functions;
     private readonly NTTTargetOptions _targetOptions;
 
-    public LinkableModule(Stream desc, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> threadLocalCaches, IReadOnlyList<Stream> blockLocalRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
+    public LinkableModule(string moduleKind, Stream desc, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> threadLocalCaches, IReadOnlyList<Stream> blockLocalRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
     {
+        _moduleKind = moduleKind;
         _desc = desc;
         _rdata = rdata;
         _threadLocalRdatas = threadLocalRdatas;
@@ -141,7 +143,8 @@ internal sealed class LinkableModule : ILinkableModule
 
     private void WriteThreadMain(string codegenDir, LinkableKernelFunction mainFunc, IReadOnlyList<string> kernelFiles)
     {
-        using (var fs = File.Open(Path.Join(codegenDir, "thread_main.cpp"), FileMode.Create))
+        var threadMainExt = _moduleKind == CUDATarget.Kind ? "cu" : "cpp";
+        using (var fs = File.Open(Path.Join(codegenDir, $"thread_main.{threadMainExt}"), FileMode.Create))
         {
             using (var writer = new StreamWriter(fs))
             {
@@ -173,7 +176,7 @@ internal sealed class LinkableModule : ILinkableModule
         {
             using (var writer = new StreamWriter(fs))
             {
-                writer.Write(CSourceBuiltn.CMakeDef());
+                writer.Write(CSourceBuiltn.CMakeDef(isCUDA: _moduleKind == CUDATarget.Kind));
             }
         }
     }
@@ -199,12 +202,12 @@ internal sealed class LinkableModule : ILinkableModule
         var funcText = File.ReadAllBytes(elfPath);
         textWriter.Write(funcText);
         linkedFunctions.Add(new LinkedFunction(mainFunc.Id, mainFunc.SourceFunction, 0, (uint)funcText.Length, mainFunc.Sections));
-        return new LinkedModule(linkedFunctions, _desc, manager.GetContent(WellknownSectionNames.Text)!, _rdata, _threadLocalRdatas, _threadLocalCaches, _blockLocalRdatas, rdataAlign);
+        return new LinkedModule(_moduleKind, linkedFunctions, _desc, manager.GetContent(WellknownSectionNames.Text)!, _rdata, _threadLocalRdatas, _threadLocalCaches, _blockLocalRdatas, rdataAlign);
     }
 
     private string CompileCSource(string sourcePath)
     {
-        var compiler = new CSourceCompiler();
+        var compiler = new CSourceCompiler(_moduleKind == CUDATarget.Kind);
         var binDir = Path.Join(sourcePath, "build", "nncase_ntt_module");
         return compiler.Compile(sourcePath, binDir);
     }

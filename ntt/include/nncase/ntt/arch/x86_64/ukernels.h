@@ -337,9 +337,9 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 
         constexpr auto axes_temp = TAxes{};
         constexpr auto conti_dims_input =
-            contiguous_dims(input.shape(), input.strides());
+            contiguous_dims(TIn::shape(), TIn::strides());
         constexpr auto conti_dims_output =
-            contiguous_dims(output.shape(), output.strides());
+            contiguous_dims(TOut::shape(), TOut::strides());
 
         if constexpr (TAxes::rank() == 2 &&
                       axes_temp[0_dim] + 1 == axes_temp[1_dim] &&
@@ -349,7 +349,6 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
             if constexpr (TAxes::rank() > 0 &&
                           (TAxes{}[-1]) == (TIn::rank() - 1)) {
                 using TVec = vector<float, 8, 8>;
-                constexpr auto in_rank = TIn::rank();
                 constexpr auto out_rank = TOut::rank();
                 constexpr auto lanes = TVec::shape();
                 constexpr auto out_shape = TOut::shape();
@@ -371,7 +370,6 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
             } else {
                 using TVec = vector<float, 8, 8>;
                 constexpr auto in_rank = TIn::rank();
-                constexpr auto out_rank = TOut::rank();
                 constexpr auto lanes = TVec::shape();
                 const auto out_shape = output.shape();
 
@@ -436,12 +434,12 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank>
-requires(
-    (std::same_as<typename TIn::element_type, ntt::vector<float, 8, 8>> ||
-     std::same_as<typename TIn::element_type, ntt::vector<float, 8>>)&&std::
-        same_as<typename std::decay_t<TOut>::element_type, float> &&
-    (AxesRank == 1 ||
-     AxesRank == 2)) class u_unpack_impl<TIn, TOut, AxesRank, true> {
+    requires(
+        (std::same_as<typename TIn::element_type, ntt::vector<float, 8, 8>> ||
+         std::same_as<typename TIn::element_type, ntt::vector<float, 8>>) &&
+        std::same_as<typename std::decay_t<TOut>::element_type, float> &&
+        (AxesRank == 1 || AxesRank == 2))
+class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
     using TElem = typename std::decay_t<TOut>::element_type;
@@ -642,9 +640,10 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_n, float,
 
 template <bool AccumulateC, class TScale>
     requires std::is_same_v<TScale, float> ||
-    std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
-        ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC, false, false,
-        1, 7, float, vector<float, 8>, vector<float, 8>, TScale, true> {
+             std::is_same_v<TScale, std::nullptr_t>
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC,
+                false, false, 1, 7, float, vector<float, 8>, vector<float, 8>,
+                TScale, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               const TScale &scale, size_t K) noexcept {
@@ -745,10 +744,10 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_kn, vector<float, 8>,
 
 template <bool AccumulateC, class TScale>
     requires std::is_same_v<TScale, float> ||
-    std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
-        ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, false,
-        false, 1, 4, vector<float, 8>, vector<float, 8, 8>, vector<float, 8>,
-        TScale, true> {
+             std::is_same_v<TScale, std::nullptr_t>
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC,
+                false, false, 1, 4, vector<float, 8>, vector<float, 8, 8>,
+                vector<float, 8>, TScale, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               const TScale &scale, size_t K) noexcept {

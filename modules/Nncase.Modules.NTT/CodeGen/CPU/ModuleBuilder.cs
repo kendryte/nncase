@@ -19,8 +19,9 @@ public sealed class NTTModuleBuilder : IModuleBuilder
     private readonly BinaryWriter[] _threadLocalCacheWriters;
     private readonly BinaryWriter[] _blockLocalRdataWriters;
 
-    public NTTModuleBuilder(CompileOptions options)
+    public NTTModuleBuilder(string moduleKind, CompileOptions options)
     {
+        ModuleKind = moduleKind;
         _sectionManager = new();
         _rdataWriter = _sectionManager.GetWriter(WellknownSectionNames.Rdata);
         var shardCount = TensorUtilities.GetProduct(((Targets.NTTTargetOptions)options.TargetOptions).Hierarchies[0]);
@@ -44,7 +45,7 @@ public sealed class NTTModuleBuilder : IModuleBuilder
     public CompileOptions CompileOptions { get; }
 
     /// <inheritdoc/>
-    public string ModuleKind => "cpu";
+    public string ModuleKind { get; }
 
     /// <inheritdoc/>
     public ILinkableModule Build(IReadOnlyList<BaseFunction> functions)
@@ -102,6 +103,6 @@ public sealed class NTTModuleBuilder : IModuleBuilder
             return _sectionManager.GetContent(WellknownSectionNames.BlockLocalRdata, i)!;
         }).ToArray();
 
-        return new LinkableModule(_sectionManager.GetContent(LinkedModule.ModuleHeaderSectionName)!, _sectionManager.GetContent(WellknownSectionNames.Rdata)!, threadLocalRdataContents, threadLocalCacheContents, blockLocalRdataContents, linkableFunctions, CompileOptions);
+        return new LinkableModule(ModuleKind, _sectionManager.GetContent(LinkedModule.ModuleHeaderSectionName)!, _sectionManager.GetContent(WellknownSectionNames.Rdata)!, threadLocalRdataContents, threadLocalCacheContents, blockLocalRdataContents, linkableFunctions, CompileOptions);
     }
 }

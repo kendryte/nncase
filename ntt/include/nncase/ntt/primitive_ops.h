@@ -198,7 +198,7 @@ template <class T1, class T2> struct ceil_div {
  */
 template <class T1, class T2> struct floor_mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
-#ifdef __clang__
+#if defined(__clang__) && !defined(__CUDA_ARCH__)
 #pragma float_control(precise, on)
 #endif
         return (T1)(double(v1) - std::floor(static_cast<double>(v1) /
