@@ -148,6 +148,26 @@ internal static class HuggingFaceUtils
         return config;
     }
 
+    public static PrimType Str2Dtype(string str)
+    {
+        return str switch
+        {
+            "float32" => DataTypes.Float32,
+            "float16" => DataTypes.Float16,
+            "bfloat16" => DataTypes.BFloat16,
+            "int8" => DataTypes.Int8,
+            "int16" => DataTypes.Int16,
+            "int32" => DataTypes.Int32,
+            "int64" => DataTypes.Int64,
+            "uint8" => DataTypes.UInt8,
+            "uint16" => DataTypes.UInt16,
+            "uint32" => DataTypes.UInt32,
+            "uint64" => DataTypes.UInt64,
+            "bool" => DataTypes.Boolean,
+            _ => throw new NotImplementedException("Unrecognized data type listed: " + str),
+        };
+    }
+
     public static Dictionary<string, Tensor> LoadAllTensorsFromFile(string path)
     {
         var constTensors = new Dictionary<string, Tensor>();
@@ -397,63 +417,6 @@ internal static class HuggingFaceUtils
 
         throw new NotImplementedException("Unrecognized data type listed: " + dataType);
     }
-
-    // public class DynamicCache
-    // {
-    //     public int SeenTokens;
-    //     public List<object>? KeyCache;
-    //     public List<object>? ValueCache;
-    //     public long GetSeqLength(int layerCount = 0)
-    //     {
-    //         bool isEmptyLayer =
-    //             KeyCache?.Count == 0
-    //             || KeyCache?.Count <= layerCount
-    //             || (int)KeyCache?[layerCount] == 0;
-    //         var layer = (Call)KeyCache?[(Index)layerCount!];
-    //         return isEmptyLayer ? 0 : layer.CheckedShape[-2].FixedValue;
-    //     }
-    //     public Tuple<Call, Call> Update(
-    //         Call keyStates,
-    //         Call valueStates,
-    //         int layerCount,
-    //         Dictionary<string, object> cacheKwargs)
-    //     {
-    //         if (layerCount == 0)
-    //         {
-    //             SeenTokens += (int)keyStates.CheckedShape[-2].FixedValue;
-    //         }
-    //         if (keyStates != null)
-    //         {
-    //             if (KeyCache.Count <= layerCount)
-    //             {
-    //                 for (int i = KeyCache.Count; i <= layerCount; i++)
-    //                 {
-    //                     KeyCache.Add(0);
-    //                     ValueCache.Add(0);
-    //                 }
-    //                 // self.key_cache.append(key_states)
-    //                 // self.value_cache.append(value_states)
-    //                 KeyCache.Add(keyStates);
-    //                 ValueCache.Add(valueStates);
-    //             }
-    //             else if ((int)KeyCache[layerCount] == 0)
-    //             {
-    //                 KeyCache[layerCount] = keyStates;
-    //                 ValueCache[layerCount] = valueStates;
-    //             }
-    //             else
-    //             {
-    //                 KeyCache[layerCount] = Nncase.IR.F.Tensors.Concat(
-    //                     new Nncase.IR.Tuple((Call)KeyCache[layerCount], keyStates),
-    //                     -2);
-    //                 ValueCache[layerCount] = Nncase.IR.F.Tensors.Concat(
-    //                     new Nncase.IR.Tuple((Call)ValueCache[layerCount], valueStates),
-    //                     -2);
-    //             }
-    //         }
-    //         return Tuple.Create((Call)KeyCache[layerCount], (Call)ValueCache[layerCount]);
-    //     }
-    // }
 }
 
 internal static class ModelUtils

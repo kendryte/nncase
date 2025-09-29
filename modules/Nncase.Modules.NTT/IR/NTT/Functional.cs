@@ -38,19 +38,24 @@ public partial class NTT
         return new Call(new VectorizedReduce(reduceOp, axes, initValue, keepDims, vectorizedAxes), input, padedNums);
     }
 
+    public static Expr VectorizedRoPE(Expr input, Expr cos, Expr sin)
+    {
+        return new Call(new VectorizedRoPE(), input, cos, sin);
+    }
+
     public static Expr InstacneNorm(Expr input, Expr scale, Expr bias, float epsilon, IRArray<int> vectorizedAxes, BaseExpr padedNums)
     {
         return new Call(new InstacneNorm(epsilon, vectorizedAxes), input, scale, bias, padedNums);
     }
 
-    public static Expr PackedMatMul(Expr lhs, Expr rhs, bool fusedReduce = false, DataType? outDataType = null)
+    public static Expr PackedMatMul(Expr lhs, Expr rhs, bool fusedReduce = false, DataType? outDataType = null, Expr? scale = null)
     {
-        return new Call(new PackedMatMul(outDataType ?? DataTypes.Float32, fusedReduce), lhs, rhs);
+        return new Call(new PackedMatMul(outDataType ?? DataTypes.Float32, fusedReduce), lhs, rhs, scale ?? None.Default);
     }
 
-    public static Expr VectorizedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, DataType? outDataType = null)
+    public static Expr VectorizedMatMul(Expr lhs, Expr rhs, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, DataType? outDataType = null, Expr? scale = null)
     {
-        return new Call(new VectorizedMatMul(outDataType ?? DataTypes.Float32, lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce), lhs, rhs);
+        return new Call(new VectorizedMatMul(outDataType ?? DataTypes.Float32, lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce), lhs, rhs, scale ?? None.Default);
     }
 
     public static Expr VectorizedBinary(Expr lhs, Expr rhs, BaseExpr postOps, BinaryOp binaryOp, IRArray<int>? lhsVectorizedAxes = null, IRArray<Dimension>? lhsPadedNums = null, IRArray<int>? rhsVectorizedAxes = null, IRArray<Dimension>? rhsPadedNums = null)

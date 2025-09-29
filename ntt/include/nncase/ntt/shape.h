@@ -133,7 +133,7 @@ constexpr auto replace_dim_impl(const TDims &dims, const TDim &dim) noexcept {
 template <dims_usage Usage, template <class... TDims> class Derived,
           Dimension... TDims>
 struct dims_base {
-    constexpr dims_base(const TDims &...dims) noexcept
+    NTT_ALWAYS_INLINE constexpr dims_base(const TDims &...dims) noexcept
         : dims_(std::make_tuple(dims...)) {}
 
     static constexpr dims_usage usage() noexcept { return Usage; }
@@ -464,7 +464,8 @@ constexpr auto canonicalize_strides(const TShape &shape,
 }
 
 namespace detail {
-template <size_t Axis, Shape TShape, bool Canonical = true> struct default_strides_impl {
+template <size_t Axis, Shape TShape, bool Canonical = true>
+struct default_strides_impl {
     static_assert(Axis > 0 && Axis <= TShape::rank(), "Axis out of bounds");
 
     template <Strides TStrides>
@@ -484,39 +485,42 @@ template <size_t Axis, Shape TShape, bool Canonical = true> struct default_strid
         }();
         auto new_strides = cnt_strides.prepend(new_stride);
         if constexpr (Axis == 1) {
-          if constexpr(Canonical) {
-            return canonicalize_strides(shape, new_strides);
-          } else {
-            return new_strides;   
-          }
+            if constexpr (Canonical) {
+                return canonicalize_strides(shape, new_strides);
+            } else {
+                return new_strides;
+            }
         } else {
-            return default_strides_impl<Axis - 1, TShape, Canonical>{}(shape, new_strides);
+            return default_strides_impl<Axis - 1, TShape, Canonical>{}(
+                shape, new_strides);
         }
     }
 };
 } // namespace detail
 
 template <dim_t ExtendRank, Strides TStrides>
-constexpr auto broadcast_strides(const TStrides &strides) noexcept {
+NTT_ALWAYS_INLINE constexpr auto
+broadcast_strides(const TStrides &strides) noexcept {
     static_assert(ExtendRank >= 0,
                   "Extend rank must be greater than or equal to 0");
     return make_zeros_strides<ExtendRank>().concat(strides);
 }
 
 template <Shape TShape, bool Canonical = true>
-constexpr auto default_strides([[maybe_unused]] const TShape shape) noexcept {
+NTT_ALWAYS_INLINE constexpr auto
+default_strides([[maybe_unused]] const TShape shape) noexcept {
     constexpr auto rank = TShape::rank();
     if constexpr (rank == 0) {
         return strides_t<>();
     } else {
-        return detail::default_strides_impl<rank, TShape, Canonical>{}(shape,
-                                                            strides_t<>());
+        return detail::default_strides_impl<rank, TShape, Canonical>{}(
+            shape, strides_t<>());
     }
 }
 
 template <Dimensions TIndex, Strides TStrides>
-constexpr auto linear_offset(const TIndex &index,
-                             const TStrides &strides) noexcept {
+NTT_ALWAYS_INLINE constexpr auto
+linear_offset(const TIndex &index, const TStrides &strides) noexcept {
     static_assert(TIndex::rank() == TStrides::rank(),
                   "index and strides must have the same rank");
 
@@ -533,8 +537,8 @@ constexpr auto linear_offset(const TIndex &index,
 }
 
 template <Dimensions TIndex, Shape TShape>
-constexpr auto linear_offset(const TIndex &index,
-                             const TShape &shape) noexcept {
+NTT_ALWAYS_INLINE constexpr auto linear_offset(const TIndex &index,
+                                               const TShape &shape) noexcept {
     static_assert(TIndex::rank() == TShape::rank(),
                   "index and shape must have the same rank");
     return linear_offset(index, default_strides(shape));
@@ -542,8 +546,8 @@ constexpr auto linear_offset(const TIndex &index,
 
 template <template <class... TDims> class TDimensions = shape_t,
           Dimension TOffset, Shape TShape>
-constexpr auto unravel_index(const TOffset &offset,
-                             const TShape &shape) noexcept {
+NTT_ALWAYS_INLINE constexpr auto unravel_index(const TOffset &offset,
+                                               const TShape &shape) noexcept {
     return shape.reverse().aggregate(
         std::make_tuple(offset, TDimensions<>{}),
         [&](auto acc, auto dim, [[maybe_unused]] auto axis) {
@@ -583,8 +587,8 @@ template <size_t Axis, Shape TShape, Strides TStrides> struct linear_size_impl {
 } // namespace detail
 
 template <Shape TShape, Strides TStrides>
-constexpr auto linear_size(const TShape &shape,
-                           const TStrides &strides) noexcept {
+NTT_ALWAYS_INLINE constexpr auto linear_size(const TShape &shape,
+                                             const TStrides &strides) noexcept {
     static_assert(TShape::rank() == TStrides::rank(),
                   "shape and strides must have the same rank");
     if constexpr (TShape::rank() == 0) {
@@ -597,12 +601,13 @@ constexpr auto linear_size(const TShape &shape,
 
 namespace detail {
 template <Shape TShape, Strides TStrides>
-constexpr dim_t contiguous_dims_impl(const TShape &shape,
-                                     const TStrides &strides) {
+NTT_ALWAYS_INLINE constexpr dim_t
+contiguous_dims_impl(const TShape &shape, const TStrides &strides) {
     auto def_strides = default_strides(shape);
     auto def_strides_2 = default_strides<TShape, false>(shape);
     for (ptrdiff_t i = (ptrdiff_t)strides.rank() - 1; i >= 0; --i) {
-        if (strides[i] != def_strides[i] && !(shape[i] == dim_one && strides[i] == def_strides_2[i])) {
+        if (strides[i] != def_strides[i] &&
+            !(shape[i] == dim_one && strides[i] == def_strides_2[i])) {
             return shape.rank() - i - 1;
         }
     }
@@ -618,8 +623,9 @@ constexpr dim_t contiguous_dims_impl(const TShape &shape,
  * @return constexpr size_t contigous dimension numbers.
  */
 template <Shape TShape, Strides TStrides>
-constexpr auto contiguous_dims([[maybe_unused]] const TShape &shape,
-                               [[maybe_unused]] const TStrides &strides) {
+NTT_ALWAYS_INLINE constexpr auto
+contiguous_dims([[maybe_unused]] const TShape &shape,
+                [[maybe_unused]] const TStrides &strides) {
     if constexpr (TShape::is_fixed() && TStrides::is_fixed()) {
         return fixed_dim_v<detail::contiguous_dims_impl(TShape{},
                                                         TStrides{})>();
@@ -629,7 +635,8 @@ constexpr auto contiguous_dims([[maybe_unused]] const TShape &shape,
 }
 
 namespace detail {
-template <Shape TShape, Strides TStrides> constexpr size_t max_size_impl() {
+template <Shape TShape, Strides TStrides>
+NTT_ALWAYS_INLINE constexpr size_t max_size_impl() {
     if constexpr (TShape::is_fixed() && TStrides::is_fixed()) {
         return linear_size(TShape{}, TStrides{});
     } else {
@@ -642,7 +649,8 @@ template <Shape TShape, Strides TStrides>
 inline constexpr size_t max_size_v = detail::max_size_impl<TShape, TStrides>();
 
 template <class Index, class Shape>
-constexpr bool in_bound(const Index &index, const Shape &shape) {
+NTT_ALWAYS_INLINE constexpr bool in_bound(const Index &index,
+                                          const Shape &shape) {
     if (index.rank() == shape.rank()) {
         for (size_t i = 0; i < index.rank(); i++) {
             if (index[i] >= shape[i]) {
@@ -676,7 +684,8 @@ template <FixedShape Axes, size_t CntAxis> struct squeeze_dims_impl {
 } // namespace detail
 
 template <Dimensions TDims, FixedDimensions TAxes>
-constexpr auto squeeze_dims(const TDims &dims, const TAxes &) noexcept {
+NTT_ALWAYS_INLINE constexpr auto squeeze_dims(const TDims &dims,
+                                              const TAxes &) noexcept {
     constexpr auto positive_axes_v = positive_axes(TAxes{}, TDims::rank());
     return dims.aggregate(empty_dims_alike_t<TDims>{},
                           [&](auto result, auto dim, auto axis) {
@@ -689,8 +698,9 @@ constexpr auto squeeze_dims(const TDims &dims, const TAxes &) noexcept {
 }
 
 template <Dimensions TDims, FixedDimensions TAxes, Dimension TDim>
-constexpr auto unsqueeze_dims(const TDims &dims, const TAxes &,
-                              const TDim &insert_dim) noexcept {
+NTT_ALWAYS_INLINE constexpr auto
+unsqueeze_dims(const TDims &dims, const TAxes &,
+               const TDim &insert_dim) noexcept {
     constexpr auto positive_axes_v = positive_axes(TAxes{}, TDims::rank());
     return make_zeros_shape<TDims::rank() + TAxes::rank()>().aggregate(
         std::make_tuple(empty_dims_alike_t<TDims>{}, dim_zero),
@@ -707,8 +717,9 @@ constexpr auto unsqueeze_dims(const TDims &dims, const TAxes &,
 }
 
 template <Dimensions TDimsA, Dimensions TDimsB>
-constexpr bool operator==([[maybe_unused]] const TDimsA &lhs,
-                          [[maybe_unused]] const TDimsB &rhs) noexcept {
+NTT_ALWAYS_INLINE constexpr bool
+operator==([[maybe_unused]] const TDimsA &lhs,
+           [[maybe_unused]] const TDimsB &rhs) noexcept {
     if constexpr (TDimsA::rank() != TDimsB::rank()) {
         return false;
     } else {
@@ -722,7 +733,8 @@ constexpr bool operator==([[maybe_unused]] const TDimsA &lhs,
 }
 
 template <Dimensions TIndex, Shape TShape>
-constexpr auto positive_index(const TIndex &index, const TShape &shape) {
+NTT_ALWAYS_INLINE constexpr auto positive_index(const TIndex &index,
+                                                const TShape &shape) {
     static_assert(TIndex::rank() == TShape::rank(),
                   "index and shape must have the same rank");
     return generate_shape<TIndex::rank()>([&index, &shape](auto axis) {
@@ -731,7 +743,8 @@ constexpr auto positive_index(const TIndex &index, const TShape &shape) {
 }
 
 template <Dimensions TAxes, Dimension TExtent>
-constexpr auto positive_axes(const TAxes &axes, const TExtent &dim) {
+NTT_ALWAYS_INLINE constexpr auto positive_axes(const TAxes &axes,
+                                               const TExtent &dim) {
     return generate_shape<TAxes::rank()>(
         [&axes, &dim](auto axis) { return positive_index(axes[axis], dim); });
 }

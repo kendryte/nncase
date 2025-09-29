@@ -231,7 +231,7 @@ public static class Math
     /// <param name="lhs">Left operand.</param>
     /// <param name="rhs">Right operand.</param>
     /// <returns>Result expression.</returns>
-    public static Call MatMul(Expr lhs, Expr rhs) => new(new MatMul(DataTypes.Float32), lhs, rhs);
+    public static Call MatMul(Expr lhs, Expr rhs) => new(new MatMul(DataTypes.Float32), lhs, rhs, None.Default);
 
     /// <summary>
     /// Call matMul.
@@ -239,8 +239,9 @@ public static class Math
     /// <param name="lhs">Left operand.</param>
     /// <param name="rhs">Right operand.</param>
     /// <param name="outDataType">outDataType. </param>
+    /// <param name="accOp">accOp. </param>
     /// <returns>Result expression.</returns>
-    public static Call MatMul(Expr lhs, Expr rhs, DataType outDataType) => new(new MatMul(outDataType), lhs, rhs);
+    public static Call MatMul(Expr lhs, Expr rhs, DataType outDataType, Expr? accOp = null) => new(new MatMul(outDataType), lhs, rhs, accOp ?? None.Default);
 
     /// <summary>
     /// Call max.

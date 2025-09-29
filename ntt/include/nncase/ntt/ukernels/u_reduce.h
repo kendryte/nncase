@@ -51,6 +51,7 @@ template <reduce_op Op, class T, bool Arch> struct u_reduce {
             typename reduce_to_binary_type<Op>::template type<T, T>;
         using policy_t = u_reduce_policy<Op, T, Arch>;
         constexpr auto unroll = policy_t::unroll;
+        __asm__ volatile("" ::: "memory");
 
         if (count / unroll) {
             T temp[unroll];

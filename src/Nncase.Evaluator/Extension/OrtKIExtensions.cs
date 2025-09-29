@@ -61,37 +61,51 @@ public static class OrtKIExtensions
         return Tensor.From(tensor.DataType.ToDataType(), new TensorInitializerWithOrt(tensor), tensor.Shape);
     }
 
-    public static Tensor ToTensor(this OrtKISharp.Tensor tensor, TensorType tensorType)
-    {
-        if (tensorType.DType is VectorType or MaskVectorType)
-        {
-            throw new NotSupportedException("VectorType is not supported in OrtKISharp.Tensor.ToTensor with TensorType.");
-        }
-
-        var shape = tensorType.Shape.IsFixed ? (RankedShape)tensorType.Shape : tensor.Shape;
-        return Tensor.From(tensorType.DType, new TensorInitializerWithOrt(tensor), shape);
-    }
-
-    public static TensorValue ToValue(this OrtKISharp.Tensor tensor)
-    {
-        return tensor.ToTensor();
-    }
-
-    public static TensorValue ToValue(this OrtKISharp.Tensor tensor, DataType dataType) => dataType switch
+    public static Tensor ToTensor(this OrtKISharp.Tensor tensor, DataType dataType) => dataType switch
     {
         MaskVectorType maskVectorType => Tensor.From(
             maskVectorType,
             new TensorInitializerWithOrt(tensor),
             tensor.Shape.Take(tensor.Shape.Length - 1).ToArray()),
         VectorType vectorType => Tensor.From(
-            vectorType with { ElemType = tensor.DataType.ToDataType() },
+            vectorType with
+            {
+                ElemType = tensor.DataType.ToDataType() switch
+                {
+                    var ortDtype when ortDtype == vectorType.ElemType => vectorType.ElemType,
+                    var ortDtype when ortDtype != vectorType.ElemType && ortDtype.SizeInBytes == vectorType.ElemType.SizeInBytes => vectorType.ElemType,
+                    _ => throw new InvalidOperationException($"Cannot convert OrtKI tensor with data type {tensor.DataType.ToDataType()} to vector type with element type {vectorType.ElemType}."),
+                },
+            },
             new TensorInitializerWithOrt(tensor),
             tensor.Shape.Take(tensor.Shape.Length - vectorType.Lanes.Count).ToArray()).CastTo(vectorType),
-        PrimType primType => tensor.ToTensor().CastTo(primType),
+        PrimType primType => Tensor.From(
+            tensor.DataType.ToDataType() switch
+            {
+                var ortDtype when ortDtype == primType => primType,
+                var ortDtype when ortDtype != primType && ortDtype.SizeInBytes == primType.SizeInBytes => primType,
+                _ => throw new InvalidOperationException($"Cannot convert OrtKI tensor with data type {tensor.DataType.ToDataType()} to vector type with element type {primType}."),
+            },
+            new TensorInitializerWithOrt(tensor),
+            tensor.Shape),
         _ => throw new NotSupportedException(),
     };
 
-    public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor) => tensor.ElementType switch
+    public static Tensor ToTensor(this OrtKISharp.Tensor tensor, IRType? type) => type switch
+    {
+        DistributedType dt => ToTensor(tensor, dt.TensorType.DType),
+        TensorType t => ToTensor(tensor, t.DType),
+        null => tensor.ToTensor(),
+        _ => throw new ArgumentOutOfRangeException(nameof(type), "Unsupported IRType"),
+    };
+
+    public static TensorValue ToValue(this OrtKISharp.Tensor tensor) => new(tensor.ToTensor());
+
+    public static TensorValue ToValue(this OrtKISharp.Tensor tensor, IRType type) => new(tensor.ToTensor(type));
+
+    public static TensorValue ToValue(this OrtKISharp.Tensor tensor, DataType dataType) => new(tensor.ToTensor(dataType));
+
+    public static OrtKISharp.Tensor ToOrtTensor(this Tensor tensor, DataType? dataType = null) => (dataType ?? tensor.ElementType) switch
     {
         MaskVectorType vectorType => ToOrtTensor(tensor, OrtDataType.Bool, tensor.Dimensions.ToArray().Append(vectorType.Lanes).ToArray()),
         VectorType vectorType => ToOrtTensor(tensor, vectorType.ElemType.ToOrtType(), tensor.Dimensions.ToArray().Concat(vectorType.Lanes.Select(x => (long)x)).ToArray()),
@@ -128,6 +142,16 @@ public static class OrtKIExtensions
 
         throw new ArgumentOutOfRangeException("Unsupported OrtDataType: " + dt);
     }
+
+    public static DataType Legalize(this DataType from, params (PrimType, PrimType)[] pairs) => Legalize(from, pairs.ToDictionary(t => t.Item1, t => t.Item2));
+
+    public static DataType Legalize(this DataType from, Dictionary<PrimType, PrimType> dict) => from switch
+    {
+        VectorType vt => vt with { ElemType = vt.ElemType.Legalize(dict) },
+        PrimType pt => dict.TryGetValue(pt, out var newPt) ? newPt : pt,
+        MaskVectorType mv => mv,
+        _ => throw new InvalidOperationException($"Cannot convert data type {from}."),
+    };
 
     public static OrtKISharp.Tensor BroadcastTo(this OrtKISharp.Tensor tensor, long[] shape, OrtDataType dtype = OrtDataType.Float) => tensor + OrtKISharp.Tensor.Empty(shape, dtype);
 

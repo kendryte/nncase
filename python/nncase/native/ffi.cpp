@@ -112,6 +112,10 @@ PYBIND11_MODULE(_nncase, m) {
             "num_layers", py::overload_cast<>(&huggingface_options::num_layers),
             py::overload_cast<int32_t>(&huggingface_options::num_layers))
         .def_property(
+            "tensor_type",
+            py::overload_cast<>(&huggingface_options::tensor_type),
+            py::overload_cast<std::string>(&huggingface_options::tensor_type))
+        .def_property(
             "attention_backend",
             py::overload_cast<>(&huggingface_options::attention_backend),
             py::overload_cast<huggingface_attenion_backend>(
@@ -493,6 +497,12 @@ PYBIND11_MODULE(_nncase, m) {
         .def("enable_profiling",
              [](interpreter &interp, uint8_t enable_profiling) {
                  interp.enable_profiling(enable_profiling);
+             })
+        .def("get_native_handle_by_module_kind",
+             [](interpreter &interp, std::string_view kind, uint32_t flags) {
+                 auto module =
+                     interp.find_module_by_kind(kind).unwrap_or_throw();
+                 return module->native_handle(flags).unwrap_or_throw();
              })
         .def("run",
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });

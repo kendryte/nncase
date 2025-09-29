@@ -16,8 +16,11 @@ public sealed class RoPEEvaluator : ITypeInferencer<RoPE>, IKernelInfoEvaluator<
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
-        var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length - 1)
-            .Append(new ValueRange<long>(context.BufferShapes[0][^1], int.MaxValue)).ToArray();
+        var multipliers = new[] {
+            new ValueRange<long>(1, int.MaxValue),
+            new ValueRange<long>(context.BufferShapes[0][^2], int.MaxValue),
+            new ValueRange<long>(1, int.MaxValue),
+        };
         var bufferInfos = new MicroKernelBufferInfo[context.BufferShapes.Length];
         var opt = (INTTTargetOptions)context.TargetOptions;
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);

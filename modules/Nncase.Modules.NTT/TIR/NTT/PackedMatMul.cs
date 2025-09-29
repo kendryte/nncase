@@ -14,6 +14,8 @@ public sealed partial class PackedMatMul : NTTKernelOp
 
     public static readonly ParameterInfo LoadC = new(typeof(PackedMatMul), 3, "loadC");
 
+    public static readonly ParameterInfo Scale = new(typeof(PackedMatMul), 4, "scale");
+
     public bool FusedReduce { get; }
 
     public override string DisplayProperty() => $"FusedReduce: {FusedReduce}";

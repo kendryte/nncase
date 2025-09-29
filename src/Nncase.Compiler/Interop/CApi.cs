@@ -52,6 +52,7 @@ public unsafe struct CApiMT
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputLogitsPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsOutputHiddenStatesPtr;
     public delegate* unmanaged<IntPtr, nuint, void> HuggingFaceOptionsNumLayersPtr;
+    public delegate* unmanaged<IntPtr, byte*, nuint, void> HuggingFaceOptionsTensorTypePtr;
     public delegate* unmanaged<IntPtr, byte> HuggingFaceOptionsGetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr, byte, void> HuggingFaceOptionsSetAttentionBackendPtr;
     public delegate* unmanaged<IntPtr, IntPtr, void> HuggingFaceOptionsSetConfigPtr;
@@ -182,6 +183,7 @@ public static unsafe class CApi
         mt->HuggingFaceOptionsOutputLogitsPtr = &HuggingFaceOptionsOutputLogits;
         mt->HuggingFaceOptionsOutputHiddenStatesPtr = &HuggingFaceOptionsOutputHiddenStates;
         mt->HuggingFaceOptionsNumLayersPtr = &HuggingFaceOptionsNumLayers;
+        mt->HuggingFaceOptionsTensorTypePtr = &HuggingFaceOptionsTensorType;
         mt->HuggingFaceOptionsGetAttentionBackendPtr = &HuggingFaceOptionsGetAttentionBackend;
         mt->HuggingFaceOptionsSetAttentionBackendPtr = &HuggingFaceOptionsSetAttentionBackend;
         mt->HuggingFaceOptionsSetConfigPtr = &HuggingFaceOptionsSetConfig;
@@ -398,6 +400,13 @@ public static unsafe class CApi
     private static void HuggingFaceOptionsNumLayers(IntPtr huggingFaceOptionsHandle, nuint numLayers)
     {
         Get<HuggingFaceOptions>(huggingFaceOptionsHandle).NumLayers = (int)numLayers;
+    }
+
+    [UnmanagedCallersOnly]
+    private static void HuggingFaceOptionsTensorType(IntPtr huggingFaceOptionsHandle, byte* tensorTypePtr, nuint tensorTypeLength)
+    {
+        var tensorType = ToString(tensorTypePtr, tensorTypeLength);
+        Get<HuggingFaceOptions>(huggingFaceOptionsHandle).TensorType = tensorType;
     }
 
     [UnmanagedCallersOnly]

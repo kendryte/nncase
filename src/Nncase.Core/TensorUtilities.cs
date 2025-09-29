@@ -457,6 +457,23 @@ public static class TensorUtilities
         return size * elementSize;
     }
 
+    public static Dimension GetMaxSize(Shape shape, ReadOnlySpan<long> strides, int elementSize)
+    {
+        long max_stride = 1;
+        Dimension max_shape = Dimension.One;
+        for (int i = 0; i < strides.Length; i++)
+        {
+            if ((shape[i] == Dimension.One ? 0 : strides[i]) >= max_stride)
+            {
+                max_stride = strides[i];
+                max_shape = shape[i];
+            }
+        }
+
+        Dimension size = max_stride * max_shape;
+        return size * elementSize;
+    }
+
     public static (long MaxSize, Dimension[] Strides) GetTensorMaxSizeAndStrides(TensorType tensorType, DistributedType? distributedType)
     {
         long[] dims;
@@ -470,7 +487,7 @@ public static class TensorUtilities
         {
             var dividedType = DistributedUtility.GetDividedTensorType(distributedType);
             dims = CompilerServices.GetMaxShape(dividedType.Shape);
-            strides = GetDefaultStrides(dividedType.Shape, dims);
+            strides = GetDefaultStrides(distributedType.TensorType.Shape, dims);
         }
 
         var maxSize = GetProduct(dims) * tensorType.DType.SizeInBytes;

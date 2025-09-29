@@ -45,6 +45,7 @@ typedef struct {
     uint32_t local_data_align;
     uint64_t output_pool_size;
     uint64_t local_data_pool_size;
+    uint64_t block_local_data_pool_size;
 } kernel_desc_header;
 
 cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
@@ -71,16 +72,27 @@ result<void> cpu_runtime_function::initialize_core(
             try_set(this->output_buffer_,
                     output_buffer.template as<host_buffer_t>());
 
-            // Allocate local datas
+            // Allocate thread local datas
             options.alignment = header.local_data_align;
             auto blocks_count = module().cdim() * module().bdim();
-            local_datas_.resize(blocks_count);
+            thread_local_datas_.resize(blocks_count);
             for (size_t i = 0; i < blocks_count; i++) {
                 try_var(buffer,
                         buffer_allocator::host().allocate(
                             header.local_data_pool_size * module().tdim(),
                             options));
-                try_set(local_datas_[i], buffer.template as<host_buffer_t>());
+                try_set(thread_local_datas_[i],
+                        buffer.template as<host_buffer_t>());
+            }
+
+            // Allocate block local datas
+            block_local_datas_.resize(blocks_count);
+            for (size_t i = 0; i < blocks_count; i++) {
+                try_var(buffer,
+                        buffer_allocator::host().allocate(
+                            header.block_local_data_pool_size, options));
+                try_set(block_local_datas_[i],
+                        buffer.template as<host_buffer_t>());
             }
             return ok();
         }));

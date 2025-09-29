@@ -48,6 +48,7 @@ public class GetPositionIdsEvaluator : IEvaluator<GetPositionIds>, ITypeInferenc
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(returnType),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(returnType, 8),
         };
     }
 

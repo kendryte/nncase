@@ -53,7 +53,7 @@
     static element_type_ get_element(const native_type &array,                 \
                                      const TIndex &index) noexcept {           \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
-        return cast_type(array)[index[dim_zero]];                              \
+        return cast_type(array)[(size_t)index[dim_zero]];                      \
     }                                                                          \
                                                                                \
     template <Dimensions TIndex>                                               \
@@ -61,29 +61,24 @@
                             element_type_ value) noexcept {                    \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
         auto casted_array = cast_type(array);                                  \
-        casted_array[index[dim_zero]] = value;                                 \
+        casted_array[(size_t)index[dim_zero]] = value;                         \
         array = (native_type)casted_array;                                     \
     }
 
-#define NTT_DEFINE_NATIVE_VECTOR_DEFAULT_BITCAST(                              \
-    element_type_, native_type, cast_type, bitcast_type, lanes)                \
+#define NTT_DEFINE_NATIVE_VECTOR_DEFAULT_BITCAST(element_type_, native_type,   \
+                                                 bitcast_type, lanes)          \
     NTT_BEGIN_DEFINE_NATIVE_VECTOR(element_type_, native_type, lanes)          \
                                                                                \
     template <Dimensions TIndex>                                               \
     static element_type_ get_element(const native_type &array,                 \
                                      const TIndex &index) noexcept {           \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
-        const auto casted_array = (cast_type)array;                            \
-        return std::bit_cast<element_type_>(                                   \
-            casted_array[(size_t)index[dim_zero]]);                            \
+        return std::bit_cast<element_type_>(array[(size_t)index[dim_zero]]);   \
     }                                                                          \
                                                                                \
     template <Dimensions TIndex>                                               \
     static void set_element(native_type &array, const TIndex &index,           \
                             element_type_ value) noexcept {                    \
         static_assert(TIndex::rank() == 1, "index must be 1D");                \
-        auto casted_array = (cast_type)array;                                  \
-        casted_array[(size_t)index[dim_zero]] =                                \
-            std::bit_cast<bitcast_type>(value);                                \
-        array = (native_type)casted_array;                                     \
+        array[(size_t)index[dim_zero]] = std::bit_cast<bitcast_type>(value);   \
     }

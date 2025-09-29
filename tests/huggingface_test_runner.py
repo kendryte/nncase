@@ -194,6 +194,10 @@ class HuggingfaceTestRunner(TestRunner):
         return outputs
 
     def parse_model(self, model_path):
+        if self.cfg['huggingface_options']['tensor_type'] == "bfloat16":
+            raise RuntimeError(
+                f"Not support bfloat16 tensor type now (because of ort)! Just 'float16' or 'float32'.")
+
         config = AutoConfig.from_pretrained(model_path + "/config.json")
 
         if self.cfg['huggingface_options']['num_layers'] != -1:
@@ -240,6 +244,22 @@ class HuggingfaceTestRunner(TestRunner):
         self.cfg['huggingface_options']['config'] = self.kv_cache_config
 
         if hasattr(config, "quantization_config"):
+            try:
+                qcfg = config.quantization_config
+                if isinstance(qcfg, dict):
+                    if 'ignored_layers' in qcfg:
+                        qcfg['ignore'] = qcfg.pop('ignored_layers')
+                        print("[quantization_config] renamed 'ignored_layers' -> 'ignore'")
+                else:
+                    if hasattr(qcfg, 'ignored_layers') and not hasattr(qcfg, 'ignore'):
+                        setattr(qcfg, 'ignore', getattr(qcfg, 'ignored_layers'))
+                        try:
+                            delattr(qcfg, 'ignored_layers')
+                        except Exception:
+                            pass
+                        print("[quantization_config] attribute 'ignored_layers' renamed to 'ignore'")
+            except Exception as e:
+                print(f"[quantization_config] rename ignored_layers failed: {e}")
             dequantize_weights(model_path)
             delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(

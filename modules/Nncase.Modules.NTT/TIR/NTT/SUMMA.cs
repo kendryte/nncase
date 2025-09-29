@@ -14,6 +14,8 @@ public sealed partial class SUMMA : NTTKernelOp
 
     public static readonly ParameterInfo LoadC = new(typeof(SUMMA), 3, "loadC");
 
+    public static readonly ParameterInfo Scale = new(typeof(SUMMA), 4, "scale");
+
     public IRArray<int> LhsVectorizedAxes { get; }
 
     public IRArray<int> RhsVectorizedAxes { get; }

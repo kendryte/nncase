@@ -18,6 +18,7 @@
 #include "../tensor_ops.h"
 #include "../utility.h"
 #include "binary.h"
+#include "nncase/math.h"
 #include "nncase/ntt/shape.h"
 #include "unary.h"
 #include <algorithm>

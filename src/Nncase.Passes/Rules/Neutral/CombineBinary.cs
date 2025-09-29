@@ -86,6 +86,23 @@ public sealed partial class CombineClampMul : IRewriteRule
     }
 }
 
+[RuleGenerator]
+public sealed partial class CombineTwoBinaryMul : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsBinary(
+      "mul1",
+      "mul1Call",
+      op => op.BinaryOp == BinaryOp.Mul,
+      IsBinary("mul2", "mul2Call", op => op.BinaryOp == BinaryOp.Mul, IsWildcard("input1"), IsWildcard("input2")),
+      IsTensorConst("mul1Const") with { TypePattern = IsScalar() | HasShape([1]) });
+
+    private Expr? GetReplace(Expr input1, Expr input2, TensorConst mul1Const, Call mul1Call, Call mul2Call)
+    {
+        return Mul(Mul(input1, mul1Const), input2);
+    }
+}
+
 internal static class CombineClampUtility
 {
     public static Pattern GetInputPattern() => IsWildcard("input", x => x is not Const) with { TypePattern = HasDataType(DataTypes.Float32) };

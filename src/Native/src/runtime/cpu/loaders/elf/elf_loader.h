@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "elfload.h"
+#include <cstdint>
 #include <nncase/compiler_defs.h>
 #include <span>
 #include <string_view>
@@ -27,6 +28,7 @@ class elf_loader {
 
     void load(std::span<const std::byte> pe);
     void load_from_file(std::string_view path);
+    uintptr_t handle() const noexcept { return (uintptr_t)handle_; }
     void *entry() const noexcept;
 
   private:

@@ -26,14 +26,15 @@ using namespace nncase::ntt;
 namespace nncase::ntt {
 template <bool AccumulateC = false, bool TransposedA = false,
           bool TransposedB = false, ShardedTensor TLhs, ShardedTensor TRhs,
-          class TOut, FixedDimensions LhsVectorizedAxes,
+          class TOut, class TScale, FixedDimensions LhsVectorizedAxes,
           FixedDimensions LhsPadedNums, FixedDimensions RhsVectorizedAxes,
           FixedDimensions RhsPadedNums>
-void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-           [[maybe_unused]] LhsVectorizedAxes lhsVectorizedAxes = fixed_shape_v<>,
-           [[maybe_unused]] LhsPadedNums lhsPadedNums = fixed_shape_v<>,
-           [[maybe_unused]] RhsVectorizedAxes rhsVectorizedAxes = fixed_shape_v<>,
-           [[maybe_unused]] RhsPadedNums rhsPadedNums = fixed_shape_v<>) {
+void summa(
+    const TLhs &lhs, const TRhs &rhs, TOut &&output, const TScale &scale,
+    [[maybe_unused]] LhsVectorizedAxes lhsVectorizedAxes = fixed_shape_v<>,
+    [[maybe_unused]] LhsPadedNums lhsPadedNums = fixed_shape_v<>,
+    [[maybe_unused]] RhsVectorizedAxes rhsVectorizedAxes = fixed_shape_v<>,
+    [[maybe_unused]] RhsPadedNums rhsPadedNums = fixed_shape_v<>) {
     static_assert(TransposedA == false && TransposedB == false,
                   "not supported for now");
     using TLhsElem = typename TLhs::element_type;
@@ -93,12 +94,12 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
 
                 if (global_rhs_k == 0) {
                     ntt::matmul<AccumulateC, TransposedA, TransposedB>(
-                        A, B, C, lhsVectorizedAxes, lhsPadedNums, rhsVectorizedAxes,
-                        rhsPadedNums);
+                        A, B, C, scale, lhsVectorizedAxes, lhsPadedNums,
+                        rhsVectorizedAxes, rhsPadedNums);
                 } else {
                     ntt::matmul<true, TransposedA, TransposedB>(
-                        A, B, C, lhsVectorizedAxes, lhsPadedNums, rhsVectorizedAxes,
-                        rhsPadedNums);
+                        A, B, C, scale, lhsVectorizedAxes, lhsPadedNums,
+                        rhsVectorizedAxes, rhsPadedNums);
                 }
             }
         } else {
@@ -122,12 +123,12 @@ void summa(const TLhs &lhs, const TRhs &rhs, TOut &&output,
                 const auto B = B_remote.view(B_offset, B_shape);
                 if (global_lhs_k == 0) {
                     ntt::matmul<AccumulateC, TransposedA, TransposedB>(
-                        A, B, C, lhsVectorizedAxes, lhsPadedNums, rhsVectorizedAxes,
-                        rhsPadedNums);
+                        A, B, C, scale, lhsVectorizedAxes, lhsPadedNums,
+                        rhsVectorizedAxes, rhsPadedNums);
                 } else {
                     ntt::matmul<true, TransposedA, TransposedB>(
-                        A, B, C, lhsVectorizedAxes, lhsPadedNums, rhsVectorizedAxes,
-                        rhsPadedNums);
+                        A, B, C, scale, lhsVectorizedAxes, lhsPadedNums,
+                        rhsVectorizedAxes, rhsPadedNums);
                 }
             }
         }
