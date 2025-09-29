@@ -18,6 +18,9 @@
 #include <iostream>
 #include <type_traits>
 
+#if defined(__riscv) && defined(__riscv_vector)
+#include "nncase/ntt/arch/riscv64/u_transpose.h"
+#endif
 namespace nncase::ntt {
 namespace ukernels {
 template <Tensor TIn, class TOut, FixedDimensions TPerms, bool Arch>
@@ -231,9 +234,9 @@ template <Tensor TIn, class TOut, FixedDimensions TPerms, size_t Segments,
           size_t... Index>
     requires(bool(TIn::rank() == std::decay_t<TOut>::rank()) &&
              bool(TIn::rank() == TPerms::rank()))
-void u_transpose(const TIn &input, TOut &output, const TPerms &,
+void u_transpose(const TIn &input, TOut &output, [[maybe_unused]] const TPerms &tperms,
                  std::index_sequence<Index...>) {
-
+#ifndef __riscv_vector
     const std::array<size_t, Segments> dims_compressed =
         u_transpose_detail::compress_dimensions<TPerms, TIn, Segments>(input);
     constexpr std::array<size_t, Segments> perm_compressed =
@@ -242,12 +245,17 @@ void u_transpose(const TIn &input, TOut &output, const TPerms &,
         dims_compressed, perm_compressed);
 
     using TElem = typename TIn::element_type;
-
+    printf("%s <strides: in(%zu, %zu), out(%zu, %zu)\n", __FILE__,
+                    input.strides()[0], input.strides()[1],
+                    output.strides()[0], output.strides()[1]);
     auto compressed_input = make_tensor_view(
         input.elements(), make_shape(dims_compressed[Index]...));
-
+        
     auto compressed_output = make_tensor_view(
         output.elements(), make_shape(shape_transed[Index]...));
+    printf("%s <strides: in(%zu, %zu), out(%zu, %zu)\n", __FILE__,
+                    compressed_input.strides()[0], compressed_input.strides()[1],
+                    compressed_output.strides()[0], compressed_output.strides()[1]);
 
     using TInCompressed = decltype(compressed_input);
     using TOutCompressed = decltype(compressed_output);
@@ -257,6 +265,10 @@ void u_transpose(const TIn &input, TOut &output, const TPerms &,
         impl;
     impl(compressed_input, compressed_output,
          fixed_shape_v<perm_compressed[Index]...>);
+#else
+
+    ukernels::u_transpose_rvv_impl<TIn, TOut, TPerms>(input, output, tperms);
+#endif
 }
 
 } // namespace nncase::ntt

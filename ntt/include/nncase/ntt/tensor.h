@@ -152,7 +152,7 @@ class basic_tensor
     NTT_ALWAYS_INLINE constexpr basic_tensor(TShape shape,
                                              TStrides strides) noexcept
         : size_impl_type(std::move(shape), std::move(strides)),
-          storage_type(shape.length()) {}
+          storage_type(linear_size(shape, strides)) {}
 
     NTT_ALWAYS_INLINE constexpr basic_tensor(buffer_type buffer, TShape shape,
                                              TStrides strides) noexcept
