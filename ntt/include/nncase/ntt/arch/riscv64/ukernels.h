@@ -570,9 +570,10 @@ template <> struct u_cast_policy<true> {
                                   size_t count) noexcept {                                 \
             using policy_t = u_cast_policy<true>;                                          \
             constexpr auto unroll = policy_t::unroll;                                      \
+            constexpr auto half_unroll = unroll / 2;                                       \
                                                                                            \
             while (count / unroll) {                                                       \
-                constexpr auto lmul = 8;                                                   \
+                constexpr auto lmul = 4;                                                   \
                 constexpr auto vl_in = NTT_VLEN / IN_BW * lmul;                            \
                 constexpr auto vl_out = NTT_VLEN / OUT_BW * lmul;                          \
                                                                                            \
@@ -580,93 +581,125 @@ template <> struct u_cast_policy<true> {
                 prepend_lanes_t<vector<IN_ELEM, vl_in>, 2> in_temp1{};                     \
                                                                                            \
                 if (input_stride == 1) {                                                   \
-                    vfloat##IN_BW##m8_t in0;                                               \
-                    vfloat##IN_BW##m8_t in1;                                               \
-                    asm volatile("vl8re" #IN_BW ".v %0, (%1);"                             \
+                    vfloat##IN_BW##m4_t in0;                                               \
+                    vfloat##IN_BW##m4_t in1;                                               \
+                    vfloat##IN_BW##m4_t in2;                                               \
+                    vfloat##IN_BW##m4_t in3;                                               \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in0)                                              \
-                                 : "r"(input + 0 * unroll));                               \
-                    asm volatile("vl8re" #IN_BW ".v %0, (%1);"                             \
+                                 : "r"(input + 0 * half_unroll));                          \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in1)                                              \
-                                 : "r"(input + 1 * unroll));                               \
+                                 : "r"(input + 1 * half_unroll));                          \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in2)                                              \
+                                 : "r"(input + 2 * half_unroll));                          \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in3)                                              \
+                                 : "r"(input + 3 * half_unroll));                          \
                     in_temp0(0_dim) = in0;                                                 \
                     in_temp0(1_dim) = in1;                                                 \
+                    in_temp1(0_dim) = in2;                                                 \
+                    in_temp1(1_dim) = in3;                                                 \
                 } else {                                                                   \
-                    vfloat##IN_BW##m8_t in0;                                               \
-                    vfloat##IN_BW##m8_t in1;                                               \
-                    asm volatile("vl8re" #IN_BW ".v %0, (%1);"                             \
+                    vfloat##IN_BW##m4_t in0;                                               \
+                    vfloat##IN_BW##m4_t in1;                                               \
+                    vfloat##IN_BW##m4_t in2;                                               \
+                    vfloat##IN_BW##m4_t in3;                                               \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in0)                                              \
                                  : "r"(input));                                            \
-                    asm volatile("vl8re" #IN_BW ".v %0, (%1);"                             \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
                                  : "=vr"(in1)                                              \
                                  : "r"(input + input_stride));                             \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in2)                                              \
+                                 : "r"(input + half_unroll));                              \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in3)                                              \
+                                 : "r"(input + half_unroll + input_stride));               \
                                                                                            \
                     auto in0_t0 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in0, 0);                                                       \
                     auto in0_t1 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in0, 1);                                                       \
                     auto in0_t2 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in0, 2);                                                       \
                     auto in0_t3 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in0, 3);                                                       \
-                    auto in0_t4 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
-                            in0, 4);                                                       \
-                    auto in0_t5 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
-                            in0, 5);                                                       \
-                    auto in0_t6 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
-                            in0, 6);                                                       \
-                    auto in0_t7 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
-                            in0, 7);                                                       \
                                                                                            \
                     auto in1_t0 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in1, 0);                                                       \
                     auto in1_t1 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in1, 1);                                                       \
                     auto in1_t2 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in1, 2);                                                       \
                     auto in1_t3 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in1, 3);                                                       \
-                    auto in1_t4 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
-                            in1, 4);                                                       \
-                    auto in1_t5 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
-                            in1, 5);                                                       \
-                    auto in1_t6 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
-                            in1, 6);                                                       \
-                    auto in1_t7 =                                                          \
-                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m8_##IN_INTRINSIC_ELEM##m1(    \
-                            in1, 7);                                                       \
+                                                                                           \
+                    auto in2_t0 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in2, 0);                                                       \
+                    auto in2_t1 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in2, 1);                                                       \
+                    auto in2_t2 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in2, 2);                                                       \
+                    auto in2_t3 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in2, 3);                                                       \
+                                                                                           \
+                    auto in3_t0 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in3, 0);                                                       \
+                    auto in3_t1 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in3, 1);                                                       \
+                    auto in3_t2 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in3, 2);                                                       \
+                    auto in3_t3 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in3, 3);                                                       \
                                                                                            \
                     in_temp0(0_dim) =                                                      \
-                        __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m8( \
-                            in0_t0, in1_t0, in0_t1, in1_t1, in0_t2, in1_t2,                \
-                            in0_t3, in1_t3);                                               \
+                        __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m4( \
+                            in0_t0, in1_t0, in0_t1, in1_t1);                               \
                                                                                            \
                     in_temp0(1_dim) =                                                      \
-                        __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m8( \
-                            in0_t4, in1_t4, in0_t5, in1_t5, in0_t6, in1_t6,                \
-                            in0_t7, in1_t7);                                               \
+                        __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m4( \
+                            in0_t2, in1_t2, in0_t3, in1_t3);                               \
+                                                                                           \
+                    in_temp1(0_dim) =                                                      \
+                        __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m4( \
+                            in2_t0, in3_t0, in2_t1, in3_t1);                               \
+                                                                                           \
+                    in_temp1(1_dim) =                                                      \
+                        __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m4( \
+                            in2_t2, in3_t2, in2_t3, in3_t3);                               \
                 }                                                                          \
                                                                                            \
                 auto v16 = ntt::cast_elem<T2Elem>(in_temp0);                               \
+                auto v24 = ntt::cast_elem<T2Elem>(in_temp1);                               \
                 v16 = TPostOps<vector<OUT_ELEM, vl_out>>()(v16);                           \
+                v24 = TPostOps<vector<OUT_ELEM, vl_out>>()(v24);                           \
                                                                                            \
-                asm volatile("vs8r.v %0, (%1);" ::"vr"(                                    \
-                                 (v##OUT_INTRINSIC_ELEM##m8_t)v16),                        \
+                asm volatile("vs4r.v %0, (%1);" ::"vr"(                                    \
+                                 (v##OUT_INTRINSIC_ELEM##m4_t)v16),                        \
                              "r"(output)                                                   \
+                             : "memory");                                                  \
+                asm volatile("vs4r.v %0, (%1);" ::"vr"(                                    \
+                                 (v##OUT_INTRINSIC_ELEM##m4_t)v24),                        \
+                             "r"(output + half_unroll)                                     \
                              : "memory");                                                  \
                 output += unroll;                                                          \
                 input += ntt::where(input_stride == 1,                                     \
