@@ -140,7 +140,7 @@ void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
 
                 if constexpr (UseMean) {
                     for (auto i = 0; i < inner_size; i++) {
-                        auto val = (input_p[offset + i] - mean) * rsqrt;
+                        auto val = (ntt::cast_elem<float>(input_p[offset + i]) - mean) * rsqrt;
                         output_p[offset + i] =
                             ntt::mul_add(val, scale_p[i], bias_p[i]);
                     }
