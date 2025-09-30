@@ -71,7 +71,7 @@ void transpose_2D_fixed_shape_devectorized_strides() {
     auto ntt_output1 = ntt::make_tensor<float>(
         ntt::fixed_shape_v<org_dims[perm_h], org_dims[perm_w]>, ntt::make_strides(3 * w, s_w));
     NttTest::init_tensor(ntt_input, -10.f, 10.f);
-    NttTest::print_tensor(ntt_input, "input");
+    // NttTest::print_tensor(ntt_input, "input");
 
     // ntt
     ntt::transpose(ntt_input, ntt_output1, ntt::fixed_shape_v<perm_h, perm_w>);

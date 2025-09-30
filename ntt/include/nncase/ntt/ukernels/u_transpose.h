@@ -28,7 +28,7 @@ class u_transpose_impl {
         constexpr auto rank = TIn::rank();
         constexpr TPerms perm_const;
         constexpr auto pos_perms = positive_axes(perm_const, rank);
-        printf("%s, %d: \n", __FILE__, __LINE__);
+        // printf("%s, %d: \n", __FILE__, __LINE__);
         ntt::apply(input.shape(), [&](auto index) {
             auto out_index = generate_shape<rank>(
                 [&](auto i) { return index[pos_perms[i]]; });
@@ -244,7 +244,7 @@ bool is_segment_contiguous(const TIn &input, const segment &seg) {
         size_t axis_next = perms[seg.start + i + 1];
         
         // 连续性条件：stride[axis_cur] == shape[axis_next] * stride[axis_next]
-        printf("strides[axis_cur] != shape[axis_next] * strides[axis_next]: %zu != %zu * %zu\n", strides[axis_cur], shape[axis_next], strides[axis_next]);
+        // printf("strides[axis_cur] != shape[axis_next] * strides[axis_next]: %zu != %zu * %zu\n", strides[axis_cur], shape[axis_next], strides[axis_next]);
         if (strides[axis_cur] != shape[axis_next] * strides[axis_next]) {
             return false;
         }
@@ -327,13 +327,13 @@ void u_transpose(const TIn &input, TOut &output, const TPerms &perms,
     
     if (!can_compress) {
         // 无法压缩，使用通用实现
-        printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1], output.strides()[0], output.strides()[1]);
+        // printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1], output.strides()[0], output.strides()[1]);
         ukernels::u_transpose_impl<TIn, std::decay_t<TOut>, TPerms, true> impl;
         impl(input, output, perms);
         return;
     }
-    printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
-                       output.strides()[0], output.strides()[1]);
+    // printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
+    //                    output.strides()[0], output.strides()[1]);
     const std::array<size_t, Segments> dims_compressed =
         u_transpose_detail::compress_dimensions<TPerms, TIn, Segments>(input);
     constexpr std::array<size_t, Segments> perm_compressed =
@@ -348,8 +348,8 @@ void u_transpose(const TIn &input, TOut &output, const TPerms &perms,
 
     auto compressed_output = make_tensor_view(
         output.elements(), make_shape(shape_transed[Index]...));
-    printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, compressed_input.strides()[0], compressed_input.strides()[1],
-           compressed_output.strides()[0], compressed_output.strides()[1]);
+    // printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, compressed_input.strides()[0], compressed_input.strides()[1],
+    //        compressed_output.strides()[0], compressed_output.strides()[1]);
 
     using TInCompressed = decltype(compressed_input);
     using TOutCompressed = decltype(compressed_output);

@@ -31,7 +31,7 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
             InElem *vec_output_ptr = output.elements().data();
             if (input.strides()[1] == 1 && output.strides()[1] == 1 &&
                 input.strides()[0] == N && output.strides()[0] == M) {
-                printf("%s, %d: \n", __FILE__, __LINE__);
+                // printf("%s, %d: \n", __FILE__, __LINE__);
                 const intptr_t out_stride_bytes = sizeof(float);
 
                 for (size_t i = 0; i < M; ++i) {
@@ -56,8 +56,8 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
             float *out_base = output.elements().data();
             if (input.strides()[1] == 1 && output.strides()[1] == 1 &&
                 input.strides()[0] == N && output.strides()[0] == M) {
-                printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
-                       output.strides()[0], output.strides()[1]);
+                // printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
+                //        output.strides()[0], output.strides()[1]);
                 const intptr_t out_stride_bytes =
                     static_cast<intptr_t>(M * sizeof(float));
 
@@ -77,8 +77,8 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
                 }
                 return;
             } else {
-                printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
-                       output.strides()[0], output.strides()[1]);
+                // printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
+                //        output.strides()[0], output.strides()[1]);
                 const intptr_t out_stride_bytes =
                     static_cast<intptr_t>(output.strides()[0] * sizeof(float));
                 const intptr_t in_stride_bytes =
@@ -102,7 +102,7 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
             }
         }
 
-        printf("%s, %d: \n", __FILE__, __LINE__);
+        // printf("%s, %d: \n", __FILE__, __LINE__);
         for (size_t i = 0; i < input.shape()[0]; ++i)
             for (size_t j = 0; j < input.shape()[1]; ++j)
                 output(j, i) = input(i, j);

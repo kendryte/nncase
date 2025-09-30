@@ -55,13 +55,13 @@ void transpose(const TIn &input, TOut &&output,
 
     if (segments <= 4 /* && conti_dims_input == rank &&
         conti_dims_output == rank */) {
-        printf("%s, %d: \n", __FILE__, __LINE__);
-        printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
-                       output.strides()[0], output.strides()[1]);
+        // printf("%s, %d: \n", __FILE__, __LINE__);
+        // printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
+        //                output.strides()[0], output.strides()[1]);
         u_transpose<TIn, std::decay_t<TOut>, TPerms, segments>(
             input, output, perms, std::make_index_sequence<segments>{});
     } else {
-        printf("%s, %d: \n", __FILE__, __LINE__);
+        // printf("%s, %d: \n", __FILE__, __LINE__);
         constexpr auto pos_perms = positive_axes(perm_const, rank);
         const TInElem *NTT_RESTRICT input_p = input.elements().data();
         TOutElem *NTT_RESTRICT output_p = output.elements().data();
