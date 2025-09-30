@@ -59,6 +59,44 @@ TEST(Transpose2DFixedShapeUnVectorized, WH) {
 }
 
 template <size_t perm_h, size_t perm_w>
+void transpose_2D_fixed_shape_devectorized_strides() {
+    constexpr size_t h = 4;
+    constexpr size_t w = 6;
+    constexpr size_t s_h = 2;
+    constexpr size_t s_w = 1;
+    constexpr size_t org_dims[] = {h, w};
+
+    // init
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<h, w>, ntt::make_strides(s_h * w, s_w));
+    auto ntt_output1 = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<org_dims[perm_h], org_dims[perm_w]>, ntt::make_strides(3 * w, s_w));
+    NttTest::init_tensor(ntt_input, -10.f, 10.f);
+    NttTest::print_tensor(ntt_input, "input");
+
+    // ntt
+    ntt::transpose(ntt_input, ntt_output1, ntt::fixed_shape_v<perm_h, perm_w>);
+
+    // ort
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    int64_t perms[] = {perm_h, perm_w};
+    auto ort_output = ortki_Transpose(ort_input, perms, std::size(perms));
+
+    // compare
+    auto ntt_output2 = ntt::make_tensor<float>(
+        ntt::fixed_shape_v<org_dims[perm_h], org_dims[perm_w]>,  ntt::make_strides(4 * w, s_w));
+    NttTest::ort2ntt(ort_output, ntt_output2);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+}
+
+TEST(Transpose2DFixedShapeUnVectorizedWithStride, HW) {
+    transpose_2D_fixed_shape_devectorized_strides<0, 1>();
+}
+
+TEST(Transpose2DFixedShapeUnVectorizedWithStride, WH) {
+    transpose_2D_fixed_shape_devectorized_strides<1, 0>();
+}
+
+template <size_t perm_h, size_t perm_w>
 void transpose_2D_ranked_shape_devectorized() {
     constexpr size_t h = 16;
     constexpr size_t w = 32;

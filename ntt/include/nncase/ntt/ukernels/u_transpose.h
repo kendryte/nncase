@@ -225,22 +225,122 @@ trans_shape(const std::array<size_t, Rank> dims,
     return dims_transed;
 }
 
+template <Tensor TIn, FixedDimensions TPerms>
+bool is_segment_contiguous(const TIn &input, const segment &seg) {
+    constexpr TPerms perms;
+    auto shape = input.shape();
+    auto strides = input.strides();
+    
+    // 单个维度总是连续的
+    // if (seg.length <= 1) 
+    // {
+    //     printf("segment length <= 1, always contiguous\n");
+    //     return true;
+    // }
+    
+    // 检查segment内相邻维度是否满足连续性条件
+    for (size_t i = 0; i< seg.length; ++i) {
+        size_t axis_cur = perms[seg.start + i];
+        size_t axis_next = perms[seg.start + i + 1];
+        
+        // 连续性条件：stride[axis_cur] == shape[axis_next] * stride[axis_next]
+        printf("strides[axis_cur] != shape[axis_next] * strides[axis_next]: %zu != %zu * %zu\n", strides[axis_cur], shape[axis_next], strides[axis_next]);
+        if (strides[axis_cur] != shape[axis_next] * strides[axis_next]) {
+            return false;
+        }
+    }
+    return true;
+}
+
+// 修改后的compress_dimensions，考虑stride连续性
+template <FixedDimensions TPerms, Tensor TIn, size_t MaxRank>
+auto compress_dimensions_with_strides(const TIn &input) {
+    constexpr TPerms perms;
+    auto shape = input.shape();
+    auto strides = input.strides();
+    constexpr auto rank = TIn::rank();
+
+    constexpr std::array<segment, MaxRank> segments = get_segments<TPerms, MaxRank>();
+    
+    // 检查每个segment的连续性，决定实际的segment数量
+    size_t actual_segments = 0;
+    std::array<segment, MaxRank> valid_segments{};
+    std::array<size_t, MaxRank> compressed_dims{};
+    std::array<size_t, MaxRank> compressed_strides{};
+    
+    for (size_t i = 0; i < MaxRank && segments[i].length > 0; ++i) {
+        const auto &seg = segments[i];
+        
+        if (is_segment_contiguous<TIn, TPerms>(input, seg)) {
+            // segment连续，可以压缩
+            size_t compressed_dim = shape[perms[seg.start]];
+            size_t compressed_stride = strides[perms[seg.start + seg.length - 1]];
+            
+            for (size_t j = 1; j < seg.length; ++j) {
+                compressed_dim *= shape[perms[seg.start + j]];
+            }
+            
+            valid_segments[actual_segments] = {actual_segments, 1, seg.index};
+            compressed_dims[actual_segments] = compressed_dim;
+            compressed_strides[actual_segments] = compressed_stride;
+            actual_segments++;
+        } else {
+            // segment不连续，拆分为单独的维度
+            for (size_t j = 0; j < seg.length; ++j) {
+                size_t axis = perms[seg.start + j];
+                valid_segments[actual_segments] = {actual_segments, 1, actual_segments};
+                compressed_dims[actual_segments] = shape[axis];
+                compressed_strides[actual_segments] = strides[axis];
+                actual_segments++;
+            }
+        }
+    }
+    
+    struct CompressResult {
+        size_t segment_count;
+        std::array<size_t, MaxRank> dims;
+        std::array<size_t, MaxRank> strides;
+        std::array<segment, MaxRank> segments;
+    };
+    
+    return CompressResult{actual_segments, compressed_dims, compressed_strides, valid_segments};
+}
+
 } // namespace u_transpose_detail
 
 template <Tensor TIn, class TOut, FixedDimensions TPerms, size_t Segments,
           size_t... Index>
     requires(bool(TIn::rank() == std::decay_t<TOut>::rank()) &&
              bool(TIn::rank() == TPerms::rank()))
-void u_transpose(const TIn &input, TOut &output, const TPerms &,
+void u_transpose(const TIn &input, TOut &output, const TPerms &perms,
                  std::index_sequence<Index...>) {
-
+    // 检查是否所有segment都连续，决定是否可以使用压缩优化
+    constexpr std::array<u_transpose_detail::segment, Segments> segments =
+        u_transpose_detail::get_segments<TPerms, Segments>();
+    
+    bool can_compress = true;
+    for (size_t i = 0; i < Segments && can_compress; ++i) {
+        if (!u_transpose_detail::is_segment_contiguous<TIn, TPerms>(input, segments[i])) {
+            can_compress = false;
+        }
+    }
+    
+    if (!can_compress) {
+        // 无法压缩，使用通用实现
+        printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1], output.strides()[0], output.strides()[1]);
+        ukernels::u_transpose_impl<TIn, std::decay_t<TOut>, TPerms, true> impl;
+        impl(input, output, perms);
+        return;
+    }
+    printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
+                       output.strides()[0], output.strides()[1]);
     const std::array<size_t, Segments> dims_compressed =
         u_transpose_detail::compress_dimensions<TPerms, TIn, Segments>(input);
     constexpr std::array<size_t, Segments> perm_compressed =
         u_transpose_detail::compress_perm<TPerms, Segments>();
     auto shape_transed = u_transpose_detail::trans_shape<Segments>(
         dims_compressed, perm_compressed);
-
+        
     using TElem = typename TIn::element_type;
 
     auto compressed_input = make_tensor_view(
@@ -248,6 +348,8 @@ void u_transpose(const TIn &input, TOut &output, const TPerms &,
 
     auto compressed_output = make_tensor_view(
         output.elements(), make_shape(shape_transed[Index]...));
+    printf("%s, %d\n <stride: in[%zu, %zu], out[%zu, %zu]>\n", __FILE__, __LINE__, compressed_input.strides()[0], compressed_input.strides()[1],
+           compressed_output.strides()[0], compressed_output.strides()[1]);
 
     using TInCompressed = decltype(compressed_input);
     using TOutCompressed = decltype(compressed_output);

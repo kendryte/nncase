@@ -45,17 +45,19 @@ void transpose(const TIn &input, TOut &&output,
     using TOutElem = std::decay_t<TOut>::element_type;
 
     constexpr auto rank = TIn::rank();
-    const auto conti_dims_input =
+    [[maybe_unused]] const auto conti_dims_input =
         contiguous_dims(input.shape(), input.strides());
-    const auto conti_dims_output =
+    [[maybe_unused]] const auto conti_dims_output =
         contiguous_dims(output.shape(), output.strides());
 
     constexpr TPerms perm_const;
     constexpr auto segments = transpose_detail::segments_cnt(perm_const);
 
-    if (segments <= 4 && conti_dims_input == rank &&
-        conti_dims_output == rank) {
+    if (segments <= 4 /* && conti_dims_input == rank &&
+        conti_dims_output == rank */) {
         printf("%s, %d: \n", __FILE__, __LINE__);
+        printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
+                       output.strides()[0], output.strides()[1]);
         u_transpose<TIn, std::decay_t<TOut>, TPerms, segments>(
             input, output, perms, std::make_index_sequence<segments>{});
     } else {

@@ -31,6 +31,7 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
             InElem *vec_output_ptr = output.elements().data();
             if (input.strides()[1] == 1 && output.strides()[1] == 1 &&
                 input.strides()[0] == N && output.strides()[0] == M) {
+                printf("%s, %d: \n", __FILE__, __LINE__);
                 const intptr_t out_stride_bytes = sizeof(float);
 
                 for (size_t i = 0; i < M; ++i) {
@@ -55,6 +56,8 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
             float *out_base = output.elements().data();
             if (input.strides()[1] == 1 && output.strides()[1] == 1 &&
                 input.strides()[0] == N && output.strides()[0] == M) {
+                printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
+                       output.strides()[0], output.strides()[1]);
                 const intptr_t out_stride_bytes =
                     static_cast<intptr_t>(M * sizeof(float));
 
@@ -74,19 +77,21 @@ class u_transpose_impl<TIn, TOut, fixed_shape_t<1, 0>, true> {
                 }
                 return;
             } else {
+                printf("%s, %d\n <stride: %zu, %zu, %zu, %zu>\n", __FILE__, __LINE__, input.strides()[0], input.strides()[1],
+                       output.strides()[0], output.strides()[1]);
                 const intptr_t out_stride_bytes =
-                    static_cast<intptr_t>(output.stride()[1] * sizeof(float));
+                    static_cast<intptr_t>(output.strides()[0] * sizeof(float));
                 const intptr_t in_stride_bytes =
-                    static_cast<intptr_t>(input.stride()[1] * sizeof(float));
+                    static_cast<intptr_t>(input.strides()[1] * sizeof(float));
                 for (size_t i = 0; i < M; ++i) {
-                    const float *row = in_base + i * N;
-                    float *col_dst = out_base + i * output.stride()[0];
+                    const float *row = in_base + i * input.strides()[0];
+                    // float *col_dst = out_base;
                     size_t remain = N;
                     size_t j = 0;
                     while (remain) {
                         size_t vl = __riscv_vsetvl_e32m4(remain);
                         vfloat32m4_t v = __riscv_vlse32_v_f32m4(row + j, in_stride_bytes, vl);
-                        col_dst = col_dst + j * output.stride()[1];
+                        auto col_dst = out_base + j * output.strides()[0] + i;
                         __riscv_vsse32_v_f32m4(col_dst, out_stride_bytes, v,
                                                vl);
                         j += vl;
