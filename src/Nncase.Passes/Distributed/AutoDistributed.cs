@@ -537,7 +537,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         {
             var tensorType = (TensorType)calls.First().Call.CheckedType;
             calls = calls.Where(call => call.Call.CheckedType is DistributedType).Concat(GetLeafCandidateDistTypes(tensorType, Placements, _moduleKind, TargetOptions)
-                .Select(dt => ((Expr)IR.F.NN.GetPositionIds((Dimension)tempArgs[0], (Expr)tempArgs[1], dt.AxisPolicies, dt.Placement), new[] { true, true })));
+                .Where(dt => dt.AxisPolicies == new[] { SBPSplit.B }).Select(dt => ((Expr)IR.F.NN.GetPositionIds((Dimension)tempArgs[0], (Expr)tempArgs[1], dt.AxisPolicies, dt.Placement), new[] { true, true })));
         }
 
         return calls;

@@ -42,6 +42,7 @@ void get_position_ids(TKVCache &&kv_cache_tensor, TOut output,
         size_t seq_len = kv_cache.seq_len(seq_id);
         auto query_len = seq_len - context_len;
         auto query_end_loc = query_start_loc + query_len;
+        printf("context_len=%d, seq_len=%d, query_len=%d, query_start_loc=%d, query_end_loc=%d\n", context_len, seq_len, query_len, query_start_loc, query_end_loc);
         if (query_start_loc >= global_end) {
             return;
         }
