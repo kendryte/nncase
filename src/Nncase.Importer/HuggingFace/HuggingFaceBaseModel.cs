@@ -293,9 +293,15 @@ public abstract class HuggingFaceModel
 
     public virtual Call LLMLayerNorm(Expr hiddenStates, string layerName)
     {
+        // originType->fp32->dolayernorm->origintype
+        // fit layernorm partten 5
         var originDtype = hiddenStates.CheckedDataType;
-        var weight = GetWeight($"{layerName}")!.CastTo(originDtype);
-        var bias = Tensor.Zeros(originDtype, weight.Dimensions);
+        hiddenStates = IR.F.Tensors.Cast(hiddenStates, DataTypes.Float32);
+
+        Expr weight = GetWeight($"{layerName}")!;
+
+        weight = IR.F.Tensors.Cast(weight, DataTypes.Float32);
+        var bias = Tensor.FromScalar(0f, (RankedShape)weight.CheckedShape);
         int axis = -1;
 
         float eps = 1e-6F;
@@ -304,7 +310,7 @@ public abstract class HuggingFaceModel
             eps = (float)Config.GetNestedValue<double>("rms_norm_eps");
         }
 
-        return IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false);
+        return IR.F.Tensors.Cast(IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false), originDtype);
     }
 
     public virtual Call Linear(Expr expr, Tensor weight, Tensor? bias = null, Tensor? scaleIf = null, Tensor? scaleW = null, string layerName = "")
