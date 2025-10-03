@@ -12,7 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/runtime/model.h"
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <nncase/runtime/char_array_stream.h>
 #include <nncase/runtime/dbg.h>
@@ -236,6 +238,20 @@ result<void> interpreter::run() noexcept {
 result<runtime_module *> interpreter::find_module_by_id(size_t index) noexcept {
     CHECK_WITH_ERR(index < modules_.size(), std::errc::result_out_of_range);
     return ok(modules_[index].get());
+}
+
+result<runtime_module *>
+interpreter::find_module_by_kind(std::string_view kind) noexcept {
+    auto it =
+        std::find_if(modules_.begin(), modules_.end(),
+                     [&kind](const std::unique_ptr<runtime_module> &p) {
+                         return std::strncmp(p->kind().data(), kind.data(),
+                                             MAX_MODULE_KIND_LENGTH) == 0;
+                     });
+    if (it == modules_.end()) {
+        return err(std::errc::result_out_of_range);
+    }
+    return ok(it->get());
 }
 
 result<size_t> interpreter::find_id_by_module(runtime_module *module) noexcept {

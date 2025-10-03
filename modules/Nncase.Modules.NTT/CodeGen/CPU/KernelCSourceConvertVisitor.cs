@@ -27,7 +27,7 @@ namespace Nncase.CodeGen.NTT;
 /// </summary>
 internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisposable
 {
-    private readonly HashSet<string> _excludedVars = new() { "data" };
+    private readonly HashSet<string> _excludedVars = new() { "data", "block_local_data" };
     private readonly StringBuilder _kernelBuilder;
     private readonly HashSet<TIR.PrimFunction> _refFuncs;
     private readonly HashSet<TIR.Buffer> _declaredBuffers = new(ReferenceEqualityComparer.Instance);
@@ -92,7 +92,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         var paramsExcluded = VisitEntry.Parameters.ToArray().OfType<IVar>().Where(x => !_excludedVars.Contains(x.Name)).ToArray();
         var templateHeader = TensorParams.Length == 0 ? string.Empty : $"template<{string.Join(", ", Enumerable.Range(0, TensorParams.Length).Select(x => $"class T{x}"))}>" + Environment.NewLine;
         var ctype = templateHeader +
-            $"void {VisitEntry.Name}({string.Concat(paramsExcluded.Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *thread_local_rdata, const std::byte *block_local_rdata, std::byte *data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
+            $"void {VisitEntry.Name}({string.Concat(paramsExcluded.Select(Visit).Select(s => $"{s.Type} {s.Name}, ").ToArray())}const std::byte *rdata, const std::byte *thread_local_rdata, const std::byte *block_local_rdata, std::byte *thread_local_data, std::byte *block_local_data, std::byte *output, nncase::ntt::runtime::thread_inout_desc *const output_descs)";
         return new(
             Declare: ctype + ";\n",
             Kernel: CSourceBuiltn.MakeKernel(ctype, _kernelBuilder.ToString()),
@@ -159,6 +159,20 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         return symbol;
     }
 
+    protected override CSymbol VisitFusion(Fusion fusion)
+    {
+        if (_exprMemo.TryGetValue(fusion, out var symbol))
+        {
+            return symbol;
+        }
+
+        string type = string.Empty;
+        string str = fusion.Name;
+        symbol = new(type, str);
+        _exprMemo.Add(fusion, symbol);
+        return symbol;
+    }
+
     /// <inheritdoc/>
     protected override CSymbol VisitPhysicalBuffer(PhysicalBuffer expr)
     {
@@ -173,8 +187,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             (MemoryLocation.Rdata, 0) => "rdata",
             (MemoryLocation.ThreadLocalRdata, 0) => "thread_local_rdata",
             (MemoryLocation.BlockLocalRdata, 0) => "block_local_rdata",
-            (MemoryLocation.Data, 0) => "data",
-            (MemoryLocation.Data, 1) => "data",
+            (MemoryLocation.Data, 0) => "thread_local_data",
+            (MemoryLocation.Data, 1) => "thread_local_data",
+            (MemoryLocation.BlockLocalData, 0) => "block_local_data",
             (MemoryLocation.Output, 0) => "output",
             _ => throw new NotSupportedException($"{expr.Location}, {expr.Hierarchy}"),
         };
@@ -214,17 +229,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         var buffer = Visit(expr.Buffer);
         var start = Visit(expr.Start);
 
-        string name;
-        if (expr.Start is DimConst && expr.Size is DimConst)
-        {
-            var spanSize = (ulong)expr.Size.FixedValue;
-            name = $"{buffer.Name}.subspan<{start.Name}, {spanSize}>()";
-        }
-        else
-        {
-            var spanSize = Visit(expr.Size).Name;
-            name = $"{buffer.Name}.subspan({start.Name}, {spanSize})";
-        }
+        var spanSize = Visit(expr.Size).Name;
+        var name = $"make_subspan({buffer.Name}, {start.Name}, {spanSize})";
 
         symbol = new(start.Type, name);
         _exprMemo.Add(expr, symbol);
@@ -283,6 +289,12 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
             IndentScope.Writer.Write($"auto start_{CallCount} = get_ms_time();\n");
 #endif
             var args = expr.Arguments.ToArray();
+            if (args.Any(x => x is TIR.Buffer { MemSpan: { Buffer: { Location: MemoryLocation.BlockLocalData } } }))
+            {
+                // Ensure all threads reach this point before a kernel using BlockLocalData
+                WriteIndWithProfiler($"ntt::distributed::topology_synchronize<ntt::distributed::topology::thread>();\n");
+            }
+
             switch (kop)
             {
                 case TIR.NTT.Unary unary:
@@ -403,10 +415,14 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
                     break;
                 case TIR.NTT.SUMMA summa:
-                    var rdKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => i >= TargetOptions.HierarchyNames.Length - 2 ? "r" + TargetOptions.HierarchyNames[i] : string.Empty + TargetOptions.HierarchyNames[i]));
-                    IndentScope.Writer.IndWrite($"{{tac::detail::tensor_reduce_sync_impl<reduce_op::sum, {rdKind}> impl; impl.reduce_group_sync();\n");
-                    IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, fixed_shape_v<{string.Join(",", summa.LhsVectorizedAxes)}>, fixed_shape_v<>, fixed_shape_v<{string.Join(",", summa.RhsVectorizedAxes)}>, fixed_shape_v<>);\n");
-                    IndentScope.Writer.IndWrite($"impl.reduce_group_sync();}}\n");
+                    {
+                        var scale = Visit(args[3]).Name;
+                        var rdKind = "tar::reduce_kind::" + string.Join("_", Enumerable.Range(0, TargetOptions.HierarchyNames.Length).Select(i => i >= TargetOptions.HierarchyNames.Length - 2 ? "r" + TargetOptions.HierarchyNames[i] : string.Empty + TargetOptions.HierarchyNames[i]));
+                        IndentScope.Writer.IndWrite($"{{tac::detail::tensor_reduce_sync_impl<reduce_op::sum, {rdKind}> impl; impl.reduce_group_sync();\n");
+                        IndentScope.Writer.IndWrite($"summa<false>({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: false).Name}, {VisitBuffer(args[2], local: false).Name}, {scale}, fixed_shape_v<{string.Join(",", summa.LhsVectorizedAxes)}>, fixed_shape_v<>, fixed_shape_v<{string.Join(",", summa.RhsVectorizedAxes)}>, fixed_shape_v<>);\n");
+                        IndentScope.Writer.IndWrite($"impl.reduce_group_sync();}}\n");
+                    }
+
                     break;
                 case TIR.NTT.PackedMatMul matmul:
                     {
@@ -426,7 +442,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
                     break;
                 case TIR.Memcopy copy:
-                    WriteWithProfiler($"tensor_copy({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");
+                    WriteWithProfiler($"tensor_copy_sync({VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[0], local: true).Name});\n");
                     break;
                 case TIR.NTT.Gather gather:
                     {
@@ -535,6 +551,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.GetItem getItem:
                     IndentScope.Writer.Write($"get_item({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitDimOrShape(args[1]).Name});\n");
                     break;
+                case TIR.NTT.GetPositionIds getPositionIds:
+                    WriteIndWithProfiler($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {KernelUtility.ShardingToC(getPositionIds.DistributedType)}, {Visit(getPositionIds.DistributedType.TensorType.Shape).Name});\n");
+                    break;
                 case TIR.NTT.Stack stack:
                     IndentScope.Writer.Write($"stack<{stack.Axis}>(std::make_tuple({string.Join(",", args.SkipLast(1).Select(x => VisitBuffer(x, local: true)).Select(s => s.Name))}), {VisitBuffer(args[^1], local: true).Name});\n");
                     break;
@@ -562,8 +581,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.PagedAttention pagedAttention:
                     WriteIndWithProfiler($"paged_attention({VisitBuffer(args[0], local: false).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {pagedAttention.LayerId}, {VisitBuffer(args[4], local: true).Name}, {pagedAttention.Layout.ToC()});\n");
                     break;
-                case TIR.NTT.GetPositionIds getPositionIds:
-                    WriteIndWithProfiler($"get_position_ids({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: false).Name});\n");
+                case TIR.NTT.SynchronizeThreads:
+                    WriteIndWithProfiler($"ntt::distributed::topology_synchronize<ntt::distributed::topology::thread>();\n");
                     break;
                 default:
                     throw new NotSupportedException(kop.ToString());
@@ -590,7 +609,11 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                     var buffer = VisitBuffer(b, local: true);
                     if (b.Name.StartsWith("data_"))
                     {
-                        dataName = $"rdata, thread_local_rdata, block_local_rdata, (std::byte *){buffer.Name}.buffer().data(), output, output_descs";
+                        dataName = $"rdata, thread_local_rdata, block_local_rdata, (std::byte *){buffer.Name}.buffer().data(), <block_local_data>, output, output_descs";
+                    }
+                    else if (b.Name.StartsWith("block_local_data_"))
+                    {
+                        dataName = dataName!.Replace("<block_local_data>", $"(std::byte *){buffer.Name}.buffer().data()", StringComparison.Ordinal);
                     }
                     else
                     {

@@ -41,29 +41,29 @@ public partial class NTT
         return new Call(new TIR.NTT.Unary(unaryOp), input, output);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
     {
-        return new Call(new Matmul(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC);
+        return new Call(new Matmul(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC, scale);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC)
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale)
     {
-        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC);
+        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC, scale);
     }
 
-    public static Call PackedMatMul(Expr lhs, Expr rhs, Expr output, Expr loadC, bool fusedReduce = false)
+    public static Call PackedMatMul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, bool fusedReduce = false)
     {
-        return new Call(new PackedMatMul(fusedReduce), lhs, rhs, output, loadC);
+        return new Call(new PackedMatMul(fusedReduce), lhs, rhs, output, loadC, scale);
     }
 
-    public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false)
+    public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false)
     {
-        return new Call(new SUMMA(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB), lhs, rhs, output, loadC);
+        return new Call(new SUMMA(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB), lhs, rhs, output, loadC, scale);
     }
 
-    public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC)
+    public static Call SUMMA(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale)
     {
-        return new Call(new SUMMA(new IRArray<int>(), new IRArray<int>(), false, false), lhs, rhs, output, loadC);
+        return new Call(new SUMMA(new IRArray<int>(), new IRArray<int>(), false, false), lhs, rhs, output, loadC, scale);
     }
 
     public static Expr Pack(Expr input, Expr output, IRArray<int> lanes, IRArray<int> axes)
@@ -203,6 +203,11 @@ public partial class NTT
         return new Call(new TIR.NTT.Cast(newType, castMode, vectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : vectorizeAxes), input, output, postOps ?? None.Default);
     }
 
+    public static Call SynchronizeThreads()
+    {
+        return new Call(new TIR.NTT.SynchronizeThreads());
+    }
+
     public static Call Where(Expr cond, Expr x, Expr y, Expr output)
     {
         return new Call(new TIR.NTT.Where(), cond, x, y, output);
@@ -248,8 +253,8 @@ public partial class NTT
         return new Call(new TIR.NTT.Range(), begin, end, step, ret);
     }
 
-    public static Expr GetPositionIds(Expr kvCache, Expr ret)
+    public static Expr GetPositionIds(Expr kvCache, Expr ret, DistributedType distributedType)
     {
-        return new Call(new TIR.NTT.GetPositionIds(), kvCache, ret);
+        return new Call(new TIR.NTT.GetPositionIds(distributedType), kvCache, ret);
     }
 }

@@ -156,6 +156,7 @@ internal sealed class LinkableModule : ILinkableModule
                     primFunction: (TIR.PrimFunction)mainFunc.SourceFunction,
                     dataAlign: scheduleResult.DataAlign,
                     dataUsage: scheduleResult.DataUsage,
+                    blockLocalDataPoolSize: scheduleResult.BlockLocalDataPoolSize,
                     rdataPoolSize: memoryPoolDesc.RdataPoolSize,
                     threadLocalRdataPoolSize: memoryPoolDesc.ThreadLocalRdataPoolSize,
                     blockLocalRdataPoolSize: memoryPoolDesc.BlockLocalRdataPoolSize,

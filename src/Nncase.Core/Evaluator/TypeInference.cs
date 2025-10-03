@@ -667,7 +667,7 @@ public static class TypeInference
         var rank = newShape.Rank;
         var shapeDims = new RankedShape((from i in Enumerable.Range(0, rank)
                                          let dim = newRankedShape[i]
-                                         select i < inRankedShape.Rank ? Dimension.Select(dim, 0, inRankedShape[i], dim) : dim).ToArray());
+                                         select i < inRankedShape.Rank ? (dim is DimConst { Value: 0 } ? inRankedShape[i] : dim) : dim).ToArray());
         var minus1DimCount = shapeDims.Count(x => x.IsFixed && x.FixedValue == -1);
         var outputShape = new Dimension[rank];
 

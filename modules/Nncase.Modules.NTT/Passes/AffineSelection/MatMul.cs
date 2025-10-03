@@ -15,6 +15,7 @@ public partial class NTTAffineSelectionPass
     {
         var lhs = (Expr)call.Arguments[IR.Math.MatMul.Lhs.Index];
         var rhs = (Expr)call.Arguments[IR.Math.MatMul.Rhs.Index];
+        var scale = (Expr)call.Arguments[IR.Math.MatMul.Scale.Index];
         bool reduceSum = false;
 
         // TODO: summa not support tiling for now.
@@ -74,12 +75,19 @@ public partial class NTTAffineSelectionPass
             return call;
         }
 
+        // todo support tensor scale.
+        if (scale is not None && !scale.CheckedShape.IsScalar)
+        {
+            return call;
+        }
+
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var rank = Math.Max(lhsShape.Rank, rhsShape.Rank) + 1;
         var domains = IR.F.Affine.Domains(rank);
         var lhsRes = new AffineRange[lhsShape.Rank];
         var rhsRes = new AffineRange[rhsShape.Rank];
+        var scaleRes = Array.Empty<AffineRange>();
         for (int i = rank - 1 - 3; i >= 0; i--)
         {
             var lhsi = i - (rank - (lhsShape.Rank + 1));
@@ -200,9 +208,9 @@ public partial class NTTAffineSelectionPass
             .Write(output, outMap, out var outTile)
             .Body(op switch
             {
-                IR.Math.MatMul => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L)),
-                IR.NTT.VectorizedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.LhsVectorizedAxes, pop.RhsVectorizedAxes, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
-                IR.NTT.PackedMatMul pop => TIR.F.NTT.PackedMatMul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), pop.FusedReduce),
+                IR.Math.MatMul => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), scale),
+                IR.NTT.VectorizedMatMul pop => TIR.F.NTT.Matmul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), scale, pop.LhsVectorizedAxes, pop.RhsVectorizedAxes, pop.TransposeA, pop.TransposeB, pop.FusedReduce),
+                IR.NTT.PackedMatMul pop => TIR.F.NTT.PackedMatMul(lhsTile, rhsTile, outTile, IR.F.Math.NotEqual(domainVar[ok][0], 0L), scale, pop.FusedReduce),
                 _ => throw new System.Diagnostics.UnreachableException(),
             }).Build();
     }

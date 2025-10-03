@@ -36,6 +36,10 @@
 */
 #pragma once
 
+#if defined(__GNUC__) && defined(__x86_64__)
+#pragma GCC optimize("no-strict-aliasing")
+#endif
+
 // FP8 types are available starting CUDA 11.8+
 // #if (__CUDACC_VER_MAJOR__ >= 12) || ((__CUDACC_VER_MAJOR__ == 11) &&
 // (__CUDACC_VER_MINOR__ >= 8)) #define CUDA_FP8_ENABLED 1 #endif
@@ -510,11 +514,10 @@ struct alignas(1) float_e4m3_t : float8_base<FloatEncoding::E4M3> {
     explicit float_e4m3_t(bfloat16 x) : float_e4m3_t(float(x)) {}
 
     CUTLASS_HOST_DEVICE
-    explicit float_e4m3_t(uint64_t x) : float_e4m3_t(double(x)) {}    
+    explicit float_e4m3_t(uint64_t x) : float_e4m3_t(double(x)) {}
 
     CUTLASS_HOST_DEVICE
-    explicit float_e4m3_t(uint32_t x) : float_e4m3_t(float(x)) {}    
-
+    explicit float_e4m3_t(uint32_t x) : float_e4m3_t(float(x)) {}
 
     /// E5M2 conversion. Defined after float_e5m2_t is defined.
     CUTLASS_HOST_DEVICE
@@ -716,10 +719,10 @@ struct alignas(1) float_e5m2_t : float8_base<FloatEncoding::E5M2> {
     explicit float_e5m2_t(bfloat16 x) : float_e5m2_t(float(x)) {}
 
     CUTLASS_HOST_DEVICE
-    explicit float_e5m2_t(int64_t x) : float_e5m2_t(float(x)) {}    
+    explicit float_e5m2_t(int64_t x) : float_e5m2_t(float(x)) {}
 
     CUTLASS_HOST_DEVICE
-    explicit float_e5m2_t(uint32_t x) : float_e5m2_t(float(x)) {}    
+    explicit float_e5m2_t(uint32_t x) : float_e5m2_t(float(x)) {}
 
     /// E4M3 conversion
     CUTLASS_HOST_DEVICE
@@ -1036,7 +1039,6 @@ CUTLASS_HOST_DEVICE
 half operator*(float_e5m2_t const &lhs, float_e4m3_t const &rhs) {
     return half(float(lhs) * float(rhs));
 }
-
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 //

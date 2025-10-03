@@ -17,11 +17,11 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/..)
 
 # --- Generate test source files ---
 # Define kernel names for automatic test generation. Add more kernels here.
-set(KERNEL_NAMES binary pack unpack cast)
+set(KERNEL_NAMES binary pack unpack cast unary)
 # set(KERNEL_NAMES binary pack unpack)
 # set(KERNEL_NAMES  pack unpack)
-# set(KERNEL_NAMES binary cast)
-# set(KERNEL_NAMES cast)
+# set(KERNEL_NAMES binary)
+# set(KERNEL_NAMES unary)
 
 # Set directories
 set(TEST_GENERATOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_generator)
@@ -52,13 +52,13 @@ endmacro()
 # Automatically process all kernel generators
 foreach(kernel ${KERNEL_NAMES})
     string(TOUPPER ${kernel} KERNEL_UPPER)
-    
+
     set(GENERATOR_SCRIPT ${TEST_GENERATOR_DIR}/generate_${kernel}_tests.py)
     set(GENERATED_CMAKE ${GENERATED_DIR}/generated_${kernel}_tests.cmake)
-    
+
     if(EXISTS ${GENERATOR_SCRIPT})
         run_generator_if_needed(${GENERATOR_SCRIPT} ${GENERATED_CMAKE})
-        
+
         if(EXISTS ${GENERATED_CMAKE})
             include(${GENERATED_CMAKE})
             list(APPEND GENERATED_TEST_SOURCES ${GENERATED_${KERNEL_UPPER}_TEST_SOURCES})
@@ -106,6 +106,7 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     test_ntt_layer_norm.cpp
     test_ntt_matmul.cpp
     test_ntt_reduce.cpp
+    test_ntt_reshard.cpp
     test_ntt_rms_norm.cpp
     test_ntt_scatter_nd.cpp
     # test_ntt_slice.cpp

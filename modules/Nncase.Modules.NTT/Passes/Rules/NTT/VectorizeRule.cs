@@ -282,7 +282,8 @@ public sealed class VectorizeMatMul : VectorizeRule
       "target",
       (dytpe) => true,
       IsWildcard("lhs") with { TypePattern = IsFloat() & !IsVector() },
-      IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() });
+      IsWildcard("rhs") with { TypePattern = IsFloat() & !IsVector() },
+      IsWildcard("scale"));
 
     /// <summary>
     /// Gets a value indicating whether trans b, note only for test.
@@ -294,11 +295,12 @@ public sealed class VectorizeMatMul : VectorizeRule
         var rets = new List<Expr>();
         var lhs = (Expr)result["lhs"];
         var rhs = (Expr)result["rhs"];
+        var scale = (Expr)result["scale"];
         var candidate = (Expr)result[Pattern];
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var outputDataType = ((Nncase.IR.Math.MatMul)result["matmul"]).OutputDataType;
-        var rcontext = new RuleContext(rets, lhs, rhs, candidate, lhsShape, rhsShape, outputDataType);
+        var rcontext = new RuleContext(rets, lhs, rhs, scale, candidate, lhsShape, rhsShape, outputDataType);
 
         // vectorize A's k and B's k
         // AddCandidate(rcontext, VectorizeKind.K, VectorizeKind.K);
@@ -332,7 +334,7 @@ public sealed class VectorizeMatMul : VectorizeRule
 
     private void AddCandidate(RuleContext context, IR.NTT.VectorizedMatMul.VectorizeKind lhsVectorize, IR.NTT.VectorizedMatMul.VectorizeKind rhsVectorize, bool transA = false, bool transB = false)
     {
-        var (rets, lhs, rhs, candidate, _, _, outputDataType) = context;
+        var (rets, lhs, rhs, scale, candidate, _, _, outputDataType) = context;
         var lhsShape = context.LhsShape.ToArray();
         var rhsShape = context.RhsShape.ToArray();
         var lhsLaneSize = Lane / lhs.CheckedDataType.SizeInBytes;
@@ -406,7 +408,7 @@ public sealed class VectorizeMatMul : VectorizeRule
         var vectorizedLhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(lhs, lhsShape, lhsVectorizedAxes, lhsLanes, 0f, out var lhsPadNums), lhsLanes, lhsVectorizedAxes);
         var vectorizedRhs = IR.F.Tensors.Pack(VectorizeUtility.PadForVectorize(rhs, rhsShape, rhsVectorizedAxes, rhsLanes, 0f, out var rhsPadNums), rhsLanes, rhsVectorizedAxes);
 
-        var matmul = IR.F.NTT.VectorizedMatMul(vectorizedLhs, vectorizedRhs, lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, false, outputDataType);
+        var matmul = IR.F.NTT.VectorizedMatMul(vectorizedLhs, vectorizedRhs, lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, false, outputDataType, scale);
 
         var outRank = System.Math.Max(lhsShape.Length, rhsShape.Length);
         _ = outRank - lhsShape.Length;
@@ -443,7 +445,7 @@ public sealed class VectorizeMatMul : VectorizeRule
         }
     }
 
-    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Candidate, Shape LhsShape, Shape RhsShape, DataType OutputDataType)
+    private sealed record RuleContext(List<Expr> Results, Expr Lhs, Expr Rhs, Expr Scale, Expr Candidate, Shape LhsShape, Shape RhsShape, DataType OutputDataType)
     {
     }
 }
@@ -1754,9 +1756,9 @@ public sealed partial class FoldVectorizeConcatDevectorize : RewriteRule<Pattern
 [RuleGenerator]
 public sealed partial class TransposeVectorizeMatMulInputs : RewriteRule<Pattern>
 {
-    public override Pattern Pattern { get; } = PatternMatch.F.NTT.IsVectorizedMatMul("matmul", "caller", m => m.RhsVectorizedAxes.Count == 2 && m.TransposeB == false, IsWildcard("lhs"), PatternMatch.F.Tensors.IsPack("rhsVectorize", "callee", p => p.Axes.Count == 2 && p.Lanes.Count == 2, PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsFixedShape("perm") /* IsAlt(IsTensorConst("rhs"), PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm")) */)));
+    public override Pattern Pattern { get; } = PatternMatch.F.NTT.IsVectorizedMatMul("matmul", "caller", m => m.RhsVectorizedAxes.Count == 2 && m.TransposeB == false, IsWildcard("lhs"), PatternMatch.F.Tensors.IsPack("rhsVectorize", "callee", p => p.Axes.Count == 2 && p.Lanes.Count == 2, PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsFixedShape("perm") /* IsAlt(IsTensorConst("rhs"), PatternMatch.F.Tensors.IsTranspose("trans", "rhs", IsWildcard("transInput"), IsTensorConst("perm")) */)), IsWildcard("scale"));
 
-    private Expr? GetReplace(IR.NTT.VectorizedMatMul matmul, Expr lhs, IR.Tensors.Pack rhsVectorize, Expr transInput, int[] perm, IMatchResult result)
+    private Expr? GetReplace(IR.NTT.VectorizedMatMul matmul, Expr lhs, IR.Tensors.Pack rhsVectorize, Expr transInput, int[] perm, Expr scale, IMatchResult result)
     {
         // note can't enable transpose const b, because const folding will be very solw.
         var inputsShape = transInput.CheckedShape.ToValueArray();
@@ -1765,8 +1767,7 @@ public sealed partial class TransposeVectorizeMatMulInputs : RewriteRule<Pattern
         if (tperm.SequenceEqual(perm))
         {
             var nvectorize = IR.F.Tensors.Pack(transInput, [rhsVectorize.Lanes[1], rhsVectorize.Lanes[0]], [rhsVectorize.Axes[1], rhsVectorize.Axes[0]]);
-            var newMatmul = new IR.NTT.VectorizedMatMul(matmul.OutputDataType, matmul.LhsVectorizedAxes, new[] { matmul.RhsVectorizedAxes[1], matmul.RhsVectorizedAxes[0] }, false, true, matmul.FusedReduce);
-            return new Call(newMatmul, lhs, nvectorize);
+            return IR.F.NTT.VectorizedMatMul(lhs, nvectorize, matmul.LhsVectorizedAxes, new[] { matmul.RhsVectorizedAxes[1], matmul.RhsVectorizedAxes[0] }, false, true, matmul.FusedReduce, matmul.OutputDataType, scale);
         }
 
         return null;

@@ -30,7 +30,8 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var dataType = context.CurrentCall.Arguments[Matmul.Lhs.Index].CheckedDataType;
         var lhs = context.GetArgumentValue(matMul, Matmul.Lhs).AsTensor();
         var rhs = context.GetArgumentValue(matMul, MatMul.Rhs).AsTensor();
-        return Math.MatMulEvaluator.InferValue(dataType, lhs, rhs);
+        var scale = context.GetArgumentValue(matMul, MatMul.Scale);
+        return Math.MatMulEvaluator.InferValue(dataType, lhs, rhs, scale: scale);
     }
 
     /// <inheritdoc/>

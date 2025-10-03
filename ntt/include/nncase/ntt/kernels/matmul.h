@@ -22,14 +22,12 @@
 namespace nncase::ntt {
 namespace detail {
 
-template <typename T>
-concept HasValidRank = requires(T t) {
+template <typename T> concept HasValidRank = requires(T t) {
     T::rank();
     requires T::rank() >= 2;
 };
 
-template <typename T>
-concept ValidMatmulTensor = Tensor<T> && HasValidRank<T>;
+template <typename T> concept ValidMatmulTensor = Tensor<T> &&HasValidRank<T>;
 
 template <class TLhs, class TRhs, typename LhsVectorizedAxes,
           typename RhsVectorizedAxes, bool TransposedA = false,
@@ -93,7 +91,7 @@ constexpr ukernels::matmul_vectorize_kind get_matmul_vectorize_kind() noexcept {
 }
 
 template <bool AccumulateC, bool TransposedA, bool TransposedB, class TLhs,
-          class TRhs, class TOut, typename LhsVectorizedAxes,
+          class TRhs, class TOut, class TScale, typename LhsVectorizedAxes,
           typename LhsPadedNums, typename RhsVectorizedAxes,
           typename RhsPadedNums>
 class matmul_impl;
@@ -103,10 +101,10 @@ class matmul_impl;
  * @remarks Loop orders: (m, n, k)
  */
 template <bool AccumulateC, bool TransposedB, ValidMatmulTensor TLhs,
-          ValidMatmulTensor TRhs, ValidMatmulTensor TOut,
+          ValidMatmulTensor TRhs, ValidMatmulTensor TOut, class TScale,
           typename LhsVectorizedAxes, typename LhsPadedNums,
           typename RhsVectorizedAxes, typename RhsPadedNums>
-class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
+class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut, TScale,
                   LhsVectorizedAxes, LhsPadedNums, RhsVectorizedAxes,
                   RhsPadedNums> {
     using TOutElem = typename TOut::element_type;
@@ -124,7 +122,8 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
         TOutElem, true>;
 
   public:
-    void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output) {
+    void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output,
+                    const TScale &scale) {
         const auto domain =
             output.shape().template slice<0, TOut::rank() - 2>();
         ntt::apply(domain, [&](auto out_offset_prefix) {
@@ -144,13 +143,14 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                          .squeeze(make_index_shape<rhs_shape.rank() - 2_dim>());
             auto c = output.view(out_offset, out_shape)
                          .squeeze(make_index_shape<out_shape.rank() - 2_dim>());
-            matmul_2d_l1(a, b, c);
+            matmul_2d_l1(a, b, c, scale);
         });
     }
 
   private:
     template <class TA, class TB, class TC>
-    constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c) {
+    constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c,
+                                const TScale &scale) {
         const auto M = c.shape()[c.rank() - 2_dim];
         const auto N = c.shape()[c.rank() - 1_dim];
         const auto K = a.shape()[a.rank() - 1_dim];
@@ -169,12 +169,12 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
         for (; m1 < scaled_M / m0_tile * m0_tile; m1 += m0_tile) {
             size_t n1 = 0;
             for (; n1 < scaled_N / n0_tile * n0_tile; n1 += n0_tile) {
-                matmul_2d_l0<m0_tile, n0_tile>(a, b, c, K, m1, n1);
+                matmul_2d_l0<m0_tile, n0_tile>(a, b, c, scale, K, m1, n1);
             }
 
             if (scaled_N % n0_tile) {
                 for (; n1 < scaled_N; n1++) {
-                    matmul_2d_l0<m0_tile, 1>(a, b, c, K, m1, n1);
+                    matmul_2d_l0<m0_tile, 1>(a, b, c, scale, K, m1, n1);
                 }
             }
         }
@@ -186,12 +186,12 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                 size_t n1 = 0;
                 for (; n1 < scaled_N / m1_n0_tile * m1_n0_tile;
                      n1 += m1_n0_tile) {
-                    matmul_2d_l0<1, m1_n0_tile>(a, b, c, K, m1, n1);
+                    matmul_2d_l0<1, m1_n0_tile>(a, b, c, scale, K, m1, n1);
                 }
 
                 if (scaled_N % m1_n0_tile) {
                     for (; n1 < scaled_N; n1++) {
-                        matmul_2d_l0<1, 1>(a, b, c, K, m1, n1);
+                        matmul_2d_l0<1, 1>(a, b, c, scale, K, m1, n1);
                     }
                 }
             }
@@ -200,8 +200,8 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
 
     template <dim_t M0Tile, dim_t N0Tile, class TA, class TB, class TC,
               Dimension TK>
-    void matmul_2d_l0(const TA &a, const TB &b, TC &c, const TK &K, dim_t m1,
-                      dim_t n1) {
+    void matmul_2d_l0(const TA &a, const TB &b, TC &c, const TScale &scale,
+                      const TK &K, dim_t m1, dim_t n1) {
 
         constexpr auto m0_scale =
             ukernels::u_type_scale<vectorize_kind, TA, TB, TC>::m0_scale;
@@ -225,7 +225,7 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
                               make_shape(fixed_dim_v<N0Tile>, K),
                               make_shape(K, fixed_dim_v<N0Tile>)));
         ntt::u_matmul<vectorize_kind, AccumulateC, false, TransposedB, M0Tile,
-                      N0Tile>(a1, b1, c0, K);
+                      N0Tile>(a1, b1, c0, scale, K);
     }
 };
 } // namespace detail
@@ -245,6 +245,7 @@ class matmul_impl<AccumulateC, false, TransposedB, TLhs, TRhs, TOut,
  */
 template <bool AccumulateC = false, bool TransposedA = false,
           bool TransposedB = false, Tensor TLhs, Tensor TRhs, class TOut,
+          class TScale = std::nullptr_t,
           FixedDimensions LhsVectorizedAxes = shape_t<>,
           FixedDimensions LhsPadedNums = shape_t<>,
           FixedDimensions RhsVectorizedAxes = shape_t<>,
@@ -252,6 +253,7 @@ template <bool AccumulateC = false, bool TransposedA = false,
 void matmul(
     [[maybe_unused]] const TLhs &lhs, [[maybe_unused]] const TRhs &rhs,
     [[maybe_unused]] TOut &&output,
+    [[maybe_unused]] const TScale &scale = nullptr,
     [[maybe_unused]] const LhsVectorizedAxes &lhsVectorizedAxes =
         fixed_shape_v<>,
     [[maybe_unused]] const LhsPadedNums &lhsPadedNums = fixed_shape_v<>,
@@ -275,10 +277,10 @@ void matmul(
                   "currently only support no pad!");
 
     detail::matmul_impl<AccumulateC, TransposedA, TransposedB, TLhs, TRhs,
-                        std::decay_t<TOut>, LhsVectorizedAxes, LhsPadedNums,
-                        RhsVectorizedAxes, RhsPadedNums>
+                        std::decay_t<TOut>, TScale, LhsVectorizedAxes,
+                        LhsPadedNums, RhsVectorizedAxes, RhsPadedNums>
         impl;
-    impl(lhs, rhs, output);
+    impl(lhs, rhs, output, scale);
 
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
     // TODO: remove this when tiling is ready

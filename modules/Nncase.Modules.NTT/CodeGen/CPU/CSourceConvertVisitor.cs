@@ -16,6 +16,7 @@ using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.CodeGen.NTT;
 using Nncase.IR;
+using Nncase.IR.Distributed;
 using Nncase.IR.Shapes;
 using Nncase.Runtime;
 using Nncase.Targets;
@@ -334,6 +335,18 @@ public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
         }
 
         symbol = new("dim_t", expr.Name);
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitThreadIdDim(ThreadIdDim expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        symbol = new("dim_t", "ntt::distributed::program_id<topology::thread>()");
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

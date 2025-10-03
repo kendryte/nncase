@@ -188,12 +188,6 @@ public partial class ExprRewriter<TContext>
     }
 
     /// <inheritdoc/>
-    protected sealed override BaseExpr VisitLeafAffineSymbolBase(Affine.AffineExpr expr, TContext context)
-    {
-        return RewriteLeafAffineSymbolBase(expr, context);
-    }
-
-    /// <inheritdoc/>
     protected sealed override BaseExpr VisitLeafAffineDim(Affine.AffineDim expr, TContext context)
     {
         return RewriteLeafAffineDim(expr, context);
@@ -281,6 +275,12 @@ public partial class ExprRewriter<TContext>
     protected sealed override BaseExpr VisitLeafBufferOf(Buffers.BufferOf expr, TContext context)
     {
         return RewriteLeafBufferOf(expr, context);
+    }
+
+    /// <inheritdoc/>
+    protected sealed override BaseExpr VisitLeafThreadIdDim(Distributed.ThreadIdDim expr, TContext context)
+    {
+        return RewriteLeafThreadIdDim(expr, context);
     }
 
     /// <inheritdoc/>
@@ -579,11 +579,6 @@ public partial class ExprRewriter<TContext>
     protected virtual BaseExpr RewriteLeafAffineExpr(Affine.AffineExpr expr, TContext context) => DefaultRewriteLeaf(expr, context);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Affine.AffineExpr"/>.
-    /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineExpr expr, TContext context) => RewriteLeafAffineExpr(expr, context);
-
-    /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDim"/>.
     /// </summary>
     protected virtual BaseExpr RewriteLeafAffineDim(Affine.AffineDim expr, TContext context) => RewriteLeafAffineExpr(expr, context);
@@ -591,17 +586,17 @@ public partial class ExprRewriter<TContext>
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineExtent"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineExtent(Affine.AffineExtent expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineExtent(Affine.AffineExtent expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineSymbol"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineSymbol(Affine.AffineSymbol expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineSymbol(Affine.AffineSymbol expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineConstant"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineConstant(Affine.AffineConstant expr, TContext context) => RewriteLeafAffineSymbolBase(expr, context);
+    protected virtual BaseExpr RewriteLeafAffineConstant(Affine.AffineConstant expr, TContext context) => RewriteLeafAffineExpr(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineAddBinary"/>.
@@ -657,6 +652,11 @@ public partial class ExprRewriter<TContext>
     /// Rewrite leaf <see cref="Buffers.BufferOf"/>.
     /// </summary>
     protected virtual BaseExpr RewriteLeafBufferOf(Buffers.BufferOf expr, TContext context) => DefaultRewriteLeaf(expr, context);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Distributed.ThreadIdDim"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafThreadIdDim(Distributed.ThreadIdDim expr, TContext context) => RewriteLeafDimension(expr, context);
 
     /// <summary>
     /// Rewrite leaf <see cref="Dimension"/>.
@@ -1020,14 +1020,6 @@ public partial class ExprRewriter
     protected sealed override BaseExpr RewriteLeafAffineExpr(Affine.AffineExpr expr, Unit context) => RewriteLeafAffineExpr(expr);
 
     /// <summary>
-    /// Rewrite leaf <see cref="Affine.AffineExpr"/>.
-    /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineExpr expr) => RewriteLeafAffineExpr(expr);
-
-    /// <inheritdoc />
-    protected sealed override BaseExpr RewriteLeafAffineSymbolBase(Affine.AffineExpr expr, Unit context) => RewriteLeafAffineSymbolBase(expr);
-
-    /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineDim"/>.
     /// </summary>
     protected virtual BaseExpr RewriteLeafAffineDim(Affine.AffineDim expr) => RewriteLeafAffineExpr(expr);
@@ -1038,7 +1030,7 @@ public partial class ExprRewriter
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineExtent"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineExtent(Affine.AffineExtent expr) => RewriteLeafAffineSymbolBase(expr);
+    protected virtual BaseExpr RewriteLeafAffineExtent(Affine.AffineExtent expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
     protected sealed override BaseExpr RewriteLeafAffineExtent(Affine.AffineExtent expr, Unit context) => RewriteLeafAffineExtent(expr);
@@ -1046,7 +1038,7 @@ public partial class ExprRewriter
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineSymbol"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineSymbol(Affine.AffineSymbol expr) => RewriteLeafAffineSymbolBase(expr);
+    protected virtual BaseExpr RewriteLeafAffineSymbol(Affine.AffineSymbol expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
     protected sealed override BaseExpr RewriteLeafAffineSymbol(Affine.AffineSymbol expr, Unit context) => RewriteLeafAffineSymbol(expr);
@@ -1054,7 +1046,7 @@ public partial class ExprRewriter
     /// <summary>
     /// Rewrite leaf <see cref="Affine.AffineConstant"/>.
     /// </summary>
-    protected virtual BaseExpr RewriteLeafAffineConstant(Affine.AffineConstant expr) => RewriteLeafAffineSymbolBase(expr);
+    protected virtual BaseExpr RewriteLeafAffineConstant(Affine.AffineConstant expr) => RewriteLeafAffineExpr(expr);
 
     /// <inheritdoc />
     protected sealed override BaseExpr RewriteLeafAffineConstant(Affine.AffineConstant expr, Unit context) => RewriteLeafAffineConstant(expr);
@@ -1146,6 +1138,14 @@ public partial class ExprRewriter
 
     /// <inheritdoc />
     protected sealed override BaseExpr RewriteLeafBufferOf(Buffers.BufferOf expr, Unit context) => RewriteLeafBufferOf(expr);
+
+    /// <summary>
+    /// Rewrite leaf <see cref="Distributed.ThreadIdDim"/>.
+    /// </summary>
+    protected virtual BaseExpr RewriteLeafThreadIdDim(Distributed.ThreadIdDim expr) => RewriteLeafDimension(expr);
+
+    /// <inheritdoc />
+    protected sealed override BaseExpr RewriteLeafThreadIdDim(Distributed.ThreadIdDim expr, Unit context) => RewriteLeafThreadIdDim(expr);
 
     /// <summary>
     /// Rewrite leaf <see cref="Dimension"/>.

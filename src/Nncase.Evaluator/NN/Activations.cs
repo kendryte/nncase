@@ -550,10 +550,11 @@ public class SwishEvaluator : IEvaluator<Swish>, ITypeInferencer<Swish>, ICostEv
     public Cost Visit(ICostEvaluateContext context, Swish target)
     {
         var outputType = context.GetReturnType<IRType>();
+        var macPerElement = 256;
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(outputType),
-            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType),
+            [CostFactorNames.CPUCycles] = CostUtility.GetCPUCycles(outputType, macPerElement),
             [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(outputType),
         };
     }

@@ -173,6 +173,8 @@ constexpr void update_paged_attention_kv_cache(const TSlots &slots_tensor,
                                                  slots_tensor);
         }
     }
+
+    ntt::tensor_copy_wait<void>();
 }
 
 template <FixedDimensions QLayout, ShardedTensor TQ, Tensor TKVCache,
@@ -296,7 +298,7 @@ void paged_attention(
 
                     // [1, valid_block_size] = [1, dim']<dim> @ [dim',
                     // valid_block_size]<dim>
-                    ntt::matmul<false>(q_slice, k_slice, s_slice,
+                    ntt::matmul<false>(q_slice, k_slice, s_slice, nullptr,
                                        fixed_shape_v<1>, {}, fixed_shape_v<0>,
                                        ntt::fixed_shape_v<>);
                 }
@@ -381,11 +383,11 @@ void paged_attention(
                     // clang-format on
                     if (context_bid == 0) {
                         ntt::matmul<false, false, true>(
-                            s_slice, v_slice, d_slice, fixed_shape_v<>,
+                            s_slice, v_slice, d_slice, nullptr, fixed_shape_v<>,
                             fixed_shape_v<>, fixed_shape_v<0>, fixed_shape_v<>);
                     } else {
                         ntt::matmul<true, false, true>(
-                            s_slice, v_slice, d_slice, fixed_shape_v<>,
+                            s_slice, v_slice, d_slice, nullptr, fixed_shape_v<>,
                             fixed_shape_v<>, fixed_shape_v<0>, fixed_shape_v<>);
                     }
                 }
@@ -426,6 +428,6 @@ void gather_paged_attention_kv_cache([[maybe_unused]] const T0 &value,
     const auto kv_cache_address = kv_cache.kv_cache_address(kv_cache_index);
     const auto storage_tensor =
         make_tensor_view_from_address(kv_cache_address, output_tensor.shape());
-    ntt::tensor_copy(storage_tensor, output_tensor);
+    ntt::tensor_copy_sync(storage_tensor, output_tensor);
 }
 } // namespace nncase::ntt

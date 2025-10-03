@@ -51,7 +51,7 @@ public sealed class PagedAttentionEvaluator : ITypeInferencer<PagedAttention>, I
         var q = context.GetOrtArgumentValue(target, PagedAttention.Q);
         var kvCaches = context.GetArgumentValueAsTensor<Reference<IPagedAttentionKVCache>>(target, PagedAttention.KVCaches);
         var scale = context.GetOrtArgumentValue(target, PagedAttention.Scale); // must match to prim kv type.
-        return RefPagedAttn(q, kvCaches, scale, target.LayerId, target.Layout).ToValue();
+        return RefPagedAttn(q, kvCaches, scale, target.LayerId, target.Layout).ToValue(context.GetReturnType());
     }
 
     private static OrtKISharp.Tensor RefPagedAttn(OrtKISharp.Tensor query, Tensor<Reference<IPagedAttentionKVCache>> kvCaches, OrtKISharp.Tensor scale, int layerId, IRArray<AttentionDimKind> qlayout)

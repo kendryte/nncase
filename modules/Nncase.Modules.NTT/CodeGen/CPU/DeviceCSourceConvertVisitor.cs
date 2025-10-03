@@ -211,7 +211,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         var start = Visit(expr.Start);
         var size = Visit(expr.Size);
 
-        var str = $"{buffer.Name}.subspan<{start.Name}, {size.Name}>()";
+        var str = $"make_subspan({buffer.Name}, {start.Name}, {size.Name})";
         symbol = new(start.Type, str);
         _exprMemo.Add(expr, symbol);
         return symbol;
@@ -250,7 +250,11 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         string type = expr.CheckedType switch
         {
             TupleType x when x == TupleType.Void => string.Empty,
-            TensorType { IsScalar: true } x => x.DType.ToC(),
+            TensorType { IsScalar: true } x => x.DType switch
+            {
+                ReferenceType => "auto",
+                _ => x.DType.ToC(),
+            },
             TensorType or DistributedType => "auto",
             _ => throw new NotSupportedException(),
         };
@@ -332,7 +336,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 str = $"(({op.NewType.ToC()}){arguments[0].Name})";
                 break;
             case TIR.Memcopy op:
-                WriteIndWithProfiler($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
+                WriteIndWithProfiler($"tensor_copy_sync({arguments[1].Name}, {arguments[0].Name});\n");
                 break;
             case TIR.NTT.Unary op:
                 WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel
@@ -437,6 +441,23 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 }
 
                 break;
+            case TIR.NTT.Where where:
+                WriteWithProfiler($"where({arguments[0].Name}, {arguments[1].Name}, {arguments[2].Name}, {arguments[3].Name});\n");
+                break;
+            case TIR.NTT.GetPositionIds getPositionIds:
+                WriteIndWithProfiler($"get_position_ids({arguments[0].Name}, {arguments[1].Name}, {KernelUtility.ShardingToC(getPositionIds.DistributedType)}, {Visit(getPositionIds.DistributedType.TensorType.Shape).Name});\n");
+                break;
+            case TIR.NTT.Compare compare:
+                {
+                    WriteWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Compare.cshtml", new CompareKernelTemplateModel
+                    {
+                        Arguments = arguments.Select(x => new KernelArgument { Symbol = x }).ToArray(),
+                        CompareOp = compare.CompareOp,
+                    }).Result);
+                }
+
+                break;
+
             default:
                 throw new NotSupportedException($"Unsupported call target: {expr.Target}");
         }
