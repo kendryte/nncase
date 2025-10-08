@@ -13,9 +13,11 @@
  * limitations under the License.
  */
 #pragma once
+#include "nncase/ntt/dimension.h"
 #include "shape.h"
 #include "tensor_traits.h"
 #include <cstring>
+#include <span>
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -56,5 +58,15 @@ constexpr auto span_cast(std::span<T, Extent> src) noexcept {
     } else {
         return return_type{(U *)src.data(), src.size_bytes() / sizeof(U)};
     }
+}
+
+template <class T, size_t SrcExtent, Dimension TOffset, Dimension TExtent>
+constexpr auto make_subspan(std::span<T, SrcExtent> src, const TOffset &offset,
+                            const TExtent &extent) noexcept {
+    using return_type = std::span<
+        T, ntt::where(std::integral_constant<bool, FixedDimension<TExtent>>{},
+                      TExtent{}, std::dynamic_extent)>;
+    return return_type{src.data() + dim_value(offset),
+                       static_cast<size_t>(dim_value(extent))};
 }
 } // namespace nncase::ntt

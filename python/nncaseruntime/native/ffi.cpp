@@ -120,6 +120,12 @@ PYBIND11_MODULE(_nncaseruntime, m) {
              [](interpreter &interp, uint8_t enable_profiling) {
                  interp.enable_profiling(enable_profiling);
              })
+        .def("get_native_handle_by_module_kind",
+             [](interpreter &interp, std::string_view kind, uint32_t flags) {
+                 auto module =
+                     interp.find_module_by_kind(kind).unwrap_or_throw();
+                 return module->native_handle(flags).unwrap_or_throw();
+             })
         .def("run",
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
 

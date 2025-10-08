@@ -269,8 +269,15 @@ public abstract class HuggingFaceModel
     {
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
+        var originDtype = q.CheckedDataType;
+        q = IR.F.Tensors.Cast(q, DataTypes.Float32);
+        k = IR.F.Tensors.Cast(k, DataTypes.Float32);
+        cos = IR.F.Tensors.Cast(cos, DataTypes.Float32);
+        sin = IR.F.Tensors.Cast(sin, DataTypes.Float32);
         var qEmbed = IR.F.NN.RoPE(q, cos, sin);
         var kEmbed = IR.F.NN.RoPE(k, cos, sin);
+        qEmbed = IR.F.Tensors.Cast(qEmbed, originDtype);
+        kEmbed = IR.F.Tensors.Cast(kEmbed, originDtype);
         return System.Tuple.Create(qEmbed, kEmbed);
     }
 
@@ -300,9 +307,15 @@ public abstract class HuggingFaceModel
 
     public virtual Call LLMLayerNorm(Expr hiddenStates, string layerName)
     {
+        // originType->fp32->dolayernorm->origintype
+        // fit layernorm partten 5
         var originDtype = hiddenStates.CheckedDataType;
-        var weight = GetWeight($"{layerName}")!.CastTo(originDtype);
-        var bias = Tensor.Zeros(originDtype, weight.Dimensions);
+        hiddenStates = IR.F.Tensors.Cast(hiddenStates, DataTypes.Float32);
+
+        Expr weight = GetWeight($"{layerName}")!;
+
+        weight = IR.F.Tensors.Cast(weight, DataTypes.Float32);
+        var bias = Tensor.FromScalar(0f, (RankedShape)weight.CheckedShape);
         int axis = -1;
 
         float eps = 1e-6F;
@@ -311,7 +324,7 @@ public abstract class HuggingFaceModel
             eps = (float)Config.GetNestedValue<double>("rms_norm_eps");
         }
 
-        return IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false);
+        return IR.F.Tensors.Cast(IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false), originDtype);
     }
 
     public virtual Call Linear(Expr expr, Tensor weight, Tensor? bias = null, Tensor? scaleIf = null, Tensor? scaleW = null, string layerName = "")
@@ -852,12 +865,12 @@ public abstract class HuggingFaceModel
         var qPerm = ModelUtils.GetLayoutPerm(qSrcLayout, qDestLayout);
         var (qLanes, qVectorizedAxis) = ModelUtils.GetQKVVectorizeParams(pagedAttentionConfig, qDestLayout);
         bool isXpu = Context.CompileSession!.Target.Name == "xpu";
-        if (isXpu)
-        {
-            var padding_m = Dimension.AlignUp(seq_len, 8) - seq_len;
-            queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, padding_m), new(0, 0)), PadMode.Constant, Tensor.Zero(queryStates.CheckedDataType)) : queryStates;
-        }
 
+        // if (isXpu)
+        // {
+        //     var padding_m = Dimension.AlignUp(seq_len, 8) - seq_len;
+        //     queryStates = seq_len is DimVar ? IR.F.NN.Pad(queryStates, new(new(0, 0), new(0, padding_m), new(0, 0)), PadMode.Constant, Tensor.Zero(queryStates.CheckedDataType)) : queryStates;
+        // }
         var transQ = IR.F.Tensors.Transpose(queryStates, qPerm);
         var castQ = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(transQ, pagedAttentionConfig.KVPrimType) : transQ;
         var vectorizedQ = qLanes.Length > 0 ? IR.F.Tensors.Pack(castQ, qLanes, qVectorizedAxis) : castQ;
@@ -885,11 +898,11 @@ public abstract class HuggingFaceModel
 
         output = pagedAttentionConfig.KVPrimType != qType ? IR.F.Tensors.Cast(output, qType) : output;
         output = IR.F.Tensors.Transpose(output, ModelUtils.GetLayoutPerm(qDestLayout, qSrcLayout));
-        if (isXpu)
-        {
-            output = seq_len is DimVar ? IR.F.Tensors.Slice(output, new[] { 0 }, new Dimension[] { seq_len }, new[] { 1 }, new[] { 1 }) : output;
-        }
 
+        // if (isXpu)
+        // {
+        //     output = seq_len is DimVar ? IR.F.Tensors.Slice(output, new[] { 0 }, new Dimension[] { seq_len }, new[] { 1 }, new[] { 1 }) : output;
+        // }
         output = IR.F.Tensors.Transpose(output, new[] { 1, 0, 2 });
 
         output = IR.F.Tensors.Reshape(output, new RankedShape(seq_len, -1L));
@@ -912,7 +925,11 @@ public abstract class HuggingFaceModel
          * self.vocab_size = config.vocab_size
          * self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
          */
-        var embedTokensWeight = GetWeight("model.embed_tokens.weight")!;
+        Expr embedTokensWeight = GetWeight("model.embed_tokens.weight")!;
+        if (ImportOptions.HuggingFaceOptions.TensorType != "default")
+        {
+            embedTokensWeight = IR.F.Tensors.Cast(embedTokensWeight, HuggingFaceUtils.Str2Dtype(ImportOptions.HuggingFaceOptions.TensorType)).With(metadata: new IRMetadata() { OutputNames = new[] { "embd cast" } });
+        }
 
         Expr? inputEmbeds;
         if (inputIds.CheckedShape.Rank > 2 && inputIds.CheckedDataType.IsFloat())
@@ -928,20 +945,12 @@ public abstract class HuggingFaceModel
                 padding_idx = (long)Config["pad_token_id"];
             }
 
-            inputEmbeds = Embedding(inputIds, embedTokensWeight, padding_idx);
+            inputEmbeds = Embedding(inputIds, embedTokensWeight.Evaluate().AsTensor(), padding_idx);
         }
 
         // Notice: The type of inputEmbeds is same as safetensors' dtype.
         // Here, we will cast it to the type defined by `HuggingFaceOptions.TensorType`.
-        Expr hiddenStates;
-        if (ImportOptions.HuggingFaceOptions.TensorType == "default")
-        {
-            hiddenStates = inputEmbeds;
-        }
-        else
-        {
-            hiddenStates = IR.F.Tensors.Cast(inputEmbeds, HuggingFaceUtils.Str2Dtype(ImportOptions.HuggingFaceOptions.TensorType)).With(metadata: new IRMetadata() { OutputNames = new[] { "embd cast" } });
-        }
+        Expr hiddenStates = inputEmbeds;
 
         var (invFreq, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
         var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreq, attentionScaling);

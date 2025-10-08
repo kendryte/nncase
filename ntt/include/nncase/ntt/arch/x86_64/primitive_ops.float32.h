@@ -175,8 +175,8 @@ template <> struct asinh<ntt::vector<float, 8>> {
     }
 };
 
-// cast
-template <> struct cast<ntt::vector<bool, 8>, ntt::vector<float, 8>> {
+// cast_elem
+template <> struct cast_elem<ntt::vector<bool, 8>, float> {
     ntt::vector<float, 8>
     operator()(const ntt::vector<bool, 8> &v) const noexcept {
         // Convert to float (1.0f for true, 0.0f for false)
@@ -187,9 +187,9 @@ template <> struct cast<ntt::vector<bool, 8>, ntt::vector<float, 8>> {
     }
 };
 
-// cast
-template <> struct cast<ntt::vector<float, 8>, ntt::vector<int, 8>> {
-    ntt::vector<int, 8>
+// cast_elem
+template <> struct cast_elem<ntt::vector<float, 8>, int32_t> {
+    ntt::vector<int32_t, 8>
     operator()(const ntt::vector<float, 8> &v) const noexcept {
         return _mm256_cvttps_epi32(v);
     }

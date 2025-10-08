@@ -51,8 +51,13 @@ void get_position_ids(TKVCache &&kv_cache_tensor, TOut output,
             continue;
         }
 
-        for (size_t pos_id = context_len + (global_start + out_loc - query_start_loc);
-             pos_id < seq_len && out_loc < local_shape[0_dim]; pos_id++) {
+        const size_t pos_id_start =
+            context_len + (global_start + out_loc - query_start_loc);
+        const size_t pos_id_end = ntt::min(
+            static_cast<size_t>(pos_id_start + (local_shape[0_dim] - out_loc)),
+            seq_len);
+
+        for (size_t pos_id = pos_id_start; pos_id < pos_id_end; pos_id++) {
             output(out_loc) = static_cast<TOutElem>(pos_id);
             out_loc++;
         }

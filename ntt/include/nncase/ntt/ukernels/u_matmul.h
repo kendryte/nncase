@@ -15,6 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../vector.h"
+#include "nncase/ntt/tensor_traits.h"
 #include "u_mul_add.h"
 #include <type_traits>
 
@@ -292,11 +293,11 @@ struct u_matmul_generic {
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
-                        for (size_t k = 0; k < m0_scale; k++) {
-                            u_mul_add<VectorizeKind, true>(a0_grouped[m](k),
-                                                           b0_grouped[n],
-                                                           c0_grouped[k][n]);
-                        }
+                        ntt::loop<m0_scale>([&](auto k) {
+                            u_mul_add<VectorizeKind, true>(
+                                ntt::unwrap_proxy(a0_grouped[m](k)),
+                                b0_grouped[n], c0_grouped[k][n]);
+                        });
                     }
                 }
 
@@ -326,11 +327,12 @@ struct u_matmul_generic {
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
-                        for (size_t k = 0; k < n0_scale; k++) {
-                            u_mul_add<VectorizeKind, true>(a0_grouped[m],
-                                                           b0_grouped[n](k),
-                                                           c0_grouped[m][k]);
-                        }
+                        ntt::loop<n0_scale>([&](auto k) {
+                            u_mul_add<VectorizeKind, true>(
+                                a0_grouped[m],
+                                ntt::unwrap_proxy(b0_grouped[n](k)),
+                                c0_grouped[m][k]);
+                        });
                     }
                 }
 
@@ -410,13 +412,14 @@ struct u_matmul_generic {
 
                 for (size_t n = 0; n < N0Tile; n++) {
                     for (size_t m = 0; m < M0Tile; m++) {
-                        for (size_t k = 0; k < n0_scale; k++) {
-                            for (size_t l = 0; l < m0_scale; l++) {
+                        ntt::loop<n0_scale>([&](auto k) {
+                            ntt::loop<m0_scale>([&](auto l) {
                                 u_mul_add<VectorizeKind, true>(
-                                    a0_grouped[m](l), b0_grouped[n](k),
+                                    ntt::unwrap_proxy(a0_grouped[m](l)),
+                                    ntt::unwrap_proxy(b0_grouped[n](k)),
                                     c0_grouped[l][k]);
-                            }
-                        }
+                            });
+                        });
                     }
                 }
 
@@ -611,8 +614,8 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC,
         if constexpr (m0_subtile) {
             TSubOutElem c0_tmp[m0_subtile][N0Tile];
 
-            for (dim_t sm1 = 0; sm1 < TOutElem::shape()[0_dim];
-                 sm1 += m0_subtile) {
+            ntt::loop<TOutElem::shape()[0_dim] / m0_subtile>([&](auto sm_tile) {
+                constexpr auto sm1 = sm_tile * m0_subtile;
                 ntt::apply(fixed_shape_v<m0_subtile, N0Tile>, [&](auto index) {
                     c0_tmp[index[0_dim]][index[1_dim]] =
                         AccumulateC
@@ -634,7 +637,7 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC,
                         b0_tile);
 
                     ntt::apply(fixed_shape_v<m0_subtile>, [&](auto index) {
-                        a0_tmp[index[0_dim]] = a0(0, 0)(sm1 + index[0_dim]);
+                        a0_tmp[index[0_dim]] = ntt::mul(a0(0, 0)(sm1 + index[0_dim]), scale);
                     });
                     ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
                         auto b0_index = ntt::where(
@@ -652,12 +655,11 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC,
                     }
                 }
 
-                ntt::apply(fixed_shape_v<m0_subtile, N0Tile>, [&](auto index) {
-                    ntt::store(
-                        c0(0_dim, index[1_dim])(sm1 + index[0_dim]),
-                        ntt::mul(c0_tmp[index[0_dim]][index[1_dim]], scale));
+                ntt::loop<m0_subtile>([&](auto i) {
+                    ntt::loop<N0Tile>(
+                        [&](auto j) { c0(0_dim, j)(sm1 + i) = c0_tmp[i][j]; });
                 });
-            }
+            });
         } else {
             u_matmul_generic<matmul_vectorize_kind::vectorize_mn, AccumulateC,
                              TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem,
@@ -773,11 +775,12 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC,
 
                     for (size_t n = 0; n < N0Tile; n++) {
                         for (size_t m = 0; m < M0Tile; m++) {
-                            for (size_t k = 0; k < n0_scale; k++) {
+                            ntt::loop<n0_scale>([&](auto k) {
                                 c0_grouped[m][k] = ntt::mul_add(
-                                    a0_grouped[m], b0_grouped[n](k),
+                                    a0_grouped[m],
+                                    ntt::unwrap_proxy(b0_grouped[n](k)),
                                     c0_grouped[m][k]);
-                            }
+                            });
                         }
                     }
                 } else {

@@ -198,6 +198,9 @@ template <class T1, class T2> struct ceil_div {
  */
 template <class T1, class T2> struct floor_mod {
     constexpr auto operator()(const T1 &v1, const T2 &v2) const noexcept {
+#ifdef __clang__
+#pragma float_control(precise, on)
+#endif
         return (T1)(double(v1) - std::floor(static_cast<double>(v1) /
                                             static_cast<double>(v2)) *
                                      static_cast<double>(v2));
@@ -205,8 +208,8 @@ template <class T1, class T2> struct floor_mod {
 };
 
 template <typename T>
-requires(std::is_same_v<T, float_e4m3_t> ||
-         std::is_same_v<T, float_e5m2_t>) struct floor_mod<T, T> {
+    requires(std::is_same_v<T, float_e4m3_t> || std::is_same_v<T, float_e5m2_t>)
+struct floor_mod<T, T> {
     constexpr auto operator()(T v1, T v2) const noexcept {
 
         return T(v1 - (std::floor(float(v1) / float(v2)) * v2));
@@ -235,8 +238,8 @@ template <class T1, class T2> struct mod {
 };
 
 template <typename T>
-requires(std::is_same_v<T, float_e4m3_t> ||
-         std::is_same_v<T, float_e5m2_t>) struct mod<T, T> {
+    requires(std::is_same_v<T, float_e4m3_t> || std::is_same_v<T, float_e5m2_t>)
+struct mod<T, T> {
     constexpr auto operator()(T v1, T v2) const noexcept {
         return T(std::fmod(static_cast<float>(v1), static_cast<float>(v2)));
     }
@@ -314,9 +317,14 @@ struct reduce {
     }
 };
 
-template <class T1, class T2, class TResult> struct mul_add {
-    constexpr TResult operator()(const T1 &v1, const T2 &v2,
-                                 const TResult &v3) const noexcept;
+template <class T1, class T2, class T3> struct mul_add {
+    constexpr auto operator()(const T1 &v1, const T2 &v2,
+                              const T3 &v3) const noexcept;
+};
+
+template <class T1, class T2, class T3> struct mul_sub {
+    constexpr auto operator()(const T1 &v1, const T2 &v2,
+                              const T3 &v3) const noexcept;
 };
 
 template <class T1, class T2> struct clamp {
@@ -328,6 +336,8 @@ template <class T1, class T2> struct clamp {
 
 template <class T1, class T2> struct cast {
     constexpr T2 operator()(const T1 &v) const noexcept {
+        // printf("cast from %f to %f\n", (double)(float)v,
+        // (double)static_cast<T2>(v));
         return static_cast<T2>(v);
     }
 };
@@ -413,8 +423,8 @@ NTT_DEFINE_BINARY_FUNC_IMPL(add)
 NTT_DEFINE_BINARY_FUNC_IMPL(sub)
 NTT_DEFINE_BINARY_FUNC_IMPL(mul)
 template <ScalarOrVector T1, class T2>
-requires std::is_same_v<T2, std::nullptr_t> constexpr auto
-mul(const T1 &v1, const T2 &) noexcept {
+    requires std::is_same_v<T2, std::nullptr_t>
+constexpr auto mul(const T1 &v1, const T2 &) noexcept {
     return v1;
 }
 NTT_DEFINE_BINARY_FUNC_IMPL(ceil_div)
@@ -435,20 +445,24 @@ NTT_DEFINE_COMPARE_FUNC_IMPL(less_or_equal)
 NTT_DEFINE_COMPARE_FUNC_IMPL(greater)
 NTT_DEFINE_COMPARE_FUNC_IMPL(greater_or_equal)
 
-template <ScalarOrVector T2, ScalarOrVector T1>
-constexpr auto cast(const T1 &v) noexcept {
-    return ops::cast<T1, T2>()(v);
-}
-
 template <Scalar T2, ScalarOrVector T1>
 constexpr auto cast_elem(const T1 &v) noexcept {
     return ops::cast_elem<T1, T2>()(v);
 }
 
-template <ScalarOrVector T1, ScalarOrVector T2, ScalarOrVector TResult>
-constexpr TResult mul_add(const T1 &v1, const T2 &v2,
-                          const TResult &v3) noexcept {
-    return ops::mul_add<T1, T2, TResult>()(v1, v2, v3);
+template <ScalarOrVector T2, ScalarOrVector T1>
+constexpr auto cast(const T1 &v) noexcept {
+    return cast_elem<element_or_scalar_t<T2>>(v);
+}
+
+template <ScalarOrVector T1, ScalarOrVector T2, ScalarOrVector T3>
+constexpr auto mul_add(const T1 &v1, const T2 &v2, const T3 &v3) noexcept {
+    return ops::mul_add<T1, T2, T3>()(v1, v2, v3);
+}
+
+template <ScalarOrVector T1, ScalarOrVector T2, ScalarOrVector T3>
+constexpr auto mul_sub(const T1 &v1, const T2 &v2, const T3 &v3) noexcept {
+    return ops::mul_sub<T1, T2, T3>()(v1, v2, v3);
 }
 
 template <template <class T1, class T2> class BinaryOp, ScalarOrVector TResult,
@@ -579,12 +593,18 @@ constexpr T swishb<T, B>::operator()(const T &v, const B &beta) const noexcept {
                           (ntt::exp((-(double)v) * (double)beta) + (double)1));
 }
 
-template <class T1, class T2, class TResult>
-constexpr TResult
-mul_add<T1, T2, TResult>::operator()(const T1 &v1, const T2 &v2,
-                                     const TResult &v3) const noexcept {
-    using TResultElem = element_or_scalar_t<TResult>;
-    return ntt::cast_elem<TResultElem>(v1 * v2) + v3;
+template <class T1, class T2, class T3>
+constexpr auto mul_add<T1, T2, T3>::operator()(const T1 &v1, const T2 &v2,
+                                               const T3 &v3) const noexcept {
+    using T3Elem = element_or_scalar_t<T3>;
+    return ntt::cast_elem<T3Elem>(v1 * v2) + v3;
+}
+
+template <class T1, class T2, class T3>
+constexpr auto mul_sub<T1, T2, T3>::operator()(const T1 &v1, const T2 &v2,
+                                               const T3 &v3) const noexcept {
+    using T3Elem = element_or_scalar_t<T3>;
+    return ntt::cast_elem<T3Elem>(v1 * v2) - v3;
 }
 } // namespace ops
 } // namespace nncase::ntt

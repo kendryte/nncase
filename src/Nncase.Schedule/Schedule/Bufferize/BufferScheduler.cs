@@ -30,7 +30,7 @@ public abstract class BufferScheduler
 
     public static BufferScheduleResult Schedule(MemoryLocation memoryLocation, IReadOnlyDictionary<TIR.PhysicalBuffer, BufferLifetime> lifetimes, BufferScheduleOptions options)
     {
-        if (memoryLocation == MemoryLocation.Data)
+        if (memoryLocation is MemoryLocation.Data or MemoryLocation.BlockLocalData)
         {
             foreach (var schedulerType in _bufferSchedulerTypes)
             {
@@ -50,7 +50,7 @@ public abstract class BufferScheduler
             }
         }
 
-        throw new NotSupportedException("Unable to schedule buffers");
+        throw new NotSupportedException($"Unable to schedule buffers of {memoryLocation}.");
     }
 
     public static IReadOnlyDictionary<MemoryLocation, BufferScheduleResult> Schedule(IReadOnlyDictionary<TIR.PhysicalBuffer, BufferLifetime> lifetimes, Func<MemoryLocation, BufferScheduleOptions> options)
@@ -58,7 +58,7 @@ public abstract class BufferScheduler
         var result = new Dictionary<MemoryLocation, BufferScheduleResult>();
         foreach (var group in lifetimes.GroupBy(x => x.Value.Buffer.Location))
         {
-            if (group.Key is MemoryLocation.Output or MemoryLocation.Data or MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata)
+            if (group.Key is MemoryLocation.Output or MemoryLocation.Data or MemoryLocation.BlockLocalData or MemoryLocation.Rdata or MemoryLocation.ThreadLocalRdata or MemoryLocation.BlockLocalRdata)
             {
                 var lifetimeDict = group.ToDictionary(x => x.Key, x => x.Value, (IEqualityComparer<TIR.PhysicalBuffer>)ReferenceEqualityComparer.Instance);
                 result.Add(group.Key, Schedule(group.Key, lifetimeDict, options(group.Key)));

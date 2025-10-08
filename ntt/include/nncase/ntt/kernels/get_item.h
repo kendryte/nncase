@@ -27,7 +27,7 @@ void get_item(const TIn &input, TOut &&output, const TIndices &indices) {
             generate_shape<TIndices::rank()>([&](auto axis) {
                 return positive_index(indices[axis], input.shape()[axis]);
             });
-        tensor_copy(input.view(positive_indices), output);
+        tensor_copy_sync(input.view(positive_indices), output);
     } else {
         auto new_indices = make_dims(indices);
         get_item(input, new_indices, output);

@@ -125,6 +125,7 @@ internal class FunctionBuilder
                     header.LocalDataAlign = (uint)primFunc.SchedResult.DataAlign;
                     header.OutputPoolSize = primFunc.SchedResult.OutputUsage;
                     header.LocalDataPoolSize = primFunc.SchedResult.DataUsage;
+                    header.BlockLocalDataPoolSize = primFunc.SchedResult.BlockLocalDataPoolSize;
                     writer.Write(ref header);
                 }
 

@@ -17,7 +17,7 @@ public static class TilingUtilities
         return buffer.CheckedType switch
         {
             TensorType t => maxShape ? CompilerServices.GetMaxShape(t.Shape) : t.Shape,
-            DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt, maxShape).Shape,
+            DistributedType dt => Utilities.DistributedUtility.GetDividedTensorType(dt, maxShape ? DistributedUtility.DivideFlags.MaxShape | DistributedUtility.DivideFlags.FloorDiv : DistributedUtility.DivideFlags.FloorDiv).Shape,
             _ => throw new NotSupportedException(),
         };
     }

@@ -43,9 +43,9 @@ public enum MemoryLocation
     Data = 1 << 6,
 
     /// <summary>
-    /// shared data.
+    /// block local data.
     /// </summary>
-    SharedData = 1 << 7,
+    BlockLocalData = 1 << 7,
 
     /// <summary>
     /// l2 data.

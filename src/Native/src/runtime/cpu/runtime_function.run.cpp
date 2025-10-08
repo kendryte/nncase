@@ -66,6 +66,7 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                         module().thread_local_rdata_header(tid_offset),
                     .thread_local_rdata = module().thread_local_rdata_content(),
                     .block_local_rdata = block_local_rdata,
+                    .thread_local_data = thread_local_data(linear_bid),
                     .block_local_data = block_local_data(linear_bid),
 #ifdef __APPLE__
                     .cpu_thread_context_key = module().cpu_thread_context_key(),

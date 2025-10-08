@@ -234,7 +234,7 @@ public static class CostUtility
         {
             TensorType t => (UInt128)(t.Shape.ProdWithDynamicAsMaxValue() * cyclesPerElement),
             TupleType t => t.Fields.Sum(GetMemoryAccess),
-            DistributedType t => GetCPUCycles(Utilities.DistributedUtility.GetDividedTensorType(t)),
+            DistributedType t => GetCPUCycles(Utilities.DistributedUtility.GetDividedTensorType(t), cyclesPerElement),
             _ => 0,
         };
     }
@@ -250,7 +250,7 @@ public static class CostUtility
             UnaryOp.Asin => 8,
             UnaryOp.Asinh => 8,
             UnaryOp.Ceil => 1,
-            UnaryOp.Cos => 8,
+            UnaryOp.Cos => 20,
             UnaryOp.Cosh => 8,
             UnaryOp.Exp => 8,
             UnaryOp.Floor => 1,
@@ -258,7 +258,7 @@ public static class CostUtility
             UnaryOp.Neg => 1,
             UnaryOp.Round => 1,
             UnaryOp.Rsqrt => 4,
-            UnaryOp.Sin => 8,
+            UnaryOp.Sin => 20,
             UnaryOp.Sinh => 8,
             UnaryOp.Sign => 1,
             UnaryOp.Sqrt => 8,

@@ -45,6 +45,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         var (lm, lk, rk, rn) = dimInfo ?? new(aRank - 2, aRank - 1, bRank - 2, bRank - 1);
         var aMaxShape = CompilerServices.GetMaxShape(a.TensorType.Shape);
         var bMaxShape = CompilerServices.GetMaxShape(b.TensorType.Shape);
+        bool isPartial = false;
 
         // TODO: keep summa only
         if (!a.TensorType.Shape.IsFixed || !b.TensorType.Shape.IsFixed || transB || (a.Placement.HierarchyKind == HierarchyKind.SMT && a.TensorType.DType is VectorType vt && vt.ElemType == DataTypes.Float8E4M3))
@@ -105,12 +106,19 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
             ndsbp[oRank - 2] = a.AxisPolicies[lm];
             ndsbp[oRank - 1] = b.AxisPolicies[rn];
 
+            if (a.AxisPolicies[lk] is SBPSplit || b.AxisPolicies[rk] is SBPSplit)
+            {
+                ndsbp[oRank - 2] = ndsbp[oRank - 2];
+                ndsbp[oRank - 1] = ndsbp[oRank - 1];
+                isPartial = true;
+            }
+
             if (!DistributedUtility.IsDistributable(outType, ndsbp, a.Placement))
             {
                 return new InvalidType("no valid sbp.");
             }
 
-            return new DistributedType(outType, ndsbp, a.Placement);
+            return new DistributedType(outType, ndsbp, a.Placement, Partial: isPartial);
         }
         else
         {
@@ -141,6 +149,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     {
                         ndsbp[oRank - 2] = a.AxisPolicies[lm];
                         ndsbp[oRank - 1] = b.AxisPolicies[rn];
+                        isPartial = true;
                     }
                     else
                     {
@@ -202,7 +211,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
 
             if (DistributedUtility.IsDistributable(ndsbp))
             {
-                return new DistributedType(outType, ndsbp, a.Placement);
+                return new DistributedType(outType, ndsbp, a.Placement, isPartial);
             }
 
             return new InvalidType("no valid sbp.");

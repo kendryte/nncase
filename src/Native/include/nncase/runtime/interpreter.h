@@ -72,6 +72,8 @@ class NNCASE_API interpreter {
 
     options_dict &options() noexcept;
     result<runtime_module *> find_module_by_id(size_t index) noexcept;
+    result<runtime_module *>
+    find_module_by_kind(std::string_view kind) noexcept;
     result<size_t> find_id_by_module(runtime_module *module) noexcept;
 
     /* V1 APIs */
