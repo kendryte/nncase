@@ -21,11 +21,9 @@
 #include "distributed.h"
 #include "primitive_ops.h"
 
-// Include arch specializations early so kernels see optimized overrides
 #ifdef __riscv_vector
 #include "arch/riscv64/arch_types.h"
 #include "arch/riscv64/primitive_ops.h"
-#include "arch/riscv64/primitive_ops_half.h"
 #include "arch/riscv64/ukernels.h"
 #include "arch/riscv64/vector_ops.h"
 #endif
