@@ -1,6 +1,11 @@
 name: runtime-build
 
-on: [ push, pull_request ]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 16 * * *'
+  workflow_dispatch:
 
 concurrency:
   group: runtime-build-${{ github.ref }}
