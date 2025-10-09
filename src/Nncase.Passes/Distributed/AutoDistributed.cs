@@ -1094,9 +1094,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-        using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
+        if (enableDump)
         {
-            Dump(stream, picks, costMemo);
+            using (var stream = Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot"))
+            {
+                Dump(stream, picks, costMemo);
+            }
         }
 
         if (_phase == AutoDistributedPhase.SearchConstant)

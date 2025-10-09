@@ -262,8 +262,15 @@ public abstract class HuggingFaceModel
     {
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
+        var originDtype = q.CheckedDataType;
+        q = IR.F.Tensors.Cast(q, DataTypes.Float32);
+        k = IR.F.Tensors.Cast(k, DataTypes.Float32);
+        cos = IR.F.Tensors.Cast(cos, DataTypes.Float32);
+        sin = IR.F.Tensors.Cast(sin, DataTypes.Float32);
         var qEmbed = IR.F.NN.RoPE(q, cos, sin);
         var kEmbed = IR.F.NN.RoPE(k, cos, sin);
+        qEmbed = IR.F.Tensors.Cast(qEmbed, originDtype);
+        kEmbed = IR.F.Tensors.Cast(kEmbed, originDtype);
         return System.Tuple.Create(qEmbed, kEmbed);
     }
 
@@ -903,7 +910,11 @@ public abstract class HuggingFaceModel
          * self.vocab_size = config.vocab_size
          * self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
          */
-        var embedTokensWeight = GetWeight("model.embed_tokens.weight")!;
+        Expr embedTokensWeight = GetWeight("model.embed_tokens.weight")!;
+        if (ImportOptions.HuggingFaceOptions.TensorType != "default")
+        {
+            embedTokensWeight = IR.F.Tensors.Cast(embedTokensWeight, HuggingFaceUtils.Str2Dtype(ImportOptions.HuggingFaceOptions.TensorType)).With(metadata: new IRMetadata() { OutputNames = new[] { "embd cast" } });
+        }
 
         Expr? inputEmbeds;
         if (inputIds.CheckedShape.Rank > 2 && inputIds.CheckedDataType.IsFloat())
@@ -919,20 +930,12 @@ public abstract class HuggingFaceModel
                 padding_idx = (long)Config["pad_token_id"];
             }
 
-            inputEmbeds = Embedding(inputIds, embedTokensWeight, padding_idx);
+            inputEmbeds = Embedding(inputIds, embedTokensWeight.Evaluate().AsTensor(), padding_idx);
         }
 
         // Notice: The type of inputEmbeds is same as safetensors' dtype.
         // Here, we will cast it to the type defined by `HuggingFaceOptions.TensorType`.
-        Expr hiddenStates;
-        if (ImportOptions.HuggingFaceOptions.TensorType == "default")
-        {
-            hiddenStates = inputEmbeds;
-        }
-        else
-        {
-            hiddenStates = IR.F.Tensors.Cast(inputEmbeds, HuggingFaceUtils.Str2Dtype(ImportOptions.HuggingFaceOptions.TensorType)).With(metadata: new IRMetadata() { OutputNames = new[] { "embd cast" } });
-        }
+        Expr hiddenStates = inputEmbeds;
 
         var (invFreq, attentionScaling) = ModelUtils.RoPEInit(Context!.Config!);
         var positionEmbeddings = RotaryEmbedding(hiddenStates, pastKeyValues, invFreq, attentionScaling);
