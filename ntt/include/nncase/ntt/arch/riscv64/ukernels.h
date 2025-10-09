@@ -128,35 +128,41 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<DTYPE, vl> v0 = __riscv_vle##BITS##_v_f##BITS##m8( \
-                    (const BUILDIN_DTYPE *)input, vl);                         \
+                vfloat##BITS##m8_t v0;                                         \
+                vfloat##BITS##m8_t v8;                                         \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul;                                     \
-                ntt::vector<DTYPE, vl> v8 = __riscv_vle##BITS##_v_f##BITS##m8( \
-                    (const BUILDIN_DTYPE *)input, vl);                         \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v8)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul;                                     \
                 __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
-                v8 = nncase::ntt::OP(v8);                                      \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v0);              \
+                v8 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v8);              \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse##BITS##_v_f##BITS##m8((BUILDIN_DTYPE *)output, v0, \
-                                                  vl);                         \
+                asm volatile("vs8r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul;                                   \
-                __riscv_vse##BITS##_v_f##BITS##m8((BUILDIN_DTYPE *)output, v8, \
-                                                  vl);                         \
+                asm volatile("vs8r.v %0, (%1);" ::"vr"(v8), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul;                                   \
                 count -= unroll;                                               \
             }                                                                  \
                                                                                \
             constexpr auto unroll8 = 8;                                        \
             while (count / unroll8) {                                          \
-                ntt::vector<DTYPE, vl> v0 = __riscv_vle##BITS##_v_f##BITS##m8( \
-                    (const BUILDIN_DTYPE *)input, vl);                         \
+                vfloat##BITS##m8_t v0;                                         \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul;                                     \
                 __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v0);              \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse##BITS##_v_f##BITS##m8((BUILDIN_DTYPE *)output, v0, \
-                                                  vl);                         \
+                asm volatile("vs8r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul;                                   \
                 count -= unroll8;                                              \
             }                                                                  \
@@ -165,15 +171,16 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto lmul4 = 4;                                          \
             constexpr auto vl4 = NTT_VLEN / BITS * lmul4;                      \
             while (count / unroll4) {                                          \
-                ntt::vector<DTYPE, vl4> v0 =                                   \
-                    __riscv_vle##BITS##_v_f##BITS##m4(                         \
-                        (const BUILDIN_DTYPE *)input, vl4);                    \
+                vfloat##BITS##m4_t v0;                                         \
+                asm volatile("vl4re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul4;                                    \
                 __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl4>)v0);             \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse##BITS##_v_f##BITS##m4((BUILDIN_DTYPE *)output, v0, \
-                                                  vl4);                        \
+                asm volatile("vs4r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul4;                                  \
                 count -= unroll4;                                              \
             }                                                                  \
@@ -182,15 +189,16 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto lmul2 = 2;                                          \
             constexpr auto vl2 = NTT_VLEN / BITS * lmul2;                      \
             while (count / unroll2) {                                          \
-                ntt::vector<DTYPE, vl2> v0 =                                   \
-                    __riscv_vle##BITS##_v_f##BITS##m2(                         \
-                        (const BUILDIN_DTYPE *)input, vl2);                    \
+                vfloat##BITS##m2_t v0;                                         \
+                asm volatile("vl2re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul2;                                    \
                 __asm__ __volatile__("" : : : "memory");                       \
-                v0 = nncase::ntt::OP(v0);                                      \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl2>)v0);             \
                 __asm__ __volatile__("" : : : "memory");                       \
-                __riscv_vse##BITS##_v_f##BITS##m2((BUILDIN_DTYPE *)output, v0, \
-                                                  vl2);                        \
+                asm volatile("vs2r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul2;                                  \
                 count -= unroll2;                                              \
             }                                                                  \
@@ -223,13 +231,14 @@ struct u_unary<ntt::ops::copy<vector<float, NTT_VLEN / 32>>,
             constexpr auto vl = NTT_VLEN / BITS * lmul;                        \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<DTYPE, vl> v0 =                                    \
-                    __riscv_vle##BITS##_v_f##BITS##m##LMUL(                    \
-                        (const BUILDIN_DTYPE *)input, vl);                     \
+                vfloat##BITS##m8_t v0;                                         \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input));                                    \
                 input += in_stride * lmul;                                     \
-                v0 = nncase::ntt::OP(v0);                                      \
-                __riscv_vse##BITS##_v_f##BITS##m##LMUL(                        \
-                    (BUILDIN_DTYPE *)output, v0, vl);                          \
+                v0 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v0);              \
+                asm volatile("vs8r.v %0, (%1);" ::"vr"(v0), "r"(output)        \
+                             : "memory");                                      \
                 output += out_stride * lmul;                                   \
                 count -= unroll;                                               \
             }                                                                  \
@@ -353,18 +362,25 @@ SPECIALIZE_U_BINARY(floor_mod, 8)
             TPostOp<vector<DTYPE, NTT_VLEN / BITS>> post_op_m1;                \
                                                                                \
             while (count / unroll) {                                           \
-                ntt::vector<DTYPE, vl> v0 = __riscv_vle##BITS##_v_f##BITS##m8( \
-                    (const BUILDIN_DTYPE *)input1, vl);                        \
+                vfloat##BITS##m8_t v0;                                         \
+                vfloat##BITS##m8_t v8;                                         \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v0)                                       \
+                             : "r"(input1));                                   \
                 input1 += input1_stride * lmul;                                \
-                ntt::vector<DTYPE, vl> v8 = __riscv_vle##BITS##_v_f##BITS##m8( \
-                    (const BUILDIN_DTYPE *)input2, vl);                        \
+                asm volatile("vl8re" #BITS ".v %0, (%1);"                      \
+                             : "=vr"(v8)                                       \
+                             : "r"(input2));                                   \
                 input2 += input2_stride * lmul;                                \
                                                                                \
-                auto v16 = nncase::ntt::OP(v0, v8);                            \
+                auto v16 = nncase::ntt::OP((ntt::vector<DTYPE, vl>)v0,         \
+                                           (ntt::vector<DTYPE, vl>)v8);        \
                 v16 = post_op_m8(v16);                                         \
                                                                                \
-                __riscv_vse##BITS##_v_f##BITS##m8((BUILDIN_DTYPE *)output,     \
-                                                  v16, vl);                    \
+                asm volatile(                                                  \
+                    "vs8r.v %0, (%1);" ::"vr"((vfloat##BITS##m8_t)v16),        \
+                    "r"(output)                                                \
+                    : "memory");                                               \
                 output += output_stride * lmul;                                \
                 count -= unroll;                                               \
             }                                                                  \
@@ -533,7 +549,7 @@ template <reduce_op Op, class T> struct u_reduce_policy<Op, T, true> {
 
 // cast
 template <> struct u_cast_policy<true> {
-    static constexpr size_t unroll = 4;
+    static constexpr size_t unroll = 8;
 };
 
 #define DEFINE_U_CAST_2_1(IN_ELEM, IN_BW, OUT_ELEM, OUT_BW, IN_BUILTIN_ELEM,               \
@@ -554,27 +570,54 @@ template <> struct u_cast_policy<true> {
                                   size_t count) noexcept {                                 \
             using policy_t = u_cast_policy<true>;                                          \
             constexpr auto unroll = policy_t::unroll;                                      \
+            constexpr auto half_unroll = unroll / 2;                                       \
                                                                                            \
             while (count / unroll) {                                                       \
                 constexpr auto lmul = 4;                                                   \
                 constexpr auto vl_in = NTT_VLEN / IN_BW * lmul;                            \
                 constexpr auto vl_out = NTT_VLEN / OUT_BW * lmul;                          \
                                                                                            \
-                prepend_lanes_t<vector<IN_ELEM, vl_in>, 2> in_temp{};                      \
+                prepend_lanes_t<vector<IN_ELEM, vl_in>, 2> in_temp0{};                     \
+                prepend_lanes_t<vector<IN_ELEM, vl_in>, 2> in_temp1{};                     \
                                                                                            \
                 if (input_stride == 1) {                                                   \
-                    auto in0 = __riscv_vle##IN_BW##_v_##IN_INTRINSIC_ELEM##m4(             \
-                        (const IN_BUILTIN_ELEM *)input, vl_in);                            \
-                    auto in1 = __riscv_vle##IN_BW##_v_##IN_INTRINSIC_ELEM##m4(             \
-                        (const IN_BUILTIN_ELEM *)(input + unroll), vl_in);                 \
-                    in_temp(0_dim) = in0;                                                  \
-                    in_temp(1_dim) = in1;                                                  \
+                    vfloat##IN_BW##m4_t in0;                                               \
+                    vfloat##IN_BW##m4_t in1;                                               \
+                    vfloat##IN_BW##m4_t in2;                                               \
+                    vfloat##IN_BW##m4_t in3;                                               \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in0)                                              \
+                                 : "r"(input + 0 * half_unroll));                          \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in1)                                              \
+                                 : "r"(input + 1 * half_unroll));                          \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in2)                                              \
+                                 : "r"(input + 2 * half_unroll));                          \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in3)                                              \
+                                 : "r"(input + 3 * half_unroll));                          \
+                    in_temp0(0_dim) = in0;                                                 \
+                    in_temp0(1_dim) = in1;                                                 \
+                    in_temp1(0_dim) = in2;                                                 \
+                    in_temp1(1_dim) = in3;                                                 \
                 } else {                                                                   \
-                    auto in0 = __riscv_vle##IN_BW##_v_##IN_INTRINSIC_ELEM##m4(             \
-                        (const IN_BUILTIN_ELEM *)input, vl_in);                            \
-                    auto in1 = __riscv_vle##IN_BW##_v_##IN_INTRINSIC_ELEM##m4(             \
-                        (const IN_BUILTIN_ELEM *)(input + input_stride),                   \
-                        vl_in);                                                            \
+                    vfloat##IN_BW##m4_t in0;                                               \
+                    vfloat##IN_BW##m4_t in1;                                               \
+                    vfloat##IN_BW##m4_t in2;                                               \
+                    vfloat##IN_BW##m4_t in3;                                               \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in0)                                              \
+                                 : "r"(input));                                            \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in1)                                              \
+                                 : "r"(input + input_stride));                             \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in2)                                              \
+                                 : "r"(input + half_unroll));                              \
+                    asm volatile("vl4re" #IN_BW ".v %0, (%1);"                             \
+                                 : "=vr"(in3)                                              \
+                                 : "r"(input + half_unroll + input_stride));               \
                                                                                            \
                     auto in0_t0 =                                                          \
                         __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
@@ -602,19 +645,62 @@ template <> struct u_cast_policy<true> {
                         __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
                             in1, 3);                                                       \
                                                                                            \
-                    in_temp(0_dim) =                                                       \
+                    auto in2_t0 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in2, 0);                                                       \
+                    auto in2_t1 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in2, 1);                                                       \
+                    auto in2_t2 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in2, 2);                                                       \
+                    auto in2_t3 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in2, 3);                                                       \
+                                                                                           \
+                    auto in3_t0 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in3, 0);                                                       \
+                    auto in3_t1 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in3, 1);                                                       \
+                    auto in3_t2 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in3, 2);                                                       \
+                    auto in3_t3 =                                                          \
+                        __riscv_vget_v_##IN_INTRINSIC_ELEM##m4_##IN_INTRINSIC_ELEM##m1(    \
+                            in3, 3);                                                       \
+                                                                                           \
+                    in_temp0(0_dim) =                                                      \
                         __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m4( \
                             in0_t0, in1_t0, in0_t1, in1_t1);                               \
                                                                                            \
-                    in_temp(1_dim) =                                                       \
+                    in_temp0(1_dim) =                                                      \
                         __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m4( \
                             in0_t2, in1_t2, in0_t3, in1_t3);                               \
+                                                                                           \
+                    in_temp1(0_dim) =                                                      \
+                        __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m4( \
+                            in2_t0, in3_t0, in2_t1, in3_t1);                               \
+                                                                                           \
+                    in_temp1(1_dim) =                                                      \
+                        __riscv_vcreate_v_##IN_INTRINSIC_ELEM##m1_##IN_INTRINSIC_ELEM##m4( \
+                            in2_t2, in3_t2, in2_t3, in3_t3);                               \
                 }                                                                          \
                                                                                            \
-                auto v16 = ntt::cast_elem<T2Elem>(in_temp);                                \
-                auto v24 = TPostOps<vector<OUT_ELEM, vl_out>>()(v16);                      \
-                __riscv_vse##OUT_BW##_v_##OUT_INTRINSIC_ELEM##m4(                          \
-                    (OUT_BUILTIN_ELEM *)output, v24, vl_out);                              \
+                auto v16 = ntt::cast_elem<T2Elem>(in_temp0);                               \
+                auto v24 = ntt::cast_elem<T2Elem>(in_temp1);                               \
+                v16 = TPostOps<vector<OUT_ELEM, vl_out>>()(v16);                           \
+                v24 = TPostOps<vector<OUT_ELEM, vl_out>>()(v24);                           \
+                                                                                           \
+                asm volatile("vs4r.v %0, (%1);" ::"vr"(                                    \
+                                 (v##OUT_INTRINSIC_ELEM##m4_t)v16),                        \
+                             "r"(output)                                                   \
+                             : "memory");                                                  \
+                asm volatile("vs4r.v %0, (%1);" ::"vr"(                                    \
+                                 (v##OUT_INTRINSIC_ELEM##m4_t)v24),                        \
+                             "r"(output + half_unroll)                                     \
+                             : "memory");                                                  \
                 output += unroll;                                                          \
                 input += ntt::where(input_stride == 1,                                     \
                                     in_offset_scale * unroll, unroll);                     \
@@ -635,9 +721,9 @@ template <> struct u_cast_policy<true> {
         }                                                                                  \
     };
 
-DEFINE_U_CAST_2_1(float, 32, half, 16, float, _Float16, f32, f16)
+DEFINE_U_CAST_2_1(float, 32, half, 16, float, _Float16, f32, float16)
 #if defined(NNCASE_XPU_MODULE) && defined(SYS_MODE)
-DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
+DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, float8e4m3)
 #endif
 
 #define DEFINE_U_CAST_1_2(IN_ELEM, IN_BW, OUT_ELEM, OUT_BW, IN_BUILTIN_ELEM,                 \
@@ -653,6 +739,7 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
                    Stride output_stride, size_t count) noexcept {                            \
             using policy_t = u_cast_policy<true>;                                            \
             constexpr auto unroll = policy_t::unroll;                                        \
+            constexpr auto half_unroll = unroll / 2;                                         \
                                                                                              \
             using T2Elem = OUT_ELEM;                                                         \
             using T1 = vector<IN_ELEM, NTT_VLEN / IN_BW>;                                    \
@@ -663,53 +750,96 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
                 constexpr auto lmul = 4;                                                     \
                 constexpr auto vl_in = NTT_VLEN / IN_BW * lmul;                              \
                 constexpr auto vl_out = NTT_VLEN / OUT_BW * lmul;                            \
-                v##IN_INTRINSIC_ELEM##m4_t in_temp;                                          \
+                v##IN_INTRINSIC_ELEM##m4_t in_temp0;                                         \
+                v##IN_INTRINSIC_ELEM##m4_t in_temp1;                                         \
                 asm volatile("vl4re" #IN_BW ".v %0, (%1);"                                   \
-                             : "=vr"(in_temp)                                                \
-                             : "r"(input));                                                  \
-                auto tmp_output =                                                            \
-                    ntt::cast_elem<T2Elem>((vector<IN_ELEM, vl_in>)in_temp);                 \
+                             : "=vr"(in_temp0)                                               \
+                             : "r"(input + 0 * half_unroll));                                \
+                asm volatile("vl4re" #IN_BW ".v %0, (%1);"                                   \
+                             : "=vr"(in_temp1)                                               \
+                             : "r"(input + 1 * half_unroll));                                \
+                auto tmp_output0 =                                                           \
+                    ntt::cast_elem<T2Elem>((vector<IN_ELEM, vl_in>)in_temp0);                \
+                auto tmp_output1 =                                                           \
+                    ntt::cast_elem<T2Elem>((vector<IN_ELEM, vl_in>)in_temp1);                \
                 auto out_ptr = output;                                                       \
                                                                                              \
                 if (input_stride == 1) {                                                     \
                                                                                              \
                     auto post_output0 = TPostOps<vector<OUT_ELEM, vl_out>>()(                \
-                        ntt::unwrap_proxy(tmp_output(0_dim)));                               \
+                        ntt::unwrap_proxy(tmp_output0(0_dim)));                              \
                     auto post_output1 = TPostOps<vector<OUT_ELEM, vl_out>>()(                \
-                        ntt::unwrap_proxy(tmp_output(1_dim)));                               \
-                    __riscv_vse##OUT_BW##_v_##OUT_INTRINSIC_ELEM##m4(                        \
-                        (OUT_BUILTIN_ELEM *)out_ptr, post_output0, vl_out);                  \
-                    __riscv_vse##OUT_BW##_v_##OUT_INTRINSIC_ELEM##m4(                        \
-                        (OUT_BUILTIN_ELEM *)(out_ptr + unroll), post_output1,                \
-                        vl_out);                                                             \
+                        ntt::unwrap_proxy(tmp_output0(1_dim)));                              \
+                    auto post_output2 = TPostOps<vector<OUT_ELEM, vl_out>>()(                \
+                        ntt::unwrap_proxy(tmp_output1(0_dim)));                              \
+                    auto post_output3 = TPostOps<vector<OUT_ELEM, vl_out>>()(                \
+                        ntt::unwrap_proxy(tmp_output1(1_dim)));                              \
+                    asm volatile("vs4r.v %0, (%1);" ::"vr"(post_output0),                    \
+                                 "r"(out_ptr + 0 * half_unroll)                              \
+                                 : "memory");                                                \
+                    asm volatile("vs4r.v %0, (%1);" ::"vr"(post_output1),                    \
+                                 "r"(out_ptr + 1 * half_unroll)                              \
+                                 : "memory");                                                \
+                    asm volatile("vs4r.v %0, (%1);" ::"vr"(post_output2),                    \
+                                 "r"(out_ptr + 2 * half_unroll)                              \
+                                 : "memory");                                                \
+                    asm volatile("vs4r.v %0, (%1);" ::"vr"(post_output3),                    \
+                                 "r"(out_ptr + 3 * half_unroll)                              \
+                                 : "memory");                                                \
                                                                                              \
                 } else {                                                                     \
                                                                                              \
                     auto in0_t0 =                                                            \
                         __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
-                            ntt::unwrap_proxy(tmp_output(0_dim)), 0);                        \
+                            ntt::unwrap_proxy(tmp_output0(0_dim)), 0);                       \
                     auto in0_t1 =                                                            \
                         __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
-                            ntt::unwrap_proxy(tmp_output(0_dim)), 1);                        \
+                            ntt::unwrap_proxy(tmp_output0(0_dim)), 1);                       \
                     auto in0_t2 =                                                            \
                         __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
-                            ntt::unwrap_proxy(tmp_output(0_dim)), 2);                        \
+                            ntt::unwrap_proxy(tmp_output0(0_dim)), 2);                       \
                     auto in0_t3 =                                                            \
                         __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
-                            ntt::unwrap_proxy(tmp_output(0_dim)), 3);                        \
+                            ntt::unwrap_proxy(tmp_output0(0_dim)), 3);                       \
                                                                                              \
                     auto in1_t0 =                                                            \
                         __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
-                            ntt::unwrap_proxy(tmp_output(1_dim)), 0);                        \
+                            ntt::unwrap_proxy(tmp_output0(1_dim)), 0);                       \
                     auto in1_t1 =                                                            \
                         __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
-                            ntt::unwrap_proxy(tmp_output(1_dim)), 1);                        \
+                            ntt::unwrap_proxy(tmp_output0(1_dim)), 1);                       \
                     auto in1_t2 =                                                            \
                         __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
-                            ntt::unwrap_proxy(tmp_output(1_dim)), 2);                        \
+                            ntt::unwrap_proxy(tmp_output0(1_dim)), 2);                       \
                     auto in1_t3 =                                                            \
                         __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
-                            ntt::unwrap_proxy(tmp_output(1_dim)), 3);                        \
+                            ntt::unwrap_proxy(tmp_output0(1_dim)), 3);                       \
+                                                                                             \
+                    auto in2_t0 =                                                            \
+                        __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
+                            ntt::unwrap_proxy(tmp_output1(0_dim)), 0);                       \
+                    auto in2_t1 =                                                            \
+                        __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
+                            ntt::unwrap_proxy(tmp_output1(0_dim)), 1);                       \
+                    auto in2_t2 =                                                            \
+                        __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
+                            ntt::unwrap_proxy(tmp_output1(0_dim)), 2);                       \
+                    auto in2_t3 =                                                            \
+                        __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
+                            ntt::unwrap_proxy(tmp_output1(0_dim)), 3);                       \
+                                                                                             \
+                    auto in3_t0 =                                                            \
+                        __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
+                            ntt::unwrap_proxy(tmp_output1(1_dim)), 0);                       \
+                    auto in3_t1 =                                                            \
+                        __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
+                            ntt::unwrap_proxy(tmp_output1(1_dim)), 1);                       \
+                    auto in3_t2 =                                                            \
+                        __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
+                            ntt::unwrap_proxy(tmp_output1(1_dim)), 2);                       \
+                    auto in3_t3 =                                                            \
+                        __riscv_vget_v_##OUT_INTRINSIC_ELEM##m4_##OUT_INTRINSIC_ELEM##m1(    \
+                            ntt::unwrap_proxy(tmp_output1(1_dim)), 3);                       \
                                                                                              \
                     auto in_temp0 =                                                          \
                         __riscv_vcreate_v_##OUT_INTRINSIC_ELEM##m1_##OUT_INTRINSIC_ELEM##m4( \
@@ -717,15 +847,30 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, i8)
                     auto in_temp1 =                                                          \
                         __riscv_vcreate_v_##OUT_INTRINSIC_ELEM##m1_##OUT_INTRINSIC_ELEM##m4( \
                             in0_t1, in0_t3, in1_t1, in1_t3);                                 \
+                    auto in_temp2 =                                                          \
+                        __riscv_vcreate_v_##OUT_INTRINSIC_ELEM##m1_##OUT_INTRINSIC_ELEM##m4( \
+                            in2_t0, in2_t2, in3_t0, in3_t2);                                 \
+                    auto in_temp3 =                                                          \
+                        __riscv_vcreate_v_##OUT_INTRINSIC_ELEM##m1_##OUT_INTRINSIC_ELEM##m4( \
+                            in2_t1, in2_t3, in3_t1, in3_t3);                                 \
                                                                                              \
                     in_temp0 = TPostOps<vector<OUT_ELEM, vl_out>>()(in_temp0);               \
                     in_temp1 = TPostOps<vector<OUT_ELEM, vl_out>>()(in_temp1);               \
+                    in_temp2 = TPostOps<vector<OUT_ELEM, vl_out>>()(in_temp2);               \
+                    in_temp3 = TPostOps<vector<OUT_ELEM, vl_out>>()(in_temp3);               \
                                                                                              \
-                    __riscv_vse##OUT_BW##_v_##OUT_INTRINSIC_ELEM##m4(                        \
-                        (OUT_BUILTIN_ELEM *)out_ptr, in_temp0, vl_out);                      \
-                    __riscv_vse##OUT_BW##_v_##OUT_INTRINSIC_ELEM##m4(                        \
-                        (OUT_BUILTIN_ELEM *)(out_ptr + output_stride),                       \
-                        in_temp1, vl_out);                                                   \
+                    asm volatile("vs4r.v %0, (%1);" ::"vr"(in_temp0),                        \
+                                 "r"(out_ptr)                                                \
+                                 : "memory");                                                \
+                    asm volatile("vs4r.v %0, (%1);" ::"vr"(in_temp1),                        \
+                                 "r"(out_ptr + output_stride)                                \
+                                 : "memory");                                                \
+                    asm volatile("vs4r.v %0, (%1);" ::"vr"(in_temp2),                        \
+                                 "r"(out_ptr + half_unroll)                                  \
+                                 : "memory");                                                \
+                    asm volatile("vs4r.v %0, (%1);" ::"vr"(in_temp3),                        \
+                                 "r"(out_ptr + half_unroll + output_stride)                  \
+                                 : "memory");                                                \
                 }                                                                            \
                 output += ntt::where(output_stride == 1,                                     \
                                      out_offset_scale * unroll, unroll);                     \
