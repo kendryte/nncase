@@ -171,6 +171,7 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
             p.Add<Passes.Rules.Neutral.TileToExpand>();
             p.Add<Passes.Rules.Neutral.FoldLayerNormBinary>();
+            p.Add<Passes.Rules.Neutral.FoldTwoNopCasts>();
         });
 
         // passManager.Add<HorizontalMergePass>();
