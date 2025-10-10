@@ -202,9 +202,9 @@ public sealed class MCTSearcher : Searcher<MergePoint>
         double coef = Math.Sqrt(2);
         double temp = 0.5;
         var ucbs = node.Children.Select(c => (-c.QualityValue / BestObjectValue) + (coef * Math.Sqrt(Math.Log(node.VisitTimes) / c.VisitTimes))).ToArray();
-        var ucbs_exp = ucbs.Select(ucb => Math.Exp(ucb / temp)).ToArray();
-        var sum = ucbs_exp.Sum();
-        var probs = ucbs_exp.Select(e => (int)(e / sum * 30)).ToArray(); // conver ucb as prob
+        var ucb_exps = ucbs.Select(ucb => Math.Max(Math.Exp(ucb / temp), 1e-10)).ToArray();
+        var sum = ucb_exps.Sum();
+        var probs = ucb_exps.Select(e => (int)(e / sum * 30)).ToArray(); // conver ucb as prob
         var candidates = probs.Select((p, i) => Enumerable.Repeat(i, p).ToArray()).SelectMany(i => i).ToArray();
         return node.Children[candidates[_random.Next(candidates.Length)]];
     }
