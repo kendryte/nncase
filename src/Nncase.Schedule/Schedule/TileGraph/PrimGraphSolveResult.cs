@@ -56,10 +56,9 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         {
             var expr = bid.Node.Grid.Buffers[bid.Index];
             var tensorType = GetBufferTensorType(expr);
-
-            if (!InputOutputVars.TryGetValue(bid, out var ivar))
+            if (!InputOutputVars.TryGetValue(bid, out _))
             {
-                ivar = new Var($"{bid}", tensorType);
+                var ivar = new Var($"{bid}", tensorType);
                 InputOutputVars.Add(bid, ivar);
             }
         }
