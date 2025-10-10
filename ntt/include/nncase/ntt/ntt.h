@@ -51,6 +51,7 @@
 #include "kernels/softmax.h"
 #include "kernels/stack.h"
 #include "kernels/summa.h"
+#include "kernels/top_k.h"
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
 #include "kernels/unpack.h"
