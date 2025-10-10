@@ -48,6 +48,7 @@ output_logits = true
 output_hidden_states = false
 num_layers = -1
 tensor_type = "float16"
+max_tokens = 3
 
 [paged_attention_config]
 block_size = 256

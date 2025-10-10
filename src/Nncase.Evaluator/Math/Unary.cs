@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Nncase.CostModel;
 using Nncase.Diagnostics;
@@ -18,6 +19,15 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
 {
     public static IValue InferValue(Tensor input_tensor, UnaryOp unaryOp)
     {
+        var legalMap = new Dictionary<PrimType, PrimType>
+        {
+            { DataTypes.Float16, DataTypes.Float32 },
+            { DataTypes.BFloat16, DataTypes.Float32 },
+            { DataTypes.Float8E4M3, DataTypes.Float32 },
+            { DataTypes.Float8E5M2, DataTypes.Float32 },
+        };
+        var legalInType = input_tensor.ElementType.Legalize(legalMap);
+
         if (input_tensor.Shape.IsScalar)
         {
             if (input_tensor.ElementType == DataTypes.Int32)
@@ -31,9 +41,9 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
         }
 
         var originDtype = input_tensor.ElementType;
-        if (originDtype.IsFloat() && originDtype is PrimType && originDtype != DataTypes.Float32)
+        if (originDtype != legalInType)
         {
-            input_tensor = input_tensor.Cast<float>();
+            input_tensor = input_tensor.CastElementTo(legalInType);
         }
 
         var input = input_tensor.ToOrtTensor();
@@ -63,8 +73,13 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
             UnaryOp.LogicalNot => OrtKI.Not(input),
             _ => throw new ArgumentOutOfRangeException(nameof(input_tensor)),
         };
+        var ret = result.ToTensor(legalInType);
+        if (input_tensor.ElementType != legalInType)
+        {
+            ret = ret.CastElementTo(input_tensor.ElementType);
+        }
 
-        return result.ToValue(originDtype);
+        return Value.FromTensor(ret);
     }
 
     public static IRType InferType(IRType inputType, UnaryOp unaryOp)

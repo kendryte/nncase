@@ -584,6 +584,9 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.SynchronizeThreads:
                     WriteIndWithProfiler($"ntt::distributed::topology_synchronize<ntt::distributed::topology::thread>();\n");
                     break;
+                case TIR.NTT.Qwen3MoE qwen3MoE:
+                    IndentScope.Writer.IndWrite($"qwen3_moe({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {VisitBuffer(args[4], local: true).Name}, {VisitBuffer(args[5], local: true).Name}, {VisitBuffer(args[6], local: true).Name}, {VisitBuffer(args[7], local: true).Name}, {VisitBuffer(args[8], local: true).Name},{VisitBuffer(args[9], local: true).Name},{VisitBuffer(args[10], local: true).Name},{VisitBuffer(args[11], local: true).Name}, {qwen3MoE.LayerId}, {qwen3MoE.HiddenSize}, {qwen3MoE.IntermediateSize}, {qwen3MoE.MoEIntermediateSize}, {qwen3MoE.NumExpert}, {qwen3MoE.NumTopK}, {qwen3MoE.IsNormTopkProb});\n");
+                    break;
                 default:
                     throw new NotSupportedException(kop.ToString());
             }

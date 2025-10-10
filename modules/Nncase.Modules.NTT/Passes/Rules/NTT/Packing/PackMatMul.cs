@@ -45,6 +45,11 @@ public sealed partial class PackMatMulByN : RewriteRule<Pattern>
 
     private Expr? GetReplace(VectorizedMatMul matMul, Call caller, Expr lhs, Expr rhs)
     {
+        if (lhs.CheckedDataType == DataTypes.Float8E4M3 || lhs.CheckedDataType == DataTypes.Float8E5M2)
+        {
+            return null;
+        }
+
         var lhsShape = lhs.CheckedShape;
         var rhsShape = rhs.CheckedShape;
         var dimInfo = matMul.GetDimInfo(lhsShape.Rank, rhsShape.Rank);
