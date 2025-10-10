@@ -111,6 +111,7 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     test_ntt_scatter_nd.cpp
     # test_ntt_slice.cpp
     test_ntt_softmax.cpp
+    test_ntt_top_k.cpp
     test_ntt_transpose.cpp
     test_ntt_unpack.cpp
     test_ntt_where.cpp
