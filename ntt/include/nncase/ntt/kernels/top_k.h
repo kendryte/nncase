@@ -25,7 +25,7 @@
 
 namespace nncase::ntt {
 
-template <Tensor TOutProb, class TOutIndice, size_t Rank, size_t Axis>
+template <Tensor TOutProb, Tensor TOutIndice, size_t Rank, size_t Axis>
 void sort_descending(TOutProb &out_probs, TOutIndice &out_indices,
                      dynamic_shape_t<Rank> apply_index, int K) {
     for (int i = 0; i < K - 1; ++i) {
@@ -64,7 +64,7 @@ void sort_descending(TOutProb &out_probs, TOutIndice &out_indices,
     }
 }
 
-template <Tensor TOutProb, class TOutIndice, size_t Rank, size_t Axis>
+template <Tensor TOutProb, Tensor TOutIndice, size_t Rank, size_t Axis>
 void requeue_descending(TOutProb &out_probs, TOutIndice &out_indices,
                         float candidate_value,
                         dynamic_dims_t<Rank> candidate_index,
@@ -98,7 +98,7 @@ void requeue_descending(TOutProb &out_probs, TOutIndice &out_indices,
     }
 }
 
-template <Tensor TInX, Tensor TInK, Tensor TOutProb, class TOutIndice,
+template <Tensor TInX, Tensor TInK, Tensor TOutProb, Tensor TOutIndice,
           FixedDimension TAxis>
 void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
            TOutIndice &out_indices, TAxis axis,
