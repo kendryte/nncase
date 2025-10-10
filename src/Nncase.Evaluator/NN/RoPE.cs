@@ -118,14 +118,9 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
     {
         // only unsupported print without to-string
         if (input.Placement != scale.Placement || scale.Placement != bias.Placement
-            || !scale.AxisPolicies.SequenceEqual(bias.AxisPolicies))
-        {
-            return invalid;
-        }
-
-        // [head, seq, dim]
-        if (!input.AxisPolicies[1..].SequenceEqual(scale.AxisPolicies)
-            || input.AxisPolicies[2] is not SBPBroadCast)
+            || !AxisEqual(input.AxisPolicies, scale.AxisPolicies, startA: 1, startB: 0)
+            || !AxisEqual(scale.AxisPolicies, bias.AxisPolicies, startA: 0, startB: 0)
+            || input.AxisPolicies[^1] is not SBPBroadCast)
         {
             return new InvalidType("RoPE: distributed types mismatch (placement/axis/SBP)");
 
