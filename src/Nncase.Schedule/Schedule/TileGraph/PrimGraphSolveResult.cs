@@ -480,7 +480,11 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
                 null => buffer switch
                 {
                     TIR.Buffer buf => IR.F.Buffer.AllocateBufferView(buf),
-                    Var ivar => ivar,
+                    Var ivar => TargetOptions.UnifiedMemoryArch switch
+                    {
+                        true => IR.F.Buffer.BufferSubview(ivar, relatedOffsets, shape),
+                        false => ivar,
+                    },
                     _ => throw new NotSupportedException(),
                 },
                 ViewInfo info => TargetOptions.UnifiedMemoryArch switch
