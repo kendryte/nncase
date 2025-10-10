@@ -25,8 +25,8 @@
 
 namespace nncase::ntt {
 
-template <size_t Rank, size_t Axis>
-void sort_descending(float *out_probs, int64_t *out_indices,
+template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
+void sort_descending(TProbs *out_probs, TIndices *out_indices,
                      int64_t out_probs_stride, int64_t out_indices_stride,
                      int K) {
     for (int cur_idx = 0; cur_idx < K - 1; ++cur_idx) {
@@ -53,8 +53,8 @@ void sort_descending(float *out_probs, int64_t *out_indices,
     }
 }
 
-template <size_t Rank, size_t Axis>
-void sort_ascending(float *out_probs, int64_t *out_indices,
+template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
+void sort_ascending(TProbs *out_probs, TIndices *out_indices,
                     int64_t out_probs_stride, int64_t out_indices_stride,
                     int K) {
     for (int cur_idx = 0; cur_idx < K - 1; ++cur_idx) {
@@ -81,10 +81,10 @@ void sort_ascending(float *out_probs, int64_t *out_indices,
     }
 }
 
-template <size_t Rank, size_t Axis>
-void requeue_descending(float *out_probs, int64_t *out_indices,
+template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
+void requeue_descending(TProbs *out_probs, TIndices *out_indices,
                         int64_t out_probs_stride, int64_t out_indices_stride,
-                        float candidate_value, int64_t candidate_index,
+                        TProbs candidate_value, int64_t candidate_index,
                         int64_t current_top_index, int64_t K) {
     auto next_candidate_value = out_probs[current_top_index * out_probs_stride];
     auto next_candidata_index =
@@ -96,18 +96,18 @@ void requeue_descending(float *out_probs, int64_t *out_indices,
     for (int k = 0; k < K; k++) {
         auto top_value = out_probs[k * out_probs_stride];
         if (next_candidate_value > top_value) {
-            requeue_descending<Rank, Axis>(
+            requeue_descending<TProbs, TIndices, Rank, Axis>(
                 out_probs, out_indices, out_probs_stride, out_indices_stride,
                 next_candidate_value, next_candidata_index, k, K);
         }
     }
 }
 
-template <size_t Rank, size_t Axis>
-void requeue_ascending(float *out_probs, int64_t *out_indices,
+template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
+void requeue_ascending(TProbs *out_probs, TIndices *out_indices,
                        int64_t out_probs_stride, int64_t out_indices_stride,
-                       float candidate_value, int64_t candidate_index,
-                       int64_t current_down_index, int64_t K) {
+                       TProbs candidate_value, TIndices candidate_index,
+                       TIndices current_down_index, int64_t K) {
     auto next_candidate_value =
         out_probs[current_down_index * out_probs_stride];
     auto next_candidata_index =
@@ -119,7 +119,7 @@ void requeue_ascending(float *out_probs, int64_t *out_indices,
     for (int k = 0; k < K; k++) {
         auto down_value = out_probs[k * out_probs_stride];
         if (next_candidate_value < down_value) {
-            requeue_ascending<Rank, Axis>(
+            requeue_ascending<TProbs, TIndices, Rank, Axis>(
                 out_probs, out_indices, out_probs_stride, out_indices_stride,
                 next_candidate_value, next_candidata_index, k, K);
         }
@@ -131,6 +131,9 @@ template <Tensor TInX, Tensor TInK, Tensor TOutProb, Tensor TOutIndice,
 void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
            TOutIndice &out_indices, TAxis axis, int64_t largest,
            int64_t sorted) {
+
+    using TProbs = element_or_scalar_t<TOutProb>;
+    using TIndices = element_or_scalar_t<TOutIndice>;
 
     constexpr auto Axis = dim_t(axis);
     constexpr auto rank = TInX::rank();
@@ -171,7 +174,7 @@ void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
                     auto top_value = slice_probs_ptr[k * out_probs_stride];
                     if (largest) {
                         if (candidate_value > top_value) {
-                            requeue_descending<rank(), Axis>(
+                            requeue_descending<TProbs, TIndices, rank(), Axis>(
                                 slice_probs_ptr, slice_indices_ptr,
                                 out_probs_stride, out_indices_stride,
                                 candidate_value, i, k, K);
@@ -179,7 +182,7 @@ void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
                         }
                     } else {
                         if (candidate_value < top_value) {
-                            requeue_ascending<rank(), Axis>(
+                            requeue_ascending<TProbs, TIndices, rank(), Axis>(
                                 slice_probs_ptr, slice_indices_ptr,
                                 out_probs_stride, out_indices_stride,
                                 candidate_value, i, k, K);
@@ -191,11 +194,11 @@ void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
 
             if (sorted) {
                 if (largest) {
-                    sort_descending<rank(), Axis>(
+                    sort_descending<TProbs, TIndices, rank(), Axis>(
                         slice_probs_ptr, slice_indices_ptr, out_probs_stride,
                         out_indices_stride, K);
                 } else {
-                    sort_ascending<rank(), Axis>(
+                    sort_ascending<TProbs, TIndices, rank(), Axis>(
                         slice_probs_ptr, slice_indices_ptr, out_probs_stride,
                         out_indices_stride, K);
                 }
