@@ -173,12 +173,21 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             {
                 shapes[a] = new IntExpr[value.BufferShapes[a].Length];
                 elemSizes[a] = sizes[a] = Solver.MakeIntConst(value.GetBufferElemSize(a));
-                var extentVars = tileVars;
-                var converter = new AffineExprToIntExprConverter(Solver, extentVars);
                 accessMaps[a] = value.Grid.AccessMaps[a];
+                var converter = new AffineExprToIntExprConverter(Solver, tileVars);
+                var accessMap = value.DomainRelation.Map * value.Grid.AccessMaps[a];
                 for (int i = 0; i < shapes[a].Length; i++)
                 {
-                    shapes[a][i] = converter.Visit(accessMaps[a].Results[i].Extent);
+                    // note themory solution, the custom affine map is not suitable for compute buffer size.
+                    if (accessMap.Results[i].Offset is AffineConstant c)
+                    {
+                        shapes[a][i] = converter.Visit(accessMap.Results[i].Offset) + converter.Visit(accessMap.Results[i].Extent);
+                    }
+                    else
+                    {
+                        shapes[a][i] = converter.Visit(accessMap.Results[i].Offset);
+                    }
+
                     sizes[a] *= shapes[a][i];
                 }
             }
@@ -296,7 +305,14 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             var converter = new AffineExprToIntExprConverter(Solver, backWardExtents[pos]);
             for (int j = 0; j < accessMap.Results.Length; j++)
             {
-                subDomainShapes[j] = converter.Visit(accessMap.Results[j].Extent);
+                if (accessMap.Results[j].Offset is AffineConstant c)
+                {
+                    subDomainShapes[j] = converter.Visit(accessMap.Results[j].Offset) + converter.Visit(accessMap.Results[j].Extent);
+                }
+                else
+                {
+                    subDomainShapes[j] = converter.Visit(accessMap.Results[j].Offset);
+                }
             }
 
             bufferSizes[pos] = subDomainShapes.Aggregate(elemSize, Solver.MakeProd);

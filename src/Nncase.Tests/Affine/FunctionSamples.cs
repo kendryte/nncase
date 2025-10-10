@@ -319,4 +319,20 @@ public static class FunctionSamples
         var v4 = IR.F.Tensors.Unpack(v3, [4], [2]); // {f32[32,12,(4 * ceil(dim2 / 4)),dim3], (S(0),B,B,B), [8@t,12,128,128]} ,
         return new Function("main", CPUTarget.Kind, v4, [v1, dim2, dim3]);
     }
+
+    public static Function GetDynamicVectorizedCastTranspose()
+    {
+        var seq_len = new DimVar("seq_len")
+        {
+            Metadata = new()
+            {
+                Range = new(1, 256),
+            },
+        };
+
+        var v1 = new Var("input", new TensorType(new VectorType(DataTypes.Float16, 64), new RankedShape(seq_len, 16)));
+        var v2 = IR.F.NTT.VectorizedCast(v1, new VectorType(DataTypes.Float32, 32), CastMode.KDefault, [1], None.Default);
+        var v3 = IR.F.Tensors.Transpose(v2, [1, 0]);
+        return new Function("main", CPUTarget.Kind, v3, [v1]);
+    }
 }

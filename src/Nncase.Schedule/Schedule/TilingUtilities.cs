@@ -109,37 +109,6 @@ public static class TilingUtilities
         return (domainSet, domainDynamic, domainBoundValues, domainBoundExprs);
     }
 
-    public static long[] InferDomainBounds(long[][] bufferShapes, AffineMap[] accessMaps)
-    {
-        var solver = new Solver("affineSolver");
-        var converter = new AffineExprToIntExprConverter(solver);
-        for (int i = 0; i < bufferShapes.Length; i++)
-        {
-            var shape = bufferShapes[i];
-            var results = accessMaps[i].Results;
-            for (int j = 0; j < results.Length; j++)
-            {
-                var extent = results[j].Extent;
-                var expr = converter.Visit(extent);
-                solver.Add(expr == shape[j]);
-            }
-        }
-
-        var dimVars = accessMaps[0].Domains.AsValueEnumerable().Select(x => (IntVar)converter.Visit(x.Extent)).ToArray();
-        var db = solver.MakePhase(dimVars, Solver.CHOOSE_FIRST_UNBOUND, Solver.ASSIGN_MIN_VALUE);
-        var solutionCollector = solver.MakeFirstSolutionCollector();
-        solutionCollector.Add(dimVars);
-        solver.Solve(db, solutionCollector);
-
-        if (solutionCollector.SolutionCount() < 1)
-        {
-            throw new InvalidOperationException("Tiling bounds infer failed!");
-        }
-
-        var dims = dimVars.Select(x => solutionCollector.Value(0, x)).ToArray();
-        return dims;
-    }
-
     /// <summary>
     /// some times we need to get the min/max value of an affine map.
     /// </summary>

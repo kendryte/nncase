@@ -46,6 +46,7 @@ public sealed class UnitTestTileGraph : TestClassBase
         { FunctionSamples.GetUnaryCastTrans, [new(2, 1, 0), new(2, 0, 0)], (_) => { }, 1, 5 },
         { FunctionSamples.GetBinaryUnary, [new(1, 0, 0)], SolveBinaryUnaryChecker, 1, 6 },
         { FunctionSamples.GetAddBranchMerge, [new(3, 1, 0), new(3, 2, 0), new(3, 0, 0)], (_) => { }, 1, 7 },
+        { FunctionSamples.GetDynamicVectorizedCastTranspose, [new(1, 0, 0)], (_) => { }, 1, 8 },
 
         // just for check single op tiling results
         // { FunctionSamples.Get1Matmul, [], (_) => { }, 5 },
