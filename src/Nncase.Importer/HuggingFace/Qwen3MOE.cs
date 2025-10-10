@@ -67,16 +67,18 @@ namespace Nncase.Importer
             //     numTopK: Config.GetNestedValue<long>("num_experts_per_tok"),
             //     isNormTopkProb: Config.GetNestedValue<bool>("norm_topk_prob") ? 1L : 0L);
             // return (Call)moeRes;
-            var routerLogits = Tensors.MatMul(hiddenStates, gateW);
+
+            // Split MoE logic.
+            var routerLogits = Linear(hiddenStates, gateW, layerName: "router_logits");
             routerLogits = Tensors.Cast(routerLogits, DataTypes.Float32);
             var topkProbs = NN.Softmax(routerLogits, -1);
-            var topKRes = Tensors.TopK(topkProbs, Tensor.FromScalar(Config.GetNestedValue<long>("num_experts_per_tok")), -1, true, true);
+            var topKRes = Tensors.TopK(topkProbs, Tensor.FromScalar(DataTypes.Int64, Config.GetNestedValue<long>("num_experts_per_tok"), [1]), -1, true, true);
             var routerWeights = topKRes[0];
             var selectedExperts = topKRes[1];
 
             if (Config.GetNestedValue<bool>("norm_topk_prob"))
             {
-                routerWeights = IR.F.Math.Binary(BinaryOp.Div, routerWeights, Tensors.ReduceSum(routerWeights, new long[] { -1L }, Tensor.FromArray(new[] { 1f }), new long[] { 1L }));
+                routerWeights = IR.F.Math.Binary(BinaryOp.Div, routerWeights, Tensors.Reduce(ReduceOp.Sum, routerWeights, new long[] { -1L }, 0f, true));
             }
 
             var sparseExpertOutput = NN.SparseExperts(
