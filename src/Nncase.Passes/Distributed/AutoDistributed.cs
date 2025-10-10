@@ -43,6 +43,17 @@ internal enum SearchGraphKind : int
     Bucket,
 }
 
+// // 仅供搜索图使用，不继承 BaseExpr/Op
+// public sealed class BoxingTag
+// {
+//     public IRType NewType { get; }
+//     /// <summary>
+//     /// Initializes a new instance of the <see cref="BoxingTag"/> class.
+//     /// </summary>
+//     /// <param name="newType"></param>
+//     public BoxingTag(IRType newType) => NewType = newType;
+//     public override string ToString() => $"BoxingTag({NewType})";
+// }
 public sealed class AutoDistributedMetaData : IRMetadata
 {
     public bool Skip { get; set; }
@@ -80,6 +91,49 @@ public sealed partial class AutoDistributedPass : FunctionPass
         }
 
         return Task.FromResult(input);
+    }
+}
+
+internal static class UserRebuilder
+{
+    public static void Rebuild(BaseExpr root)
+    {
+        var all = new List<BaseExpr>(256);
+        Dfs(root, all);
+
+        // 清
+        foreach (var n in all)
+        {
+            foreach (var u in n.Users.ToArray())
+            {
+                n.RemoveUser(u);
+            }
+        }
+
+        // 建
+        foreach (var n in all)
+        {
+            var ops = n.Operands;
+            for (int i = 0; i < ops.Length; ++i)
+            {
+                ops[i].AddUser(n);  // 注意：此时不在抑制作用域内
+            }
+        }
+    }
+
+    private static void Dfs(BaseExpr n, List<BaseExpr> bag)
+    {
+        if (bag.Contains(n))
+        {
+            return;
+        }
+
+        bag.Add(n);
+        var ops = n.Operands;
+        for (int i = 0; i < ops.Length; ++i)
+        {
+            Dfs(ops[i], bag);
+        }
     }
 }
 
@@ -309,19 +363,17 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     public Function Rewrite(Function function)
     {
-        var body = function.Body;
-        Visit(body);
-        var rootCluster = TryInstertTerminator(body);
-
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
+        BaseExpr post;
+        using (Nncase.IR.UserTrackingScope.Suppress()) // ← 构图 + 试构 + 提取期间都不写 users
         {
-            using (var stream = Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot"))
-            {
-                Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
-            }
+            Visit(function.Body);
+            var root = TryInstertTerminator(function.Body);
+            post = SolveAndExtract(root);   // 这里产生的新 IR 也不会写 users
         }
 
-        var post = SolveAndExtract(rootCluster);
+        // 作用域结束后，一次性重建 def-use
+        UserRebuilder.Rebuild(post);
+
         return function.With(body: post);
     }
 
@@ -1094,12 +1146,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-        if (enableDump)
+        using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
-            using (var stream = Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot"))
-            {
-                Dump(stream, picks, costMemo);
-            }
+            Dump(stream, picks, costMemo);
         }
 
         if (_phase == AutoDistributedPhase.SearchConstant)
