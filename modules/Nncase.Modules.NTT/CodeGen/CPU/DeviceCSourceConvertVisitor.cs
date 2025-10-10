@@ -631,7 +631,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         }
 
         var value = Visit(expr.Dim);
-        symbol = new("dims_t", value.Name);
+        symbol = new("dim_t", value.Name);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

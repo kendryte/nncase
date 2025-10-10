@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive;
 using Google.OrTools.Sat;
 using Nncase.IR;
@@ -27,32 +28,55 @@ public record NodeWithBufferInfo(long Size, Tuple<int, int> Liveness, long[] Sha
     public ulong Offset { get; set; } = ulong.MaxValue;
 }
 
+/// <summary>
+/// Represents the view information of a buffer.
+/// </summary>
+/// <param name="Parent">The parent view information.</param>
+/// <param name="View">The view expression.</param>
+/// <param name="ViewVar">The variable for the view expression.</param>
+/// <param name="Buffer">The buffer expression.</param>
+/// <param name="GlobalOffsets">The global offsets for the buffer.</param>
+/// <param name="LocalOffsets">The local offsets of parent for the buffer.</param>
+/// <param name="Shape">The shape of the view.</param>
+internal sealed record ViewInfo(ViewInfo? Parent, Expr View, Var ViewVar, Expr Buffer, RankedShape GlobalOffsets, RankedShape LocalOffsets, RankedShape Shape)
+{
+}
+
 public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<TreeSolveResult.Context, Unit>
 {
-    private readonly Dictionary<ITileable, Dictionary<BufferIdentity, SubViewInfo>> _subViewMemo;
+    private readonly Dictionary<ITileable, Dictionary<BufferIdentity, ViewInfo>> _viewInfoMemo;
 
     public TreeSolveResult(BufferGraph primBufferGraph, long objectiveValue, Dictionary<int, Dictionary<NodeWithBuffer, NodeWithBufferInfo>> levelNodeBufferInfos, Dictionary<OpNode, OpNodeInfo<long>> primitiveBufferInfo, Dictionary<TileNode, TileNodeInfo<long>> levelBufferInfos, Dictionary<ITileable, DomainInfo<long>> domainInfos, INTTTargetOptions targetOptions, string moduleKind)
         : base(null!, primitiveBufferInfo, levelBufferInfos, domainInfos, targetOptions)
     {
         PrimBufferGraph = primBufferGraph;
         (Inputs, Outputs) = primBufferGraph.GetInputsOutputs(primBufferGraph.Parent as BufferGraph);
+        InputOutputVars = new();
+        foreach (var bid in Inputs.Concat(Outputs))
+        {
+            var expr = bid.Node.Grid.Buffers[bid.Index];
+            var tensorType = GetBufferTensorType(expr);
+
+            if (!InputOutputVars.TryGetValue(bid, out var ivar))
+            {
+                ivar = new Var($"{bid}", tensorType);
+                InputOutputVars.Add(bid, ivar);
+            }
+        }
+
         ObjectiveValue = objectiveValue;
         LevelNodeBufferInfos = levelNodeBufferInfos;
         ModuleKind = moduleKind;
-        PrimBufferMemo = new();
-        _subViewMemo = new();
+        _viewInfoMemo = new();
     }
-
-    /// <summary>
-    /// Gets the primitive buffer memo. buffer identity to var/alloc/attach/view.
-    /// </summary>
-    public Dictionary<BufferIdentity, Expr> PrimBufferMemo { get; }
 
     public BufferGraph PrimBufferGraph { get; }
 
     public HashSet<BufferIdentity> Inputs { get; }
 
     public HashSet<BufferIdentity> Outputs { get; }
+
+    public Dictionary<BufferIdentity, Var> InputOutputVars { get; }
 
     public long ObjectiveValue { get; }
 
@@ -104,6 +128,26 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
     public Unit Visit(TileNode value, Context context)
     {
         var (parentbuilder, parentOffsets, parentExtents) = context;
+        {
+            var newParentExtents = new Dimension[parentExtents.Length];
+            for (int i = 0; i < parentExtents.Length; i++)
+            {
+                if (parentExtents[i] is AsDim { Dim: Call { Target: IR.Tensors.LocalShardDim } } localShardDim)
+                {
+                    var letDim = T.LetDim(out var dimVar, localShardDim, $"L{value.Level}_d{i}");
+                    parentbuilder.Body(letDim);
+                    parentbuilder = letDim;
+                    dimVar.Metadata = new() { Range = localShardDim.Metadata.Range };
+                    newParentExtents[i] = dimVar;
+                }
+                else
+                {
+                    newParentExtents[i] = parentExtents[i];
+                }
+            }
+
+            parentExtents = newParentExtents;
+        }
 
         // get current tile node's domain.
         // todo use domain map to introduce the new dimensions.
@@ -190,123 +234,76 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
         // var domainLetBuilders = Enumerable.Range(0, value.DimNames.Length).Select(i => new List<ISequentialBuilder<Expr>>()).ToArray();
         var cntBuilder = parentbuilder;
-        for (int i = 0; i < loopVars.Length + 1; i++)
+        var childBuilders = new List<ISequentialBuilder<Expr>>();
+        for (int i = 0; i < value.Children.Length; i++)
+        {
+            var childBuilder = T.Sequential();
+            childBuilders.Add(childBuilder);
+        }
+
+        for (int ci = 0; ci < loopVars.Length + 1; ci++)
         {
             foreach (var (bid, bufferInfo) in nodeMemo.BufferInfoMap)
             {
-                var place = bufferInfo.Places[i];
+                var place = bufferInfo.Places[ci];
                 var expr = bid.Node.Grid.Buffers[bid.Index];
                 var distributedType = GetBufferDistributedType(expr);
                 for (int sl = 0; sl < place.Length; sl++)
                 {
-                    if (place[sl] == 1)
+                    if (place[sl] != 1)
                     {
-                        var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
+                        continue;
+                    }
 
-                        // calculate the buffer shape.
-                        var partialShape = PartialShapeFromDomain(parentDomain, value.DomainRelation, tiledChildDomain, bufferInfo.Map, (uint)i, paramDimMap);
-                        var viewInfo = GetParentSubViewInfo(sl, value, bid, bufferInfo.Map, forwardOffsets[i], partialShape);
-                        Expr subView;
-                        if (viewInfo.InnerAllocated)
-                        {
-                            subView = IR.F.Buffer.AllocateBufferView(viewInfo.Buffer);
-                        }
-                        else
-                        {
-                            // for cpu we can use tensor view.
-                            if (TargetOptions.UnifiedMemoryArch)
-                            {
-                                subView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, viewInfo.Shape);
-                            }
-                            else
-                            {
-                                // for device we should use copy.
-                                var offset = LevelNodeBufferInfos[sl][new(value, bid)].Offset;
-                                var dtype = viewInfo.Buffer.CheckedDataType;
-                                var physicalBuffer = new PhysicalBuffer(dtype.SizeInBytes, offset, bufferInfo.Sizes[i], MemoryLocation.Data, 0);
-                                subView = new TIR.Buffer($"{bid}_L{value.Level}_Copy", dtype, new MemSpan(physicalBuffer), viewInfo.Shape.ToArray(), TensorUtilities.GetDefaultStrides(bufferInfo.Shapes[i].Select(i => (Dimension)i).ToArray()), distributedType);
-                            }
-                        }
+                    var kernelInfo = bid.Node.GetKernelInfo(TargetOptions);
+                    var partialShape = PartialShapeFromDomain(parentDomain, value.DomainRelation, tiledChildDomain, bufferInfo.Map, (uint)ci, paramDimMap);
 
-                        Var subViewVar;
+                    var viewInfo = GetViewInfo(sl, value, bid, bufferInfo.Map, forwardOffsets[ci], partialShape);
+                    var letBuilder = T.Let(viewInfo.ViewVar, viewInfo.View);
+                    cntBuilder.Body(letBuilder);
+                    cntBuilder = letBuilder;
 
-                        // the parent buffer is temp buffer.
-                        var letBuilder = T.Let(out subViewVar, subView, $"{bid}_L{value.Level}");
-                        if (!TargetOptions.UnifiedMemoryArch)
+                    // note when create loop is inner loop, the buffer load store should be instert by children's order.
+                    {
+                        var localBuilder = ci < loopVars.Length ? cntBuilder : childBuilders[FetchBidOwnerIndex(value, bid)];
+                        if (!TargetOptions.UnifiedMemoryArch && viewInfo.Parent is ViewInfo parentViewInfo)
                         {
-                            var srcBufView = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, viewInfo.Shape);
                             if (kernelInfo.BufferInfos[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Read))
                             {
-                                if (bid.Node.Op.GetType().Name.Contains("Matmul", StringComparison.Ordinal) && bid.IsOutput)
-                                {
-                                    var kdim = bid.Node.WriteAccess.Domains.Length - 2;
-                                    var val = value;
-                                    bool isLoopRelated = false;
-                                    while (val.Parent is TileNode parent)
-                                    {
-                                        var m = TileableNodeMemo[val];
-                                        if (val.Level == value.Level)
-                                        {
-                                            if (i > kdim && m.TileVars[kdim] != 1)
-                                            {
-                                                isLoopRelated = true;
-                                                break;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (m.TileVars[kdim] != 1)
-                                            {
-                                                isLoopRelated = true;
-                                                break;
-                                            }
-                                        }
-
-                                        val = parent;
-                                    }
-
-                                    if (isLoopRelated)
-                                    {
-                                        letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
-                                    }
-                                }
-                                else
-                                {
-                                    letBuilder.Body(T.Memcopy(subViewVar, srcBufView));
-                                }
+                                localBuilder.Body(T.Memcopy(viewInfo.ViewVar, IR.F.Buffer.BufferSubview(parentViewInfo.ViewVar ?? parentViewInfo.Buffer, viewInfo.LocalOffsets, viewInfo.Shape)));
                             }
 
                             if (kernelInfo.BufferInfos[bid.Index].State.HasFlag(MicroKernelBufferInfo.BufferState.Write))
                             {
-                                letBuilder.Tail(T.Memcopy(srcBufView, subViewVar));
+                                localBuilder.Tail(T.Memcopy(IR.F.Buffer.BufferSubview(parentViewInfo.ViewVar ?? parentViewInfo.Buffer, viewInfo.LocalOffsets, viewInfo.Shape), viewInfo.ViewVar));
                             }
                         }
-
-                        cntBuilder.Body(letBuilder);
-                        cntBuilder = letBuilder;
-
-                        if (!_subViewMemo.TryGetValue(value, out var subViewMap))
-                        {
-                            subViewMap = new();
-                            _subViewMemo.Add(value, subViewMap);
-                        }
-
-                        subViewMap[bid] = new(subViewVar, viewInfo.Offsets);
                     }
+
+                    if (!_viewInfoMemo.TryGetValue(value, out var subViewMap))
+                    {
+                        subViewMap = new();
+                        _viewInfoMemo.Add(value, subViewMap);
+                    }
+
+                    subViewMap[bid] = viewInfo;
                 }
             }
 
-            if (i < loopVars.Length)
+            if (ci < loopVars.Length)
             {
-                cntBuilder.Body(loopBuilders[i]);
-                cntBuilder = loopBuilders[i];
+                cntBuilder.Body(loopBuilders[ci]);
+                cntBuilder = loopBuilders[ci];
+            }
+            else
+            {
             }
         }
 
-        foreach (var child in value.Children)
+        for (int i = 0; i < value.Children.Length; i++)
         {
-            var childBuilder = T.Sequential();
-            child.Accept(this, new(childBuilder, forwardOffsets[^1], forwardExtents));
+            var childBuilder = childBuilders[i];
+            value.Children[i].Accept(this, new(childBuilder, forwardOffsets[^1], forwardExtents));
             cntBuilder.Body(childBuilder);
         }
 
@@ -323,28 +320,42 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         var currentRanges = value.DomainRelation.Map.Apply(parentOffsets, parentExtents);
         var currentOffsets = currentRanges.Select(r => r.Start).ToArray();
         var currentExtents = currentRanges.Select(r => r.Stop).ToArray();
+        var kernelInfo = value.GetKernelInfo(TargetOptions);
 
-        var buffers = new Expr[value.BufferShapes.Length];
+        var bufferParentViewInfos = new ViewInfo[value.BufferShapes.Length];
+        var bufferViews = new Expr[value.BufferShapes.Length];
         for (int i = 0; i < value.BufferShapes.Length; i++)
         {
             var bid = new BufferIdentity(value.Wrapped, i);
             var shape = PartialShapeFromDomain(parentDomain, value.DomainRelation, currentDomain, value.Grid.AccessMaps[i], (uint)currentDomain.dim(Isl.dim_type.set), paramDimMap);
-            var viewInfo = GetParentSubViewInfo(value.Level, value, bid, OpNodeMemo[value].Maps[i], currentOffsets, shape);
+            if (!TryGetParentViewInfo(value, bid, out var parentViewInfo))
+            {
+                throw new InvalidOperationException($"can't find parent view info for {bid} at OpNode {value}!");
+            }
 
-            buffers[i] = IR.F.Buffer.BufferSubview(viewInfo.Buffer, viewInfo.Offsets, viewInfo.Shape);
+            var bufferOffsets = OpNodeMemo[value].Maps[i].Apply(currentOffsets, Enumerable.Repeat<Dimension>(0L, currentOffsets.Length).ToArray()).Select(i => i.Start).ToArray();
+            var offsets = new Dimension[bufferOffsets.Length];
+            for (int j = 0; j < offsets.Length; j++)
+            {
+                var x = bufferOffsets[j] - parentViewInfo.GlobalOffsets[j];
+                offsets[j] = x;
+            }
+
+            offsets = ISLUtility.RoundTrip(offsets);
+            bufferParentViewInfos[i] = parentViewInfo;
+            bufferViews[i] = IR.F.Buffer.BufferSubview(parentViewInfo.ViewVar, offsets, shape);
         }
 
         var bodyVarReplaces = new Dictionary<BaseExpr, BaseExpr>();
         for (int i = 0; i < value.Grid.BodyParameters.Length; i++)
         {
-            bodyVarReplaces.Add(value.Grid.BodyParameters[i], buffers[i]);
+            bodyVarReplaces.Add(value.Grid.BodyParameters[i], bufferViews[i]);
         }
 
         var domain = new IR.Tuple(currentOffsets.Select(off => new IR.Tuple(IR.F.Shapes.AsTensor(off), (Expr)0L)).ToArray());
         bodyVarReplaces.Add(value.Grid.DomainParameter, domain);
         var nestBody = new ReplacingExprCloner(bodyVarReplaces).Clone(value.Grid.Body, default);
         parentbuilder.Body(nestBody);
-
         return default;
     }
 
@@ -428,35 +439,17 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
         };
     }
 
-    /// <summary>
-    /// get declare of the input/output buffer which was stored on top level.
-    /// </summary>
-    private Expr GetTopLevelDeclareBuffer(BufferIdentity bid)
-    {
-        var expr = bid.Node.Grid.Buffers[bid.Index];
-        var tensorType = GetBufferTensorType(expr);
-
-        // TODO: Currently we only support the buffer which is not distributed.
-        if (!PrimBufferMemo.TryGetValue(bid, out var buffer))
-        {
-            buffer = new Var($"{bid}", tensorType);
-            PrimBufferMemo.Add(bid, buffer);
-        }
-
-        return buffer;
-    }
-
-    private bool TryGetParerntBuffer(ITreeNode node, BufferIdentity bid, out Expr parentBuffer, out Shape parentOffsets)
+    private bool TryGetParentViewInfo(ITreeNode node, BufferIdentity bid, [MaybeNullWhen(false)] out ViewInfo parentViewInfo)
     {
         var cbid = bid;
         var parentNode = node.Parent;
+        parentViewInfo = null;
         while (parentNode is TileNode parentTileNode && parentTileNode.OpId != -1)
         {
             var pbid = TileNodeMemo[parentTileNode].GetByChildBuffer(cbid);
-            if (_subViewMemo.TryGetValue(parentTileNode, out var subViewMap) && subViewMap.TryGetValue(pbid, out var subViewInfo))
+            if (_viewInfoMemo.TryGetValue(parentTileNode, out var viewMap) && viewMap.TryGetValue(pbid, out var viewInfo))
             {
-                parentBuffer = subViewInfo.Buffer;
-                parentOffsets = subViewInfo.Offsets;
+                parentViewInfo = viewInfo;
                 return true;
             }
 
@@ -464,93 +457,122 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
             cbid = pbid;
         }
 
-        parentBuffer = null!;
-        parentOffsets = null!;
         return false;
     }
 
-    private ParentSubViewInfo GetParentSubViewInfo(int storeLevel, ITreeNode node, BufferIdentity bid, AffineMap map, Dimension[] forwardOffsets, RankedShape shape)
+    private ViewInfo GetViewInfo(int storeLevel, TileNode node, BufferIdentity bid, AffineMap map, Dimension[] forwardOffsets, RankedShape shape)
     {
-        var offset = map.Apply(forwardOffsets, Enumerable.Repeat<Dimension>(0L, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray();
-        bool innerAllocated = false;
-        if (TryGetParerntBuffer(node, bid, out var parentBuffer, out var parentOffsets))
+        TIR.Buffer AllocateBuffer(TileNode tileNode, BufferIdentity bid)
         {
-            var subOffset = new Dimension[offset.Length];
-            for (int j = 0; j < subOffset.Length; j++)
-            {
-                var x = offset[j] - parentOffsets[j];
-                subOffset[j] = x;
-
-                // CompilerServices.ERewrite(x, new Passes.IRewriteRule[] { new Passes.Rules.Arithmetic.AssociateAdd(), new Passes.Rules.Arithmetic.CommutateAdd(), new Passes.Rules.Arithmetic.XNegX(), new Passes.Rules.Arithmetic.XNegX0() }, new(), CompileOptions);
-            }
-
-            offset = ISLUtility.RoundTrip(subOffset);
-        }
-        else
-        {
-            if (Outputs.Contains(bid))
-            {
-                parentBuffer = GetTopLevelDeclareBuffer(bid);
-            }
-            else if (Inputs.Contains(bid))
-            {
-                parentBuffer = GetTopLevelDeclareBuffer(bid);
-            }
-            else if (node is TileNode tileNode)
-            {
-                parentBuffer = GetInnerAllocateBuffer(storeLevel, tileNode, bid, shape, out innerAllocated);
-            }
+            var expr = bid.Node.Grid.Buffers[bid.Index];
+            var tensorType = GetBufferTensorType(expr);
+            tensorType = new TensorType(tensorType.DType, shape); // according to subtensor shape.
+            var info = LevelNodeBufferInfos[storeLevel][new NodeWithBuffer(tileNode, bid)];
+            var alignment = tensorType.DType.SizeInBytes;
+            var strides = info.Strides.Select(i => (Dimension)i).ToArray(); // using fixed strides.
+            var physicalBuffer = new PhysicalBuffer(alignment, Tensor.FromPointer(info.Offset, tensorType.DType), info.Size, MemoryLocation.Cache, storeLevel);
+            return new TIR.Buffer($"{bid}", tensorType.DType, new MemSpan(physicalBuffer), shape.Dimensions.ToArray(), strides, null);
         }
 
-        return new ParentSubViewInfo(parentBuffer, offset, shape, innerAllocated);
-    }
-
-    /// <summary>
-    /// Allocate a buffer which store at inner level.
-    /// </summary>
-    private TIR.Buffer GetInnerAllocateBuffer(int storeLevel, TileNode node, BufferIdentity bid, RankedShape shape, out bool innerAllocated)
-    {
-        var expr = bid.Node.Grid.Buffers[bid.Index];
-        var tensorType = GetBufferTensorType(expr);
-        innerAllocated = false;
-        if (!PrimBufferMemo.TryGetValue(bid, out var buffer))
+        Expr GetViewExpr(ViewInfo? parentInfo, Expr buffer, RankedShape forwardOffsets, RankedShape relatedOffsets, RankedShape shape)
         {
-            TileNode rootNode = node;
-            while (rootNode.Parent is TileNode parentTileNode && parentTileNode.OpId != -1)
+            return parentInfo switch
             {
-                rootNode = parentTileNode;
+                null => buffer switch
+                {
+                    TIR.Buffer buf => IR.F.Buffer.AllocateBufferView(buf),
+                    Var ivar => ivar,
+                    _ => throw new NotSupportedException(),
+                },
+                ViewInfo info => TargetOptions.UnifiedMemoryArch switch
+                {
+                    true => IR.F.Buffer.BufferSubview(info.ViewVar, relatedOffsets, shape),
+                    false => buffer switch
+                    {
+                        TIR.Buffer buf => IR.F.Buffer.AllocateBufferView(buf),
+                        _ => throw new NotSupportedException(),
+                    },
+                },
+            };
+        }
+
+        var bufferOffsets = map.Apply(forwardOffsets, Enumerable.Repeat<Dimension>(0L, forwardOffsets.Length).ToArray()).Select(i => i.Start).ToArray();
+        var offsets = new RankedShape(bufferOffsets);
+        if (TryGetParentViewInfo(node, bid, out var parentViewInfo))
+        {
+            var viewOffset = new Dimension[bufferOffsets.Length];
+            for (int j = 0; j < viewOffset.Length; j++)
+            {
+                var x = bufferOffsets[j] - parentViewInfo.GlobalOffsets[j];
+                viewOffset[j] = x;
             }
 
-            if (storeLevel <= rootNode.Level)
+            offsets = ISLUtility.RoundTrip(viewOffset);
+            Expr buffer;
+            if (TargetOptions.UnifiedMemoryArch)
             {
-                tensorType = new TensorType(tensorType.DType, shape); // according to subtensor shape.
-                var info = LevelNodeBufferInfos[storeLevel][new(node, bid)];
-                var alignment = tensorType.DType.SizeInBytes;
-                var strides = info.Strides.Select(i => (Dimension)i).ToArray(); // using fixed strides.
-                var physicalBuffer = new PhysicalBuffer(alignment, Tensor.FromPointer(info.Offset, tensorType.DType), info.Size, MemoryLocation.Cache, storeLevel);
-                buffer = new TIR.Buffer($"{bid}", tensorType.DType, new MemSpan(physicalBuffer), shape.Dimensions.ToArray(), strides, null);
-                innerAllocated = true;
+                buffer = parentViewInfo.Buffer;
             }
             else
             {
-                buffer = T.AttachBuffer(None.Default, tensorType, MemoryLocation.Data, 1, out _, $"{bid}");
+                buffer = AllocateBuffer(node, bid);
             }
 
-            PrimBufferMemo.Add(bid, buffer);
+            var view = GetViewExpr(parentViewInfo, buffer, bufferOffsets, offsets, shape);
+            var viewVar = new Var($"{bid}_L{node.Level}", AnyType.Default);
+            return new ViewInfo(parentViewInfo, view, viewVar, buffer, bufferOffsets, offsets, shape);
+        }
+        else
+        {
+            parentViewInfo = null;
+            Expr buffer = null!;
+            var fromExternal = Inputs.Contains(bid) || Outputs.Contains(bid);
+
+            if (TargetOptions.UnifiedMemoryArch && fromExternal)
+            {
+                buffer = InputOutputVars[bid];
+            }
+            else
+            {
+                buffer = AllocateBuffer(node, bid);
+            }
+
+            if (!TargetOptions.UnifiedMemoryArch && fromExternal)
+            {
+                parentViewInfo = new ViewInfo(null, null!, null, InputOutputVars[bid], new RankedShape(bufferOffsets.Select(i => 0).ToArray()), new RankedShape(bufferOffsets.Select(i => 0).ToArray()), shape);
+            }
+
+            var view = GetViewExpr(null, buffer, bufferOffsets, offsets, shape);
+            var viewVar = new Var($"{bid}_L{node.Level}", AnyType.Default);
+            return new ViewInfo(parentViewInfo, view, viewVar, buffer, bufferOffsets, fromExternal ? bufferOffsets : new RankedShape(bufferOffsets.Select(i => 0).ToArray()), shape);
+        }
+    }
+
+    private int FetchBidOwnerIndex(TileNode node, BufferIdentity bid)
+    {
+        for (int i = 0; i < node.Children.Length; i++)
+        {
+            var child = node.Children[i];
+            if (child is TileNode tilenode)
+            {
+                if (TileNodeMemo[tilenode].BufferInfoMap.ContainsKey(bid))
+                {
+                    return i;
+                }
+            }
+            else if (child is OpNode opnode)
+            {
+                if (bid.Node.OpId == opnode.OpId)
+                {
+                    return i;
+                }
+            }
         }
 
-        return (TIR.Buffer)buffer;
+        return -1;
     }
 
     public sealed record Context(ISequentialBuilder<Expr> ParentBuilder, Dimension[] ForwardOffsets, Dimension[] ForwardExtents)
-    {
-    }
-
-    public sealed record ParentSubViewInfo(Expr Buffer, Shape Offsets, RankedShape Shape, bool InnerAllocated)
-    {
-    }
-
-    public sealed record SubViewInfo(Expr Buffer, Shape Offsets)
     {
     }
 }

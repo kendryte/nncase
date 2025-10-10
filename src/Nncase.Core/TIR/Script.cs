@@ -310,6 +310,11 @@ public static class T
         return new SequentialBuilder<Let>(body => new Let(newV, expression, body));
     }
 
+    public static ISequentialBuilder<Let> Let(Var v, Expr expression)
+    {
+        return new SequentialBuilder<Let>(body => new Let(v, expression, body));
+    }
+
     /// <summary>
     /// Let bind.
     /// </summary>

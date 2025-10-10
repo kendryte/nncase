@@ -100,6 +100,14 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         var defUseMap = BufferGraphMemo[value.Wrapped].Edges.Where(e => e.Tag == BufferEdgeKind.Inter).ToBiDictionary(e => e.Source, e => e.Target);
         var bufferResults = new List<BufferResult>();
 
+        // gather the min/max lifeness child.
+        Tuple<int, int> nodeLifeness = new(int.MaxValue, int.MinValue);
+        for (int i = 0; i < childResult.BufferResults.Length; i++)
+        {
+            var lifeness = childResult.BufferResults[i].Lifeness;
+            nodeLifeness = new(Math.Min(nodeLifeness.Item1, lifeness.Item1), Math.Max(nodeLifeness.Item2, lifeness.Item2));
+        }
+
         // each tile node have buffer place vars.
         if (!TileNodeMemo.TryGetValue(value, out var info))
         {
@@ -129,7 +137,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
 
                 if (!bufferInfoMap.TryGetValue(curId, out var bufferInfo))
                 {
-                    bufferInfo = GetBufferInfo(value, curId, currentAccessMap, currentLifeness, tileVars, forwardExtents, backWardExtents, result.ElemSize);
+                    bufferInfo = GetBufferInfo(value, curId, currentAccessMap, nodeLifeness, currentLifeness, tileVars, forwardExtents, backWardExtents, result.ElemSize);
                     bufferInfoMap.Add(curId, bufferInfo);
                     bufferResults.Add(new(curId, currentLifeness, value.DomainRelation.Map * currentAccessMap, result.ElemSize));
                 }
@@ -257,7 +265,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         return backWardExtents;
     }
 
-    private TileNodeBufferInfo<IntExpr> GetBufferInfo(TileNode tileNode, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> lifeness, IntExpr[] tileVars, IntExpr[] forwardExtents, IntExpr[][] backWardExtents, IntExpr elemSize)
+    private TileNodeBufferInfo<IntExpr> GetBufferInfo(TileNode tileNode, BufferIdentity bid, AffineMap accessMap, Tuple<int, int> nodeLiveness, Tuple<int, int> currentLiveness, IntExpr[] tileVars, IntExpr[] forwardExtents, IntExpr[][] backWardExtents, IntExpr elemSize)
     {
         var rank = tileNode.DomainRelation.Map.Results.Length;
         var fullPos = rank + 1;
@@ -266,6 +274,13 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
         var bufferShapes = Enumerable.Range(0, fullPos).Select(i => Array.Empty<IntExpr>()).ToArray();
         var bufferSizes = new IntExpr[fullPos];
         var bufferTrips = new IntExpr[fullPos];
+        var bufferLiveness = new Tuple<int, int>[fullPos];
+        bufferLiveness[^1] = currentLiveness;
+        for (int i = 0; i < fullPos - 1; i++)
+        {
+            bufferLiveness[i] = nodeLiveness;
+        }
+
         LoopMask bufferMask = new(0);
 
         var resultStr = accessMap.ToString().Split("->")[1];
@@ -310,7 +325,7 @@ public sealed class TreeSolverInitializer : TreeSolverBase<IntExpr>, ITreeNodeVi
             // note update writes in second visitor.
         }
 
-        var bufferInfo = new TileNodeBufferInfo<IntExpr>(lifeness, accessMap, bufferPlaces, bufferShapes, bufferSizes, bufferTrips, bufferMask);
+        var bufferInfo = new TileNodeBufferInfo<IntExpr>(bufferLiveness, accessMap, bufferPlaces, bufferShapes, bufferSizes, bufferTrips, bufferMask);
         return bufferInfo;
     }
 

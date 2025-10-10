@@ -102,15 +102,15 @@ public sealed class GraphTiler
                 foreach (var (bid, bufferInfo) in nodeInfo.BufferInfoMap)
                 {
                     var nodeBuffer = new NodeWithBuffer(tileNode, bid);
-                    beginTime = Math.Min(beginTime, bufferInfo.Liveness.Item1);
-                    endTime = Math.Max(endTime, bufferInfo.Liveness.Item2);
-                    var extents = new List<IntExpr>();
                     var ci = bufferInfo.GetLastRelatedPos();
+                    var extents = new List<IntExpr>();
+                    beginTime = Math.Min(beginTime, bufferInfo.Liveness[ci].Item1);
+                    endTime = Math.Max(endTime, bufferInfo.Liveness[ci].Item2);
 
                     extents.Add(solver.MakeProd(bufferInfo.Places[ci][sl], bufferInfo.Sizes[ci]));
                     nodeBufferSizes[nodeBuffer] = solver.MakeSum(extents);
                     nodeBufferShapes[nodeBuffer] = bufferInfo.Shapes[ci];
-                    nodeBufferLiveness[nodeBuffer] = bufferInfo.Liveness;
+                    nodeBufferLiveness[nodeBuffer] = bufferInfo.Liveness[ci];
                 }
             }
 
@@ -507,9 +507,9 @@ public sealed class GraphTiler
                 var initOffsets = Enumerable.Repeat(new DimConst(0), primTree.DomainBoundExprs.Length).ToArray();
                 var initBounds = primTree.DomainBoundExprs.ToArray();
                 result.Visit(primTree, new(bodyBuilder, initOffsets, initBounds));
-                var parameters = inputBids.Select(k => (IVar)result.PrimBufferMemo[k]).Concat(
+                var parameters = inputBids.Select(k => result.InputOutputVars[k]).Concat(
                     dynamicDimVars.Select(v => (IVar)v.With())).Concat(
-                    outputBids.Select(k => (IVar)result.PrimBufferMemo[k])).ToArray();
+                    outputBids.Select(k => result.InputOutputVars[k])).ToArray();
                 var funcBuilder = T.PrimFunc(funcName, moduleKind, parameters).Body(bodyBuilder);
                 var primFunc = funcBuilder.Build();
                 {

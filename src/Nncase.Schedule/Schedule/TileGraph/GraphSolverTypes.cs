@@ -23,7 +23,7 @@ public sealed record BufferIdentity(TileGrid Node, int Index)
 /// create loop = 0 means we create buffer in outside of all loops.
 /// for example, create loop = 2, means create buffer d0,d1,(buffer create here) d2,d3.
 /// </summary>
-/// <param name="Liveness">this buffer's liveness.</param>
+/// <param name="Liveness">this buffer's liveness for each create loop.</param>
 /// <param name="Map">this buffers access map.</param>
 /// <param name="Places">
 /// Places[create loop][store level]:
@@ -34,7 +34,7 @@ public sealed record BufferIdentity(TileGrid Node, int Index)
 /// <param name="Sizes">the buffer size according to the placement.</param>
 /// <param name="Trips">related loop trips at current domain.</param>
 /// <param name="Mask">the loop mask of this buffer at current domain.</param>
-public sealed record TileNodeBufferInfo<T>(Tuple<int, int> Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] Sizes, T[] Trips, LoopMask Mask)
+public sealed record TileNodeBufferInfo<T>(Tuple<int, int>[] Liveness, AffineMap Map, T[][] Places, T[][] Shapes, T[] Sizes, T[] Trips, LoopMask Mask)
 {
     public int GetLastRelatedPos()
     {
