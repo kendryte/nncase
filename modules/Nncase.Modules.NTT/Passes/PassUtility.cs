@@ -42,6 +42,7 @@ public static class PassUtility
             or IR.NN.CreatePagedAttentionKVCache
             or IR.NN.IdentityPagedAttentionKVCache
             or IR.NN.PagedAttention
+            or IR.NN.Qwen3MoE
             or IR.Tensors.Cast
             or IR.Tensors.Concat
             or IR.Tensors.ConstantOfShape

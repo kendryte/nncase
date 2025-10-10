@@ -20,37 +20,43 @@ public class UnsqueezeEvaluator : IEvaluator<Unsqueeze>, ITypeInferencer<Unsquee
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, Unsqueeze unSqueeze)
     {
-        OrtKISharp.Tensor input;
         var inputOrg = context.GetArgumentValue(unSqueeze, Unsqueeze.Input).AsTensor();
         var dataType = inputOrg.ElementType;
+        var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
+
+        // Get the expected output tensor type for proper shape calculation
+        var outputTensorType = context.CurrentCall.CheckedTensorType;
+
+        OrtKISharp.Tensor input;
+        bool needsTypeConversion = false;
+
         if (dataType is VectorType { ElemType: DataType dataTypes } vType && dataTypes != DataTypes.Float32)
         {
             var interType = new VectorType(DataTypes.Float32, vType.Lanes);
             input = Nncase.IR.F.Tensors.Cast(inputOrg, interType).Evaluate().AsTensor().ToOrtTensor();
+            needsTypeConversion = true;
         }
         else if (dataType is not VectorType && dataType.IsFloat() && dataType != DataTypes.Float32)
         {
             input = Nncase.IR.F.Tensors.Cast(inputOrg, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+            needsTypeConversion = true;
         }
         else
         {
             input = context.GetOrtArgumentValue(unSqueeze, Unsqueeze.Input);
         }
 
-        var axes = context.GetInt64OrtTensorArgumentValue(unSqueeze, Unsqueeze.Dim);
-        if (dataType.IsFloat() && dataType != DataTypes.Float32)
-        {
-            var unsequeeze = OrtKI.Unsqueeze(input, axes);
-            if (dataType is not VectorType && dataType != DataTypes.Float32)
-            {
-                unsequeeze = OrtKI.Cast(unsequeeze, (int)dataType.ToOrtType());
-            }
+        var unsqueezed = OrtKI.Unsqueeze(input, axes);
 
-            return Value.FromTensor(unsequeeze.ToTensor(context.CurrentCall.CheckedTensorType).CastTo(dataType));
+        if (needsTypeConversion && dataType.IsFloat() && dataType != DataTypes.Float32 && dataType is not VectorType)
+        {
+            // Convert back to original type, ensuring proper shape
+            var castedTensor = Nncase.IR.F.Tensors.Cast(unsqueezed.ToTensor(), dataType).Evaluate().AsTensor();
+            return Value.FromTensor(castedTensor);
         }
         else
         {
-            return Value.FromTensor(OrtKI.Unsqueeze(input, axes).ToTensor(context.CurrentCall.CheckedTensorType));
+            return Value.FromTensor(unsqueezed.ToTensor(outputTensorType));
         }
     }
 
