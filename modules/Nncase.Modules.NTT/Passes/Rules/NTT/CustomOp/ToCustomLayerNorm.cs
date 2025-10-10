@@ -30,26 +30,28 @@ namespace Nncase.Passes.Rules.NTT.CustomOp;
 [RuleGenerator]
 public partial class ToCustomLayerNorm : RewriteRule<Pattern>
 {
-    public ToCustomLayerNorm(CustomOpScheme scheme)
+    public ToCustomLayerNorm(CustomOpScheme scheme, bool withCast)
     {
-        Scheme = scheme;
-    }
+        if (withCast)
+        {
+            Pattern = IsCast(
+                "cast",
+                "castCall",
+                _ => true,
+                IsAlt(GetLayerNorm(), GetLayernromWithScale()));
+        }
+        else
+        {
+            Pattern = GetLayerNorm();
+        }
 
-    public ToCustomLayerNorm()
-    {
-        Scheme = null!;
+        Scheme = scheme;
     }
 
     public CustomOpScheme Scheme { get; }
 
     /// <inheritdoc/>
-    public override Pattern Pattern => IsAlt(
-        GetLayerNorm(),
-        IsCast(
-            "cast",
-            "castCall",
-            _ => true,
-            IsAlt(GetLayerNorm(), GetLayernromWithScale())));
+    public override Pattern Pattern { get; }
 
     private Pattern GetLayerNorm() => PatternMatch.F.NN.IsLayerNorm(
         "ln",

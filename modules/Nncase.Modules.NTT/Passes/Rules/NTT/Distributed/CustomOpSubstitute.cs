@@ -48,7 +48,8 @@ public class CustomOpSubstitutePass : DataflowPass
         {
             Add<ToCustomUnary>(CustomOpScheme);
             Add<ToCustomMatmul>(CustomOpScheme);
-            Add<ToCustomLayerNorm>(CustomOpScheme);
+            Add<ToCustomLayerNorm>(CustomOpScheme, true);
+            Add<ToCustomLayerNorm>(CustomOpScheme, false);
         }
     }
 
