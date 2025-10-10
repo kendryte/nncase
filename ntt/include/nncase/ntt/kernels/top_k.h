@@ -93,12 +93,14 @@ void requeue_descending(TProbs *out_probs, TIndices *out_indices,
     out_probs[current_top_index * out_probs_stride] = candidate_value;
     out_indices[current_top_index * out_indices_stride] = candidate_index;
 
+    bool replaced = false;
     for (int k = 0; k < K; k++) {
         auto top_value = out_probs[k * out_probs_stride];
-        if (next_candidate_value > top_value) {
+        if (next_candidate_value > top_value && !replaced) {
             requeue_descending<TProbs, TIndices, Rank, Axis>(
                 out_probs, out_indices, out_probs_stride, out_indices_stride,
                 next_candidate_value, next_candidata_index, k, K);
+            replaced = true;
         }
     }
 }
@@ -116,12 +118,14 @@ void requeue_ascending(TProbs *out_probs, TIndices *out_indices,
     out_probs[current_down_index * out_probs_stride] = candidate_value;
     out_indices[current_down_index * out_indices_stride] = candidate_index;
 
+    bool replaced = false;
     for (int k = 0; k < K; k++) {
         auto down_value = out_probs[k * out_probs_stride];
-        if (next_candidate_value < down_value) {
+        if (next_candidate_value < down_value && !replaced) {
             requeue_ascending<TProbs, TIndices, Rank, Axis>(
                 out_probs, out_indices, out_probs_stride, out_indices_stride,
                 next_candidate_value, next_candidata_index, k, K);
+            replaced = true;
         }
     }
 }
@@ -135,25 +139,25 @@ void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
     using TProbs = element_or_scalar_t<TOutProb>;
     using TIndices = element_or_scalar_t<TOutIndice>;
 
-    constexpr auto Axis = dim_t(axis);
     constexpr auto rank = TInX::rank();
+    constexpr auto Axis = positive_index(dim_t(axis), rank);
     auto K = k(0);
     auto apply_shape = generate_shape<rank>([&](auto i) {
-        if (i == axis)
+        if (i == Axis)
             return (dim_t)1;
         else
             return (dim_t)x.shape()[i];
     });
-    auto inner_size = x.shape()[axis];
+    auto inner_size = x.shape()[Axis];
     auto input_strides = x.strides();
     auto out_probes_strides = out_probs.strides();
     auto out_indices_strides = out_indices.strides();
     auto input_p = x.buffer().data();
     auto out_probs_p = out_probs.buffer().data();
     auto out_indices_p = out_indices.buffer().data();
-    auto input_stride = x.strides()[axis];
-    auto out_probs_stride = out_probs.strides()[axis];
-    auto out_indices_stride = out_indices.strides()[axis];
+    auto input_stride = x.strides()[Axis];
+    auto out_probs_stride = out_probs.strides()[Axis];
+    auto out_indices_stride = out_indices.strides()[Axis];
     ntt::apply(
         apply_shape,
         [&](auto, auto input_offset, auto out_probes_offset,
