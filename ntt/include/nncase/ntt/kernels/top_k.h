@@ -25,75 +25,103 @@
 
 namespace nncase::ntt {
 
-template <Tensor TOutProb, Tensor TOutIndice, size_t Rank, size_t Axis>
-void sort_descending(TOutProb &out_probs, TOutIndice &out_indices,
-                     dynamic_shape_t<Rank> apply_index, int K) {
-    for (int i = 0; i < K - 1; ++i) {
-        auto cur_idx = generate_dims<Rank>([&](auto l) {
-            if (l == Axis) {
-                return (dim_t)i;
-            } else {
-                return (dim_t)apply_index[l];
-            }
-        });
-
+template <size_t Rank, size_t Axis>
+void sort_descending(float *out_probs, int64_t *out_indices,
+                     int64_t out_probs_stride, int64_t out_indices_stride,
+                     int K) {
+    for (int cur_idx = 0; cur_idx < K - 1; ++cur_idx) {
         auto max_idx = cur_idx;
 
-        for (int j = i + 1; j < K; ++j) {
-            auto next_idx = generate_dims<Rank>([&](auto l) {
-                if (l == Axis) {
-                    return (dim_t)j;
-                } else {
-                    return (dim_t)apply_index[l];
-                }
-            });
-            if (out_probs(next_idx) > out_probs(max_idx)) {
+        for (int next_idx = cur_idx + 1; next_idx < K; ++next_idx) {
+            if (out_probs[next_idx * out_probs_stride] >
+                out_probs[max_idx * out_probs_stride]) {
                 max_idx = next_idx;
             }
         }
 
         if (max_idx != cur_idx) {
-            auto tempValue = out_probs(cur_idx);
-            out_probs(cur_idx) = out_probs(max_idx);
-            out_probs(max_idx) = tempValue;
+            auto tempValue = out_probs[cur_idx * out_probs_stride];
+            out_probs[cur_idx * out_probs_stride] =
+                out_probs[max_idx * out_probs_stride];
+            out_probs[max_idx * out_probs_stride] = tempValue;
 
-            auto tempIndex = out_indices(cur_idx);
-            out_indices(cur_idx) = out_indices(max_idx);
-            out_indices(max_idx) = tempIndex;
+            auto tempIndex = out_indices[cur_idx * out_indices_stride];
+            out_indices[cur_idx * out_indices_stride] =
+                out_indices[max_idx * out_indices_stride];
+            out_indices[max_idx * out_indices_stride] = tempIndex;
         }
     }
 }
 
-template <Tensor TOutProb, Tensor TOutIndice, size_t Rank, size_t Axis>
-void requeue_descending(TOutProb &out_probs, TOutIndice &out_indices,
-                        float candidate_value,
-                        dynamic_dims_t<Rank> candidate_index,
-                        dynamic_dims_t<Rank> current_top_index, int64_t K) {
-    auto next_candidate_value = out_probs(current_top_index);
-    auto next_candidata_index = generate_dims<Rank>([&](auto j) {
-        if (j == Axis) {
-            return out_indices(current_top_index);
-        } else {
-            return candidate_index[j];
-        }
-    });
+template <size_t Rank, size_t Axis>
+void sort_ascending(float *out_probs, int64_t *out_indices,
+                    int64_t out_probs_stride, int64_t out_indices_stride,
+                    int K) {
+    for (int cur_idx = 0; cur_idx < K - 1; ++cur_idx) {
+        auto min_idx = cur_idx;
 
-    out_probs(current_top_index) = candidate_value;
-    out_indices(current_top_index) = candidate_index[Axis];
+        for (int next_idx = cur_idx + 1; next_idx < K; ++next_idx) {
+            if (out_probs[next_idx * out_probs_stride] <
+                out_probs[min_idx * out_probs_stride]) {
+                min_idx = next_idx;
+            }
+        }
+
+        if (min_idx != cur_idx) {
+            auto tempValue = out_probs[cur_idx * out_probs_stride];
+            out_probs[cur_idx * out_probs_stride] =
+                out_probs[min_idx * out_probs_stride];
+            out_probs[min_idx * out_probs_stride] = tempValue;
+
+            auto tempIndex = out_indices[cur_idx * out_indices_stride];
+            out_indices[cur_idx * out_indices_stride] =
+                out_indices[min_idx * out_indices_stride];
+            out_indices[min_idx * out_indices_stride] = tempIndex;
+        }
+    }
+}
+
+template <size_t Rank, size_t Axis>
+void requeue_descending(float *out_probs, int64_t *out_indices,
+                        int64_t out_probs_stride, int64_t out_indices_stride,
+                        float candidate_value, int64_t candidate_index,
+                        int64_t current_top_index, int64_t K) {
+    auto next_candidate_value = out_probs[current_top_index * out_probs_stride];
+    auto next_candidata_index =
+        out_indices[current_top_index * out_indices_stride];
+
+    out_probs[current_top_index * out_probs_stride] = candidate_value;
+    out_indices[current_top_index * out_indices_stride] = candidate_index;
 
     for (int k = 0; k < K; k++) {
-        auto top_index = generate_dims<Rank>([&](auto j) {
-            if (j == Axis) {
-                return (dim_t)k;
-            } else {
-                return (dim_t)current_top_index[j];
-            }
-        });
+        auto top_value = out_probs[k * out_probs_stride];
+        if (next_candidate_value > top_value) {
+            requeue_descending<Rank, Axis>(
+                out_probs, out_indices, out_probs_stride, out_indices_stride,
+                next_candidate_value, next_candidata_index, k, K);
+        }
+    }
+}
 
-        if (next_candidate_value > out_probs(top_index)) {
-            requeue_descending<TOutProb, TOutIndice, Rank, Axis>(
-                out_probs, out_indices, next_candidate_value,
-                next_candidata_index, top_index, K);
+template <size_t Rank, size_t Axis>
+void requeue_ascending(float *out_probs, int64_t *out_indices,
+                       int64_t out_probs_stride, int64_t out_indices_stride,
+                       float candidate_value, int64_t candidate_index,
+                       int64_t current_down_index, int64_t K) {
+    auto next_candidate_value =
+        out_probs[current_down_index * out_probs_stride];
+    auto next_candidata_index =
+        out_indices[current_down_index * out_indices_stride];
+
+    out_probs[current_down_index * out_probs_stride] = candidate_value;
+    out_indices[current_down_index * out_indices_stride] = candidate_index;
+
+    for (int k = 0; k < K; k++) {
+        auto down_value = out_probs[k * out_probs_stride];
+        if (next_candidate_value < down_value) {
+            requeue_ascending<Rank, Axis>(
+                out_probs, out_indices, out_probs_stride, out_indices_stride,
+                next_candidate_value, next_candidata_index, k, K);
         }
     }
 }
@@ -101,8 +129,8 @@ void requeue_descending(TOutProb &out_probs, TOutIndice &out_indices,
 template <Tensor TInX, Tensor TInK, Tensor TOutProb, Tensor TOutIndice,
           FixedDimension TAxis>
 void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
-           TOutIndice &out_indices, TAxis axis,
-           [[maybe_unused]] int64_t largest, [[maybe_unused]] int64_t sorted) {
+           TOutIndice &out_indices, TAxis axis, int64_t largest,
+           int64_t sorted) {
 
     constexpr auto Axis = dim_t(axis);
     constexpr auto rank = TInX::rank();
@@ -114,51 +142,65 @@ void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
             return (dim_t)x.shape()[i];
     });
     auto inner_size = x.shape()[axis];
-    ntt::apply(apply_shape, [&](auto apply_index) {
-        for (int i = 0; i < K; i++) {
-            auto top_index = generate_dims<rank>([&](auto j) {
-                if (j == axis) {
-                    return (dim_t)i;
-                } else {
-                    return (dim_t)apply_index[j];
-                }
-            });
-            out_indices(top_index) = i;
-            out_probs(top_index) = x(top_index);
-        }
+    auto input_strides = x.strides();
+    auto out_probes_strides = out_probs.strides();
+    auto out_indices_strides = out_indices.strides();
+    auto input_p = x.buffer().data();
+    auto out_probs_p = out_probs.buffer().data();
+    auto out_indices_p = out_indices.buffer().data();
+    auto input_stride = x.strides()[axis];
+    auto out_probs_stride = out_probs.strides()[axis];
+    auto out_indices_stride = out_indices.strides()[axis];
+    ntt::apply(
+        apply_shape,
+        [&](auto, auto input_offset, auto out_probes_offset,
+            auto out_indices_offset) {
+            auto slice_input_ptr = input_p + input_offset;
+            auto slice_probs_ptr = out_probs_p + out_probes_offset;
+            auto slice_indices_ptr = out_indices_p + out_indices_offset;
 
-        for (int i = K; i < inner_size; i++) {
-            auto candidate_index = generate_dims<rank>([&](auto j) {
-                if (j == axis) {
-                    return (dim_t)i;
-                } else {
-                    return (dim_t)apply_index[j];
-                }
-            });
-            auto candidate_value = x(candidate_index);
-            for (int k = 0; k < K; k++) {
-                auto top_index = generate_dims<rank>([&](auto j) {
-                    if (j == axis) {
-                        return (dim_t)k;
+            for (int i = 0; i < K; i++) {
+                slice_indices_ptr[i * out_indices_stride] = i;
+                slice_probs_ptr[i * out_probs_stride] =
+                    slice_input_ptr[i * input_stride];
+            }
+
+            for (int i = K; i < inner_size; i++) {
+                auto candidate_value = slice_input_ptr[i * input_stride];
+                for (int k = 0; k < K; k++) {
+                    auto top_value = slice_probs_ptr[k * out_probs_stride];
+                    if (largest) {
+                        if (candidate_value > top_value) {
+                            requeue_descending<rank(), Axis>(
+                                slice_probs_ptr, slice_indices_ptr,
+                                out_probs_stride, out_indices_stride,
+                                candidate_value, i, k, K);
+                            break;
+                        }
                     } else {
-                        return (dim_t)apply_index[j];
+                        if (candidate_value < top_value) {
+                            requeue_ascending<rank(), Axis>(
+                                slice_probs_ptr, slice_indices_ptr,
+                                out_probs_stride, out_indices_stride,
+                                candidate_value, i, k, K);
+                            break;
+                        }
                     }
-                });
-                if (x(candidate_index) > out_probs(top_index)) {
-                    requeue_descending<TOutProb, TOutIndice, rank(), Axis>(
-                        out_probs, out_indices, candidate_value,
-                        candidate_index, top_index, K);
-                    break;
                 }
             }
-        }
 
-        if (sorted) {
-            if (largest) {
-                sort_descending<TOutProb, TOutIndice, rank(), Axis>(
-                    out_probs, out_indices, apply_index, K);
+            if (sorted) {
+                if (largest) {
+                    sort_descending<rank(), Axis>(
+                        slice_probs_ptr, slice_indices_ptr, out_probs_stride,
+                        out_indices_stride, K);
+                } else {
+                    sort_ascending<rank(), Axis>(
+                        slice_probs_ptr, slice_indices_ptr, out_probs_stride,
+                        out_indices_stride, K);
+                }
             }
-        }
-    });
+        },
+        input_strides, out_probes_strides, out_indices_strides);
 }
 } // namespace nncase::ntt
