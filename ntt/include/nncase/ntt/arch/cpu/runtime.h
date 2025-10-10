@@ -19,10 +19,10 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <string>
 #include <string_view>
 #include <unordered_map>
 #include <vector>
-#include <string>
 
 #ifdef __APPLE__
 #include <pthread.h>
@@ -259,6 +259,7 @@ struct cpu_block_entry_params_t {
     const uint64_t *thread_local_rdata_header;
     std::span<const std::byte> thread_local_rdata;
     std::span<const std::byte> block_local_rdata;
+    std::span<std::byte> thread_local_data;
     std::span<std::byte> block_local_data;
 #ifdef __APPLE__
     pthread_key_t cpu_thread_context_key;

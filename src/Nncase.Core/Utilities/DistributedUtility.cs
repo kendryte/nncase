@@ -24,6 +24,14 @@ public static class DistributedUtility
 
     public delegate bool DivideByDelegate(long input, int divisor);
 
+    [Flags]
+    public enum DivideFlags
+    {
+        None = 0,
+        MaxShape = 1 << 1,
+        FloorDiv = 1 << 2,
+    }
+
     public static DivideByDelegate DivideByFunc { get; }
 
     public static List<List<int>> GetHierarchyCombinations(int rank)
@@ -323,9 +331,9 @@ public static class DistributedUtility
         }).Average();
     }
 
-    public static TensorType GetDividedTensorType(DistributedType distributedType, bool maxShape = false)
+    public static TensorType GetDividedTensorType(DistributedType distributedType, DivideFlags divideFlags = DivideFlags.None)
     {
-        var (tiles, _) = GetDividedTile(distributedType, maxShape);
+        var (tiles, _) = GetDividedTile(distributedType, divideFlags);
         return distributedType.TensorType with { Shape = tiles };
     }
 
@@ -374,16 +382,23 @@ public static class DistributedUtility
         return (offset, shape);
     }
 
-    private static (RankedShape Tile, RankedShape Shape) GetDividedTile(DistributedType distributedType, bool maxShape = false)
+    private static (RankedShape Tile, RankedShape Shape) GetDividedTile(DistributedType distributedType, DivideFlags divideFlags = DivideFlags.None)
     {
-        Dimension[] shape = maxShape ? CompilerServices.GetMaxShape(distributedType.TensorType.Shape).Select(i => (Dimension)i).ToArray() : distributedType.TensorType.Shape.ToArray();
-        Dimension[] tiles = maxShape ? CompilerServices.GetMaxShape(distributedType.TensorType.Shape).Select(i => (Dimension)i).ToArray() : distributedType.TensorType.Shape.ToArray();
+        Dimension[] shape = divideFlags.HasFlag(DivideFlags.MaxShape) ? CompilerServices.GetMaxShape(distributedType.TensorType.Shape).Select(i => (Dimension)i).ToArray() : distributedType.TensorType.Shape.ToArray();
+        Dimension[] tiles = divideFlags.HasFlag(DivideFlags.MaxShape) ? CompilerServices.GetMaxShape(distributedType.TensorType.Shape).Select(i => (Dimension)i).ToArray() : distributedType.TensorType.Shape.ToArray();
         for (var d = 0; d < shape.Length; d++)
         {
             if (distributedType.AxisPolicies.Count > d && distributedType.AxisPolicies[d] is SBPSplit split)
             {
                 var divisor = split.Axes.Select(t => distributedType.Placement.Hierarchy[t]).Aggregate(1, (a, b) => a * b);
-                tiles[d] = tiles[d] / divisor;
+                if (divideFlags.HasFlag(DivideFlags.FloorDiv))
+                {
+                    tiles[d] = tiles[d] / divisor;
+                }
+                else
+                {
+                    tiles[d] = Dimension.CeilDiv(tiles[d], divisor);
+                }
             }
         }
 

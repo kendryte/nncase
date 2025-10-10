@@ -94,6 +94,7 @@ public class Compiler : ICompiler
         passManager.AddWithName<DataflowPass>("FoldQuantDeQuant").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldQuantDeQuant>();
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
         });
         passManager.AddWithName<DataflowPass>("BroadcastOutputNamesAfterImportPass").Configure(p =>
         {
@@ -170,6 +171,8 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.PowOf2ToSquare>();
             p.Add<Passes.Rules.Neutral.ScalarConstToTensor>();
             p.Add<Passes.Rules.Neutral.TileToExpand>();
+            p.Add<Passes.Rules.Neutral.FoldLayerNormBinary>();
+            p.Add<Passes.Rules.Neutral.FoldTwoNopCasts>();
         });
 
         // passManager.Add<HorizontalMergePass>();
@@ -239,6 +242,9 @@ public class Compiler : ICompiler
             p.Add<Passes.Rules.Neutral.FoldTwoSlices>();
             p.Add<Passes.Rules.Neutral.SpaceToBatchToPad>();
             p.Add<Passes.Rules.Neutral.FoldConv2DAddMul>();
+            p.Add<Passes.Rules.Neutral.CombineSliceTranspose>();
+            p.Add<Passes.Rules.Neutral.CombineTwoBinaryMul>();
+            p.Add<Passes.Rules.Neutral.FoldTwoBinaryMul>();
         });
 
         _compileSession.Target.RegisterTargetInDependentPass(passManager, _compileSession.CompileOptions);

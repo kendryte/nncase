@@ -21,4 +21,6 @@ public partial class Distributed
     {
         return new Call(new ForceBoxing(type), input);
     }
+
+    public static ThreadIdDim ThreadId() => ThreadIdDim.Default;
 }

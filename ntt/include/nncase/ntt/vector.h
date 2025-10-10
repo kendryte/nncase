@@ -136,6 +136,15 @@ template <Vector T, size_t... Lanes> struct replace_lanes_type {
 template <Vector T, size_t... Lanes>
 using replace_lanes_t = typename replace_lanes_type<T, Lanes...>::type;
 
+template <Vector T, size_t... Lanes> struct prepend_lanes_type {
+    using type =
+        basic_vector<typename T::element_type,
+                     decltype(T::shape().prepend(fixed_dim_v<Lanes>...))>;
+};
+
+template <Vector T, size_t... Lanes>
+using prepend_lanes_t = typename prepend_lanes_type<T, Lanes...>::type;
+
 template <class T> struct vector_rank {
     static constexpr auto value = dim_zero;
 };

@@ -6,8 +6,6 @@
 #if __riscv_vector
 #include <riscv_vector.h>
 
-using namespace nncase;
-
 // log
 #define _RVV_FLOAT16_LOG_OP(lmul, mlen)                                        \
     inline vfloat16m##lmul##_t log_ps_fp16(vfloat16m##lmul##_t x, size_t vl) { \

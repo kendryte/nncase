@@ -173,6 +173,8 @@ constexpr void update_paged_attention_kv_cache(const TSlots &slots_tensor,
                                                  slots_tensor);
         }
     }
+
+    ntt::tensor_copy_wait<void>();
 }
 
 template <FixedDimensions QLayout, ShardedTensor TQ, Tensor TKVCache,
@@ -426,6 +428,6 @@ void gather_paged_attention_kv_cache([[maybe_unused]] const T0 &value,
     const auto kv_cache_address = kv_cache.kv_cache_address(kv_cache_index);
     const auto storage_tensor =
         make_tensor_view_from_address(kv_cache_address, output_tensor.shape());
-    ntt::tensor_copy(storage_tensor, output_tensor);
+    ntt::tensor_copy_sync(storage_tensor, output_tensor);
 }
 } // namespace nncase::ntt

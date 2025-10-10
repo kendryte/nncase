@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include "math.h"
 #include "ntt/compiler_defs.h"
 #include <bit>
-#include <cmath>
 #include <cstdint>
 #include <float.h>
 #include <functional>

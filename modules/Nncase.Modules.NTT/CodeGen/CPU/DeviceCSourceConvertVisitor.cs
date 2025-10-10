@@ -211,7 +211,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         var start = Visit(expr.Start);
         var size = Visit(expr.Size);
 
-        var str = $"{buffer.Name}.subspan<{start.Name}, {size.Name}>()";
+        var str = $"make_subspan({buffer.Name}, {start.Name}, {size.Name})";
         symbol = new(start.Type, str);
         _exprMemo.Add(expr, symbol);
         return symbol;
@@ -336,7 +336,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 str = $"(({op.NewType.ToC()}){arguments[0].Name})";
                 break;
             case TIR.Memcopy op:
-                WriteIndWithProfiler($"tensor_copy({arguments[1].Name}, {arguments[0].Name});\n");
+                WriteIndWithProfiler($"tensor_copy_sync({arguments[1].Name}, {arguments[0].Name});\n");
                 break;
             case TIR.NTT.Unary op:
                 WriteIndWithProfiler(RazorTemplateEngine.RenderAsync("~/CodeGen/CPU/Templates/Kernels/Unary.cshtml", new UnaryKernelTemplateModel

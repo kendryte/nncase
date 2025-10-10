@@ -203,6 +203,11 @@ public partial class NTT
         return new Call(new TIR.NTT.Cast(newType, castMode, vectorizeAxes.IsDefaultOrEmpty ? Array.Empty<int>() : vectorizeAxes), input, output, postOps ?? None.Default);
     }
 
+    public static Call SynchronizeThreads()
+    {
+        return new Call(new TIR.NTT.SynchronizeThreads());
+    }
+
     public static Call Where(Expr cond, Expr x, Expr y, Expr output)
     {
         return new Call(new TIR.NTT.Where(), cond, x, y, output);
@@ -251,5 +256,10 @@ public partial class NTT
     public static Expr GetPositionIds(Expr kvCache, Expr ret, DistributedType distributedType)
     {
         return new Call(new TIR.NTT.GetPositionIds(distributedType), kvCache, ret);
+    }
+
+    public static Expr Qwen3MoE(Expr hiddenStates, Expr moeGateW, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, Expr ret, long layerId, long hiddenSize, long intermediateSize, long moeIntermediateSize, long numExpert, long numTopK, long isNormTopkProb)
+    {
+        return new Call(new TIR.NTT.Qwen3MoE(layerId, hiddenSize, intermediateSize, moeIntermediateSize, numExpert, numTopK, isNormTopkProb), hiddenStates, moeGateW, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale, ret);
     }
 }

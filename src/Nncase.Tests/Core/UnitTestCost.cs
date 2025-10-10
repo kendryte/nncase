@@ -22,7 +22,7 @@ public sealed class UnitTestCost
         Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Asin));
         Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Asinh));
         Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Ceil));
-        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Cos));
+        Assert.Equal((UInt128)20, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Cos));
         Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Cosh));
         Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Exp));
         Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Floor));
@@ -30,7 +30,7 @@ public sealed class UnitTestCost
         Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Neg));
         Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Round));
         Assert.Equal((UInt128)4, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Rsqrt));
-        Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sin));
+        Assert.Equal((UInt128)20, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sin));
         Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sinh));
         Assert.Equal((UInt128)1, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sign));
         Assert.Equal((UInt128)8, CostUtility.GetCPUCyclesOfUnary(UnaryOp.Sqrt));

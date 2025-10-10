@@ -110,3 +110,20 @@ public sealed partial class FoldNopBinaryByRange : IRewriteRule
         return null;
     }
 }
+
+[RuleGenerator]
+public sealed partial class FoldTwoBinaryMul : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsBinary(
+      "mul1",
+      "mul1Call",
+      op => op.BinaryOp == BinaryOp.Mul,
+      IsBinary("mul2", "mul2Call", op => op.BinaryOp == BinaryOp.Mul, IsWildcard("input"), IsTensorConst("mul2Const") with { TypePattern = IsScalar() | HasShape([1]) }),
+      IsTensorConst("mul1Const") with { TypePattern = IsScalar() | HasShape([1]) });
+
+    private Expr? GetReplace(Expr input, TensorConst mul1Const, TensorConst mul2Const, Call mul1Call, Call mul2Call)
+    {
+        return Mul(input, mul1Const * mul2Const);
+    }
+}

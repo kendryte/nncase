@@ -48,6 +48,7 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<Conv2DEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ReduceEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ReduceArgEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<SynchronizeThreadsEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GatherReduceScatterEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<ClampEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<CastEvaluator>(reuse: Reuse.Singleton);
@@ -65,5 +66,6 @@ internal class NTTModule : IApplicationPart
         registrator.RegisterManyInterface<IdentityPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GatherPagedAttentionKVCacheEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<GetPositionIdsEvaluator>(reuse: Reuse.Singleton);
+        registrator.RegisterManyInterface<Qwen3MoEEvaluator>(reuse: Reuse.Singleton);
     }
 }
