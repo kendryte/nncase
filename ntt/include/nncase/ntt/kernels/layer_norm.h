@@ -85,9 +85,9 @@ void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
                     mean = (TElemScalar)extended_mean_s;
                 } else {
                     for (auto i = 0; i < inner_size; i++) {
-                        const auto input_val = input_p[offset + i];
-                        extended_sum =
-                            ntt::mul_add(input_val, input_val, extended_sum);
+                        const auto val = ntt::square(
+                            ntt::cast_elem<float>(input_p[offset + i]));
+                        extended_sum += val;
                     }
                 }
 
@@ -95,18 +95,18 @@ void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
                     reduce_sum(extended_sum) * norm_factor;
                 auto extended_add = extended_sum_s + epsilon;
                 auto rsqrt =
-                    ntt::cast_elem<TElemScalar>(ntt::rsqrt(extended_add));
+                    ntt::rsqrt(extended_add);
 
                 if constexpr (UseMean) {
                     for (auto i = 0; i < inner_size; i++) {
-                        auto val = (input_p[offset + i] - mean) * rsqrt;
+                        auto val = (input_p[offset + i] - mean) * ntt::cast_elem<TElemScalar>(rsqrt);
                         output_p[offset + i] =
                             ntt::mul_add(val, scale_p[i], bias_p[i]);
                     }
                 } else {
                     for (auto i = 0; i < inner_size; i++) {
-                        auto val = input_p[offset + i] * rsqrt;
-                        output_p[offset + i] = val * scale_p[i] + bias_p[i];
+                        auto val = ntt::cast_elem<float>(input_p[offset + i]) * rsqrt;
+                        output_p[offset + i] = ntt::cast_elem<TElemScalar>(val * ntt::cast_elem<float>(scale_p[i]) + ntt::cast_elem<float>(bias_p[i]));
                     }
                 }
             } else {
@@ -136,18 +136,18 @@ void within_axis_vectorize_impl(const TIn &input, const TScale &scale,
                 extended_sum *= norm_factor;
                 auto extended_add = extended_sum + epsilon;
                 auto rsqrt =
-                    ntt::cast_elem<TElemScalar>(ntt::rsqrt(extended_add));
+                    ntt::rsqrt(extended_add);
 
                 if constexpr (UseMean) {
                     for (auto i = 0; i < inner_size; i++) {
-                        auto val = (input_p[offset + i] - mean) * rsqrt;
+                        auto val = (input_p[offset + i] - mean) * ntt::cast_elem<TElemScalar>(rsqrt);
                         output_p[offset + i] =
                             ntt::mul_add(val, scale_p[i], bias_p[i]);
                     }
                 } else {
                     for (auto i = 0; i < inner_size; i++) {
-                        auto val = input_p[offset + i] * rsqrt;
-                        output_p[offset + i] = val * scale_p[i] + bias_p[i];
+                        auto val = ntt::cast_elem<float>(input_p[offset + i]) * rsqrt;
+                        output_p[offset + i] = ntt::cast_elem<TElemScalar>(val * ntt::cast_elem<float>(scale_p[i]) + ntt::cast_elem<float>(bias_p[i]));
                     }
                 }
             }

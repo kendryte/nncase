@@ -12,6 +12,7 @@ using NetFabric.Hyperlinq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Nncase;
+using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.NN;
 
@@ -575,6 +576,22 @@ internal static class ModelUtils
     public static int[] GetLayoutPerm(AttentionDimKind[] inputLayout, AttentionDimKind[] targetLayout)
     {
         return targetLayout.Select(i => inputLayout.IndexOf(i)).ToArray();
+    }
+
+    public static Expr CheckShape(Expr shape)
+    {
+        if (shape.CheckedType == null)
+        {
+            shape.InferenceType();
+        }
+
+        DumpScope.Current.DumpIR(shape, "ShapeExprUtilityCheckShape");
+        if (shape.CheckedType is not TensorType || shape.CheckedShape.IsScalar)
+        {
+            throw new InvalidOperationException();
+        }
+
+        return shape;
     }
 }
 
