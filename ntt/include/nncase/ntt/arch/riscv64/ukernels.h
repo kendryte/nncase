@@ -766,14 +766,18 @@ DEFINE_U_CAST_2_1(half, 16, float_e4m3_t, 8, _Float16, int8_t, f16, float8e4m3)
                                                                                              \
                 if (input_stride == 1) {                                                     \
                                                                                              \
-                    auto post_output0 = TPostOps<vector<OUT_ELEM, vl_out>>()(                \
-                        ntt::unwrap_proxy(tmp_output0(0_dim)));                              \
-                    auto post_output1 = TPostOps<vector<OUT_ELEM, vl_out>>()(                \
-                        ntt::unwrap_proxy(tmp_output0(1_dim)));                              \
-                    auto post_output2 = TPostOps<vector<OUT_ELEM, vl_out>>()(                \
-                        ntt::unwrap_proxy(tmp_output1(0_dim)));                              \
-                    auto post_output3 = TPostOps<vector<OUT_ELEM, vl_out>>()(                \
-                        ntt::unwrap_proxy(tmp_output1(1_dim)));                              \
+                    vfloat##OUT_BW##m4_t post_output0 =                                      \
+                        TPostOps<vector<OUT_ELEM, vl_out>>()(                                \
+                            ntt::unwrap_proxy(tmp_output0(0_dim)));                          \
+                    vfloat##OUT_BW##m4_t post_output1 =                                      \
+                        TPostOps<vector<OUT_ELEM, vl_out>>()(                                \
+                            ntt::unwrap_proxy(tmp_output0(1_dim)));                          \
+                    vfloat##OUT_BW##m4_t post_output2 =                                      \
+                        TPostOps<vector<OUT_ELEM, vl_out>>()(                                \
+                            ntt::unwrap_proxy(tmp_output1(0_dim)));                          \
+                    vfloat##OUT_BW##m4_t post_output3 =                                      \
+                        TPostOps<vector<OUT_ELEM, vl_out>>()(                                \
+                            ntt::unwrap_proxy(tmp_output1(1_dim)));                          \
                     asm volatile("vs4r.v %0, (%1);" ::"vr"(post_output0),                    \
                                  "r"(out_ptr + 0 * half_unroll)                              \
                                  : "memory");                                                \
