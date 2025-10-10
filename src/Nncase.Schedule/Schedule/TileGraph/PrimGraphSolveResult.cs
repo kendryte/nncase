@@ -538,7 +538,7 @@ public sealed class TreeSolveResult : TreeSolverBase<long>, ITreeNodeVisitor<Tre
 
             if (!TargetOptions.UnifiedMemoryArch && fromExternal)
             {
-                parentViewInfo = new ViewInfo(null, null!, null, InputOutputVars[bid], new RankedShape(bufferOffsets.Select(i => 0).ToArray()), new RankedShape(bufferOffsets.Select(i => 0).ToArray()), shape);
+                parentViewInfo = new ViewInfo(null, null!, null!, InputOutputVars[bid], new RankedShape(bufferOffsets.Select(i => 0).ToArray()), new RankedShape(bufferOffsets.Select(i => 0).ToArray()), shape);
             }
 
             var view = GetViewExpr(null, buffer, bufferOffsets, offsets, shape);
