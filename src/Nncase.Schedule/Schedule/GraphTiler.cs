@@ -108,6 +108,8 @@ public sealed class GraphTiler
                     endTime = Math.Max(endTime, bufferInfo.Liveness[ci].Item2);
 
                     extents.Add(solver.MakeProd(bufferInfo.Places[ci][sl], bufferInfo.Sizes[ci]));
+                    var cons = solver.MakeGreater(bufferInfo.Sizes[ci], 0);
+                    solver.Add(cons);
                     nodeBufferSizes[nodeBuffer] = solver.MakeSum(extents);
                     nodeBufferShapes[nodeBuffer] = bufferInfo.Shapes[ci];
                     nodeBufferLiveness[nodeBuffer] = bufferInfo.Liveness[ci];
