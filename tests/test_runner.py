@@ -503,12 +503,12 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         if dtype != 'PagedAttentionKVCache':
                             input_ids = data.input_ids[0].astype(np.int64)
                             dump_txt_file(os.path.join(self.case_dir, name,
-                                                      f'text_{name}_{input_idx}_{batch_idx}.txt'), 
-                                                      input_ids)
+                                                       f'text_{name}_{input_idx}_{batch_idx}.txt'),
+                                          input_ids)
                             np.save(os.path.join(self.case_dir, name,
-                                                f'{name}_{input_idx}_{batch_idx}.npy'), input_ids)
+                                                 f'{name}_{input_idx}_{batch_idx}.npy'), input_ids)
                             convert_npy_to_json(os.path.join(self.case_dir, name,
-                                                            f'{name}_{input_idx}_{batch_idx}.npy'),
+                                                             f'{name}_{input_idx}_{batch_idx}.npy'),
                                                 os.path.join(self.case_dir, name))
                         elif dtype == 'PagedAttentionKVCache' and hasattr(data, 'dump_json'):
                             data.dump_json(os.path.join(self.case_dir, name,
@@ -519,9 +519,9 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         dump_txt_file(os.path.join(self.case_dir, name,
                                                    f'{name}_{input_idx}_{batch_idx}.txt'), data)
                         np.save(os.path.join(self.case_dir, name,
-                                                f'{name}_{input_idx}_{batch_idx}.npy'), data)
+                                             f'{name}_{input_idx}_{batch_idx}.npy'), data)
                         convert_npy_to_json(os.path.join(self.case_dir, name,
-                                                            f'{name}_{input_idx}_{batch_idx}.npy'),
+                                                         f'{name}_{input_idx}_{batch_idx}.npy'),
                                             os.path.join(self.case_dir, name))
                 samples.append(data)
             input['data'] = samples

@@ -241,7 +241,7 @@ class HuggingfaceTestRunner(TestRunner):
             kv_object = None
             if i == 0:
                 kv_object = loop_data[1]
-            else: # update kv cache when decodeing
+            else:  # update kv cache when decodeing
                 current_length = loop_data[0].shape[-1]
                 kv_object = self.local_inputs[1]['scheduler'].schedule([0], [current_length])
             if infer_or_eval == "infer":
