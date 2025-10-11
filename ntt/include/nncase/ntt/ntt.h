@@ -99,11 +99,9 @@
 #include "arch/xpu/runtime.h"
 #elif defined(__CUDA_ARCH__)
 #include "arch/cuda/distributed.h"
-#include "arch/cuda/profiling.h"
 #include "arch/cuda/runtime.h"
 #else
 #include "arch/cpu/distributed.h"
-#include "arch/cpu/profiling.h"
 #include "arch/cpu/runtime.h"
 #endif
 

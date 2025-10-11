@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/runtime/model.h"
 #ifdef WIN32
 #include <Windows.h>
 #elif defined(__unix__) || defined(__APPLE__)
@@ -20,6 +21,7 @@
 
 #include <cstring>
 #include <nncase/runtime/cpu/runtime_module.h>
+#include <nncase/runtime/cuda/runtime_module.h>
 #include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_module.h>
 
@@ -111,17 +113,43 @@ FindRuntimeMethod(activator)
 #undef FindRuntimeMethod
 #endif
 
+namespace {
+std::pair<module_kind_t, rt_module_activator_t> builtin_activators[] = {
+    {cpu::cpu_module_kind,
+     [](result<std::unique_ptr<runtime_module>> &out) {
+         out = cpu::create_cpu_runtime_module();
+     }},
+    {cuda::cuda_module_kind,
+     [](result<std::unique_ptr<runtime_module>> &out) {
+         out = cuda::create_cuda_runtime_module();
+     }},
+};
+
+result<rt_module_activator_t>
+create_builtin_activator(const module_kind_t &kind) {
+    for (auto &activator : builtin_activators) {
+        if (!strncmp(kind.data(), activator.first.data(),
+                     MAX_MODULE_KIND_LENGTH)) {
+            return ok(activator.second);
+        }
+    }
+    return err(nncase_errc::runtime_not_found);
+}
+} // namespace
+
 result<std::unique_ptr<runtime_module>>
 runtime_module::create(const module_kind_t &kind) {
-    if (!strncmp(kind.data(), cpu::cpu_module_kind.data(),
-                 MAX_MODULE_KIND_LENGTH)) {
-        return cpu::create_cpu_runtime_module();
+    auto activator = create_builtin_activator(kind);
+    if (activator.is_err()) {
+        activator = find_runtime_activator(kind);
     }
+
+    if (activator.is_err())
+        return err(activator.unwrap_err());
 
     result<std::unique_ptr<runtime_module>> rt_module(
         nncase_errc::runtime_not_found);
-    try_var(activator, find_runtime_activator(kind));
-    activator(rt_module);
+    activator.unwrap()(rt_module);
     return rt_module;
 }
 

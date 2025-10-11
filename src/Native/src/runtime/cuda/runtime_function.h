@@ -15,22 +15,22 @@
 #pragma once
 #include "nncase/ntt/profiling.h"
 #include "runtime_module.h"
-#include <nncase/ntt/arch/cpu/runtime.h>
+#include <nncase/ntt/arch/cuda/runtime.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_function.h>
 #include <nncase/tensor.h>
 #include <vector>
 
-BEGIN_NS_NNCASE_RT_MODULE(cpu)
+BEGIN_NS_NNCASE_RT_MODULE(cuda)
 
-class cpu_runtime_function final : public runtime_function {
+class cuda_runtime_function final : public runtime_function {
   public:
     static constexpr size_t default_profile_record_count = 10000;
 
-    cpu_runtime_function(runtime_module &rt_module);
-    virtual ~cpu_runtime_function();
+    cuda_runtime_function(runtime_module &rt_module);
+    virtual ~cuda_runtime_function();
 
-    cpu_runtime_module &module() const noexcept;
+    cuda_runtime_module &module() const noexcept;
 
     const std::span<std::byte>
     thread_local_data(size_t block_id) const noexcept {

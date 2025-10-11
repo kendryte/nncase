@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <chrono>
 #include <cstdarg>
 #include <cstddef>
 #include <cstring>
@@ -19,6 +20,7 @@
 #include <nncase/ntt/arch/cpu/distributed.h>
 #include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/ntt/distributed.h>
+#include <nncase/ntt/profiling.h>
 #include <nncase/ntt/shape.h>
 #include <thread>
 #include <vector>
@@ -92,6 +94,26 @@ void thread_free(void *ptr) {
     free(ptr);
 #endif
 }
+
+bool is_profiling_enabled() noexcept {
+    return cpu_thread_context_t::current().enable_profiling;
+}
+
+uint64_t get_profile_time() noexcept {
+    return std::chrono::duration_cast<std::chrono::microseconds>(
+               std::chrono::high_resolution_clock::now().time_since_epoch())
+        .count();
+}
+
+void record_profile(profile_level level,
+                    const profile_record &record) noexcept {
+    // Other levels are not supported yet.
+    if (level == profile_level::kernel) {
+        auto &ctx = cpu_thread_context_t::current();
+        auto idx = ctx.profile_record_counts[0]++;
+        ctx.profile_records[idx] = record;
+    }
+}
 } // namespace nncase::ntt::runtime
 
 cpu_thread_context_t &cpu_thread_context_t::current() noexcept {
@@ -115,18 +137,25 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
     std::vector<std::thread> threads;
     for (size_t tid = 0; tid < tdim; tid++) {
         threads.emplace_back([tid, params] {
+            // Get thread local profile records
+            auto block_profile_records = params.profile_records;
+            const auto profile_records_size =
+                block_profile_records.size() / params.tdim;
+            auto profile_records = block_profile_records.subspan(
+                profile_records_size * tid, profile_records_size);
+
 #ifdef __APPLE__
             pthread_setspecific(
-                cpu_thread_context_key,
-                new cpu_thread_context_t
+                cpu_thread_context_key, new cpu_thread_context_t
 #else
             cpu_thread_context_t::current() =
 #endif
-                {
-                    .tid = tid, .bid = params.bid, .cid = params.cid,
-                    .timer_records = &(params.timer_records[tid]),
-                    .enable_profiling = params.enable_profiling
-                }
+                {.tid = tid,
+                 .bid = params.bid,
+                 .cid = params.cid,
+                 .enable_profiling = params.enable_profiling,
+                 .profile_records = profile_records,
+                 .profile_record_counts = params.profile_record_counts + tid}
 #ifdef __APPLE__
             );
 #else

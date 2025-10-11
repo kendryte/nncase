@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "runtime_function.h"
-#include <nncase/ntt/arch/cpu/profiling.h>
 #include <nncase/ntt/arch/cpu/runtime.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
@@ -29,7 +28,6 @@ using namespace nncase::ntt::runtime;
 
 result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
     std::vector<std::thread> blocks;
-    timer_record timer_records[24];
     try_var(enable_profiling,
             module().interp().options().get_scalar_opt<uint8_t>(
                 "enable_profiling"));
@@ -45,7 +43,7 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                 module().block_local_rdata_content().subspan(
                     block_local_rdata_offset, block_local_rdata_size);
             blocks.emplace_back([cid, bid, linear_bid, tid_offset,
-                                 enable_profiling, timer_records, output_data,
+                                 enable_profiling, output_data,
                                  block_local_rdata, this] {
                 cpu_block_entry_params_t block_entry_params{
                     .tdim = module().tdim(),
@@ -54,14 +52,11 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                     .bid = bid,
                     .cid = cid,
                     .cpu_id_offset = tid_offset,
+                    .enable_profiling = enable_profiling,
                     .input_descs = this->input_descs_.data(),
                     .output_descs = this->output_descs_.data(),
                     .rdata = module().rdata(),
                     .output = output_data,
-                    .enable_profiling = enable_profiling,
-                    .timer_records = const_cast<timer_record *>(
-                        &timer_records[cid * module().bdim() * module().tdim() +
-                                       bid * module().tdim()]),
                     .thread_local_rdata_header =
                         module().thread_local_rdata_header(tid_offset),
                     .thread_local_cache_header =
@@ -73,6 +68,15 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                     .block_local_rdata = block_local_rdata,
                     .thread_local_data = thread_local_data(linear_bid),
                     .block_local_data = block_local_data(linear_bid),
+                    .profile_records =
+                        enable_profiling
+                            ? thread_local_profile_records(linear_bid)
+                            : std::span<ntt::runtime::profile_record>{},
+                    .profile_record_counts =
+                        enable_profiling
+                            ? thread_local_profile_record_counts(linear_bid)
+                                  .data()
+                            : nullptr,
 #ifdef __APPLE__
                     .cpu_thread_context_key = module().cpu_thread_context_key(),
 #endif

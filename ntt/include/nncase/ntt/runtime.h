@@ -55,7 +55,7 @@ void *thread_alloc(size_t bytes, size_t alignment);
 void thread_free(void *ptr);
 } // namespace nncase::ntt::runtime
 
-extern "C" void
+extern "C" NTT_DEVICE void
 thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
             nncase::ntt::runtime::thread_inout_desc *const output_descs,
             const std::byte *rdata, const std::byte *thread_local_rdata,

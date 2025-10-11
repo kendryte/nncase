@@ -17,7 +17,7 @@ set(SRCS buffer.cpp
 		 type_serializer.cpp
 		 tensor_serializer.cpp
 		 runtime_tensor.cpp
-         dump_manager.cpp)
+     dump_manager.cpp)
 
 if ((NOT BUILDING_RUNTIME) OR DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL)
     list(APPEND SRCS host_allocator.cpp)
@@ -37,7 +37,7 @@ if (BUILDING_RUNTIME)
     install(TARGETS runtime EXPORT nncaseruntimeTargets)
 
     add_library(nncaseruntime STATIC dummy.cpp)
-    target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase runtime runtime_cpu cpu_loaders)
+    target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase runtime)
     set_target_properties(nncaseruntime PROPERTIES
                                         OUTPUT_NAME "Nncase.Runtime.Native")
     install(TARGETS nncaseruntime EXPORT nncaseruntimeTargets
@@ -66,7 +66,7 @@ else()
     set_property(TARGET simulator PROPERTY POSITION_INDEPENDENT_CODE ON)
     
     add_library(nncaseruntime SHARED dummy.cpp)
-    target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase simulator compiler simulator_cpu cpu_loaders fmt::fmt)
+    target_link_libraries(nncaseruntime PUBLIC nlohmann_json::nlohmann_json PRIVATE nncasebase simulator compiler fmt::fmt)
     target_compile_definitions(nncaseruntime PUBLIC -DNNCASE_SHARED_LIBS)
     if (NOT (WIN32 OR APPLE))
       target_link_libraries(nncaseruntime PRIVATE dl pthread)
@@ -89,3 +89,4 @@ else()
 endif()
 
 add_subdirectory(cpu)
+add_subdirectory(cuda)

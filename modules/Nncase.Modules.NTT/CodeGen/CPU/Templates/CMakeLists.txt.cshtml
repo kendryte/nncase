@@ -17,8 +17,8 @@ endif()
 include(@Html.Raw(Model.CMakePath))
 
 @if (Model.IsCUDA) {
-@:target_sources(nncase_ntt_module PRIVATE thread_main.cu)
+@:target_sources(${NNCASE_NTT_MODULE_TARGET_NAME} PRIVATE thread_main.cu)
 } else {
-@:target_sources(nncase_ntt_module PRIVATE thread_main.cpp)
+@:target_sources(${NNCASE_NTT_MODULE_TARGET_NAME} PRIVATE thread_main.cpp)
 }
-target_include_directories(nncase_ntt_module PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(${NNCASE_NTT_MODULE_TARGET_NAME} PRIVATE ${CMAKE_CURRENT_LIST_DIR})

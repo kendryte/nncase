@@ -47,7 +47,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
 
     private Var[] TensorParams => _tensorParams ??= VisitEntry.Parameters.ToArray().OfType<Var>().Where(x => !_excludedVars.Contains(x.Name)).ToArray();
 
-    public static void WriteWithProfiler(string functionName, string tagName = "")
+    public void WriteWithProfiler(string functionName, string tagName = "")
     {
         functionName = functionName.TrimEnd(new char[] { ';', '\n' });
         if (tagName == string.Empty)
@@ -62,12 +62,12 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
         IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{tagName}\";\n");
-        IndentScope.Writer.Write($"auto_profiler profiler(function_name, runtime::profiling_level::kernel);\n");
+        IndentScope.Writer.Write($"profile_scope profiler(0, profile_level::kernel);\n");
         IndentScope.Writer.Write($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }
 
-    public static void WriteIndWithProfiler(string functionName, string tagName = "")
+    public void WriteIndWithProfiler(string functionName, string tagName = "")
     {
         functionName = functionName.TrimEnd(new char[] { ';', '\n' });
         if (tagName == string.Empty)
@@ -82,7 +82,7 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         tagName = tagName == string.Empty ? functionName : tagName;
         IndentScope.Writer.IndWrite("{\n");
         IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{tagName}\";\n");
-        IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name, runtime::profiling_level::kernel);\n");
+        IndentScope.Writer.IndWrite($"profile_scope profiler(0, profile_level::kernel);\n");
         IndentScope.Writer.IndWrite($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
     }

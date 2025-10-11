@@ -47,7 +47,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         IndentScope.Writer.IndWrite("{\n");
 #if false // Disable device profiling for now.
         IndentScope.Writer.Write($"constexpr std::string_view function_name = \"{tagName}\";\n");
-        IndentScope.Writer.Write($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+        IndentScope.Writer.Write($"profile_scope profiler(function_name, profile_level::device);\n");
 #endif
         IndentScope.Writer.Write($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");
@@ -69,7 +69,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         IndentScope.Writer.IndWrite("{\n");
 #if false // Disable device profiling for now.
         IndentScope.Writer.IndWrite($"constexpr std::string_view function_name = \"{tagName}\";\n");
-        IndentScope.Writer.IndWrite($"auto_profiler profiler(function_name, runtime::profiling_level::device);\n");
+        IndentScope.Writer.IndWrite($"profile_scope profiler(function_name, profile_level::device);\n");
 #endif
         IndentScope.Writer.IndWrite($"{functionName};\n");
         IndentScope.Writer.IndWrite("}\n");

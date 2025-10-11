@@ -28,8 +28,8 @@ namespace nncase::ntt {
 // static nncase::ntt::runtime::timer_record
 //     timer_records[CHIP_COUNTER][BLOCK_COUNTER][THREAD_COUNTER];
 
-// auto_profiler, start timing and end timing
-class auto_profiler {
+// profile_scope, start timing and end timing
+class profile_scope {
   public:
     __device__ inline uint64_t get_current_time() const {
         return std::chrono::duration_cast<std::chrono::microseconds>(
@@ -37,7 +37,7 @@ class auto_profiler {
             .count();
     }
 
-    __device__ auto_profiler(std::string_view function_name)
+    __device__ profile_scope(std::string_view function_name)
         : cid_(program_id<topology::chip>()),
           bid_(program_id<topology::block>()),
           tid_(program_id<topology::thread>()) {
@@ -50,15 +50,15 @@ class auto_profiler {
         }
     }
 
-    __device__ auto_profiler(std::string_view function_name,
-                             runtime::profiling_level level)
-        : auto_profiler(function_name) { // 调用另一个构造函数
+    __device__ profile_scope(std::string_view function_name,
+                             profile_level level)
+        : profile_scope(function_name) { // 调用另一个构造函数
         if (enable_profiling_) {
             level_ = level; // 设置 level
         }
     }
 
-    __device__ ~auto_profiler() {
+    __device__ ~profile_scope() {
         if (enable_profiling_) {
             timer_storage_->set_id({cid_, bid_, tid_});
             end_time_ = get_current_time();
@@ -74,7 +74,7 @@ class auto_profiler {
     int cid_;
     int bid_;
     int tid_;
-    nncase::ntt::runtime::profiling_level level_;
+    nncase::ntt::profile_level level_;
     nncase::ntt::runtime::timer_record *timer_storage_;
     bool enable_profiling_;
 

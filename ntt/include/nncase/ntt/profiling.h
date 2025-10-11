@@ -13,71 +13,49 @@
  * limitations under the License.
  */
 #pragma once
+#include "compiler_defs.h"
 #include <cstdint>
-#include <string_view>
-#include <unordered_map>
-#include <vector>
 
-namespace nncase::ntt::runtime {
+namespace nncase::ntt {
+enum class profile_level { kernel, device };
 
-enum class profiling_level { kernel, device };
-
-static std::string_view to_string(profiling_level level) {
-    switch (level) {
-    case profiling_level::kernel:
-        return "kernel";
-    case profiling_level::device:
-        return "device";
-    default:
-        return "unknown";
-    }
-}
-
-template <class TOPOLOGY> class timer_record_base {
-  public:
-    struct call_instance {
-        uint64_t start_time;
-        uint64_t end_time;
-    };
-
-    struct function_stats {
-        uint64_t call_count = 0;
-        uint64_t total_time = 0;
-        profiling_level level;
-        std::vector<call_instance> calls;
-    };
-
-    // 判断记录是否有效
-    virtual bool is_valid() const = 0;
-
-    // 设置计时记录
-    virtual void set_time(std::string_view function_name, uint64_t start_time,
-                          uint64_t end_time) = 0;
-
-    // 控制台打印统计信息
-    virtual void console_print() const = 0;
-
-    // 导出为 CSV 文件
-    virtual void csv_print(std::string_view filename) const = 0;
-
-    // 导出为 JSON 文件
-    virtual void markdown_print(std::string_view filename) const = 0;
-
-    // 导出为 JSON 文件
-    virtual void json_print(std::string_view filename) const = 0;
-
-    // 设置记录 ID
-    virtual void set_id(TOPOLOGY id) = 0;
-
-    virtual void set_level(std::string_view filename,
-                           profiling_level level) = 0;
-
-    // 虚析构函数，确保子类正确释放资源
-    virtual ~timer_record_base() = default;
-
-  protected:
-    timer_record_base() = default; // 禁止直接实例化抽象类
-    TOPOLOGY instance_id_;
-    std::unordered_map<std::string_view, function_stats> function_stats_;
+namespace runtime {
+struct profile_record {
+    uint32_t function_id;
+    uint64_t duration;
 };
-} // namespace nncase::ntt::runtime
+
+NTT_DEVICE bool is_profiling_enabled() noexcept;
+NTT_DEVICE uint64_t get_profile_time() noexcept;
+NTT_DEVICE void record_profile(profile_level level,
+                               const profile_record &record) noexcept;
+} // namespace runtime
+
+class profile_scope {
+  public:
+    NTT_DEVICE
+    profile_scope(uint32_t function_id,
+                  profile_level level = profile_level::kernel) noexcept
+        : enabled_(runtime::is_profiling_enabled()),
+          function_id_(function_id),
+          level_(level) {
+        if (enabled_) {
+            start_time_ = runtime::get_profile_time();
+        }
+    }
+
+    NTT_DEVICE ~profile_scope() noexcept {
+        if (enabled_) {
+            auto duration = runtime::get_profile_time() - start_time_;
+            runtime::profile_record record{function_id_, duration};
+            runtime::record_profile(level_, record);
+        }
+    }
+
+  private:
+    bool enabled_;
+    uint32_t function_id_;
+    profile_level level_;
+    uint64_t start_time_;
+};
+} // namespace nncase::ntt

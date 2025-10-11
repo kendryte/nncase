@@ -70,3 +70,6 @@ if(${CMAKE_SYSTEM_PROCESSOR} MATCHES
        message(FATAL_ERROR "Unsupported riscv64 target")
    endif()
 endif()
+
+if (CMAKE_CUDA_COMPILER)
+endif()

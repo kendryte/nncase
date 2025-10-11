@@ -146,6 +146,7 @@ NTT_HOST_DEVICE void test_strides() {
 NTT_HOST_DEVICE void test_sharding() {
     // local_index
     {
+        using namespace ntt::distributed;
         using mesh_type =
             ntt::distributed::mesh<ntt::distributed::topology::thread, 1>;
 

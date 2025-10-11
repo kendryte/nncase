@@ -20,7 +20,7 @@
 
 namespace nncase::ntt::distributed {
 template <> struct program_id_getter<topology::thread> {
-    __device__ static size_t id() noexcept { return threadIdx.x; }
+    __device__ static size_t id() noexcept { return threadIdx.x / warpSize; }
 };
 
 template <> struct program_id_getter<topology::block> {
@@ -32,6 +32,12 @@ template <> struct program_id_getter<topology::chip> {
         return runtime::cuda_thread_context_t::current().cid;
     }
 };
+
+inline __device__ size_t lane_id() noexcept {
+    uint32_t lane;
+    asm("mov.u32 %0, %%laneid;" : "=r"(lane));
+    return lane;
+}
 
 inline __device__ size_t tid() noexcept {
     return program_id<topology::thread>();

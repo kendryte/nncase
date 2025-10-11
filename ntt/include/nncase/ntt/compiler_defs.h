@@ -56,7 +56,9 @@
 #ifdef __CUDACC__
 #define NTT_HOST_DEVICE __host__ __device__
 #define NTT_DEVICE __device__
+#define NTT_KERNEL __global__
 #else
 #define NTT_HOST_DEVICE
 #define NTT_DEVICE
+#define NTT_KERNEL
 #endif

@@ -14,30 +14,19 @@
  */
 #include "runtime_function.h"
 #include "nncase/runtime/buffer.h"
-#include "nncase/runtime/simple_types.h"
-#include "nncase/tensor.h"
-#include "nncase/value.h"
 #include <cstdint>
 #include <nncase/llm/paged_attention_kv_cache.h>
-#include <nncase/ntt/arch/cpu/runtime.h>
+#include <nncase/ntt/arch/cuda/runtime.h>
 #include <nncase/runtime/allocator.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 #include <nncase/type.h>
-#include <utility>
-#include <vector>
-
-#ifdef WIN32
-#include <Windows.h>
-#elif defined(__unix__) || defined(__APPLE__)
-#include <dlfcn.h>
-#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
-using namespace nncase::runtime::cpu;
+using namespace nncase::runtime::cuda;
 using namespace nncase::ntt::runtime;
 
 typedef struct {
@@ -48,16 +37,16 @@ typedef struct {
     uint64_t block_local_data_pool_size;
 } kernel_desc_header;
 
-cpu_runtime_function::cpu_runtime_function(runtime_module &rt_module)
+cuda_runtime_function::cuda_runtime_function(runtime_module &rt_module)
     : runtime_function(rt_module), block_entry_(nullptr) {}
 
-cpu_runtime_function::~cpu_runtime_function() {}
+cuda_runtime_function::~cuda_runtime_function() {}
 
-cpu_runtime_module &cpu_runtime_function::module() const noexcept {
-    return static_cast<cpu_runtime_module &>(runtime_function::module());
+cuda_runtime_module &cuda_runtime_function::module() const noexcept {
+    return static_cast<cuda_runtime_module &>(runtime_function::module());
 }
 
-result<void> cpu_runtime_function::initialize_core(
+result<void> cuda_runtime_function::initialize_core(
     runtime_function_init_context &context) noexcept {
     const auto blocks_count = module().cdim() * module().bdim();
     try_(context.read_section(
@@ -140,7 +129,7 @@ result<void> cpu_runtime_function::initialize_core(
     return ok();
 }
 
-result<value_t> cpu_runtime_function::invoke_core(
+result<value_t> cuda_runtime_function::invoke_core(
     std::span<value_t> parameters,
     [[maybe_unused]] value_t return_value) noexcept {
     size_t input_id = 0;
@@ -284,9 +273,9 @@ result<value_t> cpu_runtime_function::invoke_core(
 }
 
 result<tensor>
-cpu_runtime_function::create_output_tensor(size_t output_id,
-                                           std::span<value_t> parameters,
-                                           std::byte *output_data) noexcept {
+cuda_runtime_function::create_output_tensor(size_t output_id,
+                                            std::span<value_t> parameters,
+                                            std::byte *output_data) noexcept {
     auto &output_desc = output_descs_[output_id];
     buffer_slice buffer;
     intptr_t offset;

@@ -134,6 +134,7 @@ void test_strides() {
 void test_sharding() {
     // local_index
     {
+        using namespace ntt::distributed;
         using mesh_type =
             ntt::distributed::mesh<ntt::distributed::topology::thread, 1>;
 
@@ -601,6 +602,7 @@ void test_matmul_transpose_b() {
 }
 
 void test_caching() {
+    using namespace ntt::distributed;
     {
         constexpr auto NumLayer = fixed_dim_v<1>;
         constexpr auto NumKVHead = fixed_dim_v<2>;
