@@ -20,7 +20,12 @@
 
 namespace nncase::ntt {
 namespace ukernels {
-template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
+
+template <bool Arch> struct u_top_k_policy {
+    static constexpr size_t unroll = 1;
+};
+
+template <bool Arch, Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
 struct u_top_k {
   public:
     constexpr void operator()(int64_t inner_size, const TProbs *slice_input_ptr,
@@ -181,7 +186,7 @@ void u_top_k(int64_t inner_size, const TProbs *slice_input_ptr,
              int64_t out_indices_stride, int K, int64_t largest,
              int64_t sorted) {
 
-    ukernels::u_top_k<TProbs, TIndices, Rank, Axis> impl;
+    ukernels::u_top_k<true, TProbs, TIndices, Rank, Axis> impl;
     impl(inner_size, slice_input_ptr, slice_probs_ptr, slice_indices_ptr,
          input_stride, out_probs_stride, out_indices_stride, K, largest,
          sorted);
