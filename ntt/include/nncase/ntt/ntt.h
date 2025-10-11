@@ -58,6 +58,7 @@
 #include "kernels/scatter_nd.h"
 #include "kernels/shapeof.h"
 #include "kernels/slice.h"
+#include "kernels/sparse_experts.h"
 #include "kernels/softmax.h"
 #include "kernels/stack.h"
 #include "kernels/summa.h"
