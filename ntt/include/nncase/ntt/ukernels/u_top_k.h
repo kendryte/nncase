@@ -19,112 +19,160 @@
 #include "nncase/ntt/tensor_traits.h"
 
 namespace nncase::ntt {
-namespace ukernels {} // namespace ukernels
-
+namespace ukernels {
 template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
-void sort_descending(TProbs *out_probs, TIndices *out_indices,
-                     int64_t out_probs_stride, int64_t out_indices_stride,
-                     int K) {
-    for (int cur_idx = 0; cur_idx < K - 1; ++cur_idx) {
-        auto max_idx = cur_idx;
+struct u_top_k {
+  public:
+    constexpr void operator()(int64_t inner_size, const TProbs *slice_input_ptr,
+                              TProbs *slice_probs_ptr,
+                              TIndices *slice_indices_ptr, int64_t input_stride,
+                              int64_t out_probs_stride,
+                              int64_t out_indices_stride, int K,
+                              int64_t largest, int64_t sorted) {
+        for (int i = 0; i < K; i++) {
+            slice_indices_ptr[i * out_indices_stride] = i;
+            slice_probs_ptr[i * out_probs_stride] =
+                slice_input_ptr[i * input_stride];
+        }
 
-        for (int next_idx = cur_idx + 1; next_idx < K; ++next_idx) {
-            if (out_probs[next_idx * out_probs_stride] >
-                out_probs[max_idx * out_probs_stride]) {
-                max_idx = next_idx;
+        for (int i = K; i < inner_size; i++) {
+            auto candidate_value = slice_input_ptr[i * input_stride];
+            for (int k = 0; k < K; k++) {
+                auto top_value = slice_probs_ptr[k * out_probs_stride];
+                if (largest) {
+                    if (candidate_value > top_value) {
+                        requeue_descending(slice_probs_ptr, slice_indices_ptr,
+                                           out_probs_stride, out_indices_stride,
+                                           candidate_value, i, k, K);
+                        break;
+                    }
+                } else {
+                    if (candidate_value < top_value) {
+                        requeue_ascending(slice_probs_ptr, slice_indices_ptr,
+                                          out_probs_stride, out_indices_stride,
+                                          candidate_value, i, k, K);
+                        break;
+                    }
+                }
             }
         }
 
-        if (max_idx != cur_idx) {
-            auto tempValue = out_probs[cur_idx * out_probs_stride];
-            out_probs[cur_idx * out_probs_stride] =
-                out_probs[max_idx * out_probs_stride];
-            out_probs[max_idx * out_probs_stride] = tempValue;
-
-            auto tempIndex = out_indices[cur_idx * out_indices_stride];
-            out_indices[cur_idx * out_indices_stride] =
-                out_indices[max_idx * out_indices_stride];
-            out_indices[max_idx * out_indices_stride] = tempIndex;
-        }
-    }
-}
-
-template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
-void sort_ascending(TProbs *out_probs, TIndices *out_indices,
-                    int64_t out_probs_stride, int64_t out_indices_stride,
-                    int K) {
-    for (int cur_idx = 0; cur_idx < K - 1; ++cur_idx) {
-        auto min_idx = cur_idx;
-
-        for (int next_idx = cur_idx + 1; next_idx < K; ++next_idx) {
-            if (out_probs[next_idx * out_probs_stride] <
-                out_probs[min_idx * out_probs_stride]) {
-                min_idx = next_idx;
+        if (sorted) {
+            if (largest) {
+                sort_descending(slice_probs_ptr, slice_indices_ptr,
+                                out_probs_stride, out_indices_stride, K);
+            } else {
+                sort_ascending(slice_probs_ptr, slice_indices_ptr,
+                               out_probs_stride, out_indices_stride, K);
             }
         }
+    }
 
-        if (min_idx != cur_idx) {
-            auto tempValue = out_probs[cur_idx * out_probs_stride];
-            out_probs[cur_idx * out_probs_stride] =
-                out_probs[min_idx * out_probs_stride];
-            out_probs[min_idx * out_probs_stride] = tempValue;
+  private:
+    void sort_descending(TProbs *out_probs, TIndices *out_indices,
+                         int64_t out_probs_stride, int64_t out_indices_stride,
+                         int K) {
+        for (int cur_idx = 0; cur_idx < K - 1; ++cur_idx) {
+            auto max_idx = cur_idx;
 
-            auto tempIndex = out_indices[cur_idx * out_indices_stride];
-            out_indices[cur_idx * out_indices_stride] =
-                out_indices[min_idx * out_indices_stride];
-            out_indices[min_idx * out_indices_stride] = tempIndex;
+            for (int next_idx = cur_idx + 1; next_idx < K; ++next_idx) {
+                if (out_probs[next_idx * out_probs_stride] >
+                    out_probs[max_idx * out_probs_stride]) {
+                    max_idx = next_idx;
+                }
+            }
+
+            if (max_idx != cur_idx) {
+                auto tempValue = out_probs[cur_idx * out_probs_stride];
+                out_probs[cur_idx * out_probs_stride] =
+                    out_probs[max_idx * out_probs_stride];
+                out_probs[max_idx * out_probs_stride] = tempValue;
+
+                auto tempIndex = out_indices[cur_idx * out_indices_stride];
+                out_indices[cur_idx * out_indices_stride] =
+                    out_indices[max_idx * out_indices_stride];
+                out_indices[max_idx * out_indices_stride] = tempIndex;
+            }
         }
     }
-}
 
-template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
-void requeue_descending(TProbs *out_probs, TIndices *out_indices,
+    void sort_ascending(TProbs *out_probs, TIndices *out_indices,
                         int64_t out_probs_stride, int64_t out_indices_stride,
-                        TProbs candidate_value, int64_t candidate_index,
-                        int64_t current_top_index, int64_t K) {
-    auto next_candidate_value = out_probs[current_top_index * out_probs_stride];
-    auto next_candidata_index =
-        out_indices[current_top_index * out_indices_stride];
+                        int K) {
+        for (int cur_idx = 0; cur_idx < K - 1; ++cur_idx) {
+            auto min_idx = cur_idx;
 
-    out_probs[current_top_index * out_probs_stride] = candidate_value;
-    out_indices[current_top_index * out_indices_stride] = candidate_index;
+            for (int next_idx = cur_idx + 1; next_idx < K; ++next_idx) {
+                if (out_probs[next_idx * out_probs_stride] <
+                    out_probs[min_idx * out_probs_stride]) {
+                    min_idx = next_idx;
+                }
+            }
 
-    bool replaced = false;
-    for (int k = 0; k < K; k++) {
-        auto top_value = out_probs[k * out_probs_stride];
-        if (next_candidate_value > top_value && !replaced) {
-            requeue_descending<TProbs, TIndices, Rank, Axis>(
-                out_probs, out_indices, out_probs_stride, out_indices_stride,
-                next_candidate_value, next_candidata_index, k, K);
-            replaced = true;
+            if (min_idx != cur_idx) {
+                auto tempValue = out_probs[cur_idx * out_probs_stride];
+                out_probs[cur_idx * out_probs_stride] =
+                    out_probs[min_idx * out_probs_stride];
+                out_probs[min_idx * out_probs_stride] = tempValue;
+
+                auto tempIndex = out_indices[cur_idx * out_indices_stride];
+                out_indices[cur_idx * out_indices_stride] =
+                    out_indices[min_idx * out_indices_stride];
+                out_indices[min_idx * out_indices_stride] = tempIndex;
+            }
         }
     }
-}
 
-template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
-void requeue_ascending(TProbs *out_probs, TIndices *out_indices,
-                       int64_t out_probs_stride, int64_t out_indices_stride,
-                       TProbs candidate_value, TIndices candidate_index,
-                       TIndices current_down_index, int64_t K) {
-    auto next_candidate_value =
-        out_probs[current_down_index * out_probs_stride];
-    auto next_candidata_index =
-        out_indices[current_down_index * out_indices_stride];
+    void requeue_descending(TProbs *out_probs, TIndices *out_indices,
+                            int64_t out_probs_stride,
+                            int64_t out_indices_stride, TProbs candidate_value,
+                            int64_t candidate_index, int64_t current_top_index,
+                            int64_t K) {
+        auto next_candidate_value =
+            out_probs[current_top_index * out_probs_stride];
+        auto next_candidata_index =
+            out_indices[current_top_index * out_indices_stride];
 
-    out_probs[current_down_index * out_probs_stride] = candidate_value;
-    out_indices[current_down_index * out_indices_stride] = candidate_index;
+        out_probs[current_top_index * out_probs_stride] = candidate_value;
+        out_indices[current_top_index * out_indices_stride] = candidate_index;
 
-    bool replaced = false;
-    for (int k = 0; k < K; k++) {
-        auto down_value = out_probs[k * out_probs_stride];
-        if (next_candidate_value < down_value && !replaced) {
-            requeue_ascending<TProbs, TIndices, Rank, Axis>(
-                out_probs, out_indices, out_probs_stride, out_indices_stride,
-                next_candidate_value, next_candidata_index, k, K);
-            replaced = true;
+        bool replaced = false;
+        for (int k = 0; k < K; k++) {
+            auto top_value = out_probs[k * out_probs_stride];
+            if (next_candidate_value > top_value && !replaced) {
+                requeue_descending(out_probs, out_indices, out_probs_stride,
+                                   out_indices_stride, next_candidate_value,
+                                   next_candidata_index, k, K);
+                replaced = true;
+            }
         }
     }
-}
+
+    void requeue_ascending(TProbs *out_probs, TIndices *out_indices,
+                           int64_t out_probs_stride, int64_t out_indices_stride,
+                           TProbs candidate_value, TIndices candidate_index,
+                           TIndices current_down_index, int64_t K) {
+        auto next_candidate_value =
+            out_probs[current_down_index * out_probs_stride];
+        auto next_candidata_index =
+            out_indices[current_down_index * out_indices_stride];
+
+        out_probs[current_down_index * out_probs_stride] = candidate_value;
+        out_indices[current_down_index * out_indices_stride] = candidate_index;
+
+        bool replaced = false;
+        for (int k = 0; k < K; k++) {
+            auto down_value = out_probs[k * out_probs_stride];
+            if (next_candidate_value < down_value && !replaced) {
+                requeue_ascending(out_probs, out_indices, out_probs_stride,
+                                  out_indices_stride, next_candidate_value,
+                                  next_candidata_index, k, K);
+                replaced = true;
+            }
+        }
+    }
+};
+} // namespace ukernels
 
 template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
 void u_top_k(int64_t inner_size, const TProbs *slice_input_ptr,
@@ -133,44 +181,9 @@ void u_top_k(int64_t inner_size, const TProbs *slice_input_ptr,
              int64_t out_indices_stride, int K, int64_t largest,
              int64_t sorted) {
 
-    for (int i = 0; i < K; i++) {
-        slice_indices_ptr[i * out_indices_stride] = i;
-        slice_probs_ptr[i * out_probs_stride] =
-            slice_input_ptr[i * input_stride];
-    }
-
-    for (int i = K; i < inner_size; i++) {
-        auto candidate_value = slice_input_ptr[i * input_stride];
-        for (int k = 0; k < K; k++) {
-            auto top_value = slice_probs_ptr[k * out_probs_stride];
-            if (largest) {
-                if (candidate_value > top_value) {
-                    requeue_descending<TProbs, TIndices, Rank, Axis>(
-                        slice_probs_ptr, slice_indices_ptr, out_probs_stride,
-                        out_indices_stride, candidate_value, i, k, K);
-                    break;
-                }
-            } else {
-                if (candidate_value < top_value) {
-                    requeue_ascending<TProbs, TIndices, Rank, Axis>(
-                        slice_probs_ptr, slice_indices_ptr, out_probs_stride,
-                        out_indices_stride, candidate_value, i, k, K);
-                    break;
-                }
-            }
-        }
-    }
-
-    if (sorted) {
-        if (largest) {
-            sort_descending<TProbs, TIndices, Rank, Axis>(
-                slice_probs_ptr, slice_indices_ptr, out_probs_stride,
-                out_indices_stride, K);
-        } else {
-            sort_ascending<TProbs, TIndices, Rank, Axis>(
-                slice_probs_ptr, slice_indices_ptr, out_probs_stride,
-                out_indices_stride, K);
-        }
-    }
+    ukernels::u_top_k<TProbs, TIndices, Rank, Axis> impl;
+    impl(inner_size, slice_input_ptr, slice_probs_ptr, slice_indices_ptr,
+         input_stride, out_probs_stride, out_indices_stride, K, largest,
+         sorted);
 }
 } // namespace nncase::ntt
