@@ -375,12 +375,13 @@ public abstract class HuggingFaceModel
                 var limit = Nncase.IR.F.Math.Max(Nncase.IR.F.Math.Abs(max), Nncase.IR.F.Math.Abs(min));
                 var qScaleA = Nncase.IR.F.Math.Div(Tensor.FromScalar(DataTypes.Int8, sbyte.MaxValue).CastTo(dtype), limit);
                 var deqScaleA = Nncase.IR.F.Math.Div(Tensor.FromScalar(DataTypes.Float32, 1f).CastTo(dtype), qScaleA);
-                var deqScaleB = scaleW.Transpose([1, 0]);
+                var deqScaleB = scaleW.Transpose([1, 0]).CastTo(dtype);
 
                 var qInput = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, expr, qScaleA);
                 qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Int8);
                 var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 }).Evaluate().AsTensor();
-                var qMatmul = Nncase.IR.F.Math.QLinearMatMul(qInput, transposed_weight, deqScaleA, 0, Tensor.FromScalar(DataTypes.Float32, 1f).CastTo(dtype), 0, deqScaleB, 0, dtype).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+                var qMatmul = Nncase.IR.F.Math.QLinearMatMul(qInput, transposed_weight, Tensor.FromScalar(DataTypes.Float32, 1f).CastTo(dtype), 0, Tensor.FromScalar(DataTypes.Float32, 1f).CastTo(dtype), 0, deqScaleB, 0, dtype).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+                qMatmul = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA);
 
                 if (bias != null)
                 {
@@ -947,7 +948,8 @@ public abstract class HuggingFaceModel
          * self.vocab_size = config.vocab_size
          * self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size, self.padding_idx)
          */
-        var embedTokensWeight = GetWeight("model.embed_tokens.weight")!;
+        // FIXME: remove cast when merging.
+        var embedTokensWeight = GetWeight("model.embed_tokens.weight")!.CastTo(DataTypes.Float16);
 
         Expr? inputEmbeds;
         if (inputIds.CheckedShape.Rank > 2 && inputIds.CheckedDataType.IsFloat())
