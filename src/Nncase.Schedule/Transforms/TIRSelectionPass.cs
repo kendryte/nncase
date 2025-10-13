@@ -175,7 +175,11 @@ public abstract class TIRSelectionPass : FunctionPass
                 var output = CreateOutputBuffer(call);
                 var newCall = call.Target switch
                 {
-                    PrimFunctionWrapper { Target: TIR.PrimFunction deviceFunc } => new Call(deviceFunc, arguments.Append(output).ToArray()),
+                    PrimFunctionWrapper { Target: TIR.PrimFunction deviceFunc } => output switch
+                    {
+                        IR.Tuple tp => new Call(deviceFunc, arguments.Concat(tp.Fields.ToArray()).ToArray()),
+                        _ => new Call(deviceFunc, arguments.Append(output).ToArray()),
+                    },
                     Function fn => new Call(new FunctionWrapper(_selectionPass.ModuleKind, fn), arguments.Append(output).ToArray()),
                     _ => _selectionPass.SelectCall(call, arguments, ref Unsafe.As<BaseExpr, Expr>(ref output)),
                 };

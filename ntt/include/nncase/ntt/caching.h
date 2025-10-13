@@ -100,8 +100,8 @@ template <size_t NumLayer, size_t NumKVHead, size_t HeadDim,
           class... AxisPolicies>
 constexpr auto make_paged_attention_config(const CacheLayout &,
                                            const BlockLayout &,
-                                           const VectorizedAxes &, const Lanes &,
-                                           const ShardingAxes &,
+                                           const VectorizedAxes &,
+                                           const Lanes &, const ShardingAxes &,
                                            const AxisPolicies &...) noexcept {
     return paged_attention_config<
         NumLayer, NumKVHead, HeadDim, KVPrimType, BlockSize, CacheLayout,
@@ -417,5 +417,10 @@ class paged_attention_kv_cache : public attention_kv_cache<TConfig> {
     block_table_t block_table_;
     slot_mapping_t slot_mapping_;
     kv_addrs_t kv_addrs_;
+    static constexpr size_t padding_size_ =
+        2048 - (sizeof(attention_kv_cache<TConfig>) + sizeof(block_table_t) +
+                sizeof(slot_mapping_t) + sizeof(kv_addrs_t));
+    static_assert(padding_size_ >= 0, "Padding size must be positive");
+    char padding_[padding_size_];
 };
 } // namespace nncase::ntt::caching

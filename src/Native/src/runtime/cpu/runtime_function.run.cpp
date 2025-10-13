@@ -64,7 +64,12 @@ result<void> cpu_runtime_function::run(std::byte *output_data) noexcept {
                                        bid * module().tdim()]),
                     .thread_local_rdata_header =
                         module().thread_local_rdata_header(tid_offset),
+                    .thread_local_cache_header =
+                        module().thread_local_cache_header(tid_offset),
                     .thread_local_rdata = module().thread_local_rdata_content(),
+                    .thread_local_cache = module().thread_local_cache_content(),
+                    .thread_local_cache_starts =
+                        module().thread_local_cache_starts(),
                     .block_local_rdata = block_local_rdata,
                     .thread_local_data = thread_local_data(linear_bid),
                     .block_local_data = block_local_data(linear_bid),

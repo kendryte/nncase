@@ -67,6 +67,8 @@ public sealed class OpNode : ITreeNode
 
     public AffineMap WriteAccess => _wrapped.WriteAccess;
 
+    public long GetBufferElemSize(int i) => _wrapped.GetBufferElemSize(i);
+
     public MicroKernelContext GetMicroKernelContext(ITargetOptions targetOptions) => new(Op, Grid.AccessMaps.ToImmutableArray(), BufferShapes, targetOptions);
 
     public MicroKernelInfo GetKernelInfo(ITargetOptions targetOptions) => CompilerServices.GetOpMicroKernelInfo(Op, GetMicroKernelContext(targetOptions));

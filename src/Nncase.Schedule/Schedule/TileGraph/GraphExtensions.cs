@@ -24,11 +24,8 @@ public static class GraphExtensions
                     {
                         var name = $"Op{tg.OpId}@L{tg.Level}";
                         arg.GraphFormat.Label = name;
-                        if (tg.DomainRelation is not null)
-                        {
-                            arg.GraphFormat.Label += System.Environment.NewLine + tg.DomainRelation.ToString();
-                        }
-
+                        arg.GraphFormat.Label += System.Environment.NewLine + tg.DomainRelation.ToString();
+                        arg.GraphFormat.Label += System.Environment.NewLine + $"DomainBounds: [{string.Join(", ", tg.DomainBoundExprs)}]";
                         arg.GraphFormat.LabelLocation = QuikGraph.Graphviz.Dot.GraphvizLabelLocation.T;
                         arg.GraphFormat.LabelJustification = QuikGraph.Graphviz.Dot.GraphvizLabelJustification.L;
                         arg.GraphFormat.BackgroundColor = _colors[tg.OpId];
@@ -38,7 +35,9 @@ public static class GraphExtensions
                 alg.FormatVertex += (_, arg) =>
                 {
                     var parentCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
-                    parentCell.Cells.Add(new() { Text = arg.Vertex.ToString(), Port = "Title" });
+                    var title = arg.Vertex.ToString();
+                    title += System.Environment.NewLine + arg.Vertex.DomainRelation.ToString();
+                    parentCell.Cells.Add(new() { Text = title, Port = "Title" });
                     var childCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
                     parentCell.Cells.Add(childCell);
                     var domainCell = new QuikGraph.Graphviz.Dot.GraphvizRecordCell();
@@ -55,7 +54,7 @@ public static class GraphExtensions
 
                     for (int i = 0; i < arg.Vertex.DomainBounds.Length; i++)
                     {
-                        boundCell.Cells.Add(new() { Text = $"d{i}: {arg.Vertex.DomainBounds[i]}" });
+                        boundCell.Cells.Add(new() { Text = $"d{i}: {arg.Vertex.DomainBounds[i]} : {arg.Vertex.DomainBoundExprs[i]}" });
                     }
 
                     arg.VertexFormat.Record.Cells.Add(parentCell);
@@ -91,8 +90,28 @@ public static class GraphExtensions
                 init.FormatVertex += (_, arg) =>
                 {
                     arg.VertexFormat.Label = arg.Vertex.ToString();
+                    if (arg.Vertex.Index == 0)
+                    {
+                        arg.VertexFormat.Label += Environment.NewLine + arg.Vertex.Node.Op.GetType().Name;
+                    }
+
                     arg.VertexFormat.FillColor = _colors[arg.Vertex.Node.OpId];
                     arg.VertexFormat.Style = QuikGraph.Graphviz.Dot.GraphvizVertexStyle.Filled;
+                };
+
+                init.FormatEdge += (_, arg) =>
+                {
+                    switch (arg.Edge.Tag)
+                    {
+                        case BufferEdgeKind.Intra:
+                            arg.EdgeFormat.Style = QuikGraph.Graphviz.Dot.GraphvizEdgeStyle.Dashed;
+                            break;
+                        case BufferEdgeKind.Inter:
+                            arg.EdgeFormat.Style = QuikGraph.Graphviz.Dot.GraphvizEdgeStyle.Solid;
+                            break;
+                        default:
+                            break;
+                    }
                 };
 
                 init.FormatCluster += (_, arg) =>
@@ -221,7 +240,7 @@ public static class GraphExtensions
         return current;
     }
 
-    public static TieredTileGraph Clone(this TieredTileGraph sourceGraph)
+    public static TieredTileGraph Clone(this TieredTileGraph sourceGraph, out Dictionary<TileGrid, TileGrid> updatedMemo)
     {
         if (sourceGraph.Parent is not null)
         {
@@ -229,12 +248,13 @@ public static class GraphExtensions
         }
 
         var wrappedGraph = new QuikGraph.AdjacencyGraph<TileGrid, QuikGraph.EquatableTaggedEdge<TileGrid, int>>();
-        var targetGraph = new TieredTileGraph(sourceGraph.Level, wrappedGraph);
-        CloneInternal(sourceGraph, targetGraph);
+        var targetGraph = new TieredTileGraph(wrappedGraph);
+        updatedMemo = new Dictionary<TileGrid, TileGrid>();
+        CloneInternal(sourceGraph, targetGraph, updatedMemo);
 
         foreach (var item in sourceGraph.Edges)
         {
-            wrappedGraph.AddEdge(item);
+            wrappedGraph.AddEdge(new(updatedMemo[item.Source], updatedMemo[item.Target], item.Tag));
         }
 
         return targetGraph;
@@ -246,37 +266,74 @@ public static class GraphExtensions
         return index >= grid.Reads.Length ? grid.Buffers[^1] : grid.Reads[index];
     }
 
-    public static (HashSet<TVertex> Inputs, HashSet<TVertex> Outputs) GetInputsOutputs<TVertex, TEdge>(this QuikGraph.IEdgeListAndIncidenceGraph<TVertex, TEdge> g)
-        where TEdge : QuikGraph.IEdge<TVertex>
+    public static (HashSet<BufferIdentity> Inputs, HashSet<BufferIdentity> Outputs) GetInputsOutputs(this BufferGraph g, BufferGraph? parent)
     {
-        var sources = new HashSet<TVertex>();
-        var targets = new HashSet<TVertex>();
+        var sources = new HashSet<BufferIdentity>();
+        var targets = new HashSet<BufferIdentity>();
         foreach (var item in g.Edges)
         {
             sources.Add(item.Source);
             targets.Add(item.Target);
         }
 
-        var inputs = new HashSet<TVertex>(sources.Except(targets));
-        var outputs = new HashSet<TVertex>(targets.Except(sources));
+        var inputs = new HashSet<BufferIdentity>(sources.Except(targets));
+        var outputs = new HashSet<BufferIdentity>(targets.Except(sources));
+        foreach (var item in g.Vertices)
+        {
+            if (item.IsOutputLiveOut)
+            {
+                outputs.Add(item);
+            }
+        }
+
+        if (parent is not null)
+        {
+            foreach (var item in parent.Edges)
+            {
+                if (g.ContainsVertex(item.Source) && !g.ContainsVertex(item.Target))
+                {
+                    outputs.Add(item.Source);
+                }
+            }
+        }
+
         return (inputs, outputs);
     }
 
-    private static void CloneInternal(TieredTileGraph sourceGraph, TieredTileGraph destGraph)
+    public static BiDictionary<TKey, TElement> ToBiDictionary<TSource, TKey, TElement>(this IEnumerable<TSource> source, Func<TSource, TKey> keySelector, Func<TSource, TElement> elementSelector)
+        where TKey : notnull
+        where TElement : notnull
+    {
+        var bidict = new BiDictionary<TKey, TElement>();
+        foreach (var item in source)
+        {
+            bidict.Add(keySelector(item), elementSelector(item));
+        }
+
+        return bidict;
+    }
+
+    private static void CloneInternal(TieredTileGraph sourceGraph, TieredTileGraph destGraph, Dictionary<TileGrid, TileGrid> updatedMemo)
     {
         if (sourceGraph.ClustersCount != 0)
         {
             foreach (var sourceChild in sourceGraph.Clusters.OfType<TieredTileGraph>())
             {
                 var destChild = destGraph.CreateCluster<TieredTileGraph>(sourceChild.Level, sourceChild.OpId, sourceChild.DomainRelation, sourceChild.DomainBoundExprs.ToArray(), sourceChild.DomainDynamic.ToArray());
-                CloneInternal(sourceChild, destChild);
+                CloneInternal(sourceChild, destChild, updatedMemo);
             }
         }
         else
         {
             foreach (var item in sourceGraph.Vertices)
             {
-                destGraph.AddVertex(item);
+                if (!updatedMemo.TryGetValue(item, out var newItem))
+                {
+                    newItem = new TileGrid(item.Grid, item.Op, item.OpId, item.DomainBounds.ToArray(), item.DomainRelation, item.DomainBoundExprs.ToArray(), item.DomainDynamic.ToArray(), item.BufferShapes.Select(x => x.ToArray()), item.Attribute);
+                    updatedMemo.Add(item, newItem);
+                }
+
+                destGraph.AddVertex(newItem);
             }
         }
     }

@@ -9,9 +9,6 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.Schedule.MonteCarloTreeSearch;
 using QuikGraph;
-using QuikGraph.Algorithms;
-using QuikGraph.Algorithms.ShortestPath;
-using QuikGraph.Graphviz;
 
 namespace Nncase.Schedule.TileGraph;
 
@@ -29,25 +26,28 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     private readonly INTTTargetOptions _targetOptions;
 
+    private readonly DimVar[] _dynamicDimVars;
+
     private readonly TieredTileGraph _graph;
 
     private int _permformCount;
 
-    public MCTState(TieredTileGraph graph, string moduleKind, string searchPath, GraphTiler graphTiler, INTTTargetOptions targetOptions)
+    public MCTState(TieredTileGraph graph, string moduleKind, string searchPath, GraphTiler graphTiler, INTTTargetOptions targetOptions, DimVar[] dynamicDimVars)
     {
         _graph = graph;
         _moduleKind = moduleKind;
         _targetOptions = targetOptions;
+        _dynamicDimVars = dynamicDimVars;
         _mergePoints.AddRange(graph.GetMergePoints());
         _legalIndex.AddRange(Enumerable.Range(0, _mergePoints.Count));
         _path = searchPath;
         _graphTiler = graphTiler;
-        Results = new(new LeafTileGraphComparer());
+        ArgumentMemo = new();
     }
 
     public long ObjectValue { get; private set; }
 
-    public Dictionary<TieredTileGraph, Expr> Results { get; }
+    public Dictionary<BufferIdentity, Expr> ArgumentMemo { get; }
 
     public MergePoint GetNextAction(int index)
     {
@@ -64,10 +64,11 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
 
     public IEnvironmentState<MergePoint>? PerformAction(MergePoint mergePoint)
     {
-        var newGraph = _graph.Clone();
-        if (newGraph.Merge(mergePoint))
+        var newGraph = _graph.Clone(out var memo);
+        var mp = new MergePoint(memo[mergePoint.Consumer], memo[mergePoint.Producer], mergePoint.Level);
+        if (newGraph.Merge(mp))
         {
-            return new MCTState(newGraph, _moduleKind, $"{_path}.{_permformCount}", _graphTiler, _targetOptions);
+            return new MCTState(newGraph, _moduleKind, $"{_path}.{_permformCount}", _graphTiler, _targetOptions, _dynamicDimVars);
         }
 
         return null;
@@ -80,22 +81,32 @@ public sealed class MCTState : IEnvironmentState<MergePoint>
             using var scope = new Diagnostics.DumpScope($"RollOut{_path}");
             try
             {
-                var res = _graphTiler.SolveRootGraph(_graph, _moduleKind, _targetOptions, Array.Empty<DimVar>());
+                var res = _graphTiler.SolveRootGraph(_graph, _moduleKind, _targetOptions, _dynamicDimVars);
                 ObjectValue = res.ObjectValue;
-                foreach (var item in res.ResultMemo)
+
+                foreach (var item in res.ArgumentMemo)
                 {
-                    Results.Add(item.Key, item.Value);
+                    ArgumentMemo.Add(item.Key, item.Value);
                 }
             }
-            catch (System.Exception)
+            catch (System.Exception e)
             {
-                ObjectValue = long.MaxValue;
-                return ObjectValue;
+                if (e is SolveFailedException or QuikGraphException)
+                {
+                    ObjectValue = long.MaxValue;
+                    return ObjectValue;
+                }
+                else
+                {
+                    throw;
+                }
             }
         }
 
         return ObjectValue;
     }
+
+    public string SearchPath() => _path;
 
     private sealed class LeafTileGraphComparer : IEqualityComparer<TieredTileGraph>
     {
@@ -155,10 +166,11 @@ public sealed class MCTNode : SearchNode<MergePoint>
 
     public override void Dump(System.CodeDom.Compiler.IndentedTextWriter writer)
     {
-        writer.WriteLine($"- name: {this}");
+        writer.WriteLine($"- name: {State.SearchPath()}");
         writer.WriteLine($"  Action: {Action}");
         writer.WriteLine($"  QualityValue: {QualityValue}");
         writer.WriteLine($"  VisitTimes: {VisitTimes}");
+        writer.WriteLine($"  ObjectValue: {State.ObjectValue}");
         writer.WriteLine($"  Children:");
         writer.Indent += 1;
         foreach (var item in Children)
@@ -174,7 +186,8 @@ public sealed class MCTSearcher : Searcher<MergePoint>
 {
     private readonly Random _random = new Random(1010);
 
-    public MCTSearcher()
+    public MCTSearcher(int searchTimes)
+        : base(searchTimes)
     {
         BestObjectValue = double.PositiveInfinity;
         BestMCTNode = null;
@@ -189,9 +202,9 @@ public sealed class MCTSearcher : Searcher<MergePoint>
         double coef = Math.Sqrt(2);
         double temp = 0.5;
         var ucbs = node.Children.Select(c => (-c.QualityValue / BestObjectValue) + (coef * Math.Sqrt(Math.Log(node.VisitTimes) / c.VisitTimes))).ToArray();
-        var ucbs_exp = ucbs.Select(ucb => Math.Exp(ucb / temp)).ToArray();
-        var sum = ucbs_exp.Sum();
-        var probs = ucbs_exp.Select(e => (int)(e / sum * 30)).ToArray(); // conver ucb as prob
+        var ucb_exps = ucbs.Select(ucb => Math.Max(Math.Exp(ucb / temp), 1e-10)).ToArray();
+        var sum = ucb_exps.Sum();
+        var probs = ucb_exps.Select(e => (int)(e / sum * 30)).ToArray(); // conver ucb as prob
         var candidates = probs.Select((p, i) => Enumerable.Repeat(i, p).ToArray()).SelectMany(i => i).ToArray();
         return node.Children[candidates[_random.Next(candidates.Length)]];
     }

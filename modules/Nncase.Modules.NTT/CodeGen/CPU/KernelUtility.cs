@@ -31,6 +31,18 @@ public static class KernelUtility
         return $"mesh<topology::thread, {string.Join(',', placement.Hierarchy)}>";
     }
 
+    public static string SBPToC(this SBP value)
+    {
+        if (value is SBPSplit s)
+        {
+            return $"S<{string.Join(", ", s.Axes)}>()";
+        }
+        else
+        {
+            return "B";
+        }
+    }
+
     public static string ShardingToC(DistributedType distributedType)
     {
         var placement = distributedType.Placement;
@@ -51,15 +63,7 @@ public static class KernelUtility
         for (int axis = 0; axis < distributedType.TensorType.Shape.Rank; axis++)
         {
             var value = ndSBP[axis];
-            if (value is SBPSplit s)
-            {
-                sb.Append($"S<{string.Join(", ", s.Axes)}>()");
-            }
-            else
-            {
-                sb.Append('B');
-            }
-
+            sb.Append(SBPToC(value));
             if (axis != distributedType.TensorType.Shape.Rank - 1)
             {
                 sb.Append(", ");

@@ -257,7 +257,10 @@ struct cpu_block_entry_params_t {
     uint8_t enable_profiling;
     timer_record *timer_records;
     const uint64_t *thread_local_rdata_header;
+    const uint64_t *thread_local_cache_header;
     std::span<const std::byte> thread_local_rdata;
+    std::span<const std::byte> thread_local_cache;
+    std::array<int32_t, 3> thread_local_cache_starts;
     std::span<const std::byte> block_local_rdata;
     std::span<std::byte> thread_local_data;
     std::span<std::byte> block_local_data;

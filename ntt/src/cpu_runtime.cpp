@@ -48,6 +48,12 @@ decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
         nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
             nncase::ntt::distributed::topology_shape);
 
+decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 3>>(
+    nncase::ntt::distributed::topology_shape))
+    nncase::ntt::distributed::detail::global_thread_local_cache_ptr =
+        nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 3>>(
+            nncase::ntt::distributed::topology_shape);
+
 decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
     nncase::ntt::distributed::topology_shape))
     nncase::ntt::distributed::detail::global_block_local_rdata_ptr =
@@ -110,15 +116,17 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
     for (size_t tid = 0; tid < tdim; tid++) {
         threads.emplace_back([tid, params] {
 #ifdef __APPLE__
-            pthread_setspecific(cpu_thread_context_key, new cpu_thread_context_t
+            pthread_setspecific(
+                cpu_thread_context_key,
+                new cpu_thread_context_t
 #else
             cpu_thread_context_t::current() =
 #endif
-                                {.tid = tid,
-                                 .bid = params.bid,
-                                 .cid = params.cid,
-                                 .timer_records = &(params.timer_records[tid]),
-                                 .enable_profiling = params.enable_profiling}
+                {
+                    .tid = tid, .bid = params.bid, .cid = params.cid,
+                    .timer_records = &(params.timer_records[tid]),
+                    .enable_profiling = params.enable_profiling
+                }
 #ifdef __APPLE__
             );
 #else
@@ -147,6 +155,12 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
                 (size_t)params.thread_local_rdata_header[tid * 2 + 1];
             auto thread_local_rdata = params.thread_local_rdata.subspan(
                 thread_local_rdata_offset, thread_local_rdata_size);
+            auto thread_local_cache_offset =
+                (size_t)params.thread_local_cache_header[tid * 2];
+            auto thread_local_cache_size =
+                (size_t)params.thread_local_cache_header[tid * 2 + 1];
+            auto thread_local_cache = params.thread_local_cache.subspan(
+                thread_local_cache_offset, thread_local_cache_size);
 
             const auto program_ids = make_shape(params.cid, params.bid, tid);
 
@@ -167,6 +181,19 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
                 program_ids)(1_dim) =
                 (uintptr_t)(thread_local_rdata.data() +
                             thread_local_rdata.size_bytes());
+
+            for (size_t i = 0; i < 3; i++) {
+                if (params.thread_local_cache_starts[i] >= 0) {
+                    ntt::distributed::detail::global_thread_local_cache_ptr(
+                        program_ids)(i) =
+                        (uintptr_t)(thread_local_cache.data() +
+                                    params.thread_local_cache_starts[i]);
+                } else {
+                    ntt::distributed::detail::global_thread_local_cache_ptr(
+                        program_ids)(i) = 0;
+                }
+            }
+
             ntt::distributed::detail::global_local_data_ptr(program_ids)(
                 0_dim) = (uintptr_t)thread_local_data.data();
             ntt::distributed::detail::global_local_data_ptr(program_ids)(

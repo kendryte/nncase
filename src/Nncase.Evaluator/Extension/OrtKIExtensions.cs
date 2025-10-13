@@ -276,7 +276,21 @@ public static class OrtKIExtensions
         private void InitializeUnmanaged<T>(Tensor<T> tensor)
             where T : unmanaged, IEquatable<T>
         {
-            _tensor.GetBuffer<T>().CopyTo(tensor.Buffer.Span);
+            var src = _tensor.GetBuffer<T>();
+            var dest = tensor.Buffer.Span;
+
+            // Add length check to prevent buffer overflow
+            if (src.Length > dest.Length)
+            {
+                var srcShapeStr = string.Join(", ", _tensor.Shape.Select(x => x.ToString()));
+                var destShapeStr = string.Join(", ", tensor.Dimensions.ToArray().Select(x => x.ToString()));
+                throw new ArgumentException(
+                    $"Source buffer length ({src.Length}) exceeds destination buffer length ({dest.Length}). " +
+                    $"Source shape: [{srcShapeStr}], Destination shape: [{destShapeStr}]",
+                    nameof(tensor));
+            }
+
+            src.CopyTo(dest);
         }
 
         private void InitializeMaskUnmanaged<T>(Tensor<T> tensor)

@@ -266,7 +266,7 @@ public static class T
         (var size, var strides) = location is MemoryLocation.Input or MemoryLocation.Output
             ? TensorUtilities.GetTensorSizeAndContiguousStrides(tensorType, distributedType)
             : TensorUtilities.GetTensorMaxSizeAndStridesExpr(tensorType, distributedType);
-        var physicalBuffer = new PhysicalBuffer(alignment, size, location);
+        var physicalBuffer = new PhysicalBuffer(alignment, start, size, location, hierarchy);
         buffer = new Buffer(name, tensorType.DType, new MemSpan(physicalBuffer), dimensions, strides, distributedType);
         return buffer;
     }
@@ -308,6 +308,11 @@ public static class T
     {
         var newV = v = new Var(name.StartsWith("var ") ? name[4..] : name);
         return new SequentialBuilder<Let>(body => new Let(newV, expression, body));
+    }
+
+    public static ISequentialBuilder<Let> Let(Var v, Expr expression)
+    {
+        return new SequentialBuilder<Let>(body => new Let(v, expression, body));
     }
 
     /// <summary>
