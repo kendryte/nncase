@@ -77,6 +77,9 @@ class cuda_runtime_module : public runtime_module {
 
   private:
     result<void> initialize_text(runtime_module_init_context &context) noexcept;
+    result<std::span<const std::byte>>
+    initialize_section(runtime_module_init_context &context,
+                       const char *name) noexcept;
 
   private:
     uint64_t tdim_;

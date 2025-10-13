@@ -25,13 +25,6 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::cuda;
 using namespace nncase::ntt::runtime;
 
-#define CHECK_CUDA(x)                                                          \
-    if ((x) != cudaSuccess) {                                                  \
-        std::cerr << "CUDA error at " << __FILE__ << ":" << __LINE__ << " - "  \
-                  << cudaGetErrorString(x) << std::endl;                       \
-        return err(std::errc::io_error);                                       \
-    }
-
 #define WARP_SIZE 32
 
 result<void> cuda_runtime_function::run(std::byte *output_data) noexcept {

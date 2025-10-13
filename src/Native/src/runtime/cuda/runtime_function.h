@@ -15,6 +15,7 @@
 #pragma once
 #include "nncase/ntt/profiling.h"
 #include "runtime_module.h"
+#include <cstddef>
 #include <nncase/ntt/arch/cuda/runtime.h>
 #include <nncase/runtime/host_buffer.h>
 #include <nncase/runtime/runtime_function.h>
@@ -22,6 +23,13 @@
 #include <vector>
 
 BEGIN_NS_NNCASE_RT_MODULE(cuda)
+
+#define CHECK_CUDA(x)                                                          \
+    if ((x) != cudaSuccess) {                                                  \
+        std::cerr << "CUDA error at " << __FILE__ << ":" << __LINE__ << " - "  \
+                  << cudaGetErrorString(x) << std::endl;                       \
+        return err(std::errc::io_error);                                       \
+    }
 
 class cuda_runtime_function final : public runtime_function {
   public:
@@ -72,8 +80,8 @@ class cuda_runtime_function final : public runtime_function {
 
   private:
     block_entry_t block_entry_;
-    std::vector<host_buffer_t> thread_local_datas_;
-    std::vector<host_buffer_t> block_local_datas_;
+    std::span<std::byte> thread_local_datas_;
+    std::span<std::byte> block_local_datas_;
     host_buffer_t output_buffer_;
     std::vector<ntt::runtime::thread_inout_desc> input_descs_;
     std::vector<ntt::runtime::thread_inout_desc> output_descs_;

@@ -63,26 +63,22 @@ result<void> cuda_runtime_function::initialize_core(
                     output_buffer.template as<host_buffer_t>());
 
             // Allocate thread local datas
-            options.alignment = header.local_data_align;
-            thread_local_datas_.resize(blocks_count);
-            for (size_t i = 0; i < blocks_count; i++) {
-                try_var(buffer,
-                        buffer_allocator::host().allocate(
-                            header.local_data_pool_size * module().tdim(),
-                            options));
-                try_set(thread_local_datas_[i],
-                        buffer.template as<host_buffer_t>());
-            }
+            const size_t thread_local_data_size =
+                header.local_data_pool_size * module().tdim() * blocks_count;
+            std::byte *thread_local_data_dev_ptr;
+            CHECK_CUDA(cudaMalloc((void **)&thread_local_data_dev_ptr,
+                                  thread_local_data_size));
+            thread_local_datas_ = std::span<std::byte>(
+                thread_local_data_dev_ptr, thread_local_data_size);
 
             // Allocate block local datas
-            block_local_datas_.resize(blocks_count);
-            for (size_t i = 0; i < blocks_count; i++) {
-                try_var(buffer,
-                        buffer_allocator::host().allocate(
-                            header.block_local_data_pool_size, options));
-                try_set(block_local_datas_[i],
-                        buffer.template as<host_buffer_t>());
-            }
+            const size_t block_local_data_size =
+                header.local_data_pool_size * blocks_count;
+            std::byte *block_local_data_dev_ptr;
+            CHECK_CUDA(cudaMalloc((void **)&block_local_data_dev_ptr,
+                                  block_local_data_size));
+            block_local_datas_ = std::span<std::byte>(block_local_data_dev_ptr,
+                                                      block_local_data_size);
             return ok();
         }));
     try_set(block_entry_, module().block_entry());

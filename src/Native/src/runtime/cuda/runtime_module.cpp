@@ -48,14 +48,11 @@ result<void> cuda_runtime_module::initialize_before_functions(
         }));
 
     try_(initialize_text(context));
-    try_set(rdata_,
-            context.get_or_read_section(".rdata", rdata_storage_, false));
+    try_set(rdata_, initialize_section(context, ".rdata"));
     try_set(thread_local_rdata_,
-            context.get_or_read_section(".thread_local_rdata",
-                                        thread_local_rdata_storage_, false));
+            initialize_section(context, ".thread_local_rdata"));
     try_set(block_local_rdata_,
-            context.get_or_read_section(".block_local_rdata",
-                                        block_local_rdata_storage_, false));
+            initialize_section(context, ".block_local_rdata"));
     return ok();
 }
 
@@ -74,6 +71,22 @@ result<void> cuda_runtime_module::initialize_text(
     }
 
     return ok();
+}
+
+result<std::span<const std::byte>>
+cuda_runtime_module::initialize_section(runtime_module_init_context &context,
+                                        const char *name) noexcept {
+    try_var(host_span, context.get_or_read_section(name, text_storage_, false));
+    if (host_span.empty()) {
+        return ok(host_span);
+    } else {
+        std::byte *device_ptr;
+        CHECK_CUDA(cudaMalloc((void **)&device_ptr, host_span.size_bytes()));
+        CHECK_CUDA(cudaMemcpy(device_ptr, host_span.data(),
+                              host_span.size_bytes(), cudaMemcpyHostToDevice));
+        return ok(
+            std::span<const std::byte>(device_ptr, host_span.size_bytes()));
+    }
 }
 
 result<uintptr_t>
