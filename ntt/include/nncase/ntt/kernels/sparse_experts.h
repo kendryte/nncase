@@ -63,17 +63,17 @@ template <Tensor TQ, Tensor TRouterIds, Tensor TRouterWeights,
           Tensor TDownInputScale, Tensor TDownProjW, Tensor TDownProjScale,
           class TOut>
 void sparse_experts_impl(const TQ &q,
-                         const TRouterIds &router_expert_ids,
-                         const TRouterWeights &router_expert_weights,
+                         const TRouterIds &topk_indices,
+                         const TRouterWeights &topk_probs,
                          const TGateInputScale &moeExpertGateInputScale,
                          const TGateProjW &moeExpertGateProjW,
                          const TGateProjScale &moeExpertGateProjScale,
-                         const TUpInputScale &moeExpertUpInputScale,
-                         const TUpProjW &moeExpertUpProjW,
-                         const TUpProjScale &moeExpertUpProjScale,
                          const TDownInputScale &moeExpertDownInputScale,
                          const TDownProjW &moeExpertDownProjW,
                          const TDownProjScale &moeExpertDownProjScale,
+                         const TUpInputScale &moeExpertUpInputScale,
+                         const TUpProjW &moeExpertUpProjW,
+                         const TUpProjScale &moeExpertUpProjScale,
                          size_t hidden_size,
                          size_t moe_intermediate_size,
                          size_t /* num_expert */,
@@ -84,20 +84,17 @@ void sparse_experts_impl(const TQ &q,
     const auto seq_len = q.shape()[0_dim];
 
     // Initialize output to zero
-    for (size_t i = 0; i < seq_len; i++) {
-        for (size_t h = 0; h < hidden_size; h++) {
-            output(i, h) = (ElemType)0;
-        }
-    }
+    for (size_t i = 0; i < seq_len; i++)
+        for (size_t h = 0; h < hidden_size; h++) output(i, h) = (ElemType)0;
 
     // For each token, accumulate expert contributions.
     for (size_t i = 0; i < seq_len; i++) {
         // take input vector
         // For each top expert
         for (size_t k = 0; k < num_top_k; k++) {
-            int32_t expert = (int32_t)router_expert_ids(i, k);
+            int32_t expert = topk_indices(i, k);
             if (expert < 0) continue;
-            auto prob = (float)router_expert_weights(i, k);
+            auto prob = topk_probs(i, k);
             // --- MLP ---
             // gate/up: [moe_intermediate_size, hidden_size]
             // down:    [hidden_size, moe_intermediate_size]
@@ -235,19 +232,19 @@ void sparse_experts_impl(const TQ &q,
 } // namespace detail
 
 template <Tensor TQ, Tensor TRouterIds, Tensor TRouterWeights,
-          Tensor TDownInputScale, Tensor TDownProjW, Tensor TDownProjScale,
           Tensor TGateInputScale, Tensor TGateProjW, Tensor TGateProjScale,
+          Tensor TDownInputScale, Tensor TDownProjW, Tensor TDownProjScale,
           Tensor TUpInputScale, Tensor TUpProjW, Tensor TUpProjScale,
           class TOut>
 void sparse_experts(const TQ &q,
                    const TRouterIds &router_expert_ids,
                    const TRouterWeights &router_expert_weights,
-                   const TDownInputScale &moeExpertDownInputScale,
-                   const TDownProjW &moeExpertDownProjW,
-                   const TDownProjScale &moeExpertDownProjScale,
                    const TGateInputScale &moeExpertGateInputScale,
                    const TGateProjW &moeExpertGateProjW,
                    const TGateProjScale &moeExpertGateProjScale,
+                   const TDownInputScale &moeExpertDownInputScale,
+                   const TDownProjW &moeExpertDownProjW,
+                   const TDownProjScale &moeExpertDownProjScale,
                    const TUpInputScale &moeExpertUpInputScale,
                    const TUpProjW &moeExpertUpProjW,
                    const TUpProjScale &moeExpertUpProjScale,
@@ -259,8 +256,8 @@ void sparse_experts(const TQ &q,
                    size_t chunk_size) noexcept {
     detail::sparse_experts_impl(q, router_expert_ids, router_expert_weights,
                            moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale,
-                           moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale,
                            moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale,
+                           moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale,
                            hidden_size, moe_intermediate_size,
                            num_expert, num_top_k, chunk_size, output);
 
