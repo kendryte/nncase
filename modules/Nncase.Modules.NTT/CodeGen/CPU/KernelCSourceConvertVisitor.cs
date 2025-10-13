@@ -646,6 +646,8 @@ public sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDispos
                 case IR.Shapes.AsTensor op:
                     str = CSourceUtilities.ConvertAsTensor(op, arguments);
                     break;
+                case Nncase.TIR.Nop:
+                    break;
                 default:
                     throw new NotSupportedException($"Unsupported call target: {expr.Target}");
             }

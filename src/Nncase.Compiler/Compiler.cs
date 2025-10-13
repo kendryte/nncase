@@ -350,20 +350,27 @@ public class Compiler : ICompiler
             p.Add<Passes.Mutators.RemoveFunctionWrapper>();
         });
 
-        passManager.Add<RemoveUnusedFunctions>();
-        passManager.Add<InferRangePass>();
-        passManager.Add<OptimizeByRangePass>();
+        if (target.Name != "k230")
+        {
+            passManager.Add<RemoveUnusedFunctions>();
+            passManager.Add<InferRangePass>();
+            passManager.Add<OptimizeByRangePass>();
+        }
+
         passManager.Add<BufferizePass>();
 
-        passManager.AddWithName<PrimFuncPass>("Optimize").Configure(p =>
+        if (target.Name != "k230")
         {
-            p.Add<Passes.Mutators.UnFoldBlock>();
-            p.Add<Passes.Mutators.FlattenSequential>();
-            p.Add<Passes.Mutators.TailLoopStripping>();
-            p.Add<Passes.Mutators.FoldConstCall>();
-            p.Add<Passes.Mutators.FlattenBuffer>();
-            p.Add<Passes.Mutators.RemoveNop>();
-        });
+            passManager.AddWithName<PrimFuncPass>("Optimize").Configure(p =>
+            {
+                p.Add<Passes.Mutators.UnFoldBlock>();
+                p.Add<Passes.Mutators.FlattenSequential>();
+                p.Add<Passes.Mutators.TailLoopStripping>();
+                p.Add<Passes.Mutators.FoldConstCall>();
+                p.Add<Passes.Mutators.FlattenBuffer>();
+                p.Add<Passes.Mutators.RemoveNop>();
+            });
+        }
     }
 
     public async Task CompileAsync(IProgress<int>? progress = null, CancellationToken token = default)
