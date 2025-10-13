@@ -344,6 +344,14 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
         else
         {
+            // if (expr.Target is IR.Tensors.TopK)
+            // {
+            //     isSupported = false;
+            // }
+            // else
+            // {
+            //     isSupported = expr.Target is AsTensor or IR.Tensors.Range ? false : true;
+            // }
             isSupported = expr.Target is AsTensor or IR.Tensors.Range ? false : true;
             foreach (var param in op.Parameters)
             {
@@ -453,7 +461,20 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         // 4. add not infered type in search space.
         var addedBuckets = bucketMemo.Values.ToArray();
-        foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
+
+        TensorType? baseTensorType = expr.CheckedType switch
+        {
+            TensorType t => t,
+            DistributedType dt => dt.TensorType,
+            _ => null,
+        };
+
+        if (baseTensorType is null)
+        {
+            return default;
+        }
+
+        foreach (var nType in GetLeafCandidateDistTypes(baseTensorType, Placements, _moduleKind, TargetOptions))
         {
             if (!bucketMemo.TryGetValue(nType, out var bucket)
                 || expr.Users.Any(u => u is Call call && (call.Target.GetType().FullName!.Contains("CustomNTT.MatMul", StringComparison.Ordinal) || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention)))

@@ -68,12 +68,23 @@ public abstract class AffineSelectionPass : FunctionPass
 
         protected override Expr RewriteLeafCall(Call expr)
         {
+            if (expr.CheckedType is not (TensorType or DistributedType))
+            {
+                return expr;
+            }
+
             var outBuffer = expr.CheckedType switch
             {
                 TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape),
                 DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape, dt.AxisPolicies, dt.Placement),
-                _ => throw new ArgumentOutOfRangeException(nameof(expr), $"Unsupported type {expr.CheckedType}"),
+                _ => expr,
             };
+
+            if (outBuffer == expr)
+            {
+                return expr;
+            }
+
             return _selectionPass.SelectCall(expr, outBuffer);
         }
     }
