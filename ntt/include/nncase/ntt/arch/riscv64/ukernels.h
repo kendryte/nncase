@@ -975,7 +975,6 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
                 vfloat32m4_t v_in = __riscv_vlse32_v_f32m4(
                     slice_input_ptr, input_stride * sizeof(TProbs), inner_size);
 
-                // === 第1个最小值 ===
                 vfloat32m1_t result = __riscv_vfredmin_vs_f32m4_f32m1(
                     v_in, float_max_m1, inner_size);
                 slice_probs_ptr[0 * out_probs_stride] =
@@ -1077,7 +1076,6 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
                 vfloat32m8_t v_in = __riscv_vlse32_v_f32m8(
                     slice_input_ptr, input_stride * sizeof(TProbs), inner_size);
 
-                // === 第1个最小值 ===
                 vfloat32m1_t result = __riscv_vfredmin_vs_f32m8_f32m1(
                     v_in, float_max_m1, inner_size);
                 slice_probs_ptr[0 * out_probs_stride] =
