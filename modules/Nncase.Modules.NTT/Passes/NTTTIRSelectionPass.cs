@@ -200,8 +200,10 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return TIR.F.NTT.VectorizedSoftmax((Expr)arguments[0], output, softmax.Axis, softmax.VectorizedAxes);
             case IR.NN.Qwen3MoE moe:
                 return TIR.F.NTT.Qwen3MoE((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], (Expr)arguments[8], (Expr)arguments[9], (Expr)arguments[10], output, moe.LayerId, moe.HiddenSize, moe.IntermediateSize, moe.MoEIntermediateSize, moe.NumExpert, moe.NumTopK, moe.IsNormTopkProb);
+            case IR.NN.SparseExperts sparseExperts:
+                return TIR.F.NTT.SparseExperts((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], (Expr)arguments[8], (Expr)arguments[9], (Expr)arguments[10], (Expr)arguments[11], output, sparseExperts.HiddenSize, sparseExperts.MoEIntermediateSize, sparseExperts.NumExpert, sparseExperts.NumTopK, sparseExperts.ChunkSize);
             case IR.Tensors.TopK topk:
-                return TIR.F.NTT.TopK((Expr)arguments[0], output, (int)((DimConst)call[IR.Tensors.TopK.K]).FixedValue, (int)((DimConst)call[IR.Tensors.TopK.Axis]).FixedValue, ((DimConst)call[IR.Tensors.TopK.Largest]).FixedValue == 1 ? true : false, ((DimConst)call[IR.Tensors.TopK.Sorted]).FixedValue == 1 ? true : false);
+                return TIR.F.NTT.TopK((Expr)arguments[0], (Expr)arguments[1], output, ((TensorConst)call[IR.Tensors.TopK.Axis]).Value.ToScalar<long>(), ((TensorConst)call[IR.Tensors.TopK.Largest]).Value.ToScalar<long>(), ((TensorConst)call[IR.Tensors.TopK.Sorted]).Value.ToScalar<long>());
             default:
                 throw new NotSupportedException($"Not supported: {op}");
         }

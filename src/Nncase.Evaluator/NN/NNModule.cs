@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using DryIoc;
+using Nncase.Evaluator.Tensors;
 using Nncase.Hosting;
 
 namespace Nncase.Evaluator.NN;
@@ -65,5 +66,8 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<GetPositionIdsEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<Qwen3MoEEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SparseExpertsEvaluator>(reuse: Reuse.Singleton);
+
+        // post
+        registrator.RegisterManyInterface<TopKEvaluator>(reuse: Reuse.Singleton);
     }
 }

@@ -73,10 +73,12 @@ public abstract class AffineSelectionPass : FunctionPass
                 return expr;
             }
 
-            var outBuffer = expr.CheckedType switch
+            Expr outBuffer = expr.CheckedType switch
             {
-                TensorType t => IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape),
-                DistributedType dt => IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape, dt.AxisPolicies, dt.Placement),
+                TensorType t => (Expr)IR.F.Buffer.Uninitialized(t.DType, TIR.MemoryLocation.Data, t.Shape),
+                DistributedType dt => (Expr)IR.F.Buffer.Uninitialized(dt.TensorType.DType, TIR.MemoryLocation.Data, dt.TensorType.Shape, dt.AxisPolicies, dt.Placement),
+
+                // TupleType tt => tt.Fields.Select(f => RewriteLeafCall(()f)),
                 _ => expr,
             };
 

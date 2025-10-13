@@ -263,8 +263,13 @@ public partial class NTT
         return new Call(new TIR.NTT.Qwen3MoE(layerId, hiddenSize, intermediateSize, moeIntermediateSize, numExpert, numTopK, isNormTopkProb), hiddenStates, moeGateW, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale, ret);
     }
 
-    public static Expr TopK(Expr x, Expr output, int k, int axis, bool largest, bool sorted)
+    public static Expr SparseExperts(Expr q, Expr routerIdx, Expr routerWeights, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, Expr ret, long hiddenSize, long moeIntermediateSize, long numExpert, long numTopK, long chunkSize)
     {
-        return new Call(new TIR.NTT.TopK(k, axis, largest, sorted), x, output);
+        return new Call(new TIR.NTT.SparseExperts(hiddenSize, moeIntermediateSize, numExpert, numTopK, chunkSize), q, routerIdx, routerWeights, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale, ret);
+    }
+
+    public static Expr TopK(Expr x, Expr k, Expr output, long axis, long largest, long sorted)
+    {
+        return new Call(new TIR.NTT.TopK(axis, largest, sorted), x, k, output);
     }
 }

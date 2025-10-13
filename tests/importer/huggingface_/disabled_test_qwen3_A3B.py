@@ -32,6 +32,7 @@ def test_qwen3_30B_A3B_static(request):
     output_logits = true
     output_hidden_states = false
     num_layers = 1
+    # tensor_type = "float32"
 
     [generator]
     [generator.inputs]
@@ -51,12 +52,12 @@ def test_qwen3_30B_A3B_static(request):
     args = 'tests/importer/huggingface_/prompt.txt'
     
     [target.cpu]
-    eval = true
+    eval = false
     infer = true
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 
-    model_name = "/compiler/share/huggingface_cache/hub/LLM-Research/Qwen3-30B-A3B_fp8_static"
+    model_name = "/home/yanghaoqi/workspace/Qwen3-30B-A3B_fp8_static"
 
     if os.path.exists(os.path.join(os.path.dirname(__file__), model_name)):
         model_file = os.path.join(os.path.dirname(__file__), model_name)

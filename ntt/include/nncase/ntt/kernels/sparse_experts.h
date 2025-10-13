@@ -78,6 +78,7 @@ void sparse_experts_impl(const TQ &q,
                          size_t moe_intermediate_size,
                          size_t /* num_expert */,
                          size_t num_top_k,
+                         size_t /* chunk_size */,
                          TOut &output) {
     using ElemType = typename TQ::element_type;
     const auto seq_len = q.shape()[0_dim];
@@ -254,13 +255,14 @@ void sparse_experts(const TQ &q,
                    size_t hidden_size,
                    size_t moe_intermediate_size,
                    size_t num_expert,
-                   size_t num_top_k) noexcept {
+                   size_t num_top_k,
+                   size_t chunk_size) noexcept {
     detail::sparse_experts_impl(q, router_expert_ids, router_expert_weights,
                            moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale,
                            moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale,
                            moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale,
                            hidden_size, moe_intermediate_size,
-                           num_expert, num_top_k, output);
+                           num_expert, num_top_k, chunk_size, output);
 
 }
 
