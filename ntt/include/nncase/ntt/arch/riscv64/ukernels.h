@@ -897,6 +897,232 @@ DEFINE_U_CAST_1_2(half, 16, float, 32, _Float16, float, float16, f32)
 DEFINE_U_CAST_1_2(float_e4m3_t, 8, half, 16, int8_t, _Float16, float8e4m3, f16)
 #endif
 
+template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
+struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
+  public:
+    inline void operator()(int64_t inner_size, const TProbs *slice_input_ptr,
+                           TProbs *slice_probs_ptr, TIndices *slice_indices_ptr,
+                           int64_t input_stride, int64_t out_probs_stride,
+                           int64_t out_indices_stride, int K,
+                           [[maybe_unused]] int64_t largest,
+                           [[maybe_unused]] int64_t sorted) const {
+        constexpr auto lmul = 8;
+        constexpr auto vl = NTT_VLEN / 32 * lmul;
+
+        if (inner_size <= vl / 2) {
+            if (largest) {
+                vint32m4_t idx_vec = __riscv_vreinterpret_v_u32m4_i32m4(
+                    __riscv_vid_v_u32m4(inner_size));
+                vfloat32m1_t float_min_m1 =
+                    __riscv_vfmv_s_f_f32m1(-FLT_MAX, inner_size);
+                vint32m4_t intmax_vec =
+                    __riscv_vmv_v_x_i32m4(INT32_MAX, inner_size);
+                vint32m1_t int_max_m1 =
+                    __riscv_vmv_v_x_i32m1(INT32_MAX, inner_size);
+                vfloat32m4_t float_min_m4 =
+                    __riscv_vfmv_v_f_f32m4(-FLT_MAX, inner_size);
+
+                vfloat32m4_t v_in = __riscv_vlse32_v_f32m4(
+                    slice_input_ptr, input_stride * sizeof(TProbs), inner_size);
+
+                vfloat32m1_t result = __riscv_vfredmax_vs_f32m4_f32m1(
+                    v_in, float_min_m1, inner_size);
+                slice_probs_ptr[0 * out_probs_stride] =
+                    __riscv_vfmv_f_s_f32m1_f32(result);
+                vfloat32m4_t max_broadcast = __riscv_vfmv_v_f_f32m4(
+                    slice_probs_ptr[0 * out_probs_stride], inner_size);
+
+                vbool8_t mask =
+                    __riscv_vmfeq_vv_f32m4_b8(v_in, max_broadcast, inner_size);
+                vint32m4_t masked_idx = __riscv_vmerge_vvm_i32m4(
+                    intmax_vec, idx_vec, mask, inner_size);
+                vint32m1_t min_idx_v = __riscv_vredmin_vs_i32m4_i32m1(
+                    masked_idx, int_max_m1, inner_size);
+                slice_indices_ptr[0 * out_indices_stride] =
+                    __riscv_vmv_x_s_i32m1_i32(min_idx_v);
+
+                for (int i = 1; i < K; i++) {
+                    v_in = __riscv_vmerge_vvm_f32m4(v_in, float_min_m4, mask,
+                                                    inner_size);
+                    result = __riscv_vfredmax_vs_f32m4_f32m1(v_in, float_min_m1,
+                                                             inner_size);
+                    slice_probs_ptr[i * out_probs_stride] =
+                        __riscv_vfmv_f_s_f32m1_f32(result);
+                    max_broadcast = __riscv_vfmv_v_f_f32m4(
+                        slice_probs_ptr[i * out_probs_stride], inner_size);
+
+                    mask = __riscv_vmfeq_vv_f32m4_b8(v_in, max_broadcast,
+                                                     inner_size);
+                    masked_idx = __riscv_vmerge_vvm_i32m4(intmax_vec, idx_vec,
+                                                          mask, inner_size);
+                    min_idx_v = __riscv_vredmin_vs_i32m4_i32m1(
+                        masked_idx, int_max_m1, inner_size);
+                    slice_indices_ptr[i * out_indices_stride] =
+                        __riscv_vmv_x_s_i32m1_i32(min_idx_v);
+                }
+            } else {
+                vint32m4_t idx_vec = __riscv_vreinterpret_v_u32m4_i32m4(
+                    __riscv_vid_v_u32m4(inner_size));
+                vfloat32m1_t float_max_m1 =
+                    __riscv_vfmv_s_f_f32m1(FLT_MAX, inner_size);
+                vint32m4_t intmin_vec =
+                    __riscv_vmv_v_x_i32m4(INT32_MIN, inner_size);
+                vint32m1_t int_min_m1 =
+                    __riscv_vmv_v_x_i32m1(INT32_MIN, inner_size);
+                vfloat32m4_t float_max_m4 =
+                    __riscv_vfmv_v_f_f32m4(FLT_MAX, inner_size);
+
+                vfloat32m4_t v_in = __riscv_vlse32_v_f32m4(
+                    slice_input_ptr, input_stride * sizeof(TProbs), inner_size);
+
+                // === 第1个最小值 ===
+                vfloat32m1_t result = __riscv_vfredmin_vs_f32m4_f32m1(
+                    v_in, float_max_m1, inner_size);
+                slice_probs_ptr[0 * out_probs_stride] =
+                    __riscv_vfmv_f_s_f32m1_f32(result);
+                vfloat32m4_t min_broadcast = __riscv_vfmv_v_f_f32m4(
+                    slice_probs_ptr[0 * out_probs_stride], inner_size);
+                vbool8_t mask =
+                    __riscv_vmfeq_vv_f32m4_b8(v_in, min_broadcast, inner_size);
+                vint32m4_t masked_idx = __riscv_vmerge_vvm_i32m4(
+                    intmin_vec, idx_vec, mask, inner_size);
+                vint32m1_t max_idx_v = __riscv_vredmax_vs_i32m4_i32m1(
+                    masked_idx, int_min_m1, inner_size);
+                slice_indices_ptr[0 * out_indices_stride] =
+                    __riscv_vmv_x_s_i32m1_i32(max_idx_v);
+
+                for (int i = 1; i < K; i++) {
+                    v_in = __riscv_vmerge_vvm_f32m4(v_in, float_max_m4, mask,
+                                                    inner_size);
+
+                    result = __riscv_vfredmin_vs_f32m4_f32m1(v_in, float_max_m1,
+                                                             inner_size);
+                    slice_probs_ptr[i * out_probs_stride] =
+                        __riscv_vfmv_f_s_f32m1_f32(result);
+                    min_broadcast = __riscv_vfmv_v_f_f32m4(
+                        slice_probs_ptr[i * out_probs_stride], inner_size);
+                    mask = __riscv_vmfeq_vv_f32m4_b8(v_in, min_broadcast,
+                                                     inner_size);
+                    masked_idx = __riscv_vmerge_vvm_i32m4(intmin_vec, idx_vec,
+                                                          mask, inner_size);
+                    max_idx_v = __riscv_vredmax_vs_i32m4_i32m1(
+                        masked_idx, int_min_m1, inner_size);
+                    slice_indices_ptr[i * out_indices_stride] =
+                        __riscv_vmv_x_s_i32m1_i32(max_idx_v);
+                }
+            }
+        } else if (inner_size <= vl && inner_size > vl / 2) {
+            if (largest) {
+                vint32m8_t idx_vec = __riscv_vreinterpret_v_u32m8_i32m8(
+                    __riscv_vid_v_u32m8(inner_size));
+                vfloat32m1_t float_min_m1 =
+                    __riscv_vfmv_s_f_f32m1(-FLT_MAX, inner_size);
+                vint32m8_t intmax_vec =
+                    __riscv_vmv_v_x_i32m8(INT32_MAX, inner_size);
+                vint32m1_t int_max_m1 =
+                    __riscv_vmv_v_x_i32m1(INT32_MAX, inner_size);
+                vfloat32m8_t float_min_m8 =
+                    __riscv_vfmv_v_f_f32m8(-FLT_MAX, inner_size);
+
+                vfloat32m8_t v_in = __riscv_vlse32_v_f32m8(
+                    slice_input_ptr, input_stride * sizeof(TProbs), inner_size);
+
+                vfloat32m1_t result = __riscv_vfredmax_vs_f32m8_f32m1(
+                    v_in, float_min_m1, inner_size);
+                slice_probs_ptr[0 * out_probs_stride] =
+                    __riscv_vfmv_f_s_f32m1_f32(result);
+                vfloat32m8_t max_broadcast = __riscv_vfmv_v_f_f32m8(
+                    slice_probs_ptr[0 * out_probs_stride], inner_size);
+
+                vbool4_t mask =
+                    __riscv_vmfeq_vv_f32m8_b4(v_in, max_broadcast, inner_size);
+                vint32m8_t masked_idx = __riscv_vmerge_vvm_i32m8(
+                    intmax_vec, idx_vec, mask, inner_size);
+                vint32m1_t min_idx_v = __riscv_vredmin_vs_i32m8_i32m1(
+                    masked_idx, int_max_m1, inner_size);
+                slice_indices_ptr[0 * out_indices_stride] =
+                    __riscv_vmv_x_s_i32m1_i32(min_idx_v);
+
+                for (int i = 1; i < K; i++) {
+                    v_in = __riscv_vmerge_vvm_f32m8(v_in, float_min_m8, mask,
+                                                    inner_size);
+                    result = __riscv_vfredmax_vs_f32m8_f32m1(v_in, float_min_m1,
+                                                             inner_size);
+                    slice_probs_ptr[i * out_probs_stride] =
+                        __riscv_vfmv_f_s_f32m1_f32(result);
+                    max_broadcast = __riscv_vfmv_v_f_f32m8(
+                        slice_probs_ptr[i * out_probs_stride], inner_size);
+
+                    mask = __riscv_vmfeq_vv_f32m8_b4(v_in, max_broadcast,
+                                                     inner_size);
+                    masked_idx = __riscv_vmerge_vvm_i32m8(intmax_vec, idx_vec,
+                                                          mask, inner_size);
+                    min_idx_v = __riscv_vredmin_vs_i32m8_i32m1(
+                        masked_idx, int_max_m1, inner_size);
+                    slice_indices_ptr[i * out_indices_stride] =
+                        __riscv_vmv_x_s_i32m1_i32(min_idx_v);
+                }
+            } else {
+                vint32m8_t idx_vec = __riscv_vreinterpret_v_u32m8_i32m8(
+                    __riscv_vid_v_u32m8(inner_size));
+                vfloat32m1_t float_max_m1 =
+                    __riscv_vfmv_s_f_f32m1(FLT_MAX, inner_size);
+                vint32m8_t intmin_vec =
+                    __riscv_vmv_v_x_i32m8(INT32_MIN, inner_size);
+                vint32m1_t int_min_m1 =
+                    __riscv_vmv_v_x_i32m1(INT32_MIN, inner_size);
+                vfloat32m8_t float_max_m8 =
+                    __riscv_vfmv_v_f_f32m8(FLT_MAX, inner_size);
+
+                vfloat32m8_t v_in = __riscv_vlse32_v_f32m8(
+                    slice_input_ptr, input_stride * sizeof(TProbs), inner_size);
+
+                // === 第1个最小值 ===
+                vfloat32m1_t result = __riscv_vfredmin_vs_f32m8_f32m1(
+                    v_in, float_max_m1, inner_size);
+                slice_probs_ptr[0 * out_probs_stride] =
+                    __riscv_vfmv_f_s_f32m1_f32(result);
+                vfloat32m8_t min_broadcast = __riscv_vfmv_v_f_f32m8(
+                    slice_probs_ptr[0 * out_probs_stride], inner_size);
+                vbool4_t mask =
+                    __riscv_vmfeq_vv_f32m8_b4(v_in, min_broadcast, inner_size);
+                vint32m8_t masked_idx = __riscv_vmerge_vvm_i32m8(
+                    intmin_vec, idx_vec, mask, inner_size);
+                vint32m1_t max_idx_v = __riscv_vredmax_vs_i32m8_i32m1(
+                    masked_idx, int_min_m1, inner_size);
+                slice_indices_ptr[0 * out_indices_stride] =
+                    __riscv_vmv_x_s_i32m1_i32(max_idx_v);
+
+                for (int i = 1; i < K; i++) {
+                    v_in = __riscv_vmerge_vvm_f32m8(v_in, float_max_m8, mask,
+                                                    inner_size);
+
+                    result = __riscv_vfredmin_vs_f32m8_f32m1(v_in, float_max_m1,
+                                                             inner_size);
+                    slice_probs_ptr[i * out_probs_stride] =
+                        __riscv_vfmv_f_s_f32m1_f32(result);
+                    min_broadcast = __riscv_vfmv_v_f_f32m8(
+                        slice_probs_ptr[i * out_probs_stride], inner_size);
+                    mask = __riscv_vmfeq_vv_f32m8_b4(v_in, min_broadcast,
+                                                     inner_size);
+                    masked_idx = __riscv_vmerge_vvm_i32m8(intmin_vec, idx_vec,
+                                                          mask, inner_size);
+                    max_idx_v = __riscv_vredmax_vs_i32m8_i32m1(
+                        masked_idx, int_min_m1, inner_size);
+                    slice_indices_ptr[i * out_indices_stride] =
+                        __riscv_vmv_x_s_i32m1_i32(max_idx_v);
+                }
+            }
+
+        } else {
+            ukernels::u_top_k<false, TProbs, TIndices, Rank, Axis> impl;
+            impl(inner_size, slice_input_ptr, slice_probs_ptr,
+                 slice_indices_ptr, input_stride, out_probs_stride,
+                 out_indices_stride, K, largest, sorted);
+        }
+    }
+};
+
 // matmul
 template <>
 struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float,
