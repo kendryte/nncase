@@ -35,7 +35,7 @@ public static class KernelUtility
     {
         if (value is SBPSplit s)
         {
-            return $"S<{string.Join(", ", s.Axes)}>()";
+            return $"S<{string.Join(", ", s.Axes)}>({s.Granularity})";
         }
         else
         {

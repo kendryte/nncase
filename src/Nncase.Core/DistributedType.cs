@@ -1,4 +1,4 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 using System;
 using System.Collections;
@@ -28,14 +28,12 @@ public abstract record SBP
 
     public static SBPPartial P(ReduceOp op = ReduceOp.Sum) => new SBPPartial(op);
 
-    public static SBPSplit S(IRArray<int> axes) => new SBPSplit(axes);
-
-    public static SBPSplit S(params int[] axes) => new SBPSplit(axes);
+    public static SBPSplit S(IRArray<int> axes, int granularity = 0) => new SBPSplit(axes, granularity);
 }
 
-public sealed record SBPSplit(IRArray<int> Axes) : SBP
+public sealed record SBPSplit(IRArray<int> Axes, int Granularity = 0) : SBP
 {
-    public override string ToString() => $"S({string.Join(",", Axes)})";
+    public override string ToString() => $"S({string.Join(",", Axes)}, {Granularity})";
 }
 
 public sealed record SBPPartial(ReduceOp Op) : SBP

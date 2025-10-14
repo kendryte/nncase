@@ -789,7 +789,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     {
         IRType VisitD2D(DistributedType inv, DistributedType outv)
         {
-            if (inv == outv)
+            if (DistributedUtility.AreSamePolicies(inv.AxisPolicies, outv.AxisPolicies, false))
             {
                 return new InvalidType("Same DistributedType");
             }

@@ -271,11 +271,11 @@ public class UnitTestInterop
         }
 
         {
-            var config = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedKVCacheDimKind.BlockSize, IR.NN.PagedKVCacheDimKind.HeadDim, IR.NN.PagedKVCacheDimKind.KV, IR.NN.PagedKVCacheDimKind.NumBlocks, IR.NN.PagedKVCacheDimKind.NumKVHeads, IR.NN.PagedKVCacheDimKind.NumLayers }, new[] { IR.NN.PagedKVCacheDimKind.HeadDim }, new[] { 32 }, new[] { IR.NN.PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S(1, 2) });
+            var config = new IR.NN.PagedAttentionConfig(1, 2, 3, DataTypes.Float16, 4, new[] { IR.NN.PagedKVCacheDimKind.BlockSize, IR.NN.PagedKVCacheDimKind.HeadDim, IR.NN.PagedKVCacheDimKind.KV, IR.NN.PagedKVCacheDimKind.NumBlocks, IR.NN.PagedKVCacheDimKind.NumKVHeads, IR.NN.PagedKVCacheDimKind.NumLayers }, new[] { IR.NN.PagedKVCacheDimKind.HeadDim }, new[] { 32 }, new[] { IR.NN.PagedKVCacheDimKind.NumBlocks }, new[] { SBP.S([1, 2]) });
             var rtConfig = RTAttentionConfig.FromConfig(config);
             Assert.IsType<RTPagedAttentionConfig>(rtConfig);
             var rtPagedConfig = (RTPagedAttentionConfig)rtConfig;
-            Assert.True(rtPagedConfig.AxisPolicies.SequenceEqual([SBP.S(1, 2)]));
+            Assert.True(rtPagedConfig.AxisPolicies.SequenceEqual([SBP.S([1, 2])]));
         }
     }
 

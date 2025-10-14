@@ -54,11 +54,12 @@ struct broadcast {
 inline constexpr broadcast B;
 
 // Split
-template <size_t... Axes> struct split {
+template <Dimension TG, size_t... Axes> struct split {
+    TG granularity = 0_dim;
     static constexpr auto axes = fixed_shape_v<Axes...>;
 
     template <class Mesh> static constexpr auto divider() {
-        return Mesh::shape.select(axes).length();
+        return granularity == 0_dim ? granularity : Mesh::shape.select(axes).length();
     }
 
     template <class Mesh, Dimension TDim, ShardIndex<Mesh> TShardIndex>
@@ -99,10 +100,12 @@ template <size_t... Axes> struct split {
     static constexpr auto max_shard_dim(const TDim &global_dim) noexcept {
         return ntt::ceil_div(global_dim, divider<Mesh>());
     }
+
+    constexpr split(TG granularity_ = 0_dim) : granularity(granularity_) {}
 };
 
-template <size_t... Axes> constexpr auto S() noexcept {
-    return split<Axes...>{};
+template <Dimension TG, size_t... Axes> constexpr auto S(TG granularity = 0_dim) noexcept {
+    return split<Axes...>{granularity};
 }
 } // namespace shard_policy
 
