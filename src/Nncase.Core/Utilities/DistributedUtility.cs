@@ -313,16 +313,16 @@ public static class DistributedUtility
         return false;
     }
 
-    public static bool AreSamePolicies(IRArray<SBP> a, IRArray<SBP> b, bool CheckGranularity = true)
+    public static bool AreSamePolicies(IRArray<SBP> a, IRArray<SBP> b, bool checkGranularity = true)
     {
-        if (a == null || b == null || a.Count != b.Count)
+        if (a == null! || b == null! || a.Count != b.Count)
         {
             return false;
         }
 
         for (int i = 0; i < a.Count; i++)
         {
-            if (!IsSamePolicy(a[i], b[i], CheckGranularity))
+            if (!IsSamePolicy(a[i], b[i], checkGranularity))
             {
                 return false;
             }
@@ -331,7 +331,7 @@ public static class DistributedUtility
         return true;
     }
 
-    public static bool IsSamePolicy(SBP a, SBP b, bool CheckGranularity = true)
+    public static bool IsSamePolicy(SBP a, SBP b, bool checkGranularity = true)
     {
         if (a == null || b == null)
         {
@@ -340,7 +340,7 @@ public static class DistributedUtility
 
         if (a is SBPSplit splitA && b is SBPSplit splitB)
         {
-            if (CheckGranularity)
+            if (checkGranularity)
             {
                 return a == b;
             }
