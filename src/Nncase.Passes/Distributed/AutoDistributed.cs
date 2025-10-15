@@ -269,7 +269,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     {
         bool Matched(SearchableNode node, (IRArray<SBP> Policies, Placement Placement) tp)
         {
-            return node.IRType is DistributedType dtype && dtype.AxisPolicies == tp.Policies && dtype.Placement == tp.Placement;
+            return node.IRType is DistributedType dtype && DistributedUtility.AreSamePolicies(dtype.AxisPolicies, tp.Policies, false) && dtype.Placement == tp.Placement;
         }
 
         foreach (var name in expr.Metadata.OutputNames ?? Array.Empty<string>())
