@@ -411,7 +411,7 @@ public static class DistributedUtility
                 var subHierarchySize = (int)TensorUtilities.GetProduct(subHierarchies);
                 var subShardIndex = splits.Select(x => x.DeviceIndex).ToArray();
                 var linearIndex = TensorUtilities.GetLinearOffset(subHierarchyStrides, subShardIndex);
-                var localDim = MathUtility.CeilDiv(globalShape[axis], ((SBPSplit)policy).Granularity is not null ? (long)((SBPSplit)policy).Granularity!.Metadata.Range!.Value.Max : subHierarchySize);
+                var localDim = ((SBPSplit)policy).Granularity is not null ? (long)((SBPSplit)policy).Granularity!.Metadata.Range!.Value.Max : MathUtility.CeilDiv(globalShape[axis], subHierarchySize);
                 offset[axis] = linearIndex * localDim;
                 shape[axis] = Math.Min(localDim, globalShape[axis] - offset[axis]);
             }

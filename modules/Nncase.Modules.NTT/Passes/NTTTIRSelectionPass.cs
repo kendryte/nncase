@@ -65,8 +65,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 var dinfo = vectorizedMatMul.GetDimInfo(dta.TensorType.Shape.Rank, dtb.TensorType.Shape.Rank);
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
                     dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
-                    dta.AxisPolicies[dinfo.Lk] == dtb.AxisPolicies[dinfo.Rn] &&
-                    dta.AxisPolicies[dinfo.Lm] == dtb.AxisPolicies[dinfo.Rk])
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[dinfo.Lk], dtb.AxisPolicies[dinfo.Rn], false) &&
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[dinfo.Lm], dtb.AxisPolicies[dinfo.Rk], false))
                 {
                     return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, (Expr)call[IR.NTT.VectorizedMatMul.Scale], vectorizedMatMul.LhsVectorizedAxes, vectorizedMatMul.RhsVectorizedAxes, vectorizedMatMul.TransposeA, vectorizedMatMul.TransposeB);
                 }
@@ -78,8 +78,8 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Math.MatMul when GetArgumentType(arguments[0]) is DistributedType dta && GetArgumentType(arguments[1]) is DistributedType dtb:
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
                     dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
-                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^2] &&
-                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^1])
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[^2], dtb.AxisPolicies[^2], false) &&
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[^1], dtb.AxisPolicies[^1], false))
                 {
                     return TIR.F.NTT.SUMMA((Expr)arguments[0], (Expr)arguments[1], output, None.Default, (Expr)call[IR.Math.MatMul.Scale]);
                 }

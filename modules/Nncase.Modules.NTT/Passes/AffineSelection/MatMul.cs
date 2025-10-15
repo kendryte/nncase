@@ -6,6 +6,7 @@ using Nncase.IR;
 using Nncase.IR.Affine;
 using Nncase.TIR;
 using Nncase.TIR.NTT;
+using Nncase.Utilities;
 
 namespace Nncase.Passes;
 
@@ -27,8 +28,8 @@ public partial class NTTAffineSelectionPass
                 var dinfo = pmm.GetDimInfo(dta.TensorType.Shape.Rank, dtb.TensorType.Shape.Rank);
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
                     dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
-                    dta.AxisPolicies[dinfo.Lk] == dtb.AxisPolicies[dinfo.Rn] &&
-                    dta.AxisPolicies[dinfo.Lm] == dtb.AxisPolicies[dinfo.Rk])
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[dinfo.Lk], dtb.AxisPolicies[dinfo.Rn], false) &&
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[dinfo.Lm], dtb.AxisPolicies[dinfo.Rk], false))
                 {
                     return call;
                 }
@@ -42,8 +43,8 @@ public partial class NTTAffineSelectionPass
             {
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
                     dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
-                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^2] &&
-                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^1])
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[^2], dtb.AxisPolicies[^2], false) &&
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[^1], dtb.AxisPolicies[^1], false))
                 {
                     return call;
                 }
@@ -57,8 +58,8 @@ public partial class NTTAffineSelectionPass
             {
                 if (dta.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
                     dtb.AxisPolicies[^2..].AsValueEnumerable().All(x => x is SBPSplit) &&
-                    dta.AxisPolicies[^2] == dtb.AxisPolicies[^1] &&
-                    dta.AxisPolicies[^1] == dtb.AxisPolicies[^2])
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[^2], dtb.AxisPolicies[^1], false) &&
+                    DistributedUtility.IsSamePolicy(dta.AxisPolicies[^1], dtb.AxisPolicies[^2], false))
                 {
                     return call;
                 }
