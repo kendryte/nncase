@@ -71,17 +71,22 @@ namespace Nncase.Importer
             // Split MoE logic.
             var routerLogits = Linear(hiddenStates, gateW, layerName: "router_logits");
             routerLogits = Tensors.Cast(routerLogits, DataTypes.Float32);
-            var topkProbs = NN.Softmax(routerLogits, -1);
-            var topKRes = Tensors.TopK(topkProbs, Tensor.FromScalar(DataTypes.Int64, Config.GetNestedValue<long>("num_experts_per_tok"), [1]), -1, true, true);
+            var topkProbs = NN.Softmax(routerLogits, -1).With(metadata: new IRMetadata() { OutputNames = new[] { $"model.layers.{count}.moe.softmax" } });
+            var topKRes = Tensors.TopK(topkProbs, Tensor.FromScalar(DataTypes.Int64, Config.GetNestedValue<long>("num_experts_per_tok"), [1]), -1, true, true).With(metadata: new IRMetadata() { OutputNames = new[] { $"model.layers.{count}.moe.topk" } });
             var routerWeights = topKRes[0];
             var selectedExperts = topKRes[1];
 
             if (Config.GetNestedValue<bool>("norm_topk_prob"))
             {
-                routerWeights = IR.F.Math.Binary(BinaryOp.Div, routerWeights, Tensors.Reduce(ReduceOp.Sum, routerWeights, new long[] { -1L }, 0f, true));
+                routerWeights = IR.F.Math.Binary(
+                    BinaryOp.Div,
+                    routerWeights,
+                    Tensors.Reduce(ReduceOp.Sum, routerWeights, new long[] { -1L }, 0f, true).With(metadata: new IRMetadata() { OutputNames = new[] { $"model.layers.{count}.moe.norm_reduce_sum" } }))
+                    .With(metadata: new IRMetadata() { OutputNames = new[] { $"model.layers.{count}.moe.norm_weights" } });
             }
 
-            var sparseExpertOutput = NN.SparseExperts(
+            string nameSparseExperts = $"model.layers.{count}.moe.sparse_experts";
+            var sparseExpertOutput = IR.F.NN.SparseExperts(
                 hiddenStates,
                 selectedExperts, // expert ids
                 routerWeights, // expert weights
@@ -98,9 +103,9 @@ namespace Nncase.Importer
                 moeIntermediateSize: Config.GetNestedValue<long>("moe_intermediate_size"),
                 numExpert: expertNum,
                 numTopK: Config.GetNestedValue<long>("num_experts_per_tok"),
-                Context!.CompileSession!.CompileOptions.ShapeBucketOptions.RangeInfo["sequence_length"].Max);
+                Context!.CompileSession!.CompileOptions.ShapeBucketOptions.RangeInfo["sequence_length"].Max).With(metadata: new IRMetadata() { OutputNames = new[] { nameSparseExperts } });
 
-            return (Call)sparseExpertOutput;
+            return sparseExpertOutput;
         }
 
         private Call? GetWeightAndExpand(string name, long expertNum = 0)
