@@ -1121,6 +1121,67 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
     }
 };
 
+template <Tensor TIn, Tensor TOut, FixedDimensions TReduceAxes,
+          FixedDimensions VectorizedAxes>
+struct u_reduce_2d<TIn, TOut, TReduceAxes, VectorizedAxes, true> {
+  public:
+    constexpr void operator()(const TIn &input, TOut &output,
+                              const TReduceAxes &,
+                              const VectorizedAxes &) noexcept {
+        using TInElem = typename TIn::element_type;
+        constexpr auto reduce_axes = TReduceAxes{};
+        auto apply_shape = generate_shape<TIn::rank()>([&](auto i) {
+            if (i == reduce_axes.at(0))
+                return (dim_t)input.shape()[i];
+            else
+                return (dim_t)1;
+        });
+
+        constexpr size_t lmul = 4;
+        constexpr size_t unroll = NTT_VLEN / sizeof(TInElem) / 8 * lmul;
+
+        auto in_ptr = input.buffer().data();
+        auto out_ptr = output.buffer().data();
+        if (reduce_axes.at(0) == 1_dim) {
+            size_t vl = output.shape()[0];
+            int64_t count = output.shape()[0];
+            while (count > 0) {
+                vfloat32m4_t result = __riscv_vfmv_v_f_f32m4(0.0f, vl);
+                ntt::apply(apply_shape, [&](auto index) {
+                    vfloat32m4_t v_in = __riscv_vlse32_v_f32m4(
+                        in_ptr + index[1] * input.strides()[1],
+                        input.strides()[0] * sizeof(TInElem), vl);
+                    result = __riscv_vfadd_vv_f32m4(result, v_in, vl);
+                    __riscv_vsse32_v_f32m4(
+                        out_ptr, output.strides()[0] * sizeof(TInElem), result,
+                        vl);
+                });
+                out_ptr += unroll * output.strides()[0];
+                in_ptr += unroll * input.strides()[0];
+                vl -= unroll;
+                count -= unroll;
+            }
+        } else {
+            size_t vl = output.shape()[1];
+            int64_t count = output.shape()[1];
+            while (count > 0) {
+                vfloat32m4_t result = __riscv_vfmv_v_f_f32m4(0.0f, vl);
+                ntt::apply(apply_shape, [&](auto index) {
+                    vfloat32m4_t v_in = __riscv_vlse32_v_f32m4(
+                        in_ptr + index[0] * input.strides()[0],
+                        input.strides()[1] * sizeof(TInElem), vl);
+                    result = __riscv_vfadd_vv_f32m4(result, v_in, vl);
+                    __riscv_vse32_v_f32m4(out_ptr, result, vl);
+                });
+                out_ptr += unroll;
+                in_ptr += unroll * input.strides()[1];
+                vl -= unroll;
+                count -= unroll;
+            }
+        }
+    }
+};
+
 // matmul
 template <>
 struct u_matmul_policy<matmul_vectorize_kind::no_vectorize, float, float, float,

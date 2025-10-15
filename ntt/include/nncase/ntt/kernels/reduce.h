@@ -124,6 +124,14 @@ class reduce_impl {
         });
     }
 
+    template <FixedDimensions TReduceAxes, FixedDimensions VectorizedAxes>
+        requires(Op == reduce_op::sum && TIn::rank() == 2 &&
+                 TReduceAxes::rank() == 1 && VectorizedAxes::rank() == 0)
+    constexpr void operator()(const TIn &input, TOut &output,
+                              const TReduceAxes &, const VectorizedAxes &) {
+        u_reduce(input, output, TReduceAxes{}, VectorizedAxes{});
+    }
+
   private:
     template <Shape TInIndex, FixedDimensions TReduceAxes>
     constexpr void apply_reduce(const TIn &input, TInIndex &index,
@@ -193,9 +201,8 @@ template <reduce_op Op, bool LoadPrevious = false, Tensor TIn, class TOut,
           FixedDimensions VectorizedAxes = shape_t<>,
           FixedDimensions PadedNums =
               decltype(make_zeros_shape<VectorizedAxes::rank()>())>
-void reduce(const TIn &input, TOut &&output,
-            [[maybe_unused]] const TReduceAxes &reduce_axes,
-            [[maybe_unused]] const VectorizedAxes &vectorized_axes = {},
+void reduce(const TIn &input, TOut &&output, const TReduceAxes &reduce_axes,
+            const VectorizedAxes &vectorized_axes = {},
             [[maybe_unused]] const PadedNums &paded_nums = {}) noexcept {
     static_assert(!(LoadPrevious && Op == reduce_op::mean),
                   "not support reduce mean splited on reduce axis");
