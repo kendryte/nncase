@@ -109,12 +109,12 @@ public sealed class PackEvaluator : ITypeInferencer<Pack>, ICostEvaluator<Pack>,
         var ndsbp = new SBP[input.TensorType.Shape.Rank];
         for (int i = 0; i < input.TensorType.Shape.Rank; i++)
         {
-            if (input.AxisPolicies[i] is SBPSplit && target.Axes.Contains(i))
+            if (input.AxisPolicies[i] is SBPSplit split && target.Axes.Contains(i))
             {
                 var lane = target.Lanes[target.Axes.IndexOf(i)];
                 if (input.TensorType.Shape[i] is { IsFixed: true, FixedValue: long s } && s / lane % divisor[i] == 0)
                 {
-                    ndsbp[i] = input.AxisPolicies[i];
+                    ndsbp[i] = SBP.S(split.Axes, split.Granularity is not null ? split.Granularity / lane : null);
                 }
                 else
                 {

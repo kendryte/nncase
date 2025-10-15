@@ -22,7 +22,8 @@
 #include <type_traits>
 
 namespace nncase::ntt::distributed {
-template <class T> concept Sharding = requires(T t) {
+template <class T>
+concept Sharding = requires(T t) {
     typename T::mesh_type;
     typename T::axis_policies_type;
 };
@@ -54,18 +55,17 @@ struct broadcast {
 inline constexpr broadcast B;
 
 // Split
-template <Dimension TG, size_t... Axes> struct split {
-    TG granularity = 0_dim;
+template <class TGranularity, size_t... Axes> struct split {
+    TGranularity granularity;
     static constexpr auto axes = fixed_shape_v<Axes...>;
 
-    template <class Mesh> static constexpr auto divider() {
-        return granularity == 0_dim ? granularity : Mesh::shape.select(axes).length();
+    template <class Mesh> constexpr auto divider() {
+        return Mesh::shape.select(axes).length();
     }
 
     template <class Mesh, Dimension TDim, ShardIndex<Mesh> TShardIndex>
-    static constexpr auto
-    global_offset(const TDim &global_dim,
-                  const TShardIndex &shard_index) noexcept {
+    constexpr auto global_offset(const TDim &global_dim,
+                                 const TShardIndex &shard_index) noexcept {
         constexpr auto submesh_shape =
             fixed_shape_v<Mesh::shape[fixed_dim_v<Axes>]...>;
         auto subshard_index = make_shape(shard_index[fixed_dim_v<Axes>]...);
@@ -77,16 +77,21 @@ template <Dimension TG, size_t... Axes> struct split {
     }
 
     template <class Mesh, Dimension TDim>
-    static constexpr auto
+    constexpr auto
     try_shard_dim_without_shard_index(const TDim &global_dim) noexcept {
-        const auto remainder = global_dim % divider<Mesh>();
-        return ntt::where(remainder == dim_zero, global_dim / divider<Mesh>(),
-                          -1_dim);
+        if constexpr (std::is_same_v<TGranularity, std::nullptr_t>) {
+            const auto remainder = global_dim % divider<Mesh>();
+            return ntt::where(remainder == dim_zero,
+                              global_dim / divider<Mesh>(), -1_dim);
+        } else {
+            return ntt::where(global_dim == granularity * divider<Mesh>(),
+                              granularity, -1_dim);
+        }
     }
 
     template <class Mesh, Dimension TDim, ShardIndex<Mesh> TShardIndex>
-    static constexpr auto shard_dim(const TDim &global_dim,
-                                    const TShardIndex &shard_index) noexcept {
+    constexpr auto shard_dim(const TDim &global_dim,
+                             const TShardIndex &shard_index) noexcept {
         const auto shard_dim_v =
             try_shard_dim_without_shard_index<Mesh>(global_dim);
         return ntt::where(shard_dim_v != -1_dim, shard_dim_v, [&] {
@@ -97,22 +102,29 @@ template <Dimension TG, size_t... Axes> struct split {
     }
 
     template <class Mesh, Dimension TDim>
-    static constexpr auto max_shard_dim(const TDim &global_dim) noexcept {
-        return ntt::ceil_div(global_dim, divider<Mesh>());
+    constexpr auto max_shard_dim(const TDim &global_dim) noexcept {
+        if constexpr (std::is_same_v<TGranularity, std::nullptr_t>) {
+            return ntt::ceil_div(global_dim, divider<Mesh>());
+        } else {
+            return granularity;
+        }
     }
 
-    constexpr split(TG granularity_ = 0_dim) : granularity(granularity_) {}
+    constexpr split(TGranularity granularity_ = nullptr)
+        : granularity(granularity_) {}
 };
 
-template <Dimension TG, size_t... Axes> constexpr auto S(TG granularity = 0_dim) noexcept {
-    return split<Axes...>{granularity};
+template <size_t... Axes, class TGranularity = std::nullptr_t>
+constexpr auto S(TGranularity granularity = nullptr) noexcept {
+    return split<TGranularity, Axes...>{granularity};
 }
 } // namespace shard_policy
 
 template <class Policy> struct is_split_shard_policy : std::false_type {};
 
-template <size_t... Axes>
-struct is_split_shard_policy<shard_policy::split<Axes...>> : std::true_type {};
+template <class TGranularity, size_t... Axes>
+struct is_split_shard_policy<shard_policy::split<TGranularity, Axes...>>
+    : std::true_type {};
 
 template <class Policy>
 concept SplitShardPolicy = is_split_shard_policy<Policy>::value;
@@ -134,9 +146,9 @@ template <class Mesh, class... AxisPolicies> struct sharding {
     global_offset(const GlobalShape &global_shape,
                   const TShardIndex &shard_index) const noexcept {
         auto get_dim = [&, this]<size_t Axis> {
-            return std::get<Axis>(axis_policies)
-                .template global_offset<Mesh>(global_shape[fixed_dim_v<Axis>],
-                                              shard_index);
+            auto policy = std::get<Axis>(axis_policies);
+            return policy.template global_offset<Mesh>(
+                global_shape[fixed_dim_v<Axis>], shard_index);
         };
         auto get_all_dims = [&]<size_t... Is>(std::index_sequence<Is...>) {
             return make_shape(get_dim.template operator()<Is>()...);
@@ -148,9 +160,9 @@ template <class Mesh, class... AxisPolicies> struct sharding {
     constexpr auto shard_shape(const GlobalShape &global_shape,
                                const TShardIndex &shard_index) const noexcept {
         auto get_dim = [&, this]<size_t Axis> {
-            return std::get<Axis>(axis_policies)
-                .template shard_dim<Mesh>(global_shape[fixed_dim_v<Axis>],
-                                          shard_index);
+            auto policy = std::get<Axis>(axis_policies);
+            return policy.template shard_dim<Mesh>(
+                global_shape[fixed_dim_v<Axis>], shard_index);
         };
         auto get_all_dims = [&]<size_t... Is>(std::index_sequence<Is...>) {
             return make_shape(get_dim.template operator()<Is>()...);
@@ -235,12 +247,14 @@ constexpr auto tensor_axes_of_non_split_shard_policies() noexcept {
 template <size_t Axis, class TSharding, class GlobalShape>
 constexpr auto local_shard_dim(const TSharding &sharding,
                                const GlobalShape &global_shape) noexcept {
-    static_assert(GlobalShape::rank() == TSharding::rank(), "Invalid sharding.");
+    static_assert(GlobalShape::rank() == TSharding::rank(),
+                  "Invalid sharding.");
 
     using mesh_type = typename TSharding::mesh_type;
     const auto local_index = mesh_type::local_index();
     return std::get<Axis>(sharding.axis_policies)
-        .template shard_dim<typename TSharding::mesh_type>(global_shape[fixed_dim_v<Axis>], local_index);
+        .template shard_dim<typename TSharding::mesh_type>(
+            global_shape[fixed_dim_v<Axis>], local_index);
 }
 
 template <class Sharding, Shape GlobalShape>

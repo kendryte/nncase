@@ -28,10 +28,10 @@ public abstract record SBP
 
     public static SBPPartial P(ReduceOp op = ReduceOp.Sum) => new SBPPartial(op);
 
-    public static SBPSplit S(IRArray<int> axes, int granularity = 0) => new SBPSplit(axes, granularity);
+    public static SBPSplit S(IRArray<int> axes, Dimension? granularity = null) => new SBPSplit(axes, granularity);
 }
 
-public sealed record SBPSplit(IRArray<int> Axes, int Granularity = 0) : SBP
+public sealed record SBPSplit(IRArray<int> Axes, Dimension? Granularity = null) : SBP
 {
     public override string ToString() => $"S({string.Join(",", Axes)}, {Granularity})";
 }

@@ -120,7 +120,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
             [&](auto last_acc, auto global_dim, auto axis) {
                 auto [last_global_offset, last_local_offset, last_shape] =
                     last_acc;
-                const auto policy =
+                auto policy =
                     std::get<axis>(src.sharding().axis_policies);
                 if constexpr (distributed::SplitShardPolicy<
                                   std::decay_t<decltype(policy)>>) {
@@ -388,7 +388,7 @@ struct reshard_impl<SrcTensor, DestTensor> {
         std::array<size_t, mesh_type::rank()> counts{};
 
         auto get_coord = [&]<size_t tensor_axis>() {
-            const auto policy = std::get<tensor_axis>(src.sharding().axis_policies);
+            auto policy = std::get<tensor_axis>(src.sharding().axis_policies);
             if constexpr (distributed::SplitShardPolicy<std::decay_t<decltype(policy)>>) {
                 size_t num_blocks = 1;
                 constexpr auto policy_rank = policy.axes.rank();

@@ -104,6 +104,7 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
         }
 
         // [m]<8>@8@4 -> [m*8]@8@4, when max(m)=256 and runtime m=12, input and output have different local shape.
+        var newPolicies = input.AxisPolicies.ToArray();
         foreach (var (s, r) in input.AxisPolicies.Select((s, r) => (s, r)))
         {
             if (s is SBPSplit split && target.Axes.Contains(r))
@@ -114,9 +115,11 @@ public sealed class UnpackEvaluator : ITypeInferencer<Unpack>, ICostEvaluator<Un
                 {
                     return new InvalidType("Not support non-divisible input");
                 }
+
+                newPolicies[r] = SBP.S(split.Axes, split.Granularity is not null ? split.Granularity * target.Lanes[target.Axes.IndexOf(r)] : null);
             }
         }
 
-        return new DistributedType(tensorType, input.AxisPolicies, input.Placement);
+        return new DistributedType(tensorType, newPolicies, input.Placement);
     }
 }

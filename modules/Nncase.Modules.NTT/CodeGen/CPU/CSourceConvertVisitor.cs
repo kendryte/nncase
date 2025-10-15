@@ -119,7 +119,7 @@ public sealed class IndentWriter : StringWriter
 /// <summary>
 /// convert single prim function to c source.
 /// </summary>
-public abstract class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
+public class CSourceConvertVisitor : ExprFunctor<CSymbol, Unit>
 {
     protected readonly Dictionary<BaseExpr, CSymbol> _exprMemo = new(ReferenceEqualityComparer.Instance);
 

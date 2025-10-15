@@ -145,7 +145,7 @@ template <class TConfig> class attention_kv_cache {
 namespace detail {
 template <class Mesh, size_t... Axes>
 constexpr auto
-kv_dim(const distributed::shard_policy::split<Axes...> &split) noexcept {
+kv_dim(distributed::shard_policy::split<std::nullptr_t, Axes...> split) noexcept {
     return split.template divider<Mesh>();
 }
 
@@ -184,8 +184,8 @@ constexpr auto origin_kv_cache_one_block_shape() noexcept {
                 // num_blocks is not sharded, so we just return
                 return last_shape;
             } else {
-                auto dim =
-                    axis_policy_t::template try_shard_dim_without_shard_index<
+                auto policy = axis_policy_t{};
+                auto dim = policy.template try_shard_dim_without_shard_index<
                         Mesh>(last_shape[sharding_axis]);
                 static_assert(dim != -1_dim,
                               "Only uniform shard dim is supported.");

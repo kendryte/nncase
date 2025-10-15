@@ -634,7 +634,7 @@ void test_caching() {
             ntt::caching::paged_kvcache_dim_kind::num_kv_heads>();
         static_assert(
             std::is_same_v<std::remove_cv_t<decltype(head_dim_policy)>,
-                           ntt::distributed::shard_policy::split<0>>,
+                           ntt::distributed::shard_policy::split<std::nullptr_t, 0>>,
             "find failed!");
 
         auto context_lens = ntt::make_tensor<int64_t>(ntt::make_shape(1));
