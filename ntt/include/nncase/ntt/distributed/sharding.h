@@ -22,8 +22,7 @@
 #include <type_traits>
 
 namespace nncase::ntt::distributed {
-template <class T>
-concept Sharding = requires(T t) {
+template <class T> concept Sharding = requires(T t) {
     typename T::mesh_type;
     typename T::axis_policies_type;
 };
@@ -55,7 +54,7 @@ struct broadcast {
 inline constexpr broadcast B;
 
 // Split
-    template <class TGranularity, size_t... Axes> struct split {
+template <class TGranularity, size_t... Axes> struct split {
     TGranularity granularity;
     static constexpr auto axes = fixed_shape_v<Axes...>;
 
@@ -110,11 +109,10 @@ inline constexpr broadcast B;
         }
     }
 
-    template <class U = TGranularity, std::enable_if_t<std::is_same_v<U, std::nullptr_t>, int> = 0>
-    constexpr split() : granularity(nullptr) {}
+    constexpr split() requires(std::is_same_v<TGranularity, std::nullptr_t>)
+        : granularity(nullptr) {}
 
-    constexpr split(TGranularity granularity_)
-        : granularity(granularity_) {}
+    constexpr split(TGranularity granularity_) : granularity(granularity_) {}
 };
 
 template <size_t... Axes, class TGranularity = std::nullptr_t>

@@ -221,7 +221,7 @@ public sealed class TestPagedAttentionCaseData : TheoryData<TestFixture.PagedAtt
             }
         }
 
-        Add(new TestFixture.PagedAttentionKVCacheTestFixture([4], [4], 14, 2, 64, 256, 16, Runtime.TypeCode.Float32, 1, [PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize], [PagedKVCacheDimKind.HeadDim], [PagedKVCacheDimKind.NumBlocks], [SBP.S([0]), SBP.S([0])], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]), [1], count++);
+        Add(new TestFixture.PagedAttentionKVCacheTestFixture([4], [4], 14, 2, 64, 256, 16, Runtime.TypeCode.Float32, 1, [PagedKVCacheDimKind.NumBlocks, PagedKVCacheDimKind.NumLayers, PagedKVCacheDimKind.KV, PagedKVCacheDimKind.NumKVHeads, PagedKVCacheDimKind.HeadDim, PagedKVCacheDimKind.BlockSize], [PagedKVCacheDimKind.HeadDim], [PagedKVCacheDimKind.NumBlocks], [SBP.S([0])], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq], [AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq]), [1], count++);
     }
 }
 
