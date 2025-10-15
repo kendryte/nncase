@@ -55,7 +55,7 @@ struct broadcast {
 inline constexpr broadcast B;
 
 // Split
-template <class TGranularity, size_t... Axes> struct split {
+    template <class TGranularity, size_t... Axes> struct split {
     TGranularity granularity;
     static constexpr auto axes = fixed_shape_v<Axes...>;
 
@@ -110,7 +110,10 @@ template <class TGranularity, size_t... Axes> struct split {
         }
     }
 
-    constexpr split(TGranularity granularity_ = nullptr)
+    template <class U = TGranularity, std::enable_if_t<std::is_same_v<U, std::nullptr_t>, int> = 0>
+    constexpr split() : granularity(nullptr) {}
+
+    constexpr split(TGranularity granularity_)
         : granularity(granularity_) {}
 };
 

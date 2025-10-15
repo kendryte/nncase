@@ -189,6 +189,30 @@ void test_sharding() {
             ntt::distributed::detail::mesh_axes_of_non_split_shard_policies<
                 sharding_type>() == ntt::fixed_shape_v<0, 1>);
     }
+
+    // Sharing split with S<2>
+    {
+        ntt::dim_t seq_length = 122;
+        [[maybe_unused]] float *xx = new float[seq_length];
+        [[maybe_unused]] auto sp = ntt::distributed::shard_policy::S<0>(16_dim);
+        [[maybe_unused]] auto sb = ntt::distributed::shard_policy::B;
+        [[maybe_unused]] auto sharding =
+        ntt::distributed::make_sharding<ntt::distributed::mesh<
+                    ntt::distributed::topology::thread, 1>>(
+                    ntt::distributed::shard_policy::S<0>(16_dim),
+                    ntt::distributed::shard_policy::B);
+        [[maybe_unused]] auto buffer_0 =
+            ntt::distributed::make_sharded_tensor_view(
+                span_cast<float>(make_subspan(
+                    std::span<std::byte, 4096>((std::byte *)xx + 4096UL,
+                    4096), 0_dim, 4096_dim)),
+                ntt::make_shape(seq_length, 64_dim),
+                ntt::distributed::make_sharding<ntt::distributed::mesh<
+                    ntt::distributed::topology::thread, 1>>(
+                    ntt::distributed::shard_policy::S<0>(16_dim),
+                    ntt::distributed::shard_policy::B),
+                ntt::make_strides(64_dim, 1_dim));
+    }
 }
 
 void test_matmul_normal() {
