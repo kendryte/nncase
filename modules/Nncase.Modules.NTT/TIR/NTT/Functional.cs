@@ -41,14 +41,14 @@ public partial class NTT
         return new Call(new TIR.NTT.Unary(unaryOp), input, output);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, Expr extra, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
     {
-        return new Call(new Matmul(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC, scale);
+        return new Call(new Matmul(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC, scale, extra);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale)
     {
-        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC, scale);
+        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC, scale, None.Default);
     }
 
     public static Call PackedMatMul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, bool fusedReduce = false)
@@ -83,9 +83,14 @@ public partial class NTT
         return new Call(new VectorizedSoftmax(axis, vectorizedAxes), input, output);
     }
 
-    public static Expr VectorizedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums)
+    public static Expr VectorizedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums, string cSourcePath = "", string funcName = "")
     {
-        return new Call(new VectorizedLayerNorm(axis, epsilon, usemean, vectorizedAxes, padedNums, null!), input, scale, bias, output);
+        return new Call(new VectorizedLayerNorm(axis, epsilon, usemean, vectorizedAxes, padedNums, null!, cSourcePath, funcName), input, scale, bias, None.Default, output);
+    }
+
+    public static Expr VectorizedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums, Expr postScale, string cSourcePath = "", string funcName = "")
+    {
+        return new Call(new VectorizedLayerNorm(axis, epsilon, usemean, vectorizedAxes, padedNums, null!, cSourcePath, funcName), input, scale, bias, postScale, output);
     }
 
     public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums, DistributedType distributedType)

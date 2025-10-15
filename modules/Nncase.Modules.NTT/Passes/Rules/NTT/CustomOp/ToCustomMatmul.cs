@@ -9,9 +9,14 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DryIoc.ImTools;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Scripting;
+using Microsoft.CodeAnalysis.Scripting;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
+using Nncase.IR.Buffers;
 using Nncase.IR.Math;
 using Nncase.Passes.Distributed;
 using Nncase.PatternMatch;
@@ -21,6 +26,13 @@ using static Nncase.IR.TypePatternUtility;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.NTT.CustomOp;
+
+public record ExtraWorkloadGlobals
+{
+    public Dimension? M;
+    public Dimension? K;
+    public Dimension? N;
+}
 
 [RuleGenerator]
 public partial class ToCustomMatmul : RewriteRule<Pattern>
@@ -68,10 +80,29 @@ public partial class ToCustomMatmul : RewriteRule<Pattern>
 
         if (node is not null)
         {
+            var extraSize = new long[] { 1 };
+            if (!string.IsNullOrEmpty(node.ExtraWorkload))
+            {
+                var scriptOptions = ScriptOptions.Default
+                    .AddReferences(typeof(Dimension).Assembly)
+                    .AddImports(typeof(Dimension).Namespace);
+                var globals = new ExtraWorkloadGlobals
+                {
+                    M = lhs.CheckedShape[^2],
+                    K = rhs.CheckedShape[^1],
+                    N = rhs.CheckedShape[^1],
+                };
+
+                var extraDim = CSharpScript.EvaluateAsync<Dimension>(node.ExtraWorkload, scriptOptions, globals: globals).Result;
+                extraSize = CompilerServices.GetMaxShape([extraDim]);
+            }
+
+            Expr extraWorkload = IR.F.Buffer.Uninitialized(DataTypes.UInt8, TIR.MemoryLocation.Data, extraSize);
+
             return call.With(
-                target: new IR.CustomNTT.MatMul(null!, null!, false, false, node!.SBP[0], node!.SBP[1], node!.SBP[2], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName, mm.OutputDataType),
-                arguments: new[] { lhs, rhs, scale },
-                metadata: call.Metadata);
+                    target: new IR.CustomNTT.MatMul(null!, null!, false, false, node!.SBP[0], node!.SBP[1], node!.SBP[2], new() { [CostFactorNames.CPUCycles] = node.Cost }, node.CSourcePath, node.FuncName, mm.OutputDataType),
+                    arguments: new[] { lhs, rhs, scale, extraWorkload },
+                    metadata: call.Metadata);
         }
 
         return null;

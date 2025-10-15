@@ -231,6 +231,28 @@ public sealed partial class CombineTransposeConstBinary : RewriteRule<CallPatter
 }
 
 /// <summary>
+/// transpose(binary(x,y),p) => binary(transpose(x,p),transpose(y,p)).
+/// </summary>
+[RuleGenerator]
+public sealed partial class CombineTransposeBinary : RewriteRule<CallPattern>
+{
+    public override CallPattern Pattern { get; } =
+        IsTranspose(
+            IsBinary("binary", "binaryCall", _ => true, IsWildcard("x"), IsWildcard("y")),
+            IsFixedShape("perm"));
+
+    private Expr? GetReplace(Binary binary, Call binaryCall, Expr x, Expr y, Shape perm)
+    {
+        if (x.CheckedShape.Rank != y.CheckedShape.Rank)
+        {
+            return null;
+        }
+
+        return Binary(binary.BinaryOp, Transpose(x, perm), Transpose(y, perm)).InheritMetaData(binaryCall);
+    }
+}
+
+/// <summary>
 /// Combine Transpose with Concat
 /// concat((transpose(x,p),...), a) => transpose(concat((x,...), p[a]), p).
 /// </summary>
@@ -423,13 +445,15 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
             return null;
         }
 
-        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsCompleteDict(mat);
-        if (forwardDict.Any(d => d.Value.Count > 1))
+        var (forwardDict, backwardDict) = IRUtility.ShapeMapMatrixAsDict(mat);
+        if (forwardDict.Any(f => f.Value.Count > 1
+            && (f.Value.Any(b => backwardDict[b].Count > 1)
+                || !Enumerable.Range(0, perm.Length - f.Value.Count).Any(i => perm.Skip(i).Take(f.Value.Count).SequenceEqual(f.Value)))))
         {
             return null;
         }
 
-        var newPerm = perm.Select(p => backwardDict[p]).SelectMany(a => a).ToArray();
+        var newPerm = perm.Select(p => backwardDict[p]).SelectMany(a => a).Distinct().ToArray();
 
         return Reshape(Transpose(input, newPerm), outShape);
     }
@@ -464,17 +488,17 @@ public sealed partial class CombineTransposeReshape : IRewriteRule
 
 /// <summary>
 /// Combine Transpose with Unary
-/// unary(transpose(x,p), a) => transpose(unary(x, p)).
+/// transpose(unary(x), p) => unary(transpose(x,p)).
 /// </summary>
 [RuleGenerator]
 public sealed partial class CombineUnaryTranspose : IRewriteRule
 {
     /// <inheritdoc/>
-    public IPattern Pattern { get; } = IsUnary("unary", "unaryCall", x => true, IsTranspose(IsWildcard("input"), IsShape("perm")));
+    public IPattern Pattern { get; } = IsTranspose("transpose", "transposeCall", _ => true, IsUnary("unary", "unaryCall", _ => true, IsWildcard("input")), IsShape("perm"));
 
-    private Expr? GetReplace(Unary unary, Call unaryCall, Expr input, Shape perm)
+    private Expr? GetReplace(Unary unary, Call transposeCall, Expr input, Shape perm)
     {
-        return Transpose(Unary(unary.UnaryOp, input).InheritMetaData(unaryCall), perm);
+        return Unary(unary.UnaryOp, Transpose(input, perm)).InheritMetaData(transposeCall);
     }
 }
 
