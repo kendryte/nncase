@@ -17,4 +17,9 @@ public partial class CustomNTT
     {
         return new Call(new IR.CustomNTT.MatMul(lhsPackedAxes, rhsPackedAxes, transA, transB, lhsSBPs, rhsSBPs, outSBPs, cost, cSourcePath, funcName, outputDataType), lhs, rhs, scale);
     }
+
+    public static Expr SparseExperts(Expr q, Expr routerIdx, Expr routerWeights, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, Expr extra, IRArray<int> qPackedAxes, IRArray<int> gatePackedAxes, IRArray<int> downPackedAxes, IRArray<int> upPackedAxes, IRArray<SBP> qSBPs, IRArray<SBP> gateSBPs, IRArray<SBP> downSBPs, IRArray<SBP> upSBPs, long hiddenSize, long moeIntermediateSize, long numExpert, long numTopK, long chunkSize, Cost cost, string cSourcePath, string funcName)
+    {
+        return new Call(new IR.CustomNTT.SparseExperts(qPackedAxes, gatePackedAxes, downPackedAxes, upPackedAxes, qSBPs, gateSBPs, downSBPs, upSBPs, hiddenSize, moeIntermediateSize, numExpert, numTopK, chunkSize, cost, cSourcePath, funcName), q, routerIdx, routerWeights, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale, extra);
+    }
 }
