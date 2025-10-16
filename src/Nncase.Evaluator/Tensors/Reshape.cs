@@ -54,15 +54,16 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 var newDims = newAxes.Select(newAxis => newShape[newAxis]).ToArray().AsReadOnlySpan();
                 var newSplitAxis = newDims.FirstIndexOfNotEqual(1);
                 newSplitAxis = newSplitAxis < 0 ? 0 : newSplitAxis;
-                var isDivisable = Dimension.TryDivExactly(newDims[newSplitAxis], DistributedUtility.GetDivisor(split, inType.Placement), out var granularity);
-                if (newDims[newSplitAxis] != inShape[inAxis] && !isDivisable)
+                if (newDims[newSplitAxis] != inShape[inAxis]
+                    && !Dimension.TryDivExactly(newDims[newSplitAxis], DistributedUtility.GetDivisor(split, inType.Placement), out _))
                 {
                     return invalidType;
                 }
 
+                var granularity = split.Granularity is null ? null : split.Granularity * newAxes.Except([newSplitAxis]).Aggregate((Dimension)1, (a, b) => a * maxNewShape[b]);
                 foreach (var newAxis in newAxes)
                 {
-                    newAxisPolicies[newAxis] = newAxis == (newAxesOffset + newSplitAxis) ? SBP.S(split.Axes, split.Granularity is null ? null : granularity) : SBP.B;
+                    newAxisPolicies[newAxis] = newAxis == (newAxesOffset + newSplitAxis) ? SBP.S(split.Axes, granularity) : SBP.B;
                 }
             }
             else
@@ -103,7 +104,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
 
                 var split = (SBPSplit)inType.AxisPolicies[firstSplitAxis.Value];
                 newAxisPolicies[newAxis] = split.Granularity is null ? split :
-                    SBP.S(split.Axes, split.Granularity! * inAxes.Except([firstSplitAxis.Value]).Aggregate((Dimension)1, (a, b) => a * inShape[b]));
+                    SBP.S(split.Axes, split.Granularity! * inAxes.Except([firstSplitAxis.Value]).Aggregate((Dimension)1, (a, b) => a * maxInShape[b]));
             }
             else
             {
