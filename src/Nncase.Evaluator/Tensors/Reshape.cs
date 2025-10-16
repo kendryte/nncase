@@ -54,15 +54,15 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 var newDims = newAxes.Select(newAxis => newShape[newAxis]).ToArray().AsReadOnlySpan();
                 var newSplitAxis = newDims.FirstIndexOfNotEqual(1);
                 newSplitAxis = newSplitAxis < 0 ? 0 : newSplitAxis;
-                if (newDims[newSplitAxis] != inShape[inAxis]
-                    && !Dimension.TryDivExactly(newDims[newSplitAxis], DistributedUtility.GetDivisor(split, inType.Placement), out _))
+                var isDivisable = Dimension.TryDivExactly(newDims[newSplitAxis], DistributedUtility.GetDivisor(split, inType.Placement), out var granularity);
+                if (newDims[newSplitAxis] != inShape[inAxis] && !isDivisable)
                 {
                     return invalidType;
                 }
 
                 foreach (var newAxis in newAxes)
                 {
-                    newAxisPolicies[newAxis] = newAxis == (newAxesOffset + newSplitAxis) ? split : SBP.B;
+                    newAxisPolicies[newAxis] = newAxis == (newAxesOffset + newSplitAxis) ? SBP.S(split.Axes, split.Granularity is null ? null : granularity) : SBP.B;
                 }
             }
             else
@@ -101,7 +101,9 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                     return invalidType;
                 }
 
-                newAxisPolicies[newAxis] = inType.AxisPolicies[firstSplitAxis.Value];
+                var split = (SBPSplit)inType.AxisPolicies[firstSplitAxis.Value];
+                newAxisPolicies[newAxis] = split.Granularity is null ? split :
+                    SBP.S(split.Axes, split.Granularity! * inAxes.Except([firstSplitAxis.Value]).Aggregate((Dimension)1, (a, b) => a * inShape[b]));
             }
             else
             {
