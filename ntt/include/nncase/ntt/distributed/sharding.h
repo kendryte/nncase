@@ -253,8 +253,8 @@ constexpr auto local_shard_dim(const TSharding &sharding,
 
     using mesh_type = typename TSharding::mesh_type;
     const auto local_index = mesh_type::local_index();
-    return std::get<Axis>(sharding.axis_policies)
-        .template shard_dim<typename TSharding::mesh_type>(
+    auto policy = std::get<Axis>(sharding.axis_policies);
+    return policy.template shard_dim<typename TSharding::mesh_type>(
             global_shape[fixed_dim_v<Axis>], local_index);
 }
 
