@@ -313,7 +313,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         Visit(body);
         var rootCluster = TryInstertTerminator(body);
 
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
+        // if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
         {
             using (var stream = Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot"))
             {
@@ -793,7 +793,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     {
         IRType VisitD2D(DistributedType inv, DistributedType outv)
         {
-            if (DistributedUtility.AreSamePolicies(inv.AxisPolicies, outv.AxisPolicies, false))
+            if (DistributedUtility.AreSamePolicies(inv.AxisPolicies, outv.AxisPolicies))
             {
                 return new InvalidType("Same DistributedType");
             }

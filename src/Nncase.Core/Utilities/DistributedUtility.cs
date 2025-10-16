@@ -315,6 +315,11 @@ public static class DistributedUtility
 
     public static bool AreSamePolicies(IRArray<SBP> a, IRArray<SBP> b, bool checkGranularity = true)
     {
+        if (a == null! && b == null!)
+        {
+            return true;
+        }
+
         if (a == null! || b == null! || a.Count != b.Count)
         {
             return false;
