@@ -44,7 +44,7 @@ public class UnaryEvaluator : IEvaluator<Unary>, ITypeInferencer<Unary>, ICostEv
     {
         if (input is DistributedType inType)
         {
-            if (Enumerable.Range(0, inType.TensorType.Shape.Rank).Any(i => DistributedUtility.IsSamePolicy(inType.AxisPolicies[i], target.InSBPs[i], false)))
+            if (Enumerable.Range(0, inType.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(inType.AxisPolicies[i], target.InSBPs[i], false)))
             {
                 return false;
             }

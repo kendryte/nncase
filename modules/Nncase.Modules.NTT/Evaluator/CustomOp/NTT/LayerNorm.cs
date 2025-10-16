@@ -69,17 +69,17 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
     {
         if (input is DistributedType a && scale is DistributedType b && bias is DistributedType c)
         {
-            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => DistributedUtility.IsSamePolicy(a.AxisPolicies[i], layerNorm.InSBPs[i], false)))
+            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(a.AxisPolicies[i], layerNorm.InSBPs[i], false)))
             {
                 return false;
             }
 
-            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => DistributedUtility.IsSamePolicy(b.AxisPolicies[i], layerNorm.ScaleSBPs[i], false)))
+            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(b.AxisPolicies[i], layerNorm.ScaleSBPs[i], false)))
             {
                 return false;
             }
 
-            if (Enumerable.Range(0, c.TensorType.Shape.Rank).Any(i => DistributedUtility.IsSamePolicy(c.AxisPolicies[i], layerNorm.BiasSBPs[i], false)))
+            if (Enumerable.Range(0, c.TensorType.Shape.Rank).Any(i => !DistributedUtility.IsSamePolicy(c.AxisPolicies[i], layerNorm.BiasSBPs[i], false)))
             {
                 return false;
             }
