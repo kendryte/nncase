@@ -12,10 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#pragma once
+#include "../apply.h"
+#include "../dimension.h"
+#include "../primitive_ops.h"
+#include "nncase/ntt/tensor_traits.h"
 namespace nncase::ntt {
 namespace ukernels {
 
-template <bool Arch, Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
+template <bool Arch, Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis,
+          bool Norm>
 struct u_top_k {
   public:
     inline void operator()(int64_t inner_size, const TProbs *slice_input_ptr,
@@ -38,6 +44,9 @@ struct u_top_k {
                                      slice_probs_ptr, slice_indices_ptr,
                                      input_stride, out_probs_stride,
                                      out_indices_stride, K, largest, sorted);
+            }
+            if constexpr (Norm) {
+                normalize_probs(slice_probs_ptr, K, out_probs_stride);
             }
             return;
         }
@@ -132,6 +141,9 @@ struct u_top_k {
                 slice_probs_ptr[i * out_probs_stride] = heap_vals[i];
                 slice_indices_ptr[i * out_indices_stride] = heap_ids[i];
             }
+        }
+        if constexpr (Norm) {
+            normalize_probs(slice_probs_ptr, K, out_probs_stride);
         }
     }
 
@@ -362,18 +374,30 @@ struct u_top_k {
         ids[a] = ids[b];
         ids[b] = ti;
     }
+
+    inline void normalize_probs(TProbs *slice_probs_ptr, int K,
+                                int out_probs_stride) const {
+        TProbs sum_probs = 0.0f;
+        for (int i = 0; i < K; ++i) {
+            sum_probs += slice_probs_ptr[i * out_probs_stride];
+        }
+
+        for (int i = 0; i < K; ++i) {
+            slice_probs_ptr[i * out_probs_stride] /= sum_probs;
+        }
+    }
 };
 
 } // namespace ukernels
 
-template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
+template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis, bool Norm>
 void u_top_k(int64_t inner_size, const TProbs *slice_input_ptr,
              TProbs *slice_probs_ptr, TIndices *slice_indices_ptr,
              int64_t input_stride, int64_t out_probs_stride,
              int64_t out_indices_stride, int K, int64_t largest,
              int64_t sorted) {
 
-    ukernels::u_top_k<true, TProbs, TIndices, Rank, Axis> impl;
+    ukernels::u_top_k<true, TProbs, TIndices, Rank, Axis, Norm> impl;
     impl(inner_size, slice_input_ptr, slice_probs_ptr, slice_indices_ptr,
          input_stride, out_probs_stride, out_indices_stride, K, largest,
          sorted);

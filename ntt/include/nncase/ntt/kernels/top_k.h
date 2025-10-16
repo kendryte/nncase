@@ -25,8 +25,8 @@
 
 namespace nncase::ntt {
 
-template <Tensor TInX, Tensor TInK, Tensor TOutProb, Tensor TOutIndice,
-          FixedDimension TAxis>
+template <bool Norm = false, Tensor TInX, Tensor TInK, Tensor TOutProb,
+          Tensor TOutIndice, FixedDimension TAxis>
 void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
            TOutIndice &out_indices, TAxis axis, int64_t largest,
            int64_t sorted) {
@@ -60,7 +60,7 @@ void top_k(const TInX &x, const TInK &k, TOutProb &out_probs,
             auto slice_input_ptr = input_p + input_offset;
             auto slice_probs_ptr = out_probs_p + out_probes_offset;
             auto slice_indices_ptr = out_indices_p + out_indices_offset;
-            ntt::u_top_k<TProbs, TIndices, rank, Axis>(
+            ntt::u_top_k<TProbs, TIndices, rank, Axis, Norm>(
                 inner_size, slice_input_ptr, slice_probs_ptr, slice_indices_ptr,
                 input_stride, out_probs_stride, out_indices_stride, K, largest,
                 sorted);

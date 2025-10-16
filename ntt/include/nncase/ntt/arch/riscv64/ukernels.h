@@ -897,8 +897,8 @@ DEFINE_U_CAST_1_2(half, 16, float, 32, _Float16, float, float16, f32)
 DEFINE_U_CAST_1_2(float_e4m3_t, 8, half, 16, int8_t, _Float16, float8e4m3, f16)
 #endif
 
-template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis>
-struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
+template <Scalar TProbs, Scalar TIndices, size_t Rank, size_t Axis, bool Norm>
+struct u_top_k<true, TProbs, TIndices, Rank, Axis, Norm> {
   public:
     inline void operator()(int64_t inner_size, const TProbs *slice_input_ptr,
                            TProbs *slice_probs_ptr, TIndices *slice_indices_ptr,
@@ -908,7 +908,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
                            [[maybe_unused]] int64_t sorted) const {
         constexpr auto lmul = 8;
         constexpr auto vl = NTT_VLEN / 32 * lmul;
+        constexpr auto max_k = 128;
 
+        TProbs probs_sum = 0;
+        TProbs probs_k[max_k];
         if (inner_size <= vl / 2) {
             if (largest) {
                 vint32m4_t idx_vec = __riscv_vreinterpret_v_u32m4_i32m4(
@@ -927,10 +930,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
 
                 vfloat32m1_t result = __riscv_vfredmax_vs_f32m4_f32m1(
                     v_in, float_min_m1, inner_size);
-                slice_probs_ptr[0 * out_probs_stride] =
-                    __riscv_vfmv_f_s_f32m1_f32(result);
-                vfloat32m4_t max_broadcast = __riscv_vfmv_v_f_f32m4(
-                    slice_probs_ptr[0 * out_probs_stride], inner_size);
+                probs_k[0] = __riscv_vfmv_f_s_f32m1_f32(result);
+                vfloat32m4_t max_broadcast =
+                    __riscv_vfmv_v_f_f32m4(probs_k[0], inner_size);
+                probs_sum += probs_k[0];
 
                 vbool8_t mask =
                     __riscv_vmfeq_vv_f32m4_b8(v_in, max_broadcast, inner_size);
@@ -946,10 +949,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
                                                     inner_size);
                     result = __riscv_vfredmax_vs_f32m4_f32m1(v_in, float_min_m1,
                                                              inner_size);
-                    slice_probs_ptr[i * out_probs_stride] =
-                        __riscv_vfmv_f_s_f32m1_f32(result);
-                    max_broadcast = __riscv_vfmv_v_f_f32m4(
-                        slice_probs_ptr[i * out_probs_stride], inner_size);
+                    probs_k[i] = __riscv_vfmv_f_s_f32m1_f32(result);
+                    max_broadcast =
+                        __riscv_vfmv_v_f_f32m4(probs_k[i], inner_size);
+                    probs_sum += probs_k[i];
 
                     mask = __riscv_vmfeq_vv_f32m4_b8(v_in, max_broadcast,
                                                      inner_size);
@@ -977,10 +980,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
 
                 vfloat32m1_t result = __riscv_vfredmin_vs_f32m4_f32m1(
                     v_in, float_max_m1, inner_size);
-                slice_probs_ptr[0 * out_probs_stride] =
-                    __riscv_vfmv_f_s_f32m1_f32(result);
-                vfloat32m4_t min_broadcast = __riscv_vfmv_v_f_f32m4(
-                    slice_probs_ptr[0 * out_probs_stride], inner_size);
+                probs_k[0] = __riscv_vfmv_f_s_f32m1_f32(result);
+                vfloat32m4_t min_broadcast =
+                    __riscv_vfmv_v_f_f32m4(probs_k[0], inner_size);
+                probs_sum += probs_k[0];
                 vbool8_t mask =
                     __riscv_vmfeq_vv_f32m4_b8(v_in, min_broadcast, inner_size);
                 vint32m4_t masked_idx = __riscv_vmerge_vvm_i32m4(
@@ -996,10 +999,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
 
                     result = __riscv_vfredmin_vs_f32m4_f32m1(v_in, float_max_m1,
                                                              inner_size);
-                    slice_probs_ptr[i * out_probs_stride] =
-                        __riscv_vfmv_f_s_f32m1_f32(result);
-                    min_broadcast = __riscv_vfmv_v_f_f32m4(
-                        slice_probs_ptr[i * out_probs_stride], inner_size);
+                    probs_k[i] = __riscv_vfmv_f_s_f32m1_f32(result);
+                    min_broadcast =
+                        __riscv_vfmv_v_f_f32m4(probs_k[i], inner_size);
+                    probs_sum += probs_k[i];
                     mask = __riscv_vmfeq_vv_f32m4_b8(v_in, min_broadcast,
                                                      inner_size);
                     masked_idx = __riscv_vmerge_vvm_i32m4(intmin_vec, idx_vec,
@@ -1028,10 +1031,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
 
                 vfloat32m1_t result = __riscv_vfredmax_vs_f32m8_f32m1(
                     v_in, float_min_m1, inner_size);
-                slice_probs_ptr[0 * out_probs_stride] =
-                    __riscv_vfmv_f_s_f32m1_f32(result);
-                vfloat32m8_t max_broadcast = __riscv_vfmv_v_f_f32m8(
-                    slice_probs_ptr[0 * out_probs_stride], inner_size);
+                probs_k[0] = __riscv_vfmv_f_s_f32m1_f32(result);
+                vfloat32m8_t max_broadcast =
+                    __riscv_vfmv_v_f_f32m8(probs_k[0], inner_size);
+                probs_sum += probs_k[0];
 
                 vbool4_t mask =
                     __riscv_vmfeq_vv_f32m8_b4(v_in, max_broadcast, inner_size);
@@ -1047,10 +1050,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
                                                     inner_size);
                     result = __riscv_vfredmax_vs_f32m8_f32m1(v_in, float_min_m1,
                                                              inner_size);
-                    slice_probs_ptr[i * out_probs_stride] =
-                        __riscv_vfmv_f_s_f32m1_f32(result);
-                    max_broadcast = __riscv_vfmv_v_f_f32m8(
-                        slice_probs_ptr[i * out_probs_stride], inner_size);
+                    probs_k[i] = __riscv_vfmv_f_s_f32m1_f32(result);
+                    max_broadcast =
+                        __riscv_vfmv_v_f_f32m8(probs_k[i], inner_size);
+                    probs_sum += probs_k[i];
 
                     mask = __riscv_vmfeq_vv_f32m8_b4(v_in, max_broadcast,
                                                      inner_size);
@@ -1078,10 +1081,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
 
                 vfloat32m1_t result = __riscv_vfredmin_vs_f32m8_f32m1(
                     v_in, float_max_m1, inner_size);
-                slice_probs_ptr[0 * out_probs_stride] =
-                    __riscv_vfmv_f_s_f32m1_f32(result);
-                vfloat32m8_t min_broadcast = __riscv_vfmv_v_f_f32m8(
-                    slice_probs_ptr[0 * out_probs_stride], inner_size);
+                probs_k[0] = __riscv_vfmv_f_s_f32m1_f32(result);
+                vfloat32m8_t min_broadcast =
+                    __riscv_vfmv_v_f_f32m8(probs_k[0], inner_size);
+                probs_sum += probs_k[0];
                 vbool4_t mask =
                     __riscv_vmfeq_vv_f32m8_b4(v_in, min_broadcast, inner_size);
                 vint32m8_t masked_idx = __riscv_vmerge_vvm_i32m8(
@@ -1097,10 +1100,10 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
 
                     result = __riscv_vfredmin_vs_f32m8_f32m1(v_in, float_max_m1,
                                                              inner_size);
-                    slice_probs_ptr[i * out_probs_stride] =
-                        __riscv_vfmv_f_s_f32m1_f32(result);
-                    min_broadcast = __riscv_vfmv_v_f_f32m8(
-                        slice_probs_ptr[i * out_probs_stride], inner_size);
+                    probs_k[i] = __riscv_vfmv_f_s_f32m1_f32(result);
+                    min_broadcast =
+                        __riscv_vfmv_v_f_f32m8(probs_k[i], inner_size);
+                    probs_sum += probs_k[i];
                     mask = __riscv_vmfeq_vv_f32m8_b4(v_in, min_broadcast,
                                                      inner_size);
                     masked_idx = __riscv_vmerge_vvm_i32m8(intmin_vec, idx_vec,
@@ -1113,10 +1116,33 @@ struct u_top_k<true, TProbs, TIndices, Rank, Axis> {
             }
 
         } else {
-            ukernels::u_top_k<false, TProbs, TIndices, Rank, Axis> impl;
+            ukernels::u_top_k<false, TProbs, TIndices, Rank, Axis, Norm> impl;
             impl(inner_size, slice_input_ptr, slice_probs_ptr,
                  slice_indices_ptr, input_stride, out_probs_stride,
                  out_indices_stride, K, largest, sorted);
+            return;
+        }
+
+        normalize(slice_probs_ptr, out_probs_stride, probs_k, probs_sum, K);
+    }
+
+  private:
+    inline void normalize(TProbs *slice_probs_ptr, int64_t out_probs_stride,
+                          TProbs *probs_k, TProbs probs_sum,
+                          int K) const noexcept {
+
+        if constexpr (Norm) {
+            vfloat32m4_t probs_k_v = __riscv_vle32_v_f32m4(probs_k, K);
+            vfloat32m4_t probs_sum_v = __riscv_vfmv_v_f_f32m4(probs_sum, K);
+            vfloat32m4_t probs_normed_v =
+                __riscv_vfdiv_vv_f32m4(probs_k_v, probs_sum_v, K);
+            __riscv_vsse32_v_f32m4(slice_probs_ptr,
+                                   out_probs_stride * sizeof(TProbs),
+                                   probs_normed_v, K);
+        } else {
+            __riscv_vsse32_v_f32m4(slice_probs_ptr,
+                                   out_probs_stride * sizeof(TProbs),
+                                   __riscv_vle32_v_f32m4(probs_k, K), K);
         }
     }
 };
