@@ -19,26 +19,23 @@
 
 namespace nncase::ntt {
 namespace ukernels {
-template <bool AccumulateC, dim_t M0Tile, Scalar TAElem, Vector TBPack,
+template <bool AccumulateC, dim_t M0Tile, Vector TAPack, Vector TBPack,
           Vector TCPack, class TScale, bool Arch>
 struct u_packed_matmul {
     using TBElem = replace_lanes_t<TBPack, TBPack::shape()[1_dim]>;
-    using TCElem = replace_lanes_t<TCPack, TCPack::shape()[1_dim]>;
+    using TCElem = typename TCPack::element_type;
     static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
     template <Dimension TLda, Dimension TLdc, Dimension TK>
     constexpr void
-    operator()(const TAElem *NTT_RESTRICT a, const TBPack *NTT_RESTRICT b,
+    operator()(const TAPack *NTT_RESTRICT a, const TBPack *NTT_RESTRICT b,
                TCPack *NTT_RESTRICT c, const TScale &scale, const TLda &lda,
                const TLdc &ldc, const TK &K) noexcept {
-        TCElem c0_tmp[M0Tile][N0Tile];
-        ntt::apply(fixed_shape_v<M0Tile, N0Tile>, [&](auto index) {
-            c0_tmp[index[0_dim]][index[1_dim]] =
-                AccumulateC ? c[index[0_dim] * ldc](index[1_dim]) : TCElem{};
-        });
+        using TAccPack = decltype(ntt::cast_elem<float>(a[0_dim]));
+        TAccPack c0_unreduced[M0Tile][N0Tile]{};
 
         for (size_t k1 = 0; k1 < K; k1++) {
-            TAElem a0_tmp[M0Tile];
+            TAPack a0_tmp[M0Tile];
             TBElem b0_tmp[N0Tile];
 
             ntt::apply(fixed_shape_v<M0Tile>, [&](auto index) {
@@ -52,30 +49,35 @@ struct u_packed_matmul {
 
             for (size_t n = 0; n < N0Tile; n++) {
                 for (size_t m = 0; m < M0Tile; m++) {
-                    c0_tmp[m][n] =
-                        ntt::mul_add(a0_tmp[m], b0_tmp[n], c0_tmp[m][n]);
+                    c0_unreduced[m][n] =
+                        ntt::mul_add(a0_tmp[m], b0_tmp[n], c0_unreduced[m][n]);
                 }
             }
-
-            ntt::prefetch<prefetch_hint::l1>(&b[k1 + 8]);
         }
 
         ntt::apply(fixed_shape_v<M0Tile, N0Tile>, [&](auto index) {
-            ntt::store(c[index[0_dim] * ldc](index[1_dim]),
-                       c0_tmp[index[0_dim]][index[1_dim]]);
+            if constexpr (AccumulateC) {
+                c[index[0_dim] * ldc](index[1_dim]) = ntt::cast_elem<TCElem>(
+                    ntt::reduce_sum(c0_unreduced[index[0_dim]][index[1_dim]],
+                                    ntt::cast_elem<float>(
+                                        c[index[0_dim] * ldc](index[1_dim]))));
+            } else {
+                c[index[0_dim] * ldc](index[1_dim]) = ntt::cast_elem<TCElem>(
+                    ntt::reduce_sum(c0_unreduced[index[0_dim]][index[1_dim]]));
+            }
         });
     }
 };
 
 } // namespace ukernels
 
-template <bool AccumulateC, dim_t M0Tile, Scalar TAElem, Vector TBPack,
+template <bool AccumulateC, dim_t M0Tile, Vector TAPack, Vector TBPack,
           Vector TCPack, class TScale, Dimension TLda, Dimension TLdc,
           Dimension TK>
-constexpr void u_packed_matmul(const TAElem *a, const TBPack *b, TCPack *c,
+constexpr void u_packed_matmul(const TAPack *a, const TBPack *b, TCPack *c,
                                const TScale &scale, const TLda &lda,
                                const TLdc &ldc, const TK &K) noexcept {
-    ukernels::u_packed_matmul<AccumulateC, M0Tile, TAElem, TBPack, TCPack,
+    ukernels::u_packed_matmul<AccumulateC, M0Tile, TAPack, TBPack, TCPack,
                               TScale, true>
         impl;
     impl(a, b, c, scale, lda, ldc, K);

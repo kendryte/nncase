@@ -19,18 +19,18 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
     public IValue Visit(IEvaluateContext context, PackedMatMul target)
     {
         var lhs = context.GetOrtArgumentValue(target, PackedMatMul.Lhs); // [x, k, m]
-        var rhs = context.GetArgumentValueAsTensor(target, PackedMatMul.Rhs); // [x, n/4/8, k, 4, 8]
+        var rhs = context.GetArgumentValueAsTensor(target, PackedMatMul.Rhs); // [x, n/4, k/8, 4, 8]
         var scale = context.GetArgumentValue(target, PackedMatMul.Scale);
         var rhsOrt = rhs.ToOrtTensor();
 
         var rhsVectorType = (VectorType)rhs.ElementType;
         var nr = rhsVectorType.Lanes[0];
-        var lanes = rhsVectorType.Lanes[1];
         var outRank = context.CurrentCall.CheckedShape.Rank;
 
         // 1. Unpack B
         var rN = rhs.Rank - 2;
-        rhsOrt = rhsOrt.Unpack(rhsVectorType.Lanes.Count, [rN, rN]);
+        var rK = rhs.Rank - 1;
+        rhsOrt = rhsOrt.Unpack(rhsVectorType.Lanes.Count, [rN, rK]);
 
         // 2. Transpose B
         {
@@ -41,8 +41,8 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
 
         var matmul = Math.MatMulEvaluator.InferValue(lhs.DataType.ToDataType(), lhs.ToTensor(), rhsOrt.ToTensor(), target.OutputDataType, scale).AsTensor().ToOrtTensor();
         var cN = matmul.Rank - 1;
-        matmul = matmul.Pack(0, [nr, lanes], [cN, cN]);
-        return matmul.ToValue(new VectorType(DataTypes.Float32, [nr, lanes]));
+        matmul = matmul.Pack(0, [nr], [cN]);
+        return matmul.ToValue(new VectorType(DataTypes.Float32, [nr]));
     }
 
     public IRType Visit(ITypeInferenceContext context, PackedMatMul target)
@@ -60,7 +60,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                     var nr = bVectorType.Lanes[0];
                     var unpackedB = b with { TensorType = UnpackedBType(b.TensorType) };
                     var dimInfo = VectorizedMatMul.GetDimInfo(false, true, a.TensorType.Shape.Rank, unpackedB.TensorType.Shape.Rank);
-                    rType = Math.MatMulEvaluator.VisitDistributedType(a, unpackedB, scale, dimInfo: dimInfo, transB: true, outputDataType: target.OutputDataType);
+                    rType = Math.MatMulEvaluator.VisitDistributedType(a, unpackedB, scale, vectorizeK: true, dimInfo: dimInfo, transB: true, outputDataType: target.OutputDataType);
                     if (rType is not DistributedType drType)
                     {
                         return rType;
@@ -81,7 +81,7 @@ public sealed class PackedMatMulEvaluator : IEvaluator<PackedMatMul>, ITypeInfer
                     var nr = bVectorType.Lanes[0];
                     var unpackedB = UnpackedBType(b);
                     var dimInfo = VectorizedMatMul.GetDimInfo(false, true, a.Shape.Rank, unpackedB.Shape.Rank);
-                    rType = Math.MatMulEvaluator.VisitTensorType(a, unpackedB, scale, dimInfo: dimInfo, outputDataType: target.OutputDataType);
+                    rType = Math.MatMulEvaluator.VisitTensorType(a, unpackedB, scale, vectorizeK: true, dimInfo: dimInfo, outputDataType: target.OutputDataType);
                     rType = TypeInference.PackType((TensorType)rType, [nr], [((TensorType)rType).Shape.Rank - 1]);
                 }
 

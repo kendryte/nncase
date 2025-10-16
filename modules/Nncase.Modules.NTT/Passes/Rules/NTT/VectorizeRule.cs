@@ -303,13 +303,13 @@ public sealed class VectorizeMatMul : VectorizeRule
         var rcontext = new RuleContext(rets, lhs, rhs, scale, candidate, lhsShape, rhsShape, outputDataType);
 
         // vectorize A's k and B's k
-        // AddCandidate(rcontext, VectorizeKind.K, VectorizeKind.K);
+        AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.K, IR.NTT.VectorizedMatMul.VectorizeKind.K);
 
         // only vectorize A's m
         // AddCandidate(rcontext, VectorizeKind.M, VectorizeKind.None);
 
         // only vectorize B's n
-        AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.None, IR.NTT.VectorizedMatMul.VectorizeKind.N/* , transB: rhs is Const */);
+        // AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.None, IR.NTT.VectorizedMatMul.VectorizeKind.N/* , transB: rhs is Const */);
         if (Rank > 1)
         {
             // vectorize A's m and B's n, when B is const, force transpose
@@ -319,11 +319,12 @@ public sealed class VectorizeMatMul : VectorizeRule
             AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.M | IR.NTT.VectorizedMatMul.VectorizeKind.K, IR.NTT.VectorizedMatMul.VectorizeKind.K | IR.NTT.VectorizedMatMul.VectorizeKind.N/* , transB: rhs is Const */);
             if (TransB)
             {
+                // vectorize A's m,k and B's n,k
                 AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.M | IR.NTT.VectorizedMatMul.VectorizeKind.K, IR.NTT.VectorizedMatMul.VectorizeKind.K | IR.NTT.VectorizedMatMul.VectorizeKind.N, transB: TransB);
             }
 
             // vectorize A's m,k and B's k
-            // AddCandidate(rcontext,  IR.NTT.VectorizedMatMul.VectorizeKind.M |  IR.NTT.VectorizedMatMul.VectorizeKind.K,  IR.NTT.VectorizedMatMul.VectorizeKind.K);
+            AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.M | IR.NTT.VectorizedMatMul.VectorizeKind.K, IR.NTT.VectorizedMatMul.VectorizeKind.K);
 
             // vectorize A's k and B's k,n
             AddCandidate(rcontext, IR.NTT.VectorizedMatMul.VectorizeKind.K, IR.NTT.VectorizedMatMul.VectorizeKind.K | IR.NTT.VectorizedMatMul.VectorizeKind.N/* , transB: lhs is Const */);
@@ -1700,22 +1701,6 @@ public sealed class VectorizeLayerNorm : VectorizeRule
         }
 
         return rets;
-    }
-}
-
-[RuleGenerator]
-public sealed partial class FoldVectorizeDevectorize : RewriteRule<Pattern>
-{
-    public override Pattern Pattern { get; } = PatternMatch.F.Tensors.IsPack("vectorize", "caller", _ => true, PatternMatch.F.Tensors.IsUnpack("devectorize", "callee", _ => true, IsWildcard("input")));
-
-    private Expr? GetReplace(IR.Tensors.Pack vectorize, IR.Tensors.Unpack devectorize, Expr input)
-    {
-        if (vectorize.Axes.SequenceEqual(devectorize.Axes) && vectorize.Lanes.SequenceEqual(devectorize.Lanes))
-        {
-            return input;
-        }
-
-        return null;
     }
 }
 

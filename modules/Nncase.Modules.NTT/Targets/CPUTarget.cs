@@ -109,7 +109,7 @@ public class CPUTarget : Target
         pass.Add<Passes.Rules.NTT.UnaryDevectorizePropagation>();
 
         pass.Add<Passes.Rules.Neutral.FoldConstCall>();
-        pass.Add<Passes.Rules.NTT.FoldVectorizeDevectorize>();
+        pass.Add<Passes.Rules.Neutral.FoldPackUnpack>();
         pass.Add<Passes.Rules.NTT.FoldVectorizeConcatDevectorize>();
         pass.Add<Passes.Rules.NTT.TransposeVectorizeMatMulInputs>();
         pass.Add<Passes.Rules.Neutral.FoldTwoReshapes>();

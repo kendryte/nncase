@@ -54,7 +54,7 @@ public sealed partial class PackMatMulByN : RewriteRule<Pattern>
         var rhsShape = rhs.CheckedShape;
         var dimInfo = matMul.GetDimInfo(lhsShape.Rank, rhsShape.Rank);
         (var lhsVectorizeKind, var rhsVectorizeKind) = matMul.GetVectorizeKind(lhsShape.Rank, rhsShape.Rank);
-        if (lhsVectorizeKind == VectorizedMatMul.VectorizeKind.None && rhsVectorizeKind == VectorizedMatMul.VectorizeKind.N
+        if (lhsVectorizeKind == VectorizedMatMul.VectorizeKind.K && rhsVectorizeKind == VectorizedMatMul.VectorizeKind.K
             && !matMul.TransposeA && !matMul.TransposeB
             && Dimension.TryDivExactly(rhsShape[dimInfo.Rn], _nr, out _))
         {

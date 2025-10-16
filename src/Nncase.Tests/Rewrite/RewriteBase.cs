@@ -2977,7 +2977,7 @@ public sealed class MatMulTransposeCase : IRewriteCase
         typeof(FoldTwoTransposes),
         typeof(Passes.Rules.NTT.VectorizeTranspose),
         typeof(Passes.Rules.NTT.VectorizeMatMul),
-        typeof(Passes.Rules.NTT.FoldVectorizeDevectorize),
+        typeof(Passes.Rules.Neutral.FoldPackUnpack),
         typeof(Passes.Rules.NTT.TransposeVectorizeMatMulInputs),
     };
 

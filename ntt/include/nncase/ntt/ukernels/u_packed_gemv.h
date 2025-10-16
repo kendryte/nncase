@@ -19,47 +19,53 @@
 
 namespace nncase::ntt {
 namespace ukernels {
-template <bool AccumulateC, Scalar TAElem, Vector TBPack, Vector TCPack,
+template <bool AccumulateC, Vector TAPack, Vector TBPack, Vector TCPack,
           class TScale, bool Arch>
 struct u_packed_gemv {
     static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
     template <Dimension TLdb, Dimension TK, Dimension TN>
     constexpr void
-    operator()(const TAElem *NTT_RESTRICT a, const TBPack *NTT_RESTRICT b,
+    operator()(const TAPack *NTT_RESTRICT a, const TBPack *NTT_RESTRICT b,
                TCPack *NTT_RESTRICT c, const TScale &scale, const TLdb &ldb,
                const TK &K, const TN &N) noexcept {
-        using TAccPack = decltype(ntt::cast_elem<float>(c[0_dim]));
+        using TCElem = typename TCPack::element_type;
+        using TAccPack = decltype(ntt::cast_elem<float>(a[0_dim]));
 
         for (size_t n1 = 0; n1 < N; n1++) {
             const auto b1 = b + n1 * ldb;
-            auto c0 = ntt::where(std::integral_constant<bool, AccumulateC>{},
-                                 ntt::cast_elem<float>(c[n1]), TAccPack{});
-
+            TAccPack c0_unreduced[N0Tile]{};
             for (size_t k1 = 0; k1 < K; k1++) {
-                const TAElem a0 = ntt::mul(a[k1], scale);
+                const TAPack a0 = ntt::mul(a[k1], scale);
                 const auto b0 = b1[k1];
                 ntt::loop<N0Tile>([&](auto tn) {
-                    c0(tn) = ntt::mul_add(a0, b0(tn), c0(tn));
+                    c0_unreduced[tn] =
+                        ntt::mul_add(a0, b0(tn), c0_unreduced[tn]);
                 });
             }
 
             ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
-                c[n1](index[0_dim]) =
-                    ntt::cast_elem<typename TCPack::element_type>(
-                        c0(index[0_dim]));
+                if constexpr (AccumulateC) {
+                    c[n1](index[0_dim]) =
+                        ntt::cast_elem<TCElem>(ntt::reduce_sum(
+                            c0_unreduced[index[0_dim]],
+                            ntt::cast_elem<float>(c[n1](index[0_dim]))));
+                } else {
+                    c[n1](index[0_dim]) = ntt::cast_elem<TCElem>(
+                        ntt::reduce_sum(c0_unreduced[index[0_dim]]));
+                }
             });
         }
     }
 };
 } // namespace ukernels
 
-template <bool AccumulateC, Scalar TAElem, Vector TBPack, Vector TCPack,
+template <bool AccumulateC, Vector TAPack, Vector TBPack, Vector TCPack,
           class TScale, Dimension TLdb, Dimension TK, Dimension TN>
-constexpr void u_packed_gemv(const TAElem *a, const TBPack *b, TCPack *c,
+constexpr void u_packed_gemv(const TAPack *a, const TBPack *b, TCPack *c,
                              const TScale &scale, const TLdb &ldb, const TK &K,
                              const TN &N) noexcept {
-    ukernels::u_packed_gemv<AccumulateC, TAElem, TBPack, TCPack, TScale, true>
+    ukernels::u_packed_gemv<AccumulateC, TAPack, TBPack, TCPack, TScale, true>
         impl;
     impl(a, b, c, scale, ldb, K, N);
 }
