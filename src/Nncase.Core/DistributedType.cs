@@ -33,7 +33,7 @@ public abstract record SBP
 
 public sealed record SBPSplit(IRArray<int> Axes, Dimension? Granularity = null) : SBP
 {
-    public override string ToString() => $"S({string.Join(",", Axes)}, {Granularity})";
+    public override string ToString() => $"S([{string.Join(",", Axes)}], {Granularity})";
 }
 
 public sealed record SBPPartial(ReduceOp Op) : SBP
