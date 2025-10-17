@@ -21,6 +21,7 @@
 #include <riscv_vector.h>
 
 namespace nncase::ntt::ukernels {
+
 template <size_t NumHeads, size_t HalfDim>
 struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
   public:
@@ -43,9 +44,10 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
             [&](auto index, auto in_offset, auto cos_offset, auto sin_offset,
                 auto out_offset) {
                 const auto seq_tile = ntt::min(unroll, seq_len - index[1_dim]);
-                asm volatile(
-                    "vsetvli zero, %[vl], e16, m4, ta, ma\n" ::[vl] "r"(
-                        seq_tile * T::size()));
+
+                size_t vl =
+                    __riscv_vsetvl_e16m4((size_t)(seq_tile * T::size()));
+
                 const T *NTT_RESTRICT cos_0p = cos + cos_offset;
                 const T *NTT_RESTRICT sin_0p = sin + sin_offset;
                 const T *NTT_RESTRICT cos_1p =
@@ -55,30 +57,14 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
                     sin_0p +
                     HalfDim * sin_strides[rope_layout::sincos_dim_axis];
 
-                // v0: cos_0
-                // v4: sin_0
-                // v8: cos_1
-                // v12: sin_1
-                // v16: input_4_0
-                // v20: input_4_1
-                // v24: tmp_0
-                // v28: tmp_1
-                asm volatile("vle16.v v0, (%[cos_0p])\n"
-                             :
-                             : [cos_0p] "r"(cos_0p)
-                             : "v0", "memory");
-                asm volatile("vle16.v v4, (%[sin_0p])\n"
-                             :
-                             : [sin_0p] "r"(sin_0p)
-                             : "v4", "memory");
-                asm volatile("vle16.v v8, (%[cos_1p])\n"
-                             :
-                             : [cos_1p] "r"(cos_1p)
-                             : "v8", "memory");
-                asm volatile("vle16.v v12, (%[sin_1p])\n"
-                             :
-                             : [sin_1p] "r"(sin_1p)
-                             : "v12", "memory");
+                vfloat16m4_t v0 = __riscv_vle16_v_f16m4(
+                    reinterpret_cast<const _Float16 *>(cos_0p), vl); // cos_0
+                vfloat16m4_t v4 = __riscv_vle16_v_f16m4(
+                    reinterpret_cast<const _Float16 *>(sin_0p), vl); // sin_0
+                vfloat16m4_t v8 = __riscv_vle16_v_f16m4(
+                    reinterpret_cast<const _Float16 *>(cos_1p), vl); // cos_1
+                vfloat16m4_t v12 = __riscv_vle16_v_f16m4(
+                    reinterpret_cast<const _Float16 *>(sin_1p), vl); // sin_1
 
                 for (size_t h = 0; h < NumHeads; h++) {
                     const T *NTT_RESTRICT input_0p =
@@ -94,44 +80,28 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
                         output_0p +
                         HalfDim * output_strides[rope_layout::dim_axis];
 
-                    asm volatile("vle16.v v16, (%[input_0p])\n"
-                                 :
-                                 : [input_0p] "r"(input_0p)
-                                 : "v16", "memory");
-                    asm volatile("vle16.v v20, (%[input_1p])\n"
-                                 :
-                                 : [input_1p] "r"(input_1p)
-                                 : "v20", "memory");
+                    // 加载 input vectors
+                    vfloat16m4_t v16 = __riscv_vle16_v_f16m4(
+                        reinterpret_cast<const _Float16 *>(input_0p),
+                        vl); // input_0
+                    vfloat16m4_t v20 = __riscv_vle16_v_f16m4(
+                        reinterpret_cast<const _Float16 *>(input_1p),
+                        vl); // input_1
 
-                    // 2nd half: output_dp[h + output_dim_strides * HalfDim]
-                    // = ntt::mul_add(input_1, cos_1, input_0 * sin_1)
-                    asm volatile(
-                        "vfmul.vv v28, v16, v12\n" // tmp_1 = input_0 * sin_1
-                        ::
-                            : "v12", "v16", "v28", "memory");
-                    asm volatile("vfmacc.vv v28, v20, v8\n" // tmp_1 = input_1 *
-                                                            // cos_1 + tmp_1
-                                 ::
-                                     : "v8", "v20", "v28", "memory");
-                    asm volatile("vse16.v v28, (%[output_1p])\n"
-                                 :
-                                 : [output_1p] "r"(output_1p)
-                                 : "v28", "memory");
+                    // 2nd half: output_1p = input_1 * cos_1 + input_0 * sin_1
+                    // tmp_1 = input_0 * sin_1
+                    vfloat16m4_t v28 = __riscv_vfmul_vv_f16m4(v16, v12, vl);
+                    // tmp_1 += input_1 * cos_1
+                    v28 = __riscv_vfmacc_vv_f16m4(v28, v20, v8, vl);
+                    __riscv_vse16_v_f16m4(
+                        reinterpret_cast<_Float16 *>(output_1p), v28, vl);
 
-                    // 1st half: output_dp[h] = ntt::mul_sub(input_0, cos_0,
-                    // input_1 * sin_0)
-                    asm volatile(
-                        "vfmul.vv v24, v20, v4\n" // tmp_0 = input_1 * sin_0
-                        ::
-                            : "v4", "v20", "v24", "memory");
-                    asm volatile("vfmsac.vv v24, v16, v0\n" // tmp_0 = input_0 *
-                                                            // cos_0 - tmp_0
-                                 ::
-                                     : "v0", "v16", "v24", "memory");
-                    asm volatile("vse16.v v24, (%[output_0p])\n"
-                                 :
-                                 : [output_0p] "r"(output_0p)
-                                 : "v24", "memory");
+                    // 1st half: output_0p = input_0 * cos_0 - input_1 * sin_0
+                    // tmp_0 = input_1 * sin_0
+                    vfloat16m4_t v24 = __riscv_vfmul_vv_f16m4(v20, v4, vl);
+                    v24 = __riscv_vfmsac_vv_f16m4(v24, v16, v0, vl);
+                    __riscv_vse16_v_f16m4(
+                        reinterpret_cast<_Float16 *>(output_0p), v24, vl);
                 }
             },
             input_strides.template slice<1>(), cos_strides, sin_strides,
