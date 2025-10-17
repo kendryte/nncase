@@ -27,7 +27,7 @@ namespace nncase::ntt::ops {
 #if defined(__AVX2__) && defined(__F16C__)
 
 namespace detail {
-inline __m256 broadcast_h_ps(half v) noexcept {
+inline __m256 broadcast_h_ps(const half &v) noexcept {
     auto v_f32 = _mm_cvtph_ps(_mm_set_epi16(0, 0, 0, 0, 0, 0, 0, v.raw()));
     return _mm256_broadcastss_ps(v_f32);
 }
@@ -739,9 +739,9 @@ struct mul_add<ntt::vector<half, 16>, ntt::vector<half, 16>,
     ntt::vector<float, 2, 8>
     operator()(const ntt::vector<half, 16> &v1, const ntt::vector<half, 16> &v2,
                const ntt::vector<float, 2, 8> &v3) const noexcept {
+        auto v3_fp32 = ntt::cast_elem<float>(v3);
         auto v1_fp32 = ntt::cast_elem<float>(v1);
         auto v2_fp32 = ntt::cast_elem<float>(v2);
-        auto v3_fp32 = ntt::cast_elem<float>(v3);
         v3_fp32(0_dim) =
             _mm256_fmadd_ps(v1_fp32(0_dim), v2_fp32(0_dim), v3_fp32(0_dim));
         v3_fp32(1_dim) =
@@ -769,6 +769,20 @@ struct mul_add<half, ntt::vector<half, 16>, ntt::vector<float, 2, 8>> {
     operator()(const half &f1, const ntt::vector<half, 16> &v2,
                const ntt::vector<float, 2, 8> &v3) const noexcept {
         auto v1 = detail::broadcast_h_ps(f1);
+        auto v2_fp32 = ntt::cast_elem<float>(v2);
+        ntt::vector<float, 2, 8> result;
+        result(0_dim) = _mm256_fmadd_ps(v1, v2_fp32(0_dim), v3(0_dim));
+        result(1_dim) = _mm256_fmadd_ps(v1, v2_fp32(1_dim), v3(1_dim));
+        return result;
+    }
+};
+
+template <>
+struct mul_add<ntt::vector<float, 8>, ntt::vector<half, 16>,
+               ntt::vector<float, 2, 8>> {
+    ntt::vector<float, 2, 8>
+    operator()(const ntt::vector<float, 8> &v1, const ntt::vector<half, 16> &v2,
+               const ntt::vector<float, 2, 8> &v3) const noexcept {
         auto v2_fp32 = ntt::cast_elem<float>(v2);
         ntt::vector<float, 2, 8> result;
         result(0_dim) = _mm256_fmadd_ps(v1, v2_fp32(0_dim), v3(0_dim));
