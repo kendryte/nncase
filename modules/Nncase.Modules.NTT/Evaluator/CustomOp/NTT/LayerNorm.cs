@@ -48,7 +48,7 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         {
             return (input, scale, bias) switch
             {
-                (DistributedType a, DistributedType b, DistributedType c) => new DistributedType((TensorType)VisitTensorType(target, a.TensorType, b.TensorType, c.TensorType), target.OutSBPs, a.Placement),
+                (DistributedType a, DistributedType b, DistributedType c) => VisitDistributedType(target, a, b, c),
                 (TensorType a, TensorType b, TensorType c) => VisitTensorType(target, a, b, c),
                 _ => new InvalidType($"{input} {scale} {bias} not support"),
             };
@@ -114,5 +114,25 @@ public class LayerNormEvaluator : IEvaluator<LayerNorm>, ITypeInferencer<LayerNo
         {
             return new TensorType(target.OutputDataType, input.Shape);
         }
+    }
+
+    private IRType VisitDistributedType(LayerNorm target, DistributedType input, DistributedType scale, DistributedType bias)
+    {
+        var tensorType = (TensorType)VisitTensorType(target, input.TensorType, scale.TensorType, bias.TensorType);
+
+        var ndsbps = new SBP[tensorType.Shape.Rank];
+        for (var i = 0; i < ndsbps.Length; i++)
+        {
+            if (i == target.VectorizedAxes[0] && input.AxisPolicies[i] is SBPSplit split)
+            {
+                ndsbps[i] = SBP.S(split.Axes, split.Granularity is null ? null : split.Granularity * ((VectorType)input.TensorType.DType).Lanes[0] / ((VectorType)tensorType.DType).Lanes[0]);
+            }
+            else
+            {
+                ndsbps[i] = input.AxisPolicies[i];
+            }
+        }
+
+        return new DistributedType(tensorType, ndsbps, input.Placement);
     }
 }
