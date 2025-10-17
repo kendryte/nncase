@@ -47,6 +47,7 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
 
                 size_t vl =
                     __riscv_vsetvl_e16m4((size_t)(seq_tile * T::size()));
+                size_t half_vl = vl / 2;
 
                 const T *NTT_RESTRICT cos_0p = cos + cos_offset;
                 const T *NTT_RESTRICT sin_0p = sin + sin_offset;
@@ -65,6 +66,15 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
                     reinterpret_cast<const _Float16 *>(cos_1p), vl); // cos_1
                 vfloat16m4_t v12 = __riscv_vle16_v_f16m4(
                     reinterpret_cast<const _Float16 *>(sin_1p), vl); // sin_1
+
+                auto v0_f32 = ntt::cast_elem<float>(
+                    (ntt::vector<half, NTT_VLEN / 16 * unroll>)v0);
+                auto v4_f32 = ntt::cast_elem<float>(
+                    (ntt::vector<half, NTT_VLEN / 16 * unroll>)v4);
+                auto v8_f32 = ntt::cast_elem<float>(
+                    (ntt::vector<half, NTT_VLEN / 16 * unroll>)v8);
+                auto v12_f32 = ntt::cast_elem<float>(
+                    (ntt::vector<half, NTT_VLEN / 16 * unroll>)v12);
 
                 for (size_t h = 0; h < NumHeads; h++) {
                     const T *NTT_RESTRICT input_0p =
@@ -87,18 +97,55 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
                         reinterpret_cast<const _Float16 *>(input_1p),
                         vl); // input_1
 
-                    // 2nd half: output_1p = input_1 * cos_1 + input_0 * sin_1
-                    // tmp_1 = input_0 * sin_1
-                    vfloat16m4_t v28 = __riscv_vfmul_vv_f16m4(v16, v12, vl);
-                    // tmp_1 += input_1 * cos_1
-                    v28 = __riscv_vfmacc_vv_f16m4(v28, v20, v8, vl);
+                    ntt::vector<float, 2, NTT_VLEN / 32 * unroll> v16_f32 =
+                        ntt::cast_elem<float>(
+                            (ntt::vector<half, NTT_VLEN / 16 * unroll>)v16);
+                    ntt::vector<float, 2, NTT_VLEN / 32 * unroll> v20_f32 =
+                        ntt::cast_elem<float>(
+                            (ntt::vector<half, NTT_VLEN / 16 * unroll>)v20);
+
+                    prepend_lanes_t<vector<float, NTT_VLEN / 32 * unroll>, 2>
+                        v28_f32{};
+                    prepend_lanes_t<vector<float, NTT_VLEN / 32 * unroll>, 2>
+                        v24_f32{};
+
+                    v28_f32(0_dim) = __riscv_vfmul_vv_f32m4(
+                        ntt::unwrap_proxy(v16_f32(0_dim)),
+                        ntt::unwrap_proxy(v12_f32(0_dim)), half_vl);
+                    v28_f32(0_dim) = __riscv_vfmacc_vv_f32m4(
+                        ntt::unwrap_proxy(v28_f32(0_dim)),
+                        ntt::unwrap_proxy(v20_f32(0_dim)),
+                        ntt::unwrap_proxy(v8_f32(0_dim)), half_vl);
+
+                    v24_f32(0_dim) = __riscv_vfmul_vv_f32m4(
+                        ntt::unwrap_proxy(v20_f32(0_dim)),
+                        ntt::unwrap_proxy(v4_f32(0_dim)), half_vl);
+                    v24_f32(0_dim) = __riscv_vfmsac_vv_f32m4(
+                        ntt::unwrap_proxy(v24_f32(0_dim)),
+                        ntt::unwrap_proxy(v16_f32(0_dim)),
+                        ntt::unwrap_proxy(v0_f32(0_dim)), half_vl);
+
+                    v28_f32(1_dim) = __riscv_vfmul_vv_f32m4(
+                        ntt::unwrap_proxy(v16_f32(1_dim)),
+                        ntt::unwrap_proxy(v12_f32(1_dim)), half_vl);
+                    v28_f32(1_dim) = __riscv_vfmacc_vv_f32m4(
+                        ntt::unwrap_proxy(v28_f32(1_dim)),
+                        ntt::unwrap_proxy(v20_f32(1_dim)),
+                        ntt::unwrap_proxy(v8_f32(1_dim)), half_vl);
+
+                    v24_f32(1_dim) = __riscv_vfmul_vv_f32m4(
+                        ntt::unwrap_proxy(v20_f32(1_dim)),
+                        ntt::unwrap_proxy(v4_f32(1_dim)), half_vl);
+                    v24_f32(1_dim) = __riscv_vfmsac_vv_f32m4(
+                        ntt::unwrap_proxy(v24_f32(1_dim)),
+                        ntt::unwrap_proxy(v16_f32(1_dim)),
+                        ntt::unwrap_proxy(v0_f32(1_dim)), half_vl);
+
+                    vfloat16m4_t v28 = ntt::cast_elem<half>(v28_f32);
+                    vfloat16m4_t v24 = ntt::cast_elem<half>(v24_f32);
+
                     __riscv_vse16_v_f16m4(
                         reinterpret_cast<_Float16 *>(output_1p), v28, vl);
-
-                    // 1st half: output_0p = input_0 * cos_0 - input_1 * sin_0
-                    // tmp_0 = input_1 * sin_0
-                    vfloat16m4_t v24 = __riscv_vfmul_vv_f16m4(v20, v4, vl);
-                    v24 = __riscv_vfmsac_vv_f16m4(v24, v16, v0, vl);
                     __riscv_vse16_v_f16m4(
                         reinterpret_cast<_Float16 *>(output_0p), v24, vl);
                 }
