@@ -80,7 +80,6 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
                         output_0p +
                         HalfDim * output_strides[rope_layout::dim_axis];
 
-                    // 加载 input vectors
                     vfloat16m4_t v16 = __riscv_vle16_v_f16m4(
                         reinterpret_cast<const _Float16 *>(input_0p),
                         vl); // input_0
