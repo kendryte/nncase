@@ -64,7 +64,7 @@ public class ReshapeEvaluator : IEvaluator<Reshape>, ITypeInferencer<Reshape>, I
                 if (newDims[newSplitAxis] != inShape[inAxis])
                 {
                     // If the new split axis is not the same as the old split axis, we need to adjust the granularity.
-                    granularity = granularity is null ? null : granularity * newAxes.Except([newSplitAxis]).Aggregate((Dimension)1, (a, b) => a * maxNewShape[b]);
+                    granularity = granularity is null ? null : granularity / newAxes.Except([newAxesOffset + newSplitAxis]).Aggregate((Dimension)1, (a, b) => a * maxNewShape[b]);
                 }
 
                 foreach (var newAxis in newAxes)
