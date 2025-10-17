@@ -1,34 +1,58 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using DryIoc.ImTools;
 using Nncase.CostModel;
+using Nncase.Diagnostics;
 using Nncase.IR;
-using Nncase.IR.NN;
-using Nncase.IR.Tensors;
+using Nncase.IR.CustomNTT;
+using Nncase.IR.F;
+using Nncase.IR.Math;
 using Nncase.Utilities;
 using OrtKISharp;
+using static Nncase.IR.F.Tensors;
 
-namespace Nncase.Evaluator.NN;
+namespace Nncase.Evaluator.CustomNTT;
 
 public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICostEvaluator<SparseExperts>, IEvaluator<SparseExperts>
 {
     public IRType Visit(ITypeInferenceContext context, SparseExperts target)
     {
-        /*
-        public static readonly ParameterInfo Q = new(typeof(SparseExperts), 0, "q", ParameterKind.Input);
-        public static readonly ParameterInfo MoeGateW = new(typeof(SparseExperts), 1, "MoeGateW", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertDownProjW = new(typeof(SparseExperts), 2, "MoeExpertDownProjW", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertDownProjScale = new(typeof(SparseExperts), 3, "MoeExpertDownProjScale", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertGateProjW = new(typeof(SparseExperts), 4, "MoeExpertGateProjW", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertGateProjScale = new(typeof(SparseExperts), 5, "MoeExpertGateProjScale", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertUpProjW = new(typeof(SparseExperts), 6, "MoeExpertUpProjW", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertUpProjScale = new(typeof(SparseExperts), 7, "MoeExpertUpProjScale", ParameterKind.Input);
-        */
-        var qType = context.GetArgumentType(target, SparseExperts.Q);
+        var qType = context.CheckArgumentType<IRType>(target, SparseExperts.Q);
+        var routerIdxType = context.CheckArgumentType<IRType>(target, SparseExperts.RouterIdx);
+        var routerWeightsType = context.CheckArgumentType<IRType>(target, SparseExperts.RouterWeights);
+        var gateType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateProjW);
+        var gateInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateInputScale);
+        var gateProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateProjScale);
+        var downType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownProjW);
+        var downInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownInputScale);
+        var downProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownProjScale);
+        var upType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpProjW);
+        var upInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpInputScale);
+        var upProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpProjScale);
+        var extraType = context.CheckArgumentType<IRType>(target, SparseExperts.Extra);
+
+        if (!CheckCustomSBP(
+            qType,
+            routerIdxType,
+            routerWeightsType,
+            gateType,
+            gateInputScaleType,
+            gateProjScaleType,
+            downType,
+            downInputScaleType,
+            downProjScaleType,
+            upType,
+            upInputScaleType,
+            upProjScaleType,
+            extraType,
+            target))
+        {
+            return new InvalidType("SparseExperts with invalid sbp.");
+        }
 
         return qType switch
         {
@@ -42,18 +66,7 @@ public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICo
 
     public Cost Visit(ICostEvaluateContext context, SparseExperts target)
     {
-        var qType = context.GetArgumentType<IRType>(target, SparseExperts.Q);
-        var returnType = context.GetReturnType<IRType>();
-
-        // cycles = softmax((q @ k^t) + mask) @ v.
-        return new()
-        {
-            // todo kv cache
-            [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(qType),
-
-            // todo [CostFactorNames.CPUCycles].
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(returnType),
-        };
+        return target.Cost;
     }
 
     public IValue Visit(IEvaluateContext context, SparseExperts target)
@@ -61,8 +74,8 @@ public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICo
         var q = context.GetOrtArgumentValue(target, SparseExperts.Q);
         var qType = q.DataType;
         q = q.Cast(OrtDataType.Float);
-        var selectedExperts = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.RouterExpertIds).AsTensor());
-        var routerWeights = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.RouterExpertWeights).AsTensor());
+        var selectedExperts = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.RouterIdx).AsTensor());
+        var routerWeights = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.RouterWeights).AsTensor());
 
         var moeExpertDownInputScale = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertDownInputScale).AsTensor());
         var moeExpertDownProjW = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertDownProjW).AsTensor());
@@ -165,9 +178,73 @@ public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICo
         return finalHiddenStates.ToValue();
     }
 
+    private bool CheckCustomSBP(
+        IRType q,
+        IRType routerIdx,
+        IRType routerWeights,
+        IRType gate,
+        IRType gateInputScale,
+        IRType gateProjScale,
+        IRType down,
+        IRType downInputScale,
+        IRType downProjScale,
+        IRType up,
+        IRType upInputScale,
+        IRType upProjScale,
+        IRType extra,
+        SparseExperts se)
+    {
+        if (q is DistributedType a && gate is DistributedType b && down is DistributedType c && up is DistributedType d)
+        {
+            if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => a.AxisPolicies[i] != se.QSBPs[i]))
+            {
+                Console.WriteLine($"[SparseExperts] Q SBP not match: {string.Join(",", a.AxisPolicies.Select(p => p.ToString()))} != {string.Join(",", se.QSBPs.Select(p => p.ToString()))}");
+                return false;
+            }
+
+            if (Enumerable.Range(0, b.TensorType.Shape.Rank).Any(i => b.AxisPolicies[i] != se.GateSBPs[i]))
+            {
+                Console.WriteLine($"[SparseExperts] Gate SBP not match: {string.Join(",", b.AxisPolicies.Select(p => p.ToString()))} != {string.Join(",", se.GateSBPs.Select(p => p.ToString()))}");
+                return false;
+            }
+
+            if (Enumerable.Range(0, c.TensorType.Shape.Rank).Any(i => c.AxisPolicies[i] != se.DownSBPs[i]))
+            {
+                Console.WriteLine($"[SparseExperts] Down SBP not match: {string.Join(",", c.AxisPolicies.Select(p => p.ToString()))} != {string.Join(",", se.DownSBPs.Select(p => p.ToString()))}");
+                return false;
+            }
+
+            if (Enumerable.Range(0, d.TensorType.Shape.Rank).Any(i => d.AxisPolicies[i] != se.UpSBPs[i]))
+            {
+                Console.WriteLine($"[SparseExperts] Up SBP not match: {string.Join(",", d.AxisPolicies.Select(p => p.ToString()))} != {string.Join(",", se.UpSBPs.Select(p => p.ToString()))}");
+                return false;
+            }
+        }
+
+        bool IsBroadcastOnly(IRType type)
+        {
+            return type is not DistributedType dist || dist.AxisPolicies.All(p => p is SBPBroadCast);
+        }
+
+        if (!IsBroadcastOnly(routerIdx) ||
+            !IsBroadcastOnly(routerWeights) ||
+            !IsBroadcastOnly(gateInputScale) ||
+            !IsBroadcastOnly(gateProjScale) ||
+            !IsBroadcastOnly(downInputScale) ||
+            !IsBroadcastOnly(downProjScale) ||
+            !IsBroadcastOnly(upInputScale) ||
+            !IsBroadcastOnly(upProjScale) ||
+            !IsBroadcastOnly(extra))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     private OrtKISharp.Tensor GetOrtTensor(Tensor tensor)
     {
-        return IR.F.Tensors.Cast(tensor, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
+        return Cast(tensor, DataTypes.Float32).Evaluate().AsTensor().ToOrtTensor();
     }
 
     private OrtKISharp.Tensor SliceAndSqueeze(OrtKISharp.Tensor tensor, long index)
