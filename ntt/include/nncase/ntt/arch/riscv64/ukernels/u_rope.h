@@ -135,8 +135,10 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
                         __riscv_vget_v_f32m4_f32m2(v16_f32, 1_dim),
                         __riscv_vget_v_f32m4_f32m2(v0_f32, 1_dim), half_vl);
 
-                    vfloat16m2_t v28 = __riscv_vfncvt_f_f_w_f16m2(v28_f32, vl);
-                    vfloat16m2_t v24 = __riscv_vfncvt_f_f_w_f16m2(v24_f32, vl);
+                    vfloat16m2_t v28 =
+                        __riscv_vfncvt_f_f_w_f16m2((vfloat32m4_t)v28_f32, vl);
+                    vfloat16m2_t v24 =
+                        __riscv_vfncvt_f_f_w_f16m2((vfloat32m4_t)v24_f32, vl);
 
                     __riscv_vse16_v_f16m2(
                         reinterpret_cast<_Float16 *>(output_1p), v28, vl);
