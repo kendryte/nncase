@@ -60,18 +60,18 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
 
                 if constexpr (UseF32) {
                     if (unroll == seq_tile) {
-                        vfloat16m2_t v0 = __riscv_vle16_v_f16m2(
-                            reinterpret_cast<const _Float16 *>(cos_0p),
-                            vl); // cos_0
-                        vfloat16m2_t v4 = __riscv_vle16_v_f16m2(
-                            reinterpret_cast<const _Float16 *>(sin_0p),
-                            vl); // sin_0
-                        vfloat16m2_t v8 = __riscv_vle16_v_f16m2(
-                            reinterpret_cast<const _Float16 *>(cos_1p),
-                            vl); // cos_1
-                        vfloat16m2_t v12 = __riscv_vle16_v_f16m2(
-                            reinterpret_cast<const _Float16 *>(sin_1p),
-                            vl); // sin_1
+                        vfloat16m2_t v0 =
+                            __riscv_vle16_v_f16m2((_Float16 *)(cos_0p),
+                                                  vl); // cos_0
+                        vfloat16m2_t v4 =
+                            __riscv_vle16_v_f16m2((_Float16 *)(sin_0p),
+                                                  vl); // sin_0
+                        vfloat16m2_t v8 =
+                            __riscv_vle16_v_f16m2((_Float16 *)(cos_1p),
+                                                  vl); // cos_1
+                        vfloat16m2_t v12 =
+                            __riscv_vle16_v_f16m2((_Float16 *)(sin_1p),
+                                                  vl); // sin_1
 
                         vfloat32m4_t v0_f32 =
                             __riscv_vfwcvt_f_f_v_f32m4(v0, vl);
@@ -160,12 +160,10 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
                             vfloat16m2_t v24 = __riscv_vfncvt_f_f_w_f16m2(
                                 (vfloat32m4_t)v24_f32, vl);
 
-                            __riscv_vse16_v_f16m2(
-                                reinterpret_cast<_Float16 *>(output_1p), v28,
-                                vl);
-                            __riscv_vse16_v_f16m2(
-                                reinterpret_cast<_Float16 *>(output_0p), v24,
-                                vl);
+                            __riscv_vse16_v_f16m2((_Float16 *)(output_1p), v28,
+                                                  vl);
+                            __riscv_vse16_v_f16m2((_Float16 *)(output_0p), v24,
+                                                  vl);
                         }
                     } else {
                         vfloat16m1_t v0 = __riscv_vle16_v_f16m1(
@@ -268,12 +266,10 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
                             vfloat16m1_t v24 = __riscv_vfncvt_f_f_w_f16m1(
                                 (vfloat32m2_t)v24_f32, vl);
 
-                            __riscv_vse16_v_f16m1(
-                                reinterpret_cast<_Float16 *>(output_1p), v28,
-                                vl);
-                            __riscv_vse16_v_f16m1(
-                                reinterpret_cast<_Float16 *>(output_0p), v24,
-                                vl);
+                            __riscv_vse16_v_f16m1((_Float16 *)(output_1p), v28,
+                                                  vl);
+                            __riscv_vse16_v_f16m1((_Float16 *)(output_0p), v24,
+                                                  vl);
                         }
                     }
                 } else {
@@ -316,15 +312,13 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
                         vfloat16m4_t v28 = __riscv_vfmul_vv_f16m4(v16, v12, vl);
                         // tmp_1 += input_1 * cos_1
                         v28 = __riscv_vfmacc_vv_f16m4(v28, v20, v8, vl);
-                        __riscv_vse16_v_f16m4(
-                            reinterpret_cast<_Float16 *>(output_1p), v28, vl);
+                        __riscv_vse16_v_f16m4((_Float16 *)(output_1p), v28, vl);
 
                         // 1st half: output_0p = input_0 * cos_0 - input_1 *
                         // sin_0 tmp_0 = input_1 * sin_0
                         vfloat16m4_t v24 = __riscv_vfmul_vv_f16m4(v20, v4, vl);
                         v24 = __riscv_vfmsac_vv_f16m4(v24, v16, v0, vl);
-                        __riscv_vse16_v_f16m4(
-                            reinterpret_cast<_Float16 *>(output_0p), v24, vl);
+                        __riscv_vse16_v_f16m4((_Float16 *)(output_0p), v24, vl);
                     }
                 }
             },
