@@ -314,7 +314,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         Visit(body);
         var rootCluster = TryInstertTerminator(body);
 
-        if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
+        // if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
         {
             using (var stream = Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot"))
             {
@@ -390,31 +390,13 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 var input = argClusters[index];
                 if (broadcastList.Contains(index))
                 {
-                    foreach (var v in input.Vertices)
-                    {
-                        if (v.IRType is DistributedType dt && dt.AxisPolicies.Any(sbp => sbp is SBPSplit))
-                        {
-                            Console.WriteLine($"{index} : Remove Split: {DescribeNode(v)}");
-                            input.RemoveVertex(v);
-                        }
-                        else
-                        {
-                            Console.WriteLine($"{index} : Keep Node: {DescribeNode(v)}");
-                        }
-                    }
-
                     var bucketsToRemove = new List<DistributedSearchGraph>();
                     foreach (var bucket in input.Clusters.OfType<DistributedSearchGraph>())
                     {
-                        var vertex = bucket.Vertices.FirstOrDefault();
-                        if (vertex == null)
-                        {
-                            bucketsToRemove.Add(bucket);
-                            continue;
-                        }
+                        bucket.RemoveVertexIf(v => !(v.IRType is not DistributedType dist ||
+                            dist.AxisPolicies.All(policy => policy is SBPBroadCast)));
 
-                        if (vertex.IRType is DistributedType dist &&
-                            dist.AxisPolicies.Any(policy => policy is SBPSplit))
+                        if (bucket.VertexCount == 0)
                         {
                             bucketsToRemove.Add(bucket);
                         }
@@ -424,6 +406,19 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     {
                         argClusters[index].RemoveCluster(bucket);
                     }
+
+                    if (index < 3)
+                    {
+                        var buckets = input.Clusters.OfType<DistributedSearchGraph>().ToArray();
+                        foreach (var bucket in buckets)
+                        {
+                            bucket.RemoveVertexIf(v => _rootSearchGraph.TryGetOutEdges(v, out var edges) && !edges.Any());
+                            if (bucket.VertexCount == 0)
+                            {
+                                argClusters[index].RemoveCluster(bucket);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -431,39 +426,14 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 var index = 0;
                 var input = argClusters[index];
 
-                foreach (var v in input.Vertices)
-                {
-                    if (v.IRType is DistributedType dt && dt.AxisPolicies is { Count: > 0 } policies
-                        && policies[0] is SBPSplit { Axes: [1, 3] }
-                        && policies[1] is SBPSplit { Axes: [2] })
-                    {
-                        Console.WriteLine($"{index} : keep Broadcast: {DescribeNode(v)}");
-                    }
-                    else
-                    {
-                        input.RemoveVertex(v);
-                        Console.WriteLine($"{index} : Remove Node: {DescribeNode(v)}");
-                    }
-                }
-
                 var bucketsToRemove = new List<DistributedSearchGraph>();
                 foreach (var bucket in input.Clusters.OfType<DistributedSearchGraph>())
                 {
-                    var vertex = bucket.Vertices.FirstOrDefault();
-                    if (vertex == null)
-                    {
-                        bucketsToRemove.Add(bucket);
-                        continue;
-                    }
-
-                    if (vertex.IRType is DistributedType dist &&
-                        dist.AxisPolicies is { Count: > 0 } policies
+                    bucket.RemoveVertexIf(v => !(v.IRType is not DistributedType dt || (dt.AxisPolicies is { Count: > 0 } policies
                         && policies[0] is SBPSplit { Axes: [1, 3] }
-                        && policies[1] is SBPSplit { Axes: [2] })
-                    {
-                        Console.WriteLine($"{index} : Keep Broadcast: {DescribeNode(vertex)}");
-                    }
-                    else
+                        && policies[1] is SBPSplit { Axes: [2] })));
+
+                    if (bucket.VertexCount == 0)
                     {
                         bucketsToRemove.Add(bucket);
                     }
@@ -472,6 +442,16 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 foreach (var bucket in bucketsToRemove)
                 {
                     argClusters[index].RemoveCluster(bucket);
+                }
+
+                var buckets = input.Clusters.OfType<DistributedSearchGraph>().ToArray();
+                foreach (var bucket in buckets)
+                {
+                    bucket.RemoveVertexIf(v => _rootSearchGraph.TryGetOutEdges(v, out var edges) && !edges.Any());
+                    if (bucket.VertexCount == 0)
+                    {
+                        argClusters[index].RemoveCluster(bucket);
+                    }
                 }
             }
 
@@ -486,41 +466,15 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 var input = argClusters[index];
                 if (broadcastList2.Contains(index))
                 {
-                    foreach (var v in input.Vertices)
-                    {
-                        if (v.IRType is DistributedType dt && dt.AxisPolicies is { Count: > 0 } policies
-                        && policies[0] is SBPBroadCast
-                        && policies[1] is SBPSplit { Axes: [2] }
-                        && policies[2] is SBPSplit { Axes: [1, 3] })
-                        {
-                            Console.WriteLine($"{index} : Keep Broadcast: {DescribeNode(v)}");
-                        }
-                        else
-                        {
-                            Console.WriteLine($"{index} : Remove Node: {DescribeNode(v)}");
-                            input.RemoveVertex(v);
-                        }
-                    }
-
                     var bucketsToRemove = new List<DistributedSearchGraph>();
                     foreach (var bucket in input.Clusters.OfType<DistributedSearchGraph>())
                     {
-                        var vertex = bucket.Vertices.FirstOrDefault();
-                        if (vertex == null)
-                        {
-                            bucketsToRemove.Add(bucket);
-                            continue;
-                        }
+                        bucket.RemoveVertexIf(v => !(v.IRType is not DistributedType dt || (dt.AxisPolicies is { Count: > 0 } policies
+                        && policies[0] is SBPBroadCast
+                        && policies[1] is SBPSplit { Axes: [2] }
+                        && policies[2] is SBPSplit { Axes: [1, 3] })));
 
-                        if (vertex.IRType is DistributedType dist &&
-                            dist.AxisPolicies is { Count: > 0 } policies
-                            && policies[0] is SBPBroadCast
-                            && policies[1] is SBPSplit { Axes: [2] }
-                            && policies[2] is SBPSplit { Axes: [1, 3] })
-                        {
-                            Console.WriteLine($"{index} : Keep Broadcast: {DescribeNode(vertex)}");
-                        }
-                        else
+                        if (bucket.VertexCount == 0)
                         {
                             bucketsToRemove.Add(bucket);
                         }
@@ -558,15 +512,15 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         foreach (var combBuckets in argClusters.Select(c => c.Clusters.OfType<DistributedSearchGraph>()).CartesianProduct())
         {
             var bucketArray = combBuckets.ToArray();
-            if (bucketArray.Any(bucket => !bucket.Vertices.Any()))
-            {
-                if (isSparseExperts)
-                {
-                    Console.WriteLine("[AutoDistributed][SparseExperts] Skip candidate: bucket without vertices.");
-                }
+            // if (bucketArray.Any(bucket => !bucket.Vertices.Any()))
+            // {
+            //     if (isSparseExperts)
+            //     {
+            //         Console.WriteLine("[AutoDistributed][SparseExperts] Skip candidate: bucket without vertices.");
+            //     }
 
-                continue;
-            }
+            //     continue;
+            // }
 
             string[]? candidateDesc = null;
             if (isSparseExperts)
@@ -700,19 +654,24 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         // 4. add not infered type in search space.
         var addedBuckets = bucketMemo.Values.ToArray();
 
-        TensorType? baseTensorType = expr.CheckedType switch
-        {
-            TensorType t => t,
-            DistributedType dt => dt.TensorType,
-            _ => null,
-        };
+        // TensorType? baseTensorType = expr.CheckedType switch
+        // {
+        //     TensorType t => t,
+        //     DistributedType dt => dt.TensorType,
+        //     _ => null,
+        // };
 
-        if (baseTensorType is null)
+        // if (baseTensorType is null)
+        // {
+        //     return default;
+        // }
+
+        if (expr.CheckedType is not TensorType)
         {
             return default;
         }
 
-        foreach (var nType in GetLeafCandidateDistTypes(baseTensorType, Placements, _moduleKind, TargetOptions))
+        foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
         {
             if (!bucketMemo.TryGetValue(nType, out var bucket)
                 || expr.Users.Any(u => u is Call call && (call.Target.GetType().FullName!.Contains("CustomNTT.MatMul", StringComparison.Ordinal) || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention)))
