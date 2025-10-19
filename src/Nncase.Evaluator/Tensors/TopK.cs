@@ -48,8 +48,8 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
 
     public Cost Visit(ICostEvaluateContext context, TopK target)
     {
-        var x = context.GetArgumentType<TensorType>(target, TopK.X);
-        var k = context.GetArgumentType<TensorType>(target, TopK.K);
+        var x = context.GetArgumentType<IRType>(target, TopK.X);
+        var k = context.GetArgumentType<IRType>(target, TopK.K);
         var outputType = context.GetReturnType<TupleType>();
         return new()
         {
