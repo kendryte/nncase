@@ -97,10 +97,10 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
                                 HalfDim * output_strides[rope_layout::dim_axis];
 
                             vfloat16m2_t v16 = __riscv_vle16_v_f16m2(
-                                reinterpret_cast<const _Float16 *>(input_0p),
+                                (const _Float16 *)(input_0p),
                                 vl); // input_0
                             vfloat16m2_t v20 = __riscv_vle16_v_f16m2(
-                                reinterpret_cast<const _Float16 *>(input_1p),
+                                (const _Float16 *)(input_1p),
                                 vl); // input_1
 
                             vfloat32m4_t v16_f32 = ntt::cast_elem<float>(
@@ -166,18 +166,18 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
                                                   vl);
                         }
                     } else {
-                        vfloat16m1_t v0 = __riscv_vle16_v_f16m1(
-                            reinterpret_cast<const _Float16 *>(cos_0p),
-                            vl); // cos_0
-                        vfloat16m1_t v4 = __riscv_vle16_v_f16m1(
-                            reinterpret_cast<const _Float16 *>(sin_0p),
-                            vl); // sin_0
-                        vfloat16m1_t v8 = __riscv_vle16_v_f16m1(
-                            reinterpret_cast<const _Float16 *>(cos_1p),
-                            vl); // cos_1
-                        vfloat16m1_t v12 = __riscv_vle16_v_f16m1(
-                            reinterpret_cast<const _Float16 *>(sin_1p),
-                            vl); // sin_1
+                        vfloat16m1_t v0 =
+                            __riscv_vle16_v_f16m1((const _Float16 *)(cos_0p),
+                                                  vl); // cos_0
+                        vfloat16m1_t v4 =
+                            __riscv_vle16_v_f16m1((const _Float16 *)(sin_0p),
+                                                  vl); // sin_0
+                        vfloat16m1_t v8 =
+                            __riscv_vle16_v_f16m1((const _Float16 *)(cos_1p),
+                                                  vl); // cos_1
+                        vfloat16m1_t v12 =
+                            __riscv_vle16_v_f16m1((const _Float16 *)(sin_1p),
+                                                  vl); // sin_1
 
                         vfloat32m2_t v0_f32 =
                             __riscv_vfwcvt_f_f_v_f32m2(v0, vl);
@@ -204,10 +204,10 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
 
                             /* load input halves — f16m1 */
                             vfloat16m1_t v16 = __riscv_vle16_v_f16m1(
-                                reinterpret_cast<const _Float16 *>(input_0p),
+                                (const _Float16 *)(input_0p),
                                 vl); // input_0
                             vfloat16m1_t v20 = __riscv_vle16_v_f16m1(
-                                reinterpret_cast<const _Float16 *>(input_1p),
+                                (const _Float16 *)(input_1p),
                                 vl); // input_1
 
                             vfloat32m2_t v16_f32 = ntt::cast_elem<float>(
@@ -273,18 +273,18 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
                         }
                     }
                 } else {
-                    vfloat16m4_t v0 = __riscv_vle16_v_f16m4(
-                        reinterpret_cast<const _Float16 *>(cos_0p),
-                        vl); // cos_0
-                    vfloat16m4_t v4 = __riscv_vle16_v_f16m4(
-                        reinterpret_cast<const _Float16 *>(sin_0p),
-                        vl); // sin_0
-                    vfloat16m4_t v8 = __riscv_vle16_v_f16m4(
-                        reinterpret_cast<const _Float16 *>(cos_1p),
-                        vl); // cos_1
-                    vfloat16m4_t v12 = __riscv_vle16_v_f16m4(
-                        reinterpret_cast<const _Float16 *>(sin_1p),
-                        vl); // sin_1
+                    vfloat16m4_t v0 =
+                        __riscv_vle16_v_f16m4((const _Float16 *)(cos_0p),
+                                              vl); // cos_0
+                    vfloat16m4_t v4 =
+                        __riscv_vle16_v_f16m4((const _Float16 *)(sin_0p),
+                                              vl); // sin_0
+                    vfloat16m4_t v8 =
+                        __riscv_vle16_v_f16m4((const _Float16 *)(cos_1p),
+                                              vl); // cos_1
+                    vfloat16m4_t v12 =
+                        __riscv_vle16_v_f16m4((const _Float16 *)(sin_1p),
+                                              vl); // sin_1
 
                     for (size_t h = 0; h < NumHeads; h++) {
                         const T *NTT_RESTRICT input_0p =
@@ -300,12 +300,12 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
                             output_0p +
                             HalfDim * output_strides[rope_layout::dim_axis];
 
-                        vfloat16m4_t v16 = __riscv_vle16_v_f16m4(
-                            reinterpret_cast<const _Float16 *>(input_0p),
-                            vl); // input_0
-                        vfloat16m4_t v20 = __riscv_vle16_v_f16m4(
-                            reinterpret_cast<const _Float16 *>(input_1p),
-                            vl); // input_1
+                        vfloat16m4_t v16 =
+                            __riscv_vle16_v_f16m4((const _Float16 *)(input_0p),
+                                                  vl); // input_0
+                        vfloat16m4_t v20 =
+                            __riscv_vle16_v_f16m4((const _Float16 *)(input_1p),
+                                                  vl); // input_1
 
                         // 2nd half: output_1p = input_1 * cos_1 + input_0 *
                         // sin_1 tmp_1 = input_0 * sin_1
