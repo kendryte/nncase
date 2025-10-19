@@ -22,8 +22,8 @@
 
 namespace nncase::ntt::ukernels {
 
-template <size_t NumHeads, size_t HalfDim>
-struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
+template <size_t NumHeads, size_t HalfDim, bool UseF32>
+struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
   public:
     using T = vector<half, NTT_VLEN / 16>;
 
@@ -58,92 +58,285 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true> {
                     sin_0p +
                     HalfDim * sin_strides[rope_layout::sincos_dim_axis];
 
-                vfloat16m2_t v0 = __riscv_vle16_v_f16m2(
-                    reinterpret_cast<const _Float16 *>(cos_0p), vl); // cos_0
-                vfloat16m2_t v4 = __riscv_vle16_v_f16m2(
-                    reinterpret_cast<const _Float16 *>(sin_0p), vl); // sin_0
-                vfloat16m2_t v8 = __riscv_vle16_v_f16m2(
-                    reinterpret_cast<const _Float16 *>(cos_1p), vl); // cos_1
-                vfloat16m2_t v12 = __riscv_vle16_v_f16m2(
-                    reinterpret_cast<const _Float16 *>(sin_1p), vl); // sin_1
+                if constexpr (UseF32) {
+                    if (unroll == seq_tile) {
+                        vfloat16m2_t v0 = __riscv_vle16_v_f16m2(
+                            reinterpret_cast<const _Float16 *>(cos_0p),
+                            vl); // cos_0
+                        vfloat16m2_t v4 = __riscv_vle16_v_f16m2(
+                            reinterpret_cast<const _Float16 *>(sin_0p),
+                            vl); // sin_0
+                        vfloat16m2_t v8 = __riscv_vle16_v_f16m2(
+                            reinterpret_cast<const _Float16 *>(cos_1p),
+                            vl); // cos_1
+                        vfloat16m2_t v12 = __riscv_vle16_v_f16m2(
+                            reinterpret_cast<const _Float16 *>(sin_1p),
+                            vl); // sin_1
 
-                vfloat32m4_t v0_f32 = __riscv_vfwcvt_f_f_v_f32m4(v0, vl);
-                vfloat32m4_t v4_f32 = __riscv_vfwcvt_f_f_v_f32m4(v4, vl);
-                vfloat32m4_t v8_f32 = __riscv_vfwcvt_f_f_v_f32m4(v8, vl);
-                vfloat32m4_t v12_f32 = __riscv_vfwcvt_f_f_v_f32m4(v12, vl);
+                        vfloat32m4_t v0_f32 =
+                            __riscv_vfwcvt_f_f_v_f32m4(v0, vl);
+                        vfloat32m4_t v4_f32 =
+                            __riscv_vfwcvt_f_f_v_f32m4(v4, vl);
+                        vfloat32m4_t v8_f32 =
+                            __riscv_vfwcvt_f_f_v_f32m4(v8, vl);
+                        vfloat32m4_t v12_f32 =
+                            __riscv_vfwcvt_f_f_v_f32m4(v12, vl);
 
-                for (size_t h = 0; h < NumHeads; h++) {
-                    const T *NTT_RESTRICT input_0p =
-                        input + in_offset +
-                        h * input_strides[rope_layout::head_axis];
-                    const T *NTT_RESTRICT input_1p =
-                        input_0p +
-                        HalfDim * input_strides[rope_layout::dim_axis];
-                    T *NTT_RESTRICT output_0p =
-                        output + out_offset +
-                        h * output_strides[rope_layout::head_axis];
-                    T *NTT_RESTRICT output_1p =
-                        output_0p +
-                        HalfDim * output_strides[rope_layout::dim_axis];
+                        for (size_t h = 0; h < NumHeads; h++) {
+                            const T *NTT_RESTRICT input_0p =
+                                input + in_offset +
+                                h * input_strides[rope_layout::head_axis];
+                            const T *NTT_RESTRICT input_1p =
+                                input_0p +
+                                HalfDim * input_strides[rope_layout::dim_axis];
+                            T *NTT_RESTRICT output_0p =
+                                output + out_offset +
+                                h * output_strides[rope_layout::head_axis];
+                            T *NTT_RESTRICT output_1p =
+                                output_0p +
+                                HalfDim * output_strides[rope_layout::dim_axis];
 
-                    vfloat16m2_t v16 = __riscv_vle16_v_f16m2(
-                        reinterpret_cast<const _Float16 *>(input_0p),
-                        vl); // input_0
-                    vfloat16m2_t v20 = __riscv_vle16_v_f16m2(
-                        reinterpret_cast<const _Float16 *>(input_1p),
-                        vl); // input_1
+                            vfloat16m2_t v16 = __riscv_vle16_v_f16m2(
+                                reinterpret_cast<const _Float16 *>(input_0p),
+                                vl); // input_0
+                            vfloat16m2_t v20 = __riscv_vle16_v_f16m2(
+                                reinterpret_cast<const _Float16 *>(input_1p),
+                                vl); // input_1
 
-                    vfloat32m4_t v16_f32 = ntt::cast_elem<float>(
-                        (ntt::vector<half, NTT_VLEN / 16 * unroll>)v16);
-                    vfloat32m4_t v20_f32 = ntt::cast_elem<float>(
-                        (ntt::vector<half, NTT_VLEN / 16 * unroll>)v20);
+                            vfloat32m4_t v16_f32 = ntt::cast_elem<float>(
+                                (ntt::vector<half, NTT_VLEN / 16 * unroll>)v16);
+                            vfloat32m4_t v20_f32 = ntt::cast_elem<float>(
+                                (ntt::vector<half, NTT_VLEN / 16 * unroll>)v20);
 
-                    prepend_lanes_t<vector<float, NTT_VLEN / 32 * unroll>, 2>
-                        v28_f32{};
-                    prepend_lanes_t<vector<float, NTT_VLEN / 32 * unroll>, 2>
-                        v24_f32{};
+                            prepend_lanes_t<
+                                vector<float, NTT_VLEN / 32 * unroll>, 2>
+                                v28_f32{};
+                            prepend_lanes_t<
+                                vector<float, NTT_VLEN / 32 * unroll>, 2>
+                                v24_f32{};
 
-                    v28_f32(0_dim) = __riscv_vfmul_vv_f32m2(
-                        __riscv_vget_v_f32m4_f32m2(v16_f32, 0_dim),
-                        __riscv_vget_v_f32m4_f32m2(v12_f32, 0_dim), half_vl);
-                    v28_f32(0_dim) = __riscv_vfmacc_vv_f32m2(
-                        __riscv_vget_v_f32m4_f32m2(v28_f32, 0_dim),
-                        __riscv_vget_v_f32m4_f32m2(v20_f32, 0_dim),
-                        __riscv_vget_v_f32m4_f32m2(v8_f32, 0_dim), half_vl);
+                            v28_f32(0_dim) = __riscv_vfmul_vv_f32m2(
+                                __riscv_vget_v_f32m4_f32m2(v16_f32, 0_dim),
+                                __riscv_vget_v_f32m4_f32m2(v12_f32, 0_dim),
+                                half_vl);
+                            v28_f32(0_dim) = __riscv_vfmacc_vv_f32m2(
+                                __riscv_vget_v_f32m4_f32m2(v28_f32, 0_dim),
+                                __riscv_vget_v_f32m4_f32m2(v20_f32, 0_dim),
+                                __riscv_vget_v_f32m4_f32m2(v8_f32, 0_dim),
+                                half_vl);
 
-                    v24_f32(0_dim) = __riscv_vfmul_vv_f32m2(
-                        __riscv_vget_v_f32m4_f32m2(v20_f32, 0_dim),
-                        __riscv_vget_v_f32m4_f32m2(v4_f32, 0_dim), half_vl);
-                    v24_f32(0_dim) = __riscv_vfmsac_vv_f32m2(
-                        __riscv_vget_v_f32m4_f32m2(v24_f32, 0_dim),
-                        __riscv_vget_v_f32m4_f32m2(v16_f32, 0_dim),
-                        __riscv_vget_v_f32m4_f32m2(v0_f32, 0_dim), half_vl);
+                            v24_f32(0_dim) = __riscv_vfmul_vv_f32m2(
+                                __riscv_vget_v_f32m4_f32m2(v20_f32, 0_dim),
+                                __riscv_vget_v_f32m4_f32m2(v4_f32, 0_dim),
+                                half_vl);
+                            v24_f32(0_dim) = __riscv_vfmsac_vv_f32m2(
+                                __riscv_vget_v_f32m4_f32m2(v24_f32, 0_dim),
+                                __riscv_vget_v_f32m4_f32m2(v16_f32, 0_dim),
+                                __riscv_vget_v_f32m4_f32m2(v0_f32, 0_dim),
+                                half_vl);
 
-                    v28_f32(1_dim) = __riscv_vfmul_vv_f32m2(
-                        __riscv_vget_v_f32m4_f32m2(v16_f32, 1_dim),
-                        __riscv_vget_v_f32m4_f32m2(v12_f32, 1_dim), half_vl);
-                    v28_f32(1_dim) = __riscv_vfmacc_vv_f32m2(
-                        __riscv_vget_v_f32m4_f32m2(v28_f32, 1_dim),
-                        __riscv_vget_v_f32m4_f32m2(v20_f32, 1_dim),
-                        __riscv_vget_v_f32m4_f32m2(v8_f32, 1_dim), half_vl);
+                            v28_f32(1_dim) = __riscv_vfmul_vv_f32m2(
+                                __riscv_vget_v_f32m4_f32m2(v16_f32, 1_dim),
+                                __riscv_vget_v_f32m4_f32m2(v12_f32, 1_dim),
+                                half_vl);
+                            v28_f32(1_dim) = __riscv_vfmacc_vv_f32m2(
+                                __riscv_vget_v_f32m4_f32m2(v28_f32, 1_dim),
+                                __riscv_vget_v_f32m4_f32m2(v20_f32, 1_dim),
+                                __riscv_vget_v_f32m4_f32m2(v8_f32, 1_dim),
+                                half_vl);
 
-                    v24_f32(1_dim) = __riscv_vfmul_vv_f32m2(
-                        __riscv_vget_v_f32m4_f32m2(v20_f32, 1_dim),
-                        __riscv_vget_v_f32m4_f32m2(v4_f32, 1_dim), half_vl);
-                    v24_f32(1_dim) = __riscv_vfmsac_vv_f32m2(
-                        __riscv_vget_v_f32m4_f32m2(v24_f32, 1_dim),
-                        __riscv_vget_v_f32m4_f32m2(v16_f32, 1_dim),
-                        __riscv_vget_v_f32m4_f32m2(v0_f32, 1_dim), half_vl);
+                            v24_f32(1_dim) = __riscv_vfmul_vv_f32m2(
+                                __riscv_vget_v_f32m4_f32m2(v20_f32, 1_dim),
+                                __riscv_vget_v_f32m4_f32m2(v4_f32, 1_dim),
+                                half_vl);
+                            v24_f32(1_dim) = __riscv_vfmsac_vv_f32m2(
+                                __riscv_vget_v_f32m4_f32m2(v24_f32, 1_dim),
+                                __riscv_vget_v_f32m4_f32m2(v16_f32, 1_dim),
+                                __riscv_vget_v_f32m4_f32m2(v0_f32, 1_dim),
+                                half_vl);
 
-                    vfloat16m2_t v28 =
-                        __riscv_vfncvt_f_f_w_f16m2((vfloat32m4_t)v28_f32, vl);
-                    vfloat16m2_t v24 =
-                        __riscv_vfncvt_f_f_w_f16m2((vfloat32m4_t)v24_f32, vl);
+                            vfloat16m2_t v28 = __riscv_vfncvt_f_f_w_f16m2(
+                                (vfloat32m4_t)v28_f32, vl);
+                            vfloat16m2_t v24 = __riscv_vfncvt_f_f_w_f16m2(
+                                (vfloat32m4_t)v24_f32, vl);
 
-                    __riscv_vse16_v_f16m2(
-                        reinterpret_cast<_Float16 *>(output_1p), v28, vl);
-                    __riscv_vse16_v_f16m2(
-                        reinterpret_cast<_Float16 *>(output_0p), v24, vl);
+                            __riscv_vse16_v_f16m2(
+                                reinterpret_cast<_Float16 *>(output_1p), v28,
+                                vl);
+                            __riscv_vse16_v_f16m2(
+                                reinterpret_cast<_Float16 *>(output_0p), v24,
+                                vl);
+                        }
+                    } else {
+                        /* 使用 m1/m2 版本的寄存器组（原来是 m2/m4） */
+                        vfloat16m1_t v0 = __riscv_vle16_v_f16m1(
+                            reinterpret_cast<const _Float16 *>(cos_0p),
+                            vl); // cos_0
+                        vfloat16m1_t v4 = __riscv_vle16_v_f16m1(
+                            reinterpret_cast<const _Float16 *>(sin_0p),
+                            vl); // sin_0
+                        vfloat16m1_t v8 = __riscv_vle16_v_f16m1(
+                            reinterpret_cast<const _Float16 *>(cos_1p),
+                            vl); // cos_1
+                        vfloat16m1_t v12 = __riscv_vle16_v_f16m1(
+                            reinterpret_cast<const _Float16 *>(sin_1p),
+                            vl); // sin_1
+
+                        /* 将 f16 -> f32 的宽转换：原来是 f32m4，这里降为 f32m2
+                         */
+                        vfloat32m2_t v0_f32 =
+                            __riscv_vfwcvt_f_f_v_f32m2(v0, vl);
+                        vfloat32m2_t v4_f32 =
+                            __riscv_vfwcvt_f_f_v_f32m2(v4, vl);
+                        vfloat32m2_t v8_f32 =
+                            __riscv_vfwcvt_f_f_v_f32m2(v8, vl);
+                        vfloat32m2_t v12_f32 =
+                            __riscv_vfwcvt_f_f_v_f32m2(v12, vl);
+
+                        for (size_t h = 0; h < NumHeads; h++) {
+                            const T *NTT_RESTRICT input_0p =
+                                input + in_offset +
+                                h * input_strides[rope_layout::head_axis];
+                            const T *NTT_RESTRICT input_1p =
+                                input_0p +
+                                HalfDim * input_strides[rope_layout::dim_axis];
+                            T *NTT_RESTRICT output_0p =
+                                output + out_offset +
+                                h * output_strides[rope_layout::head_axis];
+                            T *NTT_RESTRICT output_1p =
+                                output_0p +
+                                HalfDim * output_strides[rope_layout::dim_axis];
+
+                            /* load input halves — f16m1 */
+                            vfloat16m1_t v16 = __riscv_vle16_v_f16m1(
+                                reinterpret_cast<const _Float16 *>(input_0p),
+                                vl); // input_0
+                            vfloat16m1_t v20 = __riscv_vle16_v_f16m1(
+                                reinterpret_cast<const _Float16 *>(input_1p),
+                                vl); // input_1
+
+                            /* f16 -> f32: 这里从 f16m1 转为 f32m2（对应原先的
+                             * f16m2
+                             * -> f32m4） */
+                            vfloat32m2_t v16_f32 = ntt::cast_elem<float>(
+                                (ntt::vector<half, NTT_VLEN / 16>)v16);
+                            vfloat32m2_t v20_f32 = ntt::cast_elem<float>(
+                                (ntt::vector<half, NTT_VLEN / 16>)v20);
+
+                            /* 保持原来用 prepend_lanes_t 的结构（只要内部片段用
+                             * f32m1 即可） */
+                            prepend_lanes_t<vector<float, NTT_VLEN / 32>, 2>
+                                v28_f32{};
+                            prepend_lanes_t<vector<float, NTT_VLEN / 32>, 2>
+                                v24_f32{};
+
+                            /* 下面每一处取出 m2 中的 m1 片段（0_dim /
+                             * 1_dim）并使用 m1 的算术 intrinsic */
+                            v28_f32(0_dim) = __riscv_vfmul_vv_f32m1(
+                                __riscv_vget_v_f32m2_f32m1(v16_f32, 0_dim),
+                                __riscv_vget_v_f32m2_f32m1(v12_f32, 0_dim),
+                                half_vl);
+                            v28_f32(0_dim) = __riscv_vfmacc_vv_f32m1(
+                                __riscv_vget_v_f32m2_f32m1(v28_f32, 0_dim),
+                                __riscv_vget_v_f32m2_f32m1(v20_f32, 0_dim),
+                                __riscv_vget_v_f32m2_f32m1(v8_f32, 0_dim),
+                                half_vl);
+
+                            v24_f32(0_dim) = __riscv_vfmul_vv_f32m1(
+                                __riscv_vget_v_f32m2_f32m1(v20_f32, 0_dim),
+                                __riscv_vget_v_f32m2_f32m1(v4_f32, 0_dim),
+                                half_vl);
+                            v24_f32(0_dim) = __riscv_vfmsac_vv_f32m1(
+                                __riscv_vget_v_f32m2_f32m1(v24_f32, 0_dim),
+                                __riscv_vget_v_f32m2_f32m1(v16_f32, 0_dim),
+                                __riscv_vget_v_f32m2_f32m1(v0_f32, 0_dim),
+                                half_vl);
+
+                            v28_f32(1_dim) = __riscv_vfmul_vv_f32m1(
+                                __riscv_vget_v_f32m2_f32m1(v16_f32, 1_dim),
+                                __riscv_vget_v_f32m2_f32m1(v12_f32, 1_dim),
+                                half_vl);
+                            v28_f32(1_dim) = __riscv_vfmacc_vv_f32m1(
+                                __riscv_vget_v_f32m2_f32m1(v28_f32, 1_dim),
+                                __riscv_vget_v_f32m2_f32m1(v20_f32, 1_dim),
+                                __riscv_vget_v_f32m2_f32m1(v8_f32, 1_dim),
+                                half_vl);
+
+                            v24_f32(1_dim) = __riscv_vfmul_vv_f32m1(
+                                __riscv_vget_v_f32m2_f32m1(v20_f32, 1_dim),
+                                __riscv_vget_v_f32m2_f32m1(v4_f32, 1_dim),
+                                half_vl);
+                            v24_f32(1_dim) = __riscv_vfmsac_vv_f32m1(
+                                __riscv_vget_v_f32m2_f32m1(v24_f32, 1_dim),
+                                __riscv_vget_v_f32m2_f32m1(v16_f32, 1_dim),
+                                __riscv_vget_v_f32m2_f32m1(v0_f32, 1_dim),
+                                half_vl);
+
+                            /* 把结果从 f32m2/片段 转回 f16m1 */
+                            vfloat16m1_t v28 = __riscv_vfncvt_f_f_w_f16m1(
+                                (vfloat32m2_t)v28_f32, vl);
+                            vfloat16m1_t v24 = __riscv_vfncvt_f_f_w_f16m1(
+                                (vfloat32m2_t)v24_f32, vl);
+
+                            /* 存回内存，使用 f16m1 store */
+                            __riscv_vse16_v_f16m1(
+                                reinterpret_cast<_Float16 *>(output_1p), v28,
+                                vl);
+                            __riscv_vse16_v_f16m1(
+                                reinterpret_cast<_Float16 *>(output_0p), v24,
+                                vl);
+                        }
+                    }
+                } else {
+                    vfloat16m4_t v0 = __riscv_vle16_v_f16m4(
+                        reinterpret_cast<const _Float16 *>(cos_0p),
+                        vl); // cos_0
+                    vfloat16m4_t v4 = __riscv_vle16_v_f16m4(
+                        reinterpret_cast<const _Float16 *>(sin_0p),
+                        vl); // sin_0
+                    vfloat16m4_t v8 = __riscv_vle16_v_f16m4(
+                        reinterpret_cast<const _Float16 *>(cos_1p),
+                        vl); // cos_1
+                    vfloat16m4_t v12 = __riscv_vle16_v_f16m4(
+                        reinterpret_cast<const _Float16 *>(sin_1p),
+                        vl); // sin_1
+
+                    for (size_t h = 0; h < NumHeads; h++) {
+                        const T *NTT_RESTRICT input_0p =
+                            input + in_offset +
+                            h * input_strides[rope_layout::head_axis];
+                        const T *NTT_RESTRICT input_1p =
+                            input_0p +
+                            HalfDim * input_strides[rope_layout::dim_axis];
+                        T *NTT_RESTRICT output_0p =
+                            output + out_offset +
+                            h * output_strides[rope_layout::head_axis];
+                        T *NTT_RESTRICT output_1p =
+                            output_0p +
+                            HalfDim * output_strides[rope_layout::dim_axis];
+
+                        vfloat16m4_t v16 = __riscv_vle16_v_f16m4(
+                            reinterpret_cast<const _Float16 *>(input_0p),
+                            vl); // input_0
+                        vfloat16m4_t v20 = __riscv_vle16_v_f16m4(
+                            reinterpret_cast<const _Float16 *>(input_1p),
+                            vl); // input_1
+
+                        // 2nd half: output_1p = input_1 * cos_1 + input_0 *
+                        // sin_1 tmp_1 = input_0 * sin_1
+                        vfloat16m4_t v28 = __riscv_vfmul_vv_f16m4(v16, v12, vl);
+                        // tmp_1 += input_1 * cos_1
+                        v28 = __riscv_vfmacc_vv_f16m4(v28, v20, v8, vl);
+                        __riscv_vse16_v_f16m4(
+                            reinterpret_cast<_Float16 *>(output_1p), v28, vl);
+
+                        // 1st half: output_0p = input_0 * cos_0 - input_1 *
+                        // sin_0 tmp_0 = input_1 * sin_0
+                        vfloat16m4_t v24 = __riscv_vfmul_vv_f16m4(v20, v4, vl);
+                        v24 = __riscv_vfmsac_vv_f16m4(v24, v16, v0, vl);
+                        __riscv_vse16_v_f16m4(
+                            reinterpret_cast<_Float16 *>(output_0p), v24, vl);
+                    }
                 }
             },
             input_strides.template slice<1>(), cos_strides, sin_strides,

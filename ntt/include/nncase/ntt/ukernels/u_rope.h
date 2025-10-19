@@ -30,7 +30,8 @@ struct rope_layout {
     static constexpr auto sincos_seq_axis = 1_dim;
 };
 
-template <ScalarOrVector T, size_t NumHeads, size_t HalfDim, bool Arch>
+template <ScalarOrVector T, size_t NumHeads, size_t HalfDim, bool Arch,
+          bool UseF32>
 struct u_rope {
   public:
     template <Dimension TSeqLen, Strides TInputStrides, Strides TCosStrides,
@@ -83,16 +84,16 @@ struct u_rope {
 };
 } // namespace ukernels
 
-template <size_t NumHeads, size_t HalfDim, ScalarOrVector T, Dimension TSeqLen,
-          Strides TInputStrides, Strides TCosStrides, Strides TSinStrides,
-          Strides TOutputStrides>
+template <bool UseF32, size_t NumHeads, size_t HalfDim, ScalarOrVector T,
+          Dimension TSeqLen, Strides TInputStrides, Strides TCosStrides,
+          Strides TSinStrides, Strides TOutputStrides>
 constexpr void
 u_rope(const T *NTT_RESTRICT input, const T *NTT_RESTRICT cos,
        const T *NTT_RESTRICT sin, T *NTT_RESTRICT output,
        const TSeqLen &seq_len, const TInputStrides &input_strides,
        const TCosStrides &cos_strides, const TSinStrides &sin_strides,
        const TOutputStrides &output_strides) noexcept {
-    ukernels::u_rope<T, NumHeads, HalfDim, true> impl;
+    ukernels::u_rope<T, NumHeads, HalfDim, true, UseF32> impl;
     impl(input, cos, sin, output, seq_len, input_strides, cos_strides,
          sin_strides, output_strides);
 }
