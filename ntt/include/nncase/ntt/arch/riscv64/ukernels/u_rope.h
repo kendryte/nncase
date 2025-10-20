@@ -260,7 +260,6 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
                                 __riscv_vget_v_f32m2_f32m1(v0_f32, 1_dim),
                                 half_vl);
 
-                            /* 把结果从 f32m2/片段 转回 f16m1 */
                             vfloat16m1_t v28 = __riscv_vfncvt_f_f_w_f16m1(
                                 (vfloat32m2_t)v28_f32, vl);
                             vfloat16m1_t v24 = __riscv_vfncvt_f_f_w_f16m1(
