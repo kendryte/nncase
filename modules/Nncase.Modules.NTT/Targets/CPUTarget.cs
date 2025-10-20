@@ -119,6 +119,11 @@ public class CPUTarget : Target
     public override void RegisterTIRSelectionPass(IPassManager passManager, CompileOptions optionsÍ)
     {
         passManager.Add<NTTTIRSelectionPass>();
+        passManager.AddWithName<PrimFuncPass>("ToBlockLocalData").Configure(p =>
+        {
+            p.Add<Passes.Mutators.RemoveNop>();
+            p.Add<Nncase.Passes.Mutators.ToBlockLocalData>();
+        });
     }
 
     public override void RegisterPostAutoVectorizePass(IPassManager passManager, CompileOptions options)
