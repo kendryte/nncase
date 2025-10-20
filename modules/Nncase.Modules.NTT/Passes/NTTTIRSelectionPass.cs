@@ -219,7 +219,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         var bitcast = outBuffer.DistributedType is DistributedType ? false : true;
         if (!bitcast)
         {
-            if (inBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray().SequenceEqual(outBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray()))
+            if (DistributedUtility.AreSamePolicies(inBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray(), outBuffer.DistributedType!.AxisPolicies.Where(sbp => sbp is not SBPBroadCast).ToArray(), false))
             {
                 bitcast = true;
             }
@@ -307,8 +307,6 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 
     private Expr GenerateReshard(Expr input, ref Expr output, DistributedType inType, DistributedType outType)
     {
-        // FIXME: re-balance issue.
-#if false
         if (input is TIR.Buffer inBuffer)
         {
             if (TryGenerateGatherThreadsReshard(inBuffer, ref output, inType, outType, out var newCall))
@@ -320,7 +318,6 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
                 return newCall;
             }
         }
-#endif
 
         return TIR.F.NTT.GatherReduceScatter(input, output, inType, outType);
     }
@@ -332,7 +329,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 
         // S -> B
         var reducedInPolices = inType.AxisPolicies.Select(sbp => sbp is SBPSplit split && split.Axes.Contains(threadAxis) ? (split.Axes.Count == 1 ? (SBP)SBP.B : SBP.S(split.Axes.Except([threadAxis]).ToArray())) : sbp);
-        if (DistributedUtility.AreSamePolicies(reducedInPolices.ToArray(), outType.AxisPolicies, false))
+        if (DistributedUtility.AreSamePolicies(reducedInPolices.ToArray(), outType.AxisPolicies.ToArray(), false))
         {
             oldPhysicalBuffer = inBuffer.MemSpan.Buffer;
         }
@@ -416,7 +413,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         int splitAxis = -1;
 
         // B -> S
-        if (DistributedUtility.AreSamePolicies(reducedOutPolices.ToArray(), inType.AxisPolicies.ToArray()))
+        if (DistributedUtility.AreSamePolicies(reducedOutPolices.ToArray(), inType.AxisPolicies.ToArray(), false))
         {
             oldPhysicalBuffer = inBuffer.MemSpan.Buffer;
             splitAxis = outType.AxisPolicies.ToArray().IndexOf(x => x is SBPSplit split && split.Axes.Contains(threadAxis));
