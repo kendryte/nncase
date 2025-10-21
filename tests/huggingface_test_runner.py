@@ -414,9 +414,9 @@ class HuggingfaceTestRunner(TestRunner):
         return all_outputs, tokens_ids, tokens
 
     def parse_model(self, model_path):
-        if self.cfg['huggingface_options']['tensor_type'] == "bfloat16":
-            raise RuntimeError(
-                f"Not support bfloat16 tensor type now (because of ort)! Just 'float16' or 'float32'.")
+        # if self.cfg['huggingface_options']['tensor_type'] == "bfloat16":
+        #     raise RuntimeError(
+        #         f"Not support bfloat16 tensor type now (because of ort)! Just 'float16' or 'float32'.")
 
         config = AutoConfig.from_pretrained(model_path + "/config.json")
         self.hf_config = config
