@@ -51,9 +51,30 @@ def test_qwen3_30B_A3B_static(request):
     [generator.calibs.text]
     args = 'tests/importer/huggingface_/prompt.txt'
     
+    [target]
     [target.cpu]
-    eval = false
+    infer = false
+    [target.xpu]
     infer = true
+
+    [target.cpu.mode.noptq]
+    enabled = true
+    threshold = 0.98
+
+    [target.xpu.target_options]
+    CustomOpScheme = "/home/yanghaoqi/workspace/nncase/tlocal_tools/plugin_scheme.json"
+
+    [paged_attention_config]
+    block_size = 256
+    num_blocks = 32
+    max_sessions = 1
+    kv_type = "float16"
+    cache_layout = ["NumBlocks","NumLayers","NumKVHeads","KV","HeadDim","BlockSize"]
+    vectorized_axes = ["HeadDim"]
+    lanes = [64]
+    sharding_axes = ["NumKVHeads","NumBlocks"]
+    axis_policies = [[1],[2,3]]
+    hierarchy = [1, 2, 8, 4, 4]
     """
     runner = HuggingfaceTestRunner(request.node.name, overwrite_configs=cfg)
 

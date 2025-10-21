@@ -366,14 +366,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
         else
         {
-            // if (expr.Target is IR.Tensors.TopK)
-            // {
-            //     isSupported = false;
-            // }
-            // else
-            // {
-            //     isSupported = expr.Target is AsTensor or IR.Tensors.Range ? false : true;
-            // }
             isSupported = expr.Target is AsTensor or IR.Tensors.Range ? false : true;
             isSparseExperts = expr.Target.GetType().FullName?.Contains("CustomNTT.SparseExperts", StringComparison.Ordinal) == true;
             foreach (var param in op.Parameters)
@@ -458,11 +450,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             List<int> broadcastList2 = new() { 4, 7, 10 }; // expert 0维度为B
             foreach (var index in broadcastList2)
             {
-                if (index == 7)
-                {
-                    Console.WriteLine("\n\n--------------------Debug Here---------------------");
-                }
-
                 var input = argClusters[index];
                 if (broadcastList2.Contains(index))
                 {
@@ -484,11 +471,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     {
                         argClusters[index].RemoveCluster(bucket);
                     }
-                }
-
-                if (index == 7)
-                {
-                    Console.WriteLine("--------------------end---------------------\n\n");
                 }
             }
 
@@ -512,15 +494,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         foreach (var combBuckets in argClusters.Select(c => c.Clusters.OfType<DistributedSearchGraph>()).CartesianProduct())
         {
             var bucketArray = combBuckets.ToArray();
-            // if (bucketArray.Any(bucket => !bucket.Vertices.Any()))
-            // {
-            //     if (isSparseExperts)
-            //     {
-            //         Console.WriteLine("[AutoDistributed][SparseExperts] Skip candidate: bucket without vertices.");
-            //     }
-
-            //     continue;
-            // }
 
             string[]? candidateDesc = null;
             if (isSparseExperts)
@@ -653,18 +626,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         // 4. add not infered type in search space.
         var addedBuckets = bucketMemo.Values.ToArray();
-
-        // TensorType? baseTensorType = expr.CheckedType switch
-        // {
-        //     TensorType t => t,
-        //     DistributedType dt => dt.TensorType,
-        //     _ => null,
-        // };
-
-        // if (baseTensorType is null)
-        // {
-        //     return default;
-        // }
 
         if (expr.CheckedType is not TensorType)
         {

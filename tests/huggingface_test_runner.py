@@ -363,7 +363,7 @@ class HuggingfaceTestRunner(TestRunner):
                         return_dict=True,
                         use_cache=True,
                         # output_attentions=False,
-                        output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
+                        output_hidden_states=self.generation_config.output_hidden_states,
                     )
                 hf_past_key_values = result.past_key_values
 
