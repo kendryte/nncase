@@ -224,7 +224,7 @@ class tensor_reduce_sync_impl {
             }
 
             ntt::tensor_copy_wait<void>();
-            reduce_group_sync(ctx, group_target_value);
+            reduce_group_sync();
         } else {
             const auto axis = [&] {
                 dim_t axis = -1;
