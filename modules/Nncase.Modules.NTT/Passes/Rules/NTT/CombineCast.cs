@@ -74,3 +74,27 @@ public sealed partial class CombineTransposeVectorizedCast : IRewriteRule
         return IR.F.NTT.VectorizedCast(IR.F.Tensors.Transpose(input, perm), newType, cast.CastMode, newAxes, postOps).InheritMetaData(callee);
     }
 }
+
+[RuleGenerator]
+public sealed partial class CombineDevectorizeCast : IRewriteRule
+{
+    /// <inheritdoc/>
+    public IPattern Pattern { get; } = IsCast(
+        "cast",
+        "castCall",
+        _ => true,
+        IsUnpack(
+            "unpack",
+            "unpackCall",
+            _ => true,
+            IsWildcard("input")));
+
+    private Expr GetReplace(Cast cast, Unpack unpack, Call unpackCall, Expr input)
+    {
+        var scale = 1f * cast.NewType.SizeInBytes / unpackCall.CheckedDataType.SizeInBytes;
+        var newLanes = unpack.Lanes.Select(l => (int)(l / scale)).ToArray();
+        var newType = new VectorType(cast.NewType, newLanes);
+        var vectorizedCast = IR.F.NTT.VectorizedCast(input, newType, cast.CastMode, unpack.Axes.ToArray(), None.Default);
+        return IR.F.Tensors.Unpack(vectorizedCast, newLanes, unpack.Axes.ToArray()).InheritMetaData(unpackCall);
+    }
+}

@@ -511,9 +511,9 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             throw new NotSupportedException($"Inline Mode with {typeof(IR.Affine.Grid)}");
         }
 
-        var name = GetNextSSANumber();
         var reads = expr.Reads.AsValueEnumerable().Select(Visit).ToArray();
         var buffers = expr.Buffers.AsValueEnumerable().Select(Visit).ToArray();
+        var name = GetNextSSANumber();
 
         // 1. For Loop signature
         _writer.Write($"{name} = Grid({string.Join(", ", reads)})");
@@ -543,7 +543,8 @@ internal sealed class ILPrintVisitor : ExprFunctor<string, string>
             var domain_parameters = Visit(expr.DomainParameter);
             var parameters = expr.BodyParameters.AsValueEnumerable().Select(Visit).ToArray();
             _writer.WInd().Write($"Body: ({domain_parameters}, {string.Join(", ", parameters)})");
-            AppendCheckedType(expr.Body.CheckedType, expr.Body.Metadata.Range, " {", hasNewLine: true);
+            AppendCheckedType(expr.Body.CheckedType, expr.Body.Metadata.Range, hasNewLine: true);
+            _writer.WInd().WriteLine("{");
             using (IndentScope())
             {
                 var ss = CompilerServices.Print(expr.Body, Flags | PrinterFlags.Script);

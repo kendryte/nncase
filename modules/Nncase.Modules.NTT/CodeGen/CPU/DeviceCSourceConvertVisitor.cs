@@ -187,8 +187,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
         var size = Visit(expr.Size);
         string name = expr.Location switch
         {
-            MemoryLocation.L2Data => $"L2Data + {start.Name}",
-            MemoryLocation.L1Data => $"L1Data + {start.Name}",
+            MemoryLocation.Cache => $"tar::get_cache_address<{expr.Hierarchy}>()",
             MemoryLocation.Input or MemoryLocation.Output => start.Name,
             _ => throw new NotSupportedException(expr.Location.ToString()),
         };
@@ -255,7 +254,7 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 ReferenceType => "auto",
                 _ => x.DType.ToC(),
             },
-            TensorType or DistributedType => "auto",
+            TensorType or DistributedType or DimensionType => "auto",
             _ => throw new NotSupportedException(),
         };
 
@@ -280,6 +279,9 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 break;
             case IR.Shapes.AsTensor op:
                 str = arguments[0].Name;
+                break;
+            case IR.Tensors.LocalShardDim op:
+                str = $"local_shard_dim<0>(make_sharding<{op.Placement.PlacementToC()}>({op.AxisPolicy.SBPToC()}), make_shape({arguments[0].Name}))";
                 break;
             case TIR.NTT.SramPtr op:
                 str = $"g_cpu_mt->sram_address(bid, tid) + {arguments[0].Name}";
@@ -326,9 +328,9 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                     var strideSymbols = buffer.Strides.AsValueEnumerable().Select(Visit).ToArray();
 
                     var dtypeStr = buffer.ElemType.ToC();
-                    var dimensionStr = KernelUtility.DimensionsToC(isFixedDimensions, dimensionSymbols, false);
-                    var strideStr = KernelUtility.StridesToC(isFixedStrides, strideSymbols, false);
-                    str = $"{{span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name}), {dimensionStr}, {strideStr}}}";
+                    var dimensionStrs = dimensionSymbols.Select(x => x.Name);
+                    var strideStrs = strideSymbols.Select(x => x.Name);
+                    str = $"make_tensor_view(span_cast<{dtypeStr}>({Visit(buffer.MemSpan).Name}), make_shape({StringUtility.Join(", ", dimensionStrs)}), make_strides({StringUtility.Join(", ", strideStrs)}))";
                 }
 
                 break;
@@ -617,6 +619,19 @@ public class DeviceCSourceConvertVisitor : CSourceConvertVisitor
                 expr.Name + "_" + expr.GlobalVarIndex.ToString());
         }
 
+        _exprMemo.Add(expr, symbol);
+        return symbol;
+    }
+
+    protected override CSymbol VisitAsDim(AsDim expr)
+    {
+        if (_exprMemo.TryGetValue(expr, out var symbol))
+        {
+            return symbol;
+        }
+
+        var value = Visit(expr.Dim);
+        symbol = new("dim_t", value.Name);
         _exprMemo.Add(expr, symbol);
         return symbol;
     }

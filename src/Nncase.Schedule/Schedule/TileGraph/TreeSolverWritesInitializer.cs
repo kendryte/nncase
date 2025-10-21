@@ -35,6 +35,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITree
             partentTileInfo = TileNodeMemo[parentNode];
         }
 
+#if false
         // 1. child domain map to parent domain.
         foreach (var (bid, bufferInfo) in TileNodeMemo[value].BufferInfoMap)
         {
@@ -56,6 +57,7 @@ public sealed class TreeSolverWritesInitializer : TreeSolverBase<IntExpr>, ITree
 
             currentTripCounts.Add(bid, bufferInfo.Trips[^1]);
         }
+#endif
 
         foreach (var item in value.Children)
         {

@@ -11,26 +11,26 @@ namespace Nncase.Schedule;
 internal sealed class AffineExprToIntExprConverter : ExprVisitor<IntExpr, Unit>
 {
     private readonly Solver _solver;
-    private readonly Dictionary<int, IntExpr> _extents = new();
+    private readonly Dictionary<int, IntExpr> _dims = new();
 
-    public AffineExprToIntExprConverter(Solver solver, params IntExpr[] extents)
+    public AffineExprToIntExprConverter(Solver solver, params IntExpr[] dims)
     {
         _solver = solver;
-        if (extents.Any())
+        if (dims.Any())
         {
-            for (int i = 0; i < extents.Length; i++)
+            for (int i = 0; i < dims.Length; i++)
             {
-                _extents[i] = extents[i];
+                _dims[i] = dims[i];
             }
         }
     }
 
-    protected override IntExpr VisitLeafAffineExtent(AffineExtent expr)
+    protected override IntExpr VisitLeafAffineDim(AffineDim expr)
     {
-        if (!_extents.TryGetValue(expr.Position, out var v))
+        if (!_dims.TryGetValue(expr.Position, out var v))
         {
             v = _solver.MakeIntVar(1, int.MaxValue, $"d{expr.Position}_v");
-            _extents.Add(expr.Position, v);
+            _dims.Add(expr.Position, v);
         }
 
         return v;

@@ -139,6 +139,36 @@
         "resolved": "7.0.0",
         "contentHash": "3aeMZ1N0lJoSyzqiP03hqemtb1BijhsJADdobn/4nsMJ8V1H+CrpuduUe4hlRdx+ikBQju1VGjMD1GJ3Sk05Eg=="
       },
+      "Microsoft.CodeAnalysis.Common": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "pD5S14xMUebSGYe75kt0q/aaS/ftvktSo/pEv7aX7hNPHfdZS+SZeXvkvcffGxWkunYOyRF9m1oN7zzSdYj9dQ==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Analyzers": "3.3.4",
+          "System.Collections.Immutable": "7.0.0",
+          "System.Reflection.Metadata": "7.0.0",
+          "System.Runtime.CompilerServices.Unsafe": "6.0.0"
+        }
+      },
+      "Microsoft.CodeAnalysis.CSharp.Scripting": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "c2a+u437pZCaAcNSdI0hvvb5vAWph+sQYRpU7eFHaVU3s8Z3qOd72UJFI4m96x2bVt/7O3oSvxGSfMFf9g8DFg==",
+        "dependencies": {
+          "Microsoft.CSharp": "4.7.0",
+          "Microsoft.CodeAnalysis.CSharp": "[4.7.0]",
+          "Microsoft.CodeAnalysis.Common": "[4.7.0]",
+          "Microsoft.CodeAnalysis.Scripting.Common": "[4.7.0]"
+        }
+      },
+      "Microsoft.CodeAnalysis.Scripting.Common": {
+        "type": "Transitive",
+        "resolved": "4.7.0",
+        "contentHash": "/rooxKDFwy5XnhXdhGfk0I7zaPuLg6G+jPlS0r0gxmdgYwhqIvLBRm2DMyI2WthxwGtPTCo2LqhCc5i5+JEnaw==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Common": "[4.7.0]"
+        }
+      },
       "Microsoft.CSharp": {
         "type": "Transitive",
         "resolved": "4.7.0",
@@ -403,6 +433,11 @@
           "System.Runtime": "4.3.0"
         }
       },
+      "System.Collections.Immutable": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "dQPcs0U1IKnBdRDBkrCTi1FoajSTBzLcVTpjO4MBCMC7f4pDOIPzgBoX8JjG7X6uZRJ8EBxsi8+DR1JuwjnzOQ=="
+      },
       "System.Diagnostics.Contracts": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -564,6 +599,14 @@
           "System.Runtime": "4.3.0"
         }
       },
+      "System.Reflection.Metadata": {
+        "type": "Transitive",
+        "resolved": "7.0.0",
+        "contentHash": "MclTG61lsD9sYdpNz9xsKBzjsmsfCtcMZYXz/IUr2zlhaTaABonlr1ESeompTgM+Xk+IwtGYU7/voh3YWB/fWw==",
+        "dependencies": {
+          "System.Collections.Immutable": "7.0.0"
+        }
+      },
       "System.Reflection.Primitives": {
         "type": "Transitive",
         "resolved": "4.3.0",
@@ -606,8 +649,8 @@
       },
       "System.Runtime.CompilerServices.Unsafe": {
         "type": "Transitive",
-        "resolved": "5.0.0",
-        "contentHash": "ZD9TMpsmYJLrxbbmdvhwt9YEgG5WntEnZ/d1eH8JBX9LBp+Ju8BSBhUGbZMNVHHomWo2KVImJhTDl2hIgw/6MA=="
+        "resolved": "6.0.0",
+        "contentHash": "/iUeP3tq1S0XdNNoMz5C9twLSrM/TH+qElHkXWaPvuNOt+99G75NrV0OS2EqHx5wMN7popYjpc8oTjC1y16DLg=="
       },
       "System.Runtime.Extensions": {
         "type": "Transitive",
@@ -744,6 +787,8 @@
       "nncase.modules.ntt": {
         "type": "Project",
         "dependencies": {
+          "Microsoft.CodeAnalysis.CSharp": "[4.7.0, )",
+          "Microsoft.CodeAnalysis.Scripting": "[4.7.0, )",
           "Nncase.CodeGen": "[1.0.0, )",
           "Nncase.Diagnostics": "[1.0.0, )",
           "Nncase.Evaluator": "[1.0.0, )",
@@ -880,6 +925,30 @@
           "System.Reflection.Emit.Lightweight": "4.7.0",
           "System.Threading.Tasks.Extensions": "4.5.4",
           "System.ValueTuple": "4.5.0"
+        }
+      },
+      "Microsoft.CodeAnalysis.Analyzers": {
+        "type": "CentralTransitive",
+        "requested": "[3.3.4, )",
+        "resolved": "3.3.4",
+        "contentHash": "AxkxcPR+rheX0SmvpLVIGLhOUXAKG56a64kV9VQZ4y9gR9ZmPXnqZvHJnmwLSwzrEP6junUF11vuc+aqo5r68g=="
+      },
+      "Microsoft.CodeAnalysis.CSharp": {
+        "type": "CentralTransitive",
+        "requested": "[4.7.0, )",
+        "resolved": "4.7.0",
+        "contentHash": "JHCP2L6lB0oJ3tQoHkC67SFZxW+KbJVOnAo+6L01K5r/NlBlSUhTk5nUAldWhTVwGdzqNeHqGtnEqpsCmGSwQA==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.Common": "[4.7.0]"
+        }
+      },
+      "Microsoft.CodeAnalysis.Scripting": {
+        "type": "CentralTransitive",
+        "requested": "[4.7.0, )",
+        "resolved": "4.7.0",
+        "contentHash": "Ivv76l3bR8A6jVKWSJ79/Evt+0gz+tDkJPHzCeviz7ML/j0My8pOqd+Bz5WT5Qfhqo+yMMKC3Lku8nE9oLghhg==",
+        "dependencies": {
+          "Microsoft.CodeAnalysis.CSharp.Scripting": "[4.7.0]"
         }
       },
       "Microsoft.Extensions.Hosting.Abstractions": {

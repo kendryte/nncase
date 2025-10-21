@@ -126,7 +126,7 @@ internal sealed class PrimFuncEvaluateVisitor
     private readonly IValue[] _args;
     private readonly Dictionary<TIR.MemoryLocation, byte[]> _poolMap = new() {
           { TIR.MemoryLocation.Input, new byte[_pool_size] },
-          { TIR.MemoryLocation.L2Data, new byte[_pool_size] },
+          { TIR.MemoryLocation.Cache, new byte[_pool_size] },
           { TIR.MemoryLocation.Data, new byte[_pool_size] },
           { TIR.MemoryLocation.Output, new byte[_pool_size] },
         };

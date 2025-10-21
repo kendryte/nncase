@@ -11,9 +11,15 @@ using System.Threading.Tasks;
 
 namespace Nncase.Schedule;
 
+/// <summary>
+/// loops access mask for buffer.
+/// <example>
+/// For example, buffer a[m,k] is accessed by loop `m,n,k`, the mask is 101(knm) (binary) = 13 (decimal).
+/// </example>
+/// </summary>
 public struct LoopMask
 {
-    private readonly uint _mask;
+    private uint _mask;
 
     public LoopMask(uint mask)
     {
@@ -22,39 +28,24 @@ public struct LoopMask
 
     public int Ones => BitOperations.PopCount(_mask);
 
-    public static LoopMask operator &(LoopMask left, LoopMask right) => new LoopMask(left._mask & right._mask);
+    public void SetRelated(int loop) => _mask |= 1U << loop;
 
     public bool IsRelated(int loop) => (_mask & (1 << loop)) != 0;
 
-    public bool IsRelated(IR.Affine.AffineDim dim) => (_mask & (1 << dim.Position)) != 0;
-
-    public override string ToString() => Convert.ToString(_mask, 2);
-}
-
-public record LoopMasks(LoopMask[] Masks) : IReadOnlyList<LoopMask>
-{
-    public int Count => Masks.Length;
-
-    public LoopMask this[int index] => Masks[index];
-
-    public IEnumerator<LoopMask> GetEnumerator() => ((IEnumerable<LoopMask>)Masks).GetEnumerator();
-
-    IEnumerator IEnumerable.GetEnumerator() => Masks.GetEnumerator();
-
-    public bool IsRelated(int dim) => Masks.Any(m => m.IsRelated(dim));
-
-    public bool IsRelated(IR.Affine.AffineDim dim) => Masks.Any(m => m.IsRelated(dim));
-
-    public int IndexOf(IR.Affine.AffineDim dim)
+    public int LastRelated(int rank)
     {
-        for (int j = 0; j < Masks.Length; j++)
+        for (int i = rank - 1; i >= 0; i--)
         {
-            if (Masks[j].IsRelated(dim))
+            if (IsRelated(i))
             {
-                return j;
+                return i;
             }
         }
 
         return -1;
     }
+
+    public bool IsRelated(IR.Affine.AffineDim dim) => (_mask & (1 << dim.Position)) != 0;
+
+    public override string ToString() => Convert.ToString(_mask, 2);
 }

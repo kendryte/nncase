@@ -30,15 +30,16 @@ internal sealed class LinkedModule : ILinkedModule
 {
     public const string ModuleHeaderSectionName = ".desc";
 
-    public unsafe LinkedModule(IReadOnlyList<ILinkedFunction> functions, Stream desc, Stream text, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> blockLocalRdatas, ulong rdataAlign)
+    public unsafe LinkedModule(IReadOnlyList<ILinkedFunction> functions, Stream desc, Stream text, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> threadLocalCaches, IReadOnlyList<Stream> blockLocalRdatas, ulong rdataAlign)
     {
         Functions = functions;
         Sections =
         [
-            new LinkedSection(desc, ModuleHeaderSectionName, 0, 8, (uint)sizeof(ModuleDescHeader)),
+            new LinkedSection(desc, ModuleHeaderSectionName, 0, 8, (ulong)desc.Length),
             new LinkedSection(text, WellknownSectionNames.Text, 0, 8, (ulong)text.Length),
             new LinkedSection(rdata, WellknownSectionNames.Rdata, 0, (uint)rdataAlign, (ulong)rdata.Length),
             new LinkedMultipleContentsSection(threadLocalRdatas, WellknownSectionNames.ThreadLocalRdata, 0, (uint)rdataAlign),
+            new LinkedMultipleContentsSection(threadLocalCaches, WellknownSectionNames.ThreadLocalCache, 0, (uint)rdataAlign),
             new LinkedMultipleContentsSection(blockLocalRdatas, WellknownSectionNames.BlockLocalRdata, 0, (uint)rdataAlign),
         ];
     }

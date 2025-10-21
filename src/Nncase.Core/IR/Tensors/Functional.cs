@@ -216,4 +216,6 @@ public static class Tensors
 
         return new Call(new Unpack(lanes, axes), input);
     }
+
+    public static Call LocalShardDim(Dimension dim, SBP axisPolicy, Placement placement) => new Call(new LocalShardDim(axisPolicy, placement), dim);
 }

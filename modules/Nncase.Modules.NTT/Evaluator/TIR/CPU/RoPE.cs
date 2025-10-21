@@ -16,7 +16,7 @@ public sealed class RoPEEvaluator : ITypeInferencer<RoPE>, IKernelInfoEvaluator<
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
-        var multipliers = new[] {
+        var tilebounds = new[] {
             new ValueRange<long>(1, int.MaxValue),
             new ValueRange<long>(context.BufferShapes[0][^2], int.MaxValue),
             new ValueRange<long>(1, int.MaxValue),
@@ -27,7 +27,7 @@ public sealed class RoPEEvaluator : ITypeInferencer<RoPE>, IKernelInfoEvaluator<
         bufferInfos[1] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[2] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[3] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Write);
-        return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
+        return new MicroKernelInfo(tilebounds, bufferInfos, GetComputeCycle);
     }
 
     private static IntExpr GetComputeCycle(IntExpr[][] bufferShapes, Solver solver, MicroKernelContext context)

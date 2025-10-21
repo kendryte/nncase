@@ -48,14 +48,9 @@ public enum MemoryLocation
     BlockLocalData = 1 << 7,
 
     /// <summary>
-    /// l2 data.
+    /// cache.
     /// </summary>
-    L2Data = 1 << 8,
-
-    /// <summary>
-    /// L1 data.
-    /// </summary>
-    L1Data = 1 << 9,
+    Cache = 1 << 8,
 
     /// <summary>
     /// base addr.

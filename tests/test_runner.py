@@ -490,31 +490,39 @@ class TestRunner(Evaluator, Inference, metaclass=ABCMeta):
                         {"role": "system", "content": "You are a assistant!"},
                         {"role": "user", "content": data[batch_idx]}
                     ]
-                    data = self.tokenizer.apply_chat_template(
+                    text = self.tokenizer.apply_chat_template(
                         messages,
                         tokenize=False,
                         add_generation_prompt=True
                     )
+                    data = self.tokenizer([text], return_tensors="np")
+                    if dtype == 'PagedAttentionKVCache':
+                        data = input['scheduler'].schedule([0], [data.input_ids[0].shape[0]])
                 if not test_utils.in_ci():
                     if method == 'text':
-                        tokendizer_data = self.tokenizer(
-                            [data], return_tensors="np").input_ids[0].astype(np.int64)
-                        dump_txt_file(os.path.join(self.case_dir, name,
-                                                   f'text_{name}_{input_idx}_{batch_idx}.txt'), tokendizer_data)
+                        if dtype != 'PagedAttentionKVCache':
+                            input_ids = data.input_ids[0].astype(np.int64)
+                            dump_txt_file(os.path.join(self.case_dir, name,
+                                                       f'text_{name}_{input_idx}_{batch_idx}.txt'),
+                                          input_ids)
+                            np.save(os.path.join(self.case_dir, name,
+                                                 f'{name}_{input_idx}_{batch_idx}.npy'), input_ids)
+                            convert_npy_to_json(os.path.join(self.case_dir, name,
+                                                             f'{name}_{input_idx}_{batch_idx}.npy'),
+                                                os.path.join(self.case_dir, name))
+                        elif dtype == 'PagedAttentionKVCache' and hasattr(data, 'dump_json'):
+                            data.dump_json(os.path.join(self.case_dir, name,
+                                                        f'{name}_{input_idx}_{batch_idx}.json'))
                     else:
                         dump_bin_file(os.path.join(self.case_dir, name,
                                                    f'{name}_{input_idx}_{batch_idx}.bin'), data)
                         dump_txt_file(os.path.join(self.case_dir, name,
                                                    f'{name}_{input_idx}_{batch_idx}.txt'), data)
-                    if dtype != 'PagedAttentionKVCache':
                         np.save(os.path.join(self.case_dir, name,
                                              f'{name}_{input_idx}_{batch_idx}.npy'), data)
                         convert_npy_to_json(os.path.join(self.case_dir, name,
                                                          f'{name}_{input_idx}_{batch_idx}.npy'),
                                             os.path.join(self.case_dir, name))
-                    # elif dtype == 'PagedAttentionKVCache' and not self.cfg['huggingface_options']['pipeline']:
-                    #     data.dump_json(os.path.join(self.case_dir, name,
-                    #                                 f'{name}_{input_idx}_{batch_idx}.json'))
                 samples.append(data)
             input['data'] = samples
 

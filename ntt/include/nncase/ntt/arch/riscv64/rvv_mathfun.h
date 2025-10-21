@@ -188,15 +188,24 @@ _RVV_FLOAT32_LOG_OP(8, 4)
 #define c_exp_hi 88.0f
 #define c_exp_lo -88.0f
 
+//log2e = 1/(ln2)
 #define c_cephes_LOG2EF 1.44269504088896341
+
+//ln2
 #define c_cephes_exp_C1 0.693359375
 #define c_cephes_exp_C2 -2.12194440e-4
 
+// 1/7!
 #define c_cephes_exp_p0 1.9875691500E-4
+// 1/6!
 #define c_cephes_exp_p1 1.3981999507E-3
+// 1/5!
 #define c_cephes_exp_p2 8.3334519073E-3
+// 1/4!
 #define c_cephes_exp_p3 4.1665795894E-2
+// 1/3!
 #define c_cephes_exp_p4 1.6666665459E-1
+// 1/2!
 #define c_cephes_exp_p5 5.0000001201E-1
 
 // e^x = 1 + x + 1/2!x^2 + 1/3!x^3 + 1/4!x^4 + 1/5!x^5 + 1/6!x^6 + 1/7!x^7
@@ -211,42 +220,222 @@ _RVV_FLOAT32_LOG_OP(8, 4)
         x = __riscv_vfmax_vf_f##TLEN##m##LMUL(x, c_exp_lo, vl);                \
                                                                                \
         /* express exp(x) as exp(g + n*log(2)) */                              \
+        /*   a1 = x/(ln2) + 1/2(approxy) = x * log2e + 1/2 */                    \
         a1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(a1, x, c5, vl);                \
                                                                                \
-        /* perform a floorf */                                                 \
+        /* tmp = floor(a1) */                                                 \
+            /* tmp = float(int(a1)) */                                            \
         auto tmp = __riscv_vfcvt_f_x_v_f##TLEN##m##LMUL(                       \
             __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(a1, vl), vl);                 \
+            /* mask = tmp > a1*/   \
         auto mask = __riscv_vmfgt_vv_f##TLEN##m##LMUL##_b##MLEN(tmp, a1, vl);  \
+            /* if mask , tmp -=1 */                                                \
         tmp = __riscv_vfsub_vf_f##TLEN##m##LMUL##_m(mask, tmp, 1.f, vl);       \
+        /* floor finish*/              \
                                                                                \
+        /* x = x - ln2 * tmp  */ \
+            /*b1 = 1/7!*/ \
         auto b1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p0, vl);      \
+            /* x = x - ln2_hi * tmp , where tmp = floor(x/ln2)*/ \
         x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C1, tmp, vl);  \
+            /* a2 = int(tmp) */ \
         auto a2 = __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(tmp, vl);               \
+            /* b2 = 1/5! */ \
         auto b2 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p2, vl);      \
+            /* x = x - ln2_lo * tmp*/  \
         x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C2, tmp, vl);  \
+        /* x is now in primary range */                                       \
+                                                                               \
         auto b3 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_exp_p4, vl);      \
         auto x2 = __riscv_vfmul_vv_f##TLEN##m##LMUL(x, x, vl);                 \
+        /* b = e^x, where x = x % ln2 */                                        \
+            /* b1 = 1/7! * x + 1/6!     */                                                   \
         b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x, c1, vl);                \
+            /*b2 =  1/5! * x + 1/4!         */                              \
         b2 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b2, x, c3, vl);                \
+            /* b3 = 1/3! * x + 1/2!        */                               \
         b3 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b3, x, c5, vl);                \
+            /* b1 = b1 * x^2 + b2 */ \
         b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, b2, vl);               \
+            /* x = x + 1      */        \
         x = __riscv_vfadd_vf_f##TLEN##m##LMUL(x, 1.f, vl);                     \
+            /* b1 = b1 * x^2 + b3 */ \
         b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, b3, vl);               \
+            /* a = (float)2^(a2)*/  \
         auto a = __riscv_vsll_vx_i##TLEN##m##LMUL(a2, M, vl);                  \
+            /* b1 = b1 * x^2 + x */ \
         b1 = __riscv_vfmadd_vv_f##TLEN##m##LMUL(b1, x2, x, vl);                \
+        /* b1 = e^x end */                                                      \
+        /* b = bit(b1)             */                                      \
         auto b =                                                               \
             __riscv_vreinterpret_v_f##TLEN##m##LMUL##_i##TLEN##m##LMUL(b1);    \
                                                                                \
-        /* build 2^n */                                                        \
+        /* a + b by int rules => a * b by float rules, where a is 2^n  */       \
         auto ret = __riscv_vadd_vv_i##TLEN##m##LMUL(a, b, vl);                 \
         return __riscv_vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(     \
             ret);                                                              \
     }
 
+// Use less registers, but more data dependence
+
+#define _RVV_FLOAT_EXP_OP_LMUL8(LMUL, MLEN, TLEN, E, M)                              \
+    static inline NTT_NO_SCHEDULE_INSTS vfloat##TLEN##m##LMUL##_t exp_ps_fp32( \
+        vfloat##TLEN##m##LMUL##_t x, size_t vl) {                              \
+        auto a1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_LOG2EF, vl);      \
+        x = __riscv_vfmin_vf_f##TLEN##m##LMUL(x, c_exp_hi, vl);                \
+        x = __riscv_vfmax_vf_f##TLEN##m##LMUL(x, c_exp_lo, vl);                \
+                                                                               \
+        /* express exp(x) as exp(g + n*log(2)) */                              \
+        /*   a1 = x/(ln2) + 1/2(approxy) = x * log2e + 1/2 */                    \
+        a1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(a1, x, vl);                \
+        a1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(a1, 0.5f, vl);                \
+                                                                               \
+        /* tmp = floor(a1) */                                                 \
+            /* tmp = float(int(a1)) */                                            \
+        auto tmp = __riscv_vfcvt_f_x_v_f##TLEN##m##LMUL(                       \
+            __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(a1, vl), vl);                 \
+            /* mask = tmp > a1*/   \
+        auto mask = __riscv_vmfgt_vv_f##TLEN##m##LMUL##_b##MLEN(tmp, a1, vl);  \
+            /* if mask , tmp -=1 */                                                \
+        tmp = __riscv_vfsub_vf_f##TLEN##m##LMUL##_m(mask, tmp, 1.f, vl);       \
+        /* floor finish*/              \
+                                                                               \
+        /* x = x - ln2 * tmp  */ \
+            /*b1 = 1/7!*/ \
+            /* x = x - ln2_hi * tmp , where tmp = floor(x/ln2)*/ \
+        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C1, tmp, vl);  \
+            /* a2 = int(tmp) */ \
+        auto a2 = __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(tmp, vl);               \
+            /* x = x - ln2_lo * tmp*/  \
+        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C2, tmp, vl);  \
+        /* x is now in primary range */                                       \
+                                                                               \
+        /* b = e^x, where x = x % ln2 */                                        \
+            /* b1 = 1/7! * x + 1/6!     */                                                   \
+        auto b1 = __riscv_vfmul_vf_f##TLEN##m##LMUL(x, c_cephes_exp_p0, vl);      \
+        b1 =  __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, c_cephes_exp_p1, vl);                \
+            /* b1 = x(1/7! * x + 1/6!)*/   \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1, x, vl);                \
+            /* b1 = b1 + 1/5!*/  \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, c_cephes_exp_p2, vl);      \
+            /* b1 = b1 * x*/ \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+            /* b1 = b1 + 1/4!*/ \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, c_cephes_exp_p3, vl);      \
+            /* b1 = b1 * x*/ \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+            /* b1 = b1 + 1/3!*/ \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, c_cephes_exp_p4, vl);      \
+            /* b1 = b1 * x*/ \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+            /* b1 = b1 + 1/2!*/  \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, c_cephes_exp_p5, vl);      \
+            /* b1 = b1 * x*/ \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+            /* b1 = b1 + 1*/  \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, 1.f, vl);                     \
+            /* a = (float)2^(a2)*/  \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, 1.f, vl);                     \
+        auto a = __riscv_vsll_vx_i##TLEN##m##LMUL(a2, M, vl);                  \
+            /* b1 = b1 * x^2 + x */ \
+        /* b = bit(b1)             */                                      \
+        auto b =                                                               \
+            __riscv_vreinterpret_v_f##TLEN##m##LMUL##_i##TLEN##m##LMUL(b1);    \
+                                                                               \
+        /* a + b by int rules => a * b by float rules, where a is 2^n  */       \
+        auto ret = __riscv_vadd_vv_i##TLEN##m##LMUL(a, b, vl);                 \
+        return __riscv_vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(     \
+            ret);                                                              \
+    }
+
+#ifdef FOUR_REG_v1
+// Use four peek registers, but less data dependency
+// However, it slower than the more data dependency version,
+// because of the pipeline of the c908
+#define _RVV_FLOAT_EXP_OP_LMUL8(LMUL, MLEN, TLEN, E, M)                              \
+    static inline NTT_NO_SCHEDULE_INSTS vfloat##TLEN##m##LMUL##_t exp_ps_fp32( \
+        vfloat##TLEN##m##LMUL##_t x, size_t vl) {                              \
+        auto a1 = __riscv_vfmv_v_f_f##TLEN##m##LMUL(c_cephes_LOG2EF, vl);      \
+        x = __riscv_vfmin_vf_f##TLEN##m##LMUL(x, c_exp_hi, vl);                \
+        x = __riscv_vfmax_vf_f##TLEN##m##LMUL(x, c_exp_lo, vl);                \
+                                                                               \
+        /* express exp(x) as exp(g + n*log(2)) */                              \
+        /*   a1 = x/(ln2) + 1/2(approxy) = x * log2e + 1/2 */                    \
+        a1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(a1, x, vl);                \
+        a1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(a1, 0.5f, vl);                \
+                                                                               \
+        /* tmp = floor(a1) */                                                 \
+            /* tmp = float(int(a1)) */                                            \
+        auto tmp = __riscv_vfcvt_f_x_v_f##TLEN##m##LMUL(                       \
+            __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(a1, vl), vl);                 \
+            /* mask = tmp > a1*/   \
+        auto mask = __riscv_vmfgt_vv_f##TLEN##m##LMUL##_b##MLEN(tmp, a1, vl);  \
+            /* if mask , tmp -=1 */                                                \
+        tmp = __riscv_vfsub_vf_f##TLEN##m##LMUL##_m(mask, tmp, 1.f, vl);       \
+        /* floor finish*/              \
+                                                                               \
+        /* x = x - ln2 * tmp  */ \
+            /*b1 = 1/7!*/ \
+            /* x = x - ln2_hi * tmp , where tmp = floor(x/ln2)*/ \
+        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C1, tmp, vl);  \
+            /* a2 = int(tmp) */ \
+        auto a2 = __riscv_vfcvt_x_f_v_i##TLEN##m##LMUL(tmp, vl);               \
+            /* x = x - ln2_lo * tmp*/  \
+        x = __riscv_vfnmsac_vf_f##TLEN##m##LMUL(x, c_cephes_exp_C2, tmp, vl);  \
+        /* x is now in primary range */                                       \
+                                                                               \
+        /* b = e^x, where x = x % ln2 */                                        \
+            /*(b1 = 1/7! x^3 + 1/6! x^2 + 1/5! x + 1/4!)*/   \
+                /* b1 = 1/7! * x   */                                                   \
+                /* b2 = 1/5! * x */   \
+        auto b1 = __riscv_vfmul_vf_f##TLEN##m##LMUL(x, c_cephes_exp_p0, vl);      \
+        auto b2 = __riscv_vfmul_vf_f##TLEN##m##LMUL(x , c_cephes_exp_p2, vl);                \
+                /* b1 = b1 + 1/6!   */                                                   \
+        b1 =  __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, c_cephes_exp_p1, vl);                \
+                /* b1 = x* b1 */ \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1, x, vl);                \
+                /* b2 = b2 + 1/4!   */                                                   \
+        b2 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b2, c_cephes_exp_p3, vl);      \
+                /* b1 = x* b1*/ \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1, x, vl);                \
+        b1 = __riscv_vfadd_vv_f##TLEN##m##LMUL(b1, b2, vl);               \
+            /*end (b1 = 1/7! x^3 + 1/6! x^2 + 1/5! x + 1/4!)*/ \
+            /* b1 = b1 * x*/   \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+            /* b1 = b1 + 1/3!*/ \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, c_cephes_exp_p4, vl);      \
+            /* b1 = b1 * x*/ \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+            /* b1 = b1 + 1/2!*/  \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, c_cephes_exp_p5, vl);      \
+            /* b1 = b1 * x*/ \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+            /* b1 = b1 + 1*/  \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, 1.f, vl);                     \
+            /* a = (float)2^(a2)*/  \
+        b1 = __riscv_vfmul_vv_f##TLEN##m##LMUL(b1 , x, vl);                \
+        b1 = __riscv_vfadd_vf_f##TLEN##m##LMUL(b1, 1.f, vl);                     \
+        auto a = __riscv_vsll_vx_i##TLEN##m##LMUL(a2, M, vl);                  \
+            /* b1 = b1 * x^2 + x */ \
+        /* b = bit(b1)             */                                      \
+        auto b =                                                               \
+            __riscv_vreinterpret_v_f##TLEN##m##LMUL##_i##TLEN##m##LMUL(b1);    \
+                                                                               \
+        /* a + b by int rules => a * b by float rules, where a is 2^n  */       \
+        auto ret = __riscv_vadd_vv_i##TLEN##m##LMUL(a, b, vl);                 \
+        return __riscv_vreinterpret_v_i##TLEN##m##LMUL##_f##TLEN##m##LMUL(     \
+            ret);                                                              \
+    }
+
+#endif
+
+
 _RVV_FLOAT_EXP_OP(1, 32, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(2, 16, 32, 0x7f, 23)
 _RVV_FLOAT_EXP_OP(4, 8, 32, 0x7f, 23)
-_RVV_FLOAT_EXP_OP(8, 4, 32, 0x7f, 23)
+_RVV_FLOAT_EXP_OP_LMUL8(8, 4, 32, 0x7f, 23)
+// _RVV_FLOAT_EXP_OP(8, 4, 32, 0x7f, 23)
 
 #if 0
 // from glibc 2.40: max_ulp_error = 3
