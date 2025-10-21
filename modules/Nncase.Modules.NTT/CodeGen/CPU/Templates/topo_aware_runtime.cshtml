@@ -159,8 +159,8 @@ class tensor_reduce_sync_impl {
       var cur_index = string.Join(", ", Enumerable.Range(0, hierarchy.Length).Select(i => "ntt::distributed::" + hierarchyNames[i] + "id()"));
     }
 
-    template <class TSliceIn, class TSliceOut>
-    void reduce_impl(TSliceIn &local, TSliceIn &remote, TSliceOut &dest) {
+    template <class TSliceIn1, class TSliceIn2, class TSliceOut>
+    void reduce_impl(TSliceIn1 &local, TSliceIn2 &remote, TSliceOut &dest) {
         if constexpr (Op == ntt::reduce_op::max) {
             ntt::binary<ntt::ops::max>(local, remote, dest);
         } else if constexpr (Op == ntt::reduce_op::sum ||
