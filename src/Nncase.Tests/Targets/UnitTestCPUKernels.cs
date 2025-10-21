@@ -516,7 +516,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             var newsbp = ndsbp.ToArray();
             foreach (var axis in comb)
             {
-                newsbp[axis] = SBP.P();
+                newsbp[axis] = SBP.P(Enumerable.Range(0, shape.Length).ToArray());
             }
 
             var partial = IR.F.Distributed.ForceBoxing(broadcast, new DistributedType(inputType, newsbp, placement));
