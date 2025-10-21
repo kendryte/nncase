@@ -41,7 +41,6 @@ public abstract partial class BaseExpr
     private IRType? _checkedType;
     private int? _hashCodeCache;
 
-    // 需要补充上可选参数
     internal BaseExpr(IEnumerable<BaseExpr> operands, bool tempora = true)
     {
         ExprScope.Current?.Add(this);
@@ -408,7 +407,6 @@ public abstract partial class BaseExpr
     }
 }
 
-// 放在 Nncase.IR 命名空间下（和 BaseExpr 同程序集）
 internal static class UserTrackingScope
 {
     private static readonly System.Threading.AsyncLocal<int> _depth = new();
