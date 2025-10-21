@@ -30,7 +30,8 @@ struct rope_layout {
     static constexpr auto sincos_seq_axis = 1_dim;
 };
 
-template <ScalarOrVector T, size_t NumHeads, size_t HalfDim, bool Arch>
+template <ScalarOrVector T, size_t NumHeads, size_t HalfDim, bool Arch,
+          bool UseF32>
 struct u_rope {
   public:
     template <Dimension TSeqLen, Strides TInputStrides, Strides TCosStrides,
@@ -42,6 +43,7 @@ struct u_rope {
                const TCosStrides &cos_strides, const TSinStrides &sin_strides,
                const TOutputStrides &output_strides) noexcept {
         using rope_layout = ukernels::rope_layout;
+        using ElemType = typename ntt::element_or_scalar_t<T>;
 
         ntt::apply(
             ntt::make_shape(fixed_dim_v<HalfDim>, seq_len),
@@ -65,16 +67,38 @@ struct u_rope {
                               h * input_strides[rope_layout::head_axis] +
                               HalfDim * input_strides[rope_layout::dim_axis]];
 
-                    // 1st half
-                    output[out_offset +
-                           h * output_strides[rope_layout::head_axis]] =
-                        ntt::mul_sub(input_0, cos_0, input_1 * sin_0);
+                    if constexpr (UseF32 && Vector<T>) {
+                        const auto input_0_f32 = cast_elem<float>(input_0);
+                        const auto input_1_f32 = cast_elem<float>(input_1);
+                        const auto cos_0_f32 = cast_elem<float>(cos_0);
+                        const auto sin_0_f32 = cast_elem<float>(sin_0);
+                        const auto cos_1_f32 = cast_elem<float>(cos_1);
+                        const auto sin_1_f32 = cast_elem<float>(sin_1);
+                        auto first_half = ntt::mul_sub(input_0_f32, cos_0_f32,
+                                                       input_1_f32 * sin_0_f32);
+                        auto second_half = ntt::mul_add(
+                            input_1_f32, cos_1_f32, input_0_f32 * sin_1_f32);
 
-                    // 2nd half
-                    output[out_offset +
-                           h * output_strides[rope_layout::head_axis] +
-                           HalfDim * output_strides[rope_layout::dim_axis]] =
-                        ntt::mul_add(input_1, cos_1, input_0 * sin_1);
+                        output[out_offset +
+                               h * output_strides[rope_layout::head_axis]] =
+                            cast_elem<ElemType>(first_half);
+                        output[out_offset +
+                               h * output_strides[rope_layout::head_axis] +
+                               HalfDim *
+                                   output_strides[rope_layout::dim_axis]] =
+                            cast_elem<ElemType>(second_half);
+                    } else { // 1st half
+                        output[out_offset +
+                               h * output_strides[rope_layout::head_axis]] =
+                            ntt::mul_sub(input_0, cos_0, input_1 * sin_0);
+
+                        // 2nd half
+                        output[out_offset +
+                               h * output_strides[rope_layout::head_axis] +
+                               HalfDim *
+                                   output_strides[rope_layout::dim_axis]] =
+                            ntt::mul_add(input_1, cos_1, input_0 * sin_1);
+                    }
                 }
             },
             input_strides.template slice<1>(), cos_strides, sin_strides,
@@ -83,16 +107,16 @@ struct u_rope {
 };
 } // namespace ukernels
 
-template <size_t NumHeads, size_t HalfDim, ScalarOrVector T, Dimension TSeqLen,
-          Strides TInputStrides, Strides TCosStrides, Strides TSinStrides,
-          Strides TOutputStrides>
+template <bool UseF32, size_t NumHeads, size_t HalfDim, ScalarOrVector T,
+          Dimension TSeqLen, Strides TInputStrides, Strides TCosStrides,
+          Strides TSinStrides, Strides TOutputStrides>
 constexpr void
 u_rope(const T *NTT_RESTRICT input, const T *NTT_RESTRICT cos,
        const T *NTT_RESTRICT sin, T *NTT_RESTRICT output,
        const TSeqLen &seq_len, const TInputStrides &input_strides,
        const TCosStrides &cos_strides, const TSinStrides &sin_strides,
        const TOutputStrides &output_strides) noexcept {
-    ukernels::u_rope<T, NumHeads, HalfDim, true> impl;
+    ukernels::u_rope<T, NumHeads, HalfDim, true, UseF32> impl;
     impl(input, cos, sin, output, seq_len, input_strides, cos_strides,
          sin_strides, output_strides);
 }

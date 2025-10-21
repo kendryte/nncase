@@ -12,7 +12,7 @@ class UnaryTestGenerator(BaseTestGenerator):
             "abs": f"auto ort_output = ortki_Abs(ort_input);", 
             "cos": f"auto ort_output = ortki_Cos(ort_input);",
             "sin": f"auto ort_output = ortki_Sin(ort_input);",
-            # "exp": f"auto ort_output = ortki_Exp(ort_input);"
+            "exp": f"auto ort_output = ortki_Exp(ort_input);"
             # "acos", "acosh", "asin", "asinh", "ceil", "copy", "cos", "cosh",
             # "exp", "erf", "floor", "log", "neg", "round", "rsqrt", "sign", "sin",
             # "sinh", "sqrt", "square", "tanh", "swish",
@@ -34,19 +34,16 @@ class UnaryTestGenerator(BaseTestGenerator):
 
         # ORT *unary operations* do not support these data types, need to cast to double 
         # fortunately, they could be *cast* in ort( fp8 are unfortunate)
-        self.types_need_cast_in_ort = {
-            "sin": [ 'bool',  'int8_t', 'int16_t', 'bfloat16', 'half',
-                    'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t', 
-                    'int32_t', 'int64_t'
-                ],
-            "cos": [ 'bool',  'int8_t', 'int16_t', 'bfloat16', 'half',
-                    'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t', 
-                    'int32_t', 'int64_t', 'double'
-                ],
+        default_cast_types_in_ort = [
+            'bool', 'int8_t', 'int16_t', 'bfloat16', 'half',
+            'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t'
+        ]
 
-            "default": [ 'bool',  'int8_t', 'int16_t', 'bfloat16', 'half',
-                    'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t'
-                ]
+        self.types_need_cast_in_ort = {
+            "sin": default_cast_types_in_ort + ['int32_t', 'int64_t'],
+            "cos": default_cast_types_in_ort + ['int32_t', 'int64_t', 'double'],
+            "default": default_cast_types_in_ort,
+            "exp": default_cast_types_in_ort + ['int32_t', 'uint64_t', 'int64_t'],
         }
         self.types_need_cast_in_ntt = {
             'float_e4m3_t', 'float_e5m2_t' 
@@ -62,6 +59,18 @@ class UnaryTestGenerator(BaseTestGenerator):
             },
             "exp": {
                 "float": DataType("float", "Float32", "-70.0", "70.0", False),
+                "double": DataType("double", "Float64", "-700.0", "700.0", False),
+                "half": DataType("half", "Float16", "half(-10.0f)", "half(10.0f)", False),
+                "bfloat16": DataType("bfloat16", "Bfloat16", "-70.0_bf16", "70.0_bf16", False),
+                "float_e4m3_t": DataType("float_e4m3_t", "Float8e4m3", "float_e4m3_t(-6.0f)", "float_e4m3_t(6.0f)", False),
+                "uint8_t": DataType('uint8_t', 'Uint8', '0', '5', True),
+                "int8_t": DataType('int8_t', 'Int8', '-4', '4', True),
+                "uint16_t": DataType('uint16_t', 'Uint16', '0', '11', True),
+                "int16_t": DataType('int16_t', 'Int16', '-10', '10', True),
+                "uint32_t": DataType('uint32_t', 'Uint32', '0', '22', True),
+                "int32_t": DataType('int32_t', 'Int32', '-21', '21', True),
+                "uint64_t": DataType('uint64_t', 'Uint64', '0', '30', True),
+                "int64_t": DataType('int64_t', 'Int64', '-30', '30', True)
             }
         }
 

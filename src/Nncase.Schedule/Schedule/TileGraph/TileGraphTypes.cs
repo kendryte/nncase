@@ -11,10 +11,23 @@ using System.Runtime.CompilerServices;
 using Nncase.Graphs;
 using Nncase.IR;
 using Nncase.IR.Affine;
+using Nncase.Utilities;
 using QuikGraph;
 using QuikGraph.Collections;
+using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule.TileGraph;
+
+[Flags]
+public enum TileGridAttribute : uint
+{
+    None = 0,
+
+    /// <summary>
+    /// The grid is required by outside, e.g., the output of the function.
+    /// </summary>
+    LiveOut = 1 << 1,
+}
 
 public interface ITileable
 {
@@ -53,19 +66,45 @@ public sealed record DomainRelation(int DomainOp, int RangeOp, AffineMap Map)
         return new DomainRelation(DomainOp, other.RangeOp, Map * other.Map);
     }
 
+    public Isl.map ToMap()
+    {
+        var domains = string.Join(", ", Enumerable.Range(0, Map.Domains.Length).Select(i => $"d{i}"));
+        if (Map.Symbols.Length > 0)
+        {
+            throw new NotSupportedException("Isl map does not support symbols yet.");
+        }
+
+        var constraints = new List<string>();
+        string RangeAddDim(AffineConstant low, AffineConstant up)
+        {
+            var dim = $"d{domains.Length + constraints.Count}";
+            constraints.Add($"{low} <= {dim} < {up}");
+            return dim;
+        }
+
+        var results = StringUtility.Join(", ", Map.Results.ToArray().Select(expr => expr.Offset switch
+        {
+            AffineConstant c => RangeAddDim(c.Value, (AffineConstant)expr.Extent),
+            _ => expr.Offset.GetDisplayString(Map.Symbols),
+        }));
+
+        return new Isl.map(Isl.ctx.Current, $"{{ [{domains}] -> [{results}] : {string.Join(" and ", constraints)} }}");
+    }
+
     public override string ToString() => $"Op{DomainOp} -> Op{RangeOp}: {Map}";
 }
 
 public sealed class TileGrid : ITileable
 {
-    public TileGrid(Grid grid, Op op, int opId, IEnumerable<string> dimNames, IEnumerable<long> domainBounds, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic, IEnumerable<IEnumerable<long>> bufferShapes)
+    public TileGrid(Grid grid, Op op, int opId, IEnumerable<long> domainBounds, DomainRelation relation, Dimension[] domainBoundsExpr, IEnumerable<bool> domainDynamic, IEnumerable<IEnumerable<long>> bufferShapes, TileGridAttribute attribute)
     {
-        Level = 0;
+        Level = -1;
         Grid = grid;
         Op = op;
         OpId = opId;
         DomainDynamic = ImmutableArray.CreateRange(domainDynamic);
-        DomainRelation = new(opId, opId, AffineMap.Identity(domainBounds.Count()));
+        DomainRelation = relation;
+        Attribute = attribute;
         DomainBounds = ImmutableArray.CreateRange(domainBounds);
         DomainBoundExprs = ImmutableArray.CreateRange(domainBoundsExpr);
         BufferShapes = ImmutableArray.CreateRange(bufferShapes.Select(x => ImmutableArray.CreateRange(x)));
@@ -76,6 +115,8 @@ public sealed class TileGrid : ITileable
     public int OpId { get; }
 
     public DomainRelation DomainRelation { get; set; }
+
+    public TileGridAttribute Attribute { get; }
 
     public Grid Grid { get; }
 
@@ -93,6 +134,8 @@ public sealed class TileGrid : ITileable
 
     public AffineMap WriteAccess => Grid.AccessMaps[^1];
 
+    public long GetBufferElemSize(int i) => Grid.Buffers[i].CheckedDataType.SizeInBytes;
+
     public MicroKernelInfo GetKernelInfo(ITargetOptions targetOptions) => CompilerServices.GetOpMicroKernelInfo(Op, new(Op, Grid.AccessMaps.ToImmutableArray(), BufferShapes, targetOptions));
 
     public override string ToString()
@@ -104,11 +147,11 @@ public sealed class TileGrid : ITileable
 [DebuggerDisplay("Op{OpId}@{Level} VertexCount = {VertexCount}, EdgeCount = {EdgeCount}")]
 public sealed class TieredTileGraph : TieredAdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>, ITileable
 {
-    public TieredTileGraph(int topLevel, [NotNull] AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>> wrappedGraph)
+    public TieredTileGraph([NotNull] AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>> wrappedGraph)
         : base(wrappedGraph)
     {
         OpId = -1;
-        Level = topLevel;
+        Level = -1;
         DomainRelation = new(-1, -1, IR.Affine.AffineMap.Identity(0));
     }
 

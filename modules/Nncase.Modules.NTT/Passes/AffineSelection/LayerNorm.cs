@@ -43,10 +43,9 @@ public partial class NTTAffineSelectionPass
         }
 
         var domains = IR.F.Affine.Domains(rank);
-        var results = domains.Select(x => new AffineRange(x.Offset, x.Extent)).ToArray();
-        var inputAccess = new AffineMap(domains, default, Enumerable.Range(0, rank).Select(i => i < axis ? new AffineRange(domains[i].Offset, domains[i].Extent) : new AffineRange(domains[i].Offset, inputShape[i].FixedValue)).ToArray());
-        var scaleAccess = new AffineMap(domains, default, Enumerable.Range(axis, rank - axis).Select(i => new AffineRange(domains[i].Offset, inputShape[i].FixedValue)).ToArray());
-        var biasAccess = new AffineMap(domains, default, Enumerable.Range(axis, rank - axis).Select(i => new AffineRange(domains[i].Offset, inputShape[i].FixedValue)).ToArray());
+        var inputAccess = AffineMap.Identity(rank);
+        var scaleAccess = new AffineMap(domains, default, Enumerable.Range(axis, rank - axis).Select(i => new AffineRange(domains[i].Offset, domains[i].Extent)).ToArray());
+        var biasAccess = new AffineMap(domains, default, Enumerable.Range(axis, rank - axis).Select(i => new AffineRange(domains[i].Offset, domains[i].Extent)).ToArray());
 
         return IR.F.Affine.Grid()
             .Domain(rank, out var _)

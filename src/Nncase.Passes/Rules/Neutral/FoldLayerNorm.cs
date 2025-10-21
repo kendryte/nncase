@@ -12,6 +12,7 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.PatternMatch;
+using Nncase.Utilities;
 using static Nncase.IR.F.NN;
 using static Nncase.PatternMatch.F.Math;
 using static Nncase.PatternMatch.F.NN;
@@ -519,32 +520,32 @@ public sealed partial class FoldLayerNormBinary : RewriteRule<CallPattern>
         _ => true,
         IsLayerNorm(
             "ln",
-            "_",
+            "lnCall",
             _ => true,
             IsWildcard("x"),
             IsTensorConst("scale"),
             IsTensorConst("bias")),
         IsTensorConst("binaryConst"));
 
-    private Expr? GetReplace(LayerNorm ln, Binary binary, Expr x, TensorConst scale, TensorConst bias, TensorConst binaryConst)
+    private Expr? GetReplace(LayerNorm ln, Call lnCall, Binary binary, Expr x, TensorConst scale, TensorConst bias, TensorConst binaryConst)
     {
         if (TypeInference.BroadcastType(scale.CheckedTensorType, binaryConst.CheckedTensorType) == scale.CheckedTensorType)
         {
             if (binary.BinaryOp == BinaryOp.Add)
             {
-                return LayerNorm(ln.Axis, ln.Epsilon, x, scale, IR.F.Math.Add(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst);
+                return LayerNorm(ln.Axis, ln.Epsilon, x, scale, IR.F.Math.Add(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst).InheritMetaData(lnCall);
             }
             else if (binary.BinaryOp == BinaryOp.Sub)
             {
-                return LayerNorm(ln.Axis, ln.Epsilon, x, scale, IR.F.Math.Sub(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst);
+                return LayerNorm(ln.Axis, ln.Epsilon, x, scale, IR.F.Math.Sub(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst).InheritMetaData(lnCall);
             }
             else if (binary.BinaryOp == BinaryOp.Mul)
             {
-                return LayerNorm(ln.Axis, ln.Epsilon, x, IR.F.Math.Mul(scale, binaryConst).Evaluate().AsTensor(), IR.F.Math.Mul(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst);
+                return LayerNorm(ln.Axis, ln.Epsilon, x, IR.F.Math.Mul(scale, binaryConst).Evaluate().AsTensor(), IR.F.Math.Mul(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst).InheritMetaData(lnCall);
             }
             else if (binary.BinaryOp == BinaryOp.Div)
             {
-                return LayerNorm(ln.Axis, ln.Epsilon, x, IR.F.Math.Div(scale, binaryConst).Evaluate().AsTensor(), IR.F.Math.Div(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst);
+                return LayerNorm(ln.Axis, ln.Epsilon, x, IR.F.Math.Div(scale, binaryConst).Evaluate().AsTensor(), IR.F.Math.Div(bias, binaryConst).Evaluate().AsTensor(), ln.UseMean, ln.ChannelFirst).InheritMetaData(lnCall);
             }
             else
             {

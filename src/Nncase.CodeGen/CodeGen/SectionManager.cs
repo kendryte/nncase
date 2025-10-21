@@ -21,6 +21,8 @@ public static class WellknownSectionNames
 
     public static readonly string ThreadLocalRdata = ".thread_local_rdata";
 
+    public static readonly string ThreadLocalCache = ".thread_local_cache";
+
     public static readonly string BlockLocalRdata = ".block_local_rdata";
 }
 

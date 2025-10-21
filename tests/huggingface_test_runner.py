@@ -230,19 +230,20 @@ class HuggingfaceTestRunner(TestRunner):
         return self.get_result(model, token_num, "infer")
 
     def pipeline_run(self, model, infer_or_eval):
-        input_data = self.local_inputs
-        import copy
-        text = copy.deepcopy(input_data[0]['data'])
-        data = self.tokenizer(text, return_tensors="np").input_ids[0].astype(np.int64)
-        loop_data = [data, input_data[1]]
+        input_ids = self.local_inputs[0]['data'][0].input_ids[0].astype(np.int64)
+        loop_data = [input_ids, self.local_inputs[1]['data'][0]]
 
         token_ids = []
         tokens = []
         results = []
         for i in range(self.cfg['huggingface_options']['max_tokens']):
             result = None
-            current_length = loop_data[0].shape[-1]
-            kv_object = loop_data[1]['scheduler'].schedule([0], [current_length])
+            kv_object = None
+            if i == 0:
+                kv_object = loop_data[1]
+            else:  # update kv cache when decodeing
+                current_length = loop_data[0].shape[-1]
+                kv_object = self.local_inputs[1]['scheduler'].schedule([0], [current_length])
             if infer_or_eval == "infer":
                 result, next_token_id, next_token = self.hf_infer(
                     model, [loop_data[0], kv_object], token_num=i)
@@ -348,9 +349,9 @@ class HuggingfaceTestRunner(TestRunner):
         device = next(self.model.parameters()).device
         for idx, input in enumerate(self.local_inputs):
 
-            tokenizer_data = self.tokenizer(input['data'], return_tensors="pt")
-            data = tokenizer_data.input_ids.to(device)
-            atten_mask = tokenizer_data.attention_mask.to(device)
+            tokenizer_data = input['data'][0]
+            data = torch.tensor(tokenizer_data.input_ids).to(device)
+            atten_mask = torch.tensor(tokenizer_data.attention_mask).to(device)
             hf_past_key_values = None
 
             for i in range(self.cfg['huggingface_options']['max_tokens']):

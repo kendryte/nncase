@@ -265,7 +265,7 @@ public sealed class UnitTestModeling : TestClassBase
     [Fact]
     public async Task TestAutoFusion()
     {
-        var func = FunctionSamples.Get1WithTarget(Callable.CPUModuleKind);
+        var func = FunctionSamples.GetMatmulExpMatmulWithTarget(Callable.CPUModuleKind);
         var module = new IR.IRModule(func);
         CompileSession.Compiler.ImportIRModule(module);
         await CompileSession.Compiler.CompileAsync();

@@ -39,6 +39,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
     {
         var lhs = context.CheckArgumentType<IRType>(target, MatMul.Lhs);
         var rhs = context.CheckArgumentType<IRType>(target, MatMul.Rhs);
+        var extra = context.CheckArgumentType<IRType>(target, MatMul.ExtraWorkload);
         var (lhsRank, rhsRank) = (lhs, rhs) switch
         {
             (DistributedType a, DistributedType b) => (a.TensorType.Shape.Rank, b.TensorType.Shape.Rank),
@@ -47,7 +48,7 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         };
         var dimInfo = new MatMulDimInfo(target.TransposeA ? lhsRank - 1 : lhsRank - 2, target.TransposeA ? lhsRank - 2 : lhsRank - 1, target.TransposeB ? rhsRank - 1 : rhsRank - 2, target.TransposeB ? rhsRank - 2 : rhsRank - 1);
 
-        if (CheckCustomSBP(lhs, rhs, target))
+        if (CheckCustomSBP(lhs, rhs, extra, target))
         {
             return (lhs, rhs) switch
             {
@@ -68,8 +69,13 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
         return target.Cost;
     }
 
-    private bool CheckCustomSBP(IRType lhs, IRType rhs, MatMul matmul)
+    private bool CheckCustomSBP(IRType lhs, IRType rhs, IRType extra, MatMul matmul)
     {
+        if (extra is DistributedType de && de.AxisPolicies.Any(sbp => sbp is not SBPBroadCast))
+        {
+            return false;
+        }
+
         if (lhs is DistributedType a && rhs is DistributedType b)
         {
             if (Enumerable.Range(0, a.TensorType.Shape.Rank).Any(i => a.AxisPolicies[i] != matmul.LhsSBPs[i]))

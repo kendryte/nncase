@@ -20,15 +20,17 @@ internal sealed class LinkableModule : ILinkableModule
     private readonly Stream _desc;
     private readonly Stream _rdata;
     private readonly IReadOnlyList<Stream> _threadLocalRdatas;
+    private readonly IReadOnlyList<Stream> _threadLocalCaches;
     private readonly IReadOnlyList<Stream> _blockLocalRdatas;
     private readonly IReadOnlyList<ILinkableFunction> _functions;
     private readonly NTTTargetOptions _targetOptions;
 
-    public LinkableModule(Stream desc, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> blockLocalRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
+    public LinkableModule(Stream desc, Stream rdata, IReadOnlyList<Stream> threadLocalRdatas, IReadOnlyList<Stream> threadLocalCaches, IReadOnlyList<Stream> blockLocalRdatas, IReadOnlyList<ILinkableFunction> functions, CompileOptions options)
     {
         _desc = desc;
         _rdata = rdata;
         _threadLocalRdatas = threadLocalRdatas;
+        _threadLocalCaches = threadLocalCaches;
         _blockLocalRdatas = blockLocalRdatas;
         _functions = functions;
         PublicFunctions = _functions.OfType<LinkableKernelFunction>().ToArray();
@@ -188,11 +190,16 @@ internal sealed class LinkableModule : ILinkableModule
             rdataAlign = Math.Max(rdataAlign, func.PrimFunction.SchedResult.DataAlign);
         }
 
+        foreach (var func in _functions.OfType<LinkableDeviceFunction>())
+        {
+            rdataAlign = Math.Max(rdataAlign, func.PrimFunction.SchedResult.DataAlign);
+        }
+
         var elfPath = CompileCSource(codegenDir);
         var funcText = File.ReadAllBytes(elfPath);
         textWriter.Write(funcText);
         linkedFunctions.Add(new LinkedFunction(mainFunc.Id, mainFunc.SourceFunction, 0, (uint)funcText.Length, mainFunc.Sections));
-        return new LinkedModule(linkedFunctions, _desc, manager.GetContent(WellknownSectionNames.Text)!, _rdata, _threadLocalRdatas, _blockLocalRdatas, rdataAlign);
+        return new LinkedModule(linkedFunctions, _desc, manager.GetContent(WellknownSectionNames.Text)!, _rdata, _threadLocalRdatas, _threadLocalCaches, _blockLocalRdatas, rdataAlign);
     }
 
     private string CompileCSource(string sourcePath)

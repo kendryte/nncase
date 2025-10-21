@@ -17,7 +17,8 @@
 #include "../ukernels/u_rope.h"
 
 namespace nncase::ntt {
-template <Tensor TInput, Tensor TCos, Tensor TSin, class TOut>
+template <bool UseF32 = true, Tensor TInput, Tensor TCos, Tensor TSin,
+          class TOut>
 void rope(const TInput &input, const TCos &cos, const TSin &sin,
           TOut &&output) {
     using rope_layout = ukernels::rope_layout;
@@ -32,8 +33,8 @@ void rope(const TInput &input, const TCos &cos, const TSin &sin,
     const TElem *NTT_RESTRICT sin_p = sin.elements().data();
     TElem *NTT_RESTRICT output_p = output.elements().data();
 
-    ntt::u_rope<num_heads, half_dim>(input_p, cos_p, sin_p, output_p, seq_len,
-                                     input.strides(), cos.strides(),
-                                     sin.strides(), output.strides());
+    ntt::u_rope<UseF32, num_heads, half_dim>(
+        input_p, cos_p, sin_p, output_p, seq_len, input.strides(),
+        cos.strides(), sin.strides(), output.strides());
 }
 } // namespace nncase::ntt

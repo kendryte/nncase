@@ -13,7 +13,7 @@ namespace Nncase.Schedule;
 
 internal static class OrToolsExtensions
 {
-    private static readonly Regex _rangePattern = new Regex(@"\(\d+..\d+\)", RegexOptions.Compiled);
+    private static readonly Regex _rangePattern = new Regex(@"\(\d+ ?.. ?\d+\)", RegexOptions.Compiled);
 
     public static IntExpr CeilDiv(this IntExpr numer, long denom) =>
         (numer + (denom - 1)) / denom;
@@ -27,9 +27,14 @@ internal static class OrToolsExtensions
     public static IntExpr CeilDiv(this int numer, IntExpr denom) =>
         denom.solver().MakeDiv(numer + (denom - 1), denom);
 
-    public static IntExpr MakeProd(this Solver solver, IntVarVector ints)
+    public static IntExpr MakeProd(this Solver solver, IEnumerable<IntExpr> ints)
     {
-        return ints.Skip(1).Aggregate((IntExpr)ints.First(), solver.MakeProd);
+        return ints.Skip(1).Aggregate(ints.First(), solver.MakeProd);
+    }
+
+    public static IntExpr MakeSum(this Solver solver, IEnumerable<IntExpr> ints)
+    {
+        return ints.Skip(1).Aggregate(ints.First(), solver.MakeSum);
     }
 
     public static long[][] Value(this Assignment sol, IntExpr[][] inputs)
@@ -61,9 +66,9 @@ internal static class OrToolsExtensions
         return vec;
     }
 
-    public static string ToSimplifyString(this PropagationBaseObject intExpr)
+    public static string ToSimplifyString(this PropagationBaseObject intExpr, bool removeRange = true)
     {
         var str = intExpr.ToString();
-        return _rangePattern.Replace(str, string.Empty);
+        return removeRange ? _rangePattern.Replace(str, string.Empty) : str;
     }
 }

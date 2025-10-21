@@ -25,6 +25,8 @@ public sealed partial class MatMul : Op
     /// </summary>
     public static readonly ParameterInfo Scale = new(typeof(MatMul), 2, "scale", ParameterKind.Attribute);
 
+    public static readonly ParameterInfo ExtraWorkload = new(typeof(MatMul), 3, "extrWorkload", ParameterKind.Input);
+
     public IRArray<int> LhsVectorizedAxes { get; }
 
     public IRArray<int> RhsVectorizedAxes { get; }

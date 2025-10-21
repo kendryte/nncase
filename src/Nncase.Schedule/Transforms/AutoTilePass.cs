@@ -32,6 +32,27 @@ public sealed class AutoTilePass : FunctionPass
 
     public int WorkItem { get; set; }
 
+    public static void Dump(ClusteredBidirectionalGraph<ExprVertex, ExprEdge> cluster, string name)
+    {
+        cluster.Dump(name, algo =>
+        {
+            algo.FormatVertex += (s, arg) =>
+            {
+                arg.VertexFormat.Label = $"{arg.Vertex.Expr.GetType().Name}";
+                if (arg.Vertex.Expr is Grid grid)
+                {
+                    foreach (var field in grid.Body.Fields)
+                    {
+                        if (field is IR.Call call)
+                        {
+                            arg.VertexFormat.Label += $"\n {call.Target.GetType().Name}";
+                        }
+                    }
+                }
+            };
+        });
+    }
+
     protected override Task<BaseFunction> RunCoreAsync(BaseFunction input, RunPassContext context)
     {
         using var ctx = IntegerSetLibrary.ctx.Create();
@@ -73,13 +94,7 @@ public sealed class AutoTilePass : FunctionPass
         if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.Rewrite))
         {
             condenseAlgo.CondensedGraph.Dump($"Condensed", init => { });
-            condenseAlgo.ClusteredGraph.Dump($"Cluster", algo =>
-            {
-                algo.FormatVertex += (s, arg) =>
-                {
-                    arg.VertexFormat.Label = $"{arg.Vertex.Expr.GetType().Name}";
-                };
-            });
+            Dump(condenseAlgo.ClusteredGraph, "Cluster");
         }
 
         // 3. reconstruction
