@@ -15,6 +15,7 @@
 #pragma once
 #include "../apply.h"
 #include "../primitive_ops.h"
+#include "nncase/ntt/compiler_defs.h"
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -25,7 +26,7 @@ struct u_packed_gemv {
     static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
     template <Dimension TLdb, Dimension TK, Dimension TN>
-    constexpr void
+    NTT_ALWAYS_INLINE constexpr void
     operator()(const TAElem *NTT_RESTRICT a, const TBPack *NTT_RESTRICT b,
                TCPack *NTT_RESTRICT c, const TScale &scale, const TLdb &ldb,
                const TK &K, const TN &N) noexcept {
@@ -56,9 +57,9 @@ struct u_packed_gemv {
 
 template <bool AccumulateC, Scalar TAElem, Vector TBPack, Vector TCPack,
           class TScale, Dimension TLdb, Dimension TK, Dimension TN>
-constexpr void u_packed_gemv(const TAElem *a, const TBPack *b, TCPack *c,
-                             const TScale &scale, const TLdb &ldb, const TK &K,
-                             const TN &N) noexcept {
+NTT_ALWAYS_INLINE constexpr void
+u_packed_gemv(const TAElem *a, const TBPack *b, TCPack *c, const TScale &scale,
+              const TLdb &ldb, const TK &K, const TN &N) noexcept {
     ukernels::u_packed_gemv<AccumulateC, TAElem, TBPack, TCPack, TScale, true>
         impl;
     impl(a, b, c, scale, ldb, K, N);
