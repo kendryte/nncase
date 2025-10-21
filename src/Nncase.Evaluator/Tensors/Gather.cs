@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using DryIoc.ImTools;
 using NetFabric.Hyperlinq;
 using Nncase.CostModel;
 using Nncase.IR;
@@ -49,16 +50,10 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
         var indexType = context.GetArgumentType<IRType>(target, Gather.Index);
         var retType = context.GetReturnType<IRType>();
 
-        var gatherPart = 1U;
-        if (inputType is DistributedType d && d.AxisPolicies[target.Axis] is SBPSplit split)
-        {
-            gatherPart = split.Axes.Select(a => d.Placement.Hierarchy[a]).Aggregate(1U, (a, b) => (uint)(a * b));
-        }
-
         return new()
         {
             [CostFactorNames.MemoryLoad] = CostUtility.GetMemoryAccess(inputType) + CostUtility.GetMemoryAccess(indexType),
-            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(retType) * gatherPart,
+            [CostFactorNames.MemoryStore] = CostUtility.GetMemoryAccess(retType),
         };
     }
 
@@ -104,16 +99,16 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             return new InvalidType($"the index can't be split");
         }
 
-        var ndsbp = input.AxisPolicies[..axis].ToArray().Concat(index.AxisPolicies).Concat(input.AxisPolicies[(axis + 1)..].ToArray()).ToArray();
+        var indexDimsPolices = index.AxisPolicies.ToArray();
+        if (input.AxisPolicies[axis] is SBPSplit split)
+        {
+            indexDimsPolices = Enumerable.Repeat(SBP.P(split.Axes), indexDimsPolices.Length).ToArray();
+        }
+
+        var ndsbp = input.AxisPolicies[..axis].ToArray().Concat(indexDimsPolices).Concat(input.AxisPolicies[(axis + 1)..].ToArray()).ToArray();
 
         // one topo axis can only be spilt on one dim axis
         if (!DistributedUtility.IsDistributable(ndsbp))
-        {
-            return invalid;
-        }
-
-        // not support partial
-        if (ndsbp.Any(sbp => sbp is SBPPartial))
         {
             return invalid;
         }

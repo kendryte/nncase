@@ -463,7 +463,8 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 || expr.Users.Any(u => u is Call call && (call.Target.GetType().FullName!.Contains("CustomNTT", StringComparison.Ordinal) || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention)))
                 || expr.Target.GetType().FullName!.Contains("CustomNTT", StringComparison.Ordinal)
                 || expr.Target.GetType().FullName!.Contains("VectorizedRoPE", StringComparison.Ordinal)
-                || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention))
+                || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention)
+                || expr.Target is Gather)
             {
                 bucket = callCluster.CreateCluster<DistributedSearchGraph>(SearchGraphKind.Bucket);
                 var linked = false;
@@ -798,9 +799,20 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 return new InvalidType("Same DistributedType");
             }
 
-            if (inv.AxisPolicies.Any(s => s is SBPPartial) || outv.AxisPolicies.Any(s => s is SBPPartial))
+            for (int i = 0; i < inv.AxisPolicies.Count; i++)
             {
-                return new InvalidType("Not supported input/output is Partial");
+                switch (inv.AxisPolicies[i], outv.AxisPolicies[i])
+                {
+                    case (SBPPartial p, SBPSplit s):
+                        if (s.Axes.Except(p.Axes).Any())
+                        {
+                            return new InvalidType("Not support partial to split.");
+                        }
+
+                        break;
+                    case (_, SBPPartial):
+                        return new InvalidType("not support to partial");
+                }
             }
 
             return outv;

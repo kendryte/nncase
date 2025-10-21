@@ -213,7 +213,7 @@ public static class DistributedUtility
 
     public static IRArray<SBP> AxisPolicesToNDSBP(IRArray<SBP> axisPolices, int rank)
     {
-        var ndsbp = new SBP[rank];
+        var ndsbp = Enumerable.Repeat(SBP.B, rank).Select(p => (SBP)p).ToArray();
         for (var i = 0; i < axisPolices.Count; i++)
         {
             var policy = axisPolices[i];
@@ -224,24 +224,33 @@ public static class DistributedUtility
                     ndsbp[ax] = SBP.S([i], split.Granularity);
                 }
             }
+            else if (policy is SBPPartial partial)
+            {
+                foreach (var ax in partial.Axes)
+                {
+                    ndsbp[ax] = SBP.P(ndsbp[ax] is SBPPartial p ? p.Axes.Append(i).ToArray() : [i], partial.Op);
+                }
+            }
         }
 
-        return ndsbp.Select(sbp => sbp is SBPSplit ? sbp : SBP.B).ToArray();
+        return ndsbp;
     }
 
     public static IRArray<SBP> NDSBPToAxisPolices(IRArray<SBP> ndsbp, int rank)
     {
-        var polices = new SBP[rank];
+        var polices = Enumerable.Repeat(SBP.B, rank).Select(p => (SBP)p).ToArray();
         for (int d = 0; d < polices.Length; d++)
         {
             var splitAxes = Enumerable.Range(0, ndsbp.Count).Where(i => ndsbp[i] is SBPSplit split && split.Axes[0] == d).ToArray();
+            var partialAxes = Enumerable.Range(0, ndsbp.Count).Where(i => ndsbp[i] is SBPSplit partial && partial.Axes.Contains(d)).ToArray();
             if (splitAxes.Any())
             {
                 polices[d] = SBP.S(splitAxes, ((SBPSplit)ndsbp[splitAxes[0]]).Granularity);
             }
-            else
+
+            if (partialAxes.Any())
             {
-                polices[d] = SBP.B;
+                polices[d] = SBP.P(partialAxes, ((SBPPartial)ndsbp[partialAxes[0]]).Op);
             }
         }
 

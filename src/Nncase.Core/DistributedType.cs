@@ -26,7 +26,7 @@ public abstract record SBP
 {
     public static SBPBroadCast B => SBPBroadCast.Instance;
 
-    public static SBPPartial P(ReduceOp op = ReduceOp.Sum) => new SBPPartial(op);
+    public static SBPPartial P(IRArray<int> axes, ReduceOp op = ReduceOp.Sum) => new SBPPartial(axes, op);
 
     public static SBPSplit S(IRArray<int> axes, Dimension? granularity = null) => new SBPSplit(axes, granularity);
 }
@@ -36,9 +36,9 @@ public sealed record SBPSplit(IRArray<int> Axes, Dimension? Granularity = null) 
     public override string ToString() => $"S([{string.Join(",", Axes)}], {Granularity})";
 }
 
-public sealed record SBPPartial(ReduceOp Op) : SBP
+public sealed record SBPPartial(IRArray<int> Axes, ReduceOp Op) : SBP
 {
-    public override string ToString() => $"P({Op})";
+    public override string ToString() => $"P([{string.Join(",", Axes)}], {Op})";
 }
 
 public sealed record SBPBroadCast : SBP
@@ -85,6 +85,10 @@ public class SBPConverter : JsonConverter<SBP>
                         {
                             sbpSplit = new SBPSplit(irAxes);
                         }
+                        else if (typeDiscriminator == "P")
+                        {
+                            sbpPartial = new SBPPartial(irAxes, ReduceOp.Sum);
+                        }
                         else
                         {
                             throw new InvalidDataException("Axes must be used in SBP split");
@@ -93,7 +97,7 @@ public class SBPConverter : JsonConverter<SBP>
                         break;
                     case "Op":
                         ReduceOp partialOp = JsonSerializer.Deserialize<ReduceOp>(ref reader, options);
-                        sbpPartial = new SBPPartial(partialOp);
+                        sbpPartial = new SBPPartial(sbpPartial!.Axes, partialOp);
                         break;
                     default:
                         reader.Skip();
