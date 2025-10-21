@@ -322,21 +322,21 @@ public static class DistributedUtility
         return false;
     }
 
-    public static bool AreSamePolicies(IRArray<SBP> a, IRArray<SBP> b, bool checkGranularity = true)
+    public static bool AreSamePolicies(IRArray<SBP>? a, IRArray<SBP>? b, bool checkGranularity = true)
     {
-        if (a == null! && b == null!)
+        if (a == null && b == null)
         {
             return true;
         }
 
-        if (a == null! || b == null! || a.Count != b.Count)
+        if (a == null || b == null || a.Value.Count != b.Value.Count)
         {
             return false;
         }
 
-        for (int i = 0; i < a.Count; i++)
+        for (int i = 0; i < a.Value.Count; i++)
         {
-            if (!IsSamePolicy(a[i], b[i], checkGranularity))
+            if (!IsSamePolicy(a.Value[i], b.Value[i], checkGranularity))
             {
                 return false;
             }
