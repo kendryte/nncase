@@ -858,18 +858,15 @@ struct u_packed_gemv<AccumulateC, half, ntt::vector<half, 4, 16>,
             const auto b1 = b + n1 * ldb;
             auto c0 = ntt::where(std::integral_constant<bool, AccumulateC>{},
                                  ntt::cast_elem<float>(c[n1]), TAccPack{});
-
             for (size_t k1 = 0; k1 < K; k1 += 8) {
                 __m256 a0_v = _mm256_cvtph_ps(*(const __m128i *)(a + k1));
-                size_t kl = 8;
-#pragma GCC unroll 1
-                for (size_t k2 = 0; k2 < kl; k2++) {
+                for (size_t k2 = 0; k2 < 8; k2++) {
                     const auto a0 = ntt::vector<float, 8>(
                         _mm256_broadcastss_ps(_mm256_castps256_ps128(a0_v)));
                     const auto a0_scaled = ntt::mul(a0, scale);
-                    const auto b0 = b1[k1 + k2];
                     ntt::loop<N0Tile>([&](auto tn) {
-                        c0(tn) = ntt::mul_add(a0_scaled, b0(tn), c0(tn));
+                        c0(tn) =
+                            ntt::mul_add(a0_scaled, b1[k1 + k2](tn), c0(tn));
                     });
                     a0_v = _mm256_permutevar8x32_ps(a0_v, shift_idx);
                 }
