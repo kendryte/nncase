@@ -610,9 +610,6 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_k, AccumulateC,
         constexpr auto n0_scale =
             ukernels::u_type_scale<ukernels::matmul_vectorize_kind::vectorize_k,
                                    TA, TB, TC>::n0_scale;
-        constexpr auto same_type =
-            ukernels::u_type_scale<ukernels::matmul_vectorize_kind::vectorize_k,
-                                   TA, TB, TC>::same_type;
         constexpr auto m0_tile_scaled = m0_scale * M0Tile;
         constexpr auto n0_tile_scaled = n0_scale * N0Tile;
 
