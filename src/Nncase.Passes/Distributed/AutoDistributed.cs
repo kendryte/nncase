@@ -445,6 +445,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     }
                 }
 
+                if (!newExpr.InferenceType(_inferencer_cache) || newExpr.CheckedType is InvalidType)
+                {
+                    continue;
+                }
+
                 if (!expr.Target.GetType().FullName!.Contains("CustomNTT", StringComparison.Ordinal)
                     && TargetOptions.HierarchyKind == HierarchyKind.SMT
                     && expr.Users.Any(u => u is Call call && (call.Target.GetType().FullName!.Contains("CustomNTT.MatMul", StringComparison.Ordinal) || call.Target is PagedAttention)))
@@ -454,11 +459,6 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     {
                         continue;
                     }
-                }
-
-                if (!newExpr.InferenceType(_inferencer_cache) || newExpr.CheckedType is InvalidType)
-                {
-                    continue;
                 }
 
                 var checkType = newExpr.CheckedType;
