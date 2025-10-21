@@ -364,7 +364,7 @@ class HuggingfaceTestRunner(TestRunner):
                         return_dict=True,
                         use_cache=True,
                         # output_attentions=False,
-                        output_hidden_states=self.cfg['huggingface_options']['output_hidden_states'],
+                        output_hidden_states=self.generation_config.output_hidden_states,
                     )
                 hf_past_key_values = result.past_key_values
 
@@ -378,7 +378,7 @@ class HuggingfaceTestRunner(TestRunner):
                 else:
                     hidden_states = recursive_stack(result.hidden_states).detach().to(
                         torch.float32).numpy()[-1]
-                    dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states)
+                    dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states[0])
                     outputs.append(hidden_states[0])
                     count += 1
 
