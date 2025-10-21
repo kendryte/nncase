@@ -103,7 +103,7 @@ internal static class UserRebuilder
             var ops = n.Operands;
             for (int i = 0; i < ops.Length; ++i)
             {
-                ops[i].AddUser(n); 
+                ops[i].AddUser(n);
             }
         }
     }
