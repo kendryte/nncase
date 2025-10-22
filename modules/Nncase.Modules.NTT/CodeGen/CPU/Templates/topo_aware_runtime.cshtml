@@ -58,8 +58,6 @@ enum reduce_kind {
 };
 
 constexpr std::array<size_t, @(hierarchy.Length)> Hierarchy = {@(string.Join(", ", hierarchy))};
-auto src_ptr_tensor = nncase::ntt::make_tensor<void *>(nncase::ntt::fixed_shape_v<@(string.Join(",", hierarchy))>);
-auto dest_ptr_tensor = nncase::ntt::make_tensor<void *>(nncase::ntt::fixed_shape_v<@(string.Join(",", hierarchy))>);
 
 template <size_t Level> static std::byte *get_cache_address() {
     return reinterpret_cast<std::byte *>(
@@ -182,23 +180,19 @@ class tensor_reduce_sync_impl {
         constexpr auto group_hierarchy = group_hierarchy_getter<Kind>::group_hierarchy;
         auto cur_index = ntt::make_shape(@(cur_index));
         auto cur_index_g = index_global2group(cur_index);
-        tar::src_ptr_tensor(cur_index) =
-            reinterpret_cast<void *>(src.elements().data());
-        tar::dest_ptr_tensor(cur_index) =
-            reinterpret_cast<void *>(dest.local().elements().data());
         reduce_group_sync();
 
         // according to the group size split the tensor.
         // todo should using better split strategy.
         constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
 
-        if (src.shape() != dest.local().shape()) {
+        if (src.local().shape() != dest.local().shape()) {
             using mesh_type = typename TOutBase::mesh_type;
             const auto local_shard_index = mesh_type::local_index();
             auto node_number_g = ntt::linear_offset(cur_index_g, group_hierarchy);
             auto new_shape = dest.local().shape();
             auto starts = dest.sharding().global_offset(dest.shape(), local_shard_index);
-            auto viewed_src1_tensor = src.view(starts, new_shape);
+            auto viewed_src1_tensor = src.local().view(starts, new_shape);
             auto viewed_dest_tensor = dest.local();
 
             // reduce-scatter, communicate (group_size - 1) times
@@ -209,9 +203,7 @@ class tensor_reduce_sync_impl {
                 // keep the non-reduce axis invariant.
                 auto next_index = index_group2global(next_index_g, cur_index);
 
-                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
-                    (TElem *)tar::src_ptr_tensor(next_index), src.shape(),
-                    src.strides());
+                auto src2_tensor = src.template remote(next_index);
                 auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
 
                 if (i == 0) {
@@ -229,7 +221,7 @@ class tensor_reduce_sync_impl {
             const auto axis = [&] {
                 dim_t axis = -1;
                 loop<Rank>([&](auto i) {
-                    if (axis == -1 && src.shape()[i] >= group_size) {
+                    if (axis == -1 && src.local().shape()[i] >= group_size) {
                         axis = i;
                     }
                 });
@@ -239,8 +231,8 @@ class tensor_reduce_sync_impl {
                 return axis;
             }();
 
-            auto remain = src.shape()[axis] % (group_size);
-            auto frac = src.shape()[axis] / (group_size);
+            auto remain = src.local().shape()[axis] % (group_size);
+            auto frac = src.local().shape()[axis] / (group_size);
 
             auto node_number_g = ntt::linear_offset(cur_index_g, group_hierarchy);
 
@@ -251,7 +243,7 @@ class tensor_reduce_sync_impl {
                     if (j == axis) {
                         return ntt::where(node_number_g == group_size - 1, frac + remain, frac);
                     } else {
-                        return (dim_t)src.shape()[j];
+                        return (dim_t)src.local().shape()[j];
                     }
                 });
                 auto starts = ntt::generate_shape<Rank>([&](auto j) {
@@ -261,7 +253,7 @@ class tensor_reduce_sync_impl {
                         return (dim_t)0;
                     }
                 });
-                auto viewed_src1_tensor = src.view(starts, new_shape);
+                auto viewed_src1_tensor = src.local().view(starts, new_shape);
                 auto viewed_dest_tensor = dest.local().view(starts, new_shape);
 
                 auto next_index_g = ntt::unravel_index((node_number_g + i + 1) % group_size, group_hierarchy);
@@ -269,9 +261,7 @@ class tensor_reduce_sync_impl {
                 // keep the non-reduce axis invariant.
                 auto next_index = index_group2global(next_index_g, cur_index);
 
-                auto src2_tensor = ntt::make_tensor_view_from_address<TElem>(
-                    (TElem *)tar::src_ptr_tensor(next_index), src.shape(),
-                    src.strides());
+                auto src2_tensor = src.template remote(next_index);
                 auto viewed_src2_tensor = src2_tensor.view(starts, new_shape);
 
                 if (i == 0) {
@@ -291,9 +281,7 @@ class tensor_reduce_sync_impl {
                 auto src_index_g = ntt::unravel_index(offset % group_size, group_hierarchy);
                 auto src_index = index_group2global(src_index_g, cur_index);
 
-                auto src_tensor = ntt::make_tensor_view_from_address<TElem>(
-                    (TElem *)tar::dest_ptr_tensor(src_index), dest.local().shape(),
-                    dest.local().strides());
+                auto src_tensor = src.template remote(src_index);
                 auto starts = ntt::generate_shape<Rank>([&](auto j) {
                     if (j == axis) {
                         return offset * frac;
@@ -305,7 +293,7 @@ class tensor_reduce_sync_impl {
                     if (j == axis) {
                         return ntt::where(offset == group_size - 1, frac + remain, frac);
                     } else {
-                        return (dim_t)src.shape()[j];
+                        return (dim_t)src.local().shape()[j];
                     }
                 });
                 auto viewed_src_tensor = src_tensor.view(starts, new_shape);

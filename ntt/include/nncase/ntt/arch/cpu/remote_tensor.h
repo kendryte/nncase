@@ -20,7 +20,10 @@
 namespace nncase::ntt::distributed {
 namespace detail {
 extern decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
-    nncase::ntt::distributed::topology_shape)) global_local_data_ptr;
+    nncase::ntt::distributed::topology_shape)) global_thread_local_data_ptr;
+
+extern decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+    nncase::ntt::distributed::topology_shape)) global_block_local_data_ptr;
 
 extern decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
     nncase::ntt::distributed::topology_shape)) global_thread_local_rdata_ptr;
@@ -37,9 +40,9 @@ template <class T, topology RemoteScope, topology TensorScope,
 static auto get_remote_address(const TLocalProgramIds &local_program_ids,
                                const TRemoteProgramIds &remote_program_ids,
                                T *local_address) {
-    auto start = (size_t)global_local_data_ptr(local_program_ids)(0_dim);
-    auto end = (size_t)global_local_data_ptr(local_program_ids)(1_dim);
-    auto remote_address = (size_t)global_local_data_ptr(remote_program_ids)(0_dim);
+    auto start = (size_t)global_thread_local_data_ptr(local_program_ids)(0_dim);
+    auto end = (size_t)global_thread_local_data_ptr(local_program_ids)(1_dim);
+    auto remote_address = (size_t)global_thread_local_data_ptr(remote_program_ids)(0_dim);
     if ((uintptr_t)local_address < start || (uintptr_t)local_address >= end) {
         start = (size_t)global_thread_local_rdata_ptr(local_program_ids)(0_dim);
         end = (size_t)global_thread_local_rdata_ptr(local_program_ids)(1_dim);
@@ -48,8 +51,15 @@ static auto get_remote_address(const TLocalProgramIds &local_program_ids,
         if ((uintptr_t)local_address < start ||
             (uintptr_t)local_address >= end) {
             start = (size_t)global_block_local_rdata_ptr(local_program_ids)(0_dim);
+            end = (size_t)global_block_local_rdata_ptr(local_program_ids)(1_dim);
             remote_address =
                 (size_t)global_block_local_rdata_ptr(remote_program_ids)(0_dim);
+            if ((uintptr_t)local_address < start ||
+                (uintptr_t)local_address >= end) {
+                start = (size_t)global_block_local_data_ptr(local_program_ids)(0_dim);
+                remote_address =
+                    (size_t)global_block_local_data_ptr(remote_program_ids)(0_dim);
+            }
         }
     }
 

@@ -38,7 +38,13 @@ using namespace nncase::ntt::runtime;
 
 decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
     nncase::ntt::distributed::topology_shape))
-    nncase::ntt::distributed::detail::global_local_data_ptr =
+    nncase::ntt::distributed::detail::global_thread_local_data_ptr =
+        nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+            nncase::ntt::distributed::topology_shape);
+
+decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
+    nncase::ntt::distributed::topology_shape))
+    nncase::ntt::distributed::detail::global_block_local_data_ptr =
         nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
             nncase::ntt::distributed::topology_shape);
 
@@ -194,11 +200,16 @@ extern "C" void block_entry(const cpu_block_entry_params_t &params) {
                 }
             }
 
-            ntt::distributed::detail::global_local_data_ptr(program_ids)(
+            ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                 0_dim) = (uintptr_t)thread_local_data.data();
-            ntt::distributed::detail::global_local_data_ptr(program_ids)(
+            ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                 1_dim) = (uintptr_t)(thread_local_data.data() +
                                      thread_local_data.size_bytes());
+            ntt::distributed::detail::global_block_local_data_ptr(program_ids)(
+                0_dim) = (uintptr_t)block_local_data.data();
+            ntt::distributed::detail::global_block_local_data_ptr(program_ids)(
+                1_dim) = (uintptr_t)(block_local_data.data() +
+                                     block_local_data.size_bytes());
             ntt::distributed::detail::global_block_local_rdata_ptr(program_ids)(
                 0_dim) = (uintptr_t)params.block_local_rdata.data();
             ntt::distributed::detail::global_block_local_rdata_ptr(program_ids)(
