@@ -28,7 +28,7 @@ namespace nncase::ntt::ops {
 
 namespace detail {
 inline __m256 broadcast_h_ps(const half &v) noexcept {
-    auto v_f32 = _mm_cvtph_ps(_mm_set_epi16(0, 0, 0, 0, 0, 0, 0, v.raw()));
+    auto v_f32 = _mm_cvtph_ps(_mm_cvtsi32_si128(v.raw()));
     return _mm256_broadcastss_ps(v_f32);
 }
 } // namespace detail
