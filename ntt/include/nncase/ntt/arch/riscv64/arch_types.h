@@ -15,6 +15,7 @@
 #pragma once
 #include "../../../bfloat16.h"
 #include "../../../float8.h"
+#include "../../../float_subbyte.h"
 #include "../../../half.h"
 #include "../../native_vector.h"
 #ifdef __riscv_vector

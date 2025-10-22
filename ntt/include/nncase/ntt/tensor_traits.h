@@ -15,6 +15,7 @@
 #pragma once
 #include "../bfloat16.h"
 #include "../float8.h"
+#include "../float_subbyte.h"
 #include "../half.h"
 #include <type_traits>
 
@@ -88,6 +89,7 @@ template <typename T>
 concept Scalar = std::is_integral_v<T> || std::is_floating_point_v<T> ||
                  std::is_same_v<std::remove_cv_t<T>, bfloat16> ||
                  std::is_same_v<std::remove_cv_t<T>, half> ||
+                 std::is_same_v<std::remove_cv_t<T>, float_e2m1_t> ||
                  std::is_same_v<std::remove_cv_t<T>, float_e4m3_t> ||
                  std::is_same_v<std::remove_cv_t<T>, float_e5m2_t>;
 

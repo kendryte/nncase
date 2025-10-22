@@ -94,6 +94,12 @@ struct float_e2m1_t
     float_e2m1_t() = default;
 
     CUTLASS_HOST_DEVICE
+    explicit float_e2m1_t(unsigned int x) : Base(x) {}
+
+    CUTLASS_HOST_DEVICE
+    explicit float_e2m1_t(long x) : Base(float(x)) {}
+
+    CUTLASS_HOST_DEVICE
     explicit float_e2m1_t(double x) : Base(float(x)) {}
 
     CUTLASS_HOST_DEVICE
@@ -655,6 +661,56 @@ struct numeric_limits<nncase::float_e3m2_t>
         return nncase::float_e3m2_t::bitcast(0x4);
     }
 };
+
+inline nncase::float_e2m1_t abs(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(fabsf(float(a)));
+}
+inline nncase::float_e2m1_t exp(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(expf(float(a)));
+}
+inline nncase::float_e2m1_t log(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(logf(float(a)));
+}
+inline nncase::float_e2m1_t log10(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(log10f(float(a)));
+}
+inline nncase::float_e2m1_t sqrt(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(sqrtf(float(a)));
+}
+inline nncase::float_e2m1_t pow(const nncase::float_e2m1_t &a,
+                                const nncase::float_e2m1_t &b) {
+    return nncase::float_e2m1_t(powf(float(a), float(b)));
+}
+inline nncase::float_e2m1_t sin(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(sinf(float(a)));
+}
+inline nncase::float_e2m1_t cos(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(cosf(float(a)));
+}
+inline nncase::float_e2m1_t tan(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(tanf(float(a)));
+}
+inline nncase::float_e2m1_t tanh(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(tanhf(float(a)));
+}
+inline nncase::float_e2m1_t floor(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(floorf(float(a)));
+}
+inline nncase::float_e2m1_t ceil(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(ceilf(float(a)));
+}
+inline nncase::float_e2m1_t round(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(roundf(float(a)));
+}
+inline nncase::float_e2m1_t nearbyint(const nncase::float_e2m1_t &a) {
+    return nncase::float_e2m1_t(nearbyintf(float(a)));
+}
+inline long lrint(const nncase::float_e2m1_t &a) { return lrintf(float(a)); }
+template <>
+struct is_floating_point<nncase::float_e2m1_t> : public true_type {};
+template <>
+struct is_floating_point<nncase::float_e3m2_t> : public true_type {};
+
 } // namespace std
 #endif
 
