@@ -508,15 +508,15 @@ public sealed class UnitTestCPUKernels : TestClassBase
         };
 
         var placement = new Placement(hierarchy, targetOptions.HierarchyNames);
-        var ndsbp = Enumerable.Repeat<SBP>(SBP.B, hierarchy.Length).ToArray();
+        var ndsbp = Enumerable.Repeat<SBP>(SBP.B, shape.Length).ToArray();
         var posts = new List<Call>();
         var broadcast = IR.F.Distributed.Boxing(input, new DistributedType(inputType, ndsbp, placement));
-        foreach (var comb in LinqUtility.Combination(hierarchy.Length))
+        foreach (var comb in LinqUtility.Combination(shape.Length))
         {
             var newsbp = ndsbp.ToArray();
             foreach (var axis in comb)
             {
-                newsbp[axis] = SBP.P(Enumerable.Range(0, shape.Length).ToArray());
+                newsbp[axis] = SBP.P(Enumerable.Range(0, hierarchy.Length).ToArray());
             }
 
             var partial = IR.F.Distributed.ForceBoxing(broadcast, new DistributedType(inputType, newsbp, placement));
@@ -526,7 +526,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
             posts.Add(post);
         }
 
-        await RunCases($"Theory{count}", feedDict, posts);
+        await RunCases($"Theory{count}", feedDict, posts, null, false);
     }
 
     [Fact]
