@@ -640,9 +640,9 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_k, AccumulateC,
 
             for (size_t n = 0; n < N0Tile; n++) {
                 for (size_t m = 0; m < M0Tile; m++) {
-                    c0_unreduced[m][n] =
-                        ntt::mul_add(ntt::mul(a0_tmp[m], scale), b0_tmp[n],
-                                     c0_unreduced[m][n]);
+                    c0_unreduced[m][n] = ntt::mul_add(
+                        ntt::mul(ntt::cast_elem<float>(a0_tmp[m]), scale),
+                        ntt::cast_elem<float>(b0_tmp[n]), c0_unreduced[m][n]);
                 }
             }
         }
