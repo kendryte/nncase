@@ -281,7 +281,7 @@ class tensor_reduce_sync_impl {
                 auto src_index_g = ntt::unravel_index(offset % group_size, group_hierarchy);
                 auto src_index = index_group2global(src_index_g, cur_index);
 
-                auto src_tensor = src.template remote(src_index);
+                auto src_tensor = dest.template remote(src_index);
                 auto starts = ntt::generate_shape<Rank>([&](auto j) {
                     if (j == axis) {
                         return offset * frac;
