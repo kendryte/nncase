@@ -720,7 +720,8 @@ struct cast_elem<TFromVector, TTo> {
     }
 
     constexpr auto operator()(const TFromVector &froms) const noexcept
-        requires(sizeof(TFromElem) < sizeof(TTo))
+        requires(element_size_in_byte_v<TFromElem> <
+                 element_size_in_byte_v<TTo>)
     {
         if constexpr (TFromVector::rank() > 1) {
             constexpr auto domain = TFromVector::shape().front();
@@ -736,7 +737,9 @@ struct cast_elem<TFromVector, TTo> {
             });
             return tos;
         } else {
-            constexpr auto N = fixed_dim_v<sizeof(TTo) / sizeof(TFromElem)>;
+            constexpr auto N =
+                fixed_dim_v<(long int)(element_size_in_byte_v<TTo> /
+                                       element_size_in_byte_v<TFromElem>)>;
             constexpr auto lanes = TFromVector::shape().back() / N;
 
             vector<TTo, N, lanes> tos;

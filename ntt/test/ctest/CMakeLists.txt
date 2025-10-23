@@ -114,6 +114,7 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     test_ntt_transpose.cpp
     test_ntt_unpack.cpp
     test_ntt_where.cpp
+    test_ntt_cast_fp4.cpp
     # test_ntt_cast_from_float32_generated.cpp
 )
 

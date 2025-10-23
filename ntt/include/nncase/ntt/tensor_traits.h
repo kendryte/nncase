@@ -120,6 +120,18 @@ template <Vector T> struct element_or_scalar_type<T> {
 template <class T>
 using element_or_scalar_t = typename element_or_scalar_type<T>::type;
 
+template <typename T> struct element_size_in_byte {
+    static constexpr float value = sizeof(T);
+};
+
+template <> struct element_size_in_byte<float_e2m1_t> {
+    static constexpr float value = 0.5;
+};
+
+template <typename T>
+inline constexpr auto element_size_in_byte_v =
+    element_size_in_byte<std::remove_cv_t<T>>::value;
+
 template <class T>
 struct element_scalar_count : std::integral_constant<size_t, 1> {};
 
