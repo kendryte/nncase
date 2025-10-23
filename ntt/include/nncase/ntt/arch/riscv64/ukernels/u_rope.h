@@ -325,4 +325,94 @@ struct u_rope<vector<half, NTT_VLEN / 16>, NumHeads, HalfDim, true, UseF32> {
             output_strides.template slice<1>());
     }
 };
+
+template <size_t NumHeads, size_t HalfDim, bool UseF32>
+struct u_rope<vector<float, NTT_VLEN / 32>, NumHeads, HalfDim, true, UseF32> {
+  public:
+    using T = vector<float, NTT_VLEN / 32>;
+
+    template <Dimension TSeqLen, Strides TInputStrides, Strides TCosStrides,
+              Strides TSinStrides, Strides TOutputStrides>
+    constexpr void
+    operator()(const T *NTT_RESTRICT input, const T *NTT_RESTRICT cos,
+               const T *NTT_RESTRICT sin, T *NTT_RESTRICT output,
+               const TSeqLen &seq_len, const TInputStrides &input_strides,
+               const TCosStrides &cos_strides, const TSinStrides &sin_strides,
+               const TOutputStrides &output_strides) noexcept {
+        using rope_layout = ukernels::rope_layout;
+
+        constexpr auto unroll = 2_dim;
+        ntt::apply_tiled(
+            ntt::make_shape(fixed_dim_v<HalfDim>, seq_len),
+            ntt::make_shape(1_dim, unroll),
+            [&](auto index, auto in_offset, auto cos_offset, auto sin_offset,
+                auto out_offset) {
+                const auto seq_tile = ntt::min(unroll, seq_len - index[1_dim]);
+
+                size_t vl =
+                    __riscv_vsetvl_e32m2((size_t)(seq_tile * T::size()));
+
+                const T *NTT_RESTRICT cos_0p = cos + cos_offset;
+                const T *NTT_RESTRICT sin_0p = sin + sin_offset;
+                const T *NTT_RESTRICT cos_1p =
+                    cos_0p +
+                    HalfDim * cos_strides[rope_layout::sincos_dim_axis];
+                const T *NTT_RESTRICT sin_1p =
+                    sin_0p +
+                    HalfDim * sin_strides[rope_layout::sincos_dim_axis];
+
+                {
+                    vfloat32m2_t v0 =
+                        __riscv_vle32_v_f32m2((const float *)(cos_0p),
+                                              vl); // cos_0
+                    vfloat32m2_t v4 =
+                        __riscv_vle32_v_f32m2((const float *)(sin_0p),
+                                              vl); // sin_0
+                    vfloat32m2_t v8 =
+                        __riscv_vle32_v_f32m2((const float *)(cos_1p),
+                                              vl); // cos_1
+                    vfloat32m2_t v12 =
+                        __riscv_vle32_v_f32m2((const float *)(sin_1p),
+                                              vl); // sin_1
+
+                    for (size_t h = 0; h < NumHeads; h++) {
+                        const T *NTT_RESTRICT input_0p =
+                            input + in_offset +
+                            h * input_strides[rope_layout::head_axis];
+                        const T *NTT_RESTRICT input_1p =
+                            input_0p +
+                            HalfDim * input_strides[rope_layout::dim_axis];
+                        T *NTT_RESTRICT output_0p =
+                            output + out_offset +
+                            h * output_strides[rope_layout::head_axis];
+                        T *NTT_RESTRICT output_1p =
+                            output_0p +
+                            HalfDim * output_strides[rope_layout::dim_axis];
+
+                        vfloat32m2_t v32 =
+                            __riscv_vle32_v_f32m2((const float *)(input_0p),
+                                                  vl); // input_0
+                        vfloat32m2_t v20 =
+                            __riscv_vle32_v_f32m2((const float *)(input_1p),
+                                                  vl); // input_1
+
+                        // 2nd half: output_1p = input_1 * cos_1 + input_0 *
+                        // sin_1 tmp_1 = input_0 * sin_1
+                        vfloat32m2_t v28 = __riscv_vfmul_vv_f32m2(v32, v12, vl);
+                        // tmp_1 += input_1 * cos_1
+                        v28 = __riscv_vfmacc_vv_f32m2(v28, v20, v8, vl);
+                        __riscv_vse32_v_f32m2((float *)(output_1p), v28, vl);
+
+                        // 1st half: output_0p = input_0 * cos_0 - input_1 *
+                        // sin_0 tmp_0 = input_1 * sin_0
+                        vfloat32m2_t v24 = __riscv_vfmul_vv_f32m2(v20, v4, vl);
+                        v24 = __riscv_vfmsac_vv_f32m2(v24, v32, v0, vl);
+                        __riscv_vse32_v_f32m2((float *)(output_0p), v24, vl);
+                    }
+                }
+            },
+            input_strides.template slice<1>(), cos_strides, sin_strides,
+            output_strides.template slice<1>());
+    }
+};
 } // namespace nncase::ntt::ukernels

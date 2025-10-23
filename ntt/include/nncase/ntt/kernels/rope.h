@@ -17,7 +17,7 @@
 #include "../ukernels/u_rope.h"
 
 namespace nncase::ntt {
-template <bool UseF32 = true, Tensor TInput, Tensor TCos, Tensor TSin,
+template <bool UseF32 = false, Tensor TInput, Tensor TCos, Tensor TSin,
           class TOut>
 void rope(const TInput &input, const TCos &cos, const TSin &sin,
           TOut &&output) {
