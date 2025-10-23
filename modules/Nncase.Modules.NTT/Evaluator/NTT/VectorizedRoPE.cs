@@ -126,7 +126,7 @@ public class VectorizedRoPEEvaluator : IEvaluator<VectorizedRoPE>, ITypeInferenc
         {
             return new InvalidType("RoPE: distributed types mismatch (placement/axis/SBP)");
 
-            // optional（still ToString）：
+            // optional(still ToString)：
             // return new InvalidType($"RoPE mismatch: in={input.GetType().Name}, cos={cos.GetType().Name}, sin={sin.GetType().Name}");
         }
 

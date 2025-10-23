@@ -124,7 +124,7 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
         {
             return new InvalidType("RoPE: distributed types mismatch (placement/axis/SBP)");
 
-            // optional（still ToString）：
+            // optional(still ToString)：
             // return new InvalidType($"RoPE mismatch: in={input.GetType().Name}, cos={scale.GetType().Name}, sin={bias.GetType().Name}");
         }
 

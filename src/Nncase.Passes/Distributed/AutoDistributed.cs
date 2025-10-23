@@ -87,39 +87,49 @@ internal static class UserRebuilder
 {
     public static void Rebuild(BaseExpr root)
     {
-        var all = new List<BaseExpr>(256);
-        Dfs(root, all);
+        var order = new List<BaseExpr>(256);
+        var seen = new HashSet<BaseExpr>(ReferenceEqualityComparer.Instance); // O(1) 去重
+        DfsIter(root, order, seen);
 
-        foreach (var n in all)
+        foreach (var n in order)
         {
-            foreach (var u in n.Users.ToArray())
+            var users = n.Users.ToArray();
+            for (int i = 0; i < users.Length; i++)
             {
-                n.RemoveUser(u);
+                n.RemoveUser(users[i]);
             }
         }
 
-        foreach (var n in all)
+        foreach (var n in order)
         {
             var ops = n.Operands;
-            for (int i = 0; i < ops.Length; ++i)
+            for (int i = 0; i < ops.Length; i++)
             {
                 ops[i].AddUser(n);
             }
         }
     }
 
-    private static void Dfs(BaseExpr n, List<BaseExpr> bag)
+    private static void DfsIter(BaseExpr root, List<BaseExpr> order, HashSet<BaseExpr> seen)
     {
-        if (bag.Contains(n))
-        {
-            return;
-        }
+        var stack = new Stack<BaseExpr>();
+        stack.Push(root);
 
-        bag.Add(n);
-        var ops = n.Operands;
-        for (int i = 0; i < ops.Length; ++i)
+        while (stack.Count > 0)
         {
-            Dfs(ops[i], bag);
+            var n = stack.Pop();
+            if (!seen.Add(n))
+            {
+                continue;
+            }
+
+            order.Add(n);
+
+            var ops = n.Operands;
+            for (int i = ops.Length - 1; i >= 0; i--)
+            {
+                stack.Push(ops[i]);
+            }
         }
     }
 }
