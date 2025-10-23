@@ -51,7 +51,7 @@ using namespace ortki;
 
 decltype(nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
     nncase::ntt::distributed::topology_shape))
-    nncase::ntt::distributed::detail::global_local_data_ptr =
+    nncase::ntt::distributed::detail::global_thread_local_data_ptr =
         nncase::ntt::make_tensor<nncase::ntt::vector<uintptr_t, 2>>(
             nncase::ntt::distributed::topology_shape);
 
@@ -145,13 +145,13 @@ TEST(CpuTest, reshard_2D_same_sharding_spec_broadcast) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * sizeof(float);
         });
 
@@ -199,7 +199,7 @@ TEST(CpuTest, reshard_2D_same_sharding_spec_broadcast) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                ((size_t)ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                ((size_t)ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * sizeof(float), 8));
@@ -238,10 +238,10 @@ TEST(CpuTest, reshard_2D_same_sharding_spec_broadcast) {
         t.join();
 
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
                });
 }
@@ -268,13 +268,13 @@ TEST(CpuTest, reshard_2D_same_sharding_sepc_split) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * sizeof(float);
     });
 
@@ -323,7 +323,7 @@ TEST(CpuTest, reshard_2D_same_sharding_sepc_split) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                ((size_t)ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                ((size_t)ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * sizeof(float), 8));
@@ -359,10 +359,10 @@ TEST(CpuTest, reshard_2D_same_sharding_sepc_split) {
     for (auto &t : threads)
         t.join();
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
     });
 }
@@ -394,13 +394,13 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_broadcast_split) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * sizeof(float);
     });
 
@@ -450,7 +450,7 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_broadcast_split) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                ((size_t)ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                ((size_t)ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * sizeof(float), 8));
@@ -492,10 +492,10 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_broadcast_split) {
     for (auto &t : threads)
         t.join();
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
     });
 }
@@ -524,13 +524,13 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_split_broadcast) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * sizeof(float);
     });
 
@@ -578,7 +578,7 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_split_broadcast) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                ((size_t)ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                ((size_t)ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * sizeof(float), 8));
@@ -617,10 +617,10 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_split_broadcast) {
     for (auto &t : threads)
         t.join();
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
     });
 }
@@ -659,13 +659,13 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_different_split_axis) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * sizeof(float);
         });
 
@@ -716,7 +716,7 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_different_split_axis) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                (size_t)(ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                (size_t)(ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * sizeof(float), 8));
@@ -759,10 +759,10 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_different_split_axis) {
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_input, ntt_output));
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
                });
 }
@@ -792,13 +792,13 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_non_divisible_SB2BS) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * sizeof(float);
         });
 
@@ -849,7 +849,7 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_non_divisible_SB2BS) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                (size_t)(ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                (size_t)(ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * sizeof(float), 8));
@@ -892,10 +892,10 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_non_divisible_SB2BS) {
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_input, ntt_output));
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
                });
 }
@@ -926,13 +926,13 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_non_divisible_BS2SB) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * sizeof(float);
         });
 
@@ -983,7 +983,7 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_non_divisible_BS2SB) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                (size_t)(ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                (size_t)(ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * sizeof(float), 8));
@@ -1026,10 +1026,10 @@ TEST(CpuTest, reshard_2D_different_sharding_spec_non_divisible_BS2SB) {
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_input, ntt_output));
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
                });
 }
@@ -1059,13 +1059,13 @@ TEST(CpuTest, reshard_2D_split_multilple_axes) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * sizeof(float);
         });
 
@@ -1115,7 +1115,7 @@ TEST(CpuTest, reshard_2D_split_multilple_axes) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                (size_t)(ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                (size_t)(ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * sizeof(float), 8));
@@ -1158,10 +1158,10 @@ TEST(CpuTest, reshard_2D_split_multilple_axes) {
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_input, ntt_output));
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
                });
 }
@@ -1192,13 +1192,13 @@ TEST(CpuTest, reshard_3D_different_sharding_spec_different_split_axis) {
     constexpr size_t num = cdims * bdims * tdims;
 
     ntt::apply(
-        ntt::distributed::detail::global_local_data_ptr.shape(),
+        ntt::distributed::detail::global_thread_local_data_ptr.shape(),
         [&](auto index) {
-            ntt::distributed::detail::global_local_data_ptr(index)(0_dim) =
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) =
                 (uintptr_t)(ntt::runtime::thread_alloc(M * N * K * sizeof(float),
                                                        8));
-            ntt::distributed::detail::global_local_data_ptr(index)(1_dim) =
-                ntt::distributed::detail::global_local_data_ptr(index)(0_dim) +
+            ntt::distributed::detail::global_thread_local_data_ptr(index)(1_dim) =
+                ntt::distributed::detail::global_thread_local_data_ptr(index)(0_dim) +
                 M * N * K *sizeof(float);
         });
 
@@ -1251,7 +1251,7 @@ TEST(CpuTest, reshard_3D_different_sharding_spec_different_split_axis) {
 
             const auto program_ids = make_shape(cid, bid, tid);
             float *local_data_src = reinterpret_cast<float *>(
-                (size_t)(ntt::distributed::detail::global_local_data_ptr(program_ids)(
+                (size_t)(ntt::distributed::detail::global_thread_local_data_ptr(program_ids)(
                     0_dim)));
             auto local_data_dst = reinterpret_cast<float *>(
                 nncase::ntt::runtime::thread_alloc(M * N * K * sizeof(float), 8));
@@ -1297,10 +1297,10 @@ TEST(CpuTest, reshard_3D_different_sharding_spec_different_split_axis) {
 
     EXPECT_TRUE(NttTest::compare_tensor(ntt_input, ntt_output));
 
-    ntt::apply(ntt::distributed::detail::global_local_data_ptr.shape(),
+    ntt::apply(ntt::distributed::detail::global_thread_local_data_ptr.shape(),
                [&](auto index) {
                    thread_free(
-                       (void *)(size_t)ntt::distributed::detail::global_local_data_ptr(
+                       (void *)(size_t)ntt::distributed::detail::global_thread_local_data_ptr(
                            index)(0_dim));
                });
 }
