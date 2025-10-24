@@ -27,7 +27,7 @@ struct u_packed_matmul {
     static constexpr auto N0Tile = TCPack::shape()[0_dim];
 
     template <Dimension TLda, Dimension TLdc, Dimension TK>
-    constexpr void
+    NTT_ALWAYS_INLINE constexpr void
     operator()(const TAElem *NTT_RESTRICT a, const TBPack *NTT_RESTRICT b,
                TCPack *NTT_RESTRICT c, const TScale &scale, const TLda &lda,
                const TLdc &ldc, const TK &K) noexcept {
@@ -72,9 +72,10 @@ struct u_packed_matmul {
 template <bool AccumulateC, dim_t M0Tile, Scalar TAElem, Vector TBPack,
           Vector TCPack, class TScale, Dimension TLda, Dimension TLdc,
           Dimension TK>
-constexpr void u_packed_matmul(const TAElem *a, const TBPack *b, TCPack *c,
-                               const TScale &scale, const TLda &lda,
-                               const TLdc &ldc, const TK &K) noexcept {
+NTT_ALWAYS_INLINE constexpr void
+u_packed_matmul(const TAElem *a, const TBPack *b, TCPack *c,
+                const TScale &scale, const TLda &lda, const TLdc &ldc,
+                const TK &K) noexcept {
     ukernels::u_packed_matmul<AccumulateC, M0Tile, TAElem, TBPack, TCPack,
                               TScale, true>
         impl;
