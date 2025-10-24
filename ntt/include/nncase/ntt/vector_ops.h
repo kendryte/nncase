@@ -656,7 +656,8 @@ struct cast_elem<TFromVector, TTo> {
     using TFromElem = typename TFromVector::element_type;
 
     constexpr auto operator()(const TFromVector &froms) const noexcept
-        requires(sizeof(TFromElem) == sizeof(TTo))
+        requires(element_size_in_byte_v<TFromElem> ==
+                 element_size_in_byte_v<TTo>)
     {
         if constexpr (std::is_same_v<TFromElem, TTo>) {
             return froms; // No cast needed
