@@ -106,6 +106,12 @@ struct float_e2m1_t
     explicit float_e2m1_t(float x) : Base(x) {}
 
     CUTLASS_HOST_DEVICE
+    explicit float_e2m1_t(half x) : Base(float(x)) {}
+
+    CUTLASS_HOST_DEVICE
+    explicit float_e2m1_t(bfloat16 x) : Base(float(x)) {}
+
+    CUTLASS_HOST_DEVICE
     explicit float_e2m1_t(int x) : Base(x) {}
 
     CUTLASS_HOST_DEVICE

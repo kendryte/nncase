@@ -213,6 +213,219 @@ TEST(CastFloat32To, Fp4_Vectorize) {
         NttTest::compare_tensor(ntt_output_actual, ntt_output_expected));
 }
 
+TEST(CastFp4To, Half_NoVectorize) {
+    constexpr size_t M = 64;
+
+    float_e2m1_t init_array[M] = {
+        0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,
+        4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1,
+        -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,
+        1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,
+        0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,
+        -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,
+        2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1,
+        -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,
+        0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,
+        4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1,
+        -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1};
+    auto ntt_input = ntt::make_tensor_view(
+        std::span<float_e2m1_t, M>(init_array, M), ntt::fixed_shape_v<1, M>);
+
+    auto ntt_output_actual = ntt::make_tensor<half>(ntt::fixed_shape_v<1, M>);
+
+    // ntt
+    ntt::cast(ntt_input, ntt_output_actual, ntt::fixed_shape_v<>);
+
+    half golden_array[] = {
+        (half)0,  (half)0.5,  (half)1,  (half)1.5,  (half)2,  (half)3,
+        (half)4,  (half)6,    (half)0,  (half)-0.5, (half)-1, (half)-1.5,
+        (half)-2, (half)-3,   (half)-4, (half)-6,   (half)0,  (half)0.5,
+        (half)1,  (half)1.5,  (half)2,  (half)3,    (half)4,  (half)6,
+        (half)0,  (half)-0.5, (half)-1, (half)-1.5, (half)-2, (half)-3,
+        (half)-4, (half)-6,   (half)0,  (half)0.5,  (half)1,  (half)1.5,
+        (half)2,  (half)3,    (half)4,  (half)6,    (half)0,  (half)-0.5,
+        (half)-1, (half)-1.5, (half)-2, (half)-3,   (half)-4, (half)-6,
+        (half)0,  (half)0.5,  (half)1,  (half)1.5,  (half)2,  (half)3,
+        (half)4,  (half)6,    (half)0,  (half)-0.5, (half)-1, (half)-1.5,
+        (half)-2, (half)-3,   (half)-4, (half)-6};
+    auto ntt_output_expected = ntt::make_tensor_view(
+        std::span<half, M>(golden_array, M), ntt::fixed_shape_v<1, M>);
+
+    EXPECT_TRUE(
+        NttTest::compare_tensor(ntt_output_actual, ntt_output_expected));
+}
+
+TEST(CastFp4To, Half_Vectorize) {
+    constexpr size_t M = 64;
+    constexpr size_t N = 2;
+    constexpr size_t total_size = M * N;
+
+    constexpr size_t PIn = NTT_VLEN / 4;
+    constexpr size_t POut = NTT_VLEN / (sizeof(half) * 8);
+    float_e2m1_t init_array[total_size] = {
+        0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,
+        4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1,
+        -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,
+        1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,
+        0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,
+        -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,
+        2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1,
+        -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,
+        0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,
+        4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1,
+        -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,
+        1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,
+        0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,
+        -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,
+        2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1,
+        -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,
+        0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,
+        4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1,
+        -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,
+        1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,
+        0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,
+        -4_fe2m1, -6_fe2m1};
+
+    auto ntt_input = ntt::make_tensor<float_e2m1_t>(ntt::fixed_shape_v<M, N>);
+
+    size_t idx = 0;
+    ntt::apply(ntt_input.shape(),
+               [&](auto index) { ntt_input(index) = init_array[idx++]; });
+
+    auto ntt_input_vectorized =
+        ntt::make_tensor<ntt::vector<float_e2m1_t, PIn>>(
+            ntt::fixed_shape_v<M / PIn, N>);
+    ntt::pack(ntt_input, ntt_input_vectorized, ntt::fixed_shape_v<0>);
+
+    auto ntt_output_vectorized = ntt::make_tensor<ntt::vector<half, POut>>(
+        ntt::fixed_shape_v<M / POut, N>);
+    auto ntt_output_actual = ntt::make_tensor<half>(ntt::fixed_shape_v<M, N>);
+
+    // ntt
+    ntt::cast(ntt_input_vectorized, ntt_output_vectorized,
+              ntt::fixed_shape_v<0>);
+
+    ntt::unpack(ntt_output_vectorized, ntt_output_actual,
+                ntt::fixed_shape_v<0>);
+
+    auto ntt_output_expected = ntt::make_tensor<half>(ntt::fixed_shape_v<M, N>);
+    idx = 0;
+    ntt::apply(ntt_output_expected.shape(), [&](auto index) {
+        ntt_output_expected(index) = init_array[idx++];
+    });
+
+    EXPECT_TRUE(
+        NttTest::compare_tensor(ntt_output_actual, ntt_output_expected));
+}
+
+TEST(CastHalfTo, Fp4_NoVectorize) {
+    constexpr size_t M = 64;
+
+    half init_array[M] = {
+        (half)0,  (half)0.5,  (half)1,  (half)1.5,  (half)2,  (half)3,
+        (half)4,  (half)6,    (half)0,  (half)-0.5, (half)-1, (half)-1.5,
+        (half)-2, (half)-3,   (half)-4, (half)-6,   (half)0,  (half)0.5,
+        (half)1,  (half)1.5,  (half)2,  (half)3,    (half)4,  (half)6,
+        (half)0,  (half)-0.5, (half)-1, (half)-1.5, (half)-2, (half)-3,
+        (half)-4, (half)-6,   (half)0,  (half)0.5,  (half)1,  (half)1.5,
+        (half)2,  (half)3,    (half)4,  (half)6,    (half)0,  (half)-0.5,
+        (half)-1, (half)-1.5, (half)-2, (half)-3,   (half)-4, (half)-6,
+        (half)0,  (half)0.5,  (half)1,  (half)1.5,  (half)2,  (half)3,
+        (half)4,  (half)6,    (half)0,  (half)-0.5, (half)-1, (half)-1.5,
+        (half)-2, (half)-3,   (half)-4, (half)-6};
+    auto ntt_input = ntt::make_tensor_view(std::span<half, M>(init_array, M),
+                                           ntt::fixed_shape_v<1, M>);
+
+    auto ntt_output_actual =
+        ntt::make_tensor<float_e2m1_t>(ntt::fixed_shape_v<1, M>);
+
+    // ntt
+    ntt::cast(ntt_input, ntt_output_actual, ntt::fixed_shape_v<>);
+
+    float_e2m1_t golden_array[] = {
+        0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,
+        4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1,
+        -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,
+        1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,
+        0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,
+        -4_fe2m1, -6_fe2m1,   0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,
+        2_fe2m1,  3_fe2m1,    4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1,
+        -1_fe2m1, -1.5_fe2m1, -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1,
+        0_fe2m1,  0.5_fe2m1,  1_fe2m1,  1.5_fe2m1,  2_fe2m1,  3_fe2m1,
+        4_fe2m1,  6_fe2m1,    0_fe2m1,  -0.5_fe2m1, -1_fe2m1, -1.5_fe2m1,
+        -2_fe2m1, -3_fe2m1,   -4_fe2m1, -6_fe2m1};
+    auto ntt_output_expected = ntt::make_tensor_view(
+        std::span<float_e2m1_t, M>(golden_array, M), ntt::fixed_shape_v<1, M>);
+
+    EXPECT_TRUE(
+        NttTest::compare_tensor(ntt_output_actual, ntt_output_expected));
+}
+
+TEST(CastHalfTo, Fp4_Vectorize) {
+    constexpr size_t M = 64;
+    constexpr size_t N = 2;
+    constexpr size_t total_size = M * N;
+
+    constexpr size_t PIn = NTT_VLEN / (sizeof(half) * 8);
+    constexpr size_t POut = NTT_VLEN / 4;
+    half init_array[total_size] = {
+        (half)0,  (half)0.5,  (half)1,  (half)1.5,  (half)2,  (half)3,
+        (half)4,  (half)6,    (half)0,  (half)-0.5, (half)-1, (half)-1.5,
+        (half)-2, (half)-3,   (half)-4, (half)-6,   (half)0,  (half)0.5,
+        (half)1,  (half)1.5,  (half)2,  (half)3,    (half)4,  (half)6,
+        (half)0,  (half)-0.5, (half)-1, (half)-1.5, (half)-2, (half)-3,
+        (half)-4, (half)-6,   (half)0,  (half)0.5,  (half)1,  (half)1.5,
+        (half)2,  (half)3,    (half)4,  (half)6,    (half)0,  (half)-0.5,
+        (half)-1, (half)-1.5, (half)-2, (half)-3,   (half)-4, (half)-6,
+        (half)0,  (half)0.5,  (half)1,  (half)1.5,  (half)2,  (half)3,
+        (half)4,  (half)6,    (half)0,  (half)-0.5, (half)-1, (half)-1.5,
+        (half)-2, (half)-3,   (half)-4, (half)-6,   (half)0,  (half)0.5,
+        (half)1,  (half)1.5,  (half)2,  (half)3,    (half)4,  (half)6,
+        (half)0,  (half)-0.5, (half)-1, (half)-1.5, (half)-2, (half)-3,
+        (half)-4, (half)-6,   (half)0,  (half)0.5,  (half)1,  (half)1.5,
+        (half)2,  (half)3,    (half)4,  (half)6,    (half)0,  (half)-0.5,
+        (half)-1, (half)-1.5, (half)-2, (half)-3,   (half)-4, (half)-6,
+        (half)0,  (half)0.5,  (half)1,  (half)1.5,  (half)2,  (half)3,
+        (half)4,  (half)6,    (half)0,  (half)-0.5, (half)-1, (half)-1.5,
+        (half)-2, (half)-3,   (half)-4, (half)-6,   (half)0,  (half)0.5,
+        (half)1,  (half)1.5,  (half)2,  (half)3,    (half)4,  (half)6,
+        (half)0,  (half)-0.5, (half)-1, (half)-1.5, (half)-2, (half)-3,
+        (half)-4, (half)-6};
+
+    auto ntt_input = ntt::make_tensor<half>(ntt::fixed_shape_v<M, N>);
+
+    size_t idx = 0;
+    ntt::apply(ntt_input.shape(),
+               [&](auto index) { ntt_input(index) = init_array[idx++]; });
+
+    auto ntt_input_vectorized = ntt::make_tensor<ntt::vector<half, PIn>>(
+        ntt::fixed_shape_v<M / PIn, N>);
+    ntt::pack(ntt_input, ntt_input_vectorized, ntt::fixed_shape_v<0>);
+
+    auto ntt_output_vectorized =
+        ntt::make_tensor<ntt::vector<float_e2m1_t, POut>>(
+            ntt::fixed_shape_v<M / POut, N>);
+    auto ntt_output_actual =
+        ntt::make_tensor<float_e2m1_t>(ntt::fixed_shape_v<M, N>);
+
+    // ntt
+    ntt::cast(ntt_input_vectorized, ntt_output_vectorized,
+              ntt::fixed_shape_v<0>);
+
+    ntt::unpack(ntt_output_vectorized, ntt_output_actual,
+                ntt::fixed_shape_v<0>);
+
+    auto ntt_output_expected =
+        ntt::make_tensor<float_e2m1_t>(ntt::fixed_shape_v<M, N>);
+    idx = 0;
+    ntt::apply(ntt_output_expected.shape(), [&](auto index) {
+        ntt_output_expected(index) = (float_e2m1_t)(float)init_array[idx++];
+    });
+
+    EXPECT_TRUE(
+        NttTest::compare_tensor(ntt_output_actual, ntt_output_expected));
+}
+
 int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
