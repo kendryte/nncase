@@ -191,7 +191,9 @@ class tensor_reduce_sync_impl {
             const auto local_shard_index = mesh_type::local_index();
             auto node_number_g = ntt::linear_offset(cur_index_g, group_hierarchy);
             auto new_shape = dest.local().shape();
-            auto starts = dest.sharding().global_offset(dest.shape(), local_shard_index);
+            auto starts_src = src.sharding().global_offset(src.shape(), local_shard_index);
+            auto starts_dest = dest.sharding().global_offset(dest.shape(), local_shard_index);
+            auto starts = ntt::generate_shape<Rank>([&](auto axis) { return starts_dest[axis] - starts_src[axis]; });
             auto viewed_src1_tensor = src.local().view(starts, new_shape);
             auto viewed_dest_tensor = dest.local();
 
