@@ -37,6 +37,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 }
             }
 
+            var partialDims = new List<int>();
             for (int i = 0; i < inv.AxisPolicies.Count; i++)
             {
                 switch (inv.AxisPolicies[i], outv.AxisPolicies[i])
@@ -47,10 +48,16 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                             return new InvalidType("Not Supported Partial to Split.");
                         }
 
+                        partialDims.Add(i);
                         break;
                     case (_, SBPPartial):
                         return new InvalidType("Not Support to Partial");
                 }
+            }
+
+            if (partialDims.Count > 0 && !Enumerable.Range(0, inv.AxisPolicies.Count).Except(partialDims.ToArray()).All(i => DistributedUtility.IsSamePolicy(inv.AxisPolicies[i], outv.AxisPolicies[i])))
+            {
+                return new InvalidType("Not Supported Partial.");
             }
 
             return outv;

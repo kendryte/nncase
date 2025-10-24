@@ -799,6 +799,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 return new InvalidType("Same DistributedType");
             }
 
+            var partialDims = new List<int>();
             for (int i = 0; i < inv.AxisPolicies.Count; i++)
             {
                 switch (inv.AxisPolicies[i], outv.AxisPolicies[i])
@@ -809,10 +810,16 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                             return new InvalidType("Not support partial to split.");
                         }
 
+                        partialDims.Add(i);
                         break;
                     case (_, SBPPartial):
                         return new InvalidType("not support to partial");
                 }
+            }
+
+            if (partialDims.Count > 0 && !Enumerable.Range(0, inv.AxisPolicies.Count).Except(partialDims.ToArray()).All(i => DistributedUtility.IsSamePolicy(inv.AxisPolicies[i], outv.AxisPolicies[i])))
+            {
+                return new InvalidType("Not Supported Partial.");
             }
 
             return outv;
