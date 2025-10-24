@@ -102,9 +102,8 @@ template <Dimensions TIndex>
 static float_e2m1_t get_element(const uint8x16_t &array,
                                 const TIndex &index) noexcept {
     static_assert(TIndex::rank() == 1, "index must be 1D");
-    using cast_type = __v32qu;
     using Storage = typename float_e2m1_t::Storage;
-    const auto casted_value = (cast_type)array;
+    const auto casted_value = array;
     const auto offset = (size_t)index[dim_zero];
     Storage byte = casted_value[offset >> 1];
     bool is_low = (offset % 2 == 0);
@@ -121,18 +120,16 @@ static float_e2m1_t get_element(const uint8x16_t &array,
 template <Dimensions TIndex>
 static void set_element(uint8x16_t &array, const TIndex &index,
                         float_e2m1_t value) noexcept {
-    using cast_type = __v32qu;
     static_assert(TIndex::rank() == 1, "index must be 1D");
     using Storage = typename float_e2m1_t::Storage;
-    auto &casted_value = reinterpret_cast<cast_type &>(array);
     const auto offset = (size_t)index[dim_zero];
-    Storage &byte = casted_value[offset >> 1];
+    Storage byte = array[offset >> 1];
     Storage v = value.raw() & 0x0F;
     bool is_low = (offset % 2 == 0);
     if (is_low) {
-        byte = (byte & 0xF0) | v;
+        array[offset >> 1] = (byte & 0xF0) | v;
     } else {
-        byte = (byte & 0x0F) | (v << 4);
+        array[offset >> 1] = (byte & 0x0F) | (v << 4);
     }
 }
 NTT_END_DEFINE_NATIVE_VECTOR()
