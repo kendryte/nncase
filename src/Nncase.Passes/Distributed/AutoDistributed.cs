@@ -88,7 +88,7 @@ internal static class UserRebuilder
     public static void Rebuild(BaseExpr root)
     {
         var order = new List<BaseExpr>(256);
-        var seen = new HashSet<BaseExpr>(ReferenceEqualityComparer.Instance); // O(1) 去重
+        var seen = new HashSet<BaseExpr>(ReferenceEqualityComparer.Instance);
         DfsIter(root, order, seen);
 
         foreach (var n in order)
@@ -365,6 +365,14 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         {
             Visit(function.Body);
             var root = TryInstertTerminator(function.Body);
+            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
+            {
+                using (var stream = Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot"))
+                {
+                    Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
+                }
+            }
+
             post = SolveAndExtract(root);
         }
 
