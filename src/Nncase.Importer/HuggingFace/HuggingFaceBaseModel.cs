@@ -269,8 +269,15 @@ public abstract class HuggingFaceModel
     {
         // q_embed = (q * cos) + (rotate_half(q) * sin)
         // k_embed = (k * cos) + (rotate_half(k) * sin)
+        var originDtype = q.CheckedDataType;
+        q = IR.F.Tensors.Cast(q, DataTypes.Float32);
+        k = IR.F.Tensors.Cast(k, DataTypes.Float32);
+        cos = IR.F.Tensors.Cast(cos, DataTypes.Float32);
+        sin = IR.F.Tensors.Cast(sin, DataTypes.Float32);
         var qEmbed = IR.F.NN.RoPE(q, cos, sin);
         var kEmbed = IR.F.NN.RoPE(k, cos, sin);
+        qEmbed = IR.F.Tensors.Cast(qEmbed, originDtype);
+        kEmbed = IR.F.Tensors.Cast(kEmbed, originDtype);
         return System.Tuple.Create(qEmbed, kEmbed);
     }
 

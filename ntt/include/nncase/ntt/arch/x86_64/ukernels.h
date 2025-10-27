@@ -436,12 +436,12 @@ class u_pack2d<true, TIn, TOut, float, vector<float, 8, 8>> {
 };
 
 template <Tensor TIn, Tensor TOut, size_t AxesRank>
-requires(
-    (std::same_as<typename TIn::element_type, ntt::vector<float, 8, 8>> ||
-     std::same_as<typename TIn::element_type, ntt::vector<float, 8>>)&&std::
-        same_as<typename std::decay_t<TOut>::element_type, float> &&
-    (AxesRank == 1 ||
-     AxesRank == 2)) class u_unpack_impl<TIn, TOut, AxesRank, true> {
+    requires(
+        (std::same_as<typename TIn::element_type, ntt::vector<float, 8, 8>> ||
+         std::same_as<typename TIn::element_type, ntt::vector<float, 8>>) &&
+        std::same_as<typename std::decay_t<TOut>::element_type, float> &&
+        (AxesRank == 1 || AxesRank == 2))
+class u_unpack_impl<TIn, TOut, AxesRank, true> {
   public:
     using TVec = typename TIn::element_type;
     using TElem = typename std::decay_t<TOut>::element_type;
@@ -642,9 +642,10 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_n, float,
 
 template <bool AccumulateC, class TScale>
     requires std::is_same_v<TScale, float> ||
-    std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
-        ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC, false, false,
-        1, 7, float, vector<float, 8>, vector<float, 8>, TScale, true> {
+             std::is_same_v<TScale, std::nullptr_t>
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_n, AccumulateC,
+                false, false, 1, 7, float, vector<float, 8>, vector<float, 8>,
+                TScale, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               const TScale &scale, size_t K) noexcept {
@@ -745,10 +746,10 @@ struct u_matmul_m1_policy<matmul_vectorize_kind::vectorize_kn, vector<float, 8>,
 
 template <bool AccumulateC, class TScale>
     requires std::is_same_v<TScale, float> ||
-    std::is_same_v<TScale, std::nullptr_t> struct u_matmul<
-        ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC, false,
-        false, 1, 4, vector<float, 8>, vector<float, 8, 8>, vector<float, 8>,
-        TScale, true> {
+             std::is_same_v<TScale, std::nullptr_t>
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_kn, AccumulateC,
+                false, false, 1, 4, vector<float, 8>, vector<float, 8, 8>,
+                vector<float, 8>, TScale, true> {
     template <class TA, class TB, class TC>
     constexpr void operator()(const TA &a, const TB &b, TC &c0,
                               const TScale &scale, size_t K) noexcept {
@@ -838,6 +839,91 @@ struct u_matmul_policy<matmul_vectorize_kind::vectorize_mkn,
 //         }
 //     }
 // };
+
+template <bool AccumulateC, class TScale>
+struct u_packed_gemv<AccumulateC, half, ntt::vector<half, 4, 16>,
+                     ntt::vector<half, 4, 16>, TScale, true> {
+    static constexpr auto N0Tile = 4;
+
+    template <Dimension TLdb, Dimension TK, Dimension TN>
+    NTT_ALWAYS_INLINE constexpr void
+    operator()(const half *NTT_RESTRICT a,
+               const ntt::vector<half, 4, 16> *NTT_RESTRICT b,
+               ntt::vector<half, 4, 16> *NTT_RESTRICT c, const TScale &scale,
+               const TLdb &ldb, const TK &K, const TN &N) noexcept {
+        using TAccPack = ntt::vector<float, 4, 2, 8>;
+
+        for (size_t n1 = 0; n1 < N; n1++) {
+            const auto b1 = b + n1 * ldb;
+            auto c0 = ntt::where(std::integral_constant<bool, AccumulateC>{},
+                                 ntt::cast_elem<float>(c[n1]), TAccPack{});
+            for (size_t k1 = 0; k1 < K; k1 += 8) {
+                __m256 a0_v = _mm256_cvtph_ps(*(const __m128i *)(a + k1));
+                ntt::loop<8>([&](auto k2) {
+                    __m128 a0_lane = _mm256_extractf128_ps(a0_v, k2 >> 2);
+                    __m128 a0_elem = _mm_shuffle_ps(
+                        a0_lane, a0_lane,
+                        _MM_SHUFFLE(k2 & 3, k2 & 3, k2 & 3, k2 & 3));
+                    const auto a0 =
+                        ntt::vector<float, 8>(_mm256_broadcastss_ps(a0_elem));
+                    const auto a0_scaled = ntt::mul(a0, scale);
+                    ntt::loop<N0Tile>([&](auto tn) {
+                        c0(tn) =
+                            ntt::mul_add(a0_scaled, b1[k1 + k2](tn), c0(tn));
+                    });
+                });
+            }
+
+            ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
+                c[n1](index[0_dim]) = ntt::cast_elem<half>(c0(index[0_dim]));
+            });
+        }
+    }
+};
+
+template <bool AccumulateC, class TScale>
+struct u_packed_gemv<AccumulateC, bfloat16, ntt::vector<bfloat16, 4, 16>,
+                     ntt::vector<bfloat16, 4, 16>, TScale, true> {
+    static constexpr auto N0Tile = 4;
+
+    template <Dimension TLdb, Dimension TK, Dimension TN>
+    NTT_ALWAYS_INLINE constexpr void
+    operator()(const bfloat16 *NTT_RESTRICT a,
+               const ntt::vector<bfloat16, 4, 16> *NTT_RESTRICT b,
+               ntt::vector<bfloat16, 4, 16> *NTT_RESTRICT c,
+               const TScale &scale, const TLdb &ldb, const TK &K,
+               const TN &N) noexcept {
+        using TAccPack = ntt::vector<float, 4, 2, 8>;
+
+        for (size_t n1 = 0; n1 < N; n1++) {
+            const auto b1 = b + n1 * ldb;
+            auto c0 = ntt::where(std::integral_constant<bool, AccumulateC>{},
+                                 ntt::cast_elem<float>(c[n1]), TAccPack{});
+            for (size_t k1 = 0; k1 < K; k1 += 8) {
+                __m256 a0_v = _mm256_castsi256_ps(_mm256_slli_epi32(
+                    _mm256_cvtepu16_epi32(*(const __m128i *)(a + k1)), 16));
+                ntt::loop<8>([&](auto k2) {
+                    __m128 a0_lane = _mm256_extractf128_ps(a0_v, k2 >> 2);
+                    __m128 a0_elem = _mm_shuffle_ps(
+                        a0_lane, a0_lane,
+                        _MM_SHUFFLE(k2 & 3, k2 & 3, k2 & 3, k2 & 3));
+                    const auto a0 =
+                        ntt::vector<float, 8>(_mm256_broadcastss_ps(a0_elem));
+                    const auto a0_scaled = ntt::mul(a0, scale);
+                    ntt::loop<N0Tile>([&](auto tn) {
+                        c0(tn) =
+                            ntt::mul_add(a0_scaled, b1[k1 + k2](tn), c0(tn));
+                    });
+                });
+            }
+
+            ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
+                c[n1](index[0_dim]) =
+                    ntt::cast_elem<bfloat16>(c0(index[0_dim]));
+            });
+        }
+    }
+};
 
 // Where
 template <typename T1, typename T2, typename T3>
