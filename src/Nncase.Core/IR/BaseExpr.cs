@@ -14,6 +14,8 @@ using System.Threading.Tasks;
 using CommunityToolkit.HighPerformance.Helpers;
 using Nncase.Diagnostics;
 
+[assembly: InternalsVisibleTo("Nncase.Passes")]
+
 namespace Nncase.IR;
 
 /// <summary>
@@ -39,14 +41,17 @@ public abstract partial class BaseExpr
     private IRType? _checkedType;
     private int? _hashCodeCache;
 
-    internal BaseExpr(IEnumerable<BaseExpr> operands)
+    internal BaseExpr(IEnumerable<BaseExpr> operands, bool tempora = true)
     {
         ExprScope.Current?.Add(this);
         _operands = operands.ToArray();
-        foreach (var operand in _operands)
+        if (tempora)
         {
-            ValidateOperand(operand);
-            operand.AddUser(this);
+            foreach (var operand in _operands)
+            {
+                ValidateOperand(operand);
+                operand.AddUser(this);
+            }
         }
 
         RefreshDepth();
@@ -238,6 +243,11 @@ public abstract partial class BaseExpr
 
     internal void AddUser(BaseExpr user)
     {
+        if (UserTrackingScope.IsSuppressed)
+        {
+            return;
+        }
+
         Trace.Assert(!ReferenceEquals(this, user));
         _users.TryAdd(user, default);
     }
@@ -394,5 +404,23 @@ public abstract partial class BaseExpr
     private void RefreshDepth()
     {
         Depth = _operands.Length == 0 ? 0 : _operands.Max(x => x.Depth) + 1;
+    }
+}
+
+internal static class UserTrackingScope
+{
+    private static readonly System.Threading.AsyncLocal<int> _depth = new();
+
+    public static bool IsSuppressed => _depth.Value > 0;
+
+    public static IDisposable Suppress()
+    {
+        _depth.Value = _depth.Value + 1;
+        return new Popper();
+    }
+
+    private sealed class Popper : IDisposable
+    {
+        public void Dispose() => _depth.Value = _depth.Value - 1;
     }
 }

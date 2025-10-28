@@ -371,14 +371,14 @@ class HuggingfaceTestRunner(TestRunner):
                 count = 0
                 logits = None
                 if (self.cfg['huggingface_options']['output_logits']):
-                    logits = result.logits.detach().to(torch.float32).numpy()
+                    logits = result.logits.detach().to(torch.float32).cpu().numpy()
                     dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', logits[0])
                     outputs.append(logits)
                     count += 1
                 else:
                     hidden_states = recursive_stack(result.hidden_states).detach().to(
                         torch.float32).numpy()[-1]
-                    dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states)
+                    dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states[0])
                     outputs.append(hidden_states[0])
                     count += 1
 
@@ -405,7 +405,7 @@ class HuggingfaceTestRunner(TestRunner):
 
                 if (self.cfg['huggingface_options']['output_hidden_states']):
                     if not test_utils.in_ci():
-                        hidden_states = recursive_stack(result.hidden_states).detach().numpy()
+                        hidden_states = recursive_stack(result.hidden_states).detach().cpu().numpy()
                         hidden_states = np.squeeze(hidden_states, 1)
                         dump_data_to_file(self.case_dir, f'cpu_result_{i}_{count}', hidden_states)
                         outputs.append(hidden_states)
@@ -414,9 +414,9 @@ class HuggingfaceTestRunner(TestRunner):
         return all_outputs, tokens_ids, tokens
 
     def parse_model(self, model_path):
-        if self.cfg['huggingface_options']['tensor_type'] == "bfloat16":
-            raise RuntimeError(
-                f"Not support bfloat16 tensor type now (because of ort)! Just 'float16' or 'float32'.")
+        # if self.cfg['huggingface_options']['tensor_type'] == "bfloat16":
+        #     raise RuntimeError(
+        #         f"Not support bfloat16 tensor type now (because of ort)! Just 'float16' or 'float32'.")
 
         config = AutoConfig.from_pretrained(model_path + "/config.json")
         self.hf_config = config

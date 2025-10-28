@@ -100,7 +100,7 @@ public class FusionGroupMutator : ExprRewriter
         return false;
     }
 
-    protected override BaseExpr VisitFusion(Fusion expr, Unit context) => base.VisitFusion(expr, context);
+    protected internal override BaseExpr VisitFusion(Fusion expr, Unit context) => base.VisitFusion(expr, context);
 
     /// <inheritdoc/>
     protected override Expr RewriteLeafCall(Call expr)

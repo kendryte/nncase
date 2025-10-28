@@ -84,6 +84,57 @@ public sealed partial class AutoDistributedPass : FunctionPass
     }
 }
 
+internal static class UserRebuilder
+{
+    public static void Rebuild(BaseExpr root)
+    {
+        var order = new List<BaseExpr>(256);
+        var seen = new HashSet<BaseExpr>(ReferenceEqualityComparer.Instance);
+        DfsIter(root, order, seen);
+
+        foreach (var n in order)
+        {
+            var users = n.Users.ToArray();
+            for (int i = 0; i < users.Length; i++)
+            {
+                n.RemoveUser(users[i]);
+            }
+        }
+
+        foreach (var n in order)
+        {
+            var ops = n.Operands;
+            for (int i = 0; i < ops.Length; i++)
+            {
+                ops[i].AddUser(n);
+            }
+        }
+    }
+
+    private static void DfsIter(BaseExpr root, List<BaseExpr> order, HashSet<BaseExpr> seen)
+    {
+        var stack = new Stack<BaseExpr>();
+        stack.Push(root);
+
+        while (stack.Count > 0)
+        {
+            var n = stack.Pop();
+            if (!seen.Add(n))
+            {
+                continue;
+            }
+
+            order.Add(n);
+
+            var ops = n.Operands;
+            for (int i = ops.Length - 1; i >= 0; i--)
+            {
+                stack.Push(ops[i]);
+            }
+        }
+    }
+}
+
 internal sealed class SearchableNode
 {
     public SearchableNode(BaseExpr expr, IRType type, bool isBidirect = false)
@@ -310,19 +361,24 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     public Function Rewrite(Function function)
     {
-        var body = function.Body;
-        Visit(body);
-        var rootCluster = TryInstertTerminator(body);
-
-        // if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
+        BaseExpr post;
+        using (Nncase.IR.UserTrackingScope.Suppress())
         {
-            using (var stream = Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot"))
+            Visit(function.Body);
+            var root = TryInstertTerminator(function.Body);
+            if (Diagnostics.DumpScope.Current.IsEnabled(Diagnostics.DumpFlags.EGraphCost))
             {
-                Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
+                using (var stream = Diagnostics.DumpScope.Current.OpenFile("DistributedSearchGraph.dot"))
+                {
+                    Dump(stream, new Dictionary<SearchableNode, bool>() { }, new Dictionary<SearchableNode, CostModel.Cost>() { });
+                }
             }
+
+            post = SolveAndExtract(root);
         }
 
-        var post = SolveAndExtract(rootCluster);
+        UserRebuilder.Rebuild(post);
+
         return function.With(body: post);
     }
 
@@ -544,6 +600,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                             }
                         }
                     }
+                }
+
+                if (!newExpr.InferenceType(_inferencer_cache) || newExpr.CheckedType is InvalidType)
+                {
+                    continue;
                 }
 
                 if (!expr.Target.GetType().FullName!.Contains("CustomNTT", StringComparison.Ordinal)
@@ -1277,12 +1338,9 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         }
 
         var picks = _rootSearchGraph.Vertices.ToDictionary(e => e, e => solver.BooleanValue(varMemo[e]));
-        if (enableDump)
+        using (var stream = enableDump ? Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot") : Stream.Null)
         {
-            using (var stream = Diagnostics.DumpScope.Current.OpenFile("Costs/Pick.dot"))
-            {
-                Dump(stream, picks, costMemo);
-            }
+            Dump(stream, picks, costMemo);
         }
 
         if (_phase == AutoDistributedPhase.SearchConstant)

@@ -18,6 +18,7 @@
 #include "../shape_infer/reduce.h"
 #include "../ukernels.h"
 #include "matmul.h"
+#include "nncase/ntt/compiler_defs.h"
 #include <type_traits>
 
 namespace nncase::ntt {
@@ -35,8 +36,9 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut, TScale> {
     using TOutElem = typename TOut::element_type;
 
   public:
-    void operator()(const TLhs &lhs, const TRhs &rhs, TOut &output,
-                    const TScale &scale) {
+    NTT_ALWAYS_INLINE constexpr void operator()(const TLhs &lhs,
+                                                const TRhs &rhs, TOut &output,
+                                                const TScale &scale) {
         const auto domain =
             output.shape().template slice<0, TOut::rank() - 2>();
         ntt::apply(domain, [&](auto out_offset_prefix) {
@@ -62,8 +64,8 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut, TScale> {
 
   private:
     template <class TA, class TB, class TC>
-    constexpr void matmul_2d_l1(const TA &a, const TB &b, TC &c,
-                                const TScale &scale) {
+    NTT_ALWAYS_INLINE constexpr void matmul_2d_l1(const TA &a, const TB &b,
+                                                  TC &c, const TScale &scale) {
         const auto M = c.shape()[c.rank() - 2_dim];
         const auto N = c.shape()[c.rank() - 1_dim];
         const auto K = a.shape()[a.rank() - 1_dim];
@@ -91,8 +93,9 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut, TScale> {
     }
 
     template <dim_t M0Tile, class TA, class TB, class TC, Dimension TK>
-    void matmul_2d_l0(const TA &a, const TB &b, TC &c, const TScale &scale,
-                      const TK &K, dim_t m1, dim_t n1) {
+    NTT_ALWAYS_INLINE constexpr void
+    matmul_2d_l0(const TA &a, const TB &b, TC &c, const TScale &scale,
+                 const TK &K, dim_t m1, dim_t n1) {
         auto c0 = c.view(make_shape(m1, n1), fixed_shape_v<M0Tile, 1_dim>)
                       .squeeze(fixed_shape_v<1>);
         auto a0 =
@@ -105,8 +108,9 @@ class packed_matmul_impl<AccumulateC, TLhs, TRhs, TOut, TScale> {
     }
 
     template <class TA, class TB, class TC, Dimension TK, Dimension TN>
-    void gemv_l0(const TA &a, const TB &b, TC &c, const TScale &scale,
-                 const TK &K, const TN &N) {
+    NTT_ALWAYS_INLINE constexpr void gemv_l0(const TA &a, const TB &b, TC &c,
+                                             const TScale &scale, const TK &K,
+                                             const TN &N) {
         auto c0 = c.view(0_dim);
         auto a0 = a.view(0_dim);
         ntt::u_packed_gemv<AccumulateC>(
@@ -135,8 +139,9 @@ template <bool AccumulateC = false, bool TransposedA = false,
           FixedDimensions LhsPadedNums = shape_t<>,
           FixedDimensions RhsVectorizedAxes = shape_t<>,
           FixedDimensions RhsPadedNums = shape_t<>>
-void packed_matmul(const TLhs &lhs, const TRhs &rhs, TOut &&output,
-                   const TScale &scale) {
+NTT_ALWAYS_INLINE constexpr void packed_matmul(const TLhs &lhs, const TRhs &rhs,
+                                               TOut &&output,
+                                               const TScale &scale) {
     detail::packed_matmul_impl<AccumulateC, TLhs, TRhs, std::decay_t<TOut>,
                                TScale>
         impl;
