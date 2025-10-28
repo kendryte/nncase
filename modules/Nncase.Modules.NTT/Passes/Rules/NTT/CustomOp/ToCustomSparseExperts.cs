@@ -96,6 +96,7 @@ public partial class ToCustomSparseExperts : RewriteRule<Pattern>
 
         int qAxis = 1;
         int wAxis = 2;
+
         // moeExpertGateProjW:          [num_expert, moe_intermediate_size, hidden_size]
         // moeExpertUpProjW:            [num_expert, moe_intermediate_size, hidden_size]
         // moeExpertDownProjW:          [num_expert, hidden_size, moe_intermediate_size]
