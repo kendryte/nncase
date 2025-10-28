@@ -186,7 +186,7 @@ class tensor_reduce_sync_impl {
         // todo should using better split strategy.
         constexpr auto group_size = ntt::fixed_dim_v<get_group_size()>;
 
-        if (src.local().shape() != dest.local().shape()) {
+        if (!src.shape().aggregate(true, [&](auto same, auto s, auto i){ return same && std::is_same_v<std::decay_t<decltype(std::get<i>(src.sharding().axis_policies))>, std::decay_t<decltype(std::get<i>(dest.sharding().axis_policies))>>; })) {
             using mesh_type = typename TOutBase::mesh_type;
             const auto local_shard_index = mesh_type::local_index();
             auto node_number_g = ntt::linear_offset(cur_index_g, group_hierarchy);
