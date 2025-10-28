@@ -11,6 +11,7 @@ using Nncase.IR.Shapes;
 using Nncase.Passes.Distributed;
 using Nncase.PatternMatch;
 using Nncase.Utilities;
+using static Nncase.IR.F.Tensors;
 using static Nncase.PatternMatch.Utility;
 
 namespace Nncase.Passes.Rules.NTT.CustomOp;
@@ -91,28 +92,10 @@ public partial class ToCustomSparseExperts : RewriteRule<Pattern>
         var gateSbp = node.SBP.Length > 1 ? node.SBP[1] : Array.Empty<IR.SBP>();
         var downSbp = node.SBP.Length > 2 ? node.SBP[2] : Array.Empty<IR.SBP>();
         var upSbp = node.SBP.Length > 3 ? node.SBP[3] : Array.Empty<IR.SBP>();
-        var extra_size = /* node.ExtraWorkload; */ 1000;
+        var extra_size = /* node.ExtraWorkload; */ 10 * 1024 * 1024 * 2;
 
         int qAxis = 1;
         int wAxis = 2;
-        var target = new IR.CustomNTT.SparseExperts(
-            new[] { qAxis },
-            new[] { wAxis },
-            new[] { wAxis },
-            new[] { wAxis },
-            qSbp,
-            gateSbp,
-            downSbp,
-            upSbp,
-            sparseExperts.HiddenSize,
-            sparseExperts.MoEIntermediateSize,
-            sparseExperts.NumExpert,
-            sparseExperts.NumTopK,
-            sparseExperts.ChunkSize,
-            new() { [CostFactorNames.CPUCycles] = node.Cost },
-            node.CSourcePath,
-            node.FuncName);
-
         // moeExpertGateProjW:          [num_expert, moe_intermediate_size, hidden_size]
         // moeExpertUpProjW:            [num_expert, moe_intermediate_size, hidden_size]
         // moeExpertDownProjW:          [num_expert, hidden_size, moe_intermediate_size]
@@ -192,11 +175,29 @@ public partial class ToCustomSparseExperts : RewriteRule<Pattern>
         var paddedDownProjW = PadToLength(moeExpertDownProjW, (1, hiddenAligned), (wAxis, intermediateAligned));
         var paddedUpProjW = PadToLength(moeExpertUpProjW, (1, intermediateAligned), (wAxis, hiddenAligned));
 
+        var target = new IR.CustomNTT.SparseExperts(
+            new[] { qAxis },
+            new[] { wAxis },
+            new[] { wAxis },
+            new[] { wAxis },
+            qSbp,
+            gateSbp,
+            downSbp,
+            upSbp,
+            sparseExperts.HiddenSize,
+            paddedGateProjW.CheckedShape[1].FixedValue,
+            sparseExperts.NumExpert,
+            sparseExperts.NumTopK,
+            sparseExperts.ChunkSize,
+            new() { [CostFactorNames.CPUCycles] = node.Cost },
+            node.CSourcePath,
+            node.FuncName);
+        var qCast = Cast(q, DataTypes.Float8E4M3);
         var updatedCall = call.With(
             target: target,
             arguments: new[]
             {
-                IR.F.Tensors.Transpose(IR.F.Tensors.Pack(q, new[] { 128 / q.CheckedDataType.SizeInBytes }, new[] { qAxis }), new[] { 1, 0 }),
+                IR.F.Tensors.Transpose(IR.F.Tensors.Pack(qCast, new[] { 128 / qCast.CheckedDataType.SizeInBytes }, new[] { qAxis }), new[] { 1, 0 }),
                 routerIdx,
                 routerWeights,
                 moeExpertGateInputScale,
@@ -217,6 +218,6 @@ public partial class ToCustomSparseExperts : RewriteRule<Pattern>
                 IR.F.Buffer.Uninitialized(DataTypes.UInt8, TIR.MemoryLocation.Data, [extra_size]),
             },
             metadata: call.Metadata);
-        return IR.F.Tensors.Unpack(IR.F.Tensors.Transpose(updatedCall, new[] { 1, 0 }), new[] { 128 / q.CheckedDataType.SizeInBytes }, new[] { qAxis });
+        return IR.F.Tensors.Cast(IR.F.Tensors.Unpack(IR.F.Tensors.Transpose(updatedCall, new[] { 1, 0 }), new[] { 128 / q.CheckedDataType.SizeInBytes }, new[] { qAxis }), q.CheckedDataType);
     }
 }

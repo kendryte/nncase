@@ -235,13 +235,33 @@ public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICo
 
     private IRType Visit(ITypeInferenceContext context, SparseExperts target, TensorType q)
     {
-        return q;
+        switch (q.DType)
+        {
+            case VectorType vt:
+                var newElemType = vt.ElemType switch
+                {
+                    _ => DataTypes.BFloat16,
+                };
+                return q with { DType = new VectorType(newElemType, vt.Lanes) };
+            default:
+                return q with { DType = DataTypes.BFloat16 };
+        }
     }
 
     private IRType Visit(ITypeInferenceContext context, SparseExperts target, DistributedType q)
     {
         // TODO: Handle distributed type inference
         // For now, we just return the type as is.
-        return q;
+        // return q with { TensorType = (TensorType)q.TensorType with { DType = DataTypes.Float16 } };
+        if (q.TensorType is TensorType tensorType && tensorType.DType is VectorType vt)
+        {
+            var newElemType = vt.ElemType switch
+            {
+                _ => DataTypes.BFloat16,
+            };
+            return new DistributedType((TensorType)q.TensorType with { DType = new VectorType(newElemType, vt.Lanes) }, q.AxisPolicies, q.Placement);
+        }
+
+        return new DistributedType((TensorType)q.TensorType with { DType = DataTypes.BFloat16 }, q.AxisPolicies, q.Placement);
     }
 }

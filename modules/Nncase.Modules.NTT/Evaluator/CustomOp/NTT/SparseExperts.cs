@@ -22,37 +22,6 @@ public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICo
     public IRType Visit(ITypeInferenceContext context, SparseExperts target)
     {
         var qType = context.CheckArgumentType<IRType>(target, SparseExperts.Q);
-        var routerIdxType = context.CheckArgumentType<IRType>(target, SparseExperts.RouterIdx);
-        var routerWeightsType = context.CheckArgumentType<IRType>(target, SparseExperts.RouterWeights);
-        var gateType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateProjW);
-        var gateInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateInputScale);
-        var gateProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateProjScale);
-        var downType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownProjW);
-        var downInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownInputScale);
-        var downProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownProjScale);
-        var upType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpProjW);
-        var upInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpInputScale);
-        var upProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpProjScale);
-        var extraType = context.CheckArgumentType<IRType>(target, SparseExperts.Extra);
-
-        if (!CheckCustomSBP(
-            qType,
-            routerIdxType,
-            routerWeightsType,
-            gateType,
-            gateInputScaleType,
-            gateProjScaleType,
-            downType,
-            downInputScaleType,
-            downProjScaleType,
-            upType,
-            upInputScaleType,
-            upProjScaleType,
-            extraType,
-            target))
-        {
-            return new InvalidType("SparseExperts with invalid sbp.");
-        }
 
         return qType switch
         {
@@ -223,7 +192,7 @@ public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICo
 
         bool IsBroadcastOnly(IRType type)
         {
-            return type is not DistributedType dist || dist.AxisPolicies.All(p => p is SBPBroadCast);
+            return type is DistributedType dist && dist.AxisPolicies.All(p => p is SBPBroadCast);
         }
 
         if (!IsBroadcastOnly(routerIdx) ||
@@ -312,13 +281,79 @@ public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICo
 
     private IRType Visit(ITypeInferenceContext context, SparseExperts target, TensorType q)
     {
-        return q;
+        // return q with { DType = DataTypes.Float16 };
+        switch (q.DType)
+        {
+            case VectorType vt:
+                var newElemType = vt.ElemType switch
+                {
+                    _ => DataTypes.Float16,
+                };
+                var scale = 1 * newElemType.SizeInBytes / vt.ElemType.SizeInBytes;
+                var newShape = q.Shape.ToArray();
+                if(scale != 1)
+                {
+                    newShape[^2] = newShape[^2] * (long)scale;
+                }
+                // return q with { DType = new VectorType(newElemType, (int)(vt.Lanes[0] / scale)), shape = newShape };
+                return new TensorType(new VectorType(newElemType, (int)(vt.Lanes[0] / scale)), newShape);
+            default:
+                return q with { DType = DataTypes.Float16 };
+        }
     }
 
     private IRType Visit(ITypeInferenceContext context, SparseExperts target, DistributedType q)
     {
+        var routerIdxType = context.CheckArgumentType<IRType>(target, SparseExperts.RouterIdx);
+        var routerWeightsType = context.CheckArgumentType<IRType>(target, SparseExperts.RouterWeights);
+        var gateType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateProjW);
+        var gateInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateInputScale);
+        var gateProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertGateProjScale);
+        var downType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownProjW);
+        var downInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownInputScale);
+        var downProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertDownProjScale);
+        var upType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpProjW);
+        var upInputScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpInputScale);
+        var upProjScaleType = context.CheckArgumentType<IRType>(target, SparseExperts.MoeExpertUpProjScale);
+        var extraType = context.CheckArgumentType<IRType>(target, SparseExperts.Extra);
+
+        if (!CheckCustomSBP(
+            (IRType)q,
+            routerIdxType,
+            routerWeightsType,
+            gateType,
+            gateInputScaleType,
+            gateProjScaleType,
+            downType,
+            downInputScaleType,
+            downProjScaleType,
+            upType,
+            upInputScaleType,
+            upProjScaleType,
+            extraType,
+            target))
+        {
+            return new InvalidType("SparseExperts with invalid sbp.");
+        }
         // TODO: Handle distributed type inference
         // For now, we just return the type as is.
-        return q;
+        if (q.TensorType is TensorType tensorType && tensorType.DType is VectorType vt)
+        {
+            var newElemType = vt.ElemType switch
+            {
+                _ => DataTypes.BFloat16,
+            };
+            var scale = 1 * newElemType.SizeInBytes / vt.ElemType.SizeInBytes;
+            if (scale != 1)
+            {
+                var newShape = q.TensorType.Shape.ToArray();
+                newShape[^2] = newShape[^2] * (long)scale;
+                // return new DistributedType((TensorType)q.TensorType with { DType = new VectorType(newElemType, (int)(vt.Lanes[0] / scale)), shape = newShape }, q.AxisPolicies, q.Placement);
+                return new DistributedType(new TensorType(new VectorType(newElemType, (int)(vt.Lanes[0] / scale)), newShape), q.AxisPolicies, q.Placement);
+            }
+            return new DistributedType((TensorType)q.TensorType with { DType = new VectorType(newElemType, (int)(vt.Lanes[0] / scale)) }, q.AxisPolicies, q.Placement);
+        }
+
+        return new DistributedType((TensorType)q.TensorType with { DType = DataTypes.BFloat16 }, q.AxisPolicies, q.Placement);
     }
 }
