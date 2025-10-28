@@ -42,7 +42,7 @@ public sealed class Var : Expr, IVar, IEquatable<Var?>
         : base(Array.Empty<BaseExpr>())
     {
         TypeAnnotation = typeAnnotation;
-        RawCheckedType = TypeAnnotation;
+        CheckedType = TypeAnnotation;
         GlobalVarIndex = GetNextId();
         Name = name;
     }
@@ -55,7 +55,7 @@ public sealed class Var : Expr, IVar, IEquatable<Var?>
         : base(Array.Empty<BaseExpr>())
     {
         TypeAnnotation = typeAnnotation;
-        RawCheckedType = TypeAnnotation;
+        CheckedType = TypeAnnotation;
         GlobalVarIndex = GetNextId();
         Name = $"var_{GlobalVarIndex}";
     }
