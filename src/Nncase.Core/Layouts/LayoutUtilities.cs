@@ -22,25 +22,61 @@ public static class LayoutUtilities
         }
     }
 
+    public static Layout Unflatten(Layout layout, RecursiveValue profile)
+    {
+        return new Layout(Unflatten(layout.Shape, profile), Unflatten(layout.Stride, profile));
+    }
+
     public static RecursiveValue Unflatten(RecursiveValue value, RecursiveValue profile)
     {
-        switch (value, profile)
+        CollectValue UnflattenImpl(RecursiveValue value, RecursiveValue profile)
         {
-            case (Layout layout, RecursiveValue _):
-                return new Layout(Unflatten(layout.Shape, profile), Unflatten(layout.Stride, profile));
-            case (CollectValue tuple, CollectValue tprofile):
-                var result = new List<RecursiveValue>();
-                foreach (var p in tprofile)
-                {
-                    result.Add(Unflatten(tuple, p));
-                }
+            switch (value, profile)
+            {
+                case (_, CollectValue tprofile):
+                    var result = new List<RecursiveValue>();
+                    RecursiveValue remaining = value;
+                    foreach (var p in tprofile)
+                    {
+                        if (UnflattenImpl(remaining, p) is CollectValue { Count: 2 } subResult &&
+                            subResult.Elements[0] is RecursiveValue unflattened &&
+                            subResult.Elements[1] is CollectValue remainder)
+                        {
+                            switch (unflattened)
+                            {
+                                case CollectValue ct:
+                                    result.AddRange(ct.Elements);
+                                    break;
+                                case IntValue iv:
+                                    result.Add(unflattened);
+                                    break;
+                            }
 
-                return new CollectValue(result);
-            case (CollectValue tuple, IntValue _):
-                return new CollectValue([tuple[0], tuple[1..]]);
-            default:
-                throw new NotSupportedException();
+                            remaining = remainder;
+                        }
+                        else
+                        {
+                            throw new NotSupportedException();
+                        }
+                    }
+
+                    return new CollectValue([new CollectValue(result), remaining]);
+                case (CollectValue tuple, _):
+                    return new CollectValue([tuple[0], tuple[1..]]);
+                case (IntValue intValue, _):
+                    return new CollectValue([intValue, new CollectValue([])]);
+                default:
+                    throw new NotSupportedException();
+            }
         }
+
+        var result = UnflattenImpl(value, profile);
+        if (result[1] is not CollectValue { Count: 0 })
+        {
+            throw new ArgumentException("profile not suitable", nameof(profile));
+        }
+
+        return result[0];
     }
 
     public static int Signum(RecursiveValue a)

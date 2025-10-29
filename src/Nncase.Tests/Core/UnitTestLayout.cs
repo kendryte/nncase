@@ -38,6 +38,20 @@ public sealed class UnitTestLayout
     }
 
     [Fact]
+    public void TestUnflatten()
+    {
+        var shape = new CollectValue([2048]);
+        var unflattened = Lutil.Unflatten(shape, 1);
+        Assert.Equal("2048", unflattened.ToString());
+        unflattened = Lutil.Unflatten(2048, new CollectValue([1]));
+        Assert.Equal("(2048,)", unflattened.ToString());
+        Assert.Throws<System.ArgumentException>(() =>
+        {
+            Lutil.Unflatten(new CollectValue([2048, 128]), new CollectValue([1]));
+        });
+    }
+
+    [Fact]
     public void TestDistributedTypeLayout()
     {
         var placement = new Placement([1, 2, 8, 4, 4], "cdyxt");
@@ -104,7 +118,8 @@ public sealed class UnitTestLayout
             CollectValue shardBCoord = [new CollectValue(bPid.Select(x => new IntValue(x))), localBCoord];
             var shardBoffset = shardB.Invoke(shardBCoord);
             var shardACoord = Lutil.Idx2Crd(shardBoffset, shardA.Shape, shardA.Stride); // src rank with src start
-            System.Console.WriteLine(shardACoord);
+
+            // System.Console.WriteLine(shardACoord);
         }
     }
 }

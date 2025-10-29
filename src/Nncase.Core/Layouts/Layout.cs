@@ -87,7 +87,8 @@ public sealed record Layout : RecursiveValue, IEnumerable<Layout>
         var layout = From(distType.TensorType, bytes);
         var tiler = LayoutUtilities.GetTiler(layout.Shape, distType.AxisPolicies, distType.Placement);
         var shard = LayoutUtilities.ZippedDivide(layout, tiler);
-        return LayoutUtilities.MakeLayout(LayoutUtilities.Filter(shard[0], 1), shard[1]);
+        var filtered = LayoutUtilities.Filter(shard[0], 1);
+        return LayoutUtilities.MakeLayout(LayoutUtilities.Unflatten(filtered, new CollectValue(Enumerable.Range(0, filtered.Rank).Select(i => new IntValue(i)))), shard[1]);
     }
 
     /// <summary>
@@ -102,6 +103,11 @@ public sealed record Layout : RecursiveValue, IEnumerable<Layout>
     public long Invoke(RecursiveValue coord)
     {
         return LayoutUtilities.Crd2Idx(coord, Shape, Stride);
+    }
+
+    public RecursiveValue HierCoord(long idx)
+    {
+        return LayoutUtilities.Idx2Crd(idx, Shape, Stride);
     }
 
     public long Size() => LayoutUtilities.Product(Shape);
