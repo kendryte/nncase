@@ -259,6 +259,7 @@ public sealed class UnitTestCPUKernels : TestClassBase
     public static TheoryData<long[], int[], List<int[][]>, int> TestReshardData { get; } = new()
     {
         { [1, 77, 768], [2, 32, 4], new() { new int[][] { [-1, 1], [-1, 1], [0, 2] }, new int[][] { [-1, 2], [-1, 2], [0, 1] } }, 0 },
+        { [32, 16], [8, 8], new() { new int[][] { [0], [-1] }, new int[][] { [-1], [1] } }, 1 },
     };
 
     public static TheoryData<BinaryOp, long[], long[], int[], int[][], PostOpKind[], int> TestVectorizeBinaryData { get; } = new()
