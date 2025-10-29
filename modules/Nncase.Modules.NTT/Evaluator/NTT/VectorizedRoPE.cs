@@ -17,25 +17,6 @@ namespace Nncase.Evaluator.IR.NTT;
 public class VectorizedRoPEEvaluator : IEvaluator<VectorizedRoPE>, ITypeInferencer<VectorizedRoPE>, ICostEvaluator<VectorizedRoPE>,
     IMetricEvaluator<VectorizedRoPE>
 {
-    public static bool AxisEqual(IRArray<SBP> a, IRArray<SBP> b, int startA, int startB)
-    {
-        var lenA = a.Count - startA;
-        if (lenA != b.Count - startB)
-        {
-            return false;
-        }
-
-        for (int i = 0; i < lenA; i++)
-        {
-            if (!Equals(a[startA + i], b[startB + i]))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, VectorizedRoPE target)
     {
@@ -118,16 +99,18 @@ public class VectorizedRoPEEvaluator : IEvaluator<VectorizedRoPE>, ITypeInferenc
 
     private IRType Visit(DistributedType input, DistributedType cos, DistributedType sin)
     {
-        // only unsupported print without to-string
+        var invalid = new InvalidType($"{input}, {cos}, {sin} not support");
         if (input.Placement != cos.Placement || cos.Placement != sin.Placement
-            || !AxisEqual(input.AxisPolicies, cos.AxisPolicies, startA: 1, startB: 0)
-            || !AxisEqual(cos.AxisPolicies, sin.AxisPolicies, startA: 0, startB: 0)
-            || input.AxisPolicies[^1] is not SBPBroadCast)
+            || !cos.AxisPolicies.SequenceEqual(sin.AxisPolicies))
         {
-            return new InvalidType("RoPE: distributed types mismatch (placement/axis/SBP)");
+            return invalid;
+        }
 
-            // optional(still ToString)：
-            // return new InvalidType($"RoPE mismatch: in={input.GetType().Name}, cos={cos.GetType().Name}, sin={sin.GetType().Name}");
+        // [head, dim, seq]
+        if (!input.AxisPolicies[1..].SequenceEqual(cos.AxisPolicies)
+            || input.AxisPolicies[1] is not SBPBroadCast)
+        {
+            return invalid;
         }
 
         return input;
