@@ -330,17 +330,16 @@ struct reshard_impl<SrcTensor, DestTensor> {
                   "Cannot reshard between different mesh types.");
 
     constexpr void operator()(const SrcTensor &src, DestTensor &dest) noexcept {
-        // if constexpr (std::is_same_v<typename SrcTensor::shape_type,
-        //                              typename DestTensor::shape_type>) {
-        //     // if (src.shape() == dest.shape()) {
-        //     //     // make sure src ready.
-        //     //     distributed::topology_synchronize();
-        //     //     overlap_aware_reshard(src, dest);
-        //     //     distributed::topology_synchronize();
-        //     //     return;
-        //     // }
-        // }
-        // printf("Warning: Resharding between different sharding shapes is not fully optimized yet.\n");
+        if constexpr (std::is_same_v<typename SrcTensor::shape_type,
+                                     typename DestTensor::shape_type>) {
+            if (src.shape() == dest.shape()) {
+                // make sure src ready.
+                distributed::topology_synchronize();
+                overlap_aware_reshard(src, dest);
+                distributed::topology_synchronize();
+                return;
+            }
+        }
 
         copy_to_global(src);
         copy_from_global(dest);

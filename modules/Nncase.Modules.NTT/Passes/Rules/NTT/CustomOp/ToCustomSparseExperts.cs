@@ -193,12 +193,12 @@ public partial class ToCustomSparseExperts : RewriteRule<Pattern>
             new() { [CostFactorNames.CPUCycles] = node.Cost },
             node.CSourcePath,
             node.FuncName);
-        var qCast = Cast(q, DataTypes.Float8E4M3);
+
         var updatedCall = call.With(
             target: target,
             arguments: new[]
             {
-                IR.F.Tensors.Transpose(IR.F.Tensors.Pack(qCast, new[] { 128 / qCast.CheckedDataType.SizeInBytes }, new[] { qAxis }), new[] { 1, 0 }),
+                IR.F.Tensors.Transpose(IR.F.Tensors.Pack(q, new[] { 128 / q.CheckedDataType.SizeInBytes }, new[] { qAxis }), new[] { 1, 0 }),
                 routerIdx,
                 routerWeights,
                 moeExpertGateInputScale,
