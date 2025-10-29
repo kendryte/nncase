@@ -143,7 +143,7 @@ public sealed class Im2colEvaluator : ITypeInferencer<Im2col>, ICostEvaluator<Im
             {
                 switch (sbp)
                 {
-                    case SBPSplit split:
+                    case SBPSplit:
                         return new InvalidType($"can't split on {i}");
                     case SBPPartial:
                         return new InvalidType($"can't be partial sum");
