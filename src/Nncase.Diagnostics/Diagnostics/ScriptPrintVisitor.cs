@@ -144,9 +144,16 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
         {
             if (s is SBPSplit split)
             {
-                var divisor = split.Axes.Select(a => type.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
-                usedCeil[r] = shape[r] % divisor != 0;
-                shape[r] = (shape[r] + divisor - 1) / divisor;
+                if (split.Granularity is null)
+                {
+                    var divisor = split.Axes.Select(a => type.Placement.Hierarchy[a]).Aggregate(1, (a, b) => a * b);
+                    usedCeil[r] = shape[r] % divisor != 0;
+                    shape[r] = (shape[r] + divisor - 1) / divisor;
+                }
+                else
+                {
+                    shape[r] = split.Granularity.FixedValue;
+                }
             }
         }
 
@@ -159,7 +166,7 @@ internal sealed class ScriptPrintVisitor : ExprFunctor<IPrintSymbol, string>
             }
         }
 
-        return $"Dist({VisitType(type.TensorType)}, ({string.Join(',', type.AxisPolicies)}), [{string.Join(',', sshape)}])";
+        return $"Dist({VisitType(type.TensorType)}, ({string.Join(',', type.AxisPolicies)}), [{string.Join(',', sshape)}], {type.Partial?.ToString() ?? string.Empty})";
     }
 
     /// <inheritdoc/>

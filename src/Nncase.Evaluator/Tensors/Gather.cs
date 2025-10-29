@@ -99,13 +99,7 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             return new InvalidType($"the index can't be split");
         }
 
-        var indexDimsPolices = index.AxisPolicies.ToArray();
-        if (input.AxisPolicies[axis] is SBPSplit split)
-        {
-            indexDimsPolices = Enumerable.Repeat(SBP.P(split.Axes), indexDimsPolices.Length).ToArray();
-        }
-
-        var ndsbp = input.AxisPolicies[..axis].ToArray().Concat(indexDimsPolices).Concat(input.AxisPolicies[(axis + 1)..].ToArray()).ToArray();
+        var ndsbp = input.AxisPolicies[..axis].ToArray().Concat(index.AxisPolicies).Concat(input.AxisPolicies[(axis + 1)..].ToArray()).ToArray();
 
         // one topo axis can only be spilt on one dim axis
         if (!DistributedUtility.IsDistributable(ndsbp))
@@ -113,6 +107,12 @@ public class GatherEvaluator : IEvaluator<Gather>, ITypeInferencer<Gather>, ICos
             return invalid;
         }
 
-        return new DistributedType(tensorType, ndsbp, input.Placement);
+        // not support partial in ndsbp
+        if (ndsbp.Any(sbp => sbp is SBPPartial))
+        {
+            return invalid;
+        }
+
+        return new DistributedType(tensorType, ndsbp, input.Placement, input.AxisPolicies[axis] is SBPSplit split ? SBP.P(split.Axes) : null);
     }
 }

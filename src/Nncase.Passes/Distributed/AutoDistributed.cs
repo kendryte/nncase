@@ -463,6 +463,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 || expr.Users.Any(u => u is Call call && (call.Target.GetType().FullName!.Contains("CustomNTT", StringComparison.Ordinal) || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention)))
                 || expr.Target.GetType().FullName!.Contains("CustomNTT", StringComparison.Ordinal)
                 || expr.Target.GetType().FullName!.Contains("VectorizedRoPE", StringComparison.Ordinal)
+                || expr.Target.GetType().FullName!.Contains("Matmul", StringComparison.InvariantCultureIgnoreCase)
                 || (TargetOptions.HierarchyKind == HierarchyKind.SMT && expr.Target is PagedAttention)
                 || expr.Target is Gather)
             {
@@ -799,21 +800,27 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 return new InvalidType("Same DistributedType");
             }
 
+            if (inv.AxisPolicies.Any(sbp => sbp is SBPPartial) || outv.AxisPolicies.Any(sbp => sbp is SBPPartial))
+            {
+                return new InvalidType("Not Support Partial in Policeis.");
+            }
+
             var partialDims = new List<int>();
             for (int i = 0; i < inv.AxisPolicies.Count; i++)
             {
-                switch (inv.AxisPolicies[i], outv.AxisPolicies[i])
+                if (inv.Partial is not null && outv.AxisPolicies[i] is SBPSplit s)
                 {
-                    case (SBPPartial p, SBPSplit s):
-                        if (s.Axes.Except(p.Axes).Any())
+                    if (s.Axes.Except(inv.Partial.Axes).ToArray() != s.Axes)
+                    {
+                        if (s.Axes.Except(inv.Partial.Axes).Any())
                         {
-                            return new InvalidType("Not support partial to split.");
+                            return new InvalidType("Not Supported Partial-> Split.");
                         }
-
-                        partialDims.Add(i);
-                        break;
-                    case (_, SBPPartial):
-                        return new InvalidType("not support to partial");
+                        else
+                        {
+                            partialDims.Add(i);
+                        }
+                    }
                 }
             }
 

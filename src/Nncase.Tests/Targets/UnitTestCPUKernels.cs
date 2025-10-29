@@ -516,10 +516,10 @@ public sealed class UnitTestCPUKernels : TestClassBase
             var newsbp = ndsbp.ToArray();
             foreach (var axis in comb)
             {
-                newsbp[axis] = SBP.P(Enumerable.Range(0, hierarchy.Length).ToArray());
+                newsbp[axis] = SBP.B;
             }
 
-            var partial = IR.F.Distributed.ForceBoxing(broadcast, new DistributedType(inputType, newsbp, placement));
+            var partial = IR.F.Distributed.ForceBoxing(broadcast, new DistributedType(inputType, newsbp, placement, SBP.P(Enumerable.Range(0, hierarchy.Length).ToArray())));
             var sumed = IR.F.Distributed.Boxing(partial, new DistributedType(inputType, ndsbp, placement));
             var post = IR.F.Distributed.Boxing(sumed, inputType);
             post.Metadata = new Passes.Distributed.AutoDistributedMetaData() { Skip = true };

@@ -27,7 +27,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
             if (inv.TensorType != outv.TensorType)
             {
-                if (!inv.AxisPolicies.Any(sbp => sbp is SBPPartial))
+                if (!inv.AxisPolicies.Any(sbp => sbp is SBPPartial) && inv.Partial is null)
                 {
                     return outv;
                 }
@@ -37,21 +37,27 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
                 }
             }
 
+            if (inv.AxisPolicies.Any(sbp => sbp is SBPPartial) || outv.AxisPolicies.Any(sbp => sbp is SBPPartial))
+            {
+                return new InvalidType("Not Support Partial in Policeis.");
+            }
+
             var partialDims = new List<int>();
             for (int i = 0; i < inv.AxisPolicies.Count; i++)
             {
-                switch (inv.AxisPolicies[i], outv.AxisPolicies[i])
+                if (inv.Partial is not null && outv.AxisPolicies[i] is SBPSplit s)
                 {
-                    case (SBPPartial p, SBPSplit s):
-                        if (s.Axes.Except(p.Axes).Any())
+                    if (s.Axes.Except(inv.Partial.Axes).ToArray() != s.Axes)
+                    {
+                        if (s.Axes.Except(inv.Partial.Axes).Any())
                         {
-                            return new InvalidType("Not Supported Partial to Split.");
+                            return new InvalidType("Not Supported Partial-> Split.");
                         }
-
-                        partialDims.Add(i);
-                        break;
-                    case (_, SBPPartial):
-                        return new InvalidType("Not Support to Partial");
+                        else
+                        {
+                            partialDims.Add(i);
+                        }
+                    }
                 }
             }
 
