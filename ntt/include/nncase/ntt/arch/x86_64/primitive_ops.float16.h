@@ -27,10 +27,9 @@ namespace nncase::ntt::ops {
 #if defined(__AVX2__) && defined(__F16C__)
 
 namespace detail {
-inline __m256 broadcast_h_ps(half v) noexcept {
-    auto v1_u16 = _mm_set1_epi16(v.raw());
-    v1_u16 = _mm_broadcastw_epi16(v1_u16);
-    return _mm256_cvtph_ps(v1_u16);
+inline __m256 broadcast_h_ps(const half &v) noexcept {
+    auto v_f32 = _mm_cvtph_ps(_mm_cvtsi32_si128(v.raw()));
+    return _mm256_broadcastss_ps(v_f32);
 }
 } // namespace detail
 
@@ -778,6 +777,20 @@ struct mul_add<half, ntt::vector<half, 16>, ntt::vector<float, 2, 8>> {
     }
 };
 
+template <>
+struct mul_add<ntt::vector<float, 8>, ntt::vector<half, 16>,
+               ntt::vector<float, 2, 8>> {
+    ntt::vector<float, 2, 8>
+    operator()(const ntt::vector<float, 8> &v1, const ntt::vector<half, 16> &v2,
+               const ntt::vector<float, 2, 8> &v3) const noexcept {
+        auto v2_fp32 = ntt::cast_elem<float>(v2);
+        ntt::vector<float, 2, 8> result;
+        result(0_dim) = _mm256_fmadd_ps(v1, v2_fp32(0_dim), v3(0_dim));
+        result(1_dim) = _mm256_fmadd_ps(v1, v2_fp32(1_dim), v3(1_dim));
+        return result;
+    }
+};
+
 // // div
 // template <> struct div<ntt::vector<float, 8>, ntt::vector<float, 8>> {
 //     ntt::vector<float, 8>
@@ -950,24 +963,28 @@ struct mul_add<half, ntt::vector<half, 16>, ntt::vector<float, 2, 8>> {
 //     }
 // };
 
-// // inner product
-// template <> struct inner_product<ntt::vector<float, 8>, ntt::vector<float,
-// 8>> {
-//     float operator()(const ntt::vector<float, 8> &v1,
-//                      const ntt::vector<float, 8> &v2) const noexcept {
-//         // Multiply the elements
-//         __m256 mul = _mm256_mul_ps(v1, v2);
+// inner product
+template <> struct inner_product<ntt::vector<half, 16>, ntt::vector<half, 16>> {
+    half operator()(const ntt::vector<half, 16> &v1,
+                    const ntt::vector<half, 16> &v2) const noexcept {
+        const auto v1_f32 = ntt::cast_elem<float>(v1);
+        const auto v2_f32 = ntt::cast_elem<float>(v2);
 
-//         // Sum the elements in the 256-bit vector directly
-//         __m128 sum1 = _mm_add_ps(_mm256_castps256_ps128(mul),
-//                                  _mm256_extractf128_ps(mul, 1));
-//         sum1 = _mm_add_ps(sum1, _mm_movehl_ps(sum1, sum1));
-//         sum1 = _mm_add_ss(sum1, _mm_shuffle_ps(sum1, sum1, 1));
+        // Multiply the elements
+        __m256 mul_0 = _mm256_mul_ps(v1_f32(0_dim), v2_f32(0_dim));
+        __m256 mul_1 = _mm256_mul_ps(v1_f32(1_dim), v2_f32(1_dim));
+        __m256 mul = _mm256_add_ps(mul_0, mul_1);
 
-//         // Extract and return the final sum
-//         return _mm_cvtss_f32(sum1);
-//     }
-// };
+        // Sum the elements in the 256-bit vector directly
+        __m128 sum1 = _mm_add_ps(_mm256_castps256_ps128(mul),
+                                 _mm256_extractf128_ps(mul, 1));
+        sum1 = _mm_add_ps(sum1, _mm_movehl_ps(sum1, sum1));
+        sum1 = _mm_add_ss(sum1, _mm_shuffle_ps(sum1, sum1, 1));
+
+        // Extract and return the final sum
+        return ntt::cast_elem<half>(_mm_cvtss_f32(sum1));
+    }
+};
 
 // // outer product
 // template <> struct outer_product<ntt::vector<float, 8>, ntt::vector<float,
