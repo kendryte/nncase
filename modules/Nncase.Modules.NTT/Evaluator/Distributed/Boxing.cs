@@ -71,7 +71,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
         IRType VisitD2T(DistributedType inv, TensorType outv)
         {
-            if (inv.AxisPolicies.Any(s => s is SBPPartial))
+            if (inv.AxisPolicies.Any(s => s is SBPPartial) || inv.Partial is not null)
             {
                 return new InvalidType("Not supported input is Partial output is Unshard");
             }
@@ -81,7 +81,7 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
 
         IRType VisitT2D(TensorType inv, DistributedType outv)
         {
-            if (outv.AxisPolicies.Any(s => s is SBPPartial))
+            if (outv.AxisPolicies.Any(s => s is SBPPartial) || outv.Partial is not null)
             {
                 return new InvalidType("Not supported input is Unshard output is Partial");
             }
