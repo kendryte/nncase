@@ -324,7 +324,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
 
     private bool TryGenerateGatherThreadsReshard(TIR.Buffer inBuffer, ref Expr output, DistributedType inType, DistributedType outType, [MaybeNullWhen(false)] out Expr newCall)
     {
-        if (inType.Partial is not null)
+        if (inType.Partial is not null || inBuffer.Users.Any(u => u is Call { Target: TIR.PrimFunction }))
         {
             newCall = null;
             return false;
@@ -407,7 +407,7 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
     private bool TryGenerateSplitThreadsReshard(TIR.Buffer inBuffer, ref Expr output, DistributedType inType, DistributedType outType, [MaybeNullWhen(false)] out Expr newCall)
     {
         // Avoid P -> B -> S
-        if (inType.Partial is not null)
+        if (inType.Partial is not null || inBuffer.Users.Any(u => u is Call { Target: TIR.PrimFunction }))
         {
             newCall = null;
             return false;
