@@ -149,7 +149,6 @@ public class MatMulEvaluator : IEvaluator<MatMul>, ITypeInferencer<MatMul>, ICos
                     {
                         ndsbp[oRank - 2] = a.AxisPolicies[lm];
                         ndsbp[oRank - 1] = b.AxisPolicies[rn];
-                        partial = SBP.P(slk.Axes);
                     }
                     else
                     {
