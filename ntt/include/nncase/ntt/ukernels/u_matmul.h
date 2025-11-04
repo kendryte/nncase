@@ -595,6 +595,74 @@ struct u_matmul : u_matmul_generic<VectorizeKind, AccumulateC, TransposedA,
 template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
           dim_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
           class TScale, bool Arch>
+struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_k, AccumulateC,
+                TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem,
+                TOutElem, TScale, Arch> {
+    inline static constexpr auto b0_tile =
+        detail::b0_tile_getter<TransposedB, N0Tile>::tile;
+
+    template <class TA, class TB, class TC>
+    constexpr void operator()(const TA &a, const TB &b, TC &c0,
+                              const TScale &scale, size_t K) noexcept {
+        constexpr auto m0_scale =
+            ukernels::u_type_scale<ukernels::matmul_vectorize_kind::vectorize_k,
+                                   TA, TB, TC>::m0_scale;
+        constexpr auto n0_scale =
+            ukernels::u_type_scale<ukernels::matmul_vectorize_kind::vectorize_k,
+                                   TA, TB, TC>::n0_scale;
+        constexpr auto m0_tile_scaled = m0_scale * M0Tile;
+        constexpr auto n0_tile_scaled = n0_scale * N0Tile;
+
+        using TAccPack = decltype(ntt::cast_elem<float>(
+            std::declval<typename TA::element_type>()));
+        TAccPack c0_unreduced[m0_tile_scaled][n0_tile_scaled]{};
+        using TOutScalar = element_or_scalar_t<TOutElem>;
+
+        for (size_t k1 = 0; k1 < K; k1++) {
+            auto a0 = a.view(make_shape(0, k1), fixed_shape_v<M0Tile, 1>);
+            auto b0 =
+                b.view(ntt::where(std::integral_constant<bool, TransposedB>{},
+                                  make_shape(0_dim, k1), make_shape(k1, 0_dim)),
+                       b0_tile);
+            TLhsElem a0_tmp[M0Tile];
+            TRhsElem b0_tmp[N0Tile];
+
+            ntt::apply(fixed_shape_v<M0Tile>, [&](auto index) {
+                a0_tmp[index[0_dim]] = a0(index[0_dim], 0_dim);
+            });
+            ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
+                auto b0_index =
+                    ntt::where(std::integral_constant<bool, TransposedB>{},
+                               make_shape(index[0_dim], 0_dim),
+                               make_shape(0_dim, index[0_dim]));
+                b0_tmp[index[0]] = b0(b0_index);
+            });
+
+            for (size_t n = 0; n < N0Tile; n++) {
+                for (size_t m = 0; m < M0Tile; m++) {
+                    c0_unreduced[m][n] = ntt::mul_add(
+                        ntt::mul(ntt::cast_elem<float>(a0_tmp[m]), scale),
+                        ntt::cast_elem<float>(b0_tmp[n]), c0_unreduced[m][n]);
+                }
+            }
+        }
+
+        ntt::apply(c0.shape(), [&](auto index) {
+            if constexpr (AccumulateC) {
+                c0(index) = ntt::cast_elem<TOutElem>(
+                    ntt::reduce_sum(c0_unreduced[index[0_dim]][index[1_dim]],
+                                    ntt::cast_elem<float>(c0(index))));
+            } else {
+                c0(index) = ntt::cast_elem<TOutElem>(
+                    ntt::reduce_sum(c0_unreduced[index[0_dim]][index[1_dim]]));
+            }
+        });
+    }
+};
+
+template <bool AccumulateC, bool TransposedA, bool TransposedB, dim_t M0Tile,
+          dim_t N0Tile, class TLhsElem, class TRhsElem, class TOutElem,
+          class TScale, bool Arch>
 struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC,
                 TransposedA, TransposedB, M0Tile, N0Tile, TLhsElem, TRhsElem,
                 TOutElem, TScale, Arch> {
@@ -637,7 +705,8 @@ struct u_matmul<ukernels::matmul_vectorize_kind::vectorize_mn, AccumulateC,
                         b0_tile);
 
                     ntt::apply(fixed_shape_v<m0_subtile>, [&](auto index) {
-                        a0_tmp[index[0_dim]] = ntt::mul(a0(0, 0)(sm1 + index[0_dim]), scale);
+                        a0_tmp[index[0_dim]] =
+                            ntt::mul(a0(0, 0)(sm1 + index[0_dim]), scale);
                     });
                     ntt::apply(fixed_shape_v<N0Tile>, [&](auto index) {
                         auto b0_index = ntt::where(
