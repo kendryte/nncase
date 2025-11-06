@@ -207,8 +207,18 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
             case IR.Tensors.TopK topk:
                 return TIR.F.NTT.TopK((Expr)arguments[0], (Expr)arguments[1], output, ((TensorConst)call[IR.Tensors.TopK.Axis]).Value.ToScalar<long>(), ((TensorConst)call[IR.Tensors.TopK.Largest]).Value.ToScalar<long>(), ((TensorConst)call[IR.Tensors.TopK.Sorted]).Value.ToScalar<long>());
             case IR.CustomNTT.SparseExperts sparseExperts:
-                var extraBufferOld = (TIR.Buffer)arguments[12];
-                var extraNew = extraBufferOld.With(memSpan: extraBufferOld.MemSpan.With(extraBufferOld.MemSpan.Buffer.With(location: MemoryLocation.BlockLocalData)));
+                var oldExtraBuffer = ((TIR.Buffer)arguments[12]).MemSpan.Buffer;
+                var newExtraBuffer = oldExtraBuffer.With(location: MemoryLocation.BlockLocalData);
+                var userBuffers = (from memSpan in oldExtraBuffer.Users.OfType<TIR.MemSpan>()
+                                   from userBuffer in memSpan.Users.OfType<TIR.Buffer>()
+                                   select userBuffer).ToArray();
+                foreach (var userBuffer in userBuffers)
+                {
+                    var newBuffer = userBuffer.With(memSpan: userBuffer.MemSpan.With(buffer: newExtraBuffer));
+                    ReplaceUtility.ReplaceAllUsesWith(userBuffer, newBuffer);
+                }
+
+                var extraNew = ((TIR.Buffer)arguments[12]).With(memSpan: ((TIR.Buffer)arguments[12]).MemSpan.With(newExtraBuffer));
                 return TIR.F.NTT.SparseExperts((Expr)arguments[0], (Expr)arguments[1], (Expr)arguments[2], (Expr)arguments[3], (Expr)arguments[4], (Expr)arguments[5], (Expr)arguments[6], (Expr)arguments[7], (Expr)arguments[8], (Expr)arguments[9], (Expr)arguments[10], (Expr)arguments[11], extraNew, output, sparseExperts.QVectorizedAxes, sparseExperts.GateVectorizedAxes, sparseExperts.DownVectorizedAxes, sparseExperts.UpVectorizedAxes, sparseExperts.QSBPs, sparseExperts.GateSBPs, sparseExperts.DownSBPs, sparseExperts.UpSBPs, sparseExperts.HiddenSize, sparseExperts.MoEIntermediateSize, sparseExperts.NumExpert, sparseExperts.NumTopK, sparseExperts.ChunkSize, sparseExperts.Cost, sparseExperts.CSourcePath, sparseExperts.FuncName);
             default:
                 throw new NotSupportedException($"Not supported: {op}");
