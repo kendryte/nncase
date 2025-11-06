@@ -92,7 +92,7 @@ public partial class ToCustomSparseExperts : RewriteRule<Pattern>
         var gateSbp = node.SBP.Length > 1 ? node.SBP[1] : Array.Empty<IR.SBP>();
         var downSbp = node.SBP.Length > 2 ? node.SBP[2] : Array.Empty<IR.SBP>();
         var upSbp = node.SBP.Length > 3 ? node.SBP[3] : Array.Empty<IR.SBP>();
-        var extra_size = /* node.ExtraWorkload; */ 10 * 1024 * 1024 * 2;
+        var extra_size = /* node.ExtraWorkload; */ 10 * 1024 * 1024;
 
         int qAxis = 1;
         int wAxis = 2;
