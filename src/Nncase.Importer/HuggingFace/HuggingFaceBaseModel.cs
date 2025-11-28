@@ -9,6 +9,7 @@ using System.Reflection;
 using Nncase.Diagnostics;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Nncase.Utilities;
@@ -61,6 +62,12 @@ public abstract class HuggingFaceModel
         if (!LoadedFiles.Contains(fileName))
         {
             var filePath = Path.Combine(WeightsDir, fileName);
+            var orgfilePath = filePath.Replace(".safetensors", ".org.safetensors", StringComparison.OrdinalIgnoreCase);
+            if (File.Exists(orgfilePath))
+            {
+                filePath = orgfilePath;
+            }
+
             var tensors = HuggingFaceUtils.LoadAllTensorsFromFile(filePath);
             foreach (var kv in tensors)
             {
@@ -300,15 +307,9 @@ public abstract class HuggingFaceModel
 
     public virtual Call LLMLayerNorm(Expr hiddenStates, string layerName)
     {
-        // originType->fp32->dolayernorm->origintype
-        // fit layernorm partten 5
         var originDtype = hiddenStates.CheckedDataType;
-        hiddenStates = IR.F.Tensors.Cast(hiddenStates, DataTypes.Float32);
-
-        Expr weight = GetWeight($"{layerName}")!;
-
-        weight = IR.F.Tensors.Cast(weight, DataTypes.Float32);
-        var bias = Tensor.FromScalar(0f, (RankedShape)weight.CheckedShape);
+        var weight = GetWeight($"{layerName}")!.CastTo(originDtype);
+        var bias = Tensor.Zeros(originDtype, weight.Dimensions);
         int axis = -1;
 
         float eps = 1e-6F;
@@ -317,7 +318,7 @@ public abstract class HuggingFaceModel
             eps = (float)Config.GetNestedValue<double>("rms_norm_eps");
         }
 
-        return IR.F.Tensors.Cast(IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false), originDtype);
+        return IR.F.NN.LayerNorm(axis, eps, hiddenStates, weight, bias, false).With(metadata: new IRMetadata() { OutputNames = new[] { layerName.Substring(0, layerName.Length - 7) } });
     }
 
     public virtual Call Linear(Expr expr, Tensor weight, Tensor? bias = null, Tensor? scaleIf = null, Tensor? scaleW = null, string layerName = "")
@@ -359,6 +360,7 @@ public abstract class HuggingFaceModel
         }
         else if (scaleIf is null && scaleW is not null)
         {
+            var exprType = expr.CheckedDataType;
             long[] axes = new long[] { expr.CheckedShape.Rank - 1 };
             var max = Nncase.IR.F.Tensors.ReduceMax(expr, axes, float.MinValue, true);
             var min = Nncase.IR.F.Tensors.ReduceMin(expr, axes, float.MaxValue, true);
@@ -381,11 +383,11 @@ public abstract class HuggingFaceModel
             qInput = Nncase.IR.F.Tensors.Cast(qInput, DataTypes.Float8E4M3);
             var transposed_weight = IR.F.Tensors.Transpose(weight, new long[] { 1, 0 }).Evaluate().AsTensor();
             var qWeights = IR.F.Tensors.Cast(transposed_weight, DataTypes.Float8E4M3);
-            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights, expr.CheckedDataType).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
+            var qMatmul = Nncase.IR.F.Math.MatMul(qInput, qWeights, DataTypes.Float32).With(metadata: new IRMetadata() { OutputNames = new[] { layerName } });
 
-            if (deqScaleA.CheckedDataType != expr.CheckedDataType)
+            if (deqScaleA.CheckedDataType != qMatmul.CheckedDataType)
             {
-                deqScaleA = Nncase.IR.F.Tensors.Cast(deqScaleA, expr.CheckedDataType);
+                deqScaleA = Nncase.IR.F.Tensors.Cast(deqScaleA, qMatmul.CheckedDataType);
             }
 
             var result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, qMatmul, deqScaleA);
@@ -395,13 +397,14 @@ public abstract class HuggingFaceModel
                 long[] dims = System.Linq.Enumerable.Range(0, qMatmul.CheckedShape.Rank).Select(i => 1L).ToArray();
                 dims[dims.Length - 1] = deqScaleB.Shape[0].FixedValue;
                 deqScaleB = Tensor.From<float>(deqScaleB.ToArray<float>(), dims);
-                if (deqScaleB.ElementType != expr.CheckedDataType)
+                if (deqScaleB.ElementType != qMatmul.CheckedDataType)
                 {
-                    deqScaleB = deqScaleB.CastTo(expr.CheckedDataType);
+                    deqScaleB = deqScaleB.CastTo(qMatmul.CheckedDataType);
                 }
             }
 
             result = Nncase.IR.F.Math.Binary(Nncase.BinaryOp.Mul, result, deqScaleB);
+            result = Nncase.IR.F.Tensors.Cast(result, exprType);
             if (bias != null)
             {
                 result = IR.F.Math.Add(result, bias);
@@ -835,7 +838,7 @@ public abstract class HuggingFaceModel
         AttentionDimKind[] qSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         AttentionDimKind[] kvSrcLayout = [AttentionDimKind.Head, AttentionDimKind.Seq, AttentionDimKind.Dim];
         {
-            AttentionDimKind[] kvDestLayout = { AttentionDimKind.Seq, AttentionDimKind.Head, AttentionDimKind.Dim };
+            AttentionDimKind[] kvDestLayout = { AttentionDimKind.Head, AttentionDimKind.Dim, AttentionDimKind.Seq };
             var kvPerms = ModelUtils.GetLayoutPerm(kvSrcLayout, kvDestLayout);
             var (kvLanes, kvVectorizedAxis) = ModelUtils.GetQKVVectorizeParams(pagedAttentionConfig, kvDestLayout);
             var transK = IR.F.Tensors.Transpose(keyStates, kvPerms);
@@ -1032,4 +1035,76 @@ public abstract class HuggingFaceModel
             Context.Outputs!["hiddenStates"] = IR.F.Tensors.Cast(allHiddenStates!, DataTypes.Float32);
         }
     }
+
+    /*
+    /// <summary>
+    /// LLM MoE (Mixture of Experts) layer (base on Qwen3 moe).
+    /// </summary>
+    /// <param name="count"> layer idx.</param>
+    /// <param name="hiddenStates"> query hidden states.</param>
+    /// <returns></returns>
+    */
+
+    // public virtual Dictionary<string, Call> LLMMoe(int count, Expr hiddenStates)
+    // {
+    //     var (seqLen, hiddenDim) = (hiddenStates.CheckedShape[0], hiddenStates.CheckedShape[1]);
+    //     var expertNum = Config.GetNestedValue<long>("num_experts");
+    //     var topK = Config.GetNestedValue<long>("top_k");
+    //     var normTopkProb = Config.GetNestedValue<bool>("norm_topk_prob");
+    //     // hiddenStates = IR.F.Tensors.Reshape(hiddenStates, new RankedShape(-1, hiddenDim));
+    //     var routerW = GetWeight($"model.layers.{count}.mlp.gate.weight")!;
+    //     var routerB = GetWeight($"model.layers.{count}.mlp.gate.bias");
+    //     var ifScaleRouter = GetWeight($"model.layers.{count}.mlp.gate.input_scale");
+    //     var wScaleRouter = GetWeight($"model.layers.{count}.mlp.gate.weight_scale");
+    //     var routerLogits = Linear(hiddenStates, routerW, routerB, ifScaleRouter, wScaleRouter, $"model.layers.{count}.mlp.gate");
+    //     // [seq_len, expert_num]
+    //     var routerLogitsCast = IR.F.Tensors.Cast(routerLogits, DataTypes.Float32);
+    //     var routerWeights = IR.F.NN.Softmax(routerLogitsCast, 0);
+    //     var topKRes = IR.F.Tensors.TopK(routerWeights, Tensor.FromScalar(topK), -1, true, false);
+    //     var (topkRouterWeights, selectedExpert) = (topKRes[0], topKRes[1]);
+    //     if (normTopkProb)
+    //     {
+    //         var denom = IR.F.Tensors.ReduceSum(topkRouterWeights, new[] { -1 }, Tensor.FromScalar(0), keepDims: true);
+    //         topkRouterWeights = topkRouterWeights / denom;
+    //     }
+    //     topkRouterWeights = IR.F.Tensors.Cast(topkRouterWeights, hiddenStates.CheckedDataType);
+    //     var finalHiddenStates_ = Tensor.Zeros(hiddenStates.CheckedDataType, [1]);
+    //     var finalHiddenStates = IR.F.Tensors.Broadcast(finalHiddenStates_, new RankedShape(seqLen, hiddenDim));
+    //     // one hot mask.
+    //     // expert_mask = torch.nn.functional.one_hot(selected_experts, num_classes=self.num_experts).permute(2, 1, 0)
+    //     var expertMask = IR.F.NN.OneHot(
+    //         OneHotMode.Normal,
+    //         selectedExpert,
+    //         expertNum,
+    //         Tensor.FromArray(new[] { 0, 1 }),
+    //         -1);
+    //     expertMask = IR.F.Tensors.Transpose(expertMask, new long[] { 2, 1, 0 });
+    //     expertMask = IR.F.Tensors.Cast(expertMask, DataTypes.Float32);
+    //     for (int i = 0; i < expertNum; i++)
+    //     {
+    //         // 获取当前专家的选择概率
+    //         var expertMaskSlice = IR.F.Tensors.Slice(expertMask, new[] { (long)i }, new[] { (long)i + 1L }, new[] { 0L }, new[] { 1L }); // [1, topk, seq_len]
+    //         expertMaskSlice = IR.F.Tensors.Reshape(expertMaskSlice, new RankedShape(seqLen, topK));
+    //         var expertWeights = IR.F.Tensors.ReduceSum(
+    //             IR.F.Math.Mul(topkRouterWeights, expertMaskSlice),
+    //             new[] { 1L },
+    //             Tensor.FromScalar(0.0f),
+    //             keepDims: true); // [seq_len, 1]
+    //         var shouldCompute = expertWeights > 0.0f;
+    //         var maskedHiddenStates = IR.F.Tensors.Where(
+    //             shouldCompute,
+    //             hiddenStates,
+    //             IR.F.Tensors.Cast(0.0f, hiddenStates.CheckedDataType));
+    //         ModelUtils.CheckShape(maskedHiddenStates);
+    //         var expertOutput = LLMMlp(count, maskedHiddenStates, $"experts.{i}.");
+    //         var weightedOutput = IR.F.Math.Mul(expertOutput, expertWeights);
+    //         finalHiddenStates = IR.F.Math.Binary(BinaryOp.Add, finalHiddenStates, weightedOutput);
+    //     }
+    //     finalHiddenStates = IR.F.Tensors.Reshape(finalHiddenStates, new RankedShape(seqLen, hiddenDim));
+    //     return new Dictionary<string, Call>
+    //     {
+    //         { "finalHiddenStates", finalHiddenStates },
+    //         { "routerLogits", routerLogits },
+    //     };
+    // }
 }

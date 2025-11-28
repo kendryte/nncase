@@ -23,7 +23,7 @@
 using namespace nncase;
 using namespace ortki;
 
-#define NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, ntt_reduce_mode)                \
+#define NTT_REDUCE_VERIFY_REDUCEM_NOPACK_DIM0(M, N, ntt_reduce_mode)           \
     /* init */                                                                 \
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
@@ -41,13 +41,53 @@ using namespace ortki;
                                                                                \
     EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
 
+#define NTT_REDUCE_VERIFY_REDUCEM_NOPACK_DIM1(M, N, ntt_reduce_mode)           \
+    /* init */                                                                 \
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
+    std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
+                                                                               \
+    /* ntt */                                                                  \
+    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);      \
+    ntt::reduce_##ntt_reduce_mode(ntt_input, ntt_output1,                      \
+                                  ntt::fixed_shape_v<1>);                      \
+                                                                               \
+    auto ntt_output1_view = ntt::make_tensor_view(ntt_output1.elements(),      \
+                                                  ntt::fixed_shape_v<M, 1>);   \
+                                                                               \
+    auto ntt_output2 = ntt::make_tensor_view(                                  \
+        std::span<float, M>(golden_array, M), ntt::fixed_shape_v<M, 1>);       \
+                                                                               \
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1_view, ntt_output2));
+
+TEST(ReduceSumTestFloat, TopK_Special_NoVectorize_Dim1) {
+    constexpr size_t M = 34;
+    constexpr size_t N = 4;
+    float golden_array[] = {6,   22,  38,  54,  70,  86,  102, 118, 134,
+                            150, 166, 182, 198, 214, 230, 246, 262, 278,
+                            294, 310, 326, 342, 358, 374, 390, 406, 422,
+                            438, 454, 470, 486, 502, 518, 534};
+
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK_DIM1(M, N, sum)
+}
+
+TEST(ReduceSumTestFloat, TopK_Special_NoVectorize_Dim0) {
+    constexpr size_t M = 4;
+    constexpr size_t N = 34;
+    float golden_array[] = {204, 208, 212, 216, 220, 224, 228, 232, 236,
+                            240, 244, 248, 252, 256, 260, 264, 268, 272,
+                            276, 280, 284, 288, 292, 296, 300, 304, 308,
+                            312, 316, 320, 324, 328, 332, 336};
+
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK_DIM0(M, N, sum)
+}
+
 TEST(ReduceSumTestFloat, ReduceM_NoVectorize) {
     constexpr size_t M = 16;
     constexpr size_t N = 16;
     float golden_array[] = {1920, 1936, 1952, 1968, 1984, 2000, 2016, 2032,
                             2048, 2064, 2080, 2096, 2112, 2128, 2144, 2160};
 
-    NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, sum)
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK_DIM0(M, N, sum)
 }
 
 TEST(ReduceMaxTestFloat, ReduceM_NoVectorize) {
@@ -56,7 +96,7 @@ TEST(ReduceMaxTestFloat, ReduceM_NoVectorize) {
     float golden_array[] = {240, 241, 242, 243, 244, 245, 246, 247,
                             248, 249, 250, 251, 252, 253, 254, 255};
 
-    NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, max)
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK_DIM0(M, N, max)
 }
 
 TEST(ReduceMinTestFloat, ReduceM_NoVectorize) {
@@ -65,7 +105,7 @@ TEST(ReduceMinTestFloat, ReduceM_NoVectorize) {
     float golden_array[] = {0, 1, 2,  3,  4,  5,  6,  7,
                             8, 9, 10, 11, 12, 13, 14, 15};
 
-    NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, min)
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK_DIM0(M, N, min)
 }
 
 TEST(ReduceMeanTestFloat, ReduceM_NoVectorize) {
@@ -74,7 +114,7 @@ TEST(ReduceMeanTestFloat, ReduceM_NoVectorize) {
     float golden_array[] = {120, 121, 122, 123, 124, 125, 126, 127,
                             128, 129, 130, 131, 132, 133, 134, 135};
 
-    NTT_REDUCE_VERIFY_REDUCEM_NOPACK(M, N, mean)
+    NTT_REDUCE_VERIFY_REDUCEM_NOPACK_DIM0(M, N, mean)
 }
 
 #define NTT_PACKED_REDUCE_VERIFY_REDUCEM_PACKM(M, N, ntt_reduce_mode)          \
@@ -82,13 +122,13 @@ TEST(ReduceMeanTestFloat, ReduceM_NoVectorize) {
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    auto ntt_input_vectorize =                                                      \
+    auto ntt_input_vectorize =                                                 \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
-    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);               \
+    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);          \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, N>);      \
-    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,                 \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,            \
                                   ntt::fixed_shape_v<0>,                       \
                                   ntt::fixed_shape_v<0>);                      \
                                                                                \
@@ -203,13 +243,13 @@ TEST(ReduceMeanTestFloat, ReduceN_NoVectorize) {
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    auto ntt_input_vectorize =                                                      \
+    auto ntt_input_vectorize =                                                 \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
-    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);               \
+    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);          \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, 1>);      \
-    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,                 \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,            \
                                   ntt::fixed_shape_v<1>,                       \
                                   ntt::fixed_shape_v<1>);                      \
                                                                                \
@@ -320,13 +360,13 @@ TEST(ReduceMeanTestFloat, ReduceMN_NoVectorize) {
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    auto ntt_input_vectorize =                                                      \
+    auto ntt_input_vectorize =                                                 \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>); \
-    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);               \
+    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<0>);          \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
-    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,                 \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,            \
                                   ntt::fixed_shape_v<0, 1>,                    \
                                   ntt::fixed_shape_v<0>);                      \
                                                                                \
@@ -383,13 +423,13 @@ TEST(ReduceMeanTestFloat, ReduceMN_VectorizeM) {
     auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);        \
     std::iota(ntt_input.elements().begin(), ntt_input.elements().end(), 0.f);  \
                                                                                \
-    auto ntt_input_vectorize =                                                      \
+    auto ntt_input_vectorize =                                                 \
         ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M, N / P>); \
-    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);               \
+    ntt::pack(ntt_input, ntt_input_vectorize, ntt::fixed_shape_v<1>);          \
                                                                                \
     /* ntt */                                                                  \
     auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<1, 1>);      \
-    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,                 \
+    ntt::reduce_##ntt_reduce_mode(ntt_input_vectorize, ntt_output1,            \
                                   ntt::fixed_shape_v<0, 1>,                    \
                                   ntt::fixed_shape_v<1>);                      \
                                                                                \

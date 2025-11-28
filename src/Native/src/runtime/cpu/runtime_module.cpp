@@ -55,6 +55,16 @@ result<void> cpu_runtime_module::initialize_before_functions(
             this->tdim_ = header.tdim;
             this->bdim_ = header.bdim;
             this->cdim_ = header.cdim;
+            auto cache_levels = reader.template read<int32_t>();
+
+            for (size_t i = 0; i < 3; i++) {
+                if (i < cache_levels) {
+                    this->thread_local_cache_starts_[i] =
+                        reader.template read<int32_t>();
+                } else {
+                    this->thread_local_cache_starts_[i] = -1;
+                }
+            }
             return ok();
         }));
 
@@ -64,6 +74,9 @@ result<void> cpu_runtime_module::initialize_before_functions(
     try_set(thread_local_rdata_,
             context.get_or_read_section(".thread_local_rdata",
                                         thread_local_rdata_storage_, false));
+    try_set(thread_local_cache_,
+            context.get_or_read_section(".thread_local_cache",
+                                        thread_local_cache_storage_, false));
     try_set(block_local_rdata_,
             context.get_or_read_section(".block_local_rdata",
                                         block_local_rdata_storage_, false));

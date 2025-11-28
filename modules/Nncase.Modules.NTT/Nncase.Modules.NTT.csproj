@@ -34,6 +34,8 @@
     
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Scripting" />
   </ItemGroup>
 
   <ItemGroup>

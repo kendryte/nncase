@@ -107,7 +107,7 @@ public sealed class UpdatePagedAttentionKVCacheEvaluator : ITypeInferencer<Updat
             var headAxis = target.Layout.IndexOf(AttentionDimKind.Head);
             var dimAxis = target.Layout.IndexOf(AttentionDimKind.Dim);
             if (slots.AxisPolicies[seqAxis] is SBPSplit { Axes: [2] } &&
-                slots.AxisPolicies[headAxis] is SBPSplit { Axes: [1, 3] } &&
+                (slots.AxisPolicies[headAxis] is SBPSplit { Axes: [1, 3] } || slots.AxisPolicies[headAxis] is SBPSplit { Axes: [1] }) &&
                 slots.AxisPolicies[dimAxis] is SBPBroadCast)
             {
                 return kvCache;

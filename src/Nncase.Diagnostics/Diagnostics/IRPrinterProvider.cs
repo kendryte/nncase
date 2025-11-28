@@ -138,7 +138,11 @@ internal sealed class IRPrinterProvider : IPrinterProvider
         {
             if (flags.HasFlag(PrinterFlags.Script))
             {
-                new ScriptPrintVisitor(writer, flags).Visit(expr);
+                var result = new ScriptPrintVisitor(writer, flags).Visit(expr);
+                if (writer.BaseStream.Position == 0)
+                {
+                    writer.Write(result);
+                }
             }
             else
             {

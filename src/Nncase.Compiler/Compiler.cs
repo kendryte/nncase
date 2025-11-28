@@ -94,6 +94,7 @@ public class Compiler : ICompiler
         passManager.AddWithName<DataflowPass>("FoldQuantDeQuant").Configure(p =>
         {
             p.Add<Passes.Rules.Neutral.FoldQuantDeQuant>();
+            p.Add<Passes.Rules.Neutral.FoldConstCall>();
         });
         passManager.AddWithName<DataflowPass>("BroadcastOutputNamesAfterImportPass").Configure(p =>
         {

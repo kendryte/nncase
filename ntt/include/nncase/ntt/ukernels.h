@@ -24,6 +24,7 @@
 #include "ukernels/u_packed_gemv.h"
 #include "ukernels/u_packed_matmul.h"
 #include "ukernels/u_reduce.h"
+#include "ukernels/u_top_k.h"
 #include "ukernels/u_transpose.h"
 #include "ukernels/u_unary.h"
 #include "ukernels/u_unpack.h"

@@ -17,6 +17,55 @@ namespace Nncase.Tests.AffineTest;
 public class UnitTestAffine
 {
     [Fact]
+    public void TestAffineRelationInverse()
+    {
+        // [m,l] @ [l,n] => [m,n],  [d0,d1,d2] -> [2d1 + 3, d2 - 1]
+        var read = AffineRelation.FromCallable((dims, syms) => new AffineExpr[] { (2 * dims[1]) + 3, dims[2] - 1 }, 3, 0);
+
+        System.Console.WriteLine(read);
+        System.Console.WriteLine(read.Inverse());
+
+        // [l,k] @ [k,n] => [l,n],  [l,k,n] -> [l,n]
+        var write = AffineRelation.FromCallable((dims, syms) => new AffineExpr[] { dims[0], dims[2] }, 3, 0);
+        System.Console.WriteLine(write.Inverse());
+    }
+
+    [Fact]
+    public void TestAffineMapInverse()
+    {
+        {
+            // [d0,d1,d2] -> [d0, d2]
+            var write = AffineMap.FromCallable((dims, syms) => new AffineRange[] { new(dims[0].Offset, dims[0].Extent), new(dims[2].Offset, dims[2].Extent) }, 3, 0);
+
+            var d = new AffineDim(0);
+            var rg = AffineUtility.Inverse<AffineDim>(write.Results[0].Offset, d, out var independentVar);
+            Assert.Equal(rg, new AffineDim(0));
+            Assert.Equal(independentVar, new AffineDim(0));
+        }
+
+        {
+            // [d0] -> [d0 * 4] => [d0] -> [d0 / 4]
+            var write = AffineMap.FromCallable((dims, syms) => new AffineRange[] { new(dims[0].Offset * 4, dims[0].Extent) }, 1, 0);
+
+            var d = new AffineDim(0);
+            var rg = AffineUtility.Inverse<AffineDim>(write.Results[0].Offset, d, out var independentVar);
+            Assert.IsType<AffineDivBinary>(rg);
+            Assert.Equal(independentVar, new AffineDim(0));
+        }
+    }
+
+    [Fact]
+    public void TestAffineMapApply()
+    {
+        // [(d0,t0)] -> [(0, 64)] apply [(d0,t0)] -> [(4*d0, 4*t0)]
+        var map1 = AffineMap.FromCallable((dims, syms) => new AffineRange[] { new(0, 64) }, 1, 0);
+        var map2 = AffineMap.FromCallable((dims, syms) => new AffineRange[] { new(dims[0].Offset * 16, dims[0].Extent * 16) }, 1, 0);
+        var applied = map1 * map2;
+        Assert.IsType<AffineConstant>(applied.Results[0].Offset);
+        Assert.IsType<AffineConstant>(applied.Results[0].Extent);
+    }
+
+    [Fact]
     public void TestAffineMapToIslMap()
     {
         using var ctx = Isl.ctx.Create();

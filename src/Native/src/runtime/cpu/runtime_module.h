@@ -54,10 +54,25 @@ class cpu_runtime_module : public runtime_module {
                offset * 2;
     }
 
+    const uint64_t *thread_local_cache_header(size_t offset) const noexcept {
+        return reinterpret_cast<const uint64_t *>(thread_local_cache_.data()) +
+               offset * 2;
+    }
+
     const std::span<const std::byte>
     thread_local_rdata_content() const noexcept {
         return thread_local_rdata_.subspan(cdim_ * bdim_ * tdim_ * 2 *
                                            sizeof(uint64_t));
+    }
+
+    const std::span<const std::byte>
+    thread_local_cache_content() const noexcept {
+        return thread_local_cache_.subspan(cdim_ * bdim_ * tdim_ * 2 *
+                                           sizeof(uint64_t));
+    }
+
+    const std::array<int32_t, 3> thread_local_cache_starts() const noexcept {
+        return thread_local_cache_starts_;
     }
 
     const std::span<const std::byte> block_local_rdata() const noexcept {
@@ -96,10 +111,13 @@ class cpu_runtime_module : public runtime_module {
     std::span<const std::byte> text_;
     std::span<const std::byte> rdata_;
     std::span<const std::byte> thread_local_rdata_;
+    std::span<const std::byte> thread_local_cache_;
+    std::array<int32_t, 3> thread_local_cache_starts_;
     std::span<const std::byte> block_local_rdata_;
     host_buffer_t text_storage_;
     host_buffer_t rdata_storage_;
     host_buffer_t thread_local_rdata_storage_;
+    host_buffer_t thread_local_cache_storage_;
     host_buffer_t block_local_rdata_storage_;
 
 #ifdef __APPLE__

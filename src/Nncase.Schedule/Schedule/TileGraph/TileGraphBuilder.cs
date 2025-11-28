@@ -12,26 +12,44 @@ using Isl = IntegerSetLibrary;
 
 namespace Nncase.Schedule.TileGraph;
 
-public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
+public sealed class TieredTileGraphBuilder : ExprVisitor<Unit, Unit>
 {
     private readonly Dictionary<Grid, TileGrid> _memo;
     private readonly Dictionary<Grid, TieredTileGraph> _exprMemo;
-    private readonly int _totalLevel;
     private int _opId;
 
-    public GraphBuilder(int topLevel)
+    private TieredTileGraphBuilder(int levelCount, HashSet<Grid> outputGrids)
     {
-        _totalLevel = topLevel;
-        RootGraph = new(-1, new AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>());
+        RootGraph = new(new AdjacencyGraph<TileGrid, EquatableTaggedEdge<TileGrid, int>>());
         _memo = new();
         _exprMemo = new();
+        LevelCount = levelCount;
+        OutputGrids = outputGrids;
     }
 
     public TieredTileGraph RootGraph { get; }
 
-    public static TieredTileGraph Build(BaseExpr expr, int topLevel, out Dictionary<Grid, TieredTileGraph> exprMemo)
+    public int LevelCount { get; }
+
+    /// <summary>
+    /// Gets the output grids, for mark the grid is required by outside.
+    /// </summary>
+    public HashSet<Grid> OutputGrids { get; }
+
+    public static TieredTileGraph Build(BaseExpr expr, int levelCount, out Dictionary<Grid, TieredTileGraph> exprMemo)
     {
-        var builder = new GraphBuilder(topLevel);
+        HashSet<Grid> outputGrids = new();
+        if (expr is IR.Tuple tp)
+        {
+            var outputs = tp.Fields.ToArray().OfType<Grid>().ToHashSet();
+            outputGrids.UnionWith(outputs);
+        }
+        else if (expr is Grid grid)
+        {
+            outputGrids.UnionWith(new[] { grid });
+        }
+
+        var builder = new TieredTileGraphBuilder(levelCount, outputGrids);
         builder.Visit(expr);
         exprMemo = builder._exprMemo;
         return builder.RootGraph;
@@ -52,7 +70,7 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
         */
         var bufferShapeValues = current.Buffers.AsValueEnumerable().Select(b => TilingUtilities.GetBufferShape(b, true).ToValueArray()).ToArray();
         var bufferShapes = current.Buffers.AsValueEnumerable().Select(b => TilingUtilities.GetBufferShape(b, false)).ToArray();
-        var bufferExprs = Enumerable.Range(0, current.Buffers.Length).Select(current.GetArgument).ToArray();
+        var bufferRuntimeShapes = current.Buffers.AsValueEnumerable().Select(TilingUtilities.GetBufferRuntimeShape).ToArray();
         Isl.set[] bufferDomains;
         HashSet<DimVar> dimVars = new();
         {
@@ -62,7 +80,7 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
         }
 
         var accessMaps = current.AccessMaps.AsValueEnumerable().Select(AffineUtility.AsMap).ToArray();
-        var (domain, domainDynamic, domainBoundValues, domainBoundExprs) = TilingUtilities.InferDomainBounds(bufferExprs, bufferDomains, accessMaps, dimVars);
+        var (domain, domainDynamic, domainBoundValues, domainBoundExprs) = TilingUtilities.InferDomainBounds(bufferRuntimeShapes, bufferDomains, accessMaps, dimVars);
 
         var copId = _opId++;
         var domainDims = current.AccessMaps[0].Domains.Length;
@@ -72,11 +90,17 @@ public sealed class GraphBuilder : ExprVisitor<Unit, Unit>
             throw new InvalidOperationException("body is not call");
         }
 
-        var opNode = new TileGrid(current, op, copId, dimNames, domainBoundValues, domainBoundExprs, domainDynamic, bufferShapeValues);
+        var attr = TileGridAttribute.None;
+        if (OutputGrids.Contains(current))
+        {
+            attr |= TileGridAttribute.LiveOut;
+        }
 
-        var tileNodeRoot = RootGraph.CreateCluster<TieredTileGraph>(_totalLevel, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)), domainBoundExprs, domainDynamic);
+        var opNode = new TileGrid(current, op, copId, domainBoundValues, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)), domainBoundExprs, domainDynamic, bufferShapeValues, attr);
+
+        var tileNodeRoot = RootGraph.CreateCluster<TieredTileGraph>(LevelCount - 1, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)), domainBoundExprs, domainDynamic);
         var tileNodeTail = tileNodeRoot;
-        for (int l = _totalLevel - 1; l >= 1; l--)
+        for (int l = LevelCount - 2; l >= 0; l--)
         {
             tileNodeTail = tileNodeTail.CreateCluster<TieredTileGraph>(l, copId, new DomainRelation(copId, copId, AffineMap.Identity(domainDims)), domainBoundExprs, domainDynamic);
         }

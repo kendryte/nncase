@@ -30,7 +30,10 @@ public record MicroKernelBufferInfo(int ReadBandWidth, int WriteBandWidth, Micro
 /// <summary>
 /// micro kernel infomation for auto tiling.
 /// </summary>
-public record MicroKernelInfo(int[] Primitives, ValueRange<long>[] Multipliers, MicroKernelBufferInfo[] BufferInfos, Func<Google.OrTools.ConstraintSolver.IntExpr[][], Google.OrTools.ConstraintSolver.Solver, MicroKernelContext, Google.OrTools.ConstraintSolver.IntExpr> GetComputeCycle)
+/// <param name="TileBounds"> the bounds of op tile size.</param>
+/// <param name="BufferInfos"> the buffer information.</param>
+/// <param name="GetComputeCycle"> the callback of cycle.</param>
+public record MicroKernelInfo(ValueRange<long>[] TileBounds, MicroKernelBufferInfo[] BufferInfos, Func<Google.OrTools.ConstraintSolver.IntExpr[][], Google.OrTools.ConstraintSolver.Solver, MicroKernelContext, Google.OrTools.ConstraintSolver.IntExpr> GetComputeCycle)
 {
 }
 

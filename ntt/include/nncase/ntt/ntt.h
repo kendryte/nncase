@@ -19,6 +19,15 @@
 
 #include "caching.h"
 #include "distributed.h"
+#include "primitive_ops.h"
+
+#ifdef __riscv_vector
+#include "arch/riscv64/arch_types.h"
+#include "arch/riscv64/primitive_ops.h"
+#include "arch/riscv64/ukernels.h"
+#include "arch/riscv64/vector_ops.h"
+#endif
+
 #include "kernels/binary.h"
 #include "kernels/cast.h"
 #include "kernels/clamp.h"
@@ -38,6 +47,7 @@
 #include "kernels/packed_matmul.h"
 #include "kernels/pad.h"
 #include "kernels/paged_attention.h"
+#include "kernels/qwen3_moe.h"
 #include "kernels/range.h"
 #include "kernels/reduce.h"
 #include "kernels/reduce_arg.h"
@@ -48,14 +58,15 @@
 #include "kernels/scatter_nd.h"
 #include "kernels/shapeof.h"
 #include "kernels/slice.h"
+#include "kernels/sparse_experts.h"
 #include "kernels/softmax.h"
 #include "kernels/stack.h"
 #include "kernels/summa.h"
+#include "kernels/top_k.h"
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
 #include "kernels/unpack.h"
 #include "kernels/where.h"
-#include "primitive_ops.h"
 #include "profiling.h"
 #include "tensor.h"
 #include "tensor_ops.h"
@@ -77,12 +88,6 @@
 #endif
 #endif
 
-#ifdef __riscv_vector
-#include "arch/riscv64/arch_types.h"
-#include "arch/riscv64/primitive_ops.h"
-#include "arch/riscv64/ukernels.h"
-#include "arch/riscv64/vector_ops.h"
-#endif
 
 #ifdef NNCASE_XPU_MODULE
 #include "arch/xpu/arch_types.h"

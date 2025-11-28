@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Shapes;
@@ -41,14 +42,14 @@ public partial class NTT
         return new Call(new TIR.NTT.Unary(unaryOp), input, output);
     }
 
-    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
+    public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, Expr extra, IRArray<int> lhsVectorizedAxes, IRArray<int> rhsVectorizedAxes, bool transA = false, bool transB = false, bool fusedReduce = false, string cSourcePath = "", string funcName = "")
     {
-        return new Call(new Matmul(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC, scale);
+        return new Call(new Matmul(lhsVectorizedAxes, rhsVectorizedAxes, transA, transB, fusedReduce, cSourcePath, funcName), lhs, rhs, output, loadC, scale, extra);
     }
 
     public static Call Matmul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale)
     {
-        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC, scale);
+        return new Call(new Matmul(new IRArray<int>(), new IRArray<int>(), false, false, false, null, null), lhs, rhs, output, loadC, scale, None.Default);
     }
 
     public static Call PackedMatMul(Expr lhs, Expr rhs, Expr output, Expr loadC, Expr scale, bool fusedReduce = false)
@@ -83,9 +84,14 @@ public partial class NTT
         return new Call(new VectorizedSoftmax(axis, vectorizedAxes), input, output);
     }
 
-    public static Expr VectorizedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums)
+    public static Expr VectorizedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums, string cSourcePath = "", string funcName = "")
     {
-        return new Call(new VectorizedLayerNorm(axis, epsilon, usemean, vectorizedAxes, padedNums, null!), input, scale, bias, output);
+        return new Call(new VectorizedLayerNorm(axis, epsilon, usemean, vectorizedAxes, padedNums, null!, cSourcePath, funcName), input, scale, bias, None.Default, output);
+    }
+
+    public static Expr VectorizedLayerNorm(Expr input, Expr scale, Expr bias, Expr output, int axis, float epsilon, bool usemean, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums, Expr postScale, string cSourcePath = "", string funcName = "")
+    {
+        return new Call(new VectorizedLayerNorm(axis, epsilon, usemean, vectorizedAxes, padedNums, null!, cSourcePath, funcName), input, scale, bias, postScale, output);
     }
 
     public static Expr InstanceNorm(Expr input, Expr scale, Expr bias, Expr output, float epsilon, IRArray<int> vectorizedAxes, IRArray<Dimension> padedNums, DistributedType distributedType)
@@ -256,5 +262,25 @@ public partial class NTT
     public static Expr GetPositionIds(Expr kvCache, Expr ret, DistributedType distributedType)
     {
         return new Call(new TIR.NTT.GetPositionIds(distributedType), kvCache, ret);
+    }
+
+    public static Expr Qwen3MoE(Expr hiddenStates, Expr moeGateW, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, Expr ret, long layerId, long hiddenSize, long intermediateSize, long moeIntermediateSize, long numExpert, long numTopK, long isNormTopkProb)
+    {
+        return new Call(new TIR.NTT.Qwen3MoE(layerId, hiddenSize, intermediateSize, moeIntermediateSize, numExpert, numTopK, isNormTopkProb), hiddenStates, moeGateW, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale, ret);
+    }
+
+    public static Expr SparseExperts(Expr q, Expr routerIdx, Expr routerWeights, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, Expr ret, long hiddenSize, long moeIntermediateSize, long numExpert, long numTopK, long chunkSize)
+    {
+        return new Call(new TIR.NTT.SparseExperts(Array.Empty<int>(), Array.Empty<int>(), Array.Empty<int>(), Array.Empty<int>(), Array.Empty<SBP>(), Array.Empty<SBP>(), Array.Empty<SBP>(), Array.Empty<SBP>(), hiddenSize, moeIntermediateSize, numExpert, numTopK, chunkSize, null, string.Empty, string.Empty), q, routerIdx, routerWeights, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale, None.Default, ret);
+    }
+
+    public static Expr SparseExperts(Expr q, Expr routerIdx, Expr routerWeights, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, Expr extra, Expr ret, IRArray<int> qVectorizedAxes, IRArray<int> gateVectorizedAxes, IRArray<int> downVectorizedAxes, IRArray<int> upVectorizedAxes, IRArray<SBP> qSBPs, IRArray<SBP> gateSBPs, IRArray<SBP> downSBPs, IRArray<SBP> upSBPs, long hiddenSize, long moeIntermediateSize, long numExpert, long numTopK, long chunkSize, Cost costmodel, string cSourcePath = "", string funcName = "")
+    {
+        return new Call(new TIR.NTT.SparseExperts(qVectorizedAxes, gateVectorizedAxes, downVectorizedAxes, upVectorizedAxes, qSBPs, gateSBPs, downSBPs, upSBPs, hiddenSize, moeIntermediateSize, numExpert, numTopK, chunkSize, costmodel, cSourcePath, funcName), q, routerIdx, routerWeights, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale, extra, ret);
+    }
+
+    public static Expr TopK(Expr x, Expr k, Expr output, long axis, long largest, long sorted)
+    {
+        return new Call(new TIR.NTT.TopK(axis, largest, sorted), x, k, output);
     }
 }

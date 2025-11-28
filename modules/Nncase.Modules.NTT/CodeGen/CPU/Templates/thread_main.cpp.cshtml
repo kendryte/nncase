@@ -7,10 +7,6 @@
   var inputCount = Model.PrimFunction.Parameters.Length;
 }
 
-@foreach(var (s,i) in Model.Options.MemoryCapacities.Select((s,i) => (s,i)).SkipLast(1)){
-@:uint8_t L@(i+1)Data[@(s)];
-}
-
 extern "C" void thread_main(const nncase::ntt::runtime::thread_inout_desc *input_descs,
   nncase::ntt::runtime::thread_inout_desc *const output_descs,
   const std::byte *rdata,

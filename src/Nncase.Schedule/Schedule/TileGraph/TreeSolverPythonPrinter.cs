@@ -99,7 +99,7 @@ public sealed class TreeSolverPythonPrinter : TreeSolverBase<IntExpr>, ITreeNode
                 if (Solution.Value(place[sl].Var()) == 1)
                 {
                     var shape = bufferInfo.Shapes[i].Select(s => Solution.Value(s.Var())).ToArray();
-                    var size = Solution.Value(bufferInfo.SizeExprs[i].Var());
+                    var size = Solution.Value(bufferInfo.Sizes[i].Var());
                     writer.WriteLine($"{bid}[{string.Join(", ", shape)}] @ L{sl + 1}  # size: {size}");
                 }
             }

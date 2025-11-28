@@ -24,12 +24,12 @@ public sealed class UnaryEvaluator : ITypeInferencer<Unary>, IKernelInfoEvaluato
     {
         var domain = context.AccessMaps[0].Domains;
         var primitives = Enumerable.Repeat(1, domain.Length).ToArray();
-        var multipliers = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
+        var tilebounds = Enumerable.Repeat(new ValueRange<long>(1, int.MaxValue), domain.Length).ToArray();
         var bufferInfos = new MicroKernelBufferInfo[context.BufferShapes.Length];
         var opt = (INTTTargetOptions)context.TargetOptions;
         bufferInfos[0] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Read);
         bufferInfos[1] = new(opt.MemoryBandWidths[1], opt.MemoryBandWidths[1], MicroKernelBufferInfo.BufferState.Write);
-        return new MicroKernelInfo(primitives, multipliers, bufferInfos, GetComputeCycle);
+        return new MicroKernelInfo(tilebounds, bufferInfos, GetComputeCycle);
     }
 
     public string Visit(IPrintOpContext context, Unary target)

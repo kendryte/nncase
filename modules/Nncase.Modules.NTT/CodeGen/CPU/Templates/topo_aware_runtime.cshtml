@@ -60,6 +60,12 @@ enum reduce_kind {
 constexpr std::array<size_t, @(hierarchy.Length)> Hierarchy = {@(string.Join(", ", hierarchy))};
 auto src_ptr_tensor = nncase::ntt::make_tensor<void *>(nncase::ntt::fixed_shape_v<@(string.Join(",", hierarchy))>);
 auto dest_ptr_tensor = nncase::ntt::make_tensor<void *>(nncase::ntt::fixed_shape_v<@(string.Join(",", hierarchy))>);
+
+template <size_t Level> static std::byte *get_cache_address() {
+    return reinterpret_cast<std::byte *>(
+        ntt::distributed::detail::global_thread_local_cache_ptr(program_ids())(
+            Level));
+}
 }
 
 /**

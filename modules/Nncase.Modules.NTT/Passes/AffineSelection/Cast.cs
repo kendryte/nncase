@@ -40,7 +40,7 @@ public partial class NTTAffineSelectionPass
         {
             if (vectorizedAxes.Contains(i))
             {
-                return new AffineRange(x.Offset * inScale, x.Extent * inScale);
+                return new AffineRange(x.Offset * inScale, x.Extent);
             }
             else
             {
@@ -51,7 +51,7 @@ public partial class NTTAffineSelectionPass
         {
             if (vectorizedAxes.Contains(i))
             {
-                return new AffineRange(x.Offset * outScale, x.Extent * outScale);
+                return new AffineRange(x.Offset * outScale, x.Extent);
             }
             else
             {

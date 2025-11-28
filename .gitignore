@@ -318,3 +318,6 @@ global.json
 
 # set huggingface repo
 tests/llm/*/
+
+# agent instructions
+.github/instructions/
