@@ -122,7 +122,7 @@ public class VectorizedRoPEEvaluator : IEvaluator<VectorizedRoPE>, ITypeInferenc
         if (input.Placement != cos.Placement || cos.Placement != sin.Placement
             || !AxisEqual(input.AxisPolicies, cos.AxisPolicies, startA: 1, startB: 0)
             || !AxisEqual(cos.AxisPolicies, sin.AxisPolicies, startA: 0, startB: 0)
-            || input.AxisPolicies[^1] is not SBPBroadCast)
+            || input.AxisPolicies[1] is not SBPBroadCast)
         {
             return new InvalidType("RoPE: distributed types mismatch (placement/axis/SBP)");
 
