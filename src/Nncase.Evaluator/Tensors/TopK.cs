@@ -33,15 +33,23 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
     /// <inheritdoc/>
     public IRType Visit(ITypeInferenceContext context, TopK target)
     {
-        var input = context.CheckArgumentType<TensorType>(target, TopK.X);
-        var repeat = context.CheckArgumentType<TensorType>(target, TopK.K);
-        return Visit(context, target, input, repeat);
+        var xArg = context.CheckArgumentType<IRType>(target, TopK.X);
+        var kArg = context.CheckArgumentType<IRType>(target, TopK.K);
+
+        return (xArg, kArg) switch
+        {
+            (TensorType xt, TensorType kt) => VisitTensor(context, target, xt, kt),
+            (DistributedType dx, TensorType kt) => VisitDistributed(context, target, dx, kt, null),
+            (DistributedType dx, DistributedType dk) => VisitDistributed(context, target, dx, dk.TensorType, dk),
+            (TensorType xt, DistributedType dk) when dk.AxisPolicies.All(p => p is SBPBroadCast) => VisitTensor(context, target, xt, dk.TensorType),
+            _ => new InvalidType($"{xArg}, {kArg}"),
+        };
     }
 
     public Cost Visit(ICostEvaluateContext context, TopK target)
     {
-        var x = context.GetArgumentType<TensorType>(target, TopK.X);
-        var k = context.GetArgumentType<TensorType>(target, TopK.K);
+        var x = context.GetArgumentType<IRType>(target, TopK.X);
+        var k = context.GetArgumentType<IRType>(target, TopK.K);
         var outputType = context.GetReturnType<TupleType>();
         return new()
         {
@@ -61,7 +69,7 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         };
     }
 
-    private IRType Visit(ITypeInferenceContext context, TopK target, TensorType x, TensorType k)
+    private IRType VisitTensor(ITypeInferenceContext context, TopK target, TensorType x, TensorType k)
     {
         if (x.Shape is not RankedShape xShape
             || k.Shape is not RankedShape)
@@ -92,5 +100,64 @@ public class TopKEvaluator : IEvaluator<TopK>, ITypeInferencer<TopK>, ICostEvalu
         }
 
         return new TupleType(new[] { x with { Shape = shape }, new TensorType(DataTypes.Int64, shape) });
+    }
+
+    private IRType VisitDistributed(ITypeInferenceContext context, TopK target, DistributedType x, TensorType kTensor, DistributedType? kDistributed)
+    {
+        // K must be broadcast-only (or plain tensor).
+        if (kTensor.DType != DataTypes.Int64)
+        {
+            return new InvalidType("TopK K need int64");
+        }
+
+        if (kDistributed != null)
+        {
+            if (kDistributed.Placement != x.Placement || kDistributed.AxisPolicies.Any(policy => policy is not SBPBroadCast))
+            {
+                return new InvalidType("TopK only supports broadcast K in distributed mode");
+            }
+        }
+
+        var axisExpr = context.GetArgument(target, TopK.Axis) as TensorConst;
+        if (axisExpr is null)
+        {
+            return new InvalidType("Distributed TopK requires constant axis");
+        }
+
+        var axis = Util.PositiveIndex(axisExpr.Value.ToScalar<int>(), x.TensorType);
+
+        // Axis policy must be broadcast; other dims can be broadcast or split (no partial allowed).
+        for (int i = 0; i < x.AxisPolicies.Count; i++)
+        {
+            var policy = x.AxisPolicies[i];
+            if (policy is SBPPartial)
+            {
+                return new InvalidType("TopK doesn't support partial sbp in distributed mode");
+            }
+
+            if (i == axis)
+            {
+                if (policy is not SBPBroadCast)
+                {
+                    return new InvalidType("TopK axis must be broadcast when distributed");
+                }
+            }
+            else if (policy is not SBPBroadCast && policy is not SBPSplit)
+            {
+                return new InvalidType("Unsupported SBP policy for distributed TopK");
+            }
+        }
+
+        if (VisitTensor(context, target, x.TensorType, kTensor) is not TupleType tuple
+            || tuple.Count != 2
+            || tuple[0] is not TensorType values
+            || tuple[1] is not TensorType indices)
+        {
+            return new InvalidType("TopK tensor inference failed");
+        }
+
+        var valuesD = new DistributedType(values, x.AxisPolicies, x.Placement);
+        var indicesD = new DistributedType(indices, x.AxisPolicies, x.Placement);
+        return new TupleType(new IRType[] { valuesD, indicesD });
     }
 }

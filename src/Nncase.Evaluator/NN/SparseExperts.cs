@@ -14,33 +14,35 @@ using OrtKISharp;
 
 namespace Nncase.Evaluator.NN;
 
-public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluator<Qwen3MoE>, IEvaluator<Qwen3MoE>
+public sealed class SparseExpertsEvaluator : ITypeInferencer<SparseExperts>, ICostEvaluator<SparseExperts>, IEvaluator<SparseExperts>
 {
-    public IRType Visit(ITypeInferenceContext context, Qwen3MoE target)
+    public IRType Visit(ITypeInferenceContext context, SparseExperts target)
     {
         /*
-        public static readonly ParameterInfo Q = new(typeof(Qwen3MoE), 0, "q", ParameterKind.Input);
-        public static readonly ParameterInfo MoeGateW = new(typeof(Qwen3MoE), 1, "MoeGateW", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertDownProjW = new(typeof(Qwen3MoE), 2, "MoeExpertDownProjW", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertDownProjScale = new(typeof(Qwen3MoE), 3, "MoeExpertDownProjScale", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertGateProjW = new(typeof(Qwen3MoE), 4, "MoeExpertGateProjW", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertGateProjScale = new(typeof(Qwen3MoE), 5, "MoeExpertGateProjScale", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertUpProjW = new(typeof(Qwen3MoE), 6, "MoeExpertUpProjW", ParameterKind.Input);
-        public static readonly ParameterInfo MoeExpertUpProjScale = new(typeof(Qwen3MoE), 7, "MoeExpertUpProjScale", ParameterKind.Input);
+        public static readonly ParameterInfo Q = new(typeof(SparseExperts), 0, "q", ParameterKind.Input);
+        public static readonly ParameterInfo MoeGateW = new(typeof(SparseExperts), 1, "MoeGateW", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertDownProjW = new(typeof(SparseExperts), 2, "MoeExpertDownProjW", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertDownProjScale = new(typeof(SparseExperts), 3, "MoeExpertDownProjScale", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertGateProjW = new(typeof(SparseExperts), 4, "MoeExpertGateProjW", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertGateProjScale = new(typeof(SparseExperts), 5, "MoeExpertGateProjScale", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertUpProjW = new(typeof(SparseExperts), 6, "MoeExpertUpProjW", ParameterKind.Input);
+        public static readonly ParameterInfo MoeExpertUpProjScale = new(typeof(SparseExperts), 7, "MoeExpertUpProjScale", ParameterKind.Input);
         */
-        var q = context.CheckArgumentType<IRType>(target, Qwen3MoE.Q);
+        var qType = context.GetArgumentType(target, SparseExperts.Q);
 
-        return q switch
+        return qType switch
         {
-            DistributedType dq => Visit(context, target, dq),
-            TensorType tq => Visit(context, target, tq),
+            AnyType => AnyType.Default,
+            InvalidType invalid => invalid,
+            DistributedType distributed => Visit(context, target, distributed),
+            TensorType tensor => Visit(context, target, tensor),
             _ => new InvalidType("not support type"),
         };
     }
 
-    public Cost Visit(ICostEvaluateContext context, Qwen3MoE target)
+    public Cost Visit(ICostEvaluateContext context, SparseExperts target)
     {
-        var qType = context.GetArgumentType<IRType>(target, Qwen3MoE.Q);
+        var qType = context.GetArgumentType<IRType>(target, SparseExperts.Q);
         var returnType = context.GetReturnType<IRType>();
 
         // cycles = softmax((q @ k^t) + mask) @ v.
@@ -54,35 +56,35 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         };
     }
 
-    public IValue Visit(IEvaluateContext context, Qwen3MoE target)
+    public IValue Visit(IEvaluateContext context, SparseExperts target)
     {
-        var q = context.GetOrtArgumentValue(target, Qwen3MoE.Q);
+        var q = context.GetOrtArgumentValue(target, SparseExperts.Q);
         var qType = q.DataType;
         q = q.Cast(OrtDataType.Float);
-        var moeGateW = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeGateW).AsTensor());
+        var selectedExperts = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.RouterExpertIds).AsTensor());
+        var routerWeights = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.RouterExpertWeights).AsTensor());
 
-        var moeExpertDownInputScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertDownInputScale).AsTensor());
-        var moeExpertDownProjW = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertDownProjW).AsTensor());
-        var moeExpertDownProjScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertDownProjScale).AsTensor());
+        var moeExpertDownInputScale = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertDownInputScale).AsTensor());
+        var moeExpertDownProjW = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertDownProjW).AsTensor());
+        var moeExpertDownProjScale = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertDownProjScale).AsTensor());
 
-        var moeExpertGateInputScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertGateInputScale).AsTensor());
-        var moeExpertGateProjW = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertGateProjW).AsTensor());
-        var moeExpertGateProjScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertGateProjScale).AsTensor());
+        var moeExpertGateInputScale = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertGateInputScale).AsTensor());
+        var moeExpertGateProjW = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertGateProjW).AsTensor());
+        var moeExpertGateProjScale = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertGateProjScale).AsTensor());
 
-        var moeExpertUpInputScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertUpInputScale).AsTensor());
-        var moeExpertUpProjW = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertUpProjW).AsTensor());
-        var moeExpertUpProjScale = GetOrtTensor(context.GetArgumentValue(target, Qwen3MoE.MoeExpertUpProjScale).AsTensor());
+        var moeExpertUpInputScale = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertUpInputScale).AsTensor());
+        var moeExpertUpProjW = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertUpProjW).AsTensor());
+        var moeExpertUpProjScale = GetOrtTensor(context.GetArgumentValue(target, SparseExperts.MoeExpertUpProjScale).AsTensor());
 
-        var layerId = target.LayerId;
         var hiddenSize = target.HiddenSize;
-        var intermediateSize = target.IntermediateSize;
         var moeIntermediateSize = target.MoEIntermediateSize;
         var numExpert = target.NumExpert;
         var numTopK = target.NumTopK;
-        var isNormTopkProb = target.IsNormTopkProb;
-        Console.WriteLine($"Qwen3MoE: layerId={layerId}, hiddenSize={hiddenSize}, intermediateSize={intermediateSize}, moeIntermediateSize={moeIntermediateSize}, numExpert={numExpert}, numTopK={numTopK}, isNormTopkProb={isNormTopkProb}");
+        var chunkSize = target.ChunkSize;
 
-        Console.WriteLine($"Qwen3MoE: q.shape={string.Join(" ", q.Shape)}, moeGateW.shape={string.Join(" ", moeGateW.Shape)}, " +
+        Console.WriteLine($"SparseExperts: hiddenSize={hiddenSize}, moeIntermediateSize={moeIntermediateSize}, numExpert={numExpert}, numTopK={numTopK}, chunkSize={chunkSize}");
+
+        Console.WriteLine($"SparseExperts: q.shape={string.Join(" ", q.Shape)}, selectedExperts.shape={string.Join(" ", selectedExperts.Shape)}, " +
             $"moeExpertDownInputScale.shape={string.Join(" ", moeExpertDownInputScale.Shape)}, moeExpertDownProjW.shape={string.Join(" ", moeExpertDownProjW.Shape)}, " +
             $"moeExpertDownProjScale.shape={string.Join(" ", moeExpertDownProjScale.Shape)}, " +
             $"moeExpertGateInputScale.shape={string.Join(" ", moeExpertGateInputScale.Shape)}, moeExpertGateProjW.shape={string.Join(" ", moeExpertGateProjW.Shape)}, " +
@@ -92,18 +94,6 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
 
         // var (seqLen, hiddenDim) = (q.Shape[0], q.Shape[1]);
         var seqLen = q.Shape[0];
-        var routerLogits = OrtKI.Einsum(new[] { q, moeGateW }, "ls,ds->ld");
-        routerLogits = OrtKI.Cast(routerLogits, (int)OrtDataType.Float);
-        var routerWeights = OrtKI.Softmax(routerLogits, -1);
-
-        var topkRes = OrtKI.TopK(routerWeights, OrtKISharp.Tensor.MakeTensor(new[] { numTopK }, new[] { 1L }), -1L, 1L, 1L);
-        routerWeights = topkRes[0];
-        var selectedExperts = topkRes[1];
-
-        if (isNormTopkProb == 1L)
-        {
-            routerWeights = OrtKI.Div(routerWeights, OrtKI.ReduceSum(routerWeights, Tensor.FromArray(new[] { -1L }).ToOrtTensor(), keepdims: 1L, 0L));
-        }
 
         routerWeights = OrtKI.Cast(routerWeights, (long)q.DataType);
 
@@ -133,6 +123,9 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
 
             // prepare expertMaskReduceSum
             var expertMaskReduceSum = OrtKI.ReduceSum(singleExpertMask, Tensor.FromArray(new[] { 0L, 1L }).ToOrtTensor(), keepdims: 0L, 0L);
+
+            // // prepare q
+            // var qExpand = OrtKI.Unsqueeze(currentState, new[] { 0L });
 
             // prepare gate matmul
             var gateInputScale = SliceAndSqueeze(moeExpertGateInputScale, expertIndex);
@@ -240,15 +233,36 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
         return states;
     }
 
-    private IRType Visit(ITypeInferenceContext context, Qwen3MoE target, TensorType q)
+    private IRType Visit(ITypeInferenceContext context, SparseExperts target, TensorType q)
     {
+        // switch (q.DType)
+        // {
+        //     case VectorType vt:
+        //         var newElemType = vt.ElemType switch
+        //         {
+        //             _ => DataTypes.BFloat16,
+        //         };
+        //         return q with { DType = new VectorType(newElemType, vt.Lanes) };
+        //     default:
+        //         return q with { DType = DataTypes.BFloat16 };
+        // }
         return q;
     }
 
-    private IRType Visit(ITypeInferenceContext context, Qwen3MoE target, DistributedType q)
+    private IRType Visit(ITypeInferenceContext context, SparseExperts target, DistributedType q)
     {
-        // TODO: Handle distributed type inference
-        // For now, we just return the type as is.
+        // // TODO: Handle distributed type inference
+        // // For now, we just return the type as is.
+        // // return q with { TensorType = (TensorType)q.TensorType with { DType = DataTypes.Float16 } };
+        // if (q.TensorType is TensorType tensorType && tensorType.DType is VectorType vt)
+        // {
+        //     var newElemType = vt.ElemType switch
+        //     {
+        //         _ => DataTypes.BFloat16,
+        //     };
+        //     return new DistributedType((TensorType)q.TensorType with { DType = new VectorType(newElemType, vt.Lanes) }, q.AxisPolicies, q.Placement);
+        // }
+        // return new DistributedType((TensorType)q.TensorType with { DType = DataTypes.BFloat16 }, q.AxisPolicies, q.Placement);
         return q;
     }
 }

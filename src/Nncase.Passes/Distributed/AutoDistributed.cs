@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using System.Reactive;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
@@ -332,7 +333,28 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
     protected override Unit VisitLeafCall(Call expr)
     {
+        string DescribeType(IRType type) => type switch
+        {
+            DistributedType dt => dt.ToString(),
+            TensorType t => t.ToString(),
+            _ => type.ToString(),
+        };
+
+        string DescribeNode(SearchableNode node) => $"{node.Expr.GetType().Name}:{DescribeType(node.IRType)}";
+
+        string DescribeSbp(IRType? type)
+        {
+            return type switch
+            {
+                DistributedType dist => $"Placement={dist.Placement}, SBP=[{string.Join(", ", dist.AxisPolicies.Select(p => p.ToString()))}] Tensor={dist.TensorType}",
+                TensorType tensor => tensor.ToString(),
+                null => "Empty",
+                _ => type.ToString(),
+            };
+        }
+
         bool isSupported;
+        bool isSparseExperts = false;
         var argClusters = new DistributedSearchGraph[expr.Arguments.Length];
         if (expr.Target is not Op op)
         {
@@ -345,9 +367,122 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         else
         {
             isSupported = expr.Target is AsTensor or IR.Tensors.Range ? false : true;
+            isSparseExperts = expr.Target.GetType().FullName?.Contains("CustomNTT.SparseExperts", StringComparison.Ordinal) == true;
             foreach (var param in op.Parameters)
             {
                 argClusters[param.Index] = VisitLeafArgument(param.ParameterKind, expr.Arguments[param.Index], isSupported);
+            }
+        }
+
+        if (isSparseExperts)
+        {
+            var broadcastList = new List<int> { 1, 2, 3, 5, 6, 8, 9, 11, 12 };
+            for (var index = 0; index < argClusters.Length; index++)
+            {
+                var input = argClusters[index];
+                if (broadcastList.Contains(index))
+                {
+                    var bucketsToRemove = new List<DistributedSearchGraph>();
+                    foreach (var bucket in input.Clusters.OfType<DistributedSearchGraph>())
+                    {
+                        bucket.RemoveVertexIf(v => !(v.IRType is not DistributedType dist ||
+                            dist.AxisPolicies.All(policy => policy is SBPBroadCast)));
+
+                        if (bucket.VertexCount == 0)
+                        {
+                            bucketsToRemove.Add(bucket);
+                        }
+                    }
+
+                    foreach (var bucket in bucketsToRemove)
+                    {
+                        argClusters[index].RemoveCluster(bucket);
+                    }
+
+                    if (index < 3)
+                    {
+                        var buckets = input.Clusters.OfType<DistributedSearchGraph>().ToArray();
+                        foreach (var bucket in buckets)
+                        {
+                            bucket.RemoveVertexIf(v => _rootSearchGraph.TryGetOutEdges(v, out var edges) && !edges.Any());
+                            if (bucket.VertexCount == 0)
+                            {
+                                argClusters[index].RemoveCluster(bucket);
+                            }
+                        }
+                    }
+                }
+            }
+
+            {
+                var index = 0;
+                var input = argClusters[index];
+
+                var bucketsToRemove = new List<DistributedSearchGraph>();
+                foreach (var bucket in input.Clusters.OfType<DistributedSearchGraph>())
+                {
+                    bucket.RemoveVertexIf(v => !(v.IRType is not DistributedType dt || (dt.AxisPolicies is { Count: > 0 } policies
+                        && policies[0] is SBPSplit { Axes: [1, 3] }
+                        && policies[1] is SBPSplit { Axes: [2] })));
+
+                    if (bucket.VertexCount == 0)
+                    {
+                        bucketsToRemove.Add(bucket);
+                    }
+                }
+
+                foreach (var bucket in bucketsToRemove)
+                {
+                    argClusters[index].RemoveCluster(bucket);
+                }
+
+                var buckets = input.Clusters.OfType<DistributedSearchGraph>().ToArray();
+                foreach (var bucket in buckets)
+                {
+                    bucket.RemoveVertexIf(v => _rootSearchGraph.TryGetOutEdges(v, out var edges) && !edges.Any());
+                    if (bucket.VertexCount == 0)
+                    {
+                        argClusters[index].RemoveCluster(bucket);
+                    }
+                }
+            }
+
+            List<int> broadcastList2 = new() { 4, 7, 10 }; // expert 0维度为B
+            foreach (var index in broadcastList2)
+            {
+                var input = argClusters[index];
+                if (broadcastList2.Contains(index))
+                {
+                    var bucketsToRemove = new List<DistributedSearchGraph>();
+                    foreach (var bucket in input.Clusters.OfType<DistributedSearchGraph>())
+                    {
+                        bucket.RemoveVertexIf(v => !(v.IRType is not DistributedType dt || (dt.AxisPolicies is { Count: > 0 } policies
+                        && policies[0] is SBPBroadCast
+                        && policies[1] is SBPSplit { Axes: [2] }
+                        && policies[2] is SBPSplit { Axes: [1, 3] })));
+
+                        if (bucket.VertexCount == 0)
+                        {
+                            bucketsToRemove.Add(bucket);
+                        }
+                    }
+
+                    foreach (var bucket in bucketsToRemove)
+                    {
+                        argClusters[index].RemoveCluster(bucket);
+                    }
+                }
+            }
+
+            // 打印当前arg的节点信息
+            for (var index = 0; index < argClusters.Length; index++)
+            {
+                var input = argClusters[index];
+                Console.WriteLine($"[AutoDistributed][SparseExperts] Arg {index} Nodes:");
+                foreach (var v in input.Vertices)
+                {
+                    Console.WriteLine($"\t{DescribeNode(v)}");
+                }
             }
         }
 
@@ -358,7 +493,25 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
         var bucketMemo = new Dictionary<IRType, DistributedSearchGraph>();
         foreach (var combBuckets in argClusters.Select(c => c.Clusters.OfType<DistributedSearchGraph>()).CartesianProduct())
         {
-            var tempArgs = combBuckets.Select<DistributedSearchGraph, BaseExpr>(bucket => bucket.Vertices.First() switch
+            var bucketArray = combBuckets.ToArray();
+
+            string[]? candidateDesc = null;
+            if (isSparseExperts)
+            {
+                candidateDesc = bucketArray.Select((bucket, idx) =>
+                {
+                    var vertex = bucket.Vertices.FirstOrDefault();
+                    return vertex is null ? $"Arg {idx}: Empty" : $"Arg {idx}: {DescribeSbp(vertex.IRType)}";
+                }).ToArray();
+
+                Console.WriteLine("[AutoDistributed][SparseExperts] Candidate SBP combination:");
+                foreach (var desc in candidateDesc)
+                {
+                    Console.WriteLine($"\t{desc}");
+                }
+            }
+
+            var tempArgs = bucketArray.Select<DistributedSearchGraph, BaseExpr>(bucket => bucket.Vertices.First() switch
             {
                 SearchableNode { Expr: Dimension attr } => attr,
                 SearchableNode { Expr: Shape attr } => attr,
@@ -419,7 +572,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                 var dnode = new SearchableNode(isSupported && newExpr is Call newCall ? newCall.Target : newExpr, checkType);
                 dbucket.AddVertex(dnode);
 
-                foreach (var ((arg, _), i) in combBuckets.Zip(used).Where(p => p.Second is true).Select((arg, i) => (arg, i)))
+                foreach (var ((arg, _), i) in bucketArray.Zip(used).Where(p => p.Second is true).Select((arg, i) => (arg, i)))
                 {
                     _rootSearchGraph.AddEdge(new(dnode, arg.Vertices.First(), i, arg));
                 }
@@ -428,6 +581,21 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         if (callCluster.VertexCount == 0)
         {
+            if (isSparseExperts)
+            {
+                Console.WriteLine("[AutoDistributed][SparseExperts] No valid candidate survived. Current arg clusters:");
+                for (var index = 0; index < argClusters.Length; index++)
+                {
+                    var input = argClusters[index];
+                    foreach (var bucket in input.Clusters.OfType<DistributedSearchGraph>())
+                    {
+                        var vertex = bucket.Vertices.FirstOrDefault();
+                        Console.WriteLine($"\tArg {index}: {DescribeSbp(vertex?.IRType)}");
+                    }
+                }
+            }
+
+            System.Console.WriteLine($"[AutoDistributed] Type infer failed for {expr.Target.GetType().FullName}");
             throw new InvalidOperationException("Please Check expr's TypeInfer.");
         }
 
@@ -457,6 +625,12 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
 
         // 4. add not infered type in search space.
         var addedBuckets = bucketMemo.Values.ToArray();
+
+        if (expr.CheckedType is not TensorType)
+        {
+            return default;
+        }
+
         foreach (var nType in GetLeafCandidateDistTypes(expr.CheckedTensorType, Placements, _moduleKind, TargetOptions))
         {
             if (!bucketMemo.TryGetValue(nType, out var bucket)

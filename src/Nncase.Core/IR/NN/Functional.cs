@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -128,4 +129,6 @@ public static class NN
     public static Expr PagedAttention(Expr q, Expr kvCaches, Expr extra, Expr scale, int layerId, AttentionDimKind[] qlayout, int hiddenSize) => new Call(new PagedAttention(layerId, new IRArray<AttentionDimKind>(qlayout), hiddenSize), q, kvCaches, extra, scale);
 
     public static Expr Qwen3MoE(Expr q, Expr moeGateW, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, long layerId, long hiddenSize, long intermediateSize, long moeIntermediateSize, long numExpert, long numTopK, long isNormTopkProb) => new Call(new Qwen3MoE(layerId, hiddenSize, intermediateSize, moeIntermediateSize, numExpert, numTopK, isNormTopkProb), q, moeGateW, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale);
+
+    public static Call SparseExperts(Expr q, Expr routerExpertIds, Expr routerExpertWeights, Expr moeExpertGateInputScale, Expr moeExpertGateProjW, Expr moeExpertGateProjScale, Expr moeExpertDownInputScale, Expr moeExpertDownProjW, Expr moeExpertDownProjScale, Expr moeExpertUpInputScale, Expr moeExpertUpProjW, Expr moeExpertUpProjScale, long hiddenSize, long moeIntermediateSize, long numExpert, long numTopK, long chunkSize) => new Call(new SparseExperts(hiddenSize, moeIntermediateSize, numExpert, numTopK, chunkSize), q, routerExpertIds, routerExpertWeights, moeExpertGateInputScale, moeExpertGateProjW, moeExpertGateProjScale, moeExpertDownInputScale, moeExpertDownProjW, moeExpertDownProjScale, moeExpertUpInputScale, moeExpertUpProjW, moeExpertUpProjScale);
 }

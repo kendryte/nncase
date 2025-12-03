@@ -39,7 +39,7 @@ public struct Float8E4M3 : IEquatable<Float8E4M3>, IComparable<Float8E4M3>, INum
 
     public static Float8E4M3 MinSubnormal => FromRaw(0b0000001);
 
-    public static Float8E4M3 One => throw new NotImplementedException();
+    public static Float8E4M3 One => (Float8E4M3)1f;
 
     public static int Radix => throw new NotImplementedException();
 
