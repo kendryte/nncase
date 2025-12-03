@@ -123,6 +123,8 @@ template <class Mesh, class... AxisPolicies> struct sharding {
         return fixed_dim_v<sizeof...(AxisPolicies)>;
     }
 
+    constexpr sharding() noexcept = default;
+
     constexpr sharding(const AxisPolicies &...axis_policies) noexcept
         : axis_policies(axis_policies...) {}
 
