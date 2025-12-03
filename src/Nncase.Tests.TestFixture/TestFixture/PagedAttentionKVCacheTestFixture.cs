@@ -75,7 +75,7 @@ public sealed class PagedAttentionKVCacheTestFixture
         var curLen = query.Shape[^2];
         var histLen = key.Shape[^2];
 
-        OrtKISharp.Tensor scaleFactor = scale ?? 1 / MathF.Sqrt(query.Length);
+        OrtKISharp.Tensor scaleFactor = scale ?? (1 / MathF.Sqrt(query.Length));
         scaleFactor = scaleFactor.Cast(query.DataType);
 
         var attnBias = OrtKI.Expand(OrtKISharp.Tensor.FromScalar(0f), OrtKISharp.Tensor.MakeTensor([curLen, histLen]));
