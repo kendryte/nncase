@@ -43,6 +43,31 @@ template <reduce_op Op, class T, bool Arch> struct u_reduce_policy {
     static constexpr size_t unroll = 2;
 };
 
+template <Tensor TIn, Tensor TOut, FixedDimensions TReduceAxes,
+          FixedDimensions VectorizedAxes, bool Arch>
+struct u_reduce_2d {
+  public:
+    constexpr void operator()(const TIn &input, TOut &output,
+                              const TReduceAxes &,
+                              const VectorizedAxes &) noexcept {
+        using TInElem = typename TIn::element_type;
+        constexpr auto reduce_axes = TReduceAxes{};
+        ntt::apply(output.shape(), [&](auto index) {
+            TInElem reduced_in = 0;
+            for (size_t i = 0; i < input.shape()[reduce_axes.at(0)]; i++) {
+                auto in_index = generate_shape<TIn::rank()>([&](auto j) {
+                    if (j == reduce_axes.at(0))
+                        return (dim_t)i;
+                    else
+                        return (dim_t)index[j];
+                });
+                reduced_in += input(in_index);
+            }
+            output(index) = reduced_in;
+        });
+    }
+};
+
 template <reduce_op Op, class T, bool Arch> struct u_reduce {
   public:
     constexpr T operator()(const T *input, size_t input_stride, size_t count,
@@ -109,5 +134,13 @@ constexpr T u_reduce(const T *input, size_t input_stride, size_t count,
                      T init_value) noexcept {
     ukernels::u_reduce<Op, T, true> impl;
     return impl(input, input_stride, count, init_value);
+}
+
+template <Tensor TIn, Tensor TOut, FixedDimensions TReduceAxes,
+          FixedDimensions VectorizedAxes>
+constexpr void u_reduce(const TIn &input, TOut &output, const TReduceAxes &,
+                        const VectorizedAxes &) noexcept {
+    ukernels::u_reduce_2d<TIn, TOut, TReduceAxes, VectorizedAxes, true> impl;
+    impl(input, output, TReduceAxes{}, VectorizedAxes{});
 }
 } // namespace nncase::ntt

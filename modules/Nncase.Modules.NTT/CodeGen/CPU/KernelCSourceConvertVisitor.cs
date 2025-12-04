@@ -587,6 +587,25 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                 case TIR.NTT.Qwen3MoE qwen3MoE:
                     IndentScope.Writer.IndWrite($"qwen3_moe({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {VisitBuffer(args[4], local: true).Name}, {VisitBuffer(args[5], local: true).Name}, {VisitBuffer(args[6], local: true).Name}, {VisitBuffer(args[7], local: true).Name}, {VisitBuffer(args[8], local: true).Name},{VisitBuffer(args[9], local: true).Name},{VisitBuffer(args[10], local: true).Name},{VisitBuffer(args[11], local: true).Name}, {qwen3MoE.LayerId}, {qwen3MoE.HiddenSize}, {qwen3MoE.IntermediateSize}, {qwen3MoE.MoEIntermediateSize}, {qwen3MoE.NumExpert}, {qwen3MoE.NumTopK}, {qwen3MoE.IsNormTopkProb});\n");
                     break;
+                case TIR.NTT.SparseExperts sparseExperts:
+                    IndentScope.Writer.IndWrite($"sparse_experts({VisitBuffer(args[0], local: true).Name}, {VisitBuffer(args[1], local: true).Name}, {VisitBuffer(args[2], local: true).Name}, {VisitBuffer(args[3], local: true).Name}, {VisitBuffer(args[4], local: true).Name}, {VisitBuffer(args[5], local: true).Name}, {VisitBuffer(args[6], local: true).Name}, {VisitBuffer(args[7], local: true).Name}, {VisitBuffer(args[8], local: true).Name}, {VisitBuffer(args[9], local: true).Name}, {VisitBuffer(args[10], local: true).Name}, {VisitBuffer(args[11], local: true).Name},{VisitBuffer(args[13], local: true).Name}, {sparseExperts.HiddenSize}, {sparseExperts.MoEIntermediateSize}, {sparseExperts.NumExpert}, {sparseExperts.NumTopK}, {sparseExperts.ChunkSize});\n");
+                    break;
+                case TIR.NTT.TopK topK:
+                    {
+                        var inputBuffer = VisitBuffer(args[0], local: true);
+                        var kOperand = args[1] is TIR.Buffer kBuffer
+                            ? VisitBuffer(kBuffer, local: true)
+                            : Visit(args[1]);
+                        var outputBuffers = FlattenTuple(args[2]).Select(e => VisitBuffer(e, local: true)).ToArray();
+                        if (outputBuffers.Length != 2)
+                        {
+                            throw new NotSupportedException("TopK expects two output buffers");
+                        }
+
+                        IndentScope.Writer.IndWrite($"top_k({inputBuffer.Name}, {kOperand.Name}, {outputBuffers[0].Name}, {outputBuffers[1].Name}, fixed_dim_v<{topK.Axis}>, {topK.Largest}, {topK.Sorted});\n");
+                    }
+
+                    break;
                 default:
                     throw new NotSupportedException(kop.ToString());
             }
@@ -817,6 +836,30 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
         symbol = new(string.Empty, string.Empty);
         _exprMemo.Add(expr, symbol);
         return symbol;
+    }
+
+    private static IReadOnlyList<BaseExpr> FlattenTuple(BaseExpr expr)
+    {
+        var result = new List<BaseExpr>();
+        var stack = new Stack<BaseExpr>();
+        stack.Push(expr);
+        while (stack.Count > 0)
+        {
+            var current = stack.Pop();
+            if (current is IR.Tuple tuple)
+            {
+                for (int i = tuple.Count - 1; i >= 0; i--)
+                {
+                    stack.Push(tuple[i]);
+                }
+            }
+            else
+            {
+                result.Add(current);
+            }
+        }
+
+        return result;
     }
 
     private CSymbol VisitBuffer(BaseExpr buffer, bool local)
