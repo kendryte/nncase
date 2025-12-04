@@ -16,13 +16,12 @@ import os
 class PackTestGenerator(BaseTestGenerator):
     def __init__(self):
         super().__init__()
-        
-    def generate_test_name(self, datatype, shape_type, vector_dim, continuity: Continuity, pack_axis_str, ndim):
+
+    def generate_test_name(self, shape_type, vector_dim, continuity: Continuity, pack_axis_str, ndim):
         parts = []
-        parts.append(datatype.name_suffix)
         parts.append(shape_type)
         parts.append(f"{vector_dim}D_vector")
-        
+
         if continuity.is_contiguous:
             parts.append("contiguous")
         else:
@@ -32,13 +31,13 @@ class PackTestGenerator(BaseTestGenerator):
         parts.append(f"pack_axis_{pack_axis_str}")
         parts.append(f"{ndim}D")
         return "_".join(parts)
-    
-    
-    
+
+
+
     def generate_ort_reference(self, input_dims, input_dim_names, pack_axes):
         code = []
         ndim = len(input_dims)
-        
+
         # Calculate reshaped dimensions (for code string generation)
         reshape_dims_str = []
         dim_idx = 0
@@ -51,7 +50,7 @@ class PackTestGenerator(BaseTestGenerator):
                 reshape_dims_str.append(f"(int64_t){vec_param}")
             else:
                 reshape_dims_str.append(f"(int64_t){input_dim_names[i]}")
-        
+
         # Generate reshape code
         code.append("// ORT reference implementation (kernel part)")
         code.append(f"int64_t reshape_data[] = {{{', '.join(reshape_dims_str)}}};")
@@ -60,7 +59,7 @@ class PackTestGenerator(BaseTestGenerator):
         code.append("auto shape_tensor = make_tensor(reinterpret_cast<void *>(reshape_data), ort_type,")
         code.append("                         reshape_shape, std::size(reshape_shape));")
         code.append("auto reshaped_tensor = ortki_Reshape(ort_input, shape_tensor, 0);")
-        
+
         # Generate transpose permutation
         if len(pack_axes) > 0:
             # Calculate permutation
@@ -76,15 +75,15 @@ class PackTestGenerator(BaseTestGenerator):
                     perm.append(j)
                     j += 1
             perm.extend(packd_dims)
-            
+
             code.append("")
             code.append(f"int64_t perms[] = {{{', '.join(map(str, perm))}}};")
             code.append("auto ort_output = ortki_Transpose(reshaped_tensor, perms, std::size(perms));")
         else:
             code.append("auto ort_output = reshaped_tensor;")
-        
+
         return code
-    
+
     def generate_ntt_ops(self, pack_axes):
         pack_axes_str = self.generate_pack_axes_str(pack_axes)
         return [
@@ -123,7 +122,7 @@ class PackTestGenerator(BaseTestGenerator):
             else:
                 output_dims.append(name)
         output_shape_expr = self.generate_shape_init(shape_type, output_dims)
-        
+
         output_element_type = self.get_element_cpp_type(datatype.cpp_type, vector_dim, 'P')
 
         pack_call_code = self.generate_ntt_ops(pack_axes)
@@ -136,7 +135,7 @@ class PackTestGenerator(BaseTestGenerator):
             output_element_type=output_element_type
         )
         code.extend(op_code)
-        
+
         return code, output_shape_expr, output_element_type
 
     def generate_ort_golden_output(self, datatype, shape_type, dims, dim_names, continuity, P, pack_axes, deal_fp8):
@@ -181,9 +180,9 @@ class PackTestGenerator(BaseTestGenerator):
             dims, dim_names = [2, 8, 4, 4], ['N', 'C', 'H', 'W']
         else:
             dims, dim_names = [2, 8, 4, 4, 2], ['N', 'C', 'H', 'W', 'D']
-        
-        test_name = self.generate_test_name(datatype, shape_type, vector_dim, continuity, "_".join(map(str, pack_axes)), ndim)
-        
+
+        test_name = self.generate_test_name(shape_type, vector_dim, continuity, "_".join(map(str, pack_axes)), ndim)
+
         code: List[str] = []
 
         # 1. Test header and constants
@@ -225,12 +224,12 @@ class PackTestGenerator(BaseTestGenerator):
         """
         shape_types = ["fixed", "dynamic"]
         vector_dims = [1, 2]
-        
+
         # Define pack axis options for different dimensions
         pack_axes_options = {
-            3: [[2], [1], [0], [0, 1], [1, 2]],  
-            4: [[3], [2], [1], [0], [0, 1], [1, 2], [2, 3]],  
-            5: [[4], [3], [2], [1], [0], [0, 1], [1, 2], [2, 3], [3, 4]]  
+            3: [[2], [1], [0], [0, 1], [1, 2]],
+            4: [[3], [2], [1], [0], [0, 1], [1, 2], [2, 3]],
+            5: [[4], [3], [2], [1], [0], [0, 1], [1, 2], [2, 3], [3, 4]]
         }
 
         # Full continuity test combinations, mainly for 4D
@@ -247,12 +246,12 @@ class PackTestGenerator(BaseTestGenerator):
             Continuity(is_contiguous=True, non_contiguous_dim=None, big_tensor_op=None),
             Continuity(is_contiguous=False, non_contiguous_dim=1, big_tensor_op="*2"), # Choose a representative non-contiguous case
         ]
-        
+
         code = []
-        
+
         # Generate file header
         code.append(self.generate_header())
-        
+
         # Generate test cases
         for ndim in [3, 4, 5]:
             # Select continuity test strategy based on dimension
@@ -263,25 +262,25 @@ class PackTestGenerator(BaseTestGenerator):
                     # Skip unreasonable combinations
                     if vector_dim != len(pack_axes):
                         continue
-                    
+
                     test_code = self.generate_test_case(datatype, shape_type, vector_dim, continuity, pack_axes, ndim)
-                    code.append(test_code)       
+                    code.append(test_code)
         # Generate main function
         code.append(self.generate_footer())
-        
+
         return "\n".join(code)
-    
-    
+
+
 
 
 if __name__ == "__main__":
     generator = PackTestGenerator()
     script_directory = os.path.dirname(os.path.abspath(__file__))
-    
+
     # Get the parent directory (ctest) and then the generated subdirectory
     ctest_directory = os.path.dirname(script_directory)
     generated_directory = os.path.join(ctest_directory, "generated")
-    
+
     # Ensure generated directory exists
     os.makedirs(generated_directory, exist_ok=True)
 
@@ -289,13 +288,13 @@ if __name__ == "__main__":
 
     for datatype in ALL_DATATYPES:
         test_code = generator.generate_all_tests_for_type(datatype)
-        filename = f"test_ntt_pack_generated_{datatype.name_suffix}.cpp"
+        filename = f"test_ntt_pack_{datatype.name_suffix}.cpp"
         output_filepath = os.path.join(generated_directory, filename)
 
         with open(output_filepath, "w") as f:
             f.write(test_code)
-        
+
         print(f"Test file generated: {output_filepath}")
-        generated_filenames.append(filename) 
-    
-    generate_cmake_list(generated_directory, generated_filenames, "generated_pack_tests.cmake", "GENERATED_PACK_TEST_SOURCES")
+        generated_filenames.append(filename)
+
+    generate_cmake_list(generated_directory, generated_filenames, "pack_test.cmake", "PACK_TESTS")

@@ -8,14 +8,14 @@ from test_generator_base import *
 class BinaryTestGenerator(BaseTestGenerator):
     def __init__(self):
         super().__init__()
-        
-        # ORT *binary operations* do not support these data types, need to cast to double 
+
+        # ORT *binary operations* do not support these data types, need to cast to double
         # fortunately, they could be *cast* in ort( fp8 are unfortunate)
         self.types_need_cast_in_ort = {
             "swishb": [ 'bool', 'uint8_t', 'uint16_t', 'uint32_t',
                     'uint64_t', 'int8_t', 'int16_t', 'bfloat16', 'half',
                       "int32_t", "int64_t",
-                    'float_e4m3_t', 'float_e5m2_t' 
+                    'float_e4m3_t', 'float_e5m2_t'
                    ],
 
             "default": [ 'bool',  'int8_t', 'int16_t', 'bfloat16', 'half',
@@ -23,7 +23,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                 ]
         }
         self.types_need_cast_in_ntt = {
-            'float_e4m3_t', 'float_e5m2_t' 
+            'float_e4m3_t', 'float_e5m2_t'
         }
 
         self.dims_specs_options = {
@@ -31,7 +31,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                 # Scalar broadcast
                 ([2, 3, 16, 16], [1])
             ],
-            
+
             "default": [
                 # No broadcast
                 ([2, 3, 16, 16], [2, 3, 16, 16]),
@@ -45,8 +45,8 @@ class BinaryTestGenerator(BaseTestGenerator):
                 ([2, 1, 16, 1], [1, 3, 1, 16]),
             ]
         }
-        
-        
+
+
         # Define power operand ranges
         self.ALL_POW_OPRANDS = {
             "uint8_t": {"lhs_min": "0", "lhs_max": "3", "rhs_min": "0", "rhs_max": "3"},
@@ -70,8 +70,8 @@ class BinaryTestGenerator(BaseTestGenerator):
 
 
 
-        self.integer_types = ['int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t'] 
-        
+        self.integer_types = ['int8_t', 'int16_t', 'int32_t', 'int64_t', 'uint8_t', 'uint16_t', 'uint32_t', 'uint64_t']
+
         self.ort_custom_function = {
             "ceil_div": self._generate_ort_ceil_div_function,
             "swishb": self._generate_ort_SwishB,
@@ -86,7 +86,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                             "static bool element_is_vec = ntt::Vector<typename decltype(ntt_input_lhs)::element_type>;\n" \
                             "   auto ort_output = ortki_inner_product(ort_input_lhs, ort_input_rhs, element_is_vec); " ,
             "outer_product":  \
-                            "   auto ort_output =ortki_Mul(ort_input_lhs, ort_input_rhs); " 
+                            "   auto ort_output =ortki_Mul(ort_input_lhs, ort_input_rhs); "
         }
         self.op_str_map_simplified = {
             "sub": f"auto ort_output = ortki_Sub(ort_input_lhs, ort_input_rhs);",
@@ -131,14 +131,14 @@ class BinaryTestGenerator(BaseTestGenerator):
         if datatype.cpp_type == "int64_t":
             var_type = "int64_t"
             value_str = "-1"
-        elif datatype.cpp_type not in types_to_cast: 
+        elif datatype.cpp_type not in types_to_cast:
             # Now only int32_t in this case
             var_type = "int32_t"
             value_str = "-1"
         else:
             var_type = "double"
             value_str = "-1.0f"
-        
+
         # Return the common template with variable substitution
         return (
             f"auto ntt_neg1 = make_tensor<{var_type}>(ntt::fixed_shape_v<1>);\n"
@@ -175,7 +175,7 @@ class BinaryTestGenerator(BaseTestGenerator):
     def _generate_ort_ceil_div_function(self, datatype):
         """Generate the ort_ceil_div function definition"""
         const_var_type, const_value_str = self._generate_ort_const_var_info(datatype, -1, "ceil_div")
-        
+
         return (
             f"static ortki::OrtKITensor* ort_ceil_div(ortki::OrtKITensor* ort_input_lhs, ortki::OrtKITensor* ort_input_rhs) {{\n"
             f"    auto ntt_neg1 = make_tensor<{const_var_type}>(ntt::fixed_shape_v<1>);\n"
@@ -218,12 +218,12 @@ class BinaryTestGenerator(BaseTestGenerator):
     def _generate_ort_SwishB(self, datatype):
         """Generate the ortki_SwishB function definition"""
         const_var_type, const_value_str = self._generate_ort_const_var_info(datatype, 1, "swishb")
-        
+
         return (
             f"static ortki::OrtKITensor* ortki_SwishB(ortki::OrtKITensor* ort_input, ortki::OrtKITensor* beta_tensor) {{\n"
             f"    auto ntt_1_tensor = make_tensor<{const_var_type}>(ntt::fixed_shape_v<1>);\n"
             f"    ntt_1_tensor(0) = {const_value_str};\n"
-            "    auto ort_1 = NttTest::ntt2ort(ntt_1_tensor);\n"           
+            "    auto ort_1 = NttTest::ntt2ort(ntt_1_tensor);\n"
             "    auto ort_neg = ortki_Neg(ort_input);\n"
             "    auto ort_mul = ortki_Mul(ort_neg, beta_tensor);\n"
             "    auto ort_exp = ortki_Exp(ort_mul);\n"
@@ -233,7 +233,7 @@ class BinaryTestGenerator(BaseTestGenerator):
         )
 
 
-    def _generate_aligned_ntt_scalar_input(self, ntt_op_str, datatype, input_var_name, var_name, 
+    def _generate_aligned_ntt_scalar_input(self, ntt_op_str, datatype, input_var_name, var_name,
                                    is_dynamic_shape, dims_spec, vector_rank, other_vector_rank):
         """Generate aligned NTT input tensors for fp8 operations"""
         """ normal case: tensor<vector<P>, axbxc> -> tensor<scalar, axbxcxP>
@@ -241,12 +241,12 @@ class BinaryTestGenerator(BaseTestGenerator):
         """
         code = []
         aligned_dims = None
-        
+
         # Determine if tensors need alignment based on vector ranks
         need_alignment = vector_rank + other_vector_rank > 0
 
         #fistly unsqueeze
-        
+
         unsqueeze_dims = ""
         unpack_dims = ""
         if vector_rank >= other_vector_rank :
@@ -280,7 +280,7 @@ class BinaryTestGenerator(BaseTestGenerator):
             if other_vector_rank == 1:
                 # this vector rank must be 0
                 unsqueeze_dims = f"{len(dims_spec)}"
-                unpack_dims = unsqueeze_dims    
+                unpack_dims = unsqueeze_dims
             else: # other_vector_rank == 2
                 # this vector rank should be 1 or 0
                 unsqueeze_dims = f"{len(dims_spec)}, {len(dims_spec)+1}"
@@ -314,32 +314,32 @@ class BinaryTestGenerator(BaseTestGenerator):
             lhs_is_dynamic_shape, lhs_dims_spec, lhs_continuity
         )
         code.extend(lhs_copy_code)
-        
+
         rhs_var_name, rhs_copy_code = self._prepare_contiguous_input(
             "ntt_input_rhs", datatype, rhs_vector_rank, rhs_vec_param,
             rhs_is_dynamic_shape, rhs_dims_spec, rhs_continuity
         )
         code.extend(rhs_copy_code)
-        
+
         """
         lhs_var_name = "ntt_input_lhs"
         rhs_var_name = "ntt_input_rhs"
         code.append("// align in NTT, then cast to double, then process in ORT")
-        
+
         # Determine if tensors need alignment based on vector ranks
         need_alignment = (lhs_vector_rank + rhs_vector_rank != 0 )
         # Initialize aligned dimensions to default values
         lhs_aligned_dims = lhs_dims_spec
         rhs_aligned_dims = rhs_dims_spec
-        
+
         if need_alignment:
             # 1.1.a for tensors pair that one of which is tensor of vector
             # Generate aligned lhs input
             lhs_code, lhs_aligned_dims = self._generate_aligned_ntt_scalar_input(
-                ntt_op_str, datatype, "ntt_input_lhs", lhs_var_name, lhs_is_dynamic_shape, 
+                ntt_op_str, datatype, "ntt_input_lhs", lhs_var_name, lhs_is_dynamic_shape,
                 lhs_dims_spec, lhs_vector_rank, rhs_vector_rank)
             code.extend(lhs_code)
-                
+
             # Generate aligned rhs input
             rhs_code, rhs_aligned_dims = self._generate_aligned_ntt_scalar_input(
                 ntt_op_str, datatype, "ntt_input_rhs", rhs_var_name, rhs_is_dynamic_shape,
@@ -350,18 +350,18 @@ class BinaryTestGenerator(BaseTestGenerator):
             code.append("// 1.1.b for tensors pair that are all tensor of scalar")
             code.append(f"auto ntt_input_lhs_aligned = ({lhs_var_name}).view();")
             code.append(f"auto ntt_input_rhs_aligned = ({rhs_var_name}).view();")
-        
+
         # 1.2 get ntt_lhs/rhs_double
         lhs_double_shape_expr = self.generate_shape_init(lhs_is_dynamic_shape, lhs_aligned_dims)
         rhs_double_shape_expr = self.generate_shape_init(rhs_is_dynamic_shape, rhs_aligned_dims)
-        
+
         code.append(f"// 1.2 get ntt_lhs/rhs_double")
         code.append(f"auto ntt_lhs_double = ntt::make_tensor<double>({lhs_double_shape_expr});")
         code.append(f"auto ntt_rhs_double = ntt::make_tensor<double>({rhs_double_shape_expr});")
         code.append("")
         code.append("ntt::cast(ntt_input_lhs_aligned, ntt_lhs_double);")
         code.append("ntt::cast(ntt_input_rhs_aligned, ntt_rhs_double);")
-        
+
         return lhs_aligned_dims, rhs_aligned_dims
 
     def _execute_ort_operation(self, code, datatype, ntt_op_str):
@@ -378,7 +378,7 @@ class BinaryTestGenerator(BaseTestGenerator):
 
 
 
-    def _generate_ntt_cast_golden_output(self, datatype, 
+    def _generate_ntt_cast_golden_output(self, datatype,
                                    lhs_is_dynamic_shape, rhs_is_dynamic_shape,
                                    lhs_dims_spec, rhs_dims_spec,
                                    lhs_vector_rank, rhs_vector_rank,
@@ -399,7 +399,7 @@ class BinaryTestGenerator(BaseTestGenerator):
         """
 
         code = []
-        
+
         # 1. Prepare input alignment and cast to double
         lhs_aligned_dims, rhs_aligned_dims = self._prepare_double_input_alignment(
             code, datatype, lhs_is_dynamic_shape, rhs_is_dynamic_shape,
@@ -407,12 +407,12 @@ class BinaryTestGenerator(BaseTestGenerator):
             lhs_continuity, rhs_continuity, lhs_vec_param, rhs_vec_param,
             ntt_op_str
         )
-        
+
         # 2. Execute ORT operation
         ort_golden_double_var = self._execute_ort_operation(
             code, datatype, ntt_op_str
         )
-        
+
         # Calculate output shape for scalar tensor
         output_is_dynamic_shape, output_dims_spec = self.get_binary_output_shape(
             lhs_is_dynamic_shape, rhs_is_dynamic_shape, lhs_dims_spec, rhs_dims_spec)
@@ -422,14 +422,14 @@ class BinaryTestGenerator(BaseTestGenerator):
 
         # 3. Process ORT output back to NTT format
         self._cast_ort_golden_double_into_ntt_shape(
-            code, datatype, ntt_op_str, output_is_dynamic_shape, 
-            output_dims_spec, output_vector_rank, 
+            code, datatype, ntt_op_str, output_is_dynamic_shape,
+            output_dims_spec, output_vector_rank,
             output_vec_param, ort_golden_double_var
         )
-        
+
         return code
 
-    def _generate_ort_cast_golden_output(self, datatype, 
+    def _generate_ort_cast_golden_output(self, datatype,
                                    lhs_is_dynamic_shape, rhs_is_dynamic_shape,
                                    lhs_dims_spec, rhs_dims_spec,
                                    lhs_vector_rank, rhs_vector_rank,
@@ -445,19 +445,21 @@ class BinaryTestGenerator(BaseTestGenerator):
         4. perform operation
         """
         code = []
-        
+
         # Check if datatype needs to be cast to float32
         need_cast_in_ort = self._need_cast_in_ort(datatype, ntt_op_str)
 
+        lhs_element_type = self.get_element_cpp_type(datatype.cpp_type, lhs_vector_rank, lhs_vec_param)
         lhs_var_name, lhs_copy_code = self._prepare_contiguous_input(
-            "ntt_input_lhs", datatype, lhs_vector_rank, lhs_vec_param,
+            "ntt_input_lhs", lhs_element_type,
             lhs_is_dynamic_shape, lhs_dims_spec, lhs_continuity
         )
         code.extend(lhs_copy_code)
         ntt2ort_lhs = lhs_var_name
 
+        rhs_element_type = self.get_element_cpp_type(datatype.cpp_type, rhs_vector_rank, rhs_vec_param)
         rhs_var_name, rhs_copy_code = self._prepare_contiguous_input(
-            "ntt_input_rhs", datatype, rhs_vector_rank, rhs_vec_param,
+            "ntt_input_rhs", rhs_element_type,
             rhs_is_dynamic_shape, rhs_dims_spec, rhs_continuity
         )
         code.extend(rhs_copy_code)
@@ -472,7 +474,7 @@ class BinaryTestGenerator(BaseTestGenerator):
         is_outer_product = "true" if ntt_op_str == "outer_product" else "false"
 
         code.extend([f"auto [ort_input_lhs, ort_input_rhs] = NttTest::convert_and_align_to_ort({ntt2ort_lhs},{ntt2ort_rhs}, {need_cast_str}, {is_outer_product});"])
- 
+
         code.extend(self.generate_ort_output(datatype, ntt_op_str))
 
         if need_cast_in_ort:
@@ -480,8 +482,8 @@ class BinaryTestGenerator(BaseTestGenerator):
             code.extend(cast_to_orig_type_code)
         else:
             code.append(f"auto ort_golden = ort_output;")
-            
-        
+
+
         cast_code, golden_var_name = self.generate_ort_back2ntt(
             datatype,
             output_element_type,
@@ -497,50 +499,50 @@ class BinaryTestGenerator(BaseTestGenerator):
         result = (hasattr(self, 'ntt_op_str') and self.ntt_op_str in ["div", "mod", "floor_mod", "ceil_div"])
         return result
 
-    def generate_test_name(self, datatype, lhs_is_dynamic_shape, rhs_is_dynamic_shape, 
-        lhs_dims_spec, rhs_dims_spec, 
-        lhs_vector_rank, rhs_vector_rank, 
+    def generate_test_name(self, lhs_is_dynamic_shape, rhs_is_dynamic_shape,
+        lhs_dims_spec, rhs_dims_spec,
+        lhs_vector_rank, rhs_vector_rank,
         lhs_continuity, rhs_continuity, test_name_suffix):
-        
+
         parts = []
-        
+
         #1. datatype
-        parts.append(f"{datatype.name_suffix}")
-        
+        # parts.append(f"{datatype.name_suffix}")
+
         # 2.  lhs dynamic
         lhs_shape_type = "dynamic" if lhs_is_dynamic_shape else "fixed"
         parts.append(f"lhs_{lhs_shape_type}")
-        
+
         # lhs vector rank
         if lhs_vector_rank == 0:
             parts.append("scalar")
         else:
             parts.append(f"{lhs_vector_rank}D_vector")
-        
+
         #  contiguous->view, non_contiguous->raw_tensor
         if lhs_continuity.is_contiguous:
             parts.append("raw_tensor")
         else:
             op_str = "mul2" if lhs_continuity.big_tensor_op == "*2" else "add3" if lhs_continuity.big_tensor_op == "+3" else "add7"
             parts.append(f"view_{lhs_continuity.non_contiguous_dim}_{op_str}")
-        
+
         # 3. rhs
         rhs_shape_type = "dynamic" if rhs_is_dynamic_shape else "fixed"
         parts.append(f"rhs_{rhs_shape_type}")
-        
+
         # rhs vector rank
         if rhs_vector_rank == 0:
             parts.append("scalar")
         else:
             parts.append(f"{rhs_vector_rank}D_vector")
-        
+
         #  continuity
         if rhs_continuity.is_contiguous:
             parts.append("raw_tensor")
         else:
             op_str = "mul2" if rhs_continuity.big_tensor_op == "*2" else "add3" if rhs_continuity.big_tensor_op == "+3" else "add7"
             parts.append(f"view_dim{rhs_continuity.non_contiguous_dim}_{op_str}")
-        
+
         # 4. braodcast type
         if lhs_dims_spec == rhs_dims_spec:
             broadcast_info = "no_broadcast"
@@ -554,11 +556,11 @@ class BinaryTestGenerator(BaseTestGenerator):
             broadcast_info = "rhs_1d_broadcast"  # 右操作数是一维张量广播
         else:
             broadcast_info = "multi_broadcast"  # 多维广播
-            
+
         parts.append(broadcast_info)
         if test_name_suffix:
             parts.append(test_name_suffix)
-        
+
         return "_".join(parts)
 
     def get_binary_output_shape(self, lhs_is_dynamic_shape, rhs_is_dynamic_shape,
@@ -573,15 +575,15 @@ class BinaryTestGenerator(BaseTestGenerator):
         # Prepend 1s to the shorter shape to match the rank of the longer shape for broadcasting.
         rank_diff = len(longer_shape) - len(shorter_shape)
         padded_shorter_shape = [1] * rank_diff + shorter_shape
-        
+
         # Check for broadcasting compatibility.
         for dim1, dim2 in zip(longer_shape, padded_shorter_shape):
             assert dim1 == dim2 or min(dim1, dim2) == 1, \
                 f"Shapes {lhs_shape} and {rhs_shape} are not broadcast-compatible"
-        
+
         # The output shape is the element-wise maximum of the two shapes.
         output_shape = [max(dim1, dim2) for dim1, dim2 in zip(longer_shape, padded_shorter_shape)]
-        
+
         return output_is_dynamic_shape, output_shape
 
 
@@ -606,7 +608,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                 return 2
         else:
             return max(lhs_vector_rank, rhs_vector_rank)
-        
+
     def _get_output_vec_param(self, ntt_op_str, lhs_vec_param, rhs_vec_param):
         """Determine the output pack parameter based on the operation type and input pack parameters."""
         if ntt_op_str == "outer_product":
@@ -614,7 +616,7 @@ class BinaryTestGenerator(BaseTestGenerator):
             return (lhs_vec_param, rhs_vec_param)
         else:
             return lhs_vec_param if lhs_vec_param else rhs_vec_param
-    def generate_ntt_golden_output(self, datatype, 
+    def generate_ntt_golden_output(self, datatype,
                                     lhs_is_dynamic_shape, rhs_is_dynamic_shape,
                                     lhs_dims_spec, rhs_dims_spec,
                                     lhs_vector_rank, rhs_vector_rank,
@@ -623,11 +625,11 @@ class BinaryTestGenerator(BaseTestGenerator):
                                     output_element_type, output_shape_expr,
                                     ntt_op_str):
         code = []
-        
+
         # Check if datatype needs special fp8 handling
         need_cast_in_ntt = datatype.cpp_type in self.types_need_cast_in_ntt
         golden_var_name = "ntt_golden"
-        
+
         if need_cast_in_ntt:
             # Special handling for fp8 types that cannot be cast in ORT
             code.extend(self._generate_ntt_cast_golden_output(
@@ -660,25 +662,25 @@ class BinaryTestGenerator(BaseTestGenerator):
         datatype = lhs_datatype  # Assume same datatype for both inputs
         # generate ntt_input_lhs, ntt_input_rhs, ntt_output
         code.append(f"{indent}//---init ntt_input_lhs---")
+        lhs_element_cpp_type = self.get_element_cpp_type(lhs_datatype.cpp_type, lhs_vector_rank, lhs_vec_param)
         tensor_init_lhs_code = self.generate_tensor_init( datatype=lhs_datatype,
             shape_type=lhs_is_dynamic_shape, dim_spec=lhs_dims_spec,
             continuity=lhs_continuity, var_name="ntt_input_lhs",
-            name_suffix="_lhs", vector_rank=lhs_vector_rank,
-            P=lhs_vec_param, integer_only= lhs_datatype.integer_only)
+            name_suffix="_lhs", element_cpp_type=lhs_element_cpp_type, integer_only= lhs_datatype.integer_only)
         code.extend([f"{indent}{line}" for line in tensor_init_lhs_code])
 
         code.append(f"{indent}//---init ntt_input_rhs---")
+        rhs_element_cpp_type = self.get_element_cpp_type(rhs_datatype.cpp_type, rhs_vector_rank, rhs_vec_param)
         tensor_init_rhs_code = self.generate_tensor_init( datatype=rhs_datatype,
             shape_type=rhs_is_dynamic_shape, dim_spec=rhs_dims_spec,
             continuity=rhs_continuity, var_name="ntt_input_rhs",
-            name_suffix="_rhs", vector_rank=rhs_vector_rank,
-            P=rhs_vec_param, integer_only= rhs_datatype.integer_only)
+            name_suffix="_rhs", element_cpp_type=rhs_element_cpp_type, integer_only= rhs_datatype.integer_only)
         code.extend([f"{indent}{line}" for line in tensor_init_rhs_code])
 
         output_is_dynamic_shape, output_dims_spec = self.get_binary_output_shape(
             lhs_is_dynamic_shape, rhs_is_dynamic_shape,
             lhs_dims_spec, rhs_dims_spec)
-        
+
         output_vector_rank = self._get_output_vector_rank( ntt_op_str, lhs_vector_rank, rhs_vector_rank)
         code.append(f"{indent}//---generate output tensor---")
 
@@ -706,7 +708,7 @@ class BinaryTestGenerator(BaseTestGenerator):
     # rhs_dynamic: bool, rhs is dynamic or fixed
     # lhs_shape: list[int], lhs shape, [1, 77, 3]
     # rhs_shape: list[int], rhs shape, [1, 77, 3]
-    # braodcast_ways: list[int], broadcast ways, 0: no_broadcast 1: lhs_to_rhs, 2: rhs_to_lhs, 
+    # braodcast_ways: list[int], broadcast ways, 0: no_broadcast 1: lhs_to_rhs, 2: rhs_to_lhs,
     # lhs_vector_ranks: list[int], lhs vector ranks, 0, 1, 2
     # rhs_vector_ranks: list[int], rhs vector ranks, 0, 1, 2, 3
     # lhs_tensor: list[int], lhs is tensor or view, 0: tensor, 1: view
@@ -726,11 +728,11 @@ class BinaryTestGenerator(BaseTestGenerator):
             ntt_op_str, test_name_suffix=None):
         # only support same datatype but different range now
         assert lhs_datatype.cpp_type == rhs_datatype.cpp_type
-        
+
         datatype = lhs_datatype
         self.ntt_op_str = ntt_op_str  # Store operation type for allow_zr check
 
-        test_name = self.generate_test_name(datatype, lhs_is_dynamic_shape, rhs_is_dynamic_shape,
+        test_name = self.generate_test_name(lhs_is_dynamic_shape, rhs_is_dynamic_shape,
             lhs_dims_spec, rhs_dims_spec,
             lhs_vector_rank, rhs_vector_rank,
             lhs_continuity, rhs_continuity, test_name_suffix)
@@ -742,7 +744,7 @@ class BinaryTestGenerator(BaseTestGenerator):
         rhs_vec_param = "P" if rhs_vector_rank > 0 else None
 
         # 1. Test header and constants
-        code.extend(self.generate_function_name(f"BinaryTest{ntt_op_str}", datatype, test_name))
+        code.extend(self.generate_function_name(f"BinaryTest{ntt_op_str}", datatype.name_suffix, test_name))
         if lhs_vector_rank > 0 or rhs_vector_rank > 0:
             code.extend(self.generate_P_constants(P))
 
@@ -769,7 +771,7 @@ class BinaryTestGenerator(BaseTestGenerator):
         code.extend([f"    {line}" for line in golden_output_code])
         # cast_mode = 2 if datatype.cpp_type in types_to_cast else 0
         # set cast mode for back to ntt function
-       
+
 
 
         compare_code = self.generate_compare(
@@ -791,9 +793,9 @@ class BinaryTestGenerator(BaseTestGenerator):
             lhs_vector_rank, rhs_vector_rank,
             lhs_continuity, rhs_continuity,
             ntt_op_str):
-        
+
         test_cases = []
-        
+
         if lhs_datatype.cpp_type in self.integer_types:
             # Case 1: integer types - rhs is non-negative integer
             pow_ranges = self.ALL_POW_OPRANDS.get(rhs_datatype.cpp_type)
@@ -818,7 +820,7 @@ class BinaryTestGenerator(BaseTestGenerator):
         else:
             # Case 2.1: floating point types - rhs as integer
             pow_ranges = self.ALL_POW_OPRANDS.get(lhs_datatype.cpp_type)
-            lhs_datatype = lhs_datatype._replace( 
+            lhs_datatype = lhs_datatype._replace(
                 integer_only=False,
                 min_val=pow_ranges["lhs_min"],
                 max_val=pow_ranges["lhs_max"]
@@ -850,7 +852,7 @@ class BinaryTestGenerator(BaseTestGenerator):
             rhs_datatype = rhs_datatype._replace(
                 integer_only=False
             )
-            
+
             test_code2 = self.generate_test_case(
                 lhs_datatype, rhs_datatype,
                 lhs_is_dynamic_shape, rhs_is_dynamic_shape,
@@ -860,7 +862,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                 ntt_op_str, "rhs_float"
             )
             test_cases.append(test_code2)
-        
+
         return "\n".join(test_cases)
 
 
@@ -871,7 +873,7 @@ class BinaryTestGenerator(BaseTestGenerator):
 
         # Choose appropriate dims_specs based on op_str
         dims_specs_to_use = self.dims_specs_options.get(op_str, self.dims_specs_options["default"])
-        
+
         param_combinations_exhaustive = itertools.product(
             is_dynamic_options,          # lhs_is_dynamic_shape 2
             is_dynamic_options,          # rhs_is_dynamic_shape 2
@@ -896,9 +898,9 @@ class BinaryTestGenerator(BaseTestGenerator):
             return param_combinations_simplified
 
 
-    def generate_all_tests_for_type(self, datatype, op_str):
+    def generate_all_tests_for_type(self, op_str, datatype):
         code = []
-        
+
         code.append(self.generate_header())
 
         # Generate custom ORT functions if needed
@@ -921,13 +923,13 @@ class BinaryTestGenerator(BaseTestGenerator):
                 lhs_continuity = lhs_continuity._replace(non_contiguous_dim=0)
             if not rhs_continuity.is_contiguous and rhs_shape == [16]:
                 rhs_continuity = rhs_continuity._replace(non_contiguous_dim=0)
-            
+
             # Filter vector rank combinations for inner_product
             if op_str == "inner_product" or op_str == "outer_product":
                 # Only allow: scalar x scalar, or 1D vector x 1D vector
                 if not ((lhs_vec_rank == 0 and rhs_vec_rank == 0) or (lhs_vec_rank == 1 and rhs_vec_rank == 1)):
                     continue
-            
+
             if(op_str == "pow"):
                 # 1. lhs is neg or pos, rhs is int
                 # 2. lhs is pos, rhs is float
@@ -960,16 +962,16 @@ def generate_tests_for_op(op_str, generator):
             # Skip ceil_div for non-integer types, as it is only supported for integers
             continue
 
-        test_code = generator.generate_all_tests_for_type(datatype, op_str)
-        filename = f"test_ntt_binary_{datatype.name_suffix.lower()}_{op_str}_generated.cpp"
+        test_code = generator.generate_all_tests_for_type(op_str, datatype)
+        filename = f"test_ntt_binary_{op_str}_{datatype.name_suffix.lower()}.cpp"
         output_filepath = os.path.join(generated_directory, filename)
 
         with open(output_filepath, "w") as f:
             f.write(test_code)
-        
+
         print(f"Test file generated: {output_filepath}")
         generated_filenames.append(filename)
-    
+
 
 if __name__ == "__main__":
     generator = BinaryTestGenerator()
@@ -977,10 +979,10 @@ if __name__ == "__main__":
     # Get the parent directory (ctest) and then the generated subdirectory
     ctest_directory = os.path.dirname(script_directory)
     generated_directory = os.path.join(ctest_directory, "generated")
-    
+
     # Ensure generated directory exists
     os.makedirs(generated_directory, exist_ok=True)
-    
+
     generated_filenames = []  # collect all generated file names
 
     # for datatype in ALL_DATATYPES:
@@ -990,11 +992,11 @@ if __name__ == "__main__":
 
     #     with open(output_filepath, "w") as f:
     #         f.write(test_code)
-        
+
     #     print(f"Test file generated: {output_filepath}")
     #     generated_filenames.append(filename)
 
     for op_str in (generator.op_str_map_exhaustive.keys() | generator.op_str_map_simplified.keys()):
         generate_tests_for_op(op_str, generator)
     # Generate cmake list file in the generated directory
-    generate_cmake_list(generated_directory, generated_filenames, "generated_binary_tests.cmake", "GENERATED_BINARY_TEST_SOURCES")
+    generate_cmake_list(generated_directory, generated_filenames, "binary_test.cmake", "BINARY_TESTS")

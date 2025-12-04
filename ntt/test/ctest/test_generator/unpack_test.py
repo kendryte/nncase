@@ -18,9 +18,8 @@ class UnpackTestGenerator(BaseTestGenerator):
     def __init__(self):
         super().__init__()
 
-    def generate_test_name(self, datatype, shape_type, vector_dim, continuity: Continuity, unpack_axis_str, ndim):
+    def generate_test_name(self, shape_type, vector_dim, continuity: Continuity, unpack_axis_str, ndim):
         parts = []
-        parts.append(datatype.name_suffix)
         parts.append(shape_type)
         parts.append(f"{vector_dim}D_vector")
 
@@ -110,7 +109,7 @@ class UnpackTestGenerator(BaseTestGenerator):
         # 2. NTT operation (unpack)
         output_dims = self.get_unpacked_dims(dim_names, unpack_axes)
         output_shape_expr = self.generate_shape_init(shape_type, output_dims)
-        
+
         unpack_call_code = self.generate_ntt_ops(unpack_axes)
 
         op_code = self.generate_ntt_output_and_op_section(
@@ -120,7 +119,7 @@ class UnpackTestGenerator(BaseTestGenerator):
             ntt_op_call_lines=unpack_call_code
         )
         code.extend(op_code)
-        
+
         return code, output_shape_expr
 
     def generate_ort_golden_output(self, datatype, shape_type, dims, dim_names, continuity, vector_dim, P, unpack_axes, deal_fp8, output_shape_expr):
@@ -160,13 +159,13 @@ class UnpackTestGenerator(BaseTestGenerator):
         else:
             dims, dim_names = [2, 8, 4, 4, 2], ['N', 'C', 'H', 'W', 'D']
 
-        test_name = self.generate_test_name(datatype, shape_type, vector_dim, continuity, "_".join(map(str, unpack_axes)), ndim)
+        test_name = self.generate_test_name(shape_type, vector_dim, continuity, "_".join(map(str, unpack_axes)), ndim)
 
         code: List[str] = []
 
         # 1. Test header and constants
         code.extend(self.generate_test_prologue("UnpackTest", datatype, test_name, P, dim_names, dims))
-        
+
         # Generate output to test in ntt format
         ntt_output_code, output_shape_expr = self.generate_ntt_output_to_test(datatype, shape_type, dim_names, continuity, vector_dim, P, unpack_axes, deal_fp8)
         code.extend([f"    {line}" for line in ntt_output_code])
@@ -222,7 +221,7 @@ class UnpackTestGenerator(BaseTestGenerator):
                     # The vector dimension must match the number of axes to unpack.
                     if vector_dim != len(unpack_axes) and vector_dim > 0:
                         continue
-                    
+
                     test_code = self.generate_test_case(datatype, shape_type, vector_dim, continuity, unpack_axes, ndim)
                     code.append(test_code)
 
@@ -238,7 +237,7 @@ if __name__ == "__main__":
     # Get the parent directory (ctest) and then the generated subdirectory
     ctest_directory = os.path.dirname(script_directory)
     generated_directory = os.path.join(ctest_directory, "generated")
-    
+
     # Ensure generated directory exists
     os.makedirs(generated_directory, exist_ok=True)
 
@@ -246,7 +245,7 @@ if __name__ == "__main__":
 
     for datatype in ALL_DATATYPES:
         test_code = generator.generate_all_tests_for_type(datatype)
-        filename = f"test_ntt_unpack_generated_{datatype.name_suffix}.cpp"
+        filename = f"test_ntt_unpack_{datatype.name_suffix}.cpp"
         output_filepath = os.path.join(generated_directory, filename)
 
         with open(output_filepath, "w") as f:
@@ -255,4 +254,4 @@ if __name__ == "__main__":
         print(f"Test file generated: {output_filepath}")
         generated_filenames.append(filename)
 
-    generate_cmake_list(generated_directory, generated_filenames, "generated_unpack_tests.cmake", "GENERATED_UNPACK_TEST_SOURCES")
+    generate_cmake_list(generated_directory, generated_filenames, "unpack_test.cmake", "UNPACK_TESTS")
