@@ -17,6 +17,25 @@ namespace Nncase.Evaluator.NN;
 public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvaluator<RoPE>,
     IMetricEvaluator<RoPE>
 {
+    public static bool AxisEqual(IRArray<SBP> a, IRArray<SBP> b, int startA, int startB)
+    {
+        var lenA = a.Count - startA;
+        if (lenA != b.Count - startB)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < lenA; i++)
+        {
+            if (!Equals(a[startA + i], b[startB + i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     /// <inheritdoc/>
     public IValue Visit(IEvaluateContext context, RoPE target)
     {
@@ -97,18 +116,16 @@ public class RoPEEvaluator : IEvaluator<RoPE>, ITypeInferencer<RoPE>, ICostEvalu
 
     private IRType Visit(DistributedType input, DistributedType scale, DistributedType bias)
     {
-        var invalid = new InvalidType($"{input}, {scale}, {bias} not support");
+        // only unsupported print without to-string
         if (input.Placement != scale.Placement || scale.Placement != bias.Placement
-            || !scale.AxisPolicies.SequenceEqual(bias.AxisPolicies))
+            || !AxisEqual(input.AxisPolicies, scale.AxisPolicies, startA: 1, startB: 0)
+            || !AxisEqual(scale.AxisPolicies, bias.AxisPolicies, startA: 0, startB: 0)
+            || input.AxisPolicies[^1] is not SBPBroadCast)
         {
-            return invalid;
-        }
+            return new InvalidType("RoPE: distributed types mismatch (placement/axis/SBP)");
 
-        // [head, seq, dim]
-        if (!input.AxisPolicies[1..].SequenceEqual(scale.AxisPolicies)
-            || input.AxisPolicies[2] is not SBPBroadCast)
-        {
-            return invalid;
+            // optional(still ToString)：
+            // return new InvalidType($"RoPE mismatch: in={input.GetType().Name}, cos={scale.GetType().Name}, sin={bias.GetType().Name}");
         }
 
         return input;

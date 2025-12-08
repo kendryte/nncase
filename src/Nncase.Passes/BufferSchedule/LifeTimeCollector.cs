@@ -14,9 +14,9 @@ namespace Nncase.Passes.BufferSchedule;
 
 public class LifeTimeUpdater : ExprFunctor<Unit, Unit, LifeTimeUpdater.Context>
 {
-    protected override Unit DefaultVisit(BaseExpr expr, Context context) => default;
+    protected internal override Unit DefaultVisit(BaseExpr expr, Context context) => default;
 
-    protected override Unit VisitTuple(IR.Tuple expr, Context context)
+    protected internal override Unit VisitTuple(IR.Tuple expr, Context context)
     {
         foreach (var item in expr.Fields)
         {
@@ -26,7 +26,7 @@ public class LifeTimeUpdater : ExprFunctor<Unit, Unit, LifeTimeUpdater.Context>
         return default;
     }
 
-    protected override Unit VisitCall(Call expr, Context context)
+    protected internal override Unit VisitCall(Call expr, Context context)
     {
         foreach (var item in expr.Arguments)
         {
@@ -104,7 +104,7 @@ public class BufferSizeCalculator : ExprFunctor<BufferSizeCalculator.Result, Buf
         return new(size, Array.Empty<long>(), Array.Empty<long>());
     }
 
-    protected override Result VisitCall(Call expr)
+    protected internal override Result VisitCall(Call expr)
     {
         return VisitType(expr.CheckedType);
     }
