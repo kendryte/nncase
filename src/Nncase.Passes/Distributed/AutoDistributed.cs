@@ -557,6 +557,11 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
                     }
                 }
 
+                if (expr.Target is not Boxing && ((Call)newExpr).Arguments.AsValueEnumerable().Any(a => a.CheckedType is DistributedType dt && dt.Partial is not null))
+                {
+                    continue;
+                }
+
                 if (!newExpr.InferenceType(_inferencer_cache) || newExpr.CheckedType is InvalidType)
                 {
                     continue;
@@ -969,7 +974,7 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
     {
         IRType VisitD2D(DistributedType inv, DistributedType outv)
         {
-            if (DistributedUtility.AreSamePolicies(inv.AxisPolicies, outv.AxisPolicies))
+            if (inv.Partial == outv.Partial && DistributedUtility.AreSamePolicies(inv.AxisPolicies, outv.AxisPolicies))
             {
                 return new InvalidType("Same DistributedType");
             }
@@ -984,6 +989,14 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             {
                 if (inv.Partial is not null && outv.AxisPolicies[i] is SBPSplit s)
                 {
+                    if (inv.AxisPolicies[i] is SBPSplit splitIn)
+                    {
+                        if (splitIn.Axes.Except(s.Axes).Any())
+                        {
+                            return new InvalidType("Not Supported Split-> Split.");
+                        }
+                    }
+
                     if (s.Axes.Except(inv.Partial.Axes).ToArray() != s.Axes)
                     {
                         if (s.Axes.Except(inv.Partial.Axes).Any())

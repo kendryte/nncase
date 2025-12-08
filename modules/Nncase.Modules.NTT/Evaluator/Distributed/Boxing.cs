@@ -47,6 +47,14 @@ public sealed class BoxingEvaluator : ITypeInferencer<Boxing>, ICostEvaluator<Bo
             {
                 if (inv.Partial is not null && outv.AxisPolicies[i] is SBPSplit s)
                 {
+                    if (inv.AxisPolicies[i] is SBPSplit splitIn)
+                    {
+                        if (splitIn.Axes.Except(s.Axes).Any())
+                        {
+                            return new InvalidType("Not Supported Split-> Split.");
+                        }
+                    }
+
                     if (s.Axes.Except(inv.Partial.Axes).ToArray() != s.Axes)
                     {
                         if (s.Axes.Except(inv.Partial.Axes).Any())
