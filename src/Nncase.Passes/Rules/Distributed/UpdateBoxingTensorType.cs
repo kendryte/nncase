@@ -28,11 +28,10 @@ public partial class UpdateBoxingTensorType : RewriteRule<Pattern>
 
     private Expr? GetReplace(Boxing boxing, Expr input, RunPassContext context)
     {
-        var type = input.CheckedType;
-        if (type is DistributedType dt1 && boxing.NewType is DistributedType dt2)
+        if (boxing.NewType is DistributedType dt)
         {
-            var ttype = dt1.TensorType;
-            var dtype = dt2 with { TensorType = ttype };
+            var ttype = dt.TensorType;
+            var dtype = dt with { TensorType = ttype with { Shape = ttype.Shape.Select(d => d.Simplify()).ToArray() } };
             var newBoxing = new Call(new IR.Distributed.Boxing(dtype), input);
             context.MatchOptions.SuppressPattern(newBoxing, Pattern);
             return newBoxing;
