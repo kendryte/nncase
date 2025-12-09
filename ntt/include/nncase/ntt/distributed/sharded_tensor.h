@@ -41,6 +41,11 @@ class sharded_tensor_view : public ntt::detail::shape_storage<TShape> {
     using shape_storage_type::shape;
     using shape_storage_type::size;
 
+    constexpr sharded_tensor_view() noexcept
+        : shape_storage_type(TShape{}),
+          sharding_(),
+          local_(local_buffer_type{}, TLocalShape{}, LocalStrides{}) {}
+
     constexpr sharded_tensor_view(local_buffer_type local_buffer,
                                   const TShape &shape,
                                   const TSharding &sharding,
