@@ -25,641 +25,476 @@
 using namespace nncase;
 using namespace ortki;
 
-TEST(CastTestFloat32ToInt32, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    float min_input = -100.0f;
-    float max_input = 100.0f;
+TEST(CastTest_fp32_i32, NoVectorize) {
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -32761.0f, 32761.0f, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
 
-    // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
+    // ORT reference implementation
     auto ort_output = ortki_Cast(ort_input, 1, DataType_INT32);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestFloat32ToInt32_ranked, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    float min_input = -100.0f;
-    float max_input = 100.0f;
+TEST(CastTest_fp32_i32, 1D_Vectorize) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
+    auto ntt_input = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -32761.0f, 32761.0f, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<int32_t, P>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    auto shape = ntt::make_shape(M, N);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // init
-    auto ntt_input = ntt::make_tensor<float>(shape);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
 
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<int32_t>(shape);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
-
-    // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
+    // ORT reference implementation
     auto ort_output = ortki_Cast(ort_input, 1, DataType_INT32);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<int32_t>(shape);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<ntt::vector<int32_t, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestFloat32ToInt32, Vectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
+TEST(CastTest_fp32_i32, 2D_Vectorize) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    float min_input = -100.0f;
-    float max_input = 100.0f;
+    auto ntt_input = ntt::make_tensor<ntt::vector<float, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -32761.0f, 32761.0f, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<int32_t, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto vectorize_input =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<int32_t, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
-    // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
+    // ORT reference implementation
     auto ort_output = ortki_Cast(ort_input, 1, DataType_INT32);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<ntt::vector<int32_t, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestInt32ToFloat32, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    int32_t min_input = -100;
-    int32_t max_input = 100;
 
-    // init
-    auto ntt_input = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+TEST(CastTest_fp32_i8, NoVectorize) {
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11.0f, 11.0f, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<int8_t>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ort
+
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_FLOAT);
+    // ORT reference implementation
+    auto ort_output = ortki_Cast(ort_input, 1, DataType_INT8);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<int8_t>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestInt32ToFloat32, Vectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
+TEST(CastTest_fp32_i8, Vectorize) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    int32_t min_input = -100;
-    int32_t max_input = 100;
+    auto ntt_input = ntt::make_tensor<ntt::vector<float, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11.0f, 11.0f, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<int8_t, 4 * P>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<int32_t>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto vectorize_input =
-        ntt::make_tensor<ntt::vector<int32_t, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
-
-    // ort
+    // Reshape and transpose for 1D vector cast
+    int64_t reshape_data[] = {8, 80, 8, 4, P};
+    int64_t reshape_shape[] = {std::size(reshape_data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape_tensor1 = make_tensor(reinterpret_cast<void *>(reshape_data), ort_type,
+                             reshape_shape, std::size(reshape_shape));
     auto ort_input = NttTest::ntt2ort(ntt_input);
+    auto reshaped_tensor1 = ortki_Reshape(ort_input, shape_tensor1, 0);
+
+    int64_t perms_data[] = {0, 1, 2, 3, 4};
+    auto ort_cast_input = ortki_Transpose(reshaped_tensor1, perms_data, std::size(perms_data));
+
+    auto ort_output = ortki_Cast(ort_cast_input, 1, DataType_INT8);
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<ntt::vector<int8_t, 4 * P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+}
+
+
+TEST(CastTest_i8_fp32, NoVectorize) {
+    auto ntt_input = ntt::make_tensor<int8_t>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11, 11, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 80, 8>);
+
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
+
+
+    auto ort_input = NttTest::ntt2ort(ntt_input);
+    // ORT reference implementation
     auto ort_output = ortki_Cast(ort_input, 1, DataType_FLOAT);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestFloat32ToUint32, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    float min_input = 0.f;
-    float max_input = 100.0f;
+TEST(CastTest_i8_fp32, Vectorize) {
+    constexpr size_t P = NTT_VLEN / (sizeof(int8_t) * 8);
+    auto ntt_input = ntt::make_tensor<ntt::vector<int8_t, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11, 11, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<float, 4, P / 4>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<unsigned int>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
 
-    // ort
+    // Reshape and transpose for 1D vector cast
+    int64_t reshape_data[] = {8, 80, 8, 4, P / 4};
+    int64_t reshape_shape[] = {std::size(reshape_data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape_tensor1 = make_tensor(reinterpret_cast<void *>(reshape_data), ort_type,
+                             reshape_shape, std::size(reshape_shape));
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_UINT32);
+    auto reshaped_tensor1 = ortki_Reshape(ort_input, shape_tensor1, 0);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<unsigned int>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    int64_t perms_data[] = {0, 1, 2, 3, 4};
+    auto ort_cast_input = ortki_Transpose(reshaped_tensor1, perms_data, std::size(perms_data));
+
+    auto ort_output = ortki_Cast(ort_cast_input, 1, DataType_FLOAT);
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<ntt::vector<float, 4, P / 4>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestFloat32ToUint32, Vectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    float min_input = 0.f;
-    float max_input = 100.0f;
+TEST(CastTest_fp32_b, NoVectorize) {
+    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11.0f, 11.0f, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<bool>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto vectorize_input =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto vectorize_output = ntt::make_tensor<ntt::vector<unsigned int, P>>(
-        ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<unsigned int>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
-
-    // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_UINT32);
-
-    // compare
-    auto ntt_output2 = ntt::make_tensor<unsigned int>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(CastTestUint32ToFloat32, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    unsigned int min_input = 0;
-    unsigned int max_input = 100;
-
-    // init
-    auto ntt_input = ntt::make_tensor<unsigned int>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_FLOAT);
-
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(CastTestUint32ToFloat32, Vectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    unsigned int min_input = 0;
-    unsigned int max_input = 100;
-
-    // init
-    auto ntt_input = ntt::make_tensor<unsigned int>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    // ntt
-    auto vectorize_input = ntt::make_tensor<ntt::vector<unsigned int, P>>(
-        ntt::fixed_shape_v<M / P, N>);
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_FLOAT);
-
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(CastTestFloat32ToBool, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    float min_input = -100.0f;
-    float max_input = 100.0f;
-
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<bool>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
-
-    // ort
-    auto ort_input = NttTest::ntt2ort(ntt_input);
+    // ORT reference implementation
     auto ort_output = ortki_Cast(ort_input, 1, DataType_BOOL);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<bool>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<bool>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestFloat32ToBool_1D, Vectorize) {
-    constexpr size_t N = 128;
+TEST(CastTest_fp32_b, 1D_Vectorize) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    float min_input = -100.0f;
-    float max_input = 100.0f;
+    auto ntt_input = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11.0f, 11.0f, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto vectorize_input =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P>);
-    auto vectorize_output = ntt::make_tensor<ntt::vector<bool, P * 4>>(
-        ntt::fixed_shape_v<N / P / 4>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<bool>(ntt::fixed_shape_v<N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
-
-    // ort
+    // Reshape and transpose for 1D vector cast
+    int64_t reshape_data[] = {8, 80, 8, 1, P};
+    int64_t reshape_shape[] = {std::size(reshape_data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape_tensor1 = make_tensor(reinterpret_cast<void *>(reshape_data), ort_type,
+                             reshape_shape, std::size(reshape_shape));
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_BOOL);
+    auto reshaped_tensor1 = ortki_Reshape(ort_input, shape_tensor1, 0);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<bool>(ntt::fixed_shape_v<N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    int64_t perms_data[] = {0, 1, 2, 3, 4};
+    auto ort_cast_input = ortki_Transpose(reshaped_tensor1, perms_data, std::size(perms_data));
+
+    auto ort_output = ortki_Cast(ort_cast_input, 1, DataType_BOOL);
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestFloat32ToBool_2D, Vectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
+TEST(CastTest_fp32_b, 2D_Vectorize) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    float min_input = -100.0f;
-    float max_input = 100.0f;
+    auto ntt_input = ntt::make_tensor<ntt::vector<float, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11.0f, 11.0f, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<bool, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto vectorize_input =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<bool>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
-
-    // ort
+    // Reshape and transpose for 1D vector cast
+    int64_t reshape_data[] = {8, 80, 8, 4, P};
+    int64_t reshape_shape[] = {std::size(reshape_data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape_tensor1 = make_tensor(reinterpret_cast<void *>(reshape_data), ort_type,
+                             reshape_shape, std::size(reshape_shape));
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_BOOL);
+    auto reshaped_tensor1 = ortki_Reshape(ort_input, shape_tensor1, 0);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<bool>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    int64_t perms_data[] = {0, 1, 2, 3, 4};
+    auto ort_cast_input = ortki_Transpose(reshaped_tensor1, perms_data, std::size(perms_data));
+
+    auto ort_output = ortki_Cast(ort_cast_input, 1, DataType_BOOL);
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<ntt::vector<bool, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestBoolToFloat32, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    bool min_input = 0;
-    bool max_input = 1;
+TEST(CastTest_b_fp32, NoVectorize) {
+    auto ntt_input = ntt::make_tensor<bool>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11, 11, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<bool>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
 
-    // ort
     auto ort_input = NttTest::ntt2ort(ntt_input);
+    // ORT reference implementation
     auto ort_output = ortki_Cast(ort_input, 1, DataType_FLOAT);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<float>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestBoolToFloat32_1D, Vectorize) {
-    constexpr size_t N = 128;
+TEST(CastTest_b_fp32, 1D_Vectorize) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    bool min_input = 0;
-    bool max_input = 1;
+    auto ntt_input = ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11, 11, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<bool>(ntt::fixed_shape_v<N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto vectorize_input =
-        ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<N / P>);
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<N / P>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
-    // ort
+    // Reshape and transpose for 1D vector cast
+    int64_t reshape_data[] = {8, 80, 8, P};
+    int64_t reshape_shape[] = {std::size(reshape_data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape_tensor1 = make_tensor(reinterpret_cast<void *>(reshape_data), ort_type,
+                             reshape_shape, std::size(reshape_shape));
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_FLOAT);
+    auto reshaped_tensor1 = ortki_Reshape(ort_input, shape_tensor1, 0);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    int64_t perms_data[] = {0, 1, 2, 3};
+    auto ort_cast_input = ortki_Transpose(reshaped_tensor1, perms_data, std::size(perms_data));
+
+    auto ort_output = ortki_Cast(ort_cast_input, 1, DataType_FLOAT);
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestBoolToFloat32_2D, Vectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
+
+TEST(CastTest_b_fp32, 2D_Vectorize) {
     constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    bool min_input = 0;
-    bool max_input = 1;
+    auto ntt_input = ntt::make_tensor<ntt::vector<bool, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -11, 11, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<float, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // init
-    auto ntt_input = ntt::make_tensor<bool>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-    // ntt
-    auto vectorize_input =
-        ntt::make_tensor<ntt::vector<bool, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
 
-    // ort
+    // Reshape and transpose for 1D vector cast
+    int64_t reshape_data[] = {8, 80, 8, 4, P};
+    int64_t reshape_shape[] = {std::size(reshape_data)};
+    auto ort_type = NttTest::primitive_type2ort_type<int64_t>();
+    auto shape_tensor1 = make_tensor(reinterpret_cast<void *>(reshape_data), ort_type,
+                             reshape_shape, std::size(reshape_shape));
     auto ort_input = NttTest::ntt2ort(ntt_input);
-    auto ort_output = ortki_Cast(ort_input, 1, DataType_FLOAT);
+    auto reshaped_tensor1 = ortki_Reshape(ort_input, shape_tensor1, 0);
 
-    // compare
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::ort2ntt(ort_output, ntt_output2);
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    int64_t perms_data[] = {0, 1, 2, 3, 4};
+    auto ort_cast_input = ortki_Transpose(reshaped_tensor1, perms_data, std::size(perms_data));
+
+    auto ort_output = ortki_Cast(ort_cast_input, 1, DataType_FLOAT);
+    // ------------------------------------------------------------------
+    // 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output
+    // ------------------------------------------------------------------
+    auto ntt_golden = ntt::make_tensor<ntt::vector<float, 4, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::ort2ntt(ort_output, ntt_golden);
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
-TEST(CastTestFloat32ToFloat8E4M3, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    float min_input = -500.0f;
-    float max_input = 500.0f;
-//#  generate ntt output to test
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+TEST(CastTest_bf16_fp8e4m3, fixed_2D_vector_contiguous_3D) {
+    constexpr size_t P = NTT_VLEN / (sizeof(bfloat16) * 8);
+    auto ntt_input = ntt::make_tensor<ntt::vector<bfloat16, 2, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, -10.0_bf16, 10.0_bf16, true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<float_e4m3_t, 2 * P>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1);
-//# generate_ort_golden_output
-    // float8
-    auto ntt_output2 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
-        (ntt_output2)(index) = (float_e4m3_t)(ntt_input)(index);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
+
+
+#if 1
+    // auto ntt_input2 = ntt::make_tensor<ntt::vector<bfloat16, 2, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    // ntt::cast(ntt_output, ntt_input2);
+    // EXPECT_TRUE(NttTest::compare_tensor(ntt_input, ntt_input2));
+    auto ntt_golden = ntt::make_tensor<ntt::vector<float_e4m3_t, 2 * P>>(ntt::fixed_shape_v<8, 80, 8>);
+
+    ntt::apply(ntt_input.shape(), [&](auto& index){
+      ntt::apply(ntt_input(index).shape(), [&](auto& sub_index){
+        auto val = static_cast<float_e4m3_t>(ntt_input(index)(sub_index));
+        size_t linear_idx = linear_offset(sub_index, ntt_input(index).shape());
+        (ntt_golden)(index)(linear_idx) = val;
+      });
     });
-//# compare
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+
+#else
+    auto ntt_scalar_input = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<8, 80 * 2, 8 * P>);
+    ntt::unpack(ntt_input, ntt_scalar_input, ntt::fixed_shape_v<1, 2>);
+    auto ntt_golden_scalar = ntt::make_tensor<float_e4m3_t>(ntt_scalar_input.shape());
+    ntt::apply(ntt_golden_scalar.shape(), [&](auto& index){
+      (ntt_golden_scalar)(index) = static_cast<float_e4m3_t>(ntt_scalar_input(index));
+    });
+
+    // auto ntt_scalar_reshape = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<8, 80, 2 * 8 * P>);
+    // ntt::reshape(ntt_golden_scalar, ntt_scalar_reshape);
+
+    auto ntt_golden_vector = ntt::make_tensor<ntt::vector<float_e4m3_t, 2, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    ntt::pack(ntt_golden_scalar, ntt_golden_vector, ntt::fixed_shape_v<1, 2>);
+
+
+    auto ntt_golden = ntt::make_tensor<ntt::vector<float_e4m3_t, 2 * P>>(ntt::fixed_shape_v<8, 80, 8>);
+    ntt::apply(ntt_golden.shape(), [&](auto& index){
+    //   (ntt_golden)(index) = static_cast<ntt::vector<float_e4m3_t, 2 * P>>(ntt_golden_vector(index));
+      ntt::reshape(ntt_golden_vector(index), (ntt_golden)(index) );
+    });
+
+    // auto& ntt_golden = ntt_golden_vector;
+    // Compare results
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
+#endif
 }
 
-TEST(CastTestFloat32ToFloat8E4M3, Vectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    constexpr size_t P = NTT_VLEN / (sizeof(float) * 8);
-    float min_input = -500.0f;
-    float max_input = 500.0f;
-//#  generate ntt output to test
-    // init
-    auto ntt_input = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
+TEST(CastTest_fp8e4m3_fp16, fixed_1D_vector_contiguous_3D) {
+    constexpr size_t P = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
+    auto ntt_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P>>(ntt::fixed_shape_v<8, 80, 8>);
+    NttTest::init_tensor(ntt_input, float_e4m3_t(-16.0f), float_e4m3_t(16.0f), true, false);
+    // Create output tensor
+    auto ntt_output = ntt::make_tensor<ntt::vector<half, 2, P / 2>>(ntt::fixed_shape_v<8, 80, 8>);
 
-    // ntt
-    auto vectorize_input =
-        ntt::make_tensor<ntt::vector<float, P>>(ntt::fixed_shape_v<M / P, N>);
-    auto vectorize_output = ntt::make_tensor<ntt::vector<float_e4m3_t, P>>(
-        ntt::fixed_shape_v<M / P, N>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-    auto ntt_output1 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
+    // ------------------------------------------------------------------
+    // 2. call NTT operation to get NTT output (under test)
+    // ------------------------------------------------------------------
+    // Execute cast operation
+    ntt::cast(ntt_input, ntt_output);
 
-//# generate_ort_golden_output
-    // float8
-    auto ntt_output2 = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
-        (ntt_output2)(index) = float_e4m3_t((ntt_input)(index));
-    });
-//# compare
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
 
-TEST(CastTestFloat8E4M3ToFloat32, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    float_e4m3_t min_input = (float_e4m3_t)-448.0f;
-    float_e4m3_t max_input = (float_e4m3_t)448.0f;
-
-    // init
-    auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
-
-    // float8
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M, N>);
-    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
-        (ntt_output2)(index) = (float)(ntt_input)(index);
+    auto ntt_golden = ntt::make_tensor<ntt::vector<half, 2, P / 2>>(ntt::fixed_shape_v<8, 80, 8>);
+    ntt::apply((ntt_input).shape(), [&](auto& index1){
+        auto &v_in = (ntt_input)(index1);
+        auto &v_out = ntt_golden(index1);
+        ntt::apply(v_in.shape(), [&](auto& index2) {
+            auto val = static_cast<half>(v_in(index2));
+            auto offset = linear_offset(index2, v_in.shape());
+            auto index3 = unravel_index(offset, v_out.shape());
+            v_out(index3) = val;
+        });
     });
 
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(CastTestFloat8E4M3ToFloat32, Vectorize) {
-    constexpr size_t M = 64;
-    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
-    constexpr size_t P2 = NTT_VLEN / (sizeof(float) * 8);
-    float_e4m3_t min_input = (float_e4m3_t)-500.0f;
-    float_e4m3_t max_input = (float_e4m3_t)500.0f;
-
-    // init
-    auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
-        ntt::fixed_shape_v<M / P1>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<float, P2>>(ntt::fixed_shape_v<M / P2>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-
-    auto ntt_output1 = ntt::make_tensor<float>(ntt::fixed_shape_v<M>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
-
-    auto ntt_output2 = ntt::make_tensor<float>(ntt::fixed_shape_v<M>);
-    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
-        (ntt_output2)(index) = (float)((ntt_input)(index));
-    });
-
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(CastTestFloat8E4M3ToBFloat16, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    float_e4m3_t min_input = (float_e4m3_t)-448.0f;
-    float_e4m3_t max_input = (float_e4m3_t)448.0f;
-
-    // init
-    auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
-
-    // float8
-    auto ntt_output2 = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<M, N>);
-    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
-        (ntt_output2)(index) = (bfloat16)(ntt_input)(index);
-    });
-
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(CastTestFloat8E4M3ToBFloat16, Vectorize) {
-    constexpr size_t M = 64;
-    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
-    constexpr size_t P2 = NTT_VLEN / (sizeof(bfloat16) * 8);
-    float_e4m3_t min_input = (float_e4m3_t)-500.0f;
-    float_e4m3_t max_input = (float_e4m3_t)500.0f;
-
-    // init
-    auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
-        ntt::fixed_shape_v<M / P1>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<bfloat16, P2>>(ntt::fixed_shape_v<M / P2>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-
-    auto ntt_output1 = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<M>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
-
-    auto ntt_output2 = ntt::make_tensor<bfloat16>(ntt::fixed_shape_v<M>);
-    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
-        (ntt_output2)(index) = (bfloat16)((ntt_input)(index));
-    });
-
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(CastTestFloat8E4M3ToHalf, NoVectorize) {
-    constexpr size_t M = 32;
-    constexpr size_t N = 32;
-    float_e4m3_t min_input = (float_e4m3_t)-448.0f;
-    float_e4m3_t max_input = (float_e4m3_t)448.0f;
-
-    // init
-    auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M, N>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    // ntt
-    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<M, N>);
-    ntt::cast(ntt_input, ntt_output1, ntt::fixed_shape_v<>);
-
-    // float8
-    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<M, N>);
-    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
-        (ntt_output2)(index) = (half)(ntt_input)(index);
-    });
-
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
-}
-
-TEST(CastTestFloat8E4M3ToHalf, Vectorize) {
-    constexpr size_t M = 64;
-    constexpr size_t P1 = NTT_VLEN / (sizeof(float_e4m3_t) * 8);
-    constexpr size_t P2 = NTT_VLEN / (sizeof(half) * 8);
-    float_e4m3_t min_input = (float_e4m3_t)-500.0f;
-    float_e4m3_t max_input = (float_e4m3_t)500.0f;
-
-    // init
-    auto ntt_input = ntt::make_tensor<float_e4m3_t>(ntt::fixed_shape_v<M>);
-    NttTest::init_tensor(ntt_input, min_input, max_input);
-
-    auto vectorize_input = ntt::make_tensor<ntt::vector<float_e4m3_t, P1>>(
-        ntt::fixed_shape_v<M / P1>);
-    ntt::pack(ntt_input, vectorize_input, ntt::fixed_shape_v<0>);
-
-    auto vectorize_output =
-        ntt::make_tensor<ntt::vector<half, P2>>(ntt::fixed_shape_v<M / P2>);
-    ntt::cast(vectorize_input, vectorize_output, ntt::fixed_shape_v<0>);
-
-    auto ntt_output1 = ntt::make_tensor<half>(ntt::fixed_shape_v<M>);
-    ntt::unpack(vectorize_output, ntt_output1, ntt::fixed_shape_v<0>);
-
-    auto ntt_output2 = ntt::make_tensor<half>(ntt::fixed_shape_v<M>);
-    nncase::ntt::apply(ntt_input.shape(), [&](auto index) {
-        (ntt_output2)(index) = (half)((ntt_input)(index));
-    });
-
-    // compare
-    EXPECT_TRUE(NttTest::compare_tensor(ntt_output1, ntt_output2));
+    // Compare results
+    EXPECT_TRUE(NttTest::compare_tensor(ntt_output, ntt_golden));
 }
 
 int main(int argc, char *argv[]) {

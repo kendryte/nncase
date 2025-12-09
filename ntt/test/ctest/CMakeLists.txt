@@ -18,10 +18,6 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/..)
 # --- Generate test source files ---
 # Define kernel names for automatic test generation. Add more kernels here.
 set(KERNEL_NAMES binary pack unpack cast unary)
-# set(KERNEL_NAMES binary pack unpack)
-# set(KERNEL_NAMES  pack unpack)
-# set(KERNEL_NAMES binary)
-# set(KERNEL_NAMES unary)
 
 # Set directories
 set(TEST_GENERATOR_DIR ${CMAKE_CURRENT_SOURCE_DIR}/test_generator)
@@ -53,15 +49,15 @@ endmacro()
 foreach(kernel ${KERNEL_NAMES})
     string(TOUPPER ${kernel} KERNEL_UPPER)
 
-    set(GENERATOR_SCRIPT ${TEST_GENERATOR_DIR}/generate_${kernel}_tests.py)
-    set(GENERATED_CMAKE ${GENERATED_DIR}/generated_${kernel}_tests.cmake)
+    set(GENERATOR_SCRIPT ${TEST_GENERATOR_DIR}/${kernel}_test.py)
+    set(GENERATED_CMAKE ${GENERATED_DIR}/${kernel}_test.cmake)
 
     if(EXISTS ${GENERATOR_SCRIPT})
         run_generator_if_needed(${GENERATOR_SCRIPT} ${GENERATED_CMAKE})
 
         if(EXISTS ${GENERATED_CMAKE})
             include(${GENERATED_CMAKE})
-            list(APPEND GENERATED_TEST_SOURCES ${GENERATED_${KERNEL_UPPER}_TEST_SOURCES})
+            list(APPEND GENERATED_TESTS ${${KERNEL_UPPER}_TESTS})
         endif()
     else()
         message(WARNING "Generator script for ${kernel} not found: ${GENERATOR_SCRIPT}")
@@ -78,22 +74,10 @@ macro(add_test_exec test_source_file)
 endmacro()
 
 file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
-    # generated/test_ntt_binary_generated_add_Uint16.cpp
     test_ntt_playground.cpp
-    # generated/test_ntt_binary_float16_pow_generated.cpp
-    # generated/test_ntt_binary_float32_floor_mod_generated.cpp
-    # generated/test_ntt_binary_float32_floor_mod_generated.cpp
-    # generated/test_ntt_binary_float16_floor_mod_generated.cpp
-    # generated/test_ntt_binary_float64_floor_mod_generated.cpp
-    # generated/test_ntt_binary_int16_floor_mod_generated.cpp
-    # generated/test_ntt_binary_float32_sub_generated.cpp
-    # generated/test_ntt_cast_from_bfloat16_generated.cpp
-    # generated/test_ntt_binary_uint8_sub_generated.cpp
-    # test_ntt_pack_generated_Uint64
     # test_ntt_binary_mul.cpp
     # test_ntt_binary_sub.cpp
     # test_ntt_cast.cpp
-
     # test_ntt_unary_abs.cpp
     test_ntt_clamp.cpp
     test_ntt_compare_equal.cpp
@@ -115,14 +99,10 @@ file(GLOB HANDWRITTEN_TESTS CONFIGURE_DEPENDS
     test_ntt_transpose.cpp
     test_ntt_unpack.cpp
     test_ntt_where.cpp
-    # test_ntt_cast_from_float32_generated.cpp
 )
 
 # Combine handwritten and generated tests
-list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} ${GENERATED_TEST_SOURCES})
-# list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} )
-# list(APPEND TEST_NAMES ${GENERATED_TEST_SOURCES} )
-
+list(APPEND TEST_NAMES ${HANDWRITTEN_TESTS} ${GENERATED_TESTS})
 
 foreach(test_file ${TEST_NAMES})
     add_test_exec(${test_file})

@@ -43,21 +43,21 @@ class ShapeType(Enum):
         return self == ShapeType.FIXED
 
 ALL_DATATYPES = [
-    DataType('bool', 'Bool', 'false', 'true', False),
-    DataType('uint8_t', 'Uint8', '0', '16', True),
-    DataType('uint16_t', 'Uint16', '0', '256', True),
-    DataType('uint32_t', 'Uint32', '0', '15536', True),
-    DataType('uint64_t', 'Uint64', '0', '1000000', True),
-    DataType('int8_t', 'Int8', '-11', '11', True),
-    DataType('int16_t', 'Int16', '-181', '181', True),
-    DataType('int32_t', 'Int32', '-32761', '32761', True),
-    DataType('int64_t', 'Int64', '-1000000', '1000000', True),
-    DataType('half', 'Float16', 'half(-100.0f)', 'half(100.0f)', False),
-    DataType('float', 'Float32', '-3.4e15', '3.4e15', False),
-    DataType('double', 'Float64', '-1.7e150', '1.7e150', False),
-    DataType('bfloat16', 'Bfloat16', '-1.0e10_bf16', '1.0e10_bf16', False),
-    DataType('float_e4m3_t', 'Float8e4m3', 'float_e4m3_t(-16.0f)', 'float_e4m3_t(16.0f)', False),
-    DataType('float_e5m2_t', 'Float8e5m2', 'float_e5m2_t(-32.0f)', 'float_e5m2_t(32.0f)', False)
+    DataType('bool', 'b', 'false', 'true', False),
+    DataType('uint8_t', 'u8', '0', '16', True),
+    DataType('uint16_t', 'u16', '0', '256', True),
+    DataType('uint32_t', 'u32', '0', '15536', True),
+    DataType('uint64_t', 'u64', '0', '1000000', True),
+    DataType('int8_t', 'i8', '-11', '11', True),
+    DataType('int16_t', 'i16', '-181', '181', True),
+    DataType('int32_t', 'i32', '-32761', '32761', True),
+    DataType('int64_t', 'i64', '-1000000', '1000000', True),
+    DataType('half', 'fp16', 'half(-100.0f)', 'half(100.0f)', False),
+    DataType('float', 'fp32', '-3.4e15', '3.4e15', False),
+    DataType('double', 'fp64', '-1.7e150', '1.7e150', False),
+    DataType('bfloat16', 'bf16', '-1.0e10_bf16', '1.0e10_bf16', False),
+    DataType('float_e4m3_t', 'fp8e4m3', 'float_e4m3_t(-16.0f)', 'float_e4m3_t(16.0f)', False),
+    DataType('float_e5m2_t', 'fp8e5m2', 'float_e5m2_t(-32.0f)', 'float_e5m2_t(32.0f)', False)
 ]
 
 class BaseTestGenerator:
@@ -66,7 +66,7 @@ class BaseTestGenerator:
         self.ort_datatype_map = {
             'bool': 'DataType_BOOL',
             'uint8_t': 'DataType_UINT8',
-            'uint16_t': 'DataType_UINT16', 
+            'uint16_t': 'DataType_UINT16',
             'uint32_t': 'DataType_UINT32',
             'uint64_t': 'DataType_UINT64',
             'int8_t': 'DataType_INT8',
@@ -156,10 +156,10 @@ class BaseTestGenerator:
 #dim_spec: dim_names(list[str]) or dim_spec(list[int])
     def generate_tensor_init(self, datatype, shape_type,
                              dim_spec, continuity,
-                             vector_rank, var_name, name_suffix, P=None, integer_only=False):
+                             element_cpp_type, var_name, name_suffix, integer_only=False):
         code = []
         shape_expr = self.generate_shape_init(shape_type, dim_spec)
-        element_cpp_type = self.get_element_cpp_type(datatype.cpp_type, vector_rank, P)
+        # element_cpp_type = self.get_element_cpp_type(datatype.cpp_type, vector_rank, P)
 
         if continuity.is_contiguous:
             code.append(f"auto {var_name} = ntt::make_tensor<{element_cpp_type}>({shape_expr});")
@@ -212,8 +212,8 @@ class BaseTestGenerator:
            code.append(f"    constexpr size_t {name} = {size};")
         return code
 
-    def generate_function_name(self, test_suite_prefix, datatype, test_name):
-        code = [f"TEST({test_suite_prefix}_{datatype.name_suffix}, {test_name}) {{"]
+    def generate_function_name(self, test_suite_prefix, test_suite_suffix, test_name):
+        code = [f"TEST({test_suite_prefix}_{test_suite_suffix}, {test_name}) {{"]
         return code
 
     def generate_test_prologue(self, test_suite_prefix, datatype, test_name, P, dim_names, dims, pack_axes=None):
@@ -306,7 +306,7 @@ class BaseTestGenerator:
             code.append(f"    auto ntt_output2 = ntt::make_tensor<{output_element_type}>({output_shape_expr});")
             code.append(f"    NttTest::ort2ntt(ort_output, ntt_output2);")
             code.append(f"    EXPECT_TRUE(NttTest::compare_tensor({ntt_output_for_comp}, ntt_output2));")
-        
+
         code.append("}")
         code.append("")
         return code
@@ -369,9 +369,10 @@ using namespace ortki;
 
         if vector_rank == 0:
             return base_cpp_type
+
         if P is None:
             raise ValueError("P must be provided when vector_rank > 0")
-        
+
         # Handle tuple/list case for multi-dimensional vectors
         if isinstance(P, (tuple, list)):
             if len(P) != vector_rank:
@@ -416,14 +417,15 @@ using namespace ortki;
 
 
         # Re-use the existing, well-tested generate_tensor_init helper
+        element_type = self.get_element_cpp_type(datatype.cpp_type, vector_rank, P)
         body = self.generate_tensor_init(datatype,
                                          shape_type,
                                          dims_spec,
                                          continuity,
-                                         vector_rank,
+                                         element_type,
                                          var_name,
                                          name_suffix,
-                                         P)
+                                         )
         return comment_lines + body + [""]
 
     def generate_ntt_operation_section(self,
@@ -462,7 +464,7 @@ using namespace ortki;
             ])
 
         return self.generate_ntt_operation_section(op_section)
-    
+
     def generate_ort_cast_back(self, datatype, cast_input_var = "ort_output", cast_output_var = "ort_golden"):
         """cast ort tensor of double back to ort tensor of original type"""
         """if original type is uint, cast to int64 first"""
@@ -489,7 +491,7 @@ using namespace ortki;
         # 3. transform ort_golden_double to ntt_golden{cpp_type}_scalar
         code.append(f"//  transform ort_golden_{cast_target} to ntt_golden{datatype.cpp_type}_scalar")
 
-        
+
         # # Get shape of ntt_golden_double_scalar based on aligned shapes and operation
         golden_scalar_dims = self.generate_ntt_golden_double_scalar_dims_spec(ntt_op_str, output_dims_spec, output_vector_rank)
 
@@ -536,9 +538,9 @@ using namespace ortki;
             golden_scalar_dims = output_dims_spec
 
         return golden_scalar_dims
-    
+
     def generate_ort_output(self, datatype, ntt_op_str):
-        
+
         # Check both dictionaries for the operation string
         if ntt_op_str in self.op_str_map_exhaustive:
             op_str = self.op_str_map_exhaustive[ntt_op_str]
@@ -546,7 +548,7 @@ using namespace ortki;
             op_str = self.op_str_map_simplified[ntt_op_str]
         else:
             raise KeyError(f"Operation '{ntt_op_str}' not found in either op_str_map_exhaustive or op_str_map_simplified")
-            
+
         if callable(op_str):
             op_str = op_str(datatype)
         return [
@@ -555,13 +557,13 @@ using namespace ortki;
             ""
         ]
 
-    def _prepare_contiguous_input(self, input_name, datatype, vector_rank, vec_param, 
+    def _prepare_contiguous_input(self, input_name, element_type,
                                   is_dynamic_shape, dims_spec, continuity):
-        
+
         continuity_var_name = input_name
-        element_type = self.get_element_cpp_type(datatype.cpp_type, vector_rank, vec_param)
+        # element_type = self.get_element_cpp_type(datatype.cpp_type, vector_rank, vec_param)
         code = []
-        
+
         if not continuity.is_contiguous:
             continuity_var_name = f"{input_name}_contiguous"
             copy_code, _ = self.generate_copy_to_contiguous_code(
@@ -573,7 +575,7 @@ using namespace ortki;
             )
             continuity_var_name = f"*{continuity_var_name}"
             code.extend(copy_code)
-        
+
         return continuity_var_name, code
 
     """ Not a good abstraction """
@@ -640,7 +642,7 @@ using namespace ortki;
                   "// 2. call ortki kernel to generate ORT output",
                   "// ------------------------------------------------------------------"]
         return header + ort_operation_lines + [""]
-    
+
 
     #back2ntt early version
     def generate_ort_back2ntt_and_compare_section(self,
@@ -656,7 +658,7 @@ using namespace ortki;
         lines = ["// ------------------------------------------------------------------",
                  "// 3. convert ORT output back to NTT tensor (golden) and compare with tested NTT output",
                  "// ------------------------------------------------------------------"]
-        
+
         if cast_mode == 0:  #  no cast
             golden_var_name = "ntt_golden"
             lines.append(f"auto {golden_var_name} = ntt::make_tensor<{output_element_cpp_type}>({output_shape_expr});")
@@ -687,7 +689,7 @@ using namespace ortki;
                 golden_cast_source_var = golden_signed_int_var
             else:
                 golden_cast_source_var = golden_ntt_in_ort_type_var
-            
+
             golden_origin_var = "ntt_golden"
             lines.append(f"auto {golden_origin_var} = ntt::make_unique_tensor<{output_element_cpp_type}>({output_shape_expr});")
             lines.append(f"ntt::cast(*{golden_cast_source_var}, *{golden_origin_var});")
@@ -700,7 +702,7 @@ using namespace ortki;
         lines.append("")
         return lines
 
-    #back2ntt used for cast in ort 
+    #back2ntt used for cast in ort
     def generate_ort_back2ntt(self,
                                 datatype: DataType,
                                 output_element_cpp_type: str,
@@ -743,7 +745,7 @@ using namespace ortki;
                 golden_cast_source_var = golden_signed_int_var
             else:
                 golden_cast_source_var = golden_ntt_in_ort_type_var
-            
+
             golden_var_name = "*ntt_golden"
             lines.append(f"auto {generate_var_name} = ntt::make_unique_tensor<{output_element_cpp_type}>({output_shape_expr});")
             lines.append(f"ntt::cast(*{golden_cast_source_var}, {golden_var_name});")
@@ -824,11 +826,11 @@ def clamp_value_strings(from_type: DataType, to_type: DataType) -> tuple[str, st
     """
     Clamp the min/max values of from_type to the range of to_type.
     Returns (clamped_min_str, clamped_max_str) in the format of to_type.
-    
+
     Args:
         from_type: Source data type with min_val and max_val as strings
         to_type: Target data type with min_val and max_val as strings
-        
+
     Returns:
         Tuple of (min_value_str, max_value_str) formatted for to_type
     """
@@ -837,15 +839,15 @@ def clamp_value_strings(from_type: DataType, to_type: DataType) -> tuple[str, st
     from_max = get_numeric_value(from_type.max_val, from_type.cpp_type)
     to_min = get_numeric_value(to_type.min_val, to_type.cpp_type)
     to_max = get_numeric_value(to_type.max_val, to_type.cpp_type)
-    
+
     # Clamp the values
     clamped_min = max(from_min, to_min)
     clamped_max = min(from_max, to_max)
-    
+
     # Format back to strings for to_type
     clamped_min_str = format_value_for_type(clamped_min, from_type.cpp_type)
     clamped_max_str = format_value_for_type(clamped_max, from_type.cpp_type)
-    
+
     return clamped_min_str, clamped_max_str
 
 def generate_cmake_list(directory, filenames, output_filename, variable_name):
