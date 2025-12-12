@@ -246,7 +246,19 @@ public sealed class NTTTIRSelectionPass : TIRSelectionPass
         // If the size is not same, we cannot bitcast.
         if ((inBuffer.MemSpan.Size == outBuffer.MemSpan.Size) && (bitcast || sequeeze))
         {
-            output = inBuffer.With(name: outBuffer.Name, elemType: outBuffer.ElemType, dimensions: outBuffer.Dimensions.ToArray(), strides: outBuffer.Strides.ToArray(), distributedType: outBuffer.DistributedType);
+            var newStrides = outBuffer.Strides.ToArray();
+            if (inBuffer.MemSpan.Buffer.Location == MemoryLocation.BlockLocalData && bitcast)
+            {
+                var outType = outBuffer.DistributedType!;
+                var threadAxis = outType.Placement.Rank - 1;
+                int splitAxis = outType.AxisPolicies.ToArray().IndexOf(x => x is SBPSplit split && split.Axes.Contains(threadAxis));
+                if (splitAxis >= 0)
+                {
+                    Enumerable.Range(0, splitAxis).ToArray().ForEach(i => newStrides[i] *= outType.Placement.Hierarchy[threadAxis]);
+                }
+            }
+
+            output = inBuffer.With(name: outBuffer.Name, elemType: outBuffer.ElemType, dimensions: outBuffer.Dimensions.ToArray(), strides: newStrides, distributedType: outBuffer.DistributedType);
             return T.Nop();
         }
         else
