@@ -1041,29 +1041,37 @@ internal sealed class AutoDistributedRewriter : ExprVisitor<Unit, Unit>
             }
 
             var partialDims = new List<int>();
-            for (int i = 0; i < inv.AxisPolicies.Count; i++)
+            if (inv.Partial is not null)
             {
-                if (inv.Partial is not null && outv.AxisPolicies[i] is SBPSplit s)
+                for (int i = 0; i < inv.AxisPolicies.Count; i++)
                 {
-                    if (inv.AxisPolicies[i] is SBPSplit splitIn)
+                    if (inv.AxisPolicies[i] is SBPSplit && outv.AxisPolicies[i] is SBPBroadCast)
                     {
-                        if (splitIn.Axes.Except(s.Axes).Any())
-                        {
-                            return new InvalidType("Not Supported Split-> Split.");
-                        }
+                        return new InvalidType("Not supported input is BroadCast output is Split");
                     }
 
-                    if (s.Axes.Except(inv.Partial.Axes).ToArray() != s.Axes)
+                    if (outv.AxisPolicies[i] is SBPSplit s)
                     {
-                        if (s.Axes.Except(inv.Partial.Axes).Any())
+                        if (inv.AxisPolicies[i] is SBPSplit splitIn)
                         {
-                            return new InvalidType("Not Supported Partial-> Split.");
+                            if (splitIn.Axes.Except(s.Axes).Any())
+                            {
+                                return new InvalidType("Not Supported Split-> Split.");
+                            }
                         }
-                        else
+
+                        if (s.Axes.Except(inv.Partial.Axes).ToArray() != s.Axes)
                         {
                             partialDims.Add(i);
                         }
                     }
+                }
+
+                var ndspsIn = DistributedUtility.AxisPolicesToNDSBP(inv.AxisPolicies, inv.Placement.Rank);
+                var ndspsOut = DistributedUtility.AxisPolicesToNDSBP(outv.AxisPolicies, outv.Placement.Rank);
+                if (Enumerable.Range(0, ndspsIn.Count).Any(i => ndspsIn[i] is SBPSplit si && (ndspsOut[i] is SBPBroadCast || (ndspsOut[i] is SBPSplit so && so.Axes[0] != si.Axes[0]))))
+                {
+                    return new InvalidType("Not Supported Split-> Broadcast.");
                 }
             }
 
