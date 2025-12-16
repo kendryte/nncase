@@ -790,7 +790,7 @@ def get_numeric_value(value_str: str, cpp_type: str) -> float:
         if value_str.endswith('_bf16'):
             return float(value_str[:-6])  # Remove '_bf16'
         return float(value_str)
-    elif cpp_type in ['float_e4m3_t', 'float_e5m2_t']:
+    elif cpp_type in ['float_e4m3_t', 'float_e5m2_t', 'float_e2m1_t']:
         # Extract value from float_e4m3_t(-16.0f) format
         if value_str.startswith(cpp_type + '(') and value_str.endswith(')'):
             inner = value_str[len(cpp_type)+1:-1]  # Remove type and parentheses
@@ -815,7 +815,7 @@ def format_value_for_type(value: float, cpp_type: str) -> str:
         return str(value)
     elif cpp_type == 'bfloat16':
         return f'{value}_bf16'
-    elif cpp_type in ['float_e4m3_t', 'float_e5m2_t']:
+    elif cpp_type in ['float_e4m3_t', 'float_e5m2_t', 'float_e2m1_t']:
         return f'{cpp_type}({value}f)'
     else:
         return str(value)
