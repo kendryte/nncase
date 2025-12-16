@@ -97,4 +97,41 @@ NTT_DEFINE_NATIVE_MASK_VECTOR(uint16x8_t, 16)
 NTT_DEFINE_NATIVE_MASK_VECTOR(uint32x4_t, 32)
 NTT_DEFINE_NATIVE_MASK_VECTOR(uint64x2_t, 64)
 
+NTT_BEGIN_DEFINE_NATIVE_VECTOR(float_e2m1_t, uint8x16_t, NTT_VLEN / 4)
+template <Dimensions TIndex>
+static float_e2m1_t get_element(const uint8x16_t &array,
+                                const TIndex &index) noexcept {
+    static_assert(TIndex::rank() == 1, "index must be 1D");
+    using Storage = typename float_e2m1_t::Storage;
+    const auto casted_value = array;
+    const auto offset = (size_t)index[dim_zero];
+    Storage byte = casted_value[offset >> 1];
+    bool is_low = (offset % 2 == 0);
+
+    Storage value4;
+    if (is_low) {
+        value4 = byte & 0x0F;
+    } else {
+        value4 = (byte >> 4) & 0x0F;
+    }
+    return float_e2m1_t::bitcast(value4);
+}
+
+template <Dimensions TIndex>
+static void set_element(uint8x16_t &array, const TIndex &index,
+                        float_e2m1_t value) noexcept {
+    static_assert(TIndex::rank() == 1, "index must be 1D");
+    using Storage = typename float_e2m1_t::Storage;
+    const auto offset = (size_t)index[dim_zero];
+    Storage byte = array[offset >> 1];
+    Storage v = value.raw() & 0x0F;
+    bool is_low = (offset % 2 == 0);
+    if (is_low) {
+        array[offset >> 1] = (byte & 0xF0) | v;
+    } else {
+        array[offset >> 1] = (byte & 0x0F) | (v << 4);
+    }
+}
+NTT_END_DEFINE_NATIVE_VECTOR()
+
 #undef NTT_DEFINE_NATIVE_MASK_VECTOR

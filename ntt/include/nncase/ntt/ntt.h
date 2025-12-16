@@ -15,6 +15,7 @@
 #pragma once
 #include "../bfloat16.h"
 #include "../float8.h"
+#include "../float_subbyte.h"
 #include "../half.h"
 
 #include "caching.h"
@@ -87,7 +88,6 @@
 #include "arch/aarch64/vector_ops.h"
 #endif
 #endif
-
 
 #ifdef NNCASE_XPU_MODULE
 #include "arch/xpu/arch_types.h"

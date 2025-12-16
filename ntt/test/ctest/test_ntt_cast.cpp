@@ -18,6 +18,7 @@
 #include <gtest/gtest.h>
 #include <nncase/bfloat16.h>
 #include <nncase/float8.h>
+#include <nncase/float_subbyte.h>
 #include <nncase/half.h>
 #include <nncase/ntt/ntt.h>
 #include <ortki/operators.h>
