@@ -134,9 +134,6 @@ public sealed class Qwen3MoEEvaluator : ITypeInferencer<Qwen3MoE>, ICostEvaluato
             // prepare expertMaskReduceSum
             var expertMaskReduceSum = OrtKI.ReduceSum(singleExpertMask, Tensor.FromArray(new[] { 0L, 1L }).ToOrtTensor(), keepdims: 0L, 0L);
 
-            // // prepare q
-            // var qExpand = OrtKI.Unsqueeze(currentState, new[] { 0L });
-
             // prepare gate matmul
             var gateInputScale = SliceAndSqueeze(moeExpertGateInputScale, expertIndex);
             var gateProjW = SliceAndSqueeze(moeExpertGateProjW, expertIndex);

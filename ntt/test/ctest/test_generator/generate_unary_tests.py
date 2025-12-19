@@ -46,7 +46,7 @@ class UnaryTestGenerator(BaseTestGenerator):
             "exp": default_cast_types_in_ort + ['int32_t', 'uint64_t', 'int64_t'],
         }
         self.types_need_cast_in_ntt = {
-            'float_e4m3_t', 'float_e5m2_t' 
+            'float_e4m3_t', 'float_e5m2_t', 'float_e2m1_t'
         }
 
         self.OPRATOR_SPECICAL_TYPES = {
@@ -63,6 +63,7 @@ class UnaryTestGenerator(BaseTestGenerator):
                 "half": DataType("half", "Float16", "half(-10.0f)", "half(10.0f)", False),
                 "bfloat16": DataType("bfloat16", "Bfloat16", "-70.0_bf16", "70.0_bf16", False),
                 "float_e4m3_t": DataType("float_e4m3_t", "Float8e4m3", "float_e4m3_t(-6.0f)", "float_e4m3_t(6.0f)", False),
+                "float_e2m1_t": DataType("float_e2m1_t", "Float4e2m1", "float_e2m1_t(-6.0f)", "float_e2m1_t(6.0f)", False),
                 "uint8_t": DataType('uint8_t', 'Uint8', '0', '5', True),
                 "int8_t": DataType('int8_t', 'Int8', '-4', '4', True),
                 "uint16_t": DataType('uint16_t', 'Uint16', '0', '11', True),

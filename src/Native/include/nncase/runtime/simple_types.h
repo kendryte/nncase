@@ -18,6 +18,7 @@
 #include <array>
 #include <nncase/bfloat16.h>
 #include <nncase/float8.h>
+#include <nncase/float_subbyte.h>
 #include <nncase/half.h>
 namespace nncase {
 typedef enum : uint8_t {

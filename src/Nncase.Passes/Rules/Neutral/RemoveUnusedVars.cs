@@ -139,7 +139,7 @@ internal sealed class VarReplacer : ExprCloner<Unit>
         _newVars = newVars;
     }
 
-    protected override Expr VisitVar(Var var, Unit state)
+    protected internal override Expr VisitVar(Var var, Unit state)
     {
         return (Expr)_newVars[var];
     }

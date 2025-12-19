@@ -486,7 +486,7 @@ class HuggingfaceTestRunner(TestRunner):
             # delattr(config, "quantization_config")
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path, config=config, torch_dtype="auto", device_map="auto", trust_remote_code=True).eval()
-        restore_weights(model_path)
+        # restore_weights(model_path)
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.generation_config = self.model.generation_config
         # self.generation_config.return_dict_in_generate = True # if False, generate only output tokens

@@ -36,12 +36,14 @@ class cast_impl {
     static_assert((Vector<InElemType> && Vector<OutElemType>) ||
                       (Scalar<InElemType> && Scalar<OutElemType>),
                   "input & output must have the same type.");
-    inline static constexpr auto in_ele_size =
-        sizeof(std::conditional_t<Vector<InElemType>, // if vector
-                                  element_or_scalar_t<InElemType>, size_t>);
-    inline static constexpr auto out_ele_size =
-        sizeof(std::conditional_t<Vector<OutElemType>,
-                                  element_or_scalar_t<OutElemType>, size_t>);
+
+    inline static constexpr double in_ele_size =
+        element_size_in_byte_v<std::conditional_t<
+            Vector<InElemType>, element_or_scalar_t<InElemType>, size_t>>;
+
+    inline static constexpr double out_ele_size =
+        element_size_in_byte_v<std::conditional_t<
+            Vector<OutElemType>, element_or_scalar_t<OutElemType>, size_t>>;
 
     inline static constexpr bool is_bool_vector =
         Vector<InElemType> &&

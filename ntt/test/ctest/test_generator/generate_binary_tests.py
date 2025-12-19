@@ -15,7 +15,7 @@ class BinaryTestGenerator(BaseTestGenerator):
             "swishb": [ 'bool', 'uint8_t', 'uint16_t', 'uint32_t',
                     'uint64_t', 'int8_t', 'int16_t', 'bfloat16', 'half',
                       "int32_t", "int64_t",
-                    'float_e4m3_t', 'float_e5m2_t' 
+                    'float_e4m3_t', 'float_e5m2_t','float_e2m1_t'
                    ],
 
             "default": [ 'bool',  'int8_t', 'int16_t', 'bfloat16', 'half',
@@ -23,7 +23,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                 ]
         }
         self.types_need_cast_in_ntt = {
-            'float_e4m3_t', 'float_e5m2_t' 
+            'float_e4m3_t', 'float_e5m2_t' ,'float_e2m1_t'
         }
 
         self.dims_specs_options = {
@@ -60,6 +60,7 @@ class BinaryTestGenerator(BaseTestGenerator):
 
 
             "float_e4m3_t": {"lhs_min": "float_e4m3_t(-3.0)", "lhs_max": "float_e4m3_t(2.0)", "rhs_min": "float_e4m3_t(-2.0f)", "rhs_max": "float_e4m3_t(3.0f)"},
+            "float_e2m1_t": {"lhs_min": "float_e2m1_t(-3.0)", "lhs_max": "float_e2m1_t(3.0)", "rhs_min": "float_e2m1_t(-3.0f)", "rhs_max": "float_e2m1_t(3.0f)"},
             "float_e5m2_t": {"lhs_min": "float_e5m2_t(-3.0)", "lhs_max": "float_e5m2_t(3.0)", "rhs_min": "float_e5m2_t(-3.0f)", "rhs_max": "float_e5m2_t(3.0f)"},
             "bfloat16": {"lhs_min": "bfloat16(-64.0)", "lhs_max": "bfloat16(64.0)", "rhs_min": "-10.0_bf16", "rhs_max": "10.0_bf16"},
             "half": {"lhs_min": "half(-32.0)", "lhs_max": "half(32.0)", "rhs_min": "half(-3.0)", "rhs_max": "half(3.0)"},
@@ -842,6 +843,7 @@ class BinaryTestGenerator(BaseTestGenerator):
                 "half": "half(0.0)",
                 "float_e4m3_t": "float_e4m3_t(0.0f)",
                 "float_e5m2_t": "float_e5m2_t(0.0f)",
+                "float_e2m1_t": "float_e2m1_t(0.0f)",
             }
             # Case 2.2: lhs is positive - rhs as float
             lhs_datatype = lhs_datatype._replace(
