@@ -544,7 +544,8 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                         else
                         {
                             if (grs.InType.TensorType.Shape.All(dim => dim.IsFixed) &&
-                                grs.OutType.TensorType.Shape.All(dim => dim.IsFixed))
+                                grs.OutType.TensorType.Shape.All(dim => dim.IsFixed) &&
+                                !grs.OutType.AxisPolicies.All(p => p is SBPBroadCast))
                             {
                                 IndentScope.Writer.IndWrite("{\n");
                                 IndentScope.Writer.Indent++;
