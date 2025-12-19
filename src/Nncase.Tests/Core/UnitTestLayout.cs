@@ -24,7 +24,7 @@ public sealed class UnitTestLayout
         var layout = new Layout([2048, 2048], [2048, 1]);
         var newLayout = Lutil.ZippedDivide(layout, 4);
         System.Console.WriteLine(newLayout);
-        Assert.Equal("Layout(4, (512, 2048)):(2048, (8192, 1))", newLayout.ToString());
+        Assert.Equal("Layout((4, (512, 2048)):(2048, (8192, 1)))", newLayout.ToString());
     }
 
     [Fact]
