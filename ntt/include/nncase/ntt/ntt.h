@@ -15,6 +15,7 @@
 #pragma once
 #include "../bfloat16.h"
 #include "../float8.h"
+#include "../float_subbyte.h"
 #include "../half.h"
 
 #include "caching.h"
@@ -58,9 +59,11 @@
 #include "kernels/scatter_nd.h"
 #include "kernels/shapeof.h"
 #include "kernels/slice.h"
+#include "kernels/sparse_experts.h"
 #include "kernels/softmax.h"
 #include "kernels/stack.h"
 #include "kernels/summa.h"
+#include "kernels/top_k.h"
 #include "kernels/transpose.h"
 #include "kernels/unary.h"
 #include "kernels/unpack.h"
@@ -85,7 +88,6 @@
 #include "arch/aarch64/vector_ops.h"
 #endif
 #endif
-
 
 #ifdef NNCASE_XPU_MODULE
 #include "arch/xpu/arch_types.h"

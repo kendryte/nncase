@@ -54,12 +54,12 @@ internal sealed class FunctionBodyCloner : ExprCloner<Unit>
         _mapper = mapper;
     }
 
-    protected override BaseExpr VisitLeafVar(Var expr, Unit context)
+    protected internal override BaseExpr VisitDimVar(DimVar expr, Unit context)
     {
         return _mapper[expr];
     }
 
-    protected override BaseExpr VisitDimVar(DimVar expr, Unit context)
+    protected override BaseExpr VisitLeafVar(Var expr, Unit context)
     {
         return _mapper[expr];
     }

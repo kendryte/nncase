@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "nncase/float8.h"
+#include "nncase/float_subbyte.h"
 #include "nncase/half.h"
 #include "nncase/ntt/apply.h"
 #include "nncase/ntt/ntt.h"

@@ -123,7 +123,10 @@ template <class Mesh, class... AxisPolicies> struct sharding {
         return fixed_dim_v<sizeof...(AxisPolicies)>;
     }
 
+    constexpr sharding() noexcept requires(sizeof...(AxisPolicies) == 0) = default;
+
     constexpr sharding(const AxisPolicies &...axis_policies) noexcept
+        requires(sizeof...(AxisPolicies) != 0)
         : axis_policies(axis_policies...) {}
 
     template <Shape GlobalShape, ShardIndex<Mesh> TShardIndex>

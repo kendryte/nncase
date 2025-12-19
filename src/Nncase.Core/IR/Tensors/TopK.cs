@@ -21,7 +21,7 @@ public sealed partial class TopK : Op
     /// <summary>
     /// Gets x.
     /// </summary>
-    public static readonly ParameterInfo X = new(typeof(TopK), 0, "x");
+    public static readonly ParameterInfo X = new(typeof(TopK), 0, "x", ParameterKind.Input);
 
     /// <summary>
     /// Gets k.
