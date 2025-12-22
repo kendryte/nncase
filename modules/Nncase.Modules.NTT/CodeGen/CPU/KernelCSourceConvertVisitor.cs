@@ -549,10 +549,12 @@ internal sealed class KernelCSourceConvertVisitor : CSourceConvertVisitor, IDisp
                             {
                                 IndentScope.Writer.IndWrite("{\n");
                                 IndentScope.Writer.Indent++;
-                                IndentScope.Writer.IndWrite("auto pids = program_ids();\n");
-                                IndentScope.Writer.IndWrite("distributed::topology_synchronize();\n");
                                 var srcBuffer = VisitBuffer(args[0], local: false);
                                 var destBuffer = VisitBuffer(args[1], local: false);
+                                IndentScope.Writer.IndWrite("using T = decltype(" + srcBuffer.Name + ");\n");
+                                IndentScope.Writer.IndWrite("using mesh_type = typename T::mesh_type;\n");
+                                IndentScope.Writer.IndWrite("auto pids = mesh_type::local_index();\n");
+                                IndentScope.Writer.IndWrite("distributed::topology_synchronize();\n");
                                 int[] GetSplitTopoAxes(IRArray<SBP> axisPolicies)
                                 {
                                     return axisPolicies.OfType<SBPSplit>().Select(x => x.Axes).SelectMany(x => x).ToArray();
