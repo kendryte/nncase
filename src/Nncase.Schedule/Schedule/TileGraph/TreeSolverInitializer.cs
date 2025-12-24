@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
-#define USE_Z3
+
+// #define USE_Z3
 #if !USE_Z3
 using Google.OrTools.ConstraintSolver;
 #else
