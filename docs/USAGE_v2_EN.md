@@ -220,7 +220,7 @@ PTQTensorOptions is used to configure PTQ options. The details of all attributes
 
 | Attribute                             | Data Type | Required | Description                                                                                                         |
 | ------------------------------------- | --------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| calibrate_method                      | string    | N        | Specify calibrate method, 'NoClip' by default. 'Kld' is optional. Must be configured when use quantification.       |
+| calibrate_method                      | string    | N        | Specify calibrate method, 'Kld' by default. 'NoClip' is optional.                                                   |
 | samples_count                         | int       | N        | The number of calibration data sets. Must be configured when use quantification.                                    |
 | finetune_weights_method               | string    | N        | Finetune weights method,'NoFineTuneWeights' by default. 'UseSquant' is optional.                                    |
 | quant_type                            | string    | N        | Type of data quantification,'uint8' by default. 'int8','int16' are optional.                                        |

@@ -222,7 +222,7 @@ PTQTensorOptions类, 用于配置nncase PTQ选项，各属性说明如下
 
 | 字段名称                              | 类型   | 是否必须 | 描述                                                                                      |
 | ------------------------------------- | ------ | -------- | ----------------------------------------------------------------------------------------- |
-| calibrate_method                      | string | 否       | 量化校正方法，默认为'NoClip'，可选'Kld'。使用量化时必须配置                               |
+| calibrate_method                      | string | 否       | 量化校正方法，默认为'Kld'，可选'NoClip'。                                                 |
 | samples_count                         | int    | 否       | 校正集数量。使用量化时必须配置                                                            |
 | finetune_weights_method               | string | 否       | 微调权重方法，默认为'NoFineTuneWeights'。可选 'UseSquant'                                 |
 | quant_type                            | string | 否       | 数据量化类型，默认为'uint8'。可选'int8','int16'                                           |
