@@ -100,7 +100,7 @@ class InstallCMakeLibs(install_lib):
         for lib in libs:
             shutil.move(lib, os.path.join(self.build_dir,
                                           os.path.basename(lib)))
-            if platform.system() == "Linux":
+            if platform.system() == "Linux" and os.path.basename(lib)=="libortki.so":
                 subprocess.run(["execstack", "c", os.path.join(self.build_dir,
                                           os.path.basename(lib))], check=True)
 
