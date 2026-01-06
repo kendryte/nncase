@@ -1,7 +1,7 @@
 tensorflow==2.15.0
 torch==2.2.1
 torchvision==0.17.1
-onnx==1.15.0
+onnx==1.17.0
 onnx-simplifier==0.4.36
 onnxruntime==1.17.1
 ncnn==1.0.20240102
