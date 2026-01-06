@@ -51,7 +51,7 @@ before-build = [
 archs = ["x86_64"]
 before-build = """
   rm -f {project}/CMakeUserPresets.json && \
-  yum install -y prelink \
+  yum install -y prelink && \
   find . -name "libortki.so" -exec execstack -c {} \\;
   #"pip install https://github.com/sunnycase/auditwheel/releases/download/6.0.0/auditwheel-6.0.0-py3-none-any.whl"
 """
