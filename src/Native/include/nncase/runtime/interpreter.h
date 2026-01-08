@@ -25,9 +25,9 @@
 #include <nncase/shape.h>
 #include <nncase/tensor.h>
 #include <nncase/type.h>
+#include <string>
 #include <unordered_map>
 #include <variant>
-#include <string>
 
 BEGIN_NS_NNCASE_RUNTIME
 

@@ -14,14 +14,13 @@
  */
 #pragma once
 #include "opcode.h"
+#include <chrono>
 #include <iomanip>
 #include <iostream>
 #include <tuple>
 #include <vector>
-#include <chrono>
 
 using namespace nncase::runtime::stackvm;
-
 
 extern "C" {
 double get_ms_time();
@@ -29,7 +28,8 @@ double get_ms_time();
 
 class op_profile {
   public:
-    op_profile(opcode_t opcode, uint8_t enable_profiling = 1) : active_(enable_profiling) {
+    op_profile(opcode_t opcode, uint8_t enable_profiling = 1)
+        : active_(enable_profiling) {
         if (active_) {
             op_type_ = (uint8_t)opcode;
             op_name_ = to_string(opcode);
@@ -37,7 +37,9 @@ class op_profile {
         }
     }
 
-    op_profile(opcode_t opcode, tensor_function_t tensor_funct, uint8_t enable_profiling = 1) : active_(enable_profiling) {
+    op_profile(opcode_t opcode, tensor_function_t tensor_funct,
+               uint8_t enable_profiling = 1)
+        : active_(enable_profiling) {
         if (active_) {
             op_type_ = (uint8_t)opcode;
             op_name_ = to_string(tensor_funct);
@@ -48,7 +50,8 @@ class op_profile {
     ~op_profile() {
         if (active_) {
             end_ = get_time();
-            op_timing_.push_back(std::make_tuple(op_name_, op_type_, begin_, end_));
+            op_timing_.push_back(
+                std::make_tuple(op_name_, op_type_, begin_, end_));
         }
     }
 
@@ -64,12 +67,14 @@ class op_profile {
         return get_ms_time();
 #elif defined(LINUX_RUNTIME)
         auto now = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(now.time_since_epoch());
+        auto duration = std::chrono::duration_cast<
+            std::chrono::duration<double, std::milli>>(now.time_since_epoch());
         return duration.count();
 #else
         return (double)clock() / 1000;
 #endif
     }
+
   private:
     double begin_;
     double end_;

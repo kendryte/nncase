@@ -33,7 +33,8 @@ using namespace nncase::runtime::stackvm;
 
 result<void>
 stackvm_runtime_function::run(gsl::span<const gsl::byte> text) noexcept {
-    try_var(profiling, module().interp().options().get_scalar_opt<uint8_t>("enable_profiling"));
+    try_var(profiling, module().interp().options().get_scalar_opt<uint8_t>(
+                           "enable_profiling"));
     reader_ = {text};
 
     while (!reader_.empty()) {
