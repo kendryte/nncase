@@ -19,21 +19,6 @@
 #include <unordered_map>
 #include <vector>
 
-#ifdef NNCASE_BAREMETAL
-double get_ms_time();
-#elif defined(LINUX_RUNTIME)
-#include <chrono>
-double get_ms_time() {
-    auto now = std::chrono::high_resolution_clock::now();
-    auto duration =
-        std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(
-            now.time_since_epoch());
-    return duration.count();
-}
-#else
-double get_ms_time() { return (double)clock() / 1000; }
-#endif
-
 std::vector<std::tuple<std::string, uint8_t, double, double>>
     op_profile::op_timing_;
 

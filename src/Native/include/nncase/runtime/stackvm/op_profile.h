@@ -18,6 +18,10 @@
 #include <iostream>
 #include <tuple>
 #include <vector>
+#include <chrono>
+
+using namespace nncase::runtime::stackvm;
+
 
 extern "C" {
 double get_ms_time();
@@ -25,14 +29,27 @@ double get_ms_time();
 
 class op_profile {
   public:
-    op_profile(const std::string &op_name, uint8_t op_type)
-        : op_name_(op_name), op_type_(op_type) {
-        begin_ = get_ms_time();
+    op_profile(opcode_t opcode, uint8_t enable_profiling = 1) : active_(enable_profiling) {
+        if (active_) {
+            op_type_ = (uint8_t)opcode;
+            op_name_ = to_string(opcode);
+            begin_ = get_time();
+        }
+    }
+
+    op_profile(opcode_t opcode, tensor_function_t tensor_funct, uint8_t enable_profiling = 1) : active_(enable_profiling) {
+        if (active_) {
+            op_type_ = (uint8_t)opcode;
+            op_name_ = to_string(tensor_funct);
+            begin_ = get_time();
+        }
     }
 
     ~op_profile() {
-        end_ = get_ms_time();
-        op_timing_.push_back(std::make_tuple(op_name_, op_type_, begin_, end_));
+        if (active_) {
+            end_ = get_time();
+            op_timing_.push_back(std::make_tuple(op_name_, op_type_, begin_, end_));
+        }
     }
 
     static void print();
@@ -42,8 +59,21 @@ class op_profile {
         op_timing_;
 
   private:
+    double get_time() {
+#if defined(NNCASE_BAREMETAL)
+        return get_ms_time();
+#elif defined(LINUX_RUNTIME)
+        auto now = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::duration<double, std::milli>>(now.time_since_epoch());
+        return duration.count();
+#else
+        return (double)clock() / 1000;
+#endif
+    }
+  private:
     double begin_;
     double end_;
     std::string op_name_;
     uint8_t op_type_;
+    uint8_t active_;
 };
