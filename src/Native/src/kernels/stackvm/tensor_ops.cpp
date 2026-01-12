@@ -47,9 +47,9 @@ result<value_t> nncase::kernels::stackvm::batch_normalization(
 }
 
 result<value_t> nncase::kernels::stackvm::layer_norm(
-    int32_t axis, float epsilon, [[maybe_unused]] bool use_mean, value_t input,
-    value_t scale, value_t bias, value_t output,
-    [[maybe_unused]] kernel_context &context) {
+    int32_t axis, float epsilon, [[maybe_unused]] bool use_mean,
+    [[maybe_unused]] bool channel_first, value_t input, value_t scale,
+    value_t bias, value_t output, [[maybe_unused]] kernel_context &context) {
     try_input(input_mem, input);
     try_input(scale_mem, scale);
     try_input(bias_mem, bias);
@@ -1356,3 +1356,24 @@ result<value_t> nncase::kernels::stackvm::fake_quantize(
 //    NNCASE_UNUSED kernel_context &context) {
 //    return err(std::errc::not_supported);
 //}
+
+result<value_t> nncase::kernels::stackvm::grid_sample(
+    runtime::stackvm::grid_sample_align_corners_t align_corners,
+    runtime::stackvm::grid_sample_mode_t mode,
+    runtime::stackvm::grid_sample_padding_mode_t padding_mode, value_t input,
+    value_t grid, value_t output, kernel_context &context) {
+    try_input(in_mem, input);
+    try_input(grid_mem, grid);
+    try_var(typoecode, to_typecode(input_tensor->dtype()));
+    dims_t out_shape(4);
+    out_shape[0] = input_tensor->shape()[0];
+    out_shape[1] = input_tensor->shape()[1];
+    out_shape[2] = grid_tensor->shape()[1];
+    out_shape[3] = grid_tensor->shape()[2];
+    try_output(out_mem, output, input_tensor->dtype(), out_shape);
+    try_(reference::grid_sample(
+        typoecode, in_mem, grid_mem, out_mem, input_tensor->shape(),
+        input_tensor->strides(), grid_tensor->shape(), grid_tensor->strides(),
+        output_tensor->strides(), align_corners, mode, padding_mode, context));
+    return ok(output);
+}

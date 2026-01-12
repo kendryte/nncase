@@ -496,5 +496,13 @@ where(datatype_t dt, const bool *cond, const gsl::byte *x, const gsl::byte *y,
       gsl::span<const size_t> out_shape, gsl::span<const size_t> cond_strides,
       gsl::span<const size_t> x_strides, gsl::span<const size_t> y_strides,
       gsl::span<const size_t> out_strides);
+
+NNCASE_API result<void> grid_sample(
+    typecode_t type, const gsl::byte *input, const gsl::byte *grid,
+    gsl::byte *output, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> grid_shape,
+    gsl::span<const size_t> grid_strides, gsl::span<const size_t> out_strides,
+    grid_sample_align_corners_t align_corners, grid_sample_mode_t mode,
+    grid_sample_padding_mode_t padding_mode, kernel_context &context = default_kernel_context()) noexcept;
 } // namespace reference
 END_NS_NNCASE_KERNELS_MODULE

@@ -18,6 +18,7 @@ set(SRCS ../tensor_ops.cpp
          expand.cpp
          gather.cpp
          gather_nd.cpp
+         grid_sample.cpp
          hardmax.cpp
          instance_norm.cpp
          lrn.cpp
