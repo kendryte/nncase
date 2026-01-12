@@ -46,12 +46,6 @@ public class GridSampleEvaluator : IEvaluator<GridSample>, ITypeInferencer<GridS
 
     public IRType Visit(TensorType input, TensorType grid)
     {
-        // var r = grid.Shape[^1];
-        // if (!r.IsFixed)
-        // {
-        //     return new InvalidType("GridSample grid last dim must be fixed");
-        // }
-
         var newShape = input.Shape.ToArray()[..2].Concat(grid.Shape.ToArray()[1..^1]).ToArray();
         return input with { Shape = new Shape(newShape) };
     }
