@@ -137,6 +137,7 @@ public sealed partial class OnnxImporter : BaseImporter
             "GlobalMaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue, true),
             "Greater" => VisitCompare(op, CompareOp.GreaterThan),
             "GreaterOrEqual" => VisitCompare(op, CompareOp.GreaterOrEqual),
+            "GridSample" => VisitGridSample(op),
             "Hardmax" => VisitHardmax(op),
             "HardSigmoid" => VisitHardSigmoid(op),
             "HardSwish" => VisitHardSwish(op),
