@@ -16,7 +16,6 @@ The nncase toolchain compiler section includes the nncase and KPU plugin wheel p
   pip install --upgrade pip
   pip install nncase
   pip install nncase-kpu
-
   # nncase-2.x need dotnet-7
   sudo apt-get install -y dotnet-sdk-7.0
   ```
@@ -750,6 +749,34 @@ N/A
 
 ```python
 sim.set_output_tensor(0, tensor)
+```
+
+#### set_profiling()
+
+##### Description
+
+Set profiling
+
+##### Definition
+
+```python
+set_profiling(enabled)
+```
+
+##### Parameters
+
+| Attribute | Data Type | Required | Description                |
+| --------- | --------- | -------- | -------------------------- |
+| enabled   | int       | Y        | whther to enable profiling |
+
+##### Returns
+
+N/A
+
+##### Example
+
+```python
+sim.set_profiling(1)
 ```
 
 #### run()

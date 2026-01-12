@@ -16,7 +16,6 @@ nncase工具链compiler部分包括nncase和KPU插件包
   pip install --upgrade pip
   pip install nncase
   pip install nncase-kpu
-
   # nncase-2.x need dotnet-7
   sudo apt-get install -y dotnet-sdk-7.0
   ```
@@ -762,6 +761,34 @@ N/A
 
 ```python
 sim.set_output_tensor(0, tensor)
+```
+
+#### set_profiling()
+
+##### 功能描述
+
+设置profiling开关
+
+##### 接口定义
+
+```python
+set_profiling(enabled)
+```
+
+##### 输入参数
+
+| 参数名称 | 类型 | 是否必须 | 描述                  |
+| -------- | ---- | -------- | --------------------- |
+| enabled  | int  | 是       | 是否打开profiling开关 |
+
+##### 返回值
+
+N/A
+
+##### 代码示例
+
+```python
+sim.set_profiling(1)
 ```
 
 #### run()

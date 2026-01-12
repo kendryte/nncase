@@ -102,7 +102,7 @@ class NNCASE_API interpreter {
         }
         return dump_manager_;
     }
-    void enable_profiling(uint8_t enable_profiling) noexcept;
+    void set_profiling(uint8_t enabled) noexcept;
 
   private:
     tensor_type input_tensor_type(size_t index) const noexcept;

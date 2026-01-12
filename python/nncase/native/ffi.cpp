@@ -348,9 +348,9 @@ PYBIND11_MODULE(_nncase, m) {
              [](interpreter &interp, size_t index, runtime_tensor tensor) {
                  return interp.output_tensor(index, tensor).unwrap_or_throw();
              })
-        .def("enable_profiling",
-             [](interpreter &interp, uint8_t enable_profiling) {
-                 interp.enable_profiling(enable_profiling);
+        .def("set_profiling",
+             [](interpreter &interp, uint8_t enabled) {
+                 interp.set_profiling(enabled);
              })
         .def("run",
              [](interpreter &interp) { interp.run().unwrap_or_throw(); });
