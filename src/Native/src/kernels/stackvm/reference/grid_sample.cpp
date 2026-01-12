@@ -46,7 +46,7 @@ result<void> grid_sample_impl(
         } else if (in_x < 0 || in_x >= W_in || in_y < 0 || in_y >= H_in) {
             return T(0);
         }
-        
+
         in_index[2] = in_y;
         in_index[3] = in_x;
         return input[offset(in_strides, in_index)];

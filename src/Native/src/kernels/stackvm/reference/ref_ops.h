@@ -503,6 +503,7 @@ NNCASE_API result<void> grid_sample(
     gsl::span<const size_t> in_strides, gsl::span<const size_t> grid_shape,
     gsl::span<const size_t> grid_strides, gsl::span<const size_t> out_strides,
     grid_sample_align_corners_t align_corners, grid_sample_mode_t mode,
-    grid_sample_padding_mode_t padding_mode, kernel_context &context = default_kernel_context()) noexcept;
+    grid_sample_padding_mode_t padding_mode,
+    kernel_context &context = default_kernel_context()) noexcept;
 } // namespace reference
 END_NS_NNCASE_KERNELS_MODULE
