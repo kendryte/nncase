@@ -54,5 +54,7 @@ internal class NNModule : IApplicationPart
         registrator.RegisterManyInterface<OneHotEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<PadEvaluator>(reuse: Reuse.Singleton);
         registrator.RegisterManyInterface<SpaceToBatchEvaluator>(reuse: Reuse.Singleton);
+
+        registrator.RegisterManyInterface<GridSampleEvaluator>(reuse: Reuse.Singleton);
     }
 }
