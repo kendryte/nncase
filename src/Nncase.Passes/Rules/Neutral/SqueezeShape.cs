@@ -339,6 +339,11 @@ public sealed partial class SqueezeBinaryShape : IRewriteRule
         }
         else
         {
+            if (aSize != 1 && bSize != 1)
+            {
+                return (false, newA, newB);
+            }
+
             if (aSize != 1)
             {
                 newA = SqueezeShape(a);
