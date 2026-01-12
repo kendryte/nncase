@@ -30,8 +30,6 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var grid = GetInputExpr(op, 1);
-            CompilerServices.DumpIR(input, "GridSampleInput", "/home/chenghai/Work/Repo/rebuild-ir/nncase");
-            CompilerServices.DumpIR(grid, "GridSampleGrid", "/home/chenghai/Work/Repo/rebuild-ir/nncase");
             var alignCorners = ParseGridSampleAlignCorners(
                 (int)GetIntAttribute(op, "align_corners", 0));
             var mode = ParseGridSampleMode(GetStringAttribute(op, "mode", "bilinear"));
