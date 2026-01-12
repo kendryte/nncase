@@ -109,4 +109,7 @@ public static class NN
     /// create Swish call.
     /// </summary>
     public static Call Swish(Expr input, Expr beta) => new Call(new Swish(), input, beta);
+
+    public static Call GridSample(Expr input, Expr grid, GridSampleAlignCorners alignCorners, GridSampleMode mode, GridSamplePaddingMode paddingMode)
+        => new Call(new GridSample(alignCorners, mode, paddingMode), input, grid);
 }
