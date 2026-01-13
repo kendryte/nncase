@@ -315,9 +315,8 @@ reduce(runtime::stackvm::reduce_op_t reduce_op, value_t input, value_t axis,
 
 NNCASE_API result<value_t>
 reduce_arg(runtime::stackvm::reduce_arg_op_t reduce_arg_op,
-           typecode_t dest_type, value_t input, value_t axis,
-           value_t keep_dims, value_t select_last_index,
-           value_t output = nullptr,
+           typecode_t dest_type, value_t input, value_t axis, value_t keep_dims,
+           value_t select_last_index, value_t output = nullptr,
            kernel_context &context = default_kernel_context());
 
 NNCASE_API result<value_t>
