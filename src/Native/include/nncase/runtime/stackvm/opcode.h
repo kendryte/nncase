@@ -779,7 +779,7 @@ struct tensor_reduce_op_t {
 
 struct tensor_reduce_arg_op_t {
     reduce_arg_op_t reduce_arg_op;
-    prim_type_t dest_type;
+    typecode_t dest_type;
 };
 
 struct tensor_reduce_window2d_op_t {

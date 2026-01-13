@@ -1237,7 +1237,8 @@ template <> struct tensor_op_reader<tensor_function_t::reduce_arg> {
         tensor_reduce_arg_op_t op;
         op.reduce_arg_op =
             static_cast<reduce_arg_op_t>(reader.read_unaligned<uint8_t>());
-        op.dest_type = reader.read_unaligned<prim_type_t>();
+        op.dest_type =
+            static_cast<typecode_t>(reader.read_unaligned<uint8_t>());
         return op;
     }
 };

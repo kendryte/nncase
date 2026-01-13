@@ -1092,7 +1092,7 @@ public partial class StackVMEmitter
         }
 
         ///<summary>.</summary>
-        public void ReduceArg(ReduceArgOp reduceArgOp, PrimType destType)
+        public void ReduceArg(ReduceArgOp reduceArgOp, DataType destType)
         {
             _emitter.Write((byte)100);
             _emitter.Write((ushort)60);
