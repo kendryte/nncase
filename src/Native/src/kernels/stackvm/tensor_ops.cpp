@@ -324,7 +324,7 @@ nncase::kernels::stackvm::gather_elements(value_t input, value_t axis,
     try_positive_axis(axis_value, axis, input_tensor);
     auto out_shape = indices_tensor->shape();
     try_output(out_mem, output, dtype, out_shape);
-    try_(reference::gather_elements(
+    try_(optimized::gather_elements(
         dtype, input_mem, out_mem, input_tensor->shape(), out_shape,
         input_tensor->strides(), output_tensor->strides(),
         indices_tensor->dtype(), indices_mem, indices_tensor->shape(),
