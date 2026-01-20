@@ -1104,16 +1104,18 @@ result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
     if (is_contiguous(input_tensor) && in_place) {
         auto size = shapes.size();
         std::vector<value_t> fields(size);
+        auto start = 0;
         for (size_t i = 0; i < size; ++i) {
             auto new_shape = shapes[i];
             auto index = dims_t(new_shape.size(), 0);
-            index[axis_value] = i * sections_value[i];
+            index[axis_value] = start;
             fields[i] = tensor(
                 std::in_place, input_tensor->dtype(), new_shape, in_strides,
                 buffer_slice(input_tensor->buffer().buffer(),
                              offset(in_strides, index) *
                                  get_bytes(input_tensor->dtype()),
                              get_bytes(input_tensor->dtype(), new_shape)));
+            start += sections_value[i];
         }
 
         output = tuple(std::in_place, std::move(fields));
