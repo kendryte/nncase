@@ -1110,7 +1110,8 @@ result<value_t> nncase::kernels::stackvm::split(value_t input, value_t axis,
             auto index = dims_t(new_shape.size(), 0);
             index[axis_value] = start;
             fields[i] = tensor(
-                std::in_place, input_tensor->dtype(), new_shape, in_strides,
+                std::in_place, input_tensor->dtype(), new_shape,
+                get_default_strides(new_shape),
                 buffer_slice(input_tensor->buffer().buffer(),
                              offset(in_strides, index) *
                                  get_bytes(input_tensor->dtype()),
