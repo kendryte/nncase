@@ -23,6 +23,10 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var axis = GetIntAttribute(op, "axis", 0);
+            if (axis < 0)
+            {
+                axis += input.CheckedShape.Rank;
+            }
 
             // inShape[axis] / outputSize
             var split = GetOptionIntsAttribute(op, "split")
@@ -35,6 +39,11 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var axis = GetIntAttribute(op, "axis", 0);
+            if (axis < 0)
+            {
+                axis += input.CheckedShape.Rank;
+            }
+
             var split = GetOptionInputExpr(op, 1)
                 .Or(ComputeSplit(input, op.Output.Count, axis));
             return F.Tensors.Split(input, axis, split).With(metadata: new IRMetadata() { OutputNames = op.Output, });
