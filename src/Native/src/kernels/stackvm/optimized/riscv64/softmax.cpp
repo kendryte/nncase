@@ -52,8 +52,8 @@ vfloat32m8_t exp_ps2_opt(vfloat32m8_t _p, const float c0, const float c1,
     return _p;
 }
 
-template <typename T>
-result<void> optimized_softmax_impl(const T *input, T *output,
+#if 0
+result<void> optimized_safe_softmax(const float *input, float *output,
                                     gsl::span<const size_t> in_shape,
                                     int32_t axis, float beta) noexcept {
     size_t ndim = in_shape.size();
@@ -261,8 +261,8 @@ result<void> optimized_softmax_impl(const T *input, T *output,
     }
     return ok();
 }
-
-#define _RVV_FLOAT32_EXP_OP_OPT(LMUL, MLEN)                                    \
+#else
+#define _RVV_FLOAT32_EXP_OP_OPT(LMUL)                                          \
     static inline vfloat32m##LMUL##_t safe_softmax_exp(vfloat32m##LMUL##_t x,  \
                                                        size_t vl) {            \
         constexpr float c0 = 0x1.ffffe8p-1f;                                   \
@@ -286,24 +286,21 @@ result<void> optimized_softmax_impl(const T *input, T *output,
         b = vfmadd_vv_f32m##LMUL(b, x, tmp, vl);                               \
         a = vsll_vx_i32m##LMUL(a, 23, vl);                                     \
         auto ret = vreinterpret_v_f32m##LMUL##_i32m##LMUL(b);                  \
-        ret = vadd_vv_i32##m##LMUL(a, ret, vl);                                \
+        ret = vadd_vv_i32m##LMUL(a, ret, vl);                                  \
         return vreinterpret_v_i32m##LMUL##_f32m##LMUL(ret);                    \
     }
 
-_RVV_FLOAT32_EXP_OP_OPT(1, 32)
-_RVV_FLOAT32_EXP_OP_OPT(2, 16)
-_RVV_FLOAT32_EXP_OP_OPT(4, 8)
-_RVV_FLOAT32_EXP_OP_OPT(8, 4)
+_RVV_FLOAT32_EXP_OP_OPT(1)
+_RVV_FLOAT32_EXP_OP_OPT(2)
+_RVV_FLOAT32_EXP_OP_OPT(4)
+_RVV_FLOAT32_EXP_OP_OPT(8)
 
-template <typename T>
-result<void> optimized_safe_softmax(const T *input, T *output,
+result<void> optimized_safe_softmax(const float *input, float *output,
                                     gsl::span<const size_t> in_shape,
                                     int32_t axis, float beta) noexcept {
-    // 1. 解析维度信息
     size_t ndim = in_shape.size();
     size_t positive_axis = axis < 0 ? ndim + axis : axis;
     size_t axis_dim = in_shape[positive_axis];
-
     size_t out_side = 1;
     for (size_t i = 0; i < positive_axis; i++)
         out_side *= in_shape[i];
@@ -318,20 +315,18 @@ result<void> optimized_safe_softmax(const T *input, T *output,
             // Pass 1: Global Max
             // -----------------------------------------------------------
             float max_val = -std::numeric_limits<float>::infinity();
-            vfloat32m8_t v_max_acc =
-                vfmv_v_f_f32m8(max_val, vl_max); // Init vector acc
+            auto v_max_acc = vfmv_v_f_f32m8(max_val, vl_max);
 
             size_t n = axis_dim;
             const float *p = ptr_in_base;
 
             for (size_t vl; n > 0; n -= vl, p += vl) {
                 vl = vsetvl_e32m8(n);
-                vfloat32m8_t v0 = vle32_v_f32m8(p, vl);
+                auto v0 = vle32_v_f32m8(p, vl);
                 v_max_acc = vfmax_vv_f32m8(v_max_acc, v0, vl);
             }
 
-            vfloat32m1_t v_scalar_max =
-                vfmv_s_f_f32m1(vundefined_f32m1(), max_val, 1);
+            auto v_scalar_max = vfmv_s_f_f32m1(vundefined_f32m1(), max_val, 1);
             v_scalar_max = vfredmax_vs_f32m8_f32m1(v_scalar_max, v_max_acc,
                                                    v_scalar_max, vl_max);
             max_val = vfmv_f_s_f32m1_f32(v_scalar_max);
@@ -339,7 +334,7 @@ result<void> optimized_safe_softmax(const T *input, T *output,
             // -----------------------------------------------------------
             // Pass 2: Exp & Global Sum
             // -----------------------------------------------------------
-            vfloat32m8_t v_sum_acc = vfmv_v_f_f32m8(0.0f, vl_max);
+            auto v_sum_acc = vfmv_v_f_f32m8(0.0f, vl_max);
 
             n = axis_dim;
             p = ptr_in_base;
@@ -347,7 +342,7 @@ result<void> optimized_safe_softmax(const T *input, T *output,
 
             for (size_t vl; n > 0; n -= vl, p += vl, pout += vl) {
                 vl = vsetvl_e32m8(n);
-                vfloat32m8_t v0 = vle32_v_f32m8(p, vl);
+                auto v0 = vle32_v_f32m8(p, vl);
                 v0 = vfsub_vf_f32m8(v0, max_val, vl);
                 if (beta != 1.0f)
                     v0 = vfmul_vf_f32m8(v0, beta, vl);
@@ -356,8 +351,7 @@ result<void> optimized_safe_softmax(const T *input, T *output,
                 vse32_v_f32m8(pout, v0, vl);
             }
 
-            vfloat32m1_t v_scalar_sum =
-                vfmv_s_f_f32m1(vundefined_f32m1(), 0.0f, 1);
+            auto v_scalar_sum = vfmv_s_f_f32m1(vundefined_f32m1(), 0.0f, 1);
             v_scalar_sum = vfredusum_vs_f32m8_f32m1(v_scalar_sum, v_sum_acc,
                                                     v_scalar_sum, vl_max);
             float sum_val = vfmv_f_s_f32m1_f32(v_scalar_sum);
@@ -366,12 +360,11 @@ result<void> optimized_safe_softmax(const T *input, T *output,
             // Pass 3: Normalize
             // -----------------------------------------------------------
             float inv_sum = 1.0f / sum_val;
-
             n = axis_dim;
             pout = ptr_out_base;
             for (size_t vl; n > 0; n -= vl, pout += vl) {
                 vl = vsetvl_e32m8(n);
-                vfloat32m8_t v0 = vle32_v_f32m8(pout, vl);
+                auto v0 = vle32_v_f32m8(pout, vl);
                 v0 = vfmul_vf_f32m8(v0, inv_sum, vl);
                 vse32_v_f32m8(pout, v0, vl);
             }
@@ -404,7 +397,7 @@ result<void> optimized_safe_softmax(const T *input, T *output,
                     size_t n = current_tile_w;
                     while (n > 0) {
                         size_t vl = vsetvl_e32m8(n);
-                        vfloat32m8_t v_in = vle32_v_f32m8(ptr_row, vl);
+                        auto v_in = vle32_v_f32m8(ptr_row, vl);
                         vse32_v_f32m8(ptr_max, v_in, vl);
                         ptr_row += vl;
                         ptr_max += vl;
@@ -418,8 +411,8 @@ result<void> optimized_safe_softmax(const T *input, T *output,
                         const float *ptr_curr = ptr_row;
                         while (n > 0) {
                             size_t vl = vsetvl_e32m8(n);
-                            vfloat32m8_t v_in = vle32_v_f32m8(ptr_curr, vl);
-                            vfloat32m8_t v_max = vle32_v_f32m8(ptr_max, vl);
+                            auto v_in = vle32_v_f32m8(ptr_curr, vl);
+                            auto v_max = vle32_v_f32m8(ptr_max, vl);
                             v_max = vfmax_vv_f32m8(v_max, v_in, vl);
                             vse32_v_f32m8(ptr_max, v_max, vl);
                             ptr_curr += vl;
@@ -446,18 +439,17 @@ result<void> optimized_safe_softmax(const T *input, T *output,
 
                         while (n > 0) {
                             size_t vl = vsetvl_e32m8(n);
-                            vfloat32m8_t v_in = vle32_v_f32m8(ptr_curr, vl);
-                            vfloat32m8_t v_max = vle32_v_f32m8(ptr_max, vl);
+                            auto v_in = vle32_v_f32m8(ptr_curr, vl);
+                            auto v_max = vle32_v_f32m8(ptr_max, vl);
 
                             // exp((x - max) * beta)
-                            vfloat32m8_t v_val =
-                                vfsub_vv_f32m8(v_in, v_max, vl);
+                            auto v_val = vfsub_vv_f32m8(v_in, v_max, vl);
                             if (beta != 1.0f)
                                 v_val = vfmul_vf_f32m8(v_val, beta, vl);
                             v_val = safe_softmax_exp(v_val, vl);
 
                             // 累加 Sum
-                            vfloat32m8_t v_s = vle32_v_f32m8(ptr_sum, vl);
+                            auto v_s = vle32_v_f32m8(ptr_sum, vl);
                             vse32_v_f32m8(ptr_out, v_val, vl);
                             v_s = vfadd_vv_f32m8(v_s, v_val, vl);
                             vse32_v_f32m8(ptr_sum, v_s, vl);
@@ -480,9 +472,8 @@ result<void> optimized_safe_softmax(const T *input, T *output,
                     float *ptr_sum = local_sum;
                     while (n > 0) {
                         size_t vl = vsetvl_e32m8(n);
-                        vfloat32m8_t v_s = vle32_v_f32m8(ptr_sum, vl);
-                        v_s = vfrdiv_vf_f32m8(v_s, 1.0f,
-                                              vl); // inv_sum = 1.0 / sum
+                        auto v_s = vle32_v_f32m8(ptr_sum, vl);
+                        v_s = vfrdiv_vf_f32m8(v_s, 1.0f, vl);
                         vse32_v_f32m8(ptr_sum, v_s, vl);
                         ptr_sum += vl;
                         n -= vl;
@@ -497,8 +488,8 @@ result<void> optimized_safe_softmax(const T *input, T *output,
 
                         while (n > 0) {
                             size_t vl = vsetvl_e32m8(n);
-                            vfloat32m8_t v_val = vle32_v_f32m8(ptr_out, vl);
-                            vfloat32m8_t v_inv = vle32_v_f32m8(ptr_sum, vl);
+                            auto v_val = vle32_v_f32m8(ptr_out, vl);
+                            auto v_inv = vle32_v_f32m8(ptr_sum, vl);
                             v_val = vfmul_vv_f32m8(v_val, v_inv, vl);
                             vse32_v_f32m8(ptr_out, v_val, vl);
                             ptr_out += vl;
@@ -515,9 +506,10 @@ result<void> optimized_safe_softmax(const T *input, T *output,
 
     return ok();
 }
+#endif
 
-template <typename T>
-result<void> optimized_softmax_half_impl(const T *input, T *output,
+#if 0
+result<void> optimized_safe_softmax(const __float16_t *input, __float16_t *output,
                                          gsl::span<const size_t> in_shape,
                                          int32_t axis,
                                          __float16_t beta) noexcept {
@@ -761,16 +753,264 @@ result<void> optimized_softmax_half_impl(const T *input, T *output,
     }
     return ok();
 }
+
+#else
+#define _RVV_FLOAT16_EXP_OP_OPT(LMUL)                                          \
+    static inline vfloat16m##LMUL##_t safe_softmax_exp(vfloat16m##LMUL##_t x,  \
+                                                       size_t vl) {            \
+        constexpr __float16_t c0 = (__float16_t)0x1.ffffe8p-1f;                \
+        constexpr __float16_t c1 = (__float16_t)0x1.fffb34p-1f;                \
+        constexpr __float16_t c2 = (__float16_t)0x1.00059cp-1f;                \
+        constexpr __float16_t c3 = (__float16_t)0x1.57e0b8p-3f;                \
+        constexpr __float16_t c4 = (__float16_t)0x1.53ac16p-5f;                \
+        x = vfmax_vf_f16m##LMUL(x, (__float16_t)c_exp_lo_half, vl);            \
+        auto b = vfmul_vf_f16m##LMUL(x, (__float16_t)c_cephes_LOG2EF, vl);     \
+        auto a = vfcvt_x_f_v_i16m##LMUL(b, vl);                                \
+        b = vfcvt_f_x_v_f16m##LMUL(a, vl);                                     \
+        x = vfnmsac_vf_f16m##LMUL(x, (__float16_t)c_cephes_exp_C1, b, vl);     \
+        x = vfnmsac_vf_f16m##LMUL(x, (__float16_t)c_cephes_exp_C2, b, vl);     \
+        b = vfmv_v_f_f16m##LMUL(c3, vl);                                       \
+        b = vfmacc_vf_f16m##LMUL(b, c4, x, vl);                                \
+        auto tmp = vfmv_v_f_f16m##LMUL(c2, vl);                                \
+        b = vfmadd_vv_f16m##LMUL(b, x, tmp, vl);                               \
+        tmp = vfmv_v_f_f16m##LMUL(c1, vl);                                     \
+        b = vfmadd_vv_f16m##LMUL(b, x, tmp, vl);                               \
+        tmp = vfmv_v_f_f16m##LMUL(c0, vl);                                     \
+        b = vfmadd_vv_f16m##LMUL(b, x, tmp, vl);                               \
+        a = vsll_vx_i16m##LMUL(a, 10, vl);                                     \
+        auto ret = vreinterpret_v_f16m##LMUL##_i16m##LMUL(b);                  \
+        ret = vadd_vv_i16m##LMUL(a, ret, vl);                                  \
+        return vreinterpret_v_i16m##LMUL##_f16m##LMUL(ret);                    \
+    }
+
+_RVV_FLOAT16_EXP_OP_OPT(1)
+_RVV_FLOAT16_EXP_OP_OPT(2)
+_RVV_FLOAT16_EXP_OP_OPT(4)
+_RVV_FLOAT16_EXP_OP_OPT(8)
+
+result<void> optimized_safe_softmax(const __float16_t *input,
+                                    __float16_t *output,
+                                    gsl::span<const size_t> in_shape,
+                                    int32_t axis, __float16_t beta) noexcept {
+    size_t ndim = in_shape.size();
+    size_t positive_axis = axis < 0 ? ndim + axis : axis;
+    size_t axis_dim = in_shape[positive_axis];
+
+    size_t out_side = 1;
+    for (size_t i = 0; i < positive_axis; i++)
+        out_side *= in_shape[i];
+
+    if (positive_axis == (ndim - 1)) {
+        const size_t vl_max = vsetvlmax_e16m8();
+        for (size_t i = 0; i < out_side; i++) {
+            const __float16_t *ptr_in_base =
+                (const __float16_t *)input + i * axis_dim;
+            __float16_t *ptr_out_base = (__float16_t *)output + i * axis_dim;
+
+            // -----------------------------------------------------------
+            // Pass 1: Global Max
+            // -----------------------------------------------------------
+            __float16_t max_val = -std::numeric_limits<__float16_t>::infinity();
+            auto v_max_acc = vfmv_v_f_f16m8(max_val, vl_max);
+
+            size_t n = axis_dim;
+            const __float16_t *p = ptr_in_base;
+
+            for (size_t vl; n > 0; n -= vl, p += vl) {
+                vl = vsetvl_e16m8(n);
+                auto v0 = vle16_v_f16m8(p, vl);
+                v_max_acc = vfmax_vv_f16m8(v_max_acc, v0, vl);
+            }
+
+            auto v_scalar_max = vfmv_s_f_f16m1(vundefined_f16m1(), max_val, 1);
+            v_scalar_max = vfredmax_vs_f16m8_f16m1(v_scalar_max, v_max_acc,
+                                                   v_scalar_max, vl_max);
+            max_val = vfmv_f_s_f16m1_f16(v_scalar_max);
+
+            // -----------------------------------------------------------
+            // Pass 2: Exp & Global Sum
+            // -----------------------------------------------------------
+            auto v_sum_acc = vfmv_v_f_f16m8((__float16_t)0.0f, vl_max);
+
+            n = axis_dim;
+            p = ptr_in_base;
+            __float16_t *pout = ptr_out_base;
+
+            for (size_t vl; n > 0; n -= vl, p += vl, pout += vl) {
+                vl = vsetvl_e16m8(n);
+                auto v0 = vle16_v_f16m8(p, vl);
+                v0 = vfsub_vf_f16m8(v0, max_val, vl);
+                if (beta != (__float16_t)1.0f)
+                    v0 = vfmul_vf_f16m8(v0, beta, vl);
+                v0 = safe_softmax_exp(v0, vl);
+                v_sum_acc = vfadd_vv_f16m8(v_sum_acc, v0, vl);
+                vse16_v_f16m8(pout, v0, vl);
+            }
+
+            auto v_scalar_sum =
+                vfmv_s_f_f16m1(vundefined_f16m1(), (__float16_t)0.0f, 1);
+            v_scalar_sum = vfredusum_vs_f16m8_f16m1(v_scalar_sum, v_sum_acc,
+                                                    v_scalar_sum, vl_max);
+            auto sum_val = vfmv_f_s_f16m1_f16(v_scalar_sum);
+
+            // -----------------------------------------------------------
+            // Pass 3: Normalize
+            // -----------------------------------------------------------
+            auto inv_sum = (__float16_t)1.0f / sum_val;
+
+            n = axis_dim;
+            pout = ptr_out_base;
+            for (size_t vl; n > 0; n -= vl, pout += vl) {
+                vl = vsetvl_e16m8(n);
+                auto v0 = vle16_v_f16m8(pout, vl);
+                v0 = vfmul_vf_f16m8(v0, inv_sum, vl);
+                vse16_v_f16m8(pout, v0, vl);
+            }
+        }
+    }
+    // =========================================================
+    // 分支 2: Axis 不是最后一维 (Strided Access) -> 使用 Tiling 优化
+    // =========================================================
+    else {
+        size_t in_side = 1;
+        for (size_t i = positive_axis + 1; i < ndim; i++)
+            in_side *= in_shape[i];
+
+        constexpr int TILE_SIZE = 2048;
+        __float16_t local_max[TILE_SIZE];
+        __float16_t local_sum[TILE_SIZE];
+        for (size_t i = 0; i < out_side; i++) {
+            const __float16_t *batch_in =
+                (const __float16_t *)input + i * axis_dim * in_side;
+            __float16_t *batch_out =
+                (__float16_t *)output + i * axis_dim * in_side;
+            for (size_t col_base = 0; col_base < in_side;
+                 col_base += TILE_SIZE) {
+                size_t current_tile_w =
+                    std::min((size_t)TILE_SIZE, in_side - col_base);
+
+                // --- Pass 1: 计算 Max (在当前 Tile 内) ---
+                {
+                    const __float16_t *ptr_row = batch_in + col_base;
+                    __float16_t *ptr_max = local_max;
+                    size_t n = current_tile_w;
+                    while (n > 0) {
+                        size_t vl = vsetvl_e16m8(n);
+                        auto v_in = vle16_v_f16m8(ptr_row, vl);
+                        vse16_v_f16m8(ptr_max, v_in, vl);
+                        ptr_row += vl;
+                        ptr_max += vl;
+                        n -= vl;
+                    }
+
+                    ptr_row = batch_in + col_base + in_side;
+                    for (size_t r = 1; r < axis_dim; ++r) {
+                        n = current_tile_w;
+                        ptr_max = local_max;
+                        const __float16_t *ptr_curr = ptr_row;
+                        while (n > 0) {
+                            size_t vl = vsetvl_e16m8(n);
+                            auto v_in = vle16_v_f16m8(ptr_curr, vl);
+                            auto v_max = vle16_v_f16m8(ptr_max, vl);
+                            v_max = vfmax_vv_f16m8(v_max, v_in, vl);
+                            vse16_v_f16m8(ptr_max, v_max, vl);
+                            ptr_curr += vl;
+                            ptr_max += vl;
+                            n -= vl;
+                        }
+                        ptr_row += in_side;
+                    }
+                }
+
+                // --- Pass 2: 计算 Exp 和 Sum (在当前 Tile 内) ---
+                {
+                    std::fill(local_sum, local_sum + current_tile_w, 0.0f);
+
+                    const __float16_t *ptr_in_row = batch_in + col_base;
+                    __float16_t *ptr_out_row = batch_out + col_base;
+
+                    for (size_t r = 0; r < axis_dim; ++r) {
+                        size_t n = current_tile_w;
+                        __float16_t *ptr_max = local_max;
+                        __float16_t *ptr_sum = local_sum;
+                        const __float16_t *ptr_curr = ptr_in_row;
+                        __float16_t *ptr_out = ptr_out_row;
+
+                        while (n > 0) {
+                            size_t vl = vsetvl_e16m8(n);
+                            auto v_in = vle16_v_f16m8(ptr_curr, vl);
+                            auto v_max = vle16_v_f16m8(ptr_max, vl);
+
+                            // exp((x - max) * beta)
+                            auto v_val = vfsub_vv_f16m8(v_in, v_max, vl);
+                            if (beta != (__float16_t)1.0f)
+                                v_val = vfmul_vf_f16m8(v_val, beta, vl);
+                            v_val = safe_softmax_exp(v_val, vl);
+
+                            // 累加 Sum
+                            auto v_s = vle16_v_f16m8(ptr_sum, vl);
+                            vse16_v_f16m8(ptr_out, v_val, vl);
+                            v_s = vfadd_vv_f16m8(v_s, v_val, vl);
+                            vse16_v_f16m8(ptr_sum, v_s, vl);
+
+                            ptr_curr += vl;
+                            ptr_max += vl;
+                            ptr_sum += vl;
+                            ptr_out += vl;
+                            n -= vl;
+                        }
+                        ptr_in_row += in_side;
+                        ptr_out_row += in_side;
+                    }
+                }
+
+                // --- Pass 3: 归一化 (在当前 Tile 内) ---
+                {
+                    // 3.1 预先计算 inv_sum
+                    size_t n = current_tile_w;
+                    __float16_t *ptr_sum = local_sum;
+                    while (n > 0) {
+                        size_t vl = vsetvl_e16m8(n);
+                        auto v_s = vle16_v_f16m8(ptr_sum, vl);
+                        v_s = vfrdiv_vf_f16m8(v_s, (__float16_t)1.0f, vl);
+                        vse16_v_f16m8(ptr_sum, v_s, vl);
+                        ptr_sum += vl;
+                        n -= vl;
+                    }
+
+                    // 3.2 遍历所有行进行乘法
+                    __float16_t *ptr_out_row = batch_out + col_base;
+                    for (size_t r = 0; r < axis_dim; ++r) {
+                        n = current_tile_w;
+                        ptr_sum = local_sum;
+                        __float16_t *ptr_out = ptr_out_row;
+
+                        while (n > 0) {
+                            size_t vl = vsetvl_e16m8(n);
+                            auto v_val = vle16_v_f16m8(ptr_out, vl);
+                            auto v_inv = vle16_v_f16m8(ptr_sum, vl);
+                            v_val = vfmul_vv_f16m8(v_val, v_inv, vl);
+                            vse16_v_f16m8(ptr_out, v_val, vl);
+                            ptr_out += vl;
+                            ptr_sum += vl;
+                            n -= vl;
+                        }
+                        ptr_out_row += in_side;
+                    }
+                }
+
+            } // End of Tile Loop
+        }     // End of Batch Loop
+    }
+
+    return ok();
+}
+#endif
 #endif
 } // namespace
 
 #define IN_CAST(_ty, _name) reinterpret_cast<const _ty *>(_name)
 #define OUT_CAST(_ty, _name) reinterpret_cast<_ty *>(_name)
-
-// template result<void> optimized::softmax<float>(
-//     const float *input, float *output, gsl::span<const size_t> in_shape,
-//     gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
-//     int32_t axis, float beta) noexcept;
 
 // template <typename T>
 result<void> optimized::softmax([[maybe_unused]] typecode_t typecode,
@@ -781,14 +1021,15 @@ result<void> optimized::softmax([[maybe_unused]] typecode_t typecode,
                                 int32_t axis, float beta) noexcept {
 #if __riscv_vector
     if (typecode == typecode_t::dt_float16) {
-        return optimized_softmax_half_impl(IN_CAST(__float16_t, input),
-                                           OUT_CAST(__float16_t, output),
-                                           in_shape, axis, __float16_t(beta));
-    }
-    return optimized_safe_softmax(
-        IN_CAST(float, input), OUT_CAST(float, output), in_shape, axis, beta);
-//    TYPE_SELECT_SOFTMAX(typecode, SOFTMAX_IMPL);
+        return optimized_safe_softmax(IN_CAST(__float16_t, input),
+                                      OUT_CAST(__float16_t, output), in_shape,
+                                      axis, __float16_t(beta));
+    } else if (typecode == typecode_t::dt_float32) {
+        return optimized_safe_softmax(IN_CAST(float, input),
+                                      OUT_CAST(float, output), in_shape, axis,
+                                      beta);
+    } else
 #endif
-    return stackvm::reference::softmax(typecode, input, output, in_shape,
-                                       in_strides, out_strides, axis, beta);
+        return stackvm::reference::softmax(typecode, input, output, in_shape,
+                                           in_strides, out_strides, axis, beta);
 }
