@@ -21,9 +21,9 @@
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 #include <queue>
-#ifdef __riscv_vector
+#if defined(__riscv_vector) && defined(linux)
 #include <riscv_vector.h>
-#endif
+#endif 
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -33,7 +33,7 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
 namespace {
-#ifdef __riscv_vector
+#if defined(__riscv_vector) && defined(linux)
 template <typename T>
 void update_queue(
     std::priority_queue<std::pair<T, size_t>, std::vector<std::pair<T, size_t>>,
@@ -64,7 +64,7 @@ void topK_rvv_f32(const float *input, float *output, int64_t *indices,
     std::vector<uint32_t> temp_idxs(vl_max);
 
     size_t i = k;
-    for (; i < length; i += vl_max) {
+    for (; i < length;) {
         size_t vl = vsetvl_e32m8(length - i);
 
         vfloat32m8_t v_data = vle32_v_f32m8(input + i, vl);
@@ -80,10 +80,10 @@ void topK_rvv_f32(const float *input, float *output, int64_t *indices,
         vuint32m8_t v_seq = vid_v_u32m8(vl);
         vuint32m8_t v_indices = vadd_vx_u32m8(v_seq, i, vl);
 
-        vfloat32m8_t v_active_vals;
-        vcompress_vm_f32m8(mask, v_active_vals, v_data, vl);
-        vuint32m8_t v_active_idxs;
-        vcompress_vm_u32m8(mask, v_active_idxs, v_indices, vl);
+        vfloat32m8_t v_active_vals =
+            __riscv_vcompress_vm_f32m8(v_data, mask, vl);
+        vuint32m8_t v_active_idxs =
+            __riscv_vcompress_vm_u32m8(v_indices, mask, vl);
 
         vse32_v_f32m8(temp_vals.data(), v_active_vals, count);
         vse32_v_u32m8(temp_idxs.data(), v_active_idxs, count);
@@ -91,6 +91,7 @@ void topK_rvv_f32(const float *input, float *output, int64_t *indices,
         for (int j = 0; j < count; ++j) {
             update_queue(pq, temp_vals[j], temp_idxs[j], threshold);
         }
+        i += vl;
     }
 
     for (int j = k - 1; j >= 0; j--) {
@@ -202,7 +203,7 @@ topk_impl(const T *input, T *output_values, int64_t *output_indices,
                 output_indices + i * output_indices_shape.back();
             T *output_values_ptr =
                 output_values + i * output_values_shape.back();
-#ifdef __riscv_vector
+#if defined(__riscv_vector) && defined(linux)
             if (largest && std::is_same<T, float>::value) {
                 topK_rvv_f32((const float *)input_ptr,
                              (float *)output_values_ptr, output_indices_ptr,
