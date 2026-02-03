@@ -23,7 +23,7 @@
 #include <queue>
 #if defined(__riscv_vector) && defined(linux)
 #include <riscv_vector.h>
-#endif 
+#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
