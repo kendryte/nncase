@@ -59,34 +59,34 @@ void topK_rvv_f32(const float *input, float *output, int64_t *indices,
 
     float threshold = pq.top().first;
 
-    size_t vl_max = __riscv_vsetvlmax_e32m8();
+    size_t vl_max = vsetvlmax_e32m8();
     std::vector<float> temp_vals(vl_max);
     std::vector<uint32_t> temp_idxs(vl_max);
 
     size_t i = k;
     for (; i < length; i += vl_max) {
-        size_t vl = __riscv_vsetvl_e32m8(length - i);
+        size_t vl = vsetvl_e32m8(length - i);
 
-        vfloat32m8_t v_data = __riscv_vle32_v_f32m8(input + i, vl);
+        vfloat32m8_t v_data = vle32_v_f32m8(input + i, vl);
 
-        vbool4_t mask = __riscv_vmfgt_vf_f32m8_b4(v_data, threshold, vl);
+        vbool4_t mask = vmfgt_vf_f32m8_b4(v_data, threshold, vl);
 
-        long count = __riscv_vcpop_m_b4(mask, vl);
+        long count = vcpop_m_b4(mask, vl);
 
         if (count == 0) {
             continue;
         }
 
-        vuint32m8_t v_seq = __riscv_vid_v_u32m8(vl);
-        vuint32m8_t v_indices = __riscv_vadd_vx_u32m8(v_seq, i, vl);
+        vuint32m8_t v_seq = vid_v_u32m8(vl);
+        vuint32m8_t v_indices = vadd_vx_u32m8(v_seq, i, vl);
 
-        vfloat32m8_t v_active_vals =
-            __riscv_vcompress_vm_f32m8(v_data, mask, vl);
-        vuint32m8_t v_active_idxs =
-            __riscv_vcompress_vm_u32m8(v_indices, mask, vl);
+        vfloat32m8_t v_active_vals;
+        vcompress_vm_f32m8(mask, v_active_vals, v_data, vl);
+        vuint32m8_t v_active_idxs;
+        vcompress_vm_u32m8(mask, v_active_idxs, v_indices, vl);
 
-        __riscv_vse32_v_f32m8(temp_vals.data(), v_active_vals, count);
-        __riscv_vse32_v_u32m8(temp_idxs.data(), v_active_idxs, count);
+        vse32_v_f32m8(temp_vals.data(), v_active_vals, count);
+        vse32_v_u32m8(temp_idxs.data(), v_active_idxs, count);
 
         for (int j = 0; j < count; ++j) {
             update_queue(pq, temp_vals[j], temp_idxs[j], threshold);

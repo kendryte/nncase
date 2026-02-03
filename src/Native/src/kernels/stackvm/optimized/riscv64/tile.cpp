@@ -38,9 +38,9 @@ template <typename T> static void copy_data(T *dst, const T *src, int n) {
 static void copy_data_rvv_i64(int64_t *dst, const int64_t *src, int n) {
     int i = n;
     while (i > 0) {
-        size_t vl = __riscv_vsetvl_e64m8(i);
-        vint64m8_t v = __riscv_vle64_v_i64m8(src, vl);
-        __riscv_vse64_v_i64m8(dst, v, vl);
+        size_t vl = vsetvl_e64m8(i);
+        vint64m8_t v = vle64_v_i64m8(src, vl);
+        vse64_v_i64m8(dst, v, vl);
         src += vl;
         dst += vl;
         i -= vl;
@@ -49,10 +49,10 @@ static void copy_data_rvv_i64(int64_t *dst, const int64_t *src, int n) {
 
 static void broadcast_data_rvv_i64(int64_t *dst, int64_t val, int n) {
     while (n > 0) {
-        size_t vl = __riscv_vsetvl_e64m8(n);
+        size_t vl = vsetvl_e64m8(n);
         // 使用 vmv.v.x 将标量 val 广播到整个 vector 寄存器组
-        vint64m8_t v = __riscv_vmv_v_x_i64m8(val, vl);
-        __riscv_vse64_v_i64m8(dst, v, vl);
+        vint64m8_t v = vmv_v_x_i64m8(val, vl);
+        vse64_v_i64m8(dst, v, vl);
         dst += vl;
         n -= vl;
     }
