@@ -1189,7 +1189,7 @@ nncase::kernels::stackvm::tile(value_t input, value_t repeats, value_t output,
     auto ty = input_tensor->dtype();
     auto out_shape = tile_infer_shape(input_tensor->shape(), repeats_value);
     try_output(out_mem, output, ty, out_shape);
-    try_(reference::tile(ty, in_mem, out_mem, input_tensor->shape(), out_shape,
+    try_(optimized::tile(ty, in_mem, out_mem, input_tensor->shape(), out_shape,
                          input_tensor->strides(), output_tensor->strides(),
                          repeats_value));
     KERNEL_FINISH;
