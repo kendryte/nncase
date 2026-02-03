@@ -1214,7 +1214,7 @@ nncase::kernels::stackvm::top_k(value_t x, value_t k, value_t axis,
     try_var(tycode, to_typecode(x_tensor->dtype()));
     try_integer_v(largest);
     try_integer_v(sorted);
-    try_(reference::topk(
+    try_(optimized::topk(
         tycode, x_mem, outputs[0], OUT_CAST(int64_t, outputs[1]),
         x_tensor->shape(), x_tensor->strides(), out_values->shape(),
         out_values->strides(), out_indices->shape(), out_indices->strides(),

@@ -54,6 +54,7 @@ _TARGET_ARCH_FILES(TARGET kernels
                    reduce.cpp
                    gather_elements.cpp
                    tile.cpp
+                   topk.cpp
 )
 
 if(NOT MSVC)

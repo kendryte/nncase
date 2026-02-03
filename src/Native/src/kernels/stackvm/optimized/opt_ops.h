@@ -191,6 +191,17 @@ tile(datatype_t dt, const gsl::byte *input, gsl::byte *output,
      gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
      gsl::span<const size_t> repeats);
 
+NNCASE_API result<void> topk(typecode_t typecode, const gsl::byte *input,
+                             gsl::byte *output_values, int64_t *output_indices,
+                             gsl::span<const size_t> in_shape,
+                             gsl::span<const size_t> in_strides,
+                             gsl::span<const size_t> output_values_shape,
+                             gsl::span<const size_t> output_values_strides,
+                             gsl::span<const size_t> output_indices_shape,
+                             gsl::span<const size_t> output_indices_strides,
+                             const int64_t k, const int32_t axis,
+                             const bool largest, const bool sorted) noexcept;
+
 NNCASE_API result<void> transpose(datatype_t type, const gsl::byte *src,
                                   gsl::byte *dest, const dims_t &in_shape,
                                   const dims_t &perm,
