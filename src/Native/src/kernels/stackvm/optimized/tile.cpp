@@ -27,13 +27,11 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
-result<void> nncase::kernels::stackvm::optimized::tile(datatype_t dt, const gsl::byte *input,
-                             gsl::byte *output,
-                             gsl::span<const size_t> in_shape,
-                             gsl::span<const size_t> out_shape,
-                             gsl::span<const size_t> in_strides,
-                             gsl::span<const size_t> out_strides,
-                             gsl::span<const size_t> repeats) {
-    return reference::tile(dt, input, output, in_shape, out_shape,
-                                    in_strides, out_strides, repeats);
+result<void> nncase::kernels::stackvm::optimized::tile(
+    datatype_t dt, const gsl::byte *input, gsl::byte *output,
+    gsl::span<const size_t> in_shape, gsl::span<const size_t> out_shape,
+    gsl::span<const size_t> in_strides, gsl::span<const size_t> out_strides,
+    gsl::span<const size_t> repeats) {
+    return reference::tile(dt, input, output, in_shape, out_shape, in_strides,
+                           out_strides, repeats);
 }

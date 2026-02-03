@@ -31,18 +31,17 @@ using namespace nncase::runtime::stackvm;
 using namespace nncase::kernels;
 using namespace nncase::kernels::stackvm;
 
-result<void> nncase::kernels::stackvm::optimized::topk(typecode_t typecode, const gsl::byte *input,
-                  gsl::byte *output_values, int64_t *output_indices,
-                  gsl::span<const size_t> in_shape,
-                  gsl::span<const size_t> in_strides,
-                  gsl::span<const size_t> output_values_shape,
-                  gsl::span<const size_t> output_values_strides,
-                  gsl::span<const size_t> output_indices_shape,
-                  gsl::span<const size_t> output_indices_strides,
-                  const int64_t k, const int32_t axis, const bool largest,
-                  const bool sorted) noexcept {
-    return reference::topk(
-        typecode, input, output_values, output_indices, in_shape, in_strides,
-        output_values_shape, output_values_strides, output_indices_shape,
-        output_indices_strides, k, axis, largest, sorted);
+result<void> nncase::kernels::stackvm::optimized::topk(
+    typecode_t typecode, const gsl::byte *input, gsl::byte *output_values,
+    int64_t *output_indices, gsl::span<const size_t> in_shape,
+    gsl::span<const size_t> in_strides,
+    gsl::span<const size_t> output_values_shape,
+    gsl::span<const size_t> output_values_strides,
+    gsl::span<const size_t> output_indices_shape,
+    gsl::span<const size_t> output_indices_strides, const int64_t k,
+    const int32_t axis, const bool largest, const bool sorted) noexcept {
+    return reference::topk(typecode, input, output_values, output_indices,
+                           in_shape, in_strides, output_values_shape,
+                           output_values_strides, output_indices_shape,
+                           output_indices_strides, k, axis, largest, sorted);
 }
