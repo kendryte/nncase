@@ -21,7 +21,7 @@
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/util.h>
 #include <queue>
-#if defined(__riscv_vector) && defined(linux)
+#ifdef __riscv_vector
 #include <riscv_vector.h>
 #endif
 
@@ -33,7 +33,7 @@ using namespace nncase::kernels::stackvm;
 using namespace nncase::kernels::stackvm::optimized;
 
 namespace {
-#if defined(__riscv_vector) && defined(linux)
+#ifdef __riscv_vector
 template <typename T>
 void update_queue(
     std::priority_queue<std::pair<T, size_t>, std::vector<std::pair<T, size_t>>,
@@ -63,9 +63,8 @@ void topK_rvv_f32(const float *input, float *output, int64_t *indices,
     std::vector<float> temp_vals(vl_max);
     std::vector<uint32_t> temp_idxs(vl_max);
 
-    size_t i = k;
-    for (; i < length;) {
-        size_t vl = vsetvl_e32m8(length - i);
+    for (size_t i = k, vl = 0; i < length; i += vl) {
+        vl = vsetvl_e32m8(length - i);
 
         vfloat32m8_t v_data = vle32_v_f32m8(input + i, vl);
 
@@ -92,7 +91,6 @@ void topK_rvv_f32(const float *input, float *output, int64_t *indices,
         for (int j = 0; j < count; ++j) {
             update_queue(pq, temp_vals[j], temp_idxs[j], threshold);
         }
-        i += vl;
     }
 
     for (int j = k - 1; j >= 0; j--) {
@@ -204,7 +202,7 @@ topk_impl(const T *input, T *output_values, int64_t *output_indices,
                 output_indices + i * output_indices_shape.back();
             T *output_values_ptr =
                 output_values + i * output_values_shape.back();
-#if defined(__riscv_vector) && defined(linux)
+#ifdef __riscv_vector
             if (largest && std::is_same<T, float>::value) {
                 topK_rvv_f32((const float *)input_ptr,
                              (float *)output_values_ptr, output_indices_ptr,
