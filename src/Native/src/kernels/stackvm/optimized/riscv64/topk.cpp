@@ -80,10 +80,11 @@ void topK_rvv_f32(const float *input, float *output, int64_t *indices,
         vuint32m8_t v_seq = vid_v_u32m8(vl);
         vuint32m8_t v_indices = vadd_vx_u32m8(v_seq, i, vl);
 
-        vfloat32m8_t v_active_vals =
-            __riscv_vcompress_vm_f32m8(v_data, mask, vl);
-        vuint32m8_t v_active_idxs =
-            __riscv_vcompress_vm_u32m8(v_indices, mask, vl);
+        vfloat32m8_t v_active_vals;
+        v_active_vals = vcompress_vm_f32m8(mask, v_active_vals, v_data, vl);
+
+        vuint32m8_t v_active_idxs;
+        v_active_idxs = vcompress_vm_u32m8(mask, v_active_idxs, v_indices, vl);
 
         vse32_v_f32m8(temp_vals.data(), v_active_vals, count);
         vse32_v_u32m8(temp_idxs.data(), v_active_idxs, count);
