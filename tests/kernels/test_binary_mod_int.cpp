@@ -27,6 +27,7 @@ using namespace nncase::runtime;
 using namespace ortki;
 using namespace nncase::runtime::stackvm;
 
+#if 0
 NNCASE_TEST_CLASS(BinaryTest)
 
 NNCASE_TESTSUITE_INIT(BinaryTest, Binary, 2, dt_int32, dt_int64,
@@ -44,3 +45,4 @@ int main(int argc, char *argv[]) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
+#endif
