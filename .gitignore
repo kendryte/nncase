@@ -321,3 +321,7 @@ tests/llm/*/
 
 # agent instructions
 .github/instructions/
+
+# AI
+CLAUDE.md
+AGENTS.md
