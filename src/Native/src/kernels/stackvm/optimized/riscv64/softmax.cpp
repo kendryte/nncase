@@ -277,6 +277,7 @@ result<void> optimized_safe_softmax(const float *input, float *output,
         x = vfnmsac_vf_f32m##LMUL(x, c_cephes_exp_C1, b, vl);                  \
         x = vfnmsac_vf_f32m##LMUL(x, c_cephes_exp_C2, b, vl);                  \
         b = vfmv_v_f_f32m##LMUL(c3, vl);                                       \
+        a = vadd_vx_i32m##LMUL(a, 0x7f, vl);                                   \
         b = vfmacc_vf_f32m##LMUL(b, c4, x, vl);                                \
         auto tmp = vfmv_v_f_f32m##LMUL(c2, vl);                                \
         b = vfmadd_vv_f32m##LMUL(b, x, tmp, vl);                               \
@@ -285,9 +286,8 @@ result<void> optimized_safe_softmax(const float *input, float *output,
         tmp = vfmv_v_f_f32m##LMUL(c0, vl);                                     \
         b = vfmadd_vv_f32m##LMUL(b, x, tmp, vl);                               \
         a = vsll_vx_i32m##LMUL(a, 23, vl);                                     \
-        auto ret = vreinterpret_v_f32m##LMUL##_i32m##LMUL(b);                  \
-        ret = vadd_vv_i32m##LMUL(a, ret, vl);                                  \
-        return vreinterpret_v_i32m##LMUL##_f32m##LMUL(ret);                    \
+        auto pow2n = vreinterpret_v_i32m##LMUL##_f32m##LMUL(a);                \
+        return vfmul_vv_f32m##LMUL(b, pow2n, vl);                              \
     }
 
 _RVV_FLOAT32_EXP_OP_OPT(1)
@@ -770,6 +770,7 @@ result<void> optimized_safe_softmax(const __float16_t *input, __float16_t *outpu
         x = vfnmsac_vf_f16m##LMUL(x, (__float16_t)c_cephes_exp_C1, b, vl);     \
         x = vfnmsac_vf_f16m##LMUL(x, (__float16_t)c_cephes_exp_C2, b, vl);     \
         b = vfmv_v_f_f16m##LMUL(c3, vl);                                       \
+        a = vadd_vx_i16m##LMUL(a, 15, vl);                                     \
         b = vfmacc_vf_f16m##LMUL(b, c4, x, vl);                                \
         auto tmp = vfmv_v_f_f16m##LMUL(c2, vl);                                \
         b = vfmadd_vv_f16m##LMUL(b, x, tmp, vl);                               \
@@ -778,9 +779,8 @@ result<void> optimized_safe_softmax(const __float16_t *input, __float16_t *outpu
         tmp = vfmv_v_f_f16m##LMUL(c0, vl);                                     \
         b = vfmadd_vv_f16m##LMUL(b, x, tmp, vl);                               \
         a = vsll_vx_i16m##LMUL(a, 10, vl);                                     \
-        auto ret = vreinterpret_v_f16m##LMUL##_i16m##LMUL(b);                  \
-        ret = vadd_vv_i16m##LMUL(a, ret, vl);                                  \
-        return vreinterpret_v_i16m##LMUL##_f16m##LMUL(ret);                    \
+        auto pow2n = vreinterpret_v_i16m##LMUL##_f16m##LMUL(a);                \
+        return vfmul_vv_f16m##LMUL(b, pow2n, vl);                              \
     }
 
 _RVV_FLOAT16_EXP_OP_OPT(1)
